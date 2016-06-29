@@ -601,7 +601,7 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 /// \param is_pulse [in] Flag determining time-series type (piecewise-uniform [pulsed] vs. piecewise-linear)
 /// \return Pointer to created time series
 //
-CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag)
+CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, bool shift_to_per_ending)
 {
   char *s[MAXINPUTITEMS];
   int Len;
@@ -634,7 +634,12 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     tstep        =s_to_d(s[3]);
     //units =s[4]
   }
-
+  if (shift_to_per_ending){
+    start_day+=tstep;
+    int leap=0;
+    if (IsLeapYear(start_yr)){ leap = 1; }
+    if (start_day==365+leap){start_day=0; start_yr++;}
+  }
   double *aVal;
   aVal =new double [nMeasurements];
   if (aVal == NULL){

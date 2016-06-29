@@ -579,14 +579,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           break;
         }
       case (40): //---------------------------------------------
-        {/*:ObservationData {data type} {long SBID or int HRUID} 
+        {/*:ObservationData {data type} {long SBID or int HRUID} {(optional) units}
           {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
           {double value} x nMeasurements 
           :EndObservationData
           */
           if (Options.noisy) {cout <<"Observation data"<<endl;}
           if (Len<3){p->ImproperFormat(s); break;} 
-          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2])); // \todo[funct] should likley not be "is pulse" format. May need alternate time series class
+          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),(!strcmp(s[1], "HYDROGRAPH"))); // \todo[funct] should likley not be "is pulse" format. May need alternate time series class
           pModel->AddObservedTimeSeries(pTimeSer);
           break;
         }

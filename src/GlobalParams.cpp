@@ -230,6 +230,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   SetSpecifiedValue(G.UBC_GW_split,Gtmp.UBC_GW_split,Gtemplate.UBC_GW_split,false,"UBC_GW_SPLIT");
   SetSpecifiedValue(G.airsnow_coeff,Gtmp.airsnow_coeff,Gtemplate.airsnow_coeff,false,"AIRSNOW_COEFF");
   SetSpecifiedValue(G.avg_annual_snow,Gtmp.avg_annual_snow,Gtemplate.avg_annual_snow,false,"AVG_ANNUAL_SNOW");
+  SetSpecifiedValue(G.avg_annual_runoff,Gtmp.avg_annual_runoff,Gtemplate.avg_annual_runoff,false,"AVG_ANNUAL_RUNOFF");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -249,10 +250,13 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.wet_adiabatic_lapse =DefaultParameterValue(is_template,true); 
   g.precip_lapse        =DefaultParameterValue(is_template,true);
   g.airsnow_coeff       =DefaultParameterValue(is_template,true); 
-  g.avg_annual_snow     =DefaultParameterValue(is_template,true); 
+
   g.max_SWE_surface     =DefaultParameterValue(is_template,true); 
 
   //model-specific parameters
+  g.avg_annual_snow     =DefaultParameterValue(is_template,false); 
+  g.avg_annual_runoff   =DefaultParameterValue(is_template,false); 
+
   for (int i=0;i<12;i++){
     g.UBC_s_corr[i]=DefaultParameterValue(is_template,true);
     g.UBC_n_corr[i]=DefaultParameterValue(is_template,true);
@@ -358,6 +362,7 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
 
   else if (!name.compare("AIRSNOW_COEFF"       )){G.airsnow_coeff=value;}
   else if (!name.compare("AVG_ANNUAL_SNOW"     )){G.avg_annual_snow=value;}
+  else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){G.avg_annual_runoff=value;}
   else if (!name.compare("MAX_SWE_SURFACE"     )){G.max_SWE_surface=value;}
   
   else{  
@@ -431,6 +436,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
 
   else if (!name.compare("AIRSNOW_COEFF"       )){return G.airsnow_coeff;}
   else if (!name.compare("AVG_ANNUAL_SNOW"     )){return G.avg_annual_snow;}
+  else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){return G.avg_annual_runoff;}
   else if (!name.compare("MAX_SWE_SURFACE"     )){return G.max_SWE_surface;}
   else{
     string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;

@@ -447,6 +447,14 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
     WriteWarning(warn,Options.noisy);
   }
 
+    // Add parameters needed for discharge initialization/reference flow calculation
+  //--------------------------------------------------------------------------
+  if ((pModel->GetNumSubBasins()>1) && (CGlobalParams::GetParameter("AVG_ANNUAL_RUNOFF")<0))
+  {
+    // \todo: reduce generalization- only really needed if routing method requires Q_REF
+    ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied if more than one basin is included in model",BAD_DATA_WARN);
+  }
+
   delete pp; 
   pp=NULL;
   return true;

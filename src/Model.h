@@ -124,7 +124,6 @@ class CModel: public CModelABC
     void           GenerateGaugeWeights (const optStruct &Options);
     void       InitializeRoutingNetwork ();
     void           InitializeBasinFlows (const optStruct &Options);
-    double        EstimateInitialRunoff (const int p, const optStruct &Options) const;
     void         InitializeObservations (const optStruct &Options);
 
     void         WriteOutputFileHeaders (const optStruct &Options);

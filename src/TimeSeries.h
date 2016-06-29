@@ -34,15 +34,15 @@ class CTimeSeries: public CTimeSeriesABC
 
     double *_aSampVal; ///< Array of resampled time series values every timestep for model duration
     int     _nSampVal; ///< size of aSampVal (~model_duration/timestep)
-	double  _sampInterval; ///< timestep of resampled timeseries
+	  double  _sampInterval; ///< timestep of resampled timeseries
 
     bool   _sub_daily; ///< true if smallest time interval is sub-daily
 
     /// \brief correction from model time (t) to time series/local time
-    double   _t_corr;  ///< number of days between model start date and gauge start date (positive if data exists before model start date)
+    double    _t_corr; ///< number of days between model start date and gauge start date (positive if data exists before model start date)
 
     /// \remark forcing functions are all pulse-based
-    bool     _pulse;   ///< flag determining whether this is a pulse-based or piecewise-linear time series
+    bool       _pulse; ///< flag determining whether this is a pulse-based or piecewise-linear time series
 
     int     GetTimeIndex(const double &t_loc) const;
 
@@ -110,7 +110,7 @@ class CTimeSeries: public CTimeSeriesABC
     bool   IsPulseType()  const;
 
     static CTimeSeries  *Sum          (CTimeSeries *pTS1, CTimeSeries *pTS2, string name);
-    static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, string tag);
+    static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, string tag, bool shift_to_per_ending=false);
     static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse); 
     static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType); 
 

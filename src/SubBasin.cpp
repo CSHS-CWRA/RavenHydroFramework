@@ -332,7 +332,14 @@ double CSubBasin::GetIntegratedSpecInflow(const double &t, const double &tstep) 
   //used in mass balance to estimate water gain from unmodeled upstream sources
   return 0.5*(GetSpecifiedInflow(t)+GetSpecifiedInflow(t+tstep))*(tstep*SEC_PER_DAY); //integrated
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reference discharge [m^3]
+/// \return  reference discharge [m^3] or AUTO_COMPUTE if not yet calculated
+//
+double CSubBasin::GetReferenceFlow() const
+{
+  return _Q_ref;
+}
 /*****************************************************************
    Manipulators
 *****************************************************************/
@@ -546,7 +553,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
   if (_Q_ref==AUTO_COMPUTE)
   {
-    ResetReferenceFlow(Qin_avg+Qlat_avg);
+    ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
   }
   else{
     ResetReferenceFlow(_Q_ref);
@@ -561,7 +568,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   //------------------------------------------------------------------------
 	_avg_ann_flow=Qin_avg+Qlat_avg;
 
-  //Set initial conditions for flow history variables
+  //Set initial conditions for flow history variables (if they weren't set in .rvc file)
   //------------------------------------------------------------------------
   for (seg=0;seg<_nSegments;seg++){
     if (_aQout[seg]==AUTO_COMPUTE){
@@ -569,10 +576,10 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     }
 	}
   if (_QoutLast==AUTO_COMPUTE){
-	  _QoutLast    =_aQout[_nSegments-1];//this is actually overriden in UpdateOutflows?
+	  _QoutLast    =_aQout[_nSegments-1];
   }
   if (_QlatLast==AUTO_COMPUTE){
-	  _QlatLast    =0.0;//Qlat_avg;
+	  _QlatLast    =Qlat_avg;
   }
 
   ///< \ref from Williams (1922), as cited in Handbook of Hydrology, eqn. 9.4.3 \cite williams1922

@@ -104,6 +104,7 @@ class CSubBasin
     double               GetAvgAnnualFlow     () const;
     double               GetAvgStateVar       (const int i) const;
     double               GetAvgForcing        (const string &forcing_string) const;
+    double               GetReferenceFlow     () const;
     long                 GetDownstreamID      () const;
     int                  GetNumHRUs           () const;
     const CHydroUnit    *GetHRU               (const int k) const;

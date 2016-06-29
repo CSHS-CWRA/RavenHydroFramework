@@ -318,6 +318,7 @@ struct global_struct
 
   double           airsnow_coeff;     ///< [1/d] air/snow heat transfer coefficient
   double           avg_annual_snow;   ///< [mm] avg annual snow as SWE
+  double           avg_annual_runoff; ///< [mm] avg annual runoff from basin
 
   double           max_SWE_surface;   ///< [mm] maximum SWE in surface snow layer
 };

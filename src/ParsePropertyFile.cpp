@@ -285,6 +285,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":UBCFlashPonding"        )){code=715;}
     else if  (!strcmp(s[0],":AirSnowCoeff"           )){code=716;}
     else if  (!strcmp(s[0],":AvgAnnualSnow"          )){code=717;}
+    else if  (!strcmp(s[0],":AvgAnnualRunoff"        )){code=718;}
     else if  (!strcmp(s[0],":UBCNorthSWCorr"         )){code=750;}  //TEMP
     else if  (!strcmp(s[0],":UBCSouthSWCorr"         )){code=751;}  //TEMP
     else if  (!strcmp(s[0],":GlobalParameter"        )){code=720;}
@@ -1162,6 +1163,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         if (Options.noisy){cout <<"average annual snowfall"<<endl;}
         if (Len<2){p->ImproperFormat(s); break;}
         parsed_globals.avg_annual_snow=s_to_d(s[1]);
+        break;
+      }
+      case (718):  //----------------------------------------------
+      {/*:AvgAnnualRunoff
+         string ":AvgAnnualRunoff"  value*/
+        if (Options.noisy){cout <<"average annual runoff"<<endl;}
+        if (Len<2){p->ImproperFormat(s); break;}
+        parsed_globals.avg_annual_runoff=s_to_d(s[1]);
         break;
       }
       case(750):  //----------------------------------------------
