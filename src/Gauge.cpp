@@ -1,0 +1,600 @@
+/*----------------------------------------------------------------
+  Raven Library Source Code
+  Copyright © 2008-2014 the Raven Development Team
+----------------------------------------------------------------*/
+#include "Gauge.h"
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the Gauge constructor
+/// \details Initialize all time series to NULL and average Temp and PET to NOT_SPECIFIED
+///
+/// \param gauge_name [in] Gauge name
+/// \param latit [in] Latitude of gauge location [degrees]
+/// \param longit [in] Longitude of gauge location [degrees]
+/// \param elev [in] Elevation of gauge [masl]
+//
+CGauge::CGauge(string gauge_name,
+               const double latit, //[deg]
+               const double longit,//[deg]
+               const double elev)  //[masl]
+{
+  _Loc.latitude  =latit;
+  _Loc.longitude =longit;
+  _Loc.UTM_x			=0.0;
+  _Loc.UTM_y			=0.0;//set in initialize
+
+  _elevation     =elev;
+  _rainfall_corr =1.0;
+  _snowfall_corr =1.0;
+  _cloud_min_temp=-20.0;//ensures cloud-free status always unless overriden
+  _cloud_max_temp= 40.0;
+
+  _name=gauge_name;
+
+  _nTimeSeries=0;
+  _pTimeSeries  =NULL;
+  for (int i=0;i<MAX_FORCING_TYPES;i++){
+    _aTSindex[i]=DOESNT_EXIST;
+  }
+
+  for (int i=0;i<12;i++)
+  {
+    _aAveTemp[i]=NOT_SPECIFIED;
+    _aMinTemp[i]=NOT_SPECIFIED;
+    _aMaxTemp[i]=NOT_SPECIFIED;
+    _aAvePET [i]=NOT_SPECIFIED;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the destructor
+/// \details deletes all associated time series objects
+//
+CGauge::~CGauge()
+{
+  if (DESTRUCTOR_DEBUG){cout<<"  DELETING GAUGE"<<endl;}
+
+  for (int i=0;i<_nTimeSeries;i++){delete _pTimeSeries[i];_pTimeSeries[i]=NULL;} 
+  delete [] _pTimeSeries; _pTimeSeries=NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Performs all operations required before the simulation begins
+/// \details Calculates UTM location of gauge, initializes all time series
+/// \param &Options [in] Global model options information
+/// \param UTM_zone [in] UTM zone in which the gauge lies
+//
+void CGauge::Initialize(const optStruct   &Options,
+                        const int          UTM_zone)
+{
+  LatLonToUTMXY(_Loc.latitude,_Loc.longitude,
+                UTM_zone,
+                _Loc.UTM_x,   _Loc.UTM_y);
+  
+  //Minimum requirements at gauge: must have precip
+  ExitGracefullyIf((GetTimeSeries(F_PRECIP      )==NULL) &&
+                   (GetTimeSeries(F_RAINFALL    )==NULL),"CGauge::Initialize: No precipitation time series found",BAD_DATA);
+
+
+  //Populate Temperature time series: by timestep, daily min/max/average
+  //--------------------------------------------------------------------------
+  if ((GetTimeSeries(F_TEMP_AVE)!=NULL) && (!GetTimeSeries(F_TEMP_AVE)->IsDaily()))//Sub-daily temperature data provided
+  {
+    GenerateMinMaxAveTempFromSubdaily(Options);//Generate daily min,max, & avg
+  }
+  else if ((GetTimeSeries(F_TEMP_DAILY_MAX)!=NULL) && //Min/max temperature data provided
+           (GetTimeSeries(F_TEMP_DAILY_MIN)!=NULL)) 
+  {
+    GenerateAveSubdailyTempFromMinMax(Options);//Generate T_daily_ave, T_ave (downscaled)
+  }
+  else if (GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL) //only daily average data provided
+  {
+    GenerateMinMaxSubdailyTempFromAve(Options);
+  }
+  else
+  {
+    ExitGracefully("CGauge::Initialize: Insufficient data to generate temperature time series at gauge",BAD_DATA);
+  }
+  
+  // Handle snowfall availability
+  //--------------------------------------------------------------------------
+  ExitGracefullyIf((GetTimeSeries(F_SNOWFALL)==NULL) && (Options.rainsnow==RAINSNOW_DATA),
+      "CGauge::Initialize: snow autogeneration is off, but no snow data has been supplied.",BAD_DATA);
+
+  if ((GetTimeSeries(F_SNOWFALL)!=NULL) && (GetTimeSeries(F_RAINFALL)!=NULL)){
+    CTimeSeries *sum;
+    sum=CTimeSeries::Sum(GetTimeSeries(F_RAINFALL),GetTimeSeries(F_SNOWFALL),"PRECIP");//sum together rain & snow to get precip
+    AddTimeSeries(sum,F_PRECIP);
+  }
+  if ((GetTimeSeries(F_RAINFALL)==NULL) && (GetTimeSeries(F_SNOWFALL)==NULL)){
+    ExitGracefullyIf(GetTimeSeries(F_PRECIP)==NULL,
+        "CGauge::Initialize: no precipitation or rainfall/snowfall supplied at gauge",BAD_DATA);
+    AddTimeSeries(new CTimeSeries("RAINFALL",*GetTimeSeries(F_PRECIP)),F_RAINFALL); //if no snow or rain, copy precip to rain- (rainfall not used)
+  }
+  if (GetTimeSeries(F_SNOWFALL)==NULL)
+  {
+    AddTimeSeries(new CTimeSeries("SNOWFALL","",0.0),F_SNOWFALL);//blank series, all 0.0s 
+  }
+
+
+  double model_start_day=Options.julian_start_day;
+  int    model_start_yr =Options.julian_start_year;
+  double model_duration =Options.duration;
+  double timestep       =Options.timestep;
+  
+  /*for (int i=0; i<MAX_FORCING_TYPES;i++){
+    if (aTSindex[i]!=DOESNT_EXIST){
+      cout<<" Forcing: "<<ForcingToString((forcing_type)(i))<<endl;
+      CTimeSeries *pTS=pTimeSeries[aTSindex[i]];
+      cout<<pTS->GetNumValues()<<" "<<pTS->GetInterval()<<" "<<pTS->GetStartDay()<<endl; 
+    }
+  }*/
+  for (int i=0; i<_nTimeSeries;i++){
+    _pTimeSeries[i]->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
+
+  //QA/QC: check time series for valid values
+  //--------------------------------------------------------------------------
+  double val;
+  int index;
+  //precip greater than zero, daily less than 2000 mm/d (world record = 1825 mm/d)
+  index=_aTSindex[(int)(F_PRECIP)];
+  int nSamples=(int)(ceil(model_duration/Options.timestep-TIME_CORRECTION));
+  if (index!=DOESNT_EXIST){
+    for (int nn=0;nn<nSamples; nn++)
+    {
+      val=_pTimeSeries[index]->GetSampledValue (nn);
+      if ((val<0.0) || (val>10000)){
+        cout<<GetName()<<" "<<nn<<" "<<val<<endl;
+        ExitGracefully("CGauge::Initialize: negative or excessively large (>10000mm/d) precipitation intensity reported at gauge",BAD_DATA);
+      }
+    }
+  }
+  //temp greater than -60C less than 60C
+  index=_aTSindex[(int)(F_TEMP_DAILY_AVE)];
+  if (index!=DOESNT_EXIST){
+    for (int nn=0;nn<nSamples; nn++)
+    {
+      val=_pTimeSeries[index]->GetSampledValue (nn);
+      if ((val<-60) || (val>60)){
+        ExitGracefully("CGauge::Initialize: excessively small or large average temperature (<-60C or >60C) reported at gauge",BAD_DATA);
+      }
+    }
+  }   
+
+  //PET unreasonable 
+  index=_aTSindex[(int)(F_PET)];
+  if (index!=DOESNT_EXIST){
+    for (int nn=0;nn<nSamples; nn++)
+    {
+      val=_pTimeSeries[index]->GetSampledValue (nn);
+      if (val<0){
+        ExitGracefully("CGauge::Initialize: negative PET reported at gauge",BAD_DATA);
+      }
+    }
+  }  
+
+  
+  WarnAboutForcing(Options.SW_radiation==SW_RAD_DATA,F_SW_RADIA);
+  // WarnAboutForcing(Options.SW_radiation_net==SW_RAD_NET_DATA,F_SW_RADIA_NET);
+  WarnAboutForcing(Options.LW_radiation==LW_RAD_DATA,F_LW_RADIA);
+  WarnAboutForcing(Options.cloud_cover==CLOUDCOV_DATA,F_CLOUD_COVER);
+  WarnAboutForcing(Options.ow_evaporation ==PET_DATA,F_OW_PET);
+  WarnAboutForcing(Options.evaporation==PET_DATA,F_PET);
+  WarnAboutForcing(Options.pot_melt==POTMELT_DATA,F_POTENTIAL_MELT);
+  WarnAboutForcing(Options.rel_humidity==RELHUM_DATA,F_REL_HUMIDITY);
+  WarnAboutForcing(Options.air_pressure==AIRPRESS_DATA,F_AIR_PRES);
+  WarnAboutForcing(Options.wind_velocity==WINDVEL_DATA,F_WIND_VEL);
+  
+  // Check for monthly values, when needed
+  //--------------------------------------------------------------------------
+  // \todo [??] should move to CModel::GetParticipatingParamList
+  ExitGracefullyIf((_aAveTemp[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY)),
+    "CGauge::Initialize: monthly temps for gauge not specified, but are needed",BAD_DATA);
+  ExitGracefullyIf((_aAvePET[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY) || (Options.evaporation==PET_MONTHLY_FACTOR)),
+    "CGauge::Initialize: monthly PET values for gauge not specified, but are needed",BAD_DATA);
+
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Gets time series representing forcing data type ftype
+/// \param ftype [in] forcing data type
+/// \returns time series representing forcing data type ftype, if time series exists, NULL otherwise
+//
+CTimeSeries *CGauge::GetTimeSeries(const forcing_type ftype) const
+{
+  int index=_aTSindex[(int)(ftype)];
+  if (index!=DOESNT_EXIST){return _pTimeSeries[index];}
+  return NULL;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Checks if warnings about forcings are needed at this gauge, warns if required
+/// \param is_needed [in] true if specific forcing data is needed
+/// \param ftype [in] forcing data type
+//
+void CGauge::WarnAboutForcing(bool is_needed, const forcing_type ftype) const
+{
+  string errmsg;
+  string warning;
+
+  //check for FROM_DATA without data or vice versa
+  if ((is_needed) && (GetTimeSeries(ftype) == NULL)){
+    errmsg = "USE_DATA is specified as the means of generating "+ForcingToString(ftype) +", but no data is provided at gauge " + this->_name;
+    ExitGracefully(errmsg.c_str(),BAD_DATA_WARN);
+  }
+  else if ((GetTimeSeries(ftype) != NULL) && (!is_needed)){
+    warning = ForcingToString(ftype) +" data supplied at gauge " + this->_name + " but will not be used due to choice of forcing generation algorithm";
+    WriteWarning(warning,false);
+  }
+}
+/*****************************************************************
+   Manipulator functions
+*****************************************************************/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets gauge latitude
+/// \param &lat [in] Latitude of gauge [degrees]
+//
+void     CGauge::SetLatitude          (const double &lat){_Loc.latitude =lat;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets gauge longitude
+/// \param &lon [in] Longitude of gauge [degrees]
+//
+void     CGauge::SetLongitude         (const double &lon){_Loc.longitude=lon;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets gauge elevation
+/// \param &e [in] Elevation of gauge [degrees]
+//
+void     CGauge::SetElevation         (const double &e){_elevation=e;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets gauge property
+/// \param prop_tag [in] Property Identifier (string)
+/// \param &value [in] Set value
+/// \return True if operation was successful, false otherwise (unrecognized string)
+//
+bool     CGauge::SetProperty          (const string prop_tag, const double &value)
+{
+  string label_n = StringToUppercase(prop_tag);
+  if      (!label_n.compare("RAINFALL_CORR"   ))  {_rainfall_corr=value;}
+  else if (!label_n.compare("SNOWFALL_CORR"   ))  {_snowfall_corr=value;}
+  else if (!label_n.compare("ELEVATION"       ))  {_elevation=value;}
+  else if (!label_n.compare("CLOUD_MIN_RANGE" ))  {_cloud_min_temp=value;}
+  else if (!label_n.compare("CLOUD_MAX_RANGE" ))  {_cloud_max_temp=value;}
+  else if (!label_n.compare("LATITUDE"        ))  {_Loc.latitude=value;}
+  else if (!label_n.compare("LONGITUDE"       ))  {_Loc.longitude=value;}
+  else{
+    WriteWarning("CGauge::SetProperty: unrecognized gauge property "+prop_tag,false);
+    return false;//bad string
+  }
+  return true;
+}
+/*****************************************************************
+   Add Precip, Temperature Time Series
+*****************************************************************/
+//////////////////////////////////////////////////////////////////
+/// \brief Loads minimum temperature time series into gauge
+/// \param *pTS [in]time series to be loaded
+/// \param ftype [in] data type represented by time series
+//
+void CGauge::AddTimeSeries	(CTimeSeries *pTS, forcing_type ftype)
+{
+  ExitGracefullyIf(pTS==NULL,"AddTempTimeSeries::NULL time series added",BAD_DATA);
+  int index=_aTSindex[(int)(ftype)];
+  if (index!=DOESNT_EXIST)//overwriting existing time series
+  {
+    delete _pTimeSeries[index]; _pTimeSeries[index]=pTS;
+  }
+  else{
+    if (!DynArrayAppend((void**&)(_pTimeSeries),(void*)(pTS),_nTimeSeries)){
+      ExitGracefully("CGauge::AddTimeSeries	: adding NULL time series",BAD_DATA);}  
+    _aTSindex[(int)(ftype)]=_nTimeSeries-1;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets monthly temperature array to temps[]
+/// \param temps[] [in] New monthly temperature array
+//
+void CGauge::SetMonthlyAveTemps(const double temps[12])
+{
+  for (int i=0;i<12;i++){_aAveTemp[i]=temps[i];}
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets monthly maximum temperature array to temps[]
+/// \param temps[] [in] New monthly temperature array
+//
+void CGauge::SetMonthlyMaxTemps(const double temps[12])
+{
+  for (int i=0;i<12;i++){_aMaxTemp[i]=temps[i];}
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets monthly minimum temperature array to temps[]
+/// \param temps[] [in] New monthly temperature array
+//
+void CGauge::SetMonthlyMinTemps(const double temps[12])
+{
+  for (int i=0;i<12;i++){_aMinTemp[i]=temps[i];}
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Sets monthly PET array to PET[]
+/// \param PET[] [in] New monthly PET array
+//
+void CGauge::SetMonthlyPET (const double PET[12])
+{
+  for (int i=0;i<12;i++){_aAvePET[i]=PET[i];}
+}
+/*****************************************************************
+   Accessor Functions
+   the time t is always model time (i.e., 0 at start of model)
+*****************************************************************/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns name of gauge
+/// \return name of gauge
+//
+string   CGauge::GetName			() const {return _name;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns location of gauge
+/// \return Location of gauge
+//
+location CGauge::GetLocation			() const {return _Loc;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns elevation of gauge
+/// \return Elevation of gauge [masl]
+//
+double   CGauge::GetElevation		  () const {return _elevation;}
+//----------------------------------------------------------------
+double   CGauge::GetRainfallCorr  () const {return _rainfall_corr;}
+//----------------------------------------------------------------
+double   CGauge::GetSnowfallCorr  () const {return _snowfall_corr;}
+//----------------------------------------------------------------
+double   CGauge::GetCloudMinRange () const {return _cloud_min_temp;}
+//----------------------------------------------------------------
+double   CGauge::GetCloudMaxRange () const {return _cloud_max_temp;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return hourly temperature correction at time t
+/// \param t [in] Time at which daily temperature correction is to be determined
+/// \return Daily temperature correction at time t
+//
+double CGauge::DailyTempCorrection(const double t) const
+{
+  return -cos(2.0*PI*(t-PEAK_TEMP_HR/HR_PER_DAY));
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns average fraction of snow in precipitation between time t and t+tstep
+/// \param &t [in] Left bound of interval over which average fraction of snow in precipitation will be calculated
+/// \param &tstep [in] Duration of interval over which average fraction of snow in precipitation will be calculated
+/// \return average fraction of snow in precipitation betweeb time t and t+tstep
+//
+double CGauge::GetAverageSnowFrac	(const double &t, const double &tstep) const
+{
+  double rain=GetTimeSeries(F_RAINFALL)->GetAvgValue(t,tstep);
+  double snow=GetTimeSeries(F_SNOWFALL)->GetAvgValue(t,tstep);
+  if ((snow+rain)==0){return 0.0;}
+  return snow/(snow+rain);
+}
+double CGauge::GetAverageSnowFrac			(const int nn) const
+{ 
+  double rain=GetTimeSeries(F_RAINFALL)->GetSampledValue(nn);
+  double snow=GetTimeSeries(F_SNOWFALL)->GetSampledValue(nn);
+  if ((snow+rain)==0){return 0.0;}
+  return snow/(snow+rain);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns average forcing function value between time t and t+tstep
+/// \param f [in] desired forcing function
+/// \param &t [in] Left bound of interval over which average will be calculated
+/// \param &tstep [in] Duration of interval over which average will be calculated
+/// \return average forcing function value between time t and t+tstep
+//
+double CGauge::GetForcingValue         (const forcing_type ftype, const double &t, const double &tstep) const
+{
+  CTimeSeries *pTS;
+  pTS=GetTimeSeries(ftype);
+  if (pTS==NULL){return 0.0;}
+  return pTS->GetAvgValue(t,tstep);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns average forcing function value for time step nn
+/// \param f [in] desired forcing function
+/// \param nn [in] time step index
+/// \return average forcing function value over time step nn
+//
+double CGauge::GetForcingValue         (const forcing_type ftype, const int nn) const
+{
+  CTimeSeries *pTS;
+  pTS=GetTimeSeries(ftype);
+  if (pTS==NULL){return 0.0;}//Warning?
+
+  return pTS->GetSampledValue(nn);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns representative average temperature over month
+/// \param month [in] Month (from 1-12)
+/// \return Representative Average temperature for month
+//
+double   CGauge::GetMonthlyAveTemp  (const int month) const
+{
+  return _aAveTemp[month-1];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns representative minimum temperature over month
+/// \param month [in] Month (from 1-12)
+/// \return Representative minimum temperature for month
+//
+double   CGauge::GetMonthlyMinTemp  (const int month) const
+{
+  return _aMinTemp[month-1];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns representative maximum temperature over month
+/// \param month [in] Month (from 1-12)
+/// \return Representative maximum temperature for month
+//
+double   CGauge::GetMonthlyMaxTemp  (const int month) const
+{
+  return _aMaxTemp[month-1];
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns average PET over month
+/// \param month [in] Month for which the average PET is to be determined
+/// \return Average PET over month
+//
+double   CGauge::GetMonthlyAvePET   (const int month) const
+{
+  return _aAvePET[month-1];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Converts string (e.g., "X2305" in Gauge file) to gauge
+/// \remarks if string is invalid, returns NULL
+/// \return gauge corresponding to input string
+/*const CGauge*CGauge::StringToGauge(const string s)
+{
+  string sup=StringToUppercase(s);
+  for (int p=0;p<NumGauges;p++)
+  {
+    if (!sup.compare(StringToUppercase(pAllNumGauges[p]->GetTag()))){return pAllNumGauges[p];}
+    //else if (s_to_i(s.c_str())==(p+1))          {return pAllNumGauges[p];}
+  }
+  return NULL;
+}*/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Generates daily Tmin,Tmax,Tave time series from T (subdaily) time series
+/// \note presumes existence of valid F_TEMP_AVE time series with subdaily timestep
+//
+
+void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
+{
+  CTimeSeries *pT;
+  pT=GetTimeSeries(F_TEMP_AVE);
+
+  double start_day=Options.julian_start_day; //floor(pT->GetStartDay());
+  int    start_yr =Options.julian_start_year;//pT->GetStartYear();
+  double duration =Options.duration;         //(interval*pTave->GetNumValues());
+  double timestep =Options.timestep;
+
+  //below needed for correct mapping from time series to model time 
+  pT->Initialize(start_day,start_yr,duration,timestep,false);
+
+  int nVals=(int)ceil(duration);
+  double *aMin=new double [nVals];
+  double *aMax=new double [nVals];
+  double *aAvg=new double [nVals];
+  double t=0.0;//model time
+  for (int n=0;n<nVals;n++){
+    aMin[n]=pT->GetMinValue(t,1.0);
+    aMax[n]=pT->GetMaxValue(t,1.0);
+    aAvg[n]=pT->GetAvgValue(t,1.0);
+    t+=1.0;
+  }
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX","","",start_day,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE","","",start_day,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
+  delete [] aMin;
+  delete [] aMax;
+  delete [] aAvg;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Generates Tave and subhourly time series from daily Tmin & Tmax time series
+/// \note presumes existence of valid F_TEMP_DAILY_MIN and F_TEMP_DAILY_MAX time series
+//
+void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
+{
+  CTimeSeries *pTmin,*pTmax;
+  pTmin=GetTimeSeries(F_TEMP_DAILY_MIN);
+  pTmax=GetTimeSeries(F_TEMP_DAILY_MAX);
+
+  double start_day=Options.julian_start_day; 
+  int    start_yr =Options.julian_start_year;
+  double duration =Options.duration;         
+  double timestep =Options.timestep;
+  
+  //below needed for correct mapping from time series to model time 
+  pTmin->Initialize(start_day,start_yr,duration,timestep,false);
+  pTmax->Initialize(start_day,start_yr,duration,timestep,false);
+
+  //Generate daily average values Tave=(Tmin+Tmax)/2
+  int nVals=(int)ceil(duration);
+  double *aAvg=new double [nVals];
+  double t=0.0;//model time
+  for (int n=0;n<nVals;n++)
+  {
+    aAvg[n]=0.5*(pTmin->GetValue(t+0.5)+pTmax->GetValue(t+0.5));
+    t+=1.0;
+  }
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE","","",start_day,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
+  delete [] aAvg;
+
+  //Generate subdaily temperature values Tave
+  if (Options.timestep<(1.0-TIME_CORRECTION))
+  {
+    nVals=(int)ceil(duration/Options.timestep);
+    double *aT=NULL;
+    aT=new double [nVals];
+    ExitGracefullyIf(aT==NULL,"GenerateAveSubdailyTempFromMinMax",OUT_OF_MEMORY);
+    double t=0.0;//model time
+    for (int n=0;n<nVals;n++)
+    {
+      double Tmax=pTmax->GetValue(t+Options.timestep/2.0);
+      double Tmin=pTmin->GetValue(t+Options.timestep/2.0);
+      aT[n]=0.5*(Tmax+Tmin)+0.5*(Tmax-Tmin)*0.5*(DailyTempCorrection(t)+DailyTempCorrection(t+Options.timestep));
+      t+=Options.timestep;
+    }  
+  
+    CTimeSeries *pNewTS=new CTimeSeries("TEMP_AVE","","",start_day,start_yr,Options.timestep,aT,nVals,true);
+    this->AddTimeSeries(pNewTS,F_TEMP_AVE);
+    delete [] aT;
+  }
+  else{
+    CTimeSeries *T=GetTimeSeries(F_TEMP_DAILY_AVE);
+    this->AddTimeSeries(new CTimeSeries("TEMP_AVE",*T),F_TEMP_AVE); //just copy daily average values
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Generates Tmin, Tmax and subhourly time series from daily average temperature time series
+/// \note presumes existence of valid F_TEMP_DAILY_AVE
+/// \note necessarily naive - it is hard to downscale with little temp data
+//
+void CGauge::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
+{
+  CTimeSeries *pT;
+  pT=GetTimeSeries(F_TEMP_DAILY_AVE);
+
+  double start_day=Options.julian_start_day; //floor(pT->GetStartDay());
+  int    start_yr =Options.julian_start_year;//pT->GetStartYear();
+  double duration =Options.duration;         //(interval*pTave->GetNumValues());
+  double timestep =Options.timestep;
+
+  //below needed for correct mapping from time series to model time 
+  pT->Initialize(start_day,start_yr,duration,timestep,false);
+
+  int nVals=(int)ceil(duration);
+  double *aMin=new double [nVals];
+  double *aMax=new double [nVals];
+  double t=0.0;//model time
+  for (int n=0;n<nVals;n++){
+    aMin[n]=pT->GetValue(t+0.5)-4.0;//Options.temp_swing*0.5;
+    aMax[n]=pT->GetValue(t+0.5)+4.0;//Options.temp_swing*0.5;
+    t+=1.0;
+  }
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX","","",start_day,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
+  delete [] aMin;
+  delete [] aMax;
+
+  GenerateAveSubdailyTempFromMinMax(Options);
+}
