@@ -1,0 +1,63 @@
+# --------------------------------------------
+# Raven HRU Input file
+# HBV-EC Nith River emulation
+# --------------------------------------------
+:SubBasins
+  :Attributes   NAME  DOWNSTREAM_ID       PROFILE REACH_LENGTH  GAUGED
+  :Units        none           none          none           km    none
+  30            Sub30             36 default_trap        _AUTO      0
+  36            Sub36             39 default_trap        _AUTO      1
+  39            Sub39             43 default_trap        _AUTO      0
+  43            Sub43             -1 default_trap        _AUTO      1
+:EndSubBasins
+:SubBasinProperties
+  :Parameters TIME_CONC   TIME_TO_PEAK  TIME_LAG
+  :Units             d               d         d
+  30   1.27  0.76  0
+  36   1.20  0.72  0
+  39   1.27  0.75 0
+  43   1.27  0.75 0
+:EndSubBasinProperties
+# notes: t_conc=MAX_BAS in HBV (t_peak=t_conc/2 for HBV replication)
+:HRUs
+  :Attributes AREA ELEVATION  LATITUDE  LONGITUDE   BASIN_ID  LAND_USE_CLASS  VEG_CLASS   SOIL_PROFILE  AQUIFER_PROFILE   TERRAIN_CLASS   SLOPE   ASPECT
+  :Units       km2         m       deg        deg       none            none       none           none             none            none     deg      deg
+  1   160.8 388 43.6  -80.84  30 AGRI1   CROP1   SOILPROFC [NONE]  [NONE]  0.71  176
+  2   29.1  386 43.6  -80.82  30 AGRI1   CROP1   SOILPROFD [NONE]  [NONE]  0.52  179
+  3   13.6  391 43.59 -80.83  30 FOREST1 FOREST1 SOILPROFC [NONE]  [NONE]  1.24  208
+  4   95.6  386 43.58 -80.83  30 AGRI2   CROP1   SOILPROFC [NONE]  [NONE]  0.77  173
+  5   19.4  385 43.59 -80.83  30 AGRI2   CROP1   SOILPROFD [NONE]  [NONE]  0.53  176
+  6   18.8  369 43.44 -80.72  36 AGRI1   CROP1   SOILPROFA [NONE]  [NONE]  1.47  184
+  7   19.2  374 43.43 -80.80  36 AGRI1   CROP1   SOILPROFB [NONE]  [NONE]  1.35  147
+  8   71.0  365 43.45 -80.74  36 AGRI1   CROP1   SOILPROFC [NONE]  [NONE]  1.18  172
+  9    5.7  372 43.44 -80.71  36 FOREST1 FOREST1 SOILPROFA [NONE]  [NONE]  1.96  214
+  10   5.1  379 43.43 -80.80  36 FOREST1 FOREST1 SOILPROFB [NONE]  [NONE]  1.83  191
+  11  11.9  372 43.46 -80.75  36 FOREST1 FOREST1 SOILPROFC [NONE]  [NONE]  1.70  200
+  12  17.3  369 43.44 -80.71  36 AGRI2   CROP1   SOILPROFA [NONE]  [NONE]  1.49  200
+  13  19.4  375 43.43 -80.79  36 AGRI2   CROP1   SOILPROFB [NONE]  [NONE]  1.48  155
+  14  50.8  366 43.46 -80.75  36 AGRI2   CROP1   SOILPROFC [NONE]  [NONE]  1.31  165
+  15  65.7  332 43.34 -80.58  39 AGRI1   CROP1   SOILPROFA [NONE]  [NONE]  1.30  169
+  16  40.8  338 43.34 -80.63  39 AGRI1   CROP1   SOILPROFB [NONE]  [NONE]  1.40  162
+  17  33.4  339 43.35 -80.65  39 AGRI1   CROP1   SOILPROFC [NONE]  [NONE]  1.25  155
+  18  15.7  339 43.36 -80.59  39 FOREST1 FOREST1 SOILPROFA [NONE]  [NONE]  1.81  189
+  19   5.8  355 43.37 -80.63  39 FOREST1 FOREST1 SOILPROFB [NONE]  [NONE]  2.08  186
+  20   6.2  334 43.34 -80.65  39 FOREST1 FOREST1 SOILPROFC [NONE]  [NONE]  1.66  193
+  21  28.9  348 43.37 -80.58  39 AGRI2   CROP1   SOILPROFA [NONE]  [NONE]  1.57  178
+  22  41.2  338 43.35 -80.63  39 AGRI2   CROP1   SOILPROFB [NONE]  [NONE]  1.35  152
+  23  27.1  338 43.36 -80.65  39 AGRI2   CROP1   SOILPROFC [NONE]  [NONE]  1.29  160
+  24   6.9  346 43.38 -80.61  39 URBAN   URBAN1  SOILPROFA [NONE]  [NONE]  1.67  182
+  25  79.8  294 43.27 -80.47  43 AGRI1   CROP1   SOILPROFA [NONE]  [NONE]  1.31  166
+  26  22.2  294 43.26 -80.47  43 AGRI1   CROP1   SOILPROFB [NONE]  [NONE]  1.19  177
+  27  18.9  284 43.21 -80.50  43 AGRI1   CROP1   SOILPROFC [NONE]  [NONE]  0.84  137
+  28  18.9  285 43.26 -80.47  43 FOREST1 FOREST1 SOILPROFA [NONE]  [NONE]  1.80  168
+  29  30.4  292 43.26 -80.47  43 AGRI2   CROP1   SOILPROFA [NONE]  [NONE]  1.28  168
+  30  19.1  285 43.25 -80.47  43 AGRI2   CROP1   SOILPROFB [NONE]  [NONE]  1.32  174
+  31  10.4  287 43.22 -80.50  43 AGRI2   CROP1   SOILPROFC [NONE]  [NONE]  0.86  144
+  32   5.3  299 43.29 -80.45  43 URBAN   URBAN1  SOILPROFA [NONE]  [NONE]  1.35  171
+:EndHRUs
+#
+#
+# ----------HRU Groups defined below------------------
+:HRUGroup URBAN
+  24 32
+:EndHRUGroup

@@ -1,0 +1,104 @@
+#########################################################################
+:FileType rvi ASCII Raven 2.5
+# DataType         Raven Input File
+# For Alouette Watershed Model, British Columbia     
+#------------------------------------------------------------------------
+# Simulation parameters
+#
+
+:StartDate          1991-10-01 00:00:00
+:Duration           1096 00:00:00
+:TimeStep           24:00:00
+
+#------------------------------------------------------------------------
+# Model options
+#
+:Method              ORDERED_SERIES
+:Interpolation       INTERP_NEAREST_NEIGHBOR
+
+:Routing             ROUTE_NONE
+:CatchmentRoute      TRIANGULAR_UH
+
+:Evaporation         PET_FROMMONTHLY
+:OW_Evaporation      PET_FROMMONTHLY
+:SWRadiationMethod   SW_RAD_DEFAULT
+:SWCloudCorrect      SW_CLOUD_CORR_NONE
+:SWCanopyCorrect     SW_CANOPY_CORR_NONE
+:LWRadiationMethod   LW_RAD_DEFAULT
+:RainSnowFraction    RAINSNOW_HBV
+:PotentialMeltMethod POTMELT_HBV
+:OroTempCorrect      OROCORR_HBV
+:OroPrecipCorrect    OROCORR_HBV
+:OroPETCorrect       OROCORR_HBV
+:CloudCoverMethod    CLOUDCOV_NONE
+:PrecipIceptFract    PRECIP_ICEPT_USER
+:MonthlyInterpolationMethod  MONTHINT_LINEAR_21
+
+:SoilModel           SOIL_MULTILAYER 3
+
+#------------------------------------------------------------------------
+# Soil Layer Alias Definitions 
+#
+:Alias       FAST_RESERVOIR SOIL[1]
+:Alias       SLOW_RESERVOIR SOIL[2]
+:LakeStorage SLOW_RESERVOIR
+
+#------------------------------------------------------------------------
+# Hydrologic process order for HBV-EC Emulation
+#
+:HydrologicProcesses
+  :SnowRefreeze      FREEZE_DEGREE_DAY  SNOW_LIQ        SNOW
+  :Precipitation     PRECIP_RAVEN       ATMOS_PRECIP    MULTIPLE 
+  :CanopyEvaporation CANEVP_ALL         CANOPY          ATMOSPHERE
+  :CanopySnowEvap    CANEVP_ALL         CANOPY_SNOW     ATMOSPHERE  
+  :SnowBalance       SNOBAL_SIMPLE_MELT SNOW            SNOW_LIQ  
+    :-->Overflow     RAVEN_DEFAULT      SNOW_LIQ        PONDED_WATER
+  :Flush             RAVEN_DEFAULT      PONDED_WATER    GLACIER
+    :-->Conditional HRU_TYPE IS GLACIER
+  :GlacierMelt       GMELT_HBV          GLACIER_ICE     GLACIER
+  :GlacierRelease    GRELEASE_HBV_EC    GLACIER         SURFACE_WATER
+  :Infiltration      INF_HBV            PONDED_WATER    MULTIPLE
+  :Flush             RAVEN_DEFAULT      SURFACE_WATER   FAST_RESERVOIR 
+    :-->Conditional HRU_TYPE IS_NOT GLACIER
+  :SoilEvaporation   SOILEVAP_HBV       SOIL[0]         ATMOSPHERE
+  :CapillaryRise     RISE_HBV           FAST_RESERVOIR 	SOIL[0]
+  :LakeEvaporation   LAKE_EVAP_BASIC    SLOW_RESERVOIR  ATMOSPHERE
+  :Percolation       PERC_CONSTANT      FAST_RESERVOIR 	SLOW_RESERVOIR
+  :Baseflow          BASE_POWER_LAW     FAST_RESERVOIR  SURFACE_WATER 
+  :Baseflow          BASE_LINEAR        SLOW_RESERVOIR  SURFACE_WATER 
+:EndHydrologicProcesses
+
+
+#------------------------------------------------------------------------
+# Transport calculations for estimation of snowmelt and glacier 
+# contributions to runoff
+#
+:Transport SNOWMELT
+:FixedConcentration  SNOWMELT SNOW 1.0
+:FixedConcentration  SNOWMELT SLOW_RESERVOIR 0.0
+
+:Transport GLACIER
+:FixedConcentration  GLACIER GLACIER 1.0
+:FixedConcentration  GLACIER SLOW_RESERVOIR 0.0
+
+
+#---------------------------------------------------------
+# HRU Groups
+# - one for each elevation band 
+# - required for HBV-EC emulation:
+#   - because HBV-EC only has one shared fast reservoir/slow reservoir
+
+:DefineHRUGroups AllHRUs
+:AggregatedVariable FAST_RESERVOIR AllHRUs
+:AggregatedVariable SLOW_RESERVOIR AllHRUs
+
+:DefineHRUGroups Band1, Band2, Band3, Band4, Band5, Band6, Band7
+:DefineHRUGroups Open_N, Open_S, Forest, Glacier
+
+#---------------------------------------------------------
+# Output Options
+#:EndPause
+:EvaluationMetrics NASH_SUTCLIFFE
+
+
+

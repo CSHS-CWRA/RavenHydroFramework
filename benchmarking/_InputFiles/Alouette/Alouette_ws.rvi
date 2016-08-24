@@ -1,0 +1,132 @@
+#########################################################################
+:FileType rvi ASCII Raven 1.0
+# DataType         Raven Input File
+#
+:Application	C:\WARPP\FewsBCWAD-201507\FewsBCWAD-OC-DDA\Models\UBCWM\work\bin\Adapter\RavenFEWSAdapter.py # NRC adapter updated this value
+:Version	0.8 # NRC adapter updated this value
+:WrittenBy	gjost # NRC adapter updated this value
+:CreationDate	Wed Jun 15 08:55:55 2016 # NRC adapter updated this value
+#
+#------------------------------------------------------------------------
+# Converted from UBCWM WAT file
+:SourceFile  C:\projects\ForecastingSystem\RavenInputFiles\Temp\ALU2010_100.wat
+#
+:RunName	Alouette_ws # NRC adapter updated this value
+
+:StartDate	1960-10-01 00:00:00 # NRC adapter updated this value. Period starting. Ignores the first row in FEWS inputs.xml
+:Duration	20346 # :Duration [days] where [days] = FEWS(end date period ending) - FEWS(start date period ending)     NRC adapter updated this value
+:TimeStep           24:00:00
+
+:Method             ORDERED_SERIES
+
+:Interpolation  FROM_FILE  Alouette_ws_GaugeWeights.txt
+
+:Routing             ROUTE_NONE
+:CatchmentRoute      ROUTE_DUMP
+:Evaporation         PET_MONTHLY_FACTOR
+:OW_Evaporation      PET_MONTHLY_FACTOR
+:SWRadiationMethod   SW_RAD_UBCWM
+:SWCanopyCorrect     SW_CANOPY_CORR_UBCWM
+:SWCloudCorrect      SW_CLOUD_CORR_UBCWM
+:LWRadiationMethod   LW_RAD_UBCWM
+:WindspeedMethod     WINDVEL_UBCWM
+:RainSnowFraction    RAINSNOW_UBCWM
+:PotentialMeltMethod POTMELT_UBCWM
+:OroTempCorrect      OROCORR_UBCWM
+:OroPrecipCorrect    OROCORR_UBCWM2
+:CloudCoverMethod    CLOUDCOV_UBCWM
+
+:RetainUBCWMBugs
+#------------------------------------------------------------------------
+#Flags and output settings
+:SuppressOutputICs
+:SilentMode
+:SuppressWarnings
+#------------------------------------------------------------------------
+#Flags and ouput settings
+:SuppressOutputICs
+:SilentMode
+:SuppressWarnings
+:SnapshotHydrograph
+:PrecipIceptFract   USER_SPECIFIED
+:MonthlyInterpolationMethod          LINEAR_21
+:SoilModel          SOIL_MULTILAYER  6
+
+:DebugMode          no
+:EndPause           no
+:WriteEnsimFormat   yes
+:WriteEnsimFormat   PeriodEnding
+
+#------------------------------------------------------------------------
+# Soil Layer Alias Definitions 
+#
+:Alias TOP_SOIL      SOIL[0]
+:Alias INT_SOIL      SOIL[1]
+:Alias SHALLOW_GW    SOIL[2]
+:Alias DEEP_GW       SOIL[3]
+:Alias INT_SOIL2     SOIL[4]
+:Alias INT_SOIL3     SOIL[5]
+
+#------------------------------------------------------------------------
+# Hydrologic process order for UBCWM Emulation
+#
+:HydrologicProcesses
+ :SnowAlbedoEvolve    SNOALB_UBCWM
+ :SnowBalance         SNOBAL_UBCWM          MULTIPLE       MULTIPLE
+ :Flush               RAVEN_DEFAULT         PONDED_WATER   INT_SOIL2  # moves glacier snowmelt to fast runoff
+ :-->Conditional      HRU_TYPE              IS             GLACIER
+ :GlacierMelt         GMELT_UBC             GLACIER_ICE    PONDED_WATER 
+ :Precipitation       PRECIP_RAVEN          ATMOS_PRECIP   MULTIPLE 
+ :SoilEvaporation     SOILEVAP_UBC          MULTIPLE       ATMOSPHERE
+ :Infiltration        INF_UBC               PONDED_WATER   MULTIPLE
+ :Flush               RAVEN_DEFAULT         SURFACE_WATER  INT_SOIL2  # from infiltration
+ :GlacierInfiltration GINFIL_UBCWM          PONDED_WATER   MULTIPLE
+ :Percolation         PERC_LINEAR_ANALYTIC  INT_SOIL       INT_SOIL2 # comment out for fast runoff
+ :Percolation         PERC_LINEAR_ANALYTIC  INT_SOIL2      INT_SOIL3
+ :Baseflow            BASE_LINEAR_ANALYTIC  INT_SOIL3      SURFACE_WATER
+ :Baseflow            BASE_LINEAR_ANALYTIC  SHALLOW_GW     SURFACE_WATER
+ :Baseflow            BASE_LINEAR_ANALYTIC  DEEP_GW        SURFACE_WATER
+ :GlacierRelease      GRELEASE_LINEAR       GLACIER        SURFACE_WATER
+:EndHydrologicProcesses
+
+
+#---------------------------------------------------------
+# HRU Groups
+# - one for each elevation band 
+# - required for UBCWM emulation:
+#   - because UBCWM aggregates the TOP_SOIL state variable over each band
+# NOTE: only required for strict UBCWM emulation
+#
+:DefineHRUGroups Band1, Band2, Band3, Band4, Band5, Band6, Band7
+:AggregatedVariable TOP_SOIL Band1
+:AggregatedVariable TOP_SOIL Band2
+:AggregatedVariable TOP_SOIL Band3
+:AggregatedVariable TOP_SOIL Band4
+:AggregatedVariable TOP_SOIL Band5
+:AggregatedVariable TOP_SOIL Band6
+:AggregatedVariable TOP_SOIL Band7
+#------------------------------------------------------------------------
+      
+# Transport calculations for estimation of snowmelt and glacier
+# contributions to runoff
+#
+:Transport SNOWMELT
+:FixedConcentration  SNOWMELT SNOW 1.0
+:FixedConcentration  SNOWMELT SHALLOW_GW 0.0
+:FixedConcentration  SNOWMELT DEEP_GW 0.0
+      
+:Transport GLACIER
+:FixedConcentration  GLACIER GLACIER 1.0
+:FixedConcentration  GLACIER SHALLOW_GW 0.0
+:FixedConcentration  GLACIER DEEP_GW 0.0
+      
+#---------------------------------------------------------
+:CustomOutput CONTINUOUS  AVERAGE RAINFALL BY_HRU
+:CustomOutput CONTINUOUS  AVERAGE SNOWFALL BY_HRU
+:CustomOutput CONTINUOUS  AVERAGE TEMP_AVE BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SNOW BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[0] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[1] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[2] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[3] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[4] BY_HRU

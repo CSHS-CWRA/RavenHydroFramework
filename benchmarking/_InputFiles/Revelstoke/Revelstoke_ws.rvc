@@ -1,0 +1,68 @@
+#########################################################################
+:FileType rvc ASCII Raven 1.0
+# DataType         Raven State Variables file
+#
+:Application       (null)
+:Version           No version information..
+:WrittenBy         gjost
+:CreationDate      Wed, Apr 20, 2016 01:36 PM
+#
+#------------------------------------------------------------------------
+# Converted from UBCWM WAT file
+:SourceFile  C:\projects\ForecastingSystem\RavenInputFiles\Temp\REV2010_100.wat
+#
+#   SOIL[0]      - From WatFile (5000-S0SOIL)
+#   SOIL[2]      - From WatFile (O0GWDZ*86.4/(total watershed area, in km2)/(BASEFLOW_COEFF for GWU_SOIL))   WAS: O0GWUZ
+#   SOIL[3]      - From WatFile (O0GWDZ*86.4/(total watershed area, in km2)/(BASEFLOW_COEFF for GWL_SOIL))
+#   SNOW         - From WatFile (oneof {S0SWEON,S0SWEOS,S0SWEF,0,0} for {OpenNorth,OpenSouth,Forest,GlacierNorth,GlacierSouth})
+#   SNOW_ALBEDO  - From WatFile (oneof {ALBOPNN,ALBOPNS,ALBFOR,ALBOPNN,ALBOPNS} for {OpenNorth,OpenSouth,Forest,GlacierNorth,GlacierSouth})
+#   CUM_SNOWMELT - From WatFile (oneof {S0MEOSN,S0MEOSS,S0MEFS,S0MEOSN,S0MEOSS} for {OpenNorth,OpenSouth,Forest,GlacierNorth,GlacierSouth})
+#   SNOW_LIQ     - From WatFile (oneof {0.05*(S0SWEON-S0WEDON),0.05*(S0SWEOS-S0WEDOS),0.05*(S0SWEF-S0WEDF),0.05*(S0SWEON-S0WEDON),0.05*(S0SWEOS-S0WEDOS)}
+#                                for {OpenNorth,OpenSouth,Forest,GlacierNorth,GlacierSouth})
+#   PONDED_WATER - hardcoded value of 0 in translator
+#   SOIL[1]      - hardcoded value of 0 in translator
+#   SOIL[4]      - hardcoded value of 0 in translator
+#
+:HRUStateVariableTable
+  :Attributes,SOIL[0],SOIL[2],SOIL[3],SNOW,SNOW_ALBEDO,CUM_SNOWMELT,SNOW_LIQ,PONDED_WATER,SOIL[1],SOIL[4]
+  :Units,mm,mm,mm,mm,none,mm,mm,mm,mm,mm
+  1,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  2,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  3,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  6,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  7,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  8,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  11,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  12,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  13,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  16,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  17,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  18,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  21,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  22,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  23,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  24,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  25,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  26,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  27,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  28,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  29,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  30,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  31,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  32,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  33,5000,40.2601,159.323,0,0.65,0,0,0,0,0
+  34,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  35,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  36,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  37,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  39,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  40,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  41,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  42,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  44,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  45,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  46,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  47,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  49,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+  50,5000,40.2601,159.323,0,0.3,0,0,0,0,0
+:EndHRUStateVariableTable

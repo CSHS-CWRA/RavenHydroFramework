@@ -1,0 +1,110 @@
+#########################################################################
+:FileType rvp ASCII Raven 2.5
+# DataType         Raven Parameters file
+#
+#------------------------------------------------------------------------
+# Global parameters
+#
+:AdiabaticLapseRate   4.0    
+:RainSnowTransition   1.0 2.0    
+:IrreducibleSnowSaturation  0.05  
+
+#---------------------------------------------------------
+# Soil classes
+#    WATfile mapping: 
+#       (hardcoded)
+#
+:SoilClasses
+ :Attributes, 
+ :Units,      
+   TOPSOIL,      1.0,    0.0,       0
+   SLOW_RES,     1.0,    0.0,       0
+   FAST_RES,     1.0,    0.0,       0  
+:EndSoilClasses
+
+:SoilParameterList
+  :Parameters, POROSITY,FIELD_CAPACITY,SAT_WILT, HBV_BETA,MAX_CAP_RISE_RATE,MAX_PERC_RATE,BASEFLOW_COEFF,BASEFLOW_N
+  :Units     ,     none,          none,    none,     none,             mm/d,         mm/d,           1/d,      none
+    [DEFAULT],            0.2,     0.7,     0.0,      1.0,              0.0,          0.0,           0.0,       0.0
+     FAST_RES,       _DEFAULT,_DEFAULT,     0.0, _DEFAULT,          _DEFAULT,         5.0,           0.2,       1.1
+     SLOW_RES,       _DEFAULT,_DEFAULT,     0.0, _DEFAULT,          _DEFAULT,    _DEFAULT,          0.05,       1.0
+:EndSoilParameterList
+
+#---------------------------------------------------------
+# Soil profiles
+# name, layers, {soilClass, thickness} x layers
+#
+:SoilProfiles
+   LAKE, 0
+   GLACIER,   0,
+   DEFAULT_P, 3, TOPSOIL, 1.0, FAST_RES,100.0, SLOW_RES, 100.0
+:EndSoilProfiles
+
+#---------------------------------------------------------
+# Vegetation classes
+#    WATfile mapping: 
+#       (hardcoded)
+# - these parameters are required but have no effect in UBCWM emulation mode
+#
+:VegetationClasses
+ :Attributes,   MAX_HT, MAX_LAI, MAX_LEAF_COND
+ :Units,        m,      none,    mm_per_s
+   FOREST,      25,     6.0,     5.3
+:EndVegetationClasses
+
+:VegetationParameterList
+  :Parameters, SAI_HT_RATIO, MAX_CAPACITY,MAX_SNOW_CAPACITY, TFRAIN, TFSNOW,
+  :Units     ,         none,           mm,               mm,   frac,   frac,
+	    FOREST,          0.0,        10000,            10000,    0.88,    0.88,
+:EndVegetationParameterList
+
+#---------------------------------------------------------
+# LandUse classes
+#    WATfile mapping: 
+#       {OpenN,OpenS,Forest,GlacierN,GlacierS}Band#   C0IMPA   (1 if forest, otherwise 0)
+#
+:LandUseClasses
+ :Attributes, IMPERM, FOREST_COV
+ :Units,      frac,   frac
+               OPEN_1, 0.00275155,   0
+             FOREST_1, 0.00275155,   1
+               OPEN_2, 0.0346456,   0
+             FOREST_2, 0.0346456,   1
+               OPEN_3, 0.00429935,   0
+             FOREST_3, 0.00429935,   1
+               OPEN_4, 0.019117,   0
+             FOREST_4, 0.019117,   1
+               OPEN_5, 0.0768157,   0
+             FOREST_5, 0.0768157,   1
+               OPEN_6, 0.0633313,   0
+             FOREST_6, 0.0633313,   1
+               OPEN_7, 0.331291,   0
+             FOREST_7, 0.331291,   1
+              GLACIER, 0.331291,   0
+:EndLandUseClasses
+:LandUseParameterList
+  :Parameters,   MELT_FACTOR, MIN_MELT_FACTOR,   HBV_MELT_FOR_CORR, REFREEZE_FACTOR,HBV_MELT_ASP_CORR
+  :Units     ,        mm/d/K,          mm/d/K,                none,          mm/d/K,             none
+  #           ,     Kmin+DC ,            Kmin,                 MRF,            CRFR,               AM
+     [DEFAULT],         3.76,             2.2,                 1.0,             2.0,             0.48
+	   GLACIER,         3.76,             2.2,                   1.0,             2.0,             0.00
+:EndLandUseParameterList
+:LandUseParameterList
+  :Parameters,    HBV_MELT_FOR_CORR, 
+  :Units     ,    none,     
+  #           ,   MRF,      
+     FOREST_1,    0.7,    
+     FOREST_2,    0.7,        
+     FOREST_3,    0.7,  
+     FOREST_4,    0.7,  
+     FOREST_5,    0.7,  
+     FOREST_6,    0.7, 
+     FOREST_7,    0.7,        
+:EndLandUseParameterList
+
+:LandUseParameterList
+ :Parameters, HBV_MELT_GLACIER_CORR,   HBV_GLACIER_KMIN,GLAC_STORAGE_COEFF, HBV_GLACIER_AG
+ :Units     ,                  none,                1/d,             1/d,           1/mm  
+   #        ,                   MRG,                KG1,         KG1+DKG,             AG 
+   [DEFAULT],                  1.64,               0.05,             0.1,           0.05
+:EndLandUseParameterList

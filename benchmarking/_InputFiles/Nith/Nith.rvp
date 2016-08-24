@@ -1,0 +1,134 @@
+# --------------------------------------------
+# Raven Classed Parameter File
+# For soil, land use, vegetation, and aquifer classes
+# Whitemans subbasin - Based on HRU delineation
+# --------------------------------------------
+:RainSnowTransition 0.0 1.1559
+:AdiabaticLapseRate 6.5
+:IrreducibleSnowSaturation 0.05
+:AvgAnnualRunoff 350
+#
+# ----Soil Classes----------------------------
+#
+:SoilClasses
+  :Attributes,  %SAND,  %CLAY,  %SILT,  %ORGANIC
+  :Units,   none, none, none, none
+  TOPSOILA, 0.9,  0.1,  0.0,  0.0
+  FASTRESA, 0.9,  0.1,  0.0,  0.0
+  SLOWRESA, 0.9,  0.1,  0.0,  0.0
+  TOPSOILB, 0.8,  0.2,  0.0,  0.0
+  FASTRESB, 0.8,  0.2,  0.0,  0.0
+  SLOWRESB, 0.8,  0.2,  0.0,  0.0
+  TOPSOILC, 0.5,  0.3,  0.2,  0.0
+  FASTRESC, 0.5,  0.3,  0.2,  0.0
+  SLOWRESC, 0.5,  0.3,  0.2,  0.0
+  TOPSOILD, 0.4,  0.4,  0.2,  0.0
+  FASTRESD, 0.4,  0.4,  0.2,  0.0
+  SLOWRESD, 0.4,  0.4,  0.2,  0.0
+  TOPSOILE, 1.0,  0.0,  0.0,  0.0
+  FASTRESE, 1.0,  0.0,  0.0,  0.0
+  SLOWRESE, 1.0,  0.0,  0.0,  0.0
+  # E is for WETLAND HRU
+:EndSoilClasses
+
+:SoilParameterList
+  :Parameters,  POROSITY,   FIELD_CAPACITY, SAT_WILT, HBV_BETA, MAX_CAP_RISE_RATE,  MAX_PERC_RATE,  BASEFLOW_COEFF, BASEFLOW_N
+  :Units     ,  none,     none,     none,   none,   mm/d,       mm/d,     1/d,      none
+  #          ,  FC (fraction),  LP,       SAT_WILT, BETA,   N/A,        Perc,     Kf/Ks,      Alpha+1
+  [DEFAULT],  0.49732,    0.11777,      0.0,    0.57569,  1.1216,       0.0,      0.0,      0.0
+  FASTRESA, 0.43244,    _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     1.446,      0.034432,   1.9631
+  SLOWRESA, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     _DEFAULT,   0.044002,   1.0
+  TOPSOILB, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     0.0,      _DEFAULT,   _DEFAULT
+  FASTRESB, 0.43244,    _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     1.446,      0.034432,   1.9631
+  SLOWRESB, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     _DEFAULT,   0.044002,   1.0
+  TOPSOILC, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     0.0,      _DEFAULT,   _DEFAULT
+  FASTRESC, 0.43244,    _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     1.446,      0.034432,   1.9631
+  SLOWRESC, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     _DEFAULT,   0.044002,   1.0
+  TOPSOILD, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     0.0,      _DEFAULT,   _DEFAULT
+  FASTRESD, 0.43244,    _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     1.446,      0.034432,   1.9631
+  SLOWRESD, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     _DEFAULT,   0.044002,   1.0
+  TOPSOILE, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     0.0,      _DEFAULT,   _DEFAULT
+  FASTRESE, 0.43244,    _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     1.446,      0.034432,   1.9631
+  SLOWRESE, _DEFAULT,   _DEFAULT,     0.0,    _DEFAULT, _DEFAULT,     _DEFAULT,   0.044002,   1.0
+:EndSoilParameterList
+
+#
+# ----Soil Profiles----------------------------
+# Thickness in metres
+:SoilProfiles
+  SOILPROFA,    3,    TOPSOILA, 0.075953, FASTRESA, 0.10882,  SLOWRESA, 5.0
+  SOILPROFB,    3,    TOPSOILB, 0.075953, FASTRESB, 0.10882,  SLOWRESB, 5.0
+  SOILPROFC,    3,    TOPSOILC, 0.075953, FASTRESC, 0.10882,  SLOWRESC, 5.0
+  SOILPROFD,    3,    TOPSOILD, 0.075953, FASTRESD, 0.10882,  SLOWRESD, 5.0
+  SOILPROFE,    3,    TOPSOILE, 0.075953, FASTRESE, 0.10882,  SLOWRESE, 5.0
+  LAKE,     0
+:EndSoilProfiles
+
+#
+# ----Vegetation Classes and Parameters-------
+#
+:VegetationClasses
+  :Attributes,  MAX_HT,   MAX_LAI,    MAX_LEAF_COND
+  :Units,            m,     none,     mm_per_s
+  CROP1,             3,     4.0,      5.0
+  FOREST1,           25,    5.0,      5.0
+  URBAN1,            3,     4.0,      5.0
+  WATER1,            0,     0.0,      0.0
+  WETLAND1,          3,     6.0,      5.0
+:EndVegetationClasses
+:VegetationParameterList
+  :Parameters,  SAI_HT_RATIO, MAX_CAPACITY, MAX_SNOW_CAPACITY,  RAIN_ICEPT_FACT,  SNOW_ICEPT_FACT,  RAIN_ICEPT_PCT,   SNOW_ICEPT_PCT,
+  :Units,     none,     mm,       mm,         none,       none,             none,       none,
+  CROP1,      0.0,      16.2593,    6.6763,       0.05,       0.05,             0.05,       0.05,
+  FOREST1,    0.0,      16.2593,    6.6763,       0.05,       0.05,             0.05,       0.05,
+  URBAN1,     0.0,      5.0,      5.0,        0.05,       0.05,             0.05,       0.05,
+  WATER1,     0.0,      0.0,      0.0,        0.05,       0.05,             0.05,       0.05,
+  WETLAND1,   0.0,      10,       10,         0.05,       0.05,             0.05,       0.05,
+:EndVegetationParameterList
+:SeasonalCanopyLAI
+  CROP1,    0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 4.0, 4.0, 3.0, 2.0, 0.0, 0.0
+  FOREST1,  0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 4.0, 4.0, 3.0, 2.0, 0.0, 0.0
+  URBAN1,   0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 4.0, 4.0, 3.0, 2.0, 0.0, 0.0
+  WATER1,   0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 4.0, 4.0, 3.0, 2.0, 0.0, 0.0
+  WETLAND1, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 4.0, 4.0, 3.0, 2.0, 0.0, 0.0
+:EndSeasonalCanopyLAI
+
+#
+# --Land Use Classes and Parameters-----------
+#
+:LandUseClasses
+:Attributes,  IMPERM,   FOREST_COV,
+:Units,   fract,    fract,
+  AGRI1,    0.0,    0.1
+  AGRI2,    0.0,    0.1
+  FOREST1,  0.0,    1.0
+  URBAN,    1.0,    0.0
+  WATER,    0.0,    0.0
+  WETLAND,  0.0,    0.3
+:EndLandUseClasses
+#
+# ----Snow (Land Use) Parameters-------------------------
+:SnowParameterList
+:Parameters,  MELT_FACTOR,  MIN_MELT_FACTOR,  HBV_MELT_FOR_CORR,  REFREEZE_FACTOR,  HBV_MELT_ASP_CORR
+:Units     ,  mm/d/K,     mm/d/K,       none,       mm/d/K,       none
+#          ,  Kmin+DC ,   Kmin,       MRF,        CRFR,       AM
+  [DEFAULT],    3.1339,     1.3036,       1.0,        1.0,      0.65836
+  FOREST1,    _DEFAULT,   _DEFAULT,     0.6805,       _DEFAULT,     _DEFAULT
+  WETLAND,    _DEFAULT,   _DEFAULT,     0.6805,       _DEFAULT,     _DEFAULT
+:EndSnowParams
+#
+# ----Channel profiles-------------------------
+#
+:ChannelProfile default_trap
+  :Bedslope 0.001
+  :SurveyPoints
+    0 5
+    55 0
+    65 0
+    0 120
+  :EndSurveyPoints
+  :RoughnessZones
+    0 0.035
+  :EndRoughnessZones
+:EndChannelProfile
+:RedirectToFile channel_sections.rvp

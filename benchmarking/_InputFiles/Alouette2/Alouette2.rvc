@@ -1,0 +1,18 @@
+#########################################################################
+:FileType rvc ASCII Raven 1.0
+# DataType         Raven Initial Conditions file
+
+#---------------------------------------------------------
+# Initial basin conditions
+:BasinInitialConditions
+ :Attributes, ID,   Q
+ :Units,      none, m3/s
+   1, 1
+:EndBasinInitialConditions
+
+#---------------------------------------------------------
+# Initial Lower groundwater storage - for each HRU
+
+:InitialConditions SOIL[2]
+ 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 6.50657, 0,0
+:EndInitialConditions

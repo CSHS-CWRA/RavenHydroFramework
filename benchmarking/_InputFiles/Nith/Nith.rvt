@@ -1,0 +1,22 @@
+# --------------------------------------------
+# Raven Time Series Input file
+# --------------------------------------------
+#
+# --------------------------------------------
+#   Meteorological Gauges
+# --------------------------------------------
+
+:Gauge Stratford WWTP EC Climate Station
+  :RedirectToFile Stratford.rvt
+:EndGauge
+
+:Gauge UW Weather Station
+  :RedirectToFile UWStation.rvt
+:EndGauge
+
+:Gauge Glen Allan EC Climate Station
+  :RedirectToFile GlenAllan.rvt
+:EndGauge
+
+:RedirectToFile NewHamburgObservedFlows.rvt
+:RedirectToFile CanningObservedFlows.rvt

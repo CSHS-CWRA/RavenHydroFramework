@@ -1,0 +1,8 @@
+:Gauge
+  :Latitude 43
+  :Longitude -81
+  :Elevation 172
+  :RedirectToFile IrondequoitGauge.rvt
+:EndGauge
+#
+:RedirectToFile IrondequoitObserved.rvt

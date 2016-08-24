@@ -1,0 +1,6 @@
+In windows:
+(1) Place a compiled release executable in the _Executables/v???/ directory, where ??? is the version number.
+(2) Change the version number at line 11 of teh RavenBenchmarking.bat to ver_name=v???, where ??? is the version number.
+(3) Click on RavenBenchmarking.bat from explorer or run it from the command prompt
+(4) Compare the results between two different versions by using comparison software such as BeyondCompare. 
+(5) Document any and all relevant changes and (ideally) identify the source of changes. 

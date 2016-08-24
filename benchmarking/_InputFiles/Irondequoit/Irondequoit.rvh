@@ -1,0 +1,17 @@
+#########################################################################                                  
+:FileType rvh ASCII Raven 2.5                                                                              
+:WrittenBy         James Craig                                                                             
+:CreationDate      Feb 2015                                                                                
+# Emulation of GR4J simulation of Irondequoit Creek, NY                                                             
+#------------------------------------------------------------------------                                  
+#         
+:SubBasins
+  :Attributes,          NAME, DOWNSTREAM_ID,PROFILE,REACH_LENGTH,GAUGED
+  :Units     ,          none,          none,   none,          km,  none
+            1,   Irondequoit,            -1,   NONE,       _AUTO,     1
+:EndSubBasins
+:HRUs
+  :Attributes,  AREA, ELEVATION, LATITUDE, LONGITUDE, BASIN_ID,LAND_USE_CLASS,VEG_CLASS,SOIL_PROFILE, AQUIFER_PROFILE, TERRAIN_CLASS, SLOPE, ASPECT
+  :Units     ,   km2,         m,      deg,       deg,     none,          none,     none,        none,            none,          none,   deg,    deg
+   	        1, 326.0,	      172,	   43.0,	   -81.0,        1,        LU_ALL,	VEG_ALL,   DEFAULT_P,	         [NONE],	      [NONE],	    0,    	0
+:EndHRUs

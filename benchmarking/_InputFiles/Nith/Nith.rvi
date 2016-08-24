@@ -1,0 +1,56 @@
+# ----------------------------------------------
+# Raven Input file
+# HBV-EC Nith River emulation test case
+# ----------------------------------------------
+# --Simulation Details -------------------------
+:StartDate       2002-10-01 00:00:00
+:Duration        730                # Oct 1 2002 to Sept 30 2004
+:Method          ORDERED_SERIES
+:TimeStep        1.0
+:OutputInterval  1
+
+:RunName         run1
+#
+# --Model Details -------------------------------
+:Interpolation       INTERP_NEAREST_NEIGHBOR
+:RainSnowFraction    RAINSNOW_HBV
+:PotentialMeltMethod POTMELT_HBV
+:Routing             ROUTE_HYDROLOGIC
+:CatchmentRoute      ROUTE_TRI_CONVOLUTION
+:Evaporation         PET_HARGREAVES_1985
+:OW_Evaporation      PET_HARGREAVES_1985
+:PrecipIceptFract    PRECIP_ICEPT_USER
+
+:SoilModel           SOIL_MULTILAYER 3
+
+#
+# --Hydrologic Processes-------------------------
+:Alias       FAST_RESERVOIR SOIL[1]
+:Alias       SLOW_RESERVOIR SOIL[2]
+:LakeStorage SLOW_RESERVOIR
+#
+:HydrologicProcesses
+  :SnowRefreeze      FREEZE_DEGREE_DAY  SNOW_LIQ         SNOW
+  :Precipitation     PRECIP_RAVEN       ATMOS_PRECIP     MULTIPLE
+  :CanopyEvaporation CANEVP_ALL         CANOPY           ATMOSPHERE
+  :CanopySnowEvap    CANEVP_ALL         CANOPY_SNOW      ATMOSPHERE
+  :SnowBalance       SNOBAL_SIMPLE_MELT SNOW            SNOW_LIQ  
+    :-->Overflow     RAVEN_DEFAULT      SNOW_LIQ        PONDED_WATER
+  :Infiltration      INF_HBV            PONDED_WATER     MULTIPLE
+  :Flush             RAVEN_DEFAULT      SURFACE_WATER    FAST_RESERVOIR
+  :SoilEvaporation   SOILEVAP_HBV       SOIL[0]          ATMOSPHERE
+  :CapillaryRise     CRISE_HBV          FAST_RESERVOIR   SOIL[0]
+  :SoilEvaporation   SOILEVAP_HBV       FAST_RESERVOIR   ATMOSPHERE
+  :Percolation       PERC_CONSTANT      FAST_RESERVOIR   SLOW_RESERVOIR
+  :Baseflow          BASE_POWER_LAW     FAST_RESERVOIR   SURFACE_WATER
+  :Baseflow          BASE_LINEAR        SLOW_RESERVOIR   SURFACE_WATER
+:EndHydrologicProcesses
+#
+# --Output Options-------------------------------
+#
+:EndPause            NO
+:WriteForcingFunctions
+:CustomOutput DAILY AVERAGE SNOW BY_HRU
+:AggregatedVariable FAST_RESERVOIR AllHRUs
+:AggregatedVariable SLOW_RESERVOIR AllHRUs
+:EvaluationMetrics NASH_SUTCLIFFE
