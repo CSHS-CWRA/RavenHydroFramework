@@ -44,6 +44,7 @@ CSubBasin::CSubBasin( const long  				 Identifier,
   _drainage_area=0.0;
   _avg_ann_flow =0.0;
   _reach_length =reach_len;
+  _is_headwater =true;
 
   _t_conc				     =AUTO_COMPUTE;
   _t_peak				     =AUTO_COMPUTE;
@@ -387,8 +388,13 @@ bool CSubBasin::SetBasinProperties(const string label,
   }
   return true;
 }
-
-
+//////////////////////////////////////////////////////////////////
+/// \brief Sets basin headwater status (called by model during subbasin initialization)
+//
+void CSubBasin::SetAsNonHeadwater()
+{
+  _is_headwater=false;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds inflow hydrograph
 /// \param *pInflow Inflow time series to be added
@@ -434,7 +440,7 @@ void	CSubBasin::SetReservoirFlow(const double &Q)
 void	CSubBasin::SetReservoirStage(const double &stage)
 {
   if (_pReservoir==NULL){
-    WriteWarning("CSubBasin::SetReservoirStage: trying to set flow for non-existent reservoir.",false);return;
+    WriteWarning("CSubBasin::SetReservoirStage: trying to set stage for non-existent reservoir.",false);return;
   }
   _pReservoir->UpdateStage(stage);
 }
@@ -549,15 +555,25 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   ExitGracefullyIf((_pChannel==NULL) && (Options.routing!=ROUTE_NONE) ,
       "CSubBasin::Initialize: channel profile for basin may only be 'NONE' if Routing=ROUTE_NONE",BAD_DATA);
   
+  if (_pInflowHydro != NULL){_is_headwater=false;}
+
   _drainage_area=total_drain_area;  
 
+  //set reference flow in non-headwater basins
+  //------------------------------------------------------------------------
   if (_Q_ref==AUTO_COMPUTE)
   {
+    if (((Qin_avg + Qlat_avg) <= 0) && (!_is_headwater)){//reference flow only matters for non-headwater basins
+      ExitGracefully("CSubBasin::Initialize: negative or zero average flow specified in initialization.",BAD_DATA);
+    }
     ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
   }
   else{
     ResetReferenceFlow(_Q_ref);
   }
+  
+  // estimate reach length if needed
+  //------------------------------------------------------------------------
   if (_reach_length==AUTO_COMPUTE)
   { 
     //_reach_length =0.6581*pow(_basin_area,1.0317)*M_PER_KM;//[m] // \ref B. Annable, personal comm, 2009 (units wrong?)
@@ -678,9 +694,9 @@ void CSubBasin::ResetReferenceFlow(const double &Qreference)
   _Q_ref=Qreference;
   if ((_Q_ref!=AUTO_COMPUTE) && (_pChannel!=NULL))
   {
-    if (_Q_ref <= 0.0){
+    if ((_Q_ref <= 0.0) && (!_is_headwater)){
       cout << "_Q_ref=" << _Q_ref << endl;
-      ExitGracefully("CSubBasin::ResetReferenceFlow: invalid (negative or zero) reference flow rate", BAD_DATA);
+      ExitGracefully("CSubBasin::ResetReferenceFlow: invalid (negative or zero) reference flow rate in non-headwater basin", BAD_DATA);
     }
     _c_ref=_pChannel->GetCelerity(_Q_ref);
     _w_ref=_pChannel->GetTopWidth(_Q_ref);
@@ -729,11 +745,11 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     _nQinHist=20;
   }
 
-  bool bad_initcond=((OldnQinHist!=OldnQinHist) && (OldnQinHist!=0));
+  bool bad_initcond=((_nQinHist!=OldnQinHist) && (OldnQinHist!=0));
 
   if (bad_initcond){
-    cout<<OldnQinHist<<" "<<OldnQinHist<<endl;
-    WriteWarning("CSubBasin::GenerateCatchmentHydrograph: size of inflow history array differs between initial conditions file and calculated size. Initial conditions will be overwritten",Options.noisy);
+    cout<<_nQinHist<<" "<<OldnQinHist<<endl;
+    WriteWarning("CSubBasin::GenerateRoutingHydrograph: size of inflow history array differs between initial conditions file and calculated size. Initial conditions will be overwritten",Options.noisy);
     delete [] _aQinHist;
   }
 
@@ -790,7 +806,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   //correct to ensure that sum _aRouteHydro[m]=1.0
   sum=0.0;
 	for (n=0;n<_nQinHist;n++){sum+=_aRouteHydro[n];}
-  ExitGracefullyIf(sum==0.0,"CSubBasin::Initialize: bad routing hydrograph constructed",RUNTIME_ERR);
+  ExitGracefullyIf(sum==0.0,"CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed",RUNTIME_ERR);
   for (n=0;n<_nQinHist;n++){_aRouteHydro[n]/=sum;}
 }
 
@@ -901,7 +917,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   //---------------------------------------------------------------
 	sum=0.0;
   for (n=0;n<_nQlatHist;n++){sum+=_aUnitHydro[n];}
-	ExitGracefullyIf(sum==0.0,"CSubBasin::Initialize: bad unit hydrograph constructed",RUNTIME_ERR);
+	ExitGracefullyIf(sum==0.0,"CSubBasin::GenerateCatchmentHydrograph: bad unit hydrograph constructed",RUNTIME_ERR);
 	for (n=0;n<_nQlatHist;n++){_aUnitHydro[n]/=sum;}
 }
 
@@ -992,7 +1008,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
 	//volume change from linearly varying downstream outflow over this time step 
 	dV-=0.5*(_aQout[_nSegments-1]+_QoutLast)*dt; 
 	
-	//volume change from lateral inflows over previous time step 
+	//volume change from lateral inflows over previous time step (corrects for the fact that _aQout is channel flow plus that added from lateral inflow)
 	dV+=0.5*(Qlat_new+_QlatLast)*dt; 
   
 	_channel_storage+=dV;//[m3]
@@ -1083,11 +1099,15 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
   for (int n=0;n<_nQlatHist-1;n++){
     Qlat_last+=_aUnitHydro[n]*_aQlatHist[n+1];
   }
+  routing_method route_method;
+  if (_is_headwater){route_method=ROUTE_NONE;}
+  else              {route_method=Options.routing;}
+
   //==============================================================
-  // route from channel
+  // route in channel
   //==============================================================
-  if ((Options.routing==ROUTE_MUSKINGUM) || 
-      (Options.routing==ROUTE_MUSKINGUM_CUNGE))
+  if ((route_method==ROUTE_MUSKINGUM) || 
+      (route_method==ROUTE_MUSKINGUM_CUNGE))
   {
     double K,X,c1,c2,c3,c4,denom,cunge;
     K=GetMuskingumK(dx);
@@ -1106,7 +1126,7 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
 		{
 			if (dt>(tstep-t)){dt=tstep-t;}
 			cunge=0;
-			if ((Options.routing==ROUTE_MUSKINGUM_CUNGE) && 
+			if ((route_method==ROUTE_MUSKINGUM_CUNGE) && 
           (!Options.distrib_lat_inflow)){cunge=1;} 
 
 			//Standard Muskingum/Muskingum Cunge
@@ -1135,7 +1155,7 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
 		for (seg=0;seg<_nSegments;seg++){_aQout[seg]=aQoutStored[seg];}
   }
   //==============================================================
-  else if (Options.routing==ROUTE_STORAGECOEFF)
+  else if (route_method==ROUTE_STORAGECOEFF) 
   {
 		///< Variable storage routing method \ref (Williams, 1969/ SWAT) \cite williams1969flood
 		///< As interpreted from Williams, 1969/Kim and Lee, HP 2010 \cite williams1969flood
@@ -1169,7 +1189,7 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
 		}
   }
   //==============================================================
-  else if (Options.routing==ROUTE_HYDROLOGIC) 
+  else if (route_method==ROUTE_HYDROLOGIC) 
   { ///< basic hydrologic routing using Newton's algorithm
     ///<  ONE SEGMENT ONLY FOR NOW
 
@@ -1228,8 +1248,8 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
     }
   }
   //==============================================================
-  else if ((Options.routing==ROUTE_PLUG_FLOW) 
-        || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
+  else if ((route_method==ROUTE_PLUG_FLOW) 
+        || (route_method==ROUTE_DIFFUSIVE_WAVE))
   {	//Simple convolution - segmentation unused
 		aQout_new[_nSegments-1]=0.0;
     for (int n=0;n<_nQinHist;n++){
@@ -1240,7 +1260,7 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
     }
   }
   //==============================================================
-  else if (Options.routing==ROUTE_NONE)
+  else if (route_method==ROUTE_NONE)
   {//In channel routing skipped, inflow directly routed out - segmentation unused
 		for (seg=0;seg<_nSegments;seg++){
 			aQout_new[seg]=0.0;

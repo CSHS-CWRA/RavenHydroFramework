@@ -81,7 +81,9 @@ class CModel: public CModelABC
     int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
 
     int             _nTransParams;  ///< number of transient parameters
-    CTransientParam**_pTransParams; ///< array of pointer to transient parameters with time series
+    CTransientParam**_pTransParams; ///< array of pointers to transient parameters with time series
+    int            _nClassChanges;  ///< number of HRU Group class changes
+    class_change **_pClassChanges;  ///< array of pointers to class_changes 
 
     CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
 
@@ -234,6 +236,7 @@ class CModel: public CModelABC
     void              AddAquiferStateVars  (const int          nLayers);
     void              AddCustomOutput      (CCustomOutput     *pCO);
     void              AddTransientParameter(CTransientParam   *pTP);
+    void             AddPropertyClassChange(const string HRUgroup, const class_type tclass, const string new_class, const time_struct &tt);
     void              AddObservedTimeSeries(CTimeSeriesABC    *pTS);
     void              AddObservedWeightsTS (CTimeSeriesABC    *pTS);
     void              AddDiagnostic        (CDiagnostic       *pDiag);

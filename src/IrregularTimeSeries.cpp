@@ -107,46 +107,25 @@ CIrregularTimeSeries::~CIrregularTimeSeries()
 /// \details Calculates _indexCorr, correction to global index to get only values within model time.
 /// \remark t=0 corresponds to first day with recorded values at that gauge
 ///
-/// \param global_start_day [in] Julian global start day
-/// \param global_start_year [in] Global start year
+/// \param model_start_day [in] Julian start day of model
+/// \param model_start_year [in] start year of model
 /// \param model_duration [in] Duration of model, in days
 /// \param timestep [in] mdoel timestep, in days
 /// \param is_observation [in] - true if this is an observation time series, rather than model input
-void CIrregularTimeSeries::Initialize(const double global_start_day,
-                                      const    int global_start_year,
+void CIrregularTimeSeries::Initialize(const double model_start_day,
+                                      const    int model_start_year,
                                       const double model_duration,
                                       const double timestep,
                                       const   bool is_observation)
 {
-  double time;
-  int yr, leap;
 
-  _aTimes = new double[_nVals];
+  _aTimes = new double[_nVals]; //array of time series times in model time
   for (int n = 0; n < _nVals; n++)
-  {
-    time = _aDays[n] - global_start_day;
-    yr = _aYears[n];
+  {    
+    _aTimes[n] = TimeDifference(model_start_day,model_start_year,_aDays[n],_aYears[n]);
 
-    if (IsLeapYear(yr)){time-=1;} //leap day already added to julian day for first year
-
-	  while (yr!=global_start_year)
-    {
-      leap = 0;
-      if (IsLeapYear(yr)){ leap = 1; }
-      if (yr > global_start_year)
-      {
-        time += (365 + leap);
-        yr--;
-      }
-      else
-      {
-        time -= (365 + leap);
-        yr++;
-      }
-    }
-    _aTimes[n] = time;
-    if (_indexCorr == -1 && time >= 0){ _indexCorr = n; }
-    if (time >= 0 && time < model_duration){ _nSampVal++; }
+    if ((_indexCorr == -1) && (_aTimes[n] >= 0)){ _indexCorr = n; }
+    if ((_aTimes[n] >= 0) && (_aTimes[n] < model_duration)){ _nSampVal++; }
   }
   if (!is_observation)
   {

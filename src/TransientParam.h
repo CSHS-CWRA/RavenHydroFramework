@@ -2,7 +2,8 @@
   Raven Library Source Code
   Copyright © 2008-2014 the Raven Development Team
 ------------------------------------------------------------------
-  Class CGlobalParams
+  struct class_change
+  class  CTransientParam
 ----------------------------------------------------------------*/
 #ifndef TRANSIENT_PARAM_H
 #define TRANSIENT_PARAM_H
@@ -12,6 +13,16 @@
 #include "TimeSeries.h"
 #include "SoilAndLandClasses.h"
 
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for global model parameters
+//
+struct class_change
+{
+  int        HRU_groupID; // HRU group id (kk)
+  class_type tclass;      // type of class (e.g., CLASS_LANDUSE)  
+  string     newclass;    // new class tag
+  double     modeltime;   // modeltime of shift
+};
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for global model parameters
 //

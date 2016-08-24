@@ -73,6 +73,11 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
     {
       // no parameter required
     }
+    else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_HEDSTROM)
+    {
+      // no parameter required
+    }
+    
   }
   if (cansnow_exists)
   {
@@ -90,6 +95,11 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
     {
 	  // no parameter required
     }
+    else if (pModel->GetOptStruct()->interception_factor==PRECIP_ICEPT_HEDSTROM)
+    {
+	  // no parameter required
+    }
+    
   }
   
 
@@ -183,26 +193,27 @@ void CmvPrecipitation::GetRatesOfChange(const double		 *state_vars,
 
     if (pModel->StateVarExists(CANOPY))
     {
-      capacity = pHRU->GetVegVarProps()->capacity;
-      rain_pct = pHRU->GetVegVarProps()->rain_icept_pct;
-
       //total rain interception rate over canopy covered portion of HRU
+      rain_pct = pHRU->GetVegVarProps()->rain_icept_pct;
       rain_int = rainfall*rain_pct;
+      
+      capacity = pHRU->GetVegVarProps()->capacity;
       rain_int = threshMin(rain_int, max((capacity - state_vars[iCan]) / tstep, 0.0), 0.0);
+
       rates[iCan] = Fcan*rain_int;
     }
     //calculate snow interception-----------------------------------
     if (pModel->StateVarExists(CANOPY_SNOW))
     {
       //rate of snow interception over canopy portion of HRU
-      snow_capacity = pHRU->GetVegVarProps()->snow_capacity;
       snow_pct = pHRU->GetVegVarProps()->snow_icept_pct;
-
       snow_int = snowfall*snow_pct;
+
+      snow_capacity = pHRU->GetVegVarProps()->snow_capacity;
       snow_int = max(threshMin(snow_int, max((snow_capacity - state_vars[iSCan]) / tstep, 0.0), 0.0), 0.0);
       rates[iSCan] = Fcan*snow_int;
     }
-
+    /// \todo[funct] - if no canopy SV is present, snow_pct/rain_pct should move to ATMOSPHERE?
     snowthru = snowfall - Fcan*snow_int;
     rainthru = rainfall - Fcan*rain_int;//[mm/day]
 

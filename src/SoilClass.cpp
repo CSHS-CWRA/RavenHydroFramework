@@ -474,6 +474,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   bad=SetSpecifiedValue(S.GR4J_x2,Stmp.GR4J_x2,Sdefault.GR4J_x2,needed,"GR4J_X2");
   bad=SetSpecifiedValue(S.GR4J_x3,Stmp.GR4J_x3,Sdefault.GR4J_x3,needed,"GR4J_X3");
   bad=SetSpecifiedValue(S.baseflow_thresh,Stmp.baseflow_thresh,Sdefault.baseflow_thresh,needed,"BASEFLOW_THRESH");
+  bad=SetSpecifiedValue(S.exchange_flow,Stmp.exchange_flow,Sdefault.exchange_flow,needed,"EXCHANGE_FLOW");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -535,6 +536,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.GR4J_x2           =DefaultParameterValue(is_template,false);//0.0 //[mm/d]
   S.GR4J_x3           =DefaultParameterValue(is_template,false);//90 //[mm]
   S.baseflow_thresh   =DefaultParameterValue(is_template,false);//0 //[-]
+  S.exchange_flow     =DefaultParameterValue(is_template,false);//0 //[mm/d]
   
 }
 //////////////////////////////////////////////////////////////////
@@ -610,6 +612,7 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
   else if (!name.compare("GR4J_X2"             )){S.GR4J_x2 =value;}
   else if (!name.compare("GR4J_X3"             )){S.GR4J_x3 =value;}
   else if (!name.compare("BASEFLOW_THRESH"     )){S.baseflow_thresh =value;}
+  else if (!name.compare("EXCHANGE_FLOW"       )){S.exchange_flow=value;}
   else{
     WriteWarning("CSoilClass::SetSoilProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file",false);
   }
@@ -714,9 +717,10 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
   else if (!name.compare("GR4J_X2"             )){return S.GR4J_x2;}
   else if (!name.compare("GR4J_X3"             )){return S.GR4J_x3;}
   else if (!name.compare("BASEFLOW_THRESH"     )){return S.baseflow_thresh;}
+  else if (!name.compare("EXCHANGE_FLOW"       )){return S.exchange_flow;}
   else{
     string msg="CSoilClass::GetSoilProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA);
+    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
     return 0.0;
   }
 }

@@ -102,6 +102,8 @@ struct soil_struct
   double GR4J_x2;           ///< [mm/d]    GR4J maximum groundwater exchange rate
   double GR4J_x3;           ///< [mm]      GR4J reference storage for baseflow/GW exchange
 
+  double exchange_flow;     ///< [mm/d]    exchange flow rate with mixing zone (greater than 0)
+
   double retardation[MAX_CONSTITUENTS]; ///< [-] soil/species retardation factor
 };
 
@@ -231,6 +233,9 @@ struct surface_struct
   
   double dep_max;           ///< [mm]      maximum amount of water that can be stored in depressions    
   double abst_percent;      ///< [0..1]    percentage of rainfall/melt which is abstracted to depression storage
+  double dep_max_flow;      ///< [mm/d]    outflow rate with full depression storage (dep_stor=dep_max)     
+  double dep_n;             ///< [-]       power law coefficient for depression outflow
+  double dep_threshhold;    ///< [mm]      threshold storage at which flow commences
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

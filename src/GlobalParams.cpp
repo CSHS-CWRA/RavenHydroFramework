@@ -440,7 +440,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("MAX_SWE_SURFACE"     )){return G.max_SWE_surface;}
   else{
     string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA);
+    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
     return 0.0;
   }
 

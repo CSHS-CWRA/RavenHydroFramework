@@ -559,152 +559,152 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   CReservoir *pRes=NULL;
   HRUID=DOESNT_EXIST;
 
-  while (!p->Tokenize(s,Len))
+  while (!p->Tokenize(s, Len))
   {
-    if (Options.noisy){ cout << "-->reading line " << p->GetLineNumber() << ": ";}
-    if      (Len==0){}//Do nothing
-    else if (s[0][0]=='#')                      {if (Options.noisy){cout<<"#"<<endl;}}//Comment, do nothing
-    else if (s[0][0]=='*')                      {if (Options.noisy){cout<<"*"<<endl;}}//Comment, do nothing
-    else if (!strcmp(s[0],":SubBasinID")      )
+    if (Options.noisy){ cout << "-->reading line " << p->GetLineNumber() << ": "; }
+    if (Len == 0){}//Do nothing
+    else if (s[0][0] == '#')                      { if (Options.noisy){ cout << "#" << endl; } }//Comment, do nothing
+    else if (s[0][0] == '*')                      { if (Options.noisy){ cout << "*" << endl; } }//Comment, do nothing
+    else if (!strcmp(s[0], ":SubBasinID"))
     {
-      if (Options.noisy){cout<<":SubBasinID"<<endl;}
-      SBID=s_to_l(s[1]);
+      if (Options.noisy){ cout << ":SubBasinID" << endl; }
+      SBID = s_to_l(s[1]);
     }
-    else if (!strcmp(s[0],":HRUID")      )
+    else if (!strcmp(s[0], ":HRUID"))
     {
-      if (Options.noisy){cout<<":HRUID"<<endl;}
-      HRUID=s_to_i(s[1]);
+      if (Options.noisy){ cout << ":HRUID" << endl; }
+      HRUID = s_to_i(s[1]);
     }
-    else if (!strcmp(s[0],":Type")      )
+    else if (!strcmp(s[0], ":Type"))
     {
-      if (Options.noisy){cout<<":Type"<<endl;}
-      if      (!strcmp(s[1],"RESROUTE_STANDARD"  )){restype=RESROUTE_STANDARD;}
-      else if (!strcmp(s[1],"RESROUTE_NONE"      )){restype=RESROUTE_NONE;}
+      if (Options.noisy){ cout << ":Type" << endl; }
+      if (!strcmp(s[1], "RESROUTE_STANDARD")){ restype = RESROUTE_STANDARD; }
+      else if (!strcmp(s[1], "RESROUTE_NONE")){ restype = RESROUTE_NONE; }
     }
-    else if (!strcmp(s[0],":VolumeStageRelation")      )
+    else if (!strcmp(s[0], ":VolumeStageRelation"))
     {
-      if (Options.noisy){cout<<":VolumeStageRelation"<<endl;}
-      if (Len>=2){
-        if (!strcmp(s[1],"POWER_LAW"))
+      if (Options.noisy){ cout << ":VolumeStageRelation" << endl; }
+      if (Len >= 2){
+        if (!strcmp(s[1], "POWER_LAW"))
         {
-          type=CURVE_POWERLAW;
-          p->Tokenize(s,Len);
-          if (Len>=2){a_V=s_to_d(s[0]);b_V=s_to_d(s[1]);}
-          p->Tokenize(s,Len); //:EndVolumeStageRelation
+          type = CURVE_POWERLAW;
+          p->Tokenize(s, Len);
+          if (Len >= 2){ a_V = s_to_d(s[0]); b_V = s_to_d(s[1]); }
+          p->Tokenize(s, Len); //:EndVolumeStageRelation
         }
-        else if (!strcmp(s[1],"LINEAR"))
+        else if (!strcmp(s[1], "LINEAR"))
         {
-          p->Tokenize(s,Len);
-          if (Len>=1){a_V=s_to_d(s[0]);b_V=1.0;}
-          p->Tokenize(s,Len); //:EndVolumeStageRelation
+          p->Tokenize(s, Len);
+          if (Len >= 1){ a_V = s_to_d(s[0]); b_V = 1.0; }
+          p->Tokenize(s, Len); //:EndVolumeStageRelation
         }
-        else if (!strcmp(s[1],"LOOKUP_TABLE"))
+        else if (!strcmp(s[1], "LOOKUP_TABLE"))
         {
-          type=CURVE_DATA;
-          p->Tokenize(s,Len);
-          if (Len>=1){NV=s_to_i(s[0]);}
-          aV   =new double [NV];
-          aV_ht=new double [NV];
-          for (int i=0;i<NV;i++){
-            p->Tokenize(s,Len);
-            aV_ht[i]=s_to_d(s[0]);
-            aV   [i]=s_to_d(s[1]);
+          type = CURVE_DATA;
+          p->Tokenize(s, Len);
+          if (Len >= 1){ NV = s_to_i(s[0]); }
+          aV = new double[NV];
+          aV_ht = new double[NV];
+          for (int i = 0; i < NV; i++){
+            p->Tokenize(s, Len);
+            aV_ht[i] = s_to_d(s[0]);
+            aV[i] = s_to_d(s[1]);
           }
-          p->Tokenize(s,Len); //:EndVolumeStageRelation
+          p->Tokenize(s, Len); //:EndVolumeStageRelation
         }
       }
       else{
         //write warning
       }
     }
-    else if (!strcmp(s[0],":AreaStageRelation")      )
+    else if (!strcmp(s[0], ":AreaStageRelation"))
     {
-      if (Options.noisy){cout<<":AreaStageRelation"<<endl;}
-      if (Len>=2){
-        if (!strcmp(s[1],"POWER_LAW"))
+      if (Options.noisy){ cout << ":AreaStageRelation" << endl; }
+      if (Len >= 2){
+        if (!strcmp(s[1], "POWER_LAW"))
         {
-          type=CURVE_POWERLAW;
-          p->Tokenize(s,Len);
-          if (Len>=2){a_A=s_to_d(s[0]);b_A=s_to_d(s[1]);}
-          p->Tokenize(s,Len); //:EndAreaStageRelation
+          type = CURVE_POWERLAW;
+          p->Tokenize(s, Len);
+          if (Len >= 2){ a_A = s_to_d(s[0]); b_A = s_to_d(s[1]); }
+          p->Tokenize(s, Len); //:EndAreaStageRelation
         }
-        else if (!strcmp(s[1],"LINEAR"))
+        else if (!strcmp(s[1], "LINEAR"))
         {
-          type=CURVE_LINEAR;
-          p->Tokenize(s,Len);
-          if (Len>=1){a_A=s_to_d(s[0]);b_A=1.0;}
-          p->Tokenize(s,Len); //:EndAreaStageRelation
+          type = CURVE_LINEAR;
+          p->Tokenize(s, Len);
+          if (Len >= 1){ a_A = s_to_d(s[0]); b_A = 1.0; }
+          p->Tokenize(s, Len); //:EndAreaStageRelation
         }
-        else if (!strcmp(s[1],"LOOKUP_TABLE"))
+        else if (!strcmp(s[1], "LOOKUP_TABLE"))
         {
-          type=CURVE_DATA;
-          p->Tokenize(s,Len);
-          if (Len>=1){NA=s_to_i(s[0]);}
-          aA   =new double [NA];
-          aA_ht=new double [NA];
-          for (int i=0;i<NA;i++){
-            p->Tokenize(s,Len);
-            aA_ht[i]=s_to_d(s[0]);
-            aA   [i]=s_to_d(s[1]);
+          type = CURVE_DATA;
+          p->Tokenize(s, Len);
+          if (Len >= 1){ NA = s_to_i(s[0]); }
+          aA = new double[NA];
+          aA_ht = new double[NA];
+          for (int i = 0; i < NA; i++){
+            p->Tokenize(s, Len);
+            aA_ht[i] = s_to_d(s[0]);
+            aA[i] = s_to_d(s[1]);
           }
-          p->Tokenize(s,Len); //:EndAreaStageRelation
+          p->Tokenize(s, Len); //:EndAreaStageRelation
         }
       }
       else{
         //write warning
       }
     }
-    else if (!strcmp(s[0],":OutflowStageRelation")      )
+    else if (!strcmp(s[0], ":OutflowStageRelation"))
     {
-      if (Options.noisy){cout<<":OutflowStageRelation"<<endl;}
-      if (Len>=2){
-        if (!strcmp(s[1],"POWER_LAW"))
+      if (Options.noisy){ cout << ":OutflowStageRelation" << endl; }
+      if (Len >= 2){
+        if (!strcmp(s[1], "POWER_LAW"))
         {
-          type=CURVE_POWERLAW;
-          p->Tokenize(s,Len);
-          if (Len>=2){a_Q=s_to_d(s[0]);b_Q=s_to_d(s[1]);}
-          p->Tokenize(s,Len); //:EndOutflowStageRelation
+          type = CURVE_POWERLAW;
+          p->Tokenize(s, Len);
+          if (Len >= 2){ a_Q = s_to_d(s[0]); b_Q = s_to_d(s[1]); }
+          p->Tokenize(s, Len); //:EndOutflowStageRelation
         }
-        else if (!strcmp(s[1],"LINEAR"))
+        else if (!strcmp(s[1], "LINEAR"))
         {
-          type=CURVE_LINEAR;
-          p->Tokenize(s,Len);
-          if (Len>=1){a_Q=s_to_d(s[0]);b_Q=1.0;}
-          p->Tokenize(s,Len); //:EndOutflowStageRelation
+          type = CURVE_LINEAR;
+          p->Tokenize(s, Len);
+          if (Len >= 1){ a_Q = s_to_d(s[0]); b_Q = 1.0; }
+          p->Tokenize(s, Len); //:EndOutflowStageRelation
         }
-        else if (!strcmp(s[0],"LOOKUP_TABLE"))
+        else if (!strcmp(s[0], "LOOKUP_TABLE"))
         {
-          type=CURVE_DATA;
-          p->Tokenize(s,Len);
-          if (Len>=1){NQ=s_to_i(s[0]);}
-          aQ=new double [NQ];
-          aQ_ht=new double [NQ];
-          for (int i=0;i<NQ;i++){
-            p->Tokenize(s,Len);
-            aQ_ht[i]=s_to_d(s[0]);
-            aQ   [i]=s_to_d(s[1]);
+          type = CURVE_DATA;
+          p->Tokenize(s, Len);
+          if (Len >= 1){ NQ = s_to_i(s[0]); }
+          aQ = new double[NQ];
+          aQ_ht = new double[NQ];
+          for (int i = 0; i < NQ; i++){
+            p->Tokenize(s, Len);
+            aQ_ht[i] = s_to_d(s[0]);
+            aQ[i] = s_to_d(s[1]);
           }
-          p->Tokenize(s,Len); //:EndOutflowStageRelation
+          p->Tokenize(s, Len); //:EndOutflowStageRelation
         }
       }
       else{
         //write warning
       }
     }
-    else if (!strcmp(s[0],":StageRelations")      )
+    else if (!strcmp(s[0], ":StageRelations"))
     {
-      if (Options.noisy){cout<<":StageRelations"<<endl;}
-      type=CURVE_DATA;
-      p->Tokenize(s,Len);
-      if (Len>=1){NQ=s_to_i(s[0]);}
+      if (Options.noisy){ cout << ":StageRelations" << endl; }
+      type = CURVE_DATA;
+      p->Tokenize(s, Len);
+      if (Len >= 1){ NQ = s_to_i(s[0]); }
 
-      aQ_ht=new double    [NQ];
-      aQ=new double [NQ];
-      aV=new double [NQ];
-      aA=new double [NQ];
+      aQ_ht = new double[NQ];
+      aQ = new double[NQ];
+      aV = new double[NQ];
+      aA = new double[NQ];
       for (int i = 0; i < NQ; i++){
         p->Tokenize(s, Len);
-        if (s[0][0] == '#'){ i--;  }
+        if (s[0][0] == '#'){ i--; }
         else{
           aQ_ht[i] = s_to_d(s[0]);
           aQ[i] = s_to_d(s[1]);
@@ -712,7 +712,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
           aA[i] = s_to_d(s[3]);
         }
       }
-      p->Tokenize(s,Len); //:EndStageRelations
+      p->Tokenize(s, Len); //:EndStageRelations
     }
     else if (!strcmp(s[0], ":VaryingStageRelations"))
     {
@@ -724,21 +724,21 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       p->Tokenize(s, Len);
       nDates = Len;
       aDates = new int[nDates];
-      for (int v = 0; v<nDates; v++){ aDates[v] = s_to_i(s[v]); }
+      for (int v = 0; v < nDates; v++){ aDates[v] = s_to_i(s[v]); }
 
       aQ_ht = new double[NQ];
       aQQ = new double *[nDates];
       for (int v = 0; v < nDates; v++){
         aQQ[v] = new double[NQ];
       }
-      aV=new double [NQ];
-      aA=new double [NQ];
+      aV = new double[NQ];
+      aA = new double[NQ];
       for (int i = 0; i < NQ; i++){
         p->Tokenize(s, Len);
-        if (s[0][0] == '#'){ i--;  }
+        if (s[0][0] == '#'){ i--; }
         else{
           if (Len < 2 + nDates){
-            ExitGracefully("CReservoir::Parse: improper number of columns in :VaryingStageRelations command",BAD_DATA);
+            ExitGracefully("CReservoir::Parse: improper number of columns in :VaryingStageRelations command", BAD_DATA);
           }
           aQ_ht[i] = s_to_d(s[0]); //stage
           aV[i] = s_to_d(s[1]); //volume
@@ -748,11 +748,14 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
           }
         }
       }
-      p->Tokenize(s,Len); //:EndVaryingStageRelations
+      p->Tokenize(s, Len); //:EndVaryingStageRelations
     }
-    else if (!strcmp(s[0],":EndReservoir")){
-      if (Options.noisy){cout<<":EndReservoir"<<endl;}
+    else if (!strcmp(s[0], ":EndReservoir")){
+      if (Options.noisy){ cout << ":EndReservoir" << endl; }
       break;
+    }
+    else{
+      WriteWarning("Reservoir::Parse: unrecognized command (" + to_string(s[0]) + ") in :Reservoir-:EndReservoir Block",Options.noisy);
     }
   }
 

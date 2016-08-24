@@ -356,6 +356,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 	{
 	case YEARLY: col1Name="Year"; col1Units="years"; col1Type="int"; break;
 	case MONTHLY: col1Name="MonthEnd"; col1Units="months"; col1Type="date"; break;
+  default: break;
 	}
 
 	_CUSTOM<<"  :ColumnName "<<col1Name<<" time ";
@@ -533,7 +534,7 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
   else if ((_timeAgg==DAILY)   && 
            ((fabs(floor(t)-t) <0.5*Options.timestep) || 
             (fabs( ceil(t)-t) <0.5*Options.timestep)))			 {reset=true;}//start of day (hopefully 0:00!)- print preceding day
-  else if ((_timeAgg==EVERY_TSTEP))                          {reset=true;}//every timestep
+  else if (_timeAgg==EVERY_TSTEP)                            {reset=true;}//every timestep
   //cout <<t <<" ->"<<fabs(floor(t)-t)<<"   "<<(fabs(floor(t)-t) <0.5*Options.timestep)<<endl;
 
   if (reset)
@@ -710,7 +711,7 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
 /// \param &Options [in] Global model options information
 //
 void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate, 
-                                      const optStruct   &Options)
+                                           const optStruct   &Options)
 {
   //Check to see if it is time to write to file
   bool reset=false;
@@ -721,7 +722,7 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
   if      ((_timeAgg==YEARLY)  && (curDate.day_of_month==1) && (curDate.month==1))	{reset=true;}//Jan 1 - print preceding year
   else if ((_timeAgg==MONTHLY) && (curDate.day_of_month==1))												{reset=true;}//first day of month - print preceding month info
   else if ((_timeAgg==DAILY)   && (floor(curDate.model_time)==curDate.model_time))	{reset=true;}//start of day (hopefully 0:00!)- print preceding day
-	else if ((_timeAgg==EVERY_TSTEP))																								  {reset=true;}//every timestep
+	else if (_timeAgg==EVERY_TSTEP)  																								  {reset=true;}//every timestep
   
   // write the first 2 fields (year,month/date) and (model time)
 	if (reset)

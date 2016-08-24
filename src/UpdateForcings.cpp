@@ -51,7 +51,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   {
     ZeroOutForcings(Fg[g]);
     
-    Fg[g].precip          =_pGauges[g]->GetForcingValue    (F_PRECIP        ,nn);//mm/d
+    Fg[g].precip          =_pGauges[g]->GetForcingValue    (F_PRECIP        ,nn);//mm/d 
     Fg[g].precip_daily_ave=_pGauges[g]->GetForcingValue    (F_PRECIP, model_day, 1);
     Fg[g].precip_5day     =_pGauges[g]->GetForcingValue    (F_PRECIP,t-5.0,5.0)*5.0;
     Fg[g].snow_frac       =_pGauges[g]->GetAverageSnowFrac (nn);
@@ -147,10 +147,30 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         ref_elev         += wt * _pGauges[g]->GetElevation();
       }
     }
+    //-------------------------------------------------------------------
+    //  Gridded data support
+    //-------------------------------------------------------------------
+    //Override forcing functions with gridded data, if present
+    /// \todo [funct] support gridded data read in 
+    /*for (int gg = 0; gg < _nGridCells; gg++)
+    {
+      tt=//get this from time step and current storage history buffer of gridded data 
+      wt = _aGridWeights[k][gg];
+      F.precip += wt * GridForcings[gg][tt].precip;
+      F.precip_daily_ave += wt * GridForcings[gg][tt].precip_daily_ave;
+      F.precip_5day += wt * GridForcings[gg][tt].precip_5day;
+      F.snow_frac += wt * GridForcings[gg][tt].snow_frac;
+
+      F.temp_ave += wt * GridForcings[gg][tt].temp_ave;
+      F.temp_daily_ave += wt * GridForcings[gg][tt].temp_daily_ave;
+      F.temp_daily_min += wt * GridForcings[gg][tt].temp_daily_min;
+      F.temp_daily_max += wt * GridForcings[gg][tt].temp_daily_max;
+    }*/
+
     F.temp_ave_unc = F.temp_daily_ave;
     F.temp_min_unc = F.temp_daily_min;
     F.temp_max_unc = F.temp_daily_max;
-
+    
     //-------------------------------------------------------------------
     //  Temperature Corrections
     //-------------------------------------------------------------------
@@ -932,6 +952,4 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
 
 
   //...
-
-  /// \todo [QA/QC] populate this list for ALL forcing routines (MUCH WORK NEEDED)
 }

@@ -248,8 +248,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     //--------------------LU/LT PARAMS -------------------------
     else if  (!strcmp(s[0],":LandUseClasses"         )){code=100;}//REQUIRED
     else if  (!strcmp(s[0],":LandUseParameterList"   )){code=101;}
-    else if  (!strcmp(s[0],":SnowParameterList"      )){code=101;}
-    else if  (!strcmp(s[0],":GlacierParameterList"   )){code=101;}
+    else if  (!strcmp(s[0],":SnowParameterList"      )){code=101;}// \todo TO BECOME OBSOLETE
+    else if  (!strcmp(s[0],":GlacierParameterList"   )){code=101;}// \todo TO BECOME OBSOLETE
+    else if  (!strcmp(s[0],":LandUseChange"          )){code=102;}
     //--------------------VEGETATION PARAMS --------------------
     else if  (!strcmp(s[0],":VegetationClasses"      )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":SeasonalCanopyLAI"      )){code=201;}
@@ -257,6 +258,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":SeasonalCanopyHeight"   )){code=202;}
     else if  (!strcmp(s[0],":SeasonalRelativeHeight" )){code=202;}
     else if  (!strcmp(s[0],":VegetationParameterList")){code=206;}
+    else if  (!strcmp(s[0],":VegetationChange"       )){code=207;}
     //--------------------AQUIFER PARAMS -----------------------'
     else if  (!strcmp(s[0],":AquiferClasses"         )){code=300;}
     else if  (!strcmp(s[0],":AquiferProfiles"        )){code=301;}
@@ -315,7 +317,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         
         string filedir = GetDirectoryName(Options.rvp_filename); //if a relative path name, e.g., "/path/model.rvp", only returns e.g., "/path"
         if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-          filename = filedir + "\\" + filename;
+          filename = filedir + "//" + filename;
         }
 
         INPUT2.open(filename.c_str()); 
@@ -573,6 +575,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         }
         break;
       }
+      case(102):  //----------------------------------------------
+      {/*:LandUseChange [HRU group] [new LULT tag] [YYYY-mm-dd] */
+        if (Options.noisy) {cout <<"Change in Land Use Class"<<endl;}
+        if (Len<4){p->ImproperFormat(s); break;} 
+        time_struct tt;
+        tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
+        pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt);
+        break;
+      }
       //==========================================================
       //==========================================================
       case(200):  //----------------------------------------------
@@ -697,6 +708,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
                                                     properties   [i][j]);
           }
         }
+        break;
+      }
+      case(207):  //----------------------------------------------
+      {/*:VegetationChange [HRU group] [new Veg tag] [YYYY-mm-dd] */
+        if (Options.noisy) {cout <<"Change in Vegetation"<<endl;}
+        if (Len<4){p->ImproperFormat(s); break;} 
+        time_struct tt;
+        tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
+        pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt);
         break;
       }
       //==========================================================

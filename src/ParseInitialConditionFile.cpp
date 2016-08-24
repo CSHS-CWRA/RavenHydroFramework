@@ -96,7 +96,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         
         string filedir = GetDirectoryName(Options.rvt_filename); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
         if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-          filename = filedir + "\\" + filename;
+          filename = filedir + "//" + filename;
         }
         
         INPUT2.open(filename.c_str());  
@@ -516,7 +516,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         string warn ="maximum state variable limit exceeded in initial conditions for " + name+ " (in HRU "+to_string(pHRU->GetID())+") in .rvc file";
         WriteWarning(warn,Options.noisy);
         
-        pHRU->SetStateVarValue(i,maxv);
+        if (!Options.keepUBCWMbugs){
+          pHRU->SetStateVarValue(i,maxv);
+        }
       }
     }
   }

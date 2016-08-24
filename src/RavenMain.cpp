@@ -43,7 +43,7 @@ static string RavenBuildDate(__DATE__);
 //
 /// \param argc [in] number of arguments to executable
 /// \param argv[] [in] executable arguments; Raven.exe [filebase] [-p rvp_file] [-h hru_file] [-t rvt_file] [-o output_dir]
-/// for using WD\output subdirectory, can use -o .\output\ 
+/// for using WD\output subdirectory, can use "-o .\output\" 
 /// \return Success of main method
 //
 int main(int argc, char* argv[])
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.6.0";
+  Options.version="2.6.1";
  
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 
@@ -71,8 +71,6 @@ int main(int argc, char* argv[])
   //filebase="RoutingTest/routing_test";  //to test routing
   //SmartLookupUnitTest();
   
-
-
   if (!Options.silent){
   int year = s_to_i(RavenBuildDate.substr(RavenBuildDate.length()-4,4).c_str()); 
   cout <<"=========================================================="<<endl;

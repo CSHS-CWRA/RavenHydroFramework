@@ -403,9 +403,11 @@ double CHydroUnit::GetForcing(const string &forcing_string) const
 {
   return GetForcingFromString(forcing_string,_Forcings);
 }
+
 /*****************************************************************
    Manipulators
 *****************************************************************/
+/// \todo [re-org] should retain these in a manipulable child class accessible only to CModel
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets state variable value
@@ -500,6 +502,20 @@ void CHydroUnit::CopyDailyForcings(force_struct &F)
 void      CHydroUnit::SetPrecipMultiplier			 (const double factor)
 {
 	_PrecipMult = factor;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Changes the land use class
+//
+void CHydroUnit::ChangeLandUse(const CLandUseClass    *lult_class)
+{
+  _pSurface=lult_class->GetSurfaceStruct();
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Changes the vegetation class
+//
+void CHydroUnit::ChangeVegetation(const CVegetationClass *veg_class)
+{
+  _pVeg = veg_class->GetVegetationStruct();
 }
 
 //////////////////////////////////////////////////////////////////

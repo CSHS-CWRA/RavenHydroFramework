@@ -74,7 +74,6 @@ inline double CalculateLeafConductance( const double       &max_leaf_cond,     /
 //////////////////////////////////////////////////////////////////
 /// \brief Sets canopy properties based upon meteorological conditions and time of year
 /// \remark Called at the start of each time step for each HRU
-/// \todo [re-org] should probably just hand in veg_var_struct, time_struct, Options, and HRU as arguments
 ///
 /// \param &VV [out] Vegetation properties strcture
 /// \param *pHRU [in] HRU class object
@@ -85,13 +84,8 @@ inline double CalculateLeafConductance( const double       &max_leaf_cond,     /
 void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
                                                 const CHydroUnit       *pHRU,
                                                 const CModelABC        *pModel,
-                                                //const CVegetationClass *pVeg,         //canopy
-                                                //const surface_struct    &G,          //ground surface
-                                                //const force_struct   *F,          //forcing functions over tstep
-                                                //const double          soilmoist_deficit, //[mm]
-                                                //const double          snowdepth, 
-                                                const time_struct     &tt,
-                                                const optStruct      &Options)     
+                                                const time_struct      &tt,
+                                                const optStruct        &Options)     
 {
   VV.shelter_factor=0.5;// should be variable
 
@@ -110,7 +104,7 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
   //------------------------------------------------------------
   VV.LAI=(1.0-sparseness)*max_LAI*InterpolateMo(pHRU->GetVegetationProps()->relative_LAI,tt,Options);// \ref From Brook90 CANOPY Routine \cite Federer2010
   VV.SAI=(1.0-sparseness)*(VV.height*SAI_ht_ratio);/// \ref From Brook90 CANOPY Routine
-    
+  
   //LAI /SAI snow corrections
   /*  
   double snowdepth        =0.0;
@@ -121,6 +115,20 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
   height_above_snow=threshPositive(VV.height - snowdepth/MM_PER_METER);//From Brook90 CANOPY Routine
   VV.LAI*=(height_above_snow/VV.height); 
   VV.SAI*=(height_above_snow/VV.height); */
+
+  //Rain/Snow storage capacity
+  //------------------------------------------------------------
+  double max_capacity    =pHRU->GetVegetationProps()->max_capacity;
+  double max_sno_capacity=pHRU->GetVegetationProps()->max_snow_capacity;
+  
+  if ((max_LAI+max_SAI)>0){
+    VV.capacity      =((VV.LAI+VV.SAI)/(max_LAI+max_SAI))*max_capacity;
+    VV.snow_capacity =((VV.LAI+VV.SAI)/(max_LAI+max_SAI))*max_sno_capacity;
+  }
+  else{
+    VV.capacity     =0.0;
+    VV.snow_capacity=0.0;
+  }
 
   //Skyview factor
   //------------------------------------------------------------
@@ -144,20 +152,27 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
     VV.snow_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
   }
   
-  //Rain/Snow storage capacity
-  //------------------------------------------------------------
-  double max_capacity    =pHRU->GetVegetationProps()->max_capacity;
-  double max_sno_capacity=pHRU->GetVegetationProps()->max_snow_capacity;
-  
-  if ((max_LAI+max_SAI)>0){
-    VV.capacity      =((VV.LAI+VV.SAI)/(max_LAI+max_SAI))*max_capacity;
-    VV.snow_capacity =((VV.LAI+VV.SAI)/(max_LAI+max_SAI))*max_sno_capacity;
-  }
-  else{
-    VV.capacity     =0.0;
-    VV.snow_capacity=0.0;
-  }
+  if (Options.interception_factor == PRECIP_ICEPT_HEDSTROM)
+  {
+    int iCanSnow = pModel->GetStateVarIndex(CANOPY_SNOW);
+    if (iCanSnow == DOESNT_EXIST){ 
+      VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
+      VV.snow_icept_pct = 0.0; 
+    }
+    else
+    {///< \ref from Hedstrom & Pomeroy, 1998
+      double rho_s = CalcFreshSnowDensity(pHRU->GetForcingFunctions()->temp_ave);
+      VV.snow_capacity =VV.LAI*5.0*(0.27+46/rho_s);
 
+      double P       =pHRU->GetForcingFunctions()->snow_frac*pHRU->GetForcingFunctions()->precip* Options.timestep; //[mm]
+      double stor    =pHRU->GetStateVarValue(iCanSnow);//[mm]
+      double max_stor=VV.snow_capacity;//[mm]      
+
+      VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
+      VV.snow_icept_pct = max(min(((max_stor-stor)/P) * (1 - exp(-(1.0-sparseness)* (P/max_stor))),1.0),0.0);
+    }
+  }
+  
   //Leaf/Canopy Conductances
   //------------------------------------------------------------
 	double soilmoist_deficit=0.5;//soil moisture deficit [mm]

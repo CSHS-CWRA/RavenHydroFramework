@@ -80,9 +80,9 @@ void CLandUseClass::WriteParamsToFile(ofstream &OUT)
   OUT<<"CLASS,";
   OUT<<"IMPERMEABLE_FRAC,FOREST_COVERAGE,ROUGHNESS,FOREST_SPARSENESS,";         
   OUT<<"MELT_FACTOR [mm/d/K],MIN_MELT_FACTOR [mm/d/K],REFREEZE_FACTOR [mm/d/K],HBV_MELT_FOR_CORR,HBV_MELT_ASP_CORR,"; 
-  OUT<<"HBV_MELT_GLACIER_CORR[-],HBV_GLACIER_KMIN[-],GLACIER_STORAGE_COEFF[-],HBV_GLACIER_AG[1/mm SWE],CC_DECAY_COEFF[1/d]";
+  OUT<<"HBV_MELT_GLACIER_CORR[-],HBV_GLACIER_KMIN[-],GLACIER_STORAGE_COEFF[-],HBV_GLACIER_AG[1/mm SWE],CC_DECAY_COEFF[1/d],";
   OUT<<"SCS_CN,PARTITION_COEFF,SCS_IA_FRACTION,MAX_SAT_AREA_FRAC[-],B_EXP[-],";  
-  OUT<<"DEP_MAX,ABST_PERCENT,OW_PET_CORR,LAKE_PET_CORR,FOREST_PET_CORR";     
+  OUT<<"DEP_MAX,ABST_PERCENT,OW_PET_CORR,LAKE_PET_CORR,FOREST_PET_CORR,";     
 
   OUT<<endl;
   for (int c=0; c<NumLUClasses;c++)
@@ -281,6 +281,10 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.SCS_CN,Stmp.SCS_CN,Sdefault.SCS_CN,needed,"SCS_CN");
   SetSpecifiedValue(S.b_exp,Stmp.b_exp,Sdefault.b_exp,needed,"B_EXP");
   SetSpecifiedValue(S.dep_max,Stmp.dep_max,Sdefault.dep_max,needed,"DEP_MAX");
+  SetSpecifiedValue(S.dep_max_flow,Stmp.dep_max_flow,Sdefault.dep_max_flow,needed,"DEP_MAX_FLOW");
+  SetSpecifiedValue(S.dep_n,Stmp.dep_n,Sdefault.dep_n,needed,"DEP_N");
+  SetSpecifiedValue(S.dep_threshhold,Stmp.dep_threshhold,Sdefault.dep_threshhold,needed,"DEP_THRESHHOLD");
+
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
   SetSpecifiedValue(S.HBV_glacier_Kmin,Stmp.HBV_glacier_Kmin,Sdefault.HBV_glacier_Kmin,needed,"HBV_GLACIER_KMIN");
   SetSpecifiedValue(S.glac_storage_coeff,Stmp.glac_storage_coeff,Sdefault.glac_storage_coeff,needed,"GLAC_STORAGE_COEFF");
@@ -324,6 +328,9 @@ void CLandUseClass::InitializeSurfaceProperties(surface_struct &S, bool is_templ
   S.SCS_CN            =DefaultParameterValue(is_template,false);//50
   S.b_exp             =DefaultParameterValue(is_template,false);//0.071;    //default [-]
   S.dep_max           =DefaultParameterValue(is_template,false);//6.29;     //[mm]
+  S.dep_max_flow      =DefaultParameterValue(is_template,false);            //[mm/d]
+  S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
+  S.dep_threshhold    =DefaultParameterValue(is_template,false);//0.0;      //[mm]
   S.abst_percent      =DefaultParameterValue(is_template,false);//0.1;    
   S.HBV_glacier_Kmin  =DefaultParameterValue(is_template,false);//0.05
   S.glac_storage_coeff=DefaultParameterValue(is_template,false);//0.10
@@ -379,6 +386,9 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("B_EXP"                  )){S.b_exp=value;}
   else if (!name.compare("VIC_B_EXP"              )){S.b_exp=value;}
   else if (!name.compare("DEP_MAX"                )){S.dep_max =value;}
+  else if (!name.compare("DEP_MAX_FLOW"           )){S.dep_max_flow =value;}
+  else if (!name.compare("DEP_N"                  )){S.dep_n =value;}
+  else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshhold =value;}
   else if (!name.compare("ABST_PERCENT"           )){S.abst_percent =value;}
   else if (!name.compare("OW_PET_CORR"            )){S.ow_PET_corr=value;}
   else if (!name.compare("LAKE_PET_CORR"          )){S.lake_PET_corr=value;}
@@ -435,6 +445,9 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("B_EXP"                  )){return S.b_exp;}
   else if (!name.compare("VIC_B_EXP"              )){return S.b_exp;}
   else if (!name.compare("DEP_MAX"                )){return S.dep_max ;}
+  else if (!name.compare("DEP_MAX_FLOW"           )){return S.dep_max_flow;}
+  else if (!name.compare("DEP_N"                  )){return S.dep_n;}
+  else if (!name.compare("DEP_THRESHHOLD"         )){return S.dep_threshhold;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}
   else if (!name.compare("LAKE_PET_CORR"          )){return S.lake_PET_corr;}
@@ -445,8 +458,9 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("WIND_EXPOSURE"          )){return S.wind_exposure;}
   else{
     string msg="CLandUseClass::GetSurfaceProperty: Unrecognized/invalid LU/LT parameter name in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA);
+    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
     return 0.0;
   }
+  
 
 }

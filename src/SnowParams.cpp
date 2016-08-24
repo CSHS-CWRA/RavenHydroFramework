@@ -90,13 +90,14 @@ double CalcFreshSnowDensity(const double &air_temp)
 {
   //return FRESH_SNOW_DENS;
   
-	// \ref WATCLASS 
+	// \ref WATCLASS , also USACE (1956) (from Hedstrom & Pomeroy)
   if (air_temp<=FREEZING_TEMP) {
     return 67.92+51.25*exp((air_temp-FREEZING_TEMP)/2.59);
   }
 	else{
     return min((119.17+20.0*(air_temp-FREEZING_TEMP)),200.0);
   } 
+
 	///< or (Anderson, 1976 -CLM manual eqn 7.18) \cite anderson1976
 	/*if (air_temp>FREEZING_TEMP+2){
 		return 169.15;

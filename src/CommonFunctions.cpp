@@ -22,6 +22,7 @@ string GetProcessName(process_type p)
     case(FLUSH):              {name="Flush";                    break;}
     case(SPLIT):              {name="Split";                    break;}                     
     case(OVERFLOW_PROC):      {name="Overflow";                 break;}
+    case(EXCHANGE_FLOW):      {name="Exchange Flow";            break;}
 
     case(PRECIPITATION):      {name="Precipitation";            break;}
 
@@ -38,6 +39,7 @@ string GetProcessName(process_type p)
     case(CANOPY_DRIP):        {name="Canopy Drip";              break;}
     case(OPEN_WATER_EVAPORATION):{name="Open Water Evaporation";break;}
     case(LAKE_EVAPORATION):   {name="Lake Evaporation";         break;}
+    case(DEPRESSION_OVERFLOW):{name="Depression Overflow";      break;}
 
     case(SNOWMELT):           {name="Snow Melt";                break;}
     case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
@@ -103,7 +105,7 @@ bool SetCalculableValue(double &val, double set_val, double template_val)
 /// \param needed [in] Indicates if parameter value is needed
 /// \return Boolean indicating if the parameter value is not specified but required by model
 /// \note this is only used for non-autogeneratable parameters
-/// \todo [add funct] this routine should take in parameter name and class for better warnings to be produced
+/// \todo [QA/QC] this routine should take in parameter name and class for better warnings to be produced
 //
 bool SetSpecifiedValue(double &val, double set_val, double template_val, bool needed, string pname)
 {
@@ -412,6 +414,41 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
   return tt;
 }
 
+///////////////////////////////////////////////////////////////////
+/// \brief calculates time difference, in days between two specified dates
+/// \details positive if day 2 is after day 1
+///
+/// \param jul_day1 [in] Julian day of date 1 (measured from Jan 1 of year @ 00:00:00)
+/// \param year1 [in] year of date 1
+/// \param jul_day2 [in] Julian day of date 2 (measured from Jan 1 of year @ 00:00:00)
+/// \param year1 [in] year of date 2
+
+double TimeDifference(const double jul_day1,const int year1,const double jul_day2,const int year2)
+{
+  double diff = jul_day2 - jul_day1;
+
+  int leap;
+  int yr = year2;
+  while (yr > year1)
+  {
+    leap=0;
+    if (IsLeapYear(yr)){ leap = 1; }
+    
+    diff += (365+leap);
+    yr--;
+  }
+  while (yr < year1)
+  {
+    leap = 0;
+    if (IsLeapYear(yr)){ leap = 1; }
+    diff -= (365 + leap);
+    yr++;
+  }
+  leap = 0; 
+  if (IsLeapYear(year2) && (jul_day2>60) && (year1!=year2)){leap-=1;} //this leap day already included in Julian date
+  if (IsLeapYear(year1) && (jul_day1>60) && (year1!=year2) && (leap!=-1)){leap-=1;} //last argument for when y1 and y2 are both leap years
+  return diff+leap;
+}
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time
 /// \return "now" as an ISO formatted string

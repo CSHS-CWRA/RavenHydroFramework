@@ -30,12 +30,14 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
   double lateq =pHRU->GetLatEq();
   switch(Options.SW_radiation)
   {
+    //--------------------------------------------------------
     case(SW_RAD_DATA):
 		{
       return F->SW_radia;
       break;
     }
-    case(SW_RAD_DEFAULT):
+    //--------------------------------------------------------
+    case(SW_RAD_DEFAULT)://Dingman
     {
       double dew_pt;
       dew_pt=GetDewPointTemp(F->temp_ave,F->rel_humidity);
@@ -45,6 +47,7 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
       return ClearSkySolarRadiation(tt.julian_day,latrad,lateq,slope,F->day_angle,F->day_length,solar_noon,dew_pt,ET_rad,(Options.timestep>=1));
       break;
     }
+    //--------------------------------------------------------
     case(SW_RAD_UBCWM):
     {  
       if (tt.day_changed) //no need to do calculations every timestep
@@ -67,6 +70,17 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
 
       break;
     }
+    //--------------------------------------------------------
+    case(SW_RAD_VALIANTZAS) :
+    {
+      double declin = SolarDeclination(F->day_angle);
+      double ws = acos(-tan(latrad)*tan(declin));
+      double ecc = EccentricityCorr(F->day_angle);
+      ET_rad = 37.59*ecc*(ws*sin(latrad)*sin(declin) + sin(ws)*cos(latrad)*cos(declin)); //Extraterrestrial radiation
+      return  min(0.75+0.00002*pHRU->GetElevation(),1.0)*ET_rad;
+      break;
+    }
+
   }
   return 0;
 }
@@ -145,6 +159,19 @@ double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
       if (LW<0){LW*=(1.0-F->cloud_cover);}
 
       LW*=HR_PER_DAY*MJ_PER_M2_LANGLEY;//convert Langleys/hr->MH/m2/day
+      break;
+    }
+    //--------------------------------------------------------
+    case(LW_RAD_VALIANTZAS):
+    {
+      double f;
+      double eps;
+      double sat_vap,ea;
+      sat_vap=GetSaturatedVaporPressure(F->temp_ave);
+      ea =F->rel_humidity*sat_vap;
+      eps= 0.34 - 0.14*sqrt(ea);
+      f=(1.35*(F->SW_radia/F->SW_radia_unc)-0.35);
+      return f*eps*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0);
       break;
     }
     /*case (LW_RAD_UNFAO):
@@ -347,6 +374,7 @@ double CRadiation::SolarDeclination(const double day_angle)
 	//return asin(0.39785* sin(4.868961+0.017203*julian_day+
 	//	                         0.033446*sin(6.224111+0.017202*julian_day)));//Brook90
 	//return 0.4903*sin(day_angle-1.405); //WATFLOOD
+  //return 0.409*sin(day_angle-1.39); //Valiantzas, 2006
   return 0.40928*sin(day_angle-1.384);//UBCWM 
 }
 
@@ -381,7 +409,7 @@ double CRadiation::EccentricityCorr(const double day_angle)
 					0.000719*cos(2.0*day_angle)+
 					0.000077*sin(2.0*day_angle);
 	//return  pow(1.0 - 0.0167 * cos(0.0172 * (julian_day - 3)),-2);//Brook90
-	//return  1+0.033*cos(day_angle);//WATFLOOD
+	//return  1+0.033*cos(day_angle);//WATFLOOD, Valiantzas (2006)
 }
 
 //////////////////////////////////////////////////////////////////
@@ -611,7 +639,7 @@ double CRadiation::OpticalAirMass(const double latrad,//in radians
 }
 
 /////////////////////////////////////////////////////////////////
-/// \brief Calculates total incident radiation, in [MK/m2/d]
+/// \brief Calculates total incident radiation, in [MK/m2/d] using Dingman (2002)
 /// \details Returns clear sky solar radiation 
 /// \remark must be corrected with albedo to obtain net radiation
 /// \remark Kcs in Dingman text

@@ -233,7 +233,7 @@ double CTerrainClass::GetTerrainProperty(const terrain_struct &T, string param_n
 
   else{
     string msg="CTerrainClass::GetTerrainProperty: Unrecognized/invalid terrain parameter name in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA);
+    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
     return 0.0;
   }
 

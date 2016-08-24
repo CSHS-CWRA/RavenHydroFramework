@@ -112,7 +112,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     case(GROUNDWATER):        {name="Deep Groundwater";           break;}
     case(DEPRESSION):         {name="Depression";                 break;}
     case(SNOW):               {name="Snow";                       break;}
-    case(NEW_SNOW):           {name="Snowfall";                   break;}
+    case(NEW_SNOW):           {name="New Snow";                   break;}
     case(SNOW_LIQ):           {name="Snow Melt (Liquid)";         break;}
     case(WETLAND):            {name="Wetlands";                   break;}
     case(LUMPED_LANDFORM):    {name="Lumped Landform";            break;}
@@ -427,7 +427,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
   {
     name=name+"["+to_string(layerindex)+"]";
   }
-  if ((typ==SNOW) && (layerindex>0)){
+  if (((typ==SNOW) || (typ==SNOW_LIQ) || (typ==COLD_CONTENT)) && (layerindex>0)){
     name=name+"["+to_string(layerindex)+"]";
   }
   return name;
@@ -458,8 +458,13 @@ string CStateVariable::SVStringBreak(const string s, int &num)
   pch  = strpbrk (ss, key1); //pch is now pointer to '[' character
   pch2 = strpbrk (ss, key2); //pch is now pointer to ']' character
   if ((pch==NULL) || (pch==NULL)){num=0;return s;}//one or both brackets missing - layer = 0
+#ifdef __APPLE__
+  strxfrm(tmp,ss,pch-ss+1);
+  strxfrm(tmp2,pch+1,pch2-pch);
+#else
   strxfrm(tmp,ss,pch-ss);          //Extract type (e.g., "SOIL" from "SOIL[13]")
   strxfrm(tmp2,pch+1,pch2-pch-1);  //Extract index (e.g., "13" from "SOIL[13]")
+#endif
   num=s_to_i(tmp2);
   return string(tmp);
 }
@@ -488,7 +493,9 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ)
     case(LUMPED_LANDFORM):{return true;}
     case(GLACIER):        {return true;}
     case(GLACIER_ICE):    {return true;}
-    case(CONVOLUTION):    {return true;}
+    case(CONVOLUTION):    {return true;}   
+    case(NEW_SNOW):       {return true;}
+
     //case(CONV_STOR):    {return true;} // \todo strictly speaking, is water storage (and should be treated as such for transport), but duplicated in CONVOLUTION 
     //..
     default:              

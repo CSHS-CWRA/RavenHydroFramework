@@ -16,7 +16,7 @@
 #include "GlacierProcesses.h"
 #include "Albedo.h"
 #include "CropGrowth.h"
-#include "Abstraction.h"
+#include "DepressionProcesses.h"
 #include "OpenWaterEvap.h"
 #include "ParseLib.h"
 #include "Advection.h"
@@ -187,6 +187,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_reservoir     =false;
   Options.suppressICs         =false;
   Options.period_ending       =false;
+  Options.write_group_mb      =DOESNT_EXIST;
 
   pModel=NULL;
   pMover=NULL;
@@ -282,6 +283,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SuppressOutputICs"     )){code=72; }
     else if  (!strcmp(s[0],":SuppressOutput"        )){code=73; }
     else if  (!strcmp(s[0],":OutputInterval"        )){code=15; }
+    else if  (!strcmp(s[0],":WriteHRUGroupMBFile"   )){code=74; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"        )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"       )){code=81; }
@@ -328,6 +330,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Split"                 )){code=227;}
     else if  (!strcmp(s[0],":Convolve"              )){code=228;}
     else if  (!strcmp(s[0],":SnowTempEvolve"        )){code=229;}
+    else if  (!strcmp(s[0],":DepressionOverflow"    )){code=230;}  
+    else if  (!strcmp(s[0],":ExchangeFlow"          )){code=231;}  
     //...
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
@@ -474,6 +478,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[1],"PET_MAKKINK_1957"      )){Options.evaporation =PET_MAKKINK_1957;}
         else if (!strcmp(s[1],"PET_PRIESTLEY_TAYLOR"  )){Options.evaporation =PET_PRIESTLEY_TAYLOR;}
         else if (!strcmp(s[1],"PET_MONTHLY_FACTOR"    )){Options.evaporation =PET_MONTHLY_FACTOR;}
+        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.evaporation =PET_PENMAN_SIMPLE33;}
+        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.evaporation =PET_PENMAN_SIMPLE39;}
 
         else{
           ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
@@ -501,7 +507,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         {
           Options.interp_file="";
           for (int i=2; i<Len-1;i++){
-            Options.interp_file+=s[i]+' ';
+            Options.interp_file+=s[i];
+            Options.interp_file+=" ";
           }
           Options.interp_file+=s[Len-1];
         }
@@ -682,6 +689,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[1],"LW_RAD_DEFAULT"   )){Options.LW_radiation=LW_RAD_DEFAULT;}
         else if (!strcmp(s[1],"LW_RAD_UBCWM"     )){Options.LW_radiation=LW_RAD_UBCWM;}
         else if (!strcmp(s[1],"LW_RAD_HSPF"      )){Options.LW_radiation=LW_RAD_HSPF;}
+        else if (!strcmp(s[1],"LW_RAD_VALIANTZAS")){Options.LW_radiation=LW_RAD_VALIANTZAS;}
         else {ExitGracefully("ParseInput:LWRadiationMethod: Unrecognized method ",BAD_DATA_WARN);}
         break;
       }
@@ -689,10 +697,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       {/*:SWRadiationMethod" string method */
         if (Options.noisy) {cout <<"Shortwave Radiation Estimation Method"<<endl;}
         if (Len<2){ImproperFormatWarning(":SWRadiationMethod",p,Options.noisy); break;}
-        if      (!strcmp(s[1],"SW_RAD_DATA"   )){Options.SW_radiation=SW_RAD_DATA;}
-        else if (!strcmp(s[1],"SW_RAD_DEFAULT")){Options.SW_radiation=SW_RAD_DEFAULT;}
-        else if (!strcmp(s[1],"SW_RAD_UBCWM"  )){Options.SW_radiation=SW_RAD_UBCWM;}
-        else if (!strcmp(s[1],"UBC"           )){Options.SW_radiation=SW_RAD_UBCWM;}
+        if      (!strcmp(s[1],"SW_RAD_DATA"      )){Options.SW_radiation=SW_RAD_DATA;}
+        else if (!strcmp(s[1],"SW_RAD_DEFAULT"   )){Options.SW_radiation=SW_RAD_DEFAULT;}
+        else if (!strcmp(s[1],"SW_RAD_UBCWM"     )){Options.SW_radiation=SW_RAD_UBCWM;}
+        else if (!strcmp(s[1],"UBC"              )){Options.SW_radiation=SW_RAD_UBCWM;}
+        else if (!strcmp(s[1],"SW_RAD_VALIANTZAS")){Options.SW_radiation=SW_RAD_VALIANTZAS;}
         else {ExitGracefully("ParseInput:SWRadiationMethod: Unrecognized method",BAD_DATA_WARN);}
 
         if (Options.SW_radiation == SW_RAD_DATA){
@@ -782,6 +791,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[1],"PRECIP_ICEPT_USER"    )){Options.interception_factor=PRECIP_ICEPT_USER;}
         else if (!strcmp(s[1],"PRECIP_ICEPT_LAI"     )){Options.interception_factor=PRECIP_ICEPT_LAI;}
         else if (!strcmp(s[1],"PRECIP_ICEPT_EXPLAI"  )){Options.interception_factor=PRECIP_ICEPT_EXPLAI;}
+        else if (!strcmp(s[1],"PRECIP_ICEPT_HEDSTROM")){Options.interception_factor=PRECIP_ICEPT_HEDSTROM;}
         else {ExitGracefully("ParseInput:PrecipIceptFract: Unrecognized method",BAD_DATA_WARN);}
         break;
       }
@@ -1135,6 +1145,9 @@ bool ParseMainInputFile (CModel     *&pModel,
           else if (!strcmp(s[i],"NSC"           )){pDiag=new CDiagnostic(DIAG_NSC);}
           else if (!strcmp(s[i],"RSR"           )){pDiag=new CDiagnostic(DIAG_RSR);}
           else if (!strcmp(s[i],"R2"            )){pDiag=new CDiagnostic(DIAG_R2);}
+          else if (!strcmp(s[i],"CUMUL_FLOW"    )){pDiag=new CDiagnostic(DIAG_CUMUL_FLOW);}
+          else if (!strcmp(s[i],"LOG_NASH"      )){pDiag=new CDiagnostic(DIAG_LOG_NASH);}
+          else if (!strcmp(s[i],"KLING_GUPTA"   )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA);}
           else   {invalid=true;}
           if (!invalid){
             pModel->AddDiagnostic(pDiag);
@@ -1163,6 +1176,19 @@ bool ParseMainInputFile (CModel     *&pModel,
         {
           if (Options.noisy){cout <<"Suppressing output"<<endl;}
           Options.output_format=OUTPUT_NONE;
+        }
+        break;
+      }
+      case(74):  //--------------------------------------------
+      {/*:WriteHRUGroupMBFile [HRU Group name]*/
+        if (Options.noisy) {cout <<"Write HRU Group Mass Balance File ON"<<endl;}
+        CHRUGroup *pHRUGroup;
+        pHRUGroup = pModel->GetHRUGroup(s[1]);
+        if (pHRUGroup != NULL){
+          Options.write_group_mb = pModel->GetHRUGroup(s[1])->GetGlobalIndex();
+        }
+        else{
+          WriteWarning("ParseMainInput: invalid HRU group specified in :WriteHRUGroupMBFile command. Please define groups using :DefineHRUGroups command prior to calling this command.",Options.noisy);
         }
         break;
       }
@@ -1209,7 +1235,6 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[1],"MONTHLY"        )){ta=MONTHLY;}
         else if (!strcmp(s[1],"YEARLY"         )){ta=YEARLY;}
         else if (!strcmp(s[1],"ANNUAL"         )){ta=YEARLY;}
-        else if (!strcmp(s[1],"HOURLY"         )){ta=HOURLY;}
         else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP;}
         else{
           ta=DAILY;
@@ -1397,6 +1422,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         if      (!strcmp(s[1],"INF_GREEN_AMPT"  )){itype=INF_GREEN_AMPT; }
         else if (!strcmp(s[1],"INF_GA_SIMPLE"   )){itype=INF_GA_SIMPLE; }
         else if (!strcmp(s[1],"INF_VIC_ARNO"    )){itype=INF_VIC_ARNO;  }
+        else if (!strcmp(s[1],"INF_VIC"         )){itype=INF_VIC;       }
         else if (!strcmp(s[1],"INF_RATIONAL"    )){itype=INF_RATIONAL;  }
         else if (!strcmp(s[1],"INF_PRMS"        )){itype=INF_PRMS;      }
         else if (!strcmp(s[1],"INF_HBV"         )){itype=INF_HBV;       }
@@ -1913,7 +1939,39 @@ bool ParseMainInputFile (CModel     *&pModel,
         pModel->AddProcess(pMover);
         break;
       }
-      
+      case(230):  //----------------------------------------------
+      {/*Overflow of depression/wetland storage 
+        :DepressionOverflow [string method] DEPRESSION SURFACE_WATER*/
+        if (Options.noisy){cout <<"Overflow of depression/wetland storage process"<<endl;}
+        depflow_type d_type=DFLOW_THRESHPOW;
+        if (Len<4){ImproperFormatWarning(":DepressionStorage",p,Options.noisy); break;}
+        if      (!strcmp(s[1],"DFLOW_THRESHPOW"   )){d_type=DFLOW_THRESHPOW;}
+        else 
+        {
+          ExitGracefully("ParseMainInputFile: Unrecognized depression overflow algorithm",BAD_DATA_WARN); break;
+        }         
+        CmvDepressionOverflow::GetParticipatingStateVarList(d_type,tmpS,tmpLev,tmpN);
+        pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+        pMover=new CmvDepressionOverflow(d_type);
+        pModel->AddProcess(pMover);
+        break;
+      }
+      case(231):  //----------------------------------------------
+      {/*Exchange flow with mixing zone
+        :ExchangeFlow RAVEN_DEFAULT [state_var from] [state_var mixing_zone]*/
+        if (Options.noisy){cout <<"Exchange flow with mixing zone Process"<<endl;}
+        
+        if (Len<4){ImproperFormatWarning(":ExchangeFlow",p,Options.noisy); break;}
+        tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
+        tmpS[1]=CStateVariable::StringToSVType(s[3],tmpLev[1],true);
+        pModel->AddStateVariables(tmpS,tmpLev,2);
+
+        pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
+                            ParseSVTypeIndex(s[3],pModel));  
+        pModel->AddProcess(pMover);
+        break;
+      }
       case (297)://----------------------------------------------
       {/*->Conditional
          string ":-->Conditional" [basis_of_condition] [condition] [criterion]*/
@@ -1998,7 +2056,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       case (301)://----------------------------------------------
       {/*:FixedConcentration
-        :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l)] {optional HRU Group name}*/
+        :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l) or .rvt file name] {optional HRU Group name}*/
         if (Options.noisy){cout <<"Fixed concentration transport constituent"<<endl;}
 
         if (!transprepared){

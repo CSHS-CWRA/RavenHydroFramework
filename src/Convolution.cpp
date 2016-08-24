@@ -76,6 +76,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   //generates unit hydrograph based upon HRU parameters (called every timestep
   double tstep=Options.timestep;
   double max_time(0);
+  
   if (_type==CONVOL_GR4J_1)
   {
     double x4=pHRU->GetSurfaceProps()->GR4J_x4;
@@ -85,11 +86,12 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
     double x4=pHRU->GetSurfaceProps()->GR4J_x4;
     max_time=2*x4;
   }
+
   N =(int)(ceil(max_time/tstep));
   ExitGracefullyIf(N>MAX_CONVOL_STORES,"CmvConvolution::GenerateUnitHydrograph: unit hydrograph duration for convolution too long",BAD_DATA);
 
   if (N==0){N=1;}
-  ExitGracefullyIf(max_time<0,"CmvConvolution::GenerateUnitHydrograph: negative duration of unit hydrograph",BAD_DATA);
+  ExitGracefullyIf(max_time<=0.0,"CmvConvolution::GenerateUnitHydrograph: negative or zero duration of unit hydrograph (bad GR4J_x4)",BAD_DATA);
 
   if (_type==CONVOL_TRIANGLE){
     for (int n=0; n<N; n++)

@@ -231,7 +231,7 @@ void CModel::CorrectPrecip(const optStruct     &Options,
     //gauge and annual corrections
     //F.precip*=_pHydroUnits[k]->GetSurfaceParams()->precip_adj;//(1.0+P0PADJ)
 
-    // \todo [re-org] should move to interception
+    // \todo [re-org] should move to interception -needed because UBCWM doesn't explicitly model canopy
     double P0PINX=_pHydroUnits[k]->GetVegetationProps()->max_intercept_rate;
     double P0PINT=_pHydroUnits[k]->GetVegetationProps()->rain_icept_pct;
     double icept_factor=_pHydroUnits[k]->GetSurfaceProps()->UBC_icept_factor;

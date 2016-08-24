@@ -210,35 +210,27 @@ double CTimeSeries::GetValue(const int n)const{return _aVal[n];}
 //
 bool CTimeSeries::IsPulseType()  const{return _pulse;}
 
+
 ///////////////////////////////////////////////////////////////////
-/// \brief Enables queries of time series values using global time
+/// \brief Enables queries of time series values using model time
 /// \details Calculates _t_corr, correction to global model time, checks for overlap with model duration, resamples to model time step/day
 /// \remark t=0 corresponds to first day with recorded values at that gauge
 ///
-/// \param global_start_day [in] Julian global start day
-/// \param global_start_year [in] Global start year
+/// \param model_start_day [in] Julian start day of model
+/// \param model_start_year [in] start year of model
 /// \param model_duration [in] Duration of model, in days
 /// \param timestep [in] mdoel timestep, in days
 /// \param is_observation [in] - true if this is an observation time series, rather than model input
-void CTimeSeries::Initialize( const double global_start_day,   //julian day
-                              const    int global_start_year,  //year
+void CTimeSeries::Initialize( const double model_start_day,   //julian day
+                              const    int model_start_year,  //year
                               const double model_duration,     //days
                               const double timestep,           //days        
                               const bool   is_observation)
 {
   //_t_corr is number of days between model start date and gauge 
   //start date (positive if data exists before model start date)
-  _t_corr = global_start_day - _start_day;
 
-  int leap;
-  int yr = _start_year;
-  while (yr < global_start_year)
-  {
-    leap = 0;
-    if (IsLeapYear(yr)){ leap = 1; }
-    _t_corr += (365 + leap);
-    yr++;
-  }
+  _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year);
 
   //QA/QC: Check for overlap issues between time series duration and model duration
   //------------------------------------------------------------------------------
@@ -252,7 +244,7 @@ void CTimeSeries::Initialize( const double global_start_day,   //julian day
     {
       cout << " Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
-      cout << "  model start day, year, duration :" << global_start_day << "," << global_start_year << " " << model_duration << endl;
+      cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
       ExitGracefully(
         "CTimeSeries::Initialize: time series forcing data not available for entire model simulation duration", BAD_DATA);
     }
@@ -260,15 +252,15 @@ void CTimeSeries::Initialize( const double global_start_day,   //julian day
     {                                                  //+timesteps is for coincdent duration & data
       cout << " Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
-      cout << "  model start day, year, duration :" << global_start_day << "," << global_start_year << " " << model_duration << endl;
+      cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
       ExitGracefully(
         "CTimeSeries::Initialize: time series forcing data not available at end of model simulation", BAD_DATA);
     }
-    if ((local_simulation_start<0) || (_start_year>global_start_year))     //data does not begin until after simulation
+    if ((local_simulation_start<0) || (_start_year>model_start_year))     //data does not begin until after simulation
     {
       cout << " Time series " << GetName() << endl;
       cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
-      cout << "  model start day, year, duration :" << global_start_day << "," << global_start_year << " " << model_duration << endl;
+      cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
       ExitGracefully(
         "CTimeSeries::Initialize: time series forcing data not available at beginning of model simulation", BAD_DATA);
     }

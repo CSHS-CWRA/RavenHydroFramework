@@ -193,7 +193,7 @@ void CmvLakeEvaporation::GetRatesOfChange(const double			*state_vars,
 																				  const time_struct &tt,
 																							  double      *rates) const
 {
-  if (!pHRU->IsLake()){return;}
+  if ((!pHRU->IsLake()) && (pModel->GetLakeStorageIndex()!=iFrom[0])){return;}
 
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;		//calls PET rate [mm/d]

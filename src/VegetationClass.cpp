@@ -485,7 +485,7 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
 
   else{
     string msg="CVegetationClass::GetVegetationProperty: Unrecognized/invalid vegetation parameter name: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA);
+    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
     return 0.0;
   }
 }

@@ -20,6 +20,9 @@ enum diag_type {
 	DIAG_NSC,
 	DIAG_RSR,
   DIAG_R2,
+  DIAG_CUMUL_FLOW,
+  DIAG_LOG_NASH,
+  DIAG_KLING_GUPTA,
 };
 
 ///////////////////////////////////////////////////////////////////

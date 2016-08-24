@@ -213,4 +213,34 @@ class CmvOverflow: public CHydroProcessABC
     static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
     void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const{}
 };
+
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for exchange flow with a mixing zone
+//
+class CmvExchangeFlow: public CHydroProcessABC
+{  
+  private:/*------------------------------------------------------*/
+
+  public:/*-------------------------------------------------------*/
+		//Constructors/destructors:
+		CmvExchangeFlow(int	 from_index,
+                    int   mixingzone_index);
+		~CmvExchangeFlow(); 
+
+		//inherited functions
+    void Initialize();
+    void GetRatesOfChange(const double		  *state_vars, 
+								          const CHydroUnit  *pHRU, 
+								          const optStruct	  &Options,
+								          const time_struct &tt,
+                                double      *rates) const;
+    void ApplyConstraints(const double      *state_vars,
+											    const CHydroUnit  *pHRU, 
+								          const optStruct	  &Options,
+								          const time_struct &tt,
+                                double      *rates) const;
+
+    static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
+    void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;
+};
 #endif

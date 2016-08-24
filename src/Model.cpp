@@ -27,6 +27,7 @@ CModel::CModel(const soil_model SM,
   _nProcesses=0;    _pProcesses=NULL;
   _nCustomOutputs=0;_pCustomOutputs=NULL;
   _nTransParams=0;  _pTransParams=NULL;
+  _nClassChanges=0; _pClassChanges=NULL;
   _nObservedTS=0;   _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
   _nObsWeightTS =0; _pObsWeightTS=NULL;
   _nDiagnostics=0;  _pDiagnostics=NULL;
@@ -141,6 +142,7 @@ CModel::~CModel()
   }
   for (kk=0;kk<_nHRUGroups;kk++){delete _pHRUGroups[kk]; } delete [] _pHRUGroups;   _pHRUGroups  =NULL;
   for (j=0;j<_nTransParams;j++) {delete _pTransParams[j];} delete [] _pTransParams; _pTransParams=NULL;
+  for (j=0;j<_nClassChanges;j++){delete _pClassChanges[j];} delete [] _pClassChanges; _pClassChanges=NULL;
 
   delete [] _aStateVarType;  _aStateVarType=NULL;
   delete [] _aStateVarLayer; _aStateVarLayer=NULL;
@@ -791,6 +793,54 @@ void CModel::AddTransientParameter(CTransientParam   *pTP)
    ExitGracefully("CModel::AddTransientParameter: adding NULL transient parameter",BAD_DATA);} 
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Adds class change to model
+/// 
+/// \param *pTP [in] (valid) pointer to transient parameter to be added to model
+//
+void CModel::AddPropertyClassChange(const string HRUgroup, 
+                                    const class_type tclass, 
+                                    const string new_class, 
+                                    const time_struct &tt)
+{
+  class_change *pCC=NULL;
+  pCC=new class_change;
+  pCC->HRU_groupID=DOESNT_EXIST;
+  for (int kk = 0; kk < _nHRUGroups; kk++){
+    if (!strcmp(_pHRUGroups[kk]->GetName().c_str(), HRUgroup.c_str()))
+    {
+      pCC->HRU_groupID=kk;
+    }
+  }
+  if (pCC->HRU_groupID == DOESNT_EXIST){
+    string warning = "CModel::AddPropertyClassChange: invalid HRU Group name: " + HRUgroup+ ". HRU group names should be defined in .rvi file using :DefineHRUGroups command. "; 
+    ExitGracefullyIf(pCC->HRU_groupID == DOESNT_EXIST,warning.c_str(),BAD_DATA_WARN); return;
+  }
+  pCC->newclass=new_class;
+  if ((tclass == CLASS_LANDUSE) && (CLandUseClass::StringToLUClass(new_class) == NULL)){
+    ExitGracefully("CModel::AddPropertyClassChange: invalid land use class specified",BAD_DATA_WARN);return;
+  }
+  if ((tclass == CLASS_VEGETATION) && (CVegetationClass::StringToVegClass(new_class) == NULL)){
+    ExitGracefully("CModel::AddPropertyClassChange: invalid vegetation class specified",BAD_DATA_WARN);return;
+  }
+
+  pCC->tclass=tclass;
+  if ((tclass != CLASS_VEGETATION) && (tclass != CLASS_LANDUSE)){
+    ExitGracefully("CModel::AddPropertyClassChange: only vegetation and land use classes may be changed during the course of simulation",BAD_DATA_WARN);return;
+  }
+
+  //convert time to model time
+  pCC->modeltime= TimeDifference(_pOptStruct->julian_start_day,_pOptStruct->julian_start_year ,tt.julian_day, tt.year);
+  if ((pCC->modeltime<0) || (pCC->modeltime>_pOptStruct->duration)){
+    string warn;
+    warn="Property Class change dated "+tt.date_string+" does not occur during model simulation time";
+    WriteWarning(warn,_pOptStruct->noisy);
+  }
+
+  cout << "PROPERTY CLASS CHANGE " << pCC->HRU_groupID << " " << pCC->tclass << " "<<pCC->modeltime<<endl;
+  if (!DynArrayAppend((void**&)(_pClassChanges),(void*)(pCC),_nClassChanges)){
+   ExitGracefully("CModel::AddPropertyClassChange: adding NULL property class change",BAD_DATA);} 
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Adds observed time series to model
 /// 
 /// \param *pTS [in] (valid) pointer to observed time series to be added to model
@@ -1177,6 +1227,12 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),
     "CModel::Initialize: at least 2 gauges necessary to use :OroTempCorrect method OROCORR_UBCWM2", BAD_DATA);
+  for (int kk = 0; kk < _nHRUGroups; kk++){
+    if (_pHRUGroups[kk]->GetNumHRUs() == 0){
+      string warn = "CModel::Initialize: HRU Group " + _pHRUGroups[kk]->GetName() + " is empty.";
+      WriteWarning(warn,Options.noisy);
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1321,6 +1377,13 @@ void CModel::InitializeRoutingNetwork()
     if (noisy){cout<<endl;}
   }
   if (noisy){cout <<"      number of zero-order outlets: "<<zerocount<<endl;}
+
+  for (p = 0; p < _nSubBasins; p++)
+  {
+    if (_aSubBasinOrder[p] != _maxSubBasinOrder){
+      _pSubBasins[p]->SetAsNonHeadwater();
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1361,6 +1424,8 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
   for (p=0;p<_nSubBasins;p++)
   {    
     aSBArea[p]=_pSubBasins[p]->GetBasinArea();
+
+    //runoff_est=EstimateInitialRunoff(p,Options);//[mm/d]
 
     if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
       runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
@@ -1650,7 +1715,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Updates values of user-specified transient parameters
+/// \brief Updates values of user-specified transient parameters, updates changes to land use class
 ///
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Current time structure
@@ -1687,6 +1752,36 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
       CGlobalParams::SetGlobalProperty(pname,value);
     }
   }
+  int k;
+  for (int j = 0; j<_nClassChanges; j++)
+  {
+    if ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) && 
+        (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
+    {//change happens this time step
+      
+      int kk = _pClassChanges[j]->HRU_groupID;
+      if (_pClassChanges[j]->tclass == CLASS_LANDUSE){
+        //cout << "LAND USE CHANGE!"<<endl;
+        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+        {
+          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+          CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
+          _pHydroUnits[k]->ChangeLandUse(lult_class);
+        }
+      }
+      else if (_pClassChanges[j]->tclass == CLASS_VEGETATION){
+        //cout << "VEGETATION CHANGE!"<<endl;
+        //cout << "VEGETATION CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
+        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+        {
+          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+          CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
+          _pHydroUnits[k]->ChangeVegetation(veg_class);
+        }
+      }
+    }
+  }
+ 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Recalculates HRU derived parameters
@@ -1738,7 +1833,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
          value=pBasin->GetOutflowRate();
       }
     }
-    else if (svtyp!=DOESNT_EXIST)
+    else if (svtyp!=UNRECOGNIZED_SVTYPE)
     {
       CHydroUnit *pHRU;
       pHRU=GetHRUByID(s_to_i(_pObservedTS[i]->GetTag().c_str()));
@@ -1754,6 +1849,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     }
     _pModeledTS[i]->SetValue (n,value);
 
+
+    /// \todo [bug]: for some reason not adding final continuous hydrograph datapoint to sampled data in modeled hydrograph if AVE_HYDROGRAPH is used
 		obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
     while((tt.model_time >= obsTime+_pObservedTS[i]->GetSampledInterval()) && 
           (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))

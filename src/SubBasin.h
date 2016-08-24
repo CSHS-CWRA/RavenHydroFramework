@@ -30,7 +30,7 @@ class CSubBasin
     double         _avg_ann_flow;   ///< average annual flowrate [m3/s] (averaged along reach)
     long          _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
     bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
-
+    bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
 
     //catchment routing properties
     double               _t_conc;   ///< basin time of concentration [d]
@@ -135,6 +135,7 @@ class CSubBasin
     void            AddReservoir        (CReservoir *pReservoir);
     bool            SetBasinProperties  (const string label, 
                                          const double &value);
+    void            SetAsNonHeadwater   ();
     double          CalculateBasinArea  ();
     void            Initialize          (const double    &Qin_avg,          //[m3/s]
                                          const double    &Qlat_avg,         //[m3/s]

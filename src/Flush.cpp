@@ -277,3 +277,98 @@ void   CmvOverflow::ApplyConstraints(const double		 *state_var,
   //cant remove more than is there (already built in)
   //exceedance of max "to" compartment handled using other overflows
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the constructor
+/// \param In_index [in] Index of the main storage compartment
+/// \param Out_index [in] Index of the mixing storage compartment 
+//
+CmvExchangeFlow::CmvExchangeFlow(int					In_index,			//soil water storage
+									               int					Out_index)//soil water storage
+			      :CHydroProcessABC(EXCHANGE_FLOW,In_index,Out_index)
+{
+  ExitGracefullyIf(In_index==DOESNT_EXIST,
+    "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
+  ExitGracefullyIf(Out_index==DOESNT_EXIST,
+    "CmvOverflow Constructor: invalid 'to' compartment specified",BAD_DATA);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the default destructor
+//
+CmvExchangeFlow::~CmvExchangeFlow(){}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Exchange Flow initialization
+//
+void   CmvExchangeFlow::Initialize()
+{
+  sv_type fromType	= pModel->GetStateVarType(iFrom[0]);
+  ExitGracefullyIf(fromType!=SOIL,
+    "CmvExchangeFlow::Initialize: exchange flow must be from a soil unit",BAD_DATA);
+  sv_type toType	= pModel->GetStateVarType(iTo[0]);
+  ExitGracefullyIf((toType!=SOIL),
+    "CmvExchangeFlow::Initialize: exchange flow  must be between two soil units",BAD_DATA);  
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets reference to participating state variables
+/// \details In this case, user specifies 'from' and 'to' compartments - levels are not known before construction
+///
+/// \param *aSV [out] Reference to state variable types needed by overflow algorithm
+/// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
+/// \param &nSV [out] Number of state variables required by overflow algorithm (size of aSV[] and aLev[] arrays)
+//
+void CmvExchangeFlow::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+{
+  nSV=0;
+  //user specified 'from' & 'to' compartment, Levels - not known before construction
+}
+
+void CmvExchangeFlow::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
+{
+  nP=1;
+  aPC[0]=CLASS_SOIL;
+  aP [0]="EXCHANGE_FLOW";
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns rate of loss of water during overflow [mm/d]
+///
+/// \param *state_var [in] Array of state variables
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Specified point at time at which this accessing takes place
+/// \param *rates [out] Rate of exchange between compartments [mm/day]
+//
+void   CmvExchangeFlow::GetRatesOfChange( const double			*state_var, 
+																				 const CHydroUnit	*pHRU, 
+																				 const optStruct	&Options,
+																				 const time_struct &tt,
+                                         double     *rates) const
+{
+  int m   = pModel->GetStateVarLayer(iTo[0]); //uses mixing layer property
+  rates[0] = pHRU->GetSoilProps(m)->exchange_flow;
+  rates[1] = pHRU->GetSoilProps(m)->exchange_flow;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
+/// \remark Presumes overfilling of "to" compartment is handled using cascade
+///
+/// \param *state_var [in] Array of state variables
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Specified point at time at which this accessing takes place
+/// \param *rates [out] Rate of exchange between compartments [mm/day]
+//
+void   CmvExchangeFlow::ApplyConstraints(const double		 *state_var, 
+						                             const CHydroUnit *pHRU, 
+						                             const optStruct	 &Options,
+						                             const time_struct &tt,
+                                               double     *rates) const
+{
+  //cant remove more than is there (already built in)
+  //exceedance of max "to" compartment handled using other overflows
+}

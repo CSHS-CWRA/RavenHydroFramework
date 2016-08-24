@@ -151,7 +151,9 @@ class CHydroUnit
     void          UpdateForcingFunctions  (const force_struct &Fnew);
 	  void          CopyDailyForcings       (force_struct &F);
 	  void				  SetPrecipMultiplier     (const double factor);
-	
+    void          ChangeLandUse           (const CLandUseClass    *lult_class);
+	  void          ChangeVegetation        (const CVegetationClass *veg_class);
+
     //will be removed with landscape elements:
     void          RecalculateDerivedParams(const optStruct    &Options,
                                            const time_struct  &tt);

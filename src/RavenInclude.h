@@ -357,7 +357,9 @@ enum evap_method
   PET_THORNTHWAITE,        ///< 
   PET_TURC_1961,           ///< 
   PET_MAKKINK_1957,        ///< 
-  PET_SHUTTLEWORTH_WALLACE ///< 
+  PET_SHUTTLEWORTH_WALLACE,///< 
+  PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
+  PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -431,17 +433,19 @@ enum LW_method
   LW_RAD_DATA,    ///< Longwave radiation specified in time series files
   LW_RAD_DEFAULT, ///< from Dingman text: uses Kustas (1994) approach for effective emissivity \cite Moran1994WRR
   LW_RAD_UBCWM,   ///< UBCWM approach
-  LW_RAD_HSPF     ///< HSPF approach (U.S. Corps of Engineers, 1956)
+  LW_RAD_HSPF,    ///< HSPF approach (U.S. Corps of Engineers, 1956)
+  LW_RAD_VALIANTZAS ///< From Valiantzas, 2006 via Doorenbos and Pruit (1977) and Shuttleworth and Wallace (1952)
 };
 
 ////////////////////////////////////////////////////////////////////
-/// \brief Methods used for estimating shortwave radiation
+/// \brief Methods used for estimating clear sky and extraterrestrial shortwave radiation
 //
 enum SW_method 
 {
   SW_RAD_DATA,    ///< Shortwave radiation specified in time series files
   SW_RAD_DEFAULT, ///< from Dingman text
-  SW_RAD_UBCWM    ///< UBCWM approach
+  SW_RAD_UBCWM,    ///< UBCWM approach
+  SW_RAD_VALIANTZAS ///< From Valiantzas, 2006
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for subdaily temporal downscaling of daily average PET and snowmelt
@@ -519,6 +523,7 @@ enum precip_icept_method{
   PRECIP_ICEPT_USER,    ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
   PRECIP_ICEPT_LAI,     ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
   PRECIP_ICEPT_EXPLAI,  ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
+  PRECIP_ICEPT_HEDSTROM ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -687,7 +692,7 @@ enum process_type
   GLACIER_MELT,GLACIER_RELEASE,GLACIER_INFIL,
 
   //in HydroProcessABC.h
-  FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,
+  FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
 
   //in Albedo.h
   SNOW_ALBEDO_EVOLVE,
@@ -695,8 +700,8 @@ enum process_type
   //in CropGrowth.h
   CROP_HEAT_UNIT_EVOLVE,
 
-  //in Abstraction.h
-  ABSTRACTION,
+  //in DepressionProcesses.h
+  ABSTRACTION, DEPRESSION_OVERFLOW,
 
   //in Advection.h
   ADVECTION,
@@ -790,6 +795,7 @@ struct optStruct
   bool             write_reservoir;   ///< true if ReservoirStages.csv is written
   bool             ave_hydrograph;    ///< true if average flows over timestep are reported in hydrograph output
   bool             write_exhaustiveMB;///< true if exhaustive mass balance diagnostics are written
+  int              write_group_mb;    ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written
   bool             suppressICs;       ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
@@ -906,19 +912,22 @@ double threshMin     (const double &val1, const double &val2, const double &smoo
 double threshMax     (const double &val1, const double &val2, const double &smooth_coeff);
 
 //Time/Date Functions----------------------------------------------
-bool      IsLeapYear (const int        year);
+bool      IsLeapYear (const int          year);
 void JulianConvert   (      double       model_time, 
                       const double       start_date, 
                       const int          start_year, 
                             time_struct &tt);
-string DecDaysToHours(const double     dec_date);
+string DecDaysToHours(const double       dec_date);
 double InterpolateMo (const double      aVal[12],
                       const time_struct &tt,
                       const optStruct   &Options);
-bool   IsDaytime     (const double    &julian_day,
-                      const optStruct &Options);
+bool   IsDaytime     (const double      &julian_day,
+                      const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string sDate, string sTime);
-
+double TimeDifference(const double       jul_day1, 
+                      const int          year1, 
+                      const double       jul_day2, 
+                      const int          year2);
 string GetCurrentTime(void);
 
 //Conversion Functions-------------------------------------------

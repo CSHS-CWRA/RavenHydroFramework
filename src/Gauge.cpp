@@ -144,7 +144,7 @@ void CGauge::Initialize(const optStruct   &Options,
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
-      if ((val<0.0) || (val>10000)){
+      if ((val<-REAL_SMALL) || (val>10000)){
         cout<<GetName()<<" "<<nn<<" "<<val<<endl;
         ExitGracefully("CGauge::Initialize: negative or excessively large (>10000mm/d) precipitation intensity reported at gauge",BAD_DATA);
       }
@@ -168,7 +168,7 @@ void CGauge::Initialize(const optStruct   &Options,
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
-      if (val<0){
+      if (val<-REAL_SMALL){
         ExitGracefully("CGauge::Initialize: negative PET reported at gauge",BAD_DATA);
       }
     }

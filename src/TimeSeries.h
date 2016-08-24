@@ -77,8 +77,8 @@ class CTimeSeries: public CTimeSeriesABC
                 const CTimeSeries &t);
     ~CTimeSeries();
 
-    void Initialize(const double global_start_day, //jul day
-                    const    int global_start_year,//year
+    void Initialize(const double model_start_day, //jul day
+                    const    int model_start_year,//year
                     const double model_duration,  //days
                     const double timestep,        //days
                     const   bool is_observation);       

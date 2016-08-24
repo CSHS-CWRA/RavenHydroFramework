@@ -158,7 +158,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
         string filedir = GetDirectoryName(Options.rvt_filename); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
         if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-          filename = filedir + "\\" + filename;
+          filename = filedir + "//" + filename;
         }
 
         INPUT2.open(filename.c_str()); 
@@ -528,11 +528,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
         string filename;
         for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
-        if (Options.noisy) {cout <<"Ensim Time Series: "<<filename<<endl;} /// \todo [funct]: should look in the same directory as .rvt file if incomplete path provided
+        if (Options.noisy) {cout <<"Ensim Time Series: "<<filename<<endl;} 
 
         string filedir = GetDirectoryName(Options.rvt_filename); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
         if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-          filename = filedir + "\\" + filename;
+          filename = filedir + "//" + filename;
         }
 
         pTimeSerArray=CTimeSeries::ParseEnsimTb0(filename,nSeries,aTypes);

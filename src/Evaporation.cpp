@@ -403,6 +403,26 @@ double EstimatePET(const force_struct &F,
 			//PET=ShuttleworthWallaceEvap(&F,matric_pot,&S,&G,&CV);  // \todo [funct] (need to import additional data)
 			ExitGracefully("EstimatePET:Shuttleworth Wallace",STUB);
 		}
+    case(PET_PENMAN_SIMPLE33) :
+    {
+      double Rs =F.SW_radia;   //[MJ/m2/d]
+      double R_et =F.ET_radia; //[MJ/m2/d]
+      double Tave=F.temp_ave;  //[C]
+      double rel_hum=F.rel_humidity; //[0..1]
+
+      PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
+      break;
+    }
+    case(PET_PENMAN_SIMPLE39) :
+    {
+      double Rs =F.SW_radia;   //[MJ/m2/d]
+      double R_et =F.ET_radia; //[MJ/m2/d]
+      double Tave=F.temp_ave;  //[C]
+      double rel_hum=F.rel_humidity; //[0..1]
+
+      PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
+      break;
+    }
     default:
 	  {
         ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;

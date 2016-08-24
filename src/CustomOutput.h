@@ -32,7 +32,6 @@ enum spatial_agg
 //
 enum time_agg     
 {
-	HOURLY,     ///< Aggregate by hour
 	DAILY,      ///< Aggregate by day
 	MONTHLY,    ///< Aggregate by month
 	YEARLY,     ///< Aggregate by year

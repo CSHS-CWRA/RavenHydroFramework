@@ -197,6 +197,47 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     MB.close();
   }
   
+  //WatershedMassEnergyBalance.csv
+  //--------------------------------------------------------------
+  if (Options.write_group_mb!=DOESNT_EXIST)
+  {
+    int kk=Options.write_group_mb;
+    ofstream HGMB;
+    tmpFilename=FilenamePrepare(_pHRUGroups[kk]->GetName()+"_MassEnergyBalance.csv",Options);
+
+    HGMB.open(tmpFilename.c_str());
+    if (HGMB.fail()){
+      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+    HGMB<<"time[d],date,hour"; 
+    for (j=0;j<_nProcesses;j++){
+      for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
+        HGMB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
+        HGMB<<"["<<CStateVariable::GetStateVarUnits(_aStateVarType[_pProcesses[j]->GetFromIndices()[q]])<<"]";
+      }
+    }
+    HGMB<<endl; 
+    HGMB<<",,from:"; 
+    for (j=0;j<_nProcesses;j++){
+      for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
+        sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
+        int     ind=GetStateVarLayer(_pProcesses[j]->GetFromIndices()[q]);
+        HGMB<<","<<CStateVariable::SVTypeToString(typ,ind);
+      }
+    }
+    HGMB<<endl;
+    HGMB<<",,to:"; 
+    for (j=0;j<_nProcesses;j++){
+      for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
+        sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
+        int     ind=GetStateVarLayer(_pProcesses[j]->GetToIndices()[q]);
+        HGMB<<","<<CStateVariable::SVTypeToString(typ,ind);
+      }
+    }
+    HGMB<<endl;
+    HGMB.close();
+  }
+
   //ExhaustiveMassBalance.csv
   //--------------------------------------------------------------
   if (Options.write_exhaustiveMB)
@@ -483,6 +524,30 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       WriteEnsimMinorOutput(Options,tt);
     }
     
+    //Write cumulative mass balance info to WatershedMassEnergyBalance.csv
+    //----------------------------------------------------------------
+    if (Options.write_group_mb!=DOESNT_EXIST)
+    {
+      double sum;
+      int kk=Options.write_group_mb;
+      ofstream HGMB;
+      tmpFilename=FilenamePrepare(_pHRUGroups[kk]->GetName()+"_MassEnergyBalance.csv",Options);
+      HGMB.open(tmpFilename.c_str(),ios::app);
+      HGMB<<t<<","<<thisdate<<","<<thishour;  
+      for (int js=0;js<_nTotalConnections;js++)
+      {
+        sum=0.0;
+        for (k = 0; k < _nHydroUnits; k++){
+          if (_pHRUGroups[kk]->IsInGroup(k)){
+          sum += _aCumulativeBal[k][js] * _pHydroUnits[k]->GetArea();
+          }
+        }
+        HGMB<<","<<sum/_WatershedArea;
+      }
+      HGMB<<endl;
+      HGMB.close();
+    }
+
     //Write cumulative mass balance info to WatershedMassEnergyBalance.csv
     //----------------------------------------------------------------
     if (Options.write_mass_bal)
