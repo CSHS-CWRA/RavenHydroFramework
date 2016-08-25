@@ -112,7 +112,7 @@ double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
       double emissivity=0.99; // \todo [funct]: remove hardcoded emissivity
       double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
       double Tair =F->temp_ave+ZERO_CELSIUS;  //[K]
-      double Tsurf=F->temp_ave+ZERO_CELSIUS;//[K] //temp - more proper methods 
+      double Tsurf=pHRU->GetSurfaceTemperature()+ZERO_CELSIUS;//[K] 
 
       double ea=GetSaturatedVaporPressure(F->temp_ave);
 

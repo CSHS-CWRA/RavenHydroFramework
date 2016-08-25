@@ -133,11 +133,12 @@ class CHydroUnit
                                                const optStruct &Options) const;
 
     //specialized state variable accessors // \todo [funct] - should likely hand in representative state_var array
-    double                 GetSnowAlbedo     () const;
-    double                 GetSnowTemperature() const;
-    double                 GetSnowSWE        () const;
-    double                 GetSnowCover      () const;
-    double                 GetTotalAlbedo    () const;
+    double                 GetSnowAlbedo        () const;
+    double                 GetSnowTemperature   () const;
+    double                 GetSnowSWE           () const;
+    double                 GetSnowCover         () const;
+    double                 GetSurfaceTemperature() const;
+    double                 GetTotalAlbedo       () const;
 
     //Manipulator functions (used in parser)
     void          Disable                 ();

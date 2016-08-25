@@ -188,6 +188,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.suppressICs         =false;
   Options.period_ending       =false;
   Options.write_group_mb      =DOESNT_EXIST;
+  Options.diag_start_time     =-ALMOST_INF;
+  Options.diag_end_time       = ALMOST_INF;
 
   pModel=NULL;
   pMover=NULL;
@@ -282,6 +284,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EvaluationMetrics"     )){code=71; }
     else if  (!strcmp(s[0],":SuppressOutputICs"     )){code=72; }
     else if  (!strcmp(s[0],":SuppressOutput"        )){code=73; }
+		else if  (!strcmp(s[0],":WriteHRUGroupMBFile"   )){code=74; }
+    else if  (!strcmp(s[0],":EvaluationTime"        )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
     else if  (!strcmp(s[0],":OutputInterval"        )){code=15; }
     else if  (!strcmp(s[0],":WriteHRUGroupMBFile"   )){code=74; }
     //-----------------------------------------------------------
@@ -1191,6 +1195,21 @@ bool ParseMainInputFile (CModel     *&pModel,
           WriteWarning("ParseMainInput: invalid HRU group specified in :WriteHRUGroupMBFile command. Please define groups using :DefineHRUGroups command prior to calling this command.",Options.noisy);
         }
         break;
+      }
+      case(75):  //--------------------------------------------
+      {/*:EvaluationTime [yyyy-mm-dd] [00:00:00] {yyyy-mm-dd} {00:00:00}*/ //AFTER StartDate or JulianStartDay and JulianStartYear commands
+        if (Options.noisy) { cout << "Evaluation Time" << endl; }
+        if (Len<3) { ImproperFormatWarning(":EvaluationTime", p, Options.noisy); break; }
+         
+        time_struct tt;
+        tt = DateStringToTimeStruct(s[1], s[2]);
+        Options.diag_start_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year);
+        if (Len >= 5) // optional diagnostic end time
+        { 
+          tt = DateStringToTimeStruct(s[3], s[4]);
+          Options.diag_end_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year);
+        }
+        break;      
       }
       case(80):  //--------------------------------------------
       {/*:DefineHRUGroup */ //AFTER SoilModel Command and HydroProcesses commands 

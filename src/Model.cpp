@@ -879,18 +879,10 @@ void              CModel::AddDiagnostic        (CDiagnostic       *pDiag)
 //
 void  CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &Options)
 {
-  double t_loc;//local time
 
-  t_loc=tt_out.julian_day-Options.julian_start_day;
-  int leap;
-  int yr=Options.julian_start_year;
-  while (yr<tt_out.year)
-  {
-    leap=0;
-    if (IsLeapYear(yr)){leap=1;}
-    t_loc+=(365+leap);
-    yr++;
-  }
+	//local time
+	double t_loc = TimeDifference(tt_out.julian_day,tt_out.year,Options.julian_start_day,Options.julian_start_year);
+	
   ExitGracefullyIf(t_loc<0,
     "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);
   if (t_loc>Options.duration){
@@ -1852,10 +1844,16 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     /// \todo [bug]: for some reason not adding final continuous hydrograph datapoint to sampled data in modeled hydrograph if AVE_HYDROGRAPH is used
 		obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
-    while((tt.model_time >= obsTime+_pObservedTS[i]->GetSampledInterval()) && 
+    //while((tt.model_time+Options.timestep >= obsTime+_pObservedTS[i]->GetSampledInterval()) &&  //N .Sgro Fix (\todo : testing needed)
+		while((tt.model_time >= obsTime+_pObservedTS[i]->GetSampledInterval()) && 
           (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
-			value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
+      // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
+      if (obsTime >= Options.diag_start_time && obsTime <= Options.diag_end_time)
+      {
+          value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
+      }
+			
 			_pModeledTS[i]->SetSampledValue(_aObsIndex[i],value);
 			_aObsIndex[i]++;
 			obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);

@@ -298,6 +298,12 @@ void CTimeSeries::Resample(const double &tstep,          //days
   }
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes arrays for the resampled time series
+///
+/// \param nSampVal [in] Number of values in the resampled time series
+/// \param sampInterval [in] Time interval of the resampled time series (in days)
+//
 void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterval)
 {
   _nSampVal=nSampVal;
@@ -309,6 +315,11 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
   _aSampVal=NULL;
   _aSampVal=new double [_nSampVal];
   ExitGracefullyIf(_aSampVal==NULL,"CTimeSeries::Resample",OUT_OF_MEMORY);
+
+  //Initialize with blanks
+  for (int nn=0;nn<_nSampVal;nn++){
+      _aSampVal[nn] = BLANK_DATA;
+  }
 }
 
 //////////////////////////////////////////////////////////////////

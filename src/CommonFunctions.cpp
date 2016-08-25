@@ -414,6 +414,39 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
   return tt;
 }
 
+////////////////////////////////////////////////////////////////////////////
+/// \brief returns model time of input day and year
+/// \param day [in] Julian day to be converted to model time
+/// \param year [in] Year to be converted to model time
+/// \param global_start_day [in] Julian global start day
+/// \param global_start_year [in] Global start year
+/// \return Model time of input day and year
+/// Nick Sgro's version of Time difference - requires testing
+//
+/*double TimeDifference2(const double jul_day1, int year1,const double jul_day2, const int year2)
+{
+    int leap;
+    double modelTime = jul_day1 - jul_day2;
+
+    while (year1 != year2)
+    {
+        leap = 0;
+        if (year1 > year2)
+        {
+            if (IsLeapYear(year1 - 1)) { leap = 1; }
+            modelTime += (365 + leap);
+            year1--;
+        }
+        else
+        {
+            if (IsLeapYear(year1)) { leap = 1; }
+            modelTime -= (365 + leap);
+            year1++;
+        }
+    }
+
+    return modelTime;
+}*/
 ///////////////////////////////////////////////////////////////////
 /// \brief calculates time difference, in days between two specified dates
 /// \details positive if day 2 is after day 1

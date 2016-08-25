@@ -800,6 +800,10 @@ struct optStruct
   bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
   string           working_dir;       ///< working directory 
+
+  //diagnostic options
+  double           diag_start_time;   ///< Model time to start diagnostics 
+  double           diag_end_time;     ///< Model time to start diagnostics 
 };
 
 ///////////////////////////////////////////////////////////////////

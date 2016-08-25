@@ -91,11 +91,10 @@ void CmvGlacierMelt::GetParticipatingStateVarList(glacial_melt_type melt_type,sv
   }
   else if (melt_type==GMELT_UBC)
   {
-    nSV=4;
+    nSV=3;
     aSV[0]=GLACIER_ICE;  aLev[0]=DOESNT_EXIST;
     aSV[1]=GLACIER;      aLev[1]=DOESNT_EXIST;
     aSV[2]=GLACIER_CC;   aLev[2]=DOESNT_EXIST;
-    aSV[3]=SNOW_COVER;   aLev[3]=DOESNT_EXIST;
   }
 }
 
@@ -136,10 +135,8 @@ void CmvGlacierMelt::GetRatesOfChange( const double		*state_var,
   //----------------------------------------------------------------------
   else if (type==GMELT_UBC)
   {
-    int iSnCov=pModel->GetStateVarIndex(SNOW_COVER);
-
     double CC           =state_var[iFrom[1]]; //glacier cold content [mm]
-    double snow_coverage=state_var[iSnCov  ]; //snow cover
+    double snow_coverage= pHRU->GetSnowCover(); //snow cover
     double pot_melt;                          //potential melt [mm/d]
 
     pot_melt =pHRU->GetForcingFunctions()->potential_melt;

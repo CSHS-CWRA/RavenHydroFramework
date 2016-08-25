@@ -182,8 +182,7 @@ void CmvPrecipitation::GetRatesOfChange(const double		 *state_vars,
   {
     // Calculate Snow Cover
     //-----------------------------------------------------------------
-    if (!pModel->StateVarExists(SNOW_COVER)){ Fs = 1.0; }
-    else                                    { Fs = state_vars[iSnFrac]; }
+    Fs = pHRU->GetSnowCover();
 
     // Throughfall & interception for rain & snow
     //-----------------------------------------------------------------

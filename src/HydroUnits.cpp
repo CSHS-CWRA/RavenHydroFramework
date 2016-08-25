@@ -642,6 +642,25 @@ double  CHydroUnit::GetSnowCover () const
   else                      {return this->GetStateVarValue(iSnFrac);}
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns surface temperature
+/// \note Assumes snow is at snow surface temperature and ground is average temp. Surface temp weighted by snow cover.
+/// \note lagged - information specific to start of time step only
+///
+/// \return current surface temperature in HRU [deg C]
+//
+double CHydroUnit::GetSurfaceTemperature() const
+{
+    double snow_cover  = GetSnowCover();
+    double snow_temp   = GetSnowTemperature();
+    double ground_temp = _Forcings.temp_ave; //temp - more proper methods 
+
+    if (_HRUType == HRU_GLACIER) {
+        ground_temp = FREEZING_TEMP;
+    }
+   
+    return (1 - snow_cover)*ground_temp + snow_cover*snow_temp;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief returns total land surface albedo
 /// \note lagged - information specific to start of time step only
 ///

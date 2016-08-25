@@ -91,7 +91,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
   }
   else if(type==SNOBAL_TWO_LAYER)
   {
-    int iSnowfall,iPonded,iSLSurf,iSLPack,iCCSurf,iCCPack,iSnowTemp;
+    int iSnowfall,iPonded,iSLSurf,iSLPack,iCCSurf,iCCPack,iSnowTemp,iCumMelt;
     iSnowfall =pModel->GetStateVarIndex(NEW_SNOW);
     iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
     iSLSurf   =pModel->GetStateVarIndex(SNOW_LIQ,0);
@@ -99,8 +99,9 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     iCCSurf   =pModel->GetStateVarIndex(COLD_CONTENT,0);
     iCCPack   =pModel->GetStateVarIndex(COLD_CONTENT,1);
     iSnowTemp =pModel->GetStateVarIndex(SNOW_TEMP);
+    iCumMelt = pModel->GetStateVarIndex(CUM_SNOWMELT);
 
-    CHydroProcessABC::DynamicSpecifyConnections(9); //nConnections=6
+    CHydroProcessABC::DynamicSpecifyConnections(10); //nConnections=10
     
     iFrom[0]=iSnowfall;   iTo[0]=iSnow;      //rates[0]: SNOWFALL         -> SNOW
     iFrom[1]=iPonded;     iTo[1]=iSLSurf;    //rates[1]: Rain             -> SNOW_LIQ surface
@@ -111,6 +112,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     iFrom[6]=iCCSurf;	  iTo[6]=iCCSurf;    //rates[6]: CC surface layer
     iFrom[7]=iCCPack;	  iTo[7]=iCCPack;    //rates[7]: CC pack layer
     iFrom[8]=iSnowTemp;	  iTo[8]=iSnowTemp;  //rates[8]: Snow Temp
+    iFrom[9]=iCumMelt;    iTo[9]=iCumMelt;   //rates[9]: Cumulative Melt
   }
   else{
     ExitGracefully("CmvSnowBalance::Constructor: undefined snow balance type",BAD_DATA);
@@ -250,7 +252,7 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
   }
     else if (bal_type==SNOBAL_TWO_LAYER)
   {
-    nSV=8;
+    nSV=9;
     aSV[0]=NEW_SNOW;      aLev[0]=DOESNT_EXIST;
     aSV[1]=SNOW;          aLev[1]=DOESNT_EXIST;
     aSV[2]=SNOW_LIQ;      aLev[2]=0;
@@ -259,6 +261,7 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
     aSV[5]=COLD_CONTENT;  aLev[5]=1;
     aSV[6]=PONDED_WATER;  aLev[6]=DOESNT_EXIST;
     aSV[7]=SNOW_TEMP;     aLev[7]=DOESNT_EXIST;
+    aSV[8]=CUM_SNOWMELT;  aLev[8] = DOESNT_EXIST;
   }
   else{
     nSV=0;
@@ -708,6 +711,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     double CcSurf = state_vars[iFrom[6]]; //cold content of snow surface layer [MJ/m2]
     double CcPack = state_vars[iFrom[7]]; //cold content of snow pack layer [MJ/m2]
     double snowT = state_vars[iFrom[8]];  //snow surface temperature [C]
+    double cum_melt = state_vars[iFrom[9]]; //cumulative melt [mm]
 
     if (Swe <= REAL_SMALL && newSnow <= REAL_SMALL) { return; } //no snow to balance
 
@@ -733,6 +737,15 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     double posMf;               //positive meltfactor
     double ccSnowFall;
 
+    //reset cumulative melt to zero in October
+    //------------------------------------------------------------------------
+    if ((pHRU->GetCentroid().latitude < 0) && (tt.month == 4) && (tt.day_of_month == 1)) {
+        cum_melt = 0.0;
+    }
+    else if ((tt.month == 10) && (tt.day_of_month == 1)) {
+        cum_melt = 0.0;
+    }
+
     //reconstruct two layer snowpack
     //------------------------------------------------------------------------
     if ( (Swe+SlwcSurf) > MAXSWESURF)
@@ -749,7 +762,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     //this also initializes the cold content with the first snow fall
     //------------------------------------------------------------------------
     ccSnowFall = HCP_ICE*MJ_PER_J / MM_PER_METER * newSnow * max(-Ta, 0.0);
-    //[MJ/m2] = [J/m3/K]*[MJ/J]  * [m/mm]      *  [mm/d]  *  [K]
+    //[MJ/m2] = [J/m3/K]*[MJ/J]  * [m/mm]      *  [mm]  *  [K]
 
     //distribute fresh snowfall
     //------------------------------------------------------------------------
@@ -761,7 +774,10 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     else
     {//snow surface layer is at max
         double deltaswePack = SweSurf + SlwcSurf + newSnow - MAXSWESURF;
-        double deltaccPack = deltaswePack / SweSurf * CcSurf;//give pack the proportional coldconent of surface layer
+        double deltaccPack=0;
+        if (SweSurf > 0) {
+             deltaccPack = (deltaswePack/SweSurf) * CcSurf;//give pack the proportional coldconent of surface layer
+        }
         SwePack += deltaswePack;
         SweSurf = MAXSWESURF - SlwcSurf;
         CcPack += deltaccPack;
@@ -796,9 +812,9 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
             meltSurf -= SlwcSurf;
             CcSurf = posMf * LH_FUSION; // leftover energy is new CC
 
-            if (SweSurf < 10.0) //dont cool below gruTa when Swe is below 10 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
+            if (SweSurf < 50.0) //dont cool below gruTa when Swe is below 10 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
             {
-                CcSurf = min(CcSurf, -Ta * SweSurf * HCP_ICE*MJ_PER_J*MM_PER_METER);
+                CcSurf = min(CcSurf, -Ta * SweSurf * HCP_ICE*MJ_PER_J/MM_PER_METER);
                 CcSurf = max(CcSurf, 0.0);
             }
         }
@@ -837,7 +853,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     //re-freeze liquid water in snowpack layer
     //------------------------------------------------------------------------
     if (CcPack > SlwcPack * LH_FUSION) //snow pack layer cold content not fully satisfied
-    {
+    { 
         CcPack -= SlwcPack * LH_FUSION;        //freeze all water
         freezePack += SlwcPack * LH_FUSION;
     }
@@ -861,7 +877,13 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     }
 
     //Snow Temp - assumes an isothermal snow surface layer
-    snowT = -CcSurf / (HCP_ICE*MJ_PER_J*MM_PER_METER * max(1.0, SweSurf));
+    snowT = -CcSurf / (HCP_ICE*MJ_PER_J* max(1.0, SweSurf)/MM_PER_METER);
+    snowT *= 0.2; // There's no physical basis for this, but snowT was always way too low. 
+                  // This correction puts snowT close to the air temperature.
+
+//    if (snowT < -30) { snowT = -30; }
+
+    cum_melt += meltSurf;
 
     rates[0] = newSnow / Options.timestep;     // SNOWFALL -> SNOW
     rates[1] = rainthru / Options.timestep;    // PONDEDWATER -> SNOW_LIQ surface
@@ -872,6 +894,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     rates[6] = (CcSurf - state_vars[iFrom[6]]) / Options.timestep;   //CC pack layer
     rates[7] = (CcPack - state_vars[iFrom[7]]) / Options.timestep;   //CC pack layer
     rates[8] = (snowT - state_vars[iFrom[8]]) / Options.timestep;   //SNOW_TEMP
+    rates[9] = (cum_melt - state_vars[iFrom[9]]) / Options.timestep; //Cumulative Melt
 }
 
 //////////////////////////////////////////////////////////////////
