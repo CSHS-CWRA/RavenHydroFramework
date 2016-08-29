@@ -272,6 +272,7 @@
     <ClCompile Include="Convolution.cpp" />
     <ClCompile Include="CropGrowth.cpp" />
     <ClCompile Include="Decay.cpp" />
+    <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />
     <ClCompile Include="Flush.cpp" />
     <ClCompile Include="Forcings.cpp" />
@@ -408,6 +409,7 @@
     <ClInclude Include="Convolution.h" />
     <ClInclude Include="CropGrowth.h" />
     <ClInclude Include="Decay.h" />
+    <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="Forcings.h" />
     <ClInclude Include="GlacierProcesses.h" />
