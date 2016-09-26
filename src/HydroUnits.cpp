@@ -404,6 +404,18 @@ double CHydroUnit::GetForcing(const string &forcing_string) const
   return GetForcingFromString(forcing_string,_Forcings);
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of specified cumulative flux over HRU group
+/// 
+/// \param i [in] index of storage compartment
+/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
+/// \return Area-weighted average of cumulative flux to storage compartment i
+//
+double CHydroUnit::GetCumulFlux(const int i, const bool to) const
+{
+  return _pModel->GetCumulativeFlux(_global_k, i,to);
+}
+
 /*****************************************************************
    Manipulators
 *****************************************************************/

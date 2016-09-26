@@ -556,6 +556,34 @@ double CModel::GetFlux(const int k, const int js, const optStruct &Options) cons
 #endif
   return _aFlowBal[k][js]/Options.timestep;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns cumulative flux to/from storage unit i
+/// 
+/// \param k [in] index of HRU
+/// \param i [in] index of storage compartment
+/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
+/// \return cumulative flux to storage compartment i in hru K
+//
+double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((k<0) || (k>=_nHydroUnits),"CModel::GetCumulativeFlux: bad HRU index",RUNTIME_ERR);
+  ExitGracefullyIf((i<0) || (i>=_nStateVars),"CModel::GetCumulativeFlux: bad state var index",RUNTIME_ERR);
+#endif
+  int js=0;
+  double sum=0;
+  for (int j = 0; j < _nProcesses; j++)
+  {
+    for (int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
+    {
+      if ((to)  && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js];}
+      if ((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js];}
+      js++;
+    }
+  }
+  return sum;
+}
+
 
 /*****************************************************************  
    Watershed Diagnostic Functions
@@ -695,6 +723,23 @@ double CModel::GetAvgForcing (const string &forcing_string) const
   for (int k=0;k<_nHydroUnits;k++)
   {
     sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+  }
+  return sum/_WatershedArea;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of specified cumulative flux over watershed
+/// 
+/// \param i [in] index of storage compartment
+/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
+/// \return Area-weighted average of cumulative flux to storage compartment i
+//
+double CModel::GetAvgCumulFlux (const int i, const bool to) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  for (int k=0;k<_nHydroUnits;k++)
+  {
+    sum    +=this->GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
   }
   return sum/_WatershedArea;
 }
@@ -1244,7 +1289,7 @@ void CModel::InitializeObservations(const optStruct &Options)
   for (int i = 0; i < _nObservedTS; i++)
 	{
 		_pModeledTS[i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(), _pObservedTS[i]->GetTag(),"",Options.julian_start_day,Options.julian_start_year,Options.timestep,nModeledValues,true);
-		_pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true);
+    _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true);
 	  _pModeledTS[i]->InitializeResample(_pObservedTS[i]->GetNumSampledValues(),_pObservedTS[i]->GetSampledInterval());
 	  _aObsIndex[i]=0;
 

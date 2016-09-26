@@ -99,6 +99,22 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 		  _varUnits = GetForcingTypeUnits(typ);
 		  break;
     }
+  case (VAR_TO_FLUX) :
+    {
+			sv_type typ=pModel->GetStateVarType(_svind);
+			int     ind=pModel->GetStateVarLayer(_svind);
+      _varName  = "TO_"+CStateVariable::SVTypeToString(typ,ind);
+			_varUnits = CStateVariable::GetStateVarUnits(typ);
+		  break;
+    }
+  case (VAR_FROM_FLUX) :
+    {
+			sv_type typ=pModel->GetStateVarType(_svind);
+			int     ind=pModel->GetStateVarLayer(_svind);
+      _varName  = "FROM_"+CStateVariable::SVTypeToString(typ,ind);
+			_varUnits = CStateVariable::GetStateVarUnits(typ);
+		  break;
+    }
 	default:
     {
 		  _varName = "UNKNOWN";
@@ -334,6 +350,8 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 	_CUSTOM<<":RunName              "<<Options.run_name <<endl;
 	_CUSTOM<<"#"<<endl;
   if      ((_var == VAR_FORCING_FUNCTION) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding "<<endl; }//period ending
+  else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
+  else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
   else if ((_var == VAR_STATE_VAR       ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
   else                                                               { _CUSTOM<<":Format PeriodStarting"<<endl;  }//period starting
 	_CUSTOM<<"#"<<endl;
@@ -401,6 +419,8 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 
   int colFormat;
   if      ((_var == VAR_FORCING_FUNCTION) && (_timeAgg==EVERY_TSTEP)){ colFormat = -1; }//period ending
+  else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0; }//snapshot
+  else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot
   else if ((_var == VAR_STATE_VAR       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot
   else                                                               { colFormat = 1;  }//period starting
 
@@ -582,6 +602,20 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgForcing(_force_str);}
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str);}
     }
+    else if (_var == VAR_TO_FLUX){
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,true);}
+    }
+    else if (_var == VAR_FROM_FLUX){
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
+    }
     /*else 
     //else if (...){
     // more diagnostic variables needed here...
@@ -597,7 +631,7 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
       if      (_var == VAR_STATE_VAR){
         data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count; //NOT CURRENTLY VALID
       }
-      else if (_var == VAR_FORCING_FUNCTION){
+      else {
         data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count;
       }
     }
@@ -793,6 +827,20 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
         case BY_SELECT_HRUS:val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str); break;
 			}
     }
+    else if (_var == VAR_TO_FLUX){
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,true);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,true);}
+    }
+    else if (_var == VAR_FROM_FLUX){
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,false);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
+    }
     //else if (...){
     // more diagnostic variables needed here...
     //}
@@ -807,7 +855,7 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
       if      (_var == VAR_STATE_VAR){
         data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count; //NOT CURRENTLY VALID
       }
-      else if (_var == VAR_FORCING_FUNCTION){
+      else {
         data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count;
       }
     }

@@ -110,7 +110,7 @@ class CTimeSeries: public CTimeSeriesABC
     bool   IsPulseType()  const;
 
     static CTimeSeries  *Sum          (CTimeSeries *pTS1, CTimeSeries *pTS2, string name);
-    static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, string tag, bool shift_to_per_ending=false);
+    static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending=false);
     static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse); 
     static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType); 
 

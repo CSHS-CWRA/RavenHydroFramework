@@ -128,6 +128,8 @@ class CHydroUnit
     force_struct    const *GetForcingFunctions() const;
     double                 GetForcing         (const string &forcing_string) const;
 
+    double                 GetCumulFlux       (const int i, const bool to) const;
+
     double                 GetStateVarMax     (const int     i,
                                                const double *curr_state_var,
                                                const optStruct &Options) const;
@@ -188,6 +190,7 @@ class CHRUGroup
     CHydroUnit       *GetHRU             (const int k_local) const;
     double            GetAvgStateVar     (const int i) const;
     double            GetAvgForcing      (const string &forcing_string) const;
+    double            GetAvgCumulFlux    (const int i, const bool to) const;
     bool              IsInGroup          (const int k) const;
 
     bool              IsAggregatorGroup  (const int i) const; 

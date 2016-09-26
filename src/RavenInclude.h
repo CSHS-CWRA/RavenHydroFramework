@@ -1172,6 +1172,7 @@ double rvn_erf          (const double &x);
 double log_pdf      (const double &x, const double &mu, const double &sig);
 double LambertN     (const double &x, const int N);
 double GammaCumDist (const double &t, const double &a);
+double two_param_gamma(const double &t, const double &a);
 double TriCumDist   (const double &t, const double &tc, const double &tp);
 double NashCumDist  (const double &t, const double &k, const int &NR);
 double ADRCumDist   (const double &t, const double &L, const double &v, const double &D);

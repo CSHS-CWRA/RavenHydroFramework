@@ -133,3 +133,24 @@ double CHRUGroup::GetAvgForcing (const string &forcing_string) const
   }
   return sum/areasum;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of specified cumulative flux over HRU group
+/// 
+/// \param i [in] index of storage compartment
+/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
+/// \return Area-weighted average of cumulative flux to storage compartment i
+//
+double CHRUGroup::GetAvgCumulFlux (const int i, const bool to) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  double areasum=0.0;
+  double area;
+  for (int k=0;k<nHRUs;k++)
+  {
+    area=pHRUs[k]->GetArea();
+    sum    +=pHRUs[k]->GetCumulFlux(i,to)*area;
+    areasum+=area;
+  }
+  return sum/areasum;
+}

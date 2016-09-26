@@ -325,7 +325,6 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
 //////////////////////////////////////////////////////////////////
 /// \brief Returns index of time period for time t in terms of local time
 ///
-/// \param nguess [in] Initial guess of index n
 /// \param &t_loc [in] Local time
 /// \return Index of time period for time t; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1
 //
@@ -360,33 +359,43 @@ double CTimeSeries::GetValue(const double &t) const
 /// \param &t [in] Left bound of model time interval over which average value of time series is to be determined
 /// \param &tstep [in] Duration of interval over which average value of time series is to be determined
 /// \return Average time series value across interval t to t+tstep
+/// if interval is (mostly) blank data, returns BLANK_DATA, correction for blank data slices
 //
 double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
 {
-  int n1(0),n2(0);
-  double sum=0; 
-  double t_loc=t+_t_corr; //time re-referenced to start of time series
-  n1=GetTimeIndex(t_loc);
-  n2=GetTimeIndex(t_loc+tstep);
+  int n1(0), n2(0);
+  double sum = 0;
+  double t_loc = t + _t_corr; //time re-referenced to start of time series
+  n1 = GetTimeIndex(t_loc);
+  n2 = GetTimeIndex(t_loc + tstep);
   //t_loc       is now between n1*_interval and (n1+1)*_interval
   //t_loc+tstep is now between n2*_interval and (n2+1)*_interval
-  
-  if (t_loc<0                  ) {return CTimeSeriesABC::BLANK_DATA;}
-  if (t_loc>=_nPulses*_interval) {return CTimeSeriesABC::BLANK_DATA;}
+  double inc;
+  double blank = 0;
+  if (t_loc < 0.0) { return CTimeSeriesABC::BLANK_DATA; }
+  if (t_loc >= _nPulses*_interval) { return CTimeSeriesABC::BLANK_DATA; }
   if (_pulse){
-    if (n1==n2){return _aVal[n1];}
+    if (n1 == n2){ return _aVal[n1]; }
     else{
-      sum =_aVal[n1]*((double)(n1+1)*_interval-t_loc);
-      for (int n=n1+1;n<n2;n++){
-      sum+=_aVal[n]*_interval;
+      sum = 0;
+      inc = ((double)(n1 + 1)*_interval - t_loc);
+      if (_aVal[n1] == CTimeSeriesABC::BLANK_DATA)  { blank += inc; }
+      else                                          { sum += _aVal[n1] * inc; }
+
+      for (int n = n1 + 1; n < n2; n++){
+        if (_aVal[n] == CTimeSeriesABC::BLANK_DATA) { blank += _interval; }
+        else                                        { sum += _aVal[n] * _interval; }
       }
-      sum+=_aVal[n2]*((t_loc+tstep)-(double)(n2)*_interval);
+      inc = ((t_loc + tstep) - (double)(n2)*_interval);
+      if (_aVal[n2] == CTimeSeriesABC::BLANK_DATA)  { blank += inc; }
+      else                                          { sum += _aVal[n2] * inc; }
     }
-    //if ((this->name=="PRECIP") && (_aVal [n1]!=0)) {cout<<this->name<<" "<<n1<<" "<<n2<<" "<<_interval*24<<" "<<aVal [n1]<<" "<<aVal [n2]<<" "<<sum/tstep<<endl;}
   }
   else{
-    ExitGracefully("CTimeSeries::GetAvgValue (non-pulse)",STUB);
+    ExitGracefully("CTimeSeries::GetAvgValue (non-pulse)", STUB);
   }
+  if (blank / tstep > 0.001){return BLANK_DATA;}
+
   return sum/tstep;
 }
 
@@ -604,7 +613,7 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 /// \param is_pulse [in] Flag determining time-series type (piecewise-uniform [pulsed] vs. piecewise-linear)
 /// \return Pointer to created time series
 //
-CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, bool shift_to_per_ending)
+CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
 {
   char *s[MAXINPUTITEMS];
   int Len;
@@ -638,10 +647,11 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     //units =s[4]
   }
   if (shift_to_per_ending){
-    start_day+=tstep;
+    
+    start_day+=Options.timestep;//THIS NEEDS TO BE MODEL TIME STEP?
     int leap=0;
     if (IsLeapYear(start_yr)){ leap = 1; }
-    if (start_day==365+leap){start_day=0; start_yr++;}
+    if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
   }
   double *aVal;
   aVal =new double [nMeasurements];

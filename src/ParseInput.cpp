@@ -31,7 +31,7 @@ bool ParseHRUPropsFile         (CModel *&pModel, const optStruct &Options);
 bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 
-int  ParseSVTypeIndex          (char *string,  CModel *&pModel);
+int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 int *ParseSVTypeArray          (char *string,  CModel *&pModel, int size);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 
@@ -1283,12 +1283,39 @@ bool ParseMainInputFile (CModel     *&pModel,
         SV_ind= ParseSVTypeIndex(s[3], pModel);
         
         //cout<<"SV_ind:"<<SV_ind<<" diag:"<<diag<<endl;
-        if (SV_ind==DOESNT_EXIST){//not a state variable
+        string tmp = s[3];
+        string right;
+        if (!strcmp((tmp.substr(0, 3)).c_str(), "To:")){
+          right = tmp.substr(3,string::npos);
+
+          SV_ind=ParseSVTypeIndex(right, pModel);
+          if (SV_ind == DOESNT_EXIST){
+            WriteWarning("Custom output Flux variable " + right + " is unrecognized. No output will be written.", Options.noisy);
+            break;
+          }
+          else
+          {
+            diag=VAR_TO_FLUX;
+          }
+        }
+        if (!strcmp((tmp.substr(0, 5)).c_str(), "From:")){
+          right = tmp.substr(5,string::npos);
+          SV_ind=ParseSVTypeIndex(right, pModel);
+          if (SV_ind == DOESNT_EXIST){
+            WriteWarning("Custom output Flux variable " + right + " is unrecognized. No output will be written.", Options.noisy);
+            break;
+          }
+          else
+          {
+            diag=VAR_FROM_FLUX;
+          }
+        }
+        if (SV_ind==DOESNT_EXIST){//not a state variable or a flux to/from state var - try forcing function
           diag=VAR_FORCING_FUNCTION;
           sv_typ=UNRECOGNIZED_SVTYPE;
           force_str=s[3];
-          if (GetForcingTypeFromString(force_str)==F_UNRECOGNIZED){
-            WriteWarning("Custom output variable "+force_str+" is unrecognized. No output will be written.",Options.noisy);
+          if (GetForcingTypeFromString(force_str) == F_UNRECOGNIZED){
+            WriteWarning("Custom output variable " + force_str + " is unrecognized. No output will be written.", Options.noisy);
             break;
           }
         }
@@ -1300,6 +1327,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         if      (!strcmp(s[4],"BY_HRU"          )){sa=BY_HRU;}
         else if (!strcmp(s[4],"BY_BASIN"        )){sa=BY_BASIN;}
         else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;}
+        else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;}
         else if (!strcmp(s[4],"BY_GROUP"        )){sa=BY_HRU_GROUP;}
         else if (!strcmp(s[4],"BY_HRU_GROUP"    )){sa=BY_HRU_GROUP;}
         else{
@@ -2241,7 +2269,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 /// \param *s [in] String state variable name
 /// \param *&pModel [in] Input model object
 /// \return Integer index of state variable ins tate variable arrays, or DOESNT_EXIST (-1) if is is invalid
-int  ParseSVTypeIndex(char *s,  CModel *&pModel)
+int  ParseSVTypeIndex(string s,  CModel *&pModel)
 {
    int ind; 
    int layer_ind(-1); 

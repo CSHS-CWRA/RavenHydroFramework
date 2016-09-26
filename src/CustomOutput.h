@@ -58,9 +58,11 @@ enum agg_stat
 /// \docminor This enumerated list and its values need to be described
 enum diagnostic   
 {
-	VAR_STATE_VAR, ///< 
-	VAR_FORCING_FUNCTION, ///< 
-	VAR_HYD_COND///< 
+	VAR_STATE_VAR,        ///< track state variable 
+	VAR_FORCING_FUNCTION, ///< track forcing function
+	VAR_HYD_COND,         ///< track hydraulic conductivity
+  VAR_FROM_FLUX,        ///< track flux from specific state variable
+  VAR_TO_FLUX           ///< track flux to specific state variable
 }; 
 
 ///////////////////////////////////////////////////////////////////

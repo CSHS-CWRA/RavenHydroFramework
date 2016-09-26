@@ -186,9 +186,11 @@ class CModel: public CModelABC
     int               GetStateVarLayer(const int i) const; //for multilayer variables
     double            GetFlux         (const int k, const int iFrom, const int iTo, const optStruct &Options) const;
     double            GetFlux         (const int k, const int js, const optStruct &Options) const;
+    double            GetCumulativeFlux(const int k, const int i, const bool to) const;
     bool              StateVarExists  (sv_type type) const;
     double            GetAvgStateVar  (const int i) const;      
     double            GetAvgForcing   (const string &forcing_string) const;
+    double            GetAvgCumulFlux (const int i, const bool to) const;
     int               GetNumSoilLayers() const;
     int               GetNumAquiferLayers() const;
 
@@ -218,6 +220,7 @@ class CModel: public CModelABC
     int               GetSubBasinIndex   (const long ID) const;
     int            GetGaugeIndexFromName (const string name) const;
     double            GetWatershedArea   () const;
+
 
     const optStruct  *GetOptStruct       () const;
     CTransportModel  *GetTransportModel  () const;

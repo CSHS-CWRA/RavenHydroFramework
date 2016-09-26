@@ -413,42 +413,8 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 
   return tt;
 }
-
-////////////////////////////////////////////////////////////////////////////
-/// \brief returns model time of input day and year
-/// \param day [in] Julian day to be converted to model time
-/// \param year [in] Year to be converted to model time
-/// \param global_start_day [in] Julian global start day
-/// \param global_start_year [in] Global start year
-/// \return Model time of input day and year
-/// Nick Sgro's version of Time difference - requires testing
-//
-/*double TimeDifference2(const double jul_day1, int year1,const double jul_day2, const int year2)
-{
-    int leap;
-    double modelTime = jul_day1 - jul_day2;
-
-    while (year1 != year2)
-    {
-        leap = 0;
-        if (year1 > year2)
-        {
-            if (IsLeapYear(year1 - 1)) { leap = 1; }
-            modelTime += (365 + leap);
-            year1--;
-        }
-        else
-        {
-            if (IsLeapYear(year1)) { leap = 1; }
-            modelTime -= (365 + leap);
-            year1++;
-        }
-    }
-
-    return modelTime;
-}*/
 ///////////////////////////////////////////////////////////////////
-/// \brief calculates time difference, in days between two specified dates
+/// \brief calculates time difference, in days, between two specified dates
 /// \details positive if day 2 is after day 1
 ///
 /// \param jul_day1 [in] Julian day of date 1 (measured from Jan 1 of year @ 00:00:00)
@@ -458,29 +424,23 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 
 double TimeDifference(const double jul_day1,const int year1,const double jul_day2,const int year2)
 {
-  double diff = jul_day2 - jul_day1;
-
-  int leap;
-  int yr = year2;
-  while (yr > year1)
+  int leap,yr;
+  double diff= jul_day2 - jul_day1;
+  yr=year2-1;
+  while (yr >= year1)
   {
-    leap=0;
-    if (IsLeapYear(yr)){ leap = 1; }
-    
+    leap=0; if (IsLeapYear(yr)){ leap = 1; }
     diff += (365+leap);
     yr--;
   }
-  while (yr < year1)
+  yr=year2;
+  while (yr<year1)
   {
-    leap = 0;
-    if (IsLeapYear(yr)){ leap = 1; }
-    diff -= (365 + leap);
+    leap=0; if (IsLeapYear(yr)){ leap = 1; }
+    diff -= (365+leap);
     yr++;
   }
-  leap = 0; 
-  if (IsLeapYear(year2) && (jul_day2>60) && (year1!=year2)){leap-=1;} //this leap day already included in Julian date
-  if (IsLeapYear(year1) && (jul_day1>60) && (year1!=year2) && (leap!=-1)){leap-=1;} //last argument for when y1 and y2 are both leap years
-  return diff+leap;
+  return diff;
 }
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time
@@ -940,7 +900,7 @@ double two_param_gamma(const double &x, const double &a)
 {
   //cumulative distribution
   /// \ref from http://algolist.manual.ru/maths/count_fast/gamma_function.php
-  const int N=500;
+  const int N=100;
   if (x==0){return 0.0;}
   double num=1;
   double sum=0.0;

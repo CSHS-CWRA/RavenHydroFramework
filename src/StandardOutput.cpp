@@ -459,7 +459,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
       //----------------------------------------------------------------
-      if ((Options.ave_hydrograph) && (t!=0))
+      if ((Options.ave_hydrograph) && (t!=0.0))
       {
         _HYDRO<<t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
         for (int p=0;p<_nSubBasins;p++){
@@ -471,14 +471,16 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             }
             //if (Options.print_obs_hydro)
             {
-              for (int i = 0; i < _nObservedTS; i++){
+              for (int i = 0; i < _nObservedTS; i++)
+              {
                 if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
                   (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
                   (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
                 {
 
                   int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
-                  double val=_pObservedTS[i]->GetSampledValue(nn);
+                  //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
+                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                   if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                   else                                                         { _HYDRO << ", ";       }
                 }
@@ -508,7 +510,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
                 {
                   int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
-                  double val=_pObservedTS[i]->GetSampledValue(nn);
+                  //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
+                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
                   if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                   else                                                         { _HYDRO << ", ";       }
                 }

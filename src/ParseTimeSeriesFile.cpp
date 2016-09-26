@@ -139,6 +139,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":MonthlyAveTemperatures" )){code=77; }
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":ConcentrationTimeSeries")){code=300; }
+    else if  (!strcmp(s[0],":MassFluxTimeSeries     ")){code=300; }
     
     switch(code)
     {
@@ -223,7 +224,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Rainfall data"<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Rainfall data added before specifying a gauge station and its properties",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,"RAINFALL","");
+        pTimeSer=CTimeSeries::Parse(p,true,"RAINFALL","",Options);
         pGage->AddTimeSeries(pTimeSer,F_RAINFALL); 
         break;
       }
@@ -236,7 +237,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Snow data"<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Snow data added before specifying a gauge station and its properties",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,"SNOWFALL","");
+        pTimeSer=CTimeSeries::Parse(p,true,"SNOWFALL","",Options);
         pGage->AddTimeSeries(pTimeSer,F_SNOWFALL); 
         break;
       }
@@ -249,7 +250,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Minumum Temperature data"<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MIN","");
+        pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MIN","",Options);
         pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_MIN); 
         break;
       }
@@ -262,7 +263,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Maximum Temperature data"<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MAX","");
+        pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MAX","",Options);
         pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_MAX);  
         break;
       }
@@ -275,7 +276,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Total Precipitation data"<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Precipitation data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,"PRECIP","");
+        pTimeSer=CTimeSeries::Parse(p,true,"PRECIP","",Options);
         pGage->AddTimeSeries(pTimeSer,F_PRECIP); 
         //pGage->DeleteSnowData();//??
         break;
@@ -289,7 +290,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Time Series Data: "<<s[1]<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Time Series Data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,s[1],"");
+        pTimeSer=CTimeSeries::Parse(p,true,s[1],"",Options);
         pGage->AddTimeSeries(pTimeSer,GetForcingTypeFromString(s[1])); 
         break;
       }
@@ -327,7 +328,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if (Options.noisy) {cout <<"Ave. Temperature data"<<endl;}
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_AVE","");
+        pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_AVE","",Options);
         pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_AVE); 
         break;
       }
@@ -586,7 +587,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           */
           if (Options.noisy) {cout <<"Observation data"<<endl;}
           if (Len<3){p->ImproperFormat(s); break;} 
-          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),(!strcmp(s[1], "HYDROGRAPH"))); // \todo[funct] should likley not be "is pulse" format. May need alternate time series class
+          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,(!strcmp(s[1], "HYDROGRAPH"))); // \todo[funct] should likley not be "is pulse" format. May need alternate time series class
           pModel->AddObservedTimeSeries(pTimeSer);
           break;
         }
@@ -610,7 +611,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           */
           if (Options.noisy) {cout <<"Observation weights"<<endl;}
           if (Len<3){p->ImproperFormat(s); break;} 
-          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]));
+          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options);
           pModel->AddObservedWeightsTS(pTimeSer);
           break;
         }
@@ -637,7 +638,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           CSubBasin *pSB;
           if (Len>=2){SBID=s_to_l(s[1]);}
           pSB=pModel->GetSubBasinByID(SBID);
-          pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),to_string(SBID));
+          pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),to_string(SBID),Options);
           if (pSB!=NULL){
             pSB->AddInflowHydrograph(pTimeSer); 
           }
@@ -660,7 +661,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           CSubBasin *pSB;
           if (Len>=2){SBID=s_to_l(s[1]);}
           pSB=pModel->GetSubBasinByID(SBID);
-          pTimeSer=CTimeSeries::Parse(p,true,"Extraction_"+to_string(SBID),to_string(SBID));
+          pTimeSer=CTimeSeries::Parse(p,true,"Extraction_"+to_string(SBID),to_string(SBID),Options);
           if (pSB!=NULL){
             pSB->AddReservoirExtract(pTimeSer);
           }
@@ -852,7 +853,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
             }
           }
           CTimeSeries *pTS;
-          pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"");//name=constitutent name
+          pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"",Options);//name=constitutent name
           pModel->GetTransportModel()->AddDirichletTimeSeries(const_name, i_stor, kk,pTS);
         }
         else{

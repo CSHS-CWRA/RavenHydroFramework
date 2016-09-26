@@ -248,7 +248,23 @@ double CSubBasin::GetAvgForcing (const string &forcing_string) const
   }
   return sum/_basin_area;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of specified cumulative flux over HRU group
+/// 
+/// \param i [in] index of storage compartment
+/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
+/// \return Area-weighted average of cumulative flux to storage compartment i
+//
+double CSubBasin::GetAvgCumulFlux (const int i, const bool to) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  for (int k=0;k<_nHydroUnits;k++)
+  {
+    sum    +=_pHydroUnits[k]->GetCumulFlux(i,to)*_pHydroUnits[k]->GetArea();
+  }
+  return sum/_basin_area;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specified inflow to subbasin at time t
 /// \param &t [in] Model time at which the inflow to SB is to be determined
