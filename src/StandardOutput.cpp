@@ -82,7 +82,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
 
     _HYDRO<<"time,date,hour";
-    _HYDRO<<",precip[mm/day]";
+    _HYDRO<<",precip [mm/day]";
     for (p=0;p<_nSubBasins;p++){
       if (_pSubBasins[p]->IsGauged()){
         string name;
@@ -147,7 +147,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
 
     RES_STAGE<<"time,date,hour";
-    RES_STAGE<<",precip[mm/day]";
+    RES_STAGE<<",precip [mm/day]";
     for (p=0;p<_nSubBasins;p++){
       if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
         string name;

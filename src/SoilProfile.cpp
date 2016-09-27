@@ -156,7 +156,7 @@ void CSoilProfile::AllocateSoilLayers(const int						nSoilLayers,
   else
   {
     cout <<"nSoilLayers:"<<nSoilLayers<<" nHorizons:"<<nHorizons<<endl;
-	  ExitGracefully("CSoilProfile::AllocateSoilLayers: cannot currently handle # of horizons-# of layers combination",BAD_DATA);
+	  ExitGracefully("CSoilProfile::AllocateSoilLayers: can currently handle a number of soil profile layers which are an even multiple of the number of soil horizons (usually 1:1)",BAD_DATA);
   }
 }
 /*****************************************************************

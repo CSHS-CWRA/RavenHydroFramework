@@ -333,7 +333,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
               :Qout [nsegs] [aQout x nsegs] [aQoutLast]
               :Qlat [nQlatHist] [aQlatHist x nQlatHist] [QlatLast]
               :Qin  [nQinHist] [aQinHist x nQinHist]
-              {reservoir variables}
+              {:ResStage [stage] [last stage]}
             :BasinIndex 1D, name
                ...
          :EndBasinStateVariables
@@ -408,6 +408,12 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
                 pBasin->SetQinHist(histsize,aQin);
                 delete [] aQin;
               }
+            }
+          }
+          else if (!strcmp(s[0],":ResStage"))
+          {
+            if (Len>=3){
+              pBasin->SetReservoirStage(s_to_d(s[1]));
             }
           }
           else if (!strcmp(s[0],":EndBasinStateVariables"))
