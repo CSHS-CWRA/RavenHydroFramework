@@ -372,8 +372,8 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
   //t_loc+tstep is now between n2*_interval and (n2+1)*_interval
   double inc;
   double blank = 0;
-  if (t_loc < 0.0) { return CTimeSeriesABC::BLANK_DATA; }
-  if (t_loc >= _nPulses*_interval) { return CTimeSeriesABC::BLANK_DATA; }
+  if (t_loc < -TIME_CORRECTION) {return CTimeSeriesABC::BLANK_DATA; }
+  if (t_loc >= _nPulses*_interval) {return CTimeSeriesABC::BLANK_DATA; }
   if (_pulse){
     if (n1 == n2){ return _aVal[n1]; }
     else{
@@ -467,6 +467,19 @@ double CTimeSeries::GetSampledValue(const int nn) const
   }
   return _aSampVal[nn];
 }
+///////////////////////////////////////////////////////////////////
+/// \brief Returns sampled value of observation for diagnostics?
+///  
+/// \param nn [in] time step number (measured from simulation start)
+/// \return sampled value for observation (???)
+//
+/*double CTimeSeries::GetSampledValueObsDiag(const int nn) const
+{
+	if (nn>_nSampVal - 2){
+		return CTimeSeriesABC::BLANK_DATA;
+	}
+	return _aSampVal[nn-1];
+}*/
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns the model time of the resampled time series at index nn
 /// \param nn [in] Index
@@ -653,7 +666,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     nMeasurements=s_to_i(s[0]);
     start_day    =s_to_d(s[1]);
     start_yr     =s_to_i(s[2]);
-    tstep        =s_to_d(s[3]);
+    tstep        =FixTimestep(s_to_d(s[3]));
     //units =s[4]
   }
   if (shift_to_per_ending)
@@ -748,7 +761,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
     nMeasurements=s_to_i(s[0]);
     start_day    =s_to_d(s[1]);
     start_yr     =s_to_i(s[2]);
-    tstep        =s_to_d(s[3]);
+    tstep        =FixTimestep(s_to_d(s[3]));
   }
 
   //:Parameters line ----------------------------------------------

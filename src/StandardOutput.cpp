@@ -62,7 +62,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
 
     int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP); 
-    _STORAGE<<"time[d],date,hour,rainfall[mm/day],snowfall[mm/d SWE],Channel Storage[mm],Rivulet Storage[mm]";  
+    _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Rivulet Storage [mm]";  
     for (i=0;i<GetNumStateVars();i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
         if (i!=iAtmPrecip){
@@ -168,7 +168,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (MB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    MB<<"time[d],date,hour"; 
+    MB<<"time [d],date,hour"; 
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         MB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
@@ -209,7 +209,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (HGMB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    HGMB<<"time[d],date,hour"; 
+    HGMB<<"time [d],date,hour"; 
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         HGMB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
@@ -305,8 +305,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (_FORCINGS.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    _FORCINGS<<"time[d],date,hour,day_angle,"; 
-    _FORCINGS<<"rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave[C],temp_monthly_min[C],temp_monthly_max[C],";
+    _FORCINGS<<"time [d],date,hour,day_angle,"; 
+    _FORCINGS<<"rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
     _FORCINGS<<"air dens. [kg/m3], air pres. [KPa], rel hum. [-],";
     _FORCINGS<<"cloud cover [-],";
     _FORCINGS<<"ET radiation [W/m2], SW radiation [W/m2], LW radiation [W/m2], wind vel. [m/s],";
@@ -328,7 +328,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
       int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP); 
-      HRUSTOR<<"time[d],date,hour,rainfall[mm/day],snowfall[mm/d SWE]";  
+      HRUSTOR<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE]";  
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
