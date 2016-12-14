@@ -933,6 +933,7 @@ double TimeDifference(const double       jul_day1,
                       const double       jul_day2, 
                       const int          year2);
 string GetCurrentTime(void);
+double    FixTimestep(double tstep);
 
 //Conversion Functions-------------------------------------------
 double CelsiusToFarenheit       (const double &T);

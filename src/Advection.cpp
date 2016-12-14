@@ -32,7 +32,7 @@ CmvAdvection::CmvAdvection(string constit_name,
     iFrom[q]=pTransModel->GetFromIndex(constit_ind,q);
     iTo  [q]=pTransModel->GetToIndex  (constit_ind,q);
   }
-  for (int q=0;q<nAdvConnections;q++)//for Dirichlet source correction (from)
+  for (int q=0;q<nAdvConnections;q++)//for Dirichlet/Neumann source correction (from)
   {
     iFrom[nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,constit_ind);
     iTo  [nAdvConnections+q]=iFrom[q];
@@ -217,7 +217,7 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
       rates[2*nAdvConnections+q]+=(Cs*vol-mass)/Options.timestep;
       sv[iTo[q]]=Cs*vol;
     }
-
+    
     // \todo [funct]: handle dumping into surface water
     //if ROUTE_NONE, dump surface water compartment to CONSTIT_SW
     /*if (Options.catchment_routing==ROUTE_NONE){
@@ -225,6 +225,16 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
       rates[3*nAdvConnections]=mass/Options.timestep;
     }*/
   }
+  
+  //Handle Neumann influx conditions, if present
+  //-------------------------------------------------------
+  /*for (q = 0; q < nAdvConnections; q++)
+  {
+    rates[q] = 0.0;
+    int iFromWater = pTransModel->GetFromWaterIndex(q);
+    rates[nAdvConnections + q] += pTransModel->GetSpecifiedMassFlux(iToWater, constit_ind, k, tt); //[mg/m2/d]
+  }*/
+
   delete [] Q;
 }
 

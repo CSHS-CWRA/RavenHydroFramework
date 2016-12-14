@@ -220,7 +220,7 @@ class CModel: public CModelABC
     int               GetSubBasinIndex   (const long ID) const;
     int            GetGaugeIndexFromName (const string name) const;
     double            GetWatershedArea   () const;
-
+    bool              IsInHRUGroup       (const int k, const string HRUGroupName) const;
 
     const optStruct  *GetOptStruct       () const;
     CTransportModel  *GetTransportModel  () const;

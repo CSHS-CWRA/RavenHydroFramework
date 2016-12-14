@@ -861,6 +861,47 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
         break;
       }
+      case (301)://----------------------------------------------
+        {/*:MassFluxTimeSeries
+        :MassFluxTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
+         {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
+         {double flux values, in mg/m2/d} x nMeasurements 
+        :EndConcentrationTimeSeries 
+        */
+        if (Options.noisy){cout <<"Fixed concentration time series"<<endl;}
+
+        int layer_ind;
+        int i_stor;
+        string const_name = to_string(s[1]);
+        sv_type typ=CStateVariable::StringToSVType(s[2],layer_ind,false);
+        if (typ==UNRECOGNIZED_SVTYPE){
+          WriteWarning(":MassFluxTimeSeries command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
+          break;
+        }
+        i_stor=pModel->GetStateVarIndex(typ,layer_ind);
+        if (i_stor!=DOESNT_EXIST){
+          int kk=DOESNT_EXIST;
+          if (Len>3)
+          {
+            CHRUGroup *pSourceGrp;
+            pSourceGrp=pModel->GetHRUGroup(s[3]);
+            if (pSourceGrp==NULL){
+              ExitGracefully("Invalid HRU Group name supplied in :MassFluxTimeSeries command in .rvt file",BAD_DATA_WARN);
+              break;
+            }
+            else{
+              kk=pSourceGrp->GetGlobalIndex();
+            }
+          }
+          CTimeSeries *pTS;
+          pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"",Options);//name=constitutent name
+          pModel->GetTransportModel()->AddInfluxTimeSeries(const_name, i_stor, kk,pTS);
+        }
+        else{
+          ExitGracefully(":ConcentrationTimeSeries command: invalid state variable name",BAD_DATA_WARN);
+        }
+        break;
+      }
       default: 
       {
         char firstChar = *(s[0]);

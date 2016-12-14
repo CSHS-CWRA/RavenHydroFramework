@@ -137,10 +137,12 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
 
               CChannelXSect const *pChan=NULL;
               pChan=CChannelXSect::StringToChannelXSect(string(s[3]));
-              string error;
+              string error,error2;
               error="Parse HRU File: Unrecognized Channel profile code ("+string(s[3])+") in SubBasins command";
-              ExitGracefullyIf((pChan==NULL) && (Options.routing!=ROUTE_NONE),error.c_str(),BAD_DATA);
-              
+              error2="Parse HRU File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE";
+              ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE")  && (Options.routing!=ROUTE_NONE),error.c_str(),BAD_DATA);
+              ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE),error2.c_str(),BAD_DATA);
+
               double length;
               length=AutoOrDouble(s[4]);
               if (length!=AUTO_COMPUTE){length*=M_PER_KM;}//convert to m from km
@@ -356,7 +358,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
         pHRUGrp=pModel->GetHRUGroup(s[1]);
         if (pHRUGrp==NULL){//group not yet defined
           WriteWarning("HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file",Options.noisy);
-          pHRUGrp=new CHRUGroup(s[1],pModel->GetNumStateVars());
+          pHRUGrp=new CHRUGroup(s[1],pModel->GetNumHRUGroups());
           pModel->AddHRUGroup(pHRUGrp);
         }
         while ((Len==0) || (strcmp(s[0],":EndHRUGroup")))

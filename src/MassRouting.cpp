@@ -199,13 +199,13 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,doubl
 		  Mlat_new+=pBasin->GetUnitHydrograph()[n]*aMlatHist[p][c][n];
 	  }	
   
-	  //volume change from linearly varying upstream inflow over time step 
+	  //mass change from linearly varying upstream inflow over time step 
 	  dM+=0.5*(aMinHist[p][c][0]+aMinHist[p][c][1])*dt; 
 
-	  //volume change from linearly varying downstream outflow over time step 
+	  //mass change from linearly varying downstream outflow over time step 
 	  //dM-=0.5*(aMout[p][c][pBasin->GetNumSegments()-1]+MoutLast[p][c])*dt; 
 	  
-	  //volume change from lateral inflows
+	  //mass change from lateral inflows
 	  //dM+=0.5*(Mlat_new+MlatLast[p][c])*dt; 
   
 	  //_channel_storage[p][c]+=dM;//[mg]

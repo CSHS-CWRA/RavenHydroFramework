@@ -78,6 +78,13 @@ void CGauge::Initialize(const optStruct   &Options,
 
   //Populate Temperature time series: by timestep, daily min/max/average
   //--------------------------------------------------------------------------
+  if ((GetTimeSeries(F_TEMP_AVE)!=NULL) && (GetTimeSeries(F_TEMP_AVE)->IsDaily()))
+  {
+    // if daily temp is specified, copy to temp_daily_ave time series
+    CTimeSeries *temp_daily_ave=new CTimeSeries("TEMP_DAILY_AVE",*GetTimeSeries(F_TEMP_AVE));
+    AddTimeSeries(temp_daily_ave,F_TEMP_DAILY_AVE);
+  }
+
   if ((GetTimeSeries(F_TEMP_AVE)!=NULL) && (!GetTimeSeries(F_TEMP_AVE)->IsDaily()))//Sub-daily temperature data provided
   {
     GenerateMinMaxAveTempFromSubdaily(Options);//Generate daily min,max, & avg
@@ -100,7 +107,12 @@ void CGauge::Initialize(const optStruct   &Options,
   //--------------------------------------------------------------------------
   ExitGracefullyIf((GetTimeSeries(F_SNOWFALL)==NULL) && (Options.rainsnow==RAINSNOW_DATA),
       "CGauge::Initialize: snow autogeneration is off, but no snow data has been supplied.",BAD_DATA);
-
+  
+  if((GetTimeSeries(F_SNOWFALL)!=NULL) && (GetTimeSeries(F_RAINFALL)!=NULL) && (Options.rainsnow!=RAINSNOW_DATA))
+  {
+    WriteWarning("Gauge:Initialize: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
+  }
+  
   if ((GetTimeSeries(F_SNOWFALL)!=NULL) && (GetTimeSeries(F_RAINFALL)!=NULL)){
     CTimeSeries *sum;
     sum=CTimeSeries::Sum(GetTimeSeries(F_RAINFALL),GetTimeSeries(F_SNOWFALL),"PRECIP");//sum together rain & snow to get precip

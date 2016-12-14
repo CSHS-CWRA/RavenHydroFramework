@@ -1115,10 +1115,10 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
   for (int n=0;n<_nQlatHist-1;n++){
     Qlat_last+=_aUnitHydro[n]*_aQlatHist[n+1];
   }
+
   routing_method route_method;
   if (_is_headwater){route_method=ROUTE_NONE;}
   else              {route_method=Options.routing;}
-
   //==============================================================
   // route in channel
   //==============================================================
@@ -1193,7 +1193,7 @@ void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
 			c2=storage_coeff/2;
 			c3=(1.0-storage_coeff);
 
-      //new outflow proportional to old outflow without correction for /// \todo [funct]:properly handle impact of (Options.distrib_lat_inflow==true)
+      //new outflow proportional to old outflow without correction
       double corr=1.0;
       if (Options.distrib_lat_inflow){corr=seg_fraction;}
 			aQout_new[seg] = c1*Qin + c2*Qin_new + c3*(_aQout[seg]-corr*_QlatLast);

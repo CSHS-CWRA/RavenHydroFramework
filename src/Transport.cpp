@@ -338,6 +338,7 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit	*pHRU,
     if (toType!=ATMOSPHERE)
     {
       return pHRU->GetSoilProps(m)->retardation[c];
+      //return pHRU->GetSoilTransportProps(m)->retardation[c];
     }
     else if (toType==ATMOSPHERE)
     {
@@ -351,7 +352,33 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit	*pHRU,
     return 1.0;
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns effective retardation factor for constituent c 
+/// being transported from storage compartment iFromWater to storage compartment iToWater
+/// \param c [in] constituent index
+/// \param iFromWater [in] index of "from" water storage state variable
+/// \param iToWater [in] index of "to" water storage state variable
+//
+double CTransportModel::GetDecayCoefficient(const int c,const CHydroUnit	*pHRU,const int iStorWater) const
+{
+  sv_type storType;
+  double decay_coeff = GetConstituentParams(c)->decay_coeff;
 
+  storType=pModel->GetStateVarType(iStorWater);
+
+  //add special decay_coefficients from other processes
+  if (storType == SOIL)
+  {
+    int m = pModel->GetStateVarLayer(iStorWater);
+#ifndef _STRICTCHECK_
+    ExitGracefullyIf(m==-1,"GetDecayCoefficient:invalid iFromWater",RUNTIME_ERR);
+#endif
+    //decay_coeff += pHRU->GetSoilProps(m)->mineralization_rate[c];
+    //decay_coeff += pHRU->GetSoilProps(m)->loss_rate[c]; //e.g., denitrification
+
+  }
+  return decay_coeff;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
 /// \note adds corresponding state variables to model
@@ -569,7 +596,9 @@ void   CTransportModel::AddDirichletCompartment(const string const_name, const i
       pSource->constit_index =c;
     }
   }
+  pSource->dirichlet    =true;
   pSource->concentration=Cs;
+  pSource->flux         =0.0;
   pSource->i_stor       =i_stor;
   pSource->kk           =kk;
   pSource->pTS          =NULL;
@@ -593,14 +622,81 @@ void   CTransportModel::AddDirichletTimeSeries(const string const_name, const in
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
-  cout << "CTransportModel::AddDirichletTimeSeries: "<<const_name<<endl;
   pSource->constit_index=DOESNT_EXIST;
   for (int c=0; c<nConstituents;c++){
     if (StringToUppercase(const_name)==StringToUppercase(pConstituents[c]->name)){
       pSource->constit_index =c;
     }
   }
+  pSource->dirichlet    =true;
   pSource->concentration=DOESNT_EXIST;
+  pSource->flux         =0.0;
+  pSource->i_stor       =i_stor;
+  pSource->kk           =kk;
+  pSource->pTS          =pTS;
+
+  ExitGracefullyIf(pSource->constit_index==DOESNT_EXIST,("AddDirichletTimeSeries: invalid constituent name "+const_name).c_str(),BAD_DATA_WARN);
+  ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
+
+  if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
+   ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);} 
+
+  pLast=pSource; //so source is not deleted upon leaving this routine
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief adds influx (Neumann) source
+/// \param const_name [in] constituent name
+/// \param i_stor [in] global index of water storage state variable
+/// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
+/// \param flux [in] specified fixed mass influx rate [mg/m2/d]
+//
+void   CTransportModel::AddInfluxSource(const string const_name, const int i_stor, const int kk, const double flux)
+{
+  static constit_source *pLast;
+  constit_source *pSource=new constit_source();
+  
+  pSource->constit_index=DOESNT_EXIST;
+  for (int c=0; c<nConstituents;c++){
+    if (StringToUppercase(const_name)==StringToUppercase(pConstituents[c]->name)){
+      pSource->constit_index =c;
+    }
+  }
+  pSource->dirichlet    =false;
+  pSource->concentration=0.0;
+  pSource->flux         =flux;
+  pSource->i_stor       =i_stor;
+  pSource->kk           =kk;
+  pSource->pTS          =NULL;
+
+  ExitGracefullyIf(pSource->constit_index==DOESNT_EXIST,"AddInfluxSource: invalid constituent name",BAD_DATA_WARN);
+  ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddInfluxSource: invalid storage compartment index",BAD_DATA_WARN);
+
+  if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
+   ExitGracefully("CTransportModel::AddInfluxSource: adding NULL source",BAD_DATA);} 
+
+  pLast=pSource;//so source is not deleted upon leaving this routine
+}
+//////////////////////////////////////////////////////////////////
+/// \brief adds influx (Neumann) source source time series
+/// \param const_name [in] constituent name
+/// \param i_stor [in] global index of water storage state variable
+/// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
+/// \param pTS [in] Time series of Dirichlet source flux rate [mg/m2/d]
+//
+void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS)
+{
+  static constit_source *pLast;
+  constit_source *pSource=new constit_source();
+  pSource->constit_index=DOESNT_EXIST;
+  for (int c=0; c<nConstituents;c++){
+    if (StringToUppercase(const_name)==StringToUppercase(pConstituents[c]->name)){
+      pSource->constit_index =c;
+    }
+  }
+  pSource->dirichlet    =false;
+  pSource->concentration=0.0;
+  pSource->flux         =DOESNT_EXIST;
   pSource->i_stor       =i_stor;
   pSource->kk           =kk;
   pSource->pTS          =pTS;
@@ -647,7 +743,9 @@ void CTransportModel::Initialize()
 
   /// \todo[funct]: calculate initial mass from Dirichlet cells 
 
+
   //populate array of source indices
+  // \todo [funct] will have to revise to support different sources in different HRUs (e.g., aSourceIndices[c][i_stor][k])
   aSourceIndices=NULL;
   aSourceIndices=new int *[nConstituents];
   ExitGracefullyIf(aSourceIndices==NULL,"CTransport::Initialize",OUT_OF_MEMORY);
@@ -661,7 +759,10 @@ void CTransportModel::Initialize()
       for (int i=0;i<nSources;i++){
         if ((pSources[i]->i_stor==i_stor) && (pSources[i]->constit_index==c))
         {
-          aSourceIndices[c][i_stor]=i;
+          if (aSourceIndices[c][i_stor] != DOESNT_EXIST){
+            WriteWarning("CTransportModel::Intiialize: cannot currently have more than one constitutent source per constituent/storage combination",false);
+          }
+          aSourceIndices[c][i_stor]=i; //each 
         }
       }
     }
@@ -717,6 +818,7 @@ bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, c
   
   int i_source=aSourceIndices[c][i_stor];
   if (i_source!=DOESNT_EXIST) {
+    if (!pSources[i_source]->dirichlet){return false;}
     if (pSources[i_source]->kk==DOESNT_EXIST)
     {
       Cs = pSources[i_source]->concentration; 
@@ -739,6 +841,40 @@ bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, c
     }
   }
   return false;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns specified mass flux for given constitutent and water storage unit at time tt
+/// \returns source flux in mg/m2/d
+/// \param i_stor [in] storage index of water compartment
+/// \param c [in] constituent index
+/// \param k [in] global HRU index
+/// \param tt [in] current time structure
+//
+double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct tt) const
+{
+  double flux;
+  bool retrieve=false;
+  int i_source=aSourceIndices[c][i_stor];
+  if (i_source == DOESNT_EXIST) {return 0.0;}
+  if (pSources[i_source]->dirichlet){return 0.0;}
+
+  if (pSources[i_source]->kk==DOESNT_EXIST)//no HRU gorup
+  {
+    retrieve=true;
+  }
+  else { //Check if we are in HRU Group
+    retrieve=pModel->GetHRUGroup(pSources[i_source]->kk)->IsInGroup(k);
+  }
+  if (retrieve)
+  {
+    flux=pSources[i_source]->concentration; 
+    if (flux == DOESNT_EXIST){//get from time series
+      flux=pSources[i_source]->pTS->GetValue(tt.model_time );
+    }
+    return flux;
+  }
+  else {return 0.0;}
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Write transport output file headers

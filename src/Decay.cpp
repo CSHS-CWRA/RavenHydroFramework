@@ -78,7 +78,7 @@ void   CmvDecay::GetRatesOfChange(const double			*state_vars,
                                   double            *rates) const
 {
   int    k=pHRU->GetGlobalIndex();
-  double junk;
+  double junk,mass;
   int iStor,iConstit;
   int nCompartments = _pTransModel->GetNumWaterCompartments();
   double decay_coeff;
@@ -86,16 +86,19 @@ void   CmvDecay::GetRatesOfChange(const double			*state_vars,
   {
     iStor   =_pTransModel->GetStorWaterIndex(ii);
     iConstit=_pTransModel->GetStorIndex     (_constit_ind,ii);   //global state variable index of this constituent in this water storage
-    decay_coeff = _pTransModel->GetConstituentParams(_constit_ind)->decay_coeff;
+    
+    mass=state_vars[iConstit];
+    decay_coeff = _pTransModel->GetDecayCoefficient(_constit_ind,pHRU,iStor);
+
     if (_pTransModel->IsDirichlet(iStor, _constit_ind, k, tt, junk)){ }
     else {
       if (_dtype==DECAY_BASIC)
       {
-        rates[ii]= -decay_coeff*state_vars[iConstit]; //[mg/m2/d]=[1/d]*[mg/m2]
+        rates[ii]= -decay_coeff*mass; //[mg/m2/d]=[1/d]*[mg/m2]
       }
       else if (_dtype==DECAY_ANALYTIC)
       {
-        rates[ii] = -state_vars[iConstit] * (1 - exp(-decay_coeff*Options.timestep)); //analytical approach
+        rates[ii] = - mass * (1 - exp(-decay_coeff*Options.timestep)); //analytical approach
       }
     }
   }

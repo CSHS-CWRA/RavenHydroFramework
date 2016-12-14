@@ -34,6 +34,8 @@ class CModelABC //version of model visible to lesser units
   virtual double      GetAvgCumulFlux    (const int i, const bool to) const=0;
   virtual bool        StateVarExists     (sv_type type) const=0;
 
+  virtual bool        IsInHRUGroup       (const int k, const string HRUGroupName) const=0;
+
   virtual int         GetLakeStorageIndex() const=0;//TMP?
 
   virtual const optStruct   *GetOptStruct() const = 0;

@@ -61,7 +61,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   int nVals=pTSObs->GetNumSampledValues();
   double obsval,modval;
   double weight=1;
-  int skip;
+  int skip=0;
   if (!strcmp(pTSObs->GetName().c_str(), "HYDROGRAPH") && (Options.ave_hydrograph == true)){ skip = 1; }//skips first point (initial conditions)
 
   switch (_type)

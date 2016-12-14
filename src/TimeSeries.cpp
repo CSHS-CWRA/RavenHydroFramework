@@ -634,7 +634,17 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
     start_day=tt.julian_day;
     start_yr =tt.year;
-    tstep =s_to_d(s[2]);
+
+    string tString=s[2];
+    if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
+      time_struct tt;
+      tt=DateStringToTimeStruct("0000-01-01",tString);
+      tstep=FixTimestep(tt.julian_day);
+    } 
+    else{ 
+      tstep =FixTimestep(s_to_d(s[2]));
+    }
+    
     nMeasurements=s_to_i(s[3]);
     //units =s[4]
   } 
@@ -646,9 +656,9 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     tstep        =s_to_d(s[3]);
     //units =s[4]
   }
-  if (shift_to_per_ending){
-    
-    start_day+=Options.timestep;//THIS NEEDS TO BE MODEL TIME STEP?
+  if (shift_to_per_ending)
+  {
+    start_day+=Options.timestep;
     int leap=0;
     if (IsLeapYear(start_yr)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
@@ -721,7 +731,17 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
     start_day=tt.julian_day;
     start_yr =tt.year;
-    tstep =s_to_d(s[2]);
+
+    string tString=s[2];
+    if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
+      time_struct tt;
+      tt=DateStringToTimeStruct("0000-01-01",tString);
+      tstep=FixTimestep(tt.julian_day);
+    } 
+    else{ 
+      tstep =FixTimestep(s_to_d(s[2]));
+    }
+
     nMeasurements=s_to_i(s[3]);
   } 
   else{//julian date format [nMeasurements] [start_day] [start_yr] [timestep]

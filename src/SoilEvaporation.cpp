@@ -415,7 +415,6 @@ void CmvSoilEvap::GetRatesOfChange (const double		 *state_vars,
     tens_stor_u= pHRU->GetSoilTensionStorageCapacity(0);
     tens_stor_l= pHRU->GetSoilTensionStorageCapacity(1);
 
- 
     rates[0]   = (PET           )*min(stor_u/tens_stor_u,1.0);	//upper layer evaporation rate [mm/d]
     rates[1]   = (PET - rates[0])*min(stor_l/tens_stor_l,1.0);	//lower layer evaporation rate [mm/d]
     //   if (rates[0]<-REAL_SMALL){ cout << stor_u << " " << tens_stor_u << " "<<PET<<endl; }

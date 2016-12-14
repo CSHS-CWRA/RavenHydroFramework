@@ -176,6 +176,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   int mode=0;
   argument="";
   //initialization:
+  Options.run_name    ="";
   Options.rvi_filename="";
   Options.rvh_filename="";
   Options.rvp_filename="";
@@ -191,7 +192,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     if (i!=argc){
       word=to_string(argv[i]);
     }
-    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-c") || (word=="-o") || (word=="-s") || (i==argc))
+    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (i==argc))
     {
       if      (mode==0){ 
         Options.rvi_filename=argument+".rvi"; 
@@ -207,12 +208,14 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==3){Options.rvt_filename=argument; argument="";}
       else if (mode==4){Options.rvc_filename=argument; argument="";}
       else if (mode==5){Options.output_dir  =argument; argument="";}
+      else if (mode==6){Options.run_name    =argument; argument="";}
       if      (word=="-p"){mode=1;} 
       else if (word=="-h"){mode=2;}
       else if (word=="-t"){mode=3;} 
       else if (word=="-c"){mode=4;} 
       else if (word=="-o"){mode=5;}
       else if (word=="-s"){Options.silent=true;}//should be specified prior to other flags
+      else if (word=="-r"){mode=6;}
     }
     else{
       if (argument==""){argument+=word;}
@@ -469,4 +472,19 @@ void SmartLookupUnitTest(){
   cout<<"Guess: 0, lookup=38: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
   delete [] aVals;
   ExitGracefully("SmartLookupUnitTest",SIMULATION_DONE);
+}
+/////////////////////////////////////////////////////////////////
+/// \brief Tests FixTimestep() function 
+//
+void FixTimestepTest()
+{
+  cout.precision(12);
+  double xx;
+  xx = 0.041667; cout << "Fix Timestep :" << xx << " " << FixTimestep(xx) << " " << 1.0 / FixTimestep(xx) << endl;
+  xx = 1.0;      cout << "Fix Timestep :" << xx << " " << FixTimestep(xx) << " " << 1.0 / FixTimestep(xx) << endl;
+  xx = 0.333;    cout << "Fix Timestep :" << xx << " " << FixTimestep(xx) << " " << 1.0 / FixTimestep(xx) << endl;
+  xx = 0.25;     cout << "Fix Timestep :" << xx << " " << FixTimestep(xx) << " " << 1.0 / FixTimestep(xx) << endl;
+  xx = 0.003472; cout << "Fix Timestep :" << xx << " " << FixTimestep(xx) << " " << 1.0 / FixTimestep(xx) << endl;
+  xx = 0.4;      cout << "Fix Timestep :" << xx << " " << FixTimestep(xx) << " " << 1.0 / FixTimestep(xx) << endl;
+  ExitGracefully("FixTimestepTest", SIMULATION_DONE);
 }

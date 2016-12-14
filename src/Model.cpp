@@ -318,6 +318,26 @@ CHRUGroup  *CModel::GetHRUGroup(const string name) const
   }
   return NULL;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns true if HRU with global index k is in specified HRU Group
+///
+/// \param k [in] HRU global index 
+/// \param HRUGroupName [in] String name of HRU group
+/// \return true if HRU k is in HRU Group specified by HRUGroupName
+//
+bool              CModel::IsInHRUGroup(const int k, const string HRUGroupName) const{
+
+  CHRUGroup *pGrp=NULL;
+  pGrp=GetHRUGroup(HRUGroupName); 
+  if (pGrp == NULL){ return false; }//throw warning?
+
+  int kk = pGrp->GetGlobalIndex();
+  for (int k_loc=0; k_loc<_pHRUGroups[kk]->GetNumHRUs(); k_loc++)
+  {
+    if (_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex()==k){return true;}
+  }
+  return false;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific Sub basin denoted by index parameter
@@ -1239,12 +1259,14 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   _aShouldApplyProcess = new bool *[_nProcesses];
   for (int j=0; j<_nProcesses;j++){
-	_aShouldApplyProcess[j]=NULL;
-	_aShouldApplyProcess[j] = new bool [_nHydroUnits];
-	ExitGracefullyIf(_aShouldApplyProcess[j]==NULL,"CModel::Initialize (_aShouldApplyProcess)",OUT_OF_MEMORY);
-	for (k=0; k<_nHydroUnits;k++)
-		_aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
+	  _aShouldApplyProcess[j]=NULL;
+	  _aShouldApplyProcess[j] = new bool [_nHydroUnits];
+	  ExitGracefullyIf(_aShouldApplyProcess[j]==NULL,"CModel::Initialize (_aShouldApplyProcess)",OUT_OF_MEMORY);
+	  for (k=0; k<_nHydroUnits;k++){
+		  _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
+    }
   }
+  
 
   //Write Output File Headers
   //--------------------------------------------------------------
@@ -1855,7 +1877,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
   for (int i=0;i<_nObservedTS;i++)
   {
     string datatype=_pObservedTS[i]->GetName();
-    sv_type svtyp=CStateVariable::StringToSVType (datatype,layer_ind,false);
+    sv_type svtyp=CStateVariable::StringToSVType(datatype,layer_ind,false);
 
     if (datatype=="HYDROGRAPH")
     {
@@ -1869,6 +1891,14 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       {
          value=pBasin->GetOutflowRate();
       }
+    }
+    else if (datatype == "RESERVOIR_STAGE")
+    {
+      CSubBasin *pBasin;
+      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      ExitGracefullyIf(pBasin == NULL, 
+        "CModel::UpdateDiagnostics: Nonexistent subbasin ID specified in observed reservoir stage time series",BAD_DATA);
+      value = pBasin->GetReservoir()->GetStage();
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)
     {
@@ -1887,10 +1917,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     _pModeledTS[i]->SetValue (n,value);
 
 
-    /// \todo [bug]: for some reason not adding final continuous hydrograph datapoint to sampled data in modeled hydrograph if AVE_HYDROGRAPH is used
-		obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
-    //while((tt.model_time+Options.timestep >= obsTime+_pObservedTS[i]->GetSampledInterval()) &&  //N .Sgro Fix (\todo : testing needed)
-		while((tt.model_time >= obsTime+_pObservedTS[i]->GetSampledInterval()) && 
+    obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
+    while((tt.model_time+Options.timestep >= obsTime+_pObservedTS[i]->GetSampledInterval()) &&  //N .Sgro Fix 
           (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
       // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA

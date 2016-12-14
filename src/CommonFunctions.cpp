@@ -443,6 +443,16 @@ double TimeDifference(const double jul_day1,const int year1,const double jul_day
   return diff;
 }
 ////////////////////////////////////////////////////// /////////////////////
+/// \brief Round the timestep to the nearest fractional day
+/// \return improved timestep
+double    FixTimestep(double tstep)
+ {
+  double tmp = round(1.0/tstep);
+  ExitGracefullyIf(fabs(tstep*tmp-1.0)>0.1,
+    "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
+  return 1.0/tmp;
+}
+////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time
 /// \return "now" as an ISO formatted string
 string GetCurrentTime(void)

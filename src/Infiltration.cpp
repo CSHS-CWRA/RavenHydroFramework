@@ -321,7 +321,7 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
     stor    =state_vars[iTopSoil];
     max_stor=pHRU->GetSoilCapacity(0);
     beta    =pHRU->GetSoilProps(0)->HBV_beta;
-    sat     =min(stor/max_stor,1.0);
+    sat     =max(min(stor/max_stor,1.0),0.0);
 
 	  runoff=pow(sat,beta)*rainthru;
 

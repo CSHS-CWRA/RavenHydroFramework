@@ -27,11 +27,13 @@ struct constituent
 };
 struct constit_source
 {
+  bool dirichlet;         ///< =true for dirichlet, false for neumann
   int constit_index;      ///< constituent index (c)
   int i_stor;             ///< index of water storage compartment
   int kk;                 ///< index of HRU group to which source is applied (default is all for DOESNT_EXIST)
-  double concentration;   ///< fixed concentration [mg/m2] (or -1 if time series should be used)
-  const CTimeSeries *pTS; ///< time series of fixed concentration (or NULL if fixed should be used)
+  double concentration;   ///< fixed concentration [mg/m2] (or DOESNT_EXIST=-1 if time series should be used)
+  double flux;            ///< fixed flux [mg/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
+  const CTimeSeries *pTS; ///< time series of fixed concentration or flux (or NULL if fixed should be used)
 };
 struct transport_params
 {
@@ -115,14 +117,18 @@ class CTransportModel
     double GetOutflowConcentration(const int p, const int c) const;
     double GetIntegratedMassOutflow(const int p, const int c) const;
 
+    double GetDecayCoefficient (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
     double GetRetardationFactor(const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
 
     bool   IsDirichlet(const int i_stor, const int c, const int k, const time_struct tt, double &Cs) const;
+    double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct tt) const;
 
     //Manipulators
     void   AddConstituent(string name, bool is_tracer);
     void   AddDirichletCompartment(const string const_name, const int i_stor, const int kk, const double Cs);
     void   AddDirichletTimeSeries (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
+    void   AddInfluxSource        (const string const_name, const int i_stor, const int kk, const double flux); 
+    void   AddInfluxTimeSeries    (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
     //
     void   Prepare(const optStruct &Options);
     void   Initialize();

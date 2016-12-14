@@ -104,6 +104,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CHydroProcessABC *pMover; 
   CmvPrecipitation *pPrecip=NULL;
   bool              transprepared(false);
+  bool              runname_overridden(false);
   ifstream INPUT; 
 
   int      tmpN; 
@@ -129,7 +130,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CParser *p=new CParser(INPUT,Options.rvi_filename,line);
 
   //Default Values---------------------------------------------------
-  Options.run_name            ="";
+  if(Options.run_name!=""){runname_overridden=true;}
   Options.julian_start_day    =0;//Jan 1
   Options.julian_start_year   =2000;
   Options.duration            =365;
@@ -352,7 +353,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Transformation"        )){code=307;}
 
     ExitGracefullyIf((code>200) && (code<300) && (pModel==NULL),
-      "ParseMainInputFile: :HydrologicalProcesses command must be called before hydrological processes are specified",BAD_DATA);
+      "ParseMainInputFile: :HydrologicalProcesses AND :SoilModel commands must be called before hydrological processes are specified",BAD_DATA);
     ExitGracefullyIf((code>300) && (code<400) && (pModel->GetTransportModel()==NULL),
       "ParseMainInputFile: :Transport command must be called before geochemical processes are specified",BAD_DATA);
 
@@ -423,10 +424,10 @@ bool ParseMainInputFile (CModel     *&pModel,
         if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format
           time_struct tt;
           tt=DateStringToTimeStruct("0000-01-01",tString);
-          Options.timestep=tt.julian_day;
+          Options.timestep=FixTimestep(tt.julian_day);
         } 
         else{ 
-          Options.timestep =s_to_d(s[1]);
+          Options.timestep =FixTimestep(s_to_d(s[1]));
         }
         break;
       }
@@ -1012,7 +1013,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       case(56):  //--------------------------------------------
       {/*:RunName */
         if (Options.noisy) {cout <<"Using Run Name: "<<s[1]<<endl;}
-        Options.run_name=s[1];
+        if(!runname_overridden){
+          Options.run_name=s[1];
+        }
+        else{
+          WriteWarning("ParseInputFile: when run_name is specified from command line, it cannot be overridden in the .rvi file",Options.noisy);
+        }
         break;
       }
       case(57):  //--------------------------------------------
@@ -2118,20 +2124,22 @@ bool ParseMainInputFile (CModel     *&pModel,
           break;
         }
         i_stor=pModel->GetStateVarIndex(typ,layer_ind);
-        if (i_stor!=DOESNT_EXIST){
-          int kk=DOESNT_EXIST;
-          if (Len>4){
+        if (i_stor != DOESNT_EXIST){
+          int kk = DOESNT_EXIST;
+          if (Len > 4){
             CHRUGroup *pSourceGrp;
-            pSourceGrp=pModel->GetHRUGroup(s[4]);
-            if (pSourceGrp==NULL){
-              ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration command in .rvi file",BAD_DATA_WARN);
+            pSourceGrp = pModel->GetHRUGroup(s[4]);
+            if (pSourceGrp == NULL){
+              ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration command in .rvi file", BAD_DATA_WARN);
               break;
             }
             else{
-              kk=pSourceGrp->GetGlobalIndex();
+              kk = pSourceGrp->GetGlobalIndex();
             }
           }
-          pModel->GetTransportModel()->AddDirichletCompartment(s[1],i_stor,kk,s_to_d(s[3]));
+
+          pModel->GetTransportModel()->AddDirichletCompartment(s[1], i_stor, kk, s_to_d(s[3]));
+          //if time series is specified, s_to_d(time series file) returns zero
         }
         else{
           ExitGracefully(":FixedConcentration command: invalid state variable name",BAD_DATA_WARN);
@@ -2169,8 +2177,8 @@ bool ParseMainInputFile (CModel     *&pModel,
               kk=pSourceGrp->GetGlobalIndex();
             }
           }
-          ExitGracefully(":MassInflux command",STUB);
-          //pModel->GetTransportModel()->AddInfluxSource(s[1],i_stor,kk,s_to_d(s[3])); 
+          pModel->GetTransportModel()->AddInfluxSource(s[1],i_stor,kk,s_to_d(s[3])); 
+          //if time series is specified, s_to_d(time series file) returns zero
         }
         else{
           ExitGracefully(":MassInflux command: invalid state variable name",BAD_DATA_WARN);
@@ -2240,7 +2248,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else
         {
 			    string errString = "Unrecognized command in .rvi file:\n   " + string(s[0]);
-          ExitGracefully(errString.c_str(),BAD_DATA);
+          ExitGracefully(errString.c_str(),BAD_DATA_WARN);
         }
         break;
       }

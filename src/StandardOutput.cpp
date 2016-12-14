@@ -88,18 +88,18 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         string name;
         if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" [m3/s]";}
         else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" [m3/s]";}
-          //if (Options.print_obs_hydro)
-          {
-            for (int i = 0; i < _nObservedTS; i++){
-              if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-                (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                  (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
-              {
-                if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
-                else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
-              }
+        //if (Options.print_obs_hydro)
+        {
+          for (int i = 0; i < _nObservedTS; i++){
+            if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
+              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+                (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+            {
+              if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
+              else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
             }
           }
+        }
 
         if (_pSubBasins[p]->GetReservoir() != NULL){
           if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" [res inflow]  [m3/s]";}
@@ -466,9 +466,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if (_pSubBasins[p]->IsGauged())
           {
             _HYDRO<<","<<_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-            if (_pSubBasins[p]->GetReservoir() != NULL){
-              _HYDRO<<","<<_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-            }
+
             //if (Options.print_obs_hydro)
             {
               for (int i = 0; i < _nObservedTS; i++)
@@ -486,6 +484,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                 }
               }
             }
+            if (_pSubBasins[p]->GetReservoir() != NULL){
+              _HYDRO<<","<<_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+            }
           }
         }
         _HYDRO<<endl;
@@ -499,9 +500,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if (_pSubBasins[p]->IsGauged())
           {
             _HYDRO<<","<<_pSubBasins[p]->GetOutflowRate();
-            if (_pSubBasins[p]->GetReservoir() != NULL){
-              _HYDRO<<","<<_pSubBasins[p]->GetReservoirInflow()/(Options.timestep*SEC_PER_DAY);
-            }
+
             //if (Options.print_obs_hydro)
             {
               for (int i = 0; i < _nObservedTS; i++){
@@ -516,6 +515,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   else                                                         { _HYDRO << ", ";       }
                 }
               }
+            }
+            if (_pSubBasins[p]->GetReservoir() != NULL){
+              _HYDRO<<","<<_pSubBasins[p]->GetReservoirInflow();
             }
           }
         }

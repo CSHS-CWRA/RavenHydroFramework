@@ -480,7 +480,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         default:
           {
 			      string errString = "Unrecognized command in .rvc file:\n   " + string(s[0]);
-            ExitGracefully(errString.c_str(),BAD_DATA);//STRICT 
+            ExitGracefully(errString.c_str(),BAD_DATA_WARN);//STRICT 
           }
           break;
         }

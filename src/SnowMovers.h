@@ -177,8 +177,8 @@ enum snowbal_type
   SNOBAL_COLD_CONTENT, ///< Cold content-based
 	SNOBAL_HBV,          ///< HBV method
 	SNOBAL_UBCWM,        ///< UBCWM method
-  SNOBAL_CEMA_NIEGE,    ///< Cema Niege method
-  SNOBAL_TWO_LAYER    ///< Two layer cold content (converted from GJ C# code)
+  SNOBAL_CEMA_NIEGE,   ///< Cema Niege method
+  SNOBAL_TWO_LAYER     ///< Two layer cold content (converted from GJ C# code)
 };
 
 ///////////////////////////////////////////////////////////////////

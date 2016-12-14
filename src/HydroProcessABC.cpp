@@ -321,12 +321,12 @@ bool CHydroProcessABC::ShouldApply(const CHydroUnit *pHRU) const
     }
     else if (pConditions[i]->basis==BASIS_HRU_GROUP)
     {
-      ExitGracefully("CHydroProcessABC::ShouldApply:BASIS_HRU_GROUP",STUB);
-      /*
-      bool is_in_group=pModel->IsInHRUGroup(global_k,(int)(pConditions[i]->data));
-      if (!is_in_group) && (aConditions[i].compare_method==COMPARE_IS_EQUAL ){return false;}
-      if ( is_in_group) && (aConditions[i].compare_method==COMPARE_NOT_EQUAL ){return false;}
-      */
+      int global_k=pHRU->GetGlobalIndex();
+      bool is_in_group=pModel->IsInHRUGroup(global_k,pConditions[i]->data);
+
+      if ((!is_in_group) && (pConditions[i]->compare_method==COMPARE_IS_EQUAL )){return false;}
+      if (( is_in_group) && (pConditions[i]->compare_method==COMPARE_NOT_EQUAL )){return false;}
+      
     }
     else if (pConditions[i]->basis==BASIS_LANDCLASS){
       ExitGracefully("CHydroProcessABC::ShouldApply:BASIS_LANDCLASS",STUB);
