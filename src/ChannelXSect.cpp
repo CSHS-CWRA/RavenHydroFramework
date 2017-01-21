@@ -210,7 +210,7 @@ void CChannelXSect::Interpolate(const double &Q, double &interp, int &i) const
   //standard version-unoptimized 
   //should start out assuming current Q close to or same as old Q
   i=0; while ((Q>aQ[i+1]) && (i<(N-2))){i++;}//Dumb Search
-  //SmartSearch(Q,aQ,N,i,ilast);
+  //SmartIntervalSearch(Q,aQ,N,i,ilast);
   interp=(Q-aQ[i])/(aQ[i+1]-aQ[i]); //1<, >0, unless i=N-1, then >1
   ilast=i;
 }

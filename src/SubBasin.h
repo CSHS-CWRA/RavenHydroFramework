@@ -83,6 +83,7 @@ class CSubBasin
     double               GetMuskingumX(const double &dx) const;
     void     GenerateRoutingHydrograph(const double &Qin_avg, const optStruct &Options);
     void   GenerateCatchmentHydrograph(const double &Qlat_avg,const optStruct &Options);
+    double           GetReachSegVolume(const double &Qin, const double &Qout, const double &dx) const;
 
   public:/*-------------------------------------------------------*/
     //Constructors:

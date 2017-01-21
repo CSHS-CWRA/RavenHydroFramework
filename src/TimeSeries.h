@@ -38,11 +38,11 @@ class CTimeSeries: public CTimeSeriesABC
 
     bool   _sub_daily; ///< true if smallest time interval is sub-daily
 
-    /// \brief correction from model time (t) to time series/local time
     double    _t_corr; ///< number of days between model start date and gauge start date (positive if data exists before model start date)
-
-    /// \remark forcing functions are all pulse-based
+                       ///< \brief correction from model time (t) to time series/local time
+    
     bool       _pulse; ///< flag determining whether this is a pulse-based or piecewise-linear time series
+                       ///< \remark forcing functions are all pulse-based
 
     int     GetTimeIndex(const double &t_loc) const;
 

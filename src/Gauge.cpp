@@ -156,6 +156,9 @@ void CGauge::Initialize(const optStruct   &Options,
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
+      if(val==CTimeSeriesABC::BLANK_DATA){
+        ExitGracefully("CGauge::Initialize: Raven cannot have blank data in precipitation time series",BAD_DATA);
+      }
       if ((val<-REAL_SMALL) || (val>10000)){
         cout<<GetName()<<" "<<nn<<" "<<val<<endl;
         ExitGracefully("CGauge::Initialize: negative or excessively large (>10000mm/d) precipitation intensity reported at gauge",BAD_DATA);
@@ -168,6 +171,9 @@ void CGauge::Initialize(const optStruct   &Options,
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
+      if(val==CTimeSeriesABC::BLANK_DATA){
+        ExitGracefully("CGauge::Initialize: Raven cannot have blank data in temperature time series",BAD_DATA);
+      }
       if ((val<-60) || (val>60)){
         ExitGracefully("CGauge::Initialize: excessively small or large average temperature (<-60C or >60C) reported at gauge",BAD_DATA);
       }
@@ -180,6 +186,9 @@ void CGauge::Initialize(const optStruct   &Options,
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
+      if(val==CTimeSeriesABC::BLANK_DATA){
+        ExitGracefully("CGauge::Initialize: Raven cannot have blank data in PET time series",BAD_DATA);
+      }
       if (val<-REAL_SMALL){
         ExitGracefully("CGauge::Initialize: negative PET reported at gauge",BAD_DATA);
       }
@@ -296,6 +305,9 @@ void CGauge::AddTimeSeries	(CTimeSeries *pTS, forcing_type ftype)
   int index=_aTSindex[(int)(ftype)];
   if (index!=DOESNT_EXIST)//overwriting existing time series
   {
+    cout <<"ftype : "<<ftype<<" Forcing: "<<ForcingToString(ftype)<<endl;
+    string warn="CGauge::AddTimeSeries: a time series of data has been overwritten at  gauge "+_name;
+    WriteWarning(warn,true);
     delete _pTimeSeries[index]; _pTimeSeries[index]=pTS;
   }
   else{

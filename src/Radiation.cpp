@@ -339,7 +339,6 @@ double CRadiation::RadCorr (const double declin,		 //declination, radians
 								            const double t_sol,			 //time of day w.r.t. solar noon, days (not adjusted for slope)
 								            const bool   avg_daily)	 //in radians
 {
-	//if (solar_noon!=0.0){ExitGracefully("RadCorr",STUB);}
 	if (avg_daily)
 	{
 		//averaged daily correction
@@ -453,7 +452,6 @@ double CRadiation::CalcETRadiation( const double latrad,//latitude in radians
 		lat_eq = lateq;	//equivalent latitude for slope (Dingman E-23)
   }
 		
-	 
 	//calculate sunrise & sunset--------------------------------------------
 	hd=0.5*day_length;
 	t_rise=-hd;			//actual sunrise/set: Dingman E-5a,b
@@ -506,7 +504,7 @@ double CRadiation::CalcScatteringTransmissivity(const double dew_pt,//dew point 
 	precip_WV=1.12*exp(0.0614*dew_pt);				 //Dingman E-10 (Bolsenga 1964)
 	a=-0.124-0.0207*precip_WV;								 /// \ref Dingman E-12
 	b=-0.0682-0.0248*precip_WV;								 /// \ref Dingman E-13
-	return exp(a+b*opt_air_mass);/// \ref Dingman E-11
+	return exp(a+b*opt_air_mass);              /// \ref Dingman E-11
 }
 
 /*****************************************************************
@@ -726,7 +724,7 @@ double CRadiation::UBC_SolarRadiation(const double latrad,   //[rad]
   int nIncrements=10;
 
   horizon_corr = 20.0;//P0BAHT; 
-  turbidity = 2.0;//P0CLAR;
+  turbidity = 2.0;    //P0CLAR;
 
   declin   =SolarDeclination(day_angle);
 
@@ -757,206 +755,4 @@ double CRadiation::UBC_SolarRadiation(const double latrad,   //[rad]
 }
 
 
-
-//////////////////////////////////////////////////////////////////
-/// \brief A unit test function for clear sky radiation routine
-//
-void ClearSkyTest()
-{
-	double day_angle,declin,ecc,day_length;
-	double slope=0.0;
-	double solar_noon=0.0;	
-	double rad;
-	ofstream CST;
-	CST.open("ClearSkyTest.csv");
-	for (double day=0;day<365;day++){
-		for (double lat=0;lat<90;lat+=1.0){
-			day_angle=CRadiation::DayAngle(day,1999);
-			declin=	CRadiation::SolarDeclination(day_angle);
-			ecc   = CRadiation::EccentricityCorr(day_angle);
-			day_length = CRadiation::DayLength(lat*PI/180,declin);
-			rad   =CRadiation::CalcETRadiation(lat*PI/180,lat*PI/180,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
-			CST<<day<<","<<lat<<","<<rad<<endl;
-		}
-	}
-	CST.close();
-	ExitGracefully("ClearSkyTest",SIMULATION_DONE);
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief A unit test function for optical air mass calculation
-//
-void OpticalAirMassTest()
-{
-  double lat,dec;
-  ofstream OAM;
-  ofstream OAM2;
-  OAM.open ("OpticalAirMassTest.csv");
-  /*OAM<<"dec,lat,OM"<<endl;
-  double OM;
-  double latstep=90/100.0;
-  double decstep=(22.5*2.0)/100.0;
-  for (dec=-22.5;dec<(22.5+0.5*decstep);dec+=decstep)
-  {
-    cout<<dec<<endl;
-    for (lat=0;lat<90;lat+=latstep){
-      OM=OpticalAirMass(lat*PI/180,dec*PI/180,0.0,true);
-      OAM<<dec<<","<<lat<<","<<OM<<endl;
-    }
-  }*/
-	//---------------------------------------------------
-	// testing hourly for each month:
-	//---------------------------------------------------
-	lat=40;
-	double jday;
-
-	OAM<<"date,t,tsol,dec,OM(t),OM_avg"<<endl;
-	for (double t=0;t<365;t+=1.0/24.0)
-	{
-		time_struct tt;
-    JulianConvert(t,0.0,2001,tt);
-    tt.model_time=t;
-    
-		if (tt.day_of_month==21)//21st day of the month
-		{
-			cout<<tt.month<<endl;
-			double day_angle =CRadiation::DayAngle(jday,1999);
-			dec=CRadiation::SolarDeclination(day_angle);
-			double day_length = CRadiation::DayLength(lat*PI/180,dec*PI/180);
-			double tsol=t-floor(t)-0.5;
-			double OM=CRadiation::OpticalAirMass(lat*PI/180,dec*PI/180,day_length,tsol,false);
-			OAM<<tt.date_string<<","<<t<<","<<tsol<<","<<dec<<","<<OM<<",";
-			OAM<<CRadiation::OpticalAirMass(lat*PI/180,dec,day_length,tsol,true)<<endl;
-		}
-	}
-	//---------------------------------------------------
-  OAM.close();
-	ExitGracefully("OpticalAirMassTest",SIMULATION_DONE);
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief a unit test for shortwave radiation calculation
-//
-void ShortwaveTest()
-{
-	ofstream SHORT;
-	SHORT.open("ShortwaveTest.csv");
-  int year=2001; //no leap year
-	double SW;
-  double slope=0.0;//15*PI/180;
-	double aspect=0.0;//180*PI/180;//east facing=90 south facing=180...
-	double dew_pt=GetDewPointTemp(10,0.5);
-  double ET_rad;
-  double day_angle, declin, ecc, day_length;
-  //double elev=0.0;
-
-  double SW2;
-	for (double day=0;day<365;day++){
-		for (double lat=0;lat<90;lat+=1.0){
-			day_angle=CRadiation::DayAngle(day,year);
-			declin=	CRadiation::SolarDeclination(day_angle);
-			ecc   = CRadiation::EccentricityCorr(day_angle);
-			day_length = CRadiation::DayLength(lat*PI/180,declin);
-			SW=CRadiation::ClearSkySolarRadiation(day,lat,lat,slope,day_angle,day_length,aspect,dew_pt,ET_rad,true);
-      SW2=0.0;//CRadiation::UBC_SolarRadiation(day,year,lat,elev,true);
-			SHORT<<day<<","<<lat<<","<<SW<<","<<SW2<<endl;
-		}
-	}
-	
-	//---------------------------------------------------
-	// testing hourly for each month:
-	//---------------------------------------------------
-	/*double lat=80;
-	double dday,jday;
-	int dmon,junk;double ET_rad;
-	SHORT<<"date,t,tfake,SHORT(t),SHORT_avg"<<endl;
-	for (double t=0;t<365;t+=1.0/48.0)
-	{
-    time_struct tt;
-    JulianConvert(t,0.0,2001,tt);
-    string thisdate=tt.date_string;
-		if (ceil(dday)==21)//21st day of the month
-		{
-			cout<<dmon<<endl;
-			SW=ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,false);
-			SHORT<<thisdate<<","<<t<<","<<t-floor(t)+dmon-1<<","<<SW<<",";
-			SHORT<<ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,true)<<endl;
-		}
-	}*/
-	//---------------------------------------------------
-	SHORT.close();
-	ExitGracefully("ShortwaveTest",SIMULATION_DONE);
-}
-
-#include "ParseLib.h"
-
-//////////////////////////////////////////////////////////////////
-/// \brief a routine for taking input of day, slope,aspect, dewpoint, and albedo and calculating shortwave rafiation parameters
-/// \details input file (ShortwaveInput.csv in working directory) in the following format:
-/// input file
-/// # of entries
-/// day,year,lat(dec),slope(m/m),aspect (degrees from north),dewpoint,albedo
-/// output file
-/// day, year, lat,slope,aspect,declin,ecc,solar_time,OAM,Ketp,Ket
-//
-void ShortwaveGenerator()
-{
-  double day,latrad,slope,aspect,lateq,declin,ecc,Ketp,Ket;
-  double day_angle,Mopt,t_sol,TIR,albedo, dew_pt;
-  double day_length, solar_noon;
-  int year;
-  ifstream IN;
-	ofstream SHORT;
-  
-  IN.open   ("ShortwaveInput.csv");
-  SHORT.open("ShortwaveGenerator.csv");
-	SHORT<<"day[d], year, lat[dec],slope,aspect,declin[rad],ecc[rad],solar_time[d],albedo,dew_pt,Mopt[-],Ketp[MJ/m2/d],Ket[MJ/m2/d],Kcs[MJ/m2/d]"<<endl;
-  int 	Len,line(0);double ET_rad;
-	char *s[MAXINPUTITEMS];
-  CParser *p=new CParser(IN,line);
-  p->Tokenize(s,Len);
-  int NumLines=s_to_i(s[0]);
-  p->Tokenize(s,Len);//header
-  for (int i=0;i<NumLines;i++)
-  {
-    cout.precision(2);
-    if ((NumLines>10) && (i%(NumLines/10)==0)){cout<<(double)(i)/NumLines*100<<"%"<<endl;}
-    p->Tokenize(s,Len);
-    day     =s_to_d(s[0]);
-    year    =s_to_i(s[1]);
-    latrad  =s_to_d(s[2])*PI/180;
-    slope   =atan(s_to_d(s[3]));
-    aspect  =s_to_d(s[4])*PI/180;
-    lateq   = asin(cos(slope)*sin(latrad) + sin(slope)*cos(latrad)*cos(aspect));
-    dew_pt  =s_to_d(s[5]);
-    albedo  =s_to_d(s[6]);
-
-		day_angle= CRadiation::DayAngle(day,year);
-	  declin   = CRadiation::SolarDeclination(day_angle);
-	  ecc      = CRadiation::EccentricityCorr(day_angle);
-	  day_length = CRadiation::DayLength(latrad,declin);
-	  t_sol    = day-floor(day)-0.5;
-
-    double denom=cos(slope)*cos(latrad) - sin(slope)*sin(latrad)*cos(aspect);
-    if (denom==0.0){denom = REAL_SMALL;}
-    solar_noon = -atan(sin(slope)*sin(aspect)/denom)/EARTH_ANG_VEL;
-    if (solar_noon> 0.5){solar_noon-=1.0;}
-    if (solar_noon<-0.5){solar_noon+=1.0;}
-
-    
-		Mopt =CRadiation::OpticalAirMass (latrad,declin,                       day_length,t_sol,false);
-    Ketp =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,slope,solar_noon,day_length,t_sol,false);
-    Ket  =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,0.0  ,0.0       ,day_length,t_sol,false);
-    
-		TIR  =CRadiation::ClearSkySolarRadiation(day,latrad,lateq,tan(slope),day_angle,day_length,solar_noon,dew_pt,ET_rad,false);
-    
-		SHORT<<day<<","<<year<<","<<latrad*180/PI<<","<<tan(slope)<<","<<aspect*180/PI;
-    SHORT<<","<<declin<<","<<ecc<<","<<t_sol<<",";
-    SHORT<<albedo<<","<<dew_pt<<","<<Mopt<<","<<Ketp<<","<<Ket<<","<<TIR<<endl;
-  }
-  cout<<"100% - done"<<endl;
-  IN.close();
-	SHORT.close();
-	ExitGracefully("ShortwaveGenerator",SIMULATION_DONE);
-}
 

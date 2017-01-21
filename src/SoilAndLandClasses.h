@@ -25,7 +25,8 @@ enum class_type{
   CLASS_LANDUSE,    ///< Landuse class
   CLASS_TERRAIN,    ///< Terrain class
   CLASS_TRANSPORT,  ///< Transport class
-  CLASS_GLOBAL
+  CLASS_GLOBAL,     ///< Global parameter class
+  CLASS_HRUTYPE     ///< special flag to handle HRU type changes; not assoc. with parameters 
 };
 
 ///////////////////////////////////////////////////////////////////

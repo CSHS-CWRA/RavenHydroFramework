@@ -246,7 +246,7 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
 																				const time_struct &tt,
 																				      double      *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lakes & glaciers & rock
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers & rock
 
   double runoff;
   double rainthru;
@@ -444,7 +444,7 @@ void   CmvInfiltration::ApplyConstraints( const double     *storage,
                                           const time_struct &tt,
                                                 double     *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
 
   //cant remove more than is there (should never be an option)
   rates[0]=threshMin(rates[0],storage[iFrom[0]]/Options.timestep,0.0);

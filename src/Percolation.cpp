@@ -179,7 +179,7 @@ void   CmvPercolation::GetRatesOfChange( const double			*state_vars,
 																				 const time_struct &tt,
                                          double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}//Lakes  (but allowed beneath some glaciers?)
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}//Lakes  (but allowed beneath some glaciers?)
 
   double stor,max_stor;
 
@@ -294,7 +294,7 @@ void   CmvPercolation::GetRatesOfChange( const double			*state_vars,
   {
     double x2=pHRU->GetSoilProps(m)->GR4J_x2; 
     double x3=pHRU->GetSoilProps(m)->GR4J_x3; 
-    rates[0]=-1*x2*pow(min(stor/x3,1.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
+    rates[0]=-x2*pow(min(stor/x3,1.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
   }
   //-----------------------------------------------------------------
   else if (type==PERC_GR4JEXCH2)
@@ -331,7 +331,7 @@ void   CmvPercolation::ApplyConstraints(const double		 *state_vars,
 						                            const time_struct &tt,
                                               double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}//Lakes 
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}//Lakes 
 
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);

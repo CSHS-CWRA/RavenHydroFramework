@@ -96,7 +96,7 @@ class CHydroUnit
     location               GetCentroid     () const;
     double                 GetArea         () const;
     int                    GetSubBasinIndex() const;
-    HRU_type               GetType         () const;
+    HRU_type               GetHRUType      () const;
     bool                   IsLake          () const;//TMP?
 
     double                 GetStateVarValue(const int i) const;
@@ -156,6 +156,7 @@ class CHydroUnit
 	  void				  SetPrecipMultiplier     (const double factor);
     void          ChangeLandUse           (const CLandUseClass    *lult_class);
 	  void          ChangeVegetation        (const CVegetationClass *veg_class);
+    void          ChangeHRUType           (const HRU_type typ);
 
     //will be removed with landscape elements:
     void          RecalculateDerivedParams(const optStruct    &Options,

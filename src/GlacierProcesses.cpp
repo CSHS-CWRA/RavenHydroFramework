@@ -118,7 +118,7 @@ void CmvGlacierMelt::GetRatesOfChange( const double		*state_var,
 																		const time_struct &tt,
 																					double      *rates) const
 {
-  if (pHRU->GetType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   //----------------------------------------------------------------------
   if (type==GMELT_SIMPLE_MELT)
@@ -181,7 +181,7 @@ void   CmvGlacierMelt::ApplyConstraints( const double		*state_var,
 						                          const time_struct &tt,
                                             double      *rates) const
 {
-  if (pHRU->GetType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint on melt
 
@@ -292,7 +292,7 @@ void CmvGlacierRelease::GetRatesOfChange( const double		  *storage,
 																		      const time_struct &tt,
 																					double            *rates) const
 {
-  if (pHRU->GetType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   double glacier_stor=storage[pModel->GetStateVarIndex(GLACIER)];
 
@@ -340,7 +340,7 @@ void   CmvGlacierRelease::ApplyConstraints( const double		  *storage,
 						                                const time_struct &tt,
                                                   double      *rates) const
 {
-  if (pHRU->GetType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
  }
@@ -447,7 +447,7 @@ void CmvGlacierInfil::GetRatesOfChange ( const double		    *state_vars,
 																		      const time_struct &tt,
 																					double            *rates) const
 {
-  if (pHRU->GetType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   //-----------------------------------------------------------------
   if (type==GINFIL_UBCWM)
@@ -492,7 +492,7 @@ void   CmvGlacierInfil::ApplyConstraints( const double		  *storage,
 						                                const time_struct &tt,
                                                   double      *rates) const
 {
-  if (pHRU->GetType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
   if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint on runoff
 

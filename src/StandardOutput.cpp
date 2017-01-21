@@ -102,8 +102,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         }
 
         if (_pSubBasins[p]->GetReservoir() != NULL){
-          if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" [res inflow]  [m3/s]";}
-          else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" [res inflow] [m3/s]";}
+          if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (res. inflow)  [m3/s]";}
+          else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (res. inflow) [m3/s]";}
         }
       }
     }
@@ -153,6 +153,18 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         string name;
         if (_pSubBasins[p]->GetName()==""){RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" [m]";}
         else                              {RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" [m]";}
+      }
+      //if (Options.print_obs_hydro)
+      {
+        for (int i = 0; i < _nObservedTS; i++){
+          if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_STAGE")) &&
+            (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+            (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+          {
+            if (_pSubBasins[p]->GetName()==""){RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
+            else                              {RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
+          }
+        }
       }
     }
     RES_STAGE<<endl;
@@ -372,6 +384,20 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     DEBUG.close();
   }
 
+  //opens and closes diagnostics.csv so that this warning doesn't show up at end of simulation
+  //--------------------------------------------------------------
+  if ((_nObservedTS>0) && (_nDiagnostics>0)) 
+  {
+    ofstream DIAG;
+    string tmpFilename;
+    tmpFilename=FilenamePrepare("Diagnostics.csv",Options);
+    DIAG.open(tmpFilename.c_str());
+    if(DIAG.fail()){
+      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+    DIAG.close();
+  }
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -434,7 +460,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       double precip      =GetAveragePrecip();
       double channel_stor=GetTotalChannelStorage();
       double rivulet_stor=GetTotalRivuletStorage();
-
+       
       _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour;
 
       if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
@@ -453,7 +479,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
       }
       currentWater+=channel_stor+rivulet_stor;
-
+      
       _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<(currentWater-_initWater)+(_CumulOutput-_CumulInput); 
       _STORAGE<<endl;
 
@@ -588,6 +614,21 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
           RES_STAGE<<","<<_pSubBasins[p]->GetReservoir()->GetStage();
         }
+        //if (Options.print_obs_hydro)
+        {
+          for (int i = 0; i < _nObservedTS; i++){
+            if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_STAGE")) &&
+              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+            {
+              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
+              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+              if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
+              else                                                         { RES_STAGE << ", ";       }
+            }
+          }
+        }
+
       }
       RES_STAGE<<endl;
     }

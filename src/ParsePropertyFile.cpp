@@ -298,6 +298,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
     //--------------------OTHER ------- ------------------------
     else if  (!strcmp(s[0],":TransientParameter"     )){code=800;}
+    else if  (!strcmp(s[0],":HRUTypeChange"          )){code=801;} 
 
     switch(code)
     {
@@ -584,6 +585,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt);
         break;
       }
+
       //==========================================================
       //==========================================================
       case(200):  //----------------------------------------------
@@ -851,7 +853,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
         //map roughnesses to survey segments
         if (xz[0]>x[0]){
-          WriteWarning(":ChannelProfile command: leftmost mannings zone to right of leftmost survey point",Options.noisy);
+          WriteWarning(":ChannelProfile command: leftmost mannings zone bound to right of leftmost survey point. Roughness zones must cover entire extent of channel survey points.",Options.noisy);
 		    }
        
 		    int j=0;
@@ -1252,6 +1254,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else{
           WriteWarning("ParseClassPropertiesFile: unable to read :TransientParameter time series",true);
         }
+        break;
+      }
+      case(801): //----------------------------------------------
+      {/*:HRUTypeChange [HRU group] [new type tag] [YYYY-mm-dd] */
+        if (Options.noisy) {cout <<"Change in HRU Type"<<endl;}
+        if (Len<4){p->ImproperFormat(s); break;} 
+        time_struct tt;
+        tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
+        pModel->AddPropertyClassChange(s[1],CLASS_HRUTYPE,s[2], tt);
         break;
       }
       case(900):  //----------------------------------------------

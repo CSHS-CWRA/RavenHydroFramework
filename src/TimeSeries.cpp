@@ -468,19 +468,6 @@ double CTimeSeries::GetSampledValue(const int nn) const
   return _aSampVal[nn];
 }
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns sampled value of observation for diagnostics?
-///  
-/// \param nn [in] time step number (measured from simulation start)
-/// \return sampled value for observation (???)
-//
-/*double CTimeSeries::GetSampledValueObsDiag(const int nn) const
-{
-	if (nn>_nSampVal - 2){
-		return CTimeSeriesABC::BLANK_DATA;
-	}
-	return _aSampVal[nn-1];
-}*/
-///////////////////////////////////////////////////////////////////
 /// \brief Returns the model time of the resampled time series at index nn
 /// \param nn [in] Index
 /// \return time of time series data point for which nn is an index
@@ -628,26 +615,29 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 //
 CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
 {
+  
   char *s[MAXINPUTITEMS];
   int Len;
   double start_day;
   int    start_yr;
   double tstep;
   int    nMeasurements;
-
+  
   CTimeSeries *pTimeSeries=NULL;
+  
   p->Tokenize(s,Len);
   if (Len<4){p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;}
-
+  
   if ((string(s[0]).length()==10) &&
       ((string(s[0]).substr(4,1)=="/") || 
       (string(s[0]).substr(4,1)=="-")))
   { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
+    
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
     start_day=tt.julian_day;
     start_yr =tt.year;
-
+    
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
       time_struct tt;
@@ -676,11 +666,13 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     if (IsLeapYear(start_yr)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
   }
+  
   double *aVal;
   aVal =new double [nMeasurements];
   if (aVal == NULL){
     ExitGracefully("CTimeSeries::Parse",OUT_OF_MEMORY);
   }
+  
   int n=0;
   //cout << n << " "<<nMeasurements << " " << s[0] << " "<<Len<<" "<<strcmp(s[0],"&")<<" "<<p->Tokenize(s,Len)<<endl;
   while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
@@ -698,13 +690,17 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       aVal [n]=s_to_d(s[i]);n++;
     }
   }
+
   if (n!=nMeasurements){
     cout<<p->GetFilename()<<endl;
     cout << " n | nMeasurements " << n << " "<<nMeasurements<<endl;
     ExitGracefully("CTimeSeries::Parse: Bad number of time series points",BAD_DATA);}
 
   p->Tokenize(s,Len);//read closing term (e.g., ":EndRain")
-  
+  if(string(s[0]).substr(0,4)!=":End"){
+    ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
+  }
+
   pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse); 
   delete [] aVal;  aVal =NULL;
   return pTimeSeries;

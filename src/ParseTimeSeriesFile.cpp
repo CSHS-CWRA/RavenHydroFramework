@@ -1,6 +1,6 @@
-/*----------------------------------------------------------------
+﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright � 2008-2014 the Raven Development Team
+  Copyright © 2008-2014 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -288,10 +288,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         :EndData
        */
         if (Options.noisy) {cout <<"Time Series Data: "<<s[1]<<endl;}
+        string name=to_string(s[1]);
         ExitGracefullyIf(pGage==NULL,
           "ParseTimeSeriesFile::Time Series Data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-        pTimeSer=CTimeSeries::Parse(p,true,s[1],"",Options);
-        pGage->AddTimeSeries(pTimeSer,GetForcingTypeFromString(s[1])); 
+        pTimeSer=CTimeSeries::Parse(p,true,name,"",Options);
+        forcing_type ftype=GetForcingTypeFromString(name);
+        if(ftype==F_UNRECOGNIZED){ ExitGracefully("Unrecognized forcing type string in :Data command",BAD_DATA_WARN); }
+        pGage->AddTimeSeries(pTimeSer,ftype); 
         break;
       }
       case(9):  //----------------------------------------------

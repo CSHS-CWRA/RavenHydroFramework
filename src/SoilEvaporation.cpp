@@ -262,7 +262,7 @@ void CmvSoilEvap::GetRatesOfChange (const double		 *state_vars,
                                           double     *rates) const
 {
   
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lake/Glacier case
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
 
   //should consume ponded water with PET first?
 
@@ -527,7 +527,7 @@ void   CmvSoilEvap::ApplyConstraints( const double		 *state_vars,
                                       const time_struct &tt,
                                             double     *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lake/Glacier case
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
 
   for (int q=0;q<nConnections;q++){
     //cant remove more than is there

@@ -107,7 +107,7 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
                                            const time_struct &tt,
                                                  double     *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
 
   const soil_struct *pSoil=NULL;
 
@@ -169,7 +169,7 @@ void   CmvCapillaryRise::ApplyConstraints( const double     *storage,
                                       const time_struct &tt,
                                             double     *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
 
   //cant remove more than is there
   rates[0]=threshMin(rates[0],storage[iFrom[0]]/Options.timestep,0.0);

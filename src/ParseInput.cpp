@@ -448,6 +448,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[1],"ROUTE_DIFFUSIVE_WAVE"   )){Options.routing =ROUTE_DIFFUSIVE_WAVE;}
         else if (!strcmp(s[1],"ROUTE_HYDROLOGIC"       )){Options.routing =ROUTE_HYDROLOGIC;}
         else if (!strcmp(s[1],"ROUTE_NONE"             )){Options.routing =ROUTE_NONE;}
+        else if (!strcmp(s[1],"ROUTE_TVD"              )){Options.routing =ROUTE_TVD;}
         else if (!strcmp(s[1],"NONE"                   )){Options.routing =ROUTE_NONE;}
         else{
           ExitGracefully("ParseMainInputFile: Unrecognized routing method",BAD_DATA_WARN);

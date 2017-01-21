@@ -459,6 +459,7 @@ void	CSubBasin::SetReservoirStage(const double &stage)
     WriteWarning("CSubBasin::SetReservoirStage: trying to set stage for non-existent reservoir.",false);return;
   }
   _pReservoir->UpdateStage(stage);
+  _pReservoir->UpdateStage(stage); //Called twice so that _Qlast, _StageLast is properly initialized
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets channel storage, usually upon read of state file
@@ -659,7 +660,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   double sum(0.0);
   for (int n=0;n<_nQlatHist;n++)
 	{
-    sum+=(n)*_aUnitHydro[n]; 
+    sum+=(n+1)*_aUnitHydro[n]; 
 	}
   _rivulet_storage=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
 
@@ -751,7 +752,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   {
     _nQinHist=(int)(ceil(2*travel_time/tstep))+2;//really a function of reach length and diffusivity
   }
-  else if ((Options.routing==ROUTE_HYDROLOGIC))
+  else if ((Options.routing==ROUTE_HYDROLOGIC) || (Options.routing==ROUTE_TVD))
   {
     _nQinHist=2;
   }
@@ -1077,7 +1078,23 @@ double  CSubBasin::GetMuskingumX(const double &dx) const
 	
   return max(0.0,0.5*(1.0-_Q_ref/bedslope/_w_ref/_c_ref/dx));//[m3/s]/([m]*[m/s]*[m])
 }
+double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s] 
+                                    const double &Qout, //[m3/s] 
+                                    const double &dx) const  //[m]
+{
+  //muskingum-type storage
+  double c=_pChannel->GetCelerity(Qout);//[m/s]
+  double w=_pChannel->GetTopWidth(Qout);//[m]
+  double bedslope=_pChannel->GetBedslope();
 
+  double K=dx/(c*SEC_PER_DAY); //[d]
+  double X=max(0.0,0.5-0.5*(1.0-Qout/bedslope/w/c/dx));//[-]
+
+  return (K*X*Qin+K*(1-X)*Qout)*SEC_PER_DAY;
+
+  //level pool-type storage
+  //return dx*_pChannel->GetArea(Qout); 
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Creates aQout_new [m^3/s], an array of point measurements for outflow at downstream end of each river segment
 /// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed), 
@@ -1087,11 +1104,10 @@ double  CSubBasin::GetMuskingumX(const double &dx) const
 /// \param [out] *aQout_new Array of outflows at downstream end of each segment at end of current timestep [m^3/s]
 /// \param &Options [in] Global model options information
 //
-void CSubBasin::RouteWater(//const double &PET,           //[mm/day]
-                             double *aQout_new,//[m3/s][size:_nSegments]
-                             double &res_ht, //[m]
-                             const optStruct &Options,
-                             const time_struct &tt) const
+void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
+                           double &res_ht, //[m]
+                           const optStruct &Options,
+                           const time_struct &tt) const
 {
 	int    seg;
   double tstep;       //[d] time step

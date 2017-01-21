@@ -58,7 +58,8 @@ UNITS: all time units in days
        all routing flow rates in m3/s
        all energy fluxes in MJ/m2/d
        all energy storage in terms of temp, C
-       all storage units in mm
+       all water storage units in mm
+       all constituent storage units in mg/m2
        property units are those most commonly used
     -units outside these conventions should be used LOCALLY
     -if a constant is used in units conversion, the named variable 
@@ -140,7 +141,6 @@ const double  DENSITY_ICE   =0.917e3; ///< [kg/m3] Ice Density
 const double  DENSITY_SAND  =2.650e3; ///< [kg/m3] Sand Density
 const double  DENSITY_CLAY  =2.650e3; ///< [kg/m3] Clay Density
 const double  DENSITY_OM    =1.300e3; ///< [kg/m3] Organic Matter Density
-const double  RHOWG         =0.00981; ///< [kPa/mm] density of water times gravity acceleration 
 const double  MAX_SNOW_DENS =0.350e3; ///< [kg/m3] maximum dry density of snowpack (GAWSER)
 const double  FRESH_SNOW_DENS=0.119e3;///< [kg/m3] fresh snow density @ 0 deg. C
 
@@ -179,7 +179,7 @@ const double  EARTH_RADIUS  =6.3712e6;///< [m]
 const double  EARTH_ANG_VEL =6.283185;///< Earth's angular velocity [rad/d]
 const double  SOLAR_NOON    =0.5;     ///< The fraction of a day at which solar noon occurs (12:00 PM)
 const double  SOLAR_CONSTANT=118.1;   ///< [MJ/m2/d]
-const double  GLOBAL_ALBEDO = 0.3;    ///< Global Albedo used to calculate the backscattered radiation according to Dingman (Dingman 2008, E-20)
+const double  GLOBAL_ALBEDO =0.3;     ///< Global Albedo used to calculate the backscattered radiation according to Dingman (Dingman 2008, E-20)
 const double  PEAK_TEMP_HR  =3;       ///< if =3, 3:00 PM is time of max temperature, 3:00 AM is time of min temp
 const double  WINTER_SOLSTICE_ANG=6.111043;///< Dec 21 as day angle
 
@@ -310,7 +310,8 @@ enum routing_method
   ROUTE_MUSKINGUM_CUNGE, ///< Muskingum-Cunge algorithm
   ROUTE_STORAGECOEFF,    ///< Storage coefficient approach 
   ROUTE_DIFFUSIVE_WAVE,  ///< diffusive wave approximation
-  ROUTE_HYDROLOGIC       ///< simple iterative mass balance approach dS/dt=I-O
+  ROUTE_HYDROLOGIC,      ///< simple iterative mass balance approach dS/dt=I-O
+  ROUTE_TVD              ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -486,13 +487,15 @@ enum HRU_type
   HRU_STANDARD,  ///< Standard HRU
   HRU_LAKE,      ///< Lake HRU
   HRU_GLACIER,   ///< Glacier HRU
-  HRU_ROCK       ///< Open Rock HRUs
+  HRU_ROCK,      ///< Open Rock HRUs
+  HRU_INVALID_TYPE ///< returned if type is invalid
 };
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods for estimating relative humidity
 //
-enum relhum_method{
+enum relhum_method
+{
   RELHUM_CONSTANT, ///< naive: constant relative humidity of 0.5
   RELHUM_MINDEWPT, ///< uses minimum daily temperature as estimate of dew point
   RELHUM_DATA      ///< relative humidity specfied as time series at gauge
@@ -501,7 +504,8 @@ enum relhum_method{
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods for estimating air pressure
 //
-enum airpress_method{
+enum airpress_method
+{
   AIRPRESS_CONST, ///< standard atm pressure at 20C
   AIRPRESS_DATA,  ///< air pressure specified as time series at gauge
   AIRPRESS_BASIC, ///< power law correction for elevation (source unknown)
@@ -511,7 +515,8 @@ enum airpress_method{
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating wind velocity
 //
-enum windvel_method{
+enum windvel_method
+{
   WINDVEL_CONSTANT, ///< naive: constant wind velocity of 3 m/s
   WINDVEL_DATA,     ///< wind velocity specfied as time series at gauge
   WINDVEL_UBCWM     ///< from UBC Watershed model: daily temperature range-based
@@ -519,7 +524,8 @@ enum windvel_method{
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating precipitation interception fraction
 //
-enum precip_icept_method{
+enum precip_icept_method
+{
   PRECIP_ICEPT_USER,    ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
   PRECIP_ICEPT_LAI,     ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
   PRECIP_ICEPT_EXPLAI,  ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
@@ -529,7 +535,8 @@ enum precip_icept_method{
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of estimating potential melt
 //
-enum potmelt_method{
+enum potmelt_method
+{
   POTMELT_DEGREE_DAY,  ///< simple degree day method
   POTMELT_EB,          ///< energy balance approach  
   POTMELT_RESTRICTED,  ///< restricted degree-day method
@@ -542,7 +549,8 @@ enum potmelt_method{
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of performing monthly interpolations
 //
-enum monthly_interp{
+enum monthly_interp
+{
   MONTHINT_UNIFORM,    ///< specified value is constant for month
   MONTHINT_LINEAR_FOM, ///< linear interpolation between specified data on first of the month
   MONTHINT_LINEAR_21,  ///< linear interpolation between specified data on twenty-first of the month
@@ -553,7 +561,8 @@ enum monthly_interp{
 /// \brief Basis on which a condition for applying a method/process is built
 /// \docminor Review description of this enumerated type and its methods
 //
-enum condition_basis{
+enum condition_basis
+{
   BASIS_HRU_TYPE,  ///< condition is based upon HRU type (e.g., if is a lake...)
   BASIS_HRU_GROUP, ///< condition is based upon HRU group 
   BASIS_LANDCLASS  ///< condition is based upon land use/ land type class (e.g., if urban...)
@@ -562,7 +571,8 @@ enum condition_basis{
 ////////////////////////////////////////////////////////////////////
 /// \brief Possible comparison results
 //
-enum comparison{
+enum comparison
+{
   COMPARE_IS_EQUAL, ///< Compared entities are equal
   COMPARE_NOT_EQUAL ///< Compared entities are not equal
 };
@@ -571,7 +581,8 @@ enum comparison{
 /// \brief Abstration of a condition for applying a method/process
 /// \remark stores information about a conditional such as "land use is equal to urban" or "HRU type is not LAKE"
 //
-struct condition{
+struct condition
+{
   condition_basis basis;          ///< basis for condition (e.g., land use)
   comparison      compare_method; ///< type of condition (equal or not equal)
   string          data;           ///< conditional data (thing to which basis is compared)
@@ -580,9 +591,10 @@ struct condition{
 ////////////////////////////////////////////////////////////////////
 /// \brief Desired output format
 //
-enum out_format{
+enum out_format
+{
   OUTPUT_STANDARD, ///< Output in default Raven format (.csv files)
-  OUTPUT_ENSIM,     ///< Output in Ensim format (.tb0 files)
+  OUTPUT_ENSIM,    ///< Output in Ensim format (.tb0 files)
   OUTPUT_NONE
 };
 
@@ -715,7 +727,7 @@ enum process_type
 
 
 /******************************************************************
-Global Structures
+  Global Structures
 ******************************************************************/
 
 ////////////////////////////////////////////////////////////////////
@@ -905,10 +917,11 @@ struct force_struct
 /******************************************************************
   Other Functions (defined in CommonFunctions.cpp)
 ******************************************************************/
-string        GetProcessName      (process_type ptype);
+string GetProcessName(process_type ptype);
 
 //Array Functions--------------------------------------------------
-bool DynArrayAppend(void **& pArr,void *xptr,int &size);
+bool   DynArrayAppend(void **& pArr,void *xptr,int &size);
+int SmartIntervalSearch(const double &x, const double *ax, const int N,const int ilast);
 
 //Threshold Correction Functions-----------------------------------
 double threshPositive(const double &val);
@@ -1145,6 +1158,7 @@ double AutoOrDouble            (const string s);
 string StringToUppercase       (const string &s);
 bool   IsComment               (const char *s, const int Len);
 void   WriteWarning            (const string warn, bool noisy);
+HRU_type StringToHRUType       (const string s);
 
 //I/O Functions-----------------------------------------------
 //defined in StandardOutput.cpp

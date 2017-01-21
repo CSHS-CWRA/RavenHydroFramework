@@ -61,58 +61,58 @@ void ZeroOutForcings(force_struct &F)
 //
 forcing_type GetForcingTypeFromString(const string &forcing_string)
 {
-  
-  if      (forcing_string=="PRECIP"           ){return F_PRECIP;}
-  else if (forcing_string=="PRECIP_DAILY_AVE" ){return F_PRECIP_DAILY_AVE; }
-  else if (forcing_string=="PRECIP_5DAY"      ){return F_PRECIP_5DAY;}
-  else if (forcing_string=="SNOW_FRAC"        ){return F_SNOW_FRAC;}
-  else if (forcing_string=="SNOWFALL"         ){return F_SNOWFALL;}
-  else if (forcing_string=="RAINFALL"         ){return F_RAINFALL;}
+  string f=StringToUppercase(forcing_string);
+  if      (f=="PRECIP"           ){return F_PRECIP;}
+  else if (f=="PRECIP_DAILY_AVE" ){return F_PRECIP_DAILY_AVE; }
+  else if (f=="PRECIP_5DAY"      ){return F_PRECIP_5DAY;}
+  else if (f=="SNOW_FRAC"        ){return F_SNOW_FRAC;}
+  else if (f=="SNOWFALL"         ){return F_SNOWFALL;}
+  else if (f=="RAINFALL"         ){return F_RAINFALL;}
 
-  else if (forcing_string=="TEMP_AVE"         ){return F_TEMP_AVE;} 
-  else if (forcing_string=="TEMP_MIN"         ){return F_TEMP_DAILY_MIN;} 
-  else if (forcing_string=="MIN_TEMPERATURE"  ){return F_TEMP_DAILY_MIN;} 
-  else if (forcing_string=="TEMP_DAILY_MIN"   ){return F_TEMP_DAILY_MIN;} 
-  else if (forcing_string=="TEMP_MAX"         ){return F_TEMP_DAILY_MAX;}
-  else if (forcing_string=="MAX_TEMPERATURE"  ){return F_TEMP_DAILY_MAX;} 
-  else if (forcing_string=="TEMP_DAILY_MAX"   ){return F_TEMP_DAILY_MAX;}
-  else if (forcing_string=="TEMP_DAILY_AVE"   ){return F_TEMP_DAILY_AVE;}
-  else if (forcing_string=="TEMP_MONTH_MAX"   ){return F_TEMP_MONTH_MAX;}
-  else if (forcing_string=="TEMP_MONTH_MIN"   ){return F_TEMP_MONTH_MIN;}
-  else if (forcing_string=="TEMP_MONTH_AVE"   ){return F_TEMP_MONTH_AVE;}
-  else if (forcing_string=="TEMP_AVE_UNC"     ){return F_TEMP_AVE_UNC;}
-  else if (forcing_string=="TEMP_MAX_UNC"     ){return F_TEMP_MAX_UNC;}
-  else if (forcing_string=="TEMP_MIN_UNC"     ){return F_TEMP_MIN_UNC;}
+  else if (f=="TEMP_AVE"         ){return F_TEMP_AVE;} 
+  else if (f=="TEMP_MIN"         ){return F_TEMP_DAILY_MIN;} 
+  else if (f=="MIN_TEMPERATURE"  ){return F_TEMP_DAILY_MIN;} 
+  else if (f=="TEMP_DAILY_MIN"   ){return F_TEMP_DAILY_MIN;} 
+  else if (f=="TEMP_MAX"         ){return F_TEMP_DAILY_MAX;}
+  else if (f=="MAX_TEMPERATURE"  ){return F_TEMP_DAILY_MAX;} 
+  else if (f=="TEMP_DAILY_MAX"   ){return F_TEMP_DAILY_MAX;}
+  else if (f=="TEMP_DAILY_AVE"   ){return F_TEMP_DAILY_AVE;}
+  else if (f=="TEMP_MONTH_MAX"   ){return F_TEMP_MONTH_MAX;}
+  else if (f=="TEMP_MONTH_MIN"   ){return F_TEMP_MONTH_MIN;}
+  else if (f=="TEMP_MONTH_AVE"   ){return F_TEMP_MONTH_AVE;}
+  else if (f=="TEMP_AVE_UNC"     ){return F_TEMP_AVE_UNC;}
+  else if (f=="TEMP_MAX_UNC"     ){return F_TEMP_MAX_UNC;}
+  else if (f=="TEMP_MIN_UNC"     ){return F_TEMP_MIN_UNC;}
 
-  else if (forcing_string=="AIR_DENS"         ){return F_AIR_DENS;}
-  else if (forcing_string=="AIR_PRES"         ){return F_AIR_PRES;}
-  else if (forcing_string=="REL_HUMIDITY"     ){return F_REL_HUMIDITY;}
+  else if (f=="AIR_DENS"         ){return F_AIR_DENS;}
+  else if (f=="AIR_PRES"         ){return F_AIR_PRES;}
+  else if (f=="REL_HUMIDITY"     ){return F_REL_HUMIDITY;}
 
-  else if (forcing_string=="ET_RADIA"         ){return F_ET_RADIA;}
-  else if (forcing_string=="SW_RADIA"         ){return F_SW_RADIA;}
-  else if (forcing_string=="SHORTWAVE"        ){return F_SW_RADIA;}
-  else if (forcing_string=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
-  else if (forcing_string=="LW_RADIA"         ){return F_LW_RADIA;}
-  else if (forcing_string=="LONGWAVE"         ){return F_LW_RADIA;}
-  else if (forcing_string=="CLOUD_COVER"      ){return F_CLOUD_COVER;}
+  else if (f=="ET_RADIA"         ){return F_ET_RADIA;}
+  else if (f=="SW_RADIA"         ){return F_SW_RADIA;}
+  else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}
+  else if (f=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
+  else if (f=="LW_RADIA"         ){return F_LW_RADIA;}
+  else if (f=="LONGWAVE"         ){return F_LW_RADIA;}
+  else if (f=="CLOUD_COVER"      ){return F_CLOUD_COVER;}
 
-  else if (forcing_string=="DAY_LENGTH"       ){return F_DAY_LENGTH;}
-  else if (forcing_string=="DAY_ANGLE"        ){return F_DAY_ANGLE;}
+  else if (f=="DAY_LENGTH"       ){return F_DAY_LENGTH;}
+  else if (f=="DAY_ANGLE"        ){return F_DAY_ANGLE;}
 
-  else if (forcing_string=="WIND_VEL"         ){return F_WIND_VEL;}
+  else if (f=="WIND_VEL"         ){return F_WIND_VEL;}
 
-  else if (forcing_string=="PET"              ){return F_PET;}
-  else if (forcing_string=="OW_PET"           ){return F_OW_PET;}
-  else if (forcing_string=="PET_MONTH_AVE"    ){return F_PET_MONTH_AVE;}
+  else if (f=="PET"              ){return F_PET;}
+  else if (f=="OW_PET"           ){return F_OW_PET;}
+  else if (f=="PET_MONTH_AVE"    ){return F_PET_MONTH_AVE;}
 
-  else if (forcing_string=="POTENTIAL_MELT"   ){return F_POTENTIAL_MELT;}
+  else if (f=="POTENTIAL_MELT"   ){return F_POTENTIAL_MELT;}
 
-  else if (forcing_string=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
+  else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
   else
   {
     return F_UNRECOGNIZED;
-    //cout <<"Forcing string:|"<<forcing_string<<"|"<<endl;
+    //cout <<"Forcing string:|"<<f<<"|"<<endl;
     //ExitGracefully("GetForcingTypeFromString: invalid forcing string",RUNTIME_ERR);
   }
   return F_UNRECOGNIZED;

@@ -332,7 +332,7 @@ void CmvSnowBalance::GetRatesOfChange(const double		 *state_var,
 																      const time_struct &tt,
 																			      double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   //------------------------------------------------------------
 	if (type==SNOBAL_SIMPLE_MELT)
@@ -1073,7 +1073,7 @@ void  CmvSnowBalance::ApplyConstraints( const double		 *state_vars,
 					                              const time_struct &tt,
                                               double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   if (type==SNOBAL_SIMPLE_MELT)
   {

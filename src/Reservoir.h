@@ -32,30 +32,30 @@ enum res_type{
 class CReservoir
 {
   private:/*-------------------------------------------------------*/
-    string       name;                ///< reservoir name
-    long         SBID;                ///< subbasin ID
-    res_type     type;                ///< reservoir type (default: RESROUTE_STANDARD)
+    string       _name;                ///< reservoir name
+    long         _SBID;                ///< subbasin ID
+    res_type     _type;                ///< reservoir type (default: RESROUTE_STANDARD)
 
-    const CHydroUnit  *pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
-          CTimeSeries *pExtractTS;    ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
+    const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
+          CTimeSeries *_pExtractTS;    ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
     
-    double       stage;               ///< current stage [m] (actual state variable)
-    double       stage_last;          ///< stage at beginning of current time step [m]
-    double       Qout;                ///< outflow corresponding to current stage [m3/s] 
-    double       Qout_last;           ///< outflow at beginning of current time step [m3/s]
+    double       _stage;               ///< current stage [m] (actual state variable)
+    double       _stage_last;          ///< stage at beginning of current time step [m]
+    double       _Qout;                ///< outflow corresponding to current stage [m3/s] 
+    double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
      
-    double       min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
-    double       max_stage;           ///< maximum reference elevation [m] 
+    double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
+    double       _max_stage;           ///< maximum reference elevation [m] 
 
-    int          N;                   ///< number of points on rating curves
-    double      *aStage;              ///< Rating curve for stage elevation [m]
-    double      *aQ;                  ///< Rating curve for flow rates [m3/s]
-    double      *aArea;               ///< Rating curve for surface area [m2]
-    double      *aVolume;             ///< Rating curve for storage volume [m3]
+    int          _N;                   ///< number of points on rating curves
+    double      *_aStage;              ///< Rating curve for stage elevation [m]
+    double      *_aQ;                  ///< Rating curve for flow rates [m3/s]
+    double      *_aArea;               ///< Rating curve for surface area [m2]
+    double      *_aVolume;             ///< Rating curve for storage volume [m3]
 
-    double     **aQ_back;             ///< Rating curve for flow rates for different times [m3/s]
-    int         *aDates;              ///< Array of Julian days at which aQ changes [days after Jan 1]
-    int          nDates;              ///< size of aDates
+    double     **_aQ_back;             ///< Rating curve for flow rates for different times [m3/s]
+    int         *_aDates;              ///< Array of Julian days at which aQ changes [days after Jan 1]
+    int          _nDates;              ///< size of aDates
 
     double     GetVolume(const double &ht) const;
     double     GetArea  (const double &ht) const;

@@ -208,7 +208,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   double albedo   =pHRU->GetSnowAlbedo();
   double snowSWE  =pHRU->GetSnowSWE();
 
-  if ((pHRU->GetType()==HRU_GLACIER) && (snowSWE<=0))
+  if ((pHRU->GetHRUType()==HRU_GLACIER) && (snowSWE<=0))
   {
     double minalb=CGlobalParams::GetParams()->UBC_snow_params.MIN_SNOW_ALBEDO;
     albedo=1-(1.0-albedo)*(1-minalb);//UBCWM RFS implmentation 

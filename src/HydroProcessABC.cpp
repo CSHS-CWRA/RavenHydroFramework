@@ -308,13 +308,10 @@ bool CHydroProcessABC::ShouldApply(const CHydroUnit *pHRU) const
   {
     if (pConditions[i]->basis==BASIS_HRU_TYPE)
     {
-      HRU_type typ=pHRU->GetType();
+      HRU_type typ=pHRU->GetHRUType();
       HRU_type typ2=HRU_STANDARD;
 
-      if      (!pConditions[i]->data.compare("GLACIER" )){typ2=HRU_GLACIER;}
-      else if (!pConditions[i]->data.compare("LAKE"    )){typ2=HRU_LAKE;}
-      else if (!pConditions[i]->data.compare("ROCK"    )){typ2=HRU_ROCK;}
-      else if (!pConditions[i]->data.compare("STANDARD")){typ2=HRU_STANDARD;}
+      typ2=StringToHRUType(pConditions[i]->data);
 
       if      ((pConditions[i]->compare_method==COMPARE_IS_EQUAL ) && (typ!=typ2)){return false;}
       else if ((pConditions[i]->compare_method==COMPARE_NOT_EQUAL) && (typ==typ2)){return false;}

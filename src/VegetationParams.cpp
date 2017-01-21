@@ -345,10 +345,10 @@ void CVegetationClass::RecalculateRootParams(       veg_var_struct   &VV,
       delT=PI*pow(rootradius,2)*rootdens_m;//(mm^2*mm/mm^3)=[-]
       double alpha=(1.0/(8.0*PI*rootdens_m))*(delT-3.0-2*(log(delT))/ (1.0-delT));//dimensionless
  
-      VV.cowan_alpha    =alpha/KPA_PER_MPA*RHOWG/DD[m]; 
+      VV.cowan_alpha    =alpha/KPA_PER_MPA*DENSITY_WATER*GRAVITY/DD[m]; 
       VV.root_resistance=(1-xylem_frac)*VV.resistivity/rootfrac_m;
 
-      //RV[m].cowan_alpha    =alpha/KPA_PER_MPA*RHOWG/DD[m];
+      //RV[m].cowan_alpha    =alpha/KPA_PER_MPA*DENSITY_WATER*GRAVITY/DD[m];
       //RV[m].root_resistance=(1-R.xylem_frac)*VV.resistivity/rootfrac_m;
 
     }

@@ -174,6 +174,34 @@ bool DynArrayAppend(void **& pArr, void *xptr,int &size)
   pArr=tmp;                                                   //redirect pointer
   return true;
 }
+///////////////////////////////////////////////////////////////////////////
+/// \brief identifies index location of value in uneven continuous list of value ranges
+///
+/// \param &x [in] value for which the interval index is to be found
+/// \param *ax [in] array of consecutive values from ax[0] to ax[N-1] indicating interval boundaries 
+/// \param N [in] size of array ax
+/// \param iguess [in] best guess as to which interval x is in
+/// \return interval index value (index refers to lower bound of interval, i.e., i indicates x is between ax[i] and ax[i+1]
+/// \note returns -1 if outside of range 
+//
+int SmartIntervalSearch(const double &x,const double *ax,const int N,const int iguess)
+{
+  int i=iguess;
+  if((iguess>N-1) || (iguess<0)){i=0;}
+  if ((x>=ax[i]) && (x<ax[i+1])){return i;}
+
+  int plus,plus2;
+  for(int d=1;d<(int)(trunc(N/2)+1);d++)
+  {
+    plus =i+d;    if(plus >N-1){plus -=N;} //wrap
+    plus2=i+d+1;  if(plus2>N-1){plus2-=N;} //wrap
+    if ((x>=ax[plus]) && (x<ax[plus2])){ return plus;}
+    plus =i-d;    if(plus <0  ){plus +=N;} //wrap
+    plus2=i-d+1;  if(plus2<0  ){plus2+=N;}   //wrap
+    if ((x>=ax[plus]) && (x<ax[plus2])){ return plus;}
+  }
+  return DOESNT_EXIST;
+}
 
 /**************************************************************************
       Threshold Smoothing functions
@@ -738,6 +766,28 @@ string StringToUppercase(const string &s)
     return ret;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Converts any string to corresponding HRU Type
+/// \param &s [in] String to be converted to uppercase
+/// \return type, defaults to standard (doesn't complain)
+//
+HRU_type StringToHRUType(const string s)
+{
+  string sup;
+  sup=StringToUppercase(s);
+
+  if      (!s.compare("GLACIER" )){return HRU_GLACIER;}
+  else if (!s.compare("LAKE"    )){return HRU_LAKE;}
+  else if (!s.compare("ROCK"    )){return HRU_ROCK;}
+  else if (!s.compare("STANDARD")){return HRU_STANDARD;}
+
+#ifdef _STRICTCHECK_
+  ExitGracefully("StringToHRUType: unrecognized hru type code",BAD_DATA);
+#endif
+
+  return HRU_INVALID_TYPE;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief returns true if line is empty, begins with '#' or '*' 
 /// \param &s [in] first string token in file line
 /// \param Len length of line
@@ -1070,7 +1120,7 @@ void quickSort(double arr[], int left, int right)
 /// \param nguess [in] guess for bin index (0<=nguess<=size-2)
 /// \param *aVals [in] ordered array of bin values (size = nBins)
 /// \param nBins [in] size of aVals[]
-/// \return index of bin
+/// \return index of bin, or DOESNT_EXIST
 /// \note all values less than aVals[1] are in bin 0, \n
 ///        all between aVals[n] and aVals[n+1] are in bin n, \n
 ///        all values greater than aVals[nBins-2] are in bin nBins-2 \n
@@ -1095,5 +1145,5 @@ int SmartLookup(const double lookup_val, const int nguess, const double *aVals, 
     if ((lookup_val>aVals[n]) && (lookup_val<=aVals[n+1])){return n;}
   }
   cout<<i<<" tries NOT FOUND"<<endl;
-  return 0;
+  return DOESNT_EXIST;
 }

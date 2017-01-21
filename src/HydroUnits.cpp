@@ -236,14 +236,14 @@ double    CHydroUnit::GetSolarNoon					 () const {return _SolarNoon;}//[days]
 ///
 /// \return double precipitation correction factor
 //
-double    CHydroUnit::GetPrecipMultiplier				 () const {return _PrecipMult;}
+double    CHydroUnit::GetPrecipMultiplier	() const {return _PrecipMult;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns type of HRU (standard, lake, or glacier)
 ///
 /// \return Type of HRU (standard, lake, or glacier)
 //
-HRU_type  CHydroUnit::GetType              () const {return _HRUType;}
+HRU_type  CHydroUnit::GetHRUType           () const {return _HRUType;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Checks if HRU is of type lake
@@ -516,18 +516,25 @@ void      CHydroUnit::SetPrecipMultiplier			 (const double factor)
 	_PrecipMult = factor;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Changes the land use class
+/// \brief Changes the land use class mid-simulation
 //
 void CHydroUnit::ChangeLandUse(const CLandUseClass    *lult_class)
 {
   _pSurface=lult_class->GetSurfaceStruct();
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Changes the vegetation class
+/// \brief Changes the vegetation class mid-simulation
 //
 void CHydroUnit::ChangeVegetation(const CVegetationClass *veg_class)
 {
   _pVeg = veg_class->GetVegetationStruct();
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Changes the HRU Type mid-simulation
+//
+void CHydroUnit:: ChangeHRUType(const HRU_type typ)
+{
+  _HRUType=typ;
 }
 
 //////////////////////////////////////////////////////////////////

@@ -92,7 +92,7 @@ void CmvCropHeatUnitEvolve::GetRatesOfChange (const double		 *state_var,
 																            const time_struct &tt,
 																			            double     *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lakes & Glaciers
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & Glaciers
 
   double CHU,old_CHU;
   CHU    =state_var[pModel->GetStateVarIndex(CROP_HEAT_UNITS)];
@@ -148,6 +148,6 @@ void CmvCropHeatUnitEvolve::ApplyConstraints( const double      *state_vars,
 								                            const time_struct &t,
                                                   double      *rates) const
 {
-  if (pHRU->GetType()!=HRU_STANDARD){return;}//Lakes & Glaciers
+  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & Glaciers
   //no constraints, allow to be =-1 prior to start of growing season
 }

@@ -89,7 +89,7 @@ void CmvSnowMelt::GetRatesOfChange( const double		 *state_vars,
                                     const time_struct &tt,
                                           double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
 
   //------------------------------------------------------------
@@ -116,7 +116,7 @@ void   CmvSnowMelt::ApplyConstraints( const double		 *state_vars,
                                       const time_struct &tt,
                                             double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
     if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}
     if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
@@ -204,7 +204,7 @@ void CmvSnowSqueeze::GetRatesOfChange( const double		 *state_vars,
                                     const time_struct &tt,
                                           double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   double liq_cap,SD(0.0),S,SL;
 
@@ -238,7 +238,7 @@ void   CmvSnowSqueeze::ApplyConstraints( const double		 *state_vars,
                                       const time_struct &tt,
                                             double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
     if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}
     if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
@@ -333,7 +333,7 @@ void CmvSnowRefreeze::GetRatesOfChange( const double		 *state_vars,
                                         const time_struct &tt,
                                               double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   double Kf=pHRU->GetSurfaceProps()->refreeze_factor;//[mm/K/d]
 
@@ -362,7 +362,7 @@ void  CmvSnowRefreeze::ApplyConstraints(const double		 *state_vars,
                                         const time_struct &tt,
                                               double     *rates) const
 {
-  if (pHRU->GetType()==HRU_LAKE){return;}
+  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}//reality check
 
