@@ -845,6 +845,85 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       }
       break;
     }
+	case(DIAG_KLING_GUPTA)://-----------------------------------------
+	{
+		bool ValidObs = false;
+		bool ValidMod = false;
+		bool ValidWeight = false;
+		double ObsAvg = 0;
+		double ModAvg = 0;
+		N = 0;
+		double ObsSum = 0;
+		double ModSum = 0;
+		double ObsStd = 0;
+		double ModStd = 0;
+		double Cov = 0;
+
+		for (nn = skip; nn<nVals; nn++)
+		{
+			obsval = pTSObs->GetSampledValue(nn);
+			modval = pTSMod->GetSampledValue(nn);
+			weight = 1.0;
+			if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+
+			if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+			if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+			if (weight != 0) { ValidWeight = true; }
+
+			if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
+				ObsSum += obsval*weight;
+				ModSum += modval*weight;
+				N += weight;
+			}
+		}
+		ObsAvg = ObsSum / N;
+		ModAvg = ModSum / N;
+
+		for (nn = skip; nn<nVals; nn++)
+		{
+			obsval = pTSObs->GetSampledValue(nn);
+			modval = pTSMod->GetSampledValue(nn);
+			weight = 1.0;
+			if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+
+			if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+			if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+			if (weight != 0) { ValidWeight = true; }
+
+			if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
+				ObsStd += pow((obsval - ObsAvg), 2)*weight;
+				ModStd += pow((modval - ModAvg), 2)*weight;
+				Cov += (obsval - ObsAvg) * (modval - ModAvg)*weight;
+			}
+		}
+		ObsStd = sqrt(ObsStd / N);   // Standard Deviation for Observed Flow
+		ModStd = sqrt(ModStd / N);   // Standard Deviation for Modelled Flow
+		Cov /= N;                    // Covariance between observed and modelled flows
+
+		double r = Cov / ObsStd / ModStd; // pearson product-moment correlation coefficient
+		double Beta = ModAvg / ObsAvg;
+		double Alpha = ModStd / ObsStd;
+
+
+		if (ValidObs && ValidMod && ValidWeight)
+		{
+			return 1 - sqrt(pow((r - 1), 2) + pow((Alpha - 1), 2) + pow((Beta - 1), 2));
+		}
+		else
+		{
+			string p1 = "OBSERVED_DATA  ";
+			string p2 = "MODELED_DATA  ";
+			string p3 = "WEIGHTS ";
+			if (ValidObs) { p1 = ""; }
+			if (ValidMod) { p2 = ""; }
+			if (ValidWeight) { p3 = ""; }
+
+			string warn = "DIAG_KLING_GUPTA not performed correctly. Check " + p1 + p2 + p3;
+			WriteWarning(warn, Options.noisy);
+			return -ALMOST_INF;
+		}
+		break;
+	}
   default:
     {
       return 0.0; break;

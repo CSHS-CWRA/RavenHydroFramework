@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.6.4";
+  Options.version="2.6.5";
  
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 

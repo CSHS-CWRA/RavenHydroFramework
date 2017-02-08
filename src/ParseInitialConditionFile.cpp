@@ -134,12 +134,14 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
             ExitGracefullyIf(Len<2,
               "Parse HRU File: incorrect number of terms in SubBasin initial conditions",BAD_DATA);
             SBID=s_to_l(s[0]);
+            pSB=NULL;
             pSB=pModel->GetSubBasinByID(SBID);
-            double Qinit[MAX_RIVER_SEGS];
-            for (int seg=0;seg<MAX_RIVER_SEGS;seg++){
-              Qinit[seg]=s_to_d(s[1]);
+            if (pSB!=NULL){
+              double *aQout=new double [1];
+              aQout[0]=s_to_d(s[1]);
+              pSB->SetQoutArray(DOESNT_EXIST,aQout,aQout[0]);
+              delete [] aQout;
             }
-            if (pSB!=NULL){pSB->UpdateOutflows(Qinit,0.0,Options,true);}
             else          {
               WriteWarning("Subbasin "+to_string(SBID)+" not in model, cannot set initial conditions",Options.noisy);
             }

@@ -229,14 +229,15 @@ double HargreavesEvap(const force_struct *F)//[C]
 //
 double Hargreaves1985Evap(const force_struct *F)//[C]	
 {
-	const double HARGREAVES_CONST=0.0023;
-	double Ra;   //maximum incoming solar radiation
-	double delT; //range in monthly temperatures
+  const double HARGREAVES_CONST=0.0023;
+  double Ra;   //maximum incoming solar radiation
+  double delT; //range in monthly temperatures
 
-	Ra=F->ET_radia;//[MJ/m2/day] 
-	Ra/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
-	 
+  Ra=F->ET_radia;//[MJ/m2/day] 
+  Ra/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
+
   delT=F->temp_daily_max-F->temp_daily_min;
+  delT=max(delT,0.0);
 
 	return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_ave+17.8)); 
 }

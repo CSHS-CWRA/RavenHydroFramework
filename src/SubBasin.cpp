@@ -477,17 +477,21 @@ void CSubBasin::SetRivuletStorage   (const double &V){
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets qout storage array, usually upon read of state file
-/// \param &N [in] size of aQo array (=_nSegments)
+/// \param &N [in] size of aQo array (=_nSegments) or DOESNT_EXIST if _nSegments is unknown
 /// \param *aQo array (size N) outflow from each reach segment [m3/s] 
 /// \param QoLast: most recent outflow from reach [m3/s] 
 //
 void CSubBasin::SetQoutArray(const int N, const double *aQo, const double QoLast)
 {
-  if (N!=_nSegments){
+  if ((N!=_nSegments) && (N!=DOESNT_EXIST)){
     WriteWarning("Number of reach segments in state file and input file are inconsistent. Unable to read in-reach flow initial conditions",false);
   }
-  else{
+  else if (N==_nSegments){
     for (int i=0;i<_nSegments;i++){_aQout[i]=aQo[i];}
+    _QoutLast=QoLast;
+  }
+  else if (N==DOESNT_EXIST){//special flag if only one flow is sent in
+    for (int i=0;i<_nSegments;i++){_aQout[i]=aQo[0];}
     _QoutLast=QoLast;
   }
 }
