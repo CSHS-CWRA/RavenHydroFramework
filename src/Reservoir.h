@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 ------------------------------------------------------------------
    Reservoir.h
 ------------------------------------------------------------------
@@ -47,7 +47,7 @@ class CReservoir
     double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
     double       _max_stage;           ///< maximum reference elevation [m] 
 
-    int          _N;                   ///< number of points on rating curves
+    int          _Np;                   ///< number of points on rating curves
     double      *_aStage;              ///< Rating curve for stage elevation [m]
     double      *_aQ;                  ///< Rating curve for flow rates [m3/s]
     double      *_aArea;               ///< Rating curve for surface area [m2]
@@ -104,3 +104,4 @@ class CReservoir
     static CReservoir  *Parse(CParser *p, string name, int &HRUID, const optStruct &Options);
 };
 #endif
+

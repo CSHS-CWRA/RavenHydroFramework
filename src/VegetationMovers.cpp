@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 
   Canopy Evaporation
   Canopy Snow Evaporation
   Canopy Drip
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "VegetationMovers.h"
@@ -19,7 +19,7 @@
 /// \param cetype [in] Model of canopy evaporation
 //
 CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype)
-            :CHydroProcessABC(CANOPY_EVAPORATION)
+  :CHydroProcessABC(CANOPY_EVAPORATION)
 {
   type =cetype;
 
@@ -39,9 +39,9 @@ CmvCanopyEvap::~CmvCanopyEvap(){}
 void CmvCanopyEvap::Initialize()
 {
   ExitGracefullyIf(pModel->GetStateVarType(iFrom[0])!=CANOPY,
-    "CmvCanopyEvap::Initialize:Canopy evaporation must come from canopy unit",BAD_DATA); 
+		   "CmvCanopyEvap::Initialize:Canopy evaporation must come from canopy unit",BAD_DATA); 
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=ATMOSPHERE,
-    "CmvCanopyEvap::Initialize:Canopy evaporation must go to atmosphere",BAD_DATA); 
+		   "CmvCanopyEvap::Initialize:Canopy evaporation must go to atmosphere",BAD_DATA); 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -54,25 +54,25 @@ void CmvCanopyEvap::Initialize()
 void CmvCanopyEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
   if (type==CANEVP_RUTTER)
-  {
-    nP=3;
-    aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
-    aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
-    aP[2]="TRUNK_FRACTION";  aPC[2]=CLASS_VEGETATION; 
-  }
+    {
+      nP=3;
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
+      aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
+      aP[2]="TRUNK_FRACTION";  aPC[2]=CLASS_VEGETATION; 
+    }
   else if (type==CANEVP_MAXIMUM)     
-  {
-    nP=1;
-    aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
-  } 
+    {
+      nP=1;
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
+    } 
   else if (type==CANEVP_ALL)     
-  {
-    nP=0;
-  } 
+    {
+      nP=0;
+    } 
   else
-  {
-    ExitGracefully("CmvCanopyEvap::GetParticipatingParamList: undefined canopy evaporation algorithm",BAD_DATA);
-  }
+    {
+      ExitGracefully("CmvCanopyEvap::GetParticipatingParamList: undefined canopy evaporation algorithm",BAD_DATA);
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -101,11 +101,11 @@ void CmvCanopyEvap::GetParticipatingStateVarList(canevap_type cetype,sv_type *aS
 /// \param &tt [in] Specified point at time at which this process takes place
 /// \param *rates [out] Rate of water loss from canopy to atmosphere [mm/d]
 //
-void CmvCanopyEvap::GetRatesOfChange( const double			*state_vars, 
-                                      const CHydroUnit	*pHRU, 
-                                      const optStruct	&Options,
+void CmvCanopyEvap::GetRatesOfChange( const double      *state_vars, 
+                                      const CHydroUnit  *pHRU, 
+                                      const optStruct   &Options,
                                       const time_struct &tt,
-                                            double     *rates) const
+				            double     *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
   
@@ -118,25 +118,25 @@ void CmvCanopyEvap::GetRatesOfChange( const double			*state_vars,
   double stor=min(max(state_vars[iFrom[0]],0.0),cap*Fc); //correct for potentially invalid storage
 
   if (type==CANEVP_RUTTER)//-------------------------------------
-  {
-    double Ft =pHRU->GetVegetationProps()->trunk_fraction;
-    if (pModel->GetStateVarIndex(TRUNK)==DOESNT_EXIST){Ft=0.0;}//overrides if trunk not explicitly modeled
+    {
+      double Ft =pHRU->GetVegetationProps()->trunk_fraction;
+      if (pModel->GetStateVarIndex(TRUNK)==DOESNT_EXIST){Ft=0.0;}//overrides if trunk not explicitly modeled
 
-    rates[0]=(1.0-Ft)*Fc*PET*(stor/(cap*Fc)); 
-  }
+      rates[0]=(1.0-Ft)*Fc*PET*(stor/(cap*Fc)); 
+    }
   else if (type==CANEVP_MAXIMUM)//----------------------------------
-  {
-    rates[0]=Fc*PET;
-  }
+    {
+      rates[0]=Fc*PET;
+    }
   else if (type==CANEVP_ALL)//----------------------------------
-  {
-    //all canopy mass evaporates 'instantaneously'
-    rates[0]=state_vars[iFrom[0]]/Options.timestep;
-  }
+    {
+      //all canopy mass evaporates 'instantaneously'
+      rates[0]=state_vars[iFrom[0]]/Options.timestep;
+    }
   else//--------------------------------------------------------
-  {
-    ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
-  }
+    {
+      ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -150,11 +150,11 @@ void CmvCanopyEvap::GetRatesOfChange( const double			*state_vars,
 /// \param *rates [out] Rate of water loss from canopy to atmosphere [mm/d]
 
 //
-void CmvCanopyEvap::ApplyConstraints( const double		 *state_vars, 
-                                      const CHydroUnit *pHRU, 
-                                      const optStruct	 &Options,
+void CmvCanopyEvap::ApplyConstraints( const double      *state_vars, 
+                                      const CHydroUnit  *pHRU, 
+                                      const optStruct   &Options,
                                       const time_struct &tt,
-                                            double     *rates) const
+				            double      *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
   //must be positive
@@ -178,7 +178,7 @@ void CmvCanopyEvap::ApplyConstraints( const double		 *state_vars,
 /// \param cetype [in] Model of canopy snow evaporation
 //
 CmvCanopySnowEvap::CmvCanopySnowEvap(canevap_type cetype)
-            :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
+  :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
 {
   type =cetype;
 
@@ -198,9 +198,9 @@ CmvCanopySnowEvap::~CmvCanopySnowEvap(){}
 void CmvCanopySnowEvap::Initialize()
 {
   ExitGracefullyIf(pModel->GetStateVarType(iFrom[0])!=CANOPY_SNOW,
-    "CmvCanopySnowEvap::Initialize:Canopy evaporation must come from canopy unit",BAD_DATA); 
+		   "CmvCanopySnowEvap::Initialize:Canopy evaporation must come from canopy unit",BAD_DATA); 
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=ATMOSPHERE,
-    "CmvCanopySnowEvap::Initialize:Canopy evaporation must go to atmosphere",BAD_DATA); 
+		   "CmvCanopySnowEvap::Initialize:Canopy evaporation must go to atmosphere",BAD_DATA); 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -213,22 +213,22 @@ void CmvCanopySnowEvap::Initialize()
 void CmvCanopySnowEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
   if (type==CANEVP_RUTTER)
-  {
-    nP=0; 
-  }
+    {
+      nP=0; 
+    }
   else if (type==CANEVP_MAXIMUM)     
-  {
-    nP=1;
-    aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
-  } 
+    {
+      nP=1;
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
+    } 
   else if (type==CANEVP_ALL)     
-  {
-    nP=0;		
-  } 
+    {
+      nP=0;               
+    } 
   else
-  {
-    ExitGracefully("CmvCanopySnowEvap::GetParticipatingParamList: undefined canopy snowpack evaporation algorithm",BAD_DATA);
-  }
+    {
+      ExitGracefully("CmvCanopySnowEvap::GetParticipatingParamList: undefined canopy snowpack evaporation algorithm",BAD_DATA);
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -256,11 +256,11 @@ void CmvCanopySnowEvap::GetParticipatingStateVarList(canevap_type cetype,sv_type
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from canopy SWE to atmosphere [mm/d]
 //
-void CmvCanopySnowEvap::GetRatesOfChange( const double			*state_vars, 
-                                          const CHydroUnit	*pHRU, 
-                                          const optStruct	&Options,
+void CmvCanopySnowEvap::GetRatesOfChange( const double      *state_vars, 
+                                          const CHydroUnit  *pHRU, 
+                                          const optStruct   &Options,
                                           const time_struct &tt,
-                                                double     *rates) const
+					        double      *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
 
@@ -273,19 +273,19 @@ void CmvCanopySnowEvap::GetRatesOfChange( const double			*state_vars,
   //double stor=min(max(state_vars[iFrom[0]],0.0),cap*Fc); //correct for potentially invalid storage
 
   if (type==CANEVP_MAXIMUM)//----------------------------------
-  {
-    //all canopy mass evaporates 'instantaneously' (up to threshold)
-    rates[0]=Fc*PET;
-  }
+    {
+      //all canopy mass evaporates 'instantaneously' (up to threshold)
+      rates[0]=Fc*PET;
+    }
   else if (type==CANEVP_ALL)//----------------------------------
-  {
-    //all canopy mass evaporates 'instantaneously'
-    rates[0]=state_vars[iFrom[0]]/Options.timestep;
-  }
+    {
+      //all canopy mass evaporates 'instantaneously'
+      rates[0]=state_vars[iFrom[0]]/Options.timestep;
+    }
   else//--------------------------------------------------------
-  {
-    ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
-  }
+    {
+      ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -298,11 +298,11 @@ void CmvCanopySnowEvap::GetRatesOfChange( const double			*state_vars,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from canopy to atmosphere [mm/d]
 //
-void CmvCanopySnowEvap::ApplyConstraints( const double		 *state_vars, 
-                                          const CHydroUnit *pHRU, 
-                                          const optStruct	 &Options,
+void CmvCanopySnowEvap::ApplyConstraints( const double      *state_vars, 
+                                          const CHydroUnit  *pHRU, 
+                                          const optStruct   &Options,
                                           const time_struct &tt,
-                                            double     *rates) const
+					        double      *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
 
@@ -317,12 +317,12 @@ void CmvCanopySnowEvap::ApplyConstraints( const double		 *state_vars,
 //
 CmvCanopyDrip::CmvCanopyDrip(candrip_type cdtype, 
                              int to_index)
-              :CHydroProcessABC(CANOPY_DRIP)
+  :CHydroProcessABC(CANOPY_DRIP)
 {
   int iCan;
   type =cdtype;
   ExitGracefullyIf(to_index==DOESNT_EXIST,
-    "CmvCanopyDrip Constructor: invalid to compartment specified",BAD_DATA);
+		   "CmvCanopyDrip Constructor: invalid to compartment specified",BAD_DATA);
   iCan     =pModel->GetStateVarIndex(CANOPY);
   CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
   iFrom[0]=iCan;      iTo[0]=to_index;     
@@ -336,10 +336,10 @@ CmvCanopyDrip::~CmvCanopyDrip(){}
 //////////////////////////////////////////////////////////////////
 /// \brief Verifies that canopy drip comes from a canopy unit
 //
-void	 CmvCanopyDrip::Initialize()
+void     CmvCanopyDrip::Initialize()
 {
   ExitGracefullyIf(pModel->GetStateVarType(iFrom[0])!=CANOPY,
-    "CmvCanopyDrip::Initialize:Canopy drip must come from canopy unit",BAD_DATA); 
+		   "CmvCanopyDrip::Initialize:Canopy drip must come from canopy unit",BAD_DATA); 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -352,23 +352,23 @@ void	 CmvCanopyDrip::Initialize()
 void CmvCanopyDrip::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
   if (type==CANDRIP_RUTTER)
-  {
-    nP=3;     
-    aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
-    aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
-    aP[2]="STEMFLOW_FRAC";   aPC[2]=CLASS_VEGETATION; 		
-  }
+    {
+      nP=3;     
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; 
+      aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
+      aP[2]="STEMFLOW_FRAC";   aPC[2]=CLASS_VEGETATION;           
+    }
   else if (type==CANDRIP_SLOWDRAIN)     
-  {
-    nP=3;
-    aP[0]="DRIP_PROPORTION"; aPC[0]=CLASS_VEGETATION;    
-    aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
-    aP[2]="FOREST_COVERAGE"; aPC[2]=CLASS_LANDUSE; 
-  } 
+    {
+      nP=3;
+      aP[0]="DRIP_PROPORTION"; aPC[0]=CLASS_VEGETATION;    
+      aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
+      aP[2]="FOREST_COVERAGE"; aPC[2]=CLASS_LANDUSE; 
+    } 
   else
-  {
-    ExitGracefully("CmvCanopyDrip::GetParticipatingParamList: undefined canopy drip algorithm",BAD_DATA);
-  }
+    {
+      ExitGracefully("CmvCanopyDrip::GetParticipatingParamList: undefined canopy drip algorithm",BAD_DATA);
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -397,11 +397,11 @@ void CmvCanopyDrip::GetParticipatingStateVarList(candrip_type cdtype,sv_type *aS
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from canopy to land  surface [mm/day]
 //
-void CmvCanopyDrip::GetRatesOfChange( const double			*state_vars, 
-                                      const CHydroUnit	*pHRU, 
-                                      const optStruct	&Options,
+void CmvCanopyDrip::GetRatesOfChange( const double      *state_vars, 
+                                      const CHydroUnit  *pHRU, 
+                                      const optStruct   &Options,
                                       const time_struct &tt,
-                                            double     *rates) const
+				      double            *rates) const
 {
 
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
@@ -414,23 +414,23 @@ void CmvCanopyDrip::GetRatesOfChange( const double			*state_vars,
   double stor=state_vars[iFrom[0]];
   double cap =pHRU->GetVegVarProps()->capacity; 
   
-  if			(type==CANDRIP_RUTTER)//-------------------------------
-  {
-    p  =pHRU->GetVegetationProps()->stemflow_frac;
+  if (type==CANDRIP_RUTTER)//-------------------------------
+    {
+      p  =pHRU->GetVegetationProps()->stemflow_frac;
     
-    if (pModel->GetStateVarIndex(TRUNK)<0){p=0.0;}//overrides if trunk not modeled
+      if (pModel->GetStateVarIndex(TRUNK)<0){p=0.0;}//overrides if trunk not modeled
     
-    //if storage is greater than capacity, then overflow occurs at rate d(S-C)/dt
-    //this means storage cannot be exceeded for a full timestep
+      //if storage is greater than capacity, then overflow occurs at rate d(S-C)/dt
+      //this means storage cannot be exceeded for a full timestep
 
-    rates[0]=(1.0-p)*threshMax((stor-Fc*cap)/Options.timestep,0.0,0.0);
-  }
+      rates[0]=(1.0-p)*threshMax((stor-Fc*cap)/Options.timestep,0.0,0.0);
+    }
   else if (type==CANDRIP_SLOWDRAIN)//----------------------------
-  {
-    double drip=pHRU->GetVegetationProps()->drip_proportion;
-    rates[0]=threshPositive((stor-Fc*cap)/Options.timestep)+//overflow
-             threshMin(drip*(stor/Fc),stor/Fc/Options.timestep,0.0);//slow drip //THRESHOLD BEHAVIOR
-  }
+    {
+      double drip=pHRU->GetVegetationProps()->drip_proportion;
+      rates[0]=threshPositive((stor-Fc*cap)/Options.timestep)+//overflow
+	threshMin(drip*(stor/Fc),stor/Fc/Options.timestep,0.0);//slow drip //THRESHOLD BEHAVIOR
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -443,14 +443,16 @@ void CmvCanopyDrip::GetRatesOfChange( const double			*state_vars,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from canopy to land  surface [mm/day]
 //
-void CmvCanopyDrip::ApplyConstraints( const double		 *state_vars, 
-                                      const CHydroUnit *pHRU, 
-                                      const optStruct	 &Options,
+void CmvCanopyDrip::ApplyConstraints( const double      *state_vars, 
+                                      const CHydroUnit  *pHRU, 
+                                      const optStruct   &Options,
                                       const time_struct &tt,
-                                            double     *rates) const
+				            double      *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
   
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
 }
+
+

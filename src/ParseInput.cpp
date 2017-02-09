@@ -509,15 +509,20 @@ bool ParseMainInputFile (CModel     *&pModel,
         else{
           ExitGracefully("ParseMainInputFile: Unrecognized interpolation method",BAD_DATA_WARN);
         }
-        if ((Options.interpolation==INTERP_FROM_FILE) && (Len>2))
-        {
-          Options.interp_file="";
-          for (int i=2; i<Len-1;i++){
-            Options.interp_file+=s[i];
-            Options.interp_file+=" ";
-          }
-          Options.interp_file+=s[Len-1];
-        }
+	if ((Options.interpolation==INTERP_FROM_FILE) && (Len>2))
+	  {
+	    Options.interp_file="";
+	    for (int i=2; i<Len-1;i++){
+	      Options.interp_file+=s[i];
+	      Options.interp_file+=" ";
+	    }
+	    Options.interp_file+=s[Len-1];
+	    
+	    string filedir = GetDirectoryName(Options.rvi_filename); //if a relative path name, e.g., "/path/model.rvi", only returns e.g., "/path"
+	    if (StringToUppercase(Options.interp_file).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
+	      Options.interp_file = filedir + "//" + Options.interp_file;
+	    }
+	  }
         break;
       }
       case(12): //----------------------------------------------

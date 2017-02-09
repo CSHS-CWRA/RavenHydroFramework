@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h" 
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.6.5";
+  Options.version="2.6.6";
  
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 
@@ -340,3 +340,4 @@ bool CheckForStopfile(const time_struct &tt)
     return true;
   }
 }
+

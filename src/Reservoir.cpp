@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
@@ -30,7 +30,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _pHRU=NULL; 
   _pExtractTS=NULL; 
 
-  _N=100;
+  _Np=100;
   _max_stage=10; //reasonable default?
 
   _aQ_back=NULL;
@@ -38,17 +38,17 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _aDates=NULL;
 
   _aVolume=NULL;
-  _aStage =new double [_N];
-  _aQ     =new double [_N];
-  _aArea  =new double [_N];
-  _aVolume=new double [_N];
+  _aStage =new double [_Np];
+  _aQ     =new double [_Np];
+  _aArea  =new double [_Np];
+  _aVolume=new double [_Np];
 
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor",OUT_OF_MEMORY);
 
   double ht;
-  for (int i=0;i<_N;i++)
+  for (int i=0;i<_Np;i++)
   {
-    ht  =_min_stage+(_max_stage-_min_stage)*(double)(i)/(double)(_N-1);
+    ht  =_min_stage+(_max_stage-_min_stage)*(double)(i)/(double)(_Np-1);
     _aStage [i]=ht;
     _aQ     [i]=a_Q*pow(ht,b_Q);
     _aArea  [i]=a_A*pow(ht,b_Q);
@@ -84,26 +84,26 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _min_stage =ALMOST_INF;
   _max_stage=-ALMOST_INF; //reasonable default?
 
-  _N=nPoints;
+  _Np=nPoints;
 
   _aQ_back=NULL;
   _nDates=0;
   _aDates=NULL;
 
-  ExitGracefullyIf(_N<2,"CReservoir::constructor: must have more than 1 data point in stage relations",BAD_DATA_WARN);
+  ExitGracefullyIf(_Np<2,"CReservoir::constructor: must have more than 1 data point in stage relations",BAD_DATA_WARN);
 
   _aVolume=NULL;
-  _aStage =new double [_N];
-  _aQ     =new double [_N];
-  _aArea  =new double [_N];
-  _aVolume=new double [_N];
+  _aStage =new double [_Np];
+  _aQ     =new double [_Np];
+  _aArea  =new double [_Np];
+  _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor (2)",OUT_OF_MEMORY);
 
   /// \todo [funct]: right now assumes uniform sampling (i.e., delta stage uniform); may require resampling
   double dh;
   string warn;
   dh=a_ht[1]-a_ht[0];
-  for (int i=0;i<_N;i++)
+  for (int i=0;i<_Np;i++)
   {
     _aStage [i]=a_ht[i];
     lowerswap(_min_stage,_aStage[i]);
@@ -167,22 +167,22 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _min_stage =ALMOST_INF;
   _max_stage=-ALMOST_INF; //reasonable default?
 
-  _N=nPoints;
+  _Np=nPoints;
 
-  ExitGracefullyIf(_N<2,"CReservoir::constructor: must have more than 1 data point in stage relations",BAD_DATA_WARN);
+  ExitGracefullyIf(_Np<2,"CReservoir::constructor: must have more than 1 data point in stage relations",BAD_DATA_WARN);
 
-  _aStage =new double [_N];
-  _aQ     =new double [_N];
-  _aArea  =new double [_N];
+  _aStage =new double [_Np];
+  _aQ     =new double [_Np];
+  _aArea  =new double [_Np];
   _aQ_back = new double *[_nDates];
-  for (int v = 0; v<_nDates; v++){ _aQ_back[v] = new double[_N]; }
-  _aVolume=new double [_N];
+  for (int v = 0; v<_nDates; v++){ _aQ_back[v] = new double[_Np]; }
+  _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor (2)",OUT_OF_MEMORY);
 
   double dh;
   string warn;
   dh=a_ht[1]-a_ht[0];
-  for (int i=0;i<_N;i++)
+  for (int i=0;i<_Np;i++)
   {
     _aStage [i]=a_ht[i];
     lowerswap(_min_stage,_aStage[i]);
@@ -329,7 +329,7 @@ void CReservoir::UpdateFlowRules(const time_struct &tt, const optStruct &Options
     if (tt.julian_day >= _aDates[v]){vv=v;}
   }
   //cout << "Updating: "<<tt.date_string <<" "<<vv<<" "<<nDates<<endl;
-  for (int i = 0; i < _N; i++){
+  for (int i = 0; i < _Np; i++){
     _aQ[i] = _aQ_back[vv][i];
   }
   return;
@@ -347,9 +347,9 @@ void  CReservoir::SetInitialFlow(const double &initQ)
   double dh=0.0001;
   double h_guess=0.1;
 
-  for (int i=0;i<_N;i++)
+  for (int i=0;i<_Np;i++)
   {
-    if (_aQ[i]>0.0){h_guess=_min_stage+(double)(i)/(double)(_N)*(_max_stage-_min_stage);break;}
+    if (_aQ[i]>0.0){h_guess=_min_stage+(double)(i)/(double)(_Np)*(_max_stage-_min_stage);break;}
   }
   int    iter=0;
   double change=0;
@@ -869,8 +869,8 @@ double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom)
 //
 double     CReservoir::GetVolume(const double &ht) const
 {
-  //return Interpolate(ht,_min_stage,_max_stage,_aVolume,_N,true);
-  return Interpolate2(ht,_aStage,_aVolume,_N,true);
+  //return Interpolate(ht,_min_stage,_max_stage,_aVolume,_Np,true);
+  return Interpolate2(ht,_aStage,_aVolume,_Np,true);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates the surface area from the area-stage rating curve
@@ -880,8 +880,8 @@ double     CReservoir::GetVolume(const double &ht) const
 //
 double     CReservoir::GetArea  (const double &ht) const
 {
-  //return Interpolate(ht,_min_stage,_max_stage,_aArea,_N,false);
-  return Interpolate2(ht,_aStage,_aArea,_N,false);
+  //return Interpolate(ht,_min_stage,_max_stage,_aArea,_Np,false);
+  return Interpolate2(ht,_aStage,_aArea,_Np,false);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates the discharge from the outflow-stage rating curve
@@ -891,6 +891,8 @@ double     CReservoir::GetArea  (const double &ht) const
 //
 double     CReservoir::GetOutflow(const double &ht) const{
   
-  //return Interpolate(ht,_min_stage,_max_stage,_aQ,_N,false);
-  return Interpolate2(ht,_aStage,_aQ,_N,false);
+  //return Interpolate(ht,_min_stage,_max_stage,_aQ,_Np,false);
+  return Interpolate2(ht,_aStage,_aQ,_Np,false);
 }
+
+

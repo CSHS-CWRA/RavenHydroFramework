@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -955,3 +955,5 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
   return true;
 }
+
+

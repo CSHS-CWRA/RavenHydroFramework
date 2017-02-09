@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -354,3 +354,5 @@ void CVegetationClass::RecalculateRootParams(       veg_var_struct   &VV,
     }
   }
 }
+
+
