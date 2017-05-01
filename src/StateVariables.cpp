@@ -115,7 +115,6 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     case(NEW_SNOW):           {name="New Snow";                   break;}
     case(SNOW_LIQ):           {name="Snow Melt (Liquid)";         break;}
     case(WETLAND):            {name="Wetlands";                   break;}
-    case(LUMPED_LANDFORM):    {name="Lumped Landform";            break;}
     case(CUM_INFIL):          {name="Cumulative infiltration";    break;}
     case(GA_MOISTURE_INIT):   {name="Green Ampt initial soil Water"; break;}
 
@@ -205,7 +204,6 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
     case(NEW_SNOW):         {units="mm"; break;}
     case(SNOW_LIQ):         {units="mm"; break;}
     case(WETLAND):          {units="mm"; break;}
-    case(LUMPED_LANDFORM):  {units="mm"; break;}
     case(CUM_INFIL):        {units="mm"; break;}
     case(GA_MOISTURE_INIT): {units="mm"; break;}
 
@@ -279,9 +277,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("PONDED_WATER"    )){typ=PONDED_WATER;}
   else if (!tmp.compare("ATMOSPHERE"      )){typ=ATMOSPHERE;}
   else if (!tmp.compare("ATMOS_PRECIP"    )){typ=ATMOS_PRECIP;}
-  else if (!tmp.compare("SOIL"            )){typ=SOIL;}
-  else if (!tmp.compare("LUMPEDLANDFORM"  )){typ=LUMPED_LANDFORM;}
-  else if (!tmp.compare("LUMPED_LANDFORM" )){typ=LUMPED_LANDFORM;}        
+  else if (!tmp.compare("SOIL"            )){typ=SOIL;}       
   else if (!tmp.compare("GROUNDWATER"     )){typ=GROUNDWATER;}        
   else if (!tmp.compare("GROUND_WATER"    )){typ=GROUNDWATER;}
   else if (!tmp.compare("AQUIFER"         )){typ=GROUNDWATER;}        
@@ -365,7 +361,6 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(NEW_SNOW):       {name="NEW_SNOW";                   break;}
     case(SNOW_LIQ):       {name="SNOW_LIQ";                   break;}
     case(WETLAND):        {name="WETLAND";                    break;}
-    case(LUMPED_LANDFORM):{name="LUMPED_LANDFORM";            break;}
     case(CUM_INFIL):      {name="CUM_INFIL";                  break;}
     case(GA_MOISTURE_INIT):{name="GA_MOISTURE_INIT";          break;}
 
@@ -491,7 +486,6 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ)
     case(DEPRESSION):     {return true;}
     case(SNOW_LIQ):       {return true;}
     case(WETLAND):        {return true;}
-    case(LUMPED_LANDFORM):{return true;}
     case(GLACIER):        {return true;}
     case(GLACIER_ICE):    {return true;}
     case(CONVOLUTION):    {return true;}   

@@ -191,6 +191,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_group_mb      =DOESNT_EXIST;
   Options.diag_start_time     =-ALMOST_INF;
   Options.diag_end_time       = ALMOST_INF;
+  Options.wateryr_mo          =10; //October
 
   pModel=NULL;
   pMover=NULL;
@@ -286,9 +287,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SuppressOutputICs"     )){code=72; }
     else if  (!strcmp(s[0],":SuppressOutput"        )){code=73; }
 		else if  (!strcmp(s[0],":WriteHRUGroupMBFile"   )){code=74; }
-    else if  (!strcmp(s[0],":EvaluationTime"        )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
     else if  (!strcmp(s[0],":OutputInterval"        )){code=15; }
-    else if  (!strcmp(s[0],":WriteHRUGroupMBFile"   )){code=74; }
+    else if  (!strcmp(s[0],":EvaluationTime"        )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
+    else if  (!strcmp(s[0],":WaterYearStartMonth"   )){code=76; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"        )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"       )){code=81; }
@@ -300,7 +301,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":StateVariables"        )){code=100;}//OBSOLETE
     else if  (!strcmp(s[0],":AggregatedVariable"    )){code=101;}//After corresponding DefineHRUGroup(s) command
     //--------------------HYDROLOGICAL PROCESSES ---------------
-    else if  (!strcmp(s[0],":ProcessBegin"          )){code=200;}//REQUIRED
+    if       (!strcmp(s[0],":ProcessBegin"          )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":HydrologicProcesses"   )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":Baseflow"              )){code=201;}
     else if  (!strcmp(s[0],":CanopyEvaporation"     )){code=202;}
@@ -509,20 +510,20 @@ bool ParseMainInputFile (CModel     *&pModel,
         else{
           ExitGracefully("ParseMainInputFile: Unrecognized interpolation method",BAD_DATA_WARN);
         }
-	if ((Options.interpolation==INTERP_FROM_FILE) && (Len>2))
-	  {
-	    Options.interp_file="";
-	    for (int i=2; i<Len-1;i++){
-	      Options.interp_file+=s[i];
-	      Options.interp_file+=" ";
-	    }
-	    Options.interp_file+=s[Len-1];
-	    
-	    string filedir = GetDirectoryName(Options.rvi_filename); //if a relative path name, e.g., "/path/model.rvi", only returns e.g., "/path"
-	    if (StringToUppercase(Options.interp_file).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-	      Options.interp_file = filedir + "//" + Options.interp_file;
-	    }
-	  }
+        if ((Options.interpolation==INTERP_FROM_FILE) && (Len>2))
+        {
+          Options.interp_file="";
+          for (int i=2; i<Len-1;i++){
+            Options.interp_file+=s[i];
+            Options.interp_file+=" ";
+          }
+          Options.interp_file+=s[Len-1];
+                  
+          string filedir = GetDirectoryName(Options.rvi_filename); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
+          if (StringToUppercase(Options.interp_file).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
+            Options.interp_file = filedir + "//" + Options.interp_file;
+          }
+        }
         break;
       }
       case(12): //----------------------------------------------
@@ -578,8 +579,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         if (Options.noisy) {cout <<"Soil Model"<<endl;}
         if (Len<2){ImproperFormatWarning(":SoilModel",p,Options.noisy);  break;}
         Options.num_soillayers =1;
-        if       (!strcmp(s[1],"SOIL_LUMPED"      )){Options.soil_modeltype =SOIL_LUMPED;}
-        else if  (!strcmp(s[1],"SOIL_ONE_LAYER"   )){Options.soil_modeltype =SOIL_ONE_LAYER;}
+        if       (!strcmp(s[1],"SOIL_ONE_LAYER"   )){Options.soil_modeltype =SOIL_ONE_LAYER;}
         else if  (!strcmp(s[1],"SOIL_TWO_LAYER"   )){
           Options.soil_modeltype =SOIL_TWO_LAYER;
           Options.num_soillayers =2;
@@ -1150,20 +1150,23 @@ bool ParseMainInputFile (CModel     *&pModel,
         for (int i=1; i<Len; i++)
         {
           invalid=false;pDiag=NULL;
-          if      (!strcmp(s[i],"NASH_SUTCLIFFE")){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
-          else if (!strcmp(s[i],"RMSE"          )){pDiag=new CDiagnostic(DIAG_RMSE);}
-          else if (!strcmp(s[i],"PCT_BIAS"      )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
-          else if (!strcmp(s[i],"ABSERR"        )){pDiag=new CDiagnostic(DIAG_ABSERR);}
-          else if (!strcmp(s[i],"ABSMAX"        )){pDiag=new CDiagnostic(DIAG_ABSMAX);}
-          else if (!strcmp(s[i],"PDIFF"         )){pDiag=new CDiagnostic(DIAG_PDIFF);}
-          else if (!strcmp(s[i],"TMVOL"         )){pDiag=new CDiagnostic(DIAG_TMVOL);}
-          else if (!strcmp(s[i],"RCOEF"         )){pDiag=new CDiagnostic(DIAG_RCOEF);}
-          else if (!strcmp(s[i],"NSC"           )){pDiag=new CDiagnostic(DIAG_NSC);}
-          else if (!strcmp(s[i],"RSR"           )){pDiag=new CDiagnostic(DIAG_RSR);}
-          else if (!strcmp(s[i],"R2"            )){pDiag=new CDiagnostic(DIAG_R2);}
-          else if (!strcmp(s[i],"CUMUL_FLOW"    )){pDiag=new CDiagnostic(DIAG_CUMUL_FLOW);}
-          else if (!strcmp(s[i],"LOG_NASH"      )){pDiag=new CDiagnostic(DIAG_LOG_NASH);}
-          else if (!strcmp(s[i],"KLING_GUPTA"   )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA);}
+          if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
+          else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
+          else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
+          else if (!strcmp(s[i],"ABSERR"             )){pDiag=new CDiagnostic(DIAG_ABSERR);}
+          else if (!strcmp(s[i],"ABSMAX"             )){pDiag=new CDiagnostic(DIAG_ABSMAX);}
+          else if (!strcmp(s[i],"PDIFF"              )){pDiag=new CDiagnostic(DIAG_PDIFF);}
+          else if (!strcmp(s[i],"TMVOL"              )){pDiag=new CDiagnostic(DIAG_TMVOL);}
+          else if (!strcmp(s[i],"RCOEF"              )){pDiag=new CDiagnostic(DIAG_RCOEF);}
+          else if (!strcmp(s[i],"NSC"                )){pDiag=new CDiagnostic(DIAG_NSC);}
+          else if (!strcmp(s[i],"RSR"                )){pDiag=new CDiagnostic(DIAG_RSR);}
+          else if (!strcmp(s[i],"R2"                 )){pDiag=new CDiagnostic(DIAG_R2);}
+          else if (!strcmp(s[i],"CUMUL_FLOW"         )){pDiag=new CDiagnostic(DIAG_CUMUL_FLOW);}
+          else if (!strcmp(s[i],"LOG_NASH"           )){pDiag=new CDiagnostic(DIAG_LOG_NASH);}
+          else if (!strcmp(s[i],"KLING_GUPTA"        )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA);}
+          else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
+          else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
+          else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
           else   {invalid=true;}
           if (!invalid){
             pModel->AddDiagnostic(pDiag);
@@ -1223,6 +1226,14 @@ bool ParseMainInputFile (CModel     *&pModel,
         }
         break;      
       }
+      case(76):  //--------------------------------------------
+      {/*:WaterYearStartMonth [int month]*/
+        if (Options.noisy) {cout <<"Water year starting month"<<endl;}
+        int mo=s_to_i(s[1]);
+        if((mo>0) && (mo<=12)){Options.wateryr_mo=mo;}
+        else { WriteWarning("Invalid water year starting month in :WaterYearStartMonth command. Should be integer month between 1- and 12",Options.noisy); }
+        break;
+      }
       case(80):  //--------------------------------------------
       {/*:DefineHRUGroup */ //AFTER SoilModel Command and HydroProcesses commands 
         if (Options.noisy) {cout <<"Defining HRU Group"<<endl;}
@@ -1266,6 +1277,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[1],"MONTHLY"        )){ta=MONTHLY;}
         else if (!strcmp(s[1],"YEARLY"         )){ta=YEARLY;}
         else if (!strcmp(s[1],"ANNUAL"         )){ta=YEARLY;}
+        else if (!strcmp(s[1],"WATER_YEARLY"   )){ta=WATER_YEARLY;}
         else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP;}
         else{
           ta=DAILY;
@@ -1361,7 +1373,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         //get extra filename
         int start=5;
         if ((sa==BY_SELECT_HRUS) && (Len>=7) && (string(s[5])=="ONLY")){start=7;}
-        else if ((Len>=8) && (stat==AGG_HISTOGRAM))            {start=8;}
+        else if ((Len>=8) && (stat==AGG_HISTOGRAM))                    {start=8;}
         string filename="";
         if (Len>start){for (int i=start;i<Len;i++){filename=filename+to_string(s[i]);}}
         

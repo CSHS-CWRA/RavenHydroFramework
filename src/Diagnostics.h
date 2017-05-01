@@ -23,6 +23,9 @@ enum diag_type {
   DIAG_CUMUL_FLOW,
   DIAG_LOG_NASH,
   DIAG_KLING_GUPTA,
+  DIAG_NASH_SUTCLIFFE_DER,
+  DIAG_RMSE_DER,
+  DIAG_KLING_GUPTA_DER,
 };
 
 ///////////////////////////////////////////////////////////////////

@@ -295,7 +295,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":DecayCoefficient"       )){code=900;}
     else if  (!strcmp(s[0],":SoilTransportParamList" )){code=901;}
 
-
     //--------------------OTHER ------- ------------------------
     else if  (!strcmp(s[0],":TransientParameter"     )){code=800;}
     else if  (!strcmp(s[0],":HRUTypeChange"          )){code=801;} 

@@ -783,10 +783,10 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
     //reset cumulative melt to zero in October
     //------------------------------------------------------------------------
-    if ((pHRU->GetCentroid().latitude < 0) && (tt.month == 4) && (tt.day_of_month == 1)) {
+    if ((pHRU->GetCentroid().latitude < 0) && (tt.month == 4) && (tt.day_of_month == 1)) {//southern hemisphere (April)
         cum_melt = 0.0;
     }
-    else if ((tt.month == 10) && (tt.day_of_month == 1)) {
+    else if ((tt.month == 10) && (tt.day_of_month == 1)) {//northern hemisphere 
         cum_melt = 0.0;
     }
 

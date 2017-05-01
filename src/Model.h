@@ -136,6 +136,7 @@ class CModel: public CModelABC
     //private routines used during simulation:
     force_struct      GetAverageForcings() const;
     double       GetTotalChannelStorage () const;
+    double      GetTotalReservoirStorage() const;
     double       GetTotalRivuletStorage () const;
 
     void                     CorrectPET(const optStruct &Options,
@@ -248,6 +249,9 @@ class CModel: public CModelABC
     void              SetAggregatedVariable(const sv_type      SV,const int lev, const string group_name);
     void              SetOutputGroup       (const CHRUGroup   *pOut);
     void              SetNumSnowLayers     (const int          nLayers);
+
+    void              OverrideStreamflow   (const long SBID);
+    void              OverrideReservoirFlow(const long SBID);
 
     /*--Other Functions: mostly called by Solver--*/
     //called only once prior to simulation:

@@ -52,9 +52,8 @@ CmvInfiltration::~CmvInfiltration(){}
 //
 void CmvInfiltration::Initialize()
 {
-  ExitGracefullyIf((pModel->GetStateVarType(iTo[0])!=SOIL) &&
-                   (pModel->GetStateVarType(iTo[0])!=LUMPED_LANDFORM),
-    "CmvInfiltration::Initialize:Infiltration must go to soil or lumped landform",BAD_DATA); 
+  ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=SOIL,
+    "CmvInfiltration::Initialize:Infiltration must go to soil ",BAD_DATA); 
 
   //Lumped landform only valid for SCS, partition coefficient
 

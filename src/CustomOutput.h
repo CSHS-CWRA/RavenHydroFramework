@@ -32,10 +32,11 @@ enum spatial_agg
 //
 enum time_agg     
 {
-	DAILY,      ///< Aggregate by day
-	MONTHLY,    ///< Aggregate by month
-	YEARLY,     ///< Aggregate by year
-	EVERY_TSTEP ///< Aggregate by time-step
+	DAILY,       ///< Aggregate by day
+	MONTHLY,     ///< Aggregate by month
+	YEARLY,      ///< Aggregate by year 
+  WATER_YEARLY,///< Aggregate by water year
+	EVERY_TSTEP  ///< Aggregate by time-step
 };
 
 ////////////////////////////////////////////////////////////////////

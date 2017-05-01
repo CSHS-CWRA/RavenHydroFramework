@@ -143,7 +143,7 @@ void CmvPrecipitation::GetRatesOfChange(const double		 *state_vars,
   int    iPond, inewSnow;
 	int    iCan,iSCan,iMelt,iLake;
   int    iSnow,iSnoD,iSnoT,iCC,iSnFrac;
-  int    iSnDef;
+  int    iSnDef,iAtm;
 	double total_precip,rainfall,snowfall;			//all [mm/day]
 	double rain_int,snow_int,rainthru,snowthru;	//all [mm/day]
 	double capacity,snow_capacity;							//[mm]
@@ -165,6 +165,7 @@ void CmvPrecipitation::GetRatesOfChange(const double		 *state_vars,
   iCC     =pModel->GetStateVarIndex(COLD_CONTENT);
   iSnoT   =pModel->GetStateVarIndex(SNOW_TEMP);
   iSnDef  =pModel->GetStateVarIndex(SNOW_DEFICIT);
+  iAtm    =pModel->GetStateVarIndex(ATMOSPHERE);
 
   iLake   =pModel->GetLakeStorageIndex();
 

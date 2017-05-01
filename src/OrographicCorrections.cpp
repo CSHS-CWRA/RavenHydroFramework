@@ -279,8 +279,6 @@ double UBCPreciptiationByElev(const double temp,
                               const double band_elev,
                               const UBC_lapse PP)
 {
-
-/// \todo [re-org] PP.E0LLOW is not required, the full lapse rate can be determined with two inflection points and three gradients.
   double p_hi,p_mid,p_low;
   
   if     (gauge_elev<=PP.E0LMID){

@@ -246,7 +246,7 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
   else if (type==BASE_GR4J)
   {//GR4J
     double x3= pSoil->GR4J_x3; //GR4J reference storage amount [mm]
-    rates[0]=stor*(1.0-pow(1.0+pow(stor/x3,4),-0.25))/Options.timestep;
+    rates[0]=stor*(1.0-pow(1.0+pow(max(stor/x3,0.0),4),-0.25))/Options.timestep;
   }
 	//-----------------------------------------------------------------
   else if (type==BASE_SACRAMENTO)

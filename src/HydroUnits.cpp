@@ -595,7 +595,6 @@ double        CHydroUnit::GetStateVarMax(const int      i,
   case(GLACIER):        {max_var=ALMOST_INF;break;} 
   case(SNOW_COVER):     {max_var=1.0;       break;} 
   case(WETLAND):        {max_var=ALMOST_INF;break;} 
-  case(LUMPED_LANDFORM):{max_var=ALMOST_INF;break;} 
   case(COLD_CONTENT):   {max_var=ALMOST_INF;break;} 
   case(ENERGY_LOSSES):  {max_var=ALMOST_INF;break;} 
   case(CUM_SNOWMELT):   {max_var=ALMOST_INF;break;} 

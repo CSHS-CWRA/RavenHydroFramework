@@ -120,8 +120,8 @@ class CTransportModel
     double GetDecayCoefficient (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
     double GetRetardationFactor(const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
 
-    bool   IsDirichlet(const int i_stor, const int c, const int k, const time_struct tt, double &Cs) const;
-    double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct tt) const;
+    bool   IsDirichlet(const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const;
+    double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const;
 
     //Manipulators
     void   AddConstituent(string name, bool is_tracer);

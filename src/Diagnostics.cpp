@@ -44,6 +44,9 @@ string CDiagnostic::GetName() const
     case(DIAG_CUMUL_FLOW):    {return "DIAG_CUMUL_FLOW";break;}
     case(DIAG_LOG_NASH):      {return "DIAG_LOG_NASH";break;}
     case(DIAG_KLING_GUPTA):   {return "DIAG_KLING_GUPTA";break;}
+    case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; break;}
+    case(DIAG_RMSE_DER):      {return "DIAG_RMSE_DER"; break;}
+	  case(DIAG_KLING_GUPTA_DER):{return "DIAG_KLING_GUPTA_DER"; break;}
     default:                  {return "";break;}
   }
 }
@@ -62,12 +65,22 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   double obsval,modval;
   double weight=1;
   int skip=0;
+  string filename =pTSObs->GetSourceFile();
   if (!strcmp(pTSObs->GetName().c_str(), "HYDROGRAPH") && (Options.ave_hydrograph == true)){ skip = 1; }//skips first point (initial conditions)
+  double dt = Options.timestep;
 
   switch (_type)
   {
     case(DIAG_NASH_SUTCLIFFE)://-----------------------------------------
-    {
+		case(DIAG_NASH_SUTCLIFFE_DER):
+		{
+		  switch (_type)
+		  {
+		       case(DIAG_NASH_SUTCLIFFE_DER):
+			   {
+				   nVals -= 1;     // Reduce nvals by 1 for derivative of NSE
+			   }
+		  }
       bool ValidObs = false;
       bool ValidMod = false;
       bool ValidWeight = false;
@@ -75,14 +88,35 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       N=0;
 
       for (nn=skip;nn<nVals;nn++)
-      {
-        obsval = pTSObs->GetSampledValue(nn);
-        modval = pTSMod->GetSampledValue(nn);
-        weight=1.0;
-        if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+      {	
+        switch (_type)
+				{
+					case(DIAG_NASH_SUTCLIFFE):
+					{
+						weight=1.0;
+						obsval = pTSObs->GetSampledValue(nn);
+						modval = pTSMod->GetSampledValue(nn);
+						if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
+						if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+						if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+            break;
+					}
+					case(DIAG_NASH_SUTCLIFFE_DER):
+					{
+						// obsval and modval becomes (dS(n+1)-dS(n))/dt 
+						weight=1.0;
+						obsval = pTSObs->GetSampledValue(nn+1) - pTSObs->GetSampledValue(nn);
+						modval = pTSMod->GetSampledValue(nn+1) - pTSMod->GetSampledValue(nn);
+						obsval /= dt;
+						modval /= dt;
 
-        if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-        if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+						// both values at current timestep and next time step need to be valid 
+						if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+						if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+						if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
+            break;
+					}
+				}
         if (weight != 0) { ValidWeight = true; }
         
         if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
@@ -95,23 +129,143 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       double sum1(0.0),sum2(0.0);
       for (nn=skip;nn<nVals;nn++)
       {
-          obsval=pTSObs->GetSampledValue(nn);
-          modval=pTSMod->GetSampledValue(nn);
-          weight=1.0;
-          if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
+				switch (_type)
+				{
+					case(DIAG_NASH_SUTCLIFFE):
+					{
+						weight=1.0;
+						obsval = pTSObs->GetSampledValue(nn);
+						modval = pTSMod->GetSampledValue(nn);
+						if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
+						if (weight != 0) { ValidWeight = true; }
 
-          if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-          if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
-          if (weight != 0) { ValidWeight = true; }
+						if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+						else {weight = 0;}
+				
+						if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+						else {weight = 0;}
 
-          if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
-            sum1+=pow(obsval-modval,2)*weight;
-            sum2+=pow(obsval-avg   ,2)*weight;
-          }
-      } 
+						break;
+					}
+					case(DIAG_NASH_SUTCLIFFE_DER):
+					{
+						// obsval and modval becomes (dS(n+1)-dS(n))/dt 
+						weight=1.0;
+						obsval = pTSObs->GetSampledValue(nn+1) - pTSObs->GetSampledValue(nn);
+						modval = pTSMod->GetSampledValue(nn+1) - pTSMod->GetSampledValue(nn);
+						obsval /= dt;
+						modval /= dt;
+
+						// both values at current timestep and next time step need to be valid 
+						if(pTSWeights != NULL){ weight=0.5*(pTSWeights->GetSampledValue(nn+1))+(pTSWeights->GetSampledValue(nn));}
+						if (weight != 0) { ValidWeight = true; }
+				
+						if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true;}
+						else {weight = 0;}
+
+						if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true;}
+						else {weight = 0;}
+
+						break;
+					}
+				}
+				
+				sum1 += pow(obsval - modval,2)*weight;
+				sum2 += pow(obsval - avg, 2)*weight;
+		  }
+		
+
       if (ValidObs && ValidMod && ValidWeight) 
       {
          return 1.0 - sum1 / sum2;
+      }
+      else 
+      {
+        string p1 = "OBSERVED_DATA  "+filename;
+        string p2 = "MODELED_DATA  ";
+        string p3 = "WEIGHTS ";
+        if (ValidObs) { p1 = ""; }
+        if (ValidMod) { p2 = ""; }
+        if (ValidWeight) { p3 = ""; }
+
+				switch (_type)
+				{
+					case(DIAG_NASH_SUTCLIFFE):
+					{
+						string warn = "DIAG_NASH_SUTCLIFFE not performed correctly. Check " + p1 + p2 + p3;
+						WriteWarning(warn, Options.noisy);
+            break;
+					}
+					case(DIAG_NASH_SUTCLIFFE_DER):
+					{
+						string warn = "DIAG_NASH_SUTCLIFFE_DER not performed correctly. Check " + p1 + p2 + p3;
+						WriteWarning(warn, Options.noisy);
+            break;
+					}
+				}
+        return -ALMOST_INF;
+      }
+      break;
+    }
+    case(DIAG_RMSE)://----------------------------------------------------
+    case(DIAG_RMSE_DER)://----------------------------------------------------
+    {
+      bool ValidObs = false;
+      bool ValidMod = false;
+      bool ValidWeight = false;
+
+      double sum;
+      N=0;
+      sum=0;
+
+      for (nn=skip;nn<nVals;nn++)
+      {
+				switch (_type)
+				{
+					case(DIAG_RMSE):
+					{
+						weight=1.0;
+						obsval = pTSObs->GetSampledValue(nn);
+						modval = pTSMod->GetSampledValue(nn);
+						if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
+						if (weight != 0) { ValidWeight = true; }
+
+						if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+						else {weight = 0;}
+				
+						if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+						else {weight = 0;}
+				
+						break;
+					}
+					case(DIAG_RMSE_DER):
+					{
+						weight=1.0;
+						obsval = pTSObs->GetSampledValue(nn+1) - pTSObs->GetSampledValue(nn);
+						modval = pTSMod->GetSampledValue(nn+1) - pTSMod->GetSampledValue(nn);
+						obsval /= dt;
+						modval /= dt;
+
+
+						// both values at current timestep and next time step need to be valid 
+						if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
+						if (weight != 0) { ValidWeight = true; }
+				
+						if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true;}
+						else {weight = 0;}
+
+						if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true;}
+						else {weight = 0;}
+
+						break;
+					}
+				}
+
+        sum+=pow(obsval-modval,2)*weight;
+        N+=weight;
+      }
+      if (ValidObs && ValidMod && ValidWeight) {
+          return sqrt(sum / N);
       }
       else 
       {
@@ -122,55 +276,25 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (ValidMod) { p2 = ""; }
         if (ValidWeight) { p3 = ""; }
 
-        string warn = "DIAG_NASH_SUTCLIFFE not performed correctly. Check " + p1 + p2 + p3;
-        WriteWarning(warn, Options.noisy);
-        return -ALMOST_INF;
-      }
-      break;
-    }
-    case(DIAG_RMSE)://----------------------------------------------------
-    {
-        bool ValidObs = false;
-        bool ValidMod = false;
-        bool ValidWeight = false;
+        switch (_type)
+				{
+					case(DIAG_RMSE):
+					{
+						string warn = "DIA_RMSE not performed correctly. Check " + p1 + p2 + p3;
+						WriteWarning(warn, Options.noisy);
+						break;
+					}
+					case(DIAG_RMSE_DER):
+					{
+						string warn = "DIAG_RMSE_DER not performed correctly. Check " + p1 + p2 + p3;
+						WriteWarning(warn, Options.noisy);
+						break;
+					}
+				}
 
-        double sum;
-        N=0;
-        sum=0;
-
-        for (nn=skip;nn<nVals;nn++)
-        {
-            obsval=pTSObs->GetSampledValue(nn);
-            modval=pTSMod->GetSampledValue(nn);
-            weight=1.0;
-            if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
-
-            if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-            if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
-            if (weight != 0) { ValidWeight = true; }
-
-            if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
-                sum+=pow(obsval-modval,2)*weight;
-                N+=weight;
-            }
-        }
-        if (ValidObs && ValidMod && ValidWeight) {
-            return sqrt(sum / N);
-        }
-        else 
-        {
-            string p1 = "OBSERVED_DATA  ";
-            string p2 = "MODELED_DATA  ";
-            string p3 = "WEIGHTS ";
-            if (ValidObs) { p1 = ""; }
-            if (ValidMod) { p2 = ""; }
-            if (ValidWeight) { p3 = ""; }
-
-            string warn = "DIAG_RMSE not performed correctly. Check " + p1 + p2 + p3;
-            WriteWarning(warn, Options.noisy);
-            return -ALMOST_INF;
-        }
-        break;
+				return -ALMOST_INF;
+			}
+			break;
     }
     case(DIAG_PCT_BIAS)://-------------------------------------------------
     {
@@ -203,7 +327,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -249,7 +373,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -297,7 +421,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -341,7 +465,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -432,7 +556,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -515,7 +639,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -567,7 +691,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -636,7 +760,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -715,7 +839,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         }
         else
         {
-            string p1 = "OBSERVED_DATA  ";
+            string p1 = "OBSERVED_DATA  "+filename;
             string p2 = "MODELED_DATA  ";
             string p3 = "WEIGHTS ";
             if (ValidObs) { p1 = ""; }
@@ -788,7 +912,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       }
       else 
       {
-        string p1 = "OBSERVED_DATA  ";
+        string p1 = "OBSERVED_DATA  "+filename;
         string p2 = "MODELED_DATA  ";
         string p3 = "WEIGHTS ";
         if (ValidObs) { p1 = ""; }
@@ -835,9 +959,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       }
       else 
       {
-        string p1 = "OBSERVED_DATA  ";if (ValidObs) { p1 = ""; }
-        string p2 = "MODELED_DATA  "; if (ValidMod) { p2 = ""; }
-        string p3 = "WEIGHTS ";       if (ValidWeight) { p3 = ""; }
+        string p1 = "OBSERVED_DATA  "+filename;if (ValidObs   ) { p1 = ""; }
+        string p2 = "MODELED_DATA  ";          if (ValidMod   ) { p2 = ""; }
+        string p3 = "WEIGHTS ";                if (ValidWeight) { p3 = ""; }
 
         string warn = "DIAG_CUMUL_FLOW not performed correctly. Check " + p1 + p2 + p3;
         WriteWarning(warn, Options.noisy);
@@ -846,7 +970,15 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       break;
     }
 	case(DIAG_KLING_GUPTA)://-----------------------------------------
+	case(DIAG_KLING_GUPTA_DER):
 	{
+		switch (_type)
+		{
+			case(DIAG_KLING_GUPTA_DER):
+			{
+				nVals -= 1;      // Reduce nvals by 1 for derivative of Kling Gupta
+			}
+		}
 		bool ValidObs = false;
 		bool ValidMod = false;
 		bool ValidWeight = false;
@@ -859,43 +991,105 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 		double ModStd = 0;
 		double Cov = 0;
 
-		for (nn = skip; nn<nVals; nn++)
+		for (nn = skip; nn < nVals; nn++)
 		{
-			obsval = pTSObs->GetSampledValue(nn);
-			modval = pTSMod->GetSampledValue(nn);
-			weight = 1.0;
-			if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+			switch (_type)
+			{
+				case(DIAG_KLING_GUPTA):
+				{
+					weight = 1.0;
+					obsval = pTSObs->GetSampledValue(nn);
+					modval = pTSMod->GetSampledValue(nn);
+					if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+					if (weight != 0) { ValidWeight = true; }
+	
+					if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+					else { weight = 0; }
+	
+					if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+					else { weight = 0; }
 
-			if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-			if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
-			if (weight != 0) { ValidWeight = true; }
+					break;
+				}
+				case(DIAG_KLING_GUPTA_DER):
+				{
+					// obsval and modval becomes (dS(n+1)-dS(n))/dt 
+					weight = 1.0;
+					obsval = pTSObs->GetSampledValue(nn + 1) - pTSObs->GetSampledValue(nn);
+					modval = pTSMod->GetSampledValue(nn + 1) - pTSMod->GetSampledValue(nn);
+					obsval /= dt;
+					modval /= dt;
 
-			if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
-				ObsSum += obsval*weight;
-				ModSum += modval*weight;
-				N += weight;
+
+					// both values at current timestep and next time step need to be valid 
+					if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
+					if (weight != 0) { ValidWeight = true; }
+						
+					if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+					else { weight = 0; }
+
+					if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+					else { weight = 0; }
+
+					break;
+				}
 			}
+			ObsSum += obsval*weight;
+			ModSum += modval*weight;
+			N += weight;
 		}
 		ObsAvg = ObsSum / N;
 		ModAvg = ModSum / N;
 
-		for (nn = skip; nn<nVals; nn++)
+		for (nn = skip; nn < nVals; nn++)
 		{
-			obsval = pTSObs->GetSampledValue(nn);
-			modval = pTSMod->GetSampledValue(nn);
-			weight = 1.0;
-			if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+			switch (_type)
+			{
+				case(DIAG_KLING_GUPTA):
+				{
+					weight = 1.0;
+					obsval = pTSObs->GetSampledValue(nn);
+					modval = pTSMod->GetSampledValue(nn);
+					if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+					if (weight != 0) { ValidWeight = true; }
 
-			if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-			if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
-			if (weight != 0) { ValidWeight = true; }
+					if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+					else { weight = 0; }
 
-			if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
-				ObsStd += pow((obsval - ObsAvg), 2)*weight;
-				ModStd += pow((modval - ModAvg), 2)*weight;
-				Cov += (obsval - ObsAvg) * (modval - ModAvg)*weight;
+					if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+					else { weight = 0; }
+
+					break;
+				}
+				case(DIAG_KLING_GUPTA_DER):
+				{
+					// obsval and modval becomes (dS(n+1)-dS(n))/dt 
+					weight = 1.0;
+					obsval = pTSObs->GetSampledValue(nn + 1) - pTSObs->GetSampledValue(nn);
+					modval = pTSMod->GetSampledValue(nn + 1) - pTSMod->GetSampledValue(nn);
+					obsval /= dt;
+					modval /= dt;
+
+
+					// both values at current timestep and next time step need to be valid 
+					if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
+					if (weight != 0) { ValidWeight = true; }
+
+					if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+					else { weight = 0; }
+
+					if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+					else { weight = 0; }
+
+					break;
+				}
 			}
+			ObsStd += pow((obsval - ObsAvg), 2)*weight;
+			ModStd += pow((modval - ModAvg), 2)*weight;
+			Cov += (obsval - ObsAvg) * (modval - ModAvg)*weight;
 		}
+
+
 		ObsStd = sqrt(ObsStd / N);   // Standard Deviation for Observed Flow
 		ModStd = sqrt(ModStd / N);   // Standard Deviation for Modelled Flow
 		Cov /= N;                    // Covariance between observed and modelled flows
@@ -911,15 +1105,30 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 		}
 		else
 		{
-			string p1 = "OBSERVED_DATA  ";
+			string p1 = "OBSERVED_DATA  "+filename;
 			string p2 = "MODELED_DATA  ";
 			string p3 = "WEIGHTS ";
 			if (ValidObs) { p1 = ""; }
 			if (ValidMod) { p2 = ""; }
 			if (ValidWeight) { p3 = ""; }
 
-			string warn = "DIAG_KLING_GUPTA not performed correctly. Check " + p1 + p2 + p3;
-			WriteWarning(warn, Options.noisy);
+
+			switch (_type)
+			{
+				case(DIAG_KLING_GUPTA):
+				{
+					string warn = "DIAG_KLING_GUPTA not performed correctly. Check " + p1 + p2 + p3;
+					WriteWarning(warn, Options.noisy);
+					break;
+				}
+				case(DIAG_KLING_GUPTA_DER):
+				{
+					string warn = "DIAG_KLING_GUPTA_DER not performed correctly. Check " + p1 + p2 + p3;
+					WriteWarning(warn, Options.noisy);
+					break;
+				}
+			}
+
 			return -ALMOST_INF;
 		}
 		break;

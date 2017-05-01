@@ -132,11 +132,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":MonthlyEvapFactor"     )){code=71; }
     else if  (!strcmp(s[0],":MonthlyMinTemperature" )){code=72; }
     else if  (!strcmp(s[0],":MonthlyMaxTemperature" )){code=73; }
+
     else if  (!strcmp(s[0],":MonthlyEvapFactors"    )){code=74; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporations")){code=74; }
     else if  (!strcmp(s[0],":MonthlyMaxTemperatures" )){code=75; }
     else if  (!strcmp(s[0],":MonthlyMinTemperatures" )){code=76; }
     else if  (!strcmp(s[0],":MonthlyAveTemperatures" )){code=77; }
+    //-----------------CONTROLS ---------------------------------
+    else if  (!strcmp(s[0],":OverrideStreamflow"      )){code=100; }
+    else if  (!strcmp(s[0],":OverrideReservoirOutflow")){code=101; }
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":ConcentrationTimeSeries")){code=300; }
     else if  (!strcmp(s[0],":MassFluxTimeSeries     ")){code=300; }
@@ -155,7 +159,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       {/*:RedirectToFile*/
         string filename="";
         for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
-        if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;} /// \todo [funct]: should look in the same directory as .rvt file if incomplete path provided
+        if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;} 
 
         string filedir = GetDirectoryName(Options.rvt_filename); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
         if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
@@ -590,7 +594,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           */
           if (Options.noisy) {cout <<"Observation data"<<endl;}
           if (Len<3){p->ImproperFormat(s); break;} 
-          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,(!strcmp(s[1], "HYDROGRAPH"))); // \todo[funct] should likley not be "is pulse" format. May need alternate time series class
+          pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,(!strcmp(s[1], "HYDROGRAPH")));
           pModel->AddObservedTimeSeries(pTimeSer);
           break;
         }
@@ -822,6 +826,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
               pModel->GetGauge(g)->SetMonthlyAveTemps(monthdata);
             }
           }
+          break;
+        }
+      case(100):
+        {/*:OverrideStreamflow  [SBID]*/
+          if (Options.noisy){cout <<"Override streamflow"<<endl;}
+          long SBID=s_to_l(s[1]);
+          if (pModel->GetSubBasinByID(SBID)==NULL){
+            WriteWarning("ParseTimeSeries::Trying to override streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
+            break;
+          }
+          pModel->OverrideStreamflow(SBID);
+          break;
+        }
+      case(101):
+        {/*:OverrideReservoirOutflow  [SBID]*/
+          if (Options.noisy){cout <<"Override reservoir outflow"<<endl;}
+          long SBID=s_to_l(s[1]);
+          if (pModel->GetSubBasinByID(SBID)==NULL){
+            WriteWarning("ParseTimeSeries::Trying to override streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
+            break;
+          }
+          ExitGracefully(":OverrideReservoirOutflow: not bonded to correct SB right now",STUB);
+          pModel->OverrideReservoirFlow(SBID);
           break;
         }
       case (300)://----------------------------------------------

@@ -351,7 +351,7 @@ void MassEnergyBalance( CModel            *pModel,
 
     pBasin->RouteWater      (aQoutnew,res_ht,Options,tt);      //Where everything happens!
 
-    pBasin->UpdateOutflows  (aQoutnew,res_ht,Options,false);//actually updates flow values here 
+    pBasin->UpdateOutflows  (aQoutnew,res_ht,Options,tt,false);//actually updates flow values here 
 
     pTo   =pModel->GetDownstreamBasin(p);
     if (pTo!=DOESNT_EXIST)//correct downstream inflows

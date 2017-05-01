@@ -213,7 +213,7 @@ const CHydroUnit*CSubBasin::GetHRU				 (const int k) const
 /// \brief Returns pointer to reservoir associated with Subbasin (or NULL)
 /// \return  pointer to reservoir associated with Subbasin (or NULL if no reservoir)
 //
-const CReservoir    *CSubBasin::GetReservoir () const
+CReservoir    *CSubBasin::GetReservoir () const
 {
   return _pReservoir;
 }
@@ -283,10 +283,18 @@ double CSubBasin::GetSpecifiedInflow(const double &t) const
 //
 double CSubBasin::GetChannelStorage () const
 {
-  if (_pReservoir!=NULL){return _channel_storage+_pReservoir->GetStorage();}
   return _channel_storage;  
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns channel storage [m^3]
+/// \note Should only be called after _aQinHist has been updated by calling SetInflow
+/// \return Channel storage [m^3]
+//
+double CSubBasin::GetReservoirStorage () const
+{
+  if(_pReservoir==NULL){return 0.0;}
+  return _pReservoir->GetStorage();  
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rivulet storage [m^3]
 /// \details Returns uphill tributary storage [m^3] obtained from convoltuion
@@ -318,6 +326,16 @@ double  CSubBasin::GetReservoirInflow() const
   if (_pReservoir==NULL){return 0.0;}
 	return _aQout[_nSegments-1]; //[m3/s](from start of time step until after solver is called)
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Reservoir losses integrated over specified timestep [m^3]
+/// \return Reservoir losses over specified timestep  [m^3]
+//
+double CSubBasin::GetReservoirLosses(const double &tstep) const
+{
+  if(_pReservoir==NULL){ return 0.0; }
+  return _pReservoir->GetReservoirLosses(tstep);
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total volume lost from main reach over timestep [m^3]
 /// \note Should be called only at end of completed tstep
@@ -526,6 +544,14 @@ void CSubBasin::SetQinHist          (const int N, const double *aQi)
   _aQinHist=new double [_nQinHist];
   for (int i=0;i<_nQinHist;i++){_aQinHist[i]=aQi[i];}
 }
+/////////////////////////////////////////////////////////////////
+/// \brief Sets Downstream ID (use sparingly!)
+/// \param down_SBID [in] ID of downstream subbasin
+//
+void CSubBasin::SetDownstreamID(const long down_SBID){
+  _downstream_ID=down_SBID;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates subbasin area as a sum of HRU areas
 /// \remark Called in CModel::Initialize
@@ -994,11 +1020,14 @@ void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
 /// \param *aQo [in] Array of new outflows [m^3/s]
 /// \param &res_ht [in] new reservoir stage [m]
 /// \param &Options [in] Global model options information
+/// \param &tt [in] time structure at start of current time step
 /// \param initialize Flag to indicate if flows are to only be initialized
 //
 void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double &res_ht, //[m]
-                                  const optStruct &Options, bool initialize)
+                                  const optStruct &Options,
+                                  const time_struct &tt, 
+                                  bool initialize)
 {
   double tstep=Options.timestep;
 
@@ -1010,7 +1039,10 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
 	}
   //_aQout[num_segments-1] is now the new outflow from the channel 
 
-  if (_pReservoir!=NULL){_pReservoir->UpdateStage(res_ht);}
+  if (_pReservoir!=NULL){
+    _pReservoir->UpdateStage(res_ht);
+    _pReservoir->UpdateMassBalance(tt,Options.timestep);
+  }
 
 	if (initialize){return;}//entering initial conditions
 

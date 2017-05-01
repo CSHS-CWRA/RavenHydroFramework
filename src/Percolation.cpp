@@ -287,14 +287,14 @@ void   CmvPercolation::GetRatesOfChange( const double			*state_vars,
   //-----------------------------------------------------------------
 	else if (type==PERC_GR4J)
 	{
-    rates[0]=stor*(1.0-pow(1.0+pow(4.0/9.0*stor/max_stor,4),-0.25));
+    rates[0]=stor*(1.0-pow(1.0+pow(4.0/9.0*max(stor/max_stor,0.0),4),-0.25))/Options.timestep;
   }
   //-----------------------------------------------------------------
   else if (type==PERC_GR4JEXCH)
   {
     double x2=pHRU->GetSoilProps(m)->GR4J_x2; 
     double x3=pHRU->GetSoilProps(m)->GR4J_x3; 
-    rates[0]=-x2*pow(min(stor/x3,1.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
+    rates[0]=-x2*pow(max(min(stor/x3,1.0),0.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
   }
   //-----------------------------------------------------------------
   else if (type==PERC_GR4JEXCH2)
@@ -304,7 +304,7 @@ void   CmvPercolation::GetRatesOfChange( const double			*state_vars,
     int iSoil=pModel->GetStateVarIndex(SOIL,1);
     stor=state_vars[iSoil];
     max_stor= pHRU->GetSoilCapacity(1);
-    rates[0]=-x2*pow(min(stor/x3,1.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
+    rates[0]=-x2*pow(max(min(stor/x3,1.0),0.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
   }
   //-----------------------------------------------------------------
 	else

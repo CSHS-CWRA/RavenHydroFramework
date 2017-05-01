@@ -130,6 +130,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 		case YEARLY:			timeAggStr="Yearly"; break;
 		case MONTHLY:			timeAggStr="Monthly"; break;
 		case DAILY:				timeAggStr="Daily"; break;
+    case WATER_YEARLY:timeAggStr="WYearly";break;
 		case EVERY_TSTEP:	timeAggStr="Continuous"; break;
 	}
 	FILENAME<<timeAggStr<<"_";
@@ -219,10 +220,11 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
            (_aggstat==AGG_QUARTILES) || 
            (_aggstat==AGG_HISTOGRAM))
   {
-    if      (_timeAgg==YEARLY     ){num_store=(int)ceil(366/Options.timestep)+1;}
-    else if (_timeAgg==MONTHLY    ){num_store=(int)ceil( 31/Options.timestep)+1;}
-    else if (_timeAgg==DAILY      ){num_store=(int)ceil(  1/Options.timestep)+1;}
-    else if (_timeAgg==EVERY_TSTEP){num_store=1;}
+    if      (_timeAgg==YEARLY      ){num_store=(int)ceil(366/Options.timestep)+1;}
+    else if (_timeAgg==WATER_YEARLY){num_store=(int)ceil(366/Options.timestep)+1;}
+    else if (_timeAgg==MONTHLY     ){num_store=(int)ceil( 31/Options.timestep)+1;}
+    else if (_timeAgg==DAILY       ){num_store=(int)ceil(  1/Options.timestep)+1;}
+    else if (_timeAgg==EVERY_TSTEP ){num_store=1;}
   }
   else{
 		ExitGracefully("CCustomOutput::InitializeCustomOutput(): bad aggregator",BAD_DATA);
@@ -271,10 +273,11 @@ void CCustomOutput::WriteCSVFileHeader(void)
 {
 	// standard csv output
 	//-Line 1-
-  if      (_timeAgg==YEARLY     ){_CUSTOM<<",";}
-  else if (_timeAgg==MONTHLY    ){_CUSTOM<<",";}
-  else if (_timeAgg==DAILY      ){_CUSTOM<<",";}
-  else if (_timeAgg==EVERY_TSTEP){_CUSTOM<<",,";}
+  if      (_timeAgg==YEARLY      ){_CUSTOM<<",";}
+  else if (_timeAgg==MONTHLY     ){_CUSTOM<<",";}
+  else if (_timeAgg==DAILY       ){_CUSTOM<<",";}
+  else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<",,";}
+  else if (_timeAgg==WATER_YEARLY){_CUSTOM<<",";}
 
   if      (_spaceAgg==BY_HRU        ){_CUSTOM<<"HRU:,";}
   else if (_spaceAgg==BY_BASIN      ){_CUSTOM<<"SubBasin:,";}
@@ -308,10 +311,11 @@ void CCustomOutput::WriteCSVFileHeader(void)
   _CUSTOM<<endl;
 
   //-Line 2-
-  if      (_timeAgg==YEARLY     ){_CUSTOM<<"time,year,";}
-  else if (_timeAgg==MONTHLY    ){_CUSTOM<<"time,month,";}
-  else if (_timeAgg==DAILY      ){_CUSTOM<<"time,day,";}
-  else if (_timeAgg==EVERY_TSTEP){_CUSTOM<<"time,day,hour,";}
+  if      (_timeAgg==YEARLY      ){_CUSTOM<<"time,year,";}
+  else if (_timeAgg==WATER_YEARLY){_CUSTOM<<"time,water year,";}
+  else if (_timeAgg==MONTHLY     ){_CUSTOM<<"time,month,";}
+  else if (_timeAgg==DAILY       ){_CUSTOM<<"time,day,";}
+  else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<"time,day,hour,";}
   for (int k=0;k<num_data;k++)
   {
     if      (_aggstat==AGG_AVERAGE  ){_CUSTOM<<"mean,";}
@@ -373,6 +377,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 	switch(_timeAgg)
 	{
 	case YEARLY: col1Name="Year"; col1Units="years"; col1Type="int"; break;
+	case WATER_YEARLY: col1Name="WaterYear"; col1Units="years"; col1Type="int"; break;
 	case MONTHLY: col1Name="MonthEnd"; col1Units="months"; col1Type="date"; break;
   default: break;
 	}
@@ -555,14 +560,16 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
            ((fabs(floor(t)-t) <0.5*Options.timestep) || 
             (fabs( ceil(t)-t) <0.5*Options.timestep)))			 {reset=true;}//start of day (hopefully 0:00!)- print preceding day
   else if (_timeAgg==EVERY_TSTEP)                            {reset=true;}//every timestep
+  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    {reset=true;}//Oct 1 - print preceding year
   //cout <<t <<" ->"<<fabs(floor(t)-t)<<"   "<<(fabs(floor(t)-t) <0.5*Options.timestep)<<endl;
 
   if (reset)
   {
-		if      (_timeAgg==YEARLY     ){_CUSTOM<<t<<","<<yest.year<<",";}
-		else if (_timeAgg==MONTHLY    ){_CUSTOM<<t<<","<<yesterday.substr(0,7)<<",";}//trims day, e.g., just return 2011-02, 
-		else if (_timeAgg==DAILY      ){_CUSTOM<<t<<","<<yesterday<<",";}
+    if      (_timeAgg==YEARLY     ){_CUSTOM<<t<<","<<yest.year<<",";}
+    else if (_timeAgg==MONTHLY    ){_CUSTOM<<t<<","<<yesterday.substr(0,7)<<",";}//trims day, e.g., just return 2011-02, 
+    else if (_timeAgg==DAILY      ){_CUSTOM<<t<<","<<yesterday<<",";}
     else if (_timeAgg==EVERY_TSTEP){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
+    else if (_timeAgg==WATER_YEARLY){_CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<",";}
   }
 
   bool is_concentration=false;
@@ -750,14 +757,17 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
   //Check to see if it is time to write to file
   bool reset=false;
   double t=curDate.model_time;
+  int dday=curDate.day_of_month;
+  int dmon=curDate.month;
 
   if (t==0){return;} //initial conditions should not be printed to custom output, only period data.
 
-  if      ((_timeAgg==YEARLY)  && (curDate.day_of_month==1) && (curDate.month==1))	{reset=true;}//Jan 1 - print preceding year
-  else if ((_timeAgg==MONTHLY) && (curDate.day_of_month==1))												{reset=true;}//first day of month - print preceding month info
+  if      ((_timeAgg==YEARLY)  && (dday==1) && (dmon==1))	                          {reset=true;}//Jan 1 - print preceding year
+  else if ((_timeAgg==MONTHLY) && (dday==1))												                {reset=true;}//first day of month - print preceding month info
   else if ((_timeAgg==DAILY)   && (floor(curDate.model_time)==curDate.model_time))	{reset=true;}//start of day (hopefully 0:00!)- print preceding day
-	else if (_timeAgg==EVERY_TSTEP)  																								  {reset=true;}//every timestep
-  
+  else if ((_timeAgg==EVERY_TSTEP))  																								{reset=true;}//every timestep
+  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))     {reset=true;}//~Oct 1 - print preceding year
+
   // write the first 2 fields (year,month/date) and (model time)
 	if (reset)
   {
@@ -776,6 +786,7 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
 					_CUSTOM<<dQuote<<curDate.date_string<<" "<<DecDaysToHours(curDate.julian_day)<<dQuote<<" "<<curDate.model_time<<" "; //period ending for forcings
 				}
 				break;
+      case WATER_YEARLY: _CUSTOM<<t<<","<<prevDate.year<<"-"<<prevDate.year+1<<","; break;
 		}
   }
 

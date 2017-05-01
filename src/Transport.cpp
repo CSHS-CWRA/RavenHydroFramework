@@ -812,7 +812,7 @@ void CTransportModel::IncrementCumulOutput(const optStruct &Options)
 /// \param tt [in] current time structure
 /// \param Cs [out] Dirichlet source concentration
 //
-bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, const time_struct tt, double &Cs) const
+bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const
 {
   Cs=0.0;
   
@@ -850,7 +850,7 @@ bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, c
 /// \param k [in] global HRU index
 /// \param tt [in] current time structure
 //
-double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct tt) const
+double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const
 {
   double flux;
   bool retrieve=false;

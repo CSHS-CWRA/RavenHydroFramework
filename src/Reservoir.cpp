@@ -26,6 +26,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _min_stage =0.0;
   _Qout      =0.0;
   _Qout_last =0.0;
+  _MB_losses =0.0;
 
   _pHRU=NULL; 
   _pExtractTS=NULL; 
@@ -77,6 +78,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _stage_last=0.0;
   _Qout      =0.0;//flow corresponding to stage
   _Qout_last =0.0;//flow corresponding to stage_last
+  _MB_losses =0.0;
 
   _pHRU=NULL;
   _pExtractTS=NULL;
@@ -89,6 +91,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _aQ_back=NULL;
   _nDates=0;
   _aDates=NULL;
+
 
   ExitGracefullyIf(_Np<2,"CReservoir::constructor: must have more than 1 data point in stage relations",BAD_DATA_WARN);
 
@@ -160,6 +163,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _stage_last=0.0;
   _Qout      =0.0;//flow corresponding to stage
   _Qout_last =0.0;//flow corresponding to stage_last
+  _MB_losses =0.0;
 
   _pHRU=NULL;
   _pExtractTS=NULL;
@@ -250,14 +254,11 @@ double  CReservoir::GetOutflowRate        () const{return GetOutflow(_stage);}
 double  CReservoir::GetStage             () const{return _stage;}
 
 //////////////////////////////////////////////////////////////////
-/// \returns evaporative losses [m3/d]
+/// \returns evaporative losses integrated over previous timestep [m3]
 //
-double  CReservoir::GetEvapLosses() const
+double  CReservoir::GetReservoirLosses(const double &tstep) const
 {
-  if(_pHRU!=NULL){
-    return _pHRU->GetForcingFunctions()->PET * GetArea(_stage) / MM_PER_METER;
-  }
-  return 0.0; 
+  return _MB_losses;    
 }
 //////////////////////////////////////////////////////////////////
 /// \returns outflow integrated over timestep [m3/d]
@@ -304,6 +305,14 @@ void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
   _pHRU=pHRUpointer;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief sets all discharges in stage-discharge curve to zero (for overriding with observations) 
+//
+void  CReservoir::DisableOutflow()
+{
+  for (int i=0;i<_Np;i++){_aQ[i]=0.0;}
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief updates state variable "stage" at end of computational time step
 /// \param new_stage [in] calculated stage at end of time step
 //
@@ -315,6 +324,24 @@ void  CReservoir::UpdateStage(const double &new_stage)
   _Qout_last =_Qout; 
   _Qout      =GetOutflow(_stage);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief updates current mass balance (called at end of time step)
+/// \param tt [in] current time step information
+/// \param tstep [in] time step, in days
+//
+void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
+{
+  _MB_losses=0.0;
+  if(_pHRU!=NULL){
+    _MB_losses+=_pHRU->GetForcingFunctions()->PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
+  }
+
+  if(_pExtractTS!=NULL){
+    int nn        =(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
+    _MB_losses+=0.5*(_pExtractTS->GetSampledValue(nn+1)+_pExtractTS->GetSampledValue(nn))*SEC_PER_DAY*tstep;
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief updates rating curves based upon the time
 /// \notes can later support quite generic temporal changes to treatmetn of outflow-volume-area-stage relations
@@ -424,7 +451,6 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if (_pHRU!=NULL)
     {
       ET=_pHRU->GetForcingFunctions()->OW_PET/SEC_PER_DAY/MM_PER_METER; //average for timestep, in m/s
-      
       if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0){ 
         ET*=_pHRU->GetSurfaceProps()->lake_PET_corr; 
       }
@@ -444,7 +470,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       WriteWarning(warn,false);
       return _min_stage;
     } 
-
+    
     //double hg[20],ff[20];//retain for debugging
     double relax=1.0;
     do //Newton's method with discrete approximation of df/dh
@@ -467,7 +493,6 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       }
       h_guess+=relax*change; 
       lastchange=change;
-
       //if(iter>4){ cout <<iter<<":"<<h_guess<<" "<<f<<" "<<dfdh<<" "<<change<<" "<<relax<< " "<< out<< " "<<out2<<" "<<gamma<<endl; }
       iter++;
 

@@ -42,15 +42,17 @@ class CTimeSeriesABC
 							              const double timestep,        //days
                             const   bool is_observation) =0;       
 
-	  ts_type GetType      () const;
-	  string  GetName      () const;
+    ts_type GetType      () const;
+    string  GetName      () const;
     string  GetTag       () const;
     string  GetSourceFile() const;
 
-	  virtual double GetInterval() const=0;
-	  virtual double GetTime      (const int n) const=0;
+    void    SetTag       (string tag){_tag=tag;}
+
+    virtual double GetInterval() const=0;
+    virtual double GetTime      (const int n) const=0;
     virtual double GetValue     (const int n) const=0;
-	  virtual int    GetNumValues ()            const=0;
+    virtual int    GetNumValues ()            const=0;
     virtual double GetAvgValue  (const double &t, const double &tstep) const=0;
     virtual double GetMinValue  (const double &t, const double &tstep) const=0;
     virtual double GetMaxValue  (const double &t, const double &tstep) const=0;

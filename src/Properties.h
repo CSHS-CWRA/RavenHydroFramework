@@ -212,6 +212,7 @@ struct surface_struct
   double refreeze_factor;		///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
   double HBV_melt_for_corr; ///< [-]			 HBV snowmelt forest correction (MRF in HBV-EC)
   double HBV_melt_asp_corr; ///< [-]			 HBV snowmelt aspect correction (AM in HBV-EC)
+  double snow_patch_limit;  ///< [mm]	     SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
   
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G  
@@ -240,7 +241,6 @@ struct surface_struct
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation
   double forest_PET_corr;   ///< [-]       fraction of PET to apply to forest evapotranspiration
-  double snow_patch_limit;  ///< [mm]	     SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
 
   double GR4J_x4;           ///< [d]       GR4J time routing parameter 
 };

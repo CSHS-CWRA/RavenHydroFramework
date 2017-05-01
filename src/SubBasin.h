@@ -124,12 +124,14 @@ class CSubBasin
     double             GetIntegratedSpecInflow(const double &t,
                                                const double &tstep) const;//[m3] from specified inflows integrated over timestep
     double               GetReservoirInflow   () const;                   //[m3/s] from final segment upstream of reservoir, point in time
+    double               GetReservoirLosses   (const double &tstep) const;//[m3] from reservoir integrated over timestep
     double        GetIntegratedReservoirInflow(const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
     double               GetRivuletStorage    () const;                   //[m3] volume en route to outflow
     double               GetChannelStorage    () const;                   //[m3] volume in channel
+    double               GetReservoirStorage  () const;                   //[m3] volume in reservoir
     double               GetSpecifiedInflow   (const double &t) const;    //[m3/s] to upstream end of channel at point in time
 
-    const CReservoir    *GetReservoir         () const;
+    CReservoir    *GetReservoir         () const;
 
     //Manipulator functions
     //called during model construction/assembly:
@@ -153,11 +155,16 @@ class CSubBasin
     void            SetQoutArray        (const int N, const double *aQo, const double QoLast);
     void            SetQlatHist         (const int N, const double *aQl, const double QlLast);
     void            SetQinHist          (const int N, const double *aQi);
+    void            SetDownstreamID     (const long down_SBID);
 
     //called during model operation:
     void            SetInflow           (const double &Qin );//[m3/s]
     void            UpdateFlowRules     (const time_struct &tt, const optStruct &Options);
-    void            UpdateOutflows      (const double *Qout_new, const double &res_ht, const optStruct &Options, bool initialize);//[m3/s]
+    void            UpdateOutflows      (const double *Qout_new, 
+                                         const double &res_ht, 
+                                         const optStruct &Options,
+                                         const time_struct &tt, 
+                                         bool initialize);//[m3/s]
     void            SetLateralInflow    (const double &Qlat);//[m3/s]
     
     void            RouteWater          (      double      *Qout_new,

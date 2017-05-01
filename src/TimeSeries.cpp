@@ -819,7 +819,8 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
           {
             ExitGracefully( ("Non-numeric value found in time series (line " +to_string(p->GetLineNumber())+" of file "+p->GetFilename()+")").c_str(),BAD_DATA_WARN);
           }
-          aVal [i][n]=s_to_d(s[i]);
+          aVal [i][n]=fast_s_to_d(s[i]);
+          //aVal [i][n]=s_to_d(s[i]);
         }
         n++;   
       }

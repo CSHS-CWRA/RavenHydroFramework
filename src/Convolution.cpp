@@ -63,7 +63,7 @@ void   CmvConvolution::Initialize()
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Initializes convolution object
+/// \brief unit S-hydrograph (cumulative hydrograph) for GR4J #2
 //
 double GR4J_SH2(const double &t, const double &x4)
 {
@@ -203,18 +203,21 @@ void   CmvConvolution::GetRatesOfChange( const double			*state_vars,
   { 
     if (sumrem<REAL_SMALL){orig_storage=0.0;}
     else                  {orig_storage=S[i]/sumrem;}
-    rates[i]=aUnitHydro[i]*orig_storage; 
-    S[i]-=rates[i];
+    rates[i]=aUnitHydro[i]*orig_storage/tstep; 
+    S[i]-=rates[i]*tstep;
     sumrem-=aUnitHydro[i];
   }//sumrem should ==0 at end, so should S[N-1]
+  //cout<<sumrem<<endl;
   //cout<<"** ";for (int i=0;i<N;i++){cout<<S[i]<<" ";} cout<<endl;
    
   //time shift convolution history
+  double move;
   for (int i=N-2; i>=0; i--)
   { 
-    rates[MAX_CONVOL_STORES+i]=S[i]/tstep; 
-    S[i  ]-=rates[MAX_CONVOL_STORES+i];
-    S[i+1]+=rates[MAX_CONVOL_STORES+i];
+    move=S[i];
+    rates[MAX_CONVOL_STORES+i]=move/tstep; 
+    S[i  ]-=move;
+    S[i+1]+=move;
   }
   //cout<<"*> ";for (int i=0;i<N;i++){cout<<S[i]<<" ";} cout<<endl;
   

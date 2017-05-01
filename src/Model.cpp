@@ -66,19 +66,13 @@ CModel::CModel(const soil_model SM,
   _aStateVarType[2]=ATMOS_PRECIP;  _aStateVarLayer[2]=DOESNT_EXIST; _aStateVarIndices[(int)(ATMOS_PRECIP )][0]=2;
   _aStateVarType[3]=PONDED_WATER;  _aStateVarLayer[3]=DOESNT_EXIST; _aStateVarIndices[(int)(PONDED_WATER )][0]=3;
 
-  if (SM==SOIL_LUMPED){
-    _aStateVarType[4]=LUMPED_LANDFORM;  _aStateVarLayer[4]=DOESNT_EXIST; _aStateVarIndices[(int)(LUMPED_LANDFORM )][0]=4;
-  }
-  else
+  int count=0;
+  for (i=4;i<4+_nSoilVars;i++)
   {
-    int count=0;
-    for (i=4;i<4+_nSoilVars;i++)
-    {
-      _aStateVarType [i]=SOIL;
-      _aStateVarLayer[i]=count;
-      _aStateVarIndices[(int)(SOIL)][count]=i;
-      count++;
-    }
+    _aStateVarType [i]=SOIL;
+    _aStateVarLayer[i]=count;
+    _aStateVarIndices[(int)(SOIL)][count]=i;
+    count++;
   }
   _lake_sv=0; //by default, rain on lake goes direct to surface storage [0]
   
@@ -777,7 +771,20 @@ double CModel::GetTotalChannelStorage() const
   }
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns total reservoir storage [mm]
+/// \return Total reservoir storage in all of watershed [mm]
+//
+double CModel::GetTotalReservoirStorage() const
+{
+  double sum(0);
+  
+  for (int p=0;p<_nSubBasins;p++)
+  {
+    sum+=_pSubBasins[p]->GetReservoirStorage();		 //[m3] 
+  }
+  return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total rivulet storage distributed over watershed [mm]
 /// \return Total rivulet storage distributed over watershed [mm]
@@ -1140,6 +1147,106 @@ void  CModel::SetNumSnowLayers     (const int          nLayers)
   delete [] aLev;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief overrides streamflow with observed streamflow
+/// \param SBID [in] valid subbasin identifier of basin with observations at outflow
+//
+void CModel::OverrideStreamflow   (const long SBID)
+{
+  for (int i=0;i<_nObservedTS; i++)
+  {
+    if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
+        ( s_to_l(_pObservedTS[i]->GetTag().c_str()) == SBID) &&
+        (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+    {
+      //check for blanks in observation TS
+      bool bad=false;
+      for (int n=0;n<_pObservedTS[i]->GetNumValues();n++){
+        if (_pObservedTS[i]->GetValue(n)==CTimeSeries::BLANK_DATA){bad=true;break;}
+      }
+      if (bad){
+        WriteWarning("CModel::OverrideStreamflow::cannot override streamflow if there are blanks in observation data",_pOptStruct->noisy);
+        return;
+      }
+
+      long downID=GetSubBasinByID(SBID)->GetDownstreamID();
+      if (downID!=DOESNT_EXIST)
+      {
+        //Copy time series of observed flows to new time series
+        string name="Inflow_Hydrograph_"+to_string(SBID);
+        CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
+        CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
+        pTS->SetTag(to_string(SBID));
+
+        //add as inflow hydrograph to downstream 
+        GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
+        GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
+        return; 
+      }
+      else{
+        WriteWarning("CModel::OverrideStreamflow: overriding streamflow at an outlet subbasin has no impact on model operation",_pOptStruct->noisy);
+      }
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief overrides reservoir outflow with observed outflow
+/// \param SBID [in] subbasin identifier of basin with reservoir
+//
+void CModel::OverrideReservoirFlow(const long SBID)
+{
+  for (int i=0;i<_nObservedTS; i++)
+  {
+    if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
+        ( s_to_l(_pObservedTS[i]->GetTag().c_str()) == SBID) &&
+        (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+    {
+      //check for blanks in observation TS
+      bool bad=false;
+      for (int n=0;n<_pObservedTS[i]->GetNumValues();n++){
+        if (_pObservedTS[i]->GetValue(n)==CTimeSeries::BLANK_DATA){bad=true;break;}
+      }
+      if (bad){
+        WriteWarning("CModel::OverrideReservoirFlow::cannot override reservoir flow if there are blanks in observation data",_pOptStruct->noisy);
+        return;
+      }
+
+      long downID=GetSubBasinByID(SBID)->GetDownstreamID();
+      CReservoir *pReservoir=GetSubBasinByID(SBID)->GetReservoir();
+      if (pReservoir==NULL){
+        WriteWarning("CModel::OverrideReservoirFlow:: indicated subbasin does not have a reservoir",_pOptStruct->noisy);
+        return;
+      }
+      
+      //Copy time series of observed flows to new extraction time series
+      string name="Extraction_"+to_string(SBID);
+      CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
+      CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
+      pTS->SetTag(to_string(SBID));
+
+      //add as reservoir extraction time series  
+      pReservoir->AddExtractionTimeSeries(pTS);
+      ExitGracefully("OverrideReservoirFlow",STUB);
+      pReservoir->DisableOutflow();
+
+      if (downID!=DOESNT_EXIST)
+      {
+        //Copy time series of observed flows to new time series
+        string name="Inflow_Hydrograph_"+to_string(SBID);
+        CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
+        CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
+        pTS->SetTag(to_string(SBID));
+
+        //add as inflow hydrograph to downstream 
+        GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
+        GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
+        return; 
+      }
+    }
+  }
+
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Initializes model prior to simulation
 /// \details Perform all operations required and initial check on validity of model before simulation begins; 
 /// -initializes mass balance arrays to zero; identifies model UTM zone; 
@@ -1250,11 +1357,15 @@ void CModel::Initialize(const optStruct &Options)
     }  
   }
   _initWater+=GetTotalChannelStorage();
+  _initWater+=GetTotalReservoirStorage();
   _initWater+=GetTotalRivuletStorage();
   // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-  // I think somehow this is being double counted...
+  // I think somehow this is being double counted in the delta V calculations in the first timestep 
   for(int p=0;p<_nSubBasins;p++){
-    _initWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+    if(_pSubBasins[p]->GetReservoir()!=NULL){ 
+      _initWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+      _initWater-=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+    }
   }
 
   //Initialize Transport
@@ -1299,6 +1410,16 @@ void CModel::Initialize(const optStruct &Options)
     if (_pHRUGroups[kk]->GetNumHRUs() == 0){
       string warn = "CModel::Initialize: HRU Group " + _pHRUGroups[kk]->GetName() + " is empty.";
       WriteWarning(warn,Options.noisy);
+    }
+  }
+  for(int i=0; i<_nObservedTS; i++){
+    if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE")) 
+    {
+      long SBID=s_to_l(_pObservedTS[i]->GetTag().c_str());
+      if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
+        string warn="Observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
+        ExitGracefully(warn.c_str(),BAD_DATA);
+      }
     }
   }
 
@@ -1771,14 +1892,14 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
 //
 void CModel::IncrementCumOutflow(const optStruct &Options)
 {
-  double area;
-  for (int p=0;p<_nSubBasins;p++)
+  double area=(_WatershedArea*M2_PER_KM2);
+  for(int p=0;p<_nSubBasins;p++)
   {
-    if (_aSubBasinOrder[p]==0)//outlet does not drain into another subbasin
-    { 
-      area=(_pSubBasins[p]->GetDrainageArea()*M2_PER_KM2);
-      _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire drainage basin
+    if(_aSubBasinOrder[p]==0)//outlet does not drain into another subbasin
+    {
+      _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
     }
+    _CumulOutput+=_pSubBasins[p]->GetReservoirLosses(Options.timestep)/area*MM_PER_METER;
   }
   _pTransModel->IncrementCumulOutput(Options);
 }
@@ -1945,8 +2066,9 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     while((tt.model_time+Options.timestep >= obsTime+_pObservedTS[i]->GetSampledInterval()) &&  //N .Sgro Fix 
           (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
+      value=CTimeSeries::BLANK_DATA;
       // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
-      if (obsTime >= Options.diag_start_time && obsTime <= Options.diag_end_time)
+      if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
       {
           value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
       }

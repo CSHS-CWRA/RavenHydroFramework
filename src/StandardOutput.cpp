@@ -62,7 +62,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
 
     int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP); 
-    _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Rivulet Storage [mm]";  
+    _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";  
     for (i=0;i<GetNumStateVars();i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
         if (i!=iAtmPrecip){
@@ -102,7 +102,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         }
 
         if (_pSubBasins[p]->GetReservoir() != NULL){
-          if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (res. inflow)  [m3/s]";}
+          if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (res. inflow) [m3/s]";}
           else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (res. inflow) [m3/s]";}
         }
       }
@@ -137,7 +137,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //ReservoirStages.csv
   //--------------------------------------------------------------
-  if (Options.write_reservoir)
+  if((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
   {
     ofstream RES_STAGE;
     tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
@@ -318,12 +318,12 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
     _FORCINGS<<"time [d],date,hour,day_angle,"; 
-    _FORCINGS<<"rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
-    _FORCINGS<<"air dens. [kg/m3], air pres. [KPa], rel hum. [-],";
-    _FORCINGS<<"cloud cover [-],";
-    _FORCINGS<<"ET radiation [W/m2], SW radiation [W/m2], LW radiation [W/m2], wind vel. [m/s],";
-    _FORCINGS<<"PET [mm/d], OW PET [mm/d],";
-    _FORCINGS<<"daily correction [-],potential melt [mm/d]";
+    _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
+    _FORCINGS<<" air dens. [kg/m3], air pres. [KPa], rel hum. [-],";
+    _FORCINGS<<" cloud cover [-],";
+    _FORCINGS<<" ET radiation [W/m2], SW radiation [W/m2], LW radiation [W/m2], wind vel. [m/s],";
+    _FORCINGS<<" PET [mm/d], OW PET [mm/d],";
+    _FORCINGS<<" daily correction [-], potential melt [mm/d]";
     _FORCINGS<<endl;
   }
 
@@ -459,13 +459,14 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       double snowfall    =GetAverageSnowfall();
       double precip      =GetAveragePrecip();
       double channel_stor=GetTotalChannelStorage();
+      double reservoir_stor=GetTotalReservoirStorage();
       double rivulet_stor=GetTotalRivuletStorage();
        
       _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour;
 
       if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
       else     {_STORAGE<<",---,---";}
-      _STORAGE<<","<<channel_stor<<","<<rivulet_stor;
+      _STORAGE<<","<<channel_stor<<","<<reservoir_stor<<","<<rivulet_stor;
     
       currentWater=0.0; 
       for (i=0;i<GetNumStateVars();i++)
@@ -478,8 +479,18 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           currentWater+=S;
         }
       }
-      currentWater+=channel_stor+rivulet_stor;
-      
+      currentWater+=channel_stor+rivulet_stor+reservoir_stor;
+      if(t==0){
+        // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+        // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep 
+        for(int p=0;p<_nSubBasins;p++){
+          if(_pSubBasins[p]->GetReservoir()!=NULL){ 
+            currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+            currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+          }
+        }
+      }
+     
       _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<(currentWater-_initWater)+(_CumulOutput-_CumulInput); 
       _STORAGE<<endl;
 
@@ -502,7 +513,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
                 {
 
-                  int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
+                  //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                   if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
@@ -534,7 +545,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
                   (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
                 {
-                  int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
+                  //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
                   if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
@@ -603,7 +614,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
    
     //ReservoirStages.csv
     //--------------------------------------------------------------
-    if (Options.write_reservoir)
+    if ((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
     {
       ofstream RES_STAGE;
       tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
@@ -729,7 +740,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       force_struct *pFave;
       force_struct faveStruct = GetAverageForcings();
       pFave = &faveStruct;
-      // \todo [] - if time t=0, fill with "-"??
       _FORCINGS<<t<<","<<thisdate<<","<<thishour<<","<<pFave->day_angle<<",";  
       _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<","<<pFave->precip*(pFave->snow_frac) <<",";
       _FORCINGS<<pFave->temp_ave<<","<<pFave->temp_daily_min<<","<<pFave->temp_daily_max<<","<<pFave->temp_daily_ave<<","<<pFave->temp_month_min<<","<<pFave->temp_month_max<<",";
@@ -737,7 +747,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       _FORCINGS<<pFave->cloud_cover<<",";
       _FORCINGS<<pFave->ET_radia*MJ_PER_D_TO_WATT<<","<<pFave->SW_radia*MJ_PER_D_TO_WATT<<","<<pFave->LW_radia*MJ_PER_D_TO_WATT<<","<<pFave->wind_vel<<",";
       _FORCINGS<<pFave->PET<<","<<pFave->OW_PET<<",";
-      _FORCINGS<<pFave->subdaily_corr<<","<<pFave->potential_melt<<",";
+      _FORCINGS<<pFave->subdaily_corr<<","<<pFave->potential_melt;
       _FORCINGS<<endl;
     }
 
@@ -1117,6 +1127,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   double snowfall    =GetAverageSnowfall();
   double precip      =GetAveragePrecip();
   double channel_stor=GetTotalChannelStorage();
+  double reservoir_stor=GetTotalReservoirStorage();
   double rivulet_stor=GetTotalRivuletStorage();
 
   if ((tt.model_time==0) && (Options.suppressICs==true) && (Options.period_ending)){return;}
@@ -1126,7 +1137,8 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
   else                 {_STORAGE<<" 0.0 0.0";}
   _STORAGE<<" "<<channel_stor<<" "<<rivulet_stor;
-    
+  //_STORAGE<<" "<<channel_stor<<" "<<reservoir_stor<<" "<<rivulet_stor;  // \todo[update] - backwards incompatible
+
   currentWater=0.0; 
   for (i=0;i<GetNumStateVars();i++){ 
     if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) &&  (i!=iCumPrecip)){
@@ -1173,14 +1185,11 @@ void PrepareOutputdirectory(const optStruct &Options)
 {
   if (Options.output_dir!="")
   {
-    /// \todo [add funct] PrepareOutputdirectory: check for trailing forward slash
-
     #if defined(_WIN32)
       _mkdir(Options.output_dir.c_str());
     #elif defined(__linux__)
       mkdir(Options.output_dir.c_str(), 0777);
     #endif
-
   }
   g_output_directory=Options.output_dir;//necessary evil
 }

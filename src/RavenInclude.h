@@ -472,7 +472,6 @@ enum soil_charact
 //
 enum soil_model
 {
-  SOIL_LUMPED,    ///< "Lumped landform" approach
   SOIL_ONE_LAYER, ///< Single soil layer with additional groundwater storage
   SOIL_TWO_LAYER, ///< Two soil layers with additional groundwater storage 
   SOIL_MULTILAYER ///< Multiple (2+) soil layers with additional groundwater storage 
@@ -629,7 +628,6 @@ enum sv_type
   NEW_SNOW,       ///< [mm] new snowfall waiting to be handled by snow balance
   SNOW_LIQ,       ///< [mm] liquid snow cover
   WETLAND,        ///< [mm] deep depression storage
-  LUMPED_LANDFORM,///< [mm] for SCS/rational methods- represents agglomerated land system
   GLACIER,        ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,    ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
 
@@ -812,6 +810,7 @@ struct optStruct
   bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
   string           working_dir;       ///< working directory 
+  int              wateryr_mo;        ///< starting month of water year (typically 10=October)
 
   //diagnostic options
   double           diag_start_time;   ///< Model time to start diagnostics 
@@ -1159,6 +1158,7 @@ string StringToUppercase       (const string &s);
 bool   IsComment               (const char *s, const int Len);
 void   WriteWarning            (const string warn, bool noisy);
 HRU_type StringToHRUType       (const string s);
+double fast_s_to_d             (const char *s);
 
 //I/O Functions-----------------------------------------------
 //defined in StandardOutput.cpp

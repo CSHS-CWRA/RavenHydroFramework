@@ -43,7 +43,8 @@ class CReservoir
     double       _stage_last;          ///< stage at beginning of current time step [m]
     double       _Qout;                ///< outflow corresponding to current stage [m3/s] 
     double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
-     
+    double       _MB_losses;           ///< losses over current time step [m3]
+
     double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
     double       _max_stage;           ///< maximum reference elevation [m] 
 
@@ -81,27 +82,28 @@ class CReservoir
     long              GetSubbasinID        () const;
     double            GetStorage           () const;//[m3]
     double            GetOutflowRate       () const;//[m3/d] 
-    double            GetEvapLosses        () const;//[m3/d]
+    double            GetReservoirLosses   (const double &tstep) const;//[m3]
     double            GetIntegratedOutflow (const double &tstep) const;//[m3]
     double            GetStage             () const;//[m]
 
     //Manipulators
     void              SetMinStage            (const double &min_z);
     void              Initialize             (const optStruct &Options);
-    void              UpdateStage            (const double &new_stage);
-    void              UpdateFlowRules        (const time_struct &tt, const optStruct &Options);
     void              SetInitialFlow         (const double &Q);
     void	            AddExtractionTimeSeries(CTimeSeries *pOutflow);
     void              SetHRU                 (const CHydroUnit *pHRU);
+    void              DisableOutflow         ();
 
-    //
-    double            RouteWater(const double      &Qin_old, 
-                                 const double      &Qin_new, 
-                                 const double      &tstep,
-                                 const time_struct &tt) const;
-    void              WriteToSolutionFile (ofstream &OUT) const;
+    //Called during simulation:
+    double            RouteWater             (const double      &Qin_old, 
+                                              const double      &Qin_new, 
+                                              const double      &tstep,
+                                              const time_struct &tt) const;
+    void              UpdateStage            (const double &new_stage);
+    void              WriteToSolutionFile    (ofstream &OUT) const;
+    void              UpdateFlowRules        (const time_struct &tt, const optStruct &Options);
+    void              UpdateMassBalance      (const time_struct &tt, const double &tstep);
 
     static CReservoir  *Parse(CParser *p, string name, int &HRUID, const optStruct &Options);
 };
 #endif
-
