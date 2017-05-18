@@ -88,6 +88,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   }
 
   N =(int)(ceil(max_time/tstep));
+  if (N>MAX_CONVOL_STORES) { printf("N = %i    MAX_CONVOL_STORES = %i ",N,MAX_CONVOL_STORES ); }
   ExitGracefullyIf(N>MAX_CONVOL_STORES,"CmvConvolution::GenerateUnitHydrograph: unit hydrograph duration for convolution too long",BAD_DATA);
 
   if (N==0){N=1;}

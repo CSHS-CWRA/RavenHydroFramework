@@ -23,6 +23,8 @@
 #include "Reservoir.h"
 #include "Transport.h"
 #include "Diagnostics.h"
+#include "ForcingGrid.h"        ///> CForcingGrid
+//#include "SparseMatrix.h"       ///> CSparseMatrix
 
 double EstimatePET          (const force_struct &F, 
                              const CHydroUnit   *pHRU,
@@ -76,6 +78,10 @@ class CModel: public CModelABC
     CGauge             **_pGauges;  ///< array of pointers to gauges which store time series info [size:_nGauges]
     double       **_aGaugeWeights;  ///< array of weights for each gauge/HRU pair [_nHydroUnits][_nGauges]
 
+    int            _nForcingGrids;  ///< number of gridded forcing input data
+    CForcingGrid **_pForcingGrids;  ///< gridded input data [size: _nForcingGrids]
+    //CSparseMatrix  *_pGridWeightStruct;  ///< pointer to [_nForcingGrids] structures of sparse grid weight information
+
     int                 _UTM_zone;  ///< model-wide UTM zone used for interpolation
 
     int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
@@ -91,7 +97,7 @@ class CModel: public CModelABC
     CTimeSeriesABC **_pObservedTS;  ///< array of pointers of observation time series [size: _nObservedTS]
     CTimeSeries     **_pModeledTS;  ///< array of pointers of modeled time series corresponding to observations [size: _nObservedTS]
     int              _nObservedTS;  ///< number of observation time series
-    int               *_aObsIndex;	///< index of the next unprocessed observation
+    int               *_aObsIndex;  ///< index of the next unprocessed observation
 
     CTimeSeriesABC**_pObsWeightTS;  ///< array of pointers of observation weight time series [size: _nObsWeightTS]
     int             _nObsWeightTS;  ///< number of observation weight time series
@@ -199,56 +205,71 @@ class CModel: public CModelABC
 
     /*--below are only available to global routines--*/
     //Accessor functions
-    int               GetNumHRUs         () const;
-    int               GetNumHRUGroups    () const;
-    int               GetNumSubBasins    () const;
-    CHydroUnit       *GetHydroUnit       (const int k ) const;
-    CHydroUnit       *GetHRUByID         (const int HRUID) const;
-    CHRUGroup        *GetHRUGroup        (const int kk) const;
-    CHRUGroup        *GetHRUGroup        (const string name) const;
-    CSubBasin        *GetSubBasin        (const int p ) const;    
-    CSubBasin        *GetSubBasinByID    (const long ID) const;
-    CHydroProcessABC *GetProcess         (const int j ) const;
-    CGauge           *GetGauge           (const int g) const;
-    int               GetNumGauges       () const;
-    int               GetNumProcesses    () const;
-    process_type      GetProcessType     (const int j ) const;
-    int               GetNumConnections  (const int j ) const;
-    double            GetAveragePrecip   () const;    
-    double            GetAverageSnowfall () const;
-    int         GetOrderedSubBasinIndex  (const int pp) const;
-    int               GetDownstreamBasin (const int p ) const;
-    int               GetSubBasinIndex   (const long ID) const;
-    int            GetGaugeIndexFromName (const string name) const;
-    double            GetWatershedArea   () const;
-    bool              IsInHRUGroup       (const int k, const string HRUGroupName) const;
+    int               GetNumHRUs                        () const;
+    int               GetNumHRUGroups                   () const;
+    int               GetNumSubBasins                   () const;
+    CHydroUnit       *GetHydroUnit                      (const int k ) const;
+    CHydroUnit       *GetHRUByID                        (const int HRUID) const;
+    CHRUGroup        *GetHRUGroup                       (const int kk) const;
+    CHRUGroup        *GetHRUGroup                       (const string name) const;
+    CSubBasin        *GetSubBasin                       (const int p ) const;    
+    CSubBasin        *GetSubBasinByID                   (const long ID) const;
+    CHydroProcessABC *GetProcess                        (const int j ) const;
+    CGauge           *GetGauge                          (const int g) const;
+    CForcingGrid     *GetForcingGrid                    (const int f) const;
+    int               GetNumGauges                      () const;
+    int               GetNumForcingGrids                () const;
+    int               GetNumProcesses                   () const;
+    process_type      GetProcessType                    (const int j ) const;
+    int               GetNumConnections                 (const int j ) const;
+    double            GetAveragePrecip                  () const;    
+    double            GetAverageSnowfall                () const;
+    int               GetOrderedSubBasinIndex           (const int pp) const;
+    int               GetDownstreamBasin                (const int p ) const;
+    int               GetSubBasinIndex                  (const long ID) const;
+    int               GetGaugeIndexFromName             (const string name) const;
+    int               GetForcingGridIndexFromName       (const string name) const;
+    double            GetWatershedArea                  () const;
+    bool              IsInHRUGroup                      (const int k,
+							 const string HRUGroupName) const;
 
-    const optStruct  *GetOptStruct       () const;
-    CTransportModel  *GetTransportModel  () const;
+    const optStruct  *GetOptStruct                      () const;
+    CTransportModel  *GetTransportModel      	        () const;
     
-    void        GetParticipatingParamList(string *aP, class_type *aPC, int &nP, const optStruct &Options) const;
+    void              GetParticipatingParamList         (string *aP,
+							 class_type *aPC,
+							 int &nP,
+							 const optStruct &Options) const;
     
     //Manipulator Functions: called by Parser
-    void              AddProcess           (CHydroProcessABC  *pMov);
-    void              AddHRU               (CHydroUnit        *pHRU);
-    void              AddHRUGroup          (CHRUGroup         *pHRUGrp);
-    void              AddSubBasin          (CSubBasin         *pWS);
-    void              AddGauge             (CGauge            *pGage);
-    void              AddStateVariables    (const sv_type     *aSV,
-                                            const int         *aLev,
-                                            const int          nSV);
-    void              AddAquiferStateVars  (const int          nLayers);
-    void              AddCustomOutput      (CCustomOutput     *pCO);
-    void              AddTransientParameter(CTransientParam   *pTP);
-    void             AddPropertyClassChange(const string HRUgroup, const class_type tclass, const string new_class, const time_struct &tt);
-    void              AddObservedTimeSeries(CTimeSeriesABC    *pTS);
-    void              AddObservedWeightsTS (CTimeSeriesABC    *pTS);
-    void              AddDiagnostic        (CDiagnostic       *pDiag);
-    void              AddModelOutputTime   (const time_struct &tt_out, const optStruct &Options);
-    void              SetLakeStorage       (const sv_type      SV,const int lev);//TMP?
-    void              SetAggregatedVariable(const sv_type      SV,const int lev, const string group_name);
-    void              SetOutputGroup       (const CHRUGroup   *pOut);
-    void              SetNumSnowLayers     (const int          nLayers);
+    void    AddProcess                (	     CHydroProcessABC  *pMov		);
+    void    AddHRU                    (	     CHydroUnit        *pHRU		);
+    void    AddHRUGroup               (	     CHRUGroup         *pHRUGrp		);
+    void    AddSubBasin               (	     CSubBasin         *pWS		);
+    void    AddGauge                  (	     CGauge            *pGage		);
+    void    AddForcingGrid            (	     CForcingGrid      *pGrid		);
+    void    AddStateVariables         (const sv_type           *aSV,
+                                       const int               *aLev,
+                                       const int                nSV		);
+    void    AddAquiferStateVars       (const int                nLayers		);
+    void    AddCustomOutput           (	     CCustomOutput     *pCO		);
+    void    AddTransientParameter     (	     CTransientParam   *pTP		);
+    void    AddPropertyClassChange    (const string             HRUgroup,
+                                       const class_type         tclass,
+                                       const string             new_class,
+                                       const time_struct       &tt		);
+    void    AddObservedTimeSeries     (	     CTimeSeriesABC    *pTS		);
+    void    AddObservedWeightsTS      (	     CTimeSeriesABC    *pTS		);
+    void    AddDiagnostic             (	     CDiagnostic       *pDiag		);
+    void    AddModelOutputTime        (const time_struct       &tt_out,
+                                       const optStruct         &Options		);
+    void    SetLakeStorage            (const sv_type            SV,
+                                       const int                lev		);//TMP?
+    void    SetAggregatedVariable     (const sv_type            SV,
+                                       const int                lev,
+                                       const string             group_name	);
+    void    SetOutputGroup            (const CHRUGroup         *pOut		);
+    void    SetNumSnowLayers          (const int                nLayers		);
 
     void              OverrideStreamflow   (const long SBID);
     void              OverrideReservoirFlow(const long SBID);
@@ -256,6 +277,7 @@ class CModel: public CModelABC
     /*--Other Functions: mostly called by Solver--*/
     //called only once prior to simulation:
     void        Initialize                 (const optStruct &Options);
+    void        InitializeForcingGrids     (const optStruct &Options, const string type);
 
     //called during simulation:
     //critical simulation routines (called once during each timestep)
@@ -283,6 +305,20 @@ class CModel: public CModelABC
                                          const double moved);//[mm] or [MJ/m2]
     void        IncrementCumulInput     (const optStruct &Options, const time_struct &tt);
     void        IncrementCumOutflow     (const optStruct &Options);
+
+    //Forcing grid routines --> should probably moved somewhere else
+    //Routines for deriving missing data based on gridded data provided
+    void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);
+    void         GenerateMinMaxAveTempFromSubdaily        (const optStruct &Options);
+    void         GenerateMinMaxSubdailyTempFromAve        (const optStruct &Options);
+    //void       GenerateSubdailyAveTempFromSubdailyMinMax(const optStruct &Options);
+    void         GeneratePrecipFromSnowRain               (const optStruct &Options);
+    void         GenerateRainFromPrecip                   (const optStruct &Options);
+    void         GenerateZeroSnow                         (const optStruct &Options);
+    bool         ForcingGridIsInput                       (const string forcing_grid_name);
+    bool         ForcingGridIsAvailable                   (const string forcing_grid_name);
+    //double       GetAverageSnowFrac                       (const int x_col, const int y_row, const double t, const int n) const;
+    double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
     
     //output routines
     void        WriteMinorOutput        (const optStruct &Options, const time_struct &tt);

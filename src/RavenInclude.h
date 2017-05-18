@@ -809,7 +809,7 @@ struct optStruct
   bool             suppressICs;       ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
-  string           working_dir;       ///< working directory 
+  string           working_dir;       ///< working directory
   int              wateryr_mo;        ///< starting month of water year (typically 10=October)
 
   //diagnostic options
@@ -855,16 +855,17 @@ struct time_struct
 const int MAX_FORCING_TYPES=50;
 enum forcing_type
 {
-  F_PRECIP,        F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
-  F_RAINFALL,      F_SNOWFALL,
-  F_TEMP_AVE,      F_TEMP_DAILY_MIN,   F_TEMP_DAILY_MAX, F_TEMP_DAILY_AVE,
-  F_TEMP_MONTH_MAX,F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
-  F_TEMP_AVE_UNC,  F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
-  F_AIR_PRES,      F_AIR_DENS,         F_REL_HUMIDITY,
-  F_CLOUD_COVER,   F_SW_RADIA,         F_LW_RADIA,       F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC,
-  F_DAY_LENGTH,    F_DAY_ANGLE,        F_WIND_VEL,
-  F_PET,F_OW_PET,  F_PET_MONTH_AVE,
-  F_SUBDAILY_CORR, F_POTENTIAL_MELT,
+  F_PRECIP,         F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
+  F_RAINFALL,       F_SNOWFALL,
+  F_TEMP_MIN,       F_TEMP_MAX,         F_TEMP_AVE,
+  F_TEMP_DAILY_MIN, F_TEMP_DAILY_MAX,   F_TEMP_DAILY_AVE,
+  F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
+  F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
+  F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
+  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA,       F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC,
+  F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
+  F_PET,F_OW_PET,   F_PET_MONTH_AVE,
+  F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
   F_UNRECOGNIZED
 };
 ////////////////////////////////////////////////////////////////////

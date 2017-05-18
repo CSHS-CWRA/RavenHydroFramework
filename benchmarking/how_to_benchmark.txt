@@ -4,4 +4,13 @@ In windows:
 (3) Change the version number at line 11 of the RavenBenchmarking.bat to ver_name=v???, where ??? is the version number.
 (4) Click on RavenBenchmarking.bat from explorer or run it from the command prompt
 (5) Compare the results between two different versions by using comparison software such as BeyondCompare. 
-(6) Document any and all relevant changes and (ideally) identify the source of changes. 
+(6) Document any and all relevant changes and (ideally) identify the
+source of changes.
+
+In unix:
+(1) same as windows
+(2) same as windows but use RavenBenchmarking.sh
+(3) same as windows but use RavenBenchmarking.sh
+(4) execute RavenBenchmarking.sh
+(5) same as windows
+(6) same as windows

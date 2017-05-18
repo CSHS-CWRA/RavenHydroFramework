@@ -12,45 +12,45 @@
 //
 void ZeroOutForcings(force_struct &F)
 {
-  F.precip=0.0;
-  F.precip_daily_ave = 0.0;
-  F.precip_5day=0.0;   
-  F.snow_frac=0.0;    
+  F.precip		=0.0;
+  F.precip_daily_ave	=0.0;
+  F.precip_5day		=0.0;   
+  F.snow_frac		=0.0;    
 
-  F.temp_ave=0.0;     
-  F.temp_daily_min=0.0;     
-  F.temp_daily_max=0.0;     
-  F.temp_daily_ave=0.0;
-  F.temp_month_max=0.0;
-  F.temp_month_min=0.0;
-  F.temp_month_ave=0.0;
-  F.temp_ave_unc  =0.0;
-  F.temp_max_unc  =0.0;
-  F.temp_min_unc  =0.0;
+  F.temp_ave		=0.0;     
+  F.temp_daily_min	=0.0;     
+  F.temp_daily_max	=0.0;     
+  F.temp_daily_ave	=0.0;
+  F.temp_month_max	=0.0;
+  F.temp_month_min	=0.0;
+  F.temp_month_ave	=0.0;
+  F.temp_ave_unc	=0.0;
+  F.temp_max_unc	=0.0;
+  F.temp_min_unc	=0.0;
 
 
-  F.air_dens    =0.0;      
-  F.air_pres    =0.0;      
-  F.rel_humidity=0.0;      
+  F.air_dens		=0.0;      
+  F.air_pres		=0.0;      
+  F.rel_humidity	=0.0;      
   
-  F.cloud_cover=0.0;
-  F.ET_radia=0.0;
-  F.SW_radia=0.0;  
-  F.SW_radia_net=0.0;
-  F.LW_radia=0.0;      
+  F.cloud_cover		=0.0;
+  F.ET_radia		=0.0;
+  F.SW_radia		=0.0;  
+  F.SW_radia_net	=0.0;
+  F.LW_radia		=0.0;      
 
-  F.day_length=0.0;   
-  F.day_angle=0.0;
+  F.day_length		=0.0;   
+  F.day_angle		=0.0;
 
-  F.wind_vel=0.0;      
+  F.wind_vel		=0.0;      
 
-  F.PET=0.0;           
-  F.OW_PET=0.0;   
-  F.PET_month_ave=0.0;
+  F.PET			=0.0;           
+  F.OW_PET		=0.0;   
+  F.PET_month_ave	=0.0;
 
-  F.potential_melt=0.0;
+  F.potential_melt	=0.0;
 
-  F.subdaily_corr=0.0;
+  F.subdaily_corr	=0.0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -70,11 +70,11 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="RAINFALL"         ){return F_RAINFALL;}
 
   else if (f=="TEMP_AVE"         ){return F_TEMP_AVE;} 
-  else if (f=="TEMP_MIN"         ){return F_TEMP_DAILY_MIN;} 
-  else if (f=="MIN_TEMPERATURE"  ){return F_TEMP_DAILY_MIN;} 
+  else if (f=="TEMP_MIN"         ){return F_TEMP_DAILY_MIN;} // JMJMJM  {return F_TEMP_MIN;} // 
+  else if (f=="MIN_TEMPERATURE"  ){return F_TEMP_DAILY_MIN;} // JMJMJM	{return F_TEMP_MIN;} // 
   else if (f=="TEMP_DAILY_MIN"   ){return F_TEMP_DAILY_MIN;} 
-  else if (f=="TEMP_MAX"         ){return F_TEMP_DAILY_MAX;}
-  else if (f=="MAX_TEMPERATURE"  ){return F_TEMP_DAILY_MAX;} 
+  else if (f=="TEMP_MAX"         ){return F_TEMP_DAILY_MAX;} // JMJMJM  {return F_TEMP_MAX;} // 
+  else if (f=="MAX_TEMPERATURE"  ){return F_TEMP_DAILY_MAX;} // JMJMJM	{return F_TEMP_MAX;} // 
   else if (f=="TEMP_DAILY_MAX"   ){return F_TEMP_DAILY_MAX;}
   else if (f=="TEMP_DAILY_AVE"   ){return F_TEMP_DAILY_AVE;}
   else if (f=="TEMP_MONTH_MAX"   ){return F_TEMP_MONTH_MAX;}
@@ -110,11 +110,11 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
   else
-  {
-    return F_UNRECOGNIZED;
-    //cout <<"Forcing string:|"<<f<<"|"<<endl;
-    //ExitGracefully("GetForcingTypeFromString: invalid forcing string",RUNTIME_ERR);
-  }
+    {
+      return F_UNRECOGNIZED;
+      //cout <<"Forcing string:|"<<f<<"|"<<endl;
+      //ExitGracefully("GetForcingTypeFromString: invalid forcing string",RUNTIME_ERR);
+    }
   return F_UNRECOGNIZED;
 }
 
@@ -149,7 +149,6 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
   else if (ftype==F_TEMP_MAX_UNC    ){return f.temp_max_unc ;}
   else if (ftype==F_TEMP_MIN_UNC    ){return f.temp_min_unc ;}
 
-
   else if (ftype==F_AIR_DENS        ){return f.air_dens;}
   else if (ftype==F_AIR_PRES        ){return f.air_pres;}
   else if (ftype==F_REL_HUMIDITY    ){return f.rel_humidity;}
@@ -177,9 +176,9 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
   //else if (ftype==F_UNRECOGNIZED   ){return 0;}
 
   else
-  {
-    ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
-  }
+    {
+      ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
+    }
   return 0.0;
 }
 
@@ -191,53 +190,53 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
 //
 string GetForcingTypeUnits(forcing_type ftype)
 {
-	string units = "none";
+  string units = "none";
   switch(ftype)
-  {
-    case F_PRECIP:			{units="mm/d"; break;}
-    case F_PRECIP_DAILY_AVE:{units="mm/d"; break; }
-  	case F_PRECIP_5DAY:	    {units="mm"; break;}
-  	case F_SNOW_FRAC:		{units="0-1"; break;}
-  	case F_SNOWFALL:		{units="mm"; break;}
-  	case F_RAINFALL:		{units="mm"; break;}
+    {
+    case F_PRECIP:              {units="mm/d"; break;}
+    case F_PRECIP_DAILY_AVE:	{units="mm/d"; break; }
+    case F_PRECIP_5DAY:         {units="mm"; break;}
+    case F_SNOW_FRAC:           {units="0-1"; break;}
+    case F_SNOWFALL:            {units="mm"; break;}
+    case F_RAINFALL:            {units="mm"; break;}
 
-  	case F_TEMP_AVE:        {units="C"; break;} 
-  	case F_TEMP_DAILY_MIN:	{units="C"; break;}
-  	case F_TEMP_DAILY_MAX:  {units="C"; break;}
-  	case F_TEMP_DAILY_AVE:  {units="C"; break;}
-  	case F_TEMP_MONTH_MAX:  {units="C"; break;}
-  	case F_TEMP_MONTH_MIN:  {units="C"; break;}
-  	case F_TEMP_MONTH_AVE:  {units="C"; break;}
-  	case F_TEMP_AVE_UNC:   	{units="C"; break;}
-  	case F_TEMP_MIN_UNC:   	{units="C"; break;}
-  	case F_TEMP_MAX_UNC:   	{units="C"; break;}
+    case F_TEMP_AVE:		{units="C"; break;} 
+    case F_TEMP_DAILY_MIN:	{units="C"; break;}
+    case F_TEMP_DAILY_MAX:	{units="C"; break;}
+    case F_TEMP_DAILY_AVE:	{units="C"; break;}
+    case F_TEMP_MONTH_MAX:	{units="C"; break;}
+    case F_TEMP_MONTH_MIN:	{units="C"; break;}
+    case F_TEMP_MONTH_AVE:	{units="C"; break;}
+    case F_TEMP_AVE_UNC:	{units="C"; break;}
+    case F_TEMP_MIN_UNC:	{units="C"; break;}
+    case F_TEMP_MAX_UNC:	{units="C"; break;}
 
-  	case F_AIR_DENS:        {units="kg/m3"; break;}
-  	case F_AIR_PRES:        {units="kPa"; break;}
-  	case F_REL_HUMIDITY:	  {units="0-1"; break;}
+    case F_AIR_DENS:		{units="kg/m3"; break;}
+    case F_AIR_PRES:		{units="kPa"; break;}
+    case F_REL_HUMIDITY:	{units="0-1"; break;}
 
-  	case F_CLOUD_COVER:     {units="0-1"; break;}
-  	case F_ET_RADIA:		    {units="MJ/m2/d"; break;}
-    case F_SW_RADIA:		    {units="MJ/m2/d"; break;}
-    case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}                   
-  	case F_LW_RADIA:		    {units="MJ/m2/d"; break;}
+    case F_CLOUD_COVER:		{units="0-1"; break;}
+    case F_ET_RADIA:            {units="MJ/m2/d"; break;}
+    case F_SW_RADIA:            {units="MJ/m2/d"; break;}
+    case F_SW_RADIA_NET:	{units="MJ/m2/d"; break;}                   
+    case F_LW_RADIA:            {units="MJ/m2/d"; break;}
 
-  	case F_DAY_LENGTH:      {units="d"; break;}
-  	case F_DAY_ANGLE:		    {units="rad"; break;}
+    case F_DAY_LENGTH:		{units="d"; break;}
+    case F_DAY_ANGLE:           {units="rad"; break;}
 
-  	case F_WIND_VEL:	    	{units="m/s"; break;}
+    case F_WIND_VEL:            {units="m/s"; break;}
 
-  	case F_PET:             {units="mm/d"; break;}
-  	case F_OW_PET:          {units="mm/d"; break;}
-  	case F_PET_MONTH_AVE:	  {units="mm/d"; break;}
+    case F_PET:			{units="mm/d"; break;}
+    case F_OW_PET:		{units="mm/d"; break;}
+    case F_PET_MONTH_AVE:	{units="mm/d"; break;}
 
-    case F_POTENTIAL_MELT:  {units="mm/d"; break;}
+    case F_POTENTIAL_MELT:	{units="mm/d"; break;}
 
-    case F_SUBDAILY_CORR:	  {units="none"; break;}
+    case F_SUBDAILY_CORR:       {units="none"; break;}
     default:
       //ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
       break;
-  }
+    }
   return units;
 }
 /////////////////////////////////////////////////////////////////////
@@ -248,51 +247,50 @@ string GetForcingTypeUnits(forcing_type ftype)
 //
 string ForcingToString(const forcing_type ftype)
 {
-	string fstring = "none";
+  string fstring = "none";
   switch(ftype)
-  {
-    case F_PRECIP:          {fstring="PRECIP"; break;}
-    case F_PRECIP_DAILY_AVE:{fstring="PRECIP_DAILY_AVE"; break; }
-  	case F_PRECIP_5DAY:	    {fstring="PRECIP_5DAY"; break;}
-  	case F_SNOW_FRAC:       {fstring="SNOW_FRAC"; break;}
-  	case F_SNOWFALL:        {fstring="SNOWFALL"; break;}
-  	case F_RAINFALL:        {fstring="RAINFALL"; break;}
+    {
+    case F_PRECIP:          {fstring="PRECIP";			break;}
+    case F_PRECIP_DAILY_AVE:{fstring="PRECIP_DAILY_AVE";	break; }
+    case F_PRECIP_5DAY:     {fstring="PRECIP_5DAY";		break;}
+    case F_SNOW_FRAC:       {fstring="SNOW_FRAC";		break;}
+    case F_SNOWFALL:        {fstring="SNOWFALL";		break;}
+    case F_RAINFALL:        {fstring="RAINFALL";		break;}
+    case F_TEMP_AVE:        {fstring="TEMP_AVE";		break;}
+    case F_TEMP_DAILY_MIN:  {fstring="TEMP_DAILY_MIN";		break;}
+    case F_TEMP_DAILY_MAX:  {fstring="TEMP_DAILY_MAX";		break;}
+    case F_TEMP_DAILY_AVE:  {fstring="TEMP_DAILY_AVE";		break;}
+    case F_TEMP_MONTH_MAX:  {fstring="TEMP_MONTH_MAX";		break;}
+    case F_TEMP_MONTH_MIN:  {fstring="TEMP_MONTH_MIN";		break;}
+    case F_TEMP_MONTH_AVE:  {fstring="TEMP_MONTH_AVE";		break;}
+    case F_TEMP_AVE_UNC:    {fstring="TEMP_AVE_UNC";		break;}
+    case F_TEMP_MIN_UNC:    {fstring="TEMP_MIN_UNC";		break;}
+    case F_TEMP_MAX_UNC:    {fstring="TEMP_MAX_UNC";		break;}
 
-  	case F_TEMP_AVE:        {fstring="TEMP_AVE"; break;} 
-  	case F_TEMP_DAILY_MIN:	{fstring="TEMP_DAILY_MIN"; break;}
-  	case F_TEMP_DAILY_MAX:  {fstring="TEMP_DAILY_MAX"; break;}
-  	case F_TEMP_DAILY_AVE:  {fstring="TEMP_DAILY_AVE"; break;}
-  	case F_TEMP_MONTH_MAX:  {fstring="TEMP_MONTH_MAX"; break;}
-  	case F_TEMP_MONTH_MIN:  {fstring="TEMP_MONTH_MIN"; break;}
-  	case F_TEMP_MONTH_AVE:  {fstring="TEMP_MONTH_AVE"; break;}
-  	case F_TEMP_AVE_UNC:  	{fstring="TEMP_AVE_UNC"; break;}
-  	case F_TEMP_MIN_UNC:    {fstring="TEMP_MIN_UNC"; break;}
-  	case F_TEMP_MAX_UNC:    {fstring="TEMP_MAX_UNC"; break;}
+    case F_AIR_DENS:        {fstring="AIR_DENSITY";		break;}
+    case F_AIR_PRES:        {fstring="AIR_PRES";		break;}
+    case F_REL_HUMIDITY:    {fstring="REL_HUMIDITY";		break;}
 
-  	case F_AIR_DENS:        {fstring="AIR_DENSITY"; break;}
-  	case F_AIR_PRES:        {fstring="AIR_PRES"; break;}
-  	case F_REL_HUMIDITY:    {fstring="REL_HUMIDITY"; break;}
+    case F_CLOUD_COVER:     {fstring="CLOUD_COVER";		break;}
+    case F_ET_RADIA:        {fstring="ET_RADIA";		break;}
+    case F_SW_RADIA:        {fstring="SW_RADIA";		break;}
+    case F_SW_RADIA_NET:    {fstring="SW_RADIA_NET";		break;}
+    case F_LW_RADIA:        {fstring="LW_RADIA";		break;}
 
-  	case F_CLOUD_COVER:     {fstring="CLOUD_COVER"; break;}
-  	case F_ET_RADIA:        {fstring="ET_RADIA"; break;}
-    case F_SW_RADIA:        {fstring="SW_RADIA"; break;}
-    case F_SW_RADIA_NET:    {fstring="SW_RADIA_NET"; break;}
-  	case F_LW_RADIA:        {fstring="LW_RADIA"; break;}
+    case F_DAY_LENGTH:      {fstring="DAY_LENGTH";		break;}
+    case F_DAY_ANGLE:       {fstring="DAY_ANGLE";		break;}
 
-  	case F_DAY_LENGTH:      {fstring="DAY_LENGTH"; break;}
-  	case F_DAY_ANGLE:       {fstring="DAY_ANGLE"; break;}
+    case F_WIND_VEL:        {fstring="WIND_VEL";		break;}
 
-  	case F_WIND_VEL:        {fstring="WIND_VEL"; break;}
+    case F_PET:             {fstring="PET";			break;}
+    case F_OW_PET:          {fstring="OW_PET";			break;}
+    case F_PET_MONTH_AVE:   {fstring="PET_MONTH_AVE";		break;}
 
-  	case F_PET:             {fstring="PET"; break;}
-  	case F_OW_PET:          {fstring="OW_PET"; break;}
-  	case F_PET_MONTH_AVE:   {fstring="PET_MONTH_AVE"; break;}
+    case F_POTENTIAL_MELT:  {fstring="POTENTIAL_MELT";		break;}
 
-    case F_POTENTIAL_MELT:  {fstring="POTENTIAL_MELT"; break;}
-
-    case F_SUBDAILY_CORR:   {fstring="SUBDAILY_CORR"; break;}
+    case F_SUBDAILY_CORR:   {fstring="SUBDAILY_CORR";		break;}
     default:
       break;
-  }
+    }
   return fstring;
 }

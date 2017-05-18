@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2014 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "TimeSeriesABC.h"
 
@@ -21,9 +21,9 @@ const double CTimeSeriesABC::BLANK_DATA=-1.2345;
 /// \param filename  [in] original source file 
 //
 CTimeSeriesABC::CTimeSeriesABC(ts_type type,
-	                           string    Name,
-							   string    tag,
-							   string    filename)
+	                       string  Name,
+			       string  tag,
+			       string  filename)
 {
   _type      =type;
   _name      =Name;

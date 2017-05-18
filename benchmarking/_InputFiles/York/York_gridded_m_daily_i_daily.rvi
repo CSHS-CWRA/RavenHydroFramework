@@ -1,0 +1,67 @@
+#########################################################################
+#:FileType rvi ASCII Raven 2.6
+#:WrittenBy         Robert Chlumsky
+#:CreationDate      May 2016
+#------------------------------------------------------------------------
+#
+#:RunName             run5
+:StartDate           2006-10-01 00:00:00    # calibration until 2012-09-30, first year as warm up
+:Duration            2192 #1461 #2192		
+:TimeStep            1.0
+:Method              ORDERED_SERIES
+
+:SoilModel           SOIL_MULTILAYER  3
+:Routing             ROUTE_HYDROLOGIC
+:CatchmentRoute      ROUTE_DUMP
+#:InterpolationMethod INTERP_INVERSE_DISTANCE
+#:InterpolationMethod 	INTERP_FROM_FILE CaPA_point_weight.txt
+:Evaporation         PET_HARGREAVES_1985
+:RainSnowFraction    RAINSNOW_DINGMAN
+:PotentialMeltMethod POTMELT_DEGREE_DAY
+:OroTempCorrect      OROCORR_SIMPLELAPSE
+:OroPrecipCorrect    OROCORR_SIMPLELAPSE
+:PrecipIceptFract    PRECIP_ICEPT_LAI
+
+:MonthlyInterpolationMethod MONTHINT_LINEAR_MID
+
+#------------------------------------------------------------------------
+# Soil Layer Alias Definitions
+#
+:Alias       SOIL0 SOIL[0]
+:Alias       SOIL1 SOIL[1]
+:Alias       SOIL2 SOIL[2]
+
+#------------------------------------------------------------------------
+# Hydrologic process order
+#
+:HydrologicProcesses
+	:Precipitation	 	PRECIP_RAVEN 			ATMOS_PRECIP	MULTIPLE
+	:CanopyEvaporation 	CANEVP_MAXIMUM			CANOPY			ATMOSPHERE
+	:CanopySnowEvap    	CANEVP_MAXIMUM 			CANOPY_SNOW		ATMOSPHERE
+	:SnowBalance       	SNOBAL_SIMPLE_MELT 		SNOW 			PONDED_WATER
+	:SnowRefreeze 		FREEZE_DEGREE_DAY 		SNOW_LIQ 		SNOW
+	:Abstraction       	ABST_FILL     			PONDED_WATER    DEPRESSION
+	:OpenWaterEvaporation OPEN_WATER_EVAP     	DEPRESSION    	ATMOSPHERE
+	:Infiltration      	INF_HBV            		PONDED_WATER	MULTIPLE
+	:Baseflow			BASE_POWER_LAW			SOIL1			SURFACE_WATER
+	:Baseflow			BASE_POWER_LAW			SOIL2			SURFACE_WATER
+	:Interflow			INTERFLOW_PRMS			SOIL0			SURFACE_WATER
+	:Percolation       	PERC_GAWSER     		SOIL0 			SOIL1
+	:Percolation       	PERC_GAWSER     		SOIL1			SOIL2
+	:SoilEvaporation    SOILEVAP_ROOT			SOIL0 			ATMOSPHERE
+:EndHydrologicProcesses
+#------------------------------------------------------------------------
+
+#---------------------------------------------------------
+# Output Options
+#
+# manual run settings
+#:NoisyMode
+:WriteForcingFunctions
+#:WriteMassBalanceFile
+:EvaluationMetrics NASH_SUTCLIFFE RMSE
+
+# calibration settings
+:SilentMode
+#:EvaluationMetrics RMSE
+
