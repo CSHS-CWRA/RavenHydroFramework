@@ -56,6 +56,7 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
   nP=0;
   aP[nP]="SAI_HT_RATIO";      aPC[nP]=CLASS_VEGETATION; nP++; //reasonable defaults
   aP[nP]="FOREST_SPARSENESS"; aPC[nP]=CLASS_LANDUSE; nP++; //reasonable defaults
+  aP[nP]="MAX_LAI";           aPC[nP]=CLASS_VEGETATION; nP++;//JRCFLAG
   if (canopy_exists)
   {
     aP[nP] = "MAX_CAPACITY";  aPC[nP] = CLASS_VEGETATION; nP++;

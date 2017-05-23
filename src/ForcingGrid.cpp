@@ -10,7 +10,7 @@
 #include "Forcings.h"
 #include <string.h>
 
-#ifdef _NETCDF_
+#ifdef _RVNETCDF_
 #include <netcdf.h>
 #endif
 
@@ -136,7 +136,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
 ///        or "CForcingGrid()".
 void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 {
-#ifdef _NETCDF_
+#ifdef _RVNETCDF_
   int    ncid;                  // file unit
   int    dimid_x;               // id of x dimension (columns)
   int    dimid_y;               // id of y dimension (rows)
@@ -553,7 +553,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
   // return
   bool new_chunk_read=false;  // true if new chunk was read, otherwise false
-#ifdef _NETCDF_  
+#ifdef _RVNETCDF_  
   // local variables
   int    ncid;          // file unit
   int    dim1;          // length of 1st dimension in NetCDF
@@ -1451,7 +1451,7 @@ int  CForcingGrid::GetChunkSize() const{return _ChunkSize;}
 //
 void    CForcingGrid::nc_error_exit(int error_code) const{
 
-#ifdef _NETCDF_
+#ifdef _RVNETCDF_
   printf("Error: %s\n", nc_strerror(error_code));
   ExitGracefullyIf(error_code,    
                    "CForcingGrid: NetCDF: NetCDF error occured",BAD_DATA);

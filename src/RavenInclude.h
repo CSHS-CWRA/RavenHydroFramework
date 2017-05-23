@@ -13,7 +13,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 // #define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
-// #define _NETCDF_ //Uncomment if netCDF library is available for compilation
+// #define _RVNETCDF_ //Uncomment if netCDF library is available for compilation
 
 #include <stdlib.h>
 #include <cstring>

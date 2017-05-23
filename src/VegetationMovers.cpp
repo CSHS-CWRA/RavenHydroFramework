@@ -55,13 +55,15 @@ void CmvCanopyEvap::GetParticipatingParamList(string  *aP , class_type *aPC , in
 {
   if (type==CANEVP_RUTTER)
     {
-      nP=2;
-      aP[0]="MAX_CAPACITY";    aPC[0]=CLASS_VEGETATION; 
-      aP[1]="TRUNK_FRACTION";  aPC[1]=CLASS_VEGETATION; 
+      nP=3;
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE;  //JRCFLAG
+      aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
+      aP[2]="TRUNK_FRACTION";  aPC[2]=CLASS_VEGETATION; 
     }
   else if (type==CANEVP_MAXIMUM)     
     {
-      nP=0;
+      nP=1;
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; //JRCFLAG
     } 
   else if (type==CANEVP_ALL)     
     {
@@ -216,7 +218,8 @@ void CmvCanopySnowEvap::GetParticipatingParamList(string  *aP , class_type *aPC 
     }
   else if (type==CANEVP_MAXIMUM)     
     {
-      nP=0;
+      nP=1;
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; //JRCFLAG
     } 
   else if (type==CANEVP_ALL)     
     {
@@ -350,15 +353,17 @@ void CmvCanopyDrip::GetParticipatingParamList(string  *aP , class_type *aPC , in
 {
   if (type==CANDRIP_RUTTER)
     {
-      nP=2;     
-      aP[0]="MAX_CAPACITY";    aPC[0]=CLASS_VEGETATION; 
-      aP[1]="STEMFLOW_FRAC";   aPC[1]=CLASS_VEGETATION;           
+      nP=3;     
+      aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; //JRCFLAG
+      aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
+      aP[2]="STEMFLOW_FRAC";   aPC[2]=CLASS_VEGETATION;           
     }
   else if (type==CANDRIP_SLOWDRAIN)     
     {
-      nP=2;
+      nP=3;
       aP[0]="DRIP_PROPORTION"; aPC[0]=CLASS_VEGETATION;    
       aP[1]="MAX_CAPACITY";    aPC[1]=CLASS_VEGETATION; 
+      aP[2]="FOREST_COVERAGE"; aPC[2]=CLASS_LANDUSE; //JRCFLAG
     } 
   else
     {

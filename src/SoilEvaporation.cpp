@@ -130,11 +130,12 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
   }	
   else if (type==SOILEVAP_HBV)
   {
-    nP=4;
+    nP=5;
     aP[0]="PET_CORRECTION";    aPC[0]=CLASS_SOIL;
     aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
     aP[2]="FIELD_CAPACITY";    aPC[2]=CLASS_SOIL;
     aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
+    aP[4]="FOREST_COVERAGE";   aPC[4]=CLASS_LANDUSE; //JRCFLAG
   }   
   else if (type==SOILEVAP_UBC)     
   {

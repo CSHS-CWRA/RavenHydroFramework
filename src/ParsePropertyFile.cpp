@@ -1755,7 +1755,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat) && (aP[ii]!="FOREST_COVERAGE")){
         TEMPLATE<<std::setw(sp) <<aP[ii]<<std::setw(1)<<", ";
       }
     }
@@ -1764,7 +1764,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat) && (aP[ii]!="FOREST_COVERAGE")){
         TEMPLATE<<std::setw(sp) <<"-"<<std::setw(1)<<", ";
       }
     }
@@ -1773,7 +1773,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE") ){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1782,7 +1782,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1791,7 +1791,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1822,7 +1822,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
         TEMPLATE<<std::setw(sp) <<aP[ii]<<std::setw(1)<<", ";
       }
     }
@@ -1831,7 +1831,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
         TEMPLATE<<std::setw(sp) <<"-"<<std::setw(1)<<", ";
       }
     }
@@ -1840,7 +1840,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1849,7 +1849,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1858,7 +1858,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat)){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }

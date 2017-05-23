@@ -9,7 +9,7 @@
 #include "ParseLib.h"
 #include "Forcings.h"
 
-#ifdef _NETCDF_
+#ifdef _RVNETCDF_
 #include <netcdf.h>
 #endif
 

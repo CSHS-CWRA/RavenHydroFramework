@@ -963,7 +963,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 		   */
 		    if (Options.noisy){cout <<":GriddedForcings"<<endl;}
 
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
         
@@ -987,7 +987,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       case (401)://----------------------------------------------
 		  {/*:ForcingType [forcing type, e.g., PRECIP] */
 		    if (Options.noisy){cout <<"   :ForcingType"<<endl;}
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
 	    
@@ -1005,7 +1005,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       case (402)://----------------------------------------------
 		  {/*:FileNameNC  [filename] */
 		    if (Options.noisy){cout <<"   :FileNameNC"<<endl;}
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
 
@@ -1030,7 +1030,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       case (403)://----------------------------------------------
 		  {/*:VarNameNC   [name of :ForcingType variable in NetCDF file] */
 		    if (Options.noisy){cout <<"   :VarNameNC"<<endl;}
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
 
@@ -1048,7 +1048,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       case (404)://----------------------------------------------
 		  {/*:DimNamesNC  [longitude netCDF alias] [latitude netCDF alias] [time netCDF alias]*/
 		    if (Options.noisy){cout <<"   :DimNamesNC"<<endl;}
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
 
@@ -1087,7 +1087,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 			     2       3       0.6
 			     3       5       1.0
 		     :EndGridWeights*/
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
 		    ExitGracefullyIf(pGrid==NULL,
@@ -1164,7 +1164,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       case (406)://----------------------------------------------
 		  {/*:EndGriddedForcing*/
 		    if (Options.noisy){cout <<":EndGriddedForcing"<<endl;}
-#ifndef _NETCDF_
+#ifndef _RVNETCDF_
 		    ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
 		    pModel->AddForcingGrid(pGrid);

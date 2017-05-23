@@ -804,6 +804,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   nP=0;
 
   //Just assume needed:
+  aP[nP]="FOREST_COVERAGE";   aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
   aP[nP]="POROSITY";          aPC[nP]=CLASS_SOIL;    nP++;
 
   // Interpolation Method parameters
@@ -892,6 +893,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   {
 	aP[nP]="MAX_HEIGHT";    aPC[nP]=CLASS_VEGETATION; nP++;
 	aP[nP]="RELATIVE_HT";   aPC[nP]=CLASS_VEGETATION; nP++;
+  aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; //JRCFLAG
 	aP[nP]="RELATIVE_LAI";  aPC[nP]=CLASS_VEGETATION; nP++;
 	aP[nP]="MAX_LEAF_COND"; aPC[nP]=CLASS_VEGETATION; nP++;
 	aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;
@@ -947,6 +949,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   {
 	  aP[nP]="MAX_HEIGHT";    aPC[nP]=CLASS_VEGETATION; nP++;
 	  aP[nP]="RELATIVE_HT";   aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; //JRCFLAG
 	  aP[nP]="RELATIVE_LAI";  aPC[nP]=CLASS_VEGETATION; nP++;
 	  aP[nP]="MAX_LEAF_COND"; aPC[nP]=CLASS_VEGETATION; nP++;
 	  aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;\
@@ -1094,6 +1097,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     aP[nP]="UBC_A0PPTP" ;       aPC[nP]=CLASS_GLOBAL; nP++; 
     aP[nP]="MAX_INTERCEPT_RATE";aPC[nP]=CLASS_VEGETATION; nP++; 
     aP[nP]="RAIN_ICEPT_PCT";    aPC[nP]=CLASS_VEGETATION; nP++; 
+    aP[nP]="FOREST_COVERAGE";   aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
     aP[nP]="UBC_ICEPT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++; 
   }
   else if (Options.orocorr_precip==OROCORR_SIMPLELAPSE)
@@ -1155,6 +1159,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if (Options.pot_melt==POTMELT_UBCWM)
   {
+    aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
     aP[nP]="UBC_MIN_SNOW_ALBEDO"; aPC[nP]=CLASS_GLOBAL; nP++;
 	  aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
 	  aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
@@ -1186,6 +1191,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if (Options.wind_velocity==WINDVEL_UBCWM)
   {
+    aP[nP]="FOREST_COVERAGE"; aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
 	  aP[nP]="UBC_P0TEDL"; aPC[nP]=CLASS_GLOBAL; nP++;
 	  aP[nP]="UBC_P0TEDU"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_MAX_RANGE_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;
