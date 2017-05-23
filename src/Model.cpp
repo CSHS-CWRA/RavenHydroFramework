@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-  ----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+----------------------------------------------------------------*/
 #include "Model.h"
 
 /*****************************************************************
@@ -44,7 +44,7 @@ CModel::CModel(const soil_model SM,
   _pOptStruct = &Options;
 
   ExitGracefullyIf(nsoillayers<1,
-		   "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);
+    "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);
 
   //Initialize Lookup table for state variable indices
   for (int i=0;i<MAX_STATE_VARS;i++){
@@ -76,6 +76,7 @@ CModel::CModel(const soil_model SM,
     count++;
   }
   _lake_sv=0; //by default, rain on lake goes direct to surface storage [0]
+  
 
   CHydroProcessABC::SetModel(this);
 
@@ -120,7 +121,7 @@ CModel::~CModel()
   if (_pModeledTS != NULL){
     for (i = 0; i < _nObservedTS; i++){ delete _pModeledTS[i]; } delete[] _pModeledTS;    _pModeledTS = NULL;
   }
-  for (i=0;i<_nObsWeightTS;  i++){delete _pObsWeightTS  [i];} delete [] _pObsWeightTS;  _pObsWeightTS=NULL;
+	for (i=0;i<_nObsWeightTS;  i++){delete _pObsWeightTS  [i];} delete [] _pObsWeightTS;  _pObsWeightTS=NULL;
   for (j=0;j<_nDiagnostics;  j++){delete _pDiagnostics  [j];} delete [] _pDiagnostics;  _pDiagnostics=NULL;
 
   if (_aCumulativeBal!=NULL){
@@ -349,9 +350,9 @@ bool              CModel::IsInHRUGroup(const int k, const string HRUGroupName) c
 
   int kk = pGrp->GetGlobalIndex();
   for (int k_loc=0; k_loc<_pHRUGroups[kk]->GetNumHRUs(); k_loc++)
-    {
-      if (_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex()==k){return true;}
-    }
+  {
+    if (_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex()==k){return true;}
+  }
   return false;
 }
 
@@ -480,7 +481,7 @@ int         CModel::GetStateVarIndex(sv_type type, int layer) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((layer!=DOESNT_EXIST) && ((layer<0) || (layer>=MAX_SV_LAYERS)),
-		   "CModel GetStateVarIndex::improper layer",BAD_DATA);
+    "CModel GetStateVarIndex::improper layer",BAD_DATA);
 #endif
   if (layer==DOESNT_EXIST){return _aStateVarIndices[(int)(type)][0];    }
   else                    {return _aStateVarIndices[(int)(type)][layer];}
@@ -568,23 +569,23 @@ double CModel::GetFlux(const int k, const int iFrom_test, const int iTo_test, co
   //much more effective to store aFlowBal as aFlowRate[k][iFrom][iTo]?
   if (iFrom_test==iTo_test){return 0.0;}
   for (j=0;j<_nProcesses;j++)
+  {
+    iTo  =_pProcesses[j]->GetToIndices();
+    iFrom=_pProcesses[j]->GetFromIndices();
+    nConnections=_pProcesses[j]->GetNumConnections();
+    for (q=0;q<nConnections;q++)
     {
-      iTo  =_pProcesses[j]->GetToIndices();
-      iFrom=_pProcesses[j]->GetFromIndices();
-      nConnections=_pProcesses[j]->GetNumConnections();
-      for (q=0;q<nConnections;q++)
-	{
-	  if ((iTo_test==iTo[q]) && (iFrom_test==iFrom[q]))
-	    {
-	      flow+=_aFlowBal[k][js]/Options.timestep;
-	    }
-	  if ((iTo_test==iFrom[q]) && (iFrom_test==iTo[q]))
-	    {
-	      flow-=_aFlowBal[k][js]/Options.timestep;
-	    }
-	  js++;
-	}//end for q=0 to nConnections
-    }//end for j=0 to nProcesses
+      if ((iTo_test==iTo[q]) && (iFrom_test==iFrom[q]))
+      {
+        flow+=_aFlowBal[k][js]/Options.timestep;
+      }
+      if ((iTo_test==iFrom[q]) && (iFrom_test==iTo[q]))
+      {
+        flow-=_aFlowBal[k][js]/Options.timestep;
+      }
+      js++;
+    }//end for q=0 to nConnections
+  }//end for j=0 to nProcesses
 
   return flow;
 }
@@ -622,14 +623,14 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
   int js=0;
   double sum=0;
   for (int j = 0; j < _nProcesses; j++)
+  {
+    for (int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
     {
-      for (int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
-	{
-	  if ((to)  && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js];}
-	  if ((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js];}
-	  js++;
-	}
+      if ((to)  && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js];}
+      if ((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js];}
+      js++;
     }
+  }
   return sum;
 }
 
@@ -647,9 +648,9 @@ double CModel::GetAveragePrecip() const
 {
   double sum(0);
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
-    } 
+  {
+    sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
+  } 
   return sum/_WatershedArea; 
 }
 
@@ -663,10 +664,10 @@ double CModel::GetAverageSnowfall() const
   double sum(0);
   const force_struct *f;
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      f=_pHydroUnits[k]->GetForcingFunctions();
-      sum+=(f->precip*f->snow_frac)*_pHydroUnits[k]->GetArea();
-    } 
+  {
+    f=_pHydroUnits[k]->GetForcingFunctions();
+    sum+=(f->precip*f->snow_frac)*_pHydroUnits[k]->GetArea();
+  } 
   return sum/_WatershedArea; 
 }
 
@@ -683,59 +684,59 @@ force_struct CModel::GetAverageForcings() const
   ZeroOutForcings(Fave);
 
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      pF_hru =_pHydroUnits[k]->GetForcingFunctions();
-      area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
+  {
+    pF_hru =_pHydroUnits[k]->GetForcingFunctions();
+    area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
 
-      Fave.precip					+=area_wt*pF_hru->precip;
-      Fave.precip_daily_ave+= area_wt*pF_hru->precip_daily_ave;
-      Fave.precip_5day		+=area_wt*pF_hru->precip_5day;
-      Fave.snow_frac			+=area_wt*pF_hru->snow_frac;   
+    Fave.precip					+=area_wt*pF_hru->precip;
+    Fave.precip_daily_ave+= area_wt*pF_hru->precip_daily_ave;
+    Fave.precip_5day		+=area_wt*pF_hru->precip_5day;
+    Fave.snow_frac			+=area_wt*pF_hru->snow_frac;   
 
-      Fave.temp_ave				+=area_wt*pF_hru->temp_ave;			
-      Fave.temp_daily_min	+=area_wt*pF_hru->temp_daily_min;		
-      Fave.temp_daily_max	+=area_wt*pF_hru->temp_daily_max;			
-      Fave.temp_daily_ave	+=area_wt*pF_hru->temp_daily_ave;
-      Fave.temp_month_max	+=area_wt*pF_hru->temp_month_max;
-      Fave.temp_month_min	+=area_wt*pF_hru->temp_month_min;
-      Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
+    Fave.temp_ave				+=area_wt*pF_hru->temp_ave;			
+    Fave.temp_daily_min	+=area_wt*pF_hru->temp_daily_min;		
+    Fave.temp_daily_max	+=area_wt*pF_hru->temp_daily_max;			
+    Fave.temp_daily_ave	+=area_wt*pF_hru->temp_daily_ave;
+    Fave.temp_month_max	+=area_wt*pF_hru->temp_month_max;
+    Fave.temp_month_min	+=area_wt*pF_hru->temp_month_min;
+    Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
 
-      Fave.temp_ave_unc  	+=area_wt*pF_hru->temp_ave_unc;		
-      Fave.temp_min_unc	  +=area_wt*pF_hru->temp_min_unc;			
-      Fave.temp_max_unc	  +=area_wt*pF_hru->temp_max_unc;
+    Fave.temp_ave_unc  	+=area_wt*pF_hru->temp_ave_unc;		
+    Fave.temp_min_unc	  +=area_wt*pF_hru->temp_min_unc;			
+    Fave.temp_max_unc	  +=area_wt*pF_hru->temp_max_unc;
 
-      Fave.air_dens				+=area_wt*pF_hru->air_dens;      
-      Fave.air_pres				+=area_wt*pF_hru->air_pres;      
-      Fave.rel_humidity	  +=area_wt*pF_hru->rel_humidity;      
+    Fave.air_dens				+=area_wt*pF_hru->air_dens;      
+    Fave.air_pres				+=area_wt*pF_hru->air_pres;      
+    Fave.rel_humidity	  +=area_wt*pF_hru->rel_humidity;      
     
-      Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
-      Fave.ET_radia       +=area_wt*pF_hru->ET_radia;    
-      Fave.SW_radia				+=area_wt*pF_hru->SW_radia;   
-      Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
-      Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
-      Fave.LW_radia				+=area_wt*pF_hru->LW_radia;      
-      Fave.day_length			+=area_wt*pF_hru->day_length;    
-      Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc. 
+    Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
+    Fave.ET_radia       +=area_wt*pF_hru->ET_radia;    
+    Fave.SW_radia				+=area_wt*pF_hru->SW_radia;   
+    Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
+    Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
+    Fave.LW_radia				+=area_wt*pF_hru->LW_radia;      
+    Fave.day_length			+=area_wt*pF_hru->day_length;    
+    Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc. 
 
-      Fave.wind_vel				+=area_wt*pF_hru->wind_vel;      
+    Fave.wind_vel				+=area_wt*pF_hru->wind_vel;      
 
-      Fave.PET						+=area_wt*pF_hru->PET;           
-      Fave.OW_PET					+=area_wt*pF_hru->OW_PET; 
-      Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave; 
+    Fave.PET						+=area_wt*pF_hru->PET;           
+    Fave.OW_PET					+=area_wt*pF_hru->OW_PET; 
+    Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave; 
 
-      Fave.potential_melt +=area_wt*pF_hru->potential_melt;
+    Fave.potential_melt +=area_wt*pF_hru->potential_melt;
 
-      Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr; 
-    }
+    Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr; 
+  }
   return Fave;
 
   /*LATER?:
-    double sum(0);
-    int f=GetForcingIndex(force);
-    for (int k=0;k<_nHydroUnits;k++)
-    {
+  double sum(0);
+  int f=GetForcingIndex(force);
+  for (int k=0;k<_nHydroUnits;k++)
+  {
     sum+=_pHydroUnits[k]->GetForcingFunction(f)*_pHydroUnits[k]->GetArea();
-    }
+  }
     sum/=watershed_area;*/
 }
 
@@ -753,9 +754,9 @@ double CModel::GetAvgStateVar(const int i) const
 #endif
   double sum(0.0);
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      sum+=(_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea()); 
-    }
+  {
+    sum+=(_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea()); 
+  }
   return sum/_WatershedArea;
 }
 
@@ -770,9 +771,9 @@ double CModel::GetAvgForcing (const string &forcing_string) const
   //Area-weighted average
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
-    }
+  {
+    sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+  }
   return sum/_WatershedArea;
 }
 //////////////////////////////////////////////////////////////////
@@ -787,9 +788,9 @@ double CModel::GetAvgCumulFlux (const int i, const bool to) const
   //Area-weighted average
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      sum    +=this->GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
-    }
+  {
+    sum    +=this->GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+  }
   return sum/_WatershedArea;
 }
 //////////////////////////////////////////////////////////////////
@@ -801,9 +802,9 @@ double CModel::GetTotalChannelStorage() const
   double sum(0);
   
   for (int p=0;p<_nSubBasins;p++)
-    {
-      sum+=_pSubBasins[p]->GetChannelStorage();		 //[m3] 
-    }
+  {
+    sum+=_pSubBasins[p]->GetChannelStorage();		 //[m3] 
+  }
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
 //////////////////////////////////////////////////////////////////
@@ -829,9 +830,9 @@ double CModel::GetTotalRivuletStorage() const
   double sum(0);
   
   for (int p=0;p<_nSubBasins;p++)
-    {
-      sum+=_pSubBasins[p]->GetRivuletStorage();//[m3]
-    }
+  {
+    sum+=_pSubBasins[p]->GetRivuletStorage();//[m3]
+  }
   
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
@@ -855,7 +856,7 @@ CTransportModel  *CModel::GetTransportModel() const{return _pTransModel;}
 void CModel::AddHRU(CHydroUnit *pHRU)
 {
   if (!DynArrayAppend((void**&)(_pHydroUnits),(void*)(pHRU),_nHydroUnits)){
-    ExitGracefully("CModel::AddHRU: adding NULL HRU",BAD_DATA);} 
+   ExitGracefully("CModel::AddHRU: adding NULL HRU",BAD_DATA);} 
 }   
 
 //////////////////////////////////////////////////////////////////
@@ -866,7 +867,7 @@ void CModel::AddHRU(CHydroUnit *pHRU)
 void CModel::AddHRUGroup(CHRUGroup *pHRUGroup)
 {
   if (!DynArrayAppend((void**&)(_pHRUGroups),(void*)(pHRUGroup),_nHRUGroups)){
-    ExitGracefully("CModel::AddHRUGroup: adding NULL HRU Group",BAD_DATA);} 
+   ExitGracefully("CModel::AddHRUGroup: adding NULL HRU Group",BAD_DATA);} 
 }   
 
 //////////////////////////////////////////////////////////////////
@@ -877,7 +878,7 @@ void CModel::AddHRUGroup(CHRUGroup *pHRUGroup)
 void CModel::AddSubBasin(CSubBasin *pSB)
 {
   if (!DynArrayAppend((void**&)(_pSubBasins),(void*)(pSB),_nSubBasins)){
-    ExitGracefully("CModel::AddSubBasin: adding NULL HRU",BAD_DATA);}  
+   ExitGracefully("CModel::AddSubBasin: adding NULL HRU",BAD_DATA);}  
 }
 
 //////////////////////////////////////////////////////////////////
@@ -888,7 +889,7 @@ void CModel::AddSubBasin(CSubBasin *pSB)
 void CModel::AddGauge  (CGauge *pGage)
 {
   if (!DynArrayAppend((void**&)(_pGauges),(void*)(pGage),_nGauges)){
-    ExitGracefully("CModel::AddGauge: adding NULL Gauge",BAD_DATA);} 
+   ExitGracefully("CModel::AddGauge: adding NULL Gauge",BAD_DATA);} 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -910,7 +911,7 @@ void CModel::AddForcingGrid  (CForcingGrid *pGrid)
 void CModel::AddTransientParameter(CTransientParam   *pTP)
 {
   if (!DynArrayAppend((void**&)(_pTransParams),(void*)(pTP),_nTransParams)){
-    ExitGracefully("CModel::AddTransientParameter: adding NULL transient parameter",BAD_DATA);} 
+   ExitGracefully("CModel::AddTransientParameter: adding NULL transient parameter",BAD_DATA);} 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds class change to model
@@ -927,9 +928,9 @@ void CModel::AddPropertyClassChange(const string HRUgroup,
   pCC->HRU_groupID=DOESNT_EXIST;
   for (int kk = 0; kk < _nHRUGroups; kk++){
     if (!strcmp(_pHRUGroups[kk]->GetName().c_str(), HRUgroup.c_str()))
-      {
-	pCC->HRU_groupID=kk;
-      }
+    {
+      pCC->HRU_groupID=kk;
+    }
   }
   if (pCC->HRU_groupID == DOESNT_EXIST){
     string warning = "CModel::AddPropertyClassChange: invalid HRU Group name: " + HRUgroup+ ". HRU group names should be defined in .rvi file using :DefineHRUGroups command. "; 
@@ -961,7 +962,7 @@ void CModel::AddPropertyClassChange(const string HRUgroup,
 
   //cout << "PROPERTY CLASS CHANGE " << pCC->HRU_groupID << " " << pCC->tclass << " "<<pCC->modeltime<<endl;
   if (!DynArrayAppend((void**&)(_pClassChanges),(void*)(pCC),_nClassChanges)){
-    ExitGracefully("CModel::AddPropertyClassChange: adding NULL property class change",BAD_DATA);} 
+   ExitGracefully("CModel::AddPropertyClassChange: adding NULL property class change",BAD_DATA);} 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds observed time series to model
@@ -971,7 +972,7 @@ void CModel::AddPropertyClassChange(const string HRUgroup,
 void              CModel::AddObservedTimeSeries(CTimeSeriesABC *pTS)
 {
   if (!DynArrayAppend((void**&)(_pObservedTS),(void*)(pTS),_nObservedTS)){
-    ExitGracefully("CModel::AddObservedTimeSeries: adding NULL observation time series",BAD_DATA);} 
+   ExitGracefully("CModel::AddObservedTimeSeries: adding NULL observation time series",BAD_DATA);} 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds observation weighting time series to model
@@ -981,7 +982,7 @@ void              CModel::AddObservedTimeSeries(CTimeSeriesABC *pTS)
 void              CModel::AddObservedWeightsTS(CTimeSeriesABC   *pTS)
 {
   if (!DynArrayAppend((void**&)(_pObsWeightTS),(void*)(pTS),_nObsWeightTS)){
-    ExitGracefully("CModel::AddObservedWeightsTS: adding NULL observed weights time series",BAD_DATA);} 
+   ExitGracefully("CModel::AddObservedWeightsTS: adding NULL observed weights time series",BAD_DATA);} 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds diagnostic to model
@@ -991,7 +992,7 @@ void              CModel::AddObservedWeightsTS(CTimeSeriesABC   *pTS)
 void              CModel::AddDiagnostic        (CDiagnostic       *pDiag)
 {
   if (!DynArrayAppend((void**&)(_pDiagnostics),(void*)(pDiag),_nDiagnostics)){
-    ExitGracefully("CModel::AddDiagnostic: adding NULL diagnostic",BAD_DATA);} 
+   ExitGracefully("CModel::AddDiagnostic: adding NULL diagnostic",BAD_DATA);} 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1003,11 +1004,11 @@ void              CModel::AddDiagnostic        (CDiagnostic       *pDiag)
 void  CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &Options)
 {
 
-  //local time
-  double t_loc = TimeDifference(tt_out.julian_day,tt_out.year,Options.julian_start_day,Options.julian_start_year);
+	//local time
+	double t_loc = TimeDifference(tt_out.julian_day,tt_out.year,Options.julian_start_day,Options.julian_start_year);
 	
   ExitGracefullyIf(t_loc<0,
-		   "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);
+    "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);
   if (t_loc>Options.duration){
     WriteWarning("AddModelOutputTime: model output time specified after end of simulation. It will be ignored",Options.noisy);
   }
@@ -1034,14 +1035,14 @@ void CModel::AddProcess(CHydroProcessABC *pHydroProc)
 {
   ExitGracefullyIf(pHydroProc==NULL                 ,"CModel AddProcess::NULL process"  ,BAD_DATA);
   for (int q=0;q<pHydroProc->GetNumConnections();q++)
-    {
-      int i=pHydroProc->GetFromIndices()[q];
-      int j=pHydroProc->GetToIndices  ()[q];
-      ExitGracefullyIf((i<0) && (i>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
-      ExitGracefullyIf((j<0) && (j>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
-    }
+  {
+    int i=pHydroProc->GetFromIndices()[q];
+    int j=pHydroProc->GetToIndices  ()[q];
+    ExitGracefullyIf((i<0) && (i>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
+    ExitGracefullyIf((j<0) && (j>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
+  }
   if (!DynArrayAppend((void**&)(_pProcesses),(void*)(pHydroProc),_nProcesses)){
-    ExitGracefully("CModel::AddProcess: adding NULL hydrological process",BAD_DATA);}
+   ExitGracefully("CModel::AddProcess: adding NULL hydrological process",BAD_DATA);}
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1062,44 +1063,44 @@ void  CModel::AddStateVariables( const sv_type *aSV,
   int i,ii;
   bool found;
   for (ii=0;ii<nSV;ii++)
-    {
-      found=false;
-      for (i=0;i<_nStateVars;i++){
-	if ((_aStateVarType [i]==aSV [ii]) &&
-	    (_aStateVarLayer[i]==aLev[ii])){found=true;}
-      }
-      //found=(_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]!=DOESNT_EXIST);
-      if (!found)
-	{
-	  sv_type *tmpSV=new sv_type[_nStateVars+1];
-	  int     *tmpLy=NULL;
-	  tmpLy=new int    [_nStateVars+1];
-	  ExitGracefullyIf(tmpLy==NULL,"CModel::AddStateVariables",OUT_OF_MEMORY);
-	  for (i=0;i<_nStateVars;i++)//copy old arrays
-	    {
-	      tmpSV[i]=_aStateVarType  [i];
-	      tmpLy[i]=_aStateVarLayer [i];
-	    }
-	  //set values of new array items
-	  tmpSV[_nStateVars]=aSV[ii];
-	  tmpLy[_nStateVars]=aLev[ii];
-	  //add index to state variable lookup table
-	  ExitGracefullyIf((int)(aSV[ii])>MAX_STATE_VARS,
-			   "CModel::AddStateVariables: bad type specified",RUNTIME_ERR);
-	  ExitGracefullyIf((aLev[ii]<-1) || (aLev[ii]>=MAX_SV_LAYERS),
-			   "CModel::AddStateVariables: bad layer index specified",RUNTIME_ERR);
-	  if (aLev[ii]==DOESNT_EXIST){_aStateVarIndices[(int)(aSV[ii])][0       ]=_nStateVars;}
-	  else                       {_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]=_nStateVars;}
-	  //delete & replace old arrays
-	  delete [] _aStateVarType;  _aStateVarType=NULL;
-	  delete [] _aStateVarLayer; _aStateVarLayer=NULL;
-	  _aStateVarType =tmpSV;
-	  _aStateVarLayer=tmpLy;
-	  _nStateVars++;
-	  ExitGracefullyIf(_nStateVars>MAX_STATE_VARS,
-			   "CModel::AddStateVariables: exceeded maximum number of state variables in model",RUNTIME_ERR);
-	}  
+  {
+    found=false;
+    for (i=0;i<_nStateVars;i++){
+      if ((_aStateVarType [i]==aSV [ii]) &&
+          (_aStateVarLayer[i]==aLev[ii])){found=true;}
     }
+    //found=(_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]!=DOESNT_EXIST);
+    if (!found)
+    {
+      sv_type *tmpSV=new sv_type[_nStateVars+1];
+      int     *tmpLy=NULL;
+               tmpLy=new int    [_nStateVars+1];
+      ExitGracefullyIf(tmpLy==NULL,"CModel::AddStateVariables",OUT_OF_MEMORY);
+      for (i=0;i<_nStateVars;i++)//copy old arrays
+      {
+        tmpSV[i]=_aStateVarType  [i];
+        tmpLy[i]=_aStateVarLayer [i];
+      }
+      //set values of new array items
+      tmpSV[_nStateVars]=aSV[ii];
+      tmpLy[_nStateVars]=aLev[ii];
+      //add index to state variable lookup table
+      ExitGracefullyIf((int)(aSV[ii])>MAX_STATE_VARS,
+        "CModel::AddStateVariables: bad type specified",RUNTIME_ERR);
+      ExitGracefullyIf((aLev[ii]<-1) || (aLev[ii]>=MAX_SV_LAYERS),
+        "CModel::AddStateVariables: bad layer index specified",RUNTIME_ERR);
+      if (aLev[ii]==DOESNT_EXIST){_aStateVarIndices[(int)(aSV[ii])][0       ]=_nStateVars;}
+      else                       {_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]=_nStateVars;}
+      //delete & replace old arrays
+      delete [] _aStateVarType;  _aStateVarType=NULL;
+      delete [] _aStateVarLayer; _aStateVarLayer=NULL;
+      _aStateVarType =tmpSV;
+      _aStateVarLayer=tmpLy;
+      _nStateVars++;
+      ExitGracefullyIf(_nStateVars>MAX_STATE_VARS,
+        "CModel::AddStateVariables: exceeded maximum number of state variables in model",RUNTIME_ERR);
+    }  
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds aquifer state variables during model construction
@@ -1113,10 +1114,10 @@ void CModel::AddAquiferStateVars(const int nLayers)
   sv_type *aSV =new sv_type [_nAquiferLayers];
   int     *aLev=new int       [_nAquiferLayers];
   for (int i=0;i<_nAquiferLayers;i++)
-    {
-      aSV [i]=GROUNDWATER;
-      aLev[i]=i;
-    }
+  {
+    aSV [i]=GROUNDWATER;
+    aLev[i]=i;
+  }
   AddStateVariables(aSV,aLev,_nAquiferLayers);
   delete [] aSV;
   delete [] aLev;
@@ -1136,7 +1137,7 @@ void CModel::SetLakeStorage   (const sv_type      lak_sv, const int lev)
 {
   _lake_sv=GetStateVarIndex(lak_sv,lev);
   ExitGracefullyIf(_lake_sv==DOESNT_EXIST,
-		   "CModel::SetLakeStorage: non-existent state variable",BAD_DATA);
+    "CModel::SetLakeStorage: non-existent state variable",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1150,7 +1151,7 @@ void CModel::SetAggregatedVariable(const sv_type SV, const int lev, const string
 {
   int i=GetStateVarIndex(SV,lev);
   ExitGracefullyIf(i==DOESNT_EXIST,
-		   "CModel::SetAggregatedVariable: non-existent state variable",BAD_DATA);
+    "CModel::SetAggregatedVariable: non-existent state variable",BAD_DATA);
   for (int kk=0;kk<_nHRUGroups;kk++){
     if (!_pHRUGroups[kk]->GetName().compare(group_name)){_pHRUGroups[kk]->SetAsAggregator(i);}
   }
@@ -1163,8 +1164,8 @@ void CModel::SetAggregatedVariable(const sv_type SV, const int lev, const string
 //
 void CModel::AddCustomOutput(CCustomOutput *pCO)
 {
-  if (!DynArrayAppend((void**&)(_pCustomOutputs),(void*)(pCO),_nCustomOutputs)){
-    ExitGracefully("CModel::AddCustomOutput: adding NULL custom output",BAD_DATA);} 
+   if (!DynArrayAppend((void**&)(_pCustomOutputs),(void*)(pCO),_nCustomOutputs)){
+   ExitGracefully("CModel::AddCustomOutput: adding NULL custom output",BAD_DATA);} 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1182,7 +1183,7 @@ void CModel::SetOutputGroup(const CHRUGroup *pOut){_pOutputGroup=pOut;}
 void  CModel::SetNumSnowLayers     (const int          nLayers)
 {
   ExitGracefullyIf(nLayers<0,
-		   "CModel::SetNumSnowLayers: cannot set negative number of snow layers",BAD_DATA); 
+    "CModel::SetNumSnowLayers: cannot set negative number of snow layers",BAD_DATA); 
   sv_type *aSV=new sv_type [nLayers];
   int     *aLev=new int [nLayers];
   for (int m=0;m<nLayers;m++){
@@ -1312,13 +1313,13 @@ void CModel::Initialize(const optStruct &Options)
   // Quality control 
   //-------------------------------------------------------------- 
   ExitGracefullyIf(_nSubBasins<1,
-		   "CModel::Initialize: Must have at least one SubBasin",BAD_DATA);
+    "CModel::Initialize: Must have at least one SubBasin",BAD_DATA);
   ExitGracefullyIf(_nHydroUnits<1,
-		   "CModel::Initialize: Must have at least one hydrologic unit",BAD_DATA);
+    "CModel::Initialize: Must have at least one hydrologic unit",BAD_DATA);
   ExitGracefullyIf(_nGauges<1 && _nForcingGrids<1,
-		   "CModel::Initialize: Must have at least one meteorological gauge station",BAD_DATA);
+	  "CModel::Initialize: Must have at least one meteorological gauge station or forcing grid",BAD_DATA);
   ExitGracefullyIf(_nProcesses==0,
-		   "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
+    "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
 
   //Ensure Basins & HRU IDs are unique
   for (p=0;p<_nSubBasins;p++){
@@ -1342,16 +1343,16 @@ void CModel::Initialize(const optStruct &Options)
   _aCumulativeBal = new double * [_nHydroUnits];
   _aFlowBal       = new double * [_nHydroUnits];
   for (k=0; k<_nHydroUnits;k++)
-    {
-      _aCumulativeBal[k]= NULL;
-      _aCumulativeBal[k]= new double [_nTotalConnections];
-      ExitGracefullyIf(_aCumulativeBal[k]==NULL,"CModel::Initialize (aCumulativeBal)",OUT_OF_MEMORY);
-      for (int js=0;js<_nTotalConnections;js++){_aCumulativeBal[k][js]=0.0;}
-      _aFlowBal[k]= NULL;
-      _aFlowBal[k]= new double [_nTotalConnections];
-      ExitGracefullyIf(_aFlowBal[k]==NULL,"CModel::Initialize (aFlowBal)",OUT_OF_MEMORY);
-      for (int js=0;js<_nTotalConnections;js++){_aFlowBal[k][js]=0.0;}
-    }
+  {
+    _aCumulativeBal[k]= NULL;
+    _aCumulativeBal[k]= new double [_nTotalConnections];
+    ExitGracefullyIf(_aCumulativeBal[k]==NULL,"CModel::Initialize (aCumulativeBal)",OUT_OF_MEMORY);
+    for (int js=0;js<_nTotalConnections;js++){_aCumulativeBal[k][js]=0.0;}
+    _aFlowBal[k]= NULL;
+    _aFlowBal[k]= new double [_nTotalConnections];
+    ExitGracefullyIf(_aFlowBal[k]==NULL,"CModel::Initialize (aFlowBal)",OUT_OF_MEMORY);
+    for (int js=0;js<_nTotalConnections;js++){_aFlowBal[k][js]=0.0;}
+  }
   _CumulInput	  =_CumulOutput  =0.0;
   _CumEnergyGain=_CumEnergyLoss=0.0;
 
@@ -1360,19 +1361,19 @@ void CModel::Initialize(const optStruct &Options)
   double cen_long(0),area_tot(0);//longiturde of area-weighted watershed centroid, total wshed area 
   CHydroUnit *pHRU;
   for (k=0; k<_nHydroUnits;k++)
-    {
-      pHRU=_pHydroUnits[k];
-      area_tot+=pHRU->GetArea();
-      cen_long+=pHRU->GetCentroid().longitude/_nHydroUnits*(pHRU->GetArea());
-    }
+  {
+    pHRU=_pHydroUnits[k];
+    area_tot+=pHRU->GetArea();
+    cen_long+=pHRU->GetCentroid().longitude/_nHydroUnits*(pHRU->GetArea());
+  }
   cen_long/=area_tot;
   _UTM_zone =(int)(floor ((cen_long + 180.0) / 6) + 1);
   
   //Initialize HRUs, gauges and transient parameters
   //--------------------------------------------------------------
-  for (k=0;k<_nHydroUnits;  k++){_pHydroUnits [k]->Initialize(_UTM_zone);}
-  for (g=0;g<_nGauges;      g++){_pGauges     [g]->Initialize(Options,_UTM_zone);}
-  for (j=0;j<_nTransParams; j++){_pTransParams[j]->Initialize(Options);}
+  for (k=0;k<_nHydroUnits; k++){_pHydroUnits [k]->Initialize(_UTM_zone);}
+  for (g=0;g<_nGauges;     g++){_pGauges     [g]->Initialize(Options,_UTM_zone);}
+  for (j=0;j<_nTransParams;j++){_pTransParams[j]->Initialize(Options);}
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
   //Generate Gauge Weights from Interpolation
@@ -1398,12 +1399,12 @@ void CModel::Initialize(const optStruct &Options)
   _initWater=0.0;
   double S=0;
   for (i=0;i<_nStateVars;i++)
-    {
-      if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
+  {
+    if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
         S=GetAvgStateVar(i);
         _initWater+=S;
-      }  
-    }
+    }  
+  }
   _initWater+=GetTotalChannelStorage();
   _initWater+=GetTotalReservoirStorage();
   _initWater+=GetTotalRivuletStorage();
@@ -1427,11 +1428,11 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   _aShouldApplyProcess = new bool *[_nProcesses];
   for (int j=0; j<_nProcesses;j++){
-    _aShouldApplyProcess[j]=NULL;
-    _aShouldApplyProcess[j] = new bool [_nHydroUnits];
-    ExitGracefullyIf(_aShouldApplyProcess[j]==NULL,"CModel::Initialize (_aShouldApplyProcess)",OUT_OF_MEMORY);
-    for (k=0; k<_nHydroUnits;k++){
-      _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
+	  _aShouldApplyProcess[j]=NULL;
+	  _aShouldApplyProcess[j] = new bool [_nHydroUnits];
+	  ExitGracefullyIf(_aShouldApplyProcess[j]==NULL,"CModel::Initialize (_aShouldApplyProcess)",OUT_OF_MEMORY);
+	  for (k=0; k<_nHydroUnits;k++){
+		  _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
     }
   }
   
@@ -1453,7 +1454,7 @@ void CModel::Initialize(const optStruct &Options)
   //General QA/QC
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),
-		   "CModel::Initialize: at least 2 gauges necessary to use :OroTempCorrect method OROCORR_UBCWM2", BAD_DATA);
+    "CModel::Initialize: at least 2 gauges necessary to use :OroTempCorrect method OROCORR_UBCWM2", BAD_DATA);
   for (int kk = 0; kk < _nHRUGroups; kk++){
     if (_pHRUGroups[kk]->GetNumHRUs() == 0){
       string warn = "CModel::Initialize: HRU Group " + _pHRUGroups[kk]->GetName() + " is empty.";
@@ -1488,33 +1489,33 @@ void CModel::InitializeObservations(const optStruct &Options)
   _aObsIndex =new int           [_nObservedTS];
   CTimeSeriesABC** tmp = new CTimeSeriesABC *[_nObservedTS];
   for (int i = 0; i < _nObservedTS; i++)
-    {
-      _pModeledTS[i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(), _pObservedTS[i]->GetTag(),"",Options.julian_start_day,Options.julian_start_year,Options.timestep,nModeledValues,true);
-      _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true);
-      _pModeledTS[i]->InitializeResample(_pObservedTS[i]->GetNumSampledValues(),_pObservedTS[i]->GetSampledInterval());
-      _aObsIndex[i]=0;
+	{
+		_pModeledTS[i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(), _pObservedTS[i]->GetTag(),"",Options.julian_start_day,Options.julian_start_year,Options.timestep,nModeledValues,true);
+    _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true);
+	  _pModeledTS[i]->InitializeResample(_pObservedTS[i]->GetNumSampledValues(),_pObservedTS[i]->GetSampledInterval());
+	  _aObsIndex[i]=0;
 
-      //Match weights with observations based on Name, tag and numValues
-      tmp[i] = NULL; 
-      for (int n = 0; n < _nObsWeightTS; n++){
-	if ( _pObsWeightTS[n]!=NULL 
-	     && _pObsWeightTS[n]->GetName()     == _pObservedTS[i]->GetName() 
-	     && _pObsWeightTS[n]->GetTag()      == _pObservedTS[i]->GetTag() 
-	     && _pObsWeightTS[n]->GetNumValues()== _pObservedTS[n]->GetNumValues()  )
-	  {
-	    tmp[i] = _pObsWeightTS[n];
-	    _pObsWeightTS[n] = NULL;
-	    tmp[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration,Options.timestep,true);
-	  }
+		//Match weights with observations based on Name, tag and numValues
+	  tmp[i] = NULL; 
+		for (int n = 0; n < _nObsWeightTS; n++){
+    if ( _pObsWeightTS[n]!=NULL 
+		   && _pObsWeightTS[n]->GetName()     == _pObservedTS[i]->GetName() 
+		   && _pObsWeightTS[n]->GetTag()      == _pObservedTS[i]->GetTag() 
+		   && _pObsWeightTS[n]->GetNumValues()== _pObservedTS[n]->GetNumValues()  )
+      {
+        tmp[i] = _pObsWeightTS[n];
+        _pObsWeightTS[n] = NULL;
+        tmp[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration,Options.timestep,true);
       }
     }
+  }
   
   //clean up and warn about unmatched weights
   for (int n = 0; n < _nObsWeightTS; n++){
-    if (_pObsWeightTS[n] != NULL){
-      WriteWarning("Observation Weight "+_pObsWeightTS[n]->GetName()+" "+_pObsWeightTS[n]->GetTag()+" not matched to observation time series", Options.noisy);
-      delete _pObsWeightTS[n]; _pObsWeightTS[n]=NULL;
-    }
+		if (_pObsWeightTS[n] != NULL){
+		  WriteWarning("Observation Weight "+_pObsWeightTS[n]->GetName()+" "+_pObsWeightTS[n]->GetTag()+" not matched to observation time series", Options.noisy);
+		  delete _pObsWeightTS[n]; _pObsWeightTS[n]=NULL;
+		}
   }
 
   delete[] _pObsWeightTS;
@@ -1545,16 +1546,16 @@ void CModel::InitializeRoutingNetwork()
   //check for bad downstream IDs, populate downstream_ind array
   //----------------------------------------------------------------------
   for (p=0;p<_nSubBasins;p++)
-    {
-      _aSubBasinOrder[p]=0;
+  {
+    _aSubBasinOrder[p]=0;
     
-      pp=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
-      ExitGracefullyIf(pp==INDEX_NOT_FOUND,
-		       "CModel::InitializeRoutingNetwork: downstream basin ID not found",BAD_DATA);//Warning only?
-      ExitGracefullyIf(pp==p,
-		       "CModel::InitializeRoutingNetwork: subbasin empties into itself: circular reference!",BAD_DATA);
-      _aDownstreamInds[p]=pp;
-    }
+    pp=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
+    ExitGracefullyIf(pp==INDEX_NOT_FOUND,
+      "CModel::InitializeRoutingNetwork: downstream basin ID not found",BAD_DATA);//Warning only?
+    ExitGracefullyIf(pp==p,
+      "CModel::InitializeRoutingNetwork: subbasin empties into itself: circular reference!",BAD_DATA);
+    _aDownstreamInds[p]=pp;
+  }
 
   //iterative identification of subbasin orders
   //----------------------------------------------------------------------
@@ -1564,25 +1565,25 @@ void CModel::InitializeRoutingNetwork()
   int last_ordersum;
   int iter(0),ordersum(0);
   do 
+  {
+    last_ordersum=ordersum;
+    for (p=0;p<_nSubBasins;p++)
     {
-      last_ordersum=ordersum;
-      for (p=0;p<_nSubBasins;p++)
-	{
-	  pTo=_aDownstreamInds[p]; 
-	  if (pTo==DOESNT_EXIST){_aSubBasinOrder[p]=0;}//no downstream basin
-	  else								  {_aSubBasinOrder[p]=_aSubBasinOrder[pTo]+1;}
-	}
-      ordersum=0;
-      for (p=0;p<_nSubBasins;p++)
-	{
-	  ordersum+=_aSubBasinOrder[p];
-	  upperswap(_maxSubBasinOrder,_aSubBasinOrder[p]);
-	}
-      iter++;
-    } while ((ordersum>last_ordersum) && (iter<max_iter));
+      pTo=_aDownstreamInds[p]; 
+      if (pTo==DOESNT_EXIST){_aSubBasinOrder[p]=0;}//no downstream basin
+      else								  {_aSubBasinOrder[p]=_aSubBasinOrder[pTo]+1;}
+    }
+    ordersum=0;
+    for (p=0;p<_nSubBasins;p++)
+    {
+      ordersum+=_aSubBasinOrder[p];
+      upperswap(_maxSubBasinOrder,_aSubBasinOrder[p]);
+    }
+    iter++;
+  } while ((ordersum>last_ordersum) && (iter<max_iter));
 
   ExitGracefullyIf(iter>=max_iter,
-		   "CModel::InitializeRoutingNetwork: exceeded maximum iterations. Circular reference in basin connections?",BAD_DATA);
+    "CModel::InitializeRoutingNetwork: exceeded maximum iterations. Circular reference in basin connections?",BAD_DATA);
   
   //this while loop should go through at most _maxSubBasinOrder times
   if (noisy){cout <<"      "<<iter<<" routing order iteration(s) completed"<<endl;}
@@ -1597,31 +1598,31 @@ void CModel::InitializeRoutingNetwork()
   _aOrderedSBind=new int [_nSubBasins];
   ExitGracefullyIf(_aOrderedSBind==NULL,"CModel::InitializeRoutingNetwork(2)",OUT_OF_MEMORY);
   for (ord=_maxSubBasinOrder;ord>=0;ord--)
+  {
+    if (noisy){cout<<"      order["<<ord<<"]:";}
+    for (p=0;p<_nSubBasins;p++)
     {
-      if (noisy){cout<<"      order["<<ord<<"]:";}
-      for (p=0;p<_nSubBasins;p++)
-	{
-	  if (_aSubBasinOrder[p]==ord)
-	    {
-	      ExitGracefullyIf(pp>=_nSubBasins,"InitializeRoutingNetwork: fatal error",RUNTIME_ERR);
-	      ExitGracefullyIf(pp<0           ,"InitializeRoutingNetwork: fatal error",RUNTIME_ERR);
-	      _aOrderedSBind[pp]=p; pp++;
-	      if (noisy){cout<<" "<<p+1;}
+      if (_aSubBasinOrder[p]==ord)
+      {
+        ExitGracefullyIf(pp>=_nSubBasins,"InitializeRoutingNetwork: fatal error",RUNTIME_ERR);
+        ExitGracefullyIf(pp<0           ,"InitializeRoutingNetwork: fatal error",RUNTIME_ERR);
+        _aOrderedSBind[pp]=p; pp++;
+        if (noisy){cout<<" "<<p+1;}
 
-	      pTo=_aDownstreamInds[p]; 
-	      if (pTo==DOESNT_EXIST){zerocount++;}
-	    }
-	}
-      if (noisy){cout<<endl;}
+        pTo=_aDownstreamInds[p]; 
+        if (pTo==DOESNT_EXIST){zerocount++;}
+      }
     }
+    if (noisy){cout<<endl;}
+  }
   if (noisy){cout <<"      number of zero-order outlets: "<<zerocount<<endl;}
 
   for (p = 0; p < _nSubBasins; p++)
-    {
-      if (_aSubBasinOrder[p] != _maxSubBasinOrder){
-	_pSubBasins[p]->SetAsNonHeadwater();
-      }
+  {
+    if (_aSubBasinOrder[p] != _maxSubBasinOrder){
+      _pSubBasins[p]->SetAsNonHeadwater();
     }
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1633,7 +1634,7 @@ void CModel::InitializeRoutingNetwork()
 int CModel::GetOrderedSubBasinIndex (const int pp) const
 {
   ExitGracefullyIf((pp<0) || (pp>_nSubBasins),
-		   "CModel::GetOrderedSubBasinIndex: invalid subbasin index",RUNTIME_ERR);
+    "CModel::GetOrderedSubBasinIndex: invalid subbasin index",RUNTIME_ERR);
   return _aOrderedSBind[pp];
 }
 
@@ -1653,27 +1654,27 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
   double *aSBArea=new double [_nSubBasins];//[km2] total drainage area of basin outlet
   double *aSBQin =new double [_nSubBasins];//[m3/s] avg. inflow to basin from upstream (0 for leaf)
   double *aSBQlat=NULL;
-  aSBQlat=new double [_nSubBasins];//[m3/s] avg. lateral inflow within basin
+          aSBQlat=new double [_nSubBasins];//[m3/s] avg. lateral inflow within basin
   ExitGracefullyIf(aSBQlat==NULL,"CModel::InitializeBasinFlows",OUT_OF_MEMORY);
   
   //Estimate initial lateral runoff / flows in each basin (does not override .rvc values, if available)
   //-----------------------------------------------------------------
   double runoff_est=0.0;
   for (p=0;p<_nSubBasins;p++)
-    {    
-      aSBArea[p]=_pSubBasins[p]->GetBasinArea();
+  {    
+    aSBArea[p]=_pSubBasins[p]->GetBasinArea();
 
-      //runoff_est=EstimateInitialRunoff(p,Options);//[mm/d]
+    //runoff_est=EstimateInitialRunoff(p,Options);//[mm/d]
 
-      if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
-	runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
-      }
-      aSBQlat[p]=runoff_est/MM_PER_METER*(aSBArea[p]*M2_PER_KM2)/SEC_PER_DAY;//[m3/s]
-    
-      aSBQin [p]=_pSubBasins[p]->GetSpecifiedInflow(0.0);//initial conditions //[m3/s]
-
-      //cout<<p<<": "<< aSBQin[p]<<" "<<runoff_est<<" "<<aSBQlat[p]<<" "<<aSBArea[p]<<endl;
+    if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
+      runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
     }
+    aSBQlat[p]=runoff_est/MM_PER_METER*(aSBArea[p]*M2_PER_KM2)/SEC_PER_DAY;//[m3/s]
+    
+    aSBQin [p]=_pSubBasins[p]->GetSpecifiedInflow(0.0);//initial conditions //[m3/s]
+
+    //cout<<p<<": "<< aSBQin[p]<<" "<<runoff_est<<" "<<aSBQlat[p]<<" "<<aSBArea[p]<<endl;
+  }
 
   //Propagate flows and drainage areas downstream
   //-----------------------------------------------------------------
@@ -1681,19 +1682,19 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
   bool warn=false;
   bool warn2=false;
   for (int pp=0;pp<_nSubBasins;pp++)
-    { //calculated in order from upstream to downstream
-      p=this->GetOrderedSubBasinIndex(pp);
+  { //calculated in order from upstream to downstream
+    p=this->GetOrderedSubBasinIndex(pp);
     
-      pTo=_aDownstreamInds[p]; 
-      if (pTo!=DOESNT_EXIST){
-	aSBQin [pTo]+=aSBQlat[p]+aSBQin[p];
-	aSBArea[pTo]+=aSBArea[p];//now aSBArea==drainage area
-      }
-      //cout<<p<<": "<< aSBQin[p]<<" "<<aSBQlat[p]<<" "<<aSBArea[p]<<endl;
-      if (_pSubBasins[p]->GetReferenceFlow() == AUTO_COMPUTE){warn =true;}
-      if (_pSubBasins[p]->GetOutflowRate()   == AUTO_COMPUTE){warn2=true;}
-      _pSubBasins[p]->Initialize(aSBQin[p],aSBQlat[p],aSBArea[p],Options);  
+    pTo=_aDownstreamInds[p]; 
+    if (pTo!=DOESNT_EXIST){
+      aSBQin [pTo]+=aSBQlat[p]+aSBQin[p];
+      aSBArea[pTo]+=aSBArea[p];//now aSBArea==drainage area
     }
+    //cout<<p<<": "<< aSBQin[p]<<" "<<aSBQlat[p]<<" "<<aSBArea[p]<<endl;
+    if (_pSubBasins[p]->GetReferenceFlow() == AUTO_COMPUTE){warn =true;}
+    if (_pSubBasins[p]->GetOutflowRate()   == AUTO_COMPUTE){warn2=true;}
+    _pSubBasins[p]->Initialize(aSBQin[p],aSBQlat[p],aSBArea[p],Options);  
+  }
   if ((warn) && (_nSubBasins>1)){
     WriteWarning("CModel::InitializeBasinFlows: one or more subbasin reference discharges were autogenerated from annual average runoff", Options.noisy);
   }
@@ -1702,11 +1703,11 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
   } 
 
   /*cout<<"Routing Diagnostics"<<endl;
-    cout<<"ord pp pTo Qin Qlat Area"<<endl;
-    for (p=0;p<_nSubBasins;p++){  
+  cout<<"ord pp pTo Qin Qlat Area"<<endl;
+  for (p=0;p<_nSubBasins;p++){  
     cout<< _aSubBasinOrder[p]<<" "<< _aOrderedSBind[p]<<" "<<aDownstreamInds[p]<<" ";
     cout <<aSBQin [p]<<" "<< aSBQlat[p]<<" "<<aSBArea[p]<<endl;
-    }*/
+  }*/
   delete [] aSBQin; 
   delete [] aSBArea; 
   delete [] aSBQlat;
@@ -1735,27 +1736,27 @@ void CModel::GenerateGaugeWeights(const optStruct &Options)
   location xyh,xyg;
   
   switch(Options.interpolation)
-    {
+  {
     case(INTERP_NEAREST_NEIGHBOR)://---------------------------------------------	
       {
         //w=1.0 for nearest gauge, 0.0 for all others
         double distmin,dist;
         int    g_min=0;
         for (k=0;k<_nHydroUnits;k++)
-	  {
-	    xyh=_pHydroUnits[k]->GetCentroid(); 
-	    g_min=0;
-	    distmin=ALMOST_INF;
-	    for (g=0;g<_nGauges;g++)
-	      {
-		xyg=_pGauges[g]->GetLocation();
+        {
+          xyh=_pHydroUnits[k]->GetCentroid(); 
+          g_min=0;
+          distmin=ALMOST_INF;
+          for (g=0;g<_nGauges;g++)
+          {
+            xyg=_pGauges[g]->GetLocation();
 
-		dist=pow(xyh.UTM_x-xyg.UTM_x,2)+pow(xyh.UTM_y-xyg.UTM_y,2); 
-		if (dist<distmin){distmin=dist;g_min=g;}
-		_aGaugeWeights[k][g]=0.0;
-	      }
-	    _aGaugeWeights[k][g_min]=1.0;
-	  }
+            dist=pow(xyh.UTM_x-xyg.UTM_x,2)+pow(xyh.UTM_y-xyg.UTM_y,2); 
+            if (dist<distmin){distmin=dist;g_min=g;}
+            _aGaugeWeights[k][g]=0.0;
+          }
+          _aGaugeWeights[k][g_min]=1.0;
+        }
         break;
       }
     case(INTERP_AVERAGE_ALL):			//---------------------------------------------	
@@ -1775,32 +1776,32 @@ void CModel::GenerateGaugeWeights(const optStruct &Options)
         const double IDW_POWER=2.0;
         int atop_gauge(-1);
         for (k=0;k<_nHydroUnits;k++)
-	  {
-	    xyh=_pHydroUnits[k]->GetCentroid(); 
-	    atop_gauge=-1;
-	    denomsum=0;
-	    for (g=0;g<_nGauges;g++)
-	      {
-		xyg=_pGauges[g]->GetLocation();
-		dist=sqrt(pow(xyh.UTM_x-xyg.UTM_x,2)+pow(xyh.UTM_y-xyg.UTM_y,2));
-		denomsum+=pow(dist,-IDW_POWER);
-		if (dist<REAL_SMALL){atop_gauge=g;}//handles limiting case where weight= large number/large number
-	      }
+        {
+          xyh=_pHydroUnits[k]->GetCentroid(); 
+          atop_gauge=-1;
+          denomsum=0;
+          for (g=0;g<_nGauges;g++)
+          {
+            xyg=_pGauges[g]->GetLocation();
+            dist=sqrt(pow(xyh.UTM_x-xyg.UTM_x,2)+pow(xyh.UTM_y-xyg.UTM_y,2));
+            denomsum+=pow(dist,-IDW_POWER);
+            if (dist<REAL_SMALL){atop_gauge=g;}//handles limiting case where weight= large number/large number
+          }
 
-	    for (g=0;g<_nGauges;g++)
-	      {
-		xyg=_pGauges[g]->GetLocation();
-		dist=sqrt(pow(xyh.UTM_x-xyg.UTM_x,2)+pow(xyh.UTM_y-xyg.UTM_y,2));
+          for (g=0;g<_nGauges;g++)
+          {
+            xyg=_pGauges[g]->GetLocation();
+            dist=sqrt(pow(xyh.UTM_x-xyg.UTM_x,2)+pow(xyh.UTM_y-xyg.UTM_y,2));
 
-		if (atop_gauge!=-1){_aGaugeWeights[k][g]=0.0;_aGaugeWeights[k][atop_gauge]=1.0;}
-		else               {_aGaugeWeights[k][g]=pow(dist,-IDW_POWER)/denomsum;}
-	      }
-	  }
+            if (atop_gauge!=-1){_aGaugeWeights[k][g]=0.0;_aGaugeWeights[k][atop_gauge]=1.0;}
+            else               {_aGaugeWeights[k][g]=pow(dist,-IDW_POWER)/denomsum;}
+          }
+        }
 
         break;
       }
     case(INTERP_INVERSE_DISTANCE_ELEVATION):			//---------------------------------------------	
-      {
+    {
         //wt_i = (1/r_i^2) / (sum{1/r_j^2})
         double dist;
         double elevh,elevg;
@@ -1808,30 +1809,30 @@ void CModel::GenerateGaugeWeights(const optStruct &Options)
         const double IDW_POWER=2.0;
         int atop_gauge(-1);
         for(k=0; k<_nHydroUnits; k++)
-	  {
+        {
             elevh=_pHydroUnits[k]->GetElevation();
             atop_gauge=-1;
             denomsum=0;
             for(g=0; g<_nGauges; g++)
-	      {
+            {
                 elevg=_pGauges[g]->GetElevation();
                 dist=abs(elevh-elevg);
                 denomsum+=pow(dist,-IDW_POWER);
                 if(dist<REAL_SMALL){ atop_gauge=g; }//handles limiting case where weight= large number/large number
-	      }
+            }
 
             for(g=0; g<_nGauges; g++)
-	      {
+            {
                 elevg=_pGauges[g]->GetElevation();
                 dist=abs(elevh-elevg);
 
                 if(atop_gauge!=-1){ _aGaugeWeights[k][g]=0.0; _aGaugeWeights[k][atop_gauge]=1.0; }
                 else              { _aGaugeWeights[k][g]=pow(dist,-IDW_POWER)/denomsum; }
-	      }
-	  }
+            }
+        }
 
         break;
-      }
+    }
     case (INTERP_FROM_FILE):			//---------------------------------------------
       {
         //format: 
@@ -1847,40 +1848,50 @@ void CModel::GenerateGaugeWeights(const optStruct &Options)
         ifstream INPUT;
         INPUT.open(Options.interp_file.c_str());  
         if (INPUT.fail())
-	  {
-	    INPUT.close();
-	    string errString = "GenerateGaugeWeights:: Cannot find gauge weighting file "+Options.interp_file;
-	    ExitGracefully(errString.c_str(),BAD_DATA);
-	  }
+        {
+          INPUT.close();
+          string errString = "GenerateGaugeWeights:: Cannot find gauge weighting file "+Options.interp_file;
+          ExitGracefully(errString.c_str(),BAD_DATA);
+        }
         else
-	  {
-	    CParser *p=new CParser(INPUT,Options.interp_file,line);
-	    bool done(false);
-	    while (!done)
-	      {
-		p->Tokenize(s,Len);
-		if (IsComment(s[0],Len)){}
-		else if (!strcmp(s[0],":GaugeWeightTable")){}
-		else if (Len>=2){
-		  ExitGracefullyIf(s_to_i(s[0])!=_nGauges,
-				   "GenerateGaugeWeights: the gauge weighting file has an improper number of gauges specified",BAD_DATA);
-		  ExitGracefullyIf(s_to_i(s[1])!=_nHydroUnits,
-				   "GenerateGaugeWeights: the gauge weighting file has an improper number of HRUs specified",BAD_DATA);
-		  done=true;
-		}
-	      }
-	    int junk;
-	    p->Parse2DArray_dbl(_aGaugeWeights,_nHydroUnits,_nGauges,junk);
-	    INPUT.close();
-	    delete p;
-	  }
+        {
+          CParser *p=new CParser(INPUT,Options.interp_file,line);
+          bool done(false);
+          while (!done)
+          {
+            p->Tokenize(s,Len);
+            if (IsComment(s[0],Len)){}
+            else if (!strcmp(s[0],":GaugeWeightTable")){}
+            else if (Len>=2){
+              ExitGracefullyIf(s_to_i(s[0])!=_nGauges,
+                "GenerateGaugeWeights: the gauge weighting file has an improper number of gauges specified",BAD_DATA);
+              ExitGracefullyIf(s_to_i(s[1])!=_nHydroUnits,
+                "GenerateGaugeWeights: the gauge weighting file has an improper number of HRUs specified",BAD_DATA);
+              done=true;
+            }
+          }
+          int junk;
+          p->Parse2DArray_dbl(_aGaugeWeights,_nHydroUnits,_nGauges,junk);
+          
+          for (k=0;k<_nHydroUnits;k++){
+            double sum=0;
+            for (g=0;g<_nGauges;g++){
+              sum+=_aGaugeWeights[k][g];
+            }
+            if(fabs(sum-1.0)>1e-4){
+              ExitGracefully("GenerateGaugeWeights: INTERP_FROM_FILE: user-specified weights for gauge don't add up to 1.0",BAD_DATA);
+            }
+          }
+          INPUT.close();
+          delete p;
+        }
         break;
       }
     default:							
       {
         ExitGracefully("CModel::GenerateGaugeWeights: Invalid interpolation method",BAD_DATA);				
       }
-    }
+  }
 
   //check quality - weights for each HRU should add to 1
   double sum;
@@ -1890,10 +1901,10 @@ void CModel::GenerateGaugeWeights(const optStruct &Options)
       sum+=_aGaugeWeights[k][g];
     }
 
-    ExitGracefullyIf((fabs(sum-1.0)>REAL_SMALL) && (INTERP_FROM_FILE) && _nGauges>1,
-		     "GenerateGaugeWeights: Bad weighting scheme- weights for each HRU must sum to 1",BAD_DATA);
-    ExitGracefullyIf((fabs(sum-1.0)>REAL_SMALL) && !(INTERP_FROM_FILE) && _nGauges>1,
-		     "GenerateGaugeWeights: Bad weighting scheme- weights for each HRU must sum to 1",RUNTIME_ERR);
+    ExitGracefullyIf((fabs(sum-1.0)>REAL_SMALL) && (INTERP_FROM_FILE) && (_nGauges>1),
+		  "GenerateGaugeWeights: Bad weighting scheme- weights for each HRU must sum to 1",BAD_DATA);
+    ExitGracefullyIf((fabs(sum-1.0)>REAL_SMALL) && !(INTERP_FROM_FILE) && (_nGauges>1),
+		  "GenerateGaugeWeights: Bad weighting scheme- weights for each HRU must sum to 1",RUNTIME_ERR);
   }
 }
 
@@ -1964,71 +1975,71 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 {
   int nn=(int)((tt.model_time+REAL_SMALL)/Options.timestep);//current timestep index
   for (int j=0;j<_nTransParams;j++)
-    {
-      class_type ctype=_pTransParams[j]->GetParameterClassType();
-      string     pname=_pTransParams[j]->GetParameterName();
-      string     cname=_pTransParams[j]->GetParameterClass();
-      double     value=_pTransParams[j]->GetTimeSeries()->GetSampledValue(nn);
+  {
+    class_type ctype=_pTransParams[j]->GetParameterClassType();
+    string     pname=_pTransParams[j]->GetParameterName();
+    string     cname=_pTransParams[j]->GetParameterClass();
+    double     value=_pTransParams[j]->GetTimeSeries()->GetSampledValue(nn);
     
-      if (ctype==CLASS_SOIL)
-	{
-	  CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
-	}
-      else if (ctype==CLASS_VEGETATION)
-	{
-	  CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
-	}
-      else if (ctype==CLASS_TERRAIN)
-	{
-	  CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
-	}
-      else if (ctype==CLASS_LANDUSE)
-	{
-	  CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
-	}
-      else if (ctype==CLASS_GLOBAL)
-	{
-	  CGlobalParams::SetGlobalProperty(pname,value);
-	}
+    if (ctype==CLASS_SOIL)
+    {
+      CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
     }
+    else if (ctype==CLASS_VEGETATION)
+    {
+      CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
+    }
+    else if (ctype==CLASS_TERRAIN)
+    {
+      CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
+    }
+    else if (ctype==CLASS_LANDUSE)
+    {
+      CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+    }
+    else if (ctype==CLASS_GLOBAL)
+    {
+      CGlobalParams::SetGlobalProperty(pname,value);
+    }
+  }
   int k;
   for (int j = 0; j<_nClassChanges; j++)
-    {
-      if ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) && 
-	  (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
-	{//change happens this time step
+  {
+    if ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) && 
+        (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
+    {//change happens this time step
       
-	  int kk = _pClassChanges[j]->HRU_groupID;
-	  if (_pClassChanges[j]->tclass == CLASS_LANDUSE){
-	    //cout << "LAND USE CHANGE!"<<endl;
-	    for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
-	      {
-		k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
-		CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
-		_pHydroUnits[k]->ChangeLandUse(lult_class);
-	      }
-	  }
-	  else if (_pClassChanges[j]->tclass == CLASS_VEGETATION){
-	    //cout << "VEGETATION CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
-	    for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
-	      {
-		k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
-		CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
-		_pHydroUnits[k]->ChangeVegetation(veg_class);
-	      }
-	  }
-	  else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE){
-	    //cout << "HRU TYPE CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
-	    for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
-	      {
-		k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
-		HRU_type typ;
-		typ=StringToHRUType(_pClassChanges[j]->newclass);
-		_pHydroUnits[k]->ChangeHRUType(typ);
-	      }
-	  }
-	}
+      int kk = _pClassChanges[j]->HRU_groupID;
+      if (_pClassChanges[j]->tclass == CLASS_LANDUSE){
+        //cout << "LAND USE CHANGE!"<<endl;
+        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+        {
+          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+          CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
+          _pHydroUnits[k]->ChangeLandUse(lult_class);
+        }
+      }
+      else if (_pClassChanges[j]->tclass == CLASS_VEGETATION){
+        //cout << "VEGETATION CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
+        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+        {
+          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+          CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
+          _pHydroUnits[k]->ChangeVegetation(veg_class);
+        }
+      }
+      else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE){
+        //cout << "HRU TYPE CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
+        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+        {
+          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+          HRU_type typ;
+          typ=StringToHRUType(_pClassChanges[j]->newclass);
+          _pHydroUnits[k]->ChangeHRUType(typ);
+        }
+      }
     }
+  }
  
 }
 //////////////////////////////////////////////////////////////////
@@ -2043,9 +2054,9 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
                                          const time_struct  &tt)
 {
   for (int k=0;k<_nHydroUnits;k++)
-    {
-      _pHydroUnits[k]->RecalculateDerivedParams(Options,tt);
-    }
+  {
+    _pHydroUnits[k]->RecalculateDerivedParams(Options,tt);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2064,51 +2075,51 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
   double value, obsTime;
   int layer_ind;
   for (int i=0;i<_nObservedTS;i++)
+  {
+    string datatype=_pObservedTS[i]->GetName();
+    sv_type svtyp=CStateVariable::StringToSVType(datatype,layer_ind,false);
+
+    if (datatype=="HYDROGRAPH")
     {
-      string datatype=_pObservedTS[i]->GetName();
-      sv_type svtyp=CStateVariable::StringToSVType(datatype,layer_ind,false);
+      CSubBasin *pBasin=NULL;
+      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed hydrograph time series "+_pObservedTS[i]->GetName();
+      ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
 
-      if (datatype=="HYDROGRAPH")
-	{
-	  CSubBasin *pBasin=NULL;
-	  pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
-	  string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed hydrograph time series "+_pObservedTS[i]->GetName();
-	  ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
-
-	  if ((Options.ave_hydrograph) && (tt.model_time!=0))
-	    {
-	      value=pBasin->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-	    }
-	  else
-	    {
-	      value=pBasin->GetOutflowRate();
-	    }
-	}
-      else if (datatype == "RESERVOIR_STAGE")
-	{
-	  CSubBasin *pBasin=NULL;
-	  pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
-	  string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir stage time series "+_pObservedTS[i]->GetName();
-	  ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
-	  value = pBasin->GetReservoir()->GetStage();
-	}
-      else if (svtyp!=UNRECOGNIZED_SVTYPE)
-	{
-	  CHydroUnit *pHRU=NULL;
-	  pHRU=GetHRUByID(s_to_i(_pObservedTS[i]->GetTag().c_str()));
-	  string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
-	  ExitGracefullyIf(pHRU==NULL,error.c_str(),BAD_DATA);
-	  int sv_index=this->GetStateVarIndex(svtyp,layer_ind); 
-	  value=pHRU->GetStateVarValue(sv_index); 
-	}
+      if ((Options.ave_hydrograph) && (tt.model_time!=0))
+      {
+         value=pBasin->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+      }
       else
-	{
-	  if (tt.model_time ==0){
-	    WriteWarning("CModel::UpdateDiagnostics: invalid tag used for specifying Observation type",BAD_DATA);
-	  }
-	  value=0;
-	}
-      _pModeledTS[i]->SetValue (n,value);
+      {
+         value=pBasin->GetOutflowRate();
+      }
+    }
+    else if (datatype == "RESERVOIR_STAGE")
+    {
+      CSubBasin *pBasin=NULL;
+      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir stage time series "+_pObservedTS[i]->GetName();
+      ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
+      value = pBasin->GetReservoir()->GetStage();
+    }
+    else if (svtyp!=UNRECOGNIZED_SVTYPE)
+    {
+      CHydroUnit *pHRU=NULL;
+      pHRU=GetHRUByID(s_to_i(_pObservedTS[i]->GetTag().c_str()));
+      string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
+      ExitGracefullyIf(pHRU==NULL,error.c_str(),BAD_DATA);
+      int sv_index=this->GetStateVarIndex(svtyp,layer_ind); 
+      value=pHRU->GetStateVarValue(sv_index); 
+    }
+    else
+    {
+      if (tt.model_time ==0){
+        WriteWarning("CModel::UpdateDiagnostics: invalid tag used for specifying Observation type",BAD_DATA);
+      }
+      value=0;
+    }
+    _pModeledTS[i]->SetValue (n,value);
 
 
     obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
@@ -2151,45 +2162,45 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
                             const CHydroUnit  *pHRU,                 //pointer to HRU
                             const optStruct   &Options,      
                             const time_struct &tt,
-			    int         *iFrom,                //indices of state variable losing water or heat
-			    int         *iTo,                  //indices of state variable gaining water or heat
-			    int         &nConnections,         //number of connections between storage units/state vars
-			    double      *rates_of_change) const//loss/gain rates of water [mm/d] and energy [MJ/m2/d] 
+                                  int         *iFrom,                //indices of state variable losing water or heat
+                                  int         *iTo,                  //indices of state variable gaining water or heat
+                                  int         &nConnections,         //number of connections between storage units/state vars
+                                  double      *rates_of_change) const//loss/gain rates of water [mm/d] and energy [MJ/m2/d] 
 {
   ExitGracefullyIf((j<0) && (j>=_nProcesses),"CModel ApplyProcess::improper index",BAD_DATA);
   
   nConnections=_pProcesses[j]->GetNumConnections();//total connections: nConnections+nCascades
-  if (!_aShouldApplyProcess[j][pHRU->GetGlobalIndex()]){return false;}
+	if (!_aShouldApplyProcess[j][pHRU->GetGlobalIndex()]){return false;}
   
   for (int q=0;q<nConnections;q++)
-    {
-      iFrom[q]=_pProcesses[j]->GetFromIndices()[q];
-      iTo  [q]=_pProcesses[j]->GetToIndices  ()[q];
-      rates_of_change[q]=0.0;
-    }
+  {
+    iFrom[q]=_pProcesses[j]->GetFromIndices()[q];
+    iTo  [q]=_pProcesses[j]->GetToIndices  ()[q];
+    rates_of_change[q]=0.0;
+  }
 
   _pProcesses[j]->GetRatesOfChange(state_var,pHRU,Options,tt,rates_of_change);
 
   //special cascade handling (prior to applying constraints)
   //------------------------------------------------------------------------
   if (_pProcesses[j]->HasCascade())
-    {
-      int nCascades;
-      static double max_state_var[MAX_STATE_VARS];
-      nCascades=_pProcesses[j]->GetNumCascades();
-      for (int i=0;i<_nStateVars;i++){//should only calculate for participating compartments
-	max_state_var[i]=pHRU->GetStateVarMax(i,state_var,Options);
-      }
-      for (int q=0;q<nCascades;q++)
-	{
-	  iFrom[nConnections-nCascades+q]=_pProcesses[j]->GetCascadeFromIndex();
-	  iTo  [nConnections-nCascades+q]=_pProcesses[j]->GetCascadeToIndices()[q];
-	}    
-      _pProcesses[j]->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
+  {
+    int nCascades;
+    static double max_state_var[MAX_STATE_VARS];
+    nCascades=_pProcesses[j]->GetNumCascades();
+    for (int i=0;i<_nStateVars;i++){//should only calculate for participating compartments
+      max_state_var[i]=pHRU->GetStateVarMax(i,state_var,Options);
     }
+    for (int q=0;q<nCascades;q++)
+    {
+      iFrom[nConnections-nCascades+q]=_pProcesses[j]->GetCascadeFromIndex();
+      iTo  [nConnections-nCascades+q]=_pProcesses[j]->GetCascadeToIndices()[q];
+    }    
+    _pProcesses[j]->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
+  }
 
   _pProcesses[j]->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
-  return true;
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2219,8 +2230,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // Generate daily average values Tave=(Tmin+Tmax)/2
   // --> This is always a daily time series (also if TEMP_DAILY_MIN and TEMP_DAILY_MAX are subdaily)
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_AVE") == DOESNT_EXIST ) {
-
+  if ( GetForcingGridIndexFromName("TEMP_DAILY_AVE") == DOESNT_EXIST ) 
+	{
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTave_daily = new CForcingGrid(* pTmin);  // copy everything from tmin; matrixes are deep copies
     pTave_daily->SetForcingType("TEMP_DAILY_AVE");
@@ -2229,8 +2240,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     pTave_daily->SetChunkSize(nVals);     // if Tmin/Tmax are subdaily, several timesteps might be merged to one
     pTave_daily->ReallocateArraysInForcingGrid();
   }
-  else {
-    
+  else 
+	{  
     // for all latter chunks the the grid already exists and values will be just overwritten
     pTave_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"));
   }
@@ -2260,7 +2271,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       // TODO: it --> should be it+0.5
       
       //double time_idx_chunk = pTmax->GetChunkIndexFromModelTimeStep(Options,t+0.5);
-      int    nValsPerDay    = 1.0 / pTmin->GetInterval();
+      int    nValsPerDay    = (int)(1.0 / pTmin->GetInterval());
       double time_idx_chunk = t * nValsPerDay;
       pTave_daily->SetValue(ic, it , 0.5*(pTmin->GetValue(ic, time_idx_chunk, nValsPerDay) + pTmax->GetValue(ic, time_idx_chunk, nValsPerDay)));
     }
@@ -2286,8 +2297,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     GridDims[0] = pTmin->GetCols(); GridDims[1] = pTmin->GetRows(); GridDims[2] = nVals;
     
     // Generate subdaily average values
-    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) {
-      
+    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) 
+		{
       // for the first chunk the derived grid does not exist and has to be added to the model
       pTave = new CForcingGrid(* pTave_daily);  // copy everything from tmin; matrixes are deep copies
       pTave->SetForcingType("TEMP_AVE");
@@ -2295,9 +2306,9 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       pTave->SetGridDims(GridDims);
       pTave->SetChunkSize(nVals);            
       pTave->ReallocateArraysInForcingGrid();
-
     }
-    else {
+    else 
+		{
       // for all latter chunks the the grid already exists and values will be just overwritten
       pTave=GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));
     }
@@ -2305,7 +2316,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     // (1) set weighting
     for (int ik=0; ik<pTmin->GetnHydroUnits(); ik++) {                           // loop over HRUs
       for (int ic=0; ic<pTmin->GetRows()*pTmin->GetCols(); ic++) {               // loop over cells = rows*cols
-	pTave->SetWeightVal(ik, ic, pTmin->GetGridWeight(ik, ic));       
+				pTave->SetWeightVal(ik, ic, pTmin->GetGridWeight(ik, ic));       
       }
     }
 
@@ -2322,13 +2333,13 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     for (int it=0; it<GridDims[2]; it++) {                   // loop over all time points (nVals)
       for (int ic=0; ic<nNonZeroWeightedGridCells; ic++){    // loop over non-zero grid cell indexes
 	
-	double time_idx_chunk = double(int((t+Options.timestep/2.0)/pTmin->GetInterval()));  
-	double Tmax   = pTmax->GetValue(ic, time_idx_chunk); 
-	double Tmin   = pTmin->GetValue(ic, time_idx_chunk);
-	double T1corr = pTave->DailyTempCorrection(t);
-	double T2corr = pTave->DailyTempCorrection(t+Options.timestep);
-	double val    = 0.5*(Tmax+Tmin)+0.5*(Tmax-Tmin)*0.5*(T1corr+T2corr);
-	pTave->SetValue( ic, it, val);
+				double time_idx_chunk = double(int((t+Options.timestep/2.0)/pTmin->GetInterval()));  
+				double Tmax   = pTmax->GetValue(ic, time_idx_chunk); 
+				double Tmin   = pTmin->GetValue(ic, time_idx_chunk);
+				double T1corr = pTave->DailyTempCorrection(t);
+				double T2corr = pTave->DailyTempCorrection(t+Options.timestep);
+				double val    = 0.5*(Tmax+Tmin)+0.5*(Tmax-Tmin)*0.5*(T1corr+T2corr);
+				pTave->SetValue( ic, it, val);
       }
       t += Options.timestep;
     }
@@ -2341,7 +2352,8 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       if (Options.noisy){ printf("\n------------------------> TEMP_AVE case 1 Replace \n"); }
     }
   }
-  else{
+  else
+	{
     // Tmax       is with input time resolution
     // Tmin       is with input time resolution
     // Tave       is with model time resolution
@@ -2349,14 +2361,14 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     
     // model does not run with subdaily time step
     // --> just copy daily average values
-    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) {
-      
+    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) 
+		{
       // for the first chunk the derived grid does not exist and has to be added to the model
       pTave = new CForcingGrid(* pTave_daily);  // copy everything from tave; matrixes are deep copies
       pTave->SetForcingType("TEMP_AVE");
     }
-    else {
-      
+    else 
+		{
       // for all latter chunks the the grid already exists and values will be just overwritten
       pTave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));
     }
@@ -2364,7 +2376,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     // (1) set weighting
     for (int ik=0; ik<pTave->GetnHydroUnits(); ik++) {                           // loop over HRUs
       for (int ic=0; ic<pTave->GetRows()*pTave->GetCols(); ic++) {               // loop over cells = rows*cols
-	pTave->SetWeightVal(ik, ic, pTave_daily->GetGridWeight(ik, ic)); // --> just copy daily average values
+				pTave->SetWeightVal(ik, ic, pTave_daily->GetGridWeight(ik, ic)); // --> just copy daily average values
       }
     }
 
@@ -2375,7 +2387,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     // (3) set forcing values
     for (int it=0; it<pTave->GetChunkSize(); it++) {                       // loop over time points in buffer
       for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
-	  pTave->SetValue(ic, it , pTave_daily->GetValue(ic, (double)it)); // --> just copy daily average values
+	  		pTave->SetValue(ic, it , pTave_daily->GetValue(ic, (double)it)); // --> just copy daily average values
       }
     }
 
@@ -2516,7 +2528,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
 void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
 {
 
-  CForcingGrid *pTave,*pTmin_daily,*pTmax_daily,*pTave_daily;
+  CForcingGrid *pTmin_daily,*pTmax_daily,*pTave_daily;
   double interval;
 
   pTave_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"));
@@ -2615,82 +2627,6 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   GenerateAveSubdailyTempFromMinMax(Options);
 }
 
-// //////////////////////////////////////////////////////////////////
-// /// \brief Generates subdaily Tave from given subdaily Tmin and Tmax
-// /// \note  presumes existence of valid F_TEMP_MIN and F_TEMP_MAX time series with subdaily timestep
-// //
-// void CModel::GenerateSubdailyAveTempFromSubdailyMinMax(const optStruct &Options)
-// {
-
-//   CForcingGrid *pTave,*pTmin,*pTmax;
-//   double interval_Tmin, interval_Tmax;
-  
-//   pTmin=GetForcingGrid(GetForcingGridIndexFromName("TEMP_MIN"));
-//   pTmax=GetForcingGrid(GetForcingGridIndexFromName("TEMP_MAX"));
-//   interval_Tmin = pTmin->GetInterval();
-//   interval_Tmax = pTmax->GetInterval();
-
-//   ExitGracefullyIf(interval_Tmin != interval_Tmax,
-// 		   "CModel::GenerateSubdailyAveTempFromSubdailyMinMax: TEMP_MIN and TEMP_MAX must have the same time resolution.",BAD_DATA);
-  
-//   double start_day = Options.julian_start_day; //floor(pT->GetStartDay());	  
-//   int    start_yr  = Options.julian_start_year;//pT->GetStartYear();		  
-//   double duration  = Options.duration;         //(interval*pTave->GetNumValues());
-//   double timestep  = Options.timestep;
-  
-//   // below needed for correct mapping from time series to model time 
-//   pTmin->Initialize(start_day,start_yr,duration,timestep,Options);
-
-//   int nVals=pTmin->GetChunkSize();  // number of values
-//   int GridDims[3];
-//   GridDims[0] = pTmin->GetCols(); GridDims[1] = pTmin->GetRows(); GridDims[2] = nVals;
-  
-//   printf("nVals....: %i\n",nVals);
-
-//   // ----------------------------------------------------
-//   // Generate subdaily Tave from subdaily Tmin and Tmax
-//   // ----------------------------------------------------
-//   if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) {
-//     // for the first chunk the derived grid does not exist and has to be added to the model
-//     pTave = new CForcingGrid(* pTmin);  // copy everything from tave; matrixes are deep copies
-//     pTave->SetForcingType("TEMP_AVE");
-//     pTave->SetInterval(interval_Tmin);
-//     pTave->SetGridDims(GridDims);
-//     pTave->SetChunkSize(nVals);
-//     pTave->ReallocateArraysInForcingGrid();
-//   }
-//   else {
-//     // for all latter chunks the the grid already exists and values will be just overwritten
-//     pTave=GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));
-//   }
-
-//   // (1) set weighting
-//   for (int ik=0; ik<pTmin->GetnHydroUnits(); ik++) {                // loop over HRUs
-//     for (int ic=0; ic<pTmin->GetRows()*pTmin->GetCols(); ic++) {    // loop over cells = rows*cols
-//       double wt = pTmin->GetGridWeight(ik, ic);
-//       pTave->SetWeightVal(ik, ic, wt);       
-//     }
-//   }
-  
-//   // (2) set indexes of on-zero weighted grid cells
-//   pTave->SetIdxNonZeroGridCells(pTave->GetnHydroUnits(),pTave->GetRows()*pTave->GetCols());
-  
-//   // (3) set forcing values
-//   for (int it=0; it<nVals; it++) {                                    // loop over time points in buffer
-//     for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){      // loop over non-zero grid cell indexes    
-//       pTave->SetValue(ic, it, 0.5*(pTmin->GetValue(ic, (double)it)+pTmax->GetValue(ic, (double)it))); 
-//     }
-//   }
-  
-//   if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) {
-//     this->AddForcingGrid(pTave);
-//     printf("\n------------------------> TEMP_AVE Added \n");
-//   }
-//   else {    
-//     printf("\n------------------------> TEMP_AVE Replace \n");
-//   }
-// }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Generates precipitation as sum of snowfall and rainfall
 /// \note  presumes existence of valid F_SNOWFALL and F_RAINFALL time series
@@ -2698,10 +2634,6 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
 void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
 {
 
-  // CTimeSeries *sum;
-  // sum=CTimeSeries::Sum(GetTimeSeries(F_RAINFALL),GetTimeSeries(F_SNOWFALL),"PRECIP");//sum together rain & snow to get precip
-  // AddTimeSeries(sum,F_PRECIP);
-  
   CForcingGrid *pPre,*pSnow,*pRain;
   pSnow=GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));
   pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
@@ -2911,33 +2843,6 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
     if (Options.noisy){ printf("\n------------------------> SNOWFALL Replace \n"); }
   }
 }
-
-// //////////////////////////////////////////////////////////////////
-// /// \brief Returns average fraction of snow in precipitation between time t and following n timesteps
-// /// \param x_col  [in] Column index
-// /// \param y_row  [in] Row index
-// /// \param t      [in] Time index
-// /// \param n      [in] Number of time steps
-// /// \return average fraction of snow in precipitation between time t and following n timesteps
-// //
-// double CModel::GetAverageSnowFrac(const int x_col, const int y_row, const double t, const int n) const
-// {
-//   // double rain=GetTimeSeries(F_RAINFALL)->GetAvgValue(t,tstep);
-//   // double snow=GetTimeSeries(F_SNOWFALL)->GetAvgValue(t,tstep);
-//   // if ((snow+rain)==0){return 0.0;}
-//   // return snow/(snow+rain);
-
-//   CForcingGrid *pSnow,*pRain;
-//   pSnow=GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));
-//   pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
-
-//   double snow = pSnow->GetValue_ave(x_col, y_row, t, n);
-//   double rain = pRain->GetValue_ave(x_col, y_row, t, n);
-
-//   if ((snow+rain)==0.0){return 0.0;}
-//   return snow/(snow+rain);
-  
-// }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average fraction of snow in precipitation between time t and following n timesteps

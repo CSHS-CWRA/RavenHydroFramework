@@ -8,7 +8,10 @@
 #include "RavenInclude.h"
 #include "ParseLib.h"
 #include "Forcings.h"
+
+#ifdef _NETCDF_
 #include <netcdf.h>
+#endif
 
 ///////////////////////////////////////////////////////////////////
 /// \brief   Data abstraction for gridded, 3D forcings
@@ -114,25 +117,13 @@ class CForcingGrid //: public CForcingGridABC
   void ReallocateArraysInForcingGrid( );
   
   // ReadData populates _aVal or does nothing if no new chunk need to be read (= current modeling time step is within current chunk)
-  bool   ReadData(
-                  const optStruct   &Options,
+  bool   ReadData(const optStruct   &Options,
                   const double global_model_time
                   );
 
-  /* // returns one value of the gridded data */
-  /* double GetValue		(const int x_col, const int y_row, const double t) const; */
-  /* // returns average of t to t+n gridded data points */
-  /* double GetValue		(const int x_col, const int y_row, const double t, const int n) const; */
-  /* // returns either average, minimum, or maximum of t to t+n gridded data points */
-  /* double GetValue_ave		(const int x_col, const int y_row, const double t, const int n) const; */
-  /* double GetValue_min		(const int x_col, const int y_row, const double t, const int n) const; */
-  /* double GetValue_max		(const int x_col, const int y_row, const double t, const int n) const; */
-
-  // returns one value of the gridded data
-  double GetValue		(const int idx, const double t) const;
-  // returns average of t to t+n gridded data points
-  double GetValue		(const int idx, const double t, const int n) const;
-  // returns either average, minimum, or maximum of t to t+n gridded data points
+  // accessors
+  double GetValue		    (const int idx, const double t) const;
+  double GetValue		    (const int idx, const double t, const int n) const;
   double GetValue_ave		(const int idx, const double t, const int n) const;
   double GetValue_min		(const int idx, const double t, const int n) const;
   double GetValue_max		(const int idx, const double t, const int n) const;
@@ -146,18 +137,16 @@ class CForcingGrid //: public CForcingGridABC
   bool   CheckWeightArray(                 const int        nHydroUnits,
                                            const int        nGridCells);     ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   int    NumberNonZeroWeightedGridCells(   const int        nHydroUnits,
-					   const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
+					                                 const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
   double GetGridWeight(                    const int        HRUID,
                                            const int        CellID);         ///< returns weighting of HRU and CellID pair  
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
-                                           const double     global_model_time 
-                                        )  const;                            ///< returns index in current chunk corresponding to model time step
+                                           const double     global_model_time)  const; ///< returns index in current chunk corresponding to model time step
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
-                                           const double     global_model_time 
-                                        )  const;                            ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
+                                           const double     global_model_time)  const; ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
   void CellIdxToRowCol(                    const int        cellid,
-					   int              &row,
-					   int              &column);         ///< returns row and column index of cell ID
+					                                 int              &row,
+					                                 int              &column);         ///< returns row and column index of cell ID
   
   // set class variables
   void         SetForcingType(                const string ForcingType);               ///< set _ForcingType       	   of class
@@ -167,7 +156,7 @@ class CForcingGrid //: public CForcingGridABC
   void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims          	   of class
   void         SetNumberNonZeroGridCells(     const int    nNonZeroWeightedGridCells); ///< set _nNonZeroWeightedGridCells of class
   void         SetIdxNonZeroGridCells(        const int    nHydroUnits,
-					      const int    nGridCells);                ///< set _IdxNonZeroGridCells       of class
+					      const int    nGridCells);                ///< set _IdxNonZeroGridCells of class
   void         SetnHydroUnits(                const int    nHydroUnits);               ///< set _nHydroUnits       	   of class
   void         SetChunkSize(                  const int    ChunkSize);                 ///< set _ChunkSize         	   of class
   void         SetInterval(                   const double interval);                  ///< set _interval          	   of class

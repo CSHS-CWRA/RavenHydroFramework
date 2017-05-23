@@ -7,8 +7,6 @@
 #include "Model.h"
 #include "UnitTesting.h"
 
-#include "ForcingGrid.h"  // only testing
-
 //Defined in ParseInput.cpp
 bool ParseInputFiles (CModel      *&pModel,
                       optStruct    &Options);
@@ -52,7 +50,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.6.6";
+  Options.version="2.7.0";
  
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 
@@ -89,36 +87,6 @@ int main(int argc, char* argv[])
     pModel->Initialize       (Options);
     pModel->SummarizeToScreen(Options);
 
-    // ---------------------------
-    // JULIE - TESTING
-    // ---------------------------
-    
-    // string DimNames[3];
-    // //DimNames[0] = "xc";
-    // //DimNames[1] = "yc";
-    // //DimNames[2] = "time";
-    // DimNames[0] = "nlon";  
-    // DimNames[1] = "nlat";  
-    // DimNames[2] = "ntime"; 
-    // CForcingGrid *pGrid;
-
-    // printf("Ho 1 \n");
-    // pGrid=new CForcingGrid("PRECIP",  // ForcingType,
-    // 			   //"pre.nc",  // filename,
-    // 			   "/Users/mai/Desktop/Tolson_SVN/btolson/trunk/basins/york_lumped/York.nc",
-    // 			   //"/Users/mai/Desktop/Tolson_SVN/btolson/trunk/basins/york_lumped/York_daily.nc",
-    // 			   "pre",     // varname,
-    // 			   DimNames   // DimNames[3]
-    // 			   );
-    // pGrid->ForcingGridInit();
-    // printf("Ho 2 \n");
-    // pGrid->ReadData(Options,0.2);
-    // printf("Ho 3 \n");
-    // printf("GetValue(0,1,12) = %f\n",pGrid->GetValue(0,1,12));
-    // printf("Ho 4 \n");
-    
-  // ---------------------------
-
     if (!Options.silent){
     cout <<"======================================================"<<endl;
     cout <<"Simulation Start..."<<endl;}
@@ -136,25 +104,6 @@ int main(int argc, char* argv[])
 
     for (t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)
     {
-
-      // // ---------------------------
-      // // JULIE - TESTING
-      // // ---------------------------
-      // printf("Haaaa: tt = %s\n",tt.date_string.c_str());
-      // printf("Haaaa:  t = %f\n",t);
-
-      //pModel->GetForcingGrid(0)->ReadData(Options,t);
-      // pGrid->ReadData(Options,t);
-      
-      // printf("HRU(0):   %f\n",pModel->GetHydroUnit(0)->GetForcing("PRECIP")); // HRU value
-      // printf("Gauge(1): %f \n",pModel->GetGauge(0)->GetForcingValue(F_PRECIP,t,Options.timestep)); // HRU value
-      // printf("Gauge(2): %f \n",pModel->GetGauge(1)->GetForcingValue(F_PRECIP,t,Options.timestep)); // HRU value
-      // printf("Gauge(3): %f \n",pModel->GetGauge(2)->GetForcingValue(F_PRECIP,t,Options.timestep)); // HRU value
-      // printf("Gauge(4): %f \n",pModel->GetGauge(3)->GetForcingValue(F_PRECIP,t,Options.timestep)); // HRU value
-      
-      // //printf("GetValue(0,1,12) = %f\n",pGrid->GetValue(0,1,12));
-      // // ---------------------------
-
       pModel->UpdateTransientParams      (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
       pModel->UpdateHRUForcingFunctions  (Options,tt);
@@ -170,7 +119,6 @@ int main(int argc, char* argv[])
 
       if ((step%100==0) && (CheckForStopfile(tt))){break;}
       step++;
-
     }
 
     //Finished Solving----------------------------------------------------

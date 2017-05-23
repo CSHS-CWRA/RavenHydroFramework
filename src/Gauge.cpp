@@ -315,8 +315,6 @@ void CGauge::AddTimeSeries	(CTimeSeries *pTS, forcing_type ftype)
       ExitGracefully("CGauge::AddTimeSeries	: adding NULL time series",BAD_DATA);}  
     _aTSindex[(int)(ftype)]=_nTimeSeries-1;
   }
-  
-  // printf("AddTimeSeries: add time series: %s  interval=%f   pulses=%i\n",ForcingToString(ftype).c_str(), pTS->GetInterval(), pTS->GetNumValues());
 }
 
 //////////////////////////////////////////////////////////////////
@@ -578,10 +576,6 @@ void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       double Tmax=pTmax->GetValue(t+Options.timestep/2.0);
       double Tmin=pTmin->GetValue(t+Options.timestep/2.0);
       aT[n]=0.5*(Tmax+Tmin)+0.5*(Tmax-Tmin)*0.5*(DailyTempCorrection(t)+DailyTempCorrection(t+Options.timestep));
-      // if (n < 265 && n > 255) {
-      // 	printf(" --- Tmax = %f   Tmin = %f   T1corr = %f   T2corr = %f   -->  aT[%i] = %f \n",Tmax,Tmin, DailyTempCorrection(t), DailyTempCorrection(t+Options.timestep), n, aT[n]);
-      // }
-      // printf(" --- Tmax = %f   Tmin = %f   T1corr = %f   T2corr = %f   -->  aT[%i] = %f \n",Tmax,Tmin, DailyTempCorrection(t), DailyTempCorrection(t+Options.timestep), n, aT[n]);
       t+=Options.timestep;
     }  
   

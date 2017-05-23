@@ -130,12 +130,11 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
   }	
   else if (type==SOILEVAP_HBV)
   {
-    nP=5;
+    nP=4;
     aP[0]="PET_CORRECTION";    aPC[0]=CLASS_SOIL;
     aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
     aP[2]="FIELD_CAPACITY";    aPC[2]=CLASS_SOIL;
     aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
-    aP[4]="FOREST_COVERAGE";   aPC[4]=CLASS_LANDUSE;
   }   
   else if (type==SOILEVAP_UBC)     
   {
@@ -228,7 +227,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
 /// \ref (Woods et al 1992) \cite Wood1992JoGR
 /// if type=SOILEVAP_HBV
 ///     <ul> <li> evaporation rated calculated using HBV model (only depletes top soil layer) </ul>
-/// \ref (Bergstrom, 1995) \cite Bergstroem1995
+/// \ref (Bergstrom, 1995) \cite Bergstrom1995
 /// if type=SOILEVAP_UBC
 ///     <ul> <li> evaporation rated calculated using UBCWM model (only depletes top soil layer) </ul>
 /// \ref c) Michael Quick

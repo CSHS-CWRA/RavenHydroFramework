@@ -85,7 +85,8 @@ bool CParser::Tokenize(char **out, int &numwords){
 	}
   for (w=0; w<ct; w++){                              //copy temp array of words into out[] 
 		if (w>MAXINPUTITEMS){numwords=ct;return true;}
-		//	ExitGracefully("Tokenizeline::bad allocation",OUT_OF_MEMORY);}
+    //  cout<<filename<<endl;
+		//	ExitGracefully("Tokenizeline:: exceeded maximum number of items in line",BAD_DATA);}
 		out[w]=tempwordarray[w];
 		//cout<<out[w]<<"|";
 	}
@@ -395,7 +396,8 @@ parse_error  CParser::Parse2DArray_dbl  (Writeable1DArray v1,
 	do 
 	{
     if (Tokenize(s,Len))  {return PARSE_EOF;};
-		if  (Len==(2+numcol)){
+    if (IsComment(s[0],Len)){}
+		else if  (Len==(2+numcol)){
 			if (count>=numv){return PARSE_TOO_MANY;}
 			v1[count]=s_to_d(s[0]);
 			v2[count]=s_to_d(s[1]);

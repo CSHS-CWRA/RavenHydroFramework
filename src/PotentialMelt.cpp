@@ -17,7 +17,8 @@ double UBC_DailyPotentialMelt( const optStruct &Options,
 ///		<ul> <li> potential melt is user-specified </ul>
 /// if type==POTMELT_HBV
 ///   <ul> <li> potential melt is linearly proportional to temperature, but corrected for aspect, forest cover </ul>
-/// \ref adapted from Dingman pg 189-192 \cite Dingman1994
+/// if type==POTMELT_EB
+///   <ul> <li> \ref adapted from Dingman pg 189-192 \cite Dingman1994
 /// if type==POTMELT_RESTRICTED
 ///		<ul> <li> melt is based on radiation inputs with a 'restricted' melt factor [mm/d]</ul>
 /// \ref Dingman eqn 5-61 \cite Dingman1994

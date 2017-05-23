@@ -62,28 +62,6 @@ double TurcEvap(const force_struct *F)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates PET using Thornthwaite method \cite Thornthwaite1948GR
-/// \ref C.W. Thornthwaite (1948) "An approach toward a rational classification of climate," Geographical Review, Vol. 38 No. 1 \cite Thornthwaite1948GR
-/// \note This is a utility function called by EstimatePET
-/// \ref Added by Graham Stonebridge, Fall 2011
-/// \param *F [in] Reference to model forcing functions
-/// \return Calculated PET [mm/d]
-//
-double ThornthwaiteEvap(const force_struct *F) 
-{
-  double alpha;
-  double I;
-  double t;
-  I=31.5;
-  t=max(0.0,F->temp_month_ave);
-  alpha=0.000000675*pow(I,3)-0.0000771*pow(I,2)+0.01792*I+0.49239;
-  //Need the number of days per month
-  //Need day length
-  //Need monthly average temperatures for a whole year
-  return 1.6*pow(10*t/I,alpha);
-}
-
-//////////////////////////////////////////////////////////////////
 /// \brief Returns evaporation rate [mm/d] 
 /// \details Returns evaporation rate using the Penman-monteith equation, which
 /// is an energy-balance approach
@@ -376,59 +354,56 @@ double EstimatePET(const force_struct &F,
         PET=Hamon1961Evap(&F); break;
       }
       case(PET_PRIESTLEY_TAYLOR):
-	  {
+	    {
         PET=PriestleyTaylorEvap(&F); break;
       }
-	  case(PET_HARGREAVES):
-	  {
+	    case(PET_HARGREAVES):
+	    {
         PET=HargreavesEvap(&F); break;
       }
-	  case(PET_HARGREAVES_1985):
-	  {
+	    case(PET_HARGREAVES_1985):
+	    {
         PET=Hargreaves1985Evap(&F); break;
       }
-	  case(PET_THORNTHWAITE):
-	  {
-		  PET= ThornthwaiteEvap(&F); break;
-	  }
-	  case(PET_TURC_1961):
-		{
-			PET=TurcEvap(&F); break;
-		}
-	  case(PET_MAKKINK_1957):
-		{
-			PET=Makkink1957Evap(&F);break;
-		}
-	  case(PET_SHUTTLEWORTH_WALLACE):
-		{
-			//PET=ShuttleworthWallaceEvap(&F,matric_pot,&S,&G,&CV);  // \todo [funct] (need to import additional data)
-			ExitGracefully("EstimatePET:Shuttleworth Wallace",STUB);
-		}
-    case(PET_PENMAN_SIMPLE33) :
-    {
-      double Rs =F.SW_radia;   //[MJ/m2/d]
-      double R_et =F.ET_radia; //[MJ/m2/d]
-      double Tave=F.temp_ave;  //[C]
-      double rel_hum=F.rel_humidity; //[0..1]
+	    case(PET_TURC_1961):
+		  {
+			  PET=TurcEvap(&F); break;
+		  }
+	    case(PET_MAKKINK_1957):
+		  {
+			  PET=Makkink1957Evap(&F);break;
+		  }
+	    case(PET_SHUTTLEWORTH_WALLACE):
+		  {
+			  //PET=ShuttleworthWallaceEvap(&F,matric_pot,&S,&G,&CV);  // \todo [funct] (need to import additional data)
+			  ExitGracefully("EstimatePET:Shuttleworth Wallace",STUB);
+		  }
+      case(PET_PENMAN_SIMPLE33) :
+      {
+        double Rs =F.SW_radia;   //[MJ/m2/d]
+        double R_et =F.ET_radia; //[MJ/m2/d]
+        double Tave=F.temp_ave;  //[C]
+        double rel_hum=F.rel_humidity; //[0..1]
 
-      PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
-      break;
-    }
-    case(PET_PENMAN_SIMPLE39) :
-    {
-      double Rs =F.SW_radia;   //[MJ/m2/d]
-      double R_et =F.ET_radia; //[MJ/m2/d]
-      double Tave=F.temp_ave;  //[C]
-      double rel_hum=F.rel_humidity; //[0..1]
+        PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
+        break;
+      }
+      case(PET_PENMAN_SIMPLE39) :
+      {
+        double Rs =F.SW_radia;   //[MJ/m2/d]
+        double R_et =F.ET_radia; //[MJ/m2/d]
+        double Tave=F.temp_ave;  //[C]
+        double rel_hum=F.rel_humidity; //[0..1]
 
-      PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
-      break;
-    }
-    default:
-	  {
+        PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
+        break;
+      }
+      default:
+	    {
         ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;
       }
     }
+
 	  if (PET<(-REAL_SMALL)){
       string warn="negative PET ("+to_string(PET)+" mm/d) calculated in CModel::UpdateHRUPET";
       WriteWarning(warn,false);

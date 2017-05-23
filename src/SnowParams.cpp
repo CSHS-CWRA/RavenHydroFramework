@@ -63,16 +63,17 @@ double EstimateSnowFraction( const rainsnow_method method,
     else if (method==RAINSNOW_HBV){return frac*(1.0-F->snow_frac)+F->snow_frac;}
   }
   //-----------------------------------------------------------
-  else if (method==RAINSNOW_HSPF)
+  else if (method==RAINSNOW_HSPF) // Also, from HydroComp (1969)
   {
     double temp =CGlobalParams::GetParams()->rainsnow_temp;
     double snowtemp;
     double dewpt=GetDewPointTemp(F->temp_ave,F->rel_humidity);
 
-    snowtemp=temp+(F->temp_ave-dewpt)*(0.3072+0.0144*F->temp_ave);
+    snowtemp=temp+(F->temp_ave-dewpt)*(0.5808+0.0144*F->temp_ave);
 
     if (F->temp_ave<snowtemp){return 1.0;}
     else                     {return 0.0;}
+
   }
   return 0.0;
 	//Should check/add:

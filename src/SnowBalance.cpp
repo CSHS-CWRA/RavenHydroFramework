@@ -361,6 +361,7 @@ void CmvSnowBalance::GetRatesOfChange(const double		 *state_var,
 	{
     ColdContentBalance(state_var,pHRU,Options,tt,rates);
   }
+  //-----------------------------------------------------------
   else if(type==SNOBAL_TWO_LAYER)
   {
       TwoLayerBalance(state_var,pHRU,Options,tt,rates);

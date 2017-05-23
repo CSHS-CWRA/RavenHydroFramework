@@ -1,6 +1,6 @@
-/*----------------------------------------------------------------
+ï»¿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -24,7 +24,6 @@
 #include "Transport.h"
 #include "Diagnostics.h"
 #include "ForcingGrid.h"        ///> CForcingGrid
-//#include "SparseMatrix.h"       ///> CSparseMatrix
 
 double EstimatePET          (const force_struct &F, 
                              const CHydroUnit   *pHRU,
@@ -80,7 +79,6 @@ class CModel: public CModelABC
 
     int            _nForcingGrids;  ///< number of gridded forcing input data
     CForcingGrid **_pForcingGrids;  ///< gridded input data [size: _nForcingGrids]
-    //CSparseMatrix  *_pGridWeightStruct;  ///< pointer to [_nForcingGrids] structures of sparse grid weight information
 
     int                 _UTM_zone;  ///< model-wide UTM zone used for interpolation
 
@@ -97,7 +95,7 @@ class CModel: public CModelABC
     CTimeSeriesABC **_pObservedTS;  ///< array of pointers of observation time series [size: _nObservedTS]
     CTimeSeries     **_pModeledTS;  ///< array of pointers of modeled time series corresponding to observations [size: _nObservedTS]
     int              _nObservedTS;  ///< number of observation time series
-    int               *_aObsIndex;  ///< index of the next unprocessed observation
+    int               *_aObsIndex;	///< index of the next unprocessed observation
 
     CTimeSeriesABC**_pObsWeightTS;  ///< array of pointers of observation weight time series [size: _nObsWeightTS]
     int             _nObsWeightTS;  ///< number of observation weight time series
@@ -178,7 +176,21 @@ class CModel: public CModelABC
                                         const optStruct &Options, 
                                         const CHydroUnit *pHRU, 
                                         const time_struct &tt);
-
+																				
+    //Routines for deriving missing data based on gridded data provided
+    void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);
+    void         GenerateMinMaxAveTempFromSubdaily        (const optStruct &Options);
+    void         GenerateMinMaxSubdailyTempFromAve        (const optStruct &Options);
+    //void       GenerateSubdailyAveTempFromSubdailyMinMax(const optStruct &Options);
+    void         GeneratePrecipFromSnowRain               (const optStruct &Options);
+    void         GenerateRainFromPrecip                   (const optStruct &Options);
+    void         GenerateZeroSnow                         (const optStruct &Options);
+    bool         ForcingGridIsInput                       (const string forcing_grid_name);
+    bool         ForcingGridIsAvailable                   (const string forcing_grid_name);
+    //double       GetAverageSnowFrac                       (const int x_col, const int y_row, const double t, const int n) const;
+    double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
+		
+    
   public:/*-------------------------------------------------------*/
 
     //Constructor/Destructor:
@@ -231,15 +243,15 @@ class CModel: public CModelABC
     int               GetForcingGridIndexFromName       (const string name) const;
     double            GetWatershedArea                  () const;
     bool              IsInHRUGroup                      (const int k,
-							 const string HRUGroupName) const;
+                                                         const string HRUGroupName) const;
 
     const optStruct  *GetOptStruct                      () const;
-    CTransportModel  *GetTransportModel      	        () const;
+    CTransportModel  *GetTransportModel      	          () const;
     
     void              GetParticipatingParamList         (string *aP,
-							 class_type *aPC,
-							 int &nP,
-							 const optStruct &Options) const;
+								                                         class_type *aPC,
+							                                           int &nP,
+							                                           const optStruct &Options) const;
     
     //Manipulator Functions: called by Parser
     void    AddProcess                (	     CHydroProcessABC  *pMov		);
@@ -306,20 +318,6 @@ class CModel: public CModelABC
     void        IncrementCumulInput     (const optStruct &Options, const time_struct &tt);
     void        IncrementCumOutflow     (const optStruct &Options);
 
-    //Forcing grid routines --> should probably moved somewhere else
-    //Routines for deriving missing data based on gridded data provided
-    void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);
-    void         GenerateMinMaxAveTempFromSubdaily        (const optStruct &Options);
-    void         GenerateMinMaxSubdailyTempFromAve        (const optStruct &Options);
-    //void       GenerateSubdailyAveTempFromSubdailyMinMax(const optStruct &Options);
-    void         GeneratePrecipFromSnowRain               (const optStruct &Options);
-    void         GenerateRainFromPrecip                   (const optStruct &Options);
-    void         GenerateZeroSnow                         (const optStruct &Options);
-    bool         ForcingGridIsInput                       (const string forcing_grid_name);
-    bool         ForcingGridIsAvailable                   (const string forcing_grid_name);
-    //double       GetAverageSnowFrac                       (const int x_col, const int y_row, const double t, const int n) const;
-    double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
-    
     //output routines
     void        WriteMinorOutput        (const optStruct &Options, const time_struct &tt);
     void        WriteMajorOutput        (string solfile, const optStruct &Options, const time_struct &tt, bool final) const;

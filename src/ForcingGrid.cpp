@@ -10,7 +10,7 @@
 #include "Forcings.h"
 #include <string.h>
 
-#ifdef netcdf
+#ifdef _NETCDF_
 #include <netcdf.h>
 #endif
 
@@ -136,6 +136,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
 ///        or "CForcingGrid()".
 void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 {
+#ifdef _NETCDF_
   int    ncid;                  // file unit
   int    dimid_x;               // id of x dimension (columns)
   int    dimid_y;               // id of y dimension (rows)
@@ -161,7 +162,6 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   string colon;          // to check format of time unit string
   string unit_t_str;     // to check format of time unit string
 
-#ifdef netcdf
   // _ForcingType  = ForcingType;
   // _filename     = filename;
   // _varname      = varname;
@@ -552,8 +552,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 {
 
   // return
-  bool new_chunk_read;  // true if new chunk was read, otherwise false
-  
+  bool new_chunk_read=false;  // true if new chunk was read, otherwise false
+#ifdef _NETCDF_  
   // local variables
   int    ncid;          // file unit
   int    dim1;          // length of 1st dimension in NetCDF
@@ -572,8 +572,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   double model_timestep;
 
   new_chunk_read = false;
-
-#ifdef netcdf
 
   // -------------------------------
   // check if chunk id is valid
@@ -1453,7 +1451,7 @@ int  CForcingGrid::GetChunkSize() const{return _ChunkSize;}
 //
 void    CForcingGrid::nc_error_exit(int error_code) const{
 
-#ifdef netcdf
+#ifdef _NETCDF_
   printf("Error: %s\n", nc_strerror(error_code));
   ExitGracefullyIf(error_code,    
                    "CForcingGrid: NetCDF: NetCDF error occured",BAD_DATA);

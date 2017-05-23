@@ -12,7 +12,8 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
-//#define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
+// #define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
+// #define _NETCDF_ //Uncomment if netCDF library is available for compilation
 
 #include <stdlib.h>
 #include <cstring>
@@ -355,7 +356,6 @@ enum evap_method
   PET_HARGREAVES_1985,     ///< Hargreaves (1985) method
   PET_HAMON,               ///< Hamon (19??) method
   PET_JENSEN_HAISE,        ///< 
-  PET_THORNTHWAITE,        ///< 
   PET_TURC_1961,           ///< 
   PET_MAKKINK_1957,        ///< 
   PET_SHUTTLEWORTH_WALLACE,///< 
@@ -811,7 +811,7 @@ struct optStruct
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
   string           working_dir;       ///< working directory
   int              wateryr_mo;        ///< starting month of water year (typically 10=October)
-
+  bool             create_rvp_template;///< create an rvp template file after reading the .rvi
   //diagnostic options
   double           diag_start_time;   ///< Model time to start diagnostics 
   double           diag_end_time;     ///< Model time to start diagnostics 
