@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
-  ParseLib Source Code
-  Copyright © 2007 James Craig
-----------------------------------------------------------------*/
+  Raven Library Source Code
+  Copyright (c) 2008-2017 the Raven Development Teams
+  ----------------------------------------------------------------*/
 #ifndef PARSELIB_H
 #define PARSELIB_H
 #define _CRT_SECURE_NO_DEPRECATE 1
@@ -45,11 +45,11 @@ const bool   parserdebug=false;   ///< turn to true for debugging of parser
 //
 enum parse_error
 {
-	PARSE_BAD,        ///< Corrupt file
-	PARSE_NOT_ENOUGH, ///< Not enough parameters
-	PARSE_TOO_MANY,   ///< Too many parameters 
-	PARSE_GOOD,       ///< No error
-	PARSE_EOF         ///< End of file error
+  PARSE_BAD,        ///< Corrupt file
+  PARSE_NOT_ENOUGH, ///< Not enough parameters
+  PARSE_TOO_MANY,   ///< Too many parameters
+  PARSE_GOOD,       ///< No error
+  PARSE_EOF         ///< End of file error
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -57,107 +57,107 @@ enum parse_error
 //
 class CParser
 {
- private:
+private:
 
-	ifstream *INPUT;	///current input file
-	int      l;			  ///current line in input file
+  ifstream *INPUT;      ///current input file
+  int      l;                     ///current line in input file
   string   filename;///current input filename
 
-	bool     comma_only;//true if spaces & tabs ignored in tokenization
+  bool     comma_only;//true if spaces & tabs ignored in tokenization
 
- public:
+public:
 
-	CParser(ifstream &FILE, const int init_line_num);
-	CParser(ifstream &FILE, string filename, const int init_line_num);
-	~CParser(){}
+  CParser(ifstream &FILE, const int init_line_num);
+  CParser(ifstream &FILE, string filename, const int init_line_num);
+  ~CParser(){}
 
-	void   SetLineCounter(int i);
-	int    GetLineNumber ();
-	string GetFilename();
-	void   ImproperFormat(char **s);
-	void   IgnoreSpaces  (bool ignore){comma_only=ignore;}
+  void   SetLineCounter(int i);
+  int    GetLineNumber ();
+  string GetFilename();
+  void   ImproperFormat(char **s);
+  void   IgnoreSpaces  (bool ignore){comma_only=ignore;}
 
-	bool   Tokenize(char **tokens, int &numwords);
+  bool   Tokenize(char **tokens, int &numwords);
 
-	void         SkipLine         ();
+  void         SkipLine         ();
 
-	/* [double]                   */
-	parse_error	 Parse_dbl				(double &v1);
-	/* [double] [double]          */
-	parse_error	 Parse_dbl				(double &v1, double &v2);
-	/* [double] [double] [double] */
-	parse_error	 Parse_dbl				(double &v1, double &v2, double &v3);
-	/* [double] [double] [double] [double] */
-	parse_error	 Parse_dbl				(double &v1, double &v2, double &v3, double &v4);
-	/* [int   ] [double] [double] */ 
-	parse_error	 Parse_intdbldbl	(   int &v1, double &v2, double &v3);
-	/* [int   ]                   */
-	parse_error	 Parse_int				(   int &v1);
-	/* [int   ] [int  ]                  */
-	parse_error	 Parse_int				(   int &v1,    int &v2);
+  /* [double]                   */
+  parse_error    Parse_dbl                              (double &v1);
+  /* [double] [double]          */
+  parse_error    Parse_dbl                              (double &v1, double &v2);
+  /* [double] [double] [double] */
+  parse_error    Parse_dbl                              (double &v1, double &v2, double &v3);
+  /* [double] [double] [double] [double] */
+  parse_error    Parse_dbl                              (double &v1, double &v2, double &v3, double &v4);
+  /* [int   ] [double] [double] */
+  parse_error    Parse_intdbldbl        (   int &v1, double &v2, double &v3);
+  /* [int   ]                   */
+  parse_error    Parse_int                              (   int &v1);
+  /* [int   ] [int  ]                  */
+  parse_error    Parse_int                              (   int &v1,    int &v2);
 
-	/* [double] 
-	     ...     
-	   [double]  (fixed (known) array size)
-	   & (if optfollow=true)*/
-	parse_error	 ParseArray_dbl   (Writeable1DArray v,  int numv, int &optfollow);
+  /* [double]
+     ...
+     [double]  (fixed (known) array size)
+     & (if optfollow=true)*/
+  parse_error    ParseArray_dbl   (Writeable1DArray v,  int numv, int &optfollow);
 
-	/* [double] [double]
-	     ...      ...
-	   [double] [double] (fixed (known) array size)
-	   & (if optfollow=true)*/
-	parse_error	 ParseArray_dbl   (Writeable1DArray v1, 
-																 Writeable1DArray v2, int numv, int &optfollow);
-	/* [double] [double] [double]
-	     ...      ...
-	   [double] [double] [double] (fixed (known) array size)
-	   & (if optfollow=true) */
-	parse_error	 ParseArray_dbl   (Writeable1DArray v1, 
-																 Writeable1DArray v2, 
-																 Writeable1DArray v3, int numv, int &optfollow);
-	/* [double] 
-	     ...     
-	   [double]  (dynamic (unknown) array size, max entries maxv)
-	   & (if optfollow=true) */
-	parse_error	 ParseArray_dbl_dyn(Writeable1DArray v, int &numv, const int maxv, int &optfollow);
-	
-	/* [double]  [double]
-	     ...     
-	   [double]  [double] (dynamic (unknown) array sizes, max entries maxv)
-	   & (if optfollow=true) */
-	parse_error	 ParseArray_dbldbl_dyn(Writeable1DArray v1, Writeable1DArray v2, int &numv, const int maxv, int &optfollow);
+  /* [double] [double]
+     ...      ...
+     [double] [double] (fixed (known) array size)
+     & (if optfollow=true)*/
+  parse_error    ParseArray_dbl   (Writeable1DArray v1,
+                                   Writeable1DArray v2, int numv, int &optfollow);
+  /* [double] [double] [double]
+     ...      ...
+     [double] [double] [double] (fixed (known) array size)
+     & (if optfollow=true) */
+  parse_error    ParseArray_dbl   (Writeable1DArray v1,
+                                   Writeable1DArray v2,
+                                   Writeable1DArray v3, int numv, int &optfollow);
+  /* [double]
+     ...
+     [double]  (dynamic (unknown) array size, max entries maxv)
+     & (if optfollow=true) */
+  parse_error    ParseArray_dbl_dyn(Writeable1DArray v, int &numv, const int maxv, int &optfollow);
 
-	//special routine for borehole format
-	parse_error  Parse2DArray_dbl (Writeable1DArray v1, 
-																 Writeable1DArray v2, 
-																 Writeable2DArray v3, int numv, int numcol, int &optfollow);
-	/* [double] [double] ... [double]
-	     ...       ...   ...    ...   
-	   [double] [double] ... [double]              (fixed (known) 2D array size)
-	   & (if optfollow=true) */
-	parse_error  Parse2DArray_dbl  (Writeable2DArray v3, int numv, int numcol, int &optfollow);
+  /* [double]  [double]
+     ...
+     [double]  [double] (dynamic (unknown) array sizes, max entries maxv)
+     & (if optfollow=true) */
+  parse_error    ParseArray_dbldbl_dyn(Writeable1DArray v1, Writeable1DArray v2, int &numv, const int maxv, int &optfollow);
 
-	/* [double] [double] ... [double] ... [double]
-	     ...       ...   ...    ...   ...   ...
-	   [double] [double] ... [double]              (fixed (known) array size)
-	   & (if optfollow=true) */
-	parse_error	 ParseBigArray_dbl (Writeable1DArray v,  int numv);
+  //special routine for borehole format
+  parse_error  Parse2DArray_dbl (Writeable1DArray v1,
+                                 Writeable1DArray v2,
+                                 Writeable2DArray v3, int numv, int numcol, int &optfollow);
+  /* [double] [double] ... [double]
+     ...       ...   ...    ...
+     [double] [double] ... [double]              (fixed (known) 2D array size)
+     & (if optfollow=true) */
+  parse_error  Parse2DArray_dbl  (Writeable2DArray v3, int numv, int numcol, int &optfollow);
 
-	/* [cmplex re] [cmplex im]
-	     ...     
-	   [cmplex re] [cmplex im] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
-	   & (if optfollow=true) */
-	parse_error	 ParseArray_cmp_dyn(Writeable1DArray_z v, int &numv, const int maxv, int &optfollow);
-	/* [cmplex re] [cmplex im] [double]
-	     ...     
-	   [cmplex re] [cmplex im] [double] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
-	   & (if optfollow=true) */
-	parse_error	 ParseArray_cmp_dyn(Writeable1DArray_z v,Writeable1DArray v2, int &numv, const int maxv, int &optfollow);
-	/* [cmplex re] [cmplex im] [double] [double]
-	     ...     
-	   [cmplex re] [cmplex im] [double] [double] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
-	   & (if optfollow=true) */
-	parse_error	 ParseArray_cmp_dyn(Writeable1DArray_z v,Writeable1DArray v2,Writeable1DArray v3, int &numv, const int maxv, int &optfollow);
+  /* [double] [double] ... [double] ... [double]
+     ...       ...   ...    ...   ...   ...
+     [double] [double] ... [double]              (fixed (known) array size)
+     & (if optfollow=true) */
+  parse_error    ParseBigArray_dbl (Writeable1DArray v,  int numv);
+
+  /* [cmplex re] [cmplex im]
+     ...
+     [cmplex re] [cmplex im] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
+     & (if optfollow=true) */
+  parse_error    ParseArray_cmp_dyn(Writeable1DArray_z v, int &numv, const int maxv, int &optfollow);
+  /* [cmplex re] [cmplex im] [double]
+     ...
+     [cmplex re] [cmplex im] [double] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
+     & (if optfollow=true) */
+  parse_error    ParseArray_cmp_dyn(Writeable1DArray_z v,Writeable1DArray v2, int &numv, const int maxv, int &optfollow);
+  /* [cmplex re] [cmplex im] [double] [double]
+     ...
+     [cmplex re] [cmplex im] [double] [double] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
+     & (if optfollow=true) */
+  parse_error    ParseArray_cmp_dyn(Writeable1DArray_z v,Writeable1DArray v2,Writeable1DArray v3, int &numv, const int maxv, int &optfollow);
 };
 
 #endif

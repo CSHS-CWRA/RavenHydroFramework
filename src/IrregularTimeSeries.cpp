@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "IrregularTimeSeries.h"
 #include "ParseLib.h"
 /*****************************************************************
@@ -13,82 +13,82 @@
 ///
 /// \param Name          [in] name of time series
 /// \param tag           [in] data tag
-/// \param filename      [in] original source file  
+/// \param filename      [in] original source file
 /// \param *aValues      [in] Array of time series values [size NumValues]
 /// \param *aDays        [in] Array of julian days  [size NumValues]
 /// \param *aYears       [in] Array of years [size NumValues]
 /// \param NumValues     [in] Number of entries in the time series
 //
-CIrregularTimeSeries::CIrregularTimeSeries(	string    Name,
-											string    tag,
-											string    filename,
-											double   *aValues,
-											double   *aDays,
-					 						int      *aYears,
-											const int NumValues)
-	:CTimeSeriesABC(ts_irregular,Name,tag,filename)
+CIrregularTimeSeries::CIrregularTimeSeries(     string    Name,
+                                                string    tag,
+                                                string    filename,
+                                                double   *aValues,
+                                                double   *aDays,
+                                                int      *aYears,
+                                                const int NumValues)
+  :CTimeSeriesABC(ts_irregular,Name,tag,filename)
 {
-	_nVals= NumValues;
+  _nVals= NumValues;
 
-	ExitGracefullyIf(NumValues <= 0,
-		"CIrregularTimeSeries: Constructor: no entries in time series", BAD_DATA);
+  ExitGracefullyIf(NumValues <= 0,
+                   "CIrregularTimeSeries: Constructor: no entries in time series", BAD_DATA);
 
-	_aVal = NULL;
-	_aVal = new double[_nVals];
+  _aVal = NULL;
+  _aVal = new double[_nVals];
 
-	_aDays = NULL;
-	_aDays = new double[_nVals];
+  _aDays = NULL;
+  _aDays = new double[_nVals];
 
-	_aYears = NULL;
-	_aYears = new int[_nVals];
-	
-	ExitGracefullyIf(_aVal==NULL || _aDays==NULL || _aYears==NULL, "CIrregularTimeSeries: Constructor", OUT_OF_MEMORY);
+  _aYears = NULL;
+  _aYears = new int[_nVals];
 
-	for (int n = 0; n<_nVals; n++)
-	{
-		_aVal[n]  = aValues[n];
-		_aDays[n] = aDays[n];
-		_aYears[n]= aYears[n];
-	}
+  ExitGracefullyIf(_aVal==NULL || _aDays==NULL || _aYears==NULL, "CIrregularTimeSeries: Constructor", OUT_OF_MEMORY);
 
-	_aTimes=NULL; //generated in initialize
-	_indexCorr=-1;
-	_nSampVal=0;
+  for (int n = 0; n<_nVals; n++)
+  {
+    _aVal[n]  = aValues[n];
+    _aDays[n] = aDays[n];
+    _aYears[n]= aYears[n];
+  }
+
+  _aTimes=NULL; //generated in initialize
+  _indexCorr=-1;
+  _nSampVal=0;
 }
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of copy constructor (for which the address of a time series is passed)
 /// \param &t [in] Address of a time series of which a "copy" is made
 //
- CIrregularTimeSeries::CIrregularTimeSeries(string Name,
-                          const CIrregularTimeSeries &t)
-	  :CTimeSeriesABC(Name,t)
- {
-	 _nVals = t.GetNumValues();
+CIrregularTimeSeries::CIrregularTimeSeries(string Name,
+                                           const CIrregularTimeSeries &t)
+  :CTimeSeriesABC(Name,t)
+{
+  _nVals = t.GetNumValues();
 
-	 _aVal = NULL;
-	 _aVal = new double[_nVals];
+  _aVal = NULL;
+  _aVal = new double[_nVals];
 
-	_aDays = NULL;
-	_aDays = new double[_nVals];
+  _aDays = NULL;
+  _aDays = new double[_nVals];
 
-	_aYears = NULL;
-	_aYears = new int[_nVals];
+  _aYears = NULL;
+  _aYears = new int[_nVals];
 
-	ExitGracefullyIf(_aVal==NULL || _aDays==NULL || _aYears==NULL, "CIrregularTimeSeries: Constructor", OUT_OF_MEMORY);
+  ExitGracefullyIf(_aVal==NULL || _aDays==NULL || _aYears==NULL, "CIrregularTimeSeries: Constructor", OUT_OF_MEMORY);
 
-	 for (int n = 0; n<_nVals; n++)
-	 {
-	   _aVal[n]   = t.GetValue(n);
-	   _aDays[n]  = t.GetDay(n);
-	   _aYears[n] = t.GetYear(n);
-	 }
+  for (int n = 0; n<_nVals; n++)
+  {
+    _aVal[n]   = t.GetValue(n);
+    _aDays[n]  = t.GetDay(n);
+    _aYears[n] = t.GetYear(n);
+  }
 
-	_aTimes=NULL; //generated in initialize
-	_indexCorr=-1;
-	_nSampVal=-1;
+  _aTimes=NULL; //generated in initialize
+  _indexCorr=-1;
+  _nSampVal=-1;
 
- }
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
 //
@@ -121,7 +121,7 @@ void CIrregularTimeSeries::Initialize(const double model_start_day,
 
   _aTimes = new double[_nVals]; //array of time series times in model time
   for (int n = 0; n < _nVals; n++)
-  {    
+  {
     _aTimes[n] = TimeDifference(model_start_day,model_start_year,_aDays[n],_aYears[n]);
 
     if ((_indexCorr == -1) && (_aTimes[n] >= 0)){ _indexCorr = n; }
@@ -130,7 +130,7 @@ void CIrregularTimeSeries::Initialize(const double model_start_day,
   if (!is_observation)
   {
     ExitGracefullyIf(_nSampVal <= 0,
-      "CIrregularTimeSeries::Initialize: time series data not available during model simulation", BAD_DATA);
+                     "CIrregularTimeSeries::Initialize: time series data not available during model simulation", BAD_DATA);
   }
 }
 
@@ -176,18 +176,18 @@ int CIrregularTimeSeries::GetYear(const int n) const{return _aYears[n];}
 //
 double CIrregularTimeSeries::GetAvgValue(const double &t, const double &tstep) const
 {
-	double sum = 0;
-	int count = 0;
-	for (int n = 0; n < _nVals; n++)
-	{
-	  if ( _aTimes[n]>=t && _aTimes[n]<=(t+tstep) )
-	  {
-		sum += _aVal[n];
-		count++;
-	  }
-	}
-	if (count > 0){ return sum / count; }
-	else { return BLANK_DATA; }
+  double sum = 0;
+  int count = 0;
+  for (int n = 0; n < _nVals; n++)
+  {
+    if ( _aTimes[n]>=t && _aTimes[n]<=(t+tstep) )
+    {
+      sum += _aVal[n];
+      count++;
+    }
+  }
+  if (count > 0){ return sum / count; }
+  else { return BLANK_DATA; }
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -199,19 +199,19 @@ double CIrregularTimeSeries::GetAvgValue(const double &t, const double &tstep) c
 //
 double CIrregularTimeSeries::GetMinValue(const double &t, const double &tstep) const
 {
-	double vmin(ALMOST_INF);
-	bool blank = true;
-	for (int n = 0; n < _nVals; n++)
-	{
-		if (_aTimes[n] >= t && _aTimes[n] <= (t + tstep))
-		{
-			lowerswap(vmin, _aVal[n]);
-			blank = false;
-		}
-	}
-	if (blank){ return BLANK_DATA; }
+  double vmin(ALMOST_INF);
+  bool blank = true;
+  for (int n = 0; n < _nVals; n++)
+  {
+    if (_aTimes[n] >= t && _aTimes[n] <= (t + tstep))
+    {
+      lowerswap(vmin, _aVal[n]);
+      blank = false;
+    }
+  }
+  if (blank){ return BLANK_DATA; }
 
-	return vmin;
+  return vmin;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -223,19 +223,19 @@ double CIrregularTimeSeries::GetMinValue(const double &t, const double &tstep) c
 //
 double CIrregularTimeSeries::GetMaxValue(const double &t, const double &tstep) const
 {
-	double vmax(-ALMOST_INF);
-	bool blank = true;
-	for (int n = 0; n < _nVals; n++)
-	{
-		if (_aTimes[n] >= t && _aTimes[n] <= (t + tstep))
-		{
-			upperswap(vmax, _aVal[n]);
-			blank = false;
-		}
-	}
-	if (blank){ return BLANK_DATA; }
+  double vmax(-ALMOST_INF);
+  bool blank = true;
+  for (int n = 0; n < _nVals; n++)
+  {
+    if (_aTimes[n] >= t && _aTimes[n] <= (t + tstep))
+    {
+      upperswap(vmax, _aVal[n]);
+      blank = false;
+    }
+  }
+  if (blank){ return BLANK_DATA; }
 
-	return vmax;
+  return vmax;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -248,7 +248,7 @@ double CIrregularTimeSeries::GetInterval() const{return 0.0;}
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns nnth value within the model time
 /// \notes must be called after initializing
-///  
+///
 /// \param nn [in] index
 /// \return time series value
 //
@@ -257,7 +257,7 @@ double CIrregularTimeSeries::GetSampledValue(const int nn) const{return _aVal[nn
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns time of the nnth value within the model time
 /// \notes must be called after initializing
-///  
+///
 /// \param nn [in] index
 /// \return time
 //
@@ -266,14 +266,14 @@ double CIrregularTimeSeries::GetSampledTime(const int nn) const{return _aTimes[n
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns number of values within model time
 /// \notes must be called after initializing
-///  
+///
 /// \return number of values
 //
 int    CIrregularTimeSeries::GetNumSampledValues() const{return _nSampVal;}
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Parses standard single time series format from file and creates time series object
-/// \param *p [in] CParser object pointing to input file 
+/// \param *p [in] CParser object pointing to input file
 /// \return Pointer to created time series
 //
 CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string name, const string tag, const int nMeasurements)
@@ -293,29 +293,29 @@ CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string nam
   s[0]="";
   while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
   {
-		if (Len<3){
-		  p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;
-		  ExitGracefully("CIrregularTimeSeries::Parse: Bad number of time series points",BAD_DATA);
-		}
-		ExitGracefullyIf(n>=nMeasurements,"CIrregularTimeSeries::Parse: Bad number of time series points",BAD_DATA);
+    if (Len<3){
+      p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;
+      ExitGracefully("CIrregularTimeSeries::Parse: Bad number of time series points",BAD_DATA);
+    }
+    ExitGracefullyIf(n>=nMeasurements,"CIrregularTimeSeries::Parse: Bad number of time series points",BAD_DATA);
 
-		if ((string(s[0]).length()==10) &&
-		   ((string(s[0]).substr(4,1)=="/") || 
-			(string(s[0]).substr(4,1)=="-")))
-		{ //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0]
-			time_struct tt;
-			tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
-			aDays[n]=tt.julian_day;
-			aYears[n] =tt.year;
-		} 
-		else
-		{ //julian date format [nMeasurements] [start_day]
-			aDays [n]=s_to_d(s[0]);
-			aYears[n]=s_to_i(s[1]);
-		}
+    if ((string(s[0]).length()==10) &&
+        ((string(s[0]).substr(4,1)=="/") ||
+         (string(s[0]).substr(4,1)=="-")))
+    { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0]
+      time_struct tt;
+      tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
+      aDays[n]=tt.julian_day;
+      aYears[n] =tt.year;
+    }
+    else
+    { //julian date format [nMeasurements] [start_day]
+      aDays [n]=s_to_d(s[0]);
+      aYears[n]=s_to_i(s[1]);
+    }
 
-		aVal [n]=s_to_d(s[2]);
-		n++;
+    aVal [n]=s_to_d(s[2]);
+    n++;
   }
   if (n!=nMeasurements){
     ExitGracefully("CIrregularTimeSeries::Parse: Bad number of time series points",BAD_DATA);}

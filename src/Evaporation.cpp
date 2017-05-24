@@ -1,15 +1,15 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
+  Copyright (c) 2008-2017 the Raven Development Team
 
-	Routines for calculating PET:
-	-Penman Monteith Equation
-	-Penman-Combination
-	-Priestly Taylor Equation
-	-Hargreaves Equation
-	-Hargreaves Equation 
-	=Shuttle-Wallace
-----------------------------------------------------------------*/
+  Routines for calculating PET:
+  -Penman Monteith Equation
+  -Penman-Combination
+  -Priestly Taylor Equation
+  -Hargreaves Equation
+  -Hargreaves Equation
+  =Shuttle-Wallace
+  ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
 #include "HydroUnits.h"
@@ -19,27 +19,27 @@
 /// \ref From Makkink, 1957 as described in "A comparison of six potential
 /// evapotranspiration methods for regional use in the southeastern
 /// united states", American Water Resources Association, 2005. \cite Makkink1957JIWE
-/// \note This is a utility function called by EstimatePET 
+/// \note This is a utility function called by EstimatePET
 /// \remark Added by Graham Stonebridge, Fall 2011
 /// \param *F [in] Reference to model forcing functions
 /// \return Calculated PET [mm/d]
 //
 double Makkink1957Evap(const force_struct *F)
 {
-	double PET;
-	double gamma;			//psychometric "constant" [kPa/K]
-	double LH_vapor;	//latent heat of vaporization [MJ/kg]
-	double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
-	double sat_vap;   //Saturation vapor pressure [kPa]
+  double PET;
+  double gamma;                   //psychometric "constant" [kPa/K]
+  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
+  double sat_vap;   //Saturation vapor pressure [kPa]
 
-  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);				
+  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
   gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
   PET=0.61*(de_dT/(de_dT+gamma))*F->SW_radia*23.8846/58.5-0.12;
 
-	return max(0.0,PET);
+  return max(0.0,PET);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -48,21 +48,21 @@ double Makkink1957Evap(const force_struct *F)
 /// evapotranspiration methods for regional use in the southeastern
 /// united states", American Water Resources Association, 2005.
 /// \note This is a utility function called by EstimatePET
-/// \ref Added by Graham Stonebridge, Fall 2011 
+/// \ref Added by Graham Stonebridge, Fall 2011
 /// \param *F [in] Reference to model forcing functions
 /// \return Calculated PET [mm/d]
 //
 double TurcEvap(const force_struct *F)
 {
-	double t,evp;
-	t=max(0.0,F->temp_daily_ave);
-	evp=0.013*t/(t+15)*((F->SW_radia)*23.8846+50);
-	if (F->rel_humidity<0.5){evp*=(1+(50-F->rel_humidity*100)/70);}
-	return max(0.0,evp);
+  double t,evp;
+  t=max(0.0,F->temp_daily_ave);
+  evp=0.013*t/(t+15)*((F->SW_radia)*23.8846+50);
+  if (F->rel_humidity<0.5){evp*=(1+(50-F->rel_humidity*100)/70);}
+  return max(0.0,evp);
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns evaporation rate [mm/d] 
+/// \brief Returns evaporation rate [mm/d]
 /// \details Returns evaporation rate using the Penman-monteith equation, which
 /// is an energy-balance approach
 /// \ref  Adapted from Dingman, Howell, T.A and Evett, S.R. (USDA-Agricultural research service) \cite Howell2004 \cite Dingman2004
@@ -70,31 +70,31 @@ double TurcEvap(const force_struct *F)
 /// \note This is a utility function called by EstimatePET
 ///
 /// \param *F [in] Forcing functions for a specific HRU over the current time step
-/// \param &atmos_cond [in] Atmospheric conductance [mm/s] 
+/// \param &atmos_cond [in] Atmospheric conductance [mm/s]
 /// \param &canopy_cond [in] Canopy conductance [mm/s]
 /// \return Evaporation rate [mm/d]
 //
-double PenmanMonteithEvap(const force_struct	 *F,
+double PenmanMonteithEvap(const force_struct     *F,
                           const double       &atmos_cond,   //[mm/s]
-													const double			 &canopy_cond)	//[mm/s]
+                          const double                     &canopy_cond)  //[mm/s]
 {
-	double numer, denom;
-	double gamma;			//psychometric "constant" [kPa/K]
-	double LH_vapor;	//latent heat of vaporization [MJ/kg]
-	double de_dT;     //Vapor pressure-temp slope=de* / dT [kPa/K]
-	double sat_vap;   //Saturation vapor pressure [kPa]
-	double vapor_def; //vapor deficit [kPa]
+  double numer, denom;
+  double gamma;                   //psychometric "constant" [kPa/K]
+  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double de_dT;     //Vapor pressure-temp slope=de* / dT [kPa/K]
+  double sat_vap;   //Saturation vapor pressure [kPa]
+  double vapor_def; //vapor deficit [kPa]
 
-	sat_vap  =GetSaturatedVaporPressure(F->temp_ave);		
-	de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
+  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
+  de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
   gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
   vapor_def=sat_vap*(1.0-(F->rel_humidity));
 
   //Calculate evaporation - Dingman eqn 7-56
-	numer =de_dT*max((F->SW_radia_net) + (F->LW_radia),0.0); //[kPa/K*MJ/m2/d]
-	numer+=(F->air_dens)*SPH_AIR*vapor_def*(atmos_cond*SEC_PER_DAY/MM_PER_METER);//[kPa/K*MJ/m2/d]
-	denom = (de_dT+gamma*(1.0+(atmos_cond/canopy_cond)))*LH_vapor*DENSITY_WATER; //[kPa/K*MJ/m3]
+  numer =de_dT*max((F->SW_radia_net) + (F->LW_radia),0.0); //[kPa/K*MJ/m2/d]
+  numer+=(F->air_dens)*SPH_AIR*vapor_def*(atmos_cond*SEC_PER_DAY/MM_PER_METER);//[kPa/K*MJ/m2/d]
+  denom = (de_dT+gamma*(1.0+(atmos_cond/canopy_cond)))*LH_vapor*DENSITY_WATER; //[kPa/K*MJ/m3]
   if (canopy_cond==0){return 0.0;}//zero conductance means no ET
 
   return numer/denom*MM_PER_METER;//[mm/d]
@@ -111,50 +111,50 @@ double PenmanMonteithEvap(const force_struct	 *F,
 /// \return Potential evaporation rate [mm/d]
 //
 double PenmanCombinationEvap(const force_struct *F,
-														 const double				&vert_trans)	//[m*s^2/kg]
+                             const double                           &vert_trans)    //[m*s^2/kg]
 {
-	double gamma;			//psychometric "constant" [kPa/K]
-	double LH_vapor;	//latent heat of vaporization [MJ/kg]
-	double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
-	double sat_vap;   //Saturation vapor pressure [kPa]
-	double vapor_def; //vapor deficit [kPa]
+  double gamma;                   //psychometric "constant" [kPa/K]
+  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
+  double sat_vap;   //Saturation vapor pressure [kPa]
+  double vapor_def; //vapor deficit [kPa]
 
-	double numer,denom;
+  double numer,denom;
 
-	sat_vap			=GetSaturatedVaporPressure(F->temp_ave);				
-	de_dT				=GetSatVapSlope           (F->temp_ave,sat_vap);
-  LH_vapor		=GetLatentHeatVaporization(F->temp_ave);
-  gamma				=GetPsychometricConstant  (F->air_pres,LH_vapor);
+  sat_vap                 =GetSaturatedVaporPressure(F->temp_ave);
+  de_dT                           =GetSatVapSlope           (F->temp_ave,sat_vap);
+  LH_vapor              =GetLatentHeatVaporization(F->temp_ave);
+  gamma                         =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
   vapor_def   =sat_vap*(1.0-(F->rel_humidity));
 
-	/// \ref Calculate evaporation - Dingman eqn 7-33
-	numer =de_dT*max((F->SW_radia_net) + (F->LW_radia),0.0);
-	numer+=gamma*vert_trans*DENSITY_WATER*LH_vapor*(F->wind_vel)*vapor_def;
+  /// \ref Calculate evaporation - Dingman eqn 7-33
+  numer =de_dT*max((F->SW_radia_net) + (F->LW_radia),0.0);
+  numer+=gamma*vert_trans*DENSITY_WATER*LH_vapor*(F->wind_vel)*vapor_def;
 
-	denom =DENSITY_WATER*LH_vapor*(de_dT + gamma);
+  denom =DENSITY_WATER*LH_vapor*(de_dT + gamma);
 
   return max(0.0,(numer/denom))*MM_PER_METER;//[mm/d]
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns potential evaporation rate [mm/d] \cite Stannard1993WRR
-/// \details  returns the potential evaporation rate [mm/d] using the 
+/// \details  returns the potential evaporation rate [mm/d] using the
 /// Priestley-Taylor equation
 /// \ref adapted from SWAT
 /// \note This is a utility function called by EstimatePET
 /// \param *F [in] Forcing functions for a specific HRU over the current time step
 /// \return Potential evaporation rate [mm/d]
 //
-double PriestleyTaylorEvap(const force_struct *F)	
+double PriestleyTaylorEvap(const force_struct *F)
 {
-  double gamma;			//psychometric "constant" [kPa/K]	
-	double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
-	double LH_vapor;	//latent heat of vaporization [MJ/kg]
-	double sat_vap;   //Saturation vapor pressure
+  double gamma;                 //psychometric "constant" [kPa/K]
+  double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
+  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double sat_vap;   //Saturation vapor pressure
 
-	sat_vap =GetSaturatedVaporPressure(F->temp_ave);	
-  de_dT   =GetSatVapSlope						(F->temp_ave,sat_vap);
+  sat_vap =GetSaturatedVaporPressure(F->temp_ave);
+  de_dT   =GetSatVapSlope                                               (F->temp_ave,sat_vap);
   LH_vapor=GetLatentHeatVaporization(F->temp_ave);
   gamma   =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
@@ -163,38 +163,38 @@ double PriestleyTaylorEvap(const force_struct *F)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns potential evaporation rate [mm/d]
-/// \details  returns the potential evaporation rate [mm/d] using the 
+/// \details  returns the potential evaporation rate [mm/d] using the
 /// Hargreaves equation
 /// \ref adapted from WATFLOOD Manual \cite Kouwen2011
 /// \note This is a utility function called by EstimatePET
 /// \param *F [in] Forcing functions for a specific HRU over the current time step
 /// \return Potential evaporation rate [mm/d]
 //
-double HargreavesEvap(const force_struct *F)//[C]	
+double HargreavesEvap(const force_struct *F)//[C]
 {
-	const double HARGREAVES_CONST=0.0075;
-	double Ra;
-	double rel_hum,delT; //relative humidity[0..1], monthly temperature range [F]
+  const double HARGREAVES_CONST=0.0075;
+  double Ra;
+  double rel_hum,delT; //relative humidity[0..1], monthly temperature range [F]
   double Ct;
 
-	Ra=F->ET_radia;//[MJ/m2/d]
-	Ra/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
+  Ra=F->ET_radia;//[MJ/m2/d]
+  Ra/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
 
-	rel_hum=F->rel_humidity;
+  rel_hum=F->rel_humidity;
 
-	Ct=0.125;
-	if (rel_hum>=0.54){Ct=0.035*pow(100*(1.0-rel_hum),0.333);}
-	 
-	delT=CelsiusToFarenheit(F->temp_month_max)-
-			 CelsiusToFarenheit(F->temp_month_min);
+  Ct=0.125;
+  if (rel_hum>=0.54){Ct=0.035*pow(100*(1.0-rel_hum),0.333);}
+
+  delT=CelsiusToFarenheit(F->temp_month_max)-
+    CelsiusToFarenheit(F->temp_month_min);
 
   // \todo [optimize] - move this check to initialization routine
   ExitGracefullyIf(F->temp_month_max==NOT_SPECIFIED,
-    "PET_HARGREAVES requires minimum and maximum monthly temperatures",BAD_DATA);
+                   "PET_HARGREAVES requires minimum and maximum monthly temperatures",BAD_DATA);
 
-	return max(0.0,HARGREAVES_CONST*Ra*Ct*sqrt(delT)*CelsiusToFarenheit(F->temp_ave)); 
+  return max(0.0,HARGREAVES_CONST*Ra*Ct*sqrt(delT)*CelsiusToFarenheit(F->temp_ave));
 }
-	
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns potential evaporation rate [mm/d]
 /// \details  returns the potential evaporation rate [mm/d] using the Hargreaves 1985 equation
@@ -205,34 +205,34 @@ double HargreavesEvap(const force_struct *F)//[C]
 /// \param *F [in] Forcing functions for a specific HRU over the current time step
 /// \return Potential evaporation rate [mm/d]
 //
-double Hargreaves1985Evap(const force_struct *F)//[C]	
+double Hargreaves1985Evap(const force_struct *F)//[C]
 {
   const double HARGREAVES_CONST=0.0023;
   double Ra;   //maximum incoming solar radiation
   double delT; //range in monthly temperatures
 
-  Ra=F->ET_radia;//[MJ/m2/day] 
+  Ra=F->ET_radia;//[MJ/m2/day]
   Ra/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
 
   delT=F->temp_daily_max-F->temp_daily_min;
   delT=max(delT,0.0);
 
-	return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_ave+17.8)); 
+  return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_ave+17.8));
 }
 /*****************************************************************
-						Jensen Haise Evaporation
-******************************************************************
- /// returns the potential evaporation rate (mm/d) using the Jensen & 
- /// Haise (1963) model as outlined in the PRMS Manual \cite jensen1963JoIDD
+                                                Jensen Haise Evaporation
+                                                ******************************************************************
+                                                /// returns the potential evaporation rate (mm/d) using the Jensen &
+                                                /// Haise (1963) model as outlined in the PRMS Manual \cite jensen1963JoIDD
 ----------------------------------------------------------------*/
 /*double JensenHaise1963Evap(const force_struct *F,
-                           const double       &sat_vap_max,// monthly ave. saturated vapor pressure in hottest summer month[KPa] 
-                           const double       &sat_vap_min,// monthly ave. saturated vapor pressure in coldest winter month[KPa],//min summer monthly temp [C]
-                           const double       &elev,//elevation [masl]
-                           const double       &julian_day) 
-{
+  const double       &sat_vap_max,// monthly ave. saturated vapor pressure in hottest summer month[KPa]
+  const double       &sat_vap_min,// monthly ave. saturated vapor pressure in coldest winter month[KPa],//min summer monthly temp [C]
+  const double       &elev,//elevation [masl]
+  const double       &julian_day)
+  {
   double Ta,ctx,Rin,ch,c1,cts;
-  
+
   c1=68.0-(3.6*FEET_PER_METER*elev*0.001);
   ch=50/(sat_vap_max-sat_vap_min);
   cts=1.0/(c1+13.0*ch);
@@ -240,7 +240,7 @@ double Hargreaves1985Evap(const force_struct *F)//[C]
   Ta =CelsiusToFarenheit(F->temp_daily_ave);
 
   ctx=27.5-0.25*(sat_vap_max-sat_vap_min)*MB_PER_KPA-((FEET_PER_METER*elev)/1000);
-  
+
   Rin=(F->LW_radia+F->SW_radia_net);
   Rin/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
 
@@ -250,166 +250,166 @@ double Hargreaves1985Evap(const force_struct *F)//[C]
 /// \brief Returns PET [mm/d] using Hamon 1961 method
 /// \ref Hamon (1961) model as outlined in the PRMS Manual \cite Hamon1961
 /// \note This is a utility function called by EstimatePET
-/// \param *F [in] Model forcing functions 
+/// \param *F [in] Model forcing functions
 /// \return Calculated PET [mm/d]
 //
-double Hamon1961Evap(const force_struct *F) 
+double Hamon1961Evap(const force_struct *F)
 {
   double abs_hum,sat_vap;
   sat_vap=GetSaturatedVaporPressure(F->temp_daily_ave);//KPa
- 
+
   abs_hum=216.7*(sat_vap*MB_PER_KPA)/(F->temp_daily_ave+ZERO_CELSIUS);//abs. humidity, g/m3 (may wish to make separate function of T)s
-  
-  return 0.0055*4.0*abs_hum*F->day_length*F->day_length*MM_PER_INCH; 
+
+  return 0.0055*4.0*abs_hum*F->day_length*F->day_length*MM_PER_INCH;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates PET using known canopy properties and current forcing functions over time step
-/// \param *F [in] Model forcing functions 
+/// \param *F [in] Model forcing functions
 /// \param *pHRU [in] Reference to the specified HRU
 /// \param evap_type [in] Method of evaporation calculation selected
 /// \param &tt [in] Current model time
 /// \return Calculated PET [mm/d]
 //
-double EstimatePET(const force_struct &F, 
-									 const CHydroUnit   *pHRU,
-									 const evap_method   evap_type ,
-                   const time_struct  &tt) 
+double EstimatePET(const force_struct &F,
+                   const CHydroUnit   *pHRU,
+                   const evap_method   evap_type ,
+                   const time_struct  &tt)
 {
-	  double PET=0.0;
-		
-    switch(evap_type)
-    {
-      case(PET_CONSTANT):
-			{
-        PET =3.0; break;
-      }
-      case(PET_DATA):
-			{
-				PET=F.PET; break;//calculated direct from Gauge
-      }
-      case(PET_FROMMONTHLY):
-      {
-        double peRatio=1.0+HBV_PET_TEMP_CORR*(F.temp_ave_unc-F.temp_month_ave);
-        peRatio=max(0.0,min(2.0,peRatio));
-        PET=F.PET_month_ave*peRatio;
-        break;
-      }
-      case(PET_MONTHLY_FACTOR):
-      {
-        double forest_corr,max_temp;
-        double PET_corr=pHRU->GetSurfaceProps()->forest_PET_corr; //(A0PEFO in UBC)
-        double Fc      =pHRU->GetSurfaceProps()->forest_coverage;
-        
-        //max_temp=F.temp_daily_max;//MQ UBCWM
-        max_temp=F.temp_max_unc;
-        forest_corr=((PET_corr)*Fc + 1.0*(1.0-Fc)); //XEVAP3
-        
-        //orographic corrections 
-        const double A0PELA=0.9;
-        double XEVAP2=A0PELA * 0.001 * (g_debug_vars[4] - pHRU->GetElevation());
-        PET=forest_corr*(F.PET_month_ave*max_temp+XEVAP2); //PET_month_ave actually stores Monthly evap factors [mm/d/K]
+  double PET=0.0;
 
-        PET=max(PET,0.0); //orographic corrections must be in here if this clause is retained; otherwise this routine should be able to return negative PET
+  switch(evap_type)
+  {
+  case(PET_CONSTANT):
+  {
+    PET =3.0; break;
+  }
+  case(PET_DATA):
+  {
+    PET=F.PET; break;//calculated direct from Gauge
+  }
+  case(PET_FROMMONTHLY):
+  {
+    double peRatio=1.0+HBV_PET_TEMP_CORR*(F.temp_ave_unc-F.temp_month_ave);
+    peRatio=max(0.0,min(2.0,peRatio));
+    PET=F.PET_month_ave*peRatio;
+    break;
+  }
+  case(PET_MONTHLY_FACTOR):
+  {
+    double forest_corr,max_temp;
+    double PET_corr=pHRU->GetSurfaceProps()->forest_PET_corr; //(A0PEFO in UBC)
+    double Fc      =pHRU->GetSurfaceProps()->forest_coverage;
 
-        break;
-      }
-      case(PET_PENMAN_MONTEITH):
-			{
-				double can_cond;
-				double ref_ht,zero_pl,rough;
-				double vap_rough_ht,atmos_cond;
+    //max_temp=F.temp_daily_max;//MQ UBCWM
+    max_temp=F.temp_max_unc;
+    forest_corr=((PET_corr)*Fc + 1.0*(1.0-Fc)); //XEVAP3
 
-        can_cond=pHRU->GetVegVarProps()->canopy_conductance;
-        ref_ht  =pHRU->GetVegVarProps()->reference_height;
-        zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
-        rough   =pHRU->GetVegVarProps()->roughness;
+    //orographic corrections
+    const double A0PELA=0.9;
+    double XEVAP2=A0PELA * 0.001 * (g_debug_vars[4] - pHRU->GetElevation());
+    PET=forest_corr*(F.PET_month_ave*max_temp+XEVAP2); //PET_month_ave actually stores Monthly evap factors [mm/d/K]
 
-        vap_rough_ht=0.1*rough;//=1.0*rough for dingman
+    PET=max(PET,0.0); //orographic corrections must be in here if this clause is retained; otherwise this routine should be able to return negative PET
 
-        atmos_cond=CalcAtmosphericConductance(F.wind_vel,ref_ht,zero_pl,rough,vap_rough_ht);
-			  
-        PET=PenmanMonteithEvap(&F,atmos_cond,can_cond); break;
-      }
-      case(PET_PENMAN_COMBINATION):
-			{
-				double ref_ht,zero_pl,rough,vert_trans;
+    break;
+  }
+  case(PET_PENMAN_MONTEITH):
+  {
+    double can_cond;
+    double ref_ht,zero_pl,rough;
+    double vap_rough_ht,atmos_cond;
 
-        ref_ht  =pHRU->GetVegVarProps()->reference_height;
-        zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
-        rough   =pHRU->GetVegVarProps()->roughness;
+    can_cond=pHRU->GetVegVarProps()->canopy_conductance;
+    ref_ht  =pHRU->GetVegVarProps()->reference_height;
+    zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
+    rough   =pHRU->GetVegVarProps()->roughness;
 
-        vert_trans =GetVerticalTransportEfficiency(F.air_pres,ref_ht,zero_pl,rough);
+    vap_rough_ht=0.1*rough;//=1.0*rough for dingman
 
-        PET   =PenmanCombinationEvap(&F,vert_trans); break;
-      }
-      case(PET_JENSEN_HAISE):
-      {
-        //double sat_vap_max
-        ExitGracefully("PET_JENSEN_HAISE",STUB);
-        PET=0.0;break;//JensenHaise1963Evap(&F,sat_vap_max,sat_vap_min,elev,julian_day);
-      }
-      case(PET_HAMON):
-      {
-        PET=Hamon1961Evap(&F); break;
-      }
-      case(PET_PRIESTLEY_TAYLOR):
-	    {
-        PET=PriestleyTaylorEvap(&F); break;
-      }
-	    case(PET_HARGREAVES):
-	    {
-        PET=HargreavesEvap(&F); break;
-      }
-	    case(PET_HARGREAVES_1985):
-	    {
-        PET=Hargreaves1985Evap(&F); break;
-      }
-	    case(PET_TURC_1961):
-		  {
-			  PET=TurcEvap(&F); break;
-		  }
-	    case(PET_MAKKINK_1957):
-		  {
-			  PET=Makkink1957Evap(&F);break;
-		  }
-	    case(PET_SHUTTLEWORTH_WALLACE):
-		  {
-			  //PET=ShuttleworthWallaceEvap(&F,matric_pot,&S,&G,&CV);  // \todo [funct] (need to import additional data)
-			  ExitGracefully("EstimatePET:Shuttleworth Wallace",STUB);
-		  }
-      case(PET_PENMAN_SIMPLE33) :
-      {
-        double Rs =F.SW_radia;   //[MJ/m2/d]
-        double R_et =F.ET_radia; //[MJ/m2/d]
-        double Tave=F.temp_ave;  //[C]
-        double rel_hum=F.rel_humidity; //[0..1]
+    atmos_cond=CalcAtmosphericConductance(F.wind_vel,ref_ht,zero_pl,rough,vap_rough_ht);
 
-        PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
-        break;
-      }
-      case(PET_PENMAN_SIMPLE39) :
-      {
-        double Rs =F.SW_radia;   //[MJ/m2/d]
-        double R_et =F.ET_radia; //[MJ/m2/d]
-        double Tave=F.temp_ave;  //[C]
-        double rel_hum=F.rel_humidity; //[0..1]
+    PET=PenmanMonteithEvap(&F,atmos_cond,can_cond); break;
+  }
+  case(PET_PENMAN_COMBINATION):
+  {
+    double ref_ht,zero_pl,rough,vert_trans;
 
-        PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
-        break;
-      }
-      default:
-	    {
-        ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;
-      }
-    }
+    ref_ht  =pHRU->GetVegVarProps()->reference_height;
+    zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
+    rough   =pHRU->GetVegVarProps()->roughness;
 
-	  if (PET<(-REAL_SMALL)){
-      string warn="negative PET ("+to_string(PET)+" mm/d) calculated in CModel::UpdateHRUPET";
-      WriteWarning(warn,false);
-      PET=0.0;
-		}
-		return PET;
+    vert_trans =GetVerticalTransportEfficiency(F.air_pres,ref_ht,zero_pl,rough);
+
+    PET   =PenmanCombinationEvap(&F,vert_trans); break;
+  }
+  case(PET_JENSEN_HAISE):
+  {
+    //double sat_vap_max
+    ExitGracefully("PET_JENSEN_HAISE",STUB);
+    PET=0.0;break;//JensenHaise1963Evap(&F,sat_vap_max,sat_vap_min,elev,julian_day);
+  }
+  case(PET_HAMON):
+  {
+    PET=Hamon1961Evap(&F); break;
+  }
+  case(PET_PRIESTLEY_TAYLOR):
+  {
+    PET=PriestleyTaylorEvap(&F); break;
+  }
+  case(PET_HARGREAVES):
+  {
+    PET=HargreavesEvap(&F); break;
+  }
+  case(PET_HARGREAVES_1985):
+  {
+    PET=Hargreaves1985Evap(&F); break;
+  }
+  case(PET_TURC_1961):
+  {
+    PET=TurcEvap(&F); break;
+  }
+  case(PET_MAKKINK_1957):
+  {
+    PET=Makkink1957Evap(&F);break;
+  }
+  case(PET_SHUTTLEWORTH_WALLACE):
+  {
+    //PET=ShuttleworthWallaceEvap(&F,matric_pot,&S,&G,&CV);  // \todo [funct] (need to import additional data)
+    ExitGracefully("EstimatePET:Shuttleworth Wallace",STUB);
+  }
+  case(PET_PENMAN_SIMPLE33) :
+  {
+    double Rs =F.SW_radia;   //[MJ/m2/d]
+    double R_et =F.ET_radia; //[MJ/m2/d]
+    double Tave=F.temp_ave;  //[C]
+    double rel_hum=F.rel_humidity; //[0..1]
+
+    PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
+    break;
+  }
+  case(PET_PENMAN_SIMPLE39) :
+  {
+    double Rs =F.SW_radia;   //[MJ/m2/d]
+    double R_et =F.ET_radia; //[MJ/m2/d]
+    double Tave=F.temp_ave;  //[C]
+    double rel_hum=F.rel_humidity; //[0..1]
+
+    PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
+    break;
+  }
+  default:
+  {
+    ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;
+  }
+  }
+
+  if (PET<(-REAL_SMALL)){
+    string warn="negative PET ("+to_string(PET)+" mm/d) calculated in CModel::UpdateHRUPET";
+    WriteWarning(warn,false);
+    PET=0.0;
+  }
+  return PET;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -420,25 +420,25 @@ double EstimatePET(const force_struct &F,
 /// \return Ground air resistance [s/m]
 //
 double GroundAirResistance(const surface_struct &G,   //ground surface
-													 const veg_var_struct &VV, 
-													 const double         &wind_vel)
+                           const veg_var_struct &VV,
+                           const double         &wind_vel)
 {
-	double Rga;  //ground-air resistance (aka RAS), s/m
-	double closed_roughness,closed_zerodisp;
-	double ustar,KH;
+  double Rga;  //ground-air resistance (aka RAS), s/m
+  double closed_roughness,closed_zerodisp;
+  double ustar,KH;
 
-	//function of height, ground roughness, refht, z0, canopy rough, 
+  //function of height, ground roughness, refht, z0, canopy rough,
   closed_roughness=CVegetationClass::CalcClosedRoughness(VV.height);
   closed_zerodisp =CVegetationClass::CalcClosedZeroPlaneDisp(VV.height,closed_roughness);
   upperswap(closed_roughness,G.roughness);
 
-  ustar=VON_KARMAN*wind_vel/(log((VV.reference_height-VV.zero_pln_disp)/VV.roughness));     
+  ustar=VON_KARMAN*wind_vel/(log((VV.reference_height-VV.zero_pln_disp)/VV.roughness));
   KH   =VON_KARMAN*ustar*(VV.height-VV.zero_pln_disp);
 
   Rga  =VV.height/(WIND_EXTINCT*KH)*exp(WIND_EXTINCT * (1.0-G.roughness/VV.height));
   Rga-=exp(-WIND_EXTINCT*(closed_roughness + closed_zerodisp)/VV.height);
   upperswap(Rga,1);
-	return Rga;
+  return Rga;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -447,7 +447,7 @@ double GroundAirResistance(const surface_struct &G,   //ground surface
 /// \ref as implemented in  Brook90 routines SWGRA and SWPE
 ///
 /// \param &F [in] Reference to model forcing functions
-/// \param &matric_pot [in] Matric potential 
+/// \param &matric_pot [in] Matric potential
 /// \param &S [in] Reference to soil properties class
 /// \param &G [in] Reference to surface properties class
 /// \param &VV [in] Reference to vegetation properties class
@@ -457,13 +457,13 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
                                const double         &matric_pot,
                                const soil_struct    &S,
                                const surface_struct &G,   //ground surface
-                               const veg_var_struct &VV)	//canopy
+                               const veg_var_struct &VV)        //canopy
 {
-	double gamma;			//psychometric "constant" [kPa/K]
-	double LH_vapor;	//latent heat of vaporization [MJ/kg]
-	double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
-	double sat_vap;   //Saturation vapor pressure [kPa]
-	double vapor_def; //vapor deficit [kPa]
+  double gamma;                   //psychometric "constant" [kPa/K]
+  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
+  double sat_vap;   //Saturation vapor pressure [kPa]
+  double vapor_def; //vapor deficit [kPa]
 
   //following should be calculated as canopy/ground parameters
   double Rss=0.5;//ground-evap resistance, s/m
@@ -473,16 +473,16 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
   Rsc=1.0/VV.canopy_conductance*MM_PER_METER;
 
   double Rga; //ground-air resistance (aka RAS), s/m
-	//Rga=GroundAirResistance(G,VV,F->wind_vel);
-	double closed_roughness,closed_zerodisp;
-	double ustar,KH;
+  //Rga=GroundAirResistance(G,VV,F->wind_vel);
+  double closed_roughness,closed_zerodisp;
+  double ustar,KH;
 
-	//function of height, ground roughness, refht, z0, canopy rough, 
+  //function of height, ground roughness, refht, z0, canopy rough,
   closed_roughness=CVegetationClass::CalcClosedRoughness(VV.height);
   closed_zerodisp =CVegetationClass::CalcClosedZeroPlaneDisp(VV.height,closed_roughness);
   upperswap(closed_roughness,G.roughness);
 
-  ustar=VON_KARMAN*F->wind_vel/(log((VV.reference_height-VV.zero_pln_disp)/VV.roughness));     
+  ustar=VON_KARMAN*F->wind_vel/(log((VV.reference_height-VV.zero_pln_disp)/VV.roughness));
   KH   =VON_KARMAN*ustar*(VV.height-VV.zero_pln_disp);
 
   Rga  =VV.height/(WIND_EXTINCT*KH)*exp(WIND_EXTINCT * (1.0-G.roughness/VV.height));
@@ -499,21 +499,21 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
   double RB = (100.0 * WIND_EXTINCT) * sqrt(leaf_width / UH) / (1.0 - exp(-WIND_EXTINCT / 2.0));
   Rac = RB / (LEAF_PROJ_RAT * VV.LAI + PI * VV.SAI);
 
-	//Replace above with 
-	//CalculateResistances(G,VV,F->wind_vel,Raa,Rac,Rga);
-	/*CalculateResistances(const surface_struct &G,   //ground surface
-													 const veg_var_struct &VV, 
-													 const double         &wind_vel, 
-													 double &R_boundary,
-													 double &R_leaf_air,
-													 double &R_ground_air);*/
+  //Replace above with
+  //CalculateResistances(G,VV,F->wind_vel,Raa,Rac,Rga);
+  /*CalculateResistances(const surface_struct &G,   //ground surface
+    const veg_var_struct &VV,
+    const double         &wind_vel,
+    double &R_boundary,
+    double &R_leaf_air,
+    double &R_ground_air);*/
 
-	sat_vap  =GetSaturatedVaporPressure(F->temp_ave);				
-	de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
+  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
+  de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
   gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
   vapor_def=sat_vap*(1.0-(F->rel_humidity));
-	
+
   double AE; //Availabale energy at canopy top, [MJ/d/m2]
   double AE_grnd;//Available energy at ground, [MJ/d/m2]
   AE = (F->SW_radia_net + F->LW_radia);
@@ -532,13 +532,13 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
   double PMS =((Raa+Rga)*de_dT*AE+HCP_AIR*vpd1) / ((de_dT+gamma) * (Raa + Rga) + gamma * Rss);
   double PMC =((Raa+Rac)*de_dT*AE+HCP_AIR*vpd2) / ((de_dT+gamma) * (Raa + Rac) + gamma * Rsc);
   double LE=Ccc*PMC+Ccs*PMS;//total latent heat flux density
-  
+
   double vpd3 = vapor_def + Raa*(de_dT*AE-(de_dT+gamma)*LE)/HCP_AIR;
 
   double PET,EVAP;
   PET =(Rac*de_dT*(AE - AE_grnd)+HCP_AIR*vpd3)/((de_dT+gamma)*Rac+gamma*Rsc);
   PET =PET/(DENSITY_WATER*LH_vapor)*MM_PER_METER; //mm/d=[MJ/d/m2]*[m3/kg]*[kg/MJ]*[mm/m]=mm/d
- 
+
   EVAP =(Rga*de_dT*(     AE_grnd)+HCP_AIR*vpd3)/((de_dT+gamma)*Rga+gamma*Rss);
   EVAP =EVAP/(DENSITY_WATER*LH_vapor)*MM_PER_METER;
 
@@ -548,7 +548,7 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
 //////////////////////////////////////////////////////////////////
 /// \brief Adjust wind velocity
 /// \details returns ratio of wind speed at reference height (above canopy) to
-/// wind speed at weather station. 
+/// wind speed at weather station.
 /// \ref Adapted from Brook90s adaptation of Brutsaert 1982 \cite Federer2010
 /// \param *F [in] Current model forcing functions
 /// \param *VV [in] Reference to vegetation properties of current HRU
@@ -584,7 +584,7 @@ double AdjustWindVel(const force_struct *F,
 /// \details Shuttleworth and Wallace (1985) ground evaporation when transpiration known (adapted from Brook90 SWGE)
 /// \param actual_transpiration Actual transpiration [mm/d]
 /// \param &F [in] Reference to model forcing functions
-/// \param &matric_pot [in] Matric potential 
+/// \param &matric_pot [in] Matric potential
 /// \param &S [in] Reference to soil properties class
 /// \param &G [in] Reference to surface properties class
 /// \param &VV [in] Reference to vegetation properties class
@@ -595,13 +595,13 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
                          const double         &matric_pot,
                          const soil_struct    &S,
                          const surface_struct &G,   //ground surface
-                         const veg_var_struct &VV)	//canopy
+                         const veg_var_struct &VV)      //canopy
 {
-	double gamma;	    //psychometric "constant" [kPa/K]
-	double LH_vapor;  //latent heat of vaporization [MJ/kg]
-	double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
-	double sat_vap;   //Saturation vapor pressure [kPa]
-	double vapor_def; //vapor deficit [kPa]
+  double gamma;       //psychometric "constant" [kPa/K]
+  double LH_vapor;  //latent heat of vaporization [MJ/kg]
+  double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
+  double sat_vap;   //Saturation vapor pressure [kPa]
+  double vapor_def; //vapor deficit [kPa]
 
   double Rga=GroundAirResistance(G,VV,F->wind_vel);
 
@@ -611,7 +611,7 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
   double Raa;//boundary layer resistance, s/m
   Raa=0.1;   //CalcBoundaryLayerResistance();
 
-  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);				
+  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
   gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
@@ -627,7 +627,7 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
   double Rs = (de_dT + gamma) * Rga + gamma * Rss;
   double Ra = (de_dT + gamma) * Raa;
   double LE = (Rs* trans + HCP_AIR*vapor_def + de_dT*(Rga*AE_grnd + Raa*AE)) / (Rs + Ra);
-  
+
   return (LE - trans)/DENSITY_WATER/LH_vapor;//[mm/d]
 
 }
@@ -643,19 +643,19 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
 /// \return Calculated evaporation rate of snow [mm/d]
 //
 double SnowEvaporation(const force_struct   *F,
-                         const double         &snow_temp,
-                         const surface_struct &G,   //ground surface
-                         const veg_var_struct &VV)	//canopy
+                       const double         &snow_temp,
+                       const surface_struct &G,   //ground surface
+                       const veg_var_struct &VV)      //canopy
 {
-	double gamma;			//psychometric "constant" [kPa/K]
-	double LH_vapor;	//latent heat of vaporization [MJ/kg]
-	double sat_vap;   //Saturation vapor pressure [kPa]
+  double gamma;                   //psychometric "constant" [kPa/K]
+  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double sat_vap;   //Saturation vapor pressure [kPa]
 
   double Rga=GroundAirResistance(G,VV,F->wind_vel);//s/m
   double Raa;//boundary layer resistance, s/m
   Raa=0.1;//CalcBoundaryLayerResistance();
 
-  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);				
+  sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
   gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
@@ -670,7 +670,7 @@ double SnowEvaporation(const force_struct   *F,
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates evaporation using Blaney-Criddle method 
+/// \brief Calculates evaporation using Blaney-Criddle method
 /// \todo [add funct] Implement Blaney-Criddle evaporation
 /// \details from Blaney & Criddle, 1962 \cite Blaney1962
 /// \ref Added by GrahamStonebridge, Fall 2011
@@ -679,8 +679,8 @@ double SnowEvaporation(const force_struct   *F,
 //
 double Blaneycriddle(const force_struct *F)
 {
-	double rho;
-	rho=1.0;
+  double rho;
+  rho=1.0;
   ExitGracefully("Blaneycriddle",STUB);
-	return rho*(0.46*F->temp_month_ave+8);
+  return rho*(0.46*F->temp_month_ave+8);
 }

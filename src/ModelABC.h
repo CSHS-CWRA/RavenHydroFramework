@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #ifndef MODELABC_H
 #define MODELABC_H
 
@@ -10,14 +10,14 @@
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for surface water model with limited access to variables
-/// \details Allows lesser classes (HydroProcesses, SubBasins, and Hydrounits) 
+/// \details Allows lesser classes (HydroProcesses, SubBasins, and Hydrounits)
 ///   to obtain information from model without changing the model
 ///   PURELY VIRTUAL CLASS
 class CModelABC //version of model visible to lesser units
 {
-  protected:/*------------------------------------------------------*/
+protected:/*------------------------------------------------------*/
 
-  public:/*-------------------------------------------------------*/
+public:/*-------------------------------------------------------*/
 
   //Accessor functions
   virtual int         GetNumStateVars    () const=0;

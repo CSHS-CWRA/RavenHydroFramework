@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-class definitions:
-	CmvOWEvaporation
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  class definitions:
+  CmvOWEvaporation
   CmvLakeEvaporation
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 #ifndef OPENWATER_EVAP_H
 #define OPENWATER_EVAP_H
 
@@ -17,7 +17,7 @@ class definitions:
 //
 enum owevap_type
 {
-	OPEN_WATER_EVAP,				///< evaporates at OW_PET rate
+  OPEN_WATER_EVAP,                              ///< evaporates at OW_PET rate
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -25,31 +25,31 @@ enum owevap_type
 /// \details Calculates loss of water from open water to atmosphere
 //
 class CmvOWEvaporation: public CHydroProcessABC
-{  
-  private:/*------------------------------------------------------*/
-		owevap_type			 type; ///< Model of open water evaporation used
+{
+private:/*------------------------------------------------------*/
+  owevap_type                    type; ///< Model of open water evaporation used
 
-  public:/*-------------------------------------------------------*/
-		//Constructors/destructors:
-		CmvOWEvaporation(owevap_type ow_type, const int i_from);	//general constructor
-		~CmvOWEvaporation(); 
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvOWEvaporation(owevap_type ow_type, const int i_from);      //general constructor
+  ~CmvOWEvaporation();
 
-		//inherited functions
-    void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
-    void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double              *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
 
-    static void GetParticipatingStateVarList(owevap_type ow_type,
-																						 sv_type *aSV, int *aLev, int &nSV);
-    void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(owevap_type ow_type,
+                                           sv_type *aSV, int *aLev, int &nSV);
+  void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ class CmvOWEvaporation: public CHydroProcessABC
 //
 enum lakeevap_type
 {
-	LAKE_EVAP_BASIC,				///< constant evaporation rate - fraction of PET
+  LAKE_EVAP_BASIC,                              ///< constant evaporation rate - fraction of PET
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -65,31 +65,31 @@ enum lakeevap_type
 /// \details Calculates loss of water from open water (lake) to atmosphere
 //
 class CmvLakeEvaporation: public CHydroProcessABC
-{  
-  private:/*------------------------------------------------------*/
-		lakeevap_type			 type; ///< Model of lake evaporation used
+{
+private:/*------------------------------------------------------*/
+  lakeevap_type                  type; ///< Model of lake evaporation used
 
-  public:/*-------------------------------------------------------*/
-		//Constructors/destructors:
-		CmvLakeEvaporation(lakeevap_type lk_type, const int fromIndex);	//general constructor
-		~CmvLakeEvaporation(); 
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvLakeEvaporation(lakeevap_type lk_type, const int fromIndex);       //general constructor
+  ~CmvLakeEvaporation();
 
-		//inherited functions
-    void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
-    void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double              *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
 
-    static void GetParticipatingStateVarList(lakeevap_type lk_type,
-																						 sv_type *aSV, int *aLev, int &nSV);
-    void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(lakeevap_type lk_type,
+                                           sv_type *aSV, int *aLev, int &nSV);
+  void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const;
 };
 
 #endif

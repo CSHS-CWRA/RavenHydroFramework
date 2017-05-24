@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "GlobalParams.h"
 
@@ -14,9 +14,9 @@
 //
 double GetSnowThermCond(const double &sno_dens)
 {
-	const double A1=7.75e-15;
+  const double A1=7.75e-15;
   const double A2=1.105e-6;
-	return TC_AIR+(A1*sno_dens+A2*pow(sno_dens,2.0))*(TC_ICE-TC_AIR);
+  return TC_AIR+(A1*sno_dens+A2*pow(sno_dens,2.0))*(TC_ICE-TC_AIR);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -32,8 +32,8 @@ double EstimateSnowFraction( const rainsnow_method method,
                              const force_struct       *F,
                              const optStruct       &Options)
 {
-	
-  
+
+
   //-----------------------------------------------------------
   if (method==RAINSNOW_DATA)
   {
@@ -45,7 +45,7 @@ double EstimateSnowFraction( const rainsnow_method method,
     double temp =CGlobalParams::GetParams()->rainsnow_temp;
     if (F->temp_daily_max<=temp){return 1.0;}
     if (F->temp_daily_min>=temp){return 0.0;}
-	  return (temp-F->temp_daily_min)/(F->temp_daily_max-F->temp_daily_min);
+    return (temp-F->temp_daily_min)/(F->temp_daily_max-F->temp_daily_min);
   }
   //-----------------------------------------------------------
   else if ((method==RAINSNOW_HBV) || (method==RAINSNOW_UBCWM))
@@ -76,39 +76,39 @@ double EstimateSnowFraction( const rainsnow_method method,
 
   }
   return 0.0;
-	//Should check/add:
-	//Stefan W. Kienzle,A new temperature based method to separate rain and snow, 
-	///< Hydrological Processes 22(26),p5067-5085,2008,http://dx.doi.org/10.1002/hyp.7131 \cite kienzle2008HP
+  //Should check/add:
+  //Stefan W. Kienzle,A new temperature based method to separate rain and snow,
+  ///< Hydrological Processes 22(26),p5067-5085,2008,http://dx.doi.org/10.1002/hyp.7131 \cite kienzle2008HP
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates fresh snow density [kg/m^3] based on air temperature
-/// 
+///
 /// \param &air_temp [in] Air temperature
 /// \return Double value for fresh snow desnsity [kg/m^3]
 //
 double CalcFreshSnowDensity(const double &air_temp)
 {
   //return FRESH_SNOW_DENS;
-  
-	// \ref WATCLASS , also USACE (1956) (from Hedstrom & Pomeroy)
+
+  // \ref WATCLASS , also USACE (1956) (from Hedstrom & Pomeroy)
   if (air_temp<=FREEZING_TEMP) {
     return 67.92+51.25*exp((air_temp-FREEZING_TEMP)/2.59);
   }
-	else{
+  else{
     return min((119.17+20.0*(air_temp-FREEZING_TEMP)),200.0);
-  } 
+  }
 
-	///< or (Anderson, 1976 -CLM manual eqn 7.18) \cite anderson1976
-	/*if (air_temp>FREEZING_TEMP+2){
-		return 169.15;
-	}
-	else if (air_temp<FREEZING_TEMP-15){
-		return 50;
-	}
-	else{
-		return 50+1.7*pow(air_temp-FREEZING_TEMP+15,1.5)
-	}*/
+  ///< or (Anderson, 1976 -CLM manual eqn 7.18) \cite anderson1976
+  /*if (air_temp>FREEZING_TEMP+2){
+    return 169.15;
+    }
+    else if (air_temp<FREEZING_TEMP-15){
+    return 50;
+    }
+    else{
+    return 50+1.7*pow(air_temp-FREEZING_TEMP+15,1.5)
+    }*/
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ double CalcFreshSnowDensity(const double &air_temp)
 //
 double GetSnowDensity(const double &snowSWE,const double &snow_depth)
 {
-	return (snowSWE/snow_depth)*DENSITY_WATER; // [kg m^-3]
+  return (snowSWE/snow_depth)*DENSITY_WATER; // [kg m^-3]
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ double GetSnowDensity(const double &snowSWE,const double &snow_depth)
 double GetSnowDepth(const double &snowSWE,//[mm]
                     const double &snow_density)//[kg/m^3]
 {
-	return (snowSWE/snow_density)*DENSITY_WATER; //[mm]
+  return (snowSWE/snow_density)*DENSITY_WATER; //[mm]
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -149,17 +149,17 @@ double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, c
   //if (snow_depth>0.0){
   //  liq_cap=CGlobalParams::GetParams()->snow_SWI*(1.0-SWE/snow_depth);
   //}
-  
+
   liq_cap= CGlobalParams::GetParams()->snow_SWI*SWE; //HBV-EC, Brook90, UBCWM, GAWSER
 
   return liq_cap;
-  
+
   //from Dingman eqn 5-15
-  //JRC: returns a negative value if snow_density<275 kg/m3 and 
-  //doesnt seem to make sense - as snow becomes denser, 
+  //JRC: returns a negative value if snow_density<275 kg/m3 and
+  //doesnt seem to make sense - as snow becomes denser,
   //holding capacity should reduce!
 //  double snow_density=GetSnowDensity(SWE,snow_depth);
-//	return -0.0735*(snow_density/DENSITY_WATER) + 
+//      return -0.0735*(snow_density/DENSITY_WATER) +
 //         2.67e-4*(pow(snow_density,2)/DENSITY_WATER); //unitless
 }
 
@@ -177,13 +177,13 @@ double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, c
 //
 double GetSensibleHeatSnow(const double &air_temp, //[C]
                            const double &surf_temp,//[C]
-                           const double &V, 
+                           const double &V,
                            const double &ref_ht,   //[m]
                            const double &rough)    //[m]
 {
-	double temp_var = pow(VON_KARMAN/log(ref_ht/rough),2);
+  double temp_var = pow(VON_KARMAN/log(ref_ht/rough),2);
 
-	return DENSITY_AIR*SPH_AIR*temp_var*V*(air_temp-surf_temp); //sensible heat [MJ/m2/d]
+  return DENSITY_AIR*SPH_AIR*temp_var*V*(air_temp-surf_temp); //sensible heat [MJ/m2/d]
 }
 
 //////////////////////////////////////////////////////////////////
@@ -206,19 +206,19 @@ double GetLatentHeatSnow(const double &P,
                          const double &V,
                          const double &ref_ht,
                          const double &rough)
-{	
-	double numer,denom,temp_var,vap_pres,surf_pres,LE;
-	
-	vap_pres  = GetVaporPressure(air_temp,rel_humid);
-	surf_pres = GetVaporPressure(surf_temp,rel_humid);
+{
+  double numer,denom,temp_var,vap_pres,surf_pres,LE;
 
-	numer = AIR_H20_MW_RAT * DENSITY_AIR * pow(VON_KARMAN,2);
-	denom = P * pow(log(ref_ht/rough),2);
+  vap_pres  = GetVaporPressure(air_temp,rel_humid);
+  surf_pres = GetVaporPressure(surf_temp,rel_humid);
 
-	temp_var = numer/denom;
-	LE = LH_VAPOR*temp_var*V*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
+  numer = AIR_H20_MW_RAT * DENSITY_AIR * pow(VON_KARMAN,2);
+  denom = P * pow(log(ref_ht/rough),2);
 
-	return LE;//[MJ/m2/d]
+  temp_var = numer/denom;
+  LE = LH_VAPOR*temp_var*V*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
+
+  return LE;//[MJ/m2/d]
 }
 
 //////////////////////////////////////////////////////////////////
@@ -232,25 +232,25 @@ double GetLatentHeatSnow(const double &P,
 /// \param &rel_humid [in] Relative humidity [0..1]
 /// \return Heat input from rain [MJ/m^2/d]
 //
-double GetRainHeatInput(const double &surf_temp, 
+double GetRainHeatInput(const double &surf_temp,
                         const double &rain_rate,
                         const double &rel_humid)
 {
-	double R=0,rain_temp,vap_pres;
+  double R=0,rain_temp,vap_pres;
 
-	vap_pres = GetVaporPressure(surf_temp,rel_humid); //[kPa]
-	rain_temp = GetDewPointTemp(vap_pres); //[C]
+  vap_pres = GetVaporPressure(surf_temp,rel_humid); //[kPa]
+  rain_temp = GetDewPointTemp(vap_pres); //[C]
 
-	if(surf_temp < FREEZING_TEMP)
-	{
-		R =	DENSITY_WATER*(rain_rate/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP) + LH_FUSION);
-	}
-	if(surf_temp == FREEZING_TEMP)
-	{
-		R =	DENSITY_WATER*(rain_rate/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP));
-	}
+  if(surf_temp < FREEZING_TEMP)
+  {
+    R = DENSITY_WATER*(rain_rate/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP) + LH_FUSION);
+  }
+  if(surf_temp == FREEZING_TEMP)
+  {
+    R = DENSITY_WATER*(rain_rate/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP));
+  }
 
-	return R; // [MJ m^-2 d^-1]
+  return R; // [MJ m^-2 d^-1]
 }
 
 

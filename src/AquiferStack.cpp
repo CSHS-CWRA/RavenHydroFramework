@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
 #include "SoilProfile.h"
@@ -15,14 +15,14 @@
 CAquiferStack::CAquiferStack(const string name)
 {
   tag=name;
-	if (!DynArrayAppend((void**&)(pAllAqStacks),(void*)(this),NumAqStacks)){
-		 ExitGracefully("CAquiferStack::Constructor: creating NULL soil profile",BAD_DATA);};
+  if (!DynArrayAppend((void**&)(pAllAqStacks),(void*)(this),NumAqStacks)){
+    ExitGracefully("CAquiferStack::Constructor: creating NULL soil profile",BAD_DATA);};
 
   nLayers        =0;
-	pAquiferSoils  =NULL;
-	aAquifer_thick =NULL;
-	pAquitardSoils =NULL;
-	aAquitard_thick=NULL;
+  pAquiferSoils  =NULL;
+  aAquifer_thick =NULL;
+  pAquitardSoils =NULL;
+  aAquitard_thick=NULL;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -30,16 +30,16 @@ CAquiferStack::CAquiferStack(const string name)
 //
 CAquiferStack::~CAquiferStack()
 {
-	if (DESTRUCTOR_DEBUG){cout<<"  DELETING AQUIFER STACK "<<endl;}
-	delete [] pAquiferSoils;
-	delete [] aAquifer_thick;
-	delete [] pAquitardSoils;
-	delete [] aAquitard_thick;
+  if (DESTRUCTOR_DEBUG){cout<<"  DELETING AQUIFER STACK "<<endl;}
+  delete [] pAquiferSoils;
+  delete [] aAquifer_thick;
+  delete [] pAquitardSoils;
+  delete [] aAquitard_thick;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns tag of soil profile (e.g. "ALL_SILT")
-/// \return Tag of soil profile 
+/// \return Tag of soil profile
 //
 string CAquiferStack::GetTag() const{return tag;}
 
@@ -50,9 +50,9 @@ string CAquiferStack::GetTag() const{return tag;}
 //
 const soil_struct *CAquiferStack::GetAquiferSoil(const int m) const
 {
-	ExitGracefullyIf((m<0) || (m>=nLayers),
-		"CAquiferStack::GetAquiferSoil: bad aquifer layer index",BAD_DATA);
-	return pAquiferSoils[m]->GetSoilStruct();
+  ExitGracefullyIf((m<0) || (m>=nLayers),
+                   "CAquiferStack::GetAquiferSoil: bad aquifer layer index",BAD_DATA);
+  return pAquiferSoils[m]->GetSoilStruct();
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -62,9 +62,9 @@ const soil_struct *CAquiferStack::GetAquiferSoil(const int m) const
 //
 double CAquiferStack::GetAquiferThickness(const int m) const
 {
-	ExitGracefullyIf((m<0) || (m>=nLayers),
-		"CAquiferStack::GetAquiferThickness: bad aquifer layer index",BAD_DATA);
-	return aAquifer_thick[m];
+  ExitGracefullyIf((m<0) || (m>=nLayers),
+                   "CAquiferStack::GetAquiferThickness: bad aquifer layer index",BAD_DATA);
+  return aAquifer_thick[m];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -74,9 +74,9 @@ double CAquiferStack::GetAquiferThickness(const int m) const
 //
 string CAquiferStack::GetAquiferSoilTag (const int m) const
 {
-	ExitGracefullyIf((m<0) || (m>=nLayers),
-		"CAquiferStack::GetAquiferSoilTag: bad aquifer layer index",BAD_DATA);
-	return pAquiferSoils[m]->GetTag();
+  ExitGracefullyIf((m<0) || (m>=nLayers),
+                   "CAquiferStack::GetAquiferSoilTag: bad aquifer layer index",BAD_DATA);
+  return pAquiferSoils[m]->GetTag();
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ string CAquiferStack::GetAquiferSoilTag (const int m) const
 /// \return Number of horizons in soil profile
 double CAquiferStack::GetNumLayers () const
 {
-	return nLayers;
+  return nLayers;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -96,21 +96,21 @@ double CAquiferStack::GetNumLayers () const
 void CAquiferStack::AddLayer(double thickness, //[m]
                              const CSoilClass *pLayerSoil)
 {
-	if (!DynArrayAppend((void**&)(pAquiferSoils),(void*)(pLayerSoil),nLayers)){
-		 ExitGracefully("CAquiferStack::Constructor: creating NULL aquifer layer",BAD_DATA);};
-	DynArrayAppend((void**&)(pAquitardSoils),NULL,nLayers); //Aquitard is null,
+  if (!DynArrayAppend((void**&)(pAquiferSoils),(void*)(pLayerSoil),nLayers)){
+    ExitGracefully("CAquiferStack::Constructor: creating NULL aquifer layer",BAD_DATA);};
+  DynArrayAppend((void**&)(pAquitardSoils),NULL,nLayers); //Aquitard is null,
 
   double *tmpthick  =new double [nLayers];
   double *tmpaqthick=new double [nLayers];
-	for (int m=0;m<nLayers-1;m++){//copy previous arrays
-		tmpthick  [m]=aAquifer_thick[m];
+  for (int m=0;m<nLayers-1;m++){//copy previous arrays
+    tmpthick  [m]=aAquifer_thick[m];
     tmpaqthick[m]=aAquitard_thick[m];
-	}
-	tmpthick  [nLayers-1]=thickness;//add new data
+  }
+  tmpthick  [nLayers-1]=thickness;//add new data
   tmpaqthick[nLayers-1]=0.0;      //thickness of 0.0 for null aquifer
-	delete [] aAquifer_thick;//delete previous arrays
+  delete [] aAquifer_thick;//delete previous arrays
   delete [] aAquitard_thick;
-	aAquifer_thick=tmpthick;
+  aAquifer_thick=tmpthick;
   aAquitard_thick=tmpaqthick;
 }
 //////////////////////////////////////////////////////////////////
@@ -125,33 +125,33 @@ void CAquiferStack::AddLayer(double            thickness, //[m]
                              double            aquitard_thick,
                              const CSoilClass *pAquitardSoil)
 {
-	if (!DynArrayAppend((void**&)(pAquiferSoils),(void*)(pLayerSoil),nLayers)){
-		 ExitGracefully("CAquiferStack::Constructor: creating NULL aquifer layer",BAD_DATA);};
-	if (!DynArrayAppend((void**&)(pAquitardSoils),(void*)(pAquitardSoil),nLayers)){
-		 ExitGracefully("CAquiferStack::Constructor: creating NULL aquitard layer",BAD_DATA);};
+  if (!DynArrayAppend((void**&)(pAquiferSoils),(void*)(pLayerSoil),nLayers)){
+    ExitGracefully("CAquiferStack::Constructor: creating NULL aquifer layer",BAD_DATA);};
+  if (!DynArrayAppend((void**&)(pAquitardSoils),(void*)(pAquitardSoil),nLayers)){
+    ExitGracefully("CAquiferStack::Constructor: creating NULL aquitard layer",BAD_DATA);};
 
   double *tmpthick  =new double [nLayers];
   double *tmpaqthick=new double [nLayers];
-	for (int m=0;m<nLayers-1;m++){//copy previous arrays
-		tmpthick  [m]=aAquifer_thick[m];
+  for (int m=0;m<nLayers-1;m++){//copy previous arrays
+    tmpthick  [m]=aAquifer_thick[m];
     tmpaqthick[m]=aAquitard_thick[m];
-	}
-	tmpthick  [nLayers-1]=thickness;//add new data
+  }
+  tmpthick  [nLayers-1]=thickness;//add new data
   tmpaqthick[nLayers-1]=aquitard_thick;//add new data
-	delete [] aAquifer_thick;//delete previous arrays
+  delete [] aAquifer_thick;//delete previous arrays
   delete [] aAquitard_thick;
-	aAquifer_thick=tmpthick;
+  aAquifer_thick=tmpthick;
   aAquitard_thick=tmpaqthick;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Allocate soil layers
 //
-/// \details Discretizes soil profile into nAqLayers layers for numerical 
-///	solution, e.g., takes a 7 meter soil profile with three horizons
-///	and breaks it up into 12 layers. 
-///	The algorithm shoots for at least one layer per profile, then 
-///	aims for higher discretization in top layers, coarser 
-///	discretization at depth. Thicknesses are in metres
+/// \details Discretizes soil profile into nAqLayers layers for numerical
+///     solution, e.g., takes a 7 meter soil profile with three horizons
+///     and breaks it up into 12 layers.
+///     The algorithm shoots for at least one layer per profile, then
+///     aims for higher discretization in top layers, coarser
+///     discretization at depth. Thicknesses are in metres
 //
 /// \param nAqLayers [in] Number of aquifer layers in model (may be more finely discretized than physical aquifer layers)
 /// \param **pSoils [out] Array of pointers to aquifer soil properties
@@ -159,15 +159,15 @@ void CAquiferStack::AddLayer(double            thickness, //[m]
 //
 void CAquiferStack::AllocateAqLayers     (const int           nAqLayers,
                                           const soil_struct **pSoils,
-                                          double             *thickness) const 
+                                          double             *thickness) const
 {
   static soil_struct blank_soil_struct;
-  
+
   CSoilClass::InitializeSoilProperties(blank_soil_struct, false);
   blank_soil_struct.porosity =0;
   blank_soil_struct.hydraul_cond=0;
-	
-	int m;
+
+  int m;
   if (nLayers==0){ //special case for lakes and glaciers
     for (m=0;m<nAqLayers;m++){
       pSoils   [m]=&blank_soil_struct;
@@ -175,22 +175,22 @@ void CAquiferStack::AllocateAqLayers     (const int           nAqLayers,
     }
     return;
   }
-	else if (nAqLayers>=nLayers)
+  else if (nAqLayers>=nLayers)
   {
-		for (m=0;m<nLayers;m++){
-			pSoils   [m]=pAquiferSoils[m]->GetSoilStruct();
-			thickness[m]=aAquifer_thick [m];
-		}
-		for (m=nLayers;m<nAqLayers;m++){
-			pSoils   [m]=&blank_soil_struct;
-			thickness[m]=0.0;
-		}
-		return;
+    for (m=0;m<nLayers;m++){
+      pSoils   [m]=pAquiferSoils[m]->GetSoilStruct();
+      thickness[m]=aAquifer_thick [m];
+    }
+    for (m=nLayers;m<nAqLayers;m++){
+      pSoils   [m]=&blank_soil_struct;
+      thickness[m]=0.0;
+    }
+    return;
   }
   else
   {
     cout <<"nAqLayers:"<<nAqLayers<<" nLayers:"<<nLayers<<endl;
-	  ExitGracefully("CAquiferStack::AllocateAqLayers: cannot currently handle # of aquifer layers combination",BAD_DATA);
+    ExitGracefully("CAquiferStack::AllocateAqLayers: cannot currently handle # of aquifer layers combination",BAD_DATA);
   }
 }
 /*****************************************************************
@@ -213,7 +213,7 @@ int CAquiferStack::GetNumAqStacks()
 //
 void CAquiferStack::DestroyAllAqStacks()
 {
-	if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL AQUIFER STACKS"<<endl;}
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL AQUIFER STACKS"<<endl;}
   for (int p=0; p<NumAqStacks;p++){
     delete pAllAqStacks[p];
   }

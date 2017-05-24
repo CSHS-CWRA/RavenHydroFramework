@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
   Copyright (c) 2008-2017 the Raven Development Team
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 #include <time.h>
-#include "RavenInclude.h" 
+#include "RavenInclude.h"
 #include "Model.h"
 #include "UnitTesting.h"
 
@@ -12,8 +12,8 @@ bool ParseInputFiles (CModel      *&pModel,
                       optStruct    &Options);
 //Defined in Solvers.cpp
 void MassEnergyBalance(      CModel      *pModel,
-                       const optStruct   &Options,
-                       const time_struct &tt);        //time 
+                             const optStruct   &Options,
+                             const time_struct &tt);        //time
 //Defined below
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
 void CheckForErrorWarnings();
@@ -24,8 +24,8 @@ static optStruct   Options;
 static CModel      *pModel;
 
 // Global variables - declared as extern in RavenInclude.h--------
-string g_output_directory=""; 
-bool   g_suppress_warnings=false; 
+string g_output_directory="";
+bool   g_suppress_warnings=false;
 double g_debug_vars[5];
 
 static string RavenBuildDate(__DATE__);
@@ -36,11 +36,11 @@ static string RavenBuildDate(__DATE__);
 //
 /// \param argc [in] number of arguments to executable
 /// \param argv[] [in] executable arguments; Raven.exe [filebase] [-p rvp_file] [-h hru_file] [-t rvt_file] [-o output_dir]
-/// for using WD\output subdirectory, can use "-o .\output\" 
+/// for using WD\output subdirectory, can use "-o .\output\"
 /// \return Success of main method
 //
 int main(int argc, char* argv[])
-{ 
+{
   double      t;
   string      filebase;
   clock_t     t0, t1;          //computational time markers
@@ -51,20 +51,20 @@ int main(int argc, char* argv[])
 
   Options.pause=true;
   Options.version="2.7.0";
- 
+
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 
   RavenUnitTesting(Options);
 
   if (!Options.silent){
-  int year = s_to_i(RavenBuildDate.substr(RavenBuildDate.length()-4,4).c_str()); 
-  cout <<"=========================================================="<<endl;
-  cout <<"                        RAVEN                             "<<endl;
-  cout <<" a numerically robust semi-distributed hydrological model "<<endl;
-  cout <<"    Copyright 2008-"<<year<<", the Raven Development Team "<<endl;
-  cout <<"                    Version "<<Options.version             <<endl;
-  cout <<"                BuildDate "<<RavenBuildDate                <<endl;
-  cout <<"=========================================================="<<endl;
+    int year = s_to_i(RavenBuildDate.substr(RavenBuildDate.length()-4,4).c_str());
+    cout <<"=========================================================="<<endl;
+    cout <<"                        RAVEN                             "<<endl;
+    cout <<" a numerically robust semi-distributed hydrological model "<<endl;
+    cout <<"    Copyright 2008-"<<year<<", the Raven Development Team "<<endl;
+    cout <<"                    Version "<<Options.version             <<endl;
+    cout <<"                BuildDate "<<RavenBuildDate                <<endl;
+    cout <<"=========================================================="<<endl;
   }
 
   ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
@@ -82,14 +82,14 @@ int main(int argc, char* argv[])
     CheckForErrorWarnings();
 
     if (!Options.silent){
-    cout <<"======================================================"<<endl;
-    cout <<"Initializing Model..."<<endl;}
+      cout <<"======================================================"<<endl;
+      cout <<"Initializing Model..."<<endl;}
     pModel->Initialize       (Options);
     pModel->SummarizeToScreen(Options);
 
     if (!Options.silent){
-    cout <<"======================================================"<<endl;
-    cout <<"Simulation Start..."<<endl;}
+      cout <<"======================================================"<<endl;
+      cout <<"Simulation Start..."<<endl;}
 
     //Write initial conditions-------------------------------------
     JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
     pModel->WriteMinorOutput           (Options,tt);
 
     //Solve water/energy balance over time--------------------------------
-    t1=clock();   
+    t1=clock();
     int step=0;
 
     for (t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)
@@ -126,16 +126,16 @@ int main(int argc, char* argv[])
     pModel->RunDiagnostics    (Options);
     pModel->WriteMajorOutput  ("solution",Options,tt,true);
     pModel->CloseOutputStreams();
- 
+
     if (!Options.silent){
-    cout <<"======================================================"<<endl;
-    cout <<"...Simulation Complete: "   <<Options.run_name<<endl;
-    cout <<"  Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-    cout <<"                Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-		if (Options.output_dir!=""){ 
-    cout <<"  Output written to "        <<Options.output_dir                                        <<endl;
-		}
-    cout <<"======================================================"<<endl;
+      cout <<"======================================================"<<endl;
+      cout <<"...Simulation Complete: "   <<Options.run_name<<endl;
+      cout <<"  Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+      cout <<"                Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+      if (Options.output_dir!=""){
+        cout <<"  Output written to "        <<Options.output_dir                                        <<endl;
+      }
+      cout <<"======================================================"<<endl;
     }
   }
   else
@@ -179,8 +179,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     }
     if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (i==argc))
     {
-      if      (mode==0){ 
-        Options.rvi_filename=argument+".rvi"; 
+      if      (mode==0){
+        Options.rvi_filename=argument+".rvi";
         Options.rvp_filename=argument+".rvp";
         Options.rvh_filename=argument+".rvh";
         Options.rvt_filename=argument+".rvt";
@@ -194,10 +194,10 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==4){Options.rvc_filename=argument; argument="";}
       else if (mode==5){Options.output_dir  =argument; argument="";}
       else if (mode==6){Options.run_name    =argument; argument="";}
-      if      (word=="-p"){mode=1;} 
+      if      (word=="-p"){mode=1;}
       else if (word=="-h"){mode=2;}
-      else if (word=="-t"){mode=3;} 
-      else if (word=="-c"){mode=4;} 
+      else if (word=="-t"){mode=3;}
+      else if (word=="-c"){mode=4;}
       else if (word=="-o"){mode=5;}
       else if (word=="-s"){Options.silent=true;}//should be specified prior to other flags
       else if (word=="-r"){mode=6;}
@@ -213,9 +213,9 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvp_filename="model.rvp";
     Options.rvh_filename="model.rvh";
     Options.rvt_filename="model.rvt";
-    Options.rvc_filename="model.rvc";   
+    Options.rvc_filename="model.rvc";
   }
-  
+
   char cCurrentPath[FILENAME_MAX];
   if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))){
     ExitGracefully("RavenMain: unable to retrieve current directory.", RUNTIME_ERR);
@@ -228,12 +228,12 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   //cout << to_string(basePath) << endl;
 
   /*cout<<"PROCESSED:"<<endl;
-  cout<<Options.rvi_filename<<endl;
-  cout<<Options.rvp_filename<<endl;
-  cout<<Options.rvh_filename<<endl;
-  cout<<Options.rvt_filename<<endl;
-  cout<<Options.rvc_filename<<endl;
-  cout<<Options.output_dir<<endl;*/
+    cout<<Options.rvi_filename<<endl;
+    cout<<Options.rvp_filename<<endl;
+    cout<<Options.rvh_filename<<endl;
+    cout<<Options.rvt_filename<<endl;
+    cout<<Options.rvc_filename<<endl;
+    cout<<Options.output_dir<<endl;*/
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Exits gracefully from program, explaining reason for exit and destructing simulation all pertinent parameters
@@ -244,17 +244,17 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 //
 void ExitGracefully(const char *statement,exitcode code)
 {
-  
+
   string typeline;
-  switch (code){  
-    case(SIMULATION_DONE):  {typeline="===============================================";break;}
-    case(RUNTIME_ERR):      {typeline="Error Type: Runtime Error";       break;}
-    case(BAD_DATA):         {typeline="Error Type: Bad input data";      break;}
-    case(BAD_DATA_WARN):    {typeline="Error Type: Bad input data";      break;}
-    case(OUT_OF_MEMORY):    {typeline="Error Type: Out of memory";       break;}
-    case(FILE_OPEN_ERR):    {typeline="Error Type: File opening error";  break;}
-    case(STUB):             {typeline="Error Type: Stub function called";break;}
-    default:                {typeline="Error Type: Unknown";             break;}
+  switch (code){
+  case(SIMULATION_DONE):  {typeline="===============================================";break;}
+  case(RUNTIME_ERR):      {typeline="Error Type: Runtime Error";       break;}
+  case(BAD_DATA):         {typeline="Error Type: Bad input data";      break;}
+  case(BAD_DATA_WARN):    {typeline="Error Type: Bad input data";      break;}
+  case(OUT_OF_MEMORY):    {typeline="Error Type: Out of memory";       break;}
+  case(FILE_OPEN_ERR):    {typeline="Error Type: File opening error";  break;}
+  case(STUB):             {typeline="Error Type: Stub function called";break;}
+  default:                {typeline="Error Type: Unknown";             break;}
   }
 
   if (code != RAVEN_OPEN_ERR){//avoids recursion problems
@@ -275,14 +275,14 @@ void ExitGracefully(const char *statement,exitcode code)
   cout <<"Exiting Gracefully: "<<statement                <<endl;
   cout << typeline                                        <<endl;
   cout <<"==============================================="<<endl;
-  
+
   delete pModel; pModel=NULL;//deletes EVERYTHING!
   CStateVariable::Destroy();
 
   if(Options.pause)
   {
     cout << "Press the ENTER key to continue"<<endl;
-    cin.get(); 
+    cin.get();
   }
   exit(0);
 }
@@ -312,7 +312,7 @@ void CheckForErrorWarnings()
   WARNINGS.close();
   if (warnings_found){// && (!Options.silent){
     cout<<"*******************************************************"<<endl<<endl;
-    cout<<"WARNING: Warnings have been issued while parsing data. "<<endl; 
+    cout<<"WARNING: Warnings have been issued while parsing data. "<<endl;
     cout<<"         See Raven_errors.txt for details              "<<endl<<endl;
     cout<<"*******************************************************"<<endl<<endl;
   }

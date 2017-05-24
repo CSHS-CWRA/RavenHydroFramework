@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-class definitions:
-  CmvSnowAlbedo	
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  class definitions:
+  CmvSnowAlbedo
   CmvSoilAlbedo
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 
 #ifndef ALBEDO_H
 #define ALBEDO_H
@@ -23,32 +23,32 @@ enum snowalb_type{
 /// \brief Calculates the evolution of snow albedo
 //
 class CmvSnowAlbedoEvolve: public CHydroProcessABC
-{  
-  private:/*------------------------------------------------------*/
-    snowalb_type type; ///< Type of albedo algorithm selected
+{
+private:/*------------------------------------------------------*/
+  snowalb_type type; ///< Type of albedo algorithm selected
 
-  public:/*-------------------------------------------------------*/
-		//Constructors/destructors:
-		CmvSnowAlbedoEvolve(const snowalb_type snalbtype);
-		~CmvSnowAlbedoEvolve(); 
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvSnowAlbedoEvolve(const snowalb_type snalbtype);
+  ~CmvSnowAlbedoEvolve();
 
-		//inherited functions
-		void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
-    void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &t,
-                                double      *rates) const;
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double              *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &t,
+                        double      *rates) const;
 
-     void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-     static void GetParticipatingStateVarList(snowalb_type  snalbtype,
-                                                  sv_type *aSV, 
-                                                  int     *aLev, 
-                                                  int     &nSV);
+  void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(snowalb_type  snalbtype,
+                                           sv_type *aSV,
+                                           int     *aLev,
+                                           int     &nSV);
 };
 #endif

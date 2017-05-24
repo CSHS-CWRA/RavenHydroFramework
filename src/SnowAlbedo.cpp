@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Snow albedo evolution routines
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  Snow albedo evolution routines
+  ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "Albedo.h"
 
@@ -11,15 +11,15 @@
 /// \brief Implementation of the snow albedo evolution constructor
 //
 CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
-                        CHydroProcessABC(SNOW_ALBEDO_EVOLVE)
+  CHydroProcessABC(SNOW_ALBEDO_EVOLVE)
 {
   type =snalb_type;
 
   int iSnowAlbedo; //used by all snow albedo routines
   iSnowAlbedo   =pModel->GetStateVarIndex(SNOW_ALBEDO);
   ExitGracefullyIf(iSnowAlbedo==DOESNT_EXIST,
-    "SNOW ALBEDO EVOLVE: snow albedo state variable required",BAD_DATA);
-  
+                   "SNOW ALBEDO EVOLVE: snow albedo state variable required",BAD_DATA);
+
   if (type==SNOALB_UBCWM)
   {
     CHydroProcessABC::DynamicSpecifyConnections(1);
@@ -33,7 +33,7 @@ CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
 //
-CmvSnowAlbedoEvolve::~CmvSnowAlbedoEvolve(){} 
+CmvSnowAlbedoEvolve::~CmvSnowAlbedoEvolve(){}
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Function to initialize CmvSnowAlbedoEvolve objects
@@ -48,16 +48,16 @@ void CmvSnowAlbedoEvolve::Initialize(){}
 /// \param &nP [out] Number of parameters required by snow albedo algorithm (size of aP[] and aPC[])
 //
 void CmvSnowAlbedoEvolve::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
-{  
+{
   if (type==SNOALB_UBCWM)
   {
-	  nP=6; 
-    aP[0]="UBC_MAX_SNOW_ALBEDO"; aPC[0]=CLASS_GLOBAL; 
+    nP=6;
+    aP[0]="UBC_MAX_SNOW_ALBEDO"; aPC[0]=CLASS_GLOBAL;
     aP[1]="UBC_MIN_SNOW_ALBEDO"; aPC[1]=CLASS_GLOBAL;
-    aP[2]="UBC_ALBASE";			     aPC[2]=CLASS_GLOBAL; 
-    aP[3]="UBC_ALBREC";			     aPC[3]=CLASS_GLOBAL; 
-    aP[4]="UBC_MAX_CUM_MELT";	   aPC[4]=CLASS_GLOBAL; 
-    aP[5]="UBC_ALBSNW";			     aPC[5]=CLASS_GLOBAL; 
+    aP[2]="UBC_ALBASE";                      aPC[2]=CLASS_GLOBAL;
+    aP[3]="UBC_ALBREC";                      aPC[3]=CLASS_GLOBAL;
+    aP[4]="UBC_MAX_CUM_MELT";      aPC[4]=CLASS_GLOBAL;
+    aP[5]="UBC_ALBSNW";                      aPC[5]=CLASS_GLOBAL;
   }
   else
   {
@@ -74,13 +74,13 @@ void CmvSnowAlbedoEvolve::GetParticipatingParamList(string *aP, class_type *aPC,
 /// \param &nSV [out] Number of state variables modified by this process (i.e. length of *aSV)
 //
 void CmvSnowAlbedoEvolve::GetParticipatingStateVarList(snowalb_type bal_type,
-																								       sv_type *aSV, int *aLev, int &nSV) 
+                                                       sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=1;
   aSV[0]=SNOW_ALBEDO;   aLev[0]=DOESNT_EXIST;
 
-	if (bal_type==SNOALB_UBCWM)
-	{
+  if (bal_type==SNOALB_UBCWM)
+  {
     nSV=3;
     aSV[1]=SNOW;            aLev[1]=DOESNT_EXIST;
     aSV[2]=CUM_SNOWMELT;    aLev[2]=DOESNT_EXIST;
@@ -98,43 +98,43 @@ void CmvSnowAlbedoEvolve::GetParticipatingStateVarList(snowalb_type bal_type,
 /// \param &tt [in] Reference to the instance in time to which the calculated rates of change pertain
 /// \param *rates [out] Array (size=nConnects) which contains calculate rates of change of modified variables.
 //
-void CmvSnowAlbedoEvolve::GetRatesOfChange (const double		 *state_var, 
-																            const CHydroUnit *pHRU, 
-																            const optStruct	 &Options,
-																            const time_struct &tt,
-																			            double     *rates) const
+void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_var,
+                                            const CHydroUnit *pHRU,
+                                            const optStruct      &Options,
+                                            const time_struct &tt,
+                                            double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
-	if (type==SNOALB_UBCWM)
-	{
+  if (type==SNOALB_UBCWM)
+  {
     double snow,albedo,cum_melt,snowfall,old_albedo;
 
-		UBC_snow_par PP=CGlobalParams::GetParams()->UBC_snow_params;
+    UBC_snow_par PP=CGlobalParams::GetParams()->UBC_snow_params;
 
     snow    =state_var[pModel->GetStateVarIndex(SNOW)];
     albedo  =state_var[pModel->GetStateVarIndex(SNOW_ALBEDO)];
     cum_melt=state_var[pModel->GetStateVarIndex(CUM_SNOWMELT)];
     snowfall=pHRU->GetForcingFunctions()->precip*pHRU->GetForcingFunctions()->snow_frac;
-	    
-	  old_albedo=albedo;
+
+    old_albedo=albedo;
     //snow albedo decay
     if (snow>REAL_SMALL || snowfall>REAL_SMALL)
     {
       lowerswap(albedo,PP.MAX_SNOW_ALBEDO);
 
-	    if (albedo>PP.ALBASE){
+      if (albedo>PP.ALBASE){
         static double albrec_factor = pow(PP.ALBREC,Options.timestep);
         albedo*= albrec_factor;
-	    }
+      }
 
-	    else if (albedo<PP.ALBASE){ //separate if in case the previous change goes below ALBASE
-	      albedo = PP.ALBASE*exp(-cum_melt/PP.MAX_CUM_MELT);
-	    }
-	    upperswap(albedo,PP.MIN_SNOW_ALBEDO);
-      
-	    if (snowfall >0)//increase in snow albedo
-	    {
+      else if (albedo<PP.ALBASE){ //separate if in case the previous change goes below ALBASE
+        albedo = PP.ALBASE*exp(-cum_melt/PP.MAX_CUM_MELT);
+      }
+      upperswap(albedo,PP.MIN_SNOW_ALBEDO);
+
+      if (snowfall >0)//increase in snow albedo
+      {
         albedo += min(snowfall*Options.timestep / PP.ALBSNW,1.0) * (PP.MAX_SNOW_ALBEDO - albedo);
       }
     }
@@ -157,10 +157,10 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double		 *state_var,
 /// \param *rates [out] Array (size=nConnects) which contains calculate rates of change of modified variables.
 //
 void CmvSnowAlbedoEvolve::ApplyConstraints( const double      *state_vars,
-											                      const CHydroUnit  *pHRU, 
-								                            const optStruct	  &Options,
-								                            const time_struct &t,
-                                                  double      *rates) const
+                                            const CHydroUnit  *pHRU,
+                                            const optStruct       &Options,
+                                            const time_struct &t,
+                                            double      *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 

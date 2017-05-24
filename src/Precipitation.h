@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-class definitions:
-  CmvPrecipitation	
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  class definitions:
+  CmvPrecipitation
+  ----------------------------------------------------------------*/
 
 #ifndef PRECIPITATION_H
 #define PRECIPITATION_H
@@ -18,29 +18,29 @@ class definitions:
 /// \remark all state variables are potential receptacles for precipitation
 //
 class CmvPrecipitation: public CHydroProcessABC
-{  
-  private:/*------------------------------------------------------*/
+{
+private:/*------------------------------------------------------*/
 
-  public:/*-------------------------------------------------------*/
-		//Constructors/destructors:
-		CmvPrecipitation();
-		~CmvPrecipitation(); 
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvPrecipitation();
+  ~CmvPrecipitation();
 
-		//inherited functions
-    void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
-    void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double              *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
 
-    static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
-    void        GetParticipatingParamList   (string *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
+  void        GetParticipatingParamList   (string *aP, class_type *aPC, int &nP) const;
 
 };
 #endif

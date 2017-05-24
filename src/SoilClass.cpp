@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
 
@@ -15,9 +15,9 @@
 //
 CSoilClass::CSoilClass(const string name)
 {
-   tag=name;
-   if (!DynArrayAppend((void**&)(pAllSoilClasses),(void*)(this),NumSoilClasses)){
-     ExitGracefully("CSoilClass::Constructor: creating NULL soil class",BAD_DATA);};
+  tag=name;
+  if (!DynArrayAppend((void**&)(pAllSoilClasses),(void*)(this),NumSoilClasses)){
+    ExitGracefully("CSoilClass::Constructor: creating NULL soil class",BAD_DATA);};
 }
 
 //////////////////////////////////////////////////////////////////
@@ -42,8 +42,8 @@ string             CSoilClass::GetTag       () const{return tag;}
 /*****************************************************************
    Static Initialization, Accessors, Destructors
 *****************************************************************/
-CSoilClass **CSoilClass::pAllSoilClasses=NULL; 
-int          CSoilClass::NumSoilClasses=0;     
+CSoilClass **CSoilClass::pAllSoilClasses=NULL;
+int          CSoilClass::NumSoilClasses=0;
 
 
 //////////////////////////////////////////////////////////////////
@@ -89,18 +89,18 @@ void CSoilClass::WriteParamsToFile(ofstream &OUT)
   OUT<<"HEAT_CAPACITY,THERMAL_COND,";
   OUT<<"HYDRAUL_COND,";
   OUT<<"CLAPP_B,CLAPP_N,CLAPP_M,";
-  OUT<<"SAT_RES,SAT_WILT,FIELD_CAPACITY,"; 
+  OUT<<"SAT_RES,SAT_WILT,FIELD_CAPACITY,";
   OUT<<"AIR_ENTRY_PRESSURE,WILTING_PRESSURE,WETTING_FRONT_PSI,KSAT_STD_DEVIATION,";
-  OUT<<"EVAP_RES_FC,SHUTTLEWORTH_B,";    
+  OUT<<"EVAP_RES_FC,SHUTTLEWORTH_B,";
   OUT<<"PET_CORRECTION,";
   OUT<<"ALBEDO_WET,ALBEDO_DRY,";
   //
-  OUT<<"VIC_ZMIN,VIC_ZMAX,VIC_ALPHA,VIC_EVAP_GAMMA,";    
-  OUT<<"MAX_PERC_RATE,PERC_N,PERC_COEFF,SAC_PERC_ALPHA,SAC_PERC_EXPON,";   
-  OUT<<"MAX_BASEFLOW_RATE,BASEFLOW_N,BASEFLOW_COEFF,";    
-  OUT<<"MAX_CAP_RISE_RATE,"; 
-  OUT<<"MAX_INTERFLOW_RATE,INTERFLOW_COEFF,";	
-  OUT<<"HBV_BETA,";	 
+  OUT<<"VIC_ZMIN,VIC_ZMAX,VIC_ALPHA,VIC_EVAP_GAMMA,";
+  OUT<<"MAX_PERC_RATE,PERC_N,PERC_COEFF,SAC_PERC_ALPHA,SAC_PERC_EXPON,";
+  OUT<<"MAX_BASEFLOW_RATE,BASEFLOW_N,BASEFLOW_COEFF,";
+  OUT<<"MAX_CAP_RISE_RATE,";
+  OUT<<"MAX_INTERFLOW_RATE,INTERFLOW_COEFF,";
+  OUT<<"HBV_BETA,";
   OUT<<"UBC_EVAP_SOIL_DEF,UBC_INFIL_SOIL_DEF,";
 
   OUT<<endl;
@@ -117,7 +117,7 @@ void CSoilClass::WriteParamsToFile(ofstream &OUT)
     OUT<<t->clapp_b           <<","<<t->clapp_n         <<","<<t->clapp_m<<",";
     OUT<<t->sat_res           <<","<<t->sat_wilt        <<","<<t->field_capacity<<",";
     OUT<<t->air_entry_pressure<<","<<t->wilting_pressure<<","<<t->wetting_front_psi<<","<<t->ksat_std_deviation<<",";
-    OUT<<t->evap_res_fc       <<","<<t->shuttleworth_b  <<",";   
+    OUT<<t->evap_res_fc       <<","<<t->shuttleworth_b  <<",";
     OUT<<t->PET_correction    <<",";
     OUT<<t->albedo_wet        <<","<<t->albedo_dry<<",";
 
@@ -165,7 +165,7 @@ CSoilClass *CSoilClass::StringToSoilClass(const string s)
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the soil class corresponding to the passed index
 ///  if index is invalid, returns NULL
-/// \param c [in] Soil class index 
+/// \param c [in] Soil class index
 /// \return Reference to soil class corresponding to index c
 //
 const CSoilClass *CSoilClass::GetSoilClass(int c)
@@ -175,10 +175,10 @@ const CSoilClass *CSoilClass::GetSoilClass(int c)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates soil propeties
-/// \details Sets soil properties based upon simple soil parameters (sand,clay 
-///  &org pct) using simple pedotransfer functions. Input [Stmp] has been 
-///  read from .rvp file - if parameter == AUTO_COMPLETE, then empirical 
-///  relationships are used to estimate parameter from sand, clay & 
+/// \details Sets soil properties based upon simple soil parameters (sand,clay
+///  &org pct) using simple pedotransfer functions. Input [Stmp] has been
+///  read from .rvp file - if parameter == AUTO_COMPLETE, then empirical
+///  relationships are used to estimate parameter from sand, clay &
 ///  organic content
 ///  \todo [QA/QC] should add some reasonable checks for physical realism (e.g., positivity)
 ///
@@ -212,7 +212,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   //Porosity
   autocalc=SetCalculableValue(S.porosity,Stmp.porosity,Sdefault.porosity);
   if (autocalc)
-  { 
+  {
     S.porosity=0.489-0.126*S.sand_con;         ///< \ref CLM eqn 7.72, WATCLASS \cite Oleson2012 \cite verseghy2008
     if (S.sand_con == 0.4111111){ S.porosity = 1.0; }///special default for conceptual models without sand content specified
     warn="The required parameter POROSITY for soil class "+tag+" was autogenerated with value "+to_string(S.porosity);
@@ -223,16 +223,16 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   //Stone fraction
   autocalc=SetCalculableValue(S.stone_frac,Stmp.stone_frac,Sdefault.stone_frac);
   if (autocalc)
-  { 
+  {
     S.stone_frac=0.0;
     //no warning - default is no correction
   }
   ExitGracefullyIf((S.stone_frac<0) || (S.stone_frac>1.0),"AutoCalculateSoilProps: STONE_FRAC must be between 0 and 1",BAD_DATA);
 
-  //Bulk density 
+  //Bulk density
   autocalc=SetCalculableValue(S.bulk_density,Stmp.bulk_density,Sdefault.bulk_density);
   if (autocalc)
-  { 
+  {
     S.bulk_density =DENSITY_SAND*(1-S.porosity);
     warn="The required parameter BULK_DENSITY for soil class "+tag+" was autogenerated with value "+to_string(S.bulk_density);
     if (chatty){WriteWarning(warn,false);}
@@ -249,7 +249,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   ///< \ref arithmetic means (e.g., CLM 6.61,6.68, also from WATCLASS) \cite Oleson2012
   autocalc=SetCalculableValue(S.heat_capacity,Stmp.heat_capacity,Sdefault.heat_capacity);
   if (autocalc)
-  { 
+  {
     S.heat_capacity =
       (HCP_SAND   *SandPoro+
        HCP_CLAY   *ClayPoro+
@@ -260,7 +260,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
 
   autocalc=SetCalculableValue(S.thermal_cond,Stmp.thermal_cond,Sdefault.thermal_cond);
   if (autocalc)
-  { 
+  {
     S.thermal_cond  =
       (TC_SAND    *SandPoro+
        TC_CLAY    *ClayPoro+
@@ -275,8 +275,8 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   //Hydraulic Conductivity
   autocalc=SetCalculableValue(S.hydraul_cond,Stmp.hydraul_cond,Sdefault.hydraul_cond);
   if (autocalc)
-  { 
-    //RELATIONSHIP REQUIRED 
+  {
+    //RELATIONSHIP REQUIRED
     S.hydraul_cond=0.001;//[mm/d]
     //S.hydraul_cond=pow(10.0,(1.53*S.sand_con-0.884))* 7.0556E-6;//WATCLASS. Units unknown.
     warn="The required parameter HYDRAUL_COND for soil class "+tag+" was autogenerated with value "+to_string(S.hydraul_cond);
@@ -286,20 +286,20 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   //Saturation at field capacity
   autocalc=SetCalculableValue(S.field_capacity,Stmp.field_capacity,Sdefault.field_capacity);
   if (autocalc)
-  { 
+  {
     ///< \ref From Brakensiek et al. (1984), as reported in HELP manual \cite Brakensiek1984APP
     S.field_capacity = 0.1535 - 0.18*S.sand_con+ 0.39*S.clay_con+0.1943*S.porosity;
-	  warn="The required parameter FIELD_CAPACITY for soil class "+tag+" was autogenerated with value "+to_string(S.field_capacity);
+    warn="The required parameter FIELD_CAPACITY for soil class "+tag+" was autogenerated with value "+to_string(S.field_capacity);
     if (chatty){WriteWarning(warn,false);}
   }
 
   //Wilting point saturation
   autocalc=SetCalculableValue(S.sat_wilt,Stmp.sat_wilt,Sdefault.sat_wilt);
   if (autocalc)
-  { 
+  {
     ///< \ref From Brakensiek et al. (1984), as reported in HELP manual \cite Brakensiek1984APP
     S.sat_wilt =0.037 -0.04*S.sand_con + 0.44*S.clay_con+0.0482*S.porosity;
-	  warn="The required parameter SAT_WILT for soil class "+tag+" was autogenerated with value "+to_string(S.sat_wilt);
+    warn="The required parameter SAT_WILT for soil class "+tag+" was autogenerated with value "+to_string(S.sat_wilt);
     if (chatty){WriteWarning(warn,false);}
     //S.sat_wilt =0.0; //common for conceptual models
   }
@@ -307,35 +307,35 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   //Minimum saturation
   autocalc=SetCalculableValue(S.sat_res,Stmp.sat_res,Sdefault.sat_res);
   if (autocalc)
-  { 
+  {
     S.sat_res =0.0;
     //S.sat_res =0.04; //WATCLASS
-    
+
     ///< From Rawls et al 1982, as reported in HELP manual \cite Rawls1982TA
-    //if (S.sat_wilt> 0.04){S.sat_res =0.000+0.60*S.sat_wilt;} 
+    //if (S.sat_wilt> 0.04){S.sat_res =0.000+0.60*S.sat_wilt;}
     //else                 {S.sat_res =0.014+0.25*S.sat_wilt;}
-	  // no warning - default is no residual correction
+    // no warning - default is no residual correction
   }
 
-  //Air entry pressure 
+  //Air entry pressure
   autocalc=SetCalculableValue(S.air_entry_pressure,Stmp.air_entry_pressure,Sdefault.air_entry_pressure);
   if (autocalc)
-  { 
+  {
     S.air_entry_pressure=10*pow(10,1.88-1.31*S.sand_con);//CLM eqn 7.75, WATCLASS
-	  warn="The required parameter AIR_ENTRY_PRESSURE for soil class "+tag+" was autogenerated with value "+to_string(S.air_entry_pressure);
+    warn="The required parameter AIR_ENTRY_PRESSURE for soil class "+tag+" was autogenerated with value "+to_string(S.air_entry_pressure);
     if (chatty){WriteWarning(warn,false);}
   }
 
   //Wilting pressure
   autocalc=SetCalculableValue(S.wilting_pressure,Stmp.wilting_pressure,Sdefault.wilting_pressure);
   if (autocalc)
-  { 
+  {
     S.wilting_pressure =40;
-    //RELATIONSHIP REQUIRED 
+    //RELATIONSHIP REQUIRED
     //calculate from wilting point saturation?
-	  warn="The required parameter WILTING_PRESSURE for soil class "+tag+" was autogenerated with value "+to_string(S.wilting_pressure);
+    warn="The required parameter WILTING_PRESSURE for soil class "+tag+" was autogenerated with value "+to_string(S.wilting_pressure);
     if (chatty){WriteWarning(warn,false);}
-  }  
+  }
 
   ///< \ref Clapp-Hornberger parameters \cite Clapp1978WRR
   // for Clapp-Hornberger parabolic transition at high saturations
@@ -344,59 +344,59 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
 
   autocalc=SetCalculableValue(S.clapp_b,Stmp.clapp_b,Sdefault.clapp_b);
   if (autocalc)
-  { 
+  {
     S.clapp_b=2.91+15.9*S.clay_con;///< CLM eqn 7.73, WATCLASS \cite Oleson2012
-	  warn="The required parameter CLAPP_B for soil class "+tag+" was autogenerated with value "+to_string(S.clapp_b);
+    warn="The required parameter CLAPP_B for soil class "+tag+" was autogenerated with value "+to_string(S.clapp_b);
     if (chatty){WriteWarning(warn,false);}
   }
   double psi_inf=S.air_entry_pressure*pow(SAT_INF,-S.clapp_b);
   autocalc=SetCalculableValue(S.clapp_m,Stmp.clapp_m,Sdefault.clapp_m);
   if (autocalc)
-  { 
+  {
     S.clapp_m=(psi_inf/ pow(1.0-SAT_INF,2))- S.clapp_b*(psi_inf)/(SAT_INF*(1-SAT_INF));
-	  warn="The required parameter CLAPP_M for soil class "+tag+" was autogenerated with value "+to_string(S.clapp_m);
+    warn="The required parameter CLAPP_M for soil class "+tag+" was autogenerated with value "+to_string(S.clapp_m);
     if (chatty){WriteWarning(warn,false);}
   }
   //Wetting front Matric potential (for Green-Ampt)
   autocalc=SetCalculableValue(S.wetting_front_psi,Stmp.wetting_front_psi,Sdefault.wetting_front_psi);
   if (autocalc)
-  { 
+  {
     ///< \ref SWAT 2005 documentation 2:1.2.5 (from Rawls and Brakensiek, 1985) \cite Rawls1985
     /*
-    double mc    =S.clay_con;
-    double ms    =S.sand_con;
-    double coeff =-7.32561-4.9837*ms;
-    coeff+=-3.479*(mc*mc)-7.99*(ms*ms);
-    coeff+=(3.809479+16.08*(ms*ms)+16.02*(mc*mc))*S.porosity;
-    S.wetting_front_psi=10.0*exp(6.5309+15.83*mc*mc+3.44*ms*mc-13.6*ms*ms*mc+coeff*S.porosity);//[-mm]
+      double mc    =S.clay_con;
+      double ms    =S.sand_con;
+      double coeff =-7.32561-4.9837*ms;
+      coeff+=-3.479*(mc*mc)-7.99*(ms*ms);
+      coeff+=(3.809479+16.08*(ms*ms)+16.02*(mc*mc))*S.porosity;
+      S.wetting_front_psi=10.0*exp(6.5309+15.83*mc*mc+3.44*ms*mc-13.6*ms*ms*mc+coeff*S.porosity);//[-mm]
     */
 
-    ///< WATFLOOD Documentation (2007), supposedly from Philip, 1954 \cite philip1954SS 
+    ///< WATFLOOD Documentation (2007), supposedly from Philip, 1954 \cite philip1954SS
     //S.wetting_front_psi=250.0*log(S.hydraul_cond/SEC_PER_DAY)+100.0; //dumb
 
     //From Neuman integration of Clapp-Hornberger saturation relationship
     double bb  =S.clapp_b;
-    double psia=S.air_entry_pressure; 
+    double psia=S.air_entry_pressure;
     S.wetting_front_psi=(2*bb+3)/(2*bb+6)*psia;
-	  warn="The required parameter WETTING_FRONT_PSI for soil class "+tag+" was autogenerated with value "+to_string(S.wetting_front_psi);
+    warn="The required parameter WETTING_FRONT_PSI for soil class "+tag+" was autogenerated with value "+to_string(S.wetting_front_psi);
     if (chatty){WriteWarning(warn,false);}
     ExitGracefullyIf(S.wetting_front_psi<0,"AutocalculateSoilProperties: wetting front suction must be positive and non-zero.",BAD_DATA_WARN);
   }
 
   autocalc=SetCalculableValue(S.clapp_n,Stmp.clapp_n,Sdefault.clapp_n);
   if (autocalc)
-  { 
+  {
     S.clapp_n=2*SAT_INF-1.0-(psi_inf*S.clapp_b/(S.clapp_m*SAT_INF));
-	  warn="The required parameter CLAPP_N for soil class "+tag+" was autogenerated with value "+to_string(S.clapp_n);
+    warn="The required parameter CLAPP_N for soil class "+tag+" was autogenerated with value "+to_string(S.clapp_n);
     if (chatty){WriteWarning(warn,false);}
   }
 
   //Lateral Heterogeneity in Hydraulic Conductivity
   autocalc=SetCalculableValue(S.ksat_std_deviation,Stmp.ksat_std_deviation,Sdefault.ksat_std_deviation);
   if (autocalc)
-  { 
+  {
     S.ksat_std_deviation=0.0;
-	  //no warning - default is zero variability
+    //no warning - default is zero variability
   }
 
   //Evaporation properties
@@ -404,25 +404,25 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   //Soil evaporation resistance at field capacity
   autocalc=SetCalculableValue(S.evap_res_fc,Stmp.evap_res_fc,Sdefault.evap_res_fc);
   if (autocalc)
-  { 
+  {
     S.evap_res_fc=1.0;//?
-    //RELATIONSHIP REQUIRED 
-	  warn="The required parameter EVAP_RES_FC for soil class "+tag+" was autogenerated with value "+to_string(S.evap_res_fc);
+    //RELATIONSHIP REQUIRED
+    warn="The required parameter EVAP_RES_FC for soil class "+tag+" was autogenerated with value "+to_string(S.evap_res_fc);
     if (chatty){WriteWarning(warn,false);}
   }
   //Shuttleworth b parameter
   autocalc=SetCalculableValue(S.shuttleworth_b,Stmp.shuttleworth_b,Sdefault.shuttleworth_b);
   if (autocalc)
-  { 
+  {
     S.shuttleworth_b=1.0;//?
     //RELATIONSHIP REQUIRED
-	  //warn="The required parameter SHUTTLEWORTH_B for soil class "+tag+" was autogenerated with value "+to_string(S.shuttleworth_b);
+    //warn="The required parameter SHUTTLEWORTH_B for soil class "+tag+" was autogenerated with value "+to_string(S.shuttleworth_b);
     //if (chatty){WriteWarning(warn,false);}
   }
   //PET Correction factor
   autocalc=SetCalculableValue(S.PET_correction,Stmp.PET_correction,Sdefault.PET_correction);
   if (autocalc)
-  { 
+  {
     S.PET_correction=1.0;
     //no warning - no correction
   }
@@ -506,8 +506,8 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
 
   S.evap_res_fc =S.shuttleworth_b          =DefaultParameterValue(is_template,true);
   S.PET_correction                         =DefaultParameterValue(is_template,true);
-  
-  S.albedo_wet                             =DefaultParameterValue(is_template,true); 
+
+  S.albedo_wet                             =DefaultParameterValue(is_template,true);
   S.albedo_dry                             =DefaultParameterValue(is_template,true);
 
   for (int c=0;c<MAX_CONSTITUENTS;c++ ){
@@ -524,7 +524,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.perc_n            =DefaultParameterValue(is_template,false);//
   S.perc_coeff        =DefaultParameterValue(is_template,false);//
   S.SAC_perc_alpha    =DefaultParameterValue(is_template,false);//100;
-  S.SAC_perc_expon    =DefaultParameterValue(is_template,false);//3.0;  
+  S.SAC_perc_expon    =DefaultParameterValue(is_template,false);//3.0;
   S.max_interflow_rate=DefaultParameterValue(is_template,false);//500;    //[mm/d]
   S.interflow_coeff   =DefaultParameterValue(is_template,false);//0.1;
   S.max_baseflow_rate =DefaultParameterValue(is_template,false);//5000;   //[mm/d]
@@ -538,28 +538,28 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.GR4J_x3           =DefaultParameterValue(is_template,false);//90 //[mm]
   S.baseflow_thresh   =DefaultParameterValue(is_template,false);//0 //[-]
   S.exchange_flow     =DefaultParameterValue(is_template,false);//0 //[mm/d]
-  
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the soil property corresponding to param_name
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CSoilClass::SetSoilProperty(string       &param_name, 
+void  CSoilClass::SetSoilProperty(string       &param_name,
                                   const double &value)
 {
   SetSoilProperty(S,param_name,value);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the soil property corresponding to param_name
-/// \note This is declared as a static member because soil class 
+/// \note This is declared as a static member because soil class
 /// is not instantiated prior to read of .rvp file
 /// \param &S [out] Soil properties class
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CSoilClass::SetSoilProperty(soil_struct &S, 
-                                  string       param_name, 
+void  CSoilClass::SetSoilProperty(soil_struct &S,
+                                  string       param_name,
                                   const double value)
 {
   string name;
@@ -620,7 +620,7 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the soil property corresponding to param_name
-/// \note This is declared as a static member because soil class 
+/// \note This is declared as a static member because soil class
 /// is not instantiated prior to read of .rvp file
 /// \param constit_ind [in] consitutent index, c
 /// \param &S [out] Soil properties class
@@ -628,8 +628,8 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
 /// \param value [in] Value of parameter to be set
 //
 void  CSoilClass::SetSoilTransportProperty( int          constit_ind,
-                                            soil_struct &S, 
-                                            string       param_name, 
+                                            soil_struct &S,
+                                            string       param_name,
                                             const double value)
 {
   string name;

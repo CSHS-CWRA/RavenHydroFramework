@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Flush (abstract move of all water from one compartment to another)
+  Copyright (c) 2008-2017 the Raven Development Team
+  ------------------------------------------------------------------
+  Flush (abstract move of all water from one compartment to another)
   Split (move water to two compartments)
-  Overflow 
-----------------------------------------------------------------*/
+  Overflow
+  ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
@@ -20,14 +20,14 @@
 /// \param In_index [in] Index of the storage compartment from which water is flushed
 /// \param Out_index [in] Index of the storage compartment to which water is flushed
 //
-CmvFlush::CmvFlush(int					In_index,			//soil water storage
-									 int					Out_index)
-			      :CHydroProcessABC(FLUSH,In_index,Out_index)
+CmvFlush::CmvFlush(int In_index,                       //soil water storage
+                   int Out_index)
+  :CHydroProcessABC(FLUSH,In_index,Out_index)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
-    "CmvFlush Constructor: invalid 'from' compartment specified",BAD_DATA);
+                   "CmvFlush Constructor: invalid 'from' compartment specified",BAD_DATA);
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
-    "CmvFlush Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvFlush Constructor: invalid 'to' compartment specified",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ void   CmvFlush::Initialize()
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by flush algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvFlush::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+void CmvFlush::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=0;
   //user specified 'from' & 'to' compartment, Levels - not known before construction
@@ -66,17 +66,17 @@ void CmvFlush::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 
 //
-void   CmvFlush::GetRatesOfChange( const double			*storage, 
-																				 const CHydroUnit	*pHRU, 
-																				 const optStruct	&Options,
-																				 const time_struct &tt,
-                                         double     *rates) const
+void   CmvFlush::GetRatesOfChange( const double                 *storage,
+                                   const CHydroUnit       *pHRU,
+                                   const optStruct        &Options,
+                                   const time_struct &tt,
+                                   double     *rates) const
 {
   rates[0]=storage[iFrom[0]]/Options.timestep;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
@@ -86,11 +86,11 @@ void   CmvFlush::GetRatesOfChange( const double			*storage,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 //
-void   CmvFlush::ApplyConstraints(const double		 *storage, 
-						                            const CHydroUnit *pHRU, 
-						                            const optStruct	 &Options,
-						                            const time_struct &tt,
-                                              double     *rates) const
+void   CmvFlush::ApplyConstraints(const double           *storage,
+                                  const CHydroUnit *pHRU,
+                                  const optStruct      &Options,
+                                  const time_struct &tt,
+                                  double     *rates) const
 {
   //cant remove more than is there (already built in)
   //exceedance of max "to" compartment presumed impossible
@@ -108,18 +108,18 @@ void   CmvFlush::ApplyConstraints(const double		 *storage,
 /// \param Out_index1 [in] Index of the first storage compartment to which water is flushed
 /// \param Out_index2 [in] Index of the second storage compartment to which water is flushed
 //
-CmvSplit::CmvSplit(int					In_index,			//soil water storage
-									 int					Out_index1,
-                   int          Out_index2,
-                   double       split_amt)
-			      :CHydroProcessABC(SPLIT)
+CmvSplit::CmvSplit(int         In_index,                       //soil water storage
+                   int         Out_index1,
+                   int         Out_index2,
+                   double      split_amt)
+  :CHydroProcessABC(SPLIT)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
-    "CmvFlush Constructor: invalid 'from' compartment specified",BAD_DATA);
+                   "CmvFlush Constructor: invalid 'from' compartment specified",BAD_DATA);
   ExitGracefullyIf(Out_index1==DOESNT_EXIST,
-    "CmvFlush Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvFlush Constructor: invalid 'to' compartment specified",BAD_DATA);
   ExitGracefullyIf(Out_index2==DOESNT_EXIST,
-    "CmvFlush Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvFlush Constructor: invalid 'to' compartment specified",BAD_DATA);
   _split_pct=split_amt;
 
   DynamicSpecifyConnections(2);
@@ -148,7 +148,7 @@ void   CmvSplit::Initialize()
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by flush algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvSplit::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+void CmvSplit::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=0;
   //user specified 'from' & 'to' compartments, Levels - not known before construction
@@ -164,18 +164,18 @@ void CmvSplit::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 
 //
-void   CmvSplit::GetRatesOfChange( const double			*storage, 
-																				 const CHydroUnit	*pHRU, 
-																				 const optStruct	&Options,
-																				 const time_struct &tt,
-                                         double     *rates) const
+void   CmvSplit::GetRatesOfChange( const double                 *storage,
+                                   const CHydroUnit       *pHRU,
+                                   const optStruct        &Options,
+                                   const time_struct &tt,
+                                   double     *rates) const
 {
   rates[0]=(    _split_pct)*storage[iFrom[0]]/Options.timestep;
   rates[1]=(1.0-_split_pct)*storage[iFrom[0]]/Options.timestep;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
@@ -185,11 +185,11 @@ void   CmvSplit::GetRatesOfChange( const double			*storage,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 //
-void   CmvSplit::ApplyConstraints(const double		 *storage, 
-						                            const CHydroUnit *pHRU, 
-						                            const optStruct	 &Options,
-						                            const time_struct &tt,
-                                              double     *rates) const
+void   CmvSplit::ApplyConstraints(const double           *storage,
+                                  const CHydroUnit *pHRU,
+                                  const optStruct      &Options,
+                                  const time_struct &tt,
+                                  double     *rates) const
 {
   //cant remove more than is there (already built in)
   //exceedance of max "to" compartment presumed impossible
@@ -200,14 +200,14 @@ void   CmvSplit::ApplyConstraints(const double		 *storage,
 /// \param In_index [in] Index of the storage compartment from which water overflows
 /// \param Out_index [in] Index of the storage compartment to which water overflows
 //
-CmvOverflow::CmvOverflow(int					In_index,			//soil water storage
-									      int					Out_index)
-			      :CHydroProcessABC(OVERFLOW_PROC,In_index,Out_index)
+CmvOverflow::CmvOverflow(int                                    In_index,                       //soil water storage
+                         int                                       Out_index)
+  :CHydroProcessABC(OVERFLOW_PROC,In_index,Out_index)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
-    "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
+                   "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
-    "CmvOverflow Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvOverflow Constructor: invalid 'to' compartment specified",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ void   CmvOverflow::Initialize()
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by overflow algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvOverflow::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+void CmvOverflow::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=0;
   //user specified 'from' & 'to' compartment, Levels - not known before construction
@@ -245,20 +245,20 @@ void CmvOverflow::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 //
-void   CmvOverflow::GetRatesOfChange( const double			*state_var, 
-																				 const CHydroUnit	*pHRU, 
-																				 const optStruct	&Options,
-																				 const time_struct &tt,
-                                         double     *rates) const
+void   CmvOverflow::GetRatesOfChange( const double                      *state_var,
+                                      const CHydroUnit       *pHRU,
+                                      const optStruct        &Options,
+                                      const time_struct &tt,
+                                      double     *rates) const
 {
 
-  double max_storage=max(pHRU->GetStateVarMax(iFrom[0],state_var,Options),0.0);    
+  double max_storage=max(pHRU->GetStateVarMax(iFrom[0],state_var,Options),0.0);
   //cout << "Overflow "<<max_storage<<endl;
   rates[0]=max(state_var[iFrom[0]]-max_storage,0.0)/Options.timestep;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
@@ -268,11 +268,11 @@ void   CmvOverflow::GetRatesOfChange( const double			*state_var,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 //
-void   CmvOverflow::ApplyConstraints(const double		 *state_var, 
-						                            const CHydroUnit *pHRU, 
-						                            const optStruct	 &Options,
-						                            const time_struct &tt,
-                                              double     *rates) const
+void   CmvOverflow::ApplyConstraints(const double                *state_var,
+                                     const CHydroUnit *pHRU,
+                                     const optStruct      &Options,
+                                     const time_struct &tt,
+                                     double     *rates) const
 {
   //cant remove more than is there (already built in)
   //exceedance of max "to" compartment handled using other overflows
@@ -281,16 +281,16 @@ void   CmvOverflow::ApplyConstraints(const double		 *state_var,
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the constructor
 /// \param In_index [in] Index of the main storage compartment
-/// \param Out_index [in] Index of the mixing storage compartment 
+/// \param Out_index [in] Index of the mixing storage compartment
 //
-CmvExchangeFlow::CmvExchangeFlow(int					In_index,			//soil water storage
-									               int					Out_index)//soil water storage
-			      :CHydroProcessABC(EXCHANGE_FLOW,In_index,Out_index)
+CmvExchangeFlow::CmvExchangeFlow(int                                    In_index,                       //soil water storage
+                                 int                                      Out_index)//soil water storage
+  :CHydroProcessABC(EXCHANGE_FLOW,In_index,Out_index)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
-    "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
+                   "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
-    "CmvOverflow Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvOverflow Constructor: invalid 'to' compartment specified",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -303,12 +303,12 @@ CmvExchangeFlow::~CmvExchangeFlow(){}
 //
 void   CmvExchangeFlow::Initialize()
 {
-  sv_type fromType	= pModel->GetStateVarType(iFrom[0]);
+  sv_type fromType      = pModel->GetStateVarType(iFrom[0]);
   ExitGracefullyIf(fromType!=SOIL,
-    "CmvExchangeFlow::Initialize: exchange flow must be from a soil unit",BAD_DATA);
-  sv_type toType	= pModel->GetStateVarType(iTo[0]);
+                   "CmvExchangeFlow::Initialize: exchange flow must be from a soil unit",BAD_DATA);
+  sv_type toType        = pModel->GetStateVarType(iTo[0]);
   ExitGracefullyIf((toType!=SOIL),
-    "CmvExchangeFlow::Initialize: exchange flow  must be between two soil units",BAD_DATA);  
+                   "CmvExchangeFlow::Initialize: exchange flow  must be between two soil units",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -319,7 +319,7 @@ void   CmvExchangeFlow::Initialize()
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by overflow algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvExchangeFlow::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+void CmvExchangeFlow::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=0;
   //user specified 'from' & 'to' compartment, Levels - not known before construction
@@ -341,11 +341,11 @@ void CmvExchangeFlow::GetParticipatingParamList(string *aP, class_type *aPC, int
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 //
-void   CmvExchangeFlow::GetRatesOfChange( const double			*state_var, 
-																				 const CHydroUnit	*pHRU, 
-																				 const optStruct	&Options,
-																				 const time_struct &tt,
-                                         double     *rates) const
+void   CmvExchangeFlow::GetRatesOfChange( const double                  *state_var,
+                                          const CHydroUnit       *pHRU,
+                                          const optStruct        &Options,
+                                          const time_struct &tt,
+                                          double     *rates) const
 {
   int m   = pModel->GetStateVarLayer(iTo[0]); //uses mixing layer property
   rates[0] = pHRU->GetSoilProps(m)->exchange_flow;
@@ -353,7 +353,7 @@ void   CmvExchangeFlow::GetRatesOfChange( const double			*state_var,
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
@@ -363,11 +363,11 @@ void   CmvExchangeFlow::GetRatesOfChange( const double			*state_var,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of exchange between compartments [mm/day]
 //
-void   CmvExchangeFlow::ApplyConstraints(const double		 *state_var, 
-						                             const CHydroUnit *pHRU, 
-						                             const optStruct	 &Options,
-						                             const time_struct &tt,
-                                               double     *rates) const
+void   CmvExchangeFlow::ApplyConstraints(const double            *state_var,
+                                         const CHydroUnit *pHRU,
+                                         const optStruct     &Options,
+                                         const time_struct &tt,
+                                         double     *rates) const
 {
   //cant remove more than is there (already built in)
   //exceedance of max "to" compartment handled using other overflows

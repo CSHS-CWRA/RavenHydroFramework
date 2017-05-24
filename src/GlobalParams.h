@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
   Class CGlobalParams
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 #ifndef GLOBAL_PARAMS_H
 #define GLOBAL_PARAMS_H
 
@@ -15,30 +15,30 @@
 //
 class CGlobalParams
 {
-  protected:/*----------------------------------------------------*/
+protected:/*----------------------------------------------------*/
 
-    static global_struct             G;   ///< global parameters      
-    
-  public:/*-------------------------------------------------------*/
+  static global_struct             G;   ///< global parameters
 
-    CGlobalParams();
-    ~CGlobalParams();
+public:/*-------------------------------------------------------*/
 
-    //Accessors
-    static const global_struct    *GetParams();
-    static double GetParameter(const string param_name);
-    static void SetGlobalProperty          (string  &param_name, const double &value);
+  CGlobalParams();
+  ~CGlobalParams();
 
-    //routines
-    static void AutoCalculateGlobalParams(const global_struct &Gtmp, const global_struct &Gdefault);
+  //Accessors
+  static const global_struct    *GetParams();
+  static double GetParameter(const string param_name);
+  static void SetGlobalProperty          (string  &param_name, const double &value);
+
+  //routines
+  static void AutoCalculateGlobalParams(const global_struct &Gtmp, const global_struct &Gdefault);
 
 
-    static void InitializeGlobalParameters (global_struct &G, bool is_template);
-    static void SetGlobalProperty          (global_struct &G, string  param_name, const double value);
-    static double GetGlobalProperty        (const global_struct &G, string  param_name);
+  static void InitializeGlobalParameters (global_struct &G, bool is_template);
+  static void SetGlobalProperty          (global_struct &G, string  param_name, const double value);
+  static double GetGlobalProperty        (const global_struct &G, string  param_name);
 
-    static void SummarizeToScreen();
-    static void WriteParamsToFile(ofstream &PARAMS);
+  static void SummarizeToScreen();
+  static void WriteParamsToFile(ofstream &PARAMS);
 };
 
 #endif

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
   struct class_change
   class  CTransientParam
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 #ifndef TRANSIENT_PARAM_H
 #define TRANSIENT_PARAM_H
 
@@ -19,7 +19,7 @@
 struct class_change
 {
   int        HRU_groupID; // HRU group id (kk)
-  class_type tclass;      // type of class (e.g., CLASS_LANDUSE)  
+  class_type tclass;      // type of class (e.g., CLASS_LANDUSE)
   string     newclass;    // new class tag
   double     modeltime;   // modeltime of shift
 };
@@ -28,30 +28,30 @@ struct class_change
 //
 class CTransientParam
 {
-  protected:/*----------------------------------------------------*/
+protected:/*----------------------------------------------------*/
 
-    string      param_name;   ///< Name of parameter (e.g., "HYDRAULIC_COND")
-    class_type  param_type;   ///< parameter class type (e.g., SOIL, TERRAIN,LANDUSE,GLOBAL)
-    string      class_name;   ///< class name (e.g., "GuelphLoam")(ignored for global params)
+  string      param_name;   ///< Name of parameter (e.g., "HYDRAULIC_COND")
+  class_type  param_type;   ///< parameter class type (e.g., SOIL, TERRAIN,LANDUSE,GLOBAL)
+  string      class_name;   ///< class name (e.g., "GuelphLoam")(ignored for global params)
 
-    CTimeSeries *pTimeSeries; ///< Time series of parameter value
-            
-  public:/*-------------------------------------------------------*/
+  CTimeSeries *pTimeSeries; ///< Time series of parameter value
 
-    CTransientParam(      CTimeSeries *pTS, 
-                    const string       pname,
-                    const class_type   ptype,
-                    const string        classname);
-    ~CTransientParam();
+public:/*-------------------------------------------------------*/
 
-    //Accessors
-    const CTimeSeries *GetTimeSeries();
-    string             GetParameterName();
-    string             GetParameterClass();
-    class_type         GetParameterClassType();
+  CTransientParam(      CTimeSeries *pTS,
+                        const string       pname,
+                        const class_type   ptype,
+                        const string        classname);
+  ~CTransientParam();
 
-    //routines
-    void Initialize(const optStruct &Options);
+  //Accessors
+  const CTimeSeries *GetTimeSeries();
+  string             GetParameterName();
+  string             GetParameterClass();
+  class_type         GetParameterClassType();
+
+  //routines
+  void Initialize(const optStruct &Options);
 
 };
 

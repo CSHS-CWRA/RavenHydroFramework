@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
 /*****************************************************************
@@ -16,7 +16,7 @@ CLandUseClass::CLandUseClass(const string name)
 {
   tag=name;
   if (!DynArrayAppend((void**&)(pAllLUClasses),(void*)(this),NumLUClasses)){
-     ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
+    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
 }
 
 //////////////////////////////////////////////////////////////////
@@ -78,11 +78,11 @@ void CLandUseClass::WriteParamsToFile(ofstream &OUT)
   const surface_struct *t;
   OUT<<endl<<"---Land Use Parameters---------------------"<<endl;
   OUT<<"CLASS,";
-  OUT<<"IMPERMEABLE_FRAC,FOREST_COVERAGE,ROUGHNESS,FOREST_SPARSENESS,";         
-  OUT<<"MELT_FACTOR [mm/d/K],MIN_MELT_FACTOR [mm/d/K],REFREEZE_FACTOR [mm/d/K],HBV_MELT_FOR_CORR,HBV_MELT_ASP_CORR,"; 
+  OUT<<"IMPERMEABLE_FRAC,FOREST_COVERAGE,ROUGHNESS,FOREST_SPARSENESS,";
+  OUT<<"MELT_FACTOR [mm/d/K],MIN_MELT_FACTOR [mm/d/K],REFREEZE_FACTOR [mm/d/K],HBV_MELT_FOR_CORR,HBV_MELT_ASP_CORR,";
   OUT<<"HBV_MELT_GLACIER_CORR[-],HBV_GLACIER_KMIN[-],GLACIER_STORAGE_COEFF[-],HBV_GLACIER_AG[1/mm SWE],CC_DECAY_COEFF[1/d],";
-  OUT<<"SCS_CN,PARTITION_COEFF,SCS_IA_FRACTION,MAX_SAT_AREA_FRAC[-],B_EXP[-],";  
-  OUT<<"DEP_MAX,ABST_PERCENT,OW_PET_CORR,LAKE_PET_CORR,FOREST_PET_CORR,";     
+  OUT<<"SCS_CN,PARTITION_COEFF,SCS_IA_FRACTION,MAX_SAT_AREA_FRAC[-],B_EXP[-],";
+  OUT<<"DEP_MAX,ABST_PERCENT,OW_PET_CORR,LAKE_PET_CORR,FOREST_PET_CORR,";
 
   OUT<<endl;
   for (int c=0; c<NumLUClasses;c++)
@@ -90,12 +90,12 @@ void CLandUseClass::WriteParamsToFile(ofstream &OUT)
     s=pAllLUClasses[c];
     t=s->GetSurfaceStruct();
     OUT<<s->GetTag()<<",";
-    OUT<<t->impermeable_frac<<","<<t->forest_coverage<<","<<t->roughness<<","<<t->forest_sparseness<<",";       
+    OUT<<t->impermeable_frac<<","<<t->forest_coverage<<","<<t->roughness<<","<<t->forest_sparseness<<",";
     OUT<<t->melt_factor<<","<<t->min_melt_factor<<","<<t->refreeze_factor<<","<<t->HBV_melt_for_corr<<","<<t->HBV_melt_asp_corr<<",";
     OUT<<t->HBV_melt_glacier_corr<<","<<t->HBV_glacier_Kmin<<","<<t->glac_storage_coeff<<","<<t->HBV_glacier_Ag<<","<<t->CC_decay_coeff<<",";
-    OUT<<t->SCS_CN<<","<<t->partition_coeff<<","<<t->SCS_Ia_fraction<<","<<t->max_sat_area_frac<<","<<t->b_exp<<","; 
+    OUT<<t->SCS_CN<<","<<t->partition_coeff<<","<<t->SCS_Ia_fraction<<","<<t->max_sat_area_frac<<","<<t->b_exp<<",";
     OUT<<t->dep_max<<","<<t->abst_percent<<","<<t->ow_PET_corr<<","<<t->lake_PET_corr<<","<<t->forest_PET_corr<<",";
-    
+
     OUT<<endl;
   }
 }
@@ -133,7 +133,7 @@ CLandUseClass *CLandUseClass::StringToLUClass(const string s)
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the land use  class corresponding to the passed index
 ///  if index is invalid, returns NULL
-/// \param c [in] Soil class index 
+/// \param c [in] Soil class index
 /// \return Reference to land use class corresponding to index c
 //
 const CLandUseClass *CLandUseClass::GetLUClass(int c)
@@ -143,17 +143,17 @@ const CLandUseClass *CLandUseClass::GetLUClass(int c)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates surface propeties
-/// \details  Sets surface properties based upon simple lu/lt parameters 
-///  Input [Stmp & Rtmp] has been read from .rvp file - if parameter == 
-///  AUTO_COMPLETE, then empirical relationships are used to estimate 
-///  parameters 
+/// \details  Sets surface properties based upon simple lu/lt parameters
+///  Input [Stmp & Rtmp] has been read from .rvp file - if parameter ==
+///  AUTO_COMPLETE, then empirical relationships are used to estimate
+///  parameters
 ///
 /// \param &Stmp [in] Input LU parameters (read from .rvp file)
 /// \param &Sdefault [in] Default LU parameters
 //
 void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
                                               const surface_struct &Sdefault)
-                                              //const surface_struct &needed_params
+//const surface_struct &needed_params
 {
   bool autocalc;
   string warn;
@@ -165,8 +165,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   //Forest coverage
   autocalc=SetCalculableValue(S.forest_coverage,Stmp.forest_coverage,Sdefault.forest_coverage);
   if (autocalc)
-  {  
-    //RELATIONSHIP REQUIRED 
+  {
+    //RELATIONSHIP REQUIRED
     S.forest_coverage =0.0;
     //no warning -default is no forest cover
   }
@@ -181,15 +181,15 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   //Roughness
   autocalc=SetCalculableValue(S.roughness,Stmp.roughness,Sdefault.roughness);
   if (autocalc)
-  {  
-    //RELATIONSHIP REQUIRED 
-    S.roughness =0.0;  
+  {
+    //RELATIONSHIP REQUIRED
+    S.roughness =0.0;
     //no warning -default is no roughness
   }
 
   autocalc=SetCalculableValue(S.max_sat_area_frac,Stmp.max_sat_area_frac,Sdefault.max_sat_area_frac);
   if (autocalc)
-  {  
+  {
     S.max_sat_area_frac =1.0;
     //no warning -default is no max
   }
@@ -197,22 +197,22 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   //Snow properties
   autocalc=SetCalculableValue(S.melt_factor,Stmp.melt_factor,Sdefault.melt_factor);
   if (autocalc)
-  {  
-    //RELATIONSHIP REQUIRED? 
+  {
+    //RELATIONSHIP REQUIRED?
     S.melt_factor =5.04;//[mm/K/d]/// \ref GAWSER ??
     warn="The required parameter MELT_FACTOR for land use class "+tag+" was autogenerated with value "+to_string(S.melt_factor);
     if (chatty){WriteWarning(warn,false);}
   }
   autocalc=SetCalculableValue(S.min_melt_factor,Stmp.min_melt_factor,Sdefault.min_melt_factor);
   if (autocalc)
-  {  
+  {
     S.min_melt_factor =S.melt_factor;//[mm/K/d]
-    //no warning 
+    //no warning
   }
   autocalc=SetCalculableValue(S.refreeze_factor,Stmp.refreeze_factor,Sdefault.refreeze_factor);
   if (autocalc)
-  {  
-    S.refreeze_factor =5.04;//[mm/K/d]// \ref GAWSER 
+  {
+    S.refreeze_factor =5.04;//[mm/K/d]// \ref GAWSER
     warn="The required parameter REFREEZE_FACTOR for land use class "+tag+" was autogenerated with value "+to_string(S.refreeze_factor);
     if (chatty){WriteWarning(warn,false);}
   }
@@ -250,7 +250,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   autocalc=SetCalculableValue(S.forest_PET_corr,Stmp.forest_PET_corr,Sdefault.forest_PET_corr);
   if (autocalc)
   {
-    S.forest_PET_corr =1.0;  //Default - no correction 
+    S.forest_PET_corr =1.0;  //Default - no correction
     //no warning
   }
   autocalc=SetCalculableValue(S.SCS_Ia_fraction,Stmp.SCS_Ia_fraction,Sdefault.SCS_Ia_fraction);
@@ -303,7 +303,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
 //
 void CLandUseClass::InitializeSurfaceProperties(surface_struct &S, bool is_template)
 {
-  //required parameters 
+  //required parameters
   S.impermeable_frac =0.0;
 
   //Autocalculable parameters
@@ -331,7 +331,7 @@ void CLandUseClass::InitializeSurfaceProperties(surface_struct &S, bool is_templ
   S.dep_max_flow      =DefaultParameterValue(is_template,false);            //[mm/d]
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.dep_threshhold    =DefaultParameterValue(is_template,false);//0.0;      //[mm]
-  S.abst_percent      =DefaultParameterValue(is_template,false);//0.1;    
+  S.abst_percent      =DefaultParameterValue(is_template,false);//0.1;
   S.HBV_glacier_Kmin  =DefaultParameterValue(is_template,false);//0.05
   S.glac_storage_coeff=DefaultParameterValue(is_template,false);//0.10
   S.HBV_glacier_Ag    =DefaultParameterValue(is_template,false);//0.05 /mm
@@ -346,7 +346,7 @@ void CLandUseClass::InitializeSurfaceProperties(surface_struct &S, bool is_templ
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CLandUseClass::SetSurfaceProperty(string       &param_name, 
+void  CLandUseClass::SetSurfaceProperty(string       &param_name,
                                         const double &value)
 {
   SetSurfaceProperty(S,param_name,value);
@@ -357,8 +357,8 @@ void  CLandUseClass::SetSurfaceProperty(string       &param_name,
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CLandUseClass::SetSurfaceProperty(surface_struct &S, 
-                                        string       param_name, 
+void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
+                                        string       param_name,
                                         const double value)
 {
   string name;
@@ -461,6 +461,6 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);
     return 0.0;
   }
-  
+
 
 }

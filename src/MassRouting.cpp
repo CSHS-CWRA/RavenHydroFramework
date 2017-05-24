@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	routing of mass in catchment and channel
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ------------------------------------------------------------------
+  routing of mass in catchment and channel
+  ----------------------------------------------------------------*/
 
 #include "SubBasin.h"
 #include "Model.h"
@@ -92,8 +92,8 @@ void   CTransportModel::SetLateralInfluxes(const int p, const double *aMlat)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Creates aMoutnew [m^3/s], an array of point measurements for outflow at downstream end of each river segment
-/// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed), 
-/// lateral flow Qlat (e.g., runoff, interflow, or baseflow) is routed as part of channel routing routine otherwise, 
+/// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed),
+/// lateral flow Qlat (e.g., runoff, interflow, or baseflow) is routed as part of channel routing routine otherwise,
 /// lateral flow is all routed to most downstream outflow segment . Assumes uniform time step
 ///
 /// \param p    subbasin index
@@ -116,7 +116,7 @@ void   CTransportModel::RouteMass(const int p, double **aMout_new,const optStruc
   //==============================================================
   for (int c=0;c<nConstituents;c++)
   {
-	  Mlat_new[c]=0.0;
+    Mlat_new[c]=0.0;
     for (int n=0;n<nMlatHist;n++){
       Mlat_new[c]+=aUnitHydro[n]*aMlatHist[p][c][n];
     }
@@ -124,21 +124,21 @@ void   CTransportModel::RouteMass(const int p, double **aMout_new,const optStruc
   //==============================================================
   // route from channel
   //==============================================================
-  if ((Options.routing==ROUTE_PLUG_FLOW) 
-        || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
-  {	//Simple convolution
+  if ((Options.routing==ROUTE_PLUG_FLOW)
+      || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
+  {     //Simple convolution
     for (c=0;c<nConstituents;c++){
-		  aMout_new[nSegments-1][c]=0.0;
+      aMout_new[nSegments-1][c]=0.0;
       for (int n=0;n<nMinHist;n++){
         aMout_new[nSegments-1][c]+=aRouteHydro[n]*aMinHist[p][c][n];
-      } 
+      }
     }
   }
   //==============================================================
   else if (Options.routing==ROUTE_NONE)
   {//In channel routing instantaneous
-		for (c=0;c<nConstituents;c++){
-			aMout_new[nSegments-1][c]=aMinHist[p][c][0];//spits out the mass that just entered
+    for (c=0;c<nConstituents;c++){
+      aMout_new[nSegments-1][c]=aMinHist[p][c][0];//spits out the mass that just entered
     }
   }
   //==============================================================
@@ -146,17 +146,17 @@ void   CTransportModel::RouteMass(const int p, double **aMout_new,const optStruc
     ExitGracefully("Unrecognized or unsupported constiuent routing method",STUB);
   }
 
-	if (Options.distrib_lat_inflow==false)
+  if (Options.distrib_lat_inflow==false)
   {//all fluxes from catchment are routed directly to basin outlet
     for (c=0;c<nConstituents;c++){
-		  aMout_new[nSegments-1][c]+=Mlat_new[c];
+      aMout_new[nSegments-1][c]+=Mlat_new[c];
     }
   }
-	else{//only last segments worth
+  else{//only last segments worth
     for (c=0;c<nConstituents;c++){
-		  aMout_new[nSegments-1][c]+=Mlat_new[c]*seg_fraction;
+      aMout_new[nSegments-1][c]+=Mlat_new[c]*seg_fraction;
     }
-	}
+  }
 
   return;
 }
@@ -177,41 +177,41 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,doubl
   CSubBasin *pBasin=pModel->GetSubBasin(p);
 
   //basin_struct *M=aBasinStructs[p][m];
-  
+
   for (int c=0;c<nConstituents;c++)
   {
     //Update flows
     //------------------------------------------------------
-	  //MoutLast[p][c]=aMout[p][c][pBasin->GetNumSegments()-1];
+    //MoutLast[p][c]=aMout[p][c][pBasin->GetNumSegments()-1];
     //M.MoutLast=M.aMout[pBasin->GetNumSegments()-1];
-	  for (int seg=0;seg<pBasin->GetNumSegments();seg++){
-		  aMout[p][c][seg]=aMoutnew[seg][c];
-	  }
+    for (int seg=0;seg<pBasin->GetNumSegments();seg++){
+      aMout[p][c][seg]=aMoutnew[seg][c];
+    }
 
-	  if (initialize){return;}//entering initial conditions
+    if (initialize){return;}//entering initial conditions
 
-	  //Update channel storage
-	  //------------------------------------------------------
+    //Update channel storage
+    //------------------------------------------------------
     double dt=tstep*SEC_PER_DAY;
-	  double dM=0.0;
+    double dM=0.0;
     double Mlat_new(0.0);
     for (int n=0;n<pBasin->GetLatHistorySize();n++){
-		  Mlat_new+=pBasin->GetUnitHydrograph()[n]*aMlatHist[p][c][n];
-	  }	
-  
-	  //mass change from linearly varying upstream inflow over time step 
-	  dM+=0.5*(aMinHist[p][c][0]+aMinHist[p][c][1])*dt; 
+      Mlat_new+=pBasin->GetUnitHydrograph()[n]*aMlatHist[p][c][n];
+    }
 
-	  //mass change from linearly varying downstream outflow over time step 
-	  //dM-=0.5*(aMout[p][c][pBasin->GetNumSegments()-1]+MoutLast[p][c])*dt; 
-	  
-	  //mass change from lateral inflows
-	  //dM+=0.5*(Mlat_new+MlatLast[p][c])*dt; 
-  
-	  //_channel_storage[p][c]+=dM;//[mg]
-  
-	  //Update rivulet storage
-	  //------------------------------------------------------
+    //mass change from linearly varying upstream inflow over time step
+    dM+=0.5*(aMinHist[p][c][0]+aMinHist[p][c][1])*dt;
+
+    //mass change from linearly varying downstream outflow over time step
+    //dM-=0.5*(aMout[p][c][pBasin->GetNumSegments()-1]+MoutLast[p][c])*dt;
+
+    //mass change from lateral inflows
+    //dM+=0.5*(Mlat_new+MlatLast[p][c])*dt;
+
+    //_channel_storage[p][c]+=dM;//[mg]
+
+    //Update rivulet storage
+    //------------------------------------------------------
     dM=0.0;
 
     //inflow from ground surface (integrated over time step)

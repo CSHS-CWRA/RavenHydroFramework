@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Master Transport/Tracer class
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  Master Transport/Tracer class
   coordinates information about constituent storage
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "Model.h"
@@ -59,7 +59,7 @@ CTransportModel::~CTransportModel()
   delete [] aIndexMapping;  aIndexMapping=NULL;
   for (int i=0;i<nSources;i++     ){delete pSources[i];         } delete [] pSources;
   if (aSourceIndices!=NULL){
-  for (int c=0;c<nConstituents;c++){delete [] aSourceIndices[c];} delete [] aSourceIndices;
+    for (int c=0;c<nConstituents;c++){delete [] aSourceIndices[c];} delete [] aSourceIndices;
   }
   DeleteRoutingVars();
 }
@@ -68,13 +68,13 @@ CTransportModel::~CTransportModel()
 CTransportModel* CTransportModel::pTransModel=NULL;
 
 //////////////////////////////////////////////////////////////////
-/// \brief converts model layer index (i.e., m in CONSTITUENT[m]) to 
+/// \brief converts model layer index (i.e., m in CONSTITUENT[m]) to
 /// local constituent index c and index of corresponding local constiuent storage index j
 //
 void CTransportModel::m_to_cj(const int m, int &c, int &j) const
 {
   ExitGracefullyIf((m<0) || (m>nConstituents*nWaterCompartments),
-    "CTransportModel::LayerIndToConstitData: invalid layer index",BAD_DATA);
+                   "CTransportModel::LayerIndToConstitData: invalid layer index",BAD_DATA);
 
   j=m % nWaterCompartments;
   c=(m-j) / nWaterCompartments;
@@ -83,7 +83,7 @@ void CTransportModel::m_to_cj(const int m, int &c, int &j) const
 //////////////////////////////////////////////////////////////////
 /// \brief returns layer index m corresponding to constituent c in water storage unit i_stor
 //
-int CTransportModel::GetLayerIndex(const int c, const int i_stor) const 
+int CTransportModel::GetLayerIndex(const int c, const int i_stor) const
 {
   int j=aIndexMapping[i_stor];
   if (j==DOESNT_EXIST){return DOESNT_EXIST;}
@@ -121,7 +121,7 @@ int CTransportModel::GetLayerIndexFromName2(const string name,const int comp_m) 
   tmp=name.substr(1,name.length()-1);             //trim leading '!'
   k=(int)(tmp.find_first_of("|"));                //find char index of "|"
   if (k==DOESNT_EXIST){return DOESNT_EXIST;}      //bad format, no "|"
-  
+
   constituent_name=tmp.substr(0,k);
   compartment_name=tmp.substr(k+1,tmp.length()-k);
   //cout<<":GetLayerIndexFromName2:  "<<name<<" -> "<<tmp<<" -> |"<<constituent_name<<"| + |"<<compartment_name<<"|"<<endl;
@@ -158,10 +158,10 @@ string CTransportModel::GetConstituentName(const int m) const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns name of constitutent type e.g., "Nitrogen"
-/// \remark static routine 
-/// \param c index of constituent storage 
+/// \remark static routine
+/// \param c index of constituent storage
 //
-string CTransportModel::GetConstituentTypeName2(const int c) 
+string CTransportModel::GetConstituentTypeName2(const int c)
 {
   return pTransModel->GetConstituent(c)->name;
 }
@@ -189,10 +189,10 @@ string CTransportModel::GetConstituentShortName(const int m) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns name of constitutent type e.g., "Nitrogen"
-/// \remark static routine 
-/// \param m layer index of constituent storage 
+/// \remark static routine
+/// \param m layer index of constituent storage
 //
-string CTransportModel::GetConstituentTypeName(const int m) 
+string CTransportModel::GetConstituentTypeName(const int m)
 {
   int c,j;
   pTransModel->m_to_cj(m,c,j);
@@ -215,24 +215,24 @@ int    CTransportModel::GetNumAdvConnections() const {return nAdvConnections;}
 int    CTransportModel::GetNumConstituents() const{return nConstituents;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns constituent c in model 
+/// \brief returns constituent c in model
 //
 const constituent *CTransportModel::GetConstituent(const int c) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((c<0)||(c>=nConstituents),
-    "CTransportModel::GetConstituent: invalid index",BAD_DATA);
+                   "CTransportModel::GetConstituent: invalid index",BAD_DATA);
 #endif
   return pConstituents[c];
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns constituent c in model 
+/// \brief returns constituent c in model
 //
 const transport_params *CTransportModel::GetConstituentParams(const int c) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((c<0) || (c >= nConstituents),
-    "CTransportModel::GetConstituent: invalid index", BAD_DATA);
+                   "CTransportModel::GetConstituent: invalid index", BAD_DATA);
 #endif
   return pConstitParams[c];
 }
@@ -287,7 +287,7 @@ int    CTransportModel::GetStorIndex  (const int c,const int ii) const
 //
 int    CTransportModel::GetFromWaterIndex(const int q) const
 {
-  return iFromWater[q]; 
+  return iFromWater[q];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -296,7 +296,7 @@ int    CTransportModel::GetFromWaterIndex(const int q) const
 //
 int    CTransportModel::GetToWaterIndex  (const int q) const
 {
-  return iToWater[q]; 
+  return iToWater[q];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -305,7 +305,7 @@ int    CTransportModel::GetToWaterIndex  (const int q) const
 //
 int    CTransportModel::GetStorWaterIndex  (const int ii) const
 {
-  return iWaterStorage[ii]; 
+  return iWaterStorage[ii];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -317,13 +317,13 @@ int CTransportModel::GetJsIndex(const int q) const
   return js_indices[q];
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns effective retardation factor for constituent c 
+/// \brief returns effective retardation factor for constituent c
 /// being transported from storage compartment iFromWater to storage compartment iToWater
 /// \param c [in] constituent index
 /// \param iFromWater [in] index of "from" water storage state variable
 /// \param iToWater [in] index of "to" water storage state variable
 //
-double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit	*pHRU, const  int iFromWater,const int iToWater) const
+double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit       *pHRU, const  int iFromWater,const int iToWater) const
 {
   sv_type fromType,toType;
   //int soil_ind;
@@ -331,9 +331,9 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit	*pHRU,
   toType  =pModel->GetStateVarType(iToWater);
   int    m=pModel->GetStateVarLayer(iFromWater);
 #ifndef _STRICTCHECK_
-    ExitGracefullyIf(m==-1,"GetRetardationFactor:invalid iFromWater",RUNTIME_ERR);
+  ExitGracefullyIf(m==-1,"GetRetardationFactor:invalid iFromWater",RUNTIME_ERR);
 #endif
-  if (fromType==SOIL) 
+  if (fromType==SOIL)
   {
     if (toType!=ATMOSPHERE)
     {
@@ -347,19 +347,19 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit	*pHRU,
     }
     return 1.0;
   }
-  else 
+  else
   {
     return 1.0;
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns effective retardation factor for constituent c 
+/// \brief returns effective retardation factor for constituent c
 /// being transported from storage compartment iFromWater to storage compartment iToWater
 /// \param c [in] constituent index
 /// \param iFromWater [in] index of "from" water storage state variable
 /// \param iToWater [in] index of "to" water storage state variable
 //
-double CTransportModel::GetDecayCoefficient(const int c,const CHydroUnit	*pHRU,const int iStorWater) const
+double CTransportModel::GetDecayCoefficient(const int c,const CHydroUnit        *pHRU,const int iStorWater) const
 {
   sv_type storType;
   double decay_coeff = GetConstituentParams(c)->decay_coeff;
@@ -401,7 +401,7 @@ void   CTransportModel::AddConstituent(string name, bool is_tracer)
 
   //add to master list of constituents
   if (!DynArrayAppend((void**&)(pConstituents),(void*)(pConstit),nConstituents)){
-   ExitGracefully(" CTransportModel::AddConstituent: adding NULL constituent",BAD_DATA);} 
+    ExitGracefully(" CTransportModel::AddConstituent: adding NULL constituent",BAD_DATA);}
 
   int c=(nConstituents-1);//constit. index of current constituent
 
@@ -409,7 +409,7 @@ void   CTransportModel::AddConstituent(string name, bool is_tracer)
   sv_type *aSV =new sv_type [nWaterCompartments];
   int     *aLev=new int     [nWaterCompartments];
   for (int j=0;j<nWaterCompartments; j++)
-  { 
+  {
     int m=j+c*nWaterCompartments;
     aSV [j]=CONSTITUENT;
     aLev[j]=m;
@@ -459,12 +459,12 @@ void CTransportModel::Prepare(const optStruct &Options)
 {
   CHydroProcessABC *pProc;
   int js=0;
-  
+
   //determine number of connections
   nAdvConnections=0;
   for (int j=0; j<pModel->GetNumProcesses(); j++)
   {
-    pProc=pModel->GetProcess(j); 
+    pProc=pModel->GetProcess(j);
     for (int q=0; q<pProc->GetNumConnections(); q++)
     {
       int iF=pProc->GetFromIndices()[q];
@@ -477,7 +477,7 @@ void CTransportModel::Prepare(const optStruct &Options)
       }
     }
   }
-  
+
   //determine iFromWater, iToWater indices and process index for each and every connection
   js=0;
   int qq=0;
@@ -487,7 +487,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   for (int j=0; j<pModel->GetNumProcesses(); j++)
   {
     pProc=pModel->GetProcess(j);
-    
+
     for (int q=0; q<pProc->GetNumConnections(); q++)
     {
       int iF=pProc->GetFromIndices()[q];
@@ -508,7 +508,7 @@ void CTransportModel::Prepare(const optStruct &Options)
       js++;
     }
   }
-  
+
   //identify number of water storage compartments
   nWaterCompartments=0;
   for (int i=0;i<pModel->GetNumStateVars(); i++)
@@ -519,7 +519,7 @@ void CTransportModel::Prepare(const optStruct &Options)
     }
   }
   // identify all state variables which are water storage compartments
-  iWaterStorage=new int [nWaterCompartments]; 
+  iWaterStorage=new int [nWaterCompartments];
   aIndexMapping=new int [pModel->GetNumStateVars()];//current # of state variables does not include transport constituents
   int j=0; //j sifts through storage compartments j=0..nWaterCompartments
   for (int i=0;i<pModel->GetNumStateVars(); i++)
@@ -532,50 +532,50 @@ void CTransportModel::Prepare(const optStruct &Options)
       j++;
     }
   }
-  
+
   /// \todo [QA/QC]: check for two constituents with same name?
   if (nConstituents==0){return;}/// all of the above work necessary even with no transport?
 
   //Synopsis
-	if (!Options.silent){
-	  cout<<"===TRANSPORT MODEL SUMMARY=============================="<<endl;
-	  cout<<"   number of compartments: "<<nWaterCompartments<<endl;
-	  cout<<"   number of constituents: "<<nConstituents<<endl;
-	  cout<<"   number of connections:  "<<nAdvConnections<<endl;
-	  cout<<"   number of source terms: "<<nSources<<endl;
-	  // TMP DEBUG below===================================================
-	  if (false){
-	    for (int i=0;i<nAdvConnections;i++)
-	    {
-	      cout<<i<<": moves ";
-	      cout<< " from "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(iFromWater[i]),pModel->GetStateVarLayer(iFromWater[i]));
-	      cout<< " to "  <<CStateVariable::SVTypeToString(pModel->GetStateVarType(iToWater  [i]),pModel->GetStateVarLayer(iToWater  [i]));
-	      cout<<endl;
-	    }
-	     for (int i=0;i<pModel->GetNumStateVars(); i++)
-	      {
-	        if (aIndexMapping[i]!=DOESNT_EXIST){
-	          cout<<"constituent "<< i;
-	          cout<<" corresponds to "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(aIndexMapping[i]),pModel->GetStateVarLayer(aIndexMapping[i]));
-	          cout<<endl;
-	        }
-	        else
-	        {
-	          cout<<"SV "<<i<<" has no corresponding mapping"<<endl;
-	        }
-	     }
-	     int c=0;
-	     for (int j=0;j<nWaterCompartments;j++)
-	     {
-	       int m=c*nWaterCompartments+j;
-	       cout<<"water compartment "<< CStateVariable::SVTypeToString(pModel->GetStateVarType(iWaterStorage[j]),pModel->GetStateVarLayer(iWaterStorage[j]));
-	       cout<<" corresponds to "<<CStateVariable::SVTypeToString(CONSTITUENT,m);
-	       cout<<endl;
-	    }
-	  }
-	  // ====================================================================
-	  cout<<"========================================================"<<endl;
-	}
+  if (!Options.silent){
+    cout<<"===TRANSPORT MODEL SUMMARY=============================="<<endl;
+    cout<<"   number of compartments: "<<nWaterCompartments<<endl;
+    cout<<"   number of constituents: "<<nConstituents<<endl;
+    cout<<"   number of connections:  "<<nAdvConnections<<endl;
+    cout<<"   number of source terms: "<<nSources<<endl;
+    // TMP DEBUG below===================================================
+    if (false){
+      for (int i=0;i<nAdvConnections;i++)
+      {
+        cout<<i<<": moves ";
+        cout<< " from "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(iFromWater[i]),pModel->GetStateVarLayer(iFromWater[i]));
+        cout<< " to "  <<CStateVariable::SVTypeToString(pModel->GetStateVarType(iToWater  [i]),pModel->GetStateVarLayer(iToWater  [i]));
+        cout<<endl;
+      }
+      for (int i=0;i<pModel->GetNumStateVars(); i++)
+      {
+        if (aIndexMapping[i]!=DOESNT_EXIST){
+          cout<<"constituent "<< i;
+          cout<<" corresponds to "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(aIndexMapping[i]),pModel->GetStateVarLayer(aIndexMapping[i]));
+          cout<<endl;
+        }
+        else
+        {
+          cout<<"SV "<<i<<" has no corresponding mapping"<<endl;
+        }
+      }
+      int c=0;
+      for (int j=0;j<nWaterCompartments;j++)
+      {
+        int m=c*nWaterCompartments+j;
+        cout<<"water compartment "<< CStateVariable::SVTypeToString(pModel->GetStateVarType(iWaterStorage[j]),pModel->GetStateVarLayer(iWaterStorage[j]));
+        cout<<" corresponds to "<<CStateVariable::SVTypeToString(CONSTITUENT,m);
+        cout<<endl;
+      }
+    }
+    // ====================================================================
+    cout<<"========================================================"<<endl;
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -589,7 +589,7 @@ void   CTransportModel::AddDirichletCompartment(const string const_name, const i
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
-  
+
   pSource->constit_index=DOESNT_EXIST;
   for (int c=0; c<nConstituents;c++){
     if (StringToUppercase(const_name)==StringToUppercase(pConstituents[c]->name)){
@@ -607,7 +607,7 @@ void   CTransportModel::AddDirichletCompartment(const string const_name, const i
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletCompartment: invalid storage compartment index",BAD_DATA_WARN);
 
   if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
-   ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);} 
+    ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
 
   pLast=pSource;//so source is not deleted upon leaving this routine
 }
@@ -639,7 +639,7 @@ void   CTransportModel::AddDirichletTimeSeries(const string const_name, const in
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
 
   if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
-   ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);} 
+    ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
 
   pLast=pSource; //so source is not deleted upon leaving this routine
 }
@@ -655,7 +655,7 @@ void   CTransportModel::AddInfluxSource(const string const_name, const int i_sto
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
-  
+
   pSource->constit_index=DOESNT_EXIST;
   for (int c=0; c<nConstituents;c++){
     if (StringToUppercase(const_name)==StringToUppercase(pConstituents[c]->name)){
@@ -673,7 +673,7 @@ void   CTransportModel::AddInfluxSource(const string const_name, const int i_sto
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddInfluxSource: invalid storage compartment index",BAD_DATA_WARN);
 
   if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
-   ExitGracefully("CTransportModel::AddInfluxSource: adding NULL source",BAD_DATA);} 
+    ExitGracefully("CTransportModel::AddInfluxSource: adding NULL source",BAD_DATA);}
 
   pLast=pSource;//so source is not deleted upon leaving this routine
 }
@@ -705,7 +705,7 @@ void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
 
   if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
-   ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);} 
+    ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
 
   pLast=pSource; //so source is not deleted upon leaving this routine
 }
@@ -738,10 +738,10 @@ void CTransportModel::Initialize()
       pConstituents[c]->initial_mass+=pModel->GetAvgStateVar(i)*(area*M2_PER_KM2);
     }
   }
-  
 
 
-  /// \todo[funct]: calculate initial mass from Dirichlet cells 
+
+  /// \todo[funct]: calculate initial mass from Dirichlet cells
 
 
   //populate array of source indices
@@ -762,7 +762,7 @@ void CTransportModel::Initialize()
           if (aSourceIndices[c][i_stor] != DOESNT_EXIST){
             WriteWarning("CTransportModel::Intiialize: cannot currently have more than one constitutent source per constituent/storage combination",false);
           }
-          aSourceIndices[c][i_stor]=i; //each 
+          aSourceIndices[c][i_stor]=i; //each
         }
       }
     }
@@ -795,7 +795,7 @@ void CTransportModel::IncrementCumulOutput(const optStruct &Options)
     for (int p=0;p<pModel->GetNumSubBasins();p++)
     {
       if (pModel->GetSubBasin(p)->GetDownstreamID()==DOESNT_EXIST)//outlet does not drain into another subbasin
-      { 
+      {
         pConstituents[c]->cumul_output+=GetIntegratedMassOutflow(p,c)*Options.timestep;
       }
     }
@@ -815,15 +815,15 @@ void CTransportModel::IncrementCumulOutput(const optStruct &Options)
 bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const
 {
   Cs=0.0;
-  
+
   int i_source=aSourceIndices[c][i_stor];
   if (i_source!=DOESNT_EXIST) {
     if (!pSources[i_source]->dirichlet){return false;}
     if (pSources[i_source]->kk==DOESNT_EXIST)
     {
-      Cs = pSources[i_source]->concentration; 
+      Cs = pSources[i_source]->concentration;
       if (Cs != DOESNT_EXIST){return true;}
-      else{//time series 
+      else{//time series
         Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
         return true;
       }
@@ -831,9 +831,9 @@ bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, c
     else { //Check if we are in HRU Group
       if (pModel->GetHRUGroup(pSources[i_source]->kk)->IsInGroup(k))
       {
-        Cs=pSources[i_source]->concentration; 
+        Cs=pSources[i_source]->concentration;
         if (Cs != DOESNT_EXIST){return true;}
-        else{//time series 
+        else{//time series
           Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
           return true;
         }
@@ -867,7 +867,7 @@ double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, con
   }
   if (retrieve)
   {
-    flux=pSources[i_source]->concentration; 
+    flux=pSources[i_source]->concentration;
     if (flux == DOESNT_EXIST){//get from time series
       flux=pSources[i_source]->pTS->GetValue(tt.model_time );
     }
@@ -889,17 +889,17 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
   int iCumPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
 
   string kg,mgL,kgd;
- 
+
   for (int c=0;c<nConstituents;c++)
   {
-    
+
     //units names
     kg="[kg]"; kgd="[kg/d]"; mgL="[mg/l]";
     //kg="[mg/m2]"; kgd="[mg/m2/d]"; mgL="[mg/m2]";//TMP DEBUG OUTPUT OVERRIDE
     if (pConstituents[c]->is_tracer){
       kg="[-]"; kgd="[-]"; mgL="[-]";
     }
-    
+
     //Concentrations file
     //--------------------------------------------------------------------
     filename=pConstituents[c]->name+"Concentrations.csv";
@@ -910,14 +910,14 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
       ExitGracefully(("CTransportModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
 
-    pConstituents[c]->OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;  
+    pConstituents[c]->OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
     for (int i=0;i<pModel->GetNumStateVars();i++)
     {
       if ((CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))) && (i!=iCumPrecip)){
-         pConstituents[c]->OUTPUT<<","<<CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<" "<<mgL;
+        pConstituents[c]->OUTPUT<<","<<CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<" "<<mgL;
       }
     }
-    pConstituents[c]->OUTPUT<<", Total Mass "<<kg<<", Cum. Loading "<<kg<<", Cum. Mass Lost "<<kg<<", MB Error "<<kg<<endl; 
+    pConstituents[c]->OUTPUT<<", Total Mass "<<kg<<", Cum. Loading "<<kg<<", Cum. Mass Lost "<<kg<<", MB Error "<<kg<<endl;
 
     //Pollutograph file
     //--------------------------------------------------------------------
@@ -955,7 +955,7 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
   int iCumPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
 
   string kg,mgL,kgd;
- 
+
   int i;
   time_struct tt,tt2;
   JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
@@ -993,10 +993,10 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     pConstituents[c]->OUTPUT<<"#"<<endl;
 
     if (Options.suppressICs){
-    pConstituents[c]->OUTPUT<< ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
+      pConstituents[c]->OUTPUT<< ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
     }
     else{
-    pConstituents[c]->OUTPUT<< ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
+      pConstituents[c]->OUTPUT<< ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
     }
 
     if (Options.timestep!=1.0){pConstituents[c]->OUTPUT<<":DeltaT " <<DecDaysToHours(Options.timestep)<<endl;}
@@ -1007,25 +1007,25 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     pConstituents[c]->OUTPUT<<"  :ColumnName influx \"Channel storage\" \"Rivulet storage\"";
     for (i=0;i<pModel->GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))) && (i!=iCumPrecip)){
-          pConstituents[c]->OUTPUT<<" \""<<CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<"\"";}}
+        pConstituents[c]->OUTPUT<<" \""<<CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<"\"";}}
     pConstituents[c]->OUTPUT<<" \"Total Mass\" \"Cum. Loading\" \"Cum. Mass lost\" \"MB error\""<<endl;
 
-    pConstituents[c]->OUTPUT<<"  :ColumnUnits "<<kgd<<" "<<kg <<" "<< kg; 
+    pConstituents[c]->OUTPUT<<"  :ColumnUnits "<<kgd<<" "<<kg <<" "<< kg;
     for (i=0;i<pModel->GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))) && (i!=iCumPrecip)){
-          pConstituents[c]->OUTPUT<<" mgL";}}
+        pConstituents[c]->OUTPUT<<" mgL";}}
     pConstituents[c]->OUTPUT<<" "<<kg<<" "<<kg<<" "<<kg<<" "<<kg<<endl;
 
     pConstituents[c]->OUTPUT<<"  :ColumnType float float float";
     for (i=0;i<pModel->GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))) && (i!=iCumPrecip)){
-          pConstituents[c]->OUTPUT<<" float";}}
+        pConstituents[c]->OUTPUT<<" float";}}
     pConstituents[c]->OUTPUT<<" float float float float"<<endl;
 
     pConstituents[c]->OUTPUT<<"  :ColumnFormat -1 0 0";
     for (i=0;i<pModel->GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))) && (i!=iCumPrecip)){
-          pConstituents[c]->OUTPUT<<" 0";}}
+        pConstituents[c]->OUTPUT<<" 0";}}
     pConstituents[c]->OUTPUT<<" 0 0 0 0"<<endl;
 
     pConstituents[c]->OUTPUT<<":EndColumnMetaData"<<endl;
@@ -1040,24 +1040,24 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     if (pConstituents[c]->OUTPUT.fail()){
       ExitGracefully(("CTransportModel::WriteEnsimOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-	  pConstituents[c]->POLLUT<<"#########################################################################"<<endl;
+    pConstituents[c]->POLLUT<<"#########################################################################"<<endl;
     pConstituents[c]->POLLUT<<":FileType tb0 ASCII EnSim 1.0"<<endl;
     pConstituents[c]->POLLUT<<"#"<<endl;
     pConstituents[c]->POLLUT<<":Application   Raven"<<endl;
     pConstituents[c]->POLLUT<<":Version       "<<Options.version<<endl;
-	  pConstituents[c]->POLLUT<<":CreationDate  "<<GetCurrentTime()<<endl;
-	  pConstituents[c]->POLLUT<<"#"<<endl;
-	  pConstituents[c]->POLLUT<<"#------------------------------------------------------------------------"<<endl;
-	  pConstituents[c]->POLLUT<<"#"<<endl;
+    pConstituents[c]->POLLUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    pConstituents[c]->POLLUT<<"#"<<endl;
+    pConstituents[c]->POLLUT<<"#------------------------------------------------------------------------"<<endl;
+    pConstituents[c]->POLLUT<<"#"<<endl;
     pConstituents[c]->POLLUT<<":RunName       "<<Options.run_name<<endl;
     pConstituents[c]->POLLUT<<":Format        Instantaneous" << endl;
-	  pConstituents[c]->POLLUT<<"#"<<endl;
+    pConstituents[c]->POLLUT<<"#"<<endl;
 
     if (Options.suppressICs){
-    pConstituents[c]->POLLUT<< ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
+      pConstituents[c]->POLLUT<< ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
     }
     else{
-    pConstituents[c]->POLLUT<< ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
+      pConstituents[c]->POLLUT<< ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
     }
 
     if (Options.timestep!=1.0){pConstituents[c]->POLLUT<<":DeltaT " <<DecDaysToHours(Options.timestep)<<endl;}
@@ -1076,13 +1076,13 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
       }
     }pConstituents[c]->POLLUT<<endl;
 
-    pConstituents[c]->POLLUT<<"  :ColumnUnits"; 
+    pConstituents[c]->POLLUT<<"  :ColumnUnits";
     for (int p=0;p<pModel->GetNumSubBasins();p++){
       if (pModel->GetSubBasin(p)->IsGauged()){pConstituents[c]->POLLUT<<" "<<mgL;}
     }
     pConstituents[c]->POLLUT<<endl;
 
-    pConstituents[c]->POLLUT<<"  :ColumnType"; 
+    pConstituents[c]->POLLUT<<"  :ColumnType";
     for (int p=0;p<pModel->GetNumSubBasins();p++){
       if (pModel->GetSubBasin(p)->IsGauged()){pConstituents[c]->POLLUT<<" float";}
     }
@@ -1108,7 +1108,7 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
 {
   double currentMass,CumInflux,CumOutflux,initMass; //[kg]
   double M; //[mg/m2]
-  double V; //[mm] 
+  double V; //[mm]
   double concentration; //[mg/L]
   int    iCumPrecip;
 
@@ -1139,17 +1139,17 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     else                   {pConstituents[c]->OUTPUT<<",---";}
     pConstituents[c]->OUTPUT<<","<<channel_stor*convert<<","<<rivulet_stor*convert;
 
-    currentMass=0.0; 
+    currentMass=0.0;
     double atmos_prec=0;
     for (int j=0;j<nWaterCompartments;j++)
-    { 
+    {
       //Get constituent concentration
       int m=j+c*nWaterCompartments;
       M=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT,m)); //mg/m2
       V=pModel->GetAvgStateVar(iWaterStorage[j]); //mm
       if (fabs(V)<=1e-6){concentration=0.0;}
       else              {concentration=(M/V)*(MM_PER_METER/LITER_PER_M3);}//[mg/mm/m2]->[mg/L]
-         
+
       //concentration=M;//TMP DEBUG OUTPUT OVERRIDE [mg/m2]
 
       if (iWaterStorage[j]!=iCumPrecip)
@@ -1169,15 +1169,15 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     CumOutflux=pConstituents[c]->cumul_output;
     initMass  =pConstituents[c]->initial_mass;
 
-    pConstituents[c]->OUTPUT<<","<<currentMass*convert; 
+    pConstituents[c]->OUTPUT<<","<<currentMass*convert;
     pConstituents[c]->OUTPUT<<","<<CumInflux*convert;
     pConstituents[c]->OUTPUT<<","<<CumOutflux*convert;
-    pConstituents[c]->OUTPUT<<","<<((currentMass-initMass)+(CumOutflux-CumInflux))*convert; 
+    pConstituents[c]->OUTPUT<<","<<((currentMass-initMass)+(CumOutflux-CumInflux))*convert;
     pConstituents[c]->OUTPUT<<endl;
 
     // Pollutographs.csv
     //----------------------------------------------------------------
-    pConstituents[c]->POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;  
+    pConstituents[c]->POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;
     for (int p=0;p<pModel->GetNumSubBasins();p++){
       if (pModel->GetSubBasin(p)->IsGauged())
       {
@@ -1199,7 +1199,7 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
 {
   double currentMass,CumInflux,CumOutflux,initMass; //[kg]
   double M; //[mg/m2]
-  double V; //[mm] 
+  double V; //[mm]
   double concentration; //[mg/L]
   int    iCumPrecip;
 
@@ -1218,26 +1218,26 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
   {
     // Concentrations.tb0
     //----------------------------------------------------------------
-    double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2);//[mg/d] 
+    double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2);//[mg/d]
     double channel_stor=0;//GetTotalChannelConstituentStorage();//[mg]
     double rivulet_stor=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SW,c))*(area*M2_PER_KM2);//GetTotalRivuletConstituentStorage();//[mg]
-  
+
 
     if (tt.model_time!=0){pConstituents[c]->OUTPUT<<" "<<influx*convert;}
     else                 {pConstituents[c]->OUTPUT<<" 0.0";}
     pConstituents[c]->OUTPUT<<" "<<channel_stor*convert<<" "<<rivulet_stor*convert;
 
-    currentMass=0.0; 
+    currentMass=0.0;
     double atmos_prec=0;
     for (int j=0;j<nWaterCompartments;j++)
-    { 
+    {
       //Get constituent concentration
       int m=j+c*nWaterCompartments;
       M=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT,m)); //mg/m2
       V=pModel->GetAvgStateVar(iWaterStorage[j]); //mm
       if (fabs(V)<=1e-6){concentration=0.0;}
       else              {concentration=(M/V)*(MM_PER_METER/LITER_PER_M3);}//[mg/mm/m2]->[mg/L]
-         
+
       //concentration=M;//TMP DEBUG OUTPUT OVERRIDE [mg/m2]
 
       if (iWaterStorage[j]!=iCumPrecip)
@@ -1251,7 +1251,7 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
       }
     }
     currentMass+=channel_stor+rivulet_stor;
-    
+
 
     CumInflux =-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC,c))*(area*M2_PER_KM2);//mg
     CumInflux +=-atmos_prec;                       //mg

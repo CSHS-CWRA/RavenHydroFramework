@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2017 the Raven Development Team
-----------------------------------------------------------------*/
-#include "RavenInclude.h" 
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
+#include "RavenInclude.h"
 #include "Model.h"
 #include "ParseLib.h"
 #include "Radiation.h"
@@ -24,7 +24,7 @@ void RavenUnitTesting(const optStruct &Options)
   //SmartIntervalTest();
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests DateStringToTimeStruct() function 
+/// \brief Tests DateStringToTimeStruct() function
 //
 void DateTest()
 {
@@ -32,19 +32,19 @@ void DateTest()
   cout<<"2012-03-27 12:43:02.01"<<endl;
   tt=DateStringToTimeStruct("2012-03-27","12:43:02.01");
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
-  
+
   cout<<"2000-12-31 12:00:00"<<endl;
   tt=DateStringToTimeStruct("2000-12-31","12:00:00");
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
-  
+
   cout<<"1997/12/31 23:00:00.0000"<<endl;
   tt=DateStringToTimeStruct("1997/12/31","23:00:00.0000");
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
-  
+
   cout<<"0000/01/01 24:00:00.0000"<<endl;
   tt=DateStringToTimeStruct("0000/01/01","23:59:00.0000");
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
-  ExitGracefully("DateTest",SIMULATION_DONE); 
+  ExitGracefully("DateTest",SIMULATION_DONE);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -54,33 +54,33 @@ void JulianConvertTest()
 {
   time_struct tt;
   JulianConvert(0.0,0.0,2000,tt);
-  cout<<"Jan 1, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;    
+  cout<<"Jan 1, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(0.0,154,2004,tt);
-  cout<<"Jun 2, 2004 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;    
+  cout<<"Jun 2, 2004 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(366.0,0.0,2000,tt);
-  cout<<"Jan 1, 2001 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;  
+  cout<<"Jan 1, 2001 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(400.0,0.5,2000,tt);
-  cout<<"Feb 4, 2001 @ 12:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;  
+  cout<<"Feb 4, 2001 @ 12:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(0.0,0.0,1999,tt);
-  cout<<"Jan 1, 1999 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;    
+  cout<<"Jan 1, 1999 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(366.0,0.0,1999,tt);
-  cout<<"Jan 2, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;  
+  cout<<"Jan 2, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(397.0,3.75,1999,tt);
-  cout<<"Feb 5, 2000 @ 18:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl; 
+  cout<<"Feb 5, 2000 @ 18:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   JulianConvert(1.0,0.0,2000,tt);
-  cout<<"Jan 2, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl; 
+  cout<<"Jan 2, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  ExitGracefully("JulianConvertTest",SIMULATION_DONE); 
+  ExitGracefully("JulianConvertTest",SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests DecDaysToHours() function 
+/// \brief Tests DecDaysToHours() function
 //
 void DecDaysTest()
 {
@@ -93,7 +93,7 @@ void DecDaysTest()
   ExitGracefully("DecDaysTest",SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests SmartLookup() function 
+/// \brief Tests SmartLookup() function
 //
 void SmartLookupUnitTest(){
   int n;
@@ -119,7 +119,7 @@ void SmartLookupUnitTest(){
   ExitGracefully("SmartLookupUnitTest",SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests FixTimestep() function 
+/// \brief Tests FixTimestep() function
 //
 void FixTimestepTest()
 {
@@ -134,7 +134,7 @@ void FixTimestepTest()
   ExitGracefully("FixTimestepTest", SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests SmartIntervalSearch() function 
+/// \brief Tests SmartIntervalSearch() function
 //
 void SmartIntervalTest()
 {
@@ -162,7 +162,7 @@ void SmartIntervalTest()
   ExitGracefully("SmartIntervalTest", SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests TriCumDist() and GammaCumDist2() functions 
+/// \brief Tests TriCumDist() and GammaCumDist2() functions
 //
 void GammaTest()
 {
@@ -180,7 +180,7 @@ void GammaTest()
   ExitGracefully("GammaTest",SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests ADRCumDist() functions 
+/// \brief Tests ADRCumDist() functions
 //
 void ADRCumDistTest()
 {
@@ -202,24 +202,24 @@ void ADRCumDistTest()
 //
 void ClearSkyTest()
 {
-	double day_angle,declin,ecc,day_length;
-	double slope=0.0;
-	double solar_noon=0.0;	
-	double rad;
-	ofstream CST;
-	CST.open("ClearSkyTest.csv");
-	for (double day=0;day<365;day++){
-		for (double lat=0;lat<90;lat+=1.0){
-			day_angle=CRadiation::DayAngle(day,1999);
-			declin=	CRadiation::SolarDeclination(day_angle);
-			ecc   = CRadiation::EccentricityCorr(day_angle);
-			day_length = CRadiation::DayLength(lat*PI/180,declin);
-			rad   =CRadiation::CalcETRadiation(lat*PI/180,lat*PI/180,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
-			CST<<day<<","<<lat<<","<<rad<<endl;
-		}
-	}
-	CST.close();
-	ExitGracefully("ClearSkyTest",SIMULATION_DONE);
+  double day_angle,declin,ecc,day_length;
+  double slope=0.0;
+  double solar_noon=0.0;
+  double rad;
+  ofstream CST;
+  CST.open("ClearSkyTest.csv");
+  for (double day=0;day<365;day++){
+    for (double lat=0;lat<90;lat+=1.0){
+      day_angle=CRadiation::DayAngle(day,1999);
+      declin=   CRadiation::SolarDeclination(day_angle);
+      ecc   = CRadiation::EccentricityCorr(day_angle);
+      day_length = CRadiation::DayLength(lat*PI/180,declin);
+      rad   =CRadiation::CalcETRadiation(lat*PI/180,lat*PI/180,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
+      CST<<day<<","<<lat<<","<<rad<<endl;
+    }
+  }
+  CST.close();
+  ExitGracefully("ClearSkyTest",SIMULATION_DONE);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -232,45 +232,45 @@ void OpticalAirMassTest()
   ofstream OAM2;
   OAM.open ("OpticalAirMassTest.csv");
   /*OAM<<"dec,lat,OM"<<endl;
-  double OM;
-  double latstep=90/100.0;
-  double decstep=(22.5*2.0)/100.0;
-  for (dec=-22.5;dec<(22.5+0.5*decstep);dec+=decstep)
-  {
+    double OM;
+    double latstep=90/100.0;
+    double decstep=(22.5*2.0)/100.0;
+    for (dec=-22.5;dec<(22.5+0.5*decstep);dec+=decstep)
+    {
     cout<<dec<<endl;
     for (lat=0;lat<90;lat+=latstep){
-      OM=OpticalAirMass(lat*PI/180,dec*PI/180,0.0,true);
-      OAM<<dec<<","<<lat<<","<<OM<<endl;
+    OM=OpticalAirMass(lat*PI/180,dec*PI/180,0.0,true);
+    OAM<<dec<<","<<lat<<","<<OM<<endl;
     }
-  }*/
-	//---------------------------------------------------
-	// testing hourly for each month:
-	//---------------------------------------------------
-	lat=40;
-	double jday;
+    }*/
+  //---------------------------------------------------
+  // testing hourly for each month:
+  //---------------------------------------------------
+  lat=40;
+  double jday;
 
-	OAM<<"date,t,tsol,dec,OM(t),OM_avg"<<endl;
-	for (double t=0;t<365;t+=1.0/24.0)
-	{
-		time_struct tt;
+  OAM<<"date,t,tsol,dec,OM(t),OM_avg"<<endl;
+  for (double t=0;t<365;t+=1.0/24.0)
+  {
+    time_struct tt;
     JulianConvert(t,0.0,2001,tt);
     tt.model_time=t;
-    
-		if (tt.day_of_month==21)//21st day of the month
-		{
-			cout<<tt.month<<endl;
-			double day_angle =CRadiation::DayAngle(jday,1999);
-			dec=CRadiation::SolarDeclination(day_angle);
-			double day_length = CRadiation::DayLength(lat*PI/180,dec*PI/180);
-			double tsol=t-floor(t)-0.5;
-			double OM=CRadiation::OpticalAirMass(lat*PI/180,dec*PI/180,day_length,tsol,false);
-			OAM<<tt.date_string<<","<<t<<","<<tsol<<","<<dec<<","<<OM<<",";
-			OAM<<CRadiation::OpticalAirMass(lat*PI/180,dec,day_length,tsol,true)<<endl;
-		}
-	}
-	//---------------------------------------------------
+
+    if (tt.day_of_month==21)//21st day of the month
+    {
+      cout<<tt.month<<endl;
+      double day_angle =CRadiation::DayAngle(jday,1999);
+      dec=CRadiation::SolarDeclination(day_angle);
+      double day_length = CRadiation::DayLength(lat*PI/180,dec*PI/180);
+      double tsol=t-floor(t)-0.5;
+      double OM=CRadiation::OpticalAirMass(lat*PI/180,dec*PI/180,day_length,tsol,false);
+      OAM<<tt.date_string<<","<<t<<","<<tsol<<","<<dec<<","<<OM<<",";
+      OAM<<CRadiation::OpticalAirMass(lat*PI/180,dec,day_length,tsol,true)<<endl;
+    }
+  }
+  //---------------------------------------------------
   OAM.close();
-	ExitGracefully("OpticalAirMassTest",SIMULATION_DONE);
+  ExitGracefully("OpticalAirMassTest",SIMULATION_DONE);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -278,53 +278,53 @@ void OpticalAirMassTest()
 //
 void ShortwaveTest()
 {
-	ofstream SHORT;
-	SHORT.open("ShortwaveTest.csv");
+  ofstream SHORT;
+  SHORT.open("ShortwaveTest.csv");
   int year=2001; //no leap year
-	double SW;
+  double SW;
   double slope=0.0;//15*PI/180;
-	double aspect=0.0;//180*PI/180;//east facing=90 south facing=180...
-	double dew_pt=GetDewPointTemp(10,0.5);
+  double aspect=0.0;//180*PI/180;//east facing=90 south facing=180...
+  double dew_pt=GetDewPointTemp(10,0.5);
   double ET_rad;
   double day_angle, declin, ecc, day_length;
   //double elev=0.0;
 
   double SW2;
-	for (double day=0;day<365;day++){
-		for (double lat=0;lat<90;lat+=1.0){
-			day_angle=CRadiation::DayAngle(day,year);
-			declin=	CRadiation::SolarDeclination(day_angle);
-			ecc   = CRadiation::EccentricityCorr(day_angle);
-			day_length = CRadiation::DayLength(lat*PI/180,declin);
-			SW=CRadiation::ClearSkySolarRadiation(day,lat,lat,slope,day_angle,day_length,aspect,dew_pt,ET_rad,true);
+  for (double day=0;day<365;day++){
+    for (double lat=0;lat<90;lat+=1.0){
+      day_angle=CRadiation::DayAngle(day,year);
+      declin=   CRadiation::SolarDeclination(day_angle);
+      ecc   = CRadiation::EccentricityCorr(day_angle);
+      day_length = CRadiation::DayLength(lat*PI/180,declin);
+      SW=CRadiation::ClearSkySolarRadiation(day,lat,lat,slope,day_angle,day_length,aspect,dew_pt,ET_rad,true);
       SW2=0.0;//CRadiation::UBC_SolarRadiation(day,year,lat,elev,true);
-			SHORT<<day<<","<<lat<<","<<SW<<","<<SW2<<endl;
-		}
-	}
-	
-	//---------------------------------------------------
-	// testing hourly for each month:
-	//---------------------------------------------------
-	/*double lat=80;
-	double dday,jday;
-	int dmon,junk;double ET_rad;
-	SHORT<<"date,t,tfake,SHORT(t),SHORT_avg"<<endl;
-	for (double t=0;t<365;t+=1.0/48.0)
-	{
+      SHORT<<day<<","<<lat<<","<<SW<<","<<SW2<<endl;
+    }
+  }
+
+  //---------------------------------------------------
+  // testing hourly for each month:
+  //---------------------------------------------------
+  /*double lat=80;
+    double dday,jday;
+    int dmon,junk;double ET_rad;
+    SHORT<<"date,t,tfake,SHORT(t),SHORT_avg"<<endl;
+    for (double t=0;t<365;t+=1.0/48.0)
+    {
     time_struct tt;
     JulianConvert(t,0.0,2001,tt);
     string thisdate=tt.date_string;
-		if (ceil(dday)==21)//21st day of the month
-		{
-			cout<<dmon<<endl;
-			SW=ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,false);
-			SHORT<<thisdate<<","<<t<<","<<t-floor(t)+dmon-1<<","<<SW<<",";
-			SHORT<<ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,true)<<endl;
-		}
-	}*/
-	//---------------------------------------------------
-	SHORT.close();
-	ExitGracefully("ShortwaveTest",SIMULATION_DONE);
+    if (ceil(dday)==21)//21st day of the month
+    {
+    cout<<dmon<<endl;
+    SW=ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,false);
+    SHORT<<thisdate<<","<<t<<","<<t-floor(t)+dmon-1<<","<<SW<<",";
+    SHORT<<ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,true)<<endl;
+    }
+    }*/
+  //---------------------------------------------------
+  SHORT.close();
+  ExitGracefully("ShortwaveTest",SIMULATION_DONE);
 }
 
 
@@ -345,13 +345,13 @@ void ShortwaveGenerator()
   double day_length, solar_noon;
   int year;
   ifstream IN;
-	ofstream SHORT;
-  
+  ofstream SHORT;
+
   IN.open   ("ShortwaveInput.csv");
   SHORT.open("ShortwaveGenerator.csv");
-	SHORT<<"day[d], year, lat[dec],slope,aspect,declin[rad],ecc[rad],solar_time[d],albedo,dew_pt,Mopt[-],Ketp[MJ/m2/d],Ket[MJ/m2/d],Kcs[MJ/m2/d]"<<endl;
-  int 	Len,line(0);double ET_rad;
-	char *s[MAXINPUTITEMS];
+  SHORT<<"day[d], year, lat[dec],slope,aspect,declin[rad],ecc[rad],solar_time[d],albedo,dew_pt,Mopt[-],Ketp[MJ/m2/d],Ket[MJ/m2/d],Kcs[MJ/m2/d]"<<endl;
+  int   Len,line(0);double ET_rad;
+  char *s[MAXINPUTITEMS];
   CParser *p=new CParser(IN,line);
   p->Tokenize(s,Len);
   int NumLines=s_to_i(s[0]);
@@ -370,11 +370,11 @@ void ShortwaveGenerator()
     dew_pt  =s_to_d(s[5]);
     albedo  =s_to_d(s[6]);
 
-		day_angle= CRadiation::DayAngle(day,year);
-	  declin   = CRadiation::SolarDeclination(day_angle);
-	  ecc      = CRadiation::EccentricityCorr(day_angle);
-	  day_length = CRadiation::DayLength(latrad,declin);
-	  t_sol    = day-floor(day)-0.5;
+    day_angle= CRadiation::DayAngle(day,year);
+    declin   = CRadiation::SolarDeclination(day_angle);
+    ecc      = CRadiation::EccentricityCorr(day_angle);
+    day_length = CRadiation::DayLength(latrad,declin);
+    t_sol    = day-floor(day)-0.5;
 
     double denom=cos(slope)*cos(latrad) - sin(slope)*sin(latrad)*cos(aspect);
     if (denom==0.0){denom = REAL_SMALL;}
@@ -382,20 +382,20 @@ void ShortwaveGenerator()
     if (solar_noon> 0.5){solar_noon-=1.0;}
     if (solar_noon<-0.5){solar_noon+=1.0;}
 
-    
-		Mopt =CRadiation::OpticalAirMass (latrad,declin,                       day_length,t_sol,false);
+
+    Mopt =CRadiation::OpticalAirMass (latrad,declin,                       day_length,t_sol,false);
     Ketp =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,slope,solar_noon,day_length,t_sol,false);
     Ket  =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,0.0  ,0.0       ,day_length,t_sol,false);
-    
-		TIR  =CRadiation::ClearSkySolarRadiation(day,latrad,lateq,tan(slope),day_angle,day_length,solar_noon,dew_pt,ET_rad,false);
-    
-		SHORT<<day<<","<<year<<","<<latrad*180/PI<<","<<tan(slope)<<","<<aspect*180/PI;
+
+    TIR  =CRadiation::ClearSkySolarRadiation(day,latrad,lateq,tan(slope),day_angle,day_length,solar_noon,dew_pt,ET_rad,false);
+
+    SHORT<<day<<","<<year<<","<<latrad*180/PI<<","<<tan(slope)<<","<<aspect*180/PI;
     SHORT<<","<<declin<<","<<ecc<<","<<t_sol<<",";
     SHORT<<albedo<<","<<dew_pt<<","<<Mopt<<","<<Ketp<<","<<Ket<<","<<TIR<<endl;
   }
   cout<<"100% - done"<<endl;
   IN.close();
-	SHORT.close();
-	ExitGracefully("ShortwaveGenerator",SIMULATION_DONE);
+  SHORT.close();
+  ExitGracefully("ShortwaveGenerator",SIMULATION_DONE);
 }
 

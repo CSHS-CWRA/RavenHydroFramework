@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
   Melting
   Freezing
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
 
@@ -19,21 +19,21 @@
 /// \param Out_index [in] Index of storage compartment to which meltwater enters
 //
 CmvSnowMelt::CmvSnowMelt(snowmelt_type melt_type,int Out_index):
-             CHydroProcessABC(SNOWMELT)
+  CHydroProcessABC(SNOWMELT)
 {
   type=melt_type;
   CHydroProcessABC::DynamicSpecifyConnections(1);
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
-    "CmvSnowMelt Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvSnowMelt Constructor: invalid 'to' compartment specified",BAD_DATA);
 
-  iFrom[0]=pModel->GetStateVarIndex(SNOW);     
-  iTo  [0]=Out_index; 
+  iFrom[0]=pModel->GetStateVarIndex(SNOW);
+  iTo  [0]=Out_index;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation fo the default destructor
 //
-CmvSnowMelt::~CmvSnowMelt(){} 
+CmvSnowMelt::~CmvSnowMelt(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes snow melt modelling object
@@ -48,7 +48,7 @@ void CmvSnowMelt::Initialize(){}
 /// \param &nP [out] Number of parameters required by snow melt algorithm (size of aP[] and aPC[])
 //
 void CmvSnowMelt::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
-{  
+{
   if (type==MELT_POTMELT)
   {
     nP=0;
@@ -67,7 +67,7 @@ void CmvSnowMelt::GetParticipatingParamList(string *aP, class_type *aPC, int &nP
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by sublimation algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvSnowMelt::GetParticipatingStateVarList(snowmelt_type melt_type,sv_type *aSV, int *aLev, int &nSV) 
+void CmvSnowMelt::GetParticipatingStateVarList(snowmelt_type melt_type,sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=1;
   aSV[0]=SNOW; aLev[0]=DOESNT_EXIST;
@@ -83,11 +83,11 @@ void CmvSnowMelt::GetParticipatingStateVarList(snowmelt_type melt_type,sv_type *
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of loss from "from" compartment [mm/d]
 //
-void CmvSnowMelt::GetRatesOfChange( const double		 *state_vars,
-                                    const CHydroUnit *pHRU, 
-                                    const optStruct	 &Options,
+void CmvSnowMelt::GetRatesOfChange( const double                 *state_vars,
+                                    const CHydroUnit *pHRU,
+                                    const optStruct      &Options,
                                     const time_struct &tt,
-                                          double     *rates) const
+                                    double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
@@ -100,7 +100,7 @@ void CmvSnowMelt::GetRatesOfChange( const double		 *state_vars,
 };
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
@@ -110,21 +110,21 @@ void CmvSnowMelt::GetRatesOfChange( const double		 *state_vars,
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of loss from "from" compartment [mm/d]
 //
-void   CmvSnowMelt::ApplyConstraints( const double		 *state_vars, 
-                                      const CHydroUnit *pHRU, 
-                                      const optStruct	 &Options,
+void   CmvSnowMelt::ApplyConstraints( const double               *state_vars,
+                                      const CHydroUnit *pHRU,
+                                      const optStruct    &Options,
                                       const time_struct &tt,
-                                            double     *rates) const
+                                      double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
-    if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}
-    if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
+  if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}
+  if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
 
-    //cant remove more than is there
-    rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
+  //cant remove more than is there
+  rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
 
-    //overfilling of melt reciever should be handled using cascade!
+  //overfilling of melt reciever should be handled using cascade!
 }
 
 //************************************************************************************************
@@ -141,21 +141,21 @@ void   CmvSnowMelt::ApplyConstraints( const double		 *state_vars,
 /// \param Out_index [in] Index of the compartment to which water is lost
 //
 CmvSnowSqueeze::CmvSnowSqueeze(int Out_index):
-             CHydroProcessABC(SNOWSQUEEZE)
+  CHydroProcessABC(SNOWSQUEEZE)
 {
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
-    "CmvSnowSqueeze Constructor: invalid 'to' compartment specified",BAD_DATA);
+                   "CmvSnowSqueeze Constructor: invalid 'to' compartment specified",BAD_DATA);
 
   CHydroProcessABC::DynamicSpecifyConnections(1);
 
-  iFrom[0]=pModel->GetStateVarIndex(SNOW_LIQ);     
-  iTo  [0]=Out_index; 
+  iFrom[0]=pModel->GetStateVarIndex(SNOW_LIQ);
+  iTo  [0]=Out_index;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation fo the default destructor
 //
-CmvSnowSqueeze::~CmvSnowSqueeze(){} 
+CmvSnowSqueeze::~CmvSnowSqueeze(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes snow squeeze modelling object
@@ -172,7 +172,7 @@ void CmvSnowSqueeze::Initialize(){}
 void CmvSnowSqueeze::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
   nP=1;
-  aP[0]="SNOW_SWI";		 aPC[0]=CLASS_GLOBAL;
+  aP[0]="SNOW_SWI";              aPC[0]=CLASS_GLOBAL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -182,7 +182,7 @@ void CmvSnowSqueeze::GetParticipatingParamList(string *aP, class_type *aPC, int 
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by snow squeeze algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvSnowSqueeze::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+void CmvSnowSqueeze::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=1;
   aSV[0]=SNOW_LIQ; aLev[0]=DOESNT_EXIST;
@@ -198,11 +198,11 @@ void CmvSnowSqueeze::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of loss from "from" compartment [mm/d]
 //
-void CmvSnowSqueeze::GetRatesOfChange( const double		 *state_vars,
-                                    const CHydroUnit *pHRU, 
-                                    const optStruct	 &Options,
-                                    const time_struct &tt,
-                                          double     *rates) const
+void CmvSnowSqueeze::GetRatesOfChange( const double              *state_vars,
+                                       const CHydroUnit *pHRU,
+                                       const optStruct   &Options,
+                                       const time_struct &tt,
+                                       double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
@@ -211,7 +211,7 @@ void CmvSnowSqueeze::GetRatesOfChange( const double		 *state_vars,
   S=state_vars[pModel->GetStateVarIndex(SNOW)];
   SL=state_vars[pModel->GetStateVarIndex(SNOW_LIQ)];
   SD=S/0.2; //20% snow density
-  
+
   if (pModel->GetStateVarIndex(SNOW_DEPTH)!=DOESNT_EXIST){
     SD=state_vars[pModel->GetStateVarIndex(SNOW_DEPTH)];
   }
@@ -222,7 +222,7 @@ void CmvSnowSqueeze::GetRatesOfChange( const double		 *state_vars,
 };
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
@@ -232,16 +232,16 @@ void CmvSnowSqueeze::GetRatesOfChange( const double		 *state_vars,
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of loss from "from" compartment [mm/d]
 //
-void   CmvSnowSqueeze::ApplyConstraints( const double		 *state_vars, 
-                                      const CHydroUnit *pHRU, 
-                                      const optStruct	 &Options,
-                                      const time_struct &tt,
-                                            double     *rates) const
+void   CmvSnowSqueeze::ApplyConstraints( const double            *state_vars,
+                                         const CHydroUnit *pHRU,
+                                         const optStruct         &Options,
+                                         const time_struct &tt,
+                                         double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
-    if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}
-    if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
+  if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}
+  if (rates[0]<0.0){rates[0]=0.0;}//positivity constraint
 }
 
 //************************************************************************************************
@@ -258,13 +258,13 @@ void   CmvSnowSqueeze::ApplyConstraints( const double		 *state_vars,
 /// \param frz_type [in] Refreeze algorithm type
 //
 CmvSnowRefreeze::CmvSnowRefreeze(refreeze_type frz_type):
-                CHydroProcessABC(REFREEZE)
+  CHydroProcessABC(REFREEZE)
 {
   type =frz_type;
   if (type==FREEZE_DEGREE_DAY){
     CHydroProcessABC::DynamicSpecifyConnections(1);
 
-    iFrom[0]=pModel->GetStateVarIndex(SNOW_LIQ);     
+    iFrom[0]=pModel->GetStateVarIndex(SNOW_LIQ);
     iTo  [0]=pModel->GetStateVarIndex(SNOW);
   }
   else{
@@ -275,7 +275,7 @@ CmvSnowRefreeze::CmvSnowRefreeze(refreeze_type frz_type):
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation fo the default destructor
 //
-CmvSnowRefreeze::~CmvSnowRefreeze(){} 
+CmvSnowRefreeze::~CmvSnowRefreeze(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes refreeze modelling object
@@ -290,12 +290,12 @@ void CmvSnowRefreeze::Initialize(){}
 /// \param &nP [out] Number of parameters required by refreeze algorithm (size of aP[] and aPC[])
 //
 void CmvSnowRefreeze::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
-{  
+{
   if (type==FREEZE_DEGREE_DAY)
   {
     nP=1;
-    aP[0]="REFREEZE_FACTOR";       aPC[0]=CLASS_LANDUSE; 
-  }  
+    aP[0]="REFREEZE_FACTOR";       aPC[0]=CLASS_LANDUSE;
+  }
   else
   {
     ExitGracefully("CmvSnowRefreeze::GetParticipatingParamList: undefined refreeze algorithm",BAD_DATA);
@@ -310,8 +310,8 @@ void CmvSnowRefreeze::GetParticipatingParamList(string *aP, class_type *aPC, int
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by refreeze algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvSnowRefreeze::GetParticipatingStateVarList(refreeze_type frz_type, 
-                                                   sv_type *aSV, int *aLev, int &nSV) 
+void CmvSnowRefreeze::GetParticipatingStateVarList(refreeze_type frz_type,
+                                                   sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=2;
   aSV[0]=SNOW_LIQ;    aLev[0]=DOESNT_EXIST;
@@ -327,11 +327,11 @@ void CmvSnowRefreeze::GetParticipatingStateVarList(refreeze_type frz_type,
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of loss from "from" compartment [mm/d]
 //
-void CmvSnowRefreeze::GetRatesOfChange( const double		 *state_vars, 
-                                        const CHydroUnit *pHRU, 
-                                        const optStruct	 &Options,
+void CmvSnowRefreeze::GetRatesOfChange( const double             *state_vars,
+                                        const CHydroUnit *pHRU,
+                                        const optStruct  &Options,
                                         const time_struct &tt,
-                                              double     *rates) const
+                                        double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
@@ -346,9 +346,9 @@ void CmvSnowRefreeze::GetRatesOfChange( const double		 *state_vars,
 };
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
-/// \details For all methods, ensures that rate of refreeze cannot freeze more 
-/// liquid water than is available 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
+/// \details For all methods, ensures that rate of refreeze cannot freeze more
+/// liquid water than is available
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -356,11 +356,11 @@ void CmvSnowRefreeze::GetRatesOfChange( const double		 *state_vars,
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of loss from "from" compartment [mm/d]
 //
-void  CmvSnowRefreeze::ApplyConstraints(const double		 *state_vars, 
-                                        const CHydroUnit *pHRU, 
-                                        const optStruct	 &Options,
+void  CmvSnowRefreeze::ApplyConstraints(const double             *state_vars,
+                                        const CHydroUnit *pHRU,
+                                        const optStruct  &Options,
                                         const time_struct &tt,
-                                              double     *rates) const
+                                        double     *rates) const
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}
 

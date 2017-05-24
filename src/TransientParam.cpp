@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "TransientParam.h"
 #include "SoilAndLandClasses.h"
 
@@ -16,10 +16,10 @@
 /// \param ptype [in] class of parameter(e.g., CLASS_SOIL or CLASS_GLOBAL)
 /// \param classname [in] class of parameter time series (e.g., "GuelphLoam") (not used/ignored for CLASS_GLOBAL parameters)
 //
-CTransientParam::CTransientParam(      CTimeSeries *pTS, 
-                                 const string       pname,
-                                 const class_type   ptype,
-                                 const string        classname)
+CTransientParam::CTransientParam(      CTimeSeries *pTS,
+                                       const string       pname,
+                                       const class_type   ptype,
+                                       const string        classname)
 {
   pTimeSeries=pTS;
   param_name=pname;
@@ -35,7 +35,7 @@ CTransientParam::CTransientParam(      CTimeSeries *pTS,
 //
 CTransientParam::~CTransientParam()
 {
-	if (DESTRUCTOR_DEBUG){cout<<"  DELETING TRANSIENT PARAMETER"<<endl;}
+  if (DESTRUCTOR_DEBUG){cout<<"  DELETING TRANSIENT PARAMETER"<<endl;}
   delete pTimeSeries; pTimeSeries=NULL;
 }
 
@@ -75,28 +75,28 @@ void CTransientParam::Initialize(const optStruct &Options)
     if (CSoilClass::StringToSoilClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid soil class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
-    } 
+    }
   }
   else if (param_type==CLASS_VEGETATION)
   {
     if (CVegetationClass::StringToVegClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid vegetation class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
-    } 
+    }
   }
   else if (param_type==CLASS_TERRAIN)
   {
     if (CTerrainClass::StringToTerrainClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid terrain class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
-    } 
+    }
   }
   else if (param_type==CLASS_LANDUSE)
   {
     if (CLandUseClass::StringToLUClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid land use/land type class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
-    } 
+    }
   }
   else if (param_type==CLASS_GLOBAL)
   {

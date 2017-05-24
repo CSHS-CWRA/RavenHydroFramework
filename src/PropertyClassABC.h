@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008 James R. Craig, Andy Snowdon
-------------------------------------------------------------------
+  Copyright (c) 2008-2017 the Raven Development Team, James R. Craig, Andy Snowdon
+  ------------------------------------------------------------------
   Class CPropertyClassABC
   Class CVegetationClass
   Class CRiverClass
   Class CLandUseClass
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 #ifndef PROPERTY_CLASSES_H
 #define PROPERTY_CLASSES_H
 
@@ -19,24 +19,24 @@
 //
 class CPropertyClass
 {
-  protected:/*----------------------------------------------------*/
+protected:/*----------------------------------------------------*/
 
-    string                  tag;          ///< nickname for class, e.g., "BROADLEAF_FOREST"
+  string                  tag;          ///< nickname for class, e.g., "BROADLEAF_FOREST"
 
-    static CPropertyClass **pAllClasses;  ///< array of all classes that have been created
-    static int              NumClasses;	  ///< Number of classes
+  static CPropertyClass **pAllClasses;  ///< array of all classes that have been created
+  static int              NumClasses;   ///< Number of classes
 
-  public:/*-------------------------------------------------------*/
-    //Constructors:
-    CPropertyClass(const string name);
-    ~CPropertyClass();
+public:/*-------------------------------------------------------*/
+  //Constructors:
+  CPropertyClass(const string name);
+  ~CPropertyClass();
 
-    //Accessors
-    string                        *GetTag() const;
+  //Accessors
+  string                        *GetTag() const;
 
-    //routines
-    static int                     GetNumClasses();
-    static const CPropertyClass   *StringToClass(const string s);
-    static virtual void            SummarizeToScreen()=0;
-    static void                    DestroyAllClasses();
+  //routines
+  static int                     GetNumClasses();
+  static const CPropertyClass   *StringToClass(const string s);
+  static virtual void            SummarizeToScreen()=0;
+  static void                    DestroyAllClasses();
 };

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
 /*****************************************************************
@@ -15,8 +15,8 @@
 CTerrainClass::CTerrainClass(const string name)
 {
   tag=name;
-	if (!DynArrayAppend((void**&)(pAllTerrainClasses),(void*)(this),NumTerrainClasses)){
-		 ExitGracefully("CTerrainClass::Constructor: creating NULL terrain class",BAD_DATA);};
+  if (!DynArrayAppend((void**&)(pAllTerrainClasses),(void*)(this),NumTerrainClasses)){
+    ExitGracefully("CTerrainClass::Constructor: creating NULL terrain class",BAD_DATA);};
 }
 
 //////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ CTerrainClass::CTerrainClass(const string name)
 //
 CTerrainClass::~CTerrainClass()
 {
-	if (DESTRUCTOR_DEBUG){cout<<"  DELETING TERRAIN CLASS "<<endl;}
+  if (DESTRUCTOR_DEBUG){cout<<"  DELETING TERRAIN CLASS "<<endl;}
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@ const terrain_struct *CTerrainClass::GetTerrainStruct() const{return &T;}
 /// \brief Return nick name identifier of terrain class
 /// \return nick name identifier of terrain class
 //
-string                CTerrainClass::GetTag					 () const{return tag;}
+string                CTerrainClass::GetTag                                      () const{return tag;}
 /*****************************************************************
    Static Initialization, Accessors, Destructors
 *****************************************************************/
@@ -57,7 +57,7 @@ int CTerrainClass::GetNumClasses(){
 //
 void CTerrainClass::SummarizeToScreen()
 {
-	cout<<"==================="<<endl;
+  cout<<"==================="<<endl;
   cout<<"Terrain Class Summary:"<<NumTerrainClasses<<" terrain classes in database"<<endl;
   for (int c=0; c<NumTerrainClasses;c++){
     cout<<"-Terrain. class \""<<pAllTerrainClasses[c]->GetTag()<<"\" "<<endl;
@@ -75,15 +75,15 @@ void CTerrainClass::WriteParamsToFile(ofstream &OUT)
   const terrain_struct *t;
   OUT<<endl<<"---Terrain Class Parameters---------------------"<<endl;
   OUT<<"CLASS,";
-  OUT<<"DRAINAGE_DENSITY,HILLSLOPE_LENGTH,LAMBDA,";       
+  OUT<<"DRAINAGE_DENSITY,HILLSLOPE_LENGTH,LAMBDA,";
   OUT<<endl;
 
   for (int c=0; c<NumTerrainClasses;c++)
   {
     s=pAllTerrainClasses[c];
     t=s->GetTerrainStruct();
-    OUT<<s->GetTag()<<",";    
-    OUT<<t->drainage_density<<","<<t->hillslope_length<<","<<t->lambda<<",";  
+    OUT<<s->GetTag()<<",";
+    OUT<<t->drainage_density<<","<<t->hillslope_length<<","<<t->lambda<<",";
     OUT<<endl;
   }
 }
@@ -93,7 +93,7 @@ void CTerrainClass::WriteParamsToFile(ofstream &OUT)
 //
 void CTerrainClass::DestroyAllTerrainClasses()
 {
-	if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL TERRAIN CLASSES"<<endl;}
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL TERRAIN CLASSES"<<endl;}
   for (int c=0; c<NumTerrainClasses;c++){
     delete pAllTerrainClasses[c];
   }
@@ -121,7 +121,7 @@ CTerrainClass *CTerrainClass::StringToTerrainClass(const string s)
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the terrain  class corresponding to the passed index
 ///  if index is invalid, returns NULL
-/// \param c [in] Soil class index 
+/// \param c [in] Soil class index
 /// \return Reference to terrain class corresponding to index c
 //
 const CTerrainClass *CTerrainClass::GetTerrainClass(int c)
@@ -131,30 +131,30 @@ const CTerrainClass *CTerrainClass::GetTerrainClass(int c)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates terrain propeties
-/// \details Sets terrain properties based upon simple terrain parameters 
-///	Input [Ttmp] has been read from .rvp file - if parameter == 
-///	AUTO_COMPLETE, then empirical relationships are used to estimate 
-///	parameters 
+/// \details Sets terrain properties based upon simple terrain parameters
+///     Input [Ttmp] has been read from .rvp file - if parameter ==
+///     AUTO_COMPLETE, then empirical relationships are used to estimate
+///     parameters
 ///
 /// \param &Ttmp [in] Input terrain class parameters (read from .rvp file)
 /// \param &Tdefault [in] Default terrain class parameters
 //
-void CTerrainClass::AutoCalculateTerrainProps(const terrain_struct &Ttmp, 
+void CTerrainClass::AutoCalculateTerrainProps(const terrain_struct &Ttmp,
                                               const terrain_struct &Tdefault)
-{ 
+{
   //bool autocalc=false;
 
   //these parameters are required
-  T.drainage_density =Ttmp.drainage_density; 
+  T.drainage_density =Ttmp.drainage_density;
   T.hillslope_length =Ttmp.hillslope_length;
 
   //Standard terrain properties
   //----------------------------------------------------------------------------
   /*autocalc=SetCalculableValue(T.lambda,Ttmp.lambda,Tdefault.lambda);
-  if (autocalc)
-  { 
+    if (autocalc)
+    {
     T.lambda=0.0;
-  }*/
+    }*/
 
   //Model-specific terrain properties - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
@@ -168,7 +168,7 @@ void CTerrainClass::AutoCalculateTerrainProps(const terrain_struct &Ttmp,
 //
 void CTerrainClass::InitializeTerrainProperties(terrain_struct &T, bool is_template)//static
 {
-	//required parameters 
+  //required parameters
   T.hillslope_length=100;//[m]
   T.drainage_density=1.0;//[?]
   T.lambda          =7.5;//[m]needs reasonable estimate
@@ -180,7 +180,7 @@ void CTerrainClass::InitializeTerrainProperties(terrain_struct &T, bool is_templ
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CTerrainClass::SetTerrainProperty(string       &param_name, 
+void  CTerrainClass::SetTerrainProperty(string       &param_name,
                                         const double &value)
 {
   SetTerrainProperty(T,param_name,value);
@@ -191,8 +191,8 @@ void  CTerrainClass::SetTerrainProperty(string       &param_name,
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CTerrainClass::SetTerrainProperty(terrain_struct &T, 
-                                        string       param_name, 
+void  CTerrainClass::SetTerrainProperty(terrain_struct &T,
+                                        string       param_name,
                                         const double value)
 {
   string name;

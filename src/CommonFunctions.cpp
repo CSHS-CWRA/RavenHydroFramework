@@ -1,7 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  \copyright Copyright © 2008-2014 
-///  \author    the Raven Development Team
+///  Copyright (c) 2008-2017 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -13,55 +12,55 @@
 /// \param p [in] Type of proceses
 /// \return String equivalent of the process_type identifier
 //
-string GetProcessName(process_type p) 
+string GetProcessName(process_type p)
 {
   static string name;
   switch(p)
   {
-    case(NULL_PROCESS_TYPE):  {name="NULL";                     break;}
-    case(FLUSH):              {name="Flush";                    break;}
-    case(SPLIT):              {name="Split";                    break;}                     
-    case(OVERFLOW_PROC):      {name="Overflow";                 break;}
-    case(EXCHANGE_FLOW):      {name="Exchange Flow";            break;}
+  case(NULL_PROCESS_TYPE):  {name="NULL";                     break;}
+  case(FLUSH):              {name="Flush";                    break;}
+  case(SPLIT):              {name="Split";                    break;}
+  case(OVERFLOW_PROC):      {name="Overflow";                 break;}
+  case(EXCHANGE_FLOW):      {name="Exchange Flow";            break;}
 
-    case(PRECIPITATION):      {name="Precipitation";            break;}
+  case(PRECIPITATION):      {name="Precipitation";            break;}
 
-    case(BASEFLOW):           {name="Baseflow";                 break;}
-    case(INFILTRATION):       {name="Infiltration";             break;}
-    case(INTERFLOW):          {name="Interflow";                break;}
+  case(BASEFLOW):           {name="Baseflow";                 break;}
+  case(INFILTRATION):       {name="Infiltration";             break;}
+  case(INTERFLOW):          {name="Interflow";                break;}
     //case(REDISTRIBUTION):     {name="Soil Moisture Redistribution"; break;}
-    case(PERCOLATION):        {name="Percolation";              break;}
-    case(SOIL_EVAPORATION):   {name="Soil Evaporation";         break;}
-    case(CAPILLARY_RISE):     {name="Capillary Rise";           break;}
+  case(PERCOLATION):        {name="Percolation";              break;}
+  case(SOIL_EVAPORATION):   {name="Soil Evaporation";         break;}
+  case(CAPILLARY_RISE):     {name="Capillary Rise";           break;}
 
-    case(CANOPY_EVAPORATION): {name="Canopy Evaporation";       break;}
-    case(CANOPY_SNOW_EVAPORATION):{name="Canopy Snow Evaporation";break;}
-    case(CANOPY_DRIP):        {name="Canopy Drip";              break;}
-    case(OPEN_WATER_EVAPORATION):{name="Open Water Evaporation";break;}
-    case(LAKE_EVAPORATION):   {name="Lake Evaporation";         break;}
-    case(DEPRESSION_OVERFLOW):{name="Depression Overflow";      break;}
+  case(CANOPY_EVAPORATION): {name="Canopy Evaporation";       break;}
+  case(CANOPY_SNOW_EVAPORATION):{name="Canopy Snow Evaporation";break;}
+  case(CANOPY_DRIP):        {name="Canopy Drip";              break;}
+  case(OPEN_WATER_EVAPORATION):{name="Open Water Evaporation";break;}
+  case(LAKE_EVAPORATION):   {name="Lake Evaporation";         break;}
+  case(DEPRESSION_OVERFLOW):{name="Depression Overflow";      break;}
 
-    case(SNOWMELT):           {name="Snow Melt";                break;}
-    case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
-    case(REFREEZE):           {name="Snow Refreeze";            break;}
-    case(SUBLIMATION):        {name="Sublimation";              break;}
-    case(SNOW_BALANCE):       {name="Snow Melt & Refreeze";     break;}
-    case(GLACIER_MELT):       {name="Glacier Melt";             break;}
-    case(GLACIER_RELEASE):    {name="Glacier Release";          break;}
-    case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}
-    case(SNOW_ALBEDO_EVOLVE): {name="Snow Albedo Evolution";    break;}
-    case(CROP_HEAT_UNIT_EVOLVE):{name="Crop Heat Unit Evolution";break;}
-    case(ABSTRACTION):        {name="Abstraction";              break;}
-    case(SNOWTEMP_EVOLVE):    {name="Snow Temp. Evolution";     break;}
-    case(CONVOLVE):           {name="Convolution";              break;}
+  case(SNOWMELT):           {name="Snow Melt";                break;}
+  case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
+  case(REFREEZE):           {name="Snow Refreeze";            break;}
+  case(SUBLIMATION):        {name="Sublimation";              break;}
+  case(SNOW_BALANCE):       {name="Snow Melt & Refreeze";     break;}
+  case(GLACIER_MELT):       {name="Glacier Melt";             break;}
+  case(GLACIER_RELEASE):    {name="Glacier Release";          break;}
+  case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}
+  case(SNOW_ALBEDO_EVOLVE): {name="Snow Albedo Evolution";    break;}
+  case(CROP_HEAT_UNIT_EVOLVE):{name="Crop Heat Unit Evolution";break;}
+  case(ABSTRACTION):        {name="Abstraction";              break;}
+  case(SNOWTEMP_EVOLVE):    {name="Snow Temp. Evolution";     break;}
+  case(CONVOLVE):           {name="Convolution";              break;}
 
-    case(ADVECTION):          {name="Advection";                break;}
-                                //..
-    default:              {
-      name="Unknown Hydrological Process";      
-      ExitGracefully("GetProcessName: Unknown Hydrological Process",RUNTIME_ERR);//STRICT
-      break;
-    }
+  case(ADVECTION):          {name="Advection";                break;}
+    //..
+  default:              {
+    name="Unknown Hydrological Process";
+    ExitGracefully("GetProcessName: Unknown Hydrological Process",RUNTIME_ERR);//STRICT
+    break;
+  }
   }
   return name;
 }
@@ -77,8 +76,8 @@ string GetProcessName(process_type p)
 //
 bool SetCalculableValue(double &val, double set_val, double template_val)
 {
- //  preferred approach if master parameter list is complete 
-  
+  //  preferred approach if master parameter list is complete
+
   //JRC: THE FOLLOWING LINE MUST BE COMMENTED OUT UNTIL **ALL** REQUIRED PARAMETERS ARE DETERMINED
   if ((template_val==NOT_NEEDED) || (template_val==NOT_NEEDED_AUTO)){
     val=template_val; //even if value specified, overriden, because it is not needed
@@ -149,7 +148,7 @@ double DefaultParameterValue(bool is_template, bool is_computable)
 
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Dynamically append pointer to array
-/// \details Dynamically adds additional pointer (*xptr) onto array of pointers (**pArr) of 
+/// \details Dynamically adds additional pointer (*xptr) onto array of pointers (**pArr) of
 /// initial size indicated by parameter. Increments size by 1
 ///
 /// \param **&pArr [out] Array of pointers to which *xptr will be added
@@ -158,19 +157,19 @@ double DefaultParameterValue(bool is_template, bool is_computable)
 /// \return Boolean indicating success of method
 //
 bool DynArrayAppend(void **& pArr, void *xptr,int &size)
-{  
+{
   void **tmp=NULL;
   if (xptr==NULL){return false;}
   if ((pArr==NULL) && (size>0)) {return false;}
   size=size+1;                                                //increment size
-  tmp=new void *[size+1];                                     //allocate memory 
+  tmp=new void *[size+1];                                     //allocate memory
   if (tmp==NULL){ExitGracefully("DynArrayAppend::Out of memory",OUT_OF_MEMORY);}
   for (int i=0; i<(size-1); i++){                             //copy array
     if (pArr[i]==NULL){ExitGracefully("DynArrayAppend::Bad existing array",BAD_DATA);}
     tmp[i]=pArr[i];
-  }                              
+  }
   tmp[size-1]=xptr;                                           //add new pointer
-  if (size>1){delete [] pArr; pArr=NULL;}                     //delete old array of pointers                            
+  if (size>1){delete [] pArr; pArr=NULL;}                     //delete old array of pointers
   pArr=tmp;                                                   //redirect pointer
   return true;
 }
@@ -178,11 +177,11 @@ bool DynArrayAppend(void **& pArr, void *xptr,int &size)
 /// \brief identifies index location of value in uneven continuous list of value ranges
 ///
 /// \param &x [in] value for which the interval index is to be found
-/// \param *ax [in] array of consecutive values from ax[0] to ax[N-1] indicating interval boundaries 
+/// \param *ax [in] array of consecutive values from ax[0] to ax[N-1] indicating interval boundaries
 /// \param N [in] size of array ax
 /// \param iguess [in] best guess as to which interval x is in
 /// \return interval index value (index refers to lower bound of interval, i.e., i indicates x is between ax[i] and ax[i+1]
-/// \note returns -1 if outside of range 
+/// \note returns -1 if outside of range
 //
 int SmartIntervalSearch(const double &x,const double *ax,const int N,const int iguess)
 {
@@ -211,8 +210,8 @@ From Kavetski & Kuczera, 2007
 
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Enforces positivity of input value \cite Kavetski2007WRR
-/// \todo [add funct] Work needed here if smoothing is to be used 
-/// 
+/// \todo [add funct] Work needed here if smoothing is to be used
+///
 /// \param &val [in] input value on which positivity is enforced
 /// \return Returns the value itself if it is greater than 0.0, otherwise returns 0.0.
 //
@@ -290,11 +289,11 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   //handles roundoff error, (e.g., t=4.999873->t=5.0)
   if( (model_time-floor(model_time)) > (1-TIME_CORRECTION))
   {
-	 model_time = floor(model_time+TIME_CORRECTION);
+    model_time = floor(model_time+TIME_CORRECTION);
   }
 
   double dec_date=start_date+model_time; //decimal date calculated from start_date,start year
-  
+
   dyear=start_year;
   ddate=dec_date;
 
@@ -334,7 +333,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
 
   static char out[50];
   sprintf(out,"%4.4d-%2.2i-%2.2d",dyear,tt.month,tt.day_of_month); //2006-02-28 (ISO Standard)
-  
+
   tt.date_string=string(out);
   tt.leap_yr=IsLeapYear(tt.year);
 }
@@ -388,20 +387,20 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 
   static time_struct tt;
   if (sDate.length()!=10){
-		string errString = "DateStringToTimeStruct: Invalid date format used: "+sDate;
-		ExitGracefully(errString.c_str(),BAD_DATA);
-	}
+    string errString = "DateStringToTimeStruct: Invalid date format used: "+sDate;
+    ExitGracefully(errString.c_str(),BAD_DATA);
+  }
   if (sTime.length()<7)  {
-		string errString = "DateStringToTimeStruct: Invalid time format used (hourstamp): "+sTime;
-		ExitGracefully(errString.c_str(),BAD_DATA);
-	}
+    string errString = "DateStringToTimeStruct: Invalid time format used (hourstamp): "+sTime;
+    ExitGracefully(errString.c_str(),BAD_DATA);
+  }
 
   tt.date_string=sDate;
   tt.year        =s_to_i(sDate.substr(0,4).c_str());
   tt.month       =s_to_i(sDate.substr(5,2).c_str());
   if (tt.month>12)  {
-		string errString = "DateStringToTimeStruct: Invalid time format used (month>12): "+sDate;
-		ExitGracefully(errString.c_str(),BAD_DATA);
+    string errString = "DateStringToTimeStruct: Invalid time format used (month>12): "+sDate;
+    ExitGracefully(errString.c_str(),BAD_DATA);
   }
   tt.day_of_month=s_to_i(sDate.substr(8,2).c_str());
   tt.model_time  =0.0;//unspecified
@@ -414,18 +413,18 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
   if (tt.month>= 5){tt.julian_day+=30;}
   if (tt.month>= 6){tt.julian_day+=31;}
   if (tt.month>= 7){tt.julian_day+=30;}
-  if (tt.month>= 8){tt.julian_day+=31;}  
-  if (tt.month>= 9){tt.julian_day+=31;}  
-  if (tt.month>=10){tt.julian_day+=30;}  
+  if (tt.month>= 8){tt.julian_day+=31;}
+  if (tt.month>= 9){tt.julian_day+=31;}
+  if (tt.month>=10){tt.julian_day+=30;}
   if (tt.month>=11){tt.julian_day+=31;}
-  if (tt.month==12){tt.julian_day+=30;}    
+  if (tt.month==12){tt.julian_day+=30;}
   if ((tt.leap_yr  ) && (tt.month> 2)){tt.julian_day+= 1;}
 
   int hr, min;
   double sec;
 
   if (sTime.substr(1,1)==":"){sTime="0"+sTime;} //for h:mm:ss.00 format to hh:mm:ss.00
-  
+
   ExitGracefullyIf((sTime.substr(2,1)!=":"),"DateStringToTimeStruct: Invalid time format used",BAD_DATA);
   ExitGracefullyIf((sTime.substr(5,1)!=":"),"DateStringToTimeStruct: Invalid time format used",BAD_DATA);
 
@@ -474,10 +473,10 @@ double TimeDifference(const double jul_day1,const int year1,const double jul_day
 /// \brief Round the timestep to the nearest fractional day
 /// \return improved timestep
 double    FixTimestep(double tstep)
- {
+{
   double tmp = round(1.0/tstep);
   ExitGracefullyIf(fabs(tstep*tmp-1.0)>0.1,
-    "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
+                   "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
   return 1.0/tmp;
 }
 ////////////////////////////////////////////////////// /////////////////////
@@ -493,8 +492,8 @@ string GetCurrentTime(void)
   // generate the ISO string
   char s[20];
   sprintf(s,"%4i-%02i-%02i %02i:%02i:%02i",
-  curTime->tm_year+1900, curTime->tm_mon+1, curTime->tm_mday,
-  curTime->tm_hour, curTime->tm_min, curTime->tm_sec);
+          curTime->tm_year+1900, curTime->tm_mon+1, curTime->tm_mday,
+          curTime->tm_hour, curTime->tm_min, curTime->tm_sec);
 
   return string(s);
 }
@@ -518,7 +517,7 @@ double InterpolateMo(const double       aVal[12],
   day    =tt.day_of_month;
   month  =tt.month;
   year   =tt.year;
-  
+
   if      (Options.month_interp==MONTHINT_UNIFORM)//uniform over month
   {
     return aVal[month-1];
@@ -550,7 +549,7 @@ double InterpolateMo(const double       aVal[12],
       if (mo==-1){mo=11;nextmo=0;}
       leap=0;if ((IsLeapYear(year)) && (mo==1)){leap=1;}
       wt=1.0-(double)((day+DAYS_PER_MONTH[mo]+leap-pivot)/(DAYS_PER_MONTH[mo]+leap));
-    }  
+    }
     else{
       mo=month-1;
       nextmo=mo+1;
@@ -566,7 +565,7 @@ double InterpolateMo(const double       aVal[12],
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates saturation vapor pressure [KPa] \cite Murray1966JAM 
+/// \brief Calculates saturation vapor pressure [KPa] \cite Murray1966JAM
 /// \remark Uses Dingman equation 7.4 \cite Dingman1994
 // (Murray, Applied Meteorol 6:203, 1967)
 ///
@@ -587,7 +586,7 @@ double GetSaturatedVaporPressure(const double &T)//[C]
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates saturation vapor pressure slope [de/dT]
-/// \remark Uses Dingman equation 7.4 \cite Dingman1994 (Murray, Applied Meteorol 6:203, 1967) \cite Murray1966JAM 
+/// \remark Uses Dingman equation 7.4 \cite Dingman1994 (Murray, Applied Meteorol 6:203, 1967) \cite Murray1966JAM
 ///
 /// \param &T [in] Temperature in Celsius
 /// \param &satvap [in] Saturated vapour pressure [kpa]
@@ -605,7 +604,7 @@ double GetSatVapSlope(const double &T, const double &satvap)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates latent heat of vaporization [MJ/kg] 
+/// \brief Calculates latent heat of vaporization [MJ/kg]
 /// \remark Uses Dingman equation 7-8 (Harrison, 1963) \cite Dingman1994  \cite Harrison1963HaM
 ///
 /// \param &T [in] Temperature in Celsius
@@ -658,19 +657,19 @@ double CelsiusToFarenheit(const double &T)
 /// \remark From Dingman pg. 273 \cite Dingman1994
 ///
 /// \param &e [in] Water vapour pressure [kPa]
-/// \param &ref_ht [in] Reference height [m] 
-/// \param &z_p_dis [in] Zero plane displacement [m] 
-/// \param &rough [in] Coefficient of roughness 
+/// \param &ref_ht [in] Reference height [m]
+/// \param &z_p_dis [in] Zero plane displacement [m]
+/// \param &rough [in] Coefficient of roughness
 /// \return Vertical transport efficiency [m s^2/kg]
 //
-double GetVerticalTransportEfficiency(const double &e, 
+double GetVerticalTransportEfficiency(const double &e,
                                       const double &ref_ht,
-                                      const double &z_p_dis, 
+                                      const double &z_p_dis,
                                       const double &rough)
 {
   double numer,denom;
 
-  numer = AIR_H20_MW_RAT*DENSITY_AIR; 
+  numer = AIR_H20_MW_RAT*DENSITY_AIR;
   denom = e*DENSITY_WATER*(6.25*(pow((log(((ref_ht) - z_p_dis)/rough)),2)));
 
   return numer/denom; //[m s^2 Kg^-1]
@@ -681,9 +680,9 @@ double GetVerticalTransportEfficiency(const double &e,
 /// \ref From Dingman eqn. 7-49 \cite Dingman1994, Howell, T.A and Evett, S.R., USDA-ARS \cite Howell2004
 ///
 /// \param &wind_vel [in] Wind velocity [m/d]
-/// \param &ref_ht [in] Reference height [m] 
-/// \param &zero_pl [in] Zero plane displacement [m] 
-/// \param &rough_ht [in] Roughness height [m] 
+/// \param &ref_ht [in] Reference height [m]
+/// \param &zero_pl [in] Zero plane displacement [m]
+/// \param &rough_ht [in] Roughness height [m]
 /// \param &vap_rough_ht [in] Vapour roughness height [m]
 /// \return Atmospheric conductivity [mm/s]
 //
@@ -692,14 +691,14 @@ double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
                                   const double &zero_pl,      //[m]
                                   const double &rough_ht,     //[m]
                                   const double &vap_rough_ht) //[m]
-{  
+{
   double atmos_cond;
   if (zero_pl==0.0){return 0.0;}
 
   //6.25 from Dingman equation 7-49 is roughly 1/VK^2 (~6)
   atmos_cond=(wind_vel*MM_PER_METER*pow(VON_KARMAN,2));
   atmos_cond/=(log((ref_ht-zero_pl)/rough_ht)*log((ref_ht-zero_pl)/vap_rough_ht));
-  
+
   return atmos_cond;//[mm/s]
 }
 
@@ -757,13 +756,13 @@ double GetDewPointTemp(const double &e)
 //
 string StringToUppercase(const string &s)
 {
-    string ret(s.size(), char());
-    for(int i = 0; i < (int)(s.size()); ++i)
-    {
-      if ((s[i] <= 'z' && s[i] >= 'a')){ret[i] =  s[i]-('a'-'A');}
-      else                             {ret[i]  = s[i];}
-    }
-    return ret;
+  string ret(s.size(), char());
+  for(int i = 0; i < (int)(s.size()); ++i)
+  {
+    if ((s[i] <= 'z' && s[i] >= 'a')){ret[i] =  s[i]-('a'-'A');}
+    else                             {ret[i]  = s[i];}
+  }
+  return ret;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -784,36 +783,36 @@ double fast_s_to_d (const char *p)
   // Skip leading white space, if any.
 
   while (white_space(*p) ) {
-      p += 1;
+    p += 1;
   }
 
   // Get sign, if any.
 
   sign = 1.0;
   if (*p == '-') {
-      sign = -1.0;
-      p += 1;
+    sign = -1.0;
+    p += 1;
 
   } else if (*p == '+') {
-      p += 1;
+    p += 1;
   }
 
   // Get digits before decimal point or exponent, if any.
 
   for (value = 0.0; valid_digit(*p); p += 1) {
-      value = value * 10.0 + (*p - '0');
+    value = value * 10.0 + (*p - '0');
   }
 
   // Get digits after decimal point, if any.
 
   if (*p == '.') {
-      double pow10 = 10.0;
+    double pow10 = 10.0;
+    p += 1;
+    while (valid_digit(*p)) {
+      value += (*p - '0') / pow10;
+      pow10 *= 10.0;
       p += 1;
-      while (valid_digit(*p)) {
-          value += (*p - '0') / pow10;
-          pow10 *= 10.0;
-          p += 1;
-      }
+    }
   }
 
   // Handle exponent, if any.
@@ -821,31 +820,31 @@ double fast_s_to_d (const char *p)
   frac = 0;
   scale = 1.0;
   if ((*p == 'e') || (*p == 'E')) {
-      unsigned int expon;
+    unsigned int expon;
 
-      // Get sign of exponent, if any.
+    // Get sign of exponent, if any.
 
+    p += 1;
+    if (*p == '-') {
+      frac = 1;
       p += 1;
-      if (*p == '-') {
-          frac = 1;
-          p += 1;
 
-      } else if (*p == '+') {
-          p += 1;
-      }
+    } else if (*p == '+') {
+      p += 1;
+    }
 
-      // Get digits of exponent, if any.
+    // Get digits of exponent, if any.
 
-      for (expon = 0; valid_digit(*p); p += 1) {
-          expon = expon * 10 + (*p - '0');
-      }
-      if (expon > 308) expon = 308;
+    for (expon = 0; valid_digit(*p); p += 1) {
+      expon = expon * 10 + (*p - '0');
+    }
+    if (expon > 308) expon = 308;
 
-      // Calculate scaling factor.
+    // Calculate scaling factor.
 
-      while (expon >= 50) { scale *= 1E50; expon -= 50; }
-      while (expon >=  8) { scale *= 1E8;  expon -=  8; }
-      while (expon >   0) { scale *= 10.0; expon -=  1; }
+    while (expon >= 50) { scale *= 1E50; expon -= 50; }
+    while (expon >=  8) { scale *= 1E8;  expon -=  8; }
+    while (expon >   0) { scale *= 10.0; expon -=  1; }
   }
 
   // Return signed and scaled floating point result.
@@ -877,7 +876,7 @@ HRU_type StringToHRUType(const string s)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns true if line is empty, begins with '#' or '*' 
+/// \brief returns true if line is empty, begins with '#' or '*'
 /// \param &s [in] first string token in file line
 /// \param Len length of line
 /// \return true if line is empty or a comment
@@ -929,23 +928,23 @@ double rvn_erfc(const double &x)
   static double tmp3;
 
   if(tmp > 3.0){
-    f1  = (1.0 - 1.0/(2.0 * tmp * tmp) 
-             + 3.0/(4.0 * pow(tmp,4)) 
-             - 5.0/(6.0 * pow(tmp,6)));
+    f1  = (1.0 - 1.0/(2.0 * tmp * tmp)
+           + 3.0/(4.0 * pow(tmp,4))
+           - 5.0/(6.0 * pow(tmp,6)));
     fun = f1 * exp(-tmp * tmp) / (tmp * sqrt(PI));
-  } 
+  }
   else{
     tmp2 = 1.0 / (1.0 + (0.3275911 * tmp));
     tmp3 =   0.254829592  * tmp2       //5th order polynomial interpolation
-         - (0.284496736 * tmp2 * tmp2) 
-         + (1.421413741 * pow(tmp2,3))
-         - (1.453152027 * pow(tmp2,4))
-         + (1.061405429 * pow(tmp2,5));
+      - (0.284496736 * tmp2 * tmp2)
+      + (1.421413741 * pow(tmp2,3))
+      - (1.453152027 * pow(tmp2,4))
+      + (1.061405429 * pow(tmp2,5));
     fun = tmp3 * exp(-tmp * tmp);
-  } 
+  }
   if (tmp == x) {return fun;}
   else{return (2-fun);}
-} 
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates the error function of passed value x
 /// \details Uses pre-defined complementary error function to define error function
@@ -975,11 +974,11 @@ double log_pdf(const double &x, const double &mu, const double &sig)
 //
 double LambertN(const double &x, const int N)
 {
-	double sigma,tmp;
-	sigma=pow(-2.0-2.0*log(-x),0.5);
-	if (N<=2){tmp=-1.0-0.5*sigma*sigma-sigma/(1.0+sigma/6.3);}
-	else     {tmp=LambertN(x,N-1);}
-	return (1+log(-x)-log(-tmp))*tmp/(1+tmp);
+  double sigma,tmp;
+  sigma=pow(-2.0-2.0*log(-x),0.5);
+  if (N<=2){tmp=-1.0-0.5*sigma*sigma-sigma/(1.0+sigma/6.3);}
+  else     {tmp=LambertN(x,N-1);}
+  return (1+log(-x)-log(-tmp))*tmp/(1+tmp);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -996,17 +995,17 @@ double gamma(double x)
 
   static double g[] = {
     1.0,                  0.5772156649015329, -0.6558780715202538,
-   -0.420026350340952e-1, 0.1665386113822915, -0.421977345555443e-1,
-   -0.9621971527877e-2,   0.7218943246663e-2, -0.11651675918591e-2,
-   -0.2152416741149e-3,   0.1280502823882e-3, -0.201348547807e-4,
-   -0.12504934821e-5,     0.1133027232e-5,    -0.2056338417e-6,
+    -0.420026350340952e-1, 0.1665386113822915, -0.421977345555443e-1,
+    -0.9621971527877e-2,   0.7218943246663e-2, -0.11651675918591e-2,
+    -0.2152416741149e-3,   0.1280502823882e-3, -0.201348547807e-4,
+    -0.12504934821e-5,     0.1133027232e-5,    -0.2056338417e-6,
     0.6116095e-8,         0.50020075e-8,      -0.11812746e-8,
     0.1043427e-9,         0.77823e-11,        -0.36968e-11,
     0.51e-12,            -0.206e-13,          -0.54e-14,
     0.14e-14};
 
   if (x > 171.0){return 0.0;}    // This value is an overflow flag.
-  if (x == (int)x) 
+  if (x == (int)x)
   {
     if (x > 0.0) {
       ga = 1.0;               // use factorial
@@ -1017,9 +1016,9 @@ double gamma(double x)
       ExitGracefully("Gamma:negative integer values not allowed",RUNTIME_ERR);
     }
   }
-  else 
+  else
   {
-    z=x;  
+    z=x;
     r=1.0;
     if (fabs(x) > 1.0) {
       z = fabs(x);
@@ -1041,9 +1040,9 @@ double gamma(double x)
 /////////////////////////////////////////////////////////////////
 /// \brief returns value of two parameter gamma function  with parameter a for input x \cite Toth2012
 /// \docminor This function and its parameters need to be documented
-/// \param &x [in] 
-/// \param &a [in] 
-/// \return 
+/// \param &x [in]
+/// \param &a [in]
+/// \return
 //
 double two_param_gamma(const double &x, const double &a)
 {
@@ -1100,7 +1099,7 @@ double GammaCumDist(const double &t, const double &a)
 /// \return Cumulative triangular distribution value for input t
 //
 double TriCumDist(const double &t, const double &tc, const double &tp)
-{ 
+{
   double b=2.0/tc;
   double m;
   if (t<0.0){return 0.0;}
@@ -1113,7 +1112,7 @@ double TriCumDist(const double &t, const double &tc, const double &tp)
     return tp/tc+b*(t-tp)+0.5*m*(t-tp)*(t-tp);
   }
   else{
-  return 1.0;
+    return 1.0;
   }
 }
 
@@ -1121,15 +1120,15 @@ double TriCumDist(const double &t, const double &tc, const double &tp)
 /// \brief Returns the cumulative distribution function at input t for a sequence of linear reservoirs
 /// \remark Basically the Gamma distribution for integer shape parameters. A common unit hydrograph format \n
 ///  - \math \f$ PDF(t)/UH(t)=t^{N-1}k^{N}e^{-kt} \f$
-///  - \math \f$ CDF(t)/cum UH(t)=1-e^{-kt}\sum_{n=0}^{N-1}t^n/n! \f$ 
-/// 
+///  - \math \f$ CDF(t)/cum UH(t)=1-e^{-kt}\sum_{n=0}^{N-1}t^n/n! \f$
+///
 /// \param &t [in] The input value whose CDF is to be determined
 /// \param &k [in] CDF Parameter (linear storage coeff)
 /// \param &NR [in] Integer number of reservoirs
 /// \return CDF at point t
 //
 double NashCumDist(const double &t, const double &k, const int &NR)
-{ 
+{
   if (t<0.0){return 0.0;}
   double fact=1.0;
   double prod=1.0;
@@ -1143,14 +1142,14 @@ double NashCumDist(const double &t, const double &k, const int &NR)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates cumulative kinematic wave solution distribution 
+/// \brief Calculates cumulative kinematic wave solution distribution
 /// \docminor These parameters need to be described
 ///
 /// \param &t
 /// \param &L
 /// \param &v
 /// \param &D
-/// \return Returns cumulative kinematic wave solution distribution 
+/// \return Returns cumulative kinematic wave solution distribution
 //
 //int_0^time L/2/t^(3/2)/sqrt(pi*D)*exp(-(v*t-L)^2/(4*D*t)) dt
 // extreme case (D->0): =1 for v*t<L, 0 otherwise
@@ -1179,11 +1178,11 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
 /// \param left [in] Left bound of sort
 /// \param right [in] Right bound of sort
 //
-void quickSort(double arr[], int left, int right) 
+void quickSort(double arr[], int left, int right)
 {
   if (right<=left){return;}//e.g., if array size==0
   int i = left, j = right;
-  double tmp; 
+  double tmp;
   double pivot = arr[(left + right) / 2];
 
   // partition
@@ -1204,7 +1203,7 @@ void quickSort(double arr[], int left, int right)
   if (i < right){quickSort(arr, i, right);}
 }
 ///////////////////////////////////////////////////////////////////
-/// \brief returns index of bin that lookup_val is contained in, where array aVals of size 'size' 
+/// \brief returns index of bin that lookup_val is contained in, where array aVals of size 'size'
 /// \param lookup_val [in] value to be looked up
 /// \param nguess [in] guess for bin index (0<=nguess<=size-2)
 /// \param *aVals [in] ordered array of bin values (size = nBins)
@@ -1217,7 +1216,7 @@ void quickSort(double arr[], int left, int right)
 int SmartLookup(const double lookup_val, const int nguess, const double *aVals, const int nBins)
 {
   int i,n;
-  if ((lookup_val>aVals[nguess]) && (lookup_val<=aVals[nguess+1])){return nguess;} //most likely choice 
+  if ((lookup_val>aVals[nguess]) && (lookup_val<=aVals[nguess+1])){return nguess;} //most likely choice
   if (lookup_val<aVals[0]      ){return 0;}
   if (lookup_val>aVals[nBins-2]){return nBins-2;}
 
@@ -1226,7 +1225,7 @@ int SmartLookup(const double lookup_val, const int nguess, const double *aVals, 
     n=nguess+i;
     if (n>nBins-2){n-=nBins-1;}//wraparound
 
-    if ((lookup_val>aVals[n]) && (lookup_val<=aVals[n+1])){ return n;}///second most likely case 
+    if ((lookup_val>aVals[n]) && (lookup_val<=aVals[n+1])){ return n;}///second most likely case
 
     n=nguess-i;
     if (n<0      ){n+=nBins-1;}//wraparound

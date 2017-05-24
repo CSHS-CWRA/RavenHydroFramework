@@ -1,22 +1,22 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-   Properties.h
-------------------------------------------------------------------
-  Contains definitions of property structures and declarations of 
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  Properties.h
+  ------------------------------------------------------------------
+  Contains definitions of property structures and declarations of
   default methods for their creation
   should also get a routine for checking validity of params
   visible to all classes
-    struct soil_struct, 
-    struct veg_struct, veg_var_struct, 
-    struct surface_struct
+  struct soil_struct,
+  struct veg_struct, veg_var_struct,
+  struct surface_struct
   default methods for their creation.
   Should also get a routine for checking validity of params
   visible to all classes:
-    - struct soil_struct, 
-    - struct veg_struct, veg_var_struct, 
-    - struct surface_struct
+  - struct soil_struct,
+  - struct veg_struct, veg_var_struct,
+  - struct surface_struct
   ----------------------------------------------------------------*/
 #ifndef DEFAULT_PROPS_H
 #define DEFAULT_PROPS_H
@@ -26,7 +26,7 @@ struct force_struct;
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Structure that, when instantiated, contains defining information that reflects a specific soil type.
-/// \details Soil properties calculated from soiltype. 
+/// \details Soil properties calculated from soiltype.
 /// \note If additional properties are added, default values/formulae for values need to be
 /// specified in CSoilClass::AutoCalculateSoilProps
 //
@@ -41,28 +41,28 @@ struct soil_struct
   //standard soil parameters
   double porosity;          ///< [0..1]    soil porosity
   double stone_frac;        ///< [0..1]    stone volume fraction
-  double bulk_density;      ///< [kg/m3]   bulk dry density 
+  double bulk_density;      ///< [kg/m3]   bulk dry density
   //double specific_storage;///< [-]       specific storage
 
   double cap_ratio;         ///< [-]       total water storage cap.=thick*cap_ratio ; cap_ratio=poro*(1-stone_f)
-  
+
   //Thermal properties
   double heat_capacity;     ///< [J/m3/K]   saturated *volumetric* heat capacity
   double thermal_cond;      ///< [W/m/K]    saturated soil thermal conductivity
 
   //unsaturated flow parameters
-  double hydraul_cond;      ///< [mm/d]  saturated hydraulic conductivity 
+  double hydraul_cond;      ///< [mm/d]  saturated hydraulic conductivity
   double clapp_b;           ///< [-]       clapp-hornberger exponent  \math \f$ {\psi}={\psi_a}*S^{-b} \f$
-  double clapp_n;           ///< [-]       clapp-hornberger transition parameters for 
+  double clapp_n;           ///< [-]       clapp-hornberger transition parameters for
   double clapp_m;           ///< [mm]      high saturation: \math \f$ {\psi}=m * (S - n) * (S - 1)\f$
   double sat_res;           ///< [0..1]    Hydroscopic minimum saturation / residual saturation
   double sat_wilt;          ///< [0..1]    wilting point saturation
-	double field_capacity;    ///< [0..1]    saturation at field capacity
+  double field_capacity;    ///< [0..1]    saturation at field capacity
   double air_entry_pressure;///< [-mm]     air entry pressure (a positive value)
-  double wilting_pressure;  ///< [-mm]     Wilting pressure 
+  double wilting_pressure;  ///< [-mm]     Wilting pressure
   double wetting_front_psi; ///< [-mm]     Wetting front matric potential (for GA model)
   double ksat_std_deviation;///< [-]       standard deviation in log(k_sat)
-  
+
   //evaporation parameters
   double evap_res_fc;       ///< [d/mm]     soil evaporation resistance at field capacity
   double shuttleworth_b;    ///< [-]        exponent in relation of soil evap res to water potential \math \f$ Res = {evap_res_fc} * ({\Psi}/{\psi_{fc}})^b \f$
@@ -78,23 +78,23 @@ struct soil_struct
   double VIC_alpha;         ///< [-]
   double VIC_evap_gamma;    ///< [-]       power law exponent for VIC soil evaporation
 
-  double max_perc_rate;     ///< [mm/d]    VIC/ARNO/GAWSER percolation rate - user defined between 0.010 - 1000.0 
+  double max_perc_rate;     ///< [mm/d]    VIC/ARNO/GAWSER percolation rate - user defined between 0.010 - 1000.0
   double perc_coeff;        ///< [1/d]     Linear percolation storage coefficient
   double perc_n;            ///< [-]       VIC/ARNO percolation exponent - user defined between 1.00 - 20.00
-  double SAC_perc_alpha;    ///< [-]       Sacremento percolation multiplier - user defined between 1.00 - 250.00 
-  double SAC_perc_expon;    ///< [-]       Sacremento percolation exponent - user defined between 1.00 - 5.00 
-  
-  double max_baseflow_rate; ///< [mm/d]    max baseflow rate (e.g., VIC_ARNO)- user defined between 0.001 - 10000.00 
-  double baseflow_n;        ///< [-]       VIC/ARNO baseflow exponent - user defined between 1.0 - 10.0 
-	double baseflow_coeff;    ///< [1/d]     Linear Baseflow storage coefficient [Q_base=K*S]
-  double baseflow_thresh;   ///< [0..1]    threshold saturation for onset of baseflow
-  
-  double max_cap_rise_rate; ///< [mm/d]    HBV max capillary rise rate
-  
-  double max_interflow_rate;///< [mm/d]    PRMS max_interflow rate 
-	double interflow_coeff;	  ///< [1/d]     Linear Interflow storage coefficient 
+  double SAC_perc_alpha;    ///< [-]       Sacremento percolation multiplier - user defined between 1.00 - 250.00
+  double SAC_perc_expon;    ///< [-]       Sacremento percolation exponent - user defined between 1.00 - 5.00
 
-	double HBV_beta;          ///< [?] 		   soil infiltration param from HBV (move to Surface struct?)
+  double max_baseflow_rate; ///< [mm/d]    max baseflow rate (e.g., VIC_ARNO)- user defined between 0.001 - 10000.00
+  double baseflow_n;        ///< [-]       VIC/ARNO baseflow exponent - user defined between 1.0 - 10.0
+  double baseflow_coeff;    ///< [1/d]     Linear Baseflow storage coefficient [Q_base=K*S]
+  double baseflow_thresh;   ///< [0..1]    threshold saturation for onset of baseflow
+
+  double max_cap_rise_rate; ///< [mm/d]    HBV max capillary rise rate
+
+  double max_interflow_rate;///< [mm/d]    PRMS max_interflow rate
+  double interflow_coeff;         ///< [1/d]     Linear Interflow storage coefficient
+
+  double HBV_beta;          ///< [?]               soil infiltration param from HBV (move to Surface struct?)
 
   double UBC_evap_soil_def; ///< [mm]      soil deficit at which AET=0.1*PET (UBCWM P0EGEN)
   double UBC_infil_soil_def;///< [mm]      soil deficit at which effective impermeable fraction depletes to 0.1 (UBCWM P0AGEN)
@@ -115,36 +115,36 @@ struct soil_struct
 //
 struct veg_struct
 {
-  //specified (required) properties  
+  //specified (required) properties
   double max_height;        ///< [m]       maximum vegetation height
-  double max_leaf_cond;     ///< [mm/s]    maximum leaf conductance 
-  double max_LAI;           ///< [m2/m2]   maximum Leaf Area Index 
+  double max_leaf_cond;     ///< [mm/s]    maximum leaf conductance
+  double max_LAI;           ///< [m2/m2]   maximum Leaf Area Index
 
   //estimable parameters - usually unchanged
   double svf_extinction;    ///< [-]       extinction coefficient used to calculate skyview factor; SVF=exp(-extinct*LAI)
   double rain_icept_fact;   ///< [-]       relates percentage of throughfall of rain to LAI+SAI (~0.06)
   double snow_icept_fact;   ///< [-]       relates percentage of throughfall of snow to LAI+SAI (~0.04)
-  double rain_icept_pct;    ///< [0..1]    percentage of rain intercepted (maximum) (only on canopy portion) 
+  double rain_icept_pct;    ///< [0..1]    percentage of rain intercepted (maximum) (only on canopy portion)
   double snow_icept_pct;    ///< [0..1]    percentage of snow intercepted (maximum) (only on canopy portion)
 
-  double SAI_ht_ratio;      ///< [m2/m3]   ratio of stem area index to height  
-  double trunk_fraction;    ///< [0..1]    fraction of canopy attributed to tree trunk 
+  double SAI_ht_ratio;      ///< [m2/m3]   ratio of stem area index to height
+  double trunk_fraction;    ///< [0..1]    fraction of canopy attributed to tree trunk
   double stemflow_frac;     ///< [0..1]    ~0.03
   //double max_bottom_elev; ///< [m]       bottom of canopy (e.g., CLM v3.5)
-  
+
   double albedo;            ///< [-]       visible/near-infrared albedo of leaf
   double albedo_wet;        ///< [-]       albedo of wet leaf
 
   double relative_ht[12];   ///< [m/m]     relative vegetation height over 12 mos (ht=rel_ht*max_ht)
-  double relative_LAI[12];  ///< [m/m]     relative vegetation LAI over 12 mos 
+  double relative_LAI[12];  ///< [m/m]     relative vegetation LAI over 12 mos
 
-  double max_capacity;      ///< [mm]      maximum canopy storage capacity 
-  double max_snow_capacity; ///< [mm]      maximum canopy snow storage capacity 
-  
-  //root properties 
+  double max_capacity;      ///< [mm]      maximum canopy storage capacity
+  double max_snow_capacity; ///< [mm]      maximum canopy snow storage capacity
+
+  //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
   double max_root_length;   ///< [mm/m2]   root length per unit canopy area
-  double min_resistivity;   ///< [d/mm]    1.0/max_conductivity  
+  double min_resistivity;   ///< [d/mm]    1.0/max_conductivity
   double xylem_frac;        ///< [0..1]    fraction of plant resistance in xylem (used to calculate xylem resistance)
   double rootradius;        ///< [mm]      average root radius (used to calculate cowan alpha)
   double psi_critical;      ///< [-mm]     minimum plant leaf water potential
@@ -163,11 +163,11 @@ struct veg_var_struct
 {
   //derived properties (temporally variable)-------------------------------------------
   //Updated in CVegegtationClass::RecalculateCanopyParams
-  double LAI;               //[m2/m2]   Leaf Area Index   
-  double SAI;               //[m2/m2]   Stem Area Index 
-  double height;            //[m]       vegetation height 
-  double capacity;          //[mm]      rain storage capacity 
-  double snow_capacity;     //[mm SWE]  snow storage capacity 
+  double LAI;               //[m2/m2]   Leaf Area Index
+  double SAI;               //[m2/m2]   Stem Area Index
+  double height;            //[m]       vegetation height
+  double capacity;          //[mm]      rain storage capacity
+  double snow_capacity;     //[mm SWE]  snow storage capacity
   double leaf_cond;         //[mm/s]    leaf conductance (same as stomatal conductance?)
   double canopy_conductance;//[mm/s]    leaf conductance corrected for shelter & LAI
   double rain_icept_pct;    //[0..1]    percentage of rain intercepted  (only on canopy portion)
@@ -181,7 +181,7 @@ struct veg_var_struct
   double reference_height;  ///< [m]       reference height for air properties above ground
 
   //derived root properties (temporally variable)-------------------------------------------
-  double root_length;       //[mm/m2]      root length per unit land area 
+  double root_length;       //[mm/m2]      root length per unit land area
   double resistivity;       //[d/mm]       plant resistance to water flow
 
   //should be portioned out by soil layer (made array in HRU?)
@@ -199,7 +199,7 @@ struct surface_struct
 {
   double impermeable_frac;  ///< [-]       fraction of surface that is impermeable
 
-  double roughness;         ///< [m]       roughness parameter of ground surface 
+  double roughness;         ///< [m]       roughness parameter of ground surface
                             //             used for evapotranspiration calcs
   double forest_coverage;   ///< [0..1]    fraction of land covered by canopy
   double forest_sparseness; ///< [0..1]    sparseness of canopy in land covered by forest
@@ -209,13 +209,13 @@ struct surface_struct
   //snow parameters
   double melt_factor;       ///< [mm/d/C]  maximum snow melt factor used in degree day and hybrid snowmelt models
   double min_melt_factor;   ///< [mm/d/C]  minimum snow melt factor used in degree day and hybrid snowmelt models
-  double refreeze_factor;		///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
-  double HBV_melt_for_corr; ///< [-]			 HBV snowmelt forest correction (MRF in HBV-EC)
-  double HBV_melt_asp_corr; ///< [-]			 HBV snowmelt aspect correction (AM in HBV-EC)
-  double snow_patch_limit;  ///< [mm]	     SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
-  
+  double refreeze_factor;               ///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
+  double HBV_melt_for_corr; ///< [-]                     HBV snowmelt forest correction (MRF in HBV-EC)
+  double HBV_melt_asp_corr; ///< [-]                     HBV snowmelt aspect correction (AM in HBV-EC)
+  double snow_patch_limit;  ///< [mm]        SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
+
   //Glacier parameters
-  double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G  
+  double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
   double HBV_melt_glacier_corr;///< [-]    degree day correction factor for glacial melt (MRG in HBV-EC)
   double HBV_glacier_Kmin;  ///< [-]       minimum linear storage coefficient for glacial melt =K*G (KG1 in HBV-EC)
   double HBV_glacier_Ag;    ///< [1/mm]    extinction coefficient for diminishing storage coefficient with snow depth atop glacier, AG (K=Kmin+(Kmax-Kmin)*exp(-ag*snow_depth))
@@ -229,12 +229,12 @@ struct surface_struct
   double SCS_Ia_fraction;   ///< [0..1]    fraction of rainfall/melt which is initially abstracted to depression storage (default=0.2)
 
   //surface storage variables
-  double max_sat_area_frac; ///< [-]       PRMS maximum saturated area (pct)- user defined between 0.050 - 0.950 
-  double b_exp;             ///< [-]       ARNO/VIC b exponent - user defined between 0.001 - 3.0 
-  
-  double dep_max;           ///< [mm]      maximum amount of water that can be stored in depressions    
+  double max_sat_area_frac; ///< [-]       PRMS maximum saturated area (pct)- user defined between 0.050 - 0.950
+  double b_exp;             ///< [-]       ARNO/VIC b exponent - user defined between 0.001 - 3.0
+
+  double dep_max;           ///< [mm]      maximum amount of water that can be stored in depressions
   double abst_percent;      ///< [0..1]    percentage of rainfall/melt which is abstracted to depression storage
-  double dep_max_flow;      ///< [mm/d]    outflow rate with full depression storage (dep_stor=dep_max)     
+  double dep_max_flow;      ///< [mm/d]    outflow rate with full depression storage (dep_stor=dep_max)
   double dep_n;             ///< [-]       power law coefficient for depression outflow
   double dep_threshhold;    ///< [mm]      threshold storage at which flow commences
 
@@ -242,7 +242,7 @@ struct surface_struct
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation
   double forest_PET_corr;   ///< [-]       fraction of PET to apply to forest evapotranspiration
 
-  double GR4J_x4;           ///< [d]       GR4J time routing parameter 
+  double GR4J_x4;           ///< [d]       GR4J time routing parameter
 };
 
 //////////////////////////////////////////////////////////////////
@@ -253,8 +253,8 @@ struct terrain_struct
 {
   double drainage_density;  ///< [km/km2] length of *all* rivers in a basin divided by the area of the drainage basin
   double hillslope_length;  ///< [m]      representative hillslope length within the watershed
-  
-  double lambda;            ///< [m]      TOPMODEL mean of the log-transformed topographic index (between 5.0 - 10.0) 
+
+  double lambda;            ///< [m]      TOPMODEL mean of the log-transformed topographic index (between 5.0 - 10.0)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -262,7 +262,7 @@ struct terrain_struct
 ///
 //
 struct UBC_lapse
-{ //defined in UBCWM manual 
+{ //defined in UBCWM manual
   double A0STAB;  ///< [0..1] Precipitation gradient modification factor (default 0.01)
   double A0TLXM;  ///< [°C / 1000 m] Lapse rate for maximum temperatures when  the station elevation is less than 2000 m (default 10)
   double A0TLNM;  ///< [°C / 1000 m] Lapse rate for minimum temperatures when the station elevation is less than 2000 m (default 0.5)
@@ -300,20 +300,20 @@ struct UBC_snow_par{
 //
 struct global_struct
 {
-  UBC_lapse        UBC_lapse_params;  ///< parameters for orographic corrections  
+  UBC_lapse        UBC_lapse_params;  ///< parameters for orographic corrections
   double           UBC_s_corr[12];    ///< UBC solar radiation corrections
-  double           UBC_n_corr[12];    ///< 
+  double           UBC_n_corr[12];    ///<
   UBC_snow_par     UBC_snow_params;   ///< UBC snow parameters
   double           UBC_GW_split;      ///< UBC GW Split parameter [0..1]
-  double           UBC_exposure_fact; ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1] 
+  double           UBC_exposure_fact; ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1]
   double           UBC_cloud_penet;   ///< UBC Fraction of solar radiation penetrating cloud cover [0..1]
   double           UBC_LW_forest_fact;///< UBC mulitplier of temperature to estimate LW radiation in forests (P0BLUE*P0LWVF) [mm/d/K]
   double           UBC_flash_ponding; ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
-  
+
   double           adiabatic_lapse;   ///< [°C/km]
   double           wet_adiabatic_lapse;///< [°C/km]
   double           precip_lapse;      ///< [mm/d/km] precipitation lapse rate for orographic correction
-  
+
   double           rainsnow_temp;     ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
   double           rainsnow_delta;    ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
   double           snow_SWI;          ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow (as pct of snow porosity)

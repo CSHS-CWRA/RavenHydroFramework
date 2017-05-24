@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Infiltration.h"
 
@@ -12,12 +12,12 @@
 /// \param itype [in] Model of infiltration selected
 //
 CmvInfiltration::CmvInfiltration(infil_type  itype)
-            :CHydroProcessABC(INFILTRATION)
+  :CHydroProcessABC(INFILTRATION)
 {
   type =itype;
   CHydroProcessABC::DynamicSpecifyConnections(2);
   //infiltration (ponded-->soil)
-  iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);      iTo  [0]=pModel->GetStateVarIndex(SOIL,0); 
+  iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);      iTo  [0]=pModel->GetStateVarIndex(SOIL,0);
   //runoff/remainder (ponded->surface water)
   iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);      iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER);
 
@@ -25,27 +25,27 @@ CmvInfiltration::CmvInfiltration(infil_type  itype)
   {
     CHydroProcessABC::DynamicSpecifyConnections(4);
 
-    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);     iTo  [0]=pModel->GetStateVarIndex(SOIL,0); 
-    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);     iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER); 
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);     iTo  [0]=pModel->GetStateVarIndex(SOIL,0);
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);     iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER);
     iFrom[2]=pModel->GetStateVarIndex(CUM_INFIL);        iTo  [2]=pModel->GetStateVarIndex(CUM_INFIL);
     iFrom[3]=pModel->GetStateVarIndex(GA_MOISTURE_INIT); iTo  [3]=pModel->GetStateVarIndex(GA_MOISTURE_INIT);
   }
   else if (type==INF_UBC){
     CHydroProcessABC::DynamicSpecifyConnections(5);
     ExitGracefullyIf(pModel->GetNumSoilLayers()<4,
-      "INF_UBCWM infiltration algorithm requires at least 4 soil layers to operate. Please use a different :SoilModel or replace this infiltration algorithm.",BAD_DATA);
-    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [0]=pModel->GetStateVarIndex(SOIL,0); 
-    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER); 
-    iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [2]=pModel->GetStateVarIndex(SOIL,1); 
-    iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [3]=pModel->GetStateVarIndex(SOIL,2); 
-    iFrom[4]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [4]=pModel->GetStateVarIndex(SOIL,3); 
+                     "INF_UBCWM infiltration algorithm requires at least 4 soil layers to operate. Please use a different :SoilModel or replace this infiltration algorithm.",BAD_DATA);
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [0]=pModel->GetStateVarIndex(SOIL,0);
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER);
+    iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [2]=pModel->GetStateVarIndex(SOIL,1);
+    iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [3]=pModel->GetStateVarIndex(SOIL,2);
+    iFrom[4]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [4]=pModel->GetStateVarIndex(SOIL,3);
   }
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
 //
-CmvInfiltration::~CmvInfiltration(){} 
+CmvInfiltration::~CmvInfiltration(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Checks that process moves water to soil or lumped landform
@@ -53,7 +53,7 @@ CmvInfiltration::~CmvInfiltration(){}
 void CmvInfiltration::Initialize()
 {
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=SOIL,
-    "CmvInfiltration::Initialize:Infiltration must go to soil ",BAD_DATA); 
+                   "CmvInfiltration::Initialize:Infiltration must go to soil ",BAD_DATA);
 
   //Lumped landform only valid for SCS, partition coefficient
 
@@ -76,27 +76,27 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
     aP[1]="SCS_IA_FRACTION";  aPC[1]=CLASS_LANDUSE;
   }
   else if (type==INF_SCS_NOABSTRACTION)
-  { 
+  {
     nP=1;
     aP[0]="SCS_CN";           aPC[0]=CLASS_LANDUSE;
   }
-  else if (type==INF_RATIONAL) 
-  { 
+  else if (type==INF_RATIONAL)
+  {
     nP=1;
-    aP[0]="PARTITION_COEFF"; aPC[0]=CLASS_LANDUSE; 
+    aP[0]="PARTITION_COEFF"; aPC[0]=CLASS_LANDUSE;
   }
   else if (type==INF_ALL_INFILTRATES)
   {
-    nP=1; 
-    aP[0]="IMPERMEABLE_FRAC"; aPC[0]=CLASS_LANDUSE;  
-  } 
+    nP=1;
+    aP[0]="IMPERMEABLE_FRAC"; aPC[0]=CLASS_LANDUSE;
+  }
   else if ((type==INF_GREEN_AMPT) || (type==INF_GA_SIMPLE))
   {
     nP=4;
-    aP[0]="HYDRAUL_COND";      aPC[0]=CLASS_SOIL; 
-    aP[1]="WETTING_FRONT_PSI"; aPC[1]=CLASS_SOIL; 
-    aP[2]="POROSITY";          aPC[2]=CLASS_SOIL; 
-    aP[3]="IMPERMEABLE_FRAC";  aPC[3]=CLASS_LANDUSE; 
+    aP[0]="HYDRAUL_COND";      aPC[0]=CLASS_SOIL;
+    aP[1]="WETTING_FRONT_PSI"; aPC[1]=CLASS_SOIL;
+    aP[2]="POROSITY";          aPC[2]=CLASS_SOIL;
+    aP[3]="IMPERMEABLE_FRAC";  aPC[3]=CLASS_LANDUSE;
   }
   else if (type==INF_UPSCALED_GREEN_AMPT)
   {
@@ -106,62 +106,62 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
     aP[2]="KSAT_STD_DEVIATION";aPC[2]=CLASS_SOIL;
     aP[3]="POROSITY";          aPC[3]=CLASS_SOIL;
     aP[4]="IMPERMEABLE_FRAC";  aPC[4]=CLASS_LANDUSE;
-  } 
+  }
   else if (type==INF_PHILIP_1957)
   {
     nP=0;
   }
-  else if (type==INF_VIC)     
+  else if (type==INF_VIC)
   {
     nP=5;
-    aP[0]="VIC_ZMAX";         aPC[0]=CLASS_SOIL; 
-    aP[1]="VIC_ZMIN";         aPC[1]=CLASS_SOIL; 
-    aP[2]="VIC_ALPHA";        aPC[2]=CLASS_SOIL; 
-    aP[3]="POROSITY";         aPC[3]=CLASS_SOIL; 
-    aP[4]="IMPERMEABLE_FRAC"; aPC[4]=CLASS_LANDUSE; 
+    aP[0]="VIC_ZMAX";         aPC[0]=CLASS_SOIL;
+    aP[1]="VIC_ZMIN";         aPC[1]=CLASS_SOIL;
+    aP[2]="VIC_ALPHA";        aPC[2]=CLASS_SOIL;
+    aP[3]="POROSITY";         aPC[3]=CLASS_SOIL;
+    aP[4]="IMPERMEABLE_FRAC"; aPC[4]=CLASS_LANDUSE;
   }
   else if (type==INF_VIC_ARNO)
   {
     nP=3;
-    aP[0]="B_EXP";            aPC[0]=CLASS_SOIL;  
-    aP[1]="POROSITY";         aPC[1]=CLASS_SOIL; 
-    aP[2]="IMPERMEABLE_FRAC"; aPC[2]=CLASS_LANDUSE; 
+    aP[0]="B_EXP";            aPC[0]=CLASS_SOIL;
+    aP[1]="POROSITY";         aPC[1]=CLASS_SOIL;
+    aP[2]="IMPERMEABLE_FRAC"; aPC[2]=CLASS_LANDUSE;
   }
   else if (type==INF_TOPMODEL)
-  {		
+  {
     nP=0;
     // algorithm not completed
   }
-  else if (type==INF_PRMS)    
+  else if (type==INF_PRMS)
   {
     nP=5;
-    aP[0]="MAX_SAT_AREA_FRAC"; aPC[0]=CLASS_LANDUSE; 
-    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL; 
+    aP[0]="MAX_SAT_AREA_FRAC"; aPC[0]=CLASS_LANDUSE;
+    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
     aP[2]="FIELD_CAPACITY";    aPC[2]=CLASS_SOIL;
     aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
-    aP[4]="IMPERMEABLE_FRAC";  aPC[4]=CLASS_LANDUSE; 
+    aP[4]="IMPERMEABLE_FRAC";  aPC[4]=CLASS_LANDUSE;
   }
-  else if (type==INF_HBV)     
+  else if (type==INF_HBV)
   {
     nP=3;
-    aP[0]="POROSITY";         aPC[0]=CLASS_SOIL; 
-    aP[1]="HBV_BETA";         aPC[1]=CLASS_SOIL; 
-    aP[2]="IMPERMEABLE_FRAC"; aPC[2]=CLASS_LANDUSE;  
-  } 
-  else if (type==INF_UBC)     
+    aP[0]="POROSITY";         aPC[0]=CLASS_SOIL;
+    aP[1]="HBV_BETA";         aPC[1]=CLASS_SOIL;
+    aP[2]="IMPERMEABLE_FRAC"; aPC[2]=CLASS_LANDUSE;
+  }
+  else if (type==INF_UBC)
   {
     nP=6;
-    aP[0]="IMPERMEABLE_FRAC";      aPC[0]=CLASS_LANDUSE; 
-    aP[1]="MAX_PERC_RATE";         aPC[1]=CLASS_SOIL; 
-    aP[2]="UBC_INFIL_SOIL_DEF";    aPC[2]=CLASS_SOIL; 
-    aP[3]="POROSITY";              aPC[3]=CLASS_SOIL; 
+    aP[0]="IMPERMEABLE_FRAC";      aPC[0]=CLASS_LANDUSE;
+    aP[1]="MAX_PERC_RATE";         aPC[1]=CLASS_SOIL;
+    aP[2]="UBC_INFIL_SOIL_DEF";    aPC[2]=CLASS_SOIL;
+    aP[3]="POROSITY";              aPC[3]=CLASS_SOIL;
     aP[4]="UBC_GW_SPLIT";          aPC[4]=CLASS_GLOBAL;
     aP[5]="UBC_FLASH_PONDING";     aPC[5]=CLASS_GLOBAL;
   }
-  else if (type==INF_GR4J)     
+  else if (type==INF_GR4J)
   {
     nP=1;
-    aP[0]="POROSITY";              aPC[0]=CLASS_SOIL; 
+    aP[0]="POROSITY";              aPC[0]=CLASS_SOIL;
   }
   else
   {
@@ -177,7 +177,7 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by infiltration algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aSV, int *aLev, int &nSV) 
+void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=2;
   aSV[0]=PONDED_WATER;  aLev[0]=DOESNT_EXIST;
@@ -203,14 +203,14 @@ void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aS
 
 //////////////////////////////////////////////////////////////////
 /// \brief Partitions ponded water between infiltration and runoff [mm/day]
-/// \note  most routines completely deplete ponded water 
-/// \details 
+/// \note  most routines completely deplete ponded water
+/// \details
 /// if type=INF_RATIONAL
-///		<ul> <li> simple rational method - some percentage of ponded </ul>
+///             <ul> <li> simple rational method - some percentage of ponded </ul>
 /// if type==INF_SCS
-///		<ul> <li> SCS curve number used, abstraction estimated as Ia ~0.2*S </ul>
+///             <ul> <li> SCS curve number used, abstraction estimated as Ia ~0.2*S </ul>
 /// if type==INF_SCS
-///		<ul> <li> SCS curve number used, abstraction is modeled independently </ul>
+///             <ul> <li> SCS curve number used, abstraction is modeled independently </ul>
 /// if type==INF_GREEN_AMPT
 ///     <ul> <li> Green Ampt model (1911) - implicit formulation </ul> \cite green1911JoAS
 /// if type==INF_GA_SIMPLE
@@ -219,14 +219,14 @@ void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aS
 ///     <ul> <li> Simple infiltration as performed in the UBC watershed model </ul>
 /// \ref c) Michael Quick
 /// if type==INF_PHILIP_1957
-///   	<ul> <li> Simple infiltration as calculated using the Philip 1957 solution </ul> \cite Philip1957SS
+///     <ul> <li> Simple infiltration as calculated using the Philip 1957 solution </ul> \cite Philip1957SS
 /// if type==INF_VIC
-///    	<ul> <li> Calculates infiltration using the VIC (Variable Infiltration Capacity) model </ul>
+///     <ul> <li> Calculates infiltration using the VIC (Variable Infiltration Capacity) model </ul>
 ///    \ref of Wood et al. 1992. This is based upon the SPM formalism developed by Kavetski et al., 2003 \cite Wood1992JoGR \cite Kavetski2003WRR
 /// if type==INF_VIC_ARNO
-///  	<ul> <li> Calculates infiltration using VIC/ARNO (Variable Infiltration Capacity) </ul>
-///	if type==INF_PRMS
-///		<ul> <li> Salculates infiltration using PRMS model as defined in FUSE </ul>
+///     <ul> <li> Calculates infiltration using VIC/ARNO (Variable Infiltration Capacity) </ul>
+///     if type==INF_PRMS
+///             <ul> <li> Salculates infiltration using PRMS model as defined in FUSE </ul>
 ///  In all cases:
 ///   - infiltration=rates[0]
 ///   -  runoff      =rates[1]
@@ -239,11 +239,11 @@ void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aS
 /// \param &tt [in] Current model time
 /// \param *rates [out] Array of rates of change of state variables [mm/day]
 //
-void CmvInfiltration::GetRatesOfChange (const double		  *state_vars, 
-																				const CHydroUnit  *pHRU, 
-																				const optStruct	  &Options,
-																				const time_struct &tt,
-																				      double      *rates) const
+void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
+                                        const CHydroUnit  *pHRU,
+                                        const optStruct   &Options,
+                                        const time_struct &tt,
+                                        double      *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers & rock
 
@@ -261,31 +261,31 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
   int iTopSoil  =pModel->GetStateVarIndex(SOIL,0);
 
   //-----------------------------------------------------------------
-	if (type==INF_RATIONAL)
-	{
-		runoff=pHRU->GetSurfaceProps()->partition_coeff*rainthru;
+  if (type==INF_RATIONAL)
+  {
+    runoff=pHRU->GetSurfaceProps()->partition_coeff*rainthru;
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
-	}	
+  }
   //-----------------------------------------------------------------
-	else if ((type==INF_SCS) || (type==INF_SCS_NOABSTRACTION))
-	{
-		runoff=GetSCSRunoff(pHRU,Options,tt,rainthru);
+  else if ((type==INF_SCS) || (type==INF_SCS_NOABSTRACTION))
+  {
+    runoff=GetSCSRunoff(pHRU,Options,tt,rainthru);
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
-	}
+  }
   //-----------------------------------------------------------------
-	else if (type==INF_ALL_INFILTRATES)
-	{
-		runoff=0.0;
+  else if (type==INF_ALL_INFILTRATES)
+  {
+    runoff=0.0;
     runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
-	}
+  }
   //-----------------------------------------------------------------
-   else if (type==INF_PHILIP_1957)
+  else if (type==INF_PHILIP_1957)
   {
-     //< \todo [add funct] Add Philip 1957 infiltration alg.
+    //< \todo [add funct] Add Philip 1957 infiltration alg.
     ExitGracefully("CmvInfiltration::INF_PHILIP_1957",STUB);
   }
   //-----------------------------------------------------------------
@@ -301,7 +301,7 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
     zmin    =pHRU->GetSoilProps(0)->VIC_zmin;
     alpha   =pHRU->GetSoilProps(0)->VIC_alpha;
 
-    sat     =min(stor/max_stor,1.0);  
+    sat     =min(stor/max_stor,1.0);
     gamma   =1.0/(alpha+1.0);
     K1      =pow((zmax-zmin)*alpha*gamma,-gamma);
     Smax    =gamma*(alpha*zmax+zmin);
@@ -314,33 +314,15 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
     rates[1]=runoff;
   }
   //-----------------------------------------------------------------
-	else if (type==INF_HBV)
-	{
+  else if (type==INF_HBV)
+  {
     double beta,stor,max_stor,sat;
     stor    =state_vars[iTopSoil];
     max_stor=pHRU->GetSoilCapacity(0);
     beta    =pHRU->GetSoilProps(0)->HBV_beta;
     sat     =max(min(stor/max_stor,1.0),0.0);
 
-	  runoff=pow(sat,beta)*rainthru;
-
-    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
-
-    rates[0]=rainthru-runoff;
-    rates[1]=runoff;
-  }  
-  //-----------------------------------------------------------------
-	else if (type==INF_VIC_ARNO)
-  {  
-    double sat_area,stor,max_stor,b,sat;		
-
-    stor    =state_vars[iTopSoil];
-    max_stor=pHRU->GetSoilCapacity(0);	      //maximum storage of top soil layer [mm]
-	  b				=pHRU->GetSurfaceProps()->b_exp;	//ARNO/VIC b exponent for runoff [-]
-    sat     =min(stor/max_stor,1.0);          //soil saturation
-	  sat_area=1.0 - pow(1.0-sat,b);            //saturated area [-] fraction
-   
-	  runoff  =sat_area*rainthru;
+    runoff=pow(sat,beta)*rainthru;
 
     runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
 
@@ -348,7 +330,25 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
     rates[1]=runoff;
   }
   //-----------------------------------------------------------------
-	else if (type==INF_PRMS)
+  else if (type==INF_VIC_ARNO)
+  {
+    double sat_area,stor,max_stor,b,sat;
+
+    stor    =state_vars[iTopSoil];
+    max_stor=pHRU->GetSoilCapacity(0);        //maximum storage of top soil layer [mm]
+    b                             =pHRU->GetSurfaceProps()->b_exp;        //ARNO/VIC b exponent for runoff [-]
+    sat     =min(stor/max_stor,1.0);          //soil saturation
+    sat_area=1.0 - pow(1.0-sat,b);            //saturated area [-] fraction
+
+    runoff  =sat_area*rainthru;
+
+    runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
+
+    rates[0]=rainthru-runoff;
+    rates[1]=runoff;
+  }
+  //-----------------------------------------------------------------
+  else if (type==INF_PRMS)
   {
     double stor,tens_stor,sat_frac;
     sat_frac =pHRU->GetSurfaceProps()->max_sat_area_frac;
@@ -363,20 +363,20 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
     rates[1]=runoff;
   }
   //-----------------------------------------------------------------
-	else if (type==INF_TOPMODEL)
+  else if (type==INF_TOPMODEL)
   {
-    double sat_area;								                     //saturated area [-] fraction
-	  //double lambda		= pHRU->GetTerrainProps()->lambda ;	 //mean of the log-transformed topographical index [m]
-   // double stor     = state_vars[iTopSoil];
-   // double max_stor = pHRU->GetSoilCapacity(0);	         //maximum storage of soil layer [mm]
+    double sat_area;                                                                                 //saturated area [-] fraction
+    //double lambda               = pHRU->GetTerrainProps()->lambda ;      //mean of the log-transformed topographical index [m]
+    // double stor     = state_vars[iTopSoil];
+    // double max_stor = pHRU->GetSoilCapacity(0);                //maximum storage of soil layer [mm]
 
-	  //double xi = lambda * pow(stor/max_stor,-1);
+    //double xi = lambda * pow(stor/max_stor,-1);
 
-	  sat_area = 0;///< \todo [add funct] calculate saturated area for TOPMODEL routine
-  
+    sat_area = 0;///< \todo [add funct] calculate saturated area for TOPMODEL routine
+
     ExitGracefully("GetTOPMODELRUNOFF",STUB);
 
-    runoff =  sat_area * rainthru;		//runoff rate [mm/d]
+    runoff =  sat_area * rainthru;              //runoff rate [mm/d]
 
     runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
 
@@ -384,31 +384,31 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
     rates[1]=runoff;
   }
   //-----------------------------------------------------------------
-	else if ((type==INF_GREEN_AMPT) || (type==INF_GA_SIMPLE))
-	{
-		GetGreenAmptRunoff(state_vars,pHRU,Options,tt,rates,rainthru);
-	}
+  else if ((type==INF_GREEN_AMPT) || (type==INF_GA_SIMPLE))
+  {
+    GetGreenAmptRunoff(state_vars,pHRU,Options,tt,rates,rainthru);
+  }
   //-----------------------------------------------------------------
-	else if (type==INF_UPSCALED_GREEN_AMPT)
-	{
-		runoff=GetHeterogeneousGreenAmptRunoff(rainthru,
-																					 pHRU->GetSoilProps(0),
-																					 pHRU->GetSoilThickness(0),
-																					 state_vars[iTopSoil],
-																					 tt,Options);
+  else if (type==INF_UPSCALED_GREEN_AMPT)
+  {
+    runoff=GetHeterogeneousGreenAmptRunoff(rainthru,
+                                           pHRU->GetSoilProps(0),
+                                           pHRU->GetSoilThickness(0),
+                                           state_vars[iTopSoil],
+                                           tt,Options);
     runoff=(Fimp)*rainthru+(1-Fimp)*runoff; //correct for impermeable surfaces
 
     rates[0]=rainthru-runoff;
     rates[1]=runoff;
-	}
+  }
   //-----------------------------------------------------------------
-	else if (type==INF_UBC)
-	{
+  else if (type==INF_UBC)
+  {
     GetUBCWMRunoff(state_vars,pHRU,Options,tt,rates,rainthru);
-  } 
+  }
   //-----------------------------------------------------------------
-	else if (type==INF_GR4J)
-	{
+  else if (type==INF_GR4J)
+  {
     double x1=pHRU->GetSoilCapacity(0);
     double infil;
     double tmp;
@@ -427,7 +427,7 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 /// \remark Presumes overfilling of "to" compartment (soil) is handled using cascade
 ///
@@ -437,11 +437,11 @@ void CmvInfiltration::GetRatesOfChange (const double		  *state_vars,
 /// \param &tt [in] Current model time
 /// \param *rates [out] Corrected rate of infiltration [mm/day]
 //
-void   CmvInfiltration::ApplyConstraints( const double     *storage, 
-                                          const CHydroUnit *pHRU, 
+void   CmvInfiltration::ApplyConstraints( const double     *storage,
+                                          const CHydroUnit *pHRU,
                                           const optStruct  &Options,
                                           const time_struct &tt,
-                                                double     *rates) const
+                                          double     *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
 
@@ -451,8 +451,8 @@ void   CmvInfiltration::ApplyConstraints( const double     *storage,
   //reaching soil saturation level
   double max_stor=pHRU->GetStateVarMax(iTo[0],storage,Options);
   double inf=threshMin(rates[0],
-			                  max(max_stor-storage[iTo[0]],0.0)/Options.timestep,0.0);
-  
+                       max(max_stor-storage[iTo[0]],0.0)/Options.timestep,0.0);
+
   rates[1]+=(rates[0]-inf);
   rates[0]=inf;
 }
@@ -466,52 +466,52 @@ void   CmvInfiltration::ApplyConstraints( const double     *storage,
 /// \param &rainthru [in] Double rainfall/snowmelt rate [mm/d]
 /// \return Runoff from rainfall [mm/d] according to SCS curve number method
 //
-double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU, 
-										                 const optStruct	 &Options,
-										                 const time_struct &tt,
+double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
+                                     const optStruct         &Options,
+                                     const time_struct &tt,
                                      const double     &rainthru) const
 {
-	int		 condition=2;			//antecedent moisture condition
-	double S,CN,W,Weff;     //retention parameter [mm], CNII, rainfall [mm], runoff [mm]
+  int              condition=2;                   //antecedent moisture condition
+  double S,CN,W,Weff;     //retention parameter [mm], CNII, rainfall [mm], runoff [mm]
   double TR;              //total rain over past 5 days [in]
   double Ia;              //initial abstraction, [mm]
 
   TR=pHRU->GetForcingFunctions()->precip_5day/MM_PER_INCH;
-	CN=pHRU->GetSurfaceProps()->SCS_CN; 
+  CN=pHRU->GetSurfaceProps()->SCS_CN;
 
-	//correct curve number for antecedent moisture conditions
-	if ((tt.month>4) && (tt.month<9)){//growing season?? (northern hemisphere)
-  //if (pHRU->GetForcingFunctions()->is_growing_season){
-  //if (pHRU->GetStateVarValue(pModel->GetStateVarIndex(CROP_HEAT_UNITS))>-0.5){
-		if      (TR<1.4){condition=1;}
-		else if (TR>2.1){condition=3;}
-	}
-	else{
-		if      (TR<0.5){condition=1;}
-		else if (TR>1.1){condition=3;}
-	}
+  //correct curve number for antecedent moisture conditions
+  if ((tt.month>4) && (tt.month<9)){//growing season?? (northern hemisphere)
+    //if (pHRU->GetForcingFunctions()->is_growing_season){
+    //if (pHRU->GetStateVarValue(pModel->GetStateVarIndex(CROP_HEAT_UNITS))>-0.5){
+    if      (TR<1.4){condition=1;}
+    else if (TR>2.1){condition=3;}
+  }
+  else{
+    if      (TR<0.5){condition=1;}
+    else if (TR>1.1){condition=3;}
+  }
   if      (condition==1){CN = 5E-05 *pow(CN,3) + 0.0008*pow(CN,2) + 0.4431*CN;}//0.999R^2 with tabulated values (JRC)
   else if (condition==3){CN = 7E-05 *pow(CN,3) - 0.0185*pow(CN,2) + 2.1586*CN;}//0.999R^2 with tabulated values (JRC)
 
-	//calculate amount of runoff
-	S   =MM_PER_INCH*(1000.0/CN-100.0);	
-	W   =rainthru*Options.timestep;//[mm]
+  //calculate amount of runoff
+  S   =MM_PER_INCH*(1000.0/CN-100.0);
+  W   =rainthru*Options.timestep;//[mm]
   if (type!=INF_SCS_NOABSTRACTION)
   {
-    Ia  =(pHRU->GetSurfaceProps()->SCS_Ia_fraction)*S;//SCS_Ia_fraction is =0.2 for standard SCS implementation 
+    Ia  =(pHRU->GetSurfaceProps()->SCS_Ia_fraction)*S;//SCS_Ia_fraction is =0.2 for standard SCS implementation
   }
-  else 
+  else
   {
     Ia=0.0;//abstraction handled by another routine
     //Note: when tied to an SCS Abstraction algorithm which explicitly tracks depression storage
     //"rainthru" is what remains after abstraction, i.e., W=W-Ia, or SCS_Ia_fraction=0.0
   }
-	Weff=pow(threshPositive(W-Ia),2)/(W+(S-Ia));//[mm] 
- 
-  //alternate conceptualization  Weff=W*(1/(1+S/W))  
+  Weff=pow(threshPositive(W-Ia),2)/(W+(S-Ia));//[mm]
+
+  //alternate conceptualization  Weff=W*(1/(1+S/W))
   //more clearly indicates trend: Weff=0.5 W when S=W, =0 for W=0, =1 as W->infty
-  	
-	return Weff/Options.timestep;
+
+  return Weff/Options.timestep;
 
 }
 
@@ -526,16 +526,16 @@ double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
 /// \param *rates [out] Calculated runoff  and infiltration from rainfall [mm/d]
 /// \param &rainthru [in] Double rainfall/snowmelt rate applied to ground surface [mm/d]
 //
-void CmvInfiltration::GetUBCWMRunoff    (const double		  *state_vars, 
-                                         const CHydroUnit  *pHRU, 
-										                     const optStruct	  &Options,
-										                     const time_struct &tt,
-                                               double      *rates,
+void CmvInfiltration::GetUBCWMRunoff    (const double             *state_vars,
+                                         const CHydroUnit  *pHRU,
+                                         const optStruct      &Options,
+                                         const time_struct &tt,
+                                         double      *rates,
                                          const double      &rainthru) const
 
 {
   const double V0FLAX=1800.0; //[mm]
-  
+
   double infil,to_GW,to_interflow,runoff;
   double flash_factor,b1,b2;
 
@@ -546,12 +546,12 @@ void CmvInfiltration::GetUBCWMRunoff    (const double		  *state_vars,
   double P0AGEN       =pHRU->GetSoilProps(0)->UBC_infil_soil_def;
   double P0DSH        =CGlobalParams::GetParams()->UBC_GW_split;
   double V0FLAS       =CGlobalParams::GetParams()->UBC_flash_ponding;//[mm]
-  
+
   //calculate b1 parameter (effective permeable area without flash factor)
   b1=1.0;
   if (Fimp<1.0) {
-      b1 = Fimp*pow(10.0, -soil_deficit / P0AGEN);
-      //b1 = Fimp-(1.0-Fimp)*pow(10, -soil_deficit / P0AGEN);  //[GJ] better
+    b1 = Fimp*pow(10.0, -soil_deficit / P0AGEN);
+    //b1 = Fimp-(1.0-Fimp)*pow(10, -soil_deficit / P0AGEN);  //[GJ] better
   }
 
   //calculate flash factor (for high intensity storms)
@@ -575,20 +575,20 @@ void CmvInfiltration::GetUBCWMRunoff    (const double		  *state_vars,
   infil*=1-b2;
   to_GW*=1-b2;
   to_interflow*=1-b2;
-   
-	runoff      =rainthru-infil-to_GW-to_interflow; //equivalently, b2*rainthru?
-	
+
+  runoff      =rainthru-infil-to_GW-to_interflow; //equivalently, b2*rainthru?
+
   //NS: This seems like a much more intuitive way to do this, but maybe breaks emulation?
   //runoff      = b2*rainthru;
   //infil       =min(soil_deficit/Options.timestep,rainthru-runoff      );//fills soil deficit
   //to_GW       =min(max_perc_rate,                rainthru-runoff-infil);//overflows to GW
   //to_interflow=(rainthru-runoff-infil-to_GW);                           //overflows to interflow
-  
+
   // cout<<state_vars[iTo[0]]<<" "<<pHRU->GetSoilCapacity(0)<<" "<<pHRU->GetSoilThickness(0)<<" "<<soil_deficit<<" "<<rainthru<<" "<<infil<<" "<<runoff<<endl;
   rates[0]=infil;              // ponded water->soil deficit
   rates[1]=runoff;             // ponded water->surface water
   rates[2]=to_interflow;       // ponded water->interflow
-  rates[3]=(1.0-P0DSH)*to_GW;  // ponded water->upper groundwater 
+  rates[3]=(1.0-P0DSH)*to_GW;  // ponded water->upper groundwater
   rates[4]=(    P0DSH)*to_GW;  // ponded water->lower groundwater
-   
+
 }

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Abstraction (partitioning of ponded water/snowmelt to depression 
+  Copyright (c) 2008-2017 the Raven Development Team
+  ------------------------------------------------------------------
+  Abstraction (partitioning of ponded water/snowmelt to depression
   storage)
-----------------------------------------------------------------*/
+  ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "DepressionProcesses.h"
@@ -19,14 +19,14 @@
 /// \param absttype [in] Selected model of abstraction
 //
 CmvAbstraction::CmvAbstraction(abstraction_type absttype)
-		    	      :CHydroProcessABC(ABSTRACTION)
+  :CHydroProcessABC(ABSTRACTION)
 {
   type=absttype;
 
   CHydroProcessABC::DynamicSpecifyConnections(1);
   //abstraction (ponded-->depression)
   iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
-  iTo  [0]=pModel->GetStateVarIndex(DEPRESSION); 
+  iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
 
 }
 
@@ -54,34 +54,34 @@ void CmvAbstraction::GetParticipatingParamList(string  *aP , class_type *aPC , i
   if (type==ABST_PERCENTAGE)
   {
     nP=1;
-    aP[0]="ABST_PERCENT";			aPC[0]=CLASS_LANDUSE; 
-	}
-	else if (type==ABST_FILL)     
+    aP[0]="ABST_PERCENT";                       aPC[0]=CLASS_LANDUSE;
+  }
+  else if (type==ABST_FILL)
   {
     nP=1;
-    aP[0]="DEP_MAX";				  aPC[0]=CLASS_LANDUSE; 
-  } 
-	else if (type==ABST_SCS)     
+    aP[0]="DEP_MAX";                              aPC[0]=CLASS_LANDUSE;
+  }
+  else if (type==ABST_SCS)
   {
     nP=2;
-    aP[0]="SCS_CN";						aPC[0]=CLASS_LANDUSE; 
-		aP[1]="SCS_IA_FRACTION";	aPC[1]=CLASS_LANDUSE;
-  } 
-	else
-	{
+    aP[0]="SCS_CN";                                             aPC[0]=CLASS_LANDUSE;
+    aP[1]="SCS_IA_FRACTION";        aPC[1]=CLASS_LANDUSE;
+  }
+  else
+  {
     ExitGracefully("CmvAbstraction::GetParticipatingParamList: undefined abstraction algorithm",BAD_DATA);
   }
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to participating state variable list
-/// 
+///
 /// \param absttype [in] Selected abstraction model
 /// \param *aSV [out] Reference to array of state variables needed by abstraction algorithm
 /// \param *aLev [out] Array of levels of multilevel state variables (or DOESNT_EXIST of single level)
 /// \param &nSV [out] Number of participating state variables (length of aSV and aLev arrays)
 //
-void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_type *aSV, int *aLev, int &nSV) 
+void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=2;
   aSV[0]=PONDED_WATER;  aLev[0]=DOESNT_EXIST;
@@ -97,15 +97,15 @@ void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_
 /// \param &tt [in] Current model time at which abstraction is to be calculated
 /// \param *rates [out] rates[0]= rate of abstraction [mm/d]
 //
-void   CmvAbstraction::GetRatesOfChange( const double			*state_vars, 
-																				 const CHydroUnit	*pHRU, 
-																				 const optStruct	&Options,
-																				 const time_struct &tt,
+void   CmvAbstraction::GetRatesOfChange( const double                   *state_vars,
+                                         const CHydroUnit       *pHRU,
+                                         const optStruct        &Options,
+                                         const time_struct &tt,
                                          double     *rates) const
 {
   double ponded=state_vars[iFrom[0]];
   double depression=state_vars[iTo[0]];
- 
+
   //----------------------------------------------------------------------------
   if (type==ABST_PERCENTAGE)
   {
@@ -114,12 +114,12 @@ void   CmvAbstraction::GetRatesOfChange( const double			*state_vars,
   //----------------------------------------------------------------------------
   else if (type==ABST_FILL)
   { //fills up storage, then stops
-    double dep_space;		//[mm] available space left in depression storage
+    double dep_space;           //[mm] available space left in depression storage
 
-		dep_space = max(pHRU->GetSurfaceProps()->dep_max-depression,0.0);
-    
-		rates[0]=min(dep_space,max(ponded,0.0))/Options.timestep;
-	}
+    dep_space = max(pHRU->GetSurfaceProps()->dep_max-depression,0.0);
+
+    rates[0]=min(dep_space,max(ponded,0.0))/Options.timestep;
+  }
   //----------------------------------------------------------------------------
   else if (type==ABST_SCS)
   {
@@ -129,32 +129,32 @@ void   CmvAbstraction::GetRatesOfChange( const double			*state_vars,
 
     //S should really be calculated as auxilliary land surface param
     TR=pHRU->GetForcingFunctions()->precip_5day/MM_PER_INCH;
-    CN=pHRU->GetSurfaceProps()->SCS_CN; 
+    CN=pHRU->GetSurfaceProps()->SCS_CN;
 
     //correct curve number for antecedent moisture conditions
     if ((tt.month>4) && (tt.month<9)){//growing season?? (northern hemisphere)
-    //if (pHRU->GetForcingFunctions()->is_growing_season){
-	    if      (TR<1.4){condition=1;}
-	    else if (TR>2.1){condition=3;}
+      //if (pHRU->GetForcingFunctions()->is_growing_season){
+      if      (TR<1.4){condition=1;}
+      else if (TR>2.1){condition=3;}
     }
     else{
-	    if      (TR<0.5){condition=1;}
-	    else if (TR>1.1){condition=3;}
+      if      (TR<0.5){condition=1;}
+      else if (TR>1.1){condition=3;}
     }
     if      (condition==1){CN = 5E-05 *pow(CN,3) + 0.0008*pow(CN,2) + 0.4431*CN;}//0.999R^2 with tabulated values (JRC)
     else if (condition==3){CN = 0.0003*pow(CN,3) - 0.0185*pow(CN,2) + 2.1586*CN;}//0.999R^2 with tabulated values (JRC)
-    
+
     //calculate amount of runoff
-    S   =MM_PER_INCH*(1000/CN-10);	
+    S   =MM_PER_INCH*(1000/CN-10);
     Ia  =(pHRU->GetSurfaceProps()->SCS_Ia_fraction)*S;
 
-    rates[0]=max(Ia,ponded)/Options.timestep; 
+    rates[0]=max(Ia,ponded)/Options.timestep;
   }
 
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep.
 ///
 /// \param *state_vars [in] Array of state variables in HRU
@@ -163,11 +163,11 @@ void   CmvAbstraction::GetRatesOfChange( const double			*state_vars,
 /// \param &tt [in] Current model time at which abstraction is to be calculated
 /// \param *rates [out] rates[0]= rate of abstraction [mm/d]
 //
-void   CmvAbstraction::ApplyConstraints(const double		 *state_vars, 
-						                            const CHydroUnit *pHRU, 
-						                            const optStruct	 &Options,
-						                            const time_struct &tt,
-                                              double     *rates) const
+void   CmvAbstraction::ApplyConstraints(const double             *state_vars,
+                                        const CHydroUnit *pHRU,
+                                        const optStruct      &Options,
+                                        const time_struct &tt,
+                                        double     *rates) const
 {
   //cant remove more than is there (should never be an option)
   rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
@@ -175,7 +175,7 @@ void   CmvAbstraction::ApplyConstraints(const double		 *state_vars,
   //reaching maximum depression storage
   double max_stor=pHRU->GetStateVarMax(iTo[0],state_vars,Options);
   double abst=threshMin(rates[0],
-			                max((max_stor-max(state_vars[iTo[0]],0.0))/Options.timestep,0.0),0.0);
+                        max((max_stor-max(state_vars[iTo[0]],0.0))/Options.timestep,0.0),0.0);
   rates[0]=abst;
-  
+
 }

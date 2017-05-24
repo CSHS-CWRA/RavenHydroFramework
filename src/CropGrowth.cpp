@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Crop growth & evolution routines
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ------------------------------------------------------------------
+  Crop growth & evolution routines
+  ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "CropGrowth.h"
 
@@ -12,15 +12,15 @@
 /// \param CHU_type [in] Method of modelling crop heat units selected
 //
 CmvCropHeatUnitEvolve::CmvCropHeatUnitEvolve(CHUevolve_type CHU_type):
-                        CHydroProcessABC(CROP_HEAT_UNIT_EVOLVE)
+  CHydroProcessABC(CROP_HEAT_UNIT_EVOLVE)
 {
   type =CHU_type;
 
   int iCropHeat; //used by all crop heat routines
   iCropHeat   =pModel->GetStateVarIndex(CROP_HEAT_UNITS);
   ExitGracefullyIf(iCropHeat==DOESNT_EXIST,
-    "CROP HEAT EVOLVE: crop heat unit state variable required",BAD_DATA);
-  
+                   "CROP HEAT EVOLVE: crop heat unit state variable required",BAD_DATA);
+
   if (type==CHU_ONTARIO)
   {
     CHydroProcessABC::DynamicSpecifyConnections(1);
@@ -34,7 +34,7 @@ CmvCropHeatUnitEvolve::CmvCropHeatUnitEvolve(CHUevolve_type CHU_type):
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default CropHeatUnitEvolve destructor
 //
-CmvCropHeatUnitEvolve::~CmvCropHeatUnitEvolve(){} 
+CmvCropHeatUnitEvolve::~CmvCropHeatUnitEvolve(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes CropHeatUnitEvolve object
@@ -69,7 +69,7 @@ void CmvCropHeatUnitEvolve::GetParticipatingParamList(string  *aP , class_type *
 /// \param &nSV [out] Number of state variables required by CHUevolve algorithm (size of aSV[] and aLev[] arrays)
 //
 void CmvCropHeatUnitEvolve::GetParticipatingStateVarList(CHUevolve_type CHU_type,
-																								       sv_type *aSV, int *aLev, int &nSV) 
+                                                         sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=1;
   aSV[0]=CROP_HEAT_UNITS;   aLev[0]=DOESNT_EXIST;
@@ -86,11 +86,11 @@ void CmvCropHeatUnitEvolve::GetParticipatingStateVarList(CHUevolve_type CHU_type
 /// \param &tt [in] Current model time
 /// \param *rates [out] Rate of change in crop heat units and related state variables
 //
-void CmvCropHeatUnitEvolve::GetRatesOfChange (const double		 *state_var, 
-																            const CHydroUnit *pHRU, 
-																            const optStruct	 &Options,
-																            const time_struct &tt,
-																			            double     *rates) const
+void CmvCropHeatUnitEvolve::GetRatesOfChange (const double               *state_var,
+                                              const CHydroUnit *pHRU,
+                                              const optStruct      &Options,
+                                              const time_struct &tt,
+                                              double     *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & Glaciers
 
@@ -98,11 +98,11 @@ void CmvCropHeatUnitEvolve::GetRatesOfChange (const double		 *state_var,
   CHU    =state_var[pModel->GetStateVarIndex(CROP_HEAT_UNITS)];
   old_CHU=CHU;
 
-	if (type==CHU_ONTARIO)
-	{
-    
+  if (type==CHU_ONTARIO)
+  {
+
     double CHU_day, CHU_night;
-    
+
     double temp_ave=pHRU->GetForcingFunctions()->temp_daily_ave;
     double temp_max=pHRU->GetForcingFunctions()->temp_daily_max;
     double temp_min=pHRU->GetForcingFunctions()->temp_daily_min;
@@ -133,8 +133,8 @@ void CmvCropHeatUnitEvolve::GetRatesOfChange (const double		 *state_var,
   }
 };
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
-/// \details Ensures that  CHU >= 0 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
+/// \details Ensures that  CHU >= 0
 ///
 /// \param *state_vars [in] Reference to pertinent state variables
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -143,10 +143,10 @@ void CmvCropHeatUnitEvolve::GetRatesOfChange (const double		 *state_var,
 /// \param *rates [out] Rate of change in crop heat units
 //
 void CmvCropHeatUnitEvolve::ApplyConstraints( const double      *state_vars,
-											                      const CHydroUnit  *pHRU, 
-								                            const optStruct	  &Options,
-								                            const time_struct &t,
-                                                  double      *rates) const
+                                              const CHydroUnit  *pHRU,
+                                              const optStruct       &Options,
+                                              const time_struct &t,
+                                              double      *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & Glaciers
   //no constraints, allow to be =-1 prior to start of growing season

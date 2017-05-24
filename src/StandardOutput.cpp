@@ -1,21 +1,21 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "Model.h"
 #include "StateVariables.h"
 
 #if defined(_WIN32)
-   #include <direct.h>
+#include <direct.h>
 #elif defined(__linux__)
-   #include <sys/stat.h>
+#include <sys/stat.h>
 #endif
 
 //////////////////////////////////////////////////////////////////
 /// \brief Adds output directory & prefix to base file name
 /// \param filebase [in] base filename, with extension, no directory information
 /// \param &Options [in] Global model options information
-// 
+//
 string FilenamePrepare(string filebase, const optStruct &Options)
 {
   string fn;
@@ -45,7 +45,7 @@ void CModel::CloseOutputStreams()
 /// \details Called prior to simulation (but after initialization) from CModel::Initialize()
 /// \param &Options [in] Global model options information
 //
-void CModel::WriteOutputFileHeaders(const optStruct &Options) 
+void CModel::WriteOutputFileHeaders(const optStruct &Options)
 {
   int i,j,p;
   string tmpFilename;
@@ -61,8 +61,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
 
-    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP); 
-    _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";  
+    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+    _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";
     for (i=0;i<GetNumStateVars();i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
         if (i!=iAtmPrecip){
@@ -92,7 +92,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         {
           for (int i = 0; i < _nObservedTS; i++){
             if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+                (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
                 (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
             {
               if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
@@ -113,7 +113,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     WriteEnsimStandardHeaders(Options);
   }
-  
+
   //WatershedEnergyStorage.csv
   //--------------------------------------------------------------
   if (Options.write_energy)
@@ -125,7 +125,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
 
-    EN_STORAGE<<"time[d],date,hour,temp[C],net incoming [MJ/m2/d]";  
+    EN_STORAGE<<"time[d],date,hour,temp[C],net incoming [MJ/m2/d]";
     for (i=0;i<GetNumStateVars();i++){
       if (CStateVariable::IsEnergyStorage(_aStateVarType[i])){
         EN_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [MJ/m2]";
@@ -158,8 +158,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       {
         for (int i = 0; i < _nObservedTS; i++){
           if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_STAGE")) &&
-            (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-            (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
           {
             if (_pSubBasins[p]->GetName()==""){RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
             else                              {RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
@@ -180,15 +180,15 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (MB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    MB<<"time [d],date,hour"; 
+    MB<<"time [d],date,hour";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         MB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
         MB<<"["<<CStateVariable::GetStateVarUnits(_aStateVarType[_pProcesses[j]->GetFromIndices()[q]])<<"]";
       }
     }
-    MB<<endl; 
-    MB<<",,from:"; 
+    MB<<endl;
+    MB<<",,from:";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
@@ -197,7 +197,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
     }
     MB<<endl;
-    MB<<",,to:"; 
+    MB<<",,to:";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
@@ -208,7 +208,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     MB<<endl;
     MB.close();
   }
-  
+
   //WatershedMassEnergyBalance.csv
   //--------------------------------------------------------------
   if (Options.write_group_mb!=DOESNT_EXIST)
@@ -221,15 +221,15 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (HGMB.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    HGMB<<"time [d],date,hour"; 
+    HGMB<<"time [d],date,hour";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         HGMB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());
         HGMB<<"["<<CStateVariable::GetStateVarUnits(_aStateVarType[_pProcesses[j]->GetFromIndices()[q]])<<"]";
       }
     }
-    HGMB<<endl; 
-    HGMB<<",,from:"; 
+    HGMB<<endl;
+    HGMB<<",,from:";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
@@ -238,7 +238,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
     }
     HGMB<<endl;
-    HGMB<<",,to:"; 
+    HGMB<<",,to:";
     for (j=0;j<_nProcesses;j++){
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
@@ -317,7 +317,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (_FORCINGS.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    _FORCINGS<<"time [d],date,hour,day_angle,"; 
+    _FORCINGS<<"time [d],date,hour,day_angle,";
     _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
     _FORCINGS<<" air dens. [kg/m3], air pres. [KPa], rel hum. [-],";
     _FORCINGS<<" cloud cover [-],";
@@ -339,8 +339,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       if (HRUSTOR.fail()){
         ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
-      int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP); 
-      HRUSTOR<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE]";  
+      int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+      HRUSTOR<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE]";
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
@@ -386,7 +386,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //opens and closes diagnostics.csv so that this warning doesn't show up at end of simulation
   //--------------------------------------------------------------
-  if ((_nObservedTS>0) && (_nDiagnostics>0)) 
+  if ((_nObservedTS>0) && (_nDiagnostics>0))
   {
     ofstream DIAG;
     string tmpFilename;
@@ -408,7 +408,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 //
 void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 {
-  
+
   int     i,iCumPrecip,k;
   double  output_int = 0.0;
   double  mod_final = 0.0;
@@ -421,9 +421,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   string tmpFilename;
 
-  
+
   if ((tt.model_time==0) && (Options.suppressICs)){return;}
-  
+
   //converts the 'write every x timesteps' into a 'write at time y' value
   output_int = Options.output_interval * Options.timestep;
   mod_final  = ffmod(tt.model_time,output_int);
@@ -431,11 +431,11 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
 
-  if(fabs(mod_final) <= 0.5*Options.timestep)  //checks to see if sufficiently close to timestep 
+  if(fabs(mod_final) <= 0.5*Options.timestep)  //checks to see if sufficiently close to timestep
                                                //(this should account for any roundoff error in timestep calcs)
   {
     thisdate=tt.date_string;                //referst to date and time at END of time step
-    thishour=DecDaysToHours(tt.julian_day); 
+    thishour=DecDaysToHours(tt.julian_day);
     t       =tt.model_time;
 
     // Console output
@@ -451,7 +451,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       else     {cout <<" | P: ------";}
     }
 
-    
+
     //Write current state of water storage in system to WatershedStorage.csv (ALWAYS DONE)
     //----------------------------------------------------------------
     if (Options.output_format==OUTPUT_STANDARD)
@@ -461,37 +461,37 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       double channel_stor=GetTotalChannelStorage();
       double reservoir_stor=GetTotalReservoirStorage();
       double rivulet_stor=GetTotalRivuletStorage();
-       
+
       _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour;
 
       if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
       else     {_STORAGE<<",---,---";}
       _STORAGE<<","<<channel_stor<<","<<reservoir_stor<<","<<rivulet_stor;
-    
-      currentWater=0.0; 
+
+      currentWater=0.0;
       for (i=0;i<GetNumStateVars();i++)
-      { 
+      {
         if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
         {
           S=GetAvgStateVar(i);
           if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
-          _STORAGE<<","<<S;   
+          _STORAGE<<","<<S;
           currentWater+=S;
         }
       }
       currentWater+=channel_stor+rivulet_stor+reservoir_stor;
       if(t==0){
         // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-        // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep 
+        // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
         for(int p=0;p<_nSubBasins;p++){
-          if(_pSubBasins[p]->GetReservoir()!=NULL){ 
+          if(_pSubBasins[p]->GetReservoir()!=NULL){
             currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
             currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
           }
         }
       }
-     
-      _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<(currentWater-_initWater)+(_CumulOutput-_CumulInput); 
+
+      _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<(currentWater-_initWater)+(_CumulOutput-_CumulInput);
       _STORAGE<<endl;
 
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
@@ -509,8 +509,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               for (int i = 0; i < _nObservedTS; i++)
               {
                 if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-                  (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                  (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+                    (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+                    (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
                 {
 
                   //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
@@ -530,7 +530,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       }
       else //point value hydrograph
       {
-        _HYDRO<<t<<","<<thisdate<<","<<thishour;  
+        _HYDRO<<t<<","<<thisdate<<","<<thishour;
         if (t!=0){_HYDRO<<","<<GetAveragePrecip();}//watershed-wide precip
         else     {_HYDRO<<",---";}
         for (int p=0;p<_nSubBasins;p++){
@@ -542,8 +542,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             {
               for (int i = 0; i < _nObservedTS; i++){
                 if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-                  (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                  (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+                    (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+                    (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
                 {
                   //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
@@ -565,7 +565,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     {
       WriteEnsimMinorOutput(Options,tt);
     }
-    
+
     //Write cumulative mass balance info to WatershedMassEnergyBalance.csv
     //----------------------------------------------------------------
     if (Options.write_group_mb!=DOESNT_EXIST)
@@ -575,13 +575,13 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       ofstream HGMB;
       tmpFilename=FilenamePrepare(_pHRUGroups[kk]->GetName()+"_MassEnergyBalance.csv",Options);
       HGMB.open(tmpFilename.c_str(),ios::app);
-      HGMB<<t<<","<<thisdate<<","<<thishour;  
+      HGMB<<t<<","<<thisdate<<","<<thishour;
       for (int js=0;js<_nTotalConnections;js++)
       {
         sum=0.0;
         for (k = 0; k < _nHydroUnits; k++){
           if (_pHRUGroups[kk]->IsInGroup(k)){
-          sum += _aCumulativeBal[k][js] * _pHydroUnits[k]->GetArea();
+            sum += _aCumulativeBal[k][js] * _pHydroUnits[k]->GetArea();
           }
         }
         HGMB<<","<<sum/_WatershedArea;
@@ -593,13 +593,13 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //Write cumulative mass balance info to WatershedMassEnergyBalance.csv
     //----------------------------------------------------------------
     if (Options.write_mass_bal)
-    { 
+    {
       double sum;
-      ofstream MB;  
+      ofstream MB;
       tmpFilename=FilenamePrepare("WatershedMassEnergyBalance.csv",Options);
       MB.open(tmpFilename.c_str(),ios::app);
 
-      MB<<t<<","<<thisdate<<","<<thishour;  
+      MB<<t<<","<<thisdate<<","<<thishour;
       for (int js=0;js<_nTotalConnections;js++)
       {
         sum=0.0;
@@ -611,7 +611,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       MB<<endl;
       MB.close();
     }
-   
+
     //ReservoirStages.csv
     //--------------------------------------------------------------
     if ((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
@@ -620,7 +620,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
       RES_STAGE.open(tmpFilename.c_str(),ios::app);
 
-      RES_STAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();  
+      RES_STAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
       for (int p=0;p<_nSubBasins;p++){
         if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
           RES_STAGE<<","<<_pSubBasins[p]->GetReservoir()->GetStage();
@@ -629,8 +629,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         {
           for (int i = 0; i < _nObservedTS; i++){
             if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_STAGE")) &&
-              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+                (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
+                (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
             {
               //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
               double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
@@ -655,17 +655,17 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       tmpFilename=FilenamePrepare("WatershedEnergyStorage.csv",Options);
       EN_STORAGE.open(tmpFilename.c_str(),ios::app);
 
-      EN_STORAGE<<t<<","<<thisdate<<","<<thishour; 
+      EN_STORAGE<<t<<","<<thisdate<<","<<thishour;
       EN_STORAGE<<","<<F.temp_ave;
       EN_STORAGE<<",TMP_DEBUG";
       //  STOR<<","<<GetAverageNetRadiation();//TMP DEBUG
       for (i=0;i<GetNumStateVars();i++)
-      { 
+      {
         if (CStateVariable::IsEnergyStorage(_aStateVarType[i]))
         {
           S=GetAvgStateVar(i);
           if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
-          EN_STORAGE<<","<<S; 
+          EN_STORAGE<<","<<S;
           sum+=S;
         }
       }
@@ -675,12 +675,12 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     }
 
     if (!silent){cout<<endl;}
-   
+
     //ExhaustiveMassBalance.csv
     //--------------------------------------------------------------
     if (Options.write_exhaustiveMB)
     {
-    
+
       int j,js,q;
       double cumsum;
 
@@ -688,7 +688,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       tmpFilename=FilenamePrepare("ExhaustiveMassBalance.csv",Options);
       MB.open(tmpFilename.c_str(),ios::app);
 
-      MB<<t<<","<<thisdate<<","<<thishour; 
+      MB<<t<<","<<thisdate<<","<<thishour;
       for (int i=0;i<_nStateVars;i++)
       {
         if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
@@ -697,7 +697,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           js=0;
           for (j=0;j<_nProcesses;j++){
             for (q=0;q<_pProcesses[j]->GetNumConnections();q++){
-              if (_pProcesses[j]->GetFromIndices()[q]==i) 
+              if (_pProcesses[j]->GetFromIndices()[q]==i)
               {
                 sum=0.0;
                 for (k=0;k<_nHydroUnits;k++){
@@ -740,7 +740,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       force_struct *pFave;
       force_struct faveStruct = GetAverageForcings();
       pFave = &faveStruct;
-      _FORCINGS<<t<<","<<thisdate<<","<<thishour<<","<<pFave->day_angle<<",";  
+      _FORCINGS<<t<<","<<thisdate<<","<<thishour<<","<<pFave->day_angle<<",";
       _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<","<<pFave->precip*(pFave->snow_frac) <<",";
       _FORCINGS<<pFave->temp_ave<<","<<pFave->temp_daily_min<<","<<pFave->temp_daily_max<<","<<pFave->temp_daily_ave<<","<<pFave->temp_month_min<<","<<pFave->temp_month_max<<",";
       _FORCINGS<<pFave->air_dens<<","<<pFave->air_pres<<","<<pFave->rel_humidity<<",";
@@ -769,7 +769,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       ofstream DEBUG;
       DEBUG.open("raven_debug.csv",ios::app);
 
-      DEBUG<<t<<","<<thisdate<<","<<thishour; 
+      DEBUG<<t<<","<<thisdate<<","<<thishour;
       for(int i=0;i<5;i++){DEBUG<<","<<g_debug_vars[i];}
       DEBUG<<endl;
       DEBUG.close();
@@ -787,23 +787,23 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         HRUSTOR.open(tmpFilename.c_str(),ios::app);
 
         const force_struct *F=_pOutputGroup->GetHRU(kk)->GetForcingFunctions();
-      
+
         HRUSTOR<<tt.model_time <<","<<thisdate<<","<<thishour;
 
         if (t!=0){HRUSTOR<<","<<F->precip*(1-F->snow_frac)<<","<<F->precip*(F->snow_frac);}//precip
         else     {HRUSTOR<<",---,---";}
-      
+
         currentWater=0;
         for (i=0;i<GetNumStateVars();i++)
-        { 
+        {
           if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
           {
             S=_pOutputGroup->GetHRU(kk)->GetStateVarValue(i);
-            HRUSTOR<<","<<S;   
+            HRUSTOR<<","<<S;
             currentWater+=S;
           }
         }
-        HRUSTOR<<","<<currentWater; 
+        HRUSTOR<<","<<currentWater;
         HRUSTOR<<endl;
         HRUSTOR.close();
       }
@@ -841,7 +841,7 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
   int i,k;
   string tmpFilename;
 
-	// parameters.csv - parameters file
+  // parameters.csv - parameters file
   if ((Options.write_params) && (final==true))
   {
     ofstream PARAMS;
@@ -866,20 +866,20 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
     WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
   }
   OUT<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
-	
+
   //Header--------------------------
   OUT<<":HRUStateVariableTable"<<endl;
   OUT<<"  :Attributes,";
   for (i=0;i<GetNumStateVars();i++)
   {
-    OUT<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]); 
+    OUT<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
     if (i!=GetNumStateVars()-1){OUT<<",";}
   }
   OUT<<endl;
   OUT<<"  :Units,";
   for (i=0;i<GetNumStateVars();i++)
   {
-    OUT<<CStateVariable::GetStateVarUnits(_aStateVarType[i]); 
+    OUT<<CStateVariable::GetStateVarUnits(_aStateVarType[i]);
     if (i!=GetNumStateVars()-1){OUT<<",";}
   }
   OUT<<endl;
@@ -919,28 +919,28 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
   if (!Options.silent){
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
-    cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs)"<<endl; 
-    cout <<"          # HRUs: "<<GetNumHRUs()        <<endl; 
+    cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs)"<<endl;
+    cout <<"          # HRUs: "<<GetNumHRUs()        <<endl;
     cout <<"        # Gauges: "<<GetNumGauges()      <<endl;
-    cout <<"#State Variables: "<<GetNumStateVars()   <<endl; 
+    cout <<"#State Variables: "<<GetNumStateVars()   <<endl;
     for (int i=0;i<GetNumStateVars();i++){
       //don't write if convolution storage or advection storage?
       cout<<"                -";
       cout<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" (";
-      cout<<CStateVariable::SVTypeToString     (_aStateVarType[i],_aStateVarLayer[i])<<")"<<endl; 
+      cout<<CStateVariable::SVTypeToString     (_aStateVarType[i],_aStateVarLayer[i])<<")"<<endl;
     }
-    cout <<"     # Processes: "<<GetNumProcesses()   <<endl; 
+    cout <<"     # Processes: "<<GetNumProcesses()   <<endl;
     for (int j=0;j<GetNumProcesses();j++)
     {
       cout<<"                - ";
       cout<<GetProcessName(GetProcessType(j))<<endl;
     }
-    cout <<"    #Connections: "<<_nTotalConnections  <<endl; 
-    cout <<"        Duration: "<<Options.duration            <<" d"<<endl; 
-    cout <<"       Time step: "<<Options.timestep            <<" d"<<endl; 
+    cout <<"    #Connections: "<<_nTotalConnections  <<endl;
+    cout <<"        Duration: "<<Options.duration            <<" d"<<endl;
+    cout <<"       Time step: "<<Options.timestep            <<" d"<<endl;
     cout <<"  Watershed Area: "<<_WatershedArea              <<" km2"<<endl;
     cout <<"======================================================"<<endl;
-    cout <<endl;  
+    cout <<endl;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -951,7 +951,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
 void CModel::RunDiagnostics (const optStruct &Options)
 {
   if ((_nObservedTS==0) || (_nDiagnostics==0)) {return;}
-  
+
   ofstream DIAG;
   string tmpFilename;
   tmpFilename=FilenamePrepare("Diagnostics.csv",Options);
@@ -970,7 +970,7 @@ void CModel::RunDiagnostics (const optStruct &Options)
   {
     DIAG<<_pObservedTS[i]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";
     for (int j=0; j<_nDiagnostics;j++){
-      DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],Options)<<","; 
+      DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],Options)<<",";
     }
     DIAG<<endl;
   }
@@ -1015,10 +1015,10 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   _STORAGE << "#" << endl;
 
   if (Options.suppressICs){
-  _STORAGE << ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
+    _STORAGE << ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
   }
   else{
-  _STORAGE << ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
+    _STORAGE << ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
   }
   if (Options.timestep != 1.0){ _STORAGE << ":DeltaT " << DecDaysToHours(Options.timestep) << endl; }
   else                        { _STORAGE << ":DeltaT 24:00:00.00" << endl; }
@@ -1028,19 +1028,19 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   _STORAGE<<"  :ColumnName rainfall snowfall \"Channel storage\" \"Rivulet storage\"";
   for (i=0;i<GetNumStateVars();i++){
     if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-        _STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<"\"";}}
+      _STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<"\"";}}
   _STORAGE<<" \"Total storage\" \"Cum. precip\" \"Cum. outflow\" \"MB error\""<<endl;
 
   _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
   for (i=0;i<GetNumStateVars();i++){
     if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-        _STORAGE<<" mm";}}
+      _STORAGE<<" mm";}}
   _STORAGE<<" mm mm mm mm"<<endl;
 
   _STORAGE<<"  :ColumnType float float float float";
   for (i=0;i<GetNumStateVars();i++){
     if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-        _STORAGE<<" float";}}
+      _STORAGE<<" float";}}
   _STORAGE<<" float float float float"<<endl;
 
   _STORAGE << "  :ColumnFormat -1 -1 0 0";
@@ -1094,7 +1094,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   double val = 0; //snapshot hydrograph
   double val2=1;
   if (Options.ave_hydrograph){ val = 1; } //continuous hydrograph
-  if (Options.period_ending) { val *= -1; val2*=-1;}//period ending 
+  if (Options.period_ending) { val *= -1; val2*=-1;}//period ending
 
   _HYDRO<<":ColumnMetaData"<<endl;
   _HYDRO<<"  :ColumnName precip";
@@ -1117,7 +1117,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
 /// \todo [reorg] merge with WriteMinorOutput - too much complex code repetition here when only difference is (1) delimeter and (2) timestep info included in the .csv file
 //
 void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
-                                     const time_struct &tt) 
+                                     const time_struct &tt)
 {
   double currentWater;
   double S;
@@ -1131,25 +1131,25 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   double rivulet_stor=GetTotalRivuletStorage();
 
   if ((tt.model_time==0) && (Options.suppressICs==true) && (Options.period_ending)){return;}
-	
+
   //----------------------------------------------------------------
-	// write watershed state variables
+  // write watershed state variables
   if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
   else                 {_STORAGE<<" 0.0 0.0";}
   _STORAGE<<" "<<channel_stor<<" "<<rivulet_stor;
   //_STORAGE<<" "<<channel_stor<<" "<<reservoir_stor<<" "<<rivulet_stor;  // \todo[update] - backwards incompatible
 
-  currentWater=0.0; 
-  for (i=0;i<GetNumStateVars();i++){ 
+  currentWater=0.0;
+  for (i=0;i<GetNumStateVars();i++){
     if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) &&  (i!=iCumPrecip)){
       S=GetAvgStateVar(i);_STORAGE<<" "<<S;currentWater+=S;
     }
   }
   currentWater+=channel_stor+rivulet_stor;
 
-  _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<(currentWater-_initWater)+(_CumulOutput-_CumulInput); 
+  _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<(currentWater-_initWater)+(_CumulOutput-_CumulInput);
   _STORAGE<<endl;
-  
+
   //----------------------------------------------------------------
   //Write hydrographs for gauged watersheds (ALWAYS DONE)
   if ((Options.ave_hydrograph) && (tt.model_time!=0))
@@ -1185,11 +1185,11 @@ void PrepareOutputdirectory(const optStruct &Options)
 {
   if (Options.output_dir!="")
   {
-    #if defined(_WIN32)
-      _mkdir(Options.output_dir.c_str());
-    #elif defined(__linux__)
-      mkdir(Options.output_dir.c_str(), 0777);
-    #endif
+#if defined(_WIN32)
+    _mkdir(Options.output_dir.c_str());
+#elif defined(__linux__)
+    mkdir(Options.output_dir.c_str(), 0777);
+#endif
   }
   g_output_directory=Options.output_dir;//necessary evil
 }

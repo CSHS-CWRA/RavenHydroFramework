@@ -17,7 +17,7 @@
 /// \brief   Data abstraction for gridded, 3D forcings
 /// \details Data Abstraction for gridded, 3D forcing data.
 ///          Dimensions are (x,y,t). Only grid cells specified in
-///          GridWeights will be used. Grid cells are consecutively 
+///          GridWeights will be used. Grid cells are consecutively
 ///          numbered line by line, i.e.\n
 ///          [ [    1,   2,   3, ...,   NC, ], \n
 ///            [ NC+1,NC+2,NC+3, ..., 2 NC, ], \n
@@ -29,7 +29,7 @@
 class CForcingGrid //: public CForcingGridABC
 {
 
- private:/*------------------------------------------------------*/
+private:/*------------------------------------------------------*/
   forcing_type _ForcingType;                 ///< Forcing type, e.g. PRECIP or TEMP
   string       _filename;                    ///< Name of NetCDF file
   string       _varname;                     ///< Name of forcing variable in NetCDF file
@@ -39,7 +39,7 @@ class CForcingGrid //: public CForcingGridABC
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   ///                                        ///< This is effectively the number of data points which is stored from the original data.
   int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
-  int          _DimIds[3];                   ///< IDs of dimensions (x,y,t) 
+  int          _DimIds[3];                   ///< IDs of dimensions (x,y,t)
   int          _DimIdsVar[3];                ///< IDs of dimensions of variable (might not be (x,y,t);
   //                                         ///< then they have to be re-ordered such that _aVal is always [t][y][x])
   int          _nHydroUnits;                 ///< number of HRUs (important for weights)
@@ -60,11 +60,11 @@ class CForcingGrid //: public CForcingGridABC
   double     **_GridWeight;                  ///< Array of weights for each grid cell/HRU pair\n
   ///                                        ///< Dimensions: [_nHydroUnits][dim_cols     x dim_rows    ]
   ///                                        ///<            =[_nHydroUnits][_GridDims[0] x _GridDims[1]]
-  ///                                        ///< _GridWeight[k][l] is fraction of forcing for HRU k is from grid cell l=(i,j) 
-  ///                                        ///< and grid cell index l is derived by l = (j-1) * dim_cols + i                
-  ///                                        ///< where i and j are the row and column of cell l respectively and       
-  ///                                        ///< dim_cols is the total number of columns.                                    
-  ///                                        ///< Following contraint must be satisfied:                                
+  ///                                        ///< _GridWeight[k][l] is fraction of forcing for HRU k is from grid cell l=(i,j)
+  ///                                        ///< and grid cell index l is derived by l = (j-1) * dim_cols + i
+  ///                                        ///< where i and j are the row and column of cell l respectively and
+  ///                                        ///< dim_cols is the total number of columns.
+  ///                                        ///< Following contraint must be satisfied:
   ///                                        ///<      sum(_GridWeight[k][l], {l=1,dim_cols}) = 1.0 for all HRUs k=1,...,_nHydroUnits
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
@@ -79,54 +79,54 @@ class CForcingGrid //: public CForcingGridABC
   double       _aMinTemp[12];                ///< representative minimum monthly temperatures [C]
   double       _aMaxTemp[12];                ///< representative maximum monthly temperatures [C]
   double       _aAvePET [12];                ///< representative average monthly PET [mm/d] (or monthly PET factor [mm/d/K], if MONTHLY_FACTOR is used)
-  
-  
- public:/*------------------------------------------------------*/
+
+
+public:/*------------------------------------------------------*/
   //Constructors:
 
   // (a) simple constructor
   CForcingGrid(
-               string       ForcingType,
-               string       filename,
-               string       varname,
-               string       DimNames[3]
-               );
+    string       ForcingType,
+    string       filename,
+    string       varname,
+    string       DimNames[3]
+    );
 
   // (b) copy constructor
-  CForcingGrid( const CForcingGrid &grid );  
-  
+  CForcingGrid( const CForcingGrid &grid );
+
   // (c) destructor
   ~CForcingGrid();
 
   // Parses all information from NetCDF file and sets variables like grid dimensions and buffer size
   void ForcingGridInit( const optStruct   &Options );
-  
+
   // Initialize sets the correction time _t_corr
   // (= distance between time series start day and model start day) and
   // QA/QC to check for example that modeling period is completely covered by forcing data
   void Initialize(
-                  const double model_start_day,   // fractional day of the year (here called Julian day) [days]
-                  const    int model_start_year,  //         [year]
-                  const double model_duration,    //         [days]
-                  const double model_timestep,    // delta t [days]
-		  const optStruct &Options        // Options
-                  );          
+    const double model_start_day,   // fractional day of the year (here called Julian day) [days]
+    const    int model_start_year,  //         [year]
+    const double model_duration,    //         [days]
+    const double model_timestep,    // delta t [days]
+    const optStruct &Options        // Options
+    );
 
   // Reallocate all arrays in class to (potentially updated) grid dimensions
   // mainly used when sub-daily grids have to be added to model
   void ReallocateArraysInForcingGrid( );
-  
+
   // ReadData populates _aVal or does nothing if no new chunk need to be read (= current modeling time step is within current chunk)
   bool   ReadData(const optStruct   &Options,
                   const double global_model_time
-                  );
+    );
 
   // accessors
-  double GetValue		    (const int idx, const double t) const;
-  double GetValue		    (const int idx, const double t, const int n) const;
-  double GetValue_ave		(const int idx, const double t, const int n) const;
-  double GetValue_min		(const int idx, const double t, const int n) const;
-  double GetValue_max		(const int idx, const double t, const int n) const;
+  double GetValue                   (const int idx, const double t) const;
+  double GetValue                   (const int idx, const double t, const int n) const;
+  double GetValue_ave           (const int idx, const double t, const int n) const;
+  double GetValue_min           (const int idx, const double t, const int n) const;
+  double GetValue_max           (const int idx, const double t, const int n) const;
 
   // Weighting matrix associated routines
   void   AllocateWeightArray(              const int        nHydroUnits,
@@ -137,37 +137,37 @@ class CForcingGrid //: public CForcingGridABC
   bool   CheckWeightArray(                 const int        nHydroUnits,
                                            const int        nGridCells);     ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   int    NumberNonZeroWeightedGridCells(   const int        nHydroUnits,
-					                                 const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
+                                           const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
   double GetGridWeight(                    const int        HRUID,
-                                           const int        CellID);         ///< returns weighting of HRU and CellID pair  
+                                           const int        CellID);         ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
                                            const double     global_model_time)  const; ///< returns index in current chunk corresponding to model time step
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
                                            const double     global_model_time)  const; ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
   void CellIdxToRowCol(                    const int        cellid,
-					                                 int              &row,
-					                                 int              &column);         ///< returns row and column index of cell ID
-  
+                                           int              &row,
+                                           int              &column);         ///< returns row and column index of cell ID
+
   // set class variables
-  void         SetForcingType(                const string ForcingType);               ///< set _ForcingType       	   of class
-  void         SetFilename(                   const string filename);                  ///< set _filename          	   of class
-  void         SetVarname(                    const string varname);                   ///< set _varname           	   of class
-  void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames          	   of class
-  void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims          	   of class
+  void         SetForcingType(                const string ForcingType);               ///< set _ForcingType               of class
+  void         SetFilename(                   const string filename);                  ///< set _filename                  of class
+  void         SetVarname(                    const string varname);                   ///< set _varname                   of class
+  void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames                  of class
+  void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims                  of class
   void         SetNumberNonZeroGridCells(     const int    nNonZeroWeightedGridCells); ///< set _nNonZeroWeightedGridCells of class
   void         SetIdxNonZeroGridCells(        const int    nHydroUnits,
-					      const int    nGridCells);                ///< set _IdxNonZeroGridCells of class
-  void         SetnHydroUnits(                const int    nHydroUnits);               ///< set _nHydroUnits       	   of class
-  void         SetChunkSize(                  const int    ChunkSize);                 ///< set _ChunkSize         	   of class
-  void         SetInterval(                   const double interval);                  ///< set _interval          	   of class
-  void         SetSnowfallCorr(               const double snowfall_corr);             ///< set _snowfall_corr     	   of class
-  void         SetRainfallCorr(               const double rainfall_corr);             ///< set _rainfall_corr     	   of class
-  void         Setcloud_min_temp(             const double cloud_min_temp);            ///< set _cloud_min_temp    	   of class
-  void         Setcloud_max_temp(             const double cloud_max_temp);            ///< set _cloud_max_temp    	   of class
-  void         SetaAveTemp(                   const double aAveTemp[12]);              ///< set _aAveTemp[12]      	   of class
-  void         SetaMinTemp(                   const double aMinTemp[12]);              ///< set _aMinTemp[12]      	   of class
-  void         SetaMaxTemp(                   const double aMaxTemp[12]);              ///< set _aMaxTemp[12]      	   of class
-  void         SetaAvePET(                    const double aAvePET [12]);              ///< set _aAvePET [12]      	   of class
+                                              const int    nGridCells);                ///< set _IdxNonZeroGridCells of class
+  void         SetnHydroUnits(                const int    nHydroUnits);               ///< set _nHydroUnits               of class
+  void         SetChunkSize(                  const int    ChunkSize);                 ///< set _ChunkSize                 of class
+  void         SetInterval(                   const double interval);                  ///< set _interval                  of class
+  void         SetSnowfallCorr(               const double snowfall_corr);             ///< set _snowfall_corr             of class
+  void         SetRainfallCorr(               const double rainfall_corr);             ///< set _rainfall_corr             of class
+  void         Setcloud_min_temp(             const double cloud_min_temp);            ///< set _cloud_min_temp            of class
+  void         Setcloud_max_temp(             const double cloud_max_temp);            ///< set _cloud_max_temp            of class
+  void         SetaAveTemp(                   const double aAveTemp[12]);              ///< set _aAveTemp[12]              of class
+  void         SetaMinTemp(                   const double aMinTemp[12]);              ///< set _aMinTemp[12]              of class
+  void         SetaMaxTemp(                   const double aMaxTemp[12]);              ///< set _aMaxTemp[12]              of class
+  void         SetaAvePET(                    const double aAvePET [12]);              ///< set _aAvePET [12]              of class
   /* void         SetValue(                      const int x_col, */
   /*                                             const int y_row, */
   /*                                             const int t, */
@@ -175,7 +175,7 @@ class CForcingGrid //: public CForcingGridABC
   void         SetValue(                      const int idx,
                                               const int t,
                                               const double aVal);                      ///< set _aVal              of class
-  
+
   // get class variables
   double       GetInterval()                       const;        ///< data interval (in days)
   bool         GetIsDerived()                      const;        ///< if data are read from NetCDF (false) or derived from these data (true)
@@ -200,9 +200,9 @@ class CForcingGrid //: public CForcingGridABC
   double       GetMonthlyMaxTemp(const int month)  const;        ///< Representative maximum temperature for month
   double       GetMonthlyAvePET(const int month)   const;        ///< Average PET over month
   double       DailyTempCorrection(const double t) const;        ///< Daily temperature correction [C]
-  
+
 };
 
 #endif
 
-  
+

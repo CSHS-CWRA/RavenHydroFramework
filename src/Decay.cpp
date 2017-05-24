@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Decay of soluble contaminant/tracer/nutrient
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ------------------------------------------------------------------
+  Decay of soluble contaminant/tracer/nutrient
+  ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "Decay.h"
@@ -16,25 +16,25 @@
 /// \param pFlow [in] flow process which drives advection (this acts as a wrapper for said process)
 /// \param pModel [in] Model object
 //
-CmvDecay::CmvDecay(string           constit_name, 
-                   decay_type       dtyp, 
+CmvDecay::CmvDecay(string           constit_name,
+                   decay_type       dtyp,
                    CTransportModel *pTransportModel)
-		    	        :CHydroProcessABC(DECAY)
+  :CHydroProcessABC(DECAY)
 {
   _dtype=dtyp;
   _pTransModel=pTransportModel;
   _constit_ind=_pTransModel->GetConstituentIndex(constit_name);
   ExitGracefullyIf(_constit_ind==-1,
-    "CmvDecay constructor: invalid constituent name in :Decay command",BAD_DATA_WARN);
+                   "CmvDecay constructor: invalid constituent name in :Decay command",BAD_DATA_WARN);
 
   int nCompartments = _pTransModel->GetNumWaterCompartments();
 
   CHydroProcessABC::DynamicSpecifyConnections(nCompartments);
 
   //decay occurs in all water storage compartments
-  for (int ii=0;ii<nCompartments;ii++) 
+  for (int ii=0;ii<nCompartments;ii++)
   {
-    iFrom[ii]=_pTransModel->GetStorIndex(_constit_ind,ii); 
+    iFrom[ii]=_pTransModel->GetStorIndex(_constit_ind,ii);
     iTo  [ii]=CONSTITUENT_SINK; //CONSTITUENT_DECAY??
   }
 }
@@ -71,10 +71,10 @@ void CmvDecay::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) 
 /// \param &tt [in] Current model time
 /// \param *rates [out] rates of change in each water storage compartment due to decay
 //
-void   CmvDecay::GetRatesOfChange(const double			*state_vars, 
-																	const CHydroUnit	*pHRU, 
-																	const optStruct	  &Options,
-																	const time_struct &tt,
+void   CmvDecay::GetRatesOfChange(const double                  *state_vars,
+                                  const CHydroUnit        *pHRU,
+                                  const optStruct   &Options,
+                                  const time_struct &tt,
                                   double            *rates) const
 {
   int    k=pHRU->GetGlobalIndex();
@@ -86,7 +86,7 @@ void   CmvDecay::GetRatesOfChange(const double			*state_vars,
   {
     iStor   =_pTransModel->GetStorWaterIndex(ii);
     iConstit=_pTransModel->GetStorIndex     (_constit_ind,ii);   //global state variable index of this constituent in this water storage
-    
+
     mass=state_vars[iConstit];
     decay_coeff = _pTransModel->GetDecayCoefficient(_constit_ind,pHRU,iStor);
 
@@ -106,7 +106,7 @@ void   CmvDecay::GetRatesOfChange(const double			*state_vars,
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 ///
 /// \param *state_vars [in] array of current state variables
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -114,14 +114,14 @@ void   CmvDecay::GetRatesOfChange(const double			*state_vars,
 /// \param &tt [in] Current model time
 /// \param *rates [out] rates of change due to both associated flow process and advective transport
 //
-void   CmvDecay::ApplyConstraints(const double		 *state_vars, 
-						                            const CHydroUnit *pHRU, 
-						                            const optStruct	 &Options,
-						                            const time_struct &tt,
-                                              double     *rates) const
+void   CmvDecay::ApplyConstraints(const double           *state_vars,
+                                  const CHydroUnit *pHRU,
+                                  const optStruct      &Options,
+                                  const time_struct &tt,
+                                  double     *rates) const
 {
   int iConstit;
-  
+
   int nCompartments = _pTransModel->GetNumWaterCompartments();
   //cannot remove more mass than is there
   for (int ii = 0; ii < nCompartments; ii++)

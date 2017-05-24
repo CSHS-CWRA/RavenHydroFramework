@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 
 //////////////////////////////////////////////////////////////////
@@ -80,8 +80,8 @@ CHydroUnit *CHRUGroup::GetHRU(const int k) const
 void CHRUGroup::AddHRU(CHydroUnit *pHRU)
 {
   if (!DynArrayAppend((void**&)(pHRUs),(void*)(pHRU),nHRUs)){
-   ExitGracefully("CHRUGroup::AddHRU: adding NULL HRU",BAD_DATA);} 
-} 
+    ExitGracefully("CHRUGroup::AddHRU: adding NULL HRU",BAD_DATA);}
+}
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if state variable i is aggregated across this HRU group
 /// \returns true if state variable i is aggregated across this HRU group
@@ -135,7 +135,7 @@ double CHRUGroup::GetAvgForcing (const string &forcing_string) const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns area-weighted average of specified cumulative flux over HRU group
-/// 
+///
 /// \param i [in] index of storage compartment
 /// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
 /// \return Area-weighted average of cumulative flux to storage compartment i

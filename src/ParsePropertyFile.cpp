@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
 #include "Model.h"
@@ -213,7 +213,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     cout << "ERROR opening file: "<< Options.rvp_filename<<endl; return false;}
   
   ExitGracefullyIf(pModel==NULL,
-    "ParseClassPropertiesFile: model has not yet been created.",BAD_DATA);
+                   "ParseClassPropertiesFile: model has not yet been created.",BAD_DATA);
 
   CParser *p=new CParser(INPUT,Options.rvp_filename,line);
 
@@ -227,15 +227,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     if (ended){break;}
     if (Options.noisy){ cout << "reading line " << p->GetLineNumber() << ": ";}
     /*assign code for switch statement
-    ------------------------------------------------------------------
-    <100         : ignored/special
-    0   thru 100 : Options
-    100 thru 200 : Soil Classes
-    200 thru 300 : Land Use Classes
-    300 thru 400 : Vegetation classes
-    400 thru 500 : 
-    500 thru 600 : Snow Classes
-    ------------------------------------------------------------------
+      ------------------------------------------------------------------
+      <100         : ignored/special
+      0   thru 100 : Options
+      100 thru 200 : Soil Classes
+      200 thru 300 : Land Use Classes
+      300 thru 400 : Vegetation classes
+      400 thru 500 : 
+      500 thru 600 : Snow Classes
+      ------------------------------------------------------------------
     */
 
     code=0;   
@@ -308,1057 +308,1057 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
     switch(code)
     {
-      case(-1):  //----------------------------------------------
-      {/*Blank Line*/
-        if (Options.noisy) {cout <<""<<endl;}break;
-      }
-      case(-2):  //----------------------------------------------
-      {/*Comment*/
-        if (Options.noisy) {cout <<"*"<<endl;} break;
-      }
-      case(-3):  //----------------------------------------------
-      {/*:RedirectToFile*/
-        string filename="";
-        for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
-        if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;}
+    case(-1):  //----------------------------------------------
+    {/*Blank Line*/
+      if (Options.noisy) {cout <<""<<endl;}break;
+    }
+    case(-2):  //----------------------------------------------
+    {/*Comment*/
+      if (Options.noisy) {cout <<"*"<<endl;} break;
+    }
+    case(-3):  //----------------------------------------------
+    {/*:RedirectToFile*/
+      string filename="";
+      for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
+      if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;}
         
-        string filedir = GetDirectoryName(Options.rvp_filename); //if a relative path name, e.g., "/path/model.rvp", only returns e.g., "/path"
-        if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-          filename = filedir + "//" + filename;
-        }
+      string filedir = GetDirectoryName(Options.rvp_filename); //if a relative path name, e.g., "/path/model.rvp", only returns e.g., "/path"
+      if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
+        filename = filedir + "//" + filename;
+      }
 
-        INPUT2.open(filename.c_str()); 
-        if (INPUT2.fail()){
-          ostrstream FILENAME;
-          FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
-          ExitGracefully(FILENAME.str() ,BAD_DATA); 
+      INPUT2.open(filename.c_str()); 
+      if (INPUT2.fail()){
+        ostrstream FILENAME;
+        FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
+        ExitGracefully(FILENAME.str() ,BAD_DATA); 
+      }
+      else{
+        pMainParser=p;    //save pointer to primary parser
+        p=new CParser(INPUT2,filename,line);//open new parser
+      }
+      break;
+    }
+    case(-4):  //----------------------------------------------
+    {/*:End*/
+      if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
+    }
+    case(1):  //----------------------------------------------
+    {/*:SoilClasses
+       string "SoilClasses" 
+       {string tag, double pct_sand,double pct_clay,double pct_silt, double pct_org}xNumSoilClasses
+       :EndSoilClases*/
+      if (Options.noisy) {cout <<"Soil Classes"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
+        else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
+        else if (Len >= 1)
+        {
+          if (num_parsed_soils >= MAX_SOIL_CLASSES - 1){
+            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil classes", BAD_DATA);
+          }
+
+          CSoilClass::InitializeSoilProperties(parsed_soils[num_parsed_soils], false);
+          pSoilClasses[num_parsed_soils - 1] = new CSoilClass(s[0]);
+          soiltags[num_parsed_soils] = s[0];
+
+          if (Len >= 5){
+            parsed_soils[num_parsed_soils].sand_con = s_to_d(s[1]);
+            parsed_soils[num_parsed_soils].clay_con = s_to_d(s[2]);
+            double silt_con = s_to_d(s[3]);
+            if (fabs(silt_con + s_to_d(s[1]) + s_to_d(s[2]) - 1.0) > REAL_SMALL){
+              WriteWarning("sand, clay, and silt content should add up to one for soil class " + to_string(s[0]) + ". Silt content will be recalculated.", Options.noisy);
+            }
+            parsed_soils[num_parsed_soils].org_con = s_to_d(s[4]); 
+          }
+          else{//default - common for conceptual models
+            parsed_soils[num_parsed_soils].sand_con = 0.4111111; //special code for autogeneration of soil params
+            parsed_soils[num_parsed_soils].clay_con = 0.0;
+            parsed_soils[num_parsed_soils].org_con  = 0.0;
+          }
+          num_parsed_soils++;
         }
         else{
-          pMainParser=p;    //save pointer to primary parser
-          p=new CParser(INPUT2,filename,line);//open new parser
+          WriteWarning("Incorrect number of terms in :SoilClasses entry",Options.noisy );
+          p->ImproperFormat(s); break;
         }
-        break;
-      }
-      case(-4):  //----------------------------------------------
-      {/*:End*/
-        if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
-      }
-      case(1):  //----------------------------------------------
-      {/*:SoilClasses
-        string "SoilClasses" 
-        {string tag, double pct_sand,double pct_clay,double pct_silt, double pct_org}xNumSoilClasses
-        :EndSoilClases*/
-        if (Options.noisy) {cout <<"Soil Classes"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
         p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
-          else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
-		      else if (Len >= 1)
-		      {
-			      if (num_parsed_soils >= MAX_SOIL_CLASSES - 1){
-				      ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil classes", BAD_DATA);
-			      }
-
-			      CSoilClass::InitializeSoilProperties(parsed_soils[num_parsed_soils], false);
-			      pSoilClasses[num_parsed_soils - 1] = new CSoilClass(s[0]);
-			      soiltags[num_parsed_soils] = s[0];
-
-			      if (Len >= 5){
-				      parsed_soils[num_parsed_soils].sand_con = s_to_d(s[1]);
-				      parsed_soils[num_parsed_soils].clay_con = s_to_d(s[2]);
-				      double silt_con = s_to_d(s[3]);
-				      if (fabs(silt_con + s_to_d(s[1]) + s_to_d(s[2]) - 1.0) > REAL_SMALL){
-					      WriteWarning("sand, clay, and silt content should add up to one for soil class " + to_string(s[0]) + ". Silt content will be recalculated.", Options.noisy);
-				      }
-				      parsed_soils[num_parsed_soils].org_con = s_to_d(s[4]); 
-			      }
-			      else{//default - common for conceptual models
-              parsed_soils[num_parsed_soils].sand_con = 0.4111111; //special code for autogeneration of soil params
-				      parsed_soils[num_parsed_soils].clay_con = 0.0;
-				      parsed_soils[num_parsed_soils].org_con  = 0.0;
-			      }
-			    num_parsed_soils++;
-          }
-          else{
-            WriteWarning("Incorrect number of terms in :SoilClasses entry",Options.noisy );
-            p->ImproperFormat(s); break;
-          }
-          p->Tokenize(s,Len);
-          if (!strcmp(s[0],":EndSoilClasses")){done=true;}
-        }
-        break;
+        if (!strcmp(s[0],":EndSoilClasses")){done=true;}
       }
-      case(2):  //----------------------------------------------
-      {/*SoilProperties
-        :SoilProperties 
-        {string soil_tag, double porosity,double stone_frac,double rho_bulk}x<=NumSoilClasses
-        :EndSoilProperties*/
-        if (Options.noisy) {cout <<"Soil Properties"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
-        invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid soiltype code in SoilProperties command",BAD_DATA);
-        for (int i=0;i<num_read;i++)
+      break;
+    }
+    case(2):  //----------------------------------------------
+    {/*SoilProperties
+       :SoilProperties 
+       {string soil_tag, double porosity,double stone_frac,double rho_bulk}x<=NumSoilClasses
+       :EndSoilProperties*/
+      if (Options.noisy) {cout <<"Soil Properties"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid soiltype code in SoilProperties command",BAD_DATA);
+      for (int i=0;i<num_read;i++)
+      {
+        parsed_soils[indices[i]].porosity    =properties[i][0]; 
+        parsed_soils[indices[i]].stone_frac  =properties[i][1];
+        parsed_soils[indices[i]].bulk_density=properties[i][2];
+      } 
+      break;
+    }
+    case(6):  //----------------------------------------------
+    {/*SoilProfiles
+       ":SoilProfiles" 
+       {string tag, int numhorizons, soil1,thick1,soil2,thick2,...,soilN,thickN}xNumHorizons
+       :EndSoilProfiles
+       [[thicknesses in meters]]*/
+      if (Options.noisy) {cout <<"Soil Profiles"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (Len>=2)
         {
-          parsed_soils[indices[i]].porosity    =properties[i][0]; 
-          parsed_soils[indices[i]].stone_frac  =properties[i][1];
-          parsed_soils[indices[i]].bulk_density=properties[i][2];
-        } 
-        break;
-      }
-      case(6):  //----------------------------------------------
-      {/*SoilProfiles
-        ":SoilProfiles" 
-        {string tag, int numhorizons, soil1,thick1,soil2,thick2,...,soilN,thickN}xNumHorizons
-        :EndSoilProfiles
-        [[thicknesses in meters]]*/
-        if (Options.noisy) {cout <<"Soil Profiles"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
-        p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (Len>=2)
-          {
-            if (num_parsed_profiles>=MAX_SOIL_PROFILES-1){
-              ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil profiles",BAD_DATA);}
+          if (num_parsed_profiles>=MAX_SOIL_PROFILES-1){
+            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil profiles",BAD_DATA);}
             
-            pProfiles[num_parsed_profiles]=new CSoilProfile(s[0]);
+          pProfiles[num_parsed_profiles]=new CSoilProfile(s[0]);
 
-            int nhoriz=s_to_i(s[1]);
-            ExitGracefullyIf(nhoriz<0,
-              "ParseClassPropertiesFile: invalid number of soil horizons in profile",BAD_DATA);
-            //zero is a valid entry for lakes & glaciers (zero horizons)
-            ExitGracefullyIf(Len!=(nhoriz*2+2),
-              "ParseClassPropertiesFile:  :SoilProfiles invalid command length",BAD_DATA);   
-            bool is_special=((!string(s[0]).compare("LAKE")) ||
-                             (!string(s[0]).compare("GLACIER")) ||
-                             (!string(s[0]).compare("ROCK")));
-            ExitGracefullyIf((nhoriz==0) && (!is_special),
-              "ParseClassPropertiesFile:  only special soil profiles (LAKE,GLACIER, or ROCK) can have zero horizons",BAD_DATA);   
+          int nhoriz=s_to_i(s[1]);
+          ExitGracefullyIf(nhoriz<0,
+                           "ParseClassPropertiesFile: invalid number of soil horizons in profile",BAD_DATA);
+          //zero is a valid entry for lakes & glaciers (zero horizons)
+          ExitGracefullyIf(Len!=(nhoriz*2+2),
+                           "ParseClassPropertiesFile:  :SoilProfiles invalid command length",BAD_DATA);   
+          bool is_special=((!string(s[0]).compare("LAKE")) ||
+                           (!string(s[0]).compare("GLACIER")) ||
+                           (!string(s[0]).compare("ROCK")));
+          ExitGracefullyIf((nhoriz==0) && (!is_special),
+                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,GLACIER, or ROCK) can have zero horizons",BAD_DATA);   
               
-            for (int m=0;m<nhoriz;m++)
-            {
-              const CSoilClass *pHorizon;
-              double thisthick;
-              thisthick=s_to_d(s[2*m+2+1]);
-              pHorizon =CSoilClass::StringToSoilClass(string(s[2*m+2]));
-              if (pHorizon==NULL){cout<<"Offending soilcode: "<<string(s[2*m+2])<<endl;}
-              ExitGracefullyIf(pHorizon==NULL,
-                "ParseClassPropertiesFile: bad soiltype code in soil profile",BAD_DATA);
-              pProfiles[num_parsed_profiles]->AddHorizon(thisthick,pHorizon);
-            }
-            num_parsed_profiles++;
-          }
-          else{
-            p->ImproperFormat(s); break;
-          }
-          p->Tokenize(s,Len);
-          if (!strcmp(s[0],":EndSoilProfiles")){done=true;}
-        }
-
-        break;
-      }
-      case(57)://----------------------------------------------
-      {/*:SoilParameterList (General) [optional comments]
-        string ":SoilParameterList" 
-        :Parameters, NAME_1,NAME_2,...,NAME_N
-        :Units,      unit_1,unit_2,...,unit_N
-        {string soil_tag, double param_1, param_2, ... ,param_3}x<=NumSoilClasses
-        :EndSoilParameterList*/
-        if (Options.noisy) {cout <<"Soil Parameter List"<<endl;}
-        done=false;
-        nParamStrings=0;
-        while (!done)
-        {
-          p->Tokenize(s,Len);
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Parameters")){
-            for (int i=0;i<Len;i++){
-              aParamStrings[i]=s[i];
-            }
-            nParamStrings=Len;
-            //done=true;
-          }
-          else if (!strcmp(s[0],":Units")){
-            //Do nothing with units for now
-            done=true;
-          }
-          else {p->ImproperFormat(s); break;} 
-        }
-        invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
-        if (Options.noisy){
-          for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
-        }
-        for (int i=0;i<num_read;i++)
-        {
-          for (int j=0;j<nParamStrings-1;j++)
+          for (int m=0;m<nhoriz;m++)
           {
-            CSoilClass::SetSoilProperty(parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
+            const CSoilClass *pHorizon;
+            double thisthick;
+            thisthick=s_to_d(s[2*m+2+1]);
+            pHorizon =CSoilClass::StringToSoilClass(string(s[2*m+2]));
+            if (pHorizon==NULL){cout<<"Offending soilcode: "<<string(s[2*m+2])<<endl;}
+            ExitGracefullyIf(pHorizon==NULL,
+                             "ParseClassPropertiesFile: bad soiltype code in soil profile",BAD_DATA);
+            pProfiles[num_parsed_profiles]->AddHorizon(thisthick,pHorizon);
           }
+          num_parsed_profiles++;
         }
-        break;
-      }
-      //===========================================================================================
-      //===========================================================================================
-      case(100):  //----------------------------------------------
-      {/*:LandUseClasses
-        {string LULT_tag, double frac_impermeable {opt forest_coverage}}
-        :EndLandUseClasses*/
-        if (Options.noisy) {cout <<"Land Use Classes"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
+        else{
+          p->ImproperFormat(s); break;
+        }
         p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
-          else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
-          else if (Len>=2)
-          {
-            if (num_parsed_lult>=MAX_LULT_CLASSES-1){
-              ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}
-           
-            CLandUseClass::InitializeSurfaceProperties(parsed_surf[num_parsed_lult],false);
-            pLUClasses [num_parsed_lult-1]=new CLandUseClass(s[0]);
-            lulttags   [num_parsed_lult]=s[0];
-            parsed_surf[num_parsed_lult].impermeable_frac=s_to_d(s[1]); 
-            if (Len>=3){
-              parsed_surf[num_parsed_lult].forest_coverage=s_to_d(s[2]);
-            }
-            num_parsed_lult++;
-          }
-          else{
-            p->ImproperFormat(s); break;
-          }
-          p->Tokenize(s,Len);
-          if (!strcmp(s[0],":EndLandUseClasses")){done=true;}
-        }
-        break;
-      }
-      case(101)://----------------------------------------------
-      {/*:LandUseParameterList (General) [optional comments]
-        string ":LandUseParameterList" 
-        :Parameters, NAME_1,NAME_2,...,NAME_N
-        {string lult_tag, double param_1, param_2, ... ,param_3}x<=NumLULTClasses
-        :LandUseParameterList*/
-        if (Options.noisy) {cout <<"Land Use / Land Type Parameter List"<<endl;}
-        done=false;
-        while (!done)
-        {
-          p->Tokenize(s,Len);
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Parameters")){
-            for (int i=0;i<Len;i++){
-              aParamStrings[i]=s[i];
-            }
-            nParamStrings=Len;
-            //done=true;
-          }
-          else if (!strcmp(s[0],":Units")){
-            //Do nothing with units for now
-            done=true;
-          }
-          else {p->ImproperFormat(s); break;} 
-        }
-        invalid_index=ParsePropArray(p,indices,properties,num_read,lulttags,nParamStrings,num_parsed_lult);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid land use code in LandUseParameterList command",BAD_DATA);
-        if (Options.noisy){
-          for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
-        }
-        for (int i=0;i<num_read;i++)
-        {
-          for (int j=0;j<nParamStrings-1;j++){
-            CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],aParamStrings[j+1],properties[i][j]);
-          }
-        }
-        break;
-      }
-      case(102):  //----------------------------------------------
-      {/*:LandUseChange [HRU group] [new LULT tag] [YYYY-mm-dd] */
-        if (Options.noisy) {cout <<"Change in Land Use Class"<<endl;}
-        if (Len<4){p->ImproperFormat(s); break;} 
-        time_struct tt;
-        tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
-        pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt);
-        break;
+        if (!strcmp(s[0],":EndSoilProfiles")){done=true;}
       }
 
-      //==========================================================
-      //==========================================================
-      case(200):  //----------------------------------------------
-      {/*Vegetation Classes
-        :VegetationClasses
-        {string tag, double max height [m], max LAI, max leaf cond}xNumVegetationClasses
-        :EndVegetationClasses*/
-        if (Options.noisy) {cout <<"Vegetation Classes"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
+      break;
+    }
+    case(57)://----------------------------------------------
+    {/*:SoilParameterList (General) [optional comments]
+       string ":SoilParameterList" 
+       :Parameters, NAME_1,NAME_2,...,NAME_N
+       :Units,      unit_1,unit_2,...,unit_N
+       {string soil_tag, double param_1, param_2, ... ,param_3}x<=NumSoilClasses
+       :EndSoilParameterList*/
+      if (Options.noisy) {cout <<"Soil Parameter List"<<endl;}
+      done=false;
+      nParamStrings=0;
+      while (!done)
+      {
         p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Attributes")){}//attributes are explicit within Raven - useful for GUIs
-          else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
-          else if (Len==4)
-          {
-            if (num_parsed_veg>=MAX_VEG_CLASSES-1){
-              ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of vegetation classes",BAD_DATA);}
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Parameters")){
+          for (int i=0;i<Len;i++){
+            aParamStrings[i]=s[i];
+          }
+          nParamStrings=Len;
+          //done=true;
+        }
+        else if (!strcmp(s[0],":Units")){
+          //Do nothing with units for now
+          done=true;
+        }
+        else {p->ImproperFormat(s); break;} 
+      }
+      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
+      if (Options.noisy){
+        for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
+      }
+      for (int i=0;i<num_read;i++)
+      {
+        for (int j=0;j<nParamStrings-1;j++)
+        {
+          CSoilClass::SetSoilProperty(parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
+        }
+      }
+      break;
+    }
+    //===========================================================================================
+    //===========================================================================================
+    case(100):  //----------------------------------------------
+    {/*:LandUseClasses
+       {string LULT_tag, double frac_impermeable {opt forest_coverage}}
+       :EndLandUseClasses*/
+      if (Options.noisy) {cout <<"Land Use Classes"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
+        else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
+        else if (Len>=2)
+        {
+          if (num_parsed_lult>=MAX_LULT_CLASSES-1){
+            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}
            
-            CVegetationClass::InitializeVegetationProps(parsed_veg [num_parsed_veg],false);
-            pVegClasses[num_parsed_veg-1]=new CVegetationClass(s[0]);
-            vegtags    [num_parsed_veg]=s[0];
-            parsed_veg [num_parsed_veg].max_height   =s_to_d(s[1]); 
-            parsed_veg [num_parsed_veg].max_LAI      =s_to_d(s[2]); 
-            parsed_veg [num_parsed_veg].max_leaf_cond=s_to_d(s[3]);
+          CLandUseClass::InitializeSurfaceProperties(parsed_surf[num_parsed_lult],false);
+          pLUClasses [num_parsed_lult-1]=new CLandUseClass(s[0]);
+          lulttags   [num_parsed_lult]=s[0];
+          parsed_surf[num_parsed_lult].impermeable_frac=s_to_d(s[1]); 
+          if (Len>=3){
+            parsed_surf[num_parsed_lult].forest_coverage=s_to_d(s[2]);
+          }
+          num_parsed_lult++;
+        }
+        else{
+          p->ImproperFormat(s); break;
+        }
+        p->Tokenize(s,Len);
+        if (!strcmp(s[0],":EndLandUseClasses")){done=true;}
+      }
+      break;
+    }
+    case(101)://----------------------------------------------
+    {/*:LandUseParameterList (General) [optional comments]
+       string ":LandUseParameterList" 
+       :Parameters, NAME_1,NAME_2,...,NAME_N
+       {string lult_tag, double param_1, param_2, ... ,param_3}x<=NumLULTClasses
+       :LandUseParameterList*/
+      if (Options.noisy) {cout <<"Land Use / Land Type Parameter List"<<endl;}
+      done=false;
+      while (!done)
+      {
+        p->Tokenize(s,Len);
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Parameters")){
+          for (int i=0;i<Len;i++){
+            aParamStrings[i]=s[i];
+          }
+          nParamStrings=Len;
+          //done=true;
+        }
+        else if (!strcmp(s[0],":Units")){
+          //Do nothing with units for now
+          done=true;
+        }
+        else {p->ImproperFormat(s); break;} 
+      }
+      invalid_index=ParsePropArray(p,indices,properties,num_read,lulttags,nParamStrings,num_parsed_lult);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid land use code in LandUseParameterList command",BAD_DATA);
+      if (Options.noisy){
+        for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
+      }
+      for (int i=0;i<num_read;i++)
+      {
+        for (int j=0;j<nParamStrings-1;j++){
+          CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],aParamStrings[j+1],properties[i][j]);
+        }
+      }
+      break;
+    }
+    case(102):  //----------------------------------------------
+    {/*:LandUseChange [HRU group] [new LULT tag] [YYYY-mm-dd] */
+      if (Options.noisy) {cout <<"Change in Land Use Class"<<endl;}
+      if (Len<4){p->ImproperFormat(s); break;} 
+      time_struct tt;
+      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
+      pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt);
+      break;
+    }
+
+    //==========================================================
+    //==========================================================
+    case(200):  //----------------------------------------------
+    {/*Vegetation Classes
+       :VegetationClasses
+       {string tag, double max height [m], max LAI, max leaf cond}xNumVegetationClasses
+       :EndVegetationClasses*/
+      if (Options.noisy) {cout <<"Vegetation Classes"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Attributes")){}//attributes are explicit within Raven - useful for GUIs
+        else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
+        else if (Len==4)
+        {
+          if (num_parsed_veg>=MAX_VEG_CLASSES-1){
+            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of vegetation classes",BAD_DATA);}
+           
+          CVegetationClass::InitializeVegetationProps(parsed_veg [num_parsed_veg],false);
+          pVegClasses[num_parsed_veg-1]=new CVegetationClass(s[0]);
+          vegtags    [num_parsed_veg]=s[0];
+          parsed_veg [num_parsed_veg].max_height   =s_to_d(s[1]); 
+          parsed_veg [num_parsed_veg].max_LAI      =s_to_d(s[2]); 
+          parsed_veg [num_parsed_veg].max_leaf_cond=s_to_d(s[3]);
             
-            num_parsed_veg++;
-          }
-          else{
-            p->ImproperFormat(s); break;
-          }
-          p->Tokenize(s,Len);
-          if (!strcmp(s[0],":EndVegetationClasses")){done=true;}
+          num_parsed_veg++;
         }
-        break;
-      }
-      case(201):  //----------------------------------------------
-      {/*SeasonalCanopyLAI
-        :SeasonalCanopyLAI 
-        {string veg_tag, double LAI_Jan..LAI_dec}x<=NumVegClasses
-        :EndSeasonalCanopyLAI*/
-        if (Options.noisy) {cout <<"Seasonal Canopy LAI"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
-        invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyLAI command",BAD_DATA);
-        for (int i=0;i<num_read;i++){
-          for (int mon=0;mon<12;mon++){
-            parsed_veg[indices[i]].relative_LAI[mon]=properties[i][mon]; 
-          }
+        else{
+          p->ImproperFormat(s); break;
         }
-        break;
+        p->Tokenize(s,Len);
+        if (!strcmp(s[0],":EndVegetationClasses")){done=true;}
       }
-      case(202):  //----------------------------------------------
-      {/*SeasonalCanopyHeight
-        :SeasonalCanopyHeight
-        {string veg_tag, double Ht_Jan..Ht_dec}x<=NumVegClasses
-        :EndSeasonalCanopyHeight*/
-        if (Options.noisy) {cout <<"Seasonal Canopy Height"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
-        invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyHeight command",BAD_DATA);
-        for (int i=0;i<num_read;i++){
-          for (int mon=0;mon<12;mon++){
-            parsed_veg[indices[i]].relative_ht[mon]=properties[i][mon]; 
-          }
+      break;
+    }
+    case(201):  //----------------------------------------------
+    {/*SeasonalCanopyLAI
+       :SeasonalCanopyLAI 
+       {string veg_tag, double LAI_Jan..LAI_dec}x<=NumVegClasses
+       :EndSeasonalCanopyLAI*/
+      if (Options.noisy) {cout <<"Seasonal Canopy LAI"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyLAI command",BAD_DATA);
+      for (int i=0;i<num_read;i++){
+        for (int mon=0;mon<12;mon++){
+          parsed_veg[indices[i]].relative_LAI[mon]=properties[i][mon]; 
         }
-        break;
       }
-      case(203):  //----------------------------------------------
-      {
-        break;
+      break;
+    }
+    case(202):  //----------------------------------------------
+    {/*SeasonalCanopyHeight
+       :SeasonalCanopyHeight
+       {string veg_tag, double Ht_Jan..Ht_dec}x<=NumVegClasses
+       :EndSeasonalCanopyHeight*/
+      if (Options.noisy) {cout <<"Seasonal Canopy Height"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyHeight command",BAD_DATA);
+      for (int i=0;i<num_read;i++){
+        for (int mon=0;mon<12;mon++){
+          parsed_veg[indices[i]].relative_ht[mon]=properties[i][mon]; 
+        }
       }
-      case(204):  //----------------------------------------------
-      {
-        break;
-      }
-      case(205):  //----------------------------------------------
-      {
-        break;
-      }
-      case(206)://----------------------------------------------
-      {/*:VegetationParameterList (General) [optional comments]
+      break;
+    }
+    case(203):  //----------------------------------------------
+    {
+      break;
+    }
+    case(204):  //----------------------------------------------
+    {
+      break;
+    }
+    case(205):  //----------------------------------------------
+    {
+      break;
+    }
+    case(206)://----------------------------------------------
+    {/*:VegetationParameterList (General) [optional comments]
        ":VegetationParameterList" 
-        :Parameters, NAME_1,NAME_2,...,NAME_N
-        :Units     , unit_1,unit_2,...,unit_N
-        {string veg_tag, double param_1, param_2, ... ,param_N}x[<=NumVegClasses]
-        :EndVegetationParameterList*/
-        if (Options.noisy) {cout <<"Vegetation Parameter List"<<endl;}
-        done=false;
-        while (!done)
-        {
-          p->Tokenize(s,Len);
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Parameters")){
-            for (int i=0;i<Len;i++){
-              aParamStrings[i]=s[i];
-            }
-            nParamStrings=Len;
-          }
-          else if (!strcmp(s[0],":Units")){
-            //Do nothing with units for now
-            done=true;
-          }
-          else {p->ImproperFormat(s); break;} 
-        }
-        invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,nParamStrings,num_parsed_veg);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid vegetation code in VegetationParameterList command",BAD_DATA);
-        if (Options.noisy){
-          for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
-        }
-        for (int i=0;i<num_read;i++)
-        {
-          for (int j=0;j<nParamStrings-1;j++)
-          {
-            CVegetationClass::SetVegetationProperty(parsed_veg   [indices[i]],
-                                                    aParamStrings[j+1],
-                                                    properties   [i][j]);
-          }
-        }
-        break;
-      }
-      case(207):  //----------------------------------------------
-      {/*:VegetationChange [HRU group] [new Veg tag] [YYYY-mm-dd] */
-        if (Options.noisy) {cout <<"Change in Vegetation"<<endl;}
-        if (Len<4){p->ImproperFormat(s); break;} 
-        time_struct tt;
-        tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
-        pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt);
-        break;
-      }
-      //==========================================================
-      //==========================================================
-      case(300):  //----------------------------------------------
-      {/*AquiferClasses
-        :AquiferClasses 
-        {string tag, soil_type, thickness}xNumAquiferClasses
-        :EndAquiferClasses*/
-        if (Options.noisy) {cout <<"Aquifer Classes (OBSOLETE)"<<endl;}
-        break;
-      }
-      case(301):  //----------------------------------------------
-      {/*AquiferProfiles / AquiferStacks
-        ":AquiferProfiles" 
-        {string tag, int numhorizons, soil1,thick1,soil2,thick2,...,soilN,thickN}xNumHorizons
-        :EndAquiferProfiles
-        [[thicknesses in meters]]*/
-        if (Options.noisy) {cout <<"Aquifer Profiles"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
+       :Parameters, NAME_1,NAME_2,...,NAME_N
+       :Units     , unit_1,unit_2,...,unit_N
+       {string veg_tag, double param_1, param_2, ... ,param_N}x[<=NumVegClasses]
+       :EndVegetationParameterList*/
+      if (Options.noisy) {cout <<"Vegetation Parameter List"<<endl;}
+      done=false;
+      while (!done)
+      {
         p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (Len>=2)
-          {
-            if (num_parsed_profiles>=MAX_AQUIFER_STACKS-1){
-              ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of aquifer stacks",BAD_DATA);}
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Parameters")){
+          for (int i=0;i<Len;i++){
+            aParamStrings[i]=s[i];
+          }
+          nParamStrings=Len;
+        }
+        else if (!strcmp(s[0],":Units")){
+          //Do nothing with units for now
+          done=true;
+        }
+        else {p->ImproperFormat(s); break;} 
+      }
+      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,nParamStrings,num_parsed_veg);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid vegetation code in VegetationParameterList command",BAD_DATA);
+      if (Options.noisy){
+        for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
+      }
+      for (int i=0;i<num_read;i++)
+      {
+        for (int j=0;j<nParamStrings-1;j++)
+        {
+          CVegetationClass::SetVegetationProperty(parsed_veg   [indices[i]],
+                                                  aParamStrings[j+1],
+                                                  properties   [i][j]);
+        }
+      }
+      break;
+    }
+    case(207):  //----------------------------------------------
+    {/*:VegetationChange [HRU group] [new Veg tag] [YYYY-mm-dd] */
+      if (Options.noisy) {cout <<"Change in Vegetation"<<endl;}
+      if (Len<4){p->ImproperFormat(s); break;} 
+      time_struct tt;
+      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
+      pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt);
+      break;
+    }
+    //==========================================================
+    //==========================================================
+    case(300):  //----------------------------------------------
+    {/*AquiferClasses
+       :AquiferClasses 
+       {string tag, soil_type, thickness}xNumAquiferClasses
+       :EndAquiferClasses*/
+      if (Options.noisy) {cout <<"Aquifer Classes (OBSOLETE)"<<endl;}
+      break;
+    }
+    case(301):  //----------------------------------------------
+    {/*AquiferProfiles / AquiferStacks
+       ":AquiferProfiles" 
+       {string tag, int numhorizons, soil1,thick1,soil2,thick2,...,soilN,thickN}xNumHorizons
+       :EndAquiferProfiles
+       [[thicknesses in meters]]*/
+      if (Options.noisy) {cout <<"Aquifer Profiles"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (Len>=2)
+        {
+          if (num_parsed_profiles>=MAX_AQUIFER_STACKS-1){
+            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of aquifer stacks",BAD_DATA);}
             
-            pAqStacks[num_parsed_aqstacks]=new CAquiferStack(s[0]);
+          pAqStacks[num_parsed_aqstacks]=new CAquiferStack(s[0]);
 
-            int nlayers=s_to_i(s[1]);
-            ExitGracefullyIf(nlayers<0,
-              "ParseClassPropertiesFile: invalid number of aquifer layers in stack",BAD_DATA);
-            //zero is a valid entry for lakes & glaciers (zero horizons)
-            ExitGracefullyIf(Len!=(nlayers*2+2),
-              "ParseClassPropertiesFile:  :AquiferProfiles invalid command length",BAD_DATA);       
-            for (int m=0;m<nlayers;m++)
-            {
-              const CSoilClass *pLayerSoil;
-              double thisthick;
-              thisthick=s_to_d(s[2*m+2+1]);
-              pLayerSoil =CSoilClass::StringToSoilClass(string(s[2*m+2]));
-              if (pLayerSoil==NULL){cout<<"Offending soilcode: "<<string(s[2*m+2])<<endl;}
-              ExitGracefullyIf(pLayerSoil==NULL,
-                "ParseClassPropertiesFile: bad soiltype code in aquifer stack",BAD_DATA);
-              pAqStacks[num_parsed_aqstacks]->AddLayer(thisthick,pLayerSoil);
-            }
-            num_parsed_aqstacks++;
+          int nlayers=s_to_i(s[1]);
+          ExitGracefullyIf(nlayers<0,
+                           "ParseClassPropertiesFile: invalid number of aquifer layers in stack",BAD_DATA);
+          //zero is a valid entry for lakes & glaciers (zero horizons)
+          ExitGracefullyIf(Len!=(nlayers*2+2),
+                           "ParseClassPropertiesFile:  :AquiferProfiles invalid command length",BAD_DATA);       
+          for (int m=0;m<nlayers;m++)
+          {
+            const CSoilClass *pLayerSoil;
+            double thisthick;
+            thisthick=s_to_d(s[2*m+2+1]);
+            pLayerSoil =CSoilClass::StringToSoilClass(string(s[2*m+2]));
+            if (pLayerSoil==NULL){cout<<"Offending soilcode: "<<string(s[2*m+2])<<endl;}
+            ExitGracefullyIf(pLayerSoil==NULL,
+                             "ParseClassPropertiesFile: bad soiltype code in aquifer stack",BAD_DATA);
+            pAqStacks[num_parsed_aqstacks]->AddLayer(thisthick,pLayerSoil);
           }
-          else{
-            p->ImproperFormat(s); break;
-          }
-          p->Tokenize(s,Len);
-          if (!strcmp(s[0],":EndAquiferProfiles")){done=true;}
+          num_parsed_aqstacks++;
         }
-
-        break;
-      }
-      case(500):  //----------------------------------------------
-      {/*ChannelProfile
-        :ChannelProfile [optional string name]
-          :Bedslope {double slope}
-          :SurveyPoints
-            {double x double bed_elev}x num survey points
-          :EndSurveyPoints
-          :RoughnessZones
-            {double x_z double mannings_n}xnum roughness zones
-          :EndRoughnessZones
-        :EndChannelProfile*/
-        string tag;
-        double slope=0.0;
-        if (Options.noisy) {cout <<"Channel Profile"<<endl;}
-        tag=s[1]; 
-        double *x =new double [MAX_SURVEY_PTS];
-        double *y =new double [MAX_SURVEY_PTS];
-        double *xz=new double [MAX_SURVEY_PTS];
-        double *n =new double [MAX_SURVEY_PTS];
-        double *nn=new double [MAX_SURVEY_PTS];
-
-        int countSP=0; //number of survey points
-        int countRS=0; //number of roughness segments
-
+        else{
+          p->ImproperFormat(s); break;
+        }
         p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if ((Len==2) && (!strcmp(s[0],":Bedslope")))   
-          {
-            slope=s_to_d(s[1]);
-          }
-          else if ((Len==1) && (!strcmp(s[0],":SurveyPoints")))
-          {
-            p->Tokenize(s,Len);
-            done=false;
-            while (!done)
-            { 
-              if      (IsComment(s[0], Len)){}//comment line
-              else if (Len==2)           {x[countSP]=s_to_d(s[0]); y[countSP]=s_to_d(s[1]);countSP++;}
-              else                       {p->ImproperFormat(s); break;}
-              p->Tokenize(s,Len);
-              if (!strcmp(s[0],":EndSurveyPoints")){done=true;}
-            }
-            done=false;
-          }
-          else if ((Len==1) && (!strcmp(s[0],":RoughnessZones")))
-          {
-            p->Tokenize(s,Len);
-            done=false;
-            while (!done)
-            { 
-              if      (IsComment(s[0], Len)){}//comment line
-              else if (Len==2           ){xz[countRS]=s_to_d(s[0]);n [countRS]=s_to_d(s[1]);countRS++;}
-              else                       {p->ImproperFormat(s); break;}
-              p->Tokenize(s,Len);
-              if (!strcmp(s[0],":EndRoughnessZones")){done=true;}
-            }
-            done=false;
-          }
-          else if ((Len==1) && (!strcmp(s[0],":EndChannelProfile")))
-          {
-            done=true;
-          }
-          else                       {p->ImproperFormat(s); break;}
-          if (done!=true){p->Tokenize(s,Len);}
+        if (!strcmp(s[0],":EndAquiferProfiles")){done=true;}
+      }
+
+      break;
+    }
+    case(500):  //----------------------------------------------
+    {/*ChannelProfile
+       :ChannelProfile [optional string name]
+       :Bedslope {double slope}
+       :SurveyPoints
+       {double x double bed_elev}x num survey points
+       :EndSurveyPoints
+       :RoughnessZones
+       {double x_z double mannings_n}xnum roughness zones
+       :EndRoughnessZones
+       :EndChannelProfile*/
+      string tag;
+      double slope=0.0;
+      if (Options.noisy) {cout <<"Channel Profile"<<endl;}
+      tag=s[1]; 
+      double *x =new double [MAX_SURVEY_PTS];
+      double *y =new double [MAX_SURVEY_PTS];
+      double *xz=new double [MAX_SURVEY_PTS];
+      double *n =new double [MAX_SURVEY_PTS];
+      double *nn=new double [MAX_SURVEY_PTS];
+
+      int countSP=0; //number of survey points
+      int countRS=0; //number of roughness segments
+
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if ((Len==2) && (!strcmp(s[0],":Bedslope")))   
+        {
+          slope=s_to_d(s[1]);
         }
+        else if ((Len==1) && (!strcmp(s[0],":SurveyPoints")))
+        {
+          p->Tokenize(s,Len);
+          done=false;
+          while (!done)
+          { 
+            if      (IsComment(s[0], Len)){}//comment line
+            else if (Len==2)           {x[countSP]=s_to_d(s[0]); y[countSP]=s_to_d(s[1]);countSP++;}
+            else                       {p->ImproperFormat(s); break;}
+            p->Tokenize(s,Len);
+            if (!strcmp(s[0],":EndSurveyPoints")){done=true;}
+          }
+          done=false;
+        }
+        else if ((Len==1) && (!strcmp(s[0],":RoughnessZones")))
+        {
+          p->Tokenize(s,Len);
+          done=false;
+          while (!done)
+          { 
+            if      (IsComment(s[0], Len)){}//comment line
+            else if (Len==2           ){xz[countRS]=s_to_d(s[0]);n [countRS]=s_to_d(s[1]);countRS++;}
+            else                       {p->ImproperFormat(s); break;}
+            p->Tokenize(s,Len);
+            if (!strcmp(s[0],":EndRoughnessZones")){done=true;}
+          }
+          done=false;
+        }
+        else if ((Len==1) && (!strcmp(s[0],":EndChannelProfile")))
+        {
+          done=true;
+        }
+        else                       {p->ImproperFormat(s); break;}
+        if (done!=true){p->Tokenize(s,Len);}
+      }
 
-        //Create Channel
-        CChannelXSect *pChannel=NULL;
+      //Create Channel
+      CChannelXSect *pChannel=NULL;
 
-        //map roughnesses to survey segments
-        if (xz[0]>x[0]){
-          WriteWarning(":ChannelProfile command: leftmost mannings zone bound to right of leftmost survey point. Roughness zones must cover entire extent of channel survey points.",Options.noisy);
-		    }
+      //map roughnesses to survey segments
+      if (xz[0]>x[0]){
+        WriteWarning(":ChannelProfile command: leftmost mannings zone bound to right of leftmost survey point. Roughness zones must cover entire extent of channel survey points.",Options.noisy);
+      }
        
-		    int j=0;
-        for (int i=0; i<countSP;i++) //go through segments (segment i between x[i] and x[i+1])
-        {
-          if      (j==countRS-1){nn[i]=n[j];} //in rightmost zone
-          else if (xz[j+1]>x[i+1]){nn[i]=n[j];}//next zone switch not in this segment, use most recent
-          else { //zone switch (potentially more than one) in this segment
-            double Li=(x[i+1]-x[i]);
-            nn[i]=(xz[j+1]-x[i])/Li*n[j];
-            while ((j<countRS-1) && (xz[j+1]<x[i+1]))
-            {
-              j++;
-              if (j==countRS-1){nn[i]+=(x[i+1]-xz[j])/Li*n[j];}
-              else            {nn[i]+=(min(x[i+1],xz[j+1])-xz[j])/Li*n[j];}
-            }
+      int j=0;
+      for (int i=0; i<countSP;i++) //go through segments (segment i between x[i] and x[i+1])
+      {
+        if      (j==countRS-1){nn[i]=n[j];} //in rightmost zone
+        else if (xz[j+1]>x[i+1]){nn[i]=n[j];}//next zone switch not in this segment, use most recent
+        else { //zone switch (potentially more than one) in this segment
+          double Li=(x[i+1]-x[i]);
+          nn[i]=(xz[j+1]-x[i])/Li*n[j];
+          while ((j<countRS-1) && (xz[j+1]<x[i+1]))
+          {
+            j++;
+            if (j==countRS-1){nn[i]+=(x[i+1]-xz[j])/Li*n[j];}
+            else            {nn[i]+=(min(x[i+1],xz[j+1])-xz[j])/Li*n[j];}
           }
-          //cout<<"n["<<i<<"]:"<<nn[i]<<endl;
         }
-
-        pChannel=new CChannelXSect(tag,countSP,x,y,nn,slope); 
-
-        delete [] x; delete [] n; delete [] xz; delete [] y;delete []nn;
-        break;
+        //cout<<"n["<<i<<"]:"<<nn[i]<<endl;
       }
-      case(501):  //----------------------------------------------
-      {/*ChannelRatingCurves
-        :ChannelRatingCurves [optional string name]
-          :Bedslope {double slope}
-          :SurveyPoints
-            {double x double bed_elev}x num survey points
-          :EndSurveyPoints
-          :RoughnessZones
-            {double x_z double mannings_n}xnum roughness zones
-          :EndRoughnessZones
-        :EndChannelProfile*/
-        string tag;
-        double slope=0.0;
-        if (Options.noisy) {cout <<"Channel Profile"<<endl;}
-        tag=s[1]; 
-        double *st=new double [MAX_SURVEY_PTS];
-        double *A =new double [MAX_SURVEY_PTS];
-        double *W =new double [MAX_SURVEY_PTS];
-        double *Q =new double [MAX_SURVEY_PTS];
-        double *P =new double [MAX_SURVEY_PTS];
-        int count=0;
-        p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if ((Len>=2) && (!strcmp(s[0],":Bedslope")))   
-          {
-            slope=s_to_d(s[1]);
-          }
-          else if ((Len>=1) && (!strcmp(s[0],":StageRelationships")))
-          {
-            p->Tokenize(s,Len);
-            done=false;
-            while (!done)
-            { 
-              if      (IsComment(s[0], Len)){}//comment line
-              else if (Len>=4)  {
-                st[count]=s_to_d(s[0]); 
-                A[count]=s_to_d(s[1]);
-                W[count]=s_to_d(s[2]);
-                Q[count]=s_to_d(s[3]);
-                if (Len>=5){
-                  P[count]=s_to_d(s[4]);
-                }
-                else{
-                  P[count]=2*st[count]+W[count];
-                }
 
-                count++;
+      pChannel=new CChannelXSect(tag,countSP,x,y,nn,slope); 
+
+      delete [] x; delete [] n; delete [] xz; delete [] y;delete []nn;
+      break;
+    }
+    case(501):  //----------------------------------------------
+    {/*ChannelRatingCurves
+       :ChannelRatingCurves [optional string name]
+       :Bedslope {double slope}
+       :SurveyPoints
+       {double x double bed_elev}x num survey points
+       :EndSurveyPoints
+       :RoughnessZones
+       {double x_z double mannings_n}xnum roughness zones
+       :EndRoughnessZones
+       :EndChannelProfile*/
+      string tag;
+      double slope=0.0;
+      if (Options.noisy) {cout <<"Channel Profile"<<endl;}
+      tag=s[1]; 
+      double *st=new double [MAX_SURVEY_PTS];
+      double *A =new double [MAX_SURVEY_PTS];
+      double *W =new double [MAX_SURVEY_PTS];
+      double *Q =new double [MAX_SURVEY_PTS];
+      double *P =new double [MAX_SURVEY_PTS];
+      int count=0;
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if ((Len>=2) && (!strcmp(s[0],":Bedslope")))   
+        {
+          slope=s_to_d(s[1]);
+        }
+        else if ((Len>=1) && (!strcmp(s[0],":StageRelationships")))
+        {
+          p->Tokenize(s,Len);
+          done=false;
+          while (!done)
+          { 
+            if      (IsComment(s[0], Len)){}//comment line
+            else if (Len>=4)  {
+              st[count]=s_to_d(s[0]); 
+              A[count]=s_to_d(s[1]);
+              W[count]=s_to_d(s[2]);
+              Q[count]=s_to_d(s[3]);
+              if (Len>=5){
+                P[count]=s_to_d(s[4]);
               }
-              else{p->ImproperFormat(s); break;}
-              p->Tokenize(s,Len);
-              if (!strcmp(s[0],":EndStageRelationships")){done=true;}
-            }
-            done=false;
-          }
-          else if ((Len>=1) && (!strcmp(s[0],":EndChannelRatingCurves")))
-          {
-            done=true;
-          }
-          else                       {p->ImproperFormat(s); break;}
-          if (done!=true){p->Tokenize(s,Len);}
-        }
+              else{
+                P[count]=2*st[count]+W[count];
+              }
 
-        //Create Channel
-        CChannelXSect *pChannel=NULL;
+              count++;
+            }
+            else{p->ImproperFormat(s); break;}
+            p->Tokenize(s,Len);
+            if (!strcmp(s[0],":EndStageRelationships")){done=true;}
+          }
+          done=false;
+        }
+        else if ((Len>=1) && (!strcmp(s[0],":EndChannelRatingCurves")))
+        {
+          done=true;
+        }
+        else                       {p->ImproperFormat(s); break;}
+        if (done!=true){p->Tokenize(s,Len);}
+      }
+
+      //Create Channel
+      CChannelXSect *pChannel=NULL;
         
-        pChannel=new CChannelXSect(tag,count,Q,st,W,A,P,slope); 
+      pChannel=new CChannelXSect(tag,count,Q,st,W,A,P,slope); 
 
-        delete [] st; delete [] A; delete [] W; delete [] Q;
-        break;
-      }
-      //==========================================================
-      //==========================================================
-      case(600):  //----------------------------------------------
-      {/*TerrainClasses
-        :TerrainClasses
-        {string tag, hillslope_len, drainage_dens[,lambda]}xNumTerrainClasses
-        :EndTerrainClasses*/
-        if (Options.noisy) {cout <<"Terrain Classes"<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
-        p->Tokenize(s,Len);
-        done=false;
-        while (!done)
-        { 
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
-          else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
-          else if (Len>=3)
-          {
-            if ((num_parsed_terrs>=(MAX_TERRAIN_CLASSES-1)) || (num_parsed_terrs<0)){
-              ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of terrain classes",BAD_DATA);}
+      delete [] st; delete [] A; delete [] W; delete [] Q;
+      break;
+    }
+    //==========================================================
+    //==========================================================
+    case(600):  //----------------------------------------------
+    {/*TerrainClasses
+       :TerrainClasses
+       {string tag, hillslope_len, drainage_dens[,lambda]}xNumTerrainClasses
+       :EndTerrainClasses*/
+      if (Options.noisy) {cout <<"Terrain Classes"<<endl;}
+      if (Len!=1){p->ImproperFormat(s); break;} 
+      p->Tokenize(s,Len);
+      done=false;
+      while (!done)
+      { 
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
+        else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
+        else if (Len>=3)
+        {
+          if ((num_parsed_terrs>=(MAX_TERRAIN_CLASSES-1)) || (num_parsed_terrs<0)){
+            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of terrain classes",BAD_DATA);}
            
-            CTerrainClass::InitializeTerrainProperties(parsed_terrs[num_parsed_terrs],false);//sets all to autocompute
-            pTerrClasses[num_parsed_terrs-1]=new CTerrainClass(s[0]);
-            terraintags [num_parsed_terrs]=s[0];
-            parsed_terrs[num_parsed_terrs].hillslope_length =s_to_d(s[1]); 
-            parsed_terrs[num_parsed_terrs].drainage_density =s_to_d(s[2]); 
-						if (Len==4)
-							parsed_terrs[num_parsed_terrs].lambda =s_to_d(s[3]);
-						num_parsed_terrs++;
-          }
-          else{
-            p->ImproperFormat(s); break;
-          }
-          p->Tokenize(s,Len);
-          if (!strcmp(s[0],":EndTerrainClasses")){done=true;}
+          CTerrainClass::InitializeTerrainProperties(parsed_terrs[num_parsed_terrs],false);//sets all to autocompute
+          pTerrClasses[num_parsed_terrs-1]=new CTerrainClass(s[0]);
+          terraintags [num_parsed_terrs]=s[0];
+          parsed_terrs[num_parsed_terrs].hillslope_length =s_to_d(s[1]); 
+          parsed_terrs[num_parsed_terrs].drainage_density =s_to_d(s[2]); 
+          if (Len==4)
+            parsed_terrs[num_parsed_terrs].lambda =s_to_d(s[3]);
+          num_parsed_terrs++;
         }
-        break;
-      }
-      case(601)://----------------------------------------------
-      {/*:TerrainParameterList (General) [optional comments]
-        string ":TerrainParameterList" 
-        :Parameters, NAME_1,NAME_2,...,NAME_N
-        {string terrain_tag, double param_1, param_2, ... ,param_3}x<=NumTerrainClasses
-        :EndTerrainParameterList*/
-        if (Options.noisy) {cout <<"Terrain Parameter List"<<endl;}
-        done=false;
-        while (!done)
-        {
-          p->Tokenize(s,Len);
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Parameters")){
-            for (int i=0;i<Len;i++){
-              aParamStrings[i]=s[i];
-            }
-            nParamStrings=Len;
-          }
-          else if (!strcmp(s[0],":Units")){
-            //Do nothing with units for now
-            done=true;
-          }
-          else {p->ImproperFormat(s); break;} 
-        }
-        invalid_index=ParsePropArray(p,indices,properties,num_read,terraintags,nParamStrings,num_parsed_terrs);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid terrain class code in TerrainParameterList command",BAD_DATA);
-        if (Options.noisy){
-          for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
-        }
-        for (int i=0;i<num_read;i++)
-        {
-          for (int j=0;j<nParamStrings-1;j++){
-            CTerrainClass::SetTerrainProperty(parsed_terrs[indices[i]],aParamStrings[j+1],properties[i][j]);
-          }
-        }
-        break;
-      }
-      case(700):  //----------------------------------------------
-      {/*:AdiabaticLapseRate
-         string ":AdiabaticLapseRate" value*/
-        if (Options.noisy){cout <<"Adiabatic Lapse Rate"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.adiabatic_lapse=s_to_d(s[1]);
-        break;
-      }
-      case(701):  //----------------------------------------------
-      {/*:UBCTempLapseRates
-         string ":UBCTempLapseRates" A0TLXM A0TLNM A0TLXH A0TLNH P0TEDL P0TEDU */
-        if (Options.noisy){cout <<"UBC Temperature Lapse Rate Params"<<endl;}
-        if (Len<7){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_lapse_params.A0TLXM=s_to_d(s[1]);
-        parsed_globals.UBC_lapse_params.A0TLNM=s_to_d(s[2]);
-        parsed_globals.UBC_lapse_params.A0TLXH=s_to_d(s[3]);
-        parsed_globals.UBC_lapse_params.A0TLNH=s_to_d(s[4]);
-        parsed_globals.UBC_lapse_params.P0TEDL=s_to_d(s[5]);
-        parsed_globals.UBC_lapse_params.P0TEDU=s_to_d(s[6]);
-        break;
-      }
-      case(702):  //----------------------------------------------
-      {/*:UBCPrecipLapseRates
-         string ":UBCPrecipLapseRates" E0LLOW E0LMID  E0LHI  P0GRADL P0GRADM P0GRADU A0STAB*/
-        if (Options.noisy){cout <<"UBC Precipitation Lapse Rate Params"<<endl;}
-        if (Len<8){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_lapse_params.E0LLOW =s_to_d(s[1]);
-        parsed_globals.UBC_lapse_params.E0LMID =s_to_d(s[2]);
-        parsed_globals.UBC_lapse_params.E0LHI  =s_to_d(s[3]);
-        parsed_globals.UBC_lapse_params.P0GRADL=s_to_d(s[4]);
-        parsed_globals.UBC_lapse_params.P0GRADM=s_to_d(s[5]);
-        parsed_globals.UBC_lapse_params.P0GRADU=s_to_d(s[6]);
-        parsed_globals.UBC_lapse_params.A0STAB =s_to_d(s[7]);
-        break;
-      }
-      case(703):  //----------------------------------------------
-      {/*:UBCEvapLapseRates
-         string ":UBCEvapLapseRates" A0PELA */
-        if (Options.noisy){cout <<"UBC Evaporation Lapse Rate Params"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_lapse_params.A0PELA =s_to_d(s[1]);
-        break;
-      }
-      case (704):  //----------------------------------------------
-      {/*:WetAdiabaticLapse       
-         string ":WetAdiabaticLapse" [wet adiabatic lapse rate]  [A0PPTP] */
-        if (Options.noisy){cout <<"UBC Precipitation Wet Adiabatic Lapse Rate Params"<<endl;}
-        if (Len<3){p->ImproperFormat(s); break;}
-        parsed_globals.wet_adiabatic_lapse =s_to_d(s[1]);
-        parsed_globals.UBC_lapse_params.A0PPTP =s_to_d(s[2]);
-        break;
-      }
-      case (705):  //----------------------------------------------
-      {/*:ReferenceMaxTemperatureRange    
-         string ":ReferenceMaxTemperatureRange" [range] */
-        if (Options.noisy){cout <<"UBC Precipitation Wet Adiabatic Lapse Rate Params"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_lapse_params.max_range_temp =s_to_d(s[1]);
-        break;
-      }
-      case (706):  //----------------------------------------------
-      {/*:UBCSnowParams    
-         string ":UBCSnowParams" P0ALBMIN P0ALBMAX P0ALBREC P0ALBASE P0ALBSNW P0ALBMLX */
-        if (Options.noisy){cout <<"UBC Snow Parameters"<<endl;}
-        if (Len<7){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_snow_params.MIN_SNOW_ALBEDO=s_to_d(s[1]);
-        parsed_globals.UBC_snow_params.MAX_SNOW_ALBEDO=s_to_d(s[2]);
-        parsed_globals.UBC_snow_params.ALBREC         =s_to_d(s[3]);
-        parsed_globals.UBC_snow_params.ALBASE         =s_to_d(s[4]);
-        parsed_globals.UBC_snow_params.ALBSNW         =s_to_d(s[5]);
-        parsed_globals.UBC_snow_params.MAX_CUM_MELT   =s_to_d(s[6]);
-        break;
-      }
-      case (707):  //----------------------------------------------
-      {
-         //Obsolete
-        break;
-      }
-      case (708):  //----------------------------------------------
-      {/*:RainSnowTransition    
-         string ":RainSnowTransition"  rainsnow_temp rainsnow_delta*/
-        if (Options.noisy){cout <<"Rain/Snow Transition Parameters"<<endl;}
-        if (Len<3){p->ImproperFormat(s); break;}
-        parsed_globals.rainsnow_temp =s_to_d(s[1]);
-        parsed_globals.rainsnow_delta=s_to_d(s[2]);
-        break;
-      }
-      case (709):  //----------------------------------------------
-      {/*:IrreducibleSnowSaturation    
-         string ":IrreducibleSnowSaturation"  snow_SWI*/
-        if (Options.noisy){cout <<"Maximum liquid water content in snow"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.snow_SWI =s_to_d(s[1]);
-        break;
-      }    
-      case (710):  //----------------------------------------------
-      {/*:UBCGroundwaterSplit    
-         string ":UBCGroundwaterSplit"  split*/
-        if (Options.noisy){cout <<"UBC Groundwater split fraction (PODZSH)"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_GW_split =s_to_d(s[1]);
-        break;
-      }
-      case(711):  //----------------------------------------------
-      {/*:PrecipitationLapseRate
-         string ":PrecipitationLapseRate" value*/
-        if (Options.noisy){cout <<"Precipitation Lapse Rate"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.precip_lapse=s_to_d(s[1]);
-        break;
-      }
-      case (712):  //----------------------------------------------
-      {/*:UBCExposureFactor    
-         string ":UBCExposureFactor"  value*/
-        if (Options.noisy){cout <<"UBC exposure factor (F0ERGY)"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_exposure_fact =s_to_d(s[1]);
-        break;
-      }
-      case (713):  //----------------------------------------------
-      {/*:UBCCloudPenetration    
-         string ":UBCCloudPenetration"  value*/
-        if (Options.noisy){cout <<"UBC cloud penetration factor (P0CAST)"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_cloud_penet =s_to_d(s[1]);
-        break;
-      }
-      case (714):  //----------------------------------------------
-      {/*:UBCLWForestFactor    
-         string ":UBCLWForestFactor"  value*/
-        if (Options.noisy){cout <<"UBC longwave forest estimation factor (P0BLUE*P0LWVF)"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_LW_forest_fact =s_to_d(s[1]);
-        break;
-      }
-      case (715):  //----------------------------------------------
-      {/*:UBCFlashPonding   
-         string ":UBCFlashPonding"  value*/
-        if (Options.noisy){cout <<"UBC Flash Factor ponding threshold (V0FLAS)"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.UBC_flash_ponding =s_to_d(s[1]);
-        break;
-      }
-      case (716):  //----------------------------------------------
-      {/*:AirSnowCoeff   
-         string ":AirSnowCoeff"  value*/
-        if (Options.noisy){cout <<"air/snow heat transfer coefficient"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.airsnow_coeff=s_to_d(s[1]);
-        break;
-      }
-      case (717):  //----------------------------------------------
-      {/*:AvgAnnualSnow   
-         string ":AvgAnnualSnow"  value*/
-        if (Options.noisy){cout <<"average annual snowfall"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.avg_annual_snow=s_to_d(s[1]);
-        break;
-      }
-      case (718):  //----------------------------------------------
-      {/*:AvgAnnualRunoff
-         string ":AvgAnnualRunoff"  value*/
-        if (Options.noisy){cout <<"average annual runoff"<<endl;}
-        if (Len<2){p->ImproperFormat(s); break;}
-        parsed_globals.avg_annual_runoff=s_to_d(s[1]);
-        break;
-      }
-      case(750):  //----------------------------------------------
-      {/*:UBCNorthSWCorr
-         string ":UBCNorthSWCorr" J F M A M J J A S O N D*/
-        if (Options.noisy){cout <<"UBC North-facing shortwave correction"<<endl;}
-        if (Len<13){p->ImproperFormat(s); break;}
-        for (int i=0;i<12;i++){
-          parsed_globals.UBC_n_corr[i]=s_to_d(s[i+1]);
-        }
-        break;
-      }
-      case(751):  //----------------------------------------------
-      {/*:UBCSouthSWCorr
-         string ":UBCSouthSWCorr" J F M A M J J A S O N D*/
-        if (Options.noisy){cout <<"UBC South-facing shortwave correction"<<endl;}
-        if (Len<13){p->ImproperFormat(s); break;}
-        for (int i=0;i<12;i++){
-          parsed_globals.UBC_s_corr[i]=s_to_d(s[i+1]);
-        }
-        break;
-      }
-      case(720):  //----------------------------------------------
-      {/*:GlobalParameter
-         string ":GlobalParameter" {string PARAMETER_NAME} {double value}*/
-        if (Options.noisy){cout <<"Global Parameter"<<endl;}
-        if (Len<3){p->ImproperFormat(s); break;}
-        CGlobalParams::SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
-        break;
-      }
-      case(800):  //----------------------------------------------
-      {/*:TransientParameter {PARAM_NAME} {Parameter_class} [ClassName]
-           {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
-           {double value} x nMeasurements
-         :EndTransientParameter*/
-        if (Options.noisy){cout <<"Transient Parameter"<<endl;}
-        if (Len<3){p->ImproperFormat(s); break;}
-        string param_name,class_name;
-        class_type  ptype(CLASS_GLOBAL);
-        param_name=(string)(s[1]);
-        if      (!strcmp(s[2],"SOIL"        )){ptype=CLASS_SOIL;}
-        else if (!strcmp(s[2],"VEGETATION"  )){ptype=CLASS_VEGETATION;}
-        else if (!strcmp(s[2],"LANDUSE"     )){ptype=CLASS_LANDUSE;}
-        else if (!strcmp(s[2],"TERRAIN"     )){ptype=CLASS_TERRAIN;}
-        else if (!strcmp(s[2],"GLOBALS"     )){ptype=CLASS_GLOBAL;}
         else{
-          ExitGracefully("ParsePropertyFile: invalid parameter class in :TransientParameter command",BAD_DATA);
+          p->ImproperFormat(s); break;
         }
-        if ((ptype!=CLASS_GLOBAL) && (Len>=4)){class_name=(string)(s[3]);}
+        p->Tokenize(s,Len);
+        if (!strcmp(s[0],":EndTerrainClasses")){done=true;}
+      }
+      break;
+    }
+    case(601)://----------------------------------------------
+    {/*:TerrainParameterList (General) [optional comments]
+       string ":TerrainParameterList" 
+       :Parameters, NAME_1,NAME_2,...,NAME_N
+       {string terrain_tag, double param_1, param_2, ... ,param_3}x<=NumTerrainClasses
+       :EndTerrainParameterList*/
+      if (Options.noisy) {cout <<"Terrain Parameter List"<<endl;}
+      done=false;
+      while (!done)
+      {
+        p->Tokenize(s,Len);
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Parameters")){
+          for (int i=0;i<Len;i++){
+            aParamStrings[i]=s[i];
+          }
+          nParamStrings=Len;
+        }
+        else if (!strcmp(s[0],":Units")){
+          //Do nothing with units for now
+          done=true;
+        }
+        else {p->ImproperFormat(s); break;} 
+      }
+      invalid_index=ParsePropArray(p,indices,properties,num_read,terraintags,nParamStrings,num_parsed_terrs);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid terrain class code in TerrainParameterList command",BAD_DATA);
+      if (Options.noisy){
+        for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
+      }
+      for (int i=0;i<num_read;i++)
+      {
+        for (int j=0;j<nParamStrings-1;j++){
+          CTerrainClass::SetTerrainProperty(parsed_terrs[indices[i]],aParamStrings[j+1],properties[i][j]);
+        }
+      }
+      break;
+    }
+    case(700):  //----------------------------------------------
+    {/*:AdiabaticLapseRate
+       string ":AdiabaticLapseRate" value*/
+      if (Options.noisy){cout <<"Adiabatic Lapse Rate"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.adiabatic_lapse=s_to_d(s[1]);
+      break;
+    }
+    case(701):  //----------------------------------------------
+    {/*:UBCTempLapseRates
+       string ":UBCTempLapseRates" A0TLXM A0TLNM A0TLXH A0TLNH P0TEDL P0TEDU */
+      if (Options.noisy){cout <<"UBC Temperature Lapse Rate Params"<<endl;}
+      if (Len<7){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_lapse_params.A0TLXM=s_to_d(s[1]);
+      parsed_globals.UBC_lapse_params.A0TLNM=s_to_d(s[2]);
+      parsed_globals.UBC_lapse_params.A0TLXH=s_to_d(s[3]);
+      parsed_globals.UBC_lapse_params.A0TLNH=s_to_d(s[4]);
+      parsed_globals.UBC_lapse_params.P0TEDL=s_to_d(s[5]);
+      parsed_globals.UBC_lapse_params.P0TEDU=s_to_d(s[6]);
+      break;
+    }
+    case(702):  //----------------------------------------------
+    {/*:UBCPrecipLapseRates
+       string ":UBCPrecipLapseRates" E0LLOW E0LMID  E0LHI  P0GRADL P0GRADM P0GRADU A0STAB*/
+      if (Options.noisy){cout <<"UBC Precipitation Lapse Rate Params"<<endl;}
+      if (Len<8){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_lapse_params.E0LLOW =s_to_d(s[1]);
+      parsed_globals.UBC_lapse_params.E0LMID =s_to_d(s[2]);
+      parsed_globals.UBC_lapse_params.E0LHI  =s_to_d(s[3]);
+      parsed_globals.UBC_lapse_params.P0GRADL=s_to_d(s[4]);
+      parsed_globals.UBC_lapse_params.P0GRADM=s_to_d(s[5]);
+      parsed_globals.UBC_lapse_params.P0GRADU=s_to_d(s[6]);
+      parsed_globals.UBC_lapse_params.A0STAB =s_to_d(s[7]);
+      break;
+    }
+    case(703):  //----------------------------------------------
+    {/*:UBCEvapLapseRates
+       string ":UBCEvapLapseRates" A0PELA */
+      if (Options.noisy){cout <<"UBC Evaporation Lapse Rate Params"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_lapse_params.A0PELA =s_to_d(s[1]);
+      break;
+    }
+    case (704):  //----------------------------------------------
+    {/*:WetAdiabaticLapse       
+       string ":WetAdiabaticLapse" [wet adiabatic lapse rate]  [A0PPTP] */
+      if (Options.noisy){cout <<"UBC Precipitation Wet Adiabatic Lapse Rate Params"<<endl;}
+      if (Len<3){p->ImproperFormat(s); break;}
+      parsed_globals.wet_adiabatic_lapse =s_to_d(s[1]);
+      parsed_globals.UBC_lapse_params.A0PPTP =s_to_d(s[2]);
+      break;
+    }
+    case (705):  //----------------------------------------------
+    {/*:ReferenceMaxTemperatureRange    
+       string ":ReferenceMaxTemperatureRange" [range] */
+      if (Options.noisy){cout <<"UBC Precipitation Wet Adiabatic Lapse Rate Params"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_lapse_params.max_range_temp =s_to_d(s[1]);
+      break;
+    }
+    case (706):  //----------------------------------------------
+    {/*:UBCSnowParams    
+       string ":UBCSnowParams" P0ALBMIN P0ALBMAX P0ALBREC P0ALBASE P0ALBSNW P0ALBMLX */
+      if (Options.noisy){cout <<"UBC Snow Parameters"<<endl;}
+      if (Len<7){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_snow_params.MIN_SNOW_ALBEDO=s_to_d(s[1]);
+      parsed_globals.UBC_snow_params.MAX_SNOW_ALBEDO=s_to_d(s[2]);
+      parsed_globals.UBC_snow_params.ALBREC         =s_to_d(s[3]);
+      parsed_globals.UBC_snow_params.ALBASE         =s_to_d(s[4]);
+      parsed_globals.UBC_snow_params.ALBSNW         =s_to_d(s[5]);
+      parsed_globals.UBC_snow_params.MAX_CUM_MELT   =s_to_d(s[6]);
+      break;
+    }
+    case (707):  //----------------------------------------------
+    {
+      //Obsolete
+      break;
+    }
+    case (708):  //----------------------------------------------
+    {/*:RainSnowTransition    
+       string ":RainSnowTransition"  rainsnow_temp rainsnow_delta*/
+      if (Options.noisy){cout <<"Rain/Snow Transition Parameters"<<endl;}
+      if (Len<3){p->ImproperFormat(s); break;}
+      parsed_globals.rainsnow_temp =s_to_d(s[1]);
+      parsed_globals.rainsnow_delta=s_to_d(s[2]);
+      break;
+    }
+    case (709):  //----------------------------------------------
+    {/*:IrreducibleSnowSaturation    
+       string ":IrreducibleSnowSaturation"  snow_SWI*/
+      if (Options.noisy){cout <<"Maximum liquid water content in snow"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.snow_SWI =s_to_d(s[1]);
+      break;
+    }    
+    case (710):  //----------------------------------------------
+    {/*:UBCGroundwaterSplit    
+       string ":UBCGroundwaterSplit"  split*/
+      if (Options.noisy){cout <<"UBC Groundwater split fraction (PODZSH)"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_GW_split =s_to_d(s[1]);
+      break;
+    }
+    case(711):  //----------------------------------------------
+    {/*:PrecipitationLapseRate
+       string ":PrecipitationLapseRate" value*/
+      if (Options.noisy){cout <<"Precipitation Lapse Rate"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.precip_lapse=s_to_d(s[1]);
+      break;
+    }
+    case (712):  //----------------------------------------------
+    {/*:UBCExposureFactor    
+       string ":UBCExposureFactor"  value*/
+      if (Options.noisy){cout <<"UBC exposure factor (F0ERGY)"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_exposure_fact =s_to_d(s[1]);
+      break;
+    }
+    case (713):  //----------------------------------------------
+    {/*:UBCCloudPenetration    
+       string ":UBCCloudPenetration"  value*/
+      if (Options.noisy){cout <<"UBC cloud penetration factor (P0CAST)"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_cloud_penet =s_to_d(s[1]);
+      break;
+    }
+    case (714):  //----------------------------------------------
+    {/*:UBCLWForestFactor    
+       string ":UBCLWForestFactor"  value*/
+      if (Options.noisy){cout <<"UBC longwave forest estimation factor (P0BLUE*P0LWVF)"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_LW_forest_fact =s_to_d(s[1]);
+      break;
+    }
+    case (715):  //----------------------------------------------
+    {/*:UBCFlashPonding   
+       string ":UBCFlashPonding"  value*/
+      if (Options.noisy){cout <<"UBC Flash Factor ponding threshold (V0FLAS)"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.UBC_flash_ponding =s_to_d(s[1]);
+      break;
+    }
+    case (716):  //----------------------------------------------
+    {/*:AirSnowCoeff   
+       string ":AirSnowCoeff"  value*/
+      if (Options.noisy){cout <<"air/snow heat transfer coefficient"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.airsnow_coeff=s_to_d(s[1]);
+      break;
+    }
+    case (717):  //----------------------------------------------
+    {/*:AvgAnnualSnow   
+       string ":AvgAnnualSnow"  value*/
+      if (Options.noisy){cout <<"average annual snowfall"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.avg_annual_snow=s_to_d(s[1]);
+      break;
+    }
+    case (718):  //----------------------------------------------
+    {/*:AvgAnnualRunoff
+       string ":AvgAnnualRunoff"  value*/
+      if (Options.noisy){cout <<"average annual runoff"<<endl;}
+      if (Len<2){p->ImproperFormat(s); break;}
+      parsed_globals.avg_annual_runoff=s_to_d(s[1]);
+      break;
+    }
+    case(750):  //----------------------------------------------
+    {/*:UBCNorthSWCorr
+       string ":UBCNorthSWCorr" J F M A M J J A S O N D*/
+      if (Options.noisy){cout <<"UBC North-facing shortwave correction"<<endl;}
+      if (Len<13){p->ImproperFormat(s); break;}
+      for (int i=0;i<12;i++){
+        parsed_globals.UBC_n_corr[i]=s_to_d(s[i+1]);
+      }
+      break;
+    }
+    case(751):  //----------------------------------------------
+    {/*:UBCSouthSWCorr
+       string ":UBCSouthSWCorr" J F M A M J J A S O N D*/
+      if (Options.noisy){cout <<"UBC South-facing shortwave correction"<<endl;}
+      if (Len<13){p->ImproperFormat(s); break;}
+      for (int i=0;i<12;i++){
+        parsed_globals.UBC_s_corr[i]=s_to_d(s[i+1]);
+      }
+      break;
+    }
+    case(720):  //----------------------------------------------
+    {/*:GlobalParameter
+       string ":GlobalParameter" {string PARAMETER_NAME} {double value}*/
+      if (Options.noisy){cout <<"Global Parameter"<<endl;}
+      if (Len<3){p->ImproperFormat(s); break;}
+      CGlobalParams::SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
+      break;
+    }
+    case(800):  //----------------------------------------------
+    {/*:TransientParameter {PARAM_NAME} {Parameter_class} [ClassName]
+       {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
+       {double value} x nMeasurements
+       :EndTransientParameter*/
+      if (Options.noisy){cout <<"Transient Parameter"<<endl;}
+      if (Len<3){p->ImproperFormat(s); break;}
+      string param_name,class_name;
+      class_type  ptype(CLASS_GLOBAL);
+      param_name=(string)(s[1]);
+      if      (!strcmp(s[2],"SOIL"        )){ptype=CLASS_SOIL;}
+      else if (!strcmp(s[2],"VEGETATION"  )){ptype=CLASS_VEGETATION;}
+      else if (!strcmp(s[2],"LANDUSE"     )){ptype=CLASS_LANDUSE;}
+      else if (!strcmp(s[2],"TERRAIN"     )){ptype=CLASS_TERRAIN;}
+      else if (!strcmp(s[2],"GLOBALS"     )){ptype=CLASS_GLOBAL;}
+      else{
+        ExitGracefully("ParsePropertyFile: invalid parameter class in :TransientParameter command",BAD_DATA);
+      }
+      if ((ptype!=CLASS_GLOBAL) && (Len>=4)){class_name=(string)(s[3]);}
 
-        CTimeSeries     *pTimeSer=NULL;
-        pTimeSer=CTimeSeries::Parse(p,true,param_name+"_"+s[2]+"_"+s[3],"",Options);
-        if (pTimeSer!=NULL)
-        {
-          CTransientParam *pTransParam=NULL;
-          pTransParam = new CTransientParam(pTimeSer,param_name,ptype,class_name);
-          pModel->AddTransientParameter(pTransParam); 
-        }
-        else{
-          WriteWarning("ParseClassPropertiesFile: unable to read :TransientParameter time series",true);
-        }
-        break;
-      }
-      case(801): //----------------------------------------------
-      {/*:HRUTypeChange [HRU group] [new type tag] [YYYY-mm-dd] */
-        if (Options.noisy) {cout <<"Change in HRU Type"<<endl;}
-        if (Len<4){p->ImproperFormat(s); break;} 
-        time_struct tt;
-        tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
-        pModel->AddPropertyClassChange(s[1],CLASS_HRUTYPE,s[2], tt);
-        break;
-      }
-      case(900):  //----------------------------------------------
-      {/*:DecayCoefficient
-         :DecayCoefficient [constit_name] [value]*/
-        if (Options.noisy){cout <<"DecayCoefficient"<<endl;}
-        if (Len<3){p->ImproperFormat(s); break;}
-        if (pModel->GetTransportModel()!=NULL){
-        //pModel->GetTransportModel()->SetParameter(s[1],"DECAY_COEFF",s_to_d(s[2]),0)
-        }
-        break;
-      }
-      case(901)://----------------------------------------------
-      {/*:SoilTransportParameterList (General) [optional comments]
-        string ":SoilTransportParameterList" [constit_name]
-        :Parameters, NAME_1,NAME_2,...,NAME_N
-        :Units,      unit_1,unit_2,...,unit_N
-        {string soil_tag, double param_1, param_2, ... ,param_3}x<=NumSoilClasses
-        :EndSoilTransportParameterList*/
-        if (Options.noisy) {cout <<"Soil Transport Parameter List"<<endl;}
-        done=false;
-        if (Len<2){p->ImproperFormat(s); break;}
-        int constit_ind=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
-        if (constit_ind==DOESNT_EXIST)
-        {
-          ExitGracefully("Parsing property file: invalid constituent name in :SoilTransportParameterList command",BAD_DATA_WARN);
-          break;
-        }
-        nParamStrings=0;
-        while (!done)
-        {
-          p->Tokenize(s,Len);
-          if      (IsComment(s[0], Len)){}//comment line
-          else if (!strcmp(s[0],":Parameters")){
-            for (int i=0;i<Len;i++){
-              aParamStrings[i]=s[i];
-            }
-            nParamStrings=Len;
-            //done=true;
-          }
-          else if (!strcmp(s[0],":Units")){
-            //Do nothing with units for now
-            done=true;
-          }
-          else {p->ImproperFormat(s); break;} 
-        }
-        invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
-        ExitGracefullyIf(invalid_index,
-              "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
-        if (Options.noisy){
-          for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
-        }
-        for (int i=0;i<num_read;i++)
-        {
-          for (int j=0;j<nParamStrings-1;j++)
-          {
-            CSoilClass::SetSoilTransportProperty(constit_ind,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
-          }
-        }
-        break;
-      }
-      default://----------------------------------------------
+      CTimeSeries     *pTimeSer=NULL;
+      pTimeSer=CTimeSeries::Parse(p,true,param_name+"_"+s[2]+"_"+s[3],"",Options);
+      if (pTimeSer!=NULL)
       {
-        char firstChar = *(s[0]);
-        switch(firstChar)
+        CTransientParam *pTransParam=NULL;
+        pTransParam = new CTransientParam(pTimeSer,param_name,ptype,class_name);
+        pModel->AddTransientParameter(pTransParam); 
+      }
+      else{
+        WriteWarning("ParseClassPropertiesFile: unable to read :TransientParameter time series",true);
+      }
+      break;
+    }
+    case(801): //----------------------------------------------
+    {/*:HRUTypeChange [HRU group] [new type tag] [YYYY-mm-dd] */
+      if (Options.noisy) {cout <<"Change in HRU Type"<<endl;}
+      if (Len<4){p->ImproperFormat(s); break;} 
+      time_struct tt;
+      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
+      pModel->AddPropertyClassChange(s[1],CLASS_HRUTYPE,s[2], tt);
+      break;
+    }
+    case(900):  //----------------------------------------------
+    {/*:DecayCoefficient
+       :DecayCoefficient [constit_name] [value]*/
+      if (Options.noisy){cout <<"DecayCoefficient"<<endl;}
+      if (Len<3){p->ImproperFormat(s); break;}
+      if (pModel->GetTransportModel()!=NULL){
+        //pModel->GetTransportModel()->SetParameter(s[1],"DECAY_COEFF",s_to_d(s[2]),0)
+      }
+      break;
+    }
+    case(901)://----------------------------------------------
+    {/*:SoilTransportParameterList (General) [optional comments]
+       string ":SoilTransportParameterList" [constit_name]
+       :Parameters, NAME_1,NAME_2,...,NAME_N
+       :Units,      unit_1,unit_2,...,unit_N
+       {string soil_tag, double param_1, param_2, ... ,param_3}x<=NumSoilClasses
+       :EndSoilTransportParameterList*/
+      if (Options.noisy) {cout <<"Soil Transport Parameter List"<<endl;}
+      done=false;
+      if (Len<2){p->ImproperFormat(s); break;}
+      int constit_ind=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+      if (constit_ind==DOESNT_EXIST)
+      {
+        ExitGracefully("Parsing property file: invalid constituent name in :SoilTransportParameterList command",BAD_DATA_WARN);
+        break;
+      }
+      nParamStrings=0;
+      while (!done)
+      {
+        p->Tokenize(s,Len);
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":Parameters")){
+          for (int i=0;i<Len;i++){
+            aParamStrings[i]=s[i];
+          }
+          nParamStrings=Len;
+          //done=true;
+        }
+        else if (!strcmp(s[0],":Units")){
+          //Do nothing with units for now
+          done=true;
+        }
+        else {p->ImproperFormat(s); break;} 
+      }
+      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
+      ExitGracefullyIf(invalid_index,
+                       "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
+      if (Options.noisy){
+        for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
+      }
+      for (int i=0;i<num_read;i++)
+      {
+        for (int j=0;j<nParamStrings-1;j++)
         {
-        case ':':
-          {
-            if     (!strcmp(s[0],":FileType"))    {if (Options.noisy){cout<<"Filetype"<<endl;}}//do nothing
-            else if(!strcmp(s[0],":Application")) {if (Options.noisy){cout<<"Application"<<endl;}}//do nothing
-            else if(!strcmp(s[0],":Version"))     {if (Options.noisy){cout<<"Version"<<endl;}}//do nothing
-            else if(!strcmp(s[0],":WrittenBy"))   {if (Options.noisy){cout<<"WrittenBy"<<endl;}}//do nothing
-            else if(!strcmp(s[0],":CreationDate")){if (Options.noisy){cout<<"CreationDate"<<endl;}}//do nothing
-            else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
-            else if(Options.noisy)
-            {
-							string warn;
-							warn="Ignoring unrecognized command starting with "+string(s[0])+" in .rvp file";
-							WriteWarning(warn,Options.noisy);
-						}
-          }
-          break;
-        default:
-          {
-			  string errString = "Unrecognized command in .rvp file:\n   " + string(s[0]);
-            ExitGracefully(errString.c_str(),BAD_DATA);//STRICT 
-          }
-          break;
+          CSoilClass::SetSoilTransportProperty(constit_ind,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
         }
       }
+      break;
+    }
+    default://----------------------------------------------
+    {
+      char firstChar = *(s[0]);
+      switch(firstChar)
+      {
+      case ':':
+      {
+        if     (!strcmp(s[0],":FileType"))    {if (Options.noisy){cout<<"Filetype"<<endl;}}//do nothing
+        else if(!strcmp(s[0],":Application")) {if (Options.noisy){cout<<"Application"<<endl;}}//do nothing
+        else if(!strcmp(s[0],":Version"))     {if (Options.noisy){cout<<"Version"<<endl;}}//do nothing
+        else if(!strcmp(s[0],":WrittenBy"))   {if (Options.noisy){cout<<"WrittenBy"<<endl;}}//do nothing
+        else if(!strcmp(s[0],":CreationDate")){if (Options.noisy){cout<<"CreationDate"<<endl;}}//do nothing
+        else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
+        else if(Options.noisy)
+        {
+          string warn;
+          warn="Ignoring unrecognized command starting with "+string(s[0])+" in .rvp file";
+          WriteWarning(warn,Options.noisy);
+        }
+      }
+      break;
+      default:
+      {
+        string errString = "Unrecognized command in .rvp file:\n   " + string(s[0]);
+        ExitGracefully(errString.c_str(),BAD_DATA);//STRICT 
+      }
+      break;
+      }
+    }
     }//end switch
     end_of_file=p->Tokenize(s,Len);
 
@@ -1397,7 +1397,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   if (!Options.silent){
     cout<<"...done Autocalculating."<<endl;
     cout<<"Checking for Required Model Parameters..."<<endl;
-}
+  }
 
   RVPParameterWarning(aPmaster,aPCmaster,nPmaster,Options);
 
@@ -1416,13 +1416,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   }
 
   ExitGracefullyIf((soil_param_count>0) && (num_parsed_soils==0),
-    "ParsePropertyFile: Soil parameters needed for model, but no soil classes have been defined",BAD_DATA_WARN);
+                   "ParsePropertyFile: Soil parameters needed for model, but no soil classes have been defined",BAD_DATA_WARN);
   ExitGracefullyIf((lult_param_count>0) && (num_parsed_lult==0),
-    "ParsePropertyFile: Land Use parameters needed for model, but no terrain classes have been defined",BAD_DATA_WARN);
+                   "ParsePropertyFile: Land Use parameters needed for model, but no terrain classes have been defined",BAD_DATA_WARN);
   ExitGracefullyIf((veg_param_count>0) && (num_parsed_veg==0),
-    "ParsePropertyFile: Vegetation parameters needed for model, but no vegetation classes have been defined",BAD_DATA_WARN);
+                   "ParsePropertyFile: Vegetation parameters needed for model, but no vegetation classes have been defined",BAD_DATA_WARN);
   ExitGracefullyIf((terrain_param_count>0) && (num_parsed_terrs==0),
-    "ParsePropertyFile: Terrain parameters needed for model, but no terrain classes have been defined",BAD_DATA_WARN);
+                   "ParsePropertyFile: Terrain parameters needed for model, but no terrain classes have been defined",BAD_DATA_WARN);
 
   delete [] aP;
   delete [] aPC;
@@ -1432,19 +1432,19 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   //Check if there is at least one class for each major classification genre
   //Won't be needed if GetParticipatingParamList() populated for all processes
   ExitGracefullyIf(num_parsed_soils==0,
-    "No soil classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
+                   "No soil classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
   ExitGracefullyIf(num_parsed_veg==0,
-    "No vegetation classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
+                   "No vegetation classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
   ExitGracefullyIf(num_parsed_lult==0,
-    "No land use classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
+                   "No land use classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
   ExitGracefullyIf(num_parsed_profiles==0,
-    "No soil profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
+                   "No soil profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
 
   //CVegetationClass::SummarizeToScreen();
 
   
   ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE),
-  "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
+                   "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
   delete [] indices;
   for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
 
@@ -1564,9 +1564,9 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStr
     else if (aPC[ii]==CLASS_GLOBAL){
       if (CGlobalParams::GetParameter(aP[ii])==NOT_SPECIFIED){
             
-          string warning="ParsePropertyFile: required global parameter "+aP[ii]+" not included in .rvp file.";
-          ExitGracefully(warning.c_str(),BAD_DATA_WARN);
-        }
+        string warning="ParsePropertyFile: required global parameter "+aP[ii]+" not included in .rvp file.";
+        ExitGracefully(warning.c_str(),BAD_DATA_WARN);
+      }
     }
   }
 }

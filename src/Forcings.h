@@ -1,3 +1,7 @@
+/*----------------------------------------------------------------
+  Raven Library Source Code
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 
 #ifndef FORCINGS_H

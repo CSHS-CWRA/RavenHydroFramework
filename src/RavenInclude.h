@@ -240,16 +240,16 @@ const double  TIME_CORRECTION  =0.0001; ///< [d] offset for time series min/max 
 /// \brief Series of codes containing possible reasons for exiting
 //
 enum exitcode
-  {
-    BAD_DATA,       ///< For bad input provided by user (requires immediate exit from program)
-    BAD_DATA_WARN,  ///< For bad input provided by user (requires shutdown prior to simulation)
-    RUNTIME_ERR,    ///< For runtime error (bad programming)
-    FILE_OPEN_ERR,  ///< For bad file open (requires immediate exit)
-    RAVEN_OPEN_ERR, ///< for bad RavenErrors.txt file open
-    STUB,           ///< Stub function
-    OUT_OF_MEMORY,  ///< When out of memory
-    SIMULATION_DONE ///< Upon completion of the simulation
-  };
+{
+  BAD_DATA,       ///< For bad input provided by user (requires immediate exit from program)
+  BAD_DATA_WARN,  ///< For bad input provided by user (requires shutdown prior to simulation)
+  RUNTIME_ERR,    ///< For runtime error (bad programming)
+  FILE_OPEN_ERR,  ///< For bad file open (requires immediate exit)
+  RAVEN_OPEN_ERR, ///< for bad RavenErrors.txt file open
+  STUB,           ///< Stub function
+  OUT_OF_MEMORY,  ///< When out of memory
+  SIMULATION_DONE ///< Upon completion of the simulation
+};
 
 void ExitGracefully(const char *statement, exitcode code);//defined in RavenMain.cpp
 
@@ -297,287 +297,287 @@ Enumerated Types
 //
 
 enum numerical_method
-  {
-    EULER,              ///< Euler's method
-    ORDERED_SERIES,     ///< Conventional WB model method - processes in series
-    ITERATED_HEUN       ///< 2nd Order Convergence Method
-  };
+{
+  EULER,              ///< Euler's method
+  ORDERED_SERIES,     ///< Conventional WB model method - processes in series
+  ITERATED_HEUN       ///< 2nd Order Convergence Method
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief The methods which can be used to route water along channel between basins
 //
 enum routing_method
-  {
-    ROUTE_NONE,            ///< No routing to be simulated
-    ROUTE_PLUG_FLOW,       ///< Plug flow routing - no dissipation of wave travelling at reach celerity
-    ROUTE_MUSKINGUM,       ///< standard Muskingum algorithm
-    ROUTE_MUSKINGUM_CUNGE, ///< Muskingum-Cunge algorithm
-    ROUTE_STORAGECOEFF,    ///< Storage coefficient approach
-    ROUTE_DIFFUSIVE_WAVE,  ///< diffusive wave approximation
-    ROUTE_HYDROLOGIC,      ///< simple iterative mass balance approach dS/dt=I-O
-    ROUTE_TVD              ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
-  };
+{
+  ROUTE_NONE,            ///< No routing to be simulated
+  ROUTE_PLUG_FLOW,       ///< Plug flow routing - no dissipation of wave travelling at reach celerity
+  ROUTE_MUSKINGUM,       ///< standard Muskingum algorithm
+  ROUTE_MUSKINGUM_CUNGE, ///< Muskingum-Cunge algorithm
+  ROUTE_STORAGECOEFF,    ///< Storage coefficient approach
+  ROUTE_DIFFUSIVE_WAVE,  ///< diffusive wave approximation
+  ROUTE_HYDROLOGIC,      ///< simple iterative mass balance approach dS/dt=I-O
+  ROUTE_TVD              ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods for interpolating Met Station/Gauge data to HRUs
 //
 enum interp_method
-  {
-    INTERP_AVERAGE_ALL,      ///< Interpolation by taking the average of all values
-    INTERP_NEAREST_NEIGHBOR, ///< Interpolation by assuming the value of the nearest-neighbour
-    INTERP_INVERSE_DISTANCE, ///< Interpolates by a average of all values, weighted by the inverse distance to the interpolated point
-    INTERP_INVERSE_DISTANCE_ELEVATION, ///< Interpolates by a average of all values, weighted by the inverse elevation distance to the interpolated point
-    INTERP_FROM_FILE         ///< User-specified file used to specify interpolation weights for all HRUs
-  };
+{
+  INTERP_AVERAGE_ALL,      ///< Interpolation by taking the average of all values
+  INTERP_NEAREST_NEIGHBOR, ///< Interpolation by assuming the value of the nearest-neighbour
+  INTERP_INVERSE_DISTANCE, ///< Interpolates by a average of all values, weighted by the inverse distance to the interpolated point
+  INTERP_INVERSE_DISTANCE_ELEVATION, ///< Interpolates by a average of all values, weighted by the inverse elevation distance to the interpolated point
+  INTERP_FROM_FILE         ///< User-specified file used to specify interpolation weights for all HRUs
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods for routing water (lateral flow) to catchment outlet
 //
 enum catchment_route//methods used for routing water (lateral flow) to catchment outlet
-  {
-    ROUTE_DUMP,                ///< dumps all surface water directly in channel
-    ROUTE_DELAYED_FIRST_ORDER, ///< Linear Unit Hydrograph with lag time
-    ROUTE_GAMMA_CONVOLUTION,   ///< Gamma Unit Hydrograph
-    ROUTE_TRI_CONVOLUTION,     ///< Triangular Unit Hydrograph
-    ROUTE_RESERVOIR_SERIES     ///< Series of linear reservoirs (Nash Hydrograph)
-  };
+{
+  ROUTE_DUMP,                ///< dumps all surface water directly in channel
+  ROUTE_DELAYED_FIRST_ORDER, ///< Linear Unit Hydrograph with lag time
+  ROUTE_GAMMA_CONVOLUTION,   ///< Gamma Unit Hydrograph
+  ROUTE_TRI_CONVOLUTION,     ///< Triangular Unit Hydrograph
+  ROUTE_RESERVOIR_SERIES     ///< Series of linear reservoirs (Nash Hydrograph)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for calculating potential evapotranspiration (PET)
 /// \docminor Describe the PET methods
 //
 enum evap_method
-  {
-    PET_CONSTANT,            ///< constant uniform PET
-    PET_DATA,                ///< read PET from time series files (not currently implemented)
-    PET_FROMMONTHLY,         ///< PET estimated from specified monthly averages and daily temperature
-    PET_MONTHLY_FACTOR,      ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
-    PET_PENMAN_MONTEITH,     ///< Penman-Monteith equation
-    PET_PENMAN_COMBINATION,  ///< Penman Combination approach
-    PET_PRIESTLEY_TAYLOR,    ///< Priestley Taylor
-    PET_HARGREAVES,          ///< Hargreaves method
-    PET_HARGREAVES_1985,     ///< Hargreaves (1985) method
-    PET_HAMON,               ///< Hamon (19??) method
-    PET_JENSEN_HAISE,        ///<
-    PET_TURC_1961,           ///<
-    PET_MAKKINK_1957,        ///<
-    PET_SHUTTLEWORTH_WALLACE,///<
-    PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
-    PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
-  };
+{
+  PET_CONSTANT,            ///< constant uniform PET
+  PET_DATA,                ///< read PET from time series files (not currently implemented)
+  PET_FROMMONTHLY,         ///< PET estimated from specified monthly averages and daily temperature
+  PET_MONTHLY_FACTOR,      ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
+  PET_PENMAN_MONTEITH,     ///< Penman-Monteith equation
+  PET_PENMAN_COMBINATION,  ///< Penman Combination approach
+  PET_PRIESTLEY_TAYLOR,    ///< Priestley Taylor
+  PET_HARGREAVES,          ///< Hargreaves method
+  PET_HARGREAVES_1985,     ///< Hargreaves (1985) method
+  PET_HAMON,               ///< Hamon (19??) method
+  PET_JENSEN_HAISE,        ///<
+  PET_TURC_1961,           ///<
+  PET_MAKKINK_1957,        ///<
+  PET_SHUTTLEWORTH_WALLACE,///<
+  PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
+  PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for correcting forcing functions with elevation
 //
 enum orographic_corr
-  {
-    OROCORR_NONE,       ///< no orographic corrections
-    OROCORR_SIMPLELAPSE,///< simple linear adiabatic lapse
-    OROCORR_HBV,        ///< HBV-EC style orographic corrections
-    OROCORR_UBCWM,      ///< UBCWM-style orographic corrections
-    OROCORR_UBCWM2,     ///< UBCWM-style orographic corrections (simpler)
-    OROCORR_PRMS        ///< PRMS-style orographic corrections
-  };
+{
+  OROCORR_NONE,       ///< no orographic corrections
+  OROCORR_SIMPLELAPSE,///< simple linear adiabatic lapse
+  OROCORR_HBV,        ///< HBV-EC style orographic corrections
+  OROCORR_UBCWM,      ///< UBCWM-style orographic corrections
+  OROCORR_UBCWM2,     ///< UBCWM-style orographic corrections (simpler)
+  OROCORR_PRMS        ///< PRMS-style orographic corrections
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for converting total precipitation to rain/snow
 //
 enum rainsnow_method
-  {
-    RAINSNOW_DATA,    ///< Use data instead of calculating rain/snow partition
-    RAINSNOW_DINGMAN, ///< from Dingman - based upon min & max daily temperatures
-    RAINSNOW_HBV,     ///< Linear variation between two temperatures - corrects only rain portion
-    RAINSNOW_HSPF,    ///< HSPF approach - variable transition temperature
-    RAINSNOW_UBCWM    ///< Linear variation between two temperatures
-  };
+{
+  RAINSNOW_DATA,    ///< Use data instead of calculating rain/snow partition
+  RAINSNOW_DINGMAN, ///< from Dingman - based upon min & max daily temperatures
+  RAINSNOW_HBV,     ///< Linear variation between two temperatures - corrects only rain portion
+  RAINSNOW_HSPF,    ///< HSPF approach - variable transition temperature
+  RAINSNOW_UBCWM    ///< Linear variation between two temperatures
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating cloud cover
 //
 enum cloudcov_method
-  {
-    CLOUDCOV_NONE, ///< Cloud cover corrections not used
-    CLOUDCOV_DATA, ///< Uses gauge data for cloud cover
-    CLOUDCOV_UBCWM ///< Temperature range-based approach from UBCWM
-  };
+{
+  CLOUDCOV_NONE, ///< Cloud cover corrections not used
+  CLOUDCOV_DATA, ///< Uses gauge data for cloud cover
+  CLOUDCOV_UBCWM ///< Temperature range-based approach from UBCWM
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods correting shortwave radiation for cloud cover
 //      \a stub that defaults to SW_CLOUD_CORR_UBCWM
 enum SW_cloudcover_corr
-  {
-    SW_CLOUD_CORR_NONE,   ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
-    SW_CLOUD_CORR_UBCWM,  ///< Based on UBCWM apporach, which is identical to Dingman (2008) Eq. 5-31
-    SW_CLOUD_CORR_DINGMAN ///< Dingman (2008) Eq. 5-30     (does not require a parameter)
-  };
+{
+  SW_CLOUD_CORR_NONE,   ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
+  SW_CLOUD_CORR_UBCWM,  ///< Based on UBCWM apporach, which is identical to Dingman (2008) Eq. 5-31
+  SW_CLOUD_CORR_DINGMAN ///< Dingman (2008) Eq. 5-30     (does not require a parameter)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating changes to snow albedo
 //
 enum snalbedo_method
-  {
-    SNOW_ALBEDO_UBC   ///< snow albedo according to UBCWM
-  };
+{
+  SNOW_ALBEDO_UBC   ///< snow albedo according to UBCWM
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating canopy transmittance of shortwave radiation
 //
 enum SW_canopy_corr
-  {
-    SW_CANOPY_CORR_NONE,          ///< Applies no canopy correction for shortwave radiation
-    SW_CANOPY_CORR_STATIC,        ///< Bulk shortwave canopy transmittance (no hourly or seasonal variation)
-    SW_CANOPY_CORR_DYNAMIC,       ///< Dynamic (varies hourly and seasonal) shortwave canopy transmittance
-    SW_CANOPY_CORR_UBCWM    ///< shortwave canopy transmittance according to UBCWM  (simple factor)
-  };
+{
+  SW_CANOPY_CORR_NONE,          ///< Applies no canopy correction for shortwave radiation
+  SW_CANOPY_CORR_STATIC,        ///< Bulk shortwave canopy transmittance (no hourly or seasonal variation)
+  SW_CANOPY_CORR_DYNAMIC,       ///< Dynamic (varies hourly and seasonal) shortwave canopy transmittance
+  SW_CANOPY_CORR_UBCWM    ///< shortwave canopy transmittance according to UBCWM  (simple factor)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating net longwave radiation
 //
 enum LW_method
-  {
-    LW_RAD_DATA,    ///< Longwave radiation specified in time series files
-    LW_RAD_DEFAULT, ///< from Dingman text: uses Kustas (1994) approach for effective emissivity \cite Moran1994WRR
-    LW_RAD_UBCWM,   ///< UBCWM approach
-    LW_RAD_HSPF,    ///< HSPF approach (U.S. Corps of Engineers, 1956)
-    LW_RAD_VALIANTZAS ///< From Valiantzas, 2006 via Doorenbos and Pruit (1977) and Shuttleworth and Wallace (1952)
-  };
+{
+  LW_RAD_DATA,    ///< Longwave radiation specified in time series files
+  LW_RAD_DEFAULT, ///< from Dingman text: uses Kustas (1994) approach for effective emissivity \cite Moran1994WRR
+  LW_RAD_UBCWM,   ///< UBCWM approach
+  LW_RAD_HSPF,    ///< HSPF approach (U.S. Corps of Engineers, 1956)
+  LW_RAD_VALIANTZAS ///< From Valiantzas, 2006 via Doorenbos and Pruit (1977) and Shuttleworth and Wallace (1952)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating clear sky and extraterrestrial shortwave radiation
 //
 enum SW_method
-  {
-    SW_RAD_DATA,    ///< Shortwave radiation specified in time series files
-    SW_RAD_DEFAULT, ///< from Dingman text
-    SW_RAD_UBCWM,    ///< UBCWM approach
-    SW_RAD_VALIANTZAS ///< From Valiantzas, 2006
-  };
+{
+  SW_RAD_DATA,    ///< Shortwave radiation specified in time series files
+  SW_RAD_DEFAULT, ///< from Dingman text
+  SW_RAD_UBCWM,    ///< UBCWM approach
+  SW_RAD_VALIANTZAS ///< From Valiantzas, 2006
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for subdaily temporal downscaling of daily average PET and snowmelt
 //
 enum subdaily_method
-  {
-    SUBDAILY_NONE,    ///< no correction for daily average values used
-    SUBDAILY_SIMPLE,  ///< Use half-sine wave pulse from dawn to dusk
-    SUBDAILY_UBC,     ///< from UBCWM - based upon cumulative temperature hours above zero Celsius
-  };
+{
+  SUBDAILY_NONE,    ///< no correction for daily average values used
+  SUBDAILY_SIMPLE,  ///< Use half-sine wave pulse from dawn to dusk
+  SUBDAILY_UBC,     ///< from UBCWM - based upon cumulative temperature hours above zero Celsius
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Representations of soil characteristic curves
 //
 enum soil_charact
-  {
-    BROOKS_COREY,       ///< Brooks-Corey model
-    CLAPP_HORNBERGER,   ///< Clapp-Hornberger model
-    MUALEM_VANGENUCHTEN ///< Mualem-Van Genuchten model
-  };
+{
+  BROOKS_COREY,       ///< Brooks-Corey model
+  CLAPP_HORNBERGER,   ///< Clapp-Hornberger model
+  MUALEM_VANGENUCHTEN ///< Mualem-Van Genuchten model
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for modelling soil
 //
 enum soil_model
-  {
-    SOIL_ONE_LAYER, ///< Single soil layer with additional groundwater storage
-    SOIL_TWO_LAYER, ///< Two soil layers with additional groundwater storage
-    SOIL_MULTILAYER ///< Multiple (2+) soil layers with additional groundwater storage
-  };
+{
+  SOIL_ONE_LAYER, ///< Single soil layer with additional groundwater storage
+  SOIL_TWO_LAYER, ///< Two soil layers with additional groundwater storage
+  SOIL_MULTILAYER ///< Multiple (2+) soil layers with additional groundwater storage
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of HRUs
 /// \remark Lake, Rock, and Glacier types are special because there is no soil storage
 //
 enum HRU_type
-  {
-    HRU_STANDARD,  ///< Standard HRU
-    HRU_LAKE,      ///< Lake HRU
-    HRU_GLACIER,   ///< Glacier HRU
-    HRU_ROCK,      ///< Open Rock HRUs
-    HRU_INVALID_TYPE ///< returned if type is invalid
-  };
+{
+  HRU_STANDARD,  ///< Standard HRU
+  HRU_LAKE,      ///< Lake HRU
+  HRU_GLACIER,   ///< Glacier HRU
+  HRU_ROCK,      ///< Open Rock HRUs
+  HRU_INVALID_TYPE ///< returned if type is invalid
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods for estimating relative humidity
 //
 enum relhum_method
-  {
-    RELHUM_CONSTANT, ///< naive: constant relative humidity of 0.5
-    RELHUM_MINDEWPT, ///< uses minimum daily temperature as estimate of dew point
-    RELHUM_DATA      ///< relative humidity specfied as time series at gauge
-  };
+{
+  RELHUM_CONSTANT, ///< naive: constant relative humidity of 0.5
+  RELHUM_MINDEWPT, ///< uses minimum daily temperature as estimate of dew point
+  RELHUM_DATA      ///< relative humidity specfied as time series at gauge
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods for estimating air pressure
 //
 enum airpress_method
-  {
-    AIRPRESS_CONST, ///< standard atm pressure at 20C
-    AIRPRESS_DATA,  ///< air pressure specified as time series at gauge
-    AIRPRESS_BASIC, ///< power law correction for elevation (source unknown)
-    AIRPRESS_UBC    ///< from UBC Watershed model - simple elevation correction
-  };
+{
+  AIRPRESS_CONST, ///< standard atm pressure at 20C
+  AIRPRESS_DATA,  ///< air pressure specified as time series at gauge
+  AIRPRESS_BASIC, ///< power law correction for elevation (source unknown)
+  AIRPRESS_UBC    ///< from UBC Watershed model - simple elevation correction
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating wind velocity
 //
 enum windvel_method
-  {
-    WINDVEL_CONSTANT, ///< naive: constant wind velocity of 3 m/s
-    WINDVEL_DATA,     ///< wind velocity specfied as time series at gauge
-    WINDVEL_UBCWM     ///< from UBC Watershed model: daily temperature range-based
-  };
+{
+  WINDVEL_CONSTANT, ///< naive: constant wind velocity of 3 m/s
+  WINDVEL_DATA,     ///< wind velocity specfied as time series at gauge
+  WINDVEL_UBCWM     ///< from UBC Watershed model: daily temperature range-based
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating precipitation interception fraction
 //
 enum precip_icept_method
-  {
-    PRECIP_ICEPT_USER,    ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
-    PRECIP_ICEPT_LAI,     ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
-    PRECIP_ICEPT_EXPLAI,  ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
-    PRECIP_ICEPT_HEDSTROM ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
-  };
+{
+  PRECIP_ICEPT_USER,    ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
+  PRECIP_ICEPT_LAI,     ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
+  PRECIP_ICEPT_EXPLAI,  ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
+  PRECIP_ICEPT_HEDSTROM ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of estimating potential melt
 //
 enum potmelt_method
-  {
-    POTMELT_DEGREE_DAY,  ///< simple degree day method
-    POTMELT_EB,          ///< energy balance approach
-    POTMELT_RESTRICTED,  ///< restricted degree-day method
-    POTMELT_UBCWM,       ///< UBC watershed model approach
-    POTMELT_HBV,         ///< custom degree day model used in HBV-EC
-    POTMELT_DATA,         ///< user-specified potential melt forcing
-    POTMELT_USACE        ///< US Army Corps of Engineers Snow Melt
-  };
+{
+  POTMELT_DEGREE_DAY,  ///< simple degree day method
+  POTMELT_EB,          ///< energy balance approach
+  POTMELT_RESTRICTED,  ///< restricted degree-day method
+  POTMELT_UBCWM,       ///< UBC watershed model approach
+  POTMELT_HBV,         ///< custom degree day model used in HBV-EC
+  POTMELT_DATA,         ///< user-specified potential melt forcing
+  POTMELT_USACE        ///< US Army Corps of Engineers Snow Melt
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of performing monthly interpolations
 //
 enum monthly_interp
-  {
-    MONTHINT_UNIFORM,    ///< specified value is constant for month
-    MONTHINT_LINEAR_FOM, ///< linear interpolation between specified data on first of the month
-    MONTHINT_LINEAR_21,  ///< linear interpolation between specified data on twenty-first of the month
-    MONTHINT_LINEAR_MID  ///< linear interpolation between specified data on median day of the month (14th,15th,or 16th)
-  };
+{
+  MONTHINT_UNIFORM,    ///< specified value is constant for month
+  MONTHINT_LINEAR_FOM, ///< linear interpolation between specified data on first of the month
+  MONTHINT_LINEAR_21,  ///< linear interpolation between specified data on twenty-first of the month
+  MONTHINT_LINEAR_MID  ///< linear interpolation between specified data on median day of the month (14th,15th,or 16th)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Basis on which a condition for applying a method/process is built
 /// \docminor Review description of this enumerated type and its methods
 //
 enum condition_basis
-  {
-    BASIS_HRU_TYPE,  ///< condition is based upon HRU type (e.g., if is a lake...)
-    BASIS_HRU_GROUP, ///< condition is based upon HRU group
-    BASIS_LANDCLASS  ///< condition is based upon land use/ land type class (e.g., if urban...)
-  };
+{
+  BASIS_HRU_TYPE,  ///< condition is based upon HRU type (e.g., if is a lake...)
+  BASIS_HRU_GROUP, ///< condition is based upon HRU group
+  BASIS_LANDCLASS  ///< condition is based upon land use/ land type class (e.g., if urban...)
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Possible comparison results
 //
 enum comparison
-  {
-    COMPARE_IS_EQUAL, ///< Compared entities are equal
-    COMPARE_NOT_EQUAL ///< Compared entities are not equal
-  };
+{
+  COMPARE_IS_EQUAL, ///< Compared entities are equal
+  COMPARE_NOT_EQUAL ///< Compared entities are not equal
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Abstration of a condition for applying a method/process
@@ -594,11 +594,11 @@ struct condition
 /// \brief Desired output format
 //
 enum out_format
-  {
-    OUTPUT_STANDARD, ///< Output in default Raven format (.csv files)
-    OUTPUT_ENSIM,    ///< Output in Ensim format (.tb0 files)
-    OUTPUT_NONE
-  };
+{
+  OUTPUT_STANDARD, ///< Output in default Raven format (.csv files)
+  OUTPUT_ENSIM,    ///< Output in Ensim format (.tb0 files)
+  OUTPUT_NONE
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of state variables
@@ -613,67 +613,67 @@ enum out_format
 ///
 //
 enum sv_type
-  {
-    //Water Storage
-    SURFACE_WATER,  ///< [mm] Streams & rivers: see surface_struct (REQUIRED)
-    ATMOSPHERE,     ///< [mm] atmosphere : recieves water only!! (REQUIRED)
-    ATMOS_PRECIP,   ///< [mm] atmosphere : provides water only!! (REQUIRED)
-    PONDED_WATER,   ///< [mm] water (melt & precip) waiting to infiltrate/runoff (REQUIRED)
+{
+  //Water Storage
+  SURFACE_WATER,  ///< [mm] Streams & rivers: see surface_struct (REQUIRED)
+  ATMOSPHERE,     ///< [mm] atmosphere : recieves water only!! (REQUIRED)
+  ATMOS_PRECIP,   ///< [mm] atmosphere : provides water only!! (REQUIRED)
+  PONDED_WATER,   ///< [mm] water (melt & precip) waiting to infiltrate/runoff (REQUIRED)
 
-    SOIL,           ///< [mm] Shallow subsurface/vadose zone
-    CANOPY,         ///< [mm] Trees & vegetation
-    CANOPY_SNOW,    ///< [mm] snow in canopy
-    TRUNK,          ///< [mm] water stored in trunks of trees
-    ROOT,           ///< [mm] water stored in roots
-    GROUNDWATER,    ///< [mm] Deep groundwater
-    DEPRESSION,     ///< [mm] depression/surface storage
-    SNOW,           ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
-    NEW_SNOW,       ///< [mm] new snowfall waiting to be handled by snow balance
-    SNOW_LIQ,       ///< [mm] liquid snow cover
-    WETLAND,        ///< [mm] deep depression storage
-    GLACIER,        ///< [mm] Glacier melt/reservoir storage
-    GLACIER_ICE,    ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
+  SOIL,           ///< [mm] Shallow subsurface/vadose zone
+  CANOPY,         ///< [mm] Trees & vegetation
+  CANOPY_SNOW,    ///< [mm] snow in canopy
+  TRUNK,          ///< [mm] water stored in trunks of trees
+  ROOT,           ///< [mm] water stored in roots
+  GROUNDWATER,    ///< [mm] Deep groundwater
+  DEPRESSION,     ///< [mm] depression/surface storage
+  SNOW,           ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
+  NEW_SNOW,       ///< [mm] new snowfall waiting to be handled by snow balance
+  SNOW_LIQ,       ///< [mm] liquid snow cover
+  WETLAND,        ///< [mm] deep depression storage
+  GLACIER,        ///< [mm] Glacier melt/reservoir storage
+  GLACIER_ICE,    ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
 
-    CONVOLUTION,    ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
-    CONV_STOR,      ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
+  CONVOLUTION,    ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
+  CONV_STOR,      ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
 
-    // Memory variables
-    CUM_INFIL,          ///< [mm] Cumulative infiltration to topsoil
-    GA_MOISTURE_INIT,   ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
-    CUM_SNOWMELT,       ///< [mm] Cumulative snowmelt
+  // Memory variables
+  CUM_INFIL,          ///< [mm] Cumulative infiltration to topsoil
+  GA_MOISTURE_INIT,   ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
+  CUM_SNOWMELT,       ///< [mm] Cumulative snowmelt
 
-    //Temperature/Energy storage [C] or [MJ/m^2]
-    FREEZING_LOSS,      ///< [MJ/m2] Energy lost during freezing (for mass balance)
-    MELTING_LOSS,       ///< [MJ/m2] Energy consumed during melting
-    ENERGY_LOSSES,      ///< [MJ/m2] general energy losses
-    SURFACE_WATER_TEMP, ///< [C] Temperature of surface water
-    SNOW_TEMP,          ///< [C] Temperature of snow
-    COLD_CONTENT,       ///< [C] Cold content of snowpack
-    SOIL_TEMP,          ///< [C] Temperature of soil
-    CANOPY_TEMP,        ///< [C] Temperature fo canopy
+  //Temperature/Energy storage [C] or [MJ/m^2]
+  FREEZING_LOSS,      ///< [MJ/m2] Energy lost during freezing (for mass balance)
+  MELTING_LOSS,       ///< [MJ/m2] Energy consumed during melting
+  ENERGY_LOSSES,      ///< [MJ/m2] general energy losses
+  SURFACE_WATER_TEMP, ///< [C] Temperature of surface water
+  SNOW_TEMP,          ///< [C] Temperature of snow
+  COLD_CONTENT,       ///< [C] Cold content of snowpack
+  SOIL_TEMP,          ///< [C] Temperature of soil
+  CANOPY_TEMP,        ///< [C] Temperature fo canopy
 
-    //Snow/Glacier variables
-    SNOW_DEPTH,         ///< [mm] Snow depth - surrogate for density
-    PERMAFROST_DEPTH,   ///< [mm] depth of permafrost
-    SNOW_DEPTH_STDDEV,  ///< log([mm]) Snow depth standard deviation
-    SNOW_COVER,         ///< [0..1] fractional snow cover
-    GLACIER_CC,         ///< [mm] cold content of glacier
-    SNOW_DEFICIT,       ///< [mm] remaining holding capacity of snowpack (surrogate for SNOW_LIQ)
+  //Snow/Glacier variables
+  SNOW_DEPTH,         ///< [mm] Snow depth - surrogate for density
+  PERMAFROST_DEPTH,   ///< [mm] depth of permafrost
+  SNOW_DEPTH_STDDEV,  ///< log([mm]) Snow depth standard deviation
+  SNOW_COVER,         ///< [0..1] fractional snow cover
+  GLACIER_CC,         ///< [mm] cold content of glacier
+  SNOW_DEFICIT,       ///< [mm] remaining holding capacity of snowpack (surrogate for SNOW_LIQ)
 
-    SNOW_ALBEDO,        ///< [-] Snow Surface albedo
+  SNOW_ALBEDO,        ///< [-] Snow Surface albedo
 
-    //Crop variables
-    CROP_HEAT_UNITS,    ///< [-] cumulative crop heat units
+  //Crop variables
+  CROP_HEAT_UNITS,    ///< [-] cumulative crop heat units
 
-    //Transport variables
-    CONSTITUENT,        ///< [mg/m2] chemical species or tracer
-    CONSTITUENT_SRC,    ///< [mg/m2] chemical species or tracer cumulative source
-    CONSTITUENT_SW,     ///< [mg/m2] chemical species dumped to surface water
-    CONSTITUENT_SINK,   ///< [mg/m2] chemical species or tracer cumulative sink (e.g., decay)
+  //Transport variables
+  CONSTITUENT,        ///< [mg/m2] chemical species or tracer
+  CONSTITUENT_SRC,    ///< [mg/m2] chemical species or tracer cumulative source
+  CONSTITUENT_SW,     ///< [mg/m2] chemical species dumped to surface water
+  CONSTITUENT_SINK,   ///< [mg/m2] chemical species or tracer cumulative sink (e.g., decay)
 
-    //Special
-    UNRECOGNIZED_SVTYPE ///< Unrecognized type of state variable
-  };
+  //Special
+  UNRECOGNIZED_SVTYPE ///< Unrecognized type of state variable
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of hydrological processes
@@ -684,47 +684,47 @@ enum sv_type
 ///
 //
 enum process_type
-  {
-    //In Precipitation.h:
-    PRECIPITATION,
+{
+  //In Precipitation.h:
+  PRECIPITATION,
 
-    //In Infiltration.h
-    INFILTRATION,
+  //In Infiltration.h
+  INFILTRATION,
 
-    //in SoilWaterMovers.h:
-    BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,
+  //in SoilWaterMovers.h:
+  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,
 
-    //in VegetationMovers.h:
-    CANOPY_EVAPORATION, CANOPY_SNOW_EVAPORATION, CANOPY_DRIP,
-    OPEN_WATER_EVAPORATION, LAKE_EVAPORATION,
+  //in VegetationMovers.h:
+  CANOPY_EVAPORATION, CANOPY_SNOW_EVAPORATION, CANOPY_DRIP,
+  OPEN_WATER_EVAPORATION, LAKE_EVAPORATION,
 
-    //in SnowMovers.h
-    SNOWMELT,REFREEZE,SUBLIMATION,SNOW_BALANCE,SNOWSQUEEZE,SNOWTEMP_EVOLVE,
+  //in SnowMovers.h
+  SNOWMELT,REFREEZE,SUBLIMATION,SNOW_BALANCE,SNOWSQUEEZE,SNOWTEMP_EVOLVE,
 
-    //in GlacerProcesses.h
-    GLACIER_MELT,GLACIER_RELEASE,GLACIER_INFIL,
+  //in GlacerProcesses.h
+  GLACIER_MELT,GLACIER_RELEASE,GLACIER_INFIL,
 
-    //in HydroProcessABC.h
-    FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
+  //in HydroProcessABC.h
+  FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
 
-    //in Albedo.h
-    SNOW_ALBEDO_EVOLVE,
+  //in Albedo.h
+  SNOW_ALBEDO_EVOLVE,
 
-    //in CropGrowth.h
-    CROP_HEAT_UNIT_EVOLVE,
+  //in CropGrowth.h
+  CROP_HEAT_UNIT_EVOLVE,
 
-    //in DepressionProcesses.h
-    ABSTRACTION, DEPRESSION_OVERFLOW,
+  //in DepressionProcesses.h
+  ABSTRACTION, DEPRESSION_OVERFLOW,
 
-    //in Advection.h
-    ADVECTION,
+  //in Advection.h
+  ADVECTION,
 
-    //in Decay.h
-    DECAY,
+  //in Decay.h
+  DECAY,
 
-    //..
-    NULL_PROCESS_TYPE
-  };
+  //..
+  NULL_PROCESS_TYPE
+};
 
 
 /******************************************************************
@@ -857,20 +857,20 @@ struct time_struct
 //
 const int MAX_FORCING_TYPES=50;
 enum forcing_type
-  {
-    F_PRECIP,         F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
-    F_RAINFALL,       F_SNOWFALL,
-    F_TEMP_MIN,       F_TEMP_MAX,         F_TEMP_AVE,
-    F_TEMP_DAILY_MIN, F_TEMP_DAILY_MAX,   F_TEMP_DAILY_AVE,
-    F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
-    F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
-    F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
-    F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA,       F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC,
-    F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
-    F_PET,F_OW_PET,   F_PET_MONTH_AVE,
-    F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
-    F_UNRECOGNIZED
-  };
+{
+  F_PRECIP,         F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
+  F_RAINFALL,       F_SNOWFALL,
+  F_TEMP_MIN,       F_TEMP_MAX,         F_TEMP_AVE,
+  F_TEMP_DAILY_MIN, F_TEMP_DAILY_MAX,   F_TEMP_DAILY_AVE,
+  F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
+  F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
+  F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
+  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA,       F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC,
+  F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
+  F_PET,F_OW_PET,   F_PET_MONTH_AVE,
+  F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
+  F_UNRECOGNIZED
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Contains information on forcing functions
 //
@@ -934,8 +934,8 @@ double threshMax     (const double &val1, const double &val2, const double &smoo
 //Time/Date Functions----------------------------------------------
 bool      IsLeapYear (const int          year);
 void JulianConvert   (      double       model_time,
-			    const double       start_date,
-			    const int          start_year,
+                            const double       start_date,
+                            const int          start_year,
                             time_struct &tt);
 string DecDaysToHours(const double       dec_date);
 double InterpolateMo (const double      aVal[12],
@@ -1206,8 +1206,8 @@ int   SmartLookup(const double lookup_val, const int nguess, const double *aVals
 void LatLonToUTMXY (const double lat, //latitude, in decimal degrees
                     const double lon, //longitude, in decimal degrees
                     const int    zone,//UTM zone
-		    double &x,
-		    double &y);
+                    double &x,
+                    double &y);
 
 //Hydrological Functions-------------------------------------------
 //defined in CommonFunctions.cpp
@@ -1217,9 +1217,9 @@ double GetLatentHeatVaporization(const double &T);
 double GetPsychometricConstant  (const double &P, const double &LH_vapor);
 double GetAirDensity            (const double &T, const double &P);
 double GetVerticalTransportEfficiency     (const double &P,   //[kPa]
-					   const double &ref_ht,        //[m]
-					   const double &zero_pl,       //[m]
-					   const double &rough);        //[m]
+                                           const double &ref_ht,        //[m]
+                                           const double &zero_pl,       //[m]
+                                           const double &rough);        //[m]
 double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
                                   const double &ref_ht,       //[m]
                                   const double &zero_pl,      //[m]

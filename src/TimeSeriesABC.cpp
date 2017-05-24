@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "TimeSeriesABC.h"
 
 
-// Should be moved to RavenInclude?? 
+// Should be moved to RavenInclude??
 const double CTimeSeriesABC::BLANK_DATA=-1.2345;
 
 /*****************************************************************
@@ -18,7 +18,7 @@ const double CTimeSeriesABC::BLANK_DATA=-1.2345;
 /// \param type      [in] type of time series being constructed (subclass)
 /// \param Name      [in] name of time series
 /// \param tag       [in] data tag
-/// \param filename  [in] original source file 
+/// \param filename  [in] original source file
 //
 CTimeSeriesABC::CTimeSeriesABC(ts_type type,
                                string  Name,
@@ -35,14 +35,14 @@ CTimeSeriesABC::CTimeSeriesABC(ts_type type,
 /// \brief Implementation of copy constructor (for which the address of a time series is passed)
 /// \param &t [in] Address of a time series of which a "copy" is made
 //
- CTimeSeriesABC::CTimeSeriesABC(string Name,
-                          const CTimeSeriesABC &t)
- {
+CTimeSeriesABC::CTimeSeriesABC(string Name,
+                               const CTimeSeriesABC &t)
+{
   _type=t.GetType();
   _name=Name;
   _tag       =t.GetTag();
   _srcfile = "";
- }
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
 //
@@ -56,13 +56,13 @@ CTimeSeriesABC::~CTimeSeriesABC()
 *****************************************************************/
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns type (subclass) of time series 
+/// \brief Returns type (subclass) of time series
 /// \return type of time series
 //
 CTimeSeriesABC::ts_type CTimeSeriesABC::GetType() const{return _type;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns name of time series 
+/// \brief Returns name of time series
 /// \return name of time series
 //
 string CTimeSeriesABC::GetName()  const{return _name;}

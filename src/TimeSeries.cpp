@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
 #include "Forcings.h"
@@ -9,13 +9,13 @@
    Constructor/Destructor
 ------------------------------------------------------------------
 *****************************************************************/
-  
+
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the time series constructor when time series is single constant value
 /// \param one_value [in] Constant value of time series
 //
 CTimeSeries::CTimeSeries(string Name, string tag, double one_value)
-	:CTimeSeriesABC(ts_regular,Name,tag)
+  :CTimeSeriesABC(ts_regular,Name,tag)
 {
   _start_day=0.0;
   _start_year=1900;
@@ -45,12 +45,12 @@ CTimeSeries::CTimeSeries(string    Name,
                          string    tag,
                          string    filename,
                          double    strt_day,
-                             int   start_yr,
-                         double    data_interval, 
-                         double   *aValues,  
+                         int   start_yr,
+                         double    data_interval,
+                         double   *aValues,
                          const int NumPulses,
                          const bool is_pulse_type)
-	:CTimeSeriesABC(ts_regular,Name,tag,filename)
+  :CTimeSeriesABC(ts_regular,Name,tag,filename)
 {
   _start_day =strt_day;
   _start_year=start_yr;
@@ -58,10 +58,10 @@ CTimeSeries::CTimeSeries(string    Name,
   _interval  =data_interval;
   _nPulses   =NumPulses;
 
-  ExitGracefullyIf(NumPulses<=0,    
-    "CTimeSeries: Constructor: no entries in time series",BAD_DATA);  
-  ExitGracefullyIf(_interval<=0,    
-    "CTimeSeries: Constructor: negative time interval is not allowed",BAD_DATA);  
+  ExitGracefullyIf(NumPulses<=0,
+                   "CTimeSeries: Constructor: no entries in time series",BAD_DATA);
+  ExitGracefullyIf(_interval<=0,
+                   "CTimeSeries: Constructor: negative time interval is not allowed",BAD_DATA);
 
   _aVal=NULL;
   _aVal=new double [_nPulses];
@@ -69,7 +69,7 @@ CTimeSeries::CTimeSeries(string    Name,
 
   for (int n=0; n<_nPulses;n++)
   {
-    _aVal [n]=aValues [n];    
+    _aVal [n]=aValues [n];
   }
   _sub_daily=(_interval<(1.0-TIME_CORRECTION));//to account for potential roundoff error
   _t_corr=0.0;
@@ -85,11 +85,11 @@ CTimeSeries::CTimeSeries(string    Name,
                          string    tag,
                          string    filename,
                          double    strt_day,
-                             int   start_yr,
-                         double    data_interval, 
+                         int   start_yr,
+                         double    data_interval,
                          const int NumPulses,
                          const bool is_pulse_type)
-	:CTimeSeriesABC(ts_regular,Name,tag,filename)
+  :CTimeSeriesABC(ts_regular,Name,tag,filename)
 {
   _start_day =strt_day;
   _start_year=start_yr;
@@ -97,10 +97,10 @@ CTimeSeries::CTimeSeries(string    Name,
   _interval  =data_interval;
   _nPulses   =NumPulses;
 
-  ExitGracefullyIf(NumPulses<=0,    
-    "CTimeSeries: Constructor: no entries in time series",BAD_DATA);  
-  ExitGracefullyIf(_interval<=0,    
-    "CTimeSeries: Constructor: negative time interval is not allowed",BAD_DATA);  
+  ExitGracefullyIf(NumPulses<=0,
+                   "CTimeSeries: Constructor: no entries in time series",BAD_DATA);
+  ExitGracefullyIf(_interval<=0,
+                   "CTimeSeries: Constructor: negative time interval is not allowed",BAD_DATA);
 
   _aVal=NULL;
   _aVal=new double [_nPulses];
@@ -122,15 +122,15 @@ CTimeSeries::CTimeSeries(string    Name,
 /// \brief Implementation of copy constructor (for which the address of a time series is passed)
 /// \param &t [in] Address of a time series of which a "copy" is made
 //
- CTimeSeries::CTimeSeries(string Name,
-                          const CTimeSeries &t)
-	  :CTimeSeriesABC(Name,t)
- {
+CTimeSeries::CTimeSeries(string Name,
+                         const CTimeSeries &t)
+  :CTimeSeriesABC(Name,t)
+{
   _start_day =t.GetStartDay();
   _start_year=t.GetStartYear();
   _pulse     =t.IsPulseType();
   _interval  =t.GetInterval();
-  _nPulses   =t.GetNumValues();  
+  _nPulses   =t.GetNumValues();
   _aVal      =NULL;
   _aVal      =new double [_nPulses];
   ExitGracefullyIf(_aVal==NULL,"CTimeSeries copy constructor",OUT_OF_MEMORY);
@@ -143,7 +143,7 @@ CTimeSeries::CTimeSeries(string    Name,
 
   _aSampVal =NULL; //generated in Resample() routine
   _nSampVal =0;
- }
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
 //
@@ -205,7 +205,7 @@ double CTimeSeries::GetTime(const int n) const{return _interval*n;}
 double CTimeSeries::GetValue(const int n)const{return _aVal[n];}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns true if time series is pulse-based 
+/// \brief Returns true if time series is pulse-based
 /// \return True if time series is pulse-based (i.e., data points represent a constant value over the time interval)
 //
 bool CTimeSeries::IsPulseType()  const{return _pulse;}
@@ -224,10 +224,10 @@ bool CTimeSeries::IsPulseType()  const{return _pulse;}
 void CTimeSeries::Initialize( const double model_start_day,   //julian day
                               const    int model_start_year,  //year
                               const double model_duration,     //days
-                              const double timestep,           //days        
+                              const double timestep,           //days
                               const bool   is_observation)
 {
-  //_t_corr is number of days between model start date and gauge 
+  //_t_corr is number of days between model start date and gauge
   //start date (positive if data exists before model start date)
 
   _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year);
@@ -281,7 +281,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
 void CTimeSeries::Resample(const double &tstep,          //days
                            const double &model_duration)//days
 {
-  int nSampVal=(int)(ceil(model_duration/tstep-TIME_CORRECTION)); 
+  int nSampVal=(int)(ceil(model_duration/tstep-TIME_CORRECTION));
 
   if (!_pulse){nSampVal++;}
   InitializeResample(nSampVal,tstep);
@@ -309,16 +309,16 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
   _nSampVal=nSampVal;
   _sampInterval=sampInterval;
   ExitGracefullyIf(_nSampVal<=0,"CTimeSeries::Resample: bad # of samples",RUNTIME_ERR);
-  
+
   if(_aSampVal!=NULL){delete[] _aSampVal;}
-  
+
   _aSampVal=NULL;
   _aSampVal=new double [_nSampVal];
   ExitGracefullyIf(_aSampVal==NULL,"CTimeSeries::Resample",OUT_OF_MEMORY);
 
   //Initialize with blanks
   for (int nn=0;nn<_nSampVal;nn++){
-      _aSampVal[nn] = BLANK_DATA;
+    _aSampVal[nn] = BLANK_DATA;
   }
 }
 
@@ -408,14 +408,14 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
 double CTimeSeries::GetMinValue(const double &t, const double &tstep) const
 {
   int n1(0),n2(0);
-  double vmin(ALMOST_INF);  
+  double vmin(ALMOST_INF);
   double t_loc=t+_t_corr;
   n1=GetTimeIndex(t_loc      +TIME_CORRECTION);//to account for potential roundoff error
   n2=GetTimeIndex(t_loc+tstep-TIME_CORRECTION);
 
   ExitGracefullyIf(!_pulse,"CTimeSeries::GetMinValue (non-pulse)",STUB);
 
-  if (n1==n2){return _aVal[n1];} 
+  if (n1==n2){return _aVal[n1];}
   for (int n=n1;n<=n2;n++){lowerswap(vmin,_aVal[n]);}
   return vmin;
 }
@@ -429,7 +429,7 @@ double CTimeSeries::GetMinValue(const double &t, const double &tstep) const
 double CTimeSeries::GetMaxValue(const double &t, const double &tstep) const
 {
   int n1(0),n2(0);
-  double vmax(-ALMOST_INF); 
+  double vmax(-ALMOST_INF);
   double t_loc=t+_t_corr;
   n1=GetTimeIndex(t_loc      +TIME_CORRECTION);//to account for potential roundoff error
   n2=GetTimeIndex(t_loc+tstep-TIME_CORRECTION);
@@ -455,7 +455,7 @@ void   CTimeSeries::Multiply     (const double &factor)
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns average value of time series during timestep nn of model simulation
 /// \notes must be called after resampling
-///  
+///
 /// \param nn [in] time step number (measured from simulation start)
 /// \return Average value of time series data over time step nn
 //
@@ -474,7 +474,7 @@ double CTimeSeries::GetSampledValue(const int nn) const
 //
 double CTimeSeries::GetSampledTime(const int nn) const
 {
-	return _sampInterval*nn;
+  return _sampInterval*nn;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns data interval of resampled timeseries
@@ -483,7 +483,7 @@ double CTimeSeries::GetSampledTime(const int nn) const
 //
 double CTimeSeries::GetSampledInterval() const
 {
-	return _sampInterval;
+  return _sampInterval;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns the number resampled values
@@ -491,12 +491,12 @@ double CTimeSeries::GetSampledInterval() const
 //
 int CTimeSeries::GetNumSampledValues() const
 {
-	return _nSampVal;
+  return _nSampVal;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns average value of time series during day model_day of model simulation
 /// \notes uses precalculated value if available
-///  
+///
 /// \param model_day [in] (measured from simulation start)
 /// \return Average value of time series data over specified model day
 //
@@ -507,7 +507,7 @@ double CTimeSeries::GetDailyAvg(const int model_day) const
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns minimum value of time series during day model_day of model simulation
 /// \notes uses precalculated value if available
-///  
+///
 /// \param model_day [in] (measured from simulation start)
 /// \return Minimum value of time series data over specified model day
 //
@@ -518,7 +518,7 @@ double CTimeSeries::GetDailyMin(const int model_day) const
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns maximum value of time series during day model_day of model simulation
 /// \notes uses precalculated value if available
-///  
+///
 /// \param model_day [in] (measured from simulation start)
 /// \return Maximum value of time series data over specified model day
 //
@@ -531,7 +531,7 @@ double CTimeSeries::GetDailyMax(const int model_day) const
 /// \brief Returns the value of the modelled time series at time t
 /// \notes only really valid for special ts storing model results for diagnostics.
 /// \param &t [in] Global time at which point value of time series is to be determined
-/// \param type [in] type of observed time series 
+/// \param type [in] type of observed time series
 /// \return value of modelled time series
 //
 double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
@@ -540,7 +540,7 @@ double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
   n=0;
   double t_loc=t+_t_corr;
   n=GetTimeIndex(t_loc);
-    
+
   if (type == ts_regular){return GetAvgValue(t,_sampInterval);}
   else      {
     if (n==_nPulses-1){return _aVal[n];}
@@ -551,33 +551,33 @@ double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
 ///////////////////////////////////////////////////////////////////
 /// \brief enables time series values to be overwritten to store model-generated information
 /// \notes must use with caution!! Poor encapsulation of data
-///  
-/// \param n [in] index of  value 
+///
+/// \param n [in] index of  value
 /// \param val [in] value to overwrite
 //
-void CTimeSeries::SetValue(const int n, const double &val) 
+void CTimeSeries::SetValue(const int n, const double &val)
 {
-	ExitGracefullyIf(n>=_nPulses, "CTimeSeries::SetValue: Overwriting array allocation",BAD_DATA);
-  _aVal[n]=val; 
+  ExitGracefullyIf(n>=_nPulses, "CTimeSeries::SetValue: Overwriting array allocation",BAD_DATA);
+  _aVal[n]=val;
 }
 
 ///////////////////////////////////////////////////////////////////
 /// \brief enables sampled values to be overwritten to store model-generated information
 /// \notes must use with caution!! Poor encapsulation of data
-///  
-/// \param nn [in] index of sampled value 
+///
+/// \param nn [in] index of sampled value
 /// \param val [in] value to overwrite
 //
-void CTimeSeries::SetSampledValue(const int nn, const double &val) 
+void CTimeSeries::SetSampledValue(const int nn, const double &val)
 {
   ExitGracefullyIf(nn>=_nSampVal, "CTimeSeries::SetSampledValue: Overwriting array allocation",BAD_DATA);
-  _aSampVal[nn]=val; 
+  _aSampVal[nn]=val;
 }
 
 ///////////////////////////////////////////////////////////////////
 /// \brief sums together two time series
 /// \notes time series must have same start time, duration, and sample interval
-///  
+///
 ///
 /// \param pTS1 [in] pointer to first time series
 /// \return pTS2 [in] pointer to second time series
@@ -592,12 +592,12 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
   bool   is_pulse =pTS1->IsPulseType();
 
   ExitGracefullyIf((start_day!=pTS2->GetStartDay()) || (start_yr!=pTS1->GetStartYear()),
-    "CTimeSeries::Sum: time series must have same start date",BAD_DATA);
+                   "CTimeSeries::Sum: time series must have same start date",BAD_DATA);
   ExitGracefullyIf(interval!=pTS2->GetInterval(),
-    "CTimeSeries::Sum: time series must have same interval",BAD_DATA);
+                   "CTimeSeries::Sum: time series must have same interval",BAD_DATA);
   ExitGracefullyIf(nPulses!=pTS2->GetNumValues(),
-    "CTimeSeries::Sum: time series must have same number of data points",BAD_DATA);
-  
+                   "CTimeSeries::Sum: time series must have same number of data points",BAD_DATA);
+
   double *_aVal=new double [nPulses];
   for (int n=0;n<nPulses;n++){
     _aVal[n]=pTS1->GetValue(n)+pTS2->GetValue(n);
@@ -609,48 +609,48 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Parses standard single time series format from file and creates time series object
-/// \param *p [in] CParser object pointing to input file 
+/// \param *p [in] CParser object pointing to input file
 /// \param is_pulse [in] Flag determining time-series type (piecewise-uniform [pulsed] vs. piecewise-linear)
 /// \return Pointer to created time series
 //
 CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
 {
-  
+
   char *s[MAXINPUTITEMS];
   int Len;
   double start_day;
   int    start_yr;
   double tstep;
   int    nMeasurements;
-  
+
   CTimeSeries *pTimeSeries=NULL;
-  
+
   p->Tokenize(s,Len);
   if (Len<4){p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;}
-  
+
   if ((string(s[0]).length()==10) &&
-      ((string(s[0]).substr(4,1)=="/") || 
-      (string(s[0]).substr(4,1)=="-")))
+      ((string(s[0]).substr(4,1)=="/") ||
+       (string(s[0]).substr(4,1)=="-")))
   { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
-    
+
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
     start_day=tt.julian_day;
     start_yr =tt.year;
-    
+
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
       time_struct tt;
       tt=DateStringToTimeStruct("0000-01-01",tString);
       tstep=FixTimestep(tt.julian_day);
-    } 
-    else{ 
+    }
+    else{
       tstep =FixTimestep(s_to_d(s[2]));
     }
-    
+
     nMeasurements=s_to_i(s[3]);
     //units =s[4]
-  } 
+  }
   else
   { //julian date format [nMeasurements] [start_day] [start_yr] [timestep]
     nMeasurements=s_to_i(s[0]);
@@ -666,13 +666,13 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     if (IsLeapYear(start_yr)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
   }
-  
+
   double *aVal;
   aVal =new double [nMeasurements];
   if (aVal == NULL){
     ExitGracefully("CTimeSeries::Parse",OUT_OF_MEMORY);
   }
-  
+
   int n=0;
   //cout << n << " "<<nMeasurements << " " << s[0] << " "<<Len<<" "<<strcmp(s[0],"&")<<" "<<p->Tokenize(s,Len)<<endl;
   while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
@@ -701,16 +701,16 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
   }
 
-  pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse); 
+  pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse);
   delete [] aVal;  aVal =NULL;
   return pTimeSeries;
 }
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Parses multicolumn single time series format and create array of time series objects
-/// \note Creates output array and aType array; these must be 
+/// \note Creates output array and aType array; these must be
 ///  deleted outside of this routine
-/// \param *p [in] CParser object pointing to input file 
+/// \param *p [in] CParser object pointing to input file
 /// \param &nTS [out] number of time series parsed
 /// \param *aType [out] array (size nTS)  of forcing types, one per time series parsed
 /// \param is_pulse [in] Flag determining time-series type (pulse-based vs. piecewise-linear)
@@ -731,10 +731,10 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   //timestamp & numdata info ----------------------------------------------
   p->Tokenize(s,Len);
   if (Len<4){p->ImproperFormat(s);}
-  
+
   if ((string(s[0]).length()==10) &&
-      ((string(s[0]).substr(4,1)=="/") || 
-      (string(s[0]).substr(4,1)=="-")))
+      ((string(s[0]).substr(4,1)=="/") ||
+       (string(s[0]).substr(4,1)=="-")))
   {//in timestamp format  [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
@@ -746,13 +746,13 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
       time_struct tt;
       tt=DateStringToTimeStruct("0000-01-01",tString);
       tstep=FixTimestep(tt.julian_day);
-    } 
-    else{ 
+    }
+    else{
       tstep =FixTimestep(s_to_d(s[2]));
     }
 
     nMeasurements=s_to_i(s[3]);
-  } 
+  }
   else{//julian date format [nMeasurements] [start_day] [start_yr] [timestep]
     nMeasurements=s_to_i(s[0]);
     start_day    =s_to_d(s[1]);
@@ -764,30 +764,30 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   p->Tokenize(s,Len);
   if (strcmp(s[0],":Parameters")){
     ExitGracefully("CTimeSeries::ParseMultiple : MultiData command improperly formatted",BAD_DATA);
-  }  
+  }
   nTS=Len-1;
 
   ExitGracefullyIf(nTS>MAX_MULTIDATA,
-    "CTimeSeries::ParseMultiple: exceeded max entries in :Multidata time series input",BAD_DATA);
+                   "CTimeSeries::ParseMultiple: exceeded max entries in :Multidata time series input",BAD_DATA);
   //for (i=0; i<Len;i++){cout<<s[i]<<" ";}cout<<endl;
-  
+
   for (i=1;i<Len;i++){
     aType[i-1]=GetForcingTypeFromString(s[i]);
     if (noisy){cout<<"  "<<s[i]<<endl;}
     ExitGracefullyIf(i-1>=MAX_MULTIDATA,
-      "CTimeSeries::ParseMultiple : exceeded max number of time series in MultiData command",BAD_DATA);
+                     "CTimeSeries::ParseMultiple : exceeded max number of time series in MultiData command",BAD_DATA);
 
     string warn="CTimeSeries::ParseMultiple : unrecognized time series type "+to_string(s[i])+ " in MultiData command";
     ExitGracefullyIf(aType[i-1]==F_UNRECOGNIZED,  warn.c_str(),BAD_DATA);
   }
 
-  //:Units line ----------------------------------------------  
+  //:Units line ----------------------------------------------
   p->Tokenize(s,Len);
   if (strcmp(s[0],":Units")){
     ExitGracefully("CTimeSeries::ParseMultiple : MultiData command improperly formatted",BAD_DATA);
-  } 
+  }
 
-  //Tabular Data ----------------------------------------------  
+  //Tabular Data ----------------------------------------------
   double **aVal;
   aVal=new double *[nTS];
   for (i=0;i<nTS;i++){
@@ -822,7 +822,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
           aVal [i][n]=fast_s_to_d(s[i]);
           //aVal [i][n]=s_to_d(s[i]);
         }
-        n++;   
+        n++;
       }
     }
   }
@@ -831,12 +831,12 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
     string error="CTimeSeries::ParseMultiple: nsufficient number of time series points. File: "+p->GetFilename();
     ExitGracefully(error.c_str(),BAD_DATA);
   }
-  
+
   // finished. Now process data --------------------------------
   pTimeSeries=new CTimeSeries *[nTS];
   for (i=0;i<nTS;i++){
     pTimeSeries[i]=NULL;
-    pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),"",p->GetFilename(),start_day,start_yr,tstep,aVal[i],nMeasurements,is_pulse); 
+    pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),"",p->GetFilename(),start_day,start_yr,tstep,aVal[i],nMeasurements,is_pulse);
   }
 
   //delete dynamic memory---------------------------------------
@@ -845,7 +845,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   }
   delete [] aVal; aVal=NULL;
   return pTimeSeries;
-  
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Parses set of time series from Ensim .tb0 file format
@@ -871,17 +871,17 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
   time_struct tt;
 
   ifstream INPUT;
-  INPUT.open(filename.c_str());  
+  INPUT.open(filename.c_str());
   if (INPUT.fail())
-  { 
-    string errString="ERROR opening file: "+filename; 
+  {
+    string errString="ERROR opening file: "+filename;
     ExitGracefully(errString.c_str(),BAD_DATA);
     return NULL;
   }
 
-  ifstream inFile(filename.c_str()); 
-  int linecount=(int)std::count(istreambuf_iterator<char>(inFile), 
-                            istreambuf_iterator<char>(), '\n');//count # of lines in file
+  ifstream inFile(filename.c_str());
+  int linecount=(int)std::count(istreambuf_iterator<char>(inFile),
+                                istreambuf_iterator<char>(), '\n');//count # of lines in file
 
   CParser *p=new CParser(INPUT,filename,line);
 
@@ -900,7 +900,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
     else if (!strcmp(s[0],":EndColumnMetaData")){if (noisy){cout<<"EndColumnMetaData"<<endl;}}// do nothing
     else if (!strcmp(s[0],":ColumnUnits")      ){if (noisy){cout<<"ColumnUnits"<<endl;}}// do nothing
     else if (!strcmp(s[0],":ColumnType")       ){if (noisy){cout<<"ColumnType"<<endl;}}// do nothing
-    else if (!strcmp(s[0],":ColumnFormat")     ){if (noisy){cout<<"ColumnFormat"<<endl;}}// do nothing		
+    else if (!strcmp(s[0],":ColumnFormat")     ){if (noisy){cout<<"ColumnFormat"<<endl;}}// do nothing
     else if (!strcmp(s[0],":Format"))
     {
       if (string(s[1]) == "PeriodEnding"){period_ending=true;}
@@ -910,12 +910,12 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       if (noisy){cout<<"StartTime"<<endl;}
       if ((string(s[1]).length()==10) &&
           ((string(s[1]).substr(4,1)=="/") || (string(s[1]).substr(4,1)=="-")))
-      //if (IsValidDateString(s[1]))
+        //if (IsValidDateString(s[1]))
       {//in timestamp format
         tt=DateStringToTimeStruct(string(s[1]),string(s[2]));
         start_day=tt.julian_day;
         start_yr =tt.year;
-      } 
+      }
       else
       {
         string errString = "ParseEnsimTb0: Bad date format: " + string(s[1]);
@@ -928,7 +928,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       string tString=s[1];
       if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format
         tstep=DateStringToTimeStruct("0000-01-01",tString).julian_day;
-      } 
+      }
       else{
         string errString = "ParseEnsimTb0: Bad DeltaT format: " + string(s[1]);
         ExitGracefully(errString.c_str(),BAD_DATA);
@@ -942,9 +942,9 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
         aType[i-1]=GetForcingTypeFromString(s[i]);
         if (noisy){cout<<"  "<<s[i]<<endl;}
         ExitGracefullyIf(i-1>=MAX_MULTIDATA,
-          "CTimeSeries::ParseMultiple : exceeded max number of time series in MultiData command",BAD_DATA);
+                         "CTimeSeries::ParseMultiple : exceeded max number of time series in MultiData command",BAD_DATA);
         ExitGracefullyIf(aType[i-1]==F_UNRECOGNIZED,
-          "CTimeSeries::ParseEnsimtb0 : unrecognized time series type in MultiData command",BAD_DATA);
+                         "CTimeSeries::ParseEnsimtb0 : unrecognized time series type in MultiData command",BAD_DATA);
       }
     }
     else if (!strcmp(s[0],":EndHeader")         )
@@ -970,13 +970,13 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
           //cout<<  aVal [i][n]<<" | ";
         }
         //cout<<endl;
-        n++;  
+        n++;
       }
 
       // Make sure that the nMeasurements is actually equal to the number of valid records found (for n<nMeasurements)
       nMeasurements = n;
       if (noisy){cout <<"  Number of valid measurements found: "<<nMeasurements<<endl;}
- 
+
       // finished. Now process data --------------------------------
       if (period_ending){
         start_day=start_day-tstep;
@@ -986,7 +986,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       pTimeSeries=new CTimeSeries *[nTS];
       for (i=0;i<nTS;i++){
         pTimeSeries[i]=NULL;
-        pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),"",filename,start_day,start_yr,tstep,aVal[i],nMeasurements,true); 
+        pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),"",filename,start_day,start_yr,tstep,aVal[i],nMeasurements,true);
       }
 
       //delete dynamic memory---------------------------------------

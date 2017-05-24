@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-class definitions:
-  CmvCropHeatUnitEvolve	
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------
+  class definitions:
+  CmvCropHeatUnitEvolve
+  ----------------------------------------------------------------*/
 
 #ifndef CROPGROWTH_H
 #define CROPGROWTH_H
@@ -23,32 +23,32 @@ enum CHUevolve_type{
 /// \brief Calculates the evolution of Crop Heat Units
 //
 class CmvCropHeatUnitEvolve: public CHydroProcessABC
-{  
-  private:/*------------------------------------------------------*/
-    CHUevolve_type type; ///< Method of modeling CHUs selected
+{
+private:/*------------------------------------------------------*/
+  CHUevolve_type type; ///< Method of modeling CHUs selected
 
-  public:/*-------------------------------------------------------*/
-		//Constructors/destructors:
-		CmvCropHeatUnitEvolve(const CHUevolve_type snalbtype);
-		~CmvCropHeatUnitEvolve(); 
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvCropHeatUnitEvolve(const CHUevolve_type snalbtype);
+  ~CmvCropHeatUnitEvolve();
 
-		//inherited functions
-		void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &tt,
-                                double      *rates) const;
-    void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
-								          const optStruct	  &Options,
-								          const time_struct &t,
-                                double      *rates) const;
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double              *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &t,
+                        double      *rates) const;
 
-    void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-    static void GetParticipatingStateVarList(CHUevolve_type  snalbtype,
-                                                    sv_type *aSV, 
-                                                    int     *aLev, 
-                                                    int     &nSV);
+  void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(CHUevolve_type  snalbtype,
+                                           sv_type *aSV,
+                                           int     *aLev,
+                                           int     &nSV);
 };
 #endif

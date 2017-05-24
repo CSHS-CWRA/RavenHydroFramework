@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
 #include "Model.h"
@@ -24,20 +24,20 @@ void MassEnergyBalance( CModel            *pModel,
   int         iSW, iAtm;                             //Surface water, atmospheric precip indices
 
   int         iFrom[MAX_CONNECTIONS];                 //arrays used to pass values through GetRatesOfChange routines
-  int         iTo  [MAX_CONNECTIONS];                 
+  int         iTo  [MAX_CONNECTIONS];
   double      rates_of_change[MAX_CONNECTIONS];
-  
+
   double      tstep;              //[day] timestep
   double      t;                  //model time
   time_struct tt_end;             //time at end of timestep
-  
+
   CHydroUnit *pHRU;               //pointer to current HRU
   CSubBasin  *pBasin;             //pointer to current SubBasin
 
-  static double    **aPhi=NULL;   //[mm;C] state variable arrays at initial, intermediate times; 
+  static double    **aPhi=NULL;   //[mm;C] state variable arrays at initial, intermediate times;
   static double    **aPhinew;     //[mm;C] state variable arrays at end of timestep; value after convergence
   static double    **aPhiPrevIter;
-  
+
   static double     *aQinnew;     //[m3/s] inflow rate to subbasin reach p at t+dt [size=_nSubBasins]
   static double     *aQoutnew;    //[m3/s] final outflow from reach segment seg at time t+dt [size=MAX_RIVER_SEGS]
   static double     *aRouted;     //[m3]
@@ -51,10 +51,10 @@ void MassEnergyBalance( CModel            *pModel,
   //local shorthand for often-used variables
   NS           =pModel->GetNumStateVars();
   NB           =pModel->GetNumSubBasins();
-  nHRUs        =pModel->GetNumHRUs(); 
+  nHRUs        =pModel->GetNumHRUs();
   nProcesses   =pModel->GetNumProcesses();
   nConstituents=pModel->GetTransportModel()->GetNumConstituents();
-  tstep        =Options.timestep; 
+  tstep        =Options.timestep;
   t            =tt.model_time;
 
   JulianConvert(t+tstep,Options.julian_start_day,Options.julian_start_year,tt_end);
@@ -63,7 +63,7 @@ void MassEnergyBalance( CModel            *pModel,
   //(only gets called once in course of simulation)
   if (aPhi==NULL)
   {
-    
+
     aPhi        =new double *[nHRUs];
     aPhinew     =new double *[nHRUs];
     aPhiPrevIter=new double *[nHRUs];
@@ -132,9 +132,9 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
-  iSW =pModel->GetStateVarIndex(SURFACE_WATER); 
+  iSW =pModel->GetStateVarIndex(SURFACE_WATER);
   iAtm=pModel->GetStateVarIndex(ATMOS_PRECIP);
-  
+
   //=================================================================
   //==Standard (in series) approach==================================
   // -order is critical!
@@ -142,7 +142,7 @@ void MassEnergyBalance( CModel            *pModel,
   {
     for (k=0;k<nHRUs;k++)
     {
-      pHRU=pModel->GetHydroUnit(k); 
+      pHRU=pModel->GetHydroUnit(k);
 
       //model all hydrologic processes occuring at HRU scale
       //-----------------------------------------------------------------
@@ -153,28 +153,28 @@ void MassEnergyBalance( CModel            *pModel,
 
         if (pModel->ApplyProcess(j,aPhinew[k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change)) //note aPhinew is newest version
         {
-				  if (nConnections>MAX_CONNECTIONS){
-				    cout<<nConnections<<endl;
-				    ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);}
-				  
-					for (q=0;q<nConnections;q++)//each process may have multiple connections
-				  {
-						if (iTo[q]!=iFrom[q]){
-						  aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
-						  aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
-						}
-						else{
-						  aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
-						}
-						pModel->IncrementBalance(js,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+          if (nConnections>MAX_CONNECTIONS){
+            cout<<nConnections<<endl;
+            ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);}
 
-						js++;
-				  }//end for q=0 to nConnections
-				}// end if (pModel->ApplyProcess
-				else
-				{
-					js+=nConnections;
-				}
+          for (q=0;q<nConnections;q++)//each process may have multiple connections
+          {
+            if (iTo[q]!=iFrom[q]){
+              aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
+              aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+            }
+            else{
+              aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
+            }
+            pModel->IncrementBalance(js,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+
+            js++;
+          }//end for q=0 to nConnections
+        }// end if (pModel->ApplyProcess
+        else
+        {
+          js+=nConnections;
+        }
       }//end for j=0 to nProcesses
     }//end for k=0 to nHRUs
 
@@ -183,11 +183,11 @@ void MassEnergyBalance( CModel            *pModel,
   //=================================================================
   //==Simple Euler Method ===========================================
   // -order of processes doesn't matter
-  else if (Options.sol_method==EULER) 
+  else if (Options.sol_method==EULER)
   {
     for (k=0;k<nHRUs;k++)
     {
-      pHRU=pModel->GetHydroUnit(k); 
+      pHRU=pModel->GetHydroUnit(k);
 
       //model all hydrologic processes occuring at HRU scale
       //-----------------------------------------------------------------
@@ -198,27 +198,27 @@ void MassEnergyBalance( CModel            *pModel,
 
         if (pModel->ApplyProcess(j,aPhi   [k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change))//note aPhi is info from start of timestep
         {
-	        for (q=0;q<nConnections;q++)//each process may have multiple connections
-	        {
-	          if (iTo[q]!=iFrom[q]){
-	            aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
-	            aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
-	          }
-	          else{
-	            aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
-	          }
+          for (q=0;q<nConnections;q++)//each process may have multiple connections
+          {
+            if (iTo[q]!=iFrom[q]){
+              aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
+              aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+            }
+            else{
+              aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
+            }
 
-	          pModel->IncrementBalance(js,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
-	          js++;
-	        }//end for q=0 to nConnections
-				}
-				else
-				{
-					js+=nConnections;
-				}
+            pModel->IncrementBalance(js,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+            js++;
+          }//end for q=0 to nConnections
+        }
+        else
+        {
+          js+=nConnections;
+        }
       }//end for j=0 to nProcesses
     }//end for k=0 to nHRUs
-  }//end if Options.sol_method==EULER 
+  }//end if Options.sol_method==EULER
 
   //===================================================================
   //==Iterated Heun Method ============================================
@@ -235,7 +235,7 @@ void MassEnergyBalance( CModel            *pModel,
     //Go through all HRUs
     for (k=0;k<nHRUs;k++)
     {
-      pHRU=pModel->GetHydroUnit(k); 
+      pHRU=pModel->GetHydroUnit(k);
 
       do  //Iterate
       {
@@ -254,26 +254,26 @@ void MassEnergyBalance( CModel            *pModel,
           // ROC 1 - uses initial state var values
           // ROC 2 - uses previous iteration values
           if (pModel->ApplyProcess(j,aPhi[k]        ,pHRU,Options,tt     ,iFrom,iTo,nConnections,rate1))
-					{   
-	          pModel->ApplyProcess(j,aPhiPrevIter[k],pHRU,Options,tt_end ,iFrom,iTo,nConnections,rate2);
-          
-	          for (q=0;q<nConnections;q++)//each process may have multiple connections
-	          {
-	            rate_guess[j][q] = 0.5*(rate1[q] + rate2[q]);
-            
-	            if(iFrom[q]==iAtm){               //check if water is coming from precipitation
-	              rate_guess[j][q] = rate1[q];    //sets the rate of change to be the original (prevents over filling of SV's)
-	            }
+          {
+            pModel->ApplyProcess(j,aPhiPrevIter[k],pHRU,Options,tt_end ,iFrom,iTo,nConnections,rate2);
 
-	            if (iTo[q]!=iFrom[q]){
-	              aPhinew[k][iFrom[q]]  -= rate_guess[j][q]*tstep;//mass/energy balance maintained
-	              aPhinew[k][iTo  [q]]  += rate_guess[j][q]*tstep;//change is an exchange of energy or mass, which must be preserved
-	            }
-	            else{   //correction for state vars that are not storage compartments
-	              aPhinew[k][iTo  [q]]  += rate_guess[j][q]*tstep;
-	            }
-	          }//end for q=0 to nConnections
-					}
+            for (q=0;q<nConnections;q++)//each process may have multiple connections
+            {
+              rate_guess[j][q] = 0.5*(rate1[q] + rate2[q]);
+
+              if(iFrom[q]==iAtm){               //check if water is coming from precipitation
+                rate_guess[j][q] = rate1[q];    //sets the rate of change to be the original (prevents over filling of SV's)
+              }
+
+              if (iTo[q]!=iFrom[q]){
+                aPhinew[k][iFrom[q]]  -= rate_guess[j][q]*tstep;//mass/energy balance maintained
+                aPhinew[k][iTo  [q]]  += rate_guess[j][q]*tstep;//change is an exchange of energy or mass, which must be preserved
+              }
+              else{   //correction for state vars that are not storage compartments
+                aPhinew[k][iTo  [q]]  += rate_guess[j][q]*tstep;
+              }
+            }//end for q=0 to nConnections
+          }
         }//end for j=0 to nProcesses
 
         //Calculate convegence criterion
@@ -286,7 +286,7 @@ void MassEnergyBalance( CModel            *pModel,
         }
         converg = false;
 
-        if((converg_check <= Options.convergence_crit) || 
+        if((converg_check <= Options.convergence_crit) ||
            (iter          == Options.max_iterations))   //convergence check
         {
           js  =0;
@@ -298,7 +298,7 @@ void MassEnergyBalance( CModel            *pModel,
             nConnections=pModel->GetNumConnections(j);
             for(q=0;q<nConnections;q++)
             {
-              pModel->IncrementBalance(js,k,rate_guess[j][q]*tstep);  
+              pModel->IncrementBalance(js,k,rate_guess[j][q]*tstep);
               js++;
             }
           }
@@ -306,7 +306,7 @@ void MassEnergyBalance( CModel            *pModel,
 
         converg_check = 0.0;
 
-      } while(converg != true);  //end do loop 
+      } while(converg != true);  //end do loop
     }//end of for k=0 to nHRUs
   }//end iterated Heun
 
@@ -315,7 +315,7 @@ void MassEnergyBalance( CModel            *pModel,
   {
     ExitGracefully("MassEnergyBalance",STUB);
   }
-  
+
   //-----------------------------------------------------------------
   //      ROUTING
   //-----------------------------------------------------------------
@@ -328,7 +328,7 @@ void MassEnergyBalance( CModel            *pModel,
   }
   for (k=0;k<nHRUs;k++)
   {
-    pHRU=pModel->GetHydroUnit(k); 
+    pHRU=pModel->GetHydroUnit(k);
     p   =pHRU->GetSubBasinIndex();
 
     //surface water moved instantaneously from HRU to basin reach/channel storage
@@ -336,22 +336,22 @@ void MassEnergyBalance( CModel            *pModel,
 
     aPhinew[k][iSW]=0.0;//zero out surface water storage
   }
-  //Route water over timestep 
+  //Route water over timestep
   //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
   for (pp=0;pp<NB;pp++)
   {
     p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index
-      
+
     pBasin=pModel->GetSubBasin(p);
     pBasin->UpdateFlowRules(tt,Options);
-      
+
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
     pBasin->SetInflow       (aQinnew[p]);
     pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
     pBasin->RouteWater      (aQoutnew,res_ht,Options,tt);      //Where everything happens!
 
-    pBasin->UpdateOutflows  (aQoutnew,res_ht,Options,tt,false);//actually updates flow values here 
+    pBasin->UpdateOutflows  (aQoutnew,res_ht,Options,tt,false);//actually updates flow values here
 
     pTo   =pModel->GetDownstreamBasin(p);
     if (pTo!=DOESNT_EXIST)//correct downstream inflows
@@ -359,7 +359,7 @@ void MassEnergyBalance( CModel            *pModel,
       aQinnew[pTo]+=pBasin->GetOutflowRate();
     }
   }//end for pp...
-  
+
   //-----------------------------------------------------------------
   //      MASS CONSTITUENT ROUTING
   //-----------------------------------------------------------------
@@ -375,7 +375,7 @@ void MassEnergyBalance( CModel            *pModel,
     }
     for (k=0;k<nHRUs;k++)
     {
-      pHRU=pModel->GetHydroUnit(k); 
+      pHRU=pModel->GetHydroUnit(k);
       p   =pHRU->GetSubBasinIndex();
 
       for (c=0;c<nConstituents;c++)
@@ -385,12 +385,12 @@ void MassEnergyBalance( CModel            *pModel,
         aPhinew[k][iSWmass]=0.0;
       }
     }
-    //Route mass over timestep 
+    //Route mass over timestep
     //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
     for (pp=0;pp<NB;pp++)
     {
       p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list
-      
+
       pBasin=pModel->GetSubBasin(p);
 
       pModel->GetTransportModel()->SetMassInflows    (p,aMinnew[p]);
@@ -409,7 +409,7 @@ void MassEnergyBalance( CModel            *pModel,
   }
 
   //-----------------------------------------------------------------
-  //          AGGREGATION ACROSS HRU GROUPS 
+  //          AGGREGATION ACROSS HRU GROUPS
   //-----------------------------------------------------------------
   double agg_phi;
   double agg_area,area;
@@ -434,7 +434,7 @@ void MassEnergyBalance( CModel            *pModel,
           agg_area+=area;
         }
         avg_phi=agg_phi/agg_area;
-        
+
         //assign average state variable value to all HRUs in aggregation group
         for (int k2=0;k2<pAggGroup->GetNumHRUs();k2++)
         {
@@ -445,15 +445,15 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
   }
-  
-  //update state variable values===================================== 
+
+  //update state variable values=====================================
   for (k=0;k<nHRUs;k++){
     pHRU=pModel->GetHydroUnit(k);
     for (i=0;i<NS ;i++){
-      pHRU->SetStateVarValue(i,aPhinew[k][i]);   
+      pHRU->SetStateVarValue(i,aPhinew[k][i]);
     }
   }
-  
+
   //delete static arrays (only called once)=========================
   if (t>=Options.duration-Options.timestep)
   {
@@ -468,21 +468,21 @@ void MassEnergyBalance( CModel            *pModel,
     delete [] aQinnew;      aQinnew     =NULL;
     delete [] aQoutnew;     aQoutnew    =NULL;
     delete [] aRouted;      aRouted     =NULL;
-	
-    //delete transport static arrays.    
-		if (nConstituents>0){ 
-			for (p=0;p<NB;p++){
-				delete [] aMinnew[p];
-				delete [] aRoutedMass[p];
-			}
-		
-			for (i=0;i<MAX_RIVER_SEGS;i++){
-				delete [] aMoutnew[i];
-			}
-		}     
-		delete [] aMinnew;      aMinnew     =NULL;
-		delete [] aRoutedMass;  aRoutedMass =NULL;
-		delete [] aMoutnew;     aMoutnew    =NULL;
-		}
+
+    //delete transport static arrays.
+    if (nConstituents>0){
+      for (p=0;p<NB;p++){
+        delete [] aMinnew[p];
+        delete [] aRoutedMass[p];
+      }
+
+      for (i=0;i<MAX_RIVER_SEGS;i++){
+        delete [] aMoutnew[i];
+      }
+    }
+    delete [] aMinnew;      aMinnew     =NULL;
+    delete [] aRoutedMass;  aRoutedMass =NULL;
+    delete [] aMoutnew;     aMoutnew    =NULL;
   }
+}
 

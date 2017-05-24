@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2014 the Raven Development Team
-------------------------------------------------------------------
-	Advection of soluble contaminant/tracer/nutrient
-----------------------------------------------------------------*/
+  Copyright (c) 2008-2017 the Raven Development Team
+  ------------------------------------------------------------------
+  Advection of soluble contaminant/tracer/nutrient
+  ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "Advection.h"
@@ -16,9 +16,9 @@
 /// \param pFlow [in] flow process which drives advection (this acts as a wrapper for said process)
 /// \param pModel [in] Model object
 //
-CmvAdvection::CmvAdvection(string constit_name, 
+CmvAdvection::CmvAdvection(string constit_name,
                            CTransportModel *pTransportModel)
-		    	      :CHydroProcessABC(ADVECTION)
+  :CHydroProcessABC(ADVECTION)
 {
   pTransModel=pTransportModel;
   constit_ind=pTransModel->GetConstituentIndex(constit_name);
@@ -79,15 +79,15 @@ void CmvAdvection::GetParticipatingParamList(string  *aP, class_type *aPC, int &
 /// \param *aLev [out] Array of layer of multilayer state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by CmvAdvection algorithm (size of aSV[] and aLev[] arrays)
 //
-/*void CmvAdvection::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
-{
+/*void CmvAdvection::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
+  {
   //only returns added state vars, not those associated with flow model
 
   //nSV=pTransModel->GetNumWaterCompartments();
   //for (int i=0;i<nSV;i++){
   //  aSV[i  ]=CONSTITUENT; aLev[i  ]=i+constit_ind*nSV;
   //}
-}*/
+  }*/
 
 //////////////////////////////////////////////////////////////////
 /// \brief For modeling changes contaminant mass/concentration linked to a flow process
@@ -98,10 +98,10 @@ void CmvAdvection::GetParticipatingParamList(string  *aP, class_type *aPC, int &
 /// \param &tt [in] Current model time
 /// \param *rates [out] rates of change due to both associated flow process and advective transport
 //
-void   CmvAdvection::GetRatesOfChange(const double			*state_vars, 
-																			const CHydroUnit	*pHRU, 
-																			const optStruct	  &Options,
-																			const time_struct &tt,
+void   CmvAdvection::GetRatesOfChange(const double                      *state_vars,
+                                      const CHydroUnit        *pHRU,
+                                      const optStruct   &Options,
+                                      const time_struct &tt,
                                       double            *rates) const
 {
   int    q,iFromWater,iToWater,js;
@@ -115,9 +115,9 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
   double *Q=new double [nAdvConnections]; // \todo [optimize]: preallocate in initialize, save as member
 
   ExitGracefullyIf(Options.sol_method!=ORDERED_SERIES,
-    "CmvAdvection: Advection only works with ordered series solution approach",BAD_DATA);// \todo [re-org] Should go in initialize
+                   "CmvAdvection: Advection only works with ordered series solution approach",BAD_DATA);// \todo [re-org] Should go in initialize
 
-  // copy all state variables into array 
+  // copy all state variables into array
   memcpy(sv/*dest*/,state_vars/*src*/,sizeof(double)*(pModel->GetNumStateVars()));
 
   //get water fluxes, regenerate system state at start of timestep
@@ -129,7 +129,7 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
     js        =pTransModel->GetJsIndex       (q);
 
     Q[q]=pModel->GetFlux(k,js,Options); //[mm/d]
-    
+
     sv[iFromWater]+=Q[q]*tstep;//reverse determination of state variable history (i.e., rewinding flow calculations)
     sv[iToWater]  -=Q[q]*tstep;
   }
@@ -137,15 +137,15 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
   /*if (k==0) {
     cout <<"start ";
     for (i=1;i<pModel->GetNumStateVars();i++){
-      if (CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))){cout <<sv[i]<<" ";}
+    if (CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))){cout <<sv[i]<<" ";}
     }
     cout<<endl<<"-"<<endl;
     cout <<"end   ";
     for (i=1;i<pModel->GetNumStateVars();i++){
-      if (CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))){cout <<state_vars[i]<<" ";}
+    if (CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))){cout <<state_vars[i]<<" ";}
     }
     cout<<endl;
-  }*/
+    }*/
   //Calculate advective mass fluxes
   //-------------------------------------------------------------------------
   for (q=0;q<nAdvConnections;q++)
@@ -156,7 +156,7 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
 
     Rf=1.0;
     //Rf=pTransModel->GetRetardationFactor(constit_ind,pHRU,iFromWater,iToWater);
-    
+
     //Advection rate calculation rates[q]=dm/dt=Q*C
     mass=0;vol=1;
     if      (Q[q]>0)
@@ -170,18 +170,18 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
       vol =sv[iToWater];
     }
     if (vol>1e-6){//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
-      rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d] 
+      rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d]
       if (mass<-1e-9){ ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       if (fabs(rates[q])>mass/tstep){rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep;}//emptying out compartment
       /*if ((mass / vol)/LITER_PER_M3*MM_PER_METER > 1.0){
         cout << " conc > 1 !"<<pHRU->GetID()<<" "<<vol<<" "<<Q[q]<<" C:"<<(mass / vol)/LITER_PER_M3*MM_PER_METER<<endl;
-      }*/
+        }*/
     }
-    
+
     //special consideration - atmospheric precip can have negative storage but still specified concentration
     if ((pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) &&
-         (pTransModel->IsDirichlet(iFromWater,constit_ind,k,tt,Cs))){ 
-      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2] 
+        (pTransModel->IsDirichlet(iFromWater,constit_ind,k,tt,Cs))){
+      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       rates[q]=Q[q]*Cs;
     }
 
@@ -202,7 +202,7 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
     //----------------------------------------------------------------------
     if (pTransModel->IsDirichlet(iFromWater,constit_ind,k,tt,Cs))
     {
-      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2] 
+      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       mass=sv[iFrom[q]];
       vol =sv[iFromWater];
       rates[nAdvConnections+q]+=(Cs*vol-mass)/Options.timestep;
@@ -211,35 +211,35 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
 
     if (pTransModel->IsDirichlet(iToWater,constit_ind,k,tt,Cs))
     {
-      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2] 
+      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       mass=sv[iTo[q]];
       vol =sv[iToWater];
       rates[2*nAdvConnections+q]+=(Cs*vol-mass)/Options.timestep;
       sv[iTo[q]]=Cs*vol;
     }
-    
+
     // \todo [funct]: handle dumping into surface water
     //if ROUTE_NONE, dump surface water compartment to CONSTIT_SW
     /*if (Options.catchment_routing==ROUTE_NONE){
       mass=sv[iFrom[3*nAdvConnections]];
       rates[3*nAdvConnections]=mass/Options.timestep;
-    }*/
+      }*/
   }
-  
+
   //Handle Neumann influx conditions, if present
   //-------------------------------------------------------
   /*for (q = 0; q < nAdvConnections; q++)
-  {
+    {
     rates[q] = 0.0;
     int iFromWater = pTransModel->GetFromWaterIndex(q);
     rates[nAdvConnections + q] += pTransModel->GetSpecifiedMassFlux(iToWater, constit_ind, k, tt); //[mg/m2/d]
-  }*/
+    }*/
 
   delete [] Q;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 ///
 /// \param *state_vars [in] array of current state variables
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -247,12 +247,12 @@ void   CmvAdvection::GetRatesOfChange(const double			*state_vars,
 /// \param &tt [in] Current model time
 /// \param *rates [out] rates of change due to both associated flow process and advective transport
 //
-void   CmvAdvection::ApplyConstraints(const double		 *state_vars, 
-						                            const CHydroUnit *pHRU, 
-						                            const optStruct	 &Options,
-						                            const time_struct &tt,
-                                              double     *rates) const
+void   CmvAdvection::ApplyConstraints(const double               *state_vars,
+                                      const CHydroUnit *pHRU,
+                                      const optStruct      &Options,
+                                      const time_struct &tt,
+                                      double     *rates) const
 {
-  
+
 }
 
