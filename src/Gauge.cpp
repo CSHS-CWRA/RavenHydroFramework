@@ -312,7 +312,7 @@ void CGauge::AddTimeSeries      (CTimeSeries *pTS, forcing_type ftype)
   }
   else{
     if (!DynArrayAppend((void**&)(_pTimeSeries),(void*)(pTS),_nTimeSeries)){
-      ExitGracefully("CGauge::AddTimeSeries     : adding NULL time series",BAD_DATA);}
+      ExitGracefully("CGauge::AddTimeSeries: adding NULL time series",BAD_DATA);}
     _aTSindex[(int)(ftype)]=_nTimeSeries-1;
   }
 }

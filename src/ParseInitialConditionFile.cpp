@@ -162,7 +162,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
          -only needed if IC not equal to zero
       */
       if (Options.noisy) {cout <<"Initial Conditions (Uniform)"<<endl;}
-      if (Len==3)
+      if (Len<=3)
       {
         int     layer_ind(-1);
         int     SVind;

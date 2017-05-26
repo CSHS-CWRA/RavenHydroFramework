@@ -828,7 +828,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   }
 
   if (n!=nMeasurements){
-    string error="CTimeSeries::ParseMultiple: nsufficient number of time series points. File: "+p->GetFilename();
+    string error="CTimeSeries::ParseMultiple: Insufficient number of time series points. File: "+p->GetFilename();
     ExitGracefully(error.c_str(),BAD_DATA);
   }
 
