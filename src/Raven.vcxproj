@@ -275,6 +275,7 @@
     <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />
     <ClCompile Include="Flush.cpp" />
+    <ClCompile Include="ForcingGrid.cpp" />
     <ClCompile Include="Forcings.cpp" />
     <ClCompile Include="GlacierProcesses.cpp" />
     <ClCompile Include="GlobalParams.cpp" />
@@ -293,6 +294,7 @@
     <ClCompile Include="TimeSeriesABC.cpp" />
     <ClCompile Include="TransientParam.cpp" />
     <ClCompile Include="Transport.cpp" />
+    <ClCompile Include="UnitTesting.cpp" />
     <ClCompile Include="UTM_to_LatLong.cpp" />
     <ClCompile Include="HydroProcessABC.cpp" />
     <ClCompile Include="Infiltration.cpp" />
@@ -411,6 +413,7 @@
     <ClInclude Include="Decay.h" />
     <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
+    <ClInclude Include="ForcingGrid.h" />
     <ClInclude Include="Forcings.h" />
     <ClInclude Include="GlacierProcesses.h" />
     <ClInclude Include="GlobalParams.h" />
@@ -432,6 +435,7 @@
     <ClInclude Include="TimeSeriesABC.h" />
     <ClInclude Include="TransientParam.h" />
     <ClInclude Include="Transport.h" />
+    <ClInclude Include="UnitTesting.h" />
     <ClInclude Include="VegetationMovers.h" />
     <ClInclude Include="Gauge.h" />
     <ClInclude Include="TimeSeries.h" />
