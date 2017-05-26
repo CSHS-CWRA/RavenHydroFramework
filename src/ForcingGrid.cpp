@@ -1790,7 +1790,7 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(
   int idx_chunk = (int)idx_NC % _GridDims[2];
 
   // number of values per day
-  int nn = (int)1.0/_interval;
+  int nn = (int)(1.0/_interval);
 
   // returned index is beginning of day not actual time step
   idx_chunk = idx_chunk - (idx_chunk % nn);

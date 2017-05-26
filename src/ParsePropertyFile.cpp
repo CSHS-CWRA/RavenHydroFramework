@@ -148,7 +148,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   }
   //canopy handled in CmvPrecipitation::GetParticipatingParamList
   //Add parameters required for routing
-  if (true){//really, nSubBasins>1
+  if (false){//really, nSubBasins>1
     aP [0]="AVG_ANNUAL_RUNOFF"; aPC[0]=CLASS_GLOBAL;
     AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
   }
