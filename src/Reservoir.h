@@ -18,7 +18,8 @@ enum curve_function{
   CURVE_LINEAR,      ///< y =a*x
   CURVE_POWERLAW,    ///< y=a*x^b
   CURVE_DATA,        ///< y=interp(xi,yi)
-  CURVE_VARYING      ///< y=interp(xi,yi,t)
+  CURVE_VARYING,     ///< y=interp(xi,yi,t)
+  CURVE_LAKE         ///< y=interp(xi,yi) (curve from weir)
 };
 enum res_type{
   RESROUTE_STANDARD,
@@ -76,6 +77,8 @@ public:/*-------------------------------------------------------*/
              const int nDates, const int *aDates, const double *a_ht,
              double **a_QQ, const double *a_A, const double *a_V,
              const int     nPoints);
+  CReservoir(const string Name, const long SubID, const res_type typ, const double weircoeff, //Lake constructor
+             const double crestw, const double A, const double depth);
   ~CReservoir();
 
   //Accessors

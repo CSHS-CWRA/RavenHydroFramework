@@ -139,7 +139,7 @@ const double  DAYS_PER_MONTH[12]={31,28,31,30,31,30,31,31,30,31,30,31}; ///< Arr
 
 const double  FREEZING_TEMP =0.0;     ///< [C] Freezing temperature of water
 
-const double  DENSITY_AIR   =1.168;   ///< [kg/m3] Ambient Air Density
+const double  DENSITY_AIR   =1.2466;  ///< [kg/m3] Ambient Air Density (@ 10 C)
 const double  DENSITY_WATER =1.000e3; ///< [kg/m3] Water Density
 const double  DENSITY_ICE   =0.917e3; ///< [kg/m3] Ice Density
 const double  DENSITY_SAND  =2.650e3; ///< [kg/m3] Sand Density
@@ -597,6 +597,7 @@ enum out_format
 {
   OUTPUT_STANDARD, ///< Output in default Raven format (.csv files)
   OUTPUT_ENSIM,    ///< Output in Ensim format (.tb0 files)
+  OUTPUT_NETCDF,
   OUTPUT_NONE
 };
 
@@ -671,6 +672,9 @@ enum sv_type
   CONSTITUENT_SW,     ///< [mg/m2] chemical species dumped to surface water
   CONSTITUENT_SINK,   ///< [mg/m2] chemical species or tracer cumulative sink (e.g., decay)
 
+  //Lateral exchange
+  LATERAL_EXCHANGE,   ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
+
   //Special
   UNRECOGNIZED_SVTYPE ///< Unrecognized type of state variable
 };
@@ -706,6 +710,9 @@ enum process_type
 
   //in HydroProcessABC.h
   FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
+
+  //in LateralExchangeABC.h
+  LAT_FLUSH,
 
   //in Albedo.h
   SNOW_ALBEDO_EVOLVE,

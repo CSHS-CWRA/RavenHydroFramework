@@ -141,6 +141,9 @@ struct veg_struct
   double max_capacity;      ///< [mm]      maximum canopy storage capacity
   double max_snow_capacity; ///< [mm]      maximum canopy snow storage capacity
 
+  double veg_dens;          ///< [1/m2]    vegetation count per meter squared (range: 1.0-500.0; recommended 300.0 for crops and grass, 1.0 for forests and shrubs)
+  double veg_diam;          ///< [m]       vegetation diameter (range 0.0-2.0; recommended 0.003 for crops and grass, 0.5-1.0 for forests and shrubs [m]
+
   //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
   double max_root_length;   ///< [mm/m2]   root length per unit canopy area
@@ -176,7 +179,7 @@ struct veg_var_struct
   double shelter_factor;    ///< [-]       accounts for sheltered leaves : about 0.5-1.0
   double skyview_fact;      ///< [0..1]    skyview factor, pct of ground visible from sky
 
-  double roughness;         ///< [m]       roughness parameter
+  double roughness;         ///< [m]       surface roughness parameter for momentum transfer
   double zero_pln_disp;     ///< [m]       zero-plane displacement, height where wind vel. goes to zero
   double reference_height;  ///< [m]       reference height for air properties above ground
 
@@ -209,10 +212,11 @@ struct surface_struct
   //snow parameters
   double melt_factor;       ///< [mm/d/C]  maximum snow melt factor used in degree day and hybrid snowmelt models
   double min_melt_factor;   ///< [mm/d/C]  minimum snow melt factor used in degree day and hybrid snowmelt models
-  double refreeze_factor;               ///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
-  double HBV_melt_for_corr; ///< [-]                     HBV snowmelt forest correction (MRF in HBV-EC)
-  double HBV_melt_asp_corr; ///< [-]                     HBV snowmelt aspect correction (AM in HBV-EC)
-  double snow_patch_limit;  ///< [mm]        SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
+  double refreeze_factor;   ///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
+  double HBV_melt_for_corr; ///< [-]       HBV snowmelt forest correction (MRF in HBV-EC)
+  double HBV_melt_asp_corr; ///< [-]       HBV snowmelt aspect correction (AM in HBV-EC)
+  double snow_patch_limit;  ///< [mm]      SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
+  double fetch;             ///< [m]       distance of unobstructed wind flow (g.t. 300m)
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
@@ -326,5 +330,7 @@ struct global_struct
   double           avg_annual_runoff; ///< [mm] avg annual runoff from basin
 
   double           max_SWE_surface;   ///< [mm] maximum SWE in surface snow layer
+
+  double           TOC_multiplier;    ///< [mm] time of concentration multiplier
 };
 #endif

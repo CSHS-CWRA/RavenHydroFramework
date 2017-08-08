@@ -317,6 +317,60 @@ void MassEnergyBalance( CModel            *pModel,
   }
 
   //-----------------------------------------------------------------
+  //      LATERAL EXCHANGE PROCESSES
+  //-----------------------------------------------------------------
+  int    jj=0;
+  int    nLatConnections;
+  double Afrom,Ato;
+  const int MAX_LAT_CONNECTIONS=4000;
+  int    *kFrom,*kTo;
+  
+  double *exchange_rates=NULL;
+  kFrom=new int [MAX_LAT_CONNECTIONS];
+  kTo  =new int [MAX_LAT_CONNECTIONS];
+  exchange_rates=new double[MAX_LAT_CONNECTIONS];
+  ExitGracefullyIf(exchange_rates==NULL,"MassEnergyBalance(5)",OUT_OF_MEMORY);
+   
+  for (int q=0;q<MAX_LAT_CONNECTIONS;q++)
+  {
+    kFrom[q]=DOESNT_EXIST;
+    kTo  [q]=DOESNT_EXIST;
+    exchange_rates[i]=0.0;
+  }
+  js=0; //index of lateral process connection
+  for (j=0;j<nProcesses;j++)
+  {
+    if (pModel->ApplyLateralProcess(j,aPhinew,Options,tt,kFrom,kTo,iFrom,iTo,nLatConnections,exchange_rates))
+    {         
+      for (int q=0;q<nLatConnections;q++)
+      {
+#ifdef _STRICTCHECK_
+        ExitGracefullyIf(kFrom[q]==DOESNT_EXIST,"MassEnergyBalance: kFrom[q] doesnt exist",RUNTIME_ERR);
+        ExitGracefullyIf(kTo[q]==DOESNT_EXIST,"MassEnergyBalance: kFrom[q] doesnt exist",RUNTIME_ERR);
+#endif 
+        Afrom=pModel->GetHydroUnit(kFrom[q])->GetArea();
+        Ato  =pModel->GetHydroUnit(kTo[q]  )->GetArea();
+        aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q];
+        aPhinew[  kTo[q]][  iTo[q]]+=exchange_rates[q]*Afrom/Ato;
+        
+        //pModel->IncrementLatBalance(js,kFrom[q],kTo[q],exchange_rates[q]*tstep);
+        /*_aCumulativeBal[kFrom][j_star]+=moved;
+        _aFlowBal      [kFrom][j_star]= moved;
+        _aCumulativeBal[kTo  ][j_star]-=moved;
+        _aFlowBal      [kTo  ][j_star]=-moved;    
+        ????  
+        */
+
+        js++;
+      }
+    }
+    else{
+      js+=nLatConnections;
+    }
+  }
+
+
+  //-----------------------------------------------------------------
   //      ROUTING
   //-----------------------------------------------------------------
   double res_ht;

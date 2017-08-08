@@ -143,7 +143,7 @@ void   CTransportModel::RouteMass(const int p, double **aMout_new,const optStruc
   }
   //==============================================================
   else{
-    ExitGracefully("Unrecognized or unsupported constiuent routing method",STUB);
+    ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
   }
 
   if (Options.distrib_lat_inflow==false)

@@ -255,11 +255,11 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from "from" compartment [mm/day]
 //
-void CmvSoilEvap::GetRatesOfChange (const double                 *state_vars,
-                                    const CHydroUnit *pHRU,
-                                    const optStruct      &Options,
+void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
+                                    const CHydroUnit  *pHRU,
+                                    const optStruct   &Options,
                                     const time_struct &tt,
-                                    double     *rates) const
+                                    double            *rates) const
 {
 
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
@@ -288,7 +288,7 @@ void CmvSoilEvap::GetRatesOfChange (const double                 *state_vars,
 
       rootsum+=root_frac[m];
     }
-    for (q=0;q<nConnections;q++)
+    for (q=0;q<_nConnections;q++)
     {
       m=soil_ind[q];
       rates[q]=PET*(root_frac[m]/rootsum)*threshMin(1.0,state_vars[iFrom[q]]/cap[m],0.0);
@@ -529,7 +529,7 @@ void   CmvSoilEvap::ApplyConstraints( const double               *state_vars,
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
 
-  for (int q=0;q<nConnections;q++){
+  for (int q=0;q<_nConnections;q++){
     //cant remove more than is there
     rates[q]=threshMin(rates[q],state_vars[iFrom[q]]/Options.timestep,0.0); //presumes these are all water storage
   }

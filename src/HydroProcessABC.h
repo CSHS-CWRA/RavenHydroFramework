@@ -43,20 +43,20 @@ class CHydroProcessABC
 {
 protected:/*----------------------------------------------------*/
 
-  process_type      process;  ///< Hydrological proccess, e.g., sublimation, infiltration, etc.
+  process_type     _process;  ///< Hydrological proccess, e.g., sublimation, infiltration, etc.
   int                *iFrom;  ///< indices of state variables/storage units that (typically) lose water/energy/mass (size: nConnections)
   int                  *iTo;  ///< indices of state variables/storage units that (typically) gain water/energy/mass (size: nConnections) (==iFrom if no mass/energy is exchanged in change of state variable)
-  int          nConnections;  ///< usually 1, number of transfer routes between state variables/storage units
+  int         _nConnections;  ///< usually 1, number of transfer routes between state variables/storage units
 
-  bool            cascading;  ///< true if outflow cascades
+  bool           _cascading;  ///< true if outflow cascades
 
   /// \remark first storage unit iCascade[0] should belong to iTo[] array
   /// size: nCascades+1
-  int             *iCascade;  ///< indices of consecutive storage units that are subject to cascade
-  int             nCascades;  ///< number of cascade connections
+  int            *_iCascade;  ///< indices of consecutive storage units that are subject to cascade
+  int            _nCascades;  ///< number of cascade connections
 
-  condition   **pConditions;  ///< array of conditions for process to occur (ALL must be satisfied)
-  int           nConditions;  ///< number of conditions
+  condition  **_pConditions;  ///< array of conditions for process to occur (ALL must be satisfied)
+  int          _nConditions;  ///< number of conditions
 
   static  CModelABC *pModel;  ///< pointer to model
 
@@ -84,9 +84,10 @@ public:/*-------------------------------------------------------*/
   int           GetNumCascades()    const;
   int           GetCascadeFromIndex() const;
   const int*    GetCascadeToIndices() const;
+  virtual int   GetNumLatConnections() const { return 0; }
 
   //functions
-  static void   SetModel    (CModelABC *pM);///should really not be accessible
+  static void   SetModel    (CModelABC *pM);/// \todo[reorg]: should really not be accessible
 
   void          AddCascade  (const int *indices, const int nIndices);
   void          AddCondition(condition_basis basis,
@@ -105,15 +106,15 @@ public:/*-------------------------------------------------------*/
                                 const CHydroUnit  *pHRU,
                                 const optStruct   &Options,
                                 const time_struct &tt,
-                                double      *rates) const=0;
+                                      double      *rates) const=0;
 
   virtual void ApplyConstraints(const double      *state_vars,
                                 const CHydroUnit  *pHRU,
                                 const optStruct   &Options,
                                 const time_struct &tt,
-                                double      *rates) const=0;
+                                      double      *rates) const=0;
 
-  void                  Cascade(      double    *rates,
+  void                  Cascade(            double    *rates,
                                       const double    *storage,
                                       const double    *maxstorage,
                                       const double    &tstep);

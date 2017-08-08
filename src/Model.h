@@ -9,6 +9,7 @@
 #include "ModelABC.h"
 #include "StateVariables.h"
 #include "HydroProcessABC.h"
+#include "LateralExchangeABC.h"
 #include "SubBasin.h"
 #include "HydroUnits.h"
 #include "TimeSeries.h"
@@ -181,13 +182,11 @@ private:/*------------------------------------------------------*/
   void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);
   void         GenerateMinMaxAveTempFromSubdaily        (const optStruct &Options);
   void         GenerateMinMaxSubdailyTempFromAve        (const optStruct &Options);
-  //void       GenerateSubdailyAveTempFromSubdailyMinMax(const optStruct &Options);
   void         GeneratePrecipFromSnowRain               (const optStruct &Options);
   void         GenerateRainFromPrecip                   (const optStruct &Options);
   void         GenerateZeroSnow                         (const optStruct &Options);
   bool         ForcingGridIsInput                       (const string forcing_grid_name);
   bool         ForcingGridIsAvailable                   (const string forcing_grid_name);
-  //double       GetAverageSnowFrac                       (const int x_col, const int y_row, const double t, const int n) const;
   double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
 
@@ -198,19 +197,19 @@ public:/*-------------------------------------------------------*/
   ~CModel();
 
   //Inherited Accessor functions (from ModelABC.h)
-  int               GetNumStateVars () const;
-  sv_type           GetStateVarType (const int i) const;
-  int               GetStateVarIndex(sv_type type) const; //assumes layer=0
-  int               GetStateVarIndex(sv_type type, int layer) const;//overriden for multilayer variables
-  int               GetStateVarLayer(const int i) const; //for multilayer variables
-  double            GetFlux         (const int k, const int iFrom, const int iTo, const optStruct &Options) const;
-  double            GetFlux         (const int k, const int js, const optStruct &Options) const;
-  double            GetCumulativeFlux(const int k, const int i, const bool to) const;
-  bool              StateVarExists  (sv_type type) const;
-  double            GetAvgStateVar  (const int i) const;
-  double            GetAvgForcing   (const string &forcing_string) const;
-  double            GetAvgCumulFlux (const int i, const bool to) const;
-  int               GetNumSoilLayers() const;
+  int               GetNumStateVars    () const;
+  sv_type           GetStateVarType    (const int i) const;
+  int               GetStateVarIndex   (sv_type type) const; //assumes layer=0
+  int               GetStateVarIndex   (sv_type type, int layer) const;//overriden for multilayer variables
+  int               GetStateVarLayer   (const int i) const; //for multilayer variables
+  double            GetFlux            (const int k, const int iFrom, const int iTo, const optStruct &Options) const;
+  double            GetFlux            (const int k, const int js, const optStruct &Options) const;
+  double            GetCumulativeFlux  (const int k, const int i, const bool to) const;
+  bool              StateVarExists     (sv_type type) const;
+  double            GetAvgStateVar     (const int i) const;
+  double            GetAvgForcing      (const string &forcing_string) const;
+  double            GetAvgCumulFlux    (const int i, const bool to) const;
+  int               GetNumSoilLayers   () const;
   int               GetNumAquiferLayers() const;
 
   int               GetLakeStorageIndex() const; //TMP?
@@ -306,11 +305,21 @@ public:/*-------------------------------------------------------*/
                                           const CHydroUnit  *pHRU,
                                           const optStruct   &Options,
                                           const time_struct &tt,
-                                          int         *iFrom,
-                                          int         *iTo,
-                                          int         &nConnections,
-                                          double      *rates_of_change) const;
-
+                                                int         *iFrom,
+                                                int         *iTo,
+                                                int         &nConnections,
+                                                double      *rates_of_change) const;
+  bool        ApplyLateralProcess        (const int          j,
+                                          const double* const* state_vars,
+                                          const optStruct   &Options,
+                                          const time_struct &tt,
+                                                int         *kFrom,
+                                                int         *kTo,
+                                                int         *iFrom,
+                                                int         *iTo,
+                                                int         &nLatConnections,
+                                                double      *exchange_rates) const;
+                                         
   //water/energy/mass balance routines
   void        IncrementBalance        (const int j_star,
                                        const int k,

@@ -85,6 +85,9 @@ private:/*------------------------------------------------------*/
   void   GenerateCatchmentHydrograph(const double &Qlat_avg,const optStruct &Options);
   double           GetReachSegVolume(const double &Qin, const double &Qout, const double &dx) const;
 
+  double                         thQ(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const;
+  double                    TVDTheta(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const;
+
 public:/*-------------------------------------------------------*/
   //Constructors:
   CSubBasin(const long           ID,

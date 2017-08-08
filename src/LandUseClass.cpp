@@ -292,6 +292,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.CC_decay_coeff,Stmp.CC_decay_coeff,Sdefault.CC_decay_coeff,needed,"CC_DECAY_COEFF");
   SetSpecifiedValue(S.GR4J_x4,Stmp.GR4J_x4,Sdefault.GR4J_x4,needed,"GR4J_X4");
   SetSpecifiedValue(S.wind_exposure, Stmp.wind_exposure, Sdefault.wind_exposure, needed,"WIND_EXPOSURE");
+  SetSpecifiedValue(S.fetch,Stmp.fetch,Sdefault.fetch,needed,"FETCH");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -339,6 +340,7 @@ void CLandUseClass::InitializeSurfaceProperties(surface_struct &S, bool is_templ
   S.GR4J_x4           =DefaultParameterValue(is_template,false);//1.7 [d]
   S.UBC_icept_factor  =DefaultParameterValue(is_template,false);//0 [0..1]
   S.wind_exposure     =DefaultParameterValue(is_template,false);//
+  S.fetch             =DefaultParameterValue(is_template,false);//300+ [m]
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -397,7 +399,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("GR4J_X4"                )){S.GR4J_x4=value;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){S.UBC_icept_factor=value;}
   else if (!name.compare("WIND_EXPOSURE"          )){S.wind_exposure=value;}
-
+  else if (!name.compare("FETCH"                  )){S.fetch=value;}
   else{
     WriteWarning("Trying to set value of unrecognized/invalid land use/land type parameter "+ name,false);
   }
@@ -456,6 +458,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("GR4J_X4"                )){return S.GR4J_x4;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){return S.UBC_icept_factor;}
   else if (!name.compare("WIND_EXPOSURE"          )){return S.wind_exposure;}
+  else if (!name.compare("FETCH"                  )){return S.fetch;}
   else{
     string msg="CLandUseClass::GetSurfaceProperty: Unrecognized/invalid LU/LT parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);

@@ -309,7 +309,6 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   //----------------------------------------------------------------------------
   bool needed=false;
   bool bad;
-
   bad=SetSpecifiedValue(V.drip_proportion,Vtmp.drip_proportion,Vdefault.drip_proportion,needed,"DRIP_PROPORTION");
   bad=SetSpecifiedValue(V.max_intercept_rate,Vtmp.max_intercept_rate,Vdefault.max_intercept_rate,needed,"MAX_INTERCEPT_RATE");
   bad=SetSpecifiedValue(V.CHU_maturity,Vtmp.CHU_maturity,Vdefault.CHU_maturity,needed,"CHU_MATURITY");
@@ -319,6 +318,8 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   bad=SetSpecifiedValue(V.psi_critical,Vtmp.psi_critical,Vdefault.psi_critical,needed,"PSI_CRITICAL");
   bad=SetSpecifiedValue(V.rootradius,Vtmp.rootradius,Vdefault.rootradius,needed,"ROOTRADIUS");
   bad=SetSpecifiedValue(V.xylem_frac,Vtmp.xylem_frac,Vdefault.xylem_frac,needed,"XYLEM_FRAC");
+  bad=SetSpecifiedValue(V.veg_dens,Vtmp.veg_dens,Vdefault.veg_dens,needed,"VEG_DENS");
+  bad=SetSpecifiedValue(V.veg_diam,Vtmp.veg_diam,Vdefault.veg_diam,needed,"VEG_DIAM");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -368,7 +369,8 @@ void CVegetationClass::InitializeVegetationProps(veg_struct &V, bool is_template
   V.rootradius        =DefaultParameterValue(is_template,false);//4;    //[mm]
   V.psi_critical      =DefaultParameterValue(is_template,false);//0.0;  //[-mm] minimum plant leaf water potential
   V.root_extinct      =DefaultParameterValue(is_template,false);        //[-]
-
+  V.veg_dens          =DefaultParameterValue(is_template,false);        //[/m2]
+  V.veg_diam          =DefaultParameterValue(is_template,false);        //[m]
 }
 ////////////////////////////////////////////////////////////////////
 /// \brief Sets vegetation property
@@ -416,6 +418,8 @@ void  CVegetationClass::SetVegetationProperty(veg_struct  &V,
   else if (!name.compare("DRIP_PROPORTION"      )){V.drip_proportion=value;}
   else if (!name.compare("MAX_INTERCEPT_RATE"   )){V.max_intercept_rate=value;}
   else if (!name.compare("CHU_MATURITY"         )){V.CHU_maturity=value;}
+  else if (!name.compare("VEG_DIAM"             )){V.veg_diam=value;}
+  else if (!name.compare("VEG_DENS"             )){V.veg_dens=value;}
 
   else if (!name.compare("MAX_ROOT_LENGTH"      )){V.max_root_length=value;}
   else if (!name.compare("MIN_RESISTIVITY"      )){V.min_resistivity=value;}
@@ -472,6 +476,8 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
   else if (!name.compare("DRIP_PROPORTION"      )){return V.drip_proportion;}
   else if (!name.compare("MAX_INTERCEPT_RATE"   )){return V.max_intercept_rate;}
   else if (!name.compare("CHU_MATURITY"         )){return V.CHU_maturity;}
+  else if (!name.compare("VEG_DENS"             )){return V.veg_dens;}
+  else if (!name.compare("VEG_DIAM"             )){return V.veg_diam;}
 
   else if (!name.compare("MAX_ROOT_LENGTH"      )){return V.max_root_length;}
   else if (!name.compare("MIN_RESISTIVITY"      )){return V.min_resistivity;}

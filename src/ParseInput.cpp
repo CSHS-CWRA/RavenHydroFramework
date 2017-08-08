@@ -131,7 +131,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   //Default Values---------------------------------------------------
   if(Options.run_name!=""){runname_overridden=true;}
   Options.julian_start_day    =0;//Jan 1
-  Options.julian_start_year   =2000;
+  Options.julian_start_year   =1666;
   Options.duration            =365;
   Options.timestep            =1;
   Options.output_interval     =1;
@@ -261,6 +261,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EmulationMode"         )){code=38; }
     else if  (!strcmp(s[0],":MultilayerSnow"        )){code=39; }//AFTER SoilModel Commmand
     else if  (!strcmp(s[0],":RetainUBCWMBugs"       )){code=40; }
+    else if  (!strcmp(s[0],":EndDate"               )){code=41; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"             )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"  )){code=51; }
@@ -339,6 +340,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnowTempEvolve"        )){code=229;}
     else if  (!strcmp(s[0],":DepressionOverflow"    )){code=230;}
     else if  (!strcmp(s[0],":ExchangeFlow"          )){code=231;}
+    else if  (!strcmp(s[0],":LateralFlush"          )){code=232;}
     //...
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
@@ -956,6 +958,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.keepUBCWMbugs=true;
       break;
     }
+    case(41):  //--------------------------------------------
+    {/* :EndDate string yyyy-mm-dd hh:mm:ss.00 */
+      if (Options.noisy){cout<<":EndDate"<<endl;}
+      ExitGracefullyIf(Options.julian_start_year==1666,":EndDate command must be after :StartDate command in .rvi file.",BAD_DATA_WARN);
+      if (Len<3){ImproperFormatWarning(":EndDate",p,Options.noisy); break;}
+      time_struct tt;
+      tt=DateStringToTimeStruct(s[1],s[2]);
+      Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year);
+      ExitGracefullyIf(Options.duration<=0, "ParseInput: :EndDate must be later than :StartDate.",BAD_DATA_WARN);
+      break;
+    }
     case(50):  //--------------------------------------------
     {/*:DebugMode */
       bool bVal = false;
@@ -1453,7 +1466,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(202):  //----------------------------------------------
     {/*Canopy Evaporation
-       :CanopyEvaporation [string method] [CANOPY] [ATMOSPHERE]*/
+       :CanopyEvaporation [string method] CANOPY ATMOSPHERE*/
       if (Options.noisy){cout <<"Canopy Evaporation Process"<<endl;}
       canevap_type ce_type=CANEVP_RUTTER;
       if (Len<4){ImproperFormatWarning(":CanopyEvaporation",p,Options.noisy); break;}
@@ -2048,6 +2061,29 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
                           ParseSVTypeIndex(s[3],pModel));
       pModel->AddProcess(pMover);
+      break;
+    }
+    case(232):  //----------------------------------------------
+    {/*Lateral Flush
+       :LateralFlush RAVEN_DEFAULT [FROM_HRUGroup] [FROM SV] To [TO_HRUGROUP] [TO_SV] */
+      if(Options.noisy){ cout <<"Lateral Flush Process"<<endl; }
+
+      if(Len<7){ ImproperFormatWarning(":LateralFlush",p,Options.noisy); break; }
+
+      tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
+      tmpS[1]=CStateVariable::StringToSVType(s[6],tmpLev[1],true);
+      pModel->AddStateVariables(tmpS,tmpLev,2);
+
+      if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[2])==NULL)){
+        ExitGracefully("ParseInput: Lateral Flush - invalid 'to' or 'from' HRU Group used. Must define using :DefineHRUGroups command.",BAD_DATA_WARN);
+      }
+      else{
+        pMover=new CmvLatFlush( pModel->GetStateVarIndex(tmpS[0],tmpLev[0]),//from SV index
+                                pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
+                                pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
+                                pModel->GetHRUGroup(s[5])->GetGlobalIndex());
+        pModel->AddProcess(pMover);
+      }
       break;
     }
     case (297)://----------------------------------------------

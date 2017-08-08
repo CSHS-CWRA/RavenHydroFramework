@@ -13,6 +13,7 @@
 /// \details Allows lesser classes (HydroProcesses, SubBasins, and Hydrounits)
 ///   to obtain information from model without changing the model
 ///   PURELY VIRTUAL CLASS
+//
 class CModelABC //version of model visible to lesser units
 {
 protected:/*------------------------------------------------------*/

@@ -46,9 +46,9 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   _reach_length =reach_len;
   _is_headwater =true;
 
-  _t_conc                                    =AUTO_COMPUTE;
-  _t_peak                                    =AUTO_COMPUTE;
-  _t_lag                                           =AUTO_COMPUTE;
+  _t_conc            =AUTO_COMPUTE;
+  _t_peak            =AUTO_COMPUTE;
+  _t_lag             =AUTO_COMPUTE;
   _reservoir_constant=AUTO_COMPUTE;
   _num_reservoirs    =1;
 
@@ -123,7 +123,7 @@ long                    CSubBasin::GetID               () const {return _ID;    
 /// \brief Returns subbasin name
 /// \return subbasin name
 //
-string      CSubBasin::GetName                                           () const {return _name;          }
+string                  CSubBasin::GetName             () const {return _name;          }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns subbasin physical area [km^2]
@@ -153,19 +153,19 @@ long                    CSubBasin::GetDownstreamID     () const {return _downstr
 /// \brief Returns reach length [m]
 /// \return Reach length [m]
 //
-double      CSubBasin::GetReachLength      () const {return _reach_length;  }//[m]
+double                   CSubBasin::GetReachLength      () const {return _reach_length;  }//[m]
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns True if subbasin is gauged, false otherwise
 /// \return Boolean indicating if subbasin is gauged
 //
-bool                            CSubBasin::IsGauged            () const {return _gauged;        }
+bool                     CSubBasin::IsGauged            () const {return _gauged;        }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of river segments used in routing
 /// \return Number of river segments used in routing
 //
-int                                     CSubBasin::GetNumSegments                        () const {return _nSegments;    }
+int                 CSubBasin::GetNumSegments          () const {return _nSegments;    }
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns Unit Hydrograph as array pointer
@@ -195,19 +195,19 @@ int                  CSubBasin::GetInflowHistorySize () const{return _nQinHist;}
 /// \brief Returns Number of HRUs in SB
 /// \return Number of HRUs in SB
 //
-int                                             CSubBasin::GetNumHRUs                                    () const{return _nHydroUnits;   }
+int                CSubBasin::GetNumHRUs             () const{return _nHydroUnits;   }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns HRU corresponding to index k
-/// \param k [in] Index correspondng to the HRU of interest
-/// \return HRU corresponding to index k
+/// \brief Returns HRU corresponding to index ks
+/// \param ks [in] Index correspondng to the HRU of interest (local index, not global)
+/// \return HRU corresponding to index ks
 //
-const CHydroUnit*CSubBasin::GetHRU                               (const int k) const
+const CHydroUnit*CSubBasin::GetHRU(const int ks) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((k<0) && (k>=_nHydroUnits),"CSubBasin:GetHRU::improper index",BAD_DATA);
 #endif
-  return _pHydroUnits[k];
+  return _pHydroUnits[ks];
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns pointer to reservoir associated with Subbasin (or NULL)
@@ -222,7 +222,7 @@ CReservoir    *CSubBasin::GetReservoir () const
 /// \param i [in] Index corresponding to a state variable
 /// \return area-weighted average value of state variable with index i over all HRUs
 //
-double    CSubBasin::GetAvgStateVar   (const int i) const
+double CSubBasin::GetAvgStateVar (const int i) const
 {
   ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),
                    "CSubBasin:GetAverageStateVar::improper index",BAD_DATA);
@@ -400,7 +400,6 @@ void CSubBasin::AddReservoir(CReservoir *pRes)
   _pReservoir=pRes;
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief Sets basin properties
 /// \param label [in] String property identifier
@@ -446,7 +445,6 @@ void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 //
 void    CSubBasin::AddReservoirExtract (CTimeSeries *pOutflow)
 {
-
   if (_pReservoir!=NULL){
     _pReservoir->AddExtractionTimeSeries(pOutflow);
   }
@@ -454,7 +452,6 @@ void    CSubBasin::AddReservoirExtract (CTimeSeries *pOutflow)
     WriteWarning("Reservoir extraction history specified for basin without reservoir",false);
   }
 }
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets (usually initial) reservoir flow rate & stage
@@ -467,6 +464,7 @@ void    CSubBasin::SetReservoirFlow(const double &Q)
   }
   _pReservoir->SetInitialFlow(Q);
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief sets reservoir stage (and recalculates flow rate)
 /// \param stage [m]
@@ -479,6 +477,7 @@ void    CSubBasin::SetReservoirStage(const double &stage)
   _pReservoir->UpdateStage(stage);
   _pReservoir->UpdateStage(stage); //Called twice so that _Qlast, _StageLast is properly initialized
 }
+
 /////////////////////////////////////////////////////////////////
 /// \brief Sets channel storage, usually upon read of state file
 /// \param &V [in] channel storage [m3]
@@ -486,6 +485,7 @@ void    CSubBasin::SetReservoirStage(const double &stage)
 void CSubBasin::SetChannelStorage   (const double &V){
   _channel_storage=V;
 }
+
 /////////////////////////////////////////////////////////////////
 /// \brief Sets rivulet storage, usually upon read of state file
 /// \param &V [in] rivulet storage [m3]
@@ -493,6 +493,7 @@ void CSubBasin::SetChannelStorage   (const double &V){
 void CSubBasin::SetRivuletStorage   (const double &V){
   _rivulet_storage=V;
 }
+
 /////////////////////////////////////////////////////////////////
 /// \brief Sets qout storage array, usually upon read of state file
 /// \param &N [in] size of aQo array (=_nSegments) or DOESNT_EXIST if _nSegments is unknown
@@ -513,6 +514,7 @@ void CSubBasin::SetQoutArray(const int N, const double *aQo, const double QoLast
     _QoutLast=QoLast;
   }
 }
+
 /////////////////////////////////////////////////////////////////
 /// \brief Sets Qlat storage array, usually upon read of state file
 /// \param &N [in] size of aQl array (=_nQlatHist)
@@ -529,6 +531,7 @@ void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
   for (int i=0;i<_nQlatHist;i++){_aQlatHist[i]=aQl[i];}
   _QlatLast=QlLast;
 }
+
 /////////////////////////////////////////////////////////////////
 /// \brief Sets Qin storage array, usually upon read of state file
 /// \param &N [in] size of aQi array (=_nQinHist)
@@ -544,6 +547,7 @@ void CSubBasin::SetQinHist          (const int N, const double *aQi)
   _aQinHist=new double [_nQinHist];
   for (int i=0;i<_nQinHist;i++){_aQinHist[i]=aQi[i];}
 }
+
 /////////////////////////////////////////////////////////////////
 /// \brief Sets Downstream ID (use sparingly!)
 /// \param down_SBID [in] ID of downstream subbasin
@@ -558,7 +562,6 @@ void CSubBasin::SetDownstreamID(const long down_SBID){
 /// \note After CModel::Initialize, GetBasinArea should be used
 /// \return subbasin Area [km^2]
 //
-
 double    CSubBasin::CalculateBasinArea()
 {
   _basin_area=0.0;
@@ -650,6 +653,9 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
     _t_conc=0.76/24*pow(_basin_area,0.38);// \ref Austrailian Rainfall and runoff
   }
+  if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION){_t_peak=AUTO_COMPUTE;}
+  if(Options.catchment_routing==ROUTE_DUMP){_t_peak=AUTO_COMPUTE;}
+
   if (_t_peak==AUTO_COMPUTE){
     _t_peak=0.3*_t_conc;/// \todo [fix hack] better means of determining needed
   }
@@ -795,7 +801,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   bool bad_initcond=((_nQinHist!=OldnQinHist) && (OldnQinHist!=0));
 
   if (bad_initcond){
-    cout<<_nQinHist<<" "<<OldnQinHist<<endl;
+    //cout<<_nQinHist<<" "<<OldnQinHist<<endl;
     WriteWarning("CSubBasin::GenerateRoutingHydrograph: size of inflow history array differs between initial conditions file and calculated size. Initial conditions will be overwritten",Options.noisy);
     delete [] _aQinHist;
   }
@@ -830,7 +836,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     ExitGracefullyIf(_nSegments>1,
                      "ROUTE_DIFFUSIVE_WAVE only valid for single-segment rivers",BAD_DATA);
     sum=0.0;
-    double cc=_c_ref*SEC_PER_DAY; //[m2/day]
+    double cc=_c_ref*SEC_PER_DAY; //[m/day]
     double diffusivity=_pChannel->GetDiffusivity(_Q_ref);
     diffusivity*=SEC_PER_DAY;//convert to m2/d
     for (n=0;n<_nQinHist;n++)
@@ -853,7 +859,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   //correct to ensure that sum _aRouteHydro[m]=1.0
   sum=0.0;
   for (n=0;n<_nQinHist;n++){sum+=_aRouteHydro[n];}
-  ExitGracefullyIf(sum==0.0,"CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed",RUNTIME_ERR);
+  ExitGracefullyIf(sum<0.2,"CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed",RUNTIME_ERR); //for very diffusive channels - reach length too long
   for (n=0;n<_nQinHist;n++){_aRouteHydro[n]/=sum;}
 }
 
@@ -1131,6 +1137,33 @@ double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
   //level pool-type storage
   //return dx*_pChannel->GetArea(Qout);
 }
+double CSubBasin::thQ(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const
+{
+  //Schwanenberge and Montero, eqn 21
+  if(fabs(Out_old-Out_new)<REAL_SMALL){return 0.5;}
+  double thQ;
+  thQ=(GetReachSegVolume(In_new,Out_new,dx)-GetReachSegVolume(In_old,Out_old,dx))/tstep/SEC_PER_DAY/(Out_old-Out_new);
+  thQ+=(-(1.0-th_in)*In_old-(th_in)*In_new+Out_old)/(Out_old-Out_new);
+  return thQ;
+}
+
+double CSubBasin::TVDTheta(double In_old,double In_new,double Out_old,double Out_new,double th_in, double dx, double tstep) const
+{//Schwanenberge and Montero, eqn 22
+  double th;
+  if     (In_new> Out_old){
+    th=thQ(In_old,In_new,Out_old,min(In_new,In_old),th_in,dx,tstep);
+    //cout<<"TH!  "<<th<<" "<<min(1.0,max(0.5,th))<<endl;
+    //return 1.0;
+    return min(1.0,max(0.5,th));
+  }
+  else if(In_new< Out_old){
+    th=thQ(In_old,In_new,Out_old,max(In_new,In_old),th_in,dx,tstep);
+    return min(1.0,max(0.5,th));
+  }
+  return 0.5;
+}
+
+
 //////////////////////////////////////////////////////////////////
 /// \brief Creates aQout_new [m^3/s], an array of point measurements for outflow at downstream end of each river segment
 /// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed),
@@ -1152,7 +1185,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   double seg_fraction;//[0..1] % of reach length assoc with segment
 
   tstep       =Options.timestep;
-  dx                                    =_reach_length/(double)(_nSegments);
+  dx          =_reach_length/(double)(_nSegments);
   seg_fraction=1.0/(double)(_nSegments);
 
   //==============================================================
@@ -1314,6 +1347,78 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
         WriteWarning(warn,false);
         }*/
     }
+  }
+  //==============================================================
+  else if(route_method==ROUTE_TVD)
+  { //Total variation diminishing method of Schwanenberg and Montero, 2016 -Journal of Hydrology 539 p188-195
+    ///< basic hydrologic routing using Newton's algorithm
+    ///<  ONE SEGMENT ONLY FOR NOW
+
+    ///dV(Q)/dt=(1-th_I)Q_in(n)+(th_I)Q_in(n+1)-(1-th_Q)Q_out(n)+(th_Q)Q_out(n+1)(h) -> solve for >Qout_new
+    /// rewritten as f(Q)-gamma=0 for Newton's method solution
+
+    const double ROUTE_MAXITER=20;
+    const double ROUTE_TOLERANCE=0.0001;//[m3/s]
+
+    double Qout_old =_aQout   [_nSegments-1]-Qlat_last;
+    double Qin_new  =_aQinHist[0];
+		double Qin_old  =_aQinHist[1];
+
+    int    iter=0;
+    double change=0;
+
+    double f,df;
+    double Q_guess=Qin_new;
+    double relax=1.0;//0.99;
+    double th_in(0.5); //default for single reach
+    double th_out;
+    double dx=_reach_length;
+    double dQ=0.0001;
+    do //Newton's method
+    {
+      th_out=TVDTheta(Qin_old,Qin_new,Qout_old,Q_guess   ,th_in,dx,tstep);
+      cout<<"th_out: "<<th_out<<" "<<Qin_old<<" "<<Qin_new<<" "<<Qout_old<<" "<<Q_guess<<" "<<endl;
+      f   =(GetReachSegVolume(Qin_new,Q_guess,dx)-GetReachSegVolume(Qin_old,Qout_old,dx))/(tstep*SEC_PER_DAY);
+      f-=(1.0-th_in )*Qin_old +(th_in )*Qin_new;
+      f+=(1.0-th_out)*Qout_old+(th_out)*Q_guess;
+
+      th_out=TVDTheta(Qin_old,Qin_new,Qout_old,Q_guess+dQ,th_in,dx,tstep);
+      df   =(GetReachSegVolume(Qin_new,Q_guess+dQ,dx)-GetReachSegVolume(Qin_old,Qout_old,dx))/(tstep*SEC_PER_DAY);
+      df-=(1.0-th_in )*Qin_old +(th_in )*Qin_new;
+      df+=(1.0-th_out)*Qout_old+(th_out)*(Q_guess+dQ);
+      df-=f;
+      
+      change=-f/(df/dQ);//[m3/s]
+      if (df==0.0){change=1e-7;}
+
+      Q_guess+=relax*change; //relaxation required for some tough cases
+      
+      /*double minQ=min(min(Qin_old,Qin_new),Qout_old);
+      if(Q_guess<minQ){ Q_guess+=0.98*(minQ-Q_guess); }*///cheat -introduces MB errors
+
+      cout<<"Q_guess ["<<iter<<"]: "<< Q_guess<< " "<<f<<endl;
+      if (Q_guess<0){Q_guess=REAL_SMALL; change=0.0;}
+      
+      iter++;
+      if (iter > 3){ relax = 0.9; }
+      if (iter > 10){ relax = 0.7; }
+    } while ((iter<ROUTE_MAXITER) && (fabs(change)>ROUTE_TOLERANCE));
+    //the above is really fast for most trivial changes in flow, since f is locally linear, 1 to 3 iterations sufficient
+
+    aQout_new[_nSegments-1]=Q_guess;
+    if (Q_guess<0){ cout << "Negative flow in basin "<<to_string(this->_ID)<<" Qoutold: "<<Qout_old<<" Qin: "<<Qin_new<<" "<<Qin_old<<endl; }
+    if (Options.distrib_lat_inflow){
+      aQout_new[_nSegments-1]+=(seg_fraction)*Qlat_new;
+    }
+    if (iter==ROUTE_MAXITER){
+      string warn="CSubBasin::RouteWater:TVD did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+ " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess));
+      WriteWarning(warn,false);
+      /*for (int i = 0; i < 20; i++){
+        string warn = to_string(Qg[i]) + " " + to_string(ff[i]);
+        WriteWarning(warn,false);
+      }*/
+    }
+
   }
   //==============================================================
   else if ((route_method==ROUTE_PLUG_FLOW)

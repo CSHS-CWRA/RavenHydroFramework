@@ -432,6 +432,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
       ExitGracefullyIf(pBasin==NULL,
                        "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
+      time_struct tt;
+      JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
+      pBasin->GetReservoir()->UpdateFlowRules(tt,Options); //ensures correct discharge rating curve is used to calculate flow
       pBasin->SetReservoirFlow(AutoOrDouble(s[2]));
       break;
     }

@@ -282,7 +282,10 @@
     <ClCompile Include="GreenAmpt.cpp" />
     <ClCompile Include="HRUGroups.cpp" />
     <ClCompile Include="IrregularTimeSeries.cpp" />
+    <ClCompile Include="LateralExchangeABC.cpp" />
     <ClCompile Include="MassRouting.cpp" />
+    <ClCompile Include="ModelForcingGrids.cpp" />
+    <ClCompile Include="ModelInitialize.cpp" />
     <ClCompile Include="OrographicCorrections.cpp" />
     <ClCompile Include="ParseInitialConditionFile.cpp" />
     <ClCompile Include="ParseLib.cpp" />
@@ -290,6 +293,7 @@
     <ClCompile Include="Reservoir.cpp" />
     <ClCompile Include="SnowAlbedo.cpp" />
     <ClCompile Include="SnowTempEvolve.cpp" />
+    <ClCompile Include="LatFlush.cpp" />
     <ClCompile Include="StateVariables.cpp" />
     <ClCompile Include="TimeSeriesABC.cpp" />
     <ClCompile Include="TransientParam.cpp" />
@@ -418,6 +422,7 @@
     <ClInclude Include="GlacierProcesses.h" />
     <ClInclude Include="GlobalParams.h" />
     <ClInclude Include="IrregularTimeSeries.h" />
+    <ClInclude Include="LateralExchangeABC.h" />
     <ClInclude Include="OpenWaterEvap.h" />
     <ClInclude Include="ParseLib.h" />
     <ClInclude Include="Properties.h" />
@@ -453,7 +458,7 @@
   <ItemGroup>
     <None Include="..\RavenView\RavenView\RavenResource.dat" />
     <None Include="gawser_emulate.rvc" />
-    <None Include="Graphics\RavenIcon.ico" />
+    <None Include="RavenIcon.ico" />
     <None Include="Watflood\Watflood.rvi" />
     <None Include="WD\Alouette\Alouette.rvc" />
     <None Include="WD\Alouette\Alouette.rvh" />

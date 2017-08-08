@@ -553,55 +553,44 @@ double        CHydroUnit::GetStateVarMax(const int      i,
   double max_var=ALMOST_INF;
   switch (_pModel->GetStateVarType(i))
   {
-  case(SOIL):         {
-    int m=_pModel->GetStateVarLayer(i);
-    max_var=GetSoilCapacity(m);
-    break;
-  }
-  case(SURFACE_WATER):{max_var=ALMOST_INF;break;}
-  case(PONDED_WATER): {max_var=ALMOST_INF;break;}
-  case(ATMOSPHERE):   {max_var=ALMOST_INF;break;}
-  case(ATMOS_PRECIP): {max_var=ALMOST_INF;break;}
-  case(CANOPY):       {
-    max_var=_VegVar.capacity;
-    break;
-  }
-  case(CANOPY_SNOW):  {
-    max_var=_VegVar.snow_capacity;
-    break;
-  }
-  case(TRUNK):        {max_var=ALMOST_INF;break;} //??
-  case(ROOT):         {max_var=ALMOST_INF;break;} //??
-  case(GROUNDWATER):  {max_var=ALMOST_INF;break;}
-  case(DEPRESSION):   {
-    if (_pSurface->dep_max>0){max_var=_pSurface->dep_max;}
-    else                     {max_var=ALMOST_INF;}
-    break;
-  }
-  case(SNOW):         {max_var=ALMOST_INF;break;}
-  case(SNOW_LIQ):
-  {
-    int iSNO=_pModel->GetStateVarIndex(SNOW);
-    int iSD =_pModel->GetStateVarIndex(SNOW_DEPTH);
+    case(SOIL):         {
+      int m=_pModel->GetStateVarLayer(i);
+      max_var=GetSoilCapacity(m);
+      break;
+    }
+    case(CANOPY):       {
+      max_var=_VegVar.capacity;
+      break;
+    }
+    case(CANOPY_SNOW):  {
+      max_var=_VegVar.snow_capacity;
+      break;
+    }
+    case(DEPRESSION):   {
+      if (_pSurface->dep_max>0){max_var=_pSurface->dep_max;}
+      else                     {max_var=ALMOST_INF;}
+      break;
+    }
+    case(SNOW_LIQ):
+    {
+      int iSNO=_pModel->GetStateVarIndex(SNOW);
+      int iSD =_pModel->GetStateVarIndex(SNOW_DEPTH);
 
-    double snow_depth;
-    double SWE       =curr_state_var[iSNO];
-    if (iSD!=DOESNT_EXIST){snow_depth=curr_state_var[iSD];}
-    else                  {snow_depth=GetSnowDepth(SWE,FRESH_SNOW_DENS);}
-    max_var=CalculateSnowLiquidCapacity(SWE,snow_depth,Options);
-    break;
-  }
-  case(GLACIER):        {max_var=ALMOST_INF;break;}
-  case(SNOW_COVER):     {max_var=1.0;       break;}
-  case(WETLAND):        {max_var=ALMOST_INF;break;}
-  case(COLD_CONTENT):   {max_var=ALMOST_INF;break;}
-  case(ENERGY_LOSSES):  {max_var=ALMOST_INF;break;}
-  case(CUM_SNOWMELT):   {max_var=ALMOST_INF;break;}
-  case(CROP_HEAT_UNITS):{max_var=ALMOST_INF;break;}
-  case(CONSTITUENT):    {max_var=ALMOST_INF;break;}
-  case(CONSTITUENT_SRC):{max_var=ALMOST_INF;break;}
-  case(CONSTITUENT_SW): {max_var=ALMOST_INF;break;}
-  default:{max_var=ALMOST_INF;break;} //infinite storage
+      double snow_depth;
+      double SWE       =curr_state_var[iSNO];
+      if (iSD!=DOESNT_EXIST){snow_depth=curr_state_var[iSD];}
+      else                  {snow_depth=GetSnowDepth(SWE,FRESH_SNOW_DENS);}
+      max_var=CalculateSnowLiquidCapacity(SWE,snow_depth,Options);
+      break;
+    }
+    case(SNOW_COVER):     
+    {
+      max_var=1.0;       
+      break;
+    }
+    default:{
+      max_var=ALMOST_INF;break;
+    } //infinite storage (default)
   }/* end switch*/
   return max_var;
 }

@@ -570,7 +570,7 @@ double InterpolateMo(const double       aVal[12],
 // (Murray, Applied Meteorol 6:203, 1967)
 ///
 /// \param &T [in] Temperature in Celsius
-/// \return Saturated vapor pressure corresponding to passed temperature
+/// \return Saturated vapor pressure [kPa] corresponding to passed temperature
 //
 double GetSaturatedVaporPressure(const double &T)//[C]
 {
@@ -579,6 +579,8 @@ double GetSaturatedVaporPressure(const double &T)//[C]
   const double A3=237.3;
   const double A4=21.87456;
   const double A5=265.5;
+
+  //0.61115*exp(22.452*T/(T+ZERO_CELSIUS)); //MESH
 
   if (T>=0){return A1*exp(A2*T/(T+A3));}  // Dingman/Brook90 version (Murray, 1967)
   else     {return A1*exp(A4*T/(T+A5));}

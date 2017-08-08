@@ -262,14 +262,14 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
     {
       /*
         :Reservoir [name]
-        :SubBasin [SBID]
-        :HRUID [HRUID]
-        :VolumeHeightRelation
-        [DATA BLOCK]
-        :EndVolumeHeightRelation
-        :OutflowHeightRelation
-        :EndOutflowHeightRelation
-        ...
+          :SubBasin [SBID]
+          :HRUID [HRUID]
+          :VolumeHeightRelation
+            [DATA BLOCK]
+          :EndVolumeHeightRelation
+          :OutflowHeightRelation
+          :EndOutflowHeightRelation
+          ...
         :EndReservoir
       */
       if (Options.noisy) {cout <<":Reservoir"<<endl;}
@@ -287,9 +287,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
     case(7):  //----------------------------------------------
     { /*
         ":SubBasinProperties"
-        :Parameters, paramname1,paramname2,...,paramnameN
-        :Units     ,  units1, units2, ..., unitsN
-        {ID,param1, param2,...,paramN} x nSubBasins
+          :Parameters, paramname1,paramname2,...,paramnameN
+          :Units     ,  units1, units2, ..., unitsN
+          {ID,param1, param2,...,paramN} x nSubBasins
         :EndSubBasinProperties
       */
       if (Options.noisy) {cout <<"   Reading Basin Properties..."<<endl;}
@@ -328,7 +328,14 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
           pSB=pModel->GetSubBasinByID(SBID);
           if (pSB!=NULL){
             for (i=1;i<nParamStrings;i++){
-              good_string=pSB->SetBasinProperties(aParamStrings[i],AutoOrDouble(s[i]));
+              double in=AutoOrDouble(s[i]);
+              if(!aParamStrings[i].compare("TIME_CONC") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+                in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
+              }
+              if(!aParamStrings[i].compare("TIME_TO_PEAK") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+                in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
+              }
+              good_string=pSB->SetBasinProperties(aParamStrings[i],in);
               if (!good_string)
               {
                 string err;
@@ -349,7 +356,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
     case(8):  //----------------------------------------------
     { /*
         ":HRUGroup" {name}
-        {ID1,ID2,ID3,...} x nHRUs in group
+         {ID1,ID2,ID3,...} x nHRUs in group
         :EndHRUGroup
       */
       if (Options.noisy) {cout <<"   HRU Group..."<<endl;}

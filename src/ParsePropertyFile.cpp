@@ -153,6 +153,11 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
   }
 
+  if (true){//always
+    aP [0]="TOC_MULTIPLIER"; aPC[0]=CLASS_GLOBAL;
+    AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
+  }
+
   //Prior to this, all parameters default to NOT_NEEDED or NOT_NEEDED_AUTO
   //this overrides default values of required variables to NOT_SPECIFIED and AUTO_COMPUTE
   double val;

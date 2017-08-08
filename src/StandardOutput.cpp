@@ -434,7 +434,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   if(fabs(mod_final) <= 0.5*Options.timestep)  //checks to see if sufficiently close to timestep
                                                //(this should account for any roundoff error in timestep calcs)
   {
-    thisdate=tt.date_string;                //referst to date and time at END of time step
+    thisdate=tt.date_string;                   //refers to date and time at END of time step
     thishour=DecDaysToHours(tt.julian_day);
     t       =tt.model_time;
 
@@ -456,11 +456,11 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //----------------------------------------------------------------
     if (Options.output_format==OUTPUT_STANDARD)
     {
-      double snowfall    =GetAverageSnowfall();
-      double precip      =GetAveragePrecip();
-      double channel_stor=GetTotalChannelStorage();
+      double snowfall      =GetAverageSnowfall();
+      double precip        =GetAveragePrecip();
+      double channel_stor  =GetTotalChannelStorage();
       double reservoir_stor=GetTotalReservoirStorage();
-      double rivulet_stor=GetTotalRivuletStorage();
+      double rivulet_stor  =GetTotalRivuletStorage();
 
       _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour;
 
@@ -566,7 +566,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       WriteEnsimMinorOutput(Options,tt);
     }
 
-    //Write cumulative mass balance info to WatershedMassEnergyBalance.csv
+    //Write cumulative mass balance info to HRUGroup_MassEnergyBalance.csv
     //----------------------------------------------------------------
     if (Options.write_group_mb!=DOESNT_EXIST)
     {

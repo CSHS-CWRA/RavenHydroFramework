@@ -61,9 +61,6 @@
     <Filter Include="Input Files\Default Test Model">
       <UniqueIdentifier>{b6522925-4b4d-45ef-b635-4923cb3464de}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Hydrological Processes\Lake/Glacier Processes">
-      <UniqueIdentifier>{20a8ebdf-d839-4ed1-9055-283117ab477a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\_Driver\Output">
       <UniqueIdentifier>{e9eeeca8-fb32-49b1-b412-f1f275d391b2}</UniqueIdentifier>
     </Filter>
@@ -126,6 +123,9 @@
     </Filter>
     <Filter Include="Header Files\Transport">
       <UniqueIdentifier>{56bc8cff-8585-4c16-97b5-fb3cf3c0f2cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes">
+      <UniqueIdentifier>{20a8ebdf-d839-4ed1-9055-283117ab477a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -207,9 +207,6 @@
     <ClCompile Include="RavenMain.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
-    <ClCompile Include="Solvers.cpp">
-      <Filter>Source Files\_Driver</Filter>
-    </ClCompile>
     <ClCompile Include="ParseHRUFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
@@ -238,10 +235,10 @@
       <Filter>Source Files\Land Partitions</Filter>
     </ClCompile>
     <ClCompile Include="OpenWaterEvap.cpp">
-      <Filter>Source Files\Hydrological Processes\Lake/Glacier Processes</Filter>
+      <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>
     </ClCompile>
     <ClCompile Include="GlacierProcesses.cpp">
-      <Filter>Source Files\Hydrological Processes\Lake/Glacier Processes</Filter>
+      <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>
     </ClCompile>
     <ClCompile Include="CustomOutput.cpp">
       <Filter>Source Files\_Driver\Output</Filter>
@@ -260,9 +257,6 @@
     </ClCompile>
     <ClCompile Include="CropGrowth.cpp">
       <Filter>Source Files\Hydrological Processes\Vegetation Processes</Filter>
-    </ClCompile>
-    <ClCompile Include="Abstraction.cpp">
-      <Filter>Source Files\Hydrological Processes</Filter>
     </ClCompile>
     <ClCompile Include="AquiferStack.cpp">
       <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
@@ -326,6 +320,33 @@
     </ClCompile>
     <ClCompile Include="Forcings.cpp">
       <Filter>Source Files\Forcing Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="DepressionProcesses.cpp">
+      <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="Abstraction.cpp">
+      <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="Solvers.cpp">
+      <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="UnitTesting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ForcingGrid.cpp">
+      <Filter>Source Files\Forcing Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelForcingGrids.cpp">
+      <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelInitialize.cpp">
+      <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="LatFlush.cpp">
+      <Filter>Source Files\Hydrological Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="LateralExchangeABC.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -443,6 +464,18 @@
     <ClInclude Include="Forcings.h">
       <Filter>Header Files\Forcing Functions</Filter>
     </ClInclude>
+    <ClInclude Include="DepressionProcesses.h">
+      <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="UnitTesting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ForcingGrid.h">
+      <Filter>Header Files\Forcing Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="LateralExchangeABC.h">
+      <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc">
@@ -450,9 +483,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Graphics\RavenIcon.ico">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="WD\GAWSER Emulate\channel_sections.rvp">
       <Filter>Input Files\Gawser Test</Filter>
     </None>
@@ -645,6 +675,9 @@
       <Filter>Input Files\ReservoirTest</Filter>
     </None>
     <None Include="..\RavenView\RavenView\RavenResource.dat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="RavenIcon.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

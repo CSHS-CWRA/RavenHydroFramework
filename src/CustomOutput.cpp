@@ -38,34 +38,34 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   ExitGracefullyIf(pMod==NULL,"CCustomOutput Constructor: NULL model",BAD_DATA);
 
 // set up the objects member variables
-  _var                    =variable;                                      // forcing variable, state variable, etc.
-  _svtype               =sv;                                                            // state variable type (if output var is a SV)
-  _svind                =sv_index;                                      // state variable index (if output var is a SV)
-  _force_str=force_string;                      // name of forcing variable (if output var is a forcing function)
+  _var      =variable;                                      // forcing variable, state variable, etc.
+  _svtype   =sv;                                            // state variable type (if output var is a SV)
+  _svind    =sv_index;                                      // state variable index (if output var is a SV)
+  _force_str=force_string;                                  // name of forcing variable (if output var is a forcing function)
 
-  _spaceAgg  =space_aggregation;        // how we're aggregation the data (ByHRU,BySubbasin, etc.)
-  _timeAgg   =time_aggregation; // yearly, monthly, etc.
-  _aggstat              =stat;                                                  // the statistic we're calculating
+  _spaceAgg  =space_aggregation;                            // how we're aggregation the data (ByHRU,BySubbasin, etc.)
+  _timeAgg   =time_aggregation;                             // yearly, monthly, etc.
+  _aggstat   =stat;                                         // the statistic we're calculating
 
-  pModel          =pMod;                                                  // pointer to the main model
+  pModel     =pMod;                                         // pointer to the main model
 
 
-  _varName                ="UNKNOWN";
-  _varUnits               ="none";
+  _varName        ="UNKNOWN";
+  _varUnits       ="none";
   timeAggStr      ="UNKNOWN";
-  statStr                 ="UNKNOWN";
+  statStr         ="UNKNOWN";
   spaceAggStr     ="UNKNOWN";
 
   num_data      =1;
-  data                  =NULL;  // pointer to data storage for aggregation
+  data          =NULL;  // pointer to data storage for aggregation
 
   _hist_min     =0;
   _hist_max     =10;
-  _nBins                =1; //Arbitrary default
+  _nBins        =1; //Arbitrary default
 
-  count                 =0;
+  count         =0;
 
-  kk_only   =kk;
+  kk_only       =kk;
 
   ExitGracefullyIf((kk_only==DOESNT_EXIST) && (_spaceAgg==BY_SELECT_HRUS),
                    "CCustomOutput Constructor: invalid HRU group index for Select HRU Aggregation. Undefined HRU group?",BAD_DATA);
@@ -76,7 +76,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   ostrstream FILENAME;
   if (Options.run_name!=""){FILENAME<<Options.output_dir<<Options.run_name<<"_";}
   else                     {FILENAME<<Options.output_dir;                       }
-
+      
   // Get the variable name (either the state variable name of the forcing variable name)
   // and the units
   switch(_var)
@@ -129,9 +129,9 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
   case YEARLY:                    timeAggStr="Yearly"; break;
   case MONTHLY:                   timeAggStr="Monthly"; break;
-  case DAILY:                             timeAggStr="Daily"; break;
-  case WATER_YEARLY:timeAggStr="WYearly";break;
-  case EVERY_TSTEP:       timeAggStr="Continuous"; break;
+  case DAILY:                     timeAggStr="Daily"; break;
+  case WATER_YEARLY:              timeAggStr="WYearly";break;
+  case EVERY_TSTEP:               timeAggStr="Continuous"; break;
   }
   FILENAME<<timeAggStr<<"_";
 
@@ -144,19 +144,19 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case AGG_RANGE:                 statStr="Range"; break;
   case AGG_MEDIAN:                statStr="Median"; break;
   case AGG_95CI:                  statStr="95%"; break;
-  case AGG_QUARTILES:     statStr="Quartiles"; break;
-  case AGG_HISTOGRAM:     statStr="Histogram"; break;
+  case AGG_QUARTILES:             statStr="Quartiles"; break;
+  case AGG_HISTOGRAM:             statStr="Histogram"; break;
   }
   FILENAME<<statStr<<"_";
 
 // spatial aggregation
   switch(_spaceAgg)
   {
-  case BY_HRU:                            spaceAggStr="ByHRU"; break;
+  case BY_HRU:                    spaceAggStr="ByHRU"; break;
   case BY_BASIN:                  spaceAggStr="BySubbasin"; break;
   case BY_WSHED:                  spaceAggStr="ByWatershed"; break;
-  case BY_HRU_GROUP:      spaceAggStr="ByHRUGroup"; break;
-  case BY_SELECT_HRUS:spaceAggStr="ByHRU"; break;
+  case BY_HRU_GROUP:              spaceAggStr="ByHRUGroup"; break;
+  case BY_SELECT_HRUS:            spaceAggStr="ByHRU"; break;
   }
   FILENAME<<spaceAggStr;
 
@@ -164,8 +164,14 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   switch(Options.output_format)
   {
   case OUTPUT_ENSIM:      FILENAME<<".tb0"<<ends; break;
+  case OUTPUT_NETCDF:
+    FILENAME.clear();
+    if (Options.run_name!=""){FILENAME<<Options.output_dir<<Options.run_name<<"_";}
+    else                     {FILENAME<<Options.output_dir;                       }
+    FILENAME<<"ravenoutput.nc" <<ends; 
+    break;
   case OUTPUT_STANDARD:
-  default:                                                FILENAME<<".csv"<<ends; break;
+  default:                FILENAME<<".csv"<<ends; break;
   }
 
   if (filename_spec==""){_filename=FILENAME.str();}
@@ -261,6 +267,10 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
     break;
   case OUTPUT_ENSIM:
     WriteEnSimFileHeader(Options);
+    return;
+    break;
+  case OUTPUT_NETCDF:
+    //PrepareNetCDFFile(Options);
     return;
     break;
   }
@@ -391,11 +401,11 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
     ostrstream  curSpaceIdentifier;
     switch(_spaceAgg)
     {
-    case BY_HRU:                            curSpaceIdentifier<<"HRU_"      <<pModel->GetHydroUnit(k)->GetID() <<ends; break;
-    case BY_HRU_GROUP:      curSpaceIdentifier<<"HRUGroup_" <<pModel->GetHRUGroup(k)->GetName()<<ends; break;
+    case BY_HRU:                    curSpaceIdentifier<<"HRU_"      <<pModel->GetHydroUnit(k)->GetID() <<ends; break;
+    case BY_HRU_GROUP:              curSpaceIdentifier<<"HRUGroup_" <<pModel->GetHRUGroup(k)->GetName()<<ends; break;
     case BY_WSHED:                  curSpaceIdentifier<<"Watershed_"<<"Watershed"                      <<ends; break;
     case BY_BASIN:                  curSpaceIdentifier<<"SubBasin_" <<pModel->GetSubBasin(k)->GetID()  <<ends; break;
-    case BY_SELECT_HRUS:curSpaceIdentifier<<"HRU_"      <<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()  <<ends; break;
+    case BY_SELECT_HRUS:            curSpaceIdentifier<<"HRU_"      <<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()  <<ends; break;
     }
     string title=curSpaceIdentifier.str();
 
@@ -407,7 +417,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
     case AGG_RANGE:                 _CUSTOM<<title<<"_min "<<title<<"_max "; dataColumnCount+=2; break;
     case AGG_MEDIAN:                _CUSTOM<<title<<"_median "; dataColumnCount++; break;
     case AGG_95CI:                  _CUSTOM<<title<<"_5%_quantile "<<title<<"_95%_quantile "; dataColumnCount+=2; break;
-    case AGG_QUARTILES:     _CUSTOM<<title<<"_25%_quartile "<<title<<"_50%_quartile "<<title<<"_75%_quartile "; dataColumnCount+=3; break;
+    case AGG_QUARTILES:             _CUSTOM<<title<<"_25%_quartile "<<title<<"_50%_quartile "<<title<<"_75%_quartile "; dataColumnCount+=3; break;
     case AGG_HISTOGRAM:
     {
       for (int bin=0;bin<_nBins;bin++)
@@ -519,6 +529,10 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     WriteEnSimCustomOutput(tt, Options);
     return;
     break;
+  case OUTPUT_NETCDF:
+    //WriteNetCDFCustomOutput(tt, Options);
+    return;
+    break;
   }
 }
 
@@ -558,17 +572,17 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
   else if ((_timeAgg==MONTHLY) && (dday==1))                 {reset=true;}//first day of month - print preceding month info
   else if ((_timeAgg==DAILY)   &&
            ((fabs(floor(t)-t) <0.5*Options.timestep) ||
-            (fabs( ceil(t)-t) <0.5*Options.timestep)))                   {reset=true;}//start of day (hopefully 0:00!)- print preceding day
+            (fabs( ceil(t)-t) <0.5*Options.timestep)))       {reset=true;}//start of day (hopefully 0:00!)- print preceding day
   else if (_timeAgg==EVERY_TSTEP)                            {reset=true;}//every timestep
   else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    {reset=true;}//Oct 1 - print preceding year
   //cout <<t <<" ->"<<fabs(floor(t)-t)<<"   "<<(fabs(floor(t)-t) <0.5*Options.timestep)<<endl;
 
   if (reset)
   {
-    if      (_timeAgg==YEARLY     ){_CUSTOM<<t<<","<<yest.year<<",";}
-    else if (_timeAgg==MONTHLY    ){_CUSTOM<<t<<","<<yesterday.substr(0,7)<<",";}//trims day, e.g., just return 2011-02,
-    else if (_timeAgg==DAILY      ){_CUSTOM<<t<<","<<yesterday<<",";}
-    else if (_timeAgg==EVERY_TSTEP){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
+    if      (_timeAgg==YEARLY      ){_CUSTOM<<t<<","<<yest.year<<",";}
+    else if (_timeAgg==MONTHLY     ){_CUSTOM<<t<<","<<yesterday.substr(0,7)<<",";}//trims day, e.g., just return 2011-02,
+    else if (_timeAgg==DAILY       ){_CUSTOM<<t<<","<<yesterday<<",";}
+    else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
     else if (_timeAgg==WATER_YEARLY){_CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<",";}
   }
 
@@ -762,10 +776,10 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
 
   if (t==0){return;} //initial conditions should not be printed to custom output, only period data.
 
-  if      ((_timeAgg==YEARLY)  && (dday==1) && (dmon==1))                                 {reset=true;}//Jan 1 - print preceding year
+  if      ((_timeAgg==YEARLY)  && (dday==1) && (dmon==1))                           {reset=true;}//Jan 1 - print preceding year
   else if ((_timeAgg==MONTHLY) && (dday==1))                                                                                                            {reset=true;}//first day of month - print preceding month info
-  else if ((_timeAgg==DAILY)   && (floor(curDate.model_time)==curDate.model_time))      {reset=true;}//start of day (hopefully 0:00!)- print preceding day
-  else if ((_timeAgg==EVERY_TSTEP))                                                                                                                                                                                             {reset=true;}//every timestep
+  else if ((_timeAgg==DAILY)   && (floor(curDate.model_time)==curDate.model_time))  {reset=true;}//start of day (hopefully 0:00!)- print preceding day
+  else if ( _timeAgg==EVERY_TSTEP )                                                                                                                                                                                             {reset=true;}//every timestep
   else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))     {reset=true;}//~Oct 1 - print preceding year
 
   // write the first 2 fields (year,month/date) and (model time)
@@ -777,9 +791,9 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
 
     switch(_timeAgg)
     {
-    case YEARLY:                    _CUSTOM<<prevDate.year<<" "<<curDate.model_time<<" "; break;
-    case MONTHLY:                   _CUSTOM<<prevDate.year<<"-"<<prevDate.month<<"-"<<prevDate.day_of_month<<" "<<curDate.model_time<<" "; break;
-    case DAILY:                             _CUSTOM<<prevDate.year<<"-"<<prevDate.month<<"-"<<prevDate.day_of_month<<" "<<curDate.model_time<<" "; break;
+    case YEARLY:       _CUSTOM<<prevDate.year<<" "<<curDate.model_time<<" "; break;
+    case MONTHLY:      _CUSTOM<<prevDate.year<<"-"<<prevDate.month<<"-"<<prevDate.day_of_month<<" "<<curDate.model_time<<" "; break;
+    case DAILY:        _CUSTOM<<prevDate.year<<"-"<<prevDate.month<<"-"<<prevDate.day_of_month<<" "<<curDate.model_time<<" "; break;
     case EVERY_TSTEP:
     {
       char dQuote = '"';
@@ -821,21 +835,21 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
     else if (_var==VAR_STATE_VAR){
       switch(_spaceAgg)
       {
-      case BY_HRU:                            val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind); break;
+      case BY_HRU:                    val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind); break;
       case BY_BASIN:                  val=pModel->GetSubBasin (k)->GetAvgStateVar  (_svind); break;
       case BY_WSHED:                  val=pModel->                 GetAvgStateVar  (_svind); break;
-      case BY_HRU_GROUP:      val=pModel->GetHRUGroup (k)->GetAvgStateVar  (_svind); break;
-      case BY_SELECT_HRUS:val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetStateVarValue(_svind); break;
+      case BY_HRU_GROUP:              val=pModel->GetHRUGroup (k)->GetAvgStateVar  (_svind); break;
+      case BY_SELECT_HRUS:            val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetStateVarValue(_svind); break;
       }
     }
     else if (_var==VAR_FORCING_FUNCTION){
       switch(_spaceAgg)
       {
-      case BY_HRU:                            val=pModel->GetHydroUnit(k)->GetForcing   (_force_str); break;
+      case BY_HRU:                    val=pModel->GetHydroUnit(k)->GetForcing   (_force_str); break;
       case BY_BASIN:                  val=pModel->GetSubBasin (k)->GetAvgForcing(_force_str); break;
       case BY_WSHED:                  val=pModel->                 GetAvgForcing(_force_str); break;
-      case BY_HRU_GROUP:      val=pModel->GetHRUGroup (k)->GetAvgForcing(_force_str); break;
-      case BY_SELECT_HRUS:val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str); break;
+      case BY_HRU_GROUP:              val=pModel->GetHRUGroup (k)->GetAvgForcing(_force_str); break;
+      case BY_SELECT_HRUS:            val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str); break;
       }
     }
     else if (_var == VAR_TO_FLUX){

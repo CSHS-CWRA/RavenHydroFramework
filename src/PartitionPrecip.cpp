@@ -31,7 +31,7 @@ void CmvPrecipitation::Initialize()
   //NOTE: nConnections==nStateVar
   //(all water storage variables are potential receptacles for precip)
   /// \todo [funct] this should be changed somehow to all water vars
-  for (int q=0;q<nConnections;q++)//all state var
+  for (int q=0;q<_nConnections;q++)//all state var
   {
     iFrom[q]    =pModel->GetStateVarIndex(ATMOS_PRECIP);
     iTo  [q]    =q;
