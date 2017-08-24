@@ -231,6 +231,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
           if (!pSoilProfile->GetTag().substr(0,4).compare("LAKE"   )){HRUtype=HRU_LAKE;   }
           if (!pSoilProfile->GetTag().substr(0,7).compare("GLACIER")){HRUtype=HRU_GLACIER;}
           if (!pSoilProfile->GetTag().substr(0,4).compare("ROCK"   )){HRUtype=HRU_ROCK;   }
+          if (!pSoilProfile->GetTag().substr(0,7).compare("WETLAND")){HRUtype=HRU_WETLAND;}
           pHRU=new CHydroUnit( pModel,
                                s_to_i(s[0]),//ID
                                pModel->GetNumHRUs(),//k - global model index

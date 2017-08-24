@@ -71,6 +71,22 @@ void CModel::Initialize(const optStruct &Options)
     ExitGracefullyIf(_aFlowBal[k]==NULL,"CModel::Initialize (aFlowBal)",OUT_OF_MEMORY);
     for (int js=0;js<_nTotalConnections;js++){_aFlowBal[k][js]=0.0;}
   }
+
+  _nTotalLatConnections=0;
+  for (int j=0; j<_nProcesses;j++){
+    _nTotalLatConnections+=_pProcesses[j]->GetNumLatConnections();
+  }
+  if(_nTotalLatConnections>0){
+    _aFlowLatBal=NULL;
+    _aCumulativeLatBal = new double[_nTotalLatConnections];
+    _aFlowLatBal       = new double[_nTotalLatConnections];
+    ExitGracefullyIf(_aFlowLatBal==NULL,"CModel::Initialize (_aFlowLatBal)",OUT_OF_MEMORY);
+    
+    for(int jss=0;jss<_nTotalLatConnections;jss++){
+      _aCumulativeLatBal[jss]=0.0;
+      _aFlowLatBal      [jss]=0.0;
+    }
+  }
   _CumulInput   =_CumulOutput  =0.0;
   _CumEnergyGain=_CumEnergyLoss=0.0;
 

@@ -961,7 +961,7 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
 
   // determine in which _ichunk local_simulation_start falls
   double length_chunk = _interval * _ChunkSize; // [days]
-  int    iChunk       = int(floor(local_simulation_start / length_chunk));
+  //int    iChunk       = int(floor(local_simulation_start / length_chunk));
 
   if (Options.noisy){ cout << "Finished Initialize time series '" << _varname.c_str() << "'" << endl; }
   if (Options.noisy){ cout << endl; }
@@ -1784,7 +1784,7 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(
 
   // overall un-chunked index in NetCDF file starting from very first entry in NetCDF file
   double idx_NC = (_t_corr + global_model_time) / _interval ;
-  double delta  = (_t_corr + global_model_time) / _interval - floor(idx_NC); // difference from integer index
+  //double delta  = (_t_corr + global_model_time) / _interval - floor(idx_NC); // difference from integer index
 
   // for example overall index = 17 and _ChunkSize = 5 [time points]  --> index in current chunk = 2
   int idx_chunk = (int)idx_NC % _GridDims[2];

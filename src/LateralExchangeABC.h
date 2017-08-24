@@ -36,18 +36,18 @@ protected:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
 
-  void SetModel(const CModel *pM);
+  static void SetModel(const CModel *pM);
 
   CLateralExchangeProcessABC(const process_type ptype);     //multiple connection dynamic constructor
   
-  int GetLateralFlowIndex();
+  int GetLateralFlowIndex() const;
 
-  int GetNumLatConnections();
+  int GetNumLatConnections() const;
 
-  const int *GetFromHRUIndices();
-  const int *GetToHRUIndices();
-  const int *GetLateralFromIndices();
-  const int *GetLateralToIndices();
+  const int *GetFromHRUIndices() const;
+  const int *GetToHRUIndices() const;
+  const int *GetLateralFromIndices() const;
+  const int *GetLateralToIndices() const;
 
   virtual void GetParticipatingParamList(string *aP,class_type *aPC,int &nP) const{ nP=0;return; }
 

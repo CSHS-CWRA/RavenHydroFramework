@@ -673,7 +673,6 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
 
   CReservoir *pRes=NULL;
   HRUID=DOESNT_EXIST;
-  bool laketype(false);
 
   while (!p->Tokenize(s, Len))
   {

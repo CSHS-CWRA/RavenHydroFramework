@@ -471,6 +471,13 @@ string CStateVariable::SVStringBreak(const string s, int &num)
   strxfrm(tmp,ss,pch-ss);          //Extract type (e.g., "SOIL" from "SOIL[13]")
   strxfrm(tmp2,pch+1,pch2-pch-1);  //Extract index (e.g., "13" from "SOIL[13]")
 #endif
+  //cout<<tmp2<<endl;
+  for(int i = 0; i < (int)(strlen(tmp2)); ++i) {
+    if(!isdigit(tmp2[i])) {
+      string warn="SVStringBreak: non-integer ["+to_string(tmp2)+"] used in brackets of state variable in input file";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+  }
   num=s_to_i(tmp2);
   return string(tmp);
 }

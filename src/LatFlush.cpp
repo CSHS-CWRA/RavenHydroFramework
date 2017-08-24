@@ -18,21 +18,24 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
                         int     to_HRU_grp) : CLateralExchangeProcessABC(LAT_FLUSH)
 {
   _iFlushFrom=from_sv_ind;
-  _iFlushTo=to_sv_ind;
-  _kk_from=from_HRU_grp;
-  _kk_to=to_HRU_grp;
+  _iFlushTo  =to_sv_ind;
+  _kk_from   =from_HRU_grp;
+  _kk_to     =to_HRU_grp;
 
   DynamicSpecifyConnections(0); //purely lateral flow, no vertical 
 
-  // \todo[QA/QC] should check for valid SVs, HRU group indices
+  //check for valid SVs, HRU group indices
+  bool badHRU=(to_HRU_grp<0) || (to_HRU_grp>_pModel->GetNumHRUGroups()-1);
+  ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'to' HRU group specified in :LateralFlush command",BAD_DATA_WARN);
+  badHRU=(from_HRU_grp<0) || (from_HRU_grp>_pModel->GetNumHRUGroups()-1);
+  ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'from' HRU group specified in :LateralFlush command",BAD_DATA_WARN);
+  ExitGracefullyIf(from_sv_ind==DOESNT_EXIST,"CmvLatFlush::unrecognized 'from' state variable specified in :LateralFlush command",BAD_DATA_WARN);
+  ExitGracefullyIf(to_sv_ind  ==DOESNT_EXIST,"CmvLatFlush::unrecognized 'to' state variable specified in :LateralFlush command",BAD_DATA_WARN);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
 //
 CmvLatFlush::~CmvLatFlush(){}
-
-
-//MUST SET MODEL 
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization (prior to solution)
@@ -49,7 +52,7 @@ void CmvLatFlush::Initialize()
   bool fromfound=false;
 
   //sift through all HRUs 
-  for(int p=0;p<=_pModel->GetNumSubBasins();p++)
+  for(int p=0;p<_pModel->GetNumSubBasins();p++)
   {
     //find 'to' HRU (only one allowed per SB)
     int kToSB=DOESNT_EXIST;
@@ -58,7 +61,8 @@ void CmvLatFlush::Initialize()
       k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
 
       if(_pModel->IsInHRUGroup(k,toHRUGrp)){
-        ExitGracefullyIf(kToSB!=DOESNT_EXIST,"LatFlush::Initialize - only one HRU per subbasin can recieve flush output. More than one recipient HRU found in subbasin ",BAD_DATA_WARN);
+        ExitGracefullyIf(kToSB!=DOESNT_EXIST,
+          "LatFlush::Initialize - only one HRU per subbasin can recieve flush output. More than one recipient HRU found in subbasin ",BAD_DATA_WARN);
         kToSB=k;
       }
     }
@@ -66,6 +70,8 @@ void CmvLatFlush::Initialize()
     //find 'from' HRUs to make connections
     for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
     {
+      k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
+
       if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)){
         kFrom[q]=k;
         kTo  [q]=kToSB;
@@ -82,6 +88,9 @@ void CmvLatFlush::Initialize()
     _kTo     [q]    =kTo[q];
     _iFromLat[q]    =_iFlushFrom;
     _iToLat  [q]    =_iFlushTo;
+    /*cout <<"latflush connections: "<<_pModel->GetHydroUnit(_kFrom[q])->GetID()<<" "<<_pModel->GetHydroUnit(_kTo[q])->GetID()<<" ";
+    cout<<CStateVariable::SVTypeToString(_pModel->GetStateVarType(_iFromLat[q]),-1)<<" ";
+    cout<<CStateVariable::SVTypeToString(_pModel->GetStateVarType(_iToLat[q]),-1)<<endl;*/
   }
   delete [] kFrom;
   delete [] kTo;
@@ -107,20 +116,22 @@ void  CmvLatFlush::GetParticipatingParamList(string *aP,class_type *aPC,int &nP)
   nP=0;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief virtual process -does nothing
+/// \brief returns lateral exchange rates (mm/d) between from and to HRU/SV combinations
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Specified point at time at which this accessing takes place
-/// \param *rates [out] Rate of loss from "from" compartment [mm/day]
+/// \param *exchange_rates [out] Rate of loss from "from" compartment [mm/day]
 //
-void CmvLatFlush::GetLateralExchange( const double * const *state_vars, //array of all SVs for all HRUs, [k][i]
+void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
                                       const CHydroUnit * const *pHRUs,    
-                                      const optStruct   &Options,
-                                      const time_struct &tt,
-                                            double      *exchange_rates) const
+                                      const optStruct          &Options,
+                                      const time_struct        &tt,
+                                            double             *exchange_rates) const
 {
+  double stor;
   for(int q=0; q<_nLatConnections; q++){
-    exchange_rates[q]=0.0;
+    stor=state_vars[_kFrom[q]][_iFromLat[q]];
+    exchange_rates[q]+=max(stor,0.0)/Options.timestep;
   }
 }

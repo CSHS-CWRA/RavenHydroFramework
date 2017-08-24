@@ -538,9 +538,12 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
 //
 void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
 {
-  CTimeSeries *pTmin,*pTmax;
-  pTmin=GetTimeSeries(F_TEMP_DAILY_MIN);
-  pTmax=GetTimeSeries(F_TEMP_DAILY_MAX);
+  CTimeSeries *pTmin,*pTmax,*pTdaily_ave;
+  int          nVals;
+
+  pTmin      =GetTimeSeries(F_TEMP_DAILY_MIN);
+  pTmax      =GetTimeSeries(F_TEMP_DAILY_MAX);
+  pTdaily_ave=GetTimeSeries(F_TEMP_DAILY_AVE);
 
   double start_day=Options.julian_start_day;
   int    start_yr =Options.julian_start_year;
@@ -551,18 +554,22 @@ void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   pTmin->Initialize(start_day,start_yr,duration,timestep,false);
   pTmax->Initialize(start_day,start_yr,duration,timestep,false);
 
-  //Generate daily average values Tave=(Tmin+Tmax)/2
-  int nVals=(int)ceil(duration);
-  double *aAvg=new double [nVals];
-  double t=0.0;//model time
-  for (int n=0;n<nVals;n++)
+  //Generate daily average values Tave=(Tmin+Tmax)/2 unless provided
+  if(pTdaily_ave==NULL)
   {
-    aAvg[n]=0.5*(pTmin->GetValue(t+0.5)+pTmax->GetValue(t+0.5));
-    t+=1.0;
+    nVals=(int)ceil(duration);
+    double *aAvg=new double[nVals];
+    double t=0.0;//model time
+    for(int n=0;n<nVals;n++)
+    {
+      aAvg[n]=0.5*(pTmin->GetValue(t+0.5)+pTmax->GetValue(t+0.5));
+      t+=1.0;
+    }
+    pTdaily_ave=new CTimeSeries("TEMP_DAILY_AVE","","",start_day,start_yr,1.0,aAvg,nVals,true);
+    ExitGracefullyIf(pTdaily_ave==NULL,"GenerateAveSubdailyTempFromMinMax",OUT_OF_MEMORY);
+    this->AddTimeSeries(pTdaily_ave,F_TEMP_DAILY_AVE);
+    delete[] aAvg;
   }
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE","","",start_day,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
-  delete [] aAvg;
-
   //Generate subdaily temperature values Tave
   if (Options.timestep<(1.0-TIME_CORRECTION))
   {

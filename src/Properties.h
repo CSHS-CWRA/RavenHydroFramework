@@ -241,6 +241,8 @@ struct surface_struct
   double dep_max_flow;      ///< [mm/d]    outflow rate with full depression storage (dep_stor=dep_max)
   double dep_n;             ///< [-]       power law coefficient for depression outflow
   double dep_threshhold;    ///< [mm]      threshold storage at which flow commences
+  double dep_k;             ///< [1/d]     linear overflow coefficient Q=k*(h-dep_threshhold)
+  double dep_seep_k;        ///< [1/d]     linear seepage coefficient Q=k*h
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

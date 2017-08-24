@@ -70,7 +70,7 @@ void CmvInfiltration::GetGreenAmptRunoff (const double            *state_vars,
                                           const double      &rainthru) const
 {
   double finf; //[mm/day]
-  double cumInf; //[mm] - cumulative infiltration at time t
+  double cumInf=0; //[mm] - cumulative infiltration at time t
   double Keff; //[mm/day] -effective hydraulic conductivity
   double alpha;//|psi_f|*(saturation deficit)
   double deficit;
@@ -83,7 +83,7 @@ void CmvInfiltration::GetGreenAmptRunoff (const double            *state_vars,
   double stor     =state_vars[iTo[0]];
   double max_stor =pHRU->GetSoilCapacity(0);
   double Fimp     =pHRU->GetSurfaceProps()->impermeable_frac;
-  double initStor;
+  double initStor =0;
 
   Keff=Ksat;
 

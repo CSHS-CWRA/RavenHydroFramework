@@ -60,7 +60,7 @@ void CLateralExchangeProcessABC::DynamicSpecifyLatConnections(const int nLatConn
 ///
 /// \return global lateral flow process index
 //
-int CLateralExchangeProcessABC::GetLateralFlowIndex()
+int CLateralExchangeProcessABC::GetLateralFlowIndex() const
 {
   return _LatFlowIndex;
 }
@@ -70,7 +70,7 @@ int CLateralExchangeProcessABC::GetLateralFlowIndex()
 ///
 /// \return (integer) number of lateral connections between HRUs
 //
-int CLateralExchangeProcessABC::GetNumLatConnections()
+int CLateralExchangeProcessABC::GetNumLatConnections() const
 {
   return _nLatConnections;
 }
@@ -80,7 +80,7 @@ int CLateralExchangeProcessABC::GetNumLatConnections()
 ///
 /// \return (int*) array of global indices (k's) of 'from' HRUs
 //
-const int *CLateralExchangeProcessABC::GetFromHRUIndices()
+const int *CLateralExchangeProcessABC::GetFromHRUIndices() const
 {
   return _kFrom;
 }
@@ -90,7 +90,7 @@ const int *CLateralExchangeProcessABC::GetFromHRUIndices()
 ///
 /// \return (int*) array of global indices (k's) of 'to' HRUs
 //
-const int *CLateralExchangeProcessABC::GetToHRUIndices()
+const int *CLateralExchangeProcessABC::GetToHRUIndices() const
 {
   return _kTo;
 }
@@ -100,7 +100,7 @@ const int *CLateralExchangeProcessABC::GetToHRUIndices()
 ///
 /// \return (int*) array of global indices (i's) of 'from' state variables
 //
-const int *CLateralExchangeProcessABC::GetLateralFromIndices()
+const int *CLateralExchangeProcessABC::GetLateralFromIndices() const
 {
   return _iFromLat;
 }
@@ -110,7 +110,7 @@ const int *CLateralExchangeProcessABC::GetLateralFromIndices()
 ///
 /// \return (int*) array of global indices (i's) of 'to' state variables
 //
-const int *CLateralExchangeProcessABC::GetLateralToIndices()
+const int *CLateralExchangeProcessABC::GetLateralToIndices() const
 {
   return _iToLat;
 }

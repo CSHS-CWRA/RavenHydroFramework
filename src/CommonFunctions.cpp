@@ -39,7 +39,8 @@ string GetProcessName(process_type p)
   case(OPEN_WATER_EVAPORATION):{name="Open Water Evaporation";break;}
   case(LAKE_EVAPORATION):   {name="Lake Evaporation";         break;}
   case(DEPRESSION_OVERFLOW):{name="Depression Overflow";      break;}
-
+  case(SEEPAGE):            {name="Seepage from Depression";  break;}
+	
   case(SNOWMELT):           {name="Snow Melt";                break;}
   case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
   case(REFREEZE):           {name="Snow Refreeze";            break;}
@@ -55,6 +56,8 @@ string GetProcessName(process_type p)
   case(CONVOLVE):           {name="Convolution";              break;}
 
   case(ADVECTION):          {name="Advection";                break;}
+
+  case(LAT_FLUSH):          {name="Lateral Flush";            break;}
     //..
   default:              {
     name="Unknown Hydrological Process";
@@ -868,6 +871,7 @@ HRU_type StringToHRUType(const string s)
   if      (!s.compare("GLACIER" )){return HRU_GLACIER;}
   else if (!s.compare("LAKE"    )){return HRU_LAKE;}
   else if (!s.compare("ROCK"    )){return HRU_ROCK;}
+  else if (!s.compare("WETLAND" )){return HRU_WETLAND;}
   else if (!s.compare("STANDARD")){return HRU_STANDARD;}
 
 #ifdef _STRICTCHECK_

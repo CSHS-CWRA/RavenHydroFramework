@@ -925,7 +925,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"#State Variables: "<<GetNumStateVars()   <<endl;
     for (int i=0;i<GetNumStateVars();i++){
       //don't write if convolution storage or advection storage?
-      cout<<"                -";
+      cout<<"                - ";
       cout<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" (";
       cout<<CStateVariable::SVTypeToString     (_aStateVarType[i],_aStateVarLayer[i])<<")"<<endl;
     }
@@ -935,7 +935,8 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
       cout<<"                - ";
       cout<<GetProcessName(GetProcessType(j))<<endl;
     }
-    cout <<"    #Connections: "<<_nTotalConnections  <<endl;
+    cout <<"    #Connections: "<<_nTotalConnections          <<endl;
+    cout <<"#Lat.Connections: "<<_nTotalLatConnections       <<endl;
     cout <<"        Duration: "<<Options.duration            <<" d"<<endl;
     cout <<"       Time step: "<<Options.timestep            <<" d"<<endl;
     cout <<"  Watershed Area: "<<_WatershedArea              <<" km2"<<endl;
@@ -1136,7 +1137,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   // write watershed state variables
   if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
   else                 {_STORAGE<<" 0.0 0.0";}
-  _STORAGE<<" "<<channel_stor<<" "<<rivulet_stor;
+  _STORAGE<<" "<<channel_stor+reservoir_stor<<" "<<rivulet_stor;
   //_STORAGE<<" "<<channel_stor<<" "<<reservoir_stor<<" "<<rivulet_stor;  // \todo[update] - backwards incompatible
 
   currentWater=0.0;

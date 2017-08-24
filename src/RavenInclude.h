@@ -286,7 +286,7 @@ const int     MAX_CONSTITUENTS=10;       ///< Max number of transport constituen
 const int     MAX_RIVER_SEGS  =50;       ///< Max number of river segments
 const int     MAX_FILENAME_LENGTH=256;   ///< Max filename length
 const int     MAX_MULTIDATA   =10;       ///< Max multidata length
-
+const int     MAX_LAT_CONNECTIONS=4000;  ///< Maximum number of lateral HRU flow connections
 /******************************************************************
 Enumerated Types
    found in optStruct - the structure of global model options
@@ -489,6 +489,7 @@ enum HRU_type
   HRU_STANDARD,  ///< Standard HRU
   HRU_LAKE,      ///< Lake HRU
   HRU_GLACIER,   ///< Glacier HRU
+  HRU_WETLAND,   ///< Wetland HRU
   HRU_ROCK,      ///< Open Rock HRUs
   HRU_INVALID_TYPE ///< returned if type is invalid
 };
@@ -721,7 +722,7 @@ enum process_type
   CROP_HEAT_UNIT_EVOLVE,
 
   //in DepressionProcesses.h
-  ABSTRACTION, DEPRESSION_OVERFLOW,
+  ABSTRACTION, DEPRESSION_OVERFLOW, SEEPAGE,
 
   //in Advection.h
   ADVECTION,

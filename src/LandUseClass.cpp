@@ -284,6 +284,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.dep_max_flow,Stmp.dep_max_flow,Sdefault.dep_max_flow,needed,"DEP_MAX_FLOW");
   SetSpecifiedValue(S.dep_n,Stmp.dep_n,Sdefault.dep_n,needed,"DEP_N");
   SetSpecifiedValue(S.dep_threshhold,Stmp.dep_threshhold,Sdefault.dep_threshhold,needed,"DEP_THRESHHOLD");
+  SetSpecifiedValue(S.dep_k,Stmp.dep_k,Sdefault.dep_k,needed,"DEP_K");
+  SetSpecifiedValue(S.dep_seep_k,Stmp.dep_seep_k,Sdefault.dep_seep_k,needed,"DEP_SEEP_K");
 
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
   SetSpecifiedValue(S.HBV_glacier_Kmin,Stmp.HBV_glacier_Kmin,Sdefault.HBV_glacier_Kmin,needed,"HBV_GLACIER_KMIN");
@@ -332,6 +334,8 @@ void CLandUseClass::InitializeSurfaceProperties(surface_struct &S, bool is_templ
   S.dep_max_flow      =DefaultParameterValue(is_template,false);            //[mm/d]
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.dep_threshhold    =DefaultParameterValue(is_template,false);//0.0;      //[mm]
+  S.dep_k             =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
+  S.dep_seep_k        =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
   S.abst_percent      =DefaultParameterValue(is_template,false);//0.1;
   S.HBV_glacier_Kmin  =DefaultParameterValue(is_template,false);//0.05
   S.glac_storage_coeff=DefaultParameterValue(is_template,false);//0.10
@@ -391,6 +395,8 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("DEP_MAX_FLOW"           )){S.dep_max_flow =value;}
   else if (!name.compare("DEP_N"                  )){S.dep_n =value;}
   else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshhold =value;}
+  else if (!name.compare("DEP_K"                  )){S.dep_k =value;}
+  else if (!name.compare("DEP_SEEP_K"             )){S.dep_seep_k =value;}
   else if (!name.compare("ABST_PERCENT"           )){S.abst_percent =value;}
   else if (!name.compare("OW_PET_CORR"            )){S.ow_PET_corr=value;}
   else if (!name.compare("LAKE_PET_CORR"          )){S.lake_PET_corr=value;}
@@ -450,6 +456,8 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("DEP_MAX_FLOW"           )){return S.dep_max_flow;}
   else if (!name.compare("DEP_N"                  )){return S.dep_n;}
   else if (!name.compare("DEP_THRESHHOLD"         )){return S.dep_threshhold;}
+  else if (!name.compare("DEP_K"                  )){return S.dep_k;}
+  else if (!name.compare("DEP_SEEP_K"             )){return S.dep_seep_k;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}
   else if (!name.compare("LAKE_PET_CORR"          )){return S.lake_PET_corr;}

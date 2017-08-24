@@ -2035,8 +2035,9 @@ bool ParseMainInputFile (CModel     *&pModel,
        :DepressionOverflow [string method] DEPRESSION SURFACE_WATER*/
       if (Options.noisy){cout <<"Overflow of depression/wetland storage process"<<endl;}
       depflow_type d_type=DFLOW_THRESHPOW;
-      if (Len<4){ImproperFormatWarning(":DepressionStorage",p,Options.noisy); break;}
+      if (Len<4){ImproperFormatWarning(":DepressionOverflow",p,Options.noisy); break;}
       if      (!strcmp(s[1],"DFLOW_THRESHPOW"   )){d_type=DFLOW_THRESHPOW;}
+      else if (!strcmp(s[1],"DFLOW_LINEAR"      )){d_type=DFLOW_LINEAR;}
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized depression overflow algorithm",BAD_DATA_WARN); break;
@@ -2084,6 +2085,24 @@ bool ParseMainInputFile (CModel     *&pModel,
                                 pModel->GetHRUGroup(s[5])->GetGlobalIndex());
         pModel->AddProcess(pMover);
       }
+      break;
+    }
+    case(233):  //----------------------------------------------
+    {/*seepage from depression/wetland storage to soil
+       :Seepage [string method] DEPRESSION {SOIL[?]}*/
+      if (Options.noisy){cout <<"Seepage from depression/wetland process"<<endl;}
+      seepage_type s_type=SEEP_LINEAR;
+      if (Len<4){ImproperFormatWarning(":Seepage",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"SEEP_LINEAR"      )){s_type=SEEP_LINEAR;}
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized seepage algorithm",BAD_DATA_WARN); break;
+      }
+      CmvSeepage::GetParticipatingStateVarList(s_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover=new CmvSeepage(s_type,ParseSVTypeIndex(s[3],pModel));
+      pModel->AddProcess(pMover);
       break;
     }
     case (297)://----------------------------------------------

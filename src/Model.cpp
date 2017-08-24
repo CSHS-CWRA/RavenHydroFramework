@@ -79,16 +79,19 @@ CModel::CModel(const soil_model SM,
 
 
   CHydroProcessABC::SetModel(this);
+  CLateralExchangeProcessABC::SetModel(this);
 
   _aGaugeWeights =NULL; //Initialized in Initialize
 
-  _aCumulativeBal=NULL;
-  _aFlowBal      =NULL;
-  _CumulInput    =0.0;
-  _CumulOutput   =0.0;
-  _CumEnergyGain =0.0;
-  _CumEnergyLoss =0.0;
-  _initWater     =0.0;
+  _aCumulativeBal   =NULL;
+  _aFlowBal         =NULL;
+  _aCumulativeLatBal=NULL;
+  _aFlowLatBal      =NULL;
+  _CumulInput       =0.0;
+  _CumulOutput      =0.0;
+  _CumEnergyGain    =0.0;
+  _CumEnergyLoss    =0.0;
+  _initWater        =0.0;
 
   _UTM_zone=-1;
 
@@ -130,6 +133,8 @@ CModel::~CModel()
   if (_aFlowBal!=NULL){
     for (k=0;k<_nHydroUnits;   k++){delete [] _aFlowBal[k];      } delete [] _aFlowBal;       _aFlowBal=NULL;
   }
+  if (_aCumulativeLatBal!=NULL){delete [] _aCumulativeLatBal; _aCumulativeLatBal=NULL;}
+  if (_aFlowLatBal      !=NULL){delete [] _aFlowLatBal;       _aFlowLatBal=NULL;}
   if (_aGaugeWeights!=NULL){
     for (k=0;k<_nHydroUnits;   k++){delete [] _aGaugeWeights[k]; } delete [] _aGaugeWeights;  _aGaugeWeights=NULL;
   }
@@ -621,15 +626,30 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
 #endif
   int js=0;
   double sum=0;
-  for (int j = 0; j < _nProcesses; j++)
+  double area=_pHydroUnits[k]->GetArea();
+  int jss=0;
+  for(int j = 0; j < _nProcesses; j++)
   {
-    for (int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
+    for(int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
     {
-      if ((to)  && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js];}
-      if ((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js];}
+      if(( to) && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js]; }
+      if((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js]; }
       js++;
     }
+
+    if(_pProcesses[j]->GetNumLatConnections()>0)
+    {
+      CLateralExchangeProcessABC *pProc=(CLateralExchangeProcessABC*)_pProcesses[j];
+      for(int q = 0; q < _pProcesses[j]->GetNumLatConnections(); q++)//each process may have multiple connections
+      {
+        
+        if(( to) && (pProc->GetToHRUIndices()[q]  ==k) && (pProc->GetLateralToIndices()[q]  ==i)){sum+=_aCumulativeLatBal[jss]/area; }
+        if((!to) && (pProc->GetFromHRUIndices()[q]==k) && (pProc->GetLateralFromIndices()[q]==i)){sum+=_aCumulativeLatBal[jss]/area; }
+      }
+      jss++;
+    }
   }
+  
   return sum;
 }
 
@@ -1322,7 +1342,20 @@ void CModel::IncrementBalance(const int    j_star,
   _aCumulativeBal[k][j_star]+=moved;
   _aFlowBal      [k][j_star]= moved;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Increments lateral flow water/energy balance
+/// \details add cumulative amount of water/energy for each lateral process connection
+/// \note  called from main solver
+///
+/// \param jss [in] Integer index of hydrologic lateral process connection
+/// \param moved [in] Double amount balance is to be incremented [mm-m2] or [MJ] or [mg]
+//
+void CModel::IncrementLatBalance( const int jss,
+                                  const double moved)//[mm-m2] or [MJ]
+{
+  _aCumulativeLatBal[jss]+=moved;
+  _aFlowLatBal      [jss]=moved; 
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Increments cumulative mass & energy added to system (precipitation/ustream basin flows, etc.)
 /// \details Increment cumulative precipitation based on average preciptation and corresponding timestep [mm]
@@ -1647,17 +1680,19 @@ bool CModel::ApplyLateralProcess( const int          j,
   nLatConnections=_pProcesses[j]->GetNumLatConnections();
 
   if(nLatConnections==0){return false;}
-  if (!_aShouldApplyProcess[j][kFrom[0]]){return false;} //JRC: is the 0 appropriate?
 
+  pLatProc=(CLateralExchangeProcessABC*)_pProcesses[j]; // Cast
+  if (!_aShouldApplyProcess[j][pLatProc->GetLateralFromIndices()[0]]){return false;} //JRC: is the From/0 appropriate?
+    
   for (int q=0;q<nLatConnections;q++)
   {
-    iFrom[q]=_pProcesses[j]->GetFromIndices()[q];
-    iTo  [q]=_pProcesses[j]->GetToIndices  ()[q];
+    iFrom[q]=pLatProc->GetLateralFromIndices()[q];
+    iTo  [q]=pLatProc->GetLateralToIndices()[q];
+    kFrom[q]=pLatProc->GetFromHRUIndices()[q];
+    kTo  [q]=pLatProc->GetToHRUIndices()[q];
     exchange_rates[q]=0.0;
   }
-
-  pLatProc=(CLateralExchangeProcessABC*)_pProcesses[j];
-
+  
   pLatProc->GetLateralExchange(state_vars,_pHydroUnits,Options,tt,exchange_rates);
 
   return true;

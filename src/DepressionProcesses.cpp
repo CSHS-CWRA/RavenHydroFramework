@@ -14,8 +14,8 @@
 *****************************************************************/
 
 //////////////////////////////////////////////////////////////////
-/// \brief Implementation of abstraction constructor
-/// \param absttype [in] Selected model of abstraction
+/// \brief Implementation of depression overflow constructor
+/// \param dtype [in] Selected model of depression overflow
 //
 CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype)
   :CHydroProcessABC(DEPRESSION_OVERFLOW)
@@ -53,11 +53,17 @@ void CmvDepressionOverflow::GetParticipatingParamList(string  *aP , class_type *
   if (type==DFLOW_THRESHPOW)
   {
     nP=4;
-    aP[0]="DEP_THRESHHOLD";                     aPC[0]=CLASS_LANDUSE;
-    aP[1]="DEP_N";                              aPC[1]=CLASS_LANDUSE;
+    aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
+    aP[1]="DEP_N";              aPC[1]=CLASS_LANDUSE;
     aP[2]="DEP_MAX_FLOW";       aPC[2]=CLASS_LANDUSE;
     aP[3]="DEP_MAX";            aPC[3]=CLASS_LANDUSE;
 
+  }
+  else if (type==DFLOW_LINEAR)
+  {
+    nP=2;
+    aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
+    aP[1]="DEP_K";              aPC[1]=CLASS_LANDUSE;
   }
   else
   {
@@ -89,11 +95,11 @@ void CmvDepressionOverflow::GetParticipatingStateVarList(depflow_type dtype, sv_
 /// \param &tt [in] Current model time at which abstraction is to be calculated
 /// \param *rates [out] rates[0]= rate of abstraction [mm/d]
 //
-void   CmvDepressionOverflow::GetRatesOfChange( const double                    *state_vars,
-                                                const CHydroUnit       *pHRU,
-                                                const optStruct        &Options,
+void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
+                                                const CHydroUnit  *pHRU,
+                                                const optStruct   &Options,
                                                 const time_struct &tt,
-                                                double     *rates) const
+                                                       double     *rates) const
 {
 
   double stor=state_vars[iFrom[0]];
@@ -113,6 +119,15 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double                    
       rates[0] = max_flow*pow(max((stor - thresh_stor) / (max_stor - thresh_stor), 0.0), n);
     }
   }
+  //----------------------------------------------------------------------------
+  else if(type==DFLOW_LINEAR)
+  {
+    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
+    double dep_k      =pHRU->GetSurfaceProps()->dep_k;
+    
+    //rates[0] = dep_k* max(stor-thresh_stor,0.0); //discrete
+    rates[0]= max(stor-thresh_stor,0.0)*(1-exp(-dep_k*Options.timestep))/Options.timestep; //analytical formulation
+  }
 
 }
 
@@ -131,6 +146,129 @@ void   CmvDepressionOverflow::ApplyConstraints(const double              *state_
                                                const optStruct      &Options,
                                                const time_struct &tt,
                                                double     *rates) const
+{
+  //cant remove more than is there
+  rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
+
+}
+
+
+
+/*****************************************************************
+   Seepage Constructor/Destructor
+------------------------------------------------------------------
+*****************************************************************/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of Seepage constructor
+/// \param stype [in] Selected model of seepage
+//
+CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil)
+  :CHydroProcessABC(SEEPAGE)
+{
+  type=stype;
+
+  CHydroProcessABC::DynamicSpecifyConnections(1);
+  //abstraction (ponded-->depression)
+  iFrom[0]=pModel->GetStateVarIndex(DEPRESSION);
+  iTo  [0]=iToSoil;
+  ExitGracefullyIf(iToSoil==DOESNT_EXIST,
+                   "CmvSeepage Constructor: invalid to compartment specified",BAD_DATA);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the default destructor
+//
+CmvSeepage::~CmvSeepage(){}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes abstraction object
+//
+void   CmvSeepage::Initialize()
+{
+  ExitGracefullyIf((pModel->GetStateVarType(iTo[0])!=SOIL) &&
+                  (pModel->GetStateVarType(iTo[0])!=GROUNDWATER),
+                  "CmvSeepage::Initialize: seepage must move water to soil or groundwater unit",BAD_DATA);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns participating parameter list
+///
+/// \param *aP [out] array of parameter names needed for abstraction algorithm
+/// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
+/// \param &nP [out] Number of parameters required by abstraction algorithm (size of aP[] and aPC[])
+//
+void CmvSeepage::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
+{
+  if (type==SEEP_LINEAR)
+  {
+    nP=1;
+    aP[0]="DEP_SEEP_K";     aPC[0]=CLASS_LANDUSE;
+  }
+  else
+  {
+    ExitGracefully("CmvSeepage::GetParticipatingParamList: undefined seepage algorithm",BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets reference to participating state variable list
+///
+/// \param absttype [in] Selected abstraction model
+/// \param *aSV [out] Reference to array of state variables needed by abstraction algorithm
+/// \param *aLev [out] Array of levels of multilevel state variables (or DOESNT_EXIST of single level)
+/// \param &nSV [out] Number of participating state variables (length of aSV and aLev arrays)
+//
+void CmvSeepage::GetParticipatingStateVarList(seepage_type dtype, sv_type *aSV, int *aLev, int &nSV)
+{
+  nSV=1;
+  aSV[0]=DEPRESSION;     aLev[0]=DOESNT_EXIST;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns rates of water loss to seepage
+//
+/// \param *state_vars [in] Array of state variables in HRU
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Current model time at which abstraction is to be calculated
+/// \param *rates [out] rates[0]= rate of abstraction [mm/d]
+//
+void   CmvSeepage::GetRatesOfChange(const double      *state_vars,
+                                    const CHydroUnit  *pHRU,
+                                    const optStruct   &Options,
+                                    const time_struct &tt,
+                                           double     *rates) const
+{
+
+  double stor=state_vars[iFrom[0]];
+
+  //----------------------------------------------------------------------------
+   if(type==SEEP_LINEAR)
+  {
+    double dep_k      =pHRU->GetSurfaceProps()->dep_seep_k;
+    
+    //rates[0] = dep_k* max(stor,0.0); //discrete
+    rates[0]= max(stor,0.0)*(1-exp(-dep_k*Options.timestep))/Options.timestep; //analytical formulation
+  }
+
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
+/// \details Ensures that the rate of flow cannot drain "from" compartment over timestep.
+///
+/// \param *state_vars [in] Array of state variables in HRU
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Current model time at which abstraction is to be calculated
+/// \param *rates [out] rates[0]= rate of abstraction [mm/d]
+//
+void   CmvSeepage::ApplyConstraints(const double      *state_vars,
+                                    const CHydroUnit  *pHRU,
+                                    const optStruct   &Options,
+                                    const time_struct &tt,
+                                          double      *rates) const
 {
   //cant remove more than is there
   rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);

@@ -74,13 +74,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   case(DIAG_NASH_SUTCLIFFE)://-----------------------------------------
   case(DIAG_NASH_SUTCLIFFE_DER):
   {
-    switch (_type)
-    {
-    case(DIAG_NASH_SUTCLIFFE_DER):
+    if(_type==DIAG_NASH_SUTCLIFFE_DER)
     {
       nVals -= 1;     // Reduce nvals by 1 for derivative of NSE
     }
-    }
+   
     bool ValidObs = false;
     bool ValidMod = false;
     bool ValidWeight = false;
@@ -89,9 +87,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
     for (nn=skip;nn<nVals;nn++)
     {
-      switch (_type)
-      {
-      case(DIAG_NASH_SUTCLIFFE):
+      if(_type==DIAG_NASH_SUTCLIFFE)
       {
         weight=1.0;
         obsval = pTSObs->GetSampledValue(nn);
@@ -99,9 +95,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
         if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
         if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
-        break;
       }
-      case(DIAG_NASH_SUTCLIFFE_DER):
+      else // (DIAG_NASH_SUTCLIFFE_DER)
       {
         // obsval and modval becomes (dS(n+1)-dS(n))/dt
         weight=1.0;
@@ -114,12 +109,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
         if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
-        break;
       }
-      }
+
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
+      if ((obsval != CTimeSeriesABC::BLANK_DATA) && (modval != CTimeSeriesABC::BLANK_DATA) && weight != 0) {
         avg+=obsval*weight;
         N+= weight;
       }
@@ -129,9 +123,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double sum1(0.0),sum2(0.0);
     for (nn=skip;nn<nVals;nn++)
     {
-      switch (_type)
-      {
-      case(DIAG_NASH_SUTCLIFFE):
+      if(_type==DIAG_NASH_SUTCLIFFE)
       {
         weight=1.0;
         obsval = pTSObs->GetSampledValue(nn);
@@ -144,10 +136,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
         if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         else {weight = 0;}
-
-        break;
       }
-      case(DIAG_NASH_SUTCLIFFE_DER):
+      else //(DIAG_NASH_SUTCLIFFE_DER)
       {
         // obsval and modval becomes (dS(n+1)-dS(n))/dt
         weight=1.0;
@@ -165,9 +155,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
         if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true;}
         else {weight = 0;}
-
-        break;
-      }
       }
 
       sum1 += pow(obsval - modval,2)*weight;

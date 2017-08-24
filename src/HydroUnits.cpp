@@ -697,6 +697,9 @@ double  CHydroUnit::GetTotalAlbedo() const
     else if (_HRUType==HRU_ROCK){
       land_albedo=0.35;//ROCK_ALBEDO;
     }
+    else if(_HRUType==HRU_WETLAND){
+      land_albedo=0.15;//WETLAND_ALBEDO
+    }
     land_albedo =(snow_cover  )*snow_albedo             +(1.0-snow_cover  )*land_albedo;
     //correction for urban surfaces?
 

@@ -107,7 +107,11 @@ private:/*------------------------------------------------------*/
   //Water/Energy Balance information
   double      **_aCumulativeBal;  ///< cumulative amount of flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
   double            **_aFlowBal;  ///< current time step flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
-  int        _nTotalConnections;  ///< total number of connections in model
+  int        _nTotalConnections;  ///< total number of in-HRU connections in model
+  double    *_aCumulativeLatBal;  ///< cumulative amount of flowthrough [mm-m2 or MJ or mg] for each lateral process connection [j**]
+  double          *_aFlowLatBal;  ///< current time step flowthrough [mm-m2 or MJ or mg] for each lateral process connection [j**]
+  int     _nTotalLatConnections;  ///< total number of between-HRU connections in model
+
   double            _CumulInput;  ///< cumulative water added to watershed (precipitation, basin inflows, etc.) [mm]
   double           _CumulOutput;  ///< cumulative outflow of water from system [mm]
   double         _CumEnergyGain;  ///< cumulative area-averaged average energy gain [MJ/m2]
@@ -323,7 +327,9 @@ public:/*-------------------------------------------------------*/
   //water/energy/mass balance routines
   void        IncrementBalance        (const int j_star,
                                        const int k,
-                                       const double moved);//[mm] or [MJ/m2]
+                                       const double moved);//[mm] or [MJ/m2] or [mg]
+  void        IncrementLatBalance     (const int j_star,  
+                                       const double moved);//[mm] or [MJ/m2] or [mg]
   void        IncrementCumulInput     (const optStruct &Options, const time_struct &tt);
   void        IncrementCumOutflow     (const optStruct &Options);
 
