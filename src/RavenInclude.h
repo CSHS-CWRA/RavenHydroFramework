@@ -598,7 +598,7 @@ enum out_format
 {
   OUTPUT_STANDARD, ///< Output in default Raven format (.csv files)
   OUTPUT_ENSIM,    ///< Output in Ensim format (.tb0 files)
-  OUTPUT_NETCDF,
+  OUTPUT_NETCDF,   ///< Output in NetCDF format (.nc files)
   OUTPUT_NONE
 };
 
@@ -1174,8 +1174,9 @@ double fast_s_to_d             (const char *s);
 
 //I/O Functions-----------------------------------------------
 //defined in StandardOutput.cpp
-void PrepareOutputdirectory    (const optStruct &Options);
-string GetDirectoryName(const string &fname);
+void   PrepareOutputdirectory    (const optStruct &Options);
+string GetDirectoryName          (const string &fname);
+void   nc_error_exit             (int error_code);        ///< NetCDF error handling
 
 #ifdef _WIN32
 #include <direct.h>

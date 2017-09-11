@@ -269,6 +269,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteEnergyStorage"    )){code=53; }
     else if  (!strcmp(s[0],":WriteParametersFile"   )){code=54; }
     else if  (!strcmp(s[0],":WriteEnsimFormat"      )){code=55; }
+    else if  (!strcmp(s[0],":WriteNetcdfFormat"     )){code=78; }
     else if  (!strcmp(s[0],":RunName"               )){code=56; }
     else if  (!strcmp(s[0],":NoisyMode"             )){code=57; }
     else if  (!strcmp(s[0],":SilentMode"            )){code=58; }
@@ -1027,6 +1028,22 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         if (Options.noisy){cout <<"Write Ensim Format ON"<<endl;}
         Options.output_format=OUTPUT_ENSIM;
+      }
+      break;
+    }
+    case(78):  //--------------------------------------------
+    {/*:WriteNetcdfFormat */
+      bool bVal = true;
+      if(Len>1)
+      {
+        string sVal = StringToUppercase(string(s[1]));
+        if ((sVal == "NO") || (sVal == "OFF") || (sVal == "FALSE")) { bVal = false; }
+      }
+
+      if (bVal)
+      {
+        if (Options.noisy){cout <<"Write NetCDF Format ON"<<endl;}
+        Options.output_format=OUTPUT_NETCDF;
       }
       break;
     }

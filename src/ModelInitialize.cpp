@@ -170,6 +170,13 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
 
+  //Initialize NetCDF Output File IDs
+  //--------------------------------------------------------------
+  /* initialize all potential NetCDF file IDs with -9 == "not existing and hence not opened" */
+  _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
+  _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
+  _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
+
   //Write Output File Headers
   //--------------------------------------------------------------
   for (int c=0;c<_nCustomOutputs;c++){

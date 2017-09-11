@@ -124,6 +124,9 @@ private:/*------------------------------------------------------*/
   ofstream                _HYDRO; ///< output file stream for Hydrographs.csv
   ofstream              _STORAGE; ///< output file stream for WatershedStorage.csv
   ofstream             _FORCINGS; ///< output file stream for ForcingFunctions.csv
+  int                _HYDRO_ncid; ///< output file ID     for Hydrographs.nc;        -9 = not existing
+  int              _STORAGE_ncid; ///< output file ID     for WatershedStorage.nc;   -9 = not existing
+  int             _FORCINGS_ncid; ///< output file ID     for ForcingFunctions.nc;   -9 = not existing
   double          *_aOutputTimes; ///< array of model major output times (LOCAL times at which full solution is written)
   int              _nOutputTimes; ///< size of array of model major output times
   int         _currOutputTimeInd; ///< index of current output time
@@ -132,14 +135,17 @@ private:/*------------------------------------------------------*/
   const optStruct   *_pOptStruct; ///< pointer to model options information
 
   //initialization subroutines:
-  void           GenerateGaugeWeights (const optStruct &Options);
+  void           GenerateGaugeWeights (const optStruct 	 &Options);
   void       InitializeRoutingNetwork ();
-  void           InitializeBasinFlows (const optStruct &Options);
-  void         InitializeObservations (const optStruct &Options);
+  void           InitializeBasinFlows (const optStruct 	 &Options);
+  void         InitializeObservations (const optStruct 	 &Options);
 
-  void         WriteOutputFileHeaders (const optStruct &Options);
-  void      WriteEnsimStandardHeaders (const optStruct &Options);
-  void          WriteEnsimMinorOutput (const optStruct &Options,
+  void         WriteOutputFileHeaders (const optStruct 	 &Options);
+  void      WriteEnsimStandardHeaders (const optStruct 	 &Options);
+  void     WriteNetcdfStandardHeaders (const optStruct 	 &Options);
+  void          WriteEnsimMinorOutput (const optStruct 	 &Options,
+                                       const time_struct &tt);
+  void         WriteNetcdfMinorOutput (const optStruct   &Options,
                                        const time_struct &tt);
 
   //private routines used during simulation:
