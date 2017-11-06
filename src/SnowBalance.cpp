@@ -970,12 +970,11 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
   double newSnow = state_vars[iFrom[6]];   // New Snow [mm]
 
   // Constants
-  /// \todo[funct] - enable support of user-specified refreeze, melt, SWI, MRHO,
   double KF =  pHRU->GetSurfaceProps()->refreeze_factor;  // refreeze factor [mm/d-degC]
   double KM =  pHRU->GetSurfaceProps()->melt_factor; // melt factor [mm/d-degC] //~5.04
   double SWI = CGlobalParams::GetParams()->snow_SWI; // Maximum fraction of pore space in snowpack for liquid snow
   double RHOICE = DENSITY_ICE*1000;        // Relative density of ice
-  double MRHO = 0.35;                      // Maximum dry density for snowpack
+  double MRHO = 0.35;                      // Maximum dry density for snowpack /// \todo [funct] - enable support of user-specified MRHO,
   double a = 0.1;                          // coefficient [1/degC]
   double b = 96;                           // coefficient [h]
   double NEWDEN = 0.1;                     // New snow density

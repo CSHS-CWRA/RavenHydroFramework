@@ -282,6 +282,7 @@
     <ClCompile Include="GreenAmpt.cpp" />
     <ClCompile Include="HRUGroups.cpp" />
     <ClCompile Include="IrregularTimeSeries.cpp" />
+    <ClCompile Include="LatAdvection.cpp" />
     <ClCompile Include="LateralExchangeABC.cpp" />
     <ClCompile Include="MassRouting.cpp" />
     <ClCompile Include="ModelForcingGrids.cpp" />
@@ -422,6 +423,7 @@
     <ClInclude Include="GlacierProcesses.h" />
     <ClInclude Include="GlobalParams.h" />
     <ClInclude Include="IrregularTimeSeries.h" />
+    <ClInclude Include="LatAdvection.h" />
     <ClInclude Include="LateralExchangeABC.h" />
     <ClInclude Include="OpenWaterEvap.h" />
     <ClInclude Include="ParseLib.h" />

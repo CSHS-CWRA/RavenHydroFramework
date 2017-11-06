@@ -508,7 +508,7 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ)
   case(CONVOLUTION):    {return true;}
   case(NEW_SNOW):       {return true;}
   case(LATERAL_EXCHANGE):{return true;}
-    //case(CONV_STOR):    {return true;} // \todo strictly speaking, is water storage (and should be treated as such for transport), but duplicated in CONVOLUTION
+    //case(CONV_STOR):    {return true;} // \todo [fix hack] strictly speaking, is water storage (and should be treated as such for transport), but duplicated in CONVOLUTION
     //..
   default:
   {

@@ -98,8 +98,8 @@ void CmvAdvection::GetParticipatingParamList(string  *aP, class_type *aPC, int &
 /// \param &tt [in] Current model time
 /// \param *rates [out] rates of change due to both associated flow process and advective transport
 //
-void   CmvAdvection::GetRatesOfChange(const double                      *state_vars,
-                                      const CHydroUnit        *pHRU,
+void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
+                                      const CHydroUnit  *pHRU,
                                       const optStruct   &Options,
                                       const time_struct &tt,
                                       double            *rates) const
@@ -133,19 +133,7 @@ void   CmvAdvection::GetRatesOfChange(const double                      *state_v
     sv[iFromWater]+=Q[q]*tstep;//reverse determination of state variable history (i.e., rewinding flow calculations)
     sv[iToWater]  -=Q[q]*tstep;
   }
-  //if (false){//
-  /*if (k==0) {
-    cout <<"start ";
-    for (i=1;i<pModel->GetNumStateVars();i++){
-    if (CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))){cout <<sv[i]<<" ";}
-    }
-    cout<<endl<<"-"<<endl;
-    cout <<"end   ";
-    for (i=1;i<pModel->GetNumStateVars();i++){
-    if (CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))){cout <<state_vars[i]<<" ";}
-    }
-    cout<<endl;
-    }*/
+
   //Calculate advective mass fluxes
   //-------------------------------------------------------------------------
   for (q=0;q<nAdvConnections;q++)
@@ -173,9 +161,6 @@ void   CmvAdvection::GetRatesOfChange(const double                      *state_v
       rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d]
       if (mass<-1e-9){ ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       if (fabs(rates[q])>mass/tstep){rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep;}//emptying out compartment
-      /*if ((mass / vol)/LITER_PER_M3*MM_PER_METER > 1.0){
-        cout << " conc > 1 !"<<pHRU->GetID()<<" "<<vol<<" "<<Q[q]<<" C:"<<(mass / vol)/LITER_PER_M3*MM_PER_METER<<endl;
-        }*/
     }
 
     //special consideration - atmospheric precip can have negative storage but still specified concentration
@@ -193,10 +178,6 @@ void   CmvAdvection::GetRatesOfChange(const double                      *state_v
     sv[iToWater  ]+=Q[q]*tstep;
     sv[iFrom[q]  ]-=rates[q]*tstep;
     sv[iTo  [q]  ]+=rates[q]*tstep;
-
-    //double Ctmp = sv[iTo  [q]  ]/sv[iToWater  ]/LITER_PER_M3*MM_PER_METER ;
-    //double mtmp2=sv[iTo  [q]  ]/LITER_PER_M3*MM_PER_METER ; double vtmp2=sv[iToWater  ];
-    //if ((Ctmp>1.0001) && (sv[iToWater  ]!=0)){cout<<"violation: "<<Ctmp1<<" ("<<mtmp1<<"/"<<vtmp1<<") "<<Ctmp<<" ("<<mtmp2<<"/"<<vtmp2<<") "<<rates[q]*tstep<<" "<< Q[q]*tstep<<" "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(iFromWater),-1)<<" "<<CStateVariable::SVTypeToString(pModel->GetStateVarType(iToWater),-1)<<endl;}
 
     //Correct for Dirichlet conditions
     //----------------------------------------------------------------------

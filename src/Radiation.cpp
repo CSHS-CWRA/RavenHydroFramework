@@ -109,7 +109,7 @@ double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
   case(LW_RAD_DEFAULT):
   {
     //from Dingman eqns. 5-40
-    double emissivity=0.99; // \todo [funct]: remove hardcoded emissivity
+    double emissivity=0.99; 
     double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
     double Tair =F->temp_ave+ZERO_CELSIUS;  //[K]
     //double Tsurf=pHRU->GetSurfaceTemperature()+ZERO_CELSIUS;//[K] (not yet functional)

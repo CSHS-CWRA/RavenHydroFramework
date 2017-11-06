@@ -117,11 +117,11 @@ void  CmvLatFlush::GetParticipatingParamList(string *aP,class_type *aPC,int &nP)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns lateral exchange rates (mm/d) between from and to HRU/SV combinations
-/// \param *state_vars [in] Array of current state variables in HRU
-/// \param *pHRU [in] Reference to pertinent HRU
+/// \param **state_vars [in] 2D array of current state variables [nHRUs][nSVs]
+/// \param **pHRUs [in] array of pointers to HRUs
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Specified point at time at which this accessing takes place
-/// \param *exchange_rates [out] Rate of loss from "from" compartment [mm/day]
+/// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-m2/day]
 //
 void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
                                       const CHydroUnit * const *pHRUs,    
@@ -129,9 +129,11 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
                                       const time_struct        &tt,
                                             double             *exchange_rates) const
 {
-  double stor;
+  double stor,Afrom;
+  
   for(int q=0; q<_nLatConnections; q++){
     stor=state_vars[_kFrom[q]][_iFromLat[q]];
-    exchange_rates[q]+=max(stor,0.0)/Options.timestep;
+    Afrom=pHRUs[_kFrom[q]]->GetArea();
+    exchange_rates[q]+=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
   }
 }

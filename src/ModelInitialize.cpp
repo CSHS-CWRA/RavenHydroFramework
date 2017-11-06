@@ -50,13 +50,28 @@ void CModel::Initialize(const optStruct &Options)
 
   if ((_nSnowLayers==0) && (StateVarExists(SNOW))){_nSnowLayers=1;}
 
-  // initialize water/energy balance arrays to zero
+
+
+
+  // initialize process algorithms, initialize water/energy balance arrays to zero
   //--------------------------------------------------------------
   _nTotalConnections=0;
   for (int j=0; j<_nProcesses;j++){
-    if (_pProcesses[j]->GetProcessType()!=PRECIPITATION){_pProcesses[j]->Initialize();} //precip already initialized in ParseInput.cpp
+    if((_pProcesses[j]->GetProcessType()!=PRECIPITATION) && 
+       (_pProcesses[j]->GetProcessType()!=LAT_ADVECTION))
+       {_pProcesses[j]->Initialize();} //precip already initialized in ParseInput.cpp
     _nTotalConnections+=_pProcesses[j]->GetNumConnections();
   }
+  if (_pTransModel->GetNumConstituents()>0){
+    _pTransModel->CalculateLateralConnections();
+    for (int j=0; j<_nProcesses;j++){
+      if (_pProcesses[j]->GetProcessType()==LAT_ADVECTION){
+        _pProcesses[j]->Initialize(); //must be re-initialized after all lateral processes are initialized above
+        _nTotalConnections+=_pProcesses[j]->GetNumConnections();
+      } 
+    }
+  }
+
   _aCumulativeBal = new double * [_nHydroUnits];
   _aFlowBal       = new double * [_nHydroUnits];
   for (k=0; k<_nHydroUnits;k++)
@@ -211,7 +226,13 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
-
+  bool wetlandsinmodel=false;
+  for(k=0;k<_nHydroUnits;k++) {
+    if (_pHydroUnits[k]->GetHRUType()==HRU_WETLAND){wetlandsinmodel=true;break;}
+  }
+  if((wetlandsinmodel) && (GetStateVarIndex(DEPRESSION)==DOESNT_EXIST)) {
+    ExitGracefully("CModel::Initialize: At least one WETLAND-type soil profile is included but no DEPRESSION storage processes included in hydrologic process list.",BAD_DATA_WARN);
+  }
 }
 
 //////////////////////////////////////////////////////////////////

@@ -23,6 +23,7 @@
 #include "Diagnostics.h"
 #include "CustomOutput.h"
 #include "Decay.h"
+#include "LatAdvection.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
@@ -159,7 +160,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.LW_radiation        =LW_RAD_DEFAULT;
   Options.SW_radiation        =SW_RAD_DEFAULT;
   Options.cloud_cover         =CLOUDCOV_NONE;
-  Options.SW_canopycorr             =SW_CANOPY_CORR_NONE;
+  Options.SW_canopycorr       =SW_CANOPY_CORR_NONE;
   Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
   Options.wind_velocity       =WINDVEL_CONSTANT;
   Options.rel_humidity        =RELHUM_CONSTANT;
@@ -342,6 +343,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":DepressionOverflow"    )){code=230;}
     else if  (!strcmp(s[0],":ExchangeFlow"          )){code=231;}
     else if  (!strcmp(s[0],":LateralFlush"          )){code=232;}
+    else if  (!strcmp(s[0],":Seepage"               )){code=233;}
     //...
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
@@ -2055,6 +2057,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<4){ImproperFormatWarning(":DepressionOverflow",p,Options.noisy); break;}
       if      (!strcmp(s[1],"DFLOW_THRESHPOW"   )){d_type=DFLOW_THRESHPOW;}
       else if (!strcmp(s[1],"DFLOW_LINEAR"      )){d_type=DFLOW_LINEAR;}
+      else if (!strcmp(s[1],"DFLOW_WEIR"        )){d_type=DFLOW_WEIR;}
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized depression overflow algorithm",BAD_DATA_WARN); break;
@@ -2201,6 +2204,10 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
       pModel->AddProcess(pMover);
+
+      pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
+      pModel->AddProcess(pMover);
+
       break;
     }
 
@@ -2239,7 +2246,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         //if time series is specified, s_to_d(time series file) returns zero
       }
       else{
-        ExitGracefully(":FixedConcentration command: invalid state variable name",BAD_DATA_WARN);
+        string warn=":FixedConcentration command: invalid state variable name"+to_string(s[2]);
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
       break;
     }

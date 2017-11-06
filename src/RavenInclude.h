@@ -725,7 +725,7 @@ enum process_type
   ABSTRACTION, DEPRESSION_OVERFLOW, SEEPAGE,
 
   //in Advection.h
-  ADVECTION,
+  ADVECTION, LAT_ADVECTION,
 
   //in Decay.h
   DECAY,

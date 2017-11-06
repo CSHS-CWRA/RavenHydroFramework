@@ -18,7 +18,7 @@ void MassEnergyBalance( CModel            *pModel,
                         const optStruct   &Options,
                         const time_struct &tt)
 {
-  int         i,j,k,p,pp,pTo,q,js,c;                 //counters
+  int         i,j,k,p,pp,pTo,q,qs,c;                 //counters
   int         NS,NB,nHRUs,nConnections=0,nProcesses; //array sizes (local copies)
   int         nConstituents;                         //
   int         iSW, iAtm;                             //Surface water, atmospheric precip indices
@@ -146,7 +146,7 @@ void MassEnergyBalance( CModel            *pModel,
 
       //model all hydrologic processes occuring at HRU scale
       //-----------------------------------------------------------------
-      js=0;
+      qs=0;
       for (j=0;j<nProcesses;j++)
       {
         nConnections=0;
@@ -166,14 +166,13 @@ void MassEnergyBalance( CModel            *pModel,
             else{
               aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
             }
-            pModel->IncrementBalance(js,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
-
-            js++;
+            pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+            qs++;
           }//end for q=0 to nConnections
         }// end if (pModel->ApplyProcess
         else
         {
-          js+=nConnections;
+          qs+=nConnections;
         }
       }//end for j=0 to nProcesses
     }//end for k=0 to nHRUs
@@ -191,7 +190,7 @@ void MassEnergyBalance( CModel            *pModel,
 
       //model all hydrologic processes occuring at HRU scale
       //-----------------------------------------------------------------
-      js=0;
+      qs=0;
       for (j=0;j<nProcesses;j++)
       {
         nConnections=0;
@@ -208,13 +207,13 @@ void MassEnergyBalance( CModel            *pModel,
               aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
             }
 
-            pModel->IncrementBalance(js,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
-            js++;
+            pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+            qs++;
           }//end for q=0 to nConnections
         }
         else
         {
-          js+=nConnections;
+          qs+=nConnections;
         }
       }//end for j=0 to nProcesses
     }//end for k=0 to nHRUs
@@ -225,7 +224,7 @@ void MassEnergyBalance( CModel            *pModel,
   // -order of processes doesn't matter, converges to specified criteria
   else if(Options.sol_method==ITERATED_HEUN)
   {
-    js= 0;
+    qs= 0;
     int    iter = 0;              //iteration counter
     bool   converg = false;
     double converg_check = 0.0;
@@ -289,7 +288,7 @@ void MassEnergyBalance( CModel            *pModel,
         if((converg_check <= Options.convergence_crit) ||
            (iter          == Options.max_iterations))   //convergence check
         {
-          js  =0;
+          qs  =0;
           iter=0;
           converg = true;
 
@@ -298,8 +297,8 @@ void MassEnergyBalance( CModel            *pModel,
             nConnections=pModel->GetNumConnections(j);
             for(q=0;q<nConnections;q++)
             {
-              pModel->IncrementBalance(js,k,rate_guess[j][q]*tstep);
-              js++;
+              pModel->IncrementBalance(qs,k,rate_guess[j][q]*tstep);
+              qs++;
             }
           }
         }//end of (converg_check <=...)
@@ -319,7 +318,7 @@ void MassEnergyBalance( CModel            *pModel,
   //-----------------------------------------------------------------
   //      LATERAL EXCHANGE PROCESSES
   //-----------------------------------------------------------------
-  int    jss=0;//index of lateral process connection
+  int    qss=0;//index of lateral process connection
   int    nLatConnections;
   double Afrom,Ato;
   int    *kFrom,*kTo;
@@ -348,17 +347,16 @@ void MassEnergyBalance( CModel            *pModel,
 #endif 
         Afrom=pModel->GetHydroUnit(kFrom[q])->GetArea();
         Ato  =pModel->GetHydroUnit(kTo[q]  )->GetArea();
-        aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q];
-        aPhinew[  kTo[q]][  iTo[q]]+=exchange_rates[q]*Afrom/Ato;
-        //cout<<"  solver ex:"<<exchange_rates[q]<<" "<<kTo[q]<<endl;
+        aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q]/Afrom*tstep;  
+        aPhinew[  kTo[q]][  iTo[q]]+=exchange_rates[q]/Ato  *tstep;
        
-        pModel->IncrementLatBalance(jss,exchange_rates[q]*tstep*Afrom);
+        pModel->IncrementLatBalance(qss,exchange_rates[q]*tstep); 
 
-        jss++;
+        qss++;
       }
     }
     else{
-      jss+=nLatConnections;
+      qss+=nLatConnections;
     }
   }
   delete [] kFrom;

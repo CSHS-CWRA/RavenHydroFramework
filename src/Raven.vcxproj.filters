@@ -348,6 +348,9 @@
     <ClCompile Include="LateralExchangeABC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LatAdvection.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -475,6 +478,9 @@
     </ClInclude>
     <ClInclude Include="LateralExchangeABC.h">
       <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="LatAdvection.h">
+      <Filter>Header Files\Transport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

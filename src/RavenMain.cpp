@@ -87,6 +87,8 @@ int main(int argc, char* argv[])
     pModel->Initialize       (Options);
     pModel->SummarizeToScreen(Options);
 
+    CheckForErrorWarnings();
+
     if (!Options.silent){
       cout <<"======================================================"<<endl;
       cout <<"Simulation Start..."<<endl;}

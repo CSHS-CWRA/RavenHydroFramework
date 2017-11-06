@@ -133,7 +133,7 @@ CmvLakeEvaporation::CmvLakeEvaporation(lakeevap_type lktype, const int fromIndex
 
   CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
   iFrom[0]=fromIndex;
-  iTo[0]=pModel->GetStateVarIndex(ATMOSPHERE);;     //rates[0]: LAKE->ATMOSPHERE
+  iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);;     //rates[0]: LAKE->ATMOSPHERE
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
@@ -157,8 +157,11 @@ void CmvLakeEvaporation::Initialize()
 //
 void CmvLakeEvaporation::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
-  //lake_PET_corr (not really required, since default is appropriate)
-  //none for now...
+  if(type==LAKE_EVAP_BASIC)//-------------------------------------
+  {
+    nP=1;
+    aP[0]="LAKE_PET_CORR"; aPC[0]=CLASS_LANDUSE;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to state variable types needed by evaporation algorithm

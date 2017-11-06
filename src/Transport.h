@@ -50,31 +50,38 @@ class CModel;
 class CTransportModel
 {
 private:/*------------------------------------------------------*/
-  CModel *pModel;                  ///< pointer to model object
-  static CTransportModel *pTransModel;    ///< pointer to only transport model (needed for access to transport model through static functions)
+  CModel *pModel;                    ///< pointer to model object
+  static CTransportModel *_pTransModel;    ///< pointer to only transport model (needed for access to transport model through static functions)
 
-  int  nAdvConnections;              ///< number of advective/dispersive transport connections between water storage units
-  int *iFromWater;                   ///< state variable indices of water compartment source [size: nAdvConnections]
-  int *iToWater;                     ///< state variable indices of water compartment destination [size: nAdvConnections]
-  int *js_indices;                   ///< process index (j*) of connection [size: nAdvConnections]
+  int  _nAdvConnections;             ///< number of advective/dispersive transport connections between water storage units
+  int *_iFromWater;                  ///< state variable indices of water compartment source [size: nAdvConnections]
+  int *_iToWater;                    ///< state variable indices of water compartment destination [size: nAdvConnections]
+  int *_js_indices;                  ///< process index (j*) of connection [size: nAdvConnections]
 
-  int  nWaterCompartments;           ///< number of water storage compartments which may contain constituent
-  int *iWaterStorage;                ///< state variable indices of water storage compartments which may contain constituent [size: nWaterCompartments]
+  int  _nLatConnections;             ///< number of lateral advective transport connections between water storage units
+  int  *_iLatFromWater;              ///< state variable indices of water compartment source [size: _nLatConnections]
+  int  *_iLatToWater;                ///< state variable indices of water compartment destination [size: _nLatConnections]
+  int  *_iLatFromHRU;                ///< state variable indices of water compartment source [size: _nLatConnections]
+  int  *_iLatToHRU;                  ///< state variable indices of water compartment destination [size: _nLatConnections]
+  int  *_latqss_indices;             ///< process index (q**) of connection [size: nLatConnections]
 
-  int *aIndexMapping;                ///< lookup table to convert state variable index i to local water storage index [size: pModel::_nStateVars prior to transport variables being included]
-  ///< basically inverse of iWaterStorage
+  int  _nWaterCompartments;          ///< number of water storage compartments which may contain constituent
+  int *_iWaterStorage;               ///< state variable indices of water storage compartments which may contain constituent [size: _nWaterCompartments]
 
-  int                nConstituents;  ///< number of transported constituents [c=0..nConstituents-1]
-  constituent      **pConstituents;  ///< array of pointers to constituent structures [size: nConstituents]
-  transport_params **pConstitParams; ///< array of pointers to constituent parameters [size: nConstituents]
+  int *_aIndexMapping;               ///< lookup table to convert state variable index i to local water storage index [size: pModel::_nStateVars prior to transport variables being included]
+                                     ///< basically inverse of iWaterStorage
 
-  double ***aMinHist;                ///< array used for storing routing upstream loading history [mg/d] [size: nSubBasins x nConstituents x nMinhist(p)]
-  double ***aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] [size: nSubBasins x nConstituents x nMlathist(p)]
-  double ***aMout;                   ///< array used for storing routing channel loading history [mg/d] [size: nSubBasins x nConstituents x _nSegments(p)]
+  int                _nConstituents;  ///< number of transported constituents [c=0.._nConstituents-1]
+  constituent      **_pConstituents;  ///< array of pointers to constituent structures [size: _nConstituents]
+  transport_params **_pConstitParams; ///< array of pointers to constituent parameters [size: _nConstituents]
+
+  double ***_aMinHist;                ///< array used for storing routing upstream loading history [mg/d] [size: nSubBasins x _nConstituents x nMinhist(p)]
+  double ***_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] [size: nSubBasins x _nConstituents x nMlathist(p)]
+  double ***_aMout;                   ///< array used for storing routing channel loading history [mg/d] [size: nSubBasins x _nConstituents x _nSegments(p)]
 
   constit_source **pSources;         ///< array of pointers to constituent sources [size: nSources]
   int              nSources;         ///< number of constituent sources
-  int            **aSourceIndices;   ///> lookup table to convert constitutent and (global) water storage index to corresponding source, if any [size: nConstituents x nStateVariables]
+  int            **_aSourceIndices;   ///> lookup table to convert constitutent and (global) water storage index to corresponding source, if any [size: _nConstituents x nStateVariables]
 
   void m_to_cj(const int layerindex, int &c, int &j) const;
   void DeleteRoutingVars();
@@ -88,9 +95,9 @@ public:/*-------------------------------------------------------*/
   static int    GetLayerIndexFromName(const string name,const int comp_m);
   int          GetLayerIndexFromName2(const string name,const int comp_m) const;     //non-static version
 
-  static string GetConstituentTypeName (const int m); //e.g., "Nitrogen" (m=layer index)
-  static string GetConstituentTypeName2(const int c); //e.g., !Nitrogen (c=constituent index)
-  static string GetConstituentLongName (const int layerindex);  //e.g., "Nitrogen in Soil Water[2]"
+  static string GetConstituentTypeName (const int m);         //e.g., "Nitrogen" (m=layer index)
+  static string GetConstituentTypeName2(const int c);         //e.g., !Nitrogen (c=constituent index)
+  static string GetConstituentLongName (const int layerindex);//e.g., "Nitrogen in Soil Water[2]"
   string GetConstituentName     (const int layerindex) const; //e.g., "Nitrogen in Soil Water[2]"
   string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
 
@@ -101,26 +108,35 @@ public:/*-------------------------------------------------------*/
 
   int    GetNumWaterCompartments() const;
   int    GetNumAdvConnections() const;
+  int    GetNumLatAdvConnections() const;
 
-  int    GetFromIndex(const int c,const int q) const;
-  int    GetToIndex  (const int c,const int q) const;
-  int    GetStorIndex(const int c,const int ii) const;
+  int    GetFromIndex   (const int c,const int q) const;
+  int    GetToIndex     (const int c,const int q) const;
+  int    GetStorIndex   (const int c,const int ii) const;
+  int    GetLatFromIndex(const int c,const int qq) const;
+  int    GetLatToIndex  (const int c,const int qq) const;
 
-  int    GetFromWaterIndex(const int q) const;
-  int    GetToWaterIndex  (const int q) const;
-  int    GetJsIndex       (const int q) const;
-  int    GetStorWaterIndex(const int ii) const;
+  int    GetFromWaterIndex   (const int q) const;
+  int    GetToWaterIndex     (const int q) const;
+  int    GetJsIndex          (const int q) const;
+  int    GetLatFromHRU       (const int qq) const;
+  int    GetLatToHRU         (const int qq) const;
+  int    GetLatFromWaterIndex(const int qq) const;
+  int    GetLatToWaterIndex  (const int qq) const;
+  int    GetLatqsIndex       (const int qq) const;
+  
+  int    GetStorWaterIndex         (const int ii) const;
   int    GetWaterStorIndexFromLayer(const int m) const;
 
-  int    GetLayerIndex(const int c, const int i_stor) const;
+  int    GetLayerIndex             (const int c, const int i_stor) const;
 
-  double GetOutflowConcentration(const int p, const int c) const;
+  double GetOutflowConcentration (const int p, const int c) const;
   double GetIntegratedMassOutflow(const int p, const int c) const;
 
   double GetDecayCoefficient (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
   double GetRetardationFactor(const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
 
-  bool   IsDirichlet(const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const;
+  bool   IsDirichlet         (const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const;
   double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const;
 
   //Manipulators
@@ -131,6 +147,7 @@ public:/*-------------------------------------------------------*/
   void   AddInfluxTimeSeries    (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
   //
   void   Prepare(const optStruct &Options);
+  void   CalculateLateralConnections();
   void   Initialize();
   void   InitializeRoutingVars();
 

@@ -87,7 +87,7 @@ public:/*-------------------------------------------------------*/
   virtual int   GetNumLatConnections() const { return 0; }
 
   //functions
-  static void   SetModel    (CModelABC *pM);/// \todo[reorg]: should really not be accessible
+  static void   SetModel    (CModelABC *pM);/// \todo [reorg]: should really not be accessible
 
   void          AddCascade  (const int *indices, const int nIndices);
   void          AddCondition(condition_basis basis,

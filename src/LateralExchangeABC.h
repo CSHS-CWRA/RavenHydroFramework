@@ -39,6 +39,7 @@ public:/*-------------------------------------------------------*/
   static void SetModel(const CModel *pM);
 
   CLateralExchangeProcessABC(const process_type ptype);     //multiple connection dynamic constructor
+  ~CLateralExchangeProcessABC();
   
   int GetLateralFlowIndex() const;
 

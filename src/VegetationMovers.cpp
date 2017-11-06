@@ -107,7 +107,8 @@ void CmvCanopyEvap::GetRatesOfChange( const double      *state_vars,
                                       const time_struct &tt,
                                       double     *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   double Fc=pHRU->GetSurfaceProps()->forest_coverage;
   double cap=pHRU->GetVegVarProps()->capacity;
@@ -156,7 +157,9 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
                                       const time_struct &tt,
                                       double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
+
   //must be positive
   rates[0]=max(rates[0],0.0);
 
@@ -262,7 +265,8 @@ void CmvCanopySnowEvap::GetRatesOfChange( const double      *state_vars,
                                           const time_struct &tt,
                                           double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   double Fc=pHRU->GetSurfaceProps()->forest_coverage;
   //double cap=pHRU->GetVegVarProps()->capacity;
@@ -304,7 +308,8 @@ void CmvCanopySnowEvap::ApplyConstraints( const double      *state_vars,
                                           const time_struct &tt,
                                           double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
@@ -404,7 +409,8 @@ void CmvCanopyDrip::GetRatesOfChange( const double      *state_vars,
                                       double            *rates) const
 {
 
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   double Fc,p;
   rates[0]=0.0;//default
@@ -449,7 +455,8 @@ void CmvCanopyDrip::ApplyConstraints( const double      *state_vars,
                                       const time_struct &tt,
                                       double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
+      (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);

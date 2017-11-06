@@ -597,6 +597,12 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       tmpFilename=FilenamePrepare(_pHRUGroups[kk]->GetName()+"_MassEnergyBalance.csv",Options);
       HGMB.open(tmpFilename.c_str(),ios::app);
       HGMB<<t<<","<<thisdate<<","<<thishour;
+      double areasum=0.0;
+      for(k = 0; k < _nHydroUnits; k++){
+        if(_pHRUGroups[kk]->IsInGroup(k)){
+          areasum+=_pHydroUnits[k]->GetArea();
+        }
+      }
       for (int js=0;js<_nTotalConnections;js++)
       {
         sum=0.0;
@@ -605,7 +611,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             sum += _aCumulativeBal[k][js] * _pHydroUnits[k]->GetArea();
           }
         }
-        HGMB<<","<<sum/_WatershedArea;
+        HGMB<<","<<sum/areasum;
       }
       HGMB<<endl;
       HGMB.close();
@@ -1559,7 +1565,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
   else                 {_STORAGE<<" 0.0 0.0";}
   _STORAGE<<" "<<channel_stor+reservoir_stor<<" "<<rivulet_stor;
-  //_STORAGE<<" "<<channel_stor<<" "<<reservoir_stor<<" "<<rivulet_stor;  // \todo[update] - backwards incompatible
+  //_STORAGE<<" "<<channel_stor<<" "<<reservoir_stor<<" "<<rivulet_stor;  // \todo [update] - backwards incompatible
 
   currentWater=0.0;
   for (i=0;i<GetNumStateVars();i++){

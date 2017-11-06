@@ -36,7 +36,7 @@ const veg_struct *CVegetationClass::GetVegetationStruct() const{return &V;}
 /// \brief Return nick name identifier of vegetation class
 /// \return nick name identifier of vegetation class
 //
-string               CVegetationClass::GetTag                                   () const{return tag;}
+string               CVegetationClass::GetTag          () const{return tag;}
 
 /*****************************************************************
    Static Initialization, Accessors, Destructors
@@ -352,11 +352,11 @@ void CVegetationClass::InitializeVegetationProps(veg_struct &V, bool is_template
     V.relative_LAI[mon]=DefaultParameterValue(is_template,true);
   }
 
-  V.trunk_fraction        =DefaultParameterValue(is_template,true);
-  V.stemflow_frac               =DefaultParameterValue(is_template,true);
-  V.SAI_ht_ratio            =DefaultParameterValue(is_template,true);
+  V.trunk_fraction    =DefaultParameterValue(is_template,true);
+  V.stemflow_frac     =DefaultParameterValue(is_template,true);
+  V.SAI_ht_ratio      =DefaultParameterValue(is_template,true);
 
-  V.max_capacity                  =DefaultParameterValue(is_template,true);
+  V.max_capacity      =DefaultParameterValue(is_template,true);
   V.max_snow_capacity =DefaultParameterValue(is_template,true);
 
   //User-specified parameters

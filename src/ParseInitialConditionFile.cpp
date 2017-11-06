@@ -314,6 +314,15 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         if (count!=nHRUs)
         {
           WriteWarning("Initial condition count is incorrect for state variable \""+(stateVariable)+"\"",Options.noisy);
+          //zero out rest 
+          int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
+          if(iSV!=DOESNT_EXIST){
+            if((SVtype!=ATMOS_PRECIP) && (SVtype!=ATMOSPHERE)){//initial conditions of cumulative precip & evap ignored, left at zero
+              for(int k=count;k<pModel->GetNumHRUs();k++){
+                pModel->GetHydroUnit(k)->SetStateVarValue(iSV,0);
+              }
+            }
+          }
           //cout<<"       NumHRUs="<<pModel->GetNumHRUs()<<" values found="<<count<<endl;
         }
         delete [] v;

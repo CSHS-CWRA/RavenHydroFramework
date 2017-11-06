@@ -205,7 +205,7 @@ int                CSubBasin::GetNumHRUs             () const{return _nHydroUnit
 const CHydroUnit*CSubBasin::GetHRU(const int ks) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf((k<0) && (k>=_nHydroUnits),"CSubBasin:GetHRU::improper index",BAD_DATA);
+  ExitGracefullyIf((ks<0) && (ks>=_nHydroUnits),"CSubBasin:GetHRU::improper index",BAD_DATA);
 #endif
   return _pHydroUnits[ks];
 }

@@ -18,7 +18,8 @@
 //
 enum depflow_type{
   DFLOW_THRESHPOW, ///< threshold-based power law overflow
-  DFLOW_LINEAR     ///< threshold-based linear overflow
+  DFLOW_LINEAR,    ///< threshold-based linear overflow
+  DFLOW_WEIR       ///< threshold-based weir eqn overflow
 };
 
 ///////////////////////////////////////////////////////////////////

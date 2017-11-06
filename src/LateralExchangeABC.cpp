@@ -20,6 +20,14 @@ CLateralExchangeProcessABC::CLateralExchangeProcessABC(const process_type ptype)
   _LatFlowIndex=_nLatFlowProcesses;
   _nLatFlowProcesses++;
 }
+//----------------------------------------------------------------
+CLateralExchangeProcessABC::~CLateralExchangeProcessABC()
+{
+  delete[] _kFrom;
+  delete[] _kTo;
+  delete[] _iFromLat;
+  delete[] _iToLat;
+}
 /*****************************************************************
    Static members
 ------------------------------------------------------------------
@@ -33,16 +41,19 @@ void CLateralExchangeProcessABC::SetModel(const CModel *pM){_pModel=pM;}
 *****************************************************************/
 void CLateralExchangeProcessABC::DynamicSpecifyLatConnections(const int nLatConnects)
 {
+  _nLatConnections=nLatConnects;
+  if(_nLatConnections==0){return;}
+
   delete [] _kFrom; //if these have already been created
   delete [] _kTo;
   delete [] _iFromLat; 
   delete [] _iToLat;
   _iToLat=NULL;
-  _nLatConnections=nLatConnects;
   _kFrom   =new int [_nLatConnections];
   _kTo     =new int [_nLatConnections];
   _iFromLat=new int [_nLatConnections];
   _iToLat  =new int [_nLatConnections];
+  ExitGracefullyIf(_iToLat==NULL,"DynamicSpecifyLatConnections",OUT_OF_MEMORY);
   for (int q=0;q<_nLatConnections;q++)
   {
     _kFrom   [q]    =DOESNT_EXIST;

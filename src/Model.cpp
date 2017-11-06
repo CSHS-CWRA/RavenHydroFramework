@@ -560,7 +560,7 @@ int  CModel::GetForcingGridIndexFromName (const string name) const{
 /// \param &Options [in] Global model options information
 /// \todo [optimize]
 //
-double CModel::GetFlux(const int k, const int iFrom_test, const int iTo_test, const optStruct &Options) const
+/*double CModel::GetFlux(const int k, const int iFrom_test, const int iTo_test, const optStruct &Options) const
 {
   int q,j,js(0);
   double flow=0;
@@ -592,7 +592,7 @@ double CModel::GetFlux(const int k, const int iFrom_test, const int iTo_test, co
   }//end for j=0 to nProcesses
 
   return flow;
-}
+}*/
 //////////////////////////////////////////////////////////////////
 /// \brief Returns current mass/energy flux (mm/d, MJ/m2/d, mg/m2/d) between two storage compartments iFrom and iTo
 /// \details required for advective transport processes
@@ -600,7 +600,6 @@ double CModel::GetFlux(const int k, const int iFrom_test, const int iTo_test, co
 /// \param k [in] HRU index
 /// \param js [in] index of process connection (i.e., j*)
 /// \param &Options [in] Global model options information
-/// \todo [optimize]
 //
 double CModel::GetFlux(const int k, const int js, const optStruct &Options) const
 {
@@ -609,6 +608,21 @@ double CModel::GetFlux(const int k, const int js, const optStruct &Options) cons
   ExitGracefullyIf((js<0) || (js>=_nTotalConnections),"CModel::GetFlux: bad connection index",RUNTIME_ERR);
 #endif
   return _aFlowBal[k][js]/Options.timestep;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns current mass/energy flow (mm-m2/d, MJ/d, mg/d) between two storage compartments iFrom and iTo
+/// \details required for advective transport processes
+///
+/// \param k [in] HRU index
+/// \param qs [in] global index of process connection (i.e., q*)
+/// \param &Options [in] Global model options information
+//
+double CModel::GetLatFlow(const int qs,const optStruct &Options) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((qs<0) || (qs>=_nTotalConnections),"CModel::GetFlux: bad connection index",RUNTIME_ERR);
+#endif
+  return _aFlowLatBal[qs]/Options.timestep;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns cumulative flux to/from storage unit i
@@ -1327,20 +1341,20 @@ void CModel::OverrideReservoirFlow(const long SBID)
 *****************************************************************/
 
 //////////////////////////////////////////////////////////////////
-/// \brief Increments water/energy balance
-/// \details add cumulative amount of water/energy for each process connection
+/// \brief Increments water/mass/energy balance
+/// \details add cumulative amount of water/mass/energy for each process connection
 /// \note  called from main solver
 ///
-/// \param j_star [in] Integer index of hydrologic process connection
+/// \param q_star [in] Integer index of hydrologic process connection
 /// \param k [in] Integer index of HRU
-/// \param moved [in] Double amount balance is to be incremented
+/// \param moved [in] Double amount balance is to be incremented (mm or mg/m2 or MJ/m2)
 //
-void CModel::IncrementBalance(const int    j_star,
+void CModel::IncrementBalance(const int    q_star,
                               const int    k,
                               const double moved){
-  ExitGracefullyIf(j_star>_nTotalConnections,"CModel::IncrementBalance: bad index",RUNTIME_ERR);
-  _aCumulativeBal[k][j_star]+=moved;
-  _aFlowBal      [k][j_star]= moved;
+  ExitGracefullyIf(q_star>_nTotalConnections,"CModel::IncrementBalance: bad index",RUNTIME_ERR);
+  _aCumulativeBal[k][q_star]+=moved;
+  _aFlowBal      [k][q_star]= moved;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Increments lateral flow water/energy balance
@@ -1659,7 +1673,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 /// \param *iFrom [in] Array (size: nLatConnections)  of Indices of state variable losing mass or energy
 /// \param *iTo [in] Array (size: nLatConnections)  of indices of state variable gaining mass or energy
 /// \param &nConnections [out] Number of connections between storage units/state vars
-/// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm/d], mass [mg/m2/d], and/or energy [MJ/m2/d]
+/// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm-m2/d], mass [mg/d], and/or energy [MJ/d] 
 /// \return returns false if this process doesn't apply to this HRU, true otherwise
 //
 bool CModel::ApplyLateralProcess( const int          j,
@@ -1682,7 +1696,7 @@ bool CModel::ApplyLateralProcess( const int          j,
   if(nLatConnections==0){return false;}
 
   pLatProc=(CLateralExchangeProcessABC*)_pProcesses[j]; // Cast
-  if (!_aShouldApplyProcess[j][pLatProc->GetLateralFromIndices()[0]]){return false;} //JRC: is the From/0 appropriate?
+  if (!_aShouldApplyProcess[j][pLatProc->GetFromHRUIndices()[0]]){return false;} //JRC: is the From/0 appropriate?
     
   for (int q=0;q<nLatConnections;q++)
   {

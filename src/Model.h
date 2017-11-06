@@ -124,9 +124,9 @@ private:/*------------------------------------------------------*/
   ofstream                _HYDRO; ///< output file stream for Hydrographs.csv
   ofstream              _STORAGE; ///< output file stream for WatershedStorage.csv
   ofstream             _FORCINGS; ///< output file stream for ForcingFunctions.csv
-  int                _HYDRO_ncid=-9; ///< output file ID     for Hydrographs.nc;        -9 = not existing
-  int              _STORAGE_ncid=-9; ///< output file ID     for WatershedStorage.nc;   -9 = not existing
-  int             _FORCINGS_ncid=-9; ///< output file ID     for ForcingFunctions.nc;   -9 = not existing
+  int                _HYDRO_ncid=-9; ///< output file ID  for Hydrographs.nc;        -9 = not existing
+  int              _STORAGE_ncid=-9; ///< output file ID  for WatershedStorage.nc;   -9 = not existing
+  int             _FORCINGS_ncid=-9; ///< output file ID  for ForcingFunctions.nc;   -9 = not existing
   double          *_aOutputTimes; ///< array of model major output times (LOCAL times at which full solution is written)
   int              _nOutputTimes; ///< size of array of model major output times
   int         _currOutputTimeInd; ///< index of current output time
@@ -212,8 +212,9 @@ public:/*-------------------------------------------------------*/
   int               GetStateVarIndex   (sv_type type) const; //assumes layer=0
   int               GetStateVarIndex   (sv_type type, int layer) const;//overriden for multilayer variables
   int               GetStateVarLayer   (const int i) const; //for multilayer variables
-  double            GetFlux            (const int k, const int iFrom, const int iTo, const optStruct &Options) const;
+//  double            GetFlux            (const int k, const int iFrom, const int iTo, const optStruct &Options) const;
   double            GetFlux            (const int k, const int js, const optStruct &Options) const;
+  double            GetLatFlow         (const int js, const optStruct &Options) const;
   double            GetCumulativeFlux  (const int k, const int i, const bool to) const;
   bool              StateVarExists     (sv_type type) const;
   double            GetAvgStateVar     (const int i) const;
@@ -331,7 +332,7 @@ public:/*-------------------------------------------------------*/
                                                 double      *exchange_rates) const;
                                          
   //water/energy/mass balance routines
-  void        IncrementBalance        (const int j_star,
+  void        IncrementBalance        (const int q_star,
                                        const int k,
                                        const double moved);//[mm] or [MJ/m2] or [mg]
   void        IncrementLatBalance     (const int j_star,  

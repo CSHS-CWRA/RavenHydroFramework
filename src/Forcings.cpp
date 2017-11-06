@@ -199,12 +199,12 @@ string GetForcingTypeUnits(forcing_type ftype)
   string units = "none";
   switch(ftype)
   {
-  case F_PRECIP:                      {units="mm/d"; break;}
+  case F_PRECIP:          {units="mm/d"; break;}
   case F_PRECIP_DAILY_AVE:{units="mm/d"; break; }
-  case F_PRECIP_5DAY:         {units="mm"; break;}
-  case F_SNOW_FRAC:               {units="0-1"; break;}
-  case F_SNOWFALL:                {units="mm"; break;}
-  case F_RAINFALL:                {units="mm"; break;}
+  case F_PRECIP_5DAY:     {units="mm"; break;}
+  case F_SNOW_FRAC:       {units="0-1"; break;}
+  case F_SNOWFALL:        {units="mm"; break;}
+  case F_RAINFALL:        {units="mm"; break;}
 
   case F_TEMP_AVE:        {units="C"; break;}
   case F_TEMP_DAILY_MIN:  {units="C"; break;}
@@ -219,26 +219,26 @@ string GetForcingTypeUnits(forcing_type ftype)
 
   case F_AIR_DENS:        {units="kg/m3"; break;}
   case F_AIR_PRES:        {units="kPa"; break;}
-  case F_REL_HUMIDITY:      {units="0-1"; break;}
+  case F_REL_HUMIDITY:    {units="0-1"; break;}
 
   case F_CLOUD_COVER:     {units="0-1"; break;}
-  case F_ET_RADIA:                    {units="MJ/m2/d"; break;}
-  case F_SW_RADIA:                {units="MJ/m2/d"; break;}
+  case F_ET_RADIA:        {units="MJ/m2/d"; break;}
+  case F_SW_RADIA:        {units="MJ/m2/d"; break;}
   case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}
-  case F_LW_RADIA:                    {units="MJ/m2/d"; break;}
+  case F_LW_RADIA:        {units="MJ/m2/d"; break;}
 
   case F_DAY_LENGTH:      {units="d"; break;}
-  case F_DAY_ANGLE:                   {units="rad"; break;}
+  case F_DAY_ANGLE:       {units="rad"; break;}
 
-  case F_WIND_VEL:                {units="m/s"; break;}
+  case F_WIND_VEL:        {units="m/s"; break;}
 
   case F_PET:             {units="mm/d"; break;}
   case F_OW_PET:          {units="mm/d"; break;}
-  case F_PET_MONTH_AVE:     {units="mm/d"; break;}
+  case F_PET_MONTH_AVE:   {units="mm/d"; break;}
 
   case F_POTENTIAL_MELT:  {units="mm/d"; break;}
 
-  case F_SUBDAILY_CORR:         {units="none"; break;}
+  case F_SUBDAILY_CORR:   {units="none"; break;}
   default:
     //ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
     break;
@@ -258,7 +258,7 @@ string ForcingToString(const forcing_type ftype)
   {
   case F_PRECIP:          {fstring="PRECIP"; break;}
   case F_PRECIP_DAILY_AVE:{fstring="PRECIP_DAILY_AVE"; break; }
-  case F_PRECIP_5DAY:         {fstring="PRECIP_5DAY"; break;}
+  case F_PRECIP_5DAY:     {fstring="PRECIP_5DAY"; break;}
   case F_SNOW_FRAC:       {fstring="SNOW_FRAC"; break;}
   case F_SNOWFALL:        {fstring="SNOWFALL"; break;}
   case F_RAINFALL:        {fstring="RAINFALL"; break;}

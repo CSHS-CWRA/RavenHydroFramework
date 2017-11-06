@@ -600,6 +600,7 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
       int m = pModel->GetStateVarLayer(_svind);
       int i_stor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
       double conv=(MM_PER_METER/LITER_PER_M3);
+      val=-9999;
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind)/pModel->GetHydroUnit(k)->GetStateVarValue(i_stor)*conv;}
       else {
         ExitGracefully("CustomOutput: cannot currently generate basin,watershed, or hru group based aggregate constituent concentrations",STUB);
@@ -820,6 +821,7 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
       int m = pModel->GetStateVarLayer(_svind);
       int i_stor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
       double conv=(MM_PER_METER/LITER_PER_M3);
+
       if (_spaceAgg == BY_HRU){ val = pModel->GetHydroUnit(k)->GetStateVarValue(_svind)/pModel->GetHydroUnit(k)->GetStateVarValue(i_stor)*conv;}
       else {
         ExitGracefully("CustomOutput: cannot currently generate basin,watershed, or hru group based aggregate constituent concentrations",STUB);

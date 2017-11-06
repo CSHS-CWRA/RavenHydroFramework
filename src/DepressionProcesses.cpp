@@ -65,6 +65,12 @@ void CmvDepressionOverflow::GetParticipatingParamList(string  *aP , class_type *
     aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
     aP[1]="DEP_K";              aPC[1]=CLASS_LANDUSE;
   }
+  else if (type==DFLOW_WEIR)
+  {
+    nP=2;
+    aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
+    aP[1]="DEP_CRESTRATIO";     aPC[1]=CLASS_LANDUSE;
+  }
   else
   {
     ExitGracefully("CmvDepressionOverflow::GetParticipatingParamList: undefined depression overflow algorithm",BAD_DATA);
@@ -128,7 +134,16 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
     //rates[0] = dep_k* max(stor-thresh_stor,0.0); //discrete
     rates[0]= max(stor-thresh_stor,0.0)*(1-exp(-dep_k*Options.timestep))/Options.timestep; //analytical formulation
   }
-
+  //----------------------------------------------------------------------------
+  else if(type==DFLOW_WEIR)
+  {
+    double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
+    double dep_rat    =pHRU->GetSurfaceProps()->dep_crestratio;
+    double area = pHRU->GetArea();
+    double c=dep_rat*sqrt(area); //crest length * weir coeff (C_d*L)
+    
+    rates[0]=0.666*c/area*sqrt(2*GRAVITY)*pow(max(stor-thresh_stor,0.0),1.5);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -272,5 +287,7 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
 {
   //cant remove more than is there
   rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
+
+  //can't overfill target storage
 
 }

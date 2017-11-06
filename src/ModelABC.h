@@ -26,8 +26,9 @@ public:/*-------------------------------------------------------*/
   virtual int         GetStateVarIndex   (sv_type type) const=0;
   virtual int         GetStateVarIndex   (sv_type type, int layer) const=0;
   virtual int         GetStateVarLayer   (const int i) const=0;
-  virtual double      GetFlux            (const int k, const int iFrom, const int iTo, const optStruct &Options) const =0;
+ // virtual double      GetFlux            (const int k, const int iFrom, const int iTo, const optStruct &Options) const =0;
   virtual double      GetFlux            (const int k, const int js, const optStruct &Options) const=0;
+  virtual double      GetLatFlow         (const int js, const optStruct &Options) const=0;
   virtual double      GetCumulativeFlux  (const int k, const int i, const bool to) const=0;
   virtual int         GetNumSoilLayers   () const=0;
   virtual int         GetNumAquiferLayers() const=0;
