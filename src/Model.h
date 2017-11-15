@@ -195,8 +195,9 @@ private:/*------------------------------------------------------*/
   void         GeneratePrecipFromSnowRain               (const optStruct &Options);
   void         GenerateRainFromPrecip                   (const optStruct &Options);
   void         GenerateZeroSnow                         (const optStruct &Options);
-  bool         ForcingGridIsInput                       (const string forcing_grid_name);
-  bool         ForcingGridIsAvailable                   (const string forcing_grid_name);
+
+  bool         ForcingGridIsInput                       (const string forcing_grid_name) const;
+  bool         ForcingGridIsAvailable                   (const string forcing_grid_name) const;
   double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
 

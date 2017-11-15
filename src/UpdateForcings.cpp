@@ -49,22 +49,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
   mid_day   = ((int)tt.julian_day)+0.5;//mid day
 
-
-  int    nRows;                                     // number of rows of gridded data
-  int    nCols;                                     // number of columns of gridded data
-  int    nGridCells;                                // number of grid cells (rows x cols)
-  int    nNonZeroGridCells;                         // number of grid cells with non-zero weighting
-  double interval_pre;                              // delta t of various gridded forcing data
-  double interval_snow;                             // delta t of various gridded forcing data
-  double interval_tmin;                             // delta t of various gridded forcing data
-  double interval_tmax;                             // delta t of various gridded forcing data
-  bool   new_chunk1;                                // true if new chunk was read, otherwise false
-  bool   new_chunk2;                                // true if new chunk was read, otherwise false
-  bool   new_chunk3;                                // true if new chunk was read, otherwise false
-  bool   new_chunk4;                                // true if new chunk was read, otherwise false
-  double idx_new;                                   // index of forcing time series corresponding to current modelled time step
-  double idx_new_day;                               // index of forcing time series corresponding to current modelled day
-
   CForcingGrid *pGrid_pre        = NULL;            // forcing grids
   CForcingGrid *pGrid_rain       = NULL;
   CForcingGrid *pGrid_snow       = NULL;
@@ -73,6 +57,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_daily_tmin = NULL;
   CForcingGrid *pGrid_daily_tmax = NULL;
   CForcingGrid *pGrid_daily_tave = NULL;
+  CForcingGrid *pGrid_recharge   = NULL;
 
   // see if gridded forcing is read from a NetCDF
   bool pre_gridded            = ForcingGridIsInput("PRECIP")         ;
@@ -83,6 +68,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN") ;
   bool temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX") ;
   bool temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE") ;
+  bool recharge_gridded       = ForcingGridIsInput("RECHARGE")       ;
 
   //Extract data from gauge time series
   for (g=0;g<_nGauges;g++)
@@ -134,6 +120,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       //Fg[g].subdaily_corr =_pGauges[g]->GetForcingValue    (F_SUBDAILY_CORR,nn);
     }
+
+    if(!(recharge_gridded)){
+      Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
+    }
   }
   if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//RFS Emulation cheat
 
@@ -160,16 +150,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     for (g = 0; g < _nGauges; g++)
     {
       wt=_aGaugeWeights[k][g];
-      if (wt != 0.0){
+      if(wt != 0.0){
 
-        if ( !(pre_gridded || snow_gridded || rain_gridded) )
+        if(!(pre_gridded || snow_gridded || rain_gridded))
         {
           F.precip           += wt * Fg[g].precip;
           F.precip_daily_ave += wt * Fg[g].precip_daily_ave;
           F.precip_5day      += wt * Fg[g].precip_5day;
           F.snow_frac        += wt * Fg[g].snow_frac;
         }
-        if ( !(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded) )
+        if(!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded))
         {
           F.temp_ave         += wt * Fg[g].temp_ave;
           F.temp_daily_ave   += wt * Fg[g].temp_daily_ave;
@@ -191,17 +181,33 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.PET            += wt * Fg[g].PET;
         F.OW_PET         += wt * Fg[g].OW_PET;
         F.potential_melt += wt * Fg[g].potential_melt;
+        if(!(recharge_gridded)){
+          F.recharge       += wt * Fg[g].recharge;
+        }
         //F.subdaily_corr+= wt * Fg[g].subdaily_corr;
 
         ref_elev         += wt * _pGauges[g]->GetElevation();
       }
     }
+
     //-------------------------------------------------------------------
     //  Gridded data support
     //-------------------------------------------------------------------
+    int    nRows;                                     // number of rows of gridded data
+    int    nCols;                                     // number of columns of gridded data
+    int    nGridCells;                                // number of grid cells (rows x cols)
+    int    nNonZeroGridCells;                         // number of grid cells with non-zero weighting
+    double interval_pre;                              // delta t of various gridded forcing data
+    bool   new_chunk1;                                // true if new chunk was read, otherwise false
+    bool   new_chunk2;                                // true if new chunk was read, otherwise false
+    bool   new_chunk3;                                // true if new chunk was read, otherwise false
+    bool   new_chunk4;                                // true if new chunk was read, otherwise false
+    double idx_new;                                   // index of forcing time series corresponding to current modelled time step
+    double idx_new_day;                               // index of forcing time series corresponding to current modelled day
+
     //Override forcing functions with gridded data, if present
     // see if gridded forcing is available (either from NetCDF or derived)
-    pre_gridded            = ForcingGridIsInput("PRECIP"              ); //JRC: NECCESARY - isnt this above?
+    pre_gridded            = ForcingGridIsInput("PRECIP"              ); //JRC: NECCESARY? - isnt this above?
     rain_gridded           = ForcingGridIsInput("RAINFALL"            );
     snow_gridded           = ForcingGridIsInput("SNOWFALL"            );
     pet_gridded            = ForcingGridIsInput("PET"                 );
@@ -209,6 +215,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN"      );
     temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX"      );
     temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE"      );
+    recharge_gridded       = ForcingGridIsInput("RECHARGE"            );
 
     // find the correct grid
     if ( pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")        ); }
@@ -219,6 +226,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
     if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
     if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+    if ( recharge_gridded )       { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE"      )); }
 
     // // --------------------------------------------------------
     // // print how many and which forcing grids are available
@@ -238,18 +246,18 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     {
       // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
       new_chunk1 = false; new_chunk2 = false; new_chunk3 = false;
-      if (pre_gridded)  {new_chunk1 = pGrid_pre->ReadData(Options,tt.model_time);}
+      if (pre_gridded)  {new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time);}
       if (snow_gridded) {new_chunk2 = pGrid_snow->ReadData(Options,tt.model_time);}
       if (rain_gridded) {new_chunk3 = pGrid_rain->ReadData(Options,tt.model_time);}
 
       // populate derived data from the ones just read
       if (new_chunk1 || new_chunk2 || new_chunk3) { InitializeForcingGrids(Options, "PREC"); }
 
-      pre_gridded            = ForcingGridIsAvailable("PRECIP"              );
-      rain_gridded           = ForcingGridIsAvailable("RAINFALL"            );
-      snow_gridded           = ForcingGridIsAvailable("SNOWFALL"            );
+      pre_gridded = ForcingGridIsAvailable("PRECIP"  );//JRC: Shouldnt these all be true if InitializeForcingGrids("PREC") was called
+      rain_gridded= ForcingGridIsAvailable("RAINFALL");
+      snow_gridded= ForcingGridIsAvailable("SNOWFALL");
 
-      if ( pre_gridded || (snow_gridded && rain_gridded) )    {
+      if ( pre_gridded || (snow_gridded && rain_gridded) ) { //JRC: Shouldnt this be true if InitializeForcingGrids("PREC") was called
         F.precip           = 0.0;
         F.precip_daily_ave = 0.0;
         F.precip_5day      = 0.0;
@@ -265,7 +273,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     // ---------------------
     // (1B) update forcings: F.precip, F.precip_daily_ave, F.precip_5day
     // ---------------------
-    if ( pre_gridded )
+    if ( pre_gridded ) //JRC: does this need to be a separate loop?
     {
       nRows                  = pGrid_pre->GetRows();
       nCols                  = pGrid_pre->GetCols();
@@ -283,7 +291,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
         if (wt != 0.0) {
           F.precip           += wt * pGrid_pre->GetValue(gg, idx_new,     int(max(1.0,round(Options.timestep/interval_pre))));
-          F.precip_daily_ave += wt * pGrid_pre->GetValue(gg, idx_new_day, int(round(1.0/interval_pre)));
+          F.precip_daily_ave += wt * pGrid_pre->GetValue(gg, idx_new_day, int(        round(             1.0/interval_pre)));
           F.precip_5day      += wt * -9999.0;
         }
       }
@@ -292,26 +300,25 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     // ---------------------
     // (1b) update forcings: F.snow_frac
     // ---------------------
-    if ( snow_gridded && rain_gridded )
+    double interval_snow;       // delta t of various gridded forcing data [d]
+    if ( snow_gridded && rain_gridded ) //JRC: does this need to be a separate loop? After InitializeForcingGrids(), this should be true always
     {
-      nRows                  = pGrid_pre->GetRows();
-      nCols                  = pGrid_pre->GetCols();
+      nRows                  = pGrid_snow->GetRows();
+      nCols                  = pGrid_snow->GetCols();
       nGridCells             = nRows * nCols;
       nNonZeroGridCells      = pGrid_snow->GetNumberNonZeroGridCells();
       interval_snow          = pGrid_snow->GetInterval();
 
       idx_new     = int((pGrid_snow->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize();
-      idx_new_day = int((pGrid_snow->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize();
+      //idx_new_day = int((pGrid_snow->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize(); //JRC: not used
 
       for (int gg = 0; gg < nNonZeroGridCells; gg++)
       {
-        //int iRow  = gg / nCols;
-        //int iCol  = gg % nCols;
         int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
 
-        wt                  = pGrid_snow->GetGridWeight(k,cell_idx);
+        wt= pGrid_snow->GetGridWeight(k,cell_idx);
         if (wt != 0.0) {
-          F.snow_frac        += wt * GetAverageSnowFrac(gg, idx_new, int(max(1.0,round(Options.timestep/interval_snow))));
+          F.snow_frac+= wt * GetAverageSnowFrac(gg, idx_new, int(max(1.0,round(Options.timestep/interval_snow))));
         }
       }
     }
@@ -333,7 +340,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if ((new_chunk3 && !new_chunk4) || (!new_chunk3 && new_chunk4)) {
         ExitGracefully( "CModel::UpdateHRUForcingFunctions: Min and max temperature have to have same time points.", BAD_DATA); }
 
-      if ( temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded )
+      if ( temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded ) //JRC: Necessary? Isnt this always true after InitializeForcingGrids("TEMP")
       {
         F.temp_ave         = 0.0;
         F.temp_daily_ave   = 0.0;
@@ -349,7 +356,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       temp_daily_min_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MIN"      );
       temp_daily_max_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MAX"      );
 
-      if ( temp_ave_gridded       ) {       pGrid_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"            )); }
+      if ( temp_ave_gridded       ) {       pGrid_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"            )); } //JRC: Necessary conditional ? Isnt this always true after InitializeForcingGrids("TEMP")
       if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"      )); }
       if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN"      )); }
       if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX"      )); }
@@ -361,7 +368,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     //                       F.temp_daily_ave, F.temp_monthly_ave,
     //                       F.temp_ave
     // ---------------------
-
+    double interval_tmin;                             // delta t of Tmin gridded forcing data
+    double interval_tmax;                             // delta t of Tmax gridded forcing data
     if ( temp_ave_gridded && temp_daily_min_gridded && temp_daily_max_gridded && temp_daily_ave_gridded )
     {
       nRows             = pGrid_tave->GetRows();  // assuming that it is the same for all grids
@@ -377,8 +385,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       for (int gg = 0; gg < nNonZeroGridCells; gg++)
       {
-        //int iRow  = gg / nCols;
-        //int iCol  = gg % nCols;
         int cell_idx = pGrid_tave->GetIdxNonZeroGridCell(gg);
 
         // Tmax       is with input time resolution
@@ -390,21 +396,21 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         wt                  = pGrid_daily_tmin->GetGridWeight(k,cell_idx);
         if (wt != 0.0) {
           F.temp_daily_min   += wt *  pGrid_daily_tmin->GetValue(gg, idx_new);
-          F.temp_month_min   += wt * -33333.3;
+          F.temp_month_min   += wt * NOT_SPECIFIED;
         }
 
         idx_new = int((pGrid_daily_tmax->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmax->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmax->GetChunkSize();
         wt                  = pGrid_daily_tmax->GetGridWeight(k,cell_idx);
         if (wt != 0.0) {
           F.temp_daily_max   += wt *  pGrid_daily_tmax->GetValue(gg, idx_new);
-          F.temp_month_max   += wt * -33333.3;
+          F.temp_month_max   += wt * NOT_SPECIFIED;
         }
 
         idx_new = int((pGrid_daily_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tave->GetInterval())+Options.timestep/2.0) % pGrid_daily_tave->GetChunkSize();
         wt                  = pGrid_daily_tave->GetGridWeight(k,cell_idx);
         if (wt != 0.0) {
           F.temp_daily_ave   += wt *  pGrid_daily_tave->GetValue(gg, idx_new);
-          F.temp_month_ave    = -33333.3;
+          F.temp_month_ave    = NOT_SPECIFIED;
         }
 
         idx_new = int((pGrid_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_tave->GetInterval())+Options.timestep/2.0) % pGrid_tave->GetChunkSize();
@@ -414,6 +420,37 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         }
       }
 
+    }
+
+    // ---------------------
+    // (3) read gridded recharge
+    // ---------------------
+    double interval;
+    if ( recharge_gridded )
+    {
+      // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
+      pGrid_recharge-> ReadData(Options,tt.model_time);
+      //recharge_gridded = ForcingGridIsAvailable("RECHARGE");
+      //pGrid_recharge  = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); 
+
+      nRows                  = pGrid_recharge->GetRows();
+      nCols                  = pGrid_recharge->GetCols();
+      nGridCells             = nRows * nCols;
+      nNonZeroGridCells      = pGrid_recharge->GetNumberNonZeroGridCells();
+      interval               = pGrid_recharge->GetInterval();
+
+      idx_new     = int((pGrid_recharge->GetTcorr() + tt.model_time) * round(1.0/interval)+Options.timestep/2.0)  % pGrid_recharge->GetChunkSize();
+      
+      F.recharge = 0.0;
+      for (int gg = 0; gg < nNonZeroGridCells; gg++)
+      {
+        int cell_idx = pGrid_recharge->GetIdxNonZeroGridCell(gg);
+        wt = pGrid_recharge->GetGridWeight(k,cell_idx);
+        if (wt != 0.0) {
+          F.recharge+= wt*pGrid_recharge->GetValue(gg, idx_new, int(max(1.0,round(Options.timestep/interval))));
+        }
+      }
+      //replace with -- F.recharge=pGrid_recharge->GetWeightedValue(Options.timestep);
     }
 
     F.temp_ave_unc = F.temp_daily_ave;
@@ -513,7 +550,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options, &F);
     F.SW_radia *= CRadiation::SWCanopyCorrection(Options, _pHydroUnits[k]);
 
-    //if (Options.SW_radiation_net == SW_RAD_NET_CALCULATE)
+    //if (Options.SW_radiation_net == SW_RAD_NET_CALCULATE) // \todo [funct] - handle user-specified SW_radia_net
     {
       F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
     }//otherwise, uses data
@@ -790,6 +827,7 @@ double CModel::CalculateSubDailyCorrection(const force_struct &F,
   }
   return 1.0;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list for all forcing estimation/correction algorithms
 ///
@@ -1251,26 +1289,19 @@ void CModel::InitializeForcingGrids(const optStruct &Options, const string type)
   CForcingGrid * pGrid_daily_tmin = NULL;
   CForcingGrid * pGrid_daily_tmax = NULL;
   CForcingGrid * pGrid_daily_tave = NULL;
+  CForcingGrid * pGrid_recharge   = NULL;
 
-  // Check if input data are gridded
-  bool pre_gridded            = false;
-  bool rain_gridded           = false;
-  bool snow_gridded           = false;
-  bool pet_gridded            = false;
-  bool temp_ave_gridded       = false;
-  bool temp_daily_min_gridded = false;
-  bool temp_daily_max_gridded = false;
-  bool temp_daily_ave_gridded = false;
 
   // see if gridded forcing is read from a NetCDF
-  pre_gridded            = ForcingGridIsInput("PRECIP")         ;
-  rain_gridded           = ForcingGridIsInput("RAINFALL")       ;
-  snow_gridded           = ForcingGridIsInput("SNOWFALL")       ;
-  pet_gridded            = ForcingGridIsInput("PET")            ;
-  temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE")       ;
-  temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN") ;
-  temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX") ;
-  temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE") ;
+  bool pre_gridded            = ForcingGridIsInput("PRECIP")         ;
+  bool rain_gridded           = ForcingGridIsInput("RAINFALL")       ;
+  bool snow_gridded           = ForcingGridIsInput("SNOWFALL")       ;
+  bool pet_gridded            = ForcingGridIsInput("PET")            ;
+  bool temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE")       ;
+  bool temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN") ;
+  bool temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX") ;
+  bool temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE") ;
+  bool recharge_gridded       = ForcingGridIsInput("RECHARGE")       ;
 
   // find the correct grid
   if ( pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP"));         }
@@ -1281,6 +1312,7 @@ void CModel::InitializeForcingGrids(const optStruct &Options, const string type)
   if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
   if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
   if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+  if ( recharge_gridded )       { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE"));       }
 
   if (type == "TEMP") {
 
@@ -1359,7 +1391,7 @@ void CModel::InitializeForcingGrids(const optStruct &Options, const string type)
 ///
 /// \param forcing_grid_name [in]  name of forcing grid, e.g. "TEMP_DAILY_MIN"
 //
-bool CModel::ForcingGridIsInput(const string forcing_grid_name)
+bool CModel::ForcingGridIsInput(const string forcing_grid_name) const
 {
   int ff;         // index of a forcing grid
   bool is_input;  // class variable determining if grid is read from NetCDF (false) or is derived (true)
@@ -1380,7 +1412,7 @@ bool CModel::ForcingGridIsInput(const string forcing_grid_name)
 ///
 /// \param forcing_grid_name [in]  name of forcing grid, e.g. "TEMP_DAILY_MIN"
 //
-bool CModel::ForcingGridIsAvailable(const string forcing_grid_name)
+bool CModel::ForcingGridIsAvailable(const string forcing_grid_name) const
 {
   bool is_available;  // class variable determining if grid is available (read from NetCDF or derived) or not
 

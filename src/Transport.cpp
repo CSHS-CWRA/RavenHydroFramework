@@ -463,7 +463,7 @@ double CTransportModel::GetDecayCoefficient(const int c,const CHydroUnit        
   {
     //int m = pModel->GetStateVarLayer(iStorWater);
 #ifndef _STRICTCHECK_
-    ExitGracefullyIf(m==DOESNT_EXIST,"GetDecayCoefficient:invalid _iFromWater",RUNTIME_ERR);
+    //ExitGracefullyIf(m==DOESNT_EXIST,"GetDecayCoefficient:invalid _iFromWater",RUNTIME_ERR);
 #endif
     //decay_coeff += pHRU->GetSoilProps(m)->mineralization_rate[c];
     //decay_coeff += pHRU->GetSoilProps(m)->loss_rate[c]; //e.g., denitrification

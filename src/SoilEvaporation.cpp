@@ -350,21 +350,19 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   else if (type==SOILEVAP_VIC)
   {
-    double alpha,zmax,zmin,gamma,gamma2,K1,Smax,Sat;
+    double alpha,zmax,zmin,gamma2,Smax,Sat;
     double stor=state_vars[iFrom[0]];
     double stor_max;
 
     stor_max=pHRU->GetSoilCapacity(0);
-    pSoil               =pHRU->GetSoilProps(0);
+    pSoil   =pHRU->GetSoilProps(0);
 
     alpha =pSoil->VIC_alpha;
     zmax  =pSoil->VIC_zmax;
     zmin  =pSoil->VIC_zmin;
     gamma2=pSoil->VIC_evap_gamma;
 
-    gamma =1.0/(alpha+1.0);
-    K1    =pow((zmax-zmin)*alpha*gamma,-gamma);// \todo [bug?] K1 not used?
-    Smax  =gamma*(alpha*zmax+zmin);
+    Smax  =1.0/(alpha+1.0)*(alpha*zmax+zmin);
     Sat   =stor/stor_max;
 
     rates[0]=PET*(1.0-pow(1.0-Sat/Smax,gamma2));

@@ -877,6 +877,7 @@ enum forcing_type
   F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
+  F_RECHARGE,
   F_UNRECOGNIZED
 };
 ////////////////////////////////////////////////////////////////////
@@ -920,6 +921,8 @@ struct force_struct
   double PET;             ///< Potential Evapotranspiration [mm/d]
   double OW_PET;          ///< Open Water Potential Evapotranspiration [mm/d]
   double PET_month_ave;   ///< average PET during month [mm/d]
+
+  double recharge;        ///< recharge to groundwater (typically from external model) [mm/d]
 
   double subdaily_corr;   ///< a subdaily correction factor to re-distribute daily average PET or snowmelt [-]
 };

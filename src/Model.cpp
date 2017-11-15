@@ -733,12 +733,12 @@ force_struct CModel::GetAverageForcings() const
     pF_hru =_pHydroUnits[k]->GetForcingFunctions();
     area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
 
-    Fave.precip                                 +=area_wt*pF_hru->precip;
-    Fave.precip_daily_ave+= area_wt*pF_hru->precip_daily_ave;
-    Fave.precip_5day            +=area_wt*pF_hru->precip_5day;
-    Fave.snow_frac                      +=area_wt*pF_hru->snow_frac;
+    Fave.precip          +=area_wt*pF_hru->precip;
+    Fave.precip_daily_ave+=area_wt*pF_hru->precip_daily_ave;
+    Fave.precip_5day     +=area_wt*pF_hru->precip_5day;
+    Fave.snow_frac       +=area_wt*pF_hru->snow_frac;
 
-    Fave.temp_ave                               +=area_wt*pF_hru->temp_ave;
+    Fave.temp_ave       +=area_wt*pF_hru->temp_ave;
     Fave.temp_daily_min +=area_wt*pF_hru->temp_daily_min;
     Fave.temp_daily_max +=area_wt*pF_hru->temp_daily_max;
     Fave.temp_daily_ave +=area_wt*pF_hru->temp_daily_ave;
@@ -747,29 +747,31 @@ force_struct CModel::GetAverageForcings() const
     Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
 
     Fave.temp_ave_unc   +=area_wt*pF_hru->temp_ave_unc;
-    Fave.temp_min_unc     +=area_wt*pF_hru->temp_min_unc;
-    Fave.temp_max_unc     +=area_wt*pF_hru->temp_max_unc;
+    Fave.temp_min_unc   +=area_wt*pF_hru->temp_min_unc;
+    Fave.temp_max_unc   +=area_wt*pF_hru->temp_max_unc;
 
-    Fave.air_dens                               +=area_wt*pF_hru->air_dens;
-    Fave.air_pres                               +=area_wt*pF_hru->air_pres;
-    Fave.rel_humidity     +=area_wt*pF_hru->rel_humidity;
+    Fave.air_dens       +=area_wt*pF_hru->air_dens;
+    Fave.air_pres       +=area_wt*pF_hru->air_pres;
+    Fave.rel_humidity   +=area_wt*pF_hru->rel_humidity;
 
     Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
     Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
-    Fave.SW_radia                               +=area_wt*pF_hru->SW_radia;
+    Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
     Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
     Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
-    Fave.LW_radia                               +=area_wt*pF_hru->LW_radia;
-    Fave.day_length                     +=area_wt*pF_hru->day_length;
+    Fave.LW_radia       +=area_wt*pF_hru->LW_radia;
+    Fave.day_length     +=area_wt*pF_hru->day_length;
     Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc.
 
-    Fave.wind_vel                               +=area_wt*pF_hru->wind_vel;
+    Fave.wind_vel       +=area_wt*pF_hru->wind_vel;
 
-    Fave.PET                                            +=area_wt*pF_hru->PET;
-    Fave.OW_PET                                 +=area_wt*pF_hru->OW_PET;
+    Fave.PET            +=area_wt*pF_hru->PET;
+    Fave.OW_PET         +=area_wt*pF_hru->OW_PET;
     Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave;
 
     Fave.potential_melt +=area_wt*pF_hru->potential_melt;
+    
+    Fave.recharge       +=area_wt*pF_hru->recharge;
 
     Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
   }

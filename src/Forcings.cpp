@@ -55,6 +55,8 @@ void ZeroOutForcings(force_struct &F)
 
   F.potential_melt=0.0;
 
+  F.recharge=0.0;
+
   F.subdaily_corr=0.0;
 }
 
@@ -111,6 +113,8 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="PET_MONTH_AVE"    ){return F_PET_MONTH_AVE;}
 
   else if (f=="POTENTIAL_MELT"   ){return F_POTENTIAL_MELT;}
+
+  else if(f=="RECHARGE"          ){return F_RECHARGE;}
 
   else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
@@ -177,6 +181,8 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
 
   else if (ftype==F_POTENTIAL_MELT  ){return f.potential_melt;}
 
+  else if (ftype==F_RECHARGE        ){return f.recharge;}
+
   else if (ftype==F_SUBDAILY_CORR   ){return f.subdaily_corr;}
 
   //else if (ftype==F_UNRECOGNIZED   ){return 0;}
@@ -238,6 +244,8 @@ string GetForcingTypeUnits(forcing_type ftype)
 
   case F_POTENTIAL_MELT:  {units="mm/d"; break;}
 
+  case F_RECHARGE:        {units="mm/d"; break;}
+
   case F_SUBDAILY_CORR:   {units="none"; break;}
   default:
     //ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
@@ -294,6 +302,8 @@ string ForcingToString(const forcing_type ftype)
   case F_PET_MONTH_AVE:   {fstring="PET_MONTH_AVE"; break;}
 
   case F_POTENTIAL_MELT:  {fstring="POTENTIAL_MELT"; break;}
+
+  case F_RECHARGE:        {fstring="RECHARGE"; break;}
 
   case F_SUBDAILY_CORR:   {fstring="SUBDAILY_CORR"; break;}
   default:

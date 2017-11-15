@@ -1804,8 +1804,6 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(
 CForcingGrid::~CForcingGrid()
 {
 
-  cout << "Freeing memory!" << endl;
-
   if (DESTRUCTOR_DEBUG){cout<<"    DELETING GRIDDED DATA"<<endl;}
   delete [] _aVal;                  _aVal                = NULL;
   delete [] _GridWeight;            _GridWeight          = NULL;
