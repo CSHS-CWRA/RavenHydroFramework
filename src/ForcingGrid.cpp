@@ -10,10 +10,6 @@
 #include "Forcings.h"
 #include <string.h>
 
-#ifdef _RVNETCDF_
-#include <netcdf.h>
-#endif
-
 /*****************************************************************
    Constructor/Destructor
 ------------------------------------------------------------------
@@ -105,7 +101,9 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
 
   _aVal =  new double *[grid._ChunkSize];
   for (int it=0; it<grid._ChunkSize; it++) {                       // loop over time points in buffer
+    _aVal[it]=NULL;
     _aVal[it] = new double [grid._nNonZeroWeightedGridCells];
+    ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::Constructor",OUT_OF_MEMORY);
     for (int ic=0; ic<grid._nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
       _aVal[it][ic]=grid._aVal[it][ic];                            // copy the value
     }
@@ -114,7 +112,9 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
 
   _GridWeight =  new double *[grid._nHydroUnits];
   for (int ik=0; ik<grid._nHydroUnits; ik++) {                           // loop over HRUs
+    _GridWeight[ik] =NULL;
     _GridWeight[ik] = new double [grid._GridDims[0]*grid._GridDims[1]];
+    ExitGracefullyIf(_GridWeight[ik]==NULL,"CForcingGrid::Constructor(2)",OUT_OF_MEMORY);
     for (int ic=0; ic<grid._GridDims[0]*grid._GridDims[1]; ic++) {       // loop over cells = rows*cols
       _GridWeight[ik][ic]=grid._GridWeight[ik][ic];                      // copy the value
     }
@@ -152,9 +152,8 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   int    BytesPerTimestep;      // Memory requirement for one timestep of gridded forcing file [Bytes]
 
   int iatt;
-  int nattrib_f;
   char attrib_name[500];
-  char attrib_text[500];
+
   int retval1;
   size_t att_len;     // length of the attribute's text
 
@@ -162,42 +161,30 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   string colon;          // to check format of time unit string
   string unit_t_str;     // to check format of time unit string
 
-  // _ForcingType  = ForcingType;
-  // _filename     = filename;
-  // _varname      = varname;
-  // _DimNames[0]  = DimNames[0]; _DimNames[1]  = DimNames[1]; _DimNames[2]  = DimNames[2];
-
   // open NetCDF read-only; ncid will be set
   // _filename.c_str() converts filename from 'string' to 'const char *'
-  if ((retval = nc_open(_filename.c_str(), NC_NOWRITE, &ncid)))
-    nc_error_exit(retval);
+  retval = nc_open(_filename.c_str(), NC_NOWRITE, &ncid);
+  HandleNetCDFErrors(retval);
 
   // Get the id of dimensions based on its name; dimid will be set
   // Find length of dimension and store it in GridDim
   // dimension x = number of columns of the grid
-  if ((retval = nc_inq_dimid(ncid, _DimNames[0].c_str(), &dimid_x)))
-    nc_error_exit(retval);
-  if ((retval = nc_inq_dimlen(ncid, dimid_x, &GridDim_t)))
-    nc_error_exit(retval);
+  retval = nc_inq_dimid (ncid, _DimNames[0].c_str(), &dimid_x);  HandleNetCDFErrors(retval);
+  retval = nc_inq_dimlen(ncid, dimid_x, &GridDim_t);             HandleNetCDFErrors(retval);
   _GridDims[0] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
   // dimension y = number of rows of the grid
-  if ((retval = nc_inq_dimid(ncid, _DimNames[1].c_str(), &dimid_y)))
-    nc_error_exit(retval);
-  if ((retval = nc_inq_dimlen(ncid, dimid_y, &GridDim_t)))
-    nc_error_exit(retval);
+  retval = nc_inq_dimid (ncid, _DimNames[1].c_str(), &dimid_y);  HandleNetCDFErrors(retval);
+  retval = nc_inq_dimlen(ncid, dimid_y, &GridDim_t);             HandleNetCDFErrors(retval);
   _GridDims[1] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
   // dimension t = number of time steps in NetCDF file
-  if ((retval = nc_inq_dimid(ncid, _DimNames[2].c_str(), &dimid_t)))
-    nc_error_exit(retval);
-  if ((retval = nc_inq_dimlen(ncid, dimid_t, &GridDim_t)))
-    nc_error_exit(retval);
+  retval = nc_inq_dimid(ncid, _DimNames[2].c_str(), &dimid_t);   HandleNetCDFErrors(retval);
+  retval = nc_inq_dimlen(ncid, dimid_t, &GridDim_t);             HandleNetCDFErrors(retval);
   _GridDims[2] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
   // Get the id of the data variable based on its name; varid will be set
-  if ((retval = nc_inq_varid(ncid, _varname.c_str(), &varid_f)))
-    nc_error_exit(retval);
+  retval = nc_inq_varid(ncid, _varname.c_str(), &varid_f);       HandleNetCDFErrors(retval);
 
   // determine in which order the dimensions are in variable
   //   if  (t,         y=lat=row, x=lon=col)   --> (2,1,0) --> (dimid_t, dimid_y, dimid_x)
@@ -206,16 +193,27 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   //   if  (y=lat=row, x=lon=col, t        )   --> (1,0,2) --> (dimid_y, dimid_x, dimid_t)
   //   if  (x=lon=col, t,         y=lat=row)   --> (0,2,1) --> (dimid_x, dimid_t, dimid_y)
   //   if  (x=lon=col, y=lat=row, t        )   --> (0,1,2) --> (dimid_x, dimid_y, dimid_t)
-  if ((retval = nc_inq_vardimid(ncid, varid_f, dimids_var)))
-    nc_error_exit(retval);
+  retval = nc_inq_vardimid(ncid, varid_f, dimids_var);          HandleNetCDFErrors(retval);
 
-  _DimIds[0] = dimid_x;  // dim ID of x dimension
-  _DimIds[1] = dimid_y;  // dim ID of y dimension
-  _DimIds[2] = dimid_t;  // dim ID of t dimension
-
-  _DimIdsVar[0] = dimids_var[0];  // dim ID of 1st dimension in variable
-  _DimIdsVar[1] = dimids_var[1];  // dim ID of 2nd dimension in variable
-  _DimIdsVar[2] = dimids_var[2];  // dim ID of 3rd dimension in variable
+  if    ((dimids_var[0]==dimid_x) && (dimids_var[1]==dimid_y) && (dimids_var[2]==dimid_t))  {  // dimensions are (x,y,t)
+    _dim_order = 1;
+  }
+  else if((dimids_var[0]==dimid_y) && (dimids_var[1]==dimid_x) && (dimids_var[2]==dimid_t))  {  // dimensions are (y,x,t)
+    _dim_order = 2;
+  }
+  else if((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_t) && (dimids_var[2] == dimid_y))  {  // dimensions are (x,t,y)
+    _dim_order = 3;
+  }
+  else if((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_x) && (dimids_var[2] == dimid_y))  {  // dimensions are (t,x,y)
+    _dim_order = 4;
+  }
+  else if((dimids_var[0] == dimid_y) && (dimids_var[1] == dimid_t) && (dimids_var[2] == dimid_x))  {  // dimensions are (y,t,x)
+    _dim_order = 5;
+  }
+  else if((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_x))  {  // dimensions are (t,y,x)
+    _dim_order = 6;
+  }
+  if(Options.noisy){ printf("  Order of dimensions in NetCDF is Case %i...\n",_dim_order); }
 
   // -------------------------------
   // Start day and year are extracted from the UNITS attribute of time axis
@@ -224,13 +222,19 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   // then whole time variable has to be read and first time step needs to be added to get _start_year and _start_day
   // difference between t[0] and t[1] is then used to get _interval
   // -------------------------------
-  if ((retval = nc_inq_varid(ncid, _DimNames[2].c_str(), &varid_t)))   // varid of time
-    nc_error_exit(retval);
-  if ((retval = nc_get_att_text(ncid, varid_t, "units", unit_t)))    // unit of time
-    nc_error_exit(retval);
-  int time[_GridDims[2]];
-  if ((retval = nc_get_var_int(ncid, varid_t, &time[0])))            // time variable
-    nc_error_exit(retval);
+  retval = nc_inq_varid(ncid,_DimNames[2].c_str(),&varid_t);// varid of time
+  HandleNetCDFErrors(retval);
+
+  retval = nc_get_att_text(ncid,varid_t,"units",unit_t);    // unit of time
+  HandleNetCDFErrors(retval);
+  
+
+  int *time=NULL;
+  time=new int [_GridDims[2]];
+  ExitGracefullyIf(time==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
+  
+  retval = nc_get_var_int(ncid,varid_t,&time[0]);        
+  HandleNetCDFErrors(retval);
 
   // -------------------------------
   // check if we have equal time steps
@@ -249,7 +253,8 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   // -------------------------------
   // delta t (in days)
   // -------------------------------
-  if (strstr(unit_t, "hours")) {  // if unit of time in hours: hours since 1989-01-01 00:00:00
+  if (strstr(unit_t, "hours")) 
+  {  // if unit of time in hours: hours since 1989-01-01 00:00:00
 
     // ---------------------------
     // check if format is YYYY-MM-DD HH:MM:SS
@@ -264,17 +269,17 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     dash  = unit_t_str.substr(19, 1);  // second dash in date
     if ( !strstr(dash.c_str(), "-") ){
       unit_t_str.insert(17,"0");
-      if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+      //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
     }
     colon = unit_t_str.substr(25, 1);  // first colon in time
     if ( !strstr(colon.c_str(), ":") ){
       unit_t_str.insert(23,"0");
-      if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+      //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
     }
     colon = unit_t_str.substr(28, 1);  // second colon in time
     if ( !strstr(colon.c_str(), ":") ){
       unit_t_str.insert(26,"0");
-      if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+      //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
     }
 
     // ---------------------------
@@ -291,18 +296,19 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     _start_day  = tt.julian_day + time[0]*(1./24.0);  // I hope this is not more than one year
     _start_year = tt.year;
 
-    // printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
-    // printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
-    // printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
-    // printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
-    // printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
-    // printf("ForcingGrid: tt.month:        %i\n",tt.month);
-    // printf("ForcingGrid: tt.year:         %i\n",tt.year);
-    // printf("ForcingGrid: time[0]:         %i\n",time[0]);
-    // printf("ForcingGrid: _interval:       %f\n",_interval);
+  /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
+     printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
+     printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
+     printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
+     printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
+     printf("ForcingGrid: tt.month:        %i\n",tt.month);
+     printf("ForcingGrid: tt.year:         %i\n",tt.year);
+     printf("ForcingGrid: time[0]:         %i\n",time[0]);
+     printf("ForcingGrid: _interval:       %f\n",_interval);*/
 
   }
-  else {
+  else 
+  {
     if (strstr(unit_t, "days")) {  // if unit of time in days: days since 1989-01-01 00:00:00
       // ---------------------------
       // check if format is YYYY-MM-DD HH:MM:SS
@@ -317,17 +323,17 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
       dash  = unit_t_str.substr(18, 1);  // second dash in date
       if ( !strstr(dash.c_str(), "-") ){
         unit_t_str.insert(16,"0");
-        if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
       }
       colon = unit_t_str.substr(24, 1);  // first colon in time
       if ( !strstr(colon.c_str(), ":") ){
         unit_t_str.insert(22,"0");
-        if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
       }
       colon = unit_t_str.substr(27, 1);  // second colon in time
       if ( !strstr(colon.c_str(), ":") ){
         unit_t_str.insert(25,"0");
-        if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
       }
 
       // ---------------------------
@@ -356,6 +362,8 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   if ( ForcingToString(_ForcingType) == "TEMP_DAILY_AVE" && _interval != 1.0 )
     ExitGracefully( "Gridded forcing 'TEMP_DAILY_AVE' must have daily timestep. Please use 'TEMP_AVE' instead (see *.rvt file).",BAD_DATA);
 
+  delete[] time;
+
   // -------------------------------
   // Determine chunk size (_ChunkSize),
   //           number of chunks read in total (_nChunk) and
@@ -373,7 +381,6 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   //     ---> looks for attributes "long_name" and "units" of forcing variable
   //     --> if either attribute not available it will be set to "?"
   // -------------------------------
-
   retval = 0;
   iatt   = 0;
   long_name_f = (char *) malloc(2);
@@ -381,44 +388,40 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   unit_f = (char *) malloc(2);
   strcpy(unit_f, "?\0");
 
-  while (not(retval)) {
-
+  while (retval==0) 
+  {
     // inquire attributes name
     retval = nc_inq_attname(ncid, varid_f, iatt, attrib_name);
 
     // long_name of forcing
-    if (strcmp(attrib_name,"long_name") == 0) {
-      // inquire length of attribute's text
-      if ((retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len)))
-        nc_error_exit(retval1);
-      // allocate memory of char * to hold attribute's text
-      long_name_f = (char *) malloc(att_len + 1);
-      // read attribute text
-      if ((retval1 = nc_get_att_text(ncid, varid_f, attrib_name, long_name_f)))
-        nc_error_exit(retval1);
-      // add string determining character
-      long_name_f[att_len] = '\0';
+    if (strcmp(attrib_name,"long_name") == 0) 
+    {
+      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
+      HandleNetCDFErrors(retval1);
+      long_name_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, long_name_f);// read attribute text
+      HandleNetCDFErrors(retval1);
+      long_name_f[att_len] = '\0';// add string determining character
     }
 
     // unit of forcing
-    if (strcmp(attrib_name,"units") == 0) {
-      // inquire length of attribute's text
-      if ((retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len)))
-        nc_error_exit(retval1);
-      // allocate memory of char * to hold attribute's text
-      unit_f = (char *) malloc(att_len + 1);
-      // read attribute text
-      if ((retval1 = nc_get_att_text(ncid, varid_f, attrib_name, unit_f)))
-        nc_error_exit(retval1);
-      // add string determining character
-      unit_f[att_len] = '\0';
+    if (strcmp(attrib_name,"units") == 0) 
+    {
+      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
+      HandleNetCDFErrors(retval1);
+      unit_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, unit_f);// read attribute text
+      HandleNetCDFErrors(retval1);
+      unit_f[att_len] = '\0';// add string determining character
     }
 
-    iatt = iatt + 1;
+    iatt++;
 
   }
 
   _tag = to_string(long_name_f)+" in ["+to_string(unit_f)+"]";
+
+  free( unit_f); free(long_name_f);
   if (Options.noisy){ printf("Forcing found in NetCDF: %s \n",_tag.c_str()); }
 
   // -------------------------------
@@ -429,36 +432,12 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   ExitGracefullyIf(_nPulses<=0,
                    "CForcingGrid: ForcingGridInit: no time point entries in forcing grid",BAD_DATA);
 
-  // // -------------------------------
-  // // Initialize data array and set all entries to NODATA value
-  // // -------------------------------
-  // printf("_nNonZeroWeightedGridCells = %i\n",_nNonZeroWeightedGridCells);
-  // _aVal = NULL;
-  // _aVal =  new double *[_ChunkSize];
-  // for (int it=0; it<_ChunkSize; it++) {                       // loop over time points in buffer
-  //   _aVal[it] = new double [_nNonZeroWeightedGridCells];
-  //   for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
-  //     _aVal[it][ic]=-9999.0;                                       // initialize
-  //   }
-  // }
-
-  // _aVal = new double **[_ChunkSize];
-  // for (int it=0; it<_ChunkSize; it++) {  // loop over time points in buffer
-  //   _aVal[it] = new double * [_GridDims[1]];
-  //   for (int ir=0; ir<_GridDims[1]; ir++) { // loop over rows
-  //       _aVal[it][ir] = new double [_GridDims[0]];
-  //       for (int ic=0; ic<_GridDims[0];ic++){  // loop over columns
-  //         _aVal[it][ir][ic]=-9999;
-  //       }
-  //   }
-  // }
-
   // -------------------------------
   // Close the file. This frees up any internal NetCDF resources
   // associated with the file, and flushes any buffers.
   // -------------------------------
-  if ((retval = nc_close(ncid)))
-    nc_error_exit(retval);
+  retval = nc_close(ncid);
+  HandleNetCDFErrors(retval);
 
   _is_derived = false;
 
@@ -470,13 +449,14 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   // -------------------------------
   // Weighting array will be allocated and initialized with AllocateWeightArray()
   // -------------------------------
-
-  if (Options.noisy){ printf("ForcingGrid: Interval:        %f\n",_interval); }
-  if (Options.noisy){ printf("ForcingGrid: _start_day:      %f\n",_start_day); }
-  if (Options.noisy){ printf("ForcingGrid: _start_year:     %i\n",_start_year); }
-  if (Options.noisy){ printf("ForcingGrid: duration:        %f\n",(double)(_nPulses)*_interval); }
-  if (Options.noisy){ printf("\n"); }
-#endif   // end compilation if NetCDF library is available
+  if (Options.noisy){ 
+    printf("ForcingGrid: Interval:        %f\n",_interval); 
+    printf("ForcingGrid: _start_day:      %f\n",_start_day); 
+    printf("ForcingGrid: _start_year:     %i\n",_start_year); 
+    printf("ForcingGrid: duration:        %f\n",(double)(_nPulses)*_interval); 
+    printf("\n"); 
+  }
+#endif   // ends #ifdef _RVNETCDF_
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -492,22 +472,13 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   _aVal = NULL;
   _aVal =  new double *[_GridDims[2]];
   for (int it=0; it<_GridDims[2]; it++) {                       // loop over time points in buffer
+    _aVal[it]=NULL;
     _aVal[it] = new double [_nNonZeroWeightedGridCells];
+    ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReallocateArraysInForcingGrid",OUT_OF_MEMORY);
     for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
       _aVal[it][ic]=-9999.0;                                       // initialize
     }
   }
-
-  // _aVal = new double **[_GridDims[2]];
-  // for (int it=0; it<_GridDims[2]; it++) {            // loop over all time points (_ChunkSize*_interval)
-  //   _aVal[it] = new double * [_GridDims[1]];
-  //   for (int ir=0; ir<_GridDims[1]; ir++) {          // loop over rows
-  //     _aVal[it][ir] = new double [_GridDims[0]];
-  //     for (int ic=0; ic<_GridDims[0];ic++){          // loop over columns
-  //    _aVal[it][ir][ic]=-9999.0;
-  //     }
-  //   }
-  // }
 
   // -------------------------------
   // Initialize weight array and set all entries to NODATA value
@@ -515,7 +486,9 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   _GridWeight =  NULL;
   _GridWeight =  new double *[_nHydroUnits];
   for (int ik=0; ik<_nHydroUnits; ik++) {                      // loop over HRUs
+    _GridWeight[ik] =NULL;
     _GridWeight[ik] = new double [_GridDims[0]*_GridDims[1]];
+    ExitGracefullyIf(_GridWeight[ik]==NULL,"CForcingGrid::ReallocateArraysInForcingGrid(2)",OUT_OF_MEMORY);
     for (int ic=0; ic<_GridDims[0]*_GridDims[1]; ic++) {       // loop over cells = rows*cols
       _GridWeight[ik][ic]=-9999.0;
     }
@@ -530,7 +503,6 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   for (int il=0; il<_nNonZeroWeightedGridCells; il++) { // loop over all cells non-zero weighted grid cells
     _IdxNonZeroGridCells[il] = -1;
   }
-
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -544,28 +516,26 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
 ///         Updates class variable _aVal containing current chunk of data
 ///
 /// \param &Options          [in] Global model options information
-/// \param global_model_time [in] current simulation time stime
+/// \param global_model_time [in] current simulation time (in days)
 //
 bool CForcingGrid::ReadData(const optStruct   &Options,
-                            const double global_model_time  // current model time step in [days]
-  )
+                            const double       global_model_time)  
 {
-
-  // return
   bool new_chunk_read=false;  // true if new chunk was read, otherwise false
+
 #ifdef _RVNETCDF_
+
   // local variables
   int    ncid;          // file unit
-  int    dim1;          // length of 1st dimension in NetCDF
-  int    dim2;          // length of 2nd dimension in NetCDF
-  int    dim3;          // length of 3rd dimension in NetCDF
-  int    dim_order;     // case of dimension order, i.e. (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
-  //                    //                               (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
-  int    varid_t;       // id of time variable
+  int    dim1;          // length of 1st dimension in NetCDF data
+  int    dim2;          // length of 2nd dimension in NetCDF data
+  int    dim3;          // length of 3rd dimension in NetCDF data
+
   int    varid_f;       // id of forcing variable read
   int    retval;        // error value for NetCDF routines
-  int    iChunkSize;    // size of current chunk; always equal _ChunkSize except for last chunk (might be shorter)
+  int    iChunkSize;    // size of current chunk; always equal _ChunkSize except for last chunk in file (might be shorter)
   int    iChunk_new;    // chunk in which current model time step falls
+
   double model_start_day;
   int    model_start_yr;
   double model_duration;
@@ -576,20 +546,14 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   // -------------------------------
   // check if chunk id is valid
   // -------------------------------
-  ExitGracefullyIf(_iChunk>=_nChunk || _iChunk <-1,
+  ExitGracefullyIf((_iChunk>=_nChunk) || (_iChunk <-1),
                    "CForcingGrid: ReadData: this is not a valid chunk",BAD_DATA);
-
-  // // -------------------------------
-  // // check if input data resolution matches model time step resolution
-  // // -------------------------------
-  // ExitGracefullyIf(_interval !=  Options.timestep,
-  //                  "CForcingGrid: ReadData: model time step is not matching forcing time step",BAD_DATA);
 
   // -------------------------------
   // only initialization required
   // -------------------------------
-  if (_iChunk == -1) {
-
+  if (_iChunk == -1) 
+  {
     // -------------------------------
     // allocate array: usually array is of size [_ChunkSize, nRows, nCols]
     //                 except for last chunk it is of size [_GridDims[2]-(nchunks-1)*_ChunkSize+1, nRows, nCols]
@@ -622,7 +586,9 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     _aVal = NULL;
     _aVal = new double *[iChunkSize];
     for (int it=0; it<iChunkSize; it++) {                    // loop over time points in buffer
+      _aVal[it]=NULL;
       _aVal[it] = new double [_nNonZeroWeightedGridCells];
+      ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReadData",OUT_OF_MEMORY);
       for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){    // loop over all non-zero weighted grid cells
         _aVal[it][ic]=-9999.0;
       }
@@ -633,8 +599,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     _is_derived = false;
 
-    // TODO JAMES:
-    // Memory check
+
 
     // -------------------------------
     // Print data on screen
@@ -673,205 +638,170 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   double length_chunk = _interval * _ChunkSize; // [days]
   iChunk_new = int(floor((_t_corr + global_model_time) / length_chunk ));
 
-  if (_iChunk != iChunk_new) {  // current model time step is not covered by current chunk --> read new chunk
+  if(_iChunk != iChunk_new) 
+  {  // current model time step is not covered by current chunk --> read new chunk
 
-    if (Options.noisy){ printf("\n"); }
-    if (Options.noisy){ printf("Start reading new chunk... iChunk = %i (var = %s)\n",iChunk_new,_varname.c_str()); }
+    if(Options.noisy){ printf("\n"); }
+    if(Options.noisy){ printf("Start reading new chunk... iChunk = %i (var = %s)\n",iChunk_new,_varname.c_str()); }
     _iChunk = iChunk_new;
 
     // -------------------------------
     // check if chunk id is valid
     // -------------------------------
-    ExitGracefullyIf(_iChunk>=_nChunk || _iChunk <-1,
-                     "CForcingGrid: ReadData: this is not a valid chunk",BAD_DATA);
+    ExitGracefullyIf((_iChunk>=_nChunk) || (_iChunk<-1),
+      "CForcingGrid: ReadData: this is not a valid chunk",BAD_DATA);
 
     // -------------------------------
     // allocate array: usually array is of size [_ChunkSize, nRows, nCols]
     //                 except for last chunk it is of size [_GridDims[2]-(nchunks-1)*_ChunkSize+1, nRows, nCols]
     // -------------------------------
-    if (_iChunk < _nChunk-1) {
+    if(_iChunk < _nChunk-1) {
       iChunkSize = _ChunkSize;
     }
-    else {
+    else 
+    {
       // t1 = _t_corr + Options.duration - global_model_time       --> days still to simulate (plus days at the beginning)
       // t2 = t1 / _interval                                       --> number of timesteps need to be read from forcing
-      if (Options.noisy){ printf("   >>> t1 = %f\n", Options.duration - global_model_time); }
-      if (Options.noisy){ printf("   >>> t2 = %i\n", int((Options.duration - global_model_time) / _interval)); }
+      if(Options.noisy){ printf("   >>> t1 = %f\n",Options.duration - global_model_time); }
+      if(Options.noisy){ printf("   >>> t2 = %i\n",int((Options.duration - global_model_time) / _interval)); }
       iChunkSize = int((_t_corr + Options.duration - global_model_time) / _interval);
     }
-
-    if (Options.noisy){ printf("  iChunksize: %i\n",iChunkSize); }
-
+    if(Options.noisy){ printf("  iChunksize: %i\n",iChunkSize); }
+    
     // -------------------------------
-    // Open NetCDF file
+    // Open NetCDF file, Get the id of the forcing data, varid_f
     // -------------------------------
-    if ((retval = nc_open(_filename.c_str(), NC_NOWRITE, &ncid)))
-      nc_error_exit(retval);
+    retval = nc_open(_filename.c_str(),NC_NOWRITE,&ncid);
+    HandleNetCDFErrors(retval);
 
-    // -------------------------------
-    // Get the id of the forcing data
-    // -------------------------------
-    if ((retval = nc_inq_varid(ncid, _varname.c_str(), &varid_f)))
-      nc_error_exit(retval);
-
+    retval = nc_inq_varid(ncid,_varname.c_str(),&varid_f);
+    HandleNetCDFErrors(retval);
+      
     // -------------------------------
     // allocate aTmp matrix
     // -------------------------------
     dim1 = 1; dim2 = 1; dim3 = 1;
-    if (_DimIdsVar[0] == _DimIds[0] && _DimIdsVar[1] == _DimIds[1] && _DimIdsVar[2] == _DimIds[2])  {  // dimensions are (x,y,t)
-      if (Options.noisy){ printf("  Order of dimensions in NetCDF is (x,y,t) --> Case 1...\n"); }
-      dim_order = 1;
-      dim1 = _GridDims[0]; dim2 = _GridDims[1]; dim3 = iChunkSize; }
-    if (_DimIdsVar[0] == _DimIds[1] && _DimIdsVar[1] == _DimIds[0] && _DimIdsVar[2] == _DimIds[2])  {  // dimensions are (y,x,t)
-      if (Options.noisy){ printf("  Order of dimensions in NetCDF is (y,x,t) --> Case 2...\n"); }
-      dim_order = 2;
-      dim1 = _GridDims[1]; dim2 = _GridDims[0]; dim3 = iChunkSize; }
-    if (_DimIdsVar[0] == _DimIds[0] && _DimIdsVar[1] == _DimIds[2] && _DimIdsVar[2] == _DimIds[1])  {  // dimensions are (x,t,y)
-      if (Options.noisy){ printf("  Order of dimensions in NetCDF is (x,t,y) --> Case 3...\n"); }
-      dim_order = 3;
-      dim1 = _GridDims[0]; dim2 = iChunkSize; dim3 = _GridDims[1]; }
-    if (_DimIdsVar[0] == _DimIds[2] && _DimIdsVar[1] == _DimIds[0] && _DimIdsVar[2] == _DimIds[1])  {  // dimensions are (t,x,y)
-      if (Options.noisy){ printf("  Order of dimensions in NetCDF is (t,x,y) --> Case 4...\n"); }
-      dim_order = 4;
-      dim1 = iChunkSize; dim2 = _GridDims[0]; dim3 = _GridDims[1]; }
-    if (_DimIdsVar[0] == _DimIds[1] && _DimIdsVar[1] == _DimIds[2] && _DimIdsVar[2] == _DimIds[0])  {  // dimensions are (y,t,x)
-      if (Options.noisy){ printf("  Order of dimensions in NetCDF is (y,t,x) --> Case 5...\n"); }
-      dim_order = 5;
-      dim1 = _GridDims[1]; dim2 = iChunkSize; dim3 = _GridDims[0]; }
-    if (_DimIdsVar[0] == _DimIds[2] && _DimIdsVar[1] == _DimIds[1] && _DimIdsVar[2] == _DimIds[0])  {  // dimensions are (t,y,x)
-      if (Options.noisy){ printf("  Order of dimensions in NetCDF is (t,y,x) --> Case 6...\n"); }
-      dim_order = 6;
-      dim1 = iChunkSize; dim2 = _GridDims[1]; dim3 = _GridDims[0]; }
 
-    double aTmp[dim1][dim2][dim3];
+    switch(_dim_order)
+    {
+      case(1): 
+        dim1 = _GridDims[0]; dim2 = _GridDims[1]; dim3 = iChunkSize;   break;// dimensions are (x,y,t)
+      case(2):
+        dim1 = _GridDims[1]; dim2 = _GridDims[0]; dim3 = iChunkSize;   break;// dimensions are (y,x,t)
+      case(3):
+        dim1 = _GridDims[0]; dim2 = iChunkSize;   dim3 = _GridDims[1]; break;// dimensions are (x,t,y)
+      case(4):
+        dim1 = iChunkSize;   dim2 = _GridDims[0]; dim3 = _GridDims[1]; break; // dimensions are (t,x,y)
+      case(5):
+        dim1 = _GridDims[1]; dim2 = iChunkSize;   dim3 = _GridDims[0]; break; // dimensions are (y,t,x)
+      case(6):
+        dim1 = iChunkSize;   dim2 = _GridDims[1]; dim3 = _GridDims[0]; break;// dimensions are (t,y,x)    
+    }
+ 
+    
+    // -------------------------------
+    //emulate VLA 3D array storage - store 3D array as vector using Row Major Order
+    // -------------------------------
+    double *aVec=new double[dim1*dim2*dim3];//stores actual data
+    for(int i=0; i<dim1*dim2*dim3; i++) {
+      aVec[i]=-9999.0;
+    }
+    ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
 
-    for (int it=0; it<dim1; it++)        // loop over time points in buffer if dimensions are (t,y,x)
-      for (int ir=0; ir<dim2; ir++)      // loop over rows                  if dimensions are (t,y,x)
-        for (int ic=0; ic<dim3; ic++)    // loop over columns               if dimensions are (t,y,x)
-        {
-          //printf("it = %i   ir = %i   ic = %i \n",it,ir,ic);
-          aTmp[it][ir][ic]=-9999.0;
-
-        }
-
+    double ***aTmp=NULL; //stores pointers to rows/columns of 3D data 
+    aTmp=new double **[dim1];
+    ExitGracefullyIf(aTmp==NULL,"CForcingGrid::ReadData : aTmp(0)",OUT_OF_MEMORY);
+    for(int it=0;it<dim1;it++){
+      aTmp[it]=NULL;
+      aTmp[it]=new double *[dim2];
+      ExitGracefullyIf(aTmp[it]==NULL,"CForcingGrid::ReadData : aTmp(1)",OUT_OF_MEMORY);
+      for(int ir=0;ir<dim2;ir++){
+        aTmp[it][ir]=&aVec[it*dim2*dim3+ir*dim3]; //points to correct location in aVec data storage
+      }
+    }
+        
     // -------------------------------
     // Read chunk of data.
     // -------------------------------
     int       start_point = _ChunkSize * _iChunk;
-    size_t    nc_start[]  = {_ChunkSize * _iChunk,0,0}; //{0,0,0}; //
-    size_t    nc_length[] = {dim1, dim2, dim3};
-    ptrdiff_t nc_stride[] = {1,1,1};
+    size_t    nc_start [] ={(size_t)(start_point),0,0}; 
+    size_t    nc_length[] ={(size_t)(dim1),(size_t)(dim2),(size_t)(dim3)};
+    ptrdiff_t nc_stride[] ={1,1,1};
 
-    if (Options.noisy){ printf("  Dim of chunk read: nCol = %i   nRow = %i   nTime = %i\n",dim3, dim2, dim1); }
-    if (Options.noisy){ printf("  start  chunk: (%lu, %lu, %lu)\n",nc_start[0],nc_start[1],nc_start[2]); }
-    if (Options.noisy){ printf("  length chunk: (%lu, %lu, %lu)\n",nc_length[0],nc_length[1],nc_length[2]); }
-    if (Options.noisy){ printf("  stride chunk: (%lu, %lu, %lu)\n",nc_stride[0],nc_stride[1],nc_stride[2]); }
+    if(Options.noisy){
+      printf("  Dim of chunk read: nCol = %i   nRow = %i   nTime = %i\n",dim3,dim2,dim1);
+      printf("  start  chunk: (%lu, %lu, %lu)\n", nc_start[0], nc_start[1], nc_start[2]);
+      printf("  length chunk: (%lu, %lu, %lu)\n",nc_length[0],nc_length[1],nc_length[2]);
+      printf("  stride chunk: (%lu, %lu, %lu)\n",nc_stride[0],nc_stride[1],nc_stride[2]);
+    }
 
-    if ((retval = nc_get_vars_double(ncid, varid_f, nc_start, nc_length, nc_stride, &aTmp[0][0][0])))
-      nc_error_exit(retval);
+    retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp[0][0][0]);
+    HandleNetCDFErrors(retval);
     new_chunk_read = true;
-
+    
+    /*for(int it=0;it<dim1;it++){
+      for(int ir=0;ir<dim2;ir++){
+       for (int it=0;it<dim3;it++){
+        cout<<aTmp[it][ir][it]<<" ";
+        }
+      }
+      cout<<endl;
+    }
+     cout<<"NCGETVARS"<<endl;*/
     // -------------------------------
-    // Copy all data from aTmp array to _aVal.
+    // Copy all data from aTmp array to member array _aVal.
     // -------------------------------
+    int irow,icol;
 
-    int irow;
-    int icol;
-
-    if (dim_order == 1) {
-      for (int it=0; it<iChunkSize; it++)                      // loop over time points in buffer
-        for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
-        {
+    if(_dim_order == 1) {
+      for(int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
           CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
           _aVal[it][ic]=aTmp[icol][irow][it];
         }
+      }
     }
-
-    if (dim_order == 2) {
-      for (int it=0; it<iChunkSize; it++)                      // loop over time points in buffer
-        for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
+    else if(_dim_order == 2) {
+      for(int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
         {
           CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
           _aVal[it][ic]=aTmp[irow][icol][it];
         }
+      }
     }
-
-    if (dim_order == 3) {
-      for (int it=0; it<iChunkSize; it++)                      // loop over time points in buffer
-        for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
-        {
+    else if(_dim_order == 3) {
+      for(int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
           CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
           _aVal[it][ic]=aTmp[icol][it][irow];
         }
+      }
     }
-
-    if (dim_order == 4) {
-      for (int it=0; it<iChunkSize; it++)                      // loop over time points in buffer
-        for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
-        {
+    else if(_dim_order == 4) {
+      for(int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
           CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
           _aVal[it][ic]=aTmp[it][icol][irow];
         }
+      }
     }
-
-    if (dim_order == 5) {
-      for (int it=0; it<iChunkSize; it++)                      // loop over time points in buffer
-        for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
-        {
+    else if(_dim_order == 5) {
+      for(int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
           CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
           _aVal[it][ic]=aTmp[irow][it][icol];
         }
+      }
     }
-
-    if (dim_order == 6) {
-      for (int it=0; it<iChunkSize; it++)                      // loop over time points in buffer
-        for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++)    // loop over non-zero weighted grid cells
-        {
-          //printf("ic = %i   \n",ic);
+    else if(_dim_order == 6) {
+      for(int it=0; it<iChunkSize; it++){                      // loop over time points in buffer
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++){    // loop over non-zero weighted grid cells
           CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-          //printf("_IdxNonZeroGridCells[ic] = %i   --> icol = %i    irow = %i  \n",_IdxNonZeroGridCells[ic],icol, irow);
           _aVal[it][ic]=aTmp[it][irow][icol];
         }
+      }
     }
-
-    // if (dim_order == 1) {
-    //   for (int it=0; it<iChunkSize; it++)          // loop over time points in buffer
-    //  for (int ir=0; ir<_GridDims[1]; ir++)      // loop over rows
-    //    for (int ic=0; ic<_GridDims[0]; ic++)    // loop over columns
-    //      _aVal[it][ir][ic]=aTmp[ic][ir][it];
-    // }
-    // if (dim_order == 2) {
-    //   for (int it=0; it<iChunkSize; it++)          // loop over time points in buffer
-    //  for (int ir=0; ir<_GridDims[1]; ir++)      // loop over rows
-    //    for (int ic=0; ic<_GridDims[0]; ic++)    // loop over columns
-    //      _aVal[it][ir][ic]=aTmp[ir][ic][it];
-    // }
-    // if (dim_order == 3) {
-    //   for (int it=0; it<iChunkSize; it++)          // loop over time points in buffer
-    //  for (int ir=0; ir<_GridDims[1]; ir++)      // loop over rows
-    //    for (int ic=0; ic<_GridDims[0]; ic++)    // loop over columns
-    //      _aVal[it][ir][ic]=aTmp[ic][it][ir];
-    // }
-    // if (dim_order == 4) {
-    //   for (int it=0; it<iChunkSize; it++)          // loop over time points in buffer
-    //  for (int ir=0; ir<_GridDims[1]; ir++)      // loop over rows
-    //    for (int ic=0; ic<_GridDims[0]; ic++)    // loop over columns
-    //      _aVal[it][ir][ic]=aTmp[it][ic][ir];
-    // }
-    // if (dim_order == 5) {
-    //   for (int it=0; it<iChunkSize; it++)          // loop over time points in buffer
-    //  for (int ir=0; ir<_GridDims[1]; ir++)      // loop over rows
-    //    for (int ic=0; ic<_GridDims[0]; ic++)    // loop over columns
-    //      _aVal[it][ir][ic]=aTmp[ir][it][ic];
-    // }
-    // if (dim_order == 6) {
-    //   for (int it=0; it<iChunkSize; it++)          // loop over time points in buffer
-    //  for (int ir=0; ir<_GridDims[1]; ir++)      // loop over rows
-    //    for (int ic=0; ic<_GridDims[0]; ic++)    // loop over columns
-    //      _aVal[it][ir][ic]=aTmp[it][ir][ic];
-    // }
-
-
 
     // -------------------------------
     // Print data on screen
@@ -887,19 +817,25 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     //   }
 
     // -------------------------------
+    //delete aTmp, aVec array
+    // -------------------------------
+    for(int it=0;it<dim1;it++){delete [] aTmp[it];}delete [] aTmp;   
+    delete [] aVec;   
+    
+
+    // -------------------------------
     // Close NetCDF file
     // -------------------------------
-    if ((retval = nc_close(ncid)))
-      nc_error_exit(retval);
+    retval = nc_close(ncid);
+    HandleNetCDFErrors(retval);
 
-  }
+  }// end if(_iChunk != iChunk_new) 
 
-#endif   // end compilation if NetCDF library is available
+#endif   // end #ifdef _RVNETCDF_
 
   return new_chunk_read;
 
 }
-
 
 ///////////////////////////////////////////////////////////////////
 /// \brief   Enables queries of time series values using model time
@@ -911,6 +847,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 /// \param   model_start_year [in] start year of model
 /// \param   model_duration   [in] Duration of model, in days
 /// \param   timestep         [in] model timestep, in days
+///
 void CForcingGrid::Initialize( const double model_start_day,   // fractional day of the year (here called Julian day) [days]
                                const    int model_start_year,  //         [year]
                                const double model_duration,    //         [days]
@@ -919,7 +856,7 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
   )
 {
   //_t_corr is number of days between model start date and gauge
-  //start date (positive if data exists before model start date)
+  // start date (positive if data exists before model start date)
 
   _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year);
 
@@ -961,7 +898,6 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
 
   // determine in which _ichunk local_simulation_start falls
   double length_chunk = _interval * _ChunkSize; // [days]
-  //int    iChunk       = int(floor(local_simulation_start / length_chunk));
 
   if (Options.noisy){ cout << "Finished Initialize time series '" << _varname.c_str() << "'" << endl; }
   if (Options.noisy){ cout << endl; }
@@ -976,10 +912,8 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
 void CForcingGrid::CellIdxToRowCol(const int cellid, int &row, int &column)
 {
   int ncols = GetCols();
-
   row    = int(cellid / ncols);
   column = cellid % ncols;
-
   return;
 }
 
@@ -1135,7 +1069,6 @@ void CForcingGrid::SetSnowfallCorr(const double snowfall_corr)
 {
   _snowfall_corr = snowfall_corr;
 }
-
 
 ///////////////////////////////////////////////////////////////////
 /// \brief sets the _rainfall_corr in class CForcingGrid
@@ -1446,19 +1379,6 @@ int CForcingGrid::GetIdxNonZeroGridCell(int i) const{return _IdxNonZeroGridCells
 int  CForcingGrid::GetChunkSize() const{return _ChunkSize;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief NetCDF error handling
-/// \return Error string and exit code
-//
-void    CForcingGrid::nc_error_exit(int error_code) const{
-
-#ifdef _RVNETCDF_
-  printf("Error: %s\n", nc_strerror(error_code));
-  ExitGracefullyIf(error_code,
-                   "CForcingGrid: NetCDF: NetCDF error occured",BAD_DATA);
-#endif
-}
-
-///////////////////////////////////////////////////////////////////
 /// \brief Returns name of forcing grid data
 /// \return name of forcing data
 //
@@ -1574,11 +1494,9 @@ double CForcingGrid::GetTcorr() const {return _t_corr;}
 /// \param t      [in] Time index
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double t) const {
-
-  double val_1 = _aVal[(int)t][idx];
-
-  return val_1 ;
+double CForcingGrid::GetValue(const int idx, const double t) const 
+{
+  return _aVal[(int)t][idx];
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1588,7 +1506,8 @@ double CForcingGrid::GetValue(const int idx, const double t) const {
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double t, const int n) const {
+double CForcingGrid::GetValue(const int idx, const double t, const int n) const 
+{
 
   double sum = 0.0;
   for (int ii=0; ii<n; ii++) {
@@ -1597,7 +1516,6 @@ double CForcingGrid::GetValue(const int idx, const double t, const int n) const 
   sum /= double(n);
 
   return sum;
-
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1607,8 +1525,8 @@ double CForcingGrid::GetValue(const int idx, const double t, const int n) const 
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_ave(const int idx, const double t, const int n) const {
-
+double CForcingGrid::GetValue_ave(const int idx, const double t, const int n) const 
+{
   double sum = 0.0;
   for (int ii=0; ii<n; ii++) {
     sum += _aVal[min(_ChunkSize-1,(int)t+ii)][idx];
@@ -1616,7 +1534,6 @@ double CForcingGrid::GetValue_ave(const int idx, const double t, const int n) co
   sum /= double(n);
 
   return sum;
-
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1626,15 +1543,13 @@ double CForcingGrid::GetValue_ave(const int idx, const double t, const int n) co
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_min(const int idx, const double t, const int n) const {
-
+double CForcingGrid::GetValue_min(const int idx, const double t, const int n) const 
+{
   double mini = ALMOST_INF ;
   for (int ii=0; ii<n; ii++) {
     if (_aVal[min(_ChunkSize-1,(int)t+ii)][idx] < mini) {mini = _aVal[min(_ChunkSize-1,(int)t+ii)][idx]; };
   };
-
   return mini;
-
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1644,15 +1559,14 @@ double CForcingGrid::GetValue_min(const int idx, const double t, const int n) co
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_max(const int idx, const double t, const int n) const {
-
+double CForcingGrid::GetValue_max(const int idx, const double t, const int n) const 
+{
   double maxi = -ALMOST_INF ;
   for (int ii=0; ii<n; ii++) {
     if (_aVal[min(_ChunkSize-1,(int)t+ii)][idx] > maxi) {maxi = _aVal[min(_ChunkSize-1,(int)t+ii)][idx]; };
   };
 
   return maxi;
-
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1742,10 +1656,9 @@ double CForcingGrid::DailyTempCorrection(const double t) const
 ///
 /// \return Index of current read chunk
 ///
-double CForcingGrid::GetChunkIndexFromModelTimeStep(
-  const optStruct &Options,
-  const double    global_model_time  // current model time step in [days]
-  ) const
+double CForcingGrid::GetChunkIndexFromModelTimeStep(const optStruct &Options,
+                                                    const double    global_model_time  // current model time step in [days]
+                                                    ) const
 {
   double model_timestep;
 
@@ -1772,10 +1685,9 @@ double CForcingGrid::GetChunkIndexFromModelTimeStep(
 ///
 /// \return Index of current read chunk
 ///
-double CForcingGrid::GetChunkIndexFromModelTimeStepDay(
-  const optStruct &Options,
-  const double    global_model_time  // current model time step in [days]
-  ) const
+double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
+                                                       const double    global_model_time  // current model time step in [days]
+                                                       ) const
 {
   double model_timestep;
 
@@ -1784,7 +1696,6 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(
 
   // overall un-chunked index in NetCDF file starting from very first entry in NetCDF file
   double idx_NC = (_t_corr + global_model_time) / _interval ;
-  //double delta  = (_t_corr + global_model_time) / _interval - floor(idx_NC); // difference from integer index
 
   // for example overall index = 17 and _ChunkSize = 5 [time points]  --> index in current chunk = 2
   int idx_chunk = (int)idx_NC % _GridDims[2];
@@ -1803,7 +1714,6 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(
 //
 CForcingGrid::~CForcingGrid()
 {
-
   if (DESTRUCTOR_DEBUG){cout<<"    DELETING GRIDDED DATA"<<endl;}
   delete [] _aVal;                  _aVal                = NULL;
   delete [] _GridWeight;            _GridWeight          = NULL;

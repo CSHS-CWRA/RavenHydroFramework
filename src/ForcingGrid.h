@@ -39,9 +39,9 @@ private:/*------------------------------------------------------*/
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   ///                                        ///< This is effectively the number of data points which is stored from the original data.
   int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
-  int          _DimIds[3];                   ///< IDs of dimensions (x,y,t)
-  int          _DimIdsVar[3];                ///< IDs of dimensions of variable (might not be (x,y,t);
-  //                                         ///< then they have to be re-ordered such that _aVal is always [t][y][x])
+  int          _dim_order;                   ///< code (1-6) for different dimension orders  
+  //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
+  //                                         ///< (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
   int          _nHydroUnits;                 ///< number of HRUs (important for weights)
   int          _ChunkSize;                   ///< number of time points read before upper limit of
   ///                                        ///< allowed storage is reached
@@ -187,7 +187,6 @@ public:/*------------------------------------------------------*/
   int          GetNumberNonZeroGridCells()         const;        ///< Number of non-zero weighted grid cells
   int          GetIdxNonZeroGridCell(int i)        const;        ///< ID of i-th grid cell with non-zero weighting
   int          GetChunkSize()                      const;        ///< Current chunk size
-  void         nc_error_exit(int error_code)       const;        ///< NetCDF error handling
   forcing_type GetName()                           const;        ///< Name of forcing data, e.g. PRECIP, TEMP
   int          GetnHydroUnits()                    const;        ///< get number of HRUs _nHydroUnits
   double       GetTcorr()                          const;        ///< get correction time _t_corr

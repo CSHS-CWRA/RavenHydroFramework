@@ -907,6 +907,21 @@ void WriteWarning(const string warn, bool noisy)
   }
 }
 ///////////////////////////////////////////////////////////////////
+/// \brief NetCDF error handling
+/// \return Error string and NetCDF exit code
+//
+void HandleNetCDFErrors(int error_code){
+
+#ifdef _RVNETCDF_
+  if(error_code==0){ return; }
+  else{
+    string warn;
+    warn="NetCDF error ["+ to_string(nc_strerror(error_code))+"] occured.";
+    ExitGracefully(warn.c_str(),BAD_DATA);
+  }
+#endif
+}
+///////////////////////////////////////////////////////////////////
 /// \brief Return AUTO_COMPUTE tag if passed string is tagged, otherwise convert to double
 /// \param s [in] Input string
 /// \return AUTO_COMPUTE or USE_TEMPLATE_VALUE tag if string is tagged, otherwise double conversion of string

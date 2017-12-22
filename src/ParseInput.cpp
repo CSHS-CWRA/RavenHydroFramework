@@ -297,6 +297,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"        )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"       )){code=81; }
+    else if  (!strcmp(s[0],":DisableHRUGroup"       )){code=82; } 
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":Alias"                 )){code=98; }
     else if  (!strcmp(s[0],":CustomOutput"          )){code=99; }
@@ -1290,6 +1291,22 @@ bool ParseMainInputFile (CModel     *&pModel,
       for (int i=1;i<Len;i++){
         pHRUGrp=new CHRUGroup(s[i],pModel->GetNumHRUGroups());
         pModel->AddHRUGroup(pHRUGrp);
+      }
+      break;
+    }
+    case(82):  //--------------------------------------------
+    {/*:DisableHRUGroup */ //AFTER DefineHRUGroup(s) commands 
+      if (Options.noisy) {cout <<"Disabling HRU Group"<<endl;}
+      if (Len<2){ImproperFormatWarning(":DisableHRUGroup",p,Options.noisy); break;}
+      CHRUGroup *pHRUGrp=NULL;
+
+      pHRUGrp=pModel->GetHRUGroup(s[1]);
+      if (pHRUGrp==NULL){
+        ExitGracefully("Invalid HRU Group name supplied in :DisableHRUGroup command in .rvi file",BAD_DATA_WARN);
+        break;
+      }
+      else{
+        pHRUGrp->DisableGroup();
       }
       break;
     }

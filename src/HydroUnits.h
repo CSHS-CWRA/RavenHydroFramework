@@ -170,12 +170,13 @@ class CHRUGroup
 {
 private:/*------------------------------------------------------*/
 
-  string name;        ///< HRU group name
-  int nHRUs;          ///< Number of HRUs present in group
-  CHydroUnit **pHRUs; ///< Array of pointers to member HRUs (size = nHRUs)
-  int global_kk;      ///< index of group in master HRU Group array (in CModel)
+    string            _name; ///< HRU group name
+    int              _nHRUs; ///< Number of HRUs present in group
+    CHydroUnit     **_pHRUs; ///< Array of pointers to member HRUs (size = nHRUs)
+    int          _global_kk; ///< index of group in master HRU Group array (in CModel)
+    bool          _disabled; ///< true if all HRUs in group are disabled
 
-  bool *aAggregateSV; ///< array (size MAX_STATE_VARS) - true if state variable is averaged over HRU group each timestep
+    bool     *_aAggregateSV; ///< array (size MAX_STATE_VARS) - true if state variable is averaged over HRU group each timestep
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -183,7 +184,8 @@ public:/*-------------------------------------------------------*/
   ~CHRUGroup();
 
   void AddHRU(CHydroUnit *pHRU);
-  //void DisableAllInGroup();
+  void DisableGroup();
+  void Initialize();
 
   string            GetName            () const;
   int               GetNumHRUs         () const;

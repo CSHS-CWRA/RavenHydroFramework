@@ -24,7 +24,7 @@
 //
 void CModel::Initialize(const optStruct &Options)
 {
-  int g,i,j,k,p;
+  int g,i,j,k,kk,p;
 
   // Quality control
   //--------------------------------------------------------------
@@ -123,6 +123,7 @@ void CModel::Initialize(const optStruct &Options)
   for (k=0;k<_nHydroUnits; k++){_pHydroUnits [k]->Initialize(_UTM_zone);}
   for (g=0;g<_nGauges;     g++){_pGauges     [g]->Initialize(Options,_UTM_zone);}
   for (j=0;j<_nTransParams;j++){_pTransParams[j]->Initialize(Options);}
+  for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups[kk]->Initialize(); }
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
   //Generate Gauge Weights from Interpolation
@@ -210,12 +211,14 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),
                    "CModel::Initialize: at least 2 gauges necessary to use :OroTempCorrect method OROCORR_UBCWM2", BAD_DATA);
+  //Check for empty HRU groups
   for (int kk = 0; kk < _nHRUGroups; kk++){
     if (_pHRUGroups[kk]->GetNumHRUs() == 0){
       string warn = "CModel::Initialize: HRU Group " + _pHRUGroups[kk]->GetName() + " is empty.";
       WriteWarning(warn,Options.noisy);
     }
   }
+  //--check for stage observations not linked to valid reservoir
   for(int i=0; i<_nObservedTS; i++){
     if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE"))
     {
@@ -226,12 +229,32 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
+  //--check for wetlands in model without depression storage
   bool wetlandsinmodel=false;
   for(k=0;k<_nHydroUnits;k++) {
     if (_pHydroUnits[k]->GetHRUType()==HRU_WETLAND){wetlandsinmodel=true;break;}
   }
   if((wetlandsinmodel) && (GetStateVarIndex(DEPRESSION)==DOESNT_EXIST)) {
     ExitGracefully("CModel::Initialize: At least one WETLAND-type soil profile is included but no DEPRESSION storage processes included in hydrologic process list.",BAD_DATA_WARN);
+  }
+  //--check for partial disabling of basin HRUs
+  string disbasins="";
+  bool anydisabled=false;
+  for(p=0;p<_nSubBasins;p++){
+    bool one_enabled =false;
+    bool one_disabled=false;
+    for(k=0; k<_pSubBasins[p]->GetNumHRUs();k++){
+      if(_pSubBasins[p]->GetHRU(k)->IsEnabled()){one_enabled=true;}
+      else                                      {one_disabled=true;}
+    }
+    if(one_enabled && one_disabled){
+      string warn="CModel::Initialize: only some of the HRUs in subbasin "+to_string(_pSubBasins[p]->GetID())+" are disabled. It is suggested to disable all or none of the HRUs in one subbasin to avoid odd results";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if(one_disabled){ disbasins=disbasins+" "+to_string(_pSubBasins[p]->GetID()); anydisabled=true;}
+  }
+  if(anydisabled){
+    WriteWarning("CModel::Initialize: the following subbasins have some member HRUs disabled: "+disbasins,Options.noisy);
   }
 }
 

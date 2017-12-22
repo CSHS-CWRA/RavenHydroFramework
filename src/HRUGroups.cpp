@@ -11,14 +11,15 @@
 //
 CHRUGroup::CHRUGroup(string tag, int global_ind)
 {
-  name=tag;
-  nHRUs=0;  pHRUs=NULL;
-  aAggregateSV=NULL;
-  aAggregateSV=new bool [MAX_STATE_VARS];
+  _name=tag;
+  _nHRUs=0;  _pHRUs=NULL;
+  _aAggregateSV=NULL;
+  _aAggregateSV=new bool [MAX_STATE_VARS];
   for (int i=0;i<MAX_STATE_VARS;i++){
-    aAggregateSV[i]=false;
+    _aAggregateSV[i]=false;
   }
-  global_kk=global_ind;
+  _global_kk=global_ind;
+  _disabled=false;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -27,28 +28,28 @@ CHRUGroup::CHRUGroup(string tag, int global_ind)
 //
 CHRUGroup::~CHRUGroup()
 {
-  delete [] pHRUs; pHRUs=NULL; //deletes pointers only
-  delete [] aAggregateSV;
+  delete [] _pHRUs; _pHRUs=NULL; //deletes pointers only
+  delete [] _aAggregateSV;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of HRUs in instantiated HRU group
 /// \return Number of HRUs in group
 //
-int CHRUGroup::GetNumHRUs        () const{return nHRUs;}
+int CHRUGroup::GetNumHRUs        () const{return _nHRUs;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns name of HRU group
 /// \return Name of HRU group
 //
-string CHRUGroup::GetName () const {return name;}
+string CHRUGroup::GetName () const {return _name;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns unique HRU group global model index (kk)
 ///
 /// \return Integer index of HRU in global model array
 //
-int    CHRUGroup::GetGlobalIndex       () const {return global_kk;}
+int    CHRUGroup::GetGlobalIndex       () const {return _global_kk;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns true if HRU with global index k_global is in group
@@ -58,8 +59,8 @@ int    CHRUGroup::GetGlobalIndex       () const {return global_kk;}
 //
 bool  CHRUGroup::IsInGroup          (const int k_global) const
 {
-  for (int k=0;k<nHRUs; k++){
-    if (pHRUs[k]->GetGlobalIndex()==k_global){return true;}
+  for (int k=0;k<_nHRUs; k++){
+    if (_pHRUs[k]->GetGlobalIndex()==k_global){return true;}
   }
   return false;
 }
@@ -70,8 +71,8 @@ bool  CHRUGroup::IsInGroup          (const int k_global) const
 //
 CHydroUnit *CHRUGroup::GetHRU(const int k) const
 {
-  ExitGracefullyIf((k<0) || (k>=nHRUs),"CHRUGroup GetHydroUnit::improper index",BAD_DATA);
-  return pHRUs[k];
+  ExitGracefullyIf((k<0) || (k>=_nHRUs),"CHRUGroup GetHydroUnit::improper index",BAD_DATA);
+  return _pHRUs[k];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -79,8 +80,27 @@ CHydroUnit *CHRUGroup::GetHRU(const int k) const
 //
 void CHRUGroup::AddHRU(CHydroUnit *pHRU)
 {
-  if (!DynArrayAppend((void**&)(pHRUs),(void*)(pHRU),nHRUs)){
-    ExitGracefully("CHRUGroup::AddHRU: adding NULL HRU",BAD_DATA);}
+  if (!DynArrayAppend((void**&)(_pHRUs),(void*)(pHRU),_nHRUs)){
+   ExitGracefully("CHRUGroup::AddHRU: adding NULL HRU",BAD_DATA);} 
+} 
+//////////////////////////////////////////////////////////////////
+/// \brief initializes HRU Groups
+//
+void CHRUGroup::Initialize()
+{
+  if(_disabled)
+  {
+    for(int k=0;k<_nHRUs;k++){
+      _pHRUs[k]->Disable();
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief disables HRU Group
+//
+void CHRUGroup::DisableGroup()
+{
+  _disabled=true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if state variable i is aggregated across this HRU group
@@ -88,13 +108,13 @@ void CHRUGroup::AddHRU(CHydroUnit *pHRU)
 //
 bool  CHRUGroup::IsAggregatorGroup   (const int i) const
 {
-  return aAggregateSV[i];
+  return _aAggregateSV[i];
 }
 //////////////////////////////////////////////////////////////////
 /// \brief ensures that state variable i is aggregated across this HRU group
 //
 void  CHRUGroup::SetAsAggregator    (const int i){
-  aAggregateSV[i]=true;
+  _aAggregateSV[i]=true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a state variable specified by index i over the total area covered by the HRU group
@@ -106,10 +126,10 @@ double CHRUGroup::GetAvgStateVar (const int i) const
   double sum=0.0;
   double areasum=0.0;
   double area;
-  for (int k=0;k<nHRUs;k++)
+  for (int k=0;k<_nHRUs;k++)
   {
-    area=pHRUs[k]->GetArea();
-    sum    +=pHRUs[k]->GetStateVarValue(i)*area;
+    area    =_pHRUs[k]->GetArea();
+    sum    +=_pHRUs[k]->GetStateVarValue(i)*area;
     areasum+=area;
   }
   return sum/areasum;
@@ -125,10 +145,10 @@ double CHRUGroup::GetAvgForcing (const string &forcing_string) const
   double sum=0.0;
   double areasum=0.0;
   double area;
-  for (int k=0;k<nHRUs;k++)
+  for (int k=0;k<_nHRUs;k++)
   {
-    area=pHRUs[k]->GetArea();
-    sum    +=pHRUs[k]->GetForcing(forcing_string)*area;
+    area    =_pHRUs[k]->GetArea();
+    sum    +=_pHRUs[k]->GetForcing(forcing_string)*area;
     areasum+=area;
   }
   return sum/areasum;
@@ -146,10 +166,10 @@ double CHRUGroup::GetAvgCumulFlux (const int i, const bool to) const
   double sum=0.0;
   double areasum=0.0;
   double area;
-  for (int k=0;k<nHRUs;k++)
+  for (int k=0;k<_nHRUs;k++)
   {
-    area=pHRUs[k]->GetArea();
-    sum    +=pHRUs[k]->GetCumulFlux(i,to)*area;
+    area    =_pHRUs[k]->GetArea();
+    sum    +=_pHRUs[k]->GetCumulFlux(i,to)*area;
     areasum+=area;
   }
   return sum/areasum;

@@ -13,9 +13,13 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 // #define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
-// #define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
+#define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
 #ifdef netcdf
 #define _RVNETCDF_ //If Makefile is used this will be automatically be uncommented if netCDF library is available
+#endif
+
+#ifdef _RVNETCDF_
+#include <netcdf.h>
 #endif
 
 #include <stdlib.h>
@@ -273,9 +277,9 @@ const int     MAX_SV_LAYERS    =100;      ///< maximum # of layers per state var
 const int     MAX_SOILLAYERS   =50;      ///< maximum number of soil layers in profile
 const int     MAX_STATE_VARS   =200;     ///< maximum number of state variables in model
 const int     MAX_CONNECTIONS  =200;     ///< maximum number of to/from connections in any single process (CAdvection worst offender)
-const int     MAX_SOIL_CLASSES =50;      ///< Max number of soil classes
-const int     MAX_SOIL_PROFILES=50;      ///< Max number of soil profiles
-const int     MAX_VEG_CLASSES  =50;      ///< Max number of vegetation classes
+const int     MAX_SOIL_CLASSES =250;      ///< Max number of soil classes
+const int     MAX_SOIL_PROFILES=200;      ///< Max number of soil profiles
+const int     MAX_VEG_CLASSES  =200;      ///< Max number of vegetation classes
 const int     MAX_LULT_CLASSES =200;     ///< Max number of lult classes
 const int     MAX_AQUIFER_LAYERS=10;     ///< Max number aquifer layers
 const int     MAX_AQUIFER_STACKS=50;     ///< Max number aquifer stacks
@@ -1179,7 +1183,7 @@ double fast_s_to_d             (const char *s);
 //defined in StandardOutput.cpp
 void   PrepareOutputdirectory    (const optStruct &Options);
 string GetDirectoryName          (const string &fname);
-void   nc_error_exit             (int error_code);        ///< NetCDF error handling
+void   HandleNetCDFErrors             (int error_code);        ///< NetCDF error handling
 
 #ifdef _WIN32
 #include <direct.h>

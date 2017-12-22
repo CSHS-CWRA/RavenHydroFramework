@@ -290,7 +290,7 @@ CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string nam
   ExitGracefullyIf(aVal==NULL || aDays==NULL || aYears==NULL, "CIrregularTimeSeries: Parse", OUT_OF_MEMORY);
 
   int n=0;
-  s[0]="";
+  s[0]=NULL;
   while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
   {
     if (Len<3){

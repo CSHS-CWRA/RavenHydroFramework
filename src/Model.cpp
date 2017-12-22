@@ -1627,6 +1627,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 
   nConnections=_pProcesses[j]->GetNumConnections();//total connections: nConnections+nCascades
   if (!_aShouldApplyProcess[j][pHRU->GetGlobalIndex()]){return false;}
+  if(!pHRU->IsEnabled()){return false;}
 
   for (int q=0;q<nConnections;q++)
   {

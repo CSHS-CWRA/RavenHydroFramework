@@ -16,7 +16,7 @@ void MassEnergyBalance(      CModel      *pModel,
                              const time_struct &tt);        //time
 //Defined below
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
-void CheckForErrorWarnings();
+void CheckForErrorWarnings(bool quiet);
 bool CheckForStopfile(const time_struct &tt);
 
 // Main Driver Variables------------------------------------------
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
   //Read input files, create model, set model options
   if (ParseInputFiles(pModel, Options))
   {
-    CheckForErrorWarnings();
+    CheckForErrorWarnings(true);
 
     if (!Options.silent){
       cout <<"======================================================"<<endl;
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     pModel->Initialize       (Options);
     pModel->SummarizeToScreen(Options);
 
-    CheckForErrorWarnings();
+    CheckForErrorWarnings(false);
 
     if (!Options.silent){
       cout <<"======================================================"<<endl;
@@ -293,7 +293,7 @@ void ExitGracefully(const char *statement,exitcode code)
 /// \note called prior to simulation initialization, after parsing everything
 ///
 //
-void CheckForErrorWarnings()
+void CheckForErrorWarnings(bool quiet)
 {
 
   ifstream WARNINGS;
@@ -312,7 +312,7 @@ void CheckForErrorWarnings()
     if  (!strcmp(s[0],"WARNING")){warnings_found=true;}
   }
   WARNINGS.close();
-  if (warnings_found){// && (!Options.silent){
+  if ((warnings_found) && (!quiet)){
     cout<<"*******************************************************"<<endl<<endl;
     cout<<"WARNING: Warnings have been issued while parsing data. "<<endl;
     cout<<"         See Raven_errors.txt for details              "<<endl<<endl;

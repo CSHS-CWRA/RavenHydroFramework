@@ -141,7 +141,7 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
     double max_rate;
     max_rate = pSoil->max_cap_rise_rate;
 
-    rates[0]=max_rate*(1.0-stor/max_stor);
+    rates[0]=max_rate*(1.0-min(stor/max_stor,1.0));
   }
 
   //-----------------------------------------------------------------

@@ -289,5 +289,8 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
   rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
 
   //can't overfill target storage
-
+  //water flow simply slows (or stops) so that receptor will not overfill during tstep
+  double room;
+  room=threshMax(pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]],0.0,0.0);
+  rates[0]=threshMin(rates[0],room/Options.timestep,0.0);
 }

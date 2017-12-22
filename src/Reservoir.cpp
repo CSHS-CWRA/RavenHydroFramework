@@ -618,7 +618,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       :Type RESROUTE_STANDARD
       :StageRelations
         21 # number of points
-        0.09 0 0 0.0
+        0.09 0 0 0.0  (h [m], Q [m3/s], A [m2], V [m3])
         0.1 2 43 0.2
         ...
         3.0 20000 3500 200
@@ -632,7 +632,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       :VaryingStageRelations
         21 # number of points
         [jul day1] [jul day2] [jul day3] ...
-        0.09 0 0 0.0 0.0
+        0.09 0 0 0.0 0.0 (h [m], Q [m3/s], A [m2], V [m3])
         0.1 2 43 0.2 0.3
         ...
         3.0 20000 3500 200 250
