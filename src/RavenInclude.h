@@ -549,9 +549,19 @@ enum potmelt_method
   POTMELT_RESTRICTED,  ///< restricted degree-day method
   POTMELT_UBCWM,       ///< UBC watershed model approach
   POTMELT_HBV,         ///< custom degree day model used in HBV-EC
-  POTMELT_DATA,         ///< user-specified potential melt forcing
+  POTMELT_DATA,        ///< user-specified potential melt forcing
   POTMELT_USACE        ///< US Army Corps of Engineers Snow Melt
 };
+
+////////////////////////////////////////////////////////////////////
+/// \brief Methods of estimating/generating recharge
+//
+enum recharge_method
+{
+  RECHARGE_NONE,       ///< assumes recharge=0
+  RECHARGE_DATA        ///< recharge from (usually gridded) data (e.g., from other model)
+};
+
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of performing monthly interpolations
@@ -701,7 +711,7 @@ enum process_type
   INFILTRATION,
 
   //in SoilWaterMovers.h:
-  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,
+  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,RECHARGE,
 
   //in VegetationMovers.h:
   CANOPY_EVAPORATION, CANOPY_SNOW_EVAPORATION, CANOPY_DRIP,
@@ -792,6 +802,7 @@ struct optStruct
   windvel_method   wind_velocity;     ///< Wind velocity estimation mehtod
   potmelt_method   pot_melt;          ///< Potential melt estimation method
   subdaily_method  subdaily;          ///< Subdaily PET/Snowmelt temporal downscaling correction
+  recharge_method  recharge;          ///< aquifer/soil recharge method
 
   precip_icept_method interception_factor; ///< method for calculating canopy interception factor
 

@@ -32,9 +32,9 @@ enum baseflow_type
   BASE_LINEAR,          ///< simple bucket model (HBV,PRMS,UBCWM,...)
   BASE_LINEAR_CONSTRAIN,///< simple bucket model but limited down to FC
   BASE_LINEAR_ANALYTIC, ///< simple bucket model, analytical sol'n over timestep
-  BASE_VIC,                             ///< VIC baseflow method
+  BASE_VIC,             ///< VIC baseflow method
   BASE_TOPMODEL,        ///< TOPMODEL Baseflow method
-  BASE_SACRAMENTO,          ///< Sacramento Baseflow method
+  BASE_SACRAMENTO,      ///< Sacramento Baseflow method
   BASE_POWER_LAW,       ///< Power Law saturation
   BASE_GR4J,            ///< GR4J Baseflow method
   BASE_THRESH_POWER     ///< power law saturation above threshold
@@ -201,9 +201,9 @@ enum perc_type
 class CmvPercolation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  perc_type                                             type; ///< Model of percolation selected
-  int                                            *soil_ind;     ///< array of soil indices
-  int                                    nSoilLayers; ///< number of soil layers subject to percolation
+  perc_type       type;        ///< Model of percolation selected
+  int            *soil_ind;    ///< array of soil indices
+  int             nSoilLayers; ///< number of soil layers subject to percolation
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
@@ -260,19 +260,49 @@ public:/*-------------------------------------------------------*/
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                              double      *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
   static void GetParticipatingStateVarList(crise_type   cr_type,
                                            sv_type *aSV, int *aLev, int &nSV);
+};
+
+////////////////////////////////////////////////////////////////////
+/// \brief Data abstraction of capillary rise
+/// \details Calculates loss of water from soil layers to upper soil layers
+//
+class CmvRecharge: public CHydroProcessABC
+{
+private:/*------------------------------------------------------*/
+
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvRecharge(int to_index);
+  ~CmvRecharge();
+
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double            *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double            *rates) const;
+
+  void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
+  static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
 };
 #endif

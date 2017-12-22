@@ -351,6 +351,9 @@
     <ClCompile Include="LatAdvection.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="Recharge.cpp">
+      <Filter>Source Files\Hydrological Processes\Soil Water Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

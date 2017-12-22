@@ -170,6 +170,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.pot_melt            =POTMELT_DEGREE_DAY;
   Options.subdaily            =SUBDAILY_NONE;
   Options.interception_factor =PRECIP_ICEPT_USER;
+  Options.recharge            =RECHARGE_NONE;
   Options.keepUBCWMbugs       =false;
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
@@ -263,6 +264,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":MultilayerSnow"        )){code=39; }//AFTER SoilModel Commmand
     else if  (!strcmp(s[0],":RetainUBCWMBugs"       )){code=40; }
     else if  (!strcmp(s[0],":EndDate"               )){code=41; }
+    else if  (!strcmp(s[0],":RechargeMethod"        )){code=42; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"             )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"  )){code=51; }
@@ -345,6 +347,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":ExchangeFlow"          )){code=231;}
     else if  (!strcmp(s[0],":LateralFlush"          )){code=232;}
     else if  (!strcmp(s[0],":Seepage"               )){code=233;}
+    else if  (!strcmp(s[0],":Recharge"              )){code=234;}
     //...
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
@@ -971,6 +974,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       tt=DateStringToTimeStruct(s[1],s[2]);
       Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year);
       ExitGracefullyIf(Options.duration<=0, "ParseInput: :EndDate must be later than :StartDate.",BAD_DATA_WARN);
+      break;
+    }
+    case(42)://----------------------------------------------
+    {/*:RechargeMethod"  string method */
+      if (Options.noisy) {cout <<"Recharge Calculation Method"<<endl;}
+      if (Len<2){ImproperFormatWarning(":RechargeMethod",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"RECHARGE_NONE"     )){Options.recharge=RECHARGE_NONE;}
+      else if (!strcmp(s[1],"RECHARGE_DATA"     )){Options.recharge=RECHARGE_DATA;}
+      else {ExitGracefully("ParseInput:RechargeMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
     case(50):  //--------------------------------------------
@@ -2139,6 +2151,19 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSeepage(s_type,ParseSVTypeIndex(s[3],pModel));
+      pModel->AddProcess(pMover);
+      break;
+    }
+    case(234):  //----------------------------------------------
+    {/*recharge from other model or from deep groundwater to lower soil storage
+       :Recharge RAVEN_DEFAULT ATMOS_PRECIP SOIL[?]*/
+      if (Options.noisy){cout <<"Recharge process"<<endl;}
+      if (Len<4){ImproperFormatWarning(":Recharge",p,Options.noisy); break;}
+      
+      tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
+      pModel->AddStateVariables(tmpS,tmpLev,1);
+
+      pMover=new CmvRecharge(ParseSVTypeIndex(s[3],pModel));
       pModel->AddProcess(pMover);
       break;
     }

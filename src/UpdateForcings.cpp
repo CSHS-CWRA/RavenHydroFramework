@@ -117,7 +117,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
       Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
       Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
-
       //Fg[g].subdaily_corr =_pGauges[g]->GetForcingValue    (F_SUBDAILY_CORR,nn);
     }
 
@@ -226,7 +225,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
     if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
     if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
-    if ( recharge_gridded )       { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE"      )); }
+    if ( recharge_gridded )       { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE"      )); }
 
     // // --------------------------------------------------------
     // // print how many and which forcing grids are available
@@ -430,8 +429,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     {
       // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
       pGrid_recharge-> ReadData(Options,tt.model_time);
-      //recharge_gridded = ForcingGridIsAvailable("RECHARGE");
-      //pGrid_recharge  = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); 
 
       nRows                  = pGrid_recharge->GetRows();
       nCols                  = pGrid_recharge->GetCols();
@@ -539,6 +536,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     //-------------------------------------------------------------------
     //  Cloud Cover
     //-------------------------------------------------------------------
+
     F.cloud_cover = EstimateCloudCover(Options, F, k);
 
     //-------------------------------------------------------------------
