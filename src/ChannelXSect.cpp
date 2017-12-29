@@ -37,19 +37,23 @@ CChannelXSect::CChannelXSect(const string  name,
   nSurveyPts=NumSurveyPts;
   aX   =new double [nSurveyPts];
   aElev=new double [nSurveyPts];
-  aMann=new double [nSurveyPts];
+  _aMann=new double [nSurveyPts];
+  _min_mannings=ALMOST_INF;
   for (i=0;i<nSurveyPts;i++)
   {
     aX   [i]=X        [i];//cout<<aX[i]<<" ";
     aElev[i]=Elev     [i];//cout<<aElev[i]<<" ";
-    aMann[i]=ManningsN[i];//cout<<aMann[i]<<endl;
-
+    _aMann[i]=ManningsN[i];//cout<<aMann[i]<<endl;
+    lowerswap(_min_mannings,_aMann[i]);
     //check for valid mannings n
-    if(aMann[i]<0){
+    if(_aMann[i]<0){
       ExitGracefully("CChannelXSect::Constructor: invalid mannings n",BAD_DATA);
     }
   }
-
+  _min_stage_elev = aElev[0];
+  for (int i=1;i<nSurveyPts;i++){
+    _min_stage_elev=min(_min_stage_elev,aElev[i]);
+  }
   N=20; //Default
   aQ        =NULL;
   aStage    =NULL;
@@ -57,10 +61,8 @@ CChannelXSect::CChannelXSect(const string  name,
   aXArea    =NULL;
   aPerim    =NULL;
 
-  bedslope=slope;
-  if(bedslope<0.0){
-    ExitGracefully("CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA);
-  }
+  _bedslope=slope;
+  ExitGracefullyIf(_bedslope<0.0,"CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA);
 
   GenerateRatingCurvesFromProfile(); //All the work done here
 }
@@ -88,7 +90,7 @@ CChannelXSect::CChannelXSect(const string  name,
   nSurveyPts=0;
   aX   =NULL;
   aElev=NULL;
-  aMann=NULL;
+  _aMann=NULL;
 
   N=array_size;
   aQ       =new double [N];
@@ -104,8 +106,13 @@ CChannelXSect::CChannelXSect(const string  name,
     aXArea   [i]=area [i];
     aPerim   [i]=perim[i];
   }
-  bedslope=slope;
-  ExitGracefullyIf(bedslope<=0.0,
+  _min_stage_elev = aStage[0];
+  for (int i=1;i<N;i++){
+    _min_stage_elev=min(_min_stage_elev,aStage[i]);
+  }
+  _bedslope=slope;
+  _min_mannings=0.01;
+  ExitGracefullyIf(_bedslope<=0.0,
                    "CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA);
 }
 //////////////////////////////////////////////////////////////////
@@ -120,13 +127,44 @@ CChannelXSect::CChannelXSect(const string  name,
 /// \param bP [in] power law coefficient for wetted perimeter P=aP*Q^bP
 //
 CChannelXSect::CChannelXSect(const string  name,          //constructor for power law
+                             const double  slope,
+                             const double  mannings,
                              const double  aS,const double  bS,
                              const double  aW,const double  bW,
                              const double  aP,const double  bP)
 {
-  Construct(name);
-  /// \todo [add funct] code power law profile constructor
-  ExitGracefully("CChannelXSect::Constructor (Power law)",STUB);
+  Construct(name);  ExitGracefully("CChannelXSect::Constructor (Power law)",STUB);
+
+  nSurveyPts=0;
+  aX   =NULL;
+  aElev=NULL;
+  _aMann=NULL;
+
+  N=32;
+  aQ       =new double [N];
+  aStage   =new double [N];
+  aTopWidth=new double [N];
+  aXArea   =new double [N];
+  aPerim   =new double [N];
+  for (int i=0;i<N;i++)
+  {
+    aQ       [i]=pow(10.0,(double)(i)/(double)(N)*4-1);//from 0 to 1000 m3/s
+    aQ       [0]=0.0;
+    aStage   [i]=aS*pow(aQ[i],bS);
+    aTopWidth[i]=aW*pow(aQ[i],bW);
+    aPerim   [i]=aP*pow(aQ[i],bP);
+    aXArea   [i]=aStage   [i]*aTopWidth[i]; //approximate - may wish to revise
+    
+  }
+  _min_stage_elev = aStage[0];
+  for (int i=1;i<N;i++){
+    _min_stage_elev=min(_min_stage_elev,aStage[i]);
+  }
+  _bedslope=slope;
+  _min_mannings=mannings;
+  ExitGracefullyIf(_bedslope<=0.0,
+                   "CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA);
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -147,7 +185,9 @@ CChannelXSect::CChannelXSect(const string  name,          //constructor for trap
                              const double  slope)
 {
   Construct(name);
-  bedslope=slope;
+  _bedslope=slope;
+  ExitGracefullyIf(_bedslope<=0.0,
+                  "CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA);
   /// \todo [add funct] code trapezoidal profile constructor
   ExitGracefully("CChannelXSect::Constructor (Trapezoid)",STUB);
 }
@@ -160,7 +200,7 @@ CChannelXSect::~CChannelXSect()
   if (DESTRUCTOR_DEBUG){cout<<"  DELETING CHANNEL CROSS-SECTION "<<endl;}
   delete [] aX;
   delete [] aElev;
-  delete [] aMann;
+  delete [] _aMann;
 
   delete [] aQ;
   delete [] aStage;
@@ -184,7 +224,7 @@ string      CChannelXSect::GetTag()      const {return tag;}
 /// \brief Returns Riverbed slope
 /// \return Riverbed slope [m/m]
 //
-double      CChannelXSect::GetBedslope() const {return bedslope;}
+double      CChannelXSect::GetBedslope() const {return _bedslope;}
 
 /*****************************************************************
    Rating Curve Interpolation functions
@@ -220,11 +260,13 @@ void CChannelXSect::Interpolate(const double &Q, double &interp, int &i) const
 /// \param &Q [in] Profile flowrate [m3/s]
 /// \return Width of channel at input flowrate
 //
-double  CChannelXSect::GetTopWidth (const double &Q) const//Q in m3/s
+double  CChannelXSect::GetTopWidth (const double &Q,const double &SB_slope,const double &SB_n) const//Q in m3/s
 {
   int i;
   double interp;
-  Interpolate(Q,interp,i);
+  double junk,Q_mult;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+  Interpolate(Q/Q_mult,interp,i);
   return aTopWidth[i]+interp*(aTopWidth[i+1]-aTopWidth[i]);
 }
 
@@ -233,11 +275,13 @@ double  CChannelXSect::GetTopWidth (const double &Q) const//Q in m3/s
 /// \param &Q [in] Profile area [m3/s]
 /// \return Cross-sectional area of channel at input flowrate
 //
-double  CChannelXSect::GetArea     (const double &Q) const//Q in m3/s
+double  CChannelXSect::GetArea     (const double &Q,const double &SB_slope,const double &SB_n) const//Q in m3/s
 {
   int i;
   double interp;
-  Interpolate(Q,interp,i);
+  double junk,Q_mult;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+  Interpolate(Q/Q_mult,interp,i);
   return aXArea[i]+interp*(aXArea[i+1]-aXArea[i]);
 }
 
@@ -246,11 +290,13 @@ double  CChannelXSect::GetArea     (const double &Q) const//Q in m3/s
 /// \param &Q [in] Profile flowrate [m3/s]
 /// \return Stage elevation at specified flowrate
 //
-double  CChannelXSect::GetStageElev(const double &Q) const//Q in m3/s
+double  CChannelXSect::GetStageElev(const double &Q,const double &SB_slope,const double &SB_n) const//Q in m3/s
 {
   int i;
   double interp;
-  Interpolate(Q,interp,i);
+  double junk,Q_mult;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+  Interpolate(Q/Q_mult,interp,i);
   return aStage[i]+interp*(aStage[i+1]-aStage[i]);
 }
 
@@ -260,13 +306,9 @@ double  CChannelXSect::GetStageElev(const double &Q) const//Q in m3/s
 /// \param &Q [in] Profile flowrate [m3/s]
 /// \return channel depth at specified flowrate
 //
-double  CChannelXSect::GetDepth(const double &Q) const//Q in m3/s
+double  CChannelXSect::GetDepth(const double &Q,const double &SB_slope,const double &SB_n) const//Q in m3/s
 {
-  double min_elev = aElev[0];
-  for (int i=0;i<nSurveyPts;i++){
-    min_elev=min(min_elev,aElev[i+1]);
-  }
-  return (GetStageElev(Q)-min_elev);
+  return (GetStageElev(Q,SB_slope,SB_n)-_min_stage_elev);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -274,27 +316,54 @@ double  CChannelXSect::GetDepth(const double &Q) const//Q in m3/s
 /// \param &Q [in] Profile flowrate [m3/s]
 /// \return Wetted perimeter of channel at specified flowrate
 //
-double  CChannelXSect::GetWettedPerim(const double &Q) const//Q in m3/s
+double  CChannelXSect::GetWettedPerim(const double &Q,const double &SB_slope,const double &SB_n) const//Q in m3/s
 {
   int i;
   double interp;
-  Interpolate(Q,interp,i);
+  double junk,Q_mult;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+  Interpolate(Q/Q_mult,interp,i);
   return aPerim[i]+interp*(aPerim[i+1]-aPerim[i]);
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns correction terms for subbasin-specific slope and manning's n
+/// \param &SB_slope - subbasin local slope (or AUTO_COMPUTE if channel slope should be used) [-]
+/// \param &SB_n - subbasin local Manning's n (or AUTO_COMPUTE if channel n should be used) [-]
+/// \return &slope_mult - correction multiplier for slope (S_actual = mult * Q_channel) [-]
+/// \return &Q_mult - correction multiplier for flow (Q_actual = mult * Q_channel) [-]
+//
+void CChannelXSect::GetFlowCorrections(const double &SB_slope,
+                                       const double &SB_n,
+                                       double &slope_mult,
+                                       double &Q_mult) const
+{
+  slope_mult=1.0;
+  Q_mult=1.0;
+  if(SB_slope!=AUTO_COMPUTE){
+    slope_mult=(SB_slope/_bedslope);
+    Q_mult    =pow(SB_slope/_bedslope,0.5); //Mannings formula correction
+  }
+  if(SB_n    !=AUTO_COMPUTE){
+    Q_mult    *=(_min_mannings/SB_n);
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns celerity of channel [m/s]
 /// \param &Qref [in] Reference flowrate [m3/s]
 /// \return Celerity of channel corresponding to reference flowrate
 //
-double  CChannelXSect::GetCelerity(const double &Qref) const//Qref in m3/s, celerity in m/s
+double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,const double &SB_n) const//Qref in m3/s, celerity in m/s
 {
   //returns dQ/dA|_Qref ~ wave celerity in reach at given reference flow Qref
   //interpolated from rating curves
 
   ExitGracefullyIf(aQ==NULL,"CChannelXSect::GetCelerity: Rating curves not yet generated",RUNTIME_ERR);
-  if (Qref<0){return 0.0;}
-  int i=0; while ((Qref>aQ[i+1]) && (i<(N-2))){i++;}
+  double Q_mult;
+  double junk;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+
+  if (Qref/Q_mult<0){return 0.0;}
+  int i=0; while ((Qref/Q_mult>aQ[i+1]) && (i<(N-2))){i++;}
 
   return (aQ[i+1]-aQ[i])/(aXArea[i+1]-aXArea[i]);
 }
@@ -303,13 +372,17 @@ double  CChannelXSect::GetCelerity(const double &Qref) const//Qref in m3/s, cele
 /// \brief Returns diffusivity of channel [m/s]
 /// \param &Q [in] Channel flowrate [m3/s]
 /// \param &bedslope [in] Slope of riverbed [m/m]
-/// \return Diffusivity of channel at specified flowrate and slope [m2/s]
+/// \return Diffusivity of channel at specified flowrate and slope [m3/s]
 //
-double CChannelXSect::GetDiffusivity(const double &Q) const//Q in m2/s
+double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const
 {
   ExitGracefullyIf(Q<=0,"CChannelXSect::Invalid channel flowrate",BAD_DATA);
   ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering \cite Roberson1998
-  return 0.5*Q/GetDepth(Q)/bedslope;
+  double slope_mult=1.0;
+  double Q_mult=1.0;
+  GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);
+  
+  return 0.5*(Q)/GetDepth(Q,SB_slope,SB_n)/(slope_mult*_bedslope);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -376,7 +449,7 @@ void CChannelXSect::GetPropsFromProfile(const double &elev,
     w+=wi;
     //using Mannings equation to calculate Q
     if (Ai>0){
-      Q+=pow(bedslope,0.5)*Ai*pow(Ai/Pi,2.0/3.0)/aMann[i];
+      Q+=pow(_bedslope,0.5)*Ai*pow(Ai/Pi,2.0/3.0)/_aMann[i];
     }
   }
 }
@@ -453,7 +526,7 @@ void CChannelXSect::SummarizeToScreen         ()
   for (int p=0; p<NumChannelXSects;p++)
   {
     cout<<"-Channel profile \""<<pAllChannelXSects[p]->GetTag()<<"\" "<<endl;
-    cout<<"           slope: " <<pAllChannelXSects[p]->bedslope <<endl;
+    cout<<"           slope: " <<pAllChannelXSects[p]->_bedslope <<endl;
   }
 }
 

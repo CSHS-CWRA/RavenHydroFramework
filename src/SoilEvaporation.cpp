@@ -276,8 +276,8 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   if (type==SOILEVAP_ROOTFRAC)
   {
     double      root_frac[MAX_SOILLAYERS];
-    double      cap                      [MAX_SOILLAYERS];
-    int                 m,q;
+    double      cap      [MAX_SOILLAYERS];
+    int         m,q;
 
     double      rootsum=0.0;
 
@@ -299,7 +299,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   {
     double stor,tens_stor; //[mm]
 
-    stor                        = state_vars[iFrom[0]];
+    stor      = state_vars[iFrom[0]];
     tens_stor = pHRU->GetSoilTensionStorageCapacity(0);
 
     rates[0]  = PET * min(stor/tens_stor,1.0);  //evaporation rate [mm/d]
@@ -317,7 +317,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   {
     double stor,CHU;
 
-    stor                        = state_vars[iFrom[0]];//[mm]
+    stor      = state_vars[iFrom[0]];//[mm]
 
     CHU       = max(state_vars[pModel->GetStateVarIndex(CROP_HEAT_UNITS)],0.0);
 
@@ -408,8 +408,8 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     double stor_u,stor_l;          //upper/lower soil layer storage
     double tens_stor_u,tens_stor_l;//maximum tension storage in soil layers [mm]
 
-    stor_u         = max(state_vars[iFrom[0]],0.0);
-    stor_l         = max(state_vars[iFrom[1]],0.0);
+    stor_u     = max(state_vars[iFrom[0]],0.0);
+    stor_l     = max(state_vars[iFrom[1]],0.0);
     tens_stor_u= pHRU->GetSoilTensionStorageCapacity(0);
     tens_stor_l= pHRU->GetSoilTensionStorageCapacity(1);
 
@@ -428,13 +428,13 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     pVegVar             = pHRU->GetVegVarProps();
 
     rootfrac_u  = 0.7;//pRootVar->rootfrac;
-    stor_u                      = state_vars[iFrom[0]];
+    stor_u      = state_vars[iFrom[0]];
     tens_stor_u = pHRU->GetSoilTensionStorageCapacity(0);
 
     rates[0] = PET * rootfrac_u * min(stor_u/tens_stor_u,1.0);  //upper layer evaporation rate [mm/d]
 
     rootfrac_l  = 1.0 - rootfrac_u;
-    stor_l                      = state_vars[iFrom[1]];
+    stor_l      = state_vars[iFrom[1]];
     tens_stor_l = pHRU->GetSoilTensionStorageCapacity(1);
 
     rates[1] = PET * rootfrac_l * min(stor_l/tens_stor_l,1.0);  //upper layer evaporation rate [mm/d]
@@ -453,8 +453,8 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     pVegVar = pHRU->GetVegVarProps();
 
-    rootfrac_u = 0.7;//pRootVar->rootfrac;
-    stor_u = state_vars[iFrom[0]];
+    rootfrac_u  = 0.7;//pRootVar->rootfrac;
+    stor_u      = state_vars[iFrom[0]];
     tens_stor_u = pHRU->GetSoilTensionStorageCapacity(0);
 
     rates[0] = PET * rootfrac_u * min(stor_u / tens_stor_u, 1.0);  //upper layer evaporation rate [mm/d]

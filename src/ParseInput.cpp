@@ -183,6 +183,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_mass_bal      =false;
   Options.write_params        =false;
   Options.write_exhaustiveMB  =false;
+  Options.write_channels      =false;
+  Options.benchmarking        =false;
   Options.pause               =false;
   Options.debug_mode          =false;
   Options.ave_hydrograph      =true;
@@ -296,6 +298,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EvaluationTime"        )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
     else if  (!strcmp(s[0],":WaterYearStartMonth"   )){code=76; }
     else if  (!strcmp(s[0],":CreateRVPTemplate"     )){code=77; }
+    else if  (!strcmp(s[0],":WriteNetCDFFormat"     )){code=78; } 
+    else if  (!strcmp(s[0],":WriteChannelInfo"      )){code=79; } 
+    else if  (!strcmp(s[0],":BenchmarkingMode"      )){code=85; } 
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"        )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"       )){code=81; }
@@ -1002,6 +1007,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         Options.write_energy    =true;
         Options.write_forcings  =true;
         Options.write_params    =true;
+        Options.write_channels  =true;
       }
       break;
     }
@@ -1043,22 +1049,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         if (Options.noisy){cout <<"Write Ensim Format ON"<<endl;}
         Options.output_format=OUTPUT_ENSIM;
-      }
-      break;
-    }
-    case(78):  //--------------------------------------------
-    {/*:WriteNetcdfFormat */
-      bool bVal = true;
-      if(Len>1)
-      {
-        string sVal = StringToUppercase(string(s[1]));
-        if ((sVal == "NO") || (sVal == "OFF") || (sVal == "FALSE")) { bVal = false; }
-      }
-
-      if (bVal)
-      {
-        if (Options.noisy){cout <<"Write NetCDF Format ON"<<endl;}
-        Options.output_format=OUTPUT_NETCDF;
       }
       break;
     }
@@ -1286,6 +1276,28 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.create_rvp_template=true;
       break;
     }
+    case(78):  //--------------------------------------------
+    {/*:WriteNetCDFFormat */
+      bool bVal = true;
+      if(Len>1)
+      {
+        string sVal = StringToUppercase(string(s[1]));
+        if ((sVal == "NO") || (sVal == "OFF") || (sVal == "FALSE")) { bVal = false; }
+      }
+
+      if (bVal)
+      {
+        if (Options.noisy){cout <<"Write NetCDF Format ON"<<endl;}
+        Options.output_format=OUTPUT_NETCDF;
+      }
+      break;
+    }
+    case(79):  //--------------------------------------------
+    {/*:WriteChannelInfo */
+      if (Options.noisy) {cout <<"Write Channel Info file ON"<<endl;}
+      Options.write_channels =true;
+      break;
+    }
     case(80):  //--------------------------------------------
     {/*:DefineHRUGroup */ //AFTER SoilModel Command and HydroProcesses commands
       if (Options.noisy) {cout <<"Defining HRU Group"<<endl;}
@@ -1320,6 +1332,13 @@ bool ParseMainInputFile (CModel     *&pModel,
       else{
         pHRUGrp->DisableGroup();
       }
+      break;
+    }
+    case(85):  //--------------------------------------------
+    {/*:BenchmarkingMode */
+      if (Options.noisy) {cout <<"Benchmarking Mode"<<endl;}
+      Options.benchmarking=true;
+      g_suppress_zeros=true;
       break;
     }
     case(98):  //--------------------------------------------
@@ -2137,7 +2156,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(233):  //----------------------------------------------
-    {/*seepage from depression/wetland storage to soil
+    {/*Seepage from depression/wetland storage to soil
        :Seepage [string method] DEPRESSION {SOIL[?]}*/
       if (Options.noisy){cout <<"Seepage from depression/wetland process"<<endl;}
       seepage_type s_type=SEEP_LINEAR;

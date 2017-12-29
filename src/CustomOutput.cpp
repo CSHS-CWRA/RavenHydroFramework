@@ -688,29 +688,29 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
     if (reset)
     {
       //write to file
-      if      (_aggstat==AGG_AVERAGE){_CUSTOM<<data[k][0]      <<",";}
-      else if (_aggstat==AGG_MAXIMUM){_CUSTOM<<data[k][0]      <<",";}
-      else if (_aggstat==AGG_MINIMUM){_CUSTOM<<data[k][0]      <<",";}
-      else if (_aggstat==AGG_RANGE  ){_CUSTOM<<data[k][0]      <<","<<data[k][1]<<",";}
+      if      (_aggstat==AGG_AVERAGE){_CUSTOM<<FormatDouble(data[k][0])      <<",";}
+      else if (_aggstat==AGG_MAXIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<",";}
+      else if (_aggstat==AGG_MINIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<",";}
+      else if (_aggstat==AGG_RANGE  ){_CUSTOM<<FormatDouble(data[k][0])      <<","<<FormatDouble(data[k][1])<<",";}
       else if (_aggstat==AGG_MEDIAN )
       {
         double Q1,Q2,Q3;
         quickSort(data[k],0,count-1);
         GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<Q2<<",";
+        _CUSTOM<<FormatDouble(Q2)<<",";
       }
       else if (_aggstat==AGG_QUARTILES ) //find lower quartile, median, then upper quartile
       {
         double Q1,Q2,Q3;
         quickSort(data[k],0,count-1);
         GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<Q1<<","<<Q2<<","<<Q3<<",";
+        _CUSTOM<<FormatDouble(Q1)<<","<<FormatDouble(Q2)<<","<<FormatDouble(Q3)<<",";
       }
       else if (_aggstat==AGG_95CI)
       {
         quickSort(data[k],0,count-1);//take floor and ceiling of lower and upper intervals to be conservative
-        _CUSTOM  << data[k][(int)floor((double)(count-1)*0.025)]<<",";
-        _CUSTOM  << data[k][(int) ceil((double)(count-1)*0.975)]<<",";
+        _CUSTOM  << FormatDouble(data[k][(int)floor((double)(count-1)*0.025)])<<",";
+        _CUSTOM  << FormatDouble(data[k][(int) ceil((double)(count-1)*0.975)])<<",";
       }
       else if (_aggstat==AGG_HISTOGRAM)
       {
@@ -917,29 +917,29 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
     if (reset)
     {
       //write to file
-      if      (_aggstat==AGG_AVERAGE){_CUSTOM<<data[k][0]      <<" ";}
-      else if (_aggstat==AGG_MAXIMUM){_CUSTOM<<data[k][0]      <<" ";}
-      else if (_aggstat==AGG_MINIMUM){_CUSTOM<<data[k][0]      <<" ";}
-      else if (_aggstat==AGG_RANGE  ){_CUSTOM<<data[k][0]      <<" "<<data[k][1]<<" ";}
+      if      (_aggstat==AGG_AVERAGE){_CUSTOM<<FormatDouble(data[k][0])      <<" ";}
+      else if (_aggstat==AGG_MAXIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<" ";}
+      else if (_aggstat==AGG_MINIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<" ";}
+      else if (_aggstat==AGG_RANGE  ){_CUSTOM<<FormatDouble(data[k][0])      <<" "<<FormatDouble(data[k][1])<<" ";}
       else if (_aggstat==AGG_MEDIAN )
       {
         double Q1,Q2,Q3;
         quickSort(data[k],0,count-1);
         GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<Q2<<" ";
+        _CUSTOM<<FormatDouble(Q2)<<" ";
       }
       else if (_aggstat==AGG_QUARTILES ) //find lower quartile, median, then upper quartile
       {
         double Q1,Q2,Q3;
         quickSort(data[k],0,count-1);
         GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<Q1<<" "<<Q2<<" "<<Q3<<" ";
+        _CUSTOM<<FormatDouble(Q1)<<" "<<FormatDouble(Q2)<<" "<<FormatDouble(Q3)<<" ";
       }
       else if (_aggstat==AGG_95CI)
       {
         quickSort(data[k],0,count-1);//take floor and ceiling of lower and upper intervals to be conservative
-        _CUSTOM  << data[k][(int)floor((double)(count-1)*0.025)]<<" ";
-        _CUSTOM  << data[k][(int) ceil((double)(count-1)*0.975)]<<" ";
+        _CUSTOM  << FormatDouble(data[k][(int)floor((double)(count-1)*0.025)])<<" ";
+        _CUSTOM  << FormatDouble(data[k][(int) ceil((double)(count-1)*0.975)])<<" ";
       }
       else if (_aggstat==AGG_HISTOGRAM)
       {

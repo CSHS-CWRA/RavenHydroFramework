@@ -106,14 +106,14 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
   VV.LAI=(1.0-sparseness)*max_LAI*InterpolateMo(pHRU->GetVegetationProps()->relative_LAI,tt,Options);// \ref From Brook90 CANOPY Routine \cite Federer2010
   VV.SAI=(1.0-sparseness)*(VV.height*SAI_ht_ratio);/// \ref From Brook90 CANOPY Routine
 
-  //LAI /SAI snow corrections
+  //LAI /SAI snow corrections From Brook90 CANOPY Routine
   /*
       double snowdepth        =0.0;
       int iSnowD=pModel->GetStateVarIndex(SNOW_DEPTH);
       if (iSnowD!=DOESNT_EXIST){snowdepth=pHRU->GetStateVarValue(iSnowD);}
 
       double height_above_snow;//[m]
-      height_above_snow=threshPositive(VV.height - snowdepth/MM_PER_METER);//From Brook90 CANOPY Routine
+      height_above_snow=threshPositive(VV.height - snowdepth/MM_PER_METER);//
       VV.LAI*=(height_above_snow/VV.height);
       VV.SAI*=(height_above_snow/VV.height); */
 
@@ -172,6 +172,13 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
       VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
       VV.snow_icept_pct = max(min(((max_stor-stor)/P) * (1 - exp(-(1.0-sparseness)* (P/max_stor))),1.0),0.0);
     }
+  }
+
+  if ((Options.orocorr_precip==OROCORR_UBCWM) || (Options.orocorr_precip==OROCORR_UBCWM2))
+  {
+    //interception is (inelegantly, but necessarily) handled in the precipitation correction routine in UBCWM
+    VV.rain_icept_pct=0;
+    VV.snow_icept_pct=0;
   }
 
   //Leaf/Canopy Conductances

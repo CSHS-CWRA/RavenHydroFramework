@@ -14,7 +14,7 @@
 /// \brief Implementation of the default precipitation constructor
 //
 CmvPrecipitation::CmvPrecipitation():
-  CHydroProcessABC(PRECIPITATION)
+									CHydroProcessABC(PRECIPITATION)
 {}
 
 //////////////////////////////////////////////////////////////////
@@ -54,7 +54,6 @@ void CmvPrecipitation::Initialize()
     iFrom[q]    =pModel->GetStateVarIndex(ATMOS_PRECIP);
     iTo  [q]    =q;
   }
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
@@ -73,52 +72,39 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
   nP=0;
   aP[nP]="SAI_HT_RATIO";      aPC[nP]=CLASS_VEGETATION; nP++; //reasonable defaults
   aP[nP]="FOREST_SPARSENESS"; aPC[nP]=CLASS_LANDUSE; nP++; //reasonable defaults
-  aP[nP]="MAX_LAI";           aPC[nP]=CLASS_VEGETATION; nP++;//JRCFLAG
+  aP[nP]="MAX_LAI";           aPC[nP]=CLASS_VEGETATION; nP++;
+
+  if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_USER)
+  {
+    aP[nP] = "RAIN_ICEPT_PCT";    aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "SNOW_ICEPT_PCT";    aPC[nP] = CLASS_VEGETATION; nP++;
+  }
+	else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_LAI)
+  {
+	  aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++;   
+    aP[nP] = "RAIN_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "SNOW_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
+  }
+  else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_EXPLAI)
+  {
+    aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++; 
+  }
+  else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_HEDSTROM)
+  {
+    aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++; 
+  }
+	
   if (canopy_exists)
   {
     aP[nP] = "MAX_CAPACITY";  aPC[nP] = CLASS_VEGETATION; nP++;
-    aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++; //reasonable defaults
-    if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_LAI)
-    {
-      aP[nP] = "RAIN_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
-    }
-    else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_USER)
-    {
-      aP[nP] = "RAIN_ICEPT_PCT";    aPC[nP] = CLASS_VEGETATION; nP++;
-    }
-    else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_EXPLAI)
-    {
-      // no parameter required
-    }
-    else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_HEDSTROM)
-    {
-      // no parameter required
-    }
-
+		aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++;
   }
+	
   if (cansnow_exists)
   {
     aP[nP] = "MAX_SNOW_CAPACITY"; aPC[nP] = CLASS_VEGETATION; nP++;
-
-    if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_LAI)
-    {
-      aP[nP] = "SNOW_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
-    }
-    else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_USER)
-    {
-      aP[nP] = "SNOW_ICEPT_PCT";    aPC[nP] = CLASS_VEGETATION; nP++;
-    }
-    else if (pModel->GetOptStruct()->interception_factor==PRECIP_ICEPT_EXPLAI)
-    {
-      // no parameter required
-    }
-    else if (pModel->GetOptStruct()->interception_factor==PRECIP_ICEPT_HEDSTROM)
-    {
-      // no parameter required
-    }
-
+    aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++;
   }
-
 
 }
 //////////////////////////////////////////////////////////////////
@@ -197,7 +183,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   snowfall=(    Fsnow)*total_precip;
   rainfall=(1.0-Fsnow)*total_precip;//[mm/day]
 
-  if (!pHRU->IsLake()) //or is wetland?
+  if (!pHRU->IsLake()) 
   {
     // Calculate Snow Cover
     //-----------------------------------------------------------------
@@ -209,32 +195,48 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     snow_int = rain_int = 0.0;
     Fcan = pHRU->GetSurfaceProps()->forest_coverage;
 
-    if (pModel->StateVarExists(CANOPY))
-    {
-      //total rain interception rate over canopy covered portion of HRU
-      rain_pct = pHRU->GetVegVarProps()->rain_icept_pct;
-      rain_int = rainfall*rain_pct;
+    ///*if(Options.interception_factor==PRECIP_ICEPT_UBC){
+    /*if(Options.wind_velocity==WINDVEL_UBCWM){
+      double P0PINX=pHRU->GetVegetationProps()->max_intercept_rate;
+      double P0PINT=pHRU->GetVegetationProps()->rain_icept_pct;
+      double icept_factor=pHRU->GetSurfaceProps()->UBC_icept_factor;
 
+      rain_int = (1.0-Fsnow)*P0PINT*min(total_precip,P0PINX)*icept_factor;
+      snow_int = (    Fsnow)*P0PINT*min(total_precip,P0PINX)*icept_factor;
+    }*/
+
+    //total rain interception rate over canopy covered portion of HRU
+    rain_pct = pHRU->GetVegVarProps()->rain_icept_pct;
+    rain_int = rainfall*rain_pct;
+      
+    if (pModel->StateVarExists(CANOPY)) 
+    {
       capacity = pHRU->GetVegVarProps()->capacity;
       rain_int = threshMin(rain_int, max((capacity - state_vars[iCan]) / tstep, 0.0), 0.0);
-
       rates[iCan] = Fcan*rain_int;
     }
+    else{//if no canopy SV is present, rain_pct moves to ATMOSPHERE (via "evaporation")
+      rates[iAtm] += Fcan*rain_int;
+    }
+    rainthru = rainfall - Fcan*rain_int;//[mm/day]
+    
+    //rate of snow interception over canopy portion of HRU
+    snow_pct = pHRU->GetVegVarProps()->snow_icept_pct;
+    snow_int = snowfall*snow_pct;
+
     //calculate snow interception-----------------------------------
     if (pModel->StateVarExists(CANOPY_SNOW))
     {
-      //rate of snow interception over canopy portion of HRU
-      snow_pct = pHRU->GetVegVarProps()->snow_icept_pct;
-      snow_int = snowfall*snow_pct;
-
       snow_capacity = pHRU->GetVegVarProps()->snow_capacity;
       snow_int = max(threshMin(snow_int, max((snow_capacity - state_vars[iSCan]) / tstep, 0.0), 0.0), 0.0);
       rates[iSCan] = Fcan*snow_int;
     }
-    /// \todo [funct] - if no canopy SV is present, snow_pct/rain_pct should move to ATMOSPHERE?
+    else//if no canopy SV is present, snow_pct moves to ATMOSPHERE (via "sublimation")
+    {
+      rates[iAtm] += Fcan*snow_int;
+    }
     snowthru = snowfall - Fcan*snow_int;
-    rainthru = rainfall - Fcan*rain_int;//[mm/day]
-
+    
     if(!pModel->StateVarExists(NEW_SNOW))
     {
       if (pModel->StateVarExists(SNOW) )

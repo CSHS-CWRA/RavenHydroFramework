@@ -92,6 +92,8 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   _Q_ref=Qreference;
   _c_ref=AUTO_COMPUTE;
   _w_ref=AUTO_COMPUTE;
+  _mannings_n=AUTO_COMPUTE;
+  _slope=AUTO_COMPUTE;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -416,6 +418,8 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("RES_CONSTANT"  ))  {_reservoir_constant=value;}
   else if (!label_n.compare("NUM_RESERVOIRS"))  {_num_reservoirs=(int)(value);}
   else if (!label_n.compare("Q_REFERENCE"   ))  {_Q_ref=value;}
+  else if (!label_n.compare("MANNINGS_N"    ))  {_mannings_n=value;}
+  else if (!label_n.compare("SLOPE"         ))  {_slope=value;}
   else{
     return false;//bad string
   }
@@ -679,7 +683,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   {
     for (seg=0;seg<_nSegments;seg++)
     {
-      _channel_storage+=_pChannel->GetArea(_aQout[seg])*(_reach_length/_nSegments); //[m3]
+      _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
     }
     //cout<<"    *initial channel_storage:"<<_channel_storage<<" m3, RL: "<<_reach_length/1000<<" km, _aQout:"<<aQout[_nSegments-1]<<"m3/s Area:"<<_pChannel->GetArea(aQout[num_segments-1])<<endl;
   }
@@ -714,7 +718,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   //------------------------------------------------------------------------
   if ((Options.routing==ROUTE_MUSKINGUM) || (Options.routing==ROUTE_MUSKINGUM_CUNGE))
   {
-    double dx                                   =_reach_length/(double)(_nSegments);
+    double dx=_reach_length/(double)(_nSegments);
     double K=GetMuskingumK(dx);
     double X=GetMuskingumK(dx);
     if ((Options.timestep<2*K*X) || (Options.timestep>2*K*(1-X)))
@@ -751,8 +755,8 @@ void CSubBasin::ResetReferenceFlow(const double &Qreference)
       cout << "_Q_ref=" << _Q_ref << endl;
       ExitGracefully("CSubBasin::ResetReferenceFlow: invalid (negative or zero) reference flow rate in non-headwater basin", BAD_DATA);
     }
-    _c_ref=_pChannel->GetCelerity(_Q_ref);
-    _w_ref=_pChannel->GetTopWidth(_Q_ref);
+    _c_ref=_pChannel->GetCelerity(_Q_ref,_slope,_mannings_n);
+    _w_ref=_pChannel->GetTopWidth(_Q_ref,_slope,_mannings_n);
   }
   else
   {
@@ -837,7 +841,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
                      "ROUTE_DIFFUSIVE_WAVE only valid for single-segment rivers",BAD_DATA);
     sum=0.0;
     double cc=_c_ref*SEC_PER_DAY; //[m/day]
-    double diffusivity=_pChannel->GetDiffusivity(_Q_ref);
+    double diffusivity=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n);
     diffusivity*=SEC_PER_DAY;//convert to m2/d
     for (n=0;n<_nQinHist;n++)
     {
@@ -1116,8 +1120,9 @@ double  CSubBasin::GetMuskingumX(const double &dx) const
 {
   ///< X ranges from 0 to .5 \cite Maidment1993
   ExitGracefullyIf(_pChannel==NULL,"CSubBasin::GetMuskingumX",BAD_DATA);
-  double bedslope=_pChannel->GetBedslope();
-
+  double bedslope=_slope;
+  if(_slope==AUTO_COMPUTE){bedslope=_pChannel->GetBedslope(); }//overridden by channel
+  
   return max(0.0,0.5*(1.0-_Q_ref/bedslope/_w_ref/_c_ref/dx));//[m3/s]/([m]*[m/s]*[m])
 }
 double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
@@ -1125,18 +1130,38 @@ double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
                                     const double &dx) const  //[m]
 {
   //muskingum-type storage
-  double c=_pChannel->GetCelerity(Qout);//[m/s]
-  double w=_pChannel->GetTopWidth(Qout);//[m]
-  double bedslope=_pChannel->GetBedslope();
+  double bedslope=_slope;
+  if(_slope==AUTO_COMPUTE){bedslope=_pChannel->GetBedslope(); }//overridden by channel
 
-  double K=dx/(c*SEC_PER_DAY); //[d]
-  double X=max(0.0,0.5-0.5*(1.0-Qout/bedslope/w/c/dx));//[-]
+  /*
+	// Old version
+  double c_avg=_pChannel->GetCelerity(0.5*(Qin+Qout),_slope,_mannings_n);//[m/s]
+  double w_avg=_pChannel->GetTopWidth(0.5*(Qin+Qout),_slope,_mannings_n);//[m]
 
-  return (K*X*Qin+K*(1-X)*Qout)*SEC_PER_DAY;
+  double K=dx/(c_avg*SEC_PER_DAY); //[d]
+  double X =max(0.0,0.5*(1.0-Qin /bedslope/w_avg /c_avg /dx));//[-]
+  return (K*X*Qin+K*(1-X)*Qout)*SEC_PER_DAY; //[m3]
+  */
+	
+	double c_in=_pChannel->GetCelerity(Qin,_slope,_mannings_n);//[m/s]
+  double w_in=_pChannel->GetTopWidth(Qin,_slope,_mannings_n);//[m]
+  double c_out=_pChannel->GetCelerity(Qout,_slope,_mannings_n);//[m/s]
+  double w_out=_pChannel->GetTopWidth(Qout,_slope,_mannings_n);//[m]
 
-  //level pool-type storage
+  double Kin =dx/(c_in *SEC_PER_DAY); //[d]
+  double Kout=dx/(c_out*SEC_PER_DAY); //[d]
+  double Xin =max(0.0,0.5*(1.0-Qin /bedslope/w_in /c_in /dx));//[-]
+  double Xout=max(0.0,0.5*(1.0-Qout/bedslope/w_out/c_out/dx));//[-]
+
+  //cout<<"K,X: "<<Kin<<" "<<Kout<<" "<<Xin<<" "<<Xout<<" "<<Qin<<" "<<Qout<<" "<<dx<<endl;
+  return (Kin*Xin*Qin+Kout*(1-Xout)*Qout)*SEC_PER_DAY; //[m3]
+
+  //level pool-type storage - works great
   //return dx*_pChannel->GetArea(Qout);
+  //return dx*0.5*(_pChannel->GetArea(Qin)+_pChannel->GetArea(Qout));  //oscillatory
 }
+
+
 double CSubBasin::thQ(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const
 {
   //Schwanenberge and Montero, eqn 21
@@ -1269,7 +1294,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     double Qin    =_aQinHist[1];
     for (seg=0;seg<_nSegments;seg++)
     {
-      area=_pChannel->GetArea(_aQout[seg]);
+      area=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n);
 
       ttime=GetMuskingumK(dx)*seg_fraction;// K=representative travel time for the reach segment (else storagecoeff changes and mass flows not preserved)
       storage_coeff = min(1.0 / (ttime/tstep + 0.5),1.0);
@@ -1303,7 +1328,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     double Qout_old =_aQout   [_nSegments-1]-Qlat_last;
     double Qin_new  =_aQinHist[0];
     double Qin_old  =_aQinHist[1];
-    double V_old=_pChannel->GetArea(Qout_old)*_reach_length;
+    double V_old=_pChannel->GetArea(Qout_old,_slope,_mannings_n)*_reach_length;
 
     int    iter=0;
     double change=0;
@@ -1317,8 +1342,8 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     //double Qg[ROUTE_MAXITER],ff[ROUTE_MAXITER]; //for debugging; retain
     do //Newton's method with discrete approximation of df/dQ
     {
-      f   =(_pChannel->GetArea(Q_guess   )*_reach_length+(Q_guess   )/2.0*(tstep*SEC_PER_DAY));
-      dfdQ=(_pChannel->GetArea(Q_guess+dQ)*_reach_length+(Q_guess+dQ)/2.0*(tstep*SEC_PER_DAY)-f)/dQ;
+      f   =(_pChannel->GetArea(Q_guess   ,_slope,_mannings_n)*_reach_length+(Q_guess   )/2.0*(tstep*SEC_PER_DAY));
+      dfdQ=(_pChannel->GetArea(Q_guess+dQ,_slope,_mannings_n)*_reach_length+(Q_guess+dQ)/2.0*(tstep*SEC_PER_DAY)-f)/dQ;
       change=-(f-gamma)/dfdQ;//[m3/s]
       if (dfdQ==0.0){change=1e-7;}
 
@@ -1340,7 +1365,8 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
       aQout_new[_nSegments-1]+=(seg_fraction)*Qlat_new;
     }
     if (iter==ROUTE_MAXITER){
-      string warn="CSubBasin::RouteWater did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+ " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess));
+      string warn="CSubBasin::RouteWater did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+ 
+                  " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess,_slope,_mannings_n));
       WriteWarning(warn,false);
       /*for (int i = 0; i < 20; i++){
         string warn = to_string(Qg[i]) + " " + to_string(ff[i]);
@@ -1411,7 +1437,8 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
       aQout_new[_nSegments-1]+=(seg_fraction)*Qlat_new;
     }
     if (iter==ROUTE_MAXITER){
-      string warn="CSubBasin::RouteWater:TVD did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+ " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess));
+      string warn="CSubBasin::RouteWater:TVD did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "
+                   +to_string(_ID)+ " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess,_slope,_mannings_n));
       WriteWarning(warn,false);
       /*for (int i = 0; i < 20; i++){
         string warn = to_string(Qg[i]) + " " + to_string(ff[i]);
@@ -1490,13 +1517,13 @@ double CSubBasin::ChannelLosses( const double &reach_volume,//[m3]-representativ
 {
   double Tloss;       //[m3/day] Transmission losses during timestep
   double Eloss;       //[m3/day] Evaporation losses during timestep
-  double perim;                         //[m]
-  double top_width;             //[m]
+  double perim;       //[m]
+  double top_width;   //[m]
 
   ExitGracefullyIf(_pChannel==NULL,"CSubBasin::ChannelLosses: NULL channel",BAD_DATA);
 
-  perim                         =_pChannel->GetWettedPerim(_aQout[_nSegments-1]);
-  top_width             =_pChannel->GetTopWidth   (_aQout[_nSegments-1]);
+  perim                 =_pChannel->GetWettedPerim(_aQout[_nSegments-1],_slope,_mannings_n);
+  top_width             =_pChannel->GetTopWidth   (_aQout[_nSegments-1],_slope,_mannings_n);
 
   // calculate transmission loss rate from channel
   //--------------------------------------------------------------

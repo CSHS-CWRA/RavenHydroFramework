@@ -61,6 +61,7 @@ public:/*-------------------------------------------------------*/
   virtual double GetSampledTime(const int nn) const=0;
   virtual double GetSampledInterval() const=0;
   virtual int    GetNumSampledValues() const=0;
+
 };
 
 #endif

@@ -934,6 +934,17 @@ double AutoOrDouble(const string s)
   if (!s.compare("_DEF"    )){return USE_TEMPLATE_VALUE;}
   return s_to_d(s.c_str());
 }
+///////////////////////////////////////////////////////////////////
+/// \brief Returns same number unless really small and g_suppress_zeros is true, then zeros out
+/// \param d [in] Input double
+/// \return d or zero, if d is near zero
+//
+double FormatDouble(const double &d)
+{
+  if((g_suppress_zeros) && (fabs(d)<REAL_SMALL)){return 0.0;}
+  return d;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Determines the complementary error of passed double &x (i.e., erfc(x))
 /// \remark From Charbeneau, Groundwater Hydraulics and Pollutant Transport, 2000\cite Charbeneau2002AMR

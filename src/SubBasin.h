@@ -40,12 +40,14 @@ private:/*------------------------------------------------------*/
   int          _num_reservoirs;   ///< number of linear reservoirs used for in-catchment routing
 
   //River/stream  channel data:
-  const CChannelXSect*_pChannel;   ///< Main channel
+  const CChannelXSect*_pChannel;  ///< Main channel
 
   double         _reach_length;   ///< length of subbasin reach [m]
   double                _Q_ref;   ///< reference flow rate [m3/s]
   double                _c_ref;   ///< celerity at reference flow rate [m/s]
   double                _w_ref;   ///< channel top width at reference flow rate [m]
+  double           _mannings_n;   ///< manning's n for channel (or uses channel one, if =AUTO_COMPUTE)
+  double                _slope;   ///< channel slope (rise over run) (or uses channel one, if =AUTO_COMPUTE)
 
   int               _nSegments;   ///< Number of river segments used in routing(>=1)
 

@@ -211,6 +211,14 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),
                    "CModel::Initialize: at least 2 gauges necessary to use :OroTempCorrect method OROCORR_UBCWM2", BAD_DATA);
+
+  //warn about interception handling
+  if(!StateVarExists(CANOPY_SNOW)){
+    WriteWarning("Since no processes with CANOPY_SNOW variable have been specified, all snow interception will be directly moved to the atmosphere as if it had sublimated.",Options.noisy);
+  }
+  if(!StateVarExists(CANOPY)){
+    WriteWarning("Since no processes with CANOPY variable have been specified, all rain interception will be directly moved to the atmosphere as if it had evaporated.",Options.noisy);
+  }
   //Check for empty HRU groups
   for (int kk = 0; kk < _nHRUGroups; kk++){
     if (_pHRUGroups[kk]->GetNumHRUs() == 0){

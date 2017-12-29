@@ -297,7 +297,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
     autocalc=SetCalculableValue(V.relative_LAI[mon],Vtmp.relative_LAI[mon],Vdefault.relative_LAI[mon]);
     if (autocalc)
     {
-      V.relative_LAI[mon]=0.5*(1.0+sin((mon+1.5)/24.0/PI));//peaks in mid-aug, lowest in mid-feb
+      V.relative_LAI[mon]=1.0;//0.5*(1.0+sin((mon+1.5)/12.0*2*PI));//peaks in mid-aug, lowest in mid-feb
       is_auto=true;
     }
   }

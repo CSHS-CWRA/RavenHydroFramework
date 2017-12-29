@@ -87,7 +87,7 @@ Other comments:
 extern string g_output_directory; ///< Had to be here to avoid passing Options structure around willy-nilly
 extern double g_debug_vars[5];    ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
-
+extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -832,6 +832,8 @@ struct optStruct
   bool             ave_hydrograph;    ///< true if average flows over timestep are reported in hydrograph output
   bool             write_exhaustiveMB;///< true if exhaustive mass balance diagnostics are written
   int              write_group_mb;    ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written
+  bool             write_channels;    ///< true if writing channel rating curve information
+  bool             benchmarking;      ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;       ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
@@ -1189,6 +1191,7 @@ bool   IsComment               (const char *s, const int Len);
 void   WriteWarning            (const string warn, bool noisy);
 HRU_type StringToHRUType       (const string s);
 double fast_s_to_d             (const char *s);
+double FormatDouble            (const double &d);
 
 //I/O Functions-----------------------------------------------
 //defined in StandardOutput.cpp

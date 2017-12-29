@@ -26,6 +26,7 @@ static CModel      *pModel;
 // Global variables - declared as extern in RavenInclude.h--------
 string g_output_directory="";
 bool   g_suppress_warnings=false;
+bool   g_suppress_zeros=false;
 double g_debug_vars[5];
 
 static string RavenBuildDate(__DATE__);
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.7.1";
+  Options.version="2.7.2";
 
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 

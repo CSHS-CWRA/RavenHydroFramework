@@ -140,8 +140,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             string error,error2;
             error="Parse HRU File: Unrecognized Channel profile code ("+string(s[3])+") in SubBasins command";
             error2="Parse HRU File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE";
-            ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE")  && (Options.routing!=ROUTE_NONE),error.c_str(),BAD_DATA);
-            ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE),error2.c_str(),BAD_DATA);
+            ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE")  && (Options.routing!=ROUTE_NONE),error.c_str(),BAD_DATA_WARN);
+            ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE),error2.c_str(),BAD_DATA_WARN);
 
             double length;
             length=AutoOrDouble(s[4]);
@@ -290,7 +290,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
         ":SubBasinProperties"
           :Parameters, paramname1,paramname2,...,paramnameN
           :Units     ,  units1, units2, ..., unitsN
-          {ID,param1, param2,...,paramN} x nSubBasins
+          {ID,param1, param2,...,paramN} x nSubBasins (or a subset of SBs)
         :EndSubBasinProperties
       */
       if (Options.noisy) {cout <<"   Reading Basin Properties..."<<endl;}
@@ -462,7 +462,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
   if ((pModel->GetNumSubBasins()>1) && (CGlobalParams::GetParameter("AVG_ANNUAL_RUNOFF")<0))
   {
     // \todo: reduce generalization- only really needed if routing method requires Q_REF
-    ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied if more than one basin is included in model",BAD_DATA_WARN);
+    ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied (using :AvgAnnualRunoff command in .rvp file) if more than one basin is included in model",BAD_DATA_WARN);
   }
 
   delete pp;

@@ -22,14 +22,16 @@ class CChannelXSect
 private:/*-------------------------------------------------------*/
   string       tag;                 /// <nickname for XSect
 
-  double       bedslope;            /// <slope of river channel
+  double       _bedslope;           /// <slope of river channel
   //double     conductivity;        /// <conductivity of channel bottom sediments [m/d]
 
   int          nSurveyPts;          /// <# of survey points
   /// <nSurveyPts=0 if rating curve not generated from surveyed data
   double      *aX;                  /// <survey points in local coordinates [m]
   double      *aElev;               /// <bottom channel elevation at survey pts (size nSurveyPts)[m above arbitrary datum]
-  double      *aMann;               /// <Mannings roughness for each segment (between aX[i] and aX[i+1]) (size: nSurveyPts-1)
+  double      *_aMann;              /// <Mannings roughness for each segment (between aX[i] and aX[i+1]) (size: nSurveyPts-1)
+  double       _min_mannings;       /// <minimum roughness coefficient for all segments
+  double       _min_stage_elev;     /// <minimum elevation of channel profile
 
   int          N;                   /// <number of points on rating curves
   double      *aQ;                  /// <Rating curve for flow rates [m3/s]
@@ -50,6 +52,8 @@ private:/*-------------------------------------------------------*/
   void GetPropsFromProfile(const double &elev,
                            double &Q,   double &width,
                            double &A,   double &P);
+  void GetFlowCorrections(const double &SB_slope,const double &SB_n,
+                          double &slope_mult,double &Q_mult) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -68,6 +72,8 @@ public:/*-------------------------------------------------------*/
                  const double *perim,
                  const double  bedslope);
   CChannelXSect (const string  name,          //constructor for power law
+                 const double  slope,
+                 const double  mannings,
                  const double  a1,
                  const double  b1,
                  const double  a2,
@@ -85,13 +91,13 @@ public:/*-------------------------------------------------------*/
   //Accessors
   string              GetTag        ()                const;
   double              GetBedslope   ()                const;
-  double              GetTopWidth   (const double &Q) const;
-  double              GetArea       (const double &Q) const;
-  double              GetStageElev  (const double &Q) const;
-  double              GetWettedPerim(const double &Q) const;
-  double              GetDepth      (const double &Q) const;
-  double              GetCelerity   (const double &Qref) const;
-  double              GetDiffusivity(const double &Q) const;
+  double              GetTopWidth   (const double &Q, const double &SB_slope,const double &SB_n) const;
+  double              GetArea       (const double &Q, const double &SB_slope,const double &SB_n) const;
+  double              GetStageElev  (const double &Q, const double &SB_slope,const double &SB_n) const;
+  double              GetWettedPerim(const double &Q, const double &SB_slope,const double &SB_n) const;
+  double              GetDepth      (const double &Q, const double &SB_slope,const double &SB_n) const;
+  double              GetCelerity   (const double &Qref, const double &SB_slope,const double &SB_n) const;
+  double              GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const;
 
   //static accessors, destructor
   static int                 GetNumChannelXSects       ();

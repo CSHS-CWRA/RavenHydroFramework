@@ -25,10 +25,13 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
   DynamicSpecifyConnections(0); //purely lateral flow, no vertical 
 
   //check for valid SVs, HRU group indices
-  bool badHRU=(to_HRU_grp<0) || (to_HRU_grp>_pModel->GetNumHRUGroups()-1);
+  bool badHRU;
+  badHRU=(to_HRU_grp<0) || (to_HRU_grp>_pModel->GetNumHRUGroups()-1);
   ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'to' HRU group specified in :LateralFlush command",BAD_DATA_WARN);
+
   badHRU=(from_HRU_grp<0) || (from_HRU_grp>_pModel->GetNumHRUGroups()-1);
   ExitGracefullyIf(badHRU,"CmvLatFlush::unrecognized 'from' HRU group specified in :LateralFlush command",BAD_DATA_WARN);
+
   ExitGracefullyIf(from_sv_ind==DOESNT_EXIST,"CmvLatFlush::unrecognized 'from' state variable specified in :LateralFlush command",BAD_DATA_WARN);
   ExitGracefullyIf(to_sv_ind  ==DOESNT_EXIST,"CmvLatFlush::unrecognized 'to' state variable specified in :LateralFlush command",BAD_DATA_WARN);
 }
@@ -129,11 +132,18 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
                                       const time_struct        &tt,
                                             double             *exchange_rates) const
 {
-  double stor,Afrom;
-  
+  double stor,Afrom,Ato;
+  double to_stor,max_to_stor,max_rate;
+
   for(int q=0; q<_nLatConnections; q++){
     stor=state_vars[_kFrom[q]][_iFromLat[q]];
+    to_stor=state_vars[_kTo[q]][_iToLat[q]];
     Afrom=pHRUs[_kFrom[q]]->GetArea();
-    exchange_rates[q]+=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
+    Ato  =pHRUs[_kTo  [q]]->GetArea();
+    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(iTo[0],state_vars[_kTo[q]],Options);
+    max_rate=max(max_to_stor-to_stor,0.0)/Options.timestep*Ato;
+
+    exchange_rates[q]=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
+    exchange_rates[q]=min(exchange_rates[q],max_rate); //constrains so that it does not overfill receiving compartment
   }
 }

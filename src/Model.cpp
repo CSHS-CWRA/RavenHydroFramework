@@ -1238,6 +1238,8 @@ void  CModel::SetNumSnowLayers     (const int          nLayers)
   delete [] aLev;
 }
 
+bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID);
+
 //////////////////////////////////////////////////////////////////
 /// \brief overrides streamflow with observed streamflow
 /// \param SBID [in] valid subbasin identifier of basin with observations at outflow
@@ -1246,9 +1248,7 @@ void CModel::OverrideStreamflow   (const long SBID)
 {
   for (int i=0;i<_nObservedTS; i++)
   {
-    if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-        ( s_to_l(_pObservedTS[i]->GetTag().c_str()) == SBID) &&
-        (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+    if (IsContinuousFlowObs(_pObservedTS[i],SBID))
     {
       //check for blanks in observation TS
       bool bad=false;
@@ -1288,9 +1288,7 @@ void CModel::OverrideReservoirFlow(const long SBID)
 {
   for (int i=0;i<_nObservedTS; i++)
   {
-    if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-        ( s_to_l(_pObservedTS[i]->GetTag().c_str()) == SBID) &&
-        (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+    if (IsContinuousFlowObs(_pObservedTS[i],SBID))
     {
       //check for blanks in observation TS
       bool bad=false;

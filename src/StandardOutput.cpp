@@ -20,7 +20,36 @@
 #elif defined(__linux__)
 #include <sys/stat.h>
 #endif
-
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if specified observation time series is the flow series for subbasin SBID
+/// \param pObs [in] observation time series
+/// \param SBID [in] subbasin ID
+//
+bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID)
+{
+ // clears up  terribly ugly repeated if statements
+  if(pObs==NULL){return false;}
+  return (
+    (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")) && //name ="HYDROGRAPH"
+    (s_to_l(pObs->GetTag().c_str()) == SBID) &&        //SBID is correct
+    (pObs->GetType() == CTimeSeriesABC::ts_regular)    //not irregular time series
+    );
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if specified observation time series is the reservoir stage series for subbasin SBID
+/// \param pObs [in] observation time series
+/// \param SBID [in] subbasin ID
+//
+bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
+{
+ // clears up  terribly ugly repeated if statements
+  if(pObs==NULL){return false;}
+  return (
+    (!strcmp(pObs->GetName().c_str(),"RESERVOIR_STAGE")) &&
+    (s_to_l(pObs->GetTag().c_str()) == SBID) &&
+    (pObs->GetType() == CTimeSeriesABC::ts_regular)
+    );
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds output directory & prefix to base file name
 /// \param filebase [in] base filename, with extension, no directory information
@@ -114,9 +143,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         //if (Options.print_obs_hydro)
         {
           for (int i = 0; i < _nObservedTS; i++){
-            if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-                (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+            if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
             {
               if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
               else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
@@ -184,9 +211,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       //if (Options.print_obs_hydro)
       {
         for (int i = 0; i < _nObservedTS; i++){
-          if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_STAGE")) &&
-              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+          if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
             if (_pSubBasins[p]->GetName()==""){RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
             else                              {RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
@@ -502,7 +527,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         {
           S=GetAvgStateVar(i);
           if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
-          _STORAGE<<","<<S;
+          _STORAGE<<","<<FormatDouble(S);
           currentWater+=S;
         }
       }
@@ -518,7 +543,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
       }
 
-      _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<(currentWater-_initWater)+(_CumulOutput-_CumulInput);
+      _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
       _STORAGE<<endl;
 
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
@@ -535,11 +560,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             {
               for (int i = 0; i < _nObservedTS; i++)
               {
-                if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-                    (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                    (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+                if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
                 {
-
                   //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
@@ -568,9 +590,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             //if (Options.print_obs_hydro)
             {
               for (int i = 0; i < _nObservedTS; i++){
-                if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-                    (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                    (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+                if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
                 {
                   //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
@@ -665,9 +685,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         //if (Options.print_obs_hydro)
         {
           for (int i = 0; i < _nObservedTS; i++){
-            if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_STAGE")) &&
-                (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-                (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+            if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
             {
               //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
               double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
@@ -941,6 +959,10 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
   }
   OUT<<":EndBasinStateVariables"<<endl;
   OUT.close();
+
+  if(Options.write_channels){
+    CChannelXSect::WriteRatingCurves();
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1048,8 +1070,10 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   _STORAGE << ":FileType tb0 ASCII EnSim 1.0" << endl;
   _STORAGE << "#" << endl;
   _STORAGE << ":Application   Raven" << endl;
-  _STORAGE << ":Version       " << Options.version << endl;
-  _STORAGE << ":CreationDate  " << GetCurrentTime() << endl;
+  if(!Options.benchmarking){
+    _STORAGE << ":Version       " << Options.version << endl;
+    _STORAGE << ":CreationDate  " << GetCurrentTime() << endl;
+  }
   _STORAGE << "#" << endl;
   _STORAGE << "#------------------------------------------------------------------------" << endl;
   _STORAGE << "#" << endl;
@@ -1109,8 +1133,10 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   _HYDRO << ":FileType tb0 ASCII EnSim 1.0" << endl;
   _HYDRO << "#" << endl;
   _HYDRO << ":Application   Raven" << endl;
-  _HYDRO << ":Version       " << Options.version << endl;
-  _HYDRO << ":CreationDate  " << GetCurrentTime() << endl;
+  if(!Options.benchmarking){
+    _HYDRO << ":Version       " << Options.version << endl;
+    _HYDRO << ":CreationDate  " << GetCurrentTime() << endl;
+  }
   _HYDRO << "#" << endl;
   _HYDRO << "#------------------------------------------------------------------------" << endl;
   _HYDRO << "#" << endl;
@@ -1322,9 +1348,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     if (_pSubBasins[p]->IsGauged()){
       {
         for (int i = 0; i < _nObservedTS; i++){
-          if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+          if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
             nObs++;
           }
@@ -1452,9 +1476,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     {
       for (int i = 0; i < _nObservedTS; i++)
       {
-        if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-            (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-            (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular))
+        if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
         {
           if (_pSubBasins[p]->GetName()==""){current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str();}
           else                              {current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str();}
@@ -1523,12 +1545,12 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   currentWater=0.0;
   for (i=0;i<GetNumStateVars();i++){
     if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) &&  (i!=iCumPrecip)){
-      S=GetAvgStateVar(i);_STORAGE<<" "<<S;currentWater+=S;
+      S=GetAvgStateVar(i);_STORAGE<<" "<<FormatDouble(S);currentWater+=S;
     }
   }
   currentWater+=channel_stor+rivulet_stor;
 
-  _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<(currentWater-_initWater)+(_CumulOutput-_CumulInput);
+  _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
   _STORAGE<<endl;
 
   //----------------------------------------------------------------
@@ -1588,36 +1610,20 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   nSim = 0;
   nObs = 0;
   nRes = 0;
-  if ((Options.ave_hydrograph) && (current_time[0] != 0.0)){
-    for (int p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged()){
-        nSim++;
-        for (int i = 0; i < _nObservedTS; i++){
-          if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular)){
-            nObs++;
-          }
+  
+  for (int p=0;p<_nSubBasins;p++){
+    if (_pSubBasins[p]->IsGauged()){
+      nSim++;
+      for (int i = 0; i < _nObservedTS; i++){
+        if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+        {
+          nObs++;
         }
-        if (_pSubBasins[p]->GetReservoir() != NULL){ nRes++;}
       }
-    }      
-  }
-  else {  // point-value hydrograph
-    for (int p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged()){
-        nSim++;
-        for (int i = 0; i < _nObservedTS; i++){
-          if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-              (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-              (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular)){
-            nObs++;
-          }
-        }
-        if (_pSubBasins[p]->GetReservoir() != NULL){ nRes++;}
-      }
+      if (_pSubBasins[p]->GetReservoir() != NULL){ nRes++;}
     }
-  }
+  }      
+ 
 
   /* (b) allocate memory if necessary */
   
@@ -1645,9 +1651,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         //if (Options.print_obs_hydro)
         {
           for (int i = 0; i < _nObservedTS; i++){
-            if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-          (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-          (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular)){
+            if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+            {
               double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep); //time shift handled in CTimeSeries::Parse
               if ((val != CTimeSeriesABC::BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
               else                                                           { outflow_obs[iObs] = -9999.; }
@@ -1673,9 +1678,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         //if (Options.print_obs_hydro)
         {
           for (int i = 0; i < _nObservedTS; i++){
-            if ((!strcmp(_pObservedTS[i]->GetName().c_str(), "HYDROGRAPH")) &&
-          (s_to_l(_pObservedTS[i]->GetTag().c_str()) == _pSubBasins[p]->GetID()) &&
-          (_pObservedTS[i]->GetType() == CTimeSeriesABC::ts_regular)){
+            if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+            {
               double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep);
               if ((val != CTimeSeriesABC::BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
               else                                                           { outflow_obs[iObs] = -9999.; }
