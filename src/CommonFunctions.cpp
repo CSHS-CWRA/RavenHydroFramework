@@ -40,7 +40,8 @@ string GetProcessName(process_type p)
   case(LAKE_EVAPORATION):   {name="Lake Evaporation";         break;}
   case(DEPRESSION_OVERFLOW):{name="Depression Overflow";      break;}
   case(SEEPAGE):            {name="Seepage from Depression";  break;}
-	
+  case(RECHARGE):           {name="Recharge";                 break;}
+
   case(SNOWMELT):           {name="Snow Melt";                break;}
   case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
   case(REFREEZE):           {name="Snow Refreeze";            break;}

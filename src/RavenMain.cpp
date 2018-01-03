@@ -52,6 +52,9 @@ int main(int argc, char* argv[])
 
   Options.pause=true;
   Options.version="2.7.2";
+#ifdef _NETCDF_ 
+  Options.version=Options.version+" w/ netCDF";
+#endif 
 
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 

@@ -354,8 +354,10 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
   _CUSTOM<<":FileType tb0 ASCII EnSim 1.0"<<endl;
   _CUSTOM<<"#"<<endl;
   _CUSTOM<<":Application   Raven"<<endl;
-  _CUSTOM<<":Version       "<<Options.version <<endl;
-  _CUSTOM<<":CreationDate  "<<GetCurrentTime()<<endl;
+  if(!Options.benchmarking){
+    _CUSTOM<<":Version       "<<Options.version <<endl;
+    _CUSTOM<<":CreationDate  "<<GetCurrentTime()<<endl;
+  }
   _CUSTOM<<"#"<<endl;
   _CUSTOM<<"#------------------------------------------------------------------------"<<endl;
   _CUSTOM<<"#"<<endl;
@@ -456,6 +458,13 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
   _CUSTOM<<"#"<<endl;
   _CUSTOM<<":EndHeader"<<endl;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Write header info to netCDF file
+//
+void WriteNetCDFFileHeader(const optStruct &Options)
+{
+  // \todo
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates quartiles of passed 1D data array
@@ -514,7 +523,7 @@ void GetQuartiles(const double *values, const int size, double &Q1, double &Q2, 
 /// \param &tt [in] Current model time
 /// \param &Options [in] Global model options information
 //
-void CCustomOutput::WriteCustomOutput(const time_struct &tt,
+/*void CCustomOutput::WriteCustomOutput(const time_struct &tt,
                                       const optStruct   &Options)
 {
 // write to the appropriate file type
@@ -522,7 +531,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   {
   case OUTPUT_STANDARD:
   default:
-    WriteCSVCustomOutput(tt, Options);
+    WriteCustomOutput(tt, Options);
     return;
     break;
   case OUTPUT_ENSIM:
@@ -534,28 +543,28 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     return;
     break;
   }
-}
+}*/
 
 //////////////////////////////////////////////////////////////////
 /// \brief Write custom output to file by querying the model and calculating diagnostics
+/// \brief now handles .csv and .tb0 (Ensim) formats
 /// \param &tt [in] Current model time
 /// \param &Options [in] Global model options information
 //
-void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
-                                         const optStruct   &Options)
+void CCustomOutput::WriteCustomOutput(const time_struct &tt,
+                                      const optStruct   &Options)
 {
   //each custom output gets values of vals data[nHRUs] (max size)
   double val=0;
   double dday;//,jul_day;
   int    dmon,dyr;
   string thisdate, thishour, yesterday;
-  //double tstep=Options.timestep;
   bool   reset;
 
   double t=tt.model_time;
 
   time_struct yest;
-  JulianConvert(t-1,Options.julian_start_day,Options.julian_start_year,yest);
+  JulianConvert(t-1,Options.julian_start_day,Options.julian_start_year,yest); //get previous day, yest
   yesterday=yest.date_string;
   thisdate=tt.date_string;
   dday    =tt.day_of_month;
@@ -579,11 +588,30 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
 
   if (reset)
   {
-    if      (_timeAgg==YEARLY      ){_CUSTOM<<t<<","<<yest.year<<",";}
-    else if (_timeAgg==MONTHLY     ){_CUSTOM<<t<<","<<yesterday.substr(0,7)<<",";}//trims day, e.g., just return 2011-02,
-    else if (_timeAgg==DAILY       ){_CUSTOM<<t<<","<<yesterday<<",";}
-    else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
-    else if (_timeAgg==WATER_YEARLY){_CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<",";}
+    if(Options.output_format==OUTPUT_STANDARD)
+    {
+      if      (_timeAgg==YEARLY      ){_CUSTOM<<t<<","<<yest.year<<",";}
+      else if (_timeAgg==MONTHLY     ){_CUSTOM<<t<<","<<yesterday.substr(0,7)<<",";}//trims day, e.g., just return 2011-02,
+      else if (_timeAgg==DAILY       ){_CUSTOM<<t<<","<<yesterday<<",";}
+      else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
+      else if (_timeAgg==WATER_YEARLY){_CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<",";}
+    }
+    else if(Options.output_format==OUTPUT_ENSIM)
+    {
+      switch(_timeAgg)
+      {
+      case YEARLY:       _CUSTOM<<yest.year<<" "<<t<<" "; break;
+      case MONTHLY:      _CUSTOM<<yest.year<<"-"<<yest.month<<"-"<<yest.day_of_month<<" "<<t<<" "; break;
+      case DAILY:        _CUSTOM<<yest.year<<"-"<<yest.month<<"-"<<yest.day_of_month<<" "<<t<<" "; break;
+      case EVERY_TSTEP:
+      {
+        char dQuote = '"';
+        _CUSTOM<<dQuote<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<dQuote<<" "<<t<<" "; //period ending for forcings
+      }
+      break;
+      case WATER_YEARLY: _CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<","; break;
+      }
+    }
   }
 
   bool is_concentration=false;
@@ -685,52 +713,63 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
 
     //---Write output to file and reinitialize statistics, if needed---------
     //-----------------------------------------------------------------------
+    
     if (reset)
     {
-      //write to file
-      if      (_aggstat==AGG_AVERAGE){_CUSTOM<<FormatDouble(data[k][0])      <<",";}
-      else if (_aggstat==AGG_MAXIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<",";}
-      else if (_aggstat==AGG_MINIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<",";}
-      else if (_aggstat==AGG_RANGE  ){_CUSTOM<<FormatDouble(data[k][0])      <<","<<FormatDouble(data[k][1])<<",";}
-      else if (_aggstat==AGG_MEDIAN )
-      {
-        double Q1,Q2,Q3;
-        quickSort(data[k],0,count-1);
-        GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<FormatDouble(Q2)<<",";
-      }
-      else if (_aggstat==AGG_QUARTILES ) //find lower quartile, median, then upper quartile
-      {
-        double Q1,Q2,Q3;
-        quickSort(data[k],0,count-1);
-        GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<FormatDouble(Q1)<<","<<FormatDouble(Q2)<<","<<FormatDouble(Q3)<<",";
-      }
-      else if (_aggstat==AGG_95CI)
-      {
-        quickSort(data[k],0,count-1);//take floor and ceiling of lower and upper intervals to be conservative
-        _CUSTOM  << FormatDouble(data[k][(int)floor((double)(count-1)*0.025)])<<",";
-        _CUSTOM  << FormatDouble(data[k][(int) ceil((double)(count-1)*0.975)])<<",";
-      }
-      else if (_aggstat==AGG_HISTOGRAM)
-      {
-        quickSort(data[k],0,count-1);
-        double binsize = (_hist_max-_hist_min)/_nBins;
-        int bincount[MAX_HISTOGRAM_BINS];
-
-        for (int bin=0;bin<_nBins;bin++){bincount[bin]=0;}
-        for (int a=0;a<count;a++)
+      if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
+      {  
+        string sep=",";
+        if(Options.output_format==OUTPUT_ENSIM){ sep=" "; }//space separated
+        //write to .csv or .tb0 file
+        if     (_aggstat==AGG_AVERAGE){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_MAXIMUM){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_MINIMUM){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_RANGE  ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep<<FormatDouble(data[k][1])<<sep; }
+        else if(_aggstat==AGG_MEDIAN)
         {
-          for (int bin=0;bin<_nBins;bin++){
-            if ((data[k][a]>=(_hist_min+bin*binsize)) && (data[k][a]<(_hist_min+(bin+1)*binsize))){bincount[bin]++;}
+          double Q1,Q2,Q3;
+          quickSort(data[k],0,count-1);
+          GetQuartiles(data[k],count,Q1,Q2,Q3);
+          _CUSTOM<<FormatDouble(Q2)<<sep;
+        }
+        else if(_aggstat==AGG_QUARTILES) //find lower quartile, median, then upper quartile
+        {
+          double Q1,Q2,Q3;
+          quickSort(data[k],0,count-1);
+          GetQuartiles(data[k],count,Q1,Q2,Q3);
+          _CUSTOM<<FormatDouble(Q1)<<sep<<FormatDouble(Q2)<<sep<<FormatDouble(Q3)<<sep;
+        }
+        else if(_aggstat==AGG_95CI)
+        {
+          quickSort(data[k],0,count-1);//take floor and ceiling of lower and upper intervals to be conservative
+          _CUSTOM  << FormatDouble(data[k][(int)floor((double)(count-1)*0.025)])<<sep;
+          _CUSTOM  << FormatDouble(data[k][(int)ceil((double)(count-1)*0.975)])<<sep;
+        }
+        else if(_aggstat==AGG_HISTOGRAM)
+        {
+          quickSort(data[k],0,count-1);
+          double binsize = (_hist_max-_hist_min)/_nBins;
+          int bincount[MAX_HISTOGRAM_BINS];
+
+          for(int bin=0;bin<_nBins;bin++){ bincount[bin]=0; }
+          for(int a=0;a<count;a++)
+          {
+            for(int bin=0;bin<_nBins;bin++){
+              if((data[k][a]>=(_hist_min+bin*binsize)) && (data[k][a]<(_hist_min+(bin+1)*binsize))){ bincount[bin]++; }
+            }
+          }
+
+          for(int bin=0;bin<_nBins;bin++){
+            _CUSTOM<<bincount[bin]<<sep;
           }
         }
 
-        for (int bin=0;bin<_nBins;bin++){
-          _CUSTOM<<bincount[bin]<<",";
-        }
       }
-
+      else if(Options.output_format==OUTPUT_NETCDF)
+      {
+			  // \todo
+        //may only be able to support single value diagnostics (no quartiles, 95CI, histograms) - will have to warn user in initialize
+      }
 
       //-reset to initial conditions
       //-----------------------------------------------------------------------
@@ -757,7 +796,13 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
   }
 
   if (reset){
-    _CUSTOM<<endl;
+  	if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
+    { 
+      _CUSTOM<<endl;//valid for ensim or .csv format
+		}
+		else if (Options.output_format==OUTPUT_NETCDF){
+			 // \todo
+		}
   }
 }
 
@@ -766,7 +811,7 @@ void CCustomOutput::WriteCSVCustomOutput(const time_struct &tt,
 /// \param &tt [in] Current model time
 /// \param &Options [in] Global model options information
 //
-void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
+/*void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
                                            const optStruct   &Options)
 {
   //Check to see if it is time to write to file
@@ -826,13 +871,10 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
       else {
         ExitGracefully("CustomOutput: cannot currently generate basin,watershed, or hru group based aggregate constituent concentrations",STUB);
       }
-      /*
-        else if (_spaceAgg==BY_BASIN      ){val=-9999;}// \todo [funct] pTransModel->GetSubBasinAvgConc(k,_svind)
-        else if (_spaceAgg==BY_WSHED      ){val=-9999;}
-        else if (_spaceAgg==BY_HRU_GROUP  ){val=-9999;}
-        else if (_spaceAgg==BY_SELECT_HRUS){val=-9999;}
-      */
-
+      //else if (_spaceAgg==BY_BASIN      ){val=-9999;}// \todo [funct] pTransModel->GetSubBasinAvgConc(k,_svind)
+      //else if (_spaceAgg==BY_WSHED      ){val=-9999;}
+      // else if (_spaceAgg==BY_HRU_GROUP  ){val=-9999;}
+      //  else if (_spaceAgg==BY_SELECT_HRUS){val=-9999;}
     }
     else if (_var==VAR_STATE_VAR){
       switch(_spaceAgg)
@@ -988,7 +1030,7 @@ void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
     _CUSTOM<<endl;
   }
 }
-
+*/
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output stream after all information written to file
 //

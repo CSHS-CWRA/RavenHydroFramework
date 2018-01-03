@@ -134,8 +134,6 @@ public:/*------------------------------------------------------*/
 private:
   void WriteCSVFileHeader(void);
   void WriteEnSimFileHeader(const optStruct &Options);
-
-  void WriteCSVCustomOutput(const time_struct &tt, const optStruct &Options);
-  void WriteEnSimCustomOutput(const time_struct &tt, const optStruct &Options);
+  void WriteNetCDFFileHeader(const optStruct &Options);
 };
 #endif
