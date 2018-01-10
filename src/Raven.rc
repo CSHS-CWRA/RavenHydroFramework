@@ -52,7 +52,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON2               ICON                    "Graphics\\RavenIcon.ico"
+IDI_ICON2               ICON                    "RavenIcon.ico"
 #endif    // English (Canada) resources
 /////////////////////////////////////////////////////////////////////////////
 

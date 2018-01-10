@@ -144,6 +144,7 @@ public:/*-------------------------------------------------------*/
 
   //Manipulator functions (used in parser)
   void          Disable                 ();
+  void          Enable                  ();
 
   //Manipulator functions (used in initialization)
   void          Initialize              (const int UTM_zone);
@@ -185,6 +186,7 @@ public:/*-------------------------------------------------------*/
 
   void AddHRU(CHydroUnit *pHRU);
   void DisableGroup();
+  void EnableGroup();
   void Initialize();
 
   string            GetName            () const;

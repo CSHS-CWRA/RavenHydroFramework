@@ -442,6 +442,11 @@ void    CHydroUnit::SetStateVarValue      (const int i, const double &val)
 void CHydroUnit::Disable(){_Disabled=true;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief Enables HRU
+//
+void CHydroUnit::Enable(){_Disabled=false;}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Initializes HRU - converts coordinates of HRU centroid into UTM
 /// \remark Called prior to simulation or any interpolation;
 ///

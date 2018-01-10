@@ -661,7 +661,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       {
         sum=0.0;
         for (k=0;k<_nHydroUnits;k++){
-          sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+          if(_pHydroUnits[k]->IsEnabled())
+          {
+            sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+          }
         }
         MB<<","<<sum/_WatershedArea;
       }
@@ -756,7 +759,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               {
                 sum=0.0;
                 for (k=0;k<_nHydroUnits;k++){
-                  sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+                  if(_pHydroUnits[k]->IsEnabled())
+                  {
+                    sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+                  }
                 }
                 MB<<","<<-sum/_WatershedArea;
                 cumsum-=sum/_WatershedArea;
@@ -771,7 +777,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               {
                 sum=0.0;
                 for (k=0;k<_nHydroUnits;k++){
-                  sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+                  if(_pHydroUnits[k]->IsEnabled())
+                  {
+                    sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+                  }
                 }
                 MB<<","<<sum/_WatershedArea;
                 cumsum+=sum/_WatershedArea;
@@ -976,13 +985,19 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     if (_pSubBasins[p]->GetReservoir() != NULL){rescount++;}
   }
   int disablecount=0;
+  double allarea=0.0;
   for(int k=0;k<_nHydroUnits; k++){
     if(!_pHydroUnits[k]->IsEnabled()){disablecount++;}
+    allarea+=_pHydroUnits[k]->GetArea();
+  }
+  int SBdisablecount=0;
+  for(int p=0;p<_nSubBasins; p++){
+    if(!_pSubBasins[p]->IsEnabled()){SBdisablecount++;}
   }
   if(!Options.silent){
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
-    cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs)"<<endl;
+    cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<disablecount<<" disabled)"<<endl;
     cout <<"          # HRUs: "<<GetNumHRUs()        << " ("<<disablecount<<" disabled)"<<endl;
     cout <<"        # Gauges: "<<GetNumGauges()      <<endl;
     cout <<"#State Variables: "<<GetNumStateVars()   <<endl;
@@ -1002,7 +1017,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"#Lat.Connections: "<<_nTotalLatConnections       <<endl;
     cout <<"        Duration: "<<Options.duration            <<" d"<<endl;
     cout <<"       Time step: "<<Options.timestep            <<" d"<<endl;
-    cout <<"  Watershed Area: "<<_WatershedArea              <<" km2"<<endl;
+    cout <<"  Watershed Area: "<<_WatershedArea              <<" km2 (simulated) of "<<allarea<<" km2"<<endl;
     cout <<"======================================================"<<endl;
     cout <<endl;
   }

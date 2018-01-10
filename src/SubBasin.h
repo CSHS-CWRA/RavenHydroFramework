@@ -21,6 +21,7 @@ private:/*------------------------------------------------------*/
 
   long                     _ID;   ///< unique ID of subbasin (must be positive)
   string                 _name;   ///< name
+  bool               _disabled;   ///< true if disabled
 
   const CModelABC     *_pModel;   ///< Pointer to model
 
@@ -118,6 +119,7 @@ public:/*-------------------------------------------------------*/
   bool                 IsGauged             () const;
   double               GetReachLength       () const;
   int                  GetNumSegments       () const;
+  bool                 IsEnabled            () const;
 
   const double        *GetUnitHydrograph    () const;
   const double        *GetRoutingHydrograph () const;
@@ -161,6 +163,8 @@ public:/*-------------------------------------------------------*/
   void            SetQlatHist         (const int N, const double *aQl, const double QlLast);
   void            SetQinHist          (const int N, const double *aQi);
   void            SetDownstreamID     (const long down_SBID);
+  void            Disable             ();
+  void            Enable              ();
 
   //called during model operation:
   void            SetInflow           (const double &Qin );//[m3/s]

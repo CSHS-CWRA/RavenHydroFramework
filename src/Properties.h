@@ -115,6 +115,8 @@ struct soil_struct
 //
 struct veg_struct
 {
+  string vegetation_name;   ///<           name of vegetation class
+
   //specified (required) properties
   double max_height;        ///< [m]       maximum vegetation height
   double max_leaf_cond;     ///< [mm/s]    maximum leaf conductance
@@ -200,6 +202,8 @@ struct veg_var_struct
 //
 struct surface_struct
 {
+  string landuse_name;      ///<           name of land use linked to this data
+
   double impermeable_frac;  ///< [-]       fraction of surface that is impermeable
 
   double roughness;         ///< [m]       roughness parameter of ground surface

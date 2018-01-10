@@ -376,12 +376,15 @@ void MassEnergyBalance( CModel            *pModel,
   for (k=0;k<nHRUs;k++)
   {
     pHRU=pModel->GetHydroUnit(k);
-    p   =pHRU->GetSubBasinIndex();
+    if(pHRU->IsEnabled())
+    {
+      p   =pHRU->GetSubBasinIndex();
 
-    //surface water moved instantaneously from HRU to basin reach/channel storage
-    aRouted[p]+=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//aRouted=[m3]
+      //surface water moved instantaneously from HRU to basin reach/channel storage
+      aRouted[p]+=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//aRouted=[m3]
 
-    aPhinew[k][iSW]=0.0;//zero out surface water storage
+      aPhinew[k][iSW]=0.0;//zero out surface water storage
+    }
   }
   //Route water over timestep
   //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
@@ -390,20 +393,23 @@ void MassEnergyBalance( CModel            *pModel,
     p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index
 
     pBasin=pModel->GetSubBasin(p);
-    pBasin->UpdateFlowRules(tt,Options);
-
-    aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
-    pBasin->SetInflow       (aQinnew[p]);
-    pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
-
-    pBasin->RouteWater      (aQoutnew,res_ht,Options,tt);      //Where everything happens!
-
-    pBasin->UpdateOutflows  (aQoutnew,res_ht,Options,tt,false);//actually updates flow values here
-
-    pTo   =pModel->GetDownstreamBasin(p);
-    if (pTo!=DOESNT_EXIST)//correct downstream inflows
+    if(pBasin->IsEnabled())
     {
-      aQinnew[pTo]+=pBasin->GetOutflowRate();
+      pBasin->UpdateFlowRules(tt,Options);
+
+      aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
+      pBasin->SetInflow(aQinnew[p]);
+      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
+
+      pBasin->RouteWater(aQoutnew,res_ht,Options,tt);      //Where everything happens!
+
+      pBasin->UpdateOutflows(aQoutnew,res_ht,Options,tt,false);//actually updates flow values here
+
+      pTo   =pModel->GetDownstreamBasin(p);
+      if(pTo!=DOESNT_EXIST)//correct downstream inflows
+      {
+        aQinnew[pTo]+=pBasin->GetOutflowRate();
+      }
     }
   }//end for pp...
 
@@ -423,13 +429,16 @@ void MassEnergyBalance( CModel            *pModel,
     for (k=0;k<nHRUs;k++)
     {
       pHRU=pModel->GetHydroUnit(k);
-      p   =pHRU->GetSubBasinIndex();
-
-      for (c=0;c<nConstituents;c++)
+      if(pHRU->IsEnabled())
       {
-        int iSWmass =pModel->GetStateVarIndex(CONSTITUENT,pModel->GetTransportModel()->GetLayerIndex(c,iSW));
-        aRoutedMass[p][c]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//aRoutedMass=[mg/d]
-        aPhinew[k][iSWmass]=0.0;
+        p   =pHRU->GetSubBasinIndex();
+
+        for(c=0;c<nConstituents;c++)
+        {
+          int iSWmass =pModel->GetStateVarIndex(CONSTITUENT,pModel->GetTransportModel()->GetLayerIndex(c,iSW));
+          aRoutedMass[p][c]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//aRoutedMass=[mg/d]
+          aPhinew[k][iSWmass]=0.0;
+        }
       }
     }
     //Route mass over timestep
@@ -440,16 +449,19 @@ void MassEnergyBalance( CModel            *pModel,
 
       pBasin=pModel->GetSubBasin(p);
 
-      pModel->GetTransportModel()->SetMassInflows    (p,aMinnew[p]);
-      pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]);
-      pModel->GetTransportModel()->RouteMass         (p,aMoutnew,Options);
-      pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,0.0,Options,false);
-
-      pTo   =pModel->GetDownstreamBasin(p);
-      if (pTo!=DOESNT_EXIST)
+      if(pBasin->IsEnabled())
       {
-        for (int c=0;c<nConstituents;c++){
-          aMinnew[pTo][c]+=aMoutnew[pBasin->GetNumSegments()-1][c];
+        pModel->GetTransportModel()->SetMassInflows(p,aMinnew[p]);
+        pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]);
+        pModel->GetTransportModel()->RouteMass(p,aMoutnew,Options);
+        pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,0.0,Options,false);
+
+        pTo   =pModel->GetDownstreamBasin(p);
+        if(pTo!=DOESNT_EXIST)
+        {
+          for(int c=0;c<nConstituents;c++){
+            aMinnew[pTo][c]+=aMoutnew[pBasin->GetNumSegments()-1][c];
+          }
         }
       }
     }//end for pp...
@@ -496,8 +508,11 @@ void MassEnergyBalance( CModel            *pModel,
   //update state variable values=====================================
   for (k=0;k<nHRUs;k++){
     pHRU=pModel->GetHydroUnit(k);
-    for (i=0;i<NS ;i++){
-      pHRU->SetStateVarValue(i,aPhinew[k][i]);
+    if(pHRU->IsEnabled())
+    {
+      for(i=0;i<NS;i++){
+        pHRU->SetStateVarValue(i,aPhinew[k][i]);
+      }
     }
   }
 

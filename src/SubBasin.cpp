@@ -54,6 +54,8 @@ CSubBasin::CSubBasin( const long                                 Identifier,
 
   _nSegments         =1;//0;
 
+  _disabled=false;
+
   ExitGracefullyIf(_nSegments>MAX_RIVER_SEGS,
                    "CSubBasin:Constructor: exceeded maximum river segments",BAD_DATA);
 
@@ -170,6 +172,13 @@ bool                     CSubBasin::IsGauged            () const {return _gauged
 int                 CSubBasin::GetNumSegments          () const {return _nSegments;    }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns true if basin is enabled
+/// \return true if basin is enabled
+//
+bool                 CSubBasin::IsEnabled              () const {return !_disabled;    }
+
+
+//////////////////////////////////////////////////////////////////
 /// \brief returns Unit Hydrograph as array pointer
 /// \return Unit Hydrograph as array pointer
 //
@@ -231,7 +240,10 @@ double CSubBasin::GetAvgStateVar (const int i) const
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
-    sum+=_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea();
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum+=_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_basin_area;
 }
@@ -246,7 +258,10 @@ double CSubBasin::GetAvgForcing (const string &forcing_string) const
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
-    sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_basin_area;
 }
@@ -257,13 +272,16 @@ double CSubBasin::GetAvgForcing (const string &forcing_string) const
 /// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
 /// \return Area-weighted average of cumulative flux to storage compartment i
 //
-double CSubBasin::GetAvgCumulFlux (const int i, const bool to) const
+double CSubBasin::GetAvgCumulFlux(const int i,const bool to) const
 {
   //Area-weighted average
   double sum=0.0;
-  for (int k=0;k<_nHydroUnits;k++)
+  for(int k=0;k<_nHydroUnits;k++)
   {
-    sum    +=_pHydroUnits[k]->GetCumulFlux(i,to)*_pHydroUnits[k]->GetArea();
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum    +=_pHydroUnits[k]->GetCumulFlux(i,to)*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_basin_area;
 }
@@ -559,7 +577,20 @@ void CSubBasin::SetQinHist          (const int N, const double *aQi)
 void CSubBasin::SetDownstreamID(const long down_SBID){
   _downstream_ID=down_SBID;
 }
-
+/////////////////////////////////////////////////////////////////
+/// \brief Sets basin as disabled
+//
+void CSubBasin::Disable(){
+  _disabled=true;
+  for(int k=0; k<_nHydroUnits; k++){ _pHydroUnits[k]->Disable(); }
+}
+/////////////////////////////////////////////////////////////////
+/// \brief Sets basin as enabled
+//
+void CSubBasin::Enable(){
+  _disabled=false;
+  for(int k=0; k<_nHydroUnits; k++){ _pHydroUnits[k]->Enable(); }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates subbasin area as a sum of HRU areas
 /// \remark Called in CModel::Initialize
@@ -572,13 +603,16 @@ double    CSubBasin::CalculateBasinArea()
   for (int k=0;k<_nHydroUnits;k++)
   {
     ExitGracefullyIf(_pHydroUnits[k]->GetArea()<=0.0,
-                     "CSubBasin::CalculateBasinArea: one or more HRUs has a negative or zero area",BAD_DATA);
-    _basin_area+=_pHydroUnits[k]->GetArea();
+      "CSubBasin::CalculateBasinArea: one or more HRUs has a negative or zero area",BAD_DATA);
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      _basin_area+=_pHydroUnits[k]->GetArea();
+    }
   }
   ExitGracefullyIf(_nHydroUnits==0,
                    "CSubBasin::CalculateBasinArea: one or more subbasins has zero constituent HRUs", BAD_DATA);
-  ExitGracefullyIf(_basin_area<=0,
-                   "CSubBasin::CalculateBasinArea: negative or zero subbasin area!", BAD_DATA);
+  ExitGracefullyIf(_basin_area<0.0,
+                   "CSubBasin::CalculateBasinArea: negative subbasin area!", BAD_DATA);
 
   return _basin_area;
 }
@@ -613,17 +647,22 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
   _drainage_area=total_drain_area;
 
+  //cout <<" basin "<< _ID<<" disabled="<<boolalpha<<(_disabled)<<endl;
   //set reference flow in non-headwater basins
   //------------------------------------------------------------------------
-  if (_Q_ref==AUTO_COMPUTE)
-  {
-    if (((Qin_avg + Qlat_avg) <= 0) && (!_is_headwater)){//reference flow only matters for non-headwater basins
-      ExitGracefully("CSubBasin::Initialize: negative or zero average flow specified in initialization.",BAD_DATA);
+  if(!_disabled){
+    if(_Q_ref==AUTO_COMPUTE)
+    {
+      if(((Qin_avg + Qlat_avg) <= 0) && (!_is_headwater) && (!_disabled)){//reference flow only matters for non-headwater basins
+        string warn="CSubBasin::Initialize: negative or zero average flow specified in initialization (basin "+to_string(_ID)+")";
+        ExitGracefully(warn.c_str(),BAD_DATA);
+      }
+      ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
     }
-    ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
-  }
-  else{
-    ResetReferenceFlow(_Q_ref);
+    else{
+
+      ResetReferenceFlow(_Q_ref);
+    }
   }
 
   // estimate reach length if needed

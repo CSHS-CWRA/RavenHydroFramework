@@ -2197,6 +2197,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"HRU_TYPE"     )){basis=BASIS_HRU_TYPE;  }
       else if (!strcmp(s[1],"HRU_GROUP"    )){basis=BASIS_HRU_GROUP; }
       else if (!strcmp(s[1],"LAND_CLASS"   )){basis=BASIS_LANDCLASS; }
+      else if (!strcmp(s[1],"VEGETATION"   )){basis=BASIS_VEGETATION; }
       else                                   {
         ExitGracefully("ParseMainInputFile: Conditional statement has invalid basis",BAD_DATA_WARN);break;
 

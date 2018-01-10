@@ -96,7 +96,6 @@ class CVegetationClass
 {
 protected:/*----------------------------------------------------*/
 
-  string                    tag;                  ///< nickname for veg. class, e.g., "BROADLEAF_FOREST"
   veg_struct                V;                    ///< corresponding canopy/root properties
 
   static CVegetationClass **pAllVegClasses;       ///< array of pointers to all vegetation classes that have been created
@@ -108,7 +107,7 @@ public:/*-------------------------------------------------------*/
   ~CVegetationClass();
 
   //Accessors
-  string                   GetTag() const;
+  string                   GetVegetationName() const;
   const veg_struct        *GetVegetationStruct() const;
   double                   GetParameter(const string param_name) const;//not currently used
   double                   GetVegetationProperty(string param_name) const;
@@ -127,7 +126,7 @@ public:/*-------------------------------------------------------*/
   static void                    SetVegetationProperty(veg_struct &V, string param_name, const double value);
   static double                  GetVegetationProperty(const veg_struct &V, string param_name);
 
-  static void                    InitializeVegetationProps(veg_struct &V, bool is_template);
+  static void                    InitializeVegetationProps(string name, veg_struct &V, bool is_template);
   //static void                    InitializeVegetationProps(double *params, bool is_template);
 
   static void                    SummarizeToScreen();
@@ -174,7 +173,6 @@ class CLandUseClass
 {
 protected:/*----------------------------------------------------*/
 
-  string                    tag;                  ///< nickname for LU class, e.g., "URBAN"
   surface_struct            S;                    ///< corresponding surface properties
 
   static CLandUseClass    **pAllLUClasses;        ///< array of pointers to all LU classes that have been created
@@ -186,7 +184,7 @@ public:/*-------------------------------------------------------*/
   ~CLandUseClass();
 
   //Accessors
-  string                   GetTag() const;
+  string                   GetLanduseName() const;
   const surface_struct    *GetSurfaceStruct() const;
   double                   GetSurfaceProperty(string param_name) const;
   void                     SetSurfaceProperty(string &param_name, const double &value);
@@ -200,7 +198,7 @@ public:/*-------------------------------------------------------*/
   static       CLandUseClass    *StringToLUClass(const string s);
   static void                    DestroyAllLUClasses();
 
-  static void                    InitializeSurfaceProperties(surface_struct &S, bool is_template);
+  static void                    InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
   static void                    SetSurfaceProperty         (surface_struct &S, string param_name, const double value);
   static double                  GetSurfaceProperty         (const surface_struct &S, string param_name);
 

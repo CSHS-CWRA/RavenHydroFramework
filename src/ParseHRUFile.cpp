@@ -75,6 +75,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":Reservoir"                )){code=3;  }
     else if  (!strcmp(s[0],":SubBasinProperties"       )){code=7;  }
     else if  (!strcmp(s[0],":HRUGroup"                 )){code=8;  }
+    else if  (!strcmp(s[0],":PopulateHRUGroup"         )){code=9;  }
 
     switch(code)
     {
@@ -399,6 +400,107 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             if (gaps){
               WriteWarning("Range specified in HRUGroup command has gaps",Options.noisy);
             }
+          }
+        }
+      }
+      break;
+    }
+    case(9):  //----------------------------------------------
+    { /*
+        ":PopulateHRUGroup" {name} "With" {conditionbase} {condition} {conditiondata}
+        e.g.,
+        :PopulateHRUGroup NotRock With HRUS NOTWITHIN RockHRUGroup
+        
+        :PopulateHRUGroup LowBand With ELEVATION BETWEEN  0 500
+        :PopulateHRUGroup CroplandHRUs With LANDUSE EQUALS CROPLAND
+        :PopulateHRUGroup NonCroplandHRUs With LANDUSE NOTEQUALS CROPLAND
+        :PopulateHRUGroup BroadleafHRUs With VEGETATION  EQUALS  BROADLEAF
+        [not in here yet] :PopulateHRUGroup Rocks With HRUTYPE EQUALS ROCK
+      */
+      if (Options.noisy) {cout <<"   Populate HRU Group..."<<endl;}
+      if (Len<6){pp->ImproperFormat(s);}
+
+      CHRUGroup *pHRUGrp=NULL;
+      pHRUGrp=pModel->GetHRUGroup(s[1]);
+
+      if (pHRUGrp==NULL){//group not yet defined
+        WriteWarning("HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file (2)",Options.noisy);
+        pHRUGrp=new CHRUGroup(s[1],pModel->GetNumHRUGroups());
+        pModel->AddHRUGroup(pHRUGrp);
+      }
+      int k;
+      if(!strcmp(s[3],"HRUS"))
+      {
+        CHRUGroup *pHRUGrp2=NULL;
+        pHRUGrp2=pModel->GetHRUGroup(s[5]);
+        if(pHRUGrp2==NULL){
+          ExitGracefully(":PopulateHRUGroup: invalid HRU group reference used in command",BAD_DATA_WARN);
+        }
+        else{
+          if(!strcmp(s[4],"NOTWITHIN")){
+            for(k=0;k<pModel->GetNumHRUs();k++)
+            {
+              if(!pHRUGrp2->IsInGroup(k)){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            }
+          }
+        }
+      }
+      else if(!strcmp(s[3],"LANDUSE"))
+      {
+        if(!strcmp(s[4],"EQUALS")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if(pModel->GetHydroUnit(k)->GetSurfaceProps()->landuse_name==to_string(s[5])){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+          }
+        }
+        if(!strcmp(s[4],"DOESNTEQUAL")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if(pModel->GetHydroUnit(k)->GetSurfaceProps()->landuse_name!=to_string(s[5])){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+          }
+        }
+      }
+      else if(!strcmp(s[3],"VEGETATION"))
+      {
+        if(!strcmp(s[4],"EQUALS")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if(pModel->GetHydroUnit(k)->GetVegetationProps()->vegetation_name==to_string(s[5])){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+          }
+        }
+        if(!strcmp(s[4],"DOESNTEQUAL")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if(pModel->GetHydroUnit(k)->GetVegetationProps()->vegetation_name!=to_string(s[5])){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+          }
+        }
+      }
+      else if(!strcmp(s[3],"ELEVATION"))
+      {
+        if(!strcmp(s[4],"BETWEEN")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if((pModel->GetHydroUnit(k)->GetElevation()>s_to_d(s[5])) &&
+               (pModel->GetHydroUnit(k)->GetElevation()>s_to_d(s[6]))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+          }
+        }
+      }
+      else if(!strcmp(s[3],"HRUTYPE"))
+      {
+        if(!strcmp(s[4],"EQUALS")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_ROCK) && (!strcmp(s[4],"ROCK"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_GLACIER) && (!strcmp(s[4],"GLACIER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_LAKE) && (!strcmp(s[4],"LAKE"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+          }
+        }
+        if(!strcmp(s[4],"DOESNTEQUAL")){
+          for(k=0;k<pModel->GetNumHRUs();k++)
+          {
+            if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_ROCK) && (!strcmp(s[4],"ROCK"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_GLACIER) && (!strcmp(s[4],"GLACIER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_LAKE) && (!strcmp(s[4],"LAKE"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
           }
         }
       }

@@ -327,10 +327,14 @@ bool CHydroProcessABC::ShouldApply(const CHydroUnit *pHRU) const
 
     }
     else if (_pConditions[i]->basis==BASIS_LANDCLASS){
-      ExitGracefully("CHydroProcessABC::ShouldApply:BASIS_LANDCLASS",STUB);
       //
-      //if (_pConditions[i].data!=pHRU->GetSurfaceProps()->landclass_name) && (aConditions[i].compare_method==COMPARE_IS_EQUAL )){return false;}
-      //if (_pConditions[i].data==pHRU->GetSurfaceProps()->landclass_name) && (aConditions[i].compare_method==COMPARE_NOT_EQUAL)){return false;}
+      if ((_pConditions[i]->data!=pHRU->GetSurfaceProps()->landuse_name) && (_pConditions[i]->compare_method==COMPARE_IS_EQUAL )){return false;}
+      if ((_pConditions[i]->data==pHRU->GetSurfaceProps()->landuse_name) && (_pConditions[i]->compare_method==COMPARE_NOT_EQUAL)){return false;}
+    }
+    else if (_pConditions[i]->basis==BASIS_VEGETATION){
+      //
+      if ((_pConditions[i]->data!=pHRU->GetVegetationProps()->vegetation_name) && (_pConditions[i]->compare_method==COMPARE_IS_EQUAL )){return false;}
+      if ((_pConditions[i]->data==pHRU->GetVegetationProps()->vegetation_name) && (_pConditions[i]->compare_method==COMPARE_NOT_EQUAL)){return false;}
     }
   }
   return true;

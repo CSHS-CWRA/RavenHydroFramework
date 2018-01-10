@@ -13,12 +13,14 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes model prior to simulation
 /// \details Perform all operations required and initial check on validity of model before simulation begins;
-/// -initializes mass balance arrays to zero; identifies model UTM zone;
-/// -calls initialization routines of all subasins, HRUs, processes, and gauges
-/// -generates gauge weights
-/// -calculates stream network topology, routing orders
-/// -calculates initial water/energy/mass storage
-/// -calls routines to write initial conditions to minor output
+///
+///  -initializes mass balance arrays to zero; identifies model UTM zone;
+///  -calls initialization routines of all subasins, HRUs, processes, and gauges
+///  -generates gauge weights
+///  -calculates stream network topology, routing orders
+///  -calculates initial water/energy/mass storage
+///  -calls routines to write initial conditions to minor output
+///  -handles disabling of HRUs and subbasins in model for submodel calibration
 ///
 /// \param &Options [in] Global model options information
 //
@@ -43,7 +45,7 @@ void CModel::Initialize(const optStruct &Options)
       if (_pSubBasins[p]->GetID()==_pSubBasins[pp]->GetID()){
         ExitGracefully("CModel::Initialize: non-unique basin identifier found",BAD_DATA);}}}
 
-  for (k=0;k<_nSubBasins;k++){
+  for (k=0;k<_nHydroUnits;k++){
     for (int kk=0;kk<p;kk++){
       if ((k!=kk) && (_pHydroUnits[k]->GetID()==_pHydroUnits[kk]->GetID())){
         ExitGracefully("CModel::Initialize: non-unique HRU identifier found",BAD_DATA);}}}
@@ -125,6 +127,44 @@ void CModel::Initialize(const optStruct &Options)
   for (j=0;j<_nTransParams;j++){_pTransParams[j]->Initialize(Options);}
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups[kk]->Initialize(); }
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
+
+  /*for(kk=0;kk<_nHRUGroups;kk++){
+    cout<<"    GROUP MEMBERSHIP: "<<_pHRUGroups[kk]->GetName()<<" : ";
+    for(k=0;k<_pHRUGroups[kk]->GetNumHRUs();k++){
+      cout<<_pHRUGroups[kk]->GetHRU(k)->GetID()<<",";
+    }
+    cout<<endl;
+  }*/
+
+  //--check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
+  //---------------------------------------------------------------
+  string disbasins="";
+  bool anydisabled=false;
+  for(p=0;p<_nSubBasins;p++){
+    bool one_enabled =false;
+    bool one_disabled=false;
+    for(k=0; k<_pSubBasins[p]->GetNumHRUs();k++){
+      if(_pSubBasins[p]->GetHRU(k)->IsEnabled()){one_enabled=true;}
+      else                                      {one_disabled=true;}
+    }
+    if(one_enabled && one_disabled){
+      string warn="CModel::Initialize: only some of the HRUs in subbasin "+to_string(_pSubBasins[p]->GetID())+" are disabled. It is suggested to disable all or none of the HRUs in one subbasin to avoid uninterpretable results";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if(one_disabled){ disbasins=disbasins+", "+to_string(_pSubBasins[p]->GetID()); anydisabled=true;}
+    if((one_disabled) && (!one_enabled)){
+      _pSubBasins[p]->Disable(); //all HRUs in basin disabled -disable subbasin!
+    }
+  }
+  for(k=0; k<_nHydroUnits;k++){
+    cout<<" HRU "<<_pHydroUnits[k]->GetID()<<" "<<boolalpha<<_pHydroUnits[k]->IsEnabled()<<endl;
+  }
+  for(p=0;p<_nSubBasins;p++){
+    cout<<" SB "<<_pSubBasins[p]->GetID()<<" "<<boolalpha<<_pSubBasins[p]->IsEnabled()<<endl;
+  }
+  if(anydisabled){
+    WriteWarning("CModel::Initialize: the following subbasins have one or more member HRUs disabled: "+disbasins,Options.noisy);
+  }
 
   //Generate Gauge Weights from Interpolation
   //--------------------------------------------------------------
@@ -245,25 +285,8 @@ void CModel::Initialize(const optStruct &Options)
   if((wetlandsinmodel) && (GetStateVarIndex(DEPRESSION)==DOESNT_EXIST)) {
     ExitGracefully("CModel::Initialize: At least one WETLAND-type soil profile is included but no DEPRESSION storage processes included in hydrologic process list.",BAD_DATA_WARN);
   }
-  //--check for partial disabling of basin HRUs
-  string disbasins="";
-  bool anydisabled=false;
-  for(p=0;p<_nSubBasins;p++){
-    bool one_enabled =false;
-    bool one_disabled=false;
-    for(k=0; k<_pSubBasins[p]->GetNumHRUs();k++){
-      if(_pSubBasins[p]->GetHRU(k)->IsEnabled()){one_enabled=true;}
-      else                                      {one_disabled=true;}
-    }
-    if(one_enabled && one_disabled){
-      string warn="CModel::Initialize: only some of the HRUs in subbasin "+to_string(_pSubBasins[p]->GetID())+" are disabled. It is suggested to disable all or none of the HRUs in one subbasin to avoid odd results";
-      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
-    }
-    if(one_disabled){ disbasins=disbasins+" "+to_string(_pSubBasins[p]->GetID()); anydisabled=true;}
-  }
-  if(anydisabled){
-    WriteWarning("CModel::Initialize: the following subbasins have some member HRUs disabled: "+disbasins,Options.noisy);
-  }
+
+  
 }
 
 //////////////////////////////////////////////////////////////////
@@ -478,7 +501,7 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
     p=this->GetOrderedSubBasinIndex(pp);
 
     pTo=_aDownstreamInds[p];
-    if (pTo!=DOESNT_EXIST){
+    if ((pTo!=DOESNT_EXIST) && (_pSubBasins[pTo]->IsEnabled())){
       aSBQin [pTo]+=aSBQlat[p]+aSBQin[p];
       aSBArea[pTo]+=aSBArea[p];//now aSBArea==drainage area
     }

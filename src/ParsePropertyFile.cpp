@@ -90,7 +90,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   CGlobalParams::InitializeGlobalParameters(global_template,true);
   CGlobalParams::InitializeGlobalParameters(parsed_globals,false); 
   
-  CVegetationClass::InitializeVegetationProps (parsed_veg[0],true);//zero-index canopy is template
+  CVegetationClass::InitializeVegetationProps ("[DEFAULT]",parsed_veg[0],true);//zero-index canopy is template
   vegtags    [0]="[DEFAULT]";
   num_parsed_veg++;
 
@@ -98,7 +98,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   soiltags    [0]="[DEFAULT]";
   num_parsed_soils++;
 
-  CLandUseClass::InitializeSurfaceProperties(parsed_surf[0],true);//zero-index LULT is template
+  CLandUseClass::InitializeSurfaceProperties("[DEFAULT]",parsed_surf[0],true);//zero-index LULT is template
   lulttags    [0]="[DEFAULT]";
   num_parsed_lult++;
 
@@ -536,7 +536,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_lult>=MAX_LULT_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}
            
-          CLandUseClass::InitializeSurfaceProperties(parsed_surf[num_parsed_lult],false);
+          CLandUseClass::InitializeSurfaceProperties(s[0],parsed_surf[num_parsed_lult],false);
           pLUClasses [num_parsed_lult-1]=new CLandUseClass(s[0]);
           lulttags   [num_parsed_lult]=s[0];
           parsed_surf[num_parsed_lult].impermeable_frac=s_to_d(s[1]); 
@@ -623,7 +623,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_veg>=MAX_VEG_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of vegetation classes",BAD_DATA);}
            
-          CVegetationClass::InitializeVegetationProps(parsed_veg [num_parsed_veg],false);
+          CVegetationClass::InitializeVegetationProps(s[0],parsed_veg [num_parsed_veg],false);
           pVegClasses[num_parsed_veg-1]=new CVegetationClass(s[0]);
           vegtags    [num_parsed_veg]=s[0];
           parsed_veg [num_parsed_veg].max_height   =s_to_d(s[1]); 
@@ -1549,7 +1549,7 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStr
     else if (aPC[ii]==CLASS_VEGETATION){
       for (int c=0;c<CVegetationClass::GetNumClasses();c++){
         if (CVegetationClass::GetVegClass(c)->GetVegetationProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required vegetation property "+aP[ii]+" not included in .rvp file for vegetation class "+CVegetationClass::GetVegClass(c)->GetTag();
+          string warning="ParsePropertyFile: required vegetation property "+aP[ii]+" not included in .rvp file for vegetation class "+CVegetationClass::GetVegClass(c)->GetVegetationName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }
@@ -1558,7 +1558,7 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStr
       for (int c=0;c<CLandUseClass::GetNumClasses();c++){
         if (CLandUseClass::GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
             
-          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+CLandUseClass::GetLUClass(c)->GetTag();
+          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+CLandUseClass::GetLUClass(c)->GetLanduseName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }

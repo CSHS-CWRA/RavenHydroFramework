@@ -694,7 +694,10 @@ double CModel::GetAveragePrecip() const
   double sum(0);
   for (int k=0;k<_nHydroUnits;k++)
   {
-    sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_WatershedArea;
 }
@@ -710,8 +713,11 @@ double CModel::GetAverageSnowfall() const
   const force_struct *f;
   for (int k=0;k<_nHydroUnits;k++)
   {
-    f=_pHydroUnits[k]->GetForcingFunctions();
-    sum+=(f->precip*f->snow_frac)*_pHydroUnits[k]->GetArea();
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      f=_pHydroUnits[k]->GetForcingFunctions();
+      sum+=(f->precip*f->snow_frac)*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_WatershedArea;
 }
@@ -730,61 +736,55 @@ force_struct CModel::GetAverageForcings() const
 
   for (int k=0;k<_nHydroUnits;k++)
   {
-    pF_hru =_pHydroUnits[k]->GetForcingFunctions();
-    area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      pF_hru =_pHydroUnits[k]->GetForcingFunctions();
+      area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
 
-    Fave.precip          +=area_wt*pF_hru->precip;
-    Fave.precip_daily_ave+=area_wt*pF_hru->precip_daily_ave;
-    Fave.precip_5day     +=area_wt*pF_hru->precip_5day;
-    Fave.snow_frac       +=area_wt*pF_hru->snow_frac;
+      Fave.precip          +=area_wt*pF_hru->precip;
+      Fave.precip_daily_ave+=area_wt*pF_hru->precip_daily_ave;
+      Fave.precip_5day     +=area_wt*pF_hru->precip_5day;
+      Fave.snow_frac       +=area_wt*pF_hru->snow_frac;
 
-    Fave.temp_ave       +=area_wt*pF_hru->temp_ave;
-    Fave.temp_daily_min +=area_wt*pF_hru->temp_daily_min;
-    Fave.temp_daily_max +=area_wt*pF_hru->temp_daily_max;
-    Fave.temp_daily_ave +=area_wt*pF_hru->temp_daily_ave;
-    Fave.temp_month_max +=area_wt*pF_hru->temp_month_max;
-    Fave.temp_month_min +=area_wt*pF_hru->temp_month_min;
-    Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
+      Fave.temp_ave       +=area_wt*pF_hru->temp_ave;
+      Fave.temp_daily_min +=area_wt*pF_hru->temp_daily_min;
+      Fave.temp_daily_max +=area_wt*pF_hru->temp_daily_max;
+      Fave.temp_daily_ave +=area_wt*pF_hru->temp_daily_ave;
+      Fave.temp_month_max +=area_wt*pF_hru->temp_month_max;
+      Fave.temp_month_min +=area_wt*pF_hru->temp_month_min;
+      Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
 
-    Fave.temp_ave_unc   +=area_wt*pF_hru->temp_ave_unc;
-    Fave.temp_min_unc   +=area_wt*pF_hru->temp_min_unc;
-    Fave.temp_max_unc   +=area_wt*pF_hru->temp_max_unc;
+      Fave.temp_ave_unc   +=area_wt*pF_hru->temp_ave_unc;
+      Fave.temp_min_unc   +=area_wt*pF_hru->temp_min_unc;
+      Fave.temp_max_unc   +=area_wt*pF_hru->temp_max_unc;
 
-    Fave.air_dens       +=area_wt*pF_hru->air_dens;
-    Fave.air_pres       +=area_wt*pF_hru->air_pres;
-    Fave.rel_humidity   +=area_wt*pF_hru->rel_humidity;
+      Fave.air_dens       +=area_wt*pF_hru->air_dens;
+      Fave.air_pres       +=area_wt*pF_hru->air_pres;
+      Fave.rel_humidity   +=area_wt*pF_hru->rel_humidity;
 
-    Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
-    Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
-    Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
-    Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
-    Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
-    Fave.LW_radia       +=area_wt*pF_hru->LW_radia;
-    Fave.day_length     +=area_wt*pF_hru->day_length;
-    Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc.
+      Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
+      Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
+      Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
+      Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
+      Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
+      Fave.LW_radia       +=area_wt*pF_hru->LW_radia;
+      Fave.day_length     +=area_wt*pF_hru->day_length;
+      Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc.
 
-    Fave.wind_vel       +=area_wt*pF_hru->wind_vel;
+      Fave.wind_vel       +=area_wt*pF_hru->wind_vel;
 
-    Fave.PET            +=area_wt*pF_hru->PET;
-    Fave.OW_PET         +=area_wt*pF_hru->OW_PET;
-    Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave;
+      Fave.PET            +=area_wt*pF_hru->PET;
+      Fave.OW_PET         +=area_wt*pF_hru->OW_PET;
+      Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave;
 
-    Fave.potential_melt +=area_wt*pF_hru->potential_melt;
-    
-    Fave.recharge       +=area_wt*pF_hru->recharge;
+      Fave.potential_melt +=area_wt*pF_hru->potential_melt;
 
-    Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
+      Fave.recharge       +=area_wt*pF_hru->recharge;
+
+      Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
+    }
   }
   return Fave;
-
-  /*LATER?:
-    double sum(0);
-    int f=GetForcingIndex(force);
-    for (int k=0;k<_nHydroUnits;k++)
-    {
-    sum+=_pHydroUnits[k]->GetForcingFunction(f)*_pHydroUnits[k]->GetArea();
-    }
-    sum/=watershed_area;*/
 }
 
 //////////////////////////////////////////////////////////////////
@@ -802,7 +802,10 @@ double CModel::GetAvgStateVar(const int i) const
   double sum(0.0);
   for (int k=0;k<_nHydroUnits;k++)
   {
-    sum+=(_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea());
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum+=(_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea());
+    }
   }
   return sum/_WatershedArea;
 }
@@ -819,7 +822,10 @@ double CModel::GetAvgForcing (const string &forcing_string) const
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
-    sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+    if (_pHydroUnits[k]->IsEnabled())
+    {
+      sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_WatershedArea;
 }
@@ -836,7 +842,10 @@ double CModel::GetAvgCumulFlux (const int i, const bool to) const
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
-    sum    +=this->GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum +=GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+    }
   }
   return sum/_WatershedArea;
 }
@@ -906,6 +915,12 @@ void CModel::AddHRU(CHydroUnit *pHRU)
 //
 void CModel::AddHRUGroup(CHRUGroup *pHRUGroup)
 {
+  for(int kk=0;kk<_nHRUGroups;kk++){
+    if(pHRUGroup->GetName()==_pHRUGroups[kk]->GetName()){
+      WriteWarning("CModel::AddHRUGroups: cannot add two HRU groups with the same name. Group "+pHRUGroup->GetName()+ " is duplicated in input.",true);
+      break;
+    }
+  }
   if (!DynArrayAppend((void**&)(_pHRUGroups),(void*)(pHRUGroup),_nHRUGroups)){
     ExitGracefully("CModel::AddHRUGroup: adding NULL HRU Group",BAD_DATA);}
 }
@@ -1401,11 +1416,18 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
   double area=(_WatershedArea*M2_PER_KM2);
   for(int p=0;p<_nSubBasins;p++)
   {
-    if(_aSubBasinOrder[p]==0)//outlet does not drain into another subbasin
-    {
-      _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
+    bool outflowdisabled;
+    CSubBasin *pSBdown=NULL;
+    pSBdown=GetSubBasinByID(_pSubBasins[p]->GetDownstreamID());
+    outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
+
+    if(_pSubBasins[p]->IsEnabled()){
+      if((_aSubBasinOrder[p]==0) || (outflowdisabled))//outlet does not drain into another subbasin
+      {
+        _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
+      }
+      _CumulOutput+=_pSubBasins[p]->GetReservoirLosses(Options.timestep)/area*MM_PER_METER;
     }
-    _CumulOutput+=_pSubBasins[p]->GetReservoirLosses(Options.timestep)/area*MM_PER_METER;
   }
   _pTransModel->IncrementCumulOutput(Options);
 }
@@ -1501,7 +1523,10 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
 {
   for (int k=0;k<_nHydroUnits;k++)
   {
-    _pHydroUnits[k]->RecalculateDerivedParams(Options,tt);
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      _pHydroUnits[k]->RecalculateDerivedParams(Options,tt);
+    }
   }
 }
 
@@ -1698,7 +1723,8 @@ bool CModel::ApplyLateralProcess( const int          j,
 
   pLatProc=(CLateralExchangeProcessABC*)_pProcesses[j]; // Cast
   if (!_aShouldApplyProcess[j][pLatProc->GetFromHRUIndices()[0]]){return false;} //JRC: is the From/0 appropriate?
-    
+  
+  
   for (int q=0;q<nLatConnections;q++)
   {
     iFrom[q]=pLatProc->GetLateralFromIndices()[q];
@@ -1707,7 +1733,11 @@ bool CModel::ApplyLateralProcess( const int          j,
     kTo  [q]=pLatProc->GetToHRUIndices()[q];
     exchange_rates[q]=0.0;
   }
-  
+  for(int q=0;q<nLatConnections;q++)
+  {
+    if(!_pHydroUnits[kFrom[q]]->IsEnabled()) { return false; }
+    if(!_pHydroUnits[kTo  [q]]->IsEnabled()) { return false; } //ALL participating HRUs must be enabled to apply
+  }
   pLatProc->GetLateralExchange(state_vars,_pHydroUnits,Options,tt,exchange_rates);
 
   return true;

@@ -131,450 +131,455 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   double ref_elev;
   for (k = 0; k < _nHydroUnits; k++)
   {
-    elev  = _pHydroUnits[k]->GetElevation();
-    slope = _pHydroUnits[k]->GetSlope();
-
-    ZeroOutForcings(F);
-    ref_elev = 0.0;
-
-    //not gauge-based
-    if (tt.day_changed)
+    if(_pHydroUnits[k]->IsEnabled())
     {
-      F.day_angle  = CRadiation::DayAngle(mid_day, yr);
-      F.day_length = CRadiation::DayLength(_pHydroUnits[k]->GetLatRad(), CRadiation::SolarDeclination(F.day_angle));
-    }
+      elev  = _pHydroUnits[k]->GetElevation();
+      slope = _pHydroUnits[k]->GetSlope();
 
-    //interpolate forcing values from gauges
-    //-------------------------------------------------------------------
-    for (g = 0; g < _nGauges; g++)
-    {
-      wt=_aGaugeWeights[k][g];
-      if(wt != 0.0){
+      ZeroOutForcings(F);
+      ref_elev = 0.0;
 
-        if(!(pre_gridded || snow_gridded || rain_gridded))
-        {
-          F.precip           += wt * Fg[g].precip;
-          F.precip_daily_ave += wt * Fg[g].precip_daily_ave;
-          F.precip_5day      += wt * Fg[g].precip_5day;
-          F.snow_frac        += wt * Fg[g].snow_frac;
-        }
-        if(!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded))
-        {
-          F.temp_ave         += wt * Fg[g].temp_ave;
-          F.temp_daily_ave   += wt * Fg[g].temp_daily_ave;
-          F.temp_daily_min   += wt * Fg[g].temp_daily_min;
-          F.temp_daily_max   += wt * Fg[g].temp_daily_max;
-          F.temp_month_min   += wt * Fg[g].temp_month_min;
-          F.temp_month_max   += wt * Fg[g].temp_month_max;
-          F.temp_month_ave   += wt * Fg[g].temp_month_ave;
-        }
-
-        F.rel_humidity   += wt * Fg[g].rel_humidity;
-        F.wind_vel       += wt * Fg[g].wind_vel;
-        F.cloud_cover    += wt * Fg[g].cloud_cover;
-        F.ET_radia       += wt * Fg[g].ET_radia;
-        F.LW_radia       += wt * Fg[g].LW_radia;
-        F.SW_radia       += wt * Fg[g].SW_radia;
-        F.SW_radia_net   += wt * Fg[g].SW_radia_net;
-        F.PET_month_ave  += wt * Fg[g].PET_month_ave;
-        F.PET            += wt * Fg[g].PET;
-        F.OW_PET         += wt * Fg[g].OW_PET;
-        F.potential_melt += wt * Fg[g].potential_melt;
-        if(!(recharge_gridded)){
-          F.recharge       += wt * Fg[g].recharge;
-        }
-        //F.subdaily_corr+= wt * Fg[g].subdaily_corr;
-
-        ref_elev         += wt * _pGauges[g]->GetElevation();
-      }
-    }
-
-    //-------------------------------------------------------------------
-    //  Gridded data support
-    //-------------------------------------------------------------------
-    int    nRows;                                     // number of rows of gridded data
-    int    nCols;                                     // number of columns of gridded data
-    int    nGridCells;                                // number of grid cells (rows x cols)
-    int    nNonZeroGridCells;                         // number of grid cells with non-zero weighting
-    double interval_pre;                              // delta t of various gridded forcing data
-    bool   new_chunk1;                                // true if new chunk was read, otherwise false
-    bool   new_chunk2;                                // true if new chunk was read, otherwise false
-    bool   new_chunk3;                                // true if new chunk was read, otherwise false
-    bool   new_chunk4;                                // true if new chunk was read, otherwise false
-    double idx_new;                                   // index of forcing time series corresponding to current modelled time step
-    double idx_new_day;                               // index of forcing time series corresponding to current modelled day
-
-    //Override forcing functions with gridded data, if present
-    // see if gridded forcing is available (either from NetCDF or derived)
-    pre_gridded            = ForcingGridIsInput("PRECIP"              ); //JRC: NECCESARY? - isnt this above?
-    rain_gridded           = ForcingGridIsInput("RAINFALL"            );
-    snow_gridded           = ForcingGridIsInput("SNOWFALL"            );
-    pet_gridded            = ForcingGridIsInput("PET"                 );
-    temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE"            );
-    temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN"      );
-    temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX"      );
-    temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE"      );
-    recharge_gridded       = ForcingGridIsInput("RECHARGE"            );
-
-    // find the correct grid
-    if ( pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")        ); }
-    if ( rain_gridded)            { pGrid_rain       = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")      ); }
-    if ( snow_gridded)            { pGrid_snow       = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")      ); }
-    if ( pet_gridded)             { pGrid_pet        = GetForcingGrid(GetForcingGridIndexFromName("PET")           ); }
-    if ( temp_ave_gridded )       { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")      ); }
-    if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
-    if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
-    if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
-    if ( recharge_gridded )       { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE"      )); }
-
-    // // --------------------------------------------------------
-    // // print how many and which forcing grids are available
-    // // --------------------------------------------------------
-    // printf("_nForcingGrids = %i\n",_nForcingGrids);
-    // for (int ff=0;ff<_nForcingGrids;ff++)
-    //        {
-    //          forcing_type tmp = _pForcingGrids[ff]->GetName();
-    //          string       tmp2 = ForcingToString(tmp) ;
-    //          cout << "forcing_type = " << tmp << " : " << tmp2 << endl;
-    //        }
-
-    // ---------------------
-    // (1A) read gridded precip/snowfall/rainfall and populate additional time series
-    // ---------------------
-    if ( pre_gridded || snow_gridded || rain_gridded )
-    {
-      // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
-      new_chunk1 = false; new_chunk2 = false; new_chunk3 = false;
-      if (pre_gridded)  {new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time);}
-      if (snow_gridded) {new_chunk2 = pGrid_snow->ReadData(Options,tt.model_time);}
-      if (rain_gridded) {new_chunk3 = pGrid_rain->ReadData(Options,tt.model_time);}
-
-      // populate derived data from the ones just read
-      if (new_chunk1 || new_chunk2 || new_chunk3) { InitializeForcingGrids(Options, "PREC"); }
-
-      pre_gridded = ForcingGridIsAvailable("PRECIP"  );//JRC: Shouldnt these all be true if InitializeForcingGrids("PREC") was called
-      rain_gridded= ForcingGridIsAvailable("RAINFALL");
-      snow_gridded= ForcingGridIsAvailable("SNOWFALL");
-
-      if ( pre_gridded || (snow_gridded && rain_gridded) ) { //JRC: Shouldnt this be true if InitializeForcingGrids("PREC") was called
-        F.precip           = 0.0;
-        F.precip_daily_ave = 0.0;
-        F.precip_5day      = 0.0;
-        F.snow_frac        = 0.0;
-      }
-
-      if ( pre_gridded)  { pGrid_pre  = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")        ); }
-      if ( rain_gridded) { pGrid_rain = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")      ); }
-      if ( snow_gridded) { pGrid_snow = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")      ); }
-
-    }
-
-    // ---------------------
-    // (1B) update forcings: F.precip, F.precip_daily_ave, F.precip_5day
-    // ---------------------
-    if ( pre_gridded ) //JRC: does this need to be a separate loop?
-    {
-      nRows                  = pGrid_pre->GetRows();
-      nCols                  = pGrid_pre->GetCols();
-      nGridCells             = nRows * nCols;
-      nNonZeroGridCells      = pGrid_pre->GetNumberNonZeroGridCells();
-      interval_pre           = pGrid_pre->GetInterval();
-
-      idx_new     = int((pGrid_pre->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
-      idx_new_day = int((pGrid_pre->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
-
-      for (int gg = 0; gg < nNonZeroGridCells; gg++)
+      //not gauge-based
+      if(tt.day_changed)
       {
-        int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
-
-        wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.precip           += wt * pGrid_pre->GetValue(gg, idx_new,     int(max(1.0,round(Options.timestep/interval_pre))));
-          F.precip_daily_ave += wt * pGrid_pre->GetValue(gg, idx_new_day, int(        round(             1.0/interval_pre)));
-          F.precip_5day      += wt * -9999.0;
-        }
-      }
-    }
-
-    // ---------------------
-    // (1b) update forcings: F.snow_frac
-    // ---------------------
-    double interval_snow;       // delta t of various gridded forcing data [d]
-    if ( snow_gridded && rain_gridded ) //JRC: does this need to be a separate loop? After InitializeForcingGrids(), this should be true always
-    {
-      nRows                  = pGrid_snow->GetRows();
-      nCols                  = pGrid_snow->GetCols();
-      nGridCells             = nRows * nCols;
-      nNonZeroGridCells      = pGrid_snow->GetNumberNonZeroGridCells();
-      interval_snow          = pGrid_snow->GetInterval();
-
-      idx_new     = int((pGrid_snow->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize();
-      //idx_new_day = int((pGrid_snow->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize(); //JRC: not used
-
-      for (int gg = 0; gg < nNonZeroGridCells; gg++)
-      {
-        int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
-
-        wt= pGrid_snow->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.snow_frac+= wt * GetAverageSnowFrac(gg, idx_new, int(max(1.0,round(Options.timestep/interval_snow))));
-        }
-      }
-    }
-
-    // ---------------------
-    // (2a) read gridded temperature (average or min/max) and populate additional time series
-    // ---------------------
-    if ( temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded )
-    {
-      // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
-      new_chunk1 = false; new_chunk2 = false; new_chunk3 = false; new_chunk4 = false;
-      if (temp_ave_gridded)       {new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
-      if (temp_daily_ave_gridded) {new_chunk2 = pGrid_daily_tave->ReadData(Options,tt.model_time); }
-      if (temp_daily_min_gridded) {new_chunk3 = pGrid_daily_tmin->ReadData(Options,tt.model_time); }
-      if (temp_daily_max_gridded) {new_chunk4 = pGrid_daily_tmax->ReadData(Options,tt.model_time); }
-
-      // populate derived data from the ones just read
-      if (new_chunk1 || new_chunk2 || new_chunk3 || new_chunk4) { InitializeForcingGrids(Options, "TEMP"); }
-      if ((new_chunk3 && !new_chunk4) || (!new_chunk3 && new_chunk4)) {
-        ExitGracefully( "CModel::UpdateHRUForcingFunctions: Min and max temperature have to have same time points.", BAD_DATA); }
-
-      if ( temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded ) //JRC: Necessary? Isnt this always true after InitializeForcingGrids("TEMP")
-      {
-        F.temp_ave         = 0.0;
-        F.temp_daily_ave   = 0.0;
-        F.temp_daily_min   = 0.0;
-        F.temp_daily_max   = 0.0;
-        F.temp_month_min   = 0.0;
-        F.temp_month_max   = 0.0;
-        F.temp_month_ave   = 0.0;
+        F.day_angle  = CRadiation::DayAngle(mid_day,yr);
+        F.day_length = CRadiation::DayLength(_pHydroUnits[k]->GetLatRad(),CRadiation::SolarDeclination(F.day_angle));
       }
 
-      temp_ave_gridded        = ForcingGridIsAvailable("TEMP_AVE"            );
-      temp_daily_ave_gridded  = ForcingGridIsAvailable("TEMP_DAILY_AVE"      );
-      temp_daily_min_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MIN"      );
-      temp_daily_max_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MAX"      );
-
-      if ( temp_ave_gridded       ) {       pGrid_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"            )); } //JRC: Necessary conditional ? Isnt this always true after InitializeForcingGrids("TEMP")
-      if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"      )); }
-      if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN"      )); }
-      if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX"      )); }
-    }
-
-    // ---------------------
-    // (2b) update forcings: F.temp_daily_min, F.temp_monthly_min,
-    //                       F.temp_daily_max, F.temp_monthly_max,
-    //                       F.temp_daily_ave, F.temp_monthly_ave,
-    //                       F.temp_ave
-    // ---------------------
-    double interval_tmin;                             // delta t of Tmin gridded forcing data
-    double interval_tmax;                             // delta t of Tmax gridded forcing data
-    if ( temp_ave_gridded && temp_daily_min_gridded && temp_daily_max_gridded && temp_daily_ave_gridded )
-    {
-      nRows             = pGrid_tave->GetRows();  // assuming that it is the same for all grids
-      nCols             = pGrid_tave->GetCols();  // assuming that it is the same for all grids
-      nGridCells        = nRows * nCols;
-      nNonZeroGridCells = pGrid_tave->GetNumberNonZeroGridCells();
-
-      interval_tmin   = pGrid_daily_tmin->GetInterval();
-      interval_tmax   = pGrid_daily_tmax->GetInterval();
-
-      ExitGracefullyIf( interval_tmax != interval_tmin,
-                        "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature must have same time resolution.", BAD_DATA);
-
-      for (int gg = 0; gg < nNonZeroGridCells; gg++)
+      //interpolate forcing values from gauges
+      //-------------------------------------------------------------------
+      for(g = 0; g < _nGauges; g++)
       {
-        int cell_idx = pGrid_tave->GetIdxNonZeroGridCell(gg);
-
-        // Tmax       is with input time resolution
-        // Tmin       is with input time resolution
-        // Tave       is with model time resolution
-        // Tave_daily is with daily resolution
-
-        idx_new = int((pGrid_daily_tmin->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmin->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmin->GetChunkSize();
-        wt                  = pGrid_daily_tmin->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.temp_daily_min   += wt *  pGrid_daily_tmin->GetValue(gg, idx_new);
-          F.temp_month_min   += wt * NOT_SPECIFIED;
-        }
-
-        idx_new = int((pGrid_daily_tmax->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmax->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmax->GetChunkSize();
-        wt                  = pGrid_daily_tmax->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.temp_daily_max   += wt *  pGrid_daily_tmax->GetValue(gg, idx_new);
-          F.temp_month_max   += wt * NOT_SPECIFIED;
-        }
-
-        idx_new = int((pGrid_daily_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tave->GetInterval())+Options.timestep/2.0) % pGrid_daily_tave->GetChunkSize();
-        wt                  = pGrid_daily_tave->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.temp_daily_ave   += wt *  pGrid_daily_tave->GetValue(gg, idx_new);
-          F.temp_month_ave    = NOT_SPECIFIED;
-        }
-
-        idx_new = int((pGrid_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_tave->GetInterval())+Options.timestep/2.0) % pGrid_tave->GetChunkSize();
-        wt                  = pGrid_tave->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.temp_ave         += wt *  pGrid_tave->GetValue(gg, idx_new);
-        }
-      }
-
-    }
-
-    // ---------------------
-    // (3) read gridded recharge
-    // ---------------------
-    double interval;
-    if ( recharge_gridded )
-    {
-      // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
-      pGrid_recharge-> ReadData(Options,tt.model_time);
-
-      nRows                  = pGrid_recharge->GetRows();
-      nCols                  = pGrid_recharge->GetCols();
-      nGridCells             = nRows * nCols;
-      nNonZeroGridCells      = pGrid_recharge->GetNumberNonZeroGridCells();
-      interval               = pGrid_recharge->GetInterval();
-
-      idx_new     = int((pGrid_recharge->GetTcorr() + tt.model_time) * round(1.0/interval)+Options.timestep/2.0)  % pGrid_recharge->GetChunkSize();
-      
-      F.recharge = 0.0;
-      for (int gg = 0; gg < nNonZeroGridCells; gg++)
-      {
-        int cell_idx = pGrid_recharge->GetIdxNonZeroGridCell(gg);
-        wt = pGrid_recharge->GetGridWeight(k,cell_idx);
-        if (wt != 0.0) {
-          F.recharge+= wt*pGrid_recharge->GetValue(gg, idx_new, int(max(1.0,round(Options.timestep/interval))));
-        }
-      }
-      //replace with -- F.recharge=pGrid_recharge->GetWeightedValue(Options.timestep);
-    }
-
-    F.temp_ave_unc = F.temp_daily_ave;
-    F.temp_min_unc = F.temp_daily_min;
-    F.temp_max_unc = F.temp_daily_max;
-
-    //-------------------------------------------------------------------
-    //  Temperature Corrections
-    //-------------------------------------------------------------------
-    CorrectTemp(Options, F, elev, ref_elev, tt);
-
-    //-------------------------------------------------------------------
-    //  Copy Daily values from current day, earlier time steps
-    //    (done after temperature corrections so that the uncorrected values are used in calculating the lapse rate for temp_ave)
-    //-------------------------------------------------------------------
-    if (!tt.day_changed){
-      _pHydroUnits[k]->CopyDailyForcings(F);
-    }
-
-    //-------------------------------------------------------------------
-    //  Subdaily Corrections
-    //-------------------------------------------------------------------
-    F.subdaily_corr = CalculateSubDailyCorrection(F, Options, elev, ref_elev, tt, k);
-
-    //-------------------------------------------------------------------
-    //  Air Pressure, Density, relative humidity
-    //-------------------------------------------------------------------
-    F.air_pres = EstimateAirPressure(Options.air_pressure, F, elev);
-
-    F.air_dens = GetAirDensity(F.temp_ave, F.air_pres);
-
-    F.rel_humidity = EstimateRelativeHumidity(Options.rel_humidity, F);
-
-    //-------------------------------------------------------------------
-    // Snow fraction Calculations
-    //-------------------------------------------------------------------
-    F.snow_frac =EstimateSnowFraction(Options.rainsnow,&F,Options);
-
-    //-------------------------------------------------------------------
-    //  Precip Corrections
-    //-------------------------------------------------------------------
-
-    //--Gauge Corrections------------------------------------------------
-    double gauge_corr;
-    double grid_corr;
-    F.precip=F.precip_5day=F.precip_daily_ave=0.0;
-
-    if ( !(pre_gridded || snow_gridded || rain_gridded) )
-    {
-      for(int g=0; g<_nGauges; g++)
-      {
-        gauge_corr= F.snow_frac*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*_pGauges[g]->GetRainfallCorr();
         wt=_aGaugeWeights[k][g];
+        if(wt != 0.0){
 
-        F.precip         += wt*gauge_corr*Fg[g].precip;
-        F.precip_daily_ave+=wt*gauge_corr*Fg[g].precip_daily_ave;
-        F.precip_5day    += wt*gauge_corr*Fg[g].precip_5day;
+          if(!(pre_gridded || snow_gridded || rain_gridded))
+          {
+            F.precip           += wt * Fg[g].precip;
+            F.precip_daily_ave += wt * Fg[g].precip_daily_ave;
+            F.precip_5day      += wt * Fg[g].precip_5day;
+            F.snow_frac        += wt * Fg[g].snow_frac;
+          }
+          if(!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded))
+          {
+            F.temp_ave         += wt * Fg[g].temp_ave;
+            F.temp_daily_ave   += wt * Fg[g].temp_daily_ave;
+            F.temp_daily_min   += wt * Fg[g].temp_daily_min;
+            F.temp_daily_max   += wt * Fg[g].temp_daily_max;
+            F.temp_month_min   += wt * Fg[g].temp_month_min;
+            F.temp_month_max   += wt * Fg[g].temp_month_max;
+            F.temp_month_ave   += wt * Fg[g].temp_month_ave;
+          }
+
+          F.rel_humidity   += wt * Fg[g].rel_humidity;
+          F.wind_vel       += wt * Fg[g].wind_vel;
+          F.cloud_cover    += wt * Fg[g].cloud_cover;
+          F.ET_radia       += wt * Fg[g].ET_radia;
+          F.LW_radia       += wt * Fg[g].LW_radia;
+          F.SW_radia       += wt * Fg[g].SW_radia;
+          F.SW_radia_net   += wt * Fg[g].SW_radia_net;
+          F.PET_month_ave  += wt * Fg[g].PET_month_ave;
+          F.PET            += wt * Fg[g].PET;
+          F.OW_PET         += wt * Fg[g].OW_PET;
+          F.potential_melt += wt * Fg[g].potential_melt;
+          if(!(recharge_gridded)){
+            F.recharge       += wt * Fg[g].recharge;
+          }
+          //F.subdaily_corr+= wt * Fg[g].subdaily_corr;
+
+          ref_elev         += wt * _pGauges[g]->GetElevation();
+        }
       }
-    }
-    else
-    {
-      for (int gg = 0; gg < nNonZeroGridCells; gg++)
-      {
-        int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
 
-        grid_corr= F.snow_frac*pGrid_pre->GetSnowfallCorr() + (1.0-F.snow_frac)*pGrid_pre->GetRainfallCorr();
+      //-------------------------------------------------------------------
+      //  Gridded data support
+      //-------------------------------------------------------------------
+      int    nRows;                                     // number of rows of gridded data
+      int    nCols;                                     // number of columns of gridded data
+      int    nGridCells;                                // number of grid cells (rows x cols)
+      int    nNonZeroGridCells;                         // number of grid cells with non-zero weighting
+      double interval_pre;                              // delta t of various gridded forcing data
+      bool   new_chunk1;                                // true if new chunk was read, otherwise false
+      bool   new_chunk2;                                // true if new chunk was read, otherwise false
+      bool   new_chunk3;                                // true if new chunk was read, otherwise false
+      bool   new_chunk4;                                // true if new chunk was read, otherwise false
+      double idx_new;                                   // index of forcing time series corresponding to current modelled time step
+      double idx_new_day;                               // index of forcing time series corresponding to current modelled day
+
+      //Override forcing functions with gridded data, if present
+      // see if gridded forcing is available (either from NetCDF or derived)
+      pre_gridded            = ForcingGridIsInput("PRECIP"); //JRC: NECCESARY? - isnt this above?
+      rain_gridded           = ForcingGridIsInput("RAINFALL");
+      snow_gridded           = ForcingGridIsInput("SNOWFALL");
+      pet_gridded            = ForcingGridIsInput("PET");
+      temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE");
+      temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN");
+      temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX");
+      temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE");
+      recharge_gridded       = ForcingGridIsInput("RECHARGE");
+
+      // find the correct grid
+      if(pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); }
+      if(rain_gridded)            { pGrid_rain       = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); }
+      if(snow_gridded)            { pGrid_snow       = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); }
+      if(pet_gridded)             { pGrid_pet        = GetForcingGrid(GetForcingGridIndexFromName("PET")); }
+      if(temp_ave_gridded)       { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); }
+      if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
+      if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
+      if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+      if(recharge_gridded)       { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); }
+
+      // // --------------------------------------------------------
+      // // print how many and which forcing grids are available
+      // // --------------------------------------------------------
+      // printf("_nForcingGrids = %i\n",_nForcingGrids);
+      // for (int ff=0;ff<_nForcingGrids;ff++)
+      //        {
+      //          forcing_type tmp = _pForcingGrids[ff]->GetName();
+      //          string       tmp2 = ForcingToString(tmp) ;
+      //          cout << "forcing_type = " << tmp << " : " << tmp2 << endl;
+      //        }
+
+      // ---------------------
+      // (1A) read gridded precip/snowfall/rainfall and populate additional time series
+      // ---------------------
+      if(pre_gridded || snow_gridded || rain_gridded)
+      {
+        // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
+        new_chunk1 = false; new_chunk2 = false; new_chunk3 = false;
+        if(pre_gridded)  { new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time); }
+        if(snow_gridded) { new_chunk2 = pGrid_snow->ReadData(Options,tt.model_time); }
+        if(rain_gridded) { new_chunk3 = pGrid_rain->ReadData(Options,tt.model_time); }
+
+        // populate derived data from the ones just read
+        if(new_chunk1 || new_chunk2 || new_chunk3) { InitializeForcingGrids(Options,"PREC"); }
+
+        pre_gridded = ForcingGridIsAvailable("PRECIP");//JRC: Shouldnt these all be true if InitializeForcingGrids("PREC") was called
+        rain_gridded= ForcingGridIsAvailable("RAINFALL");
+        snow_gridded= ForcingGridIsAvailable("SNOWFALL");
+
+        if(pre_gridded || (snow_gridded && rain_gridded)) { //JRC: Shouldnt this be true if InitializeForcingGrids("PREC") was called
+          F.precip           = 0.0;
+          F.precip_daily_ave = 0.0;
+          F.precip_5day      = 0.0;
+          F.snow_frac        = 0.0;
+        }
+
+        if(pre_gridded)  { pGrid_pre  = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); }
+        if(rain_gridded) { pGrid_rain = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); }
+        if(snow_gridded) { pGrid_snow = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); }
+
+      }
+
+      // ---------------------
+      // (1B) update forcings: F.precip, F.precip_daily_ave, F.precip_5day
+      // ---------------------
+      if(pre_gridded) //JRC: does this need to be a separate loop?
+      {
+        nRows                  = pGrid_pre->GetRows();
+        nCols                  = pGrid_pre->GetCols();
+        nGridCells             = nRows * nCols;
+        nNonZeroGridCells      = pGrid_pre->GetNumberNonZeroGridCells();
+        interval_pre           = pGrid_pre->GetInterval();
 
         idx_new     = int((pGrid_pre->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
         idx_new_day = int((pGrid_pre->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
 
-        wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
-        F.precip           += wt * grid_corr * pGrid_pre->GetValue(gg, idx_new,     int(max(1.0,round(Options.timestep/interval_pre))));
-        F.precip_daily_ave += wt * grid_corr * pGrid_pre->GetValue(gg, idx_new_day, int(round(1.0/interval_pre)));
-        F.precip_5day      += wt * grid_corr * -9999.0;
+        for(int gg = 0; gg < nNonZeroGridCells; gg++)
+        {
+          int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
+
+          wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.precip           += wt * pGrid_pre->GetValue(gg,idx_new,int(max(1.0,round(Options.timestep/interval_pre))));
+            F.precip_daily_ave += wt * pGrid_pre->GetValue(gg,idx_new_day,int(round(1.0/interval_pre)));
+            F.precip_5day      += wt * -9999.0;
+          }
+        }
       }
-    }
-    //--Orographic corrections-------------------------------------------
-    CorrectPrecip(Options,F,elev,ref_elev,k,tt);
 
-    //-------------------------------------------------------------------
-    //  Wind Velocity
-    //-------------------------------------------------------------------
+      // ---------------------
+      // (1b) update forcings: F.snow_frac
+      // ---------------------
+      double interval_snow;       // delta t of various gridded forcing data [d]
+      if(snow_gridded && rain_gridded) //JRC: does this need to be a separate loop? After InitializeForcingGrids(), this should be true always
+      {
+        nRows                  = pGrid_snow->GetRows();
+        nCols                  = pGrid_snow->GetCols();
+        nGridCells             = nRows * nCols;
+        nNonZeroGridCells      = pGrid_snow->GetNumberNonZeroGridCells();
+        interval_snow          = pGrid_snow->GetInterval();
 
-    F.wind_vel = EstimateWindVelocity(Options, F, k);
+        idx_new     = int((pGrid_snow->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize();
+        //idx_new_day = int((pGrid_snow->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize(); //JRC: not used
 
-    //-------------------------------------------------------------------
-    //  Cloud Cover
-    //-------------------------------------------------------------------
+        for(int gg = 0; gg < nNonZeroGridCells; gg++)
+        {
+          int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
 
-    F.cloud_cover = EstimateCloudCover(Options, F, k);
+          wt= pGrid_snow->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.snow_frac+= wt * GetAverageSnowFrac(gg,idx_new,int(max(1.0,round(Options.timestep/interval_snow))));
+          }
+        }
+      }
 
-    //-------------------------------------------------------------------
-    //  Radiation Calculations
-    //-------------------------------------------------------------------
+      // ---------------------
+      // (2a) read gridded temperature (average or min/max) and populate additional time series
+      // ---------------------
+      if(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded)
+      {
+        // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
+        new_chunk1 = false; new_chunk2 = false; new_chunk3 = false; new_chunk4 = false;
+        if(temp_ave_gridded)       { new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
+        if(temp_daily_ave_gridded) { new_chunk2 = pGrid_daily_tave->ReadData(Options,tt.model_time); }
+        if(temp_daily_min_gridded) { new_chunk3 = pGrid_daily_tmin->ReadData(Options,tt.model_time); }
+        if(temp_daily_max_gridded) { new_chunk4 = pGrid_daily_tmax->ReadData(Options,tt.model_time); }
 
-    F.SW_radia = CRadiation::EstimateShortwaveRadiation(Options, &F, _pHydroUnits[k], tt, F.ET_radia);
-    F.SW_radia_unc = F.SW_radia;
-    F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options, &F);
-    F.SW_radia *= CRadiation::SWCanopyCorrection(Options, _pHydroUnits[k]);
+        // populate derived data from the ones just read
+        if(new_chunk1 || new_chunk2 || new_chunk3 || new_chunk4) { InitializeForcingGrids(Options,"TEMP"); }
+        if((new_chunk3 && !new_chunk4) || (!new_chunk3 && new_chunk4)) {
+          ExitGracefully("CModel::UpdateHRUForcingFunctions: Min and max temperature have to have same time points.",BAD_DATA);
+        }
 
-    //if (Options.SW_radiation_net == SW_RAD_NET_CALCULATE) // \todo [funct] - handle user-specified SW_radia_net
-    {
-      F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
-    }//otherwise, uses data
+        if(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded) //JRC: Necessary? Isnt this always true after InitializeForcingGrids("TEMP")
+        {
+          F.temp_ave         = 0.0;
+          F.temp_daily_ave   = 0.0;
+          F.temp_daily_min   = 0.0;
+          F.temp_daily_max   = 0.0;
+          F.temp_month_min   = 0.0;
+          F.temp_month_max   = 0.0;
+          F.temp_month_ave   = 0.0;
+        }
 
-    F.LW_radia=CRadiation::EstimateLongwaveRadiation  (Options,&F,_pHydroUnits[k]);
+        temp_ave_gridded        = ForcingGridIsAvailable("TEMP_AVE");
+        temp_daily_ave_gridded  = ForcingGridIsAvailable("TEMP_DAILY_AVE");
+        temp_daily_min_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MIN");
+        temp_daily_max_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MAX");
 
-    //-------------------------------------------------------------------
-    //  Potential Melt Rate
-    //-------------------------------------------------------------------
+        if(temp_ave_gridded) { pGrid_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); } //JRC: Necessary conditional ? Isnt this always true after InitializeForcingGrids("TEMP")
+        if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+        if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
+        if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
+      }
 
-    F.potential_melt=EstimatePotentialMelt(&F,Options,_pHydroUnits[k],tt);
+      // ---------------------
+      // (2b) update forcings: F.temp_daily_min, F.temp_monthly_min,
+      //                       F.temp_daily_max, F.temp_monthly_max,
+      //                       F.temp_daily_ave, F.temp_monthly_ave,
+      //                       F.temp_ave
+      // ---------------------
+      double interval_tmin;                             // delta t of Tmin gridded forcing data
+      double interval_tmax;                             // delta t of Tmax gridded forcing data
+      if(temp_ave_gridded && temp_daily_min_gridded && temp_daily_max_gridded && temp_daily_ave_gridded)
+      {
+        nRows             = pGrid_tave->GetRows();  // assuming that it is the same for all grids
+        nCols             = pGrid_tave->GetCols();  // assuming that it is the same for all grids
+        nGridCells        = nRows * nCols;
+        nNonZeroGridCells = pGrid_tave->GetNumberNonZeroGridCells();
 
-    //-------------------------------------------------------------------
-    //  PET Calculations
-    //-------------------------------------------------------------------
-    // last but not least - needs all of the forcing params calculated above
-    F.PET   =EstimatePET(F,_pHydroUnits[k],Options.evaporation   ,tt);
-    F.OW_PET=EstimatePET(F,_pHydroUnits[k],Options.ow_evaporation,tt);
+        interval_tmin   = pGrid_daily_tmin->GetInterval();
+        interval_tmax   = pGrid_daily_tmax->GetInterval();
 
-    CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev,k);
+        ExitGracefullyIf(interval_tmax != interval_tmin,
+          "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
 
-    //-------------------------------------------------------------------
-    // Update
-    //-------------------------------------------------------------------
-    _pHydroUnits[k]->UpdateForcingFunctions(F);
-  }
+        for(int gg = 0; gg < nNonZeroGridCells; gg++)
+        {
+          int cell_idx = pGrid_tave->GetIdxNonZeroGridCell(gg);
+
+          // Tmax       is with input time resolution
+          // Tmin       is with input time resolution
+          // Tave       is with model time resolution
+          // Tave_daily is with daily resolution
+
+          idx_new = int((pGrid_daily_tmin->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmin->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmin->GetChunkSize();
+          wt                  = pGrid_daily_tmin->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.temp_daily_min   += wt *  pGrid_daily_tmin->GetValue(gg,idx_new);
+            F.temp_month_min   += wt * NOT_SPECIFIED;
+          }
+
+          idx_new = int((pGrid_daily_tmax->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmax->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmax->GetChunkSize();
+          wt                  = pGrid_daily_tmax->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.temp_daily_max   += wt *  pGrid_daily_tmax->GetValue(gg,idx_new);
+            F.temp_month_max   += wt * NOT_SPECIFIED;
+          }
+
+          idx_new = int((pGrid_daily_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tave->GetInterval())+Options.timestep/2.0) % pGrid_daily_tave->GetChunkSize();
+          wt                  = pGrid_daily_tave->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.temp_daily_ave   += wt *  pGrid_daily_tave->GetValue(gg,idx_new);
+            F.temp_month_ave    = NOT_SPECIFIED;
+          }
+
+          idx_new = int((pGrid_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_tave->GetInterval())+Options.timestep/2.0) % pGrid_tave->GetChunkSize();
+          wt                  = pGrid_tave->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.temp_ave         += wt *  pGrid_tave->GetValue(gg,idx_new);
+          }
+        }
+
+      }
+
+      // ---------------------
+      // (3) read gridded recharge
+      // ---------------------
+      double interval;
+      if(recharge_gridded)
+      {
+        // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
+        pGrid_recharge-> ReadData(Options,tt.model_time);
+
+        nRows                  = pGrid_recharge->GetRows();
+        nCols                  = pGrid_recharge->GetCols();
+        nGridCells             = nRows * nCols;
+        nNonZeroGridCells      = pGrid_recharge->GetNumberNonZeroGridCells();
+        interval               = pGrid_recharge->GetInterval();
+
+        idx_new     = int((pGrid_recharge->GetTcorr() + tt.model_time) * round(1.0/interval)+Options.timestep/2.0)  % pGrid_recharge->GetChunkSize();
+
+        F.recharge = 0.0;
+        for(int gg = 0; gg < nNonZeroGridCells; gg++)
+        {
+          int cell_idx = pGrid_recharge->GetIdxNonZeroGridCell(gg);
+          wt = pGrid_recharge->GetGridWeight(k,cell_idx);
+          if(wt != 0.0) {
+            F.recharge+= wt*pGrid_recharge->GetValue(gg,idx_new,int(max(1.0,round(Options.timestep/interval))));
+          }
+        }
+        //replace with -- F.recharge=pGrid_recharge->GetWeightedValue(Options.timestep);
+      }
+
+      F.temp_ave_unc = F.temp_daily_ave;
+      F.temp_min_unc = F.temp_daily_min;
+      F.temp_max_unc = F.temp_daily_max;
+
+      //-------------------------------------------------------------------
+      //  Temperature Corrections
+      //-------------------------------------------------------------------
+      CorrectTemp(Options,F,elev,ref_elev,tt);
+
+      //-------------------------------------------------------------------
+      //  Copy Daily values from current day, earlier time steps
+      //    (done after temperature corrections so that the uncorrected values are used in calculating the lapse rate for temp_ave)
+      //-------------------------------------------------------------------
+      if(!tt.day_changed){
+        _pHydroUnits[k]->CopyDailyForcings(F);
+      }
+
+      //-------------------------------------------------------------------
+      //  Subdaily Corrections
+      //-------------------------------------------------------------------
+      F.subdaily_corr = CalculateSubDailyCorrection(F,Options,elev,ref_elev,tt,k);
+
+      //-------------------------------------------------------------------
+      //  Air Pressure, Density, relative humidity
+      //-------------------------------------------------------------------
+      F.air_pres = EstimateAirPressure(Options.air_pressure,F,elev);
+
+      F.air_dens = GetAirDensity(F.temp_ave,F.air_pres);
+
+      F.rel_humidity = EstimateRelativeHumidity(Options.rel_humidity,F);
+
+      //-------------------------------------------------------------------
+      // Snow fraction Calculations
+      //-------------------------------------------------------------------
+      F.snow_frac =EstimateSnowFraction(Options.rainsnow,&F,Options);
+
+      //-------------------------------------------------------------------
+      //  Precip Corrections
+      //-------------------------------------------------------------------
+
+      //--Gauge Corrections------------------------------------------------
+      double gauge_corr;
+      double grid_corr;
+      F.precip=F.precip_5day=F.precip_daily_ave=0.0;
+
+      if(!(pre_gridded || snow_gridded || rain_gridded))
+      {
+        for(int g=0; g<_nGauges; g++)
+        {
+          gauge_corr= F.snow_frac*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*_pGauges[g]->GetRainfallCorr();
+          wt=_aGaugeWeights[k][g];
+
+          F.precip         += wt*gauge_corr*Fg[g].precip;
+          F.precip_daily_ave+=wt*gauge_corr*Fg[g].precip_daily_ave;
+          F.precip_5day    += wt*gauge_corr*Fg[g].precip_5day;
+        }
+      }
+      else
+      {
+        for(int gg = 0; gg < nNonZeroGridCells; gg++)
+        {
+          int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
+
+          grid_corr= F.snow_frac*pGrid_pre->GetSnowfallCorr() + (1.0-F.snow_frac)*pGrid_pre->GetRainfallCorr();
+
+          idx_new     = int((pGrid_pre->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
+          idx_new_day = int((pGrid_pre->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
+
+          wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
+          F.precip           += wt * grid_corr * pGrid_pre->GetValue(gg,idx_new,int(max(1.0,round(Options.timestep/interval_pre))));
+          F.precip_daily_ave += wt * grid_corr * pGrid_pre->GetValue(gg,idx_new_day,int(round(1.0/interval_pre)));
+          F.precip_5day      += wt * grid_corr * -9999.0;
+        }
+      }
+      //--Orographic corrections-------------------------------------------
+      CorrectPrecip(Options,F,elev,ref_elev,k,tt);
+
+      //-------------------------------------------------------------------
+      //  Wind Velocity
+      //-------------------------------------------------------------------
+
+      F.wind_vel = EstimateWindVelocity(Options,F,k);
+
+      //-------------------------------------------------------------------
+      //  Cloud Cover
+      //-------------------------------------------------------------------
+
+      F.cloud_cover = EstimateCloudCover(Options,F,k);
+
+      //-------------------------------------------------------------------
+      //  Radiation Calculations
+      //-------------------------------------------------------------------
+
+      F.SW_radia = CRadiation::EstimateShortwaveRadiation(Options,&F,_pHydroUnits[k],tt,F.ET_radia);
+      F.SW_radia_unc = F.SW_radia;
+      F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F);
+      F.SW_radia *= CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
+
+      //if (Options.SW_radiation_net == SW_RAD_NET_CALCULATE) // \todo [funct] - handle user-specified SW_radia_net
+      {
+        F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
+      }//otherwise, uses data
+
+      F.LW_radia=CRadiation::EstimateLongwaveRadiation(Options,&F,_pHydroUnits[k]);
+
+      //-------------------------------------------------------------------
+      //  Potential Melt Rate
+      //-------------------------------------------------------------------
+
+      F.potential_melt=EstimatePotentialMelt(&F,Options,_pHydroUnits[k],tt);
+
+      //-------------------------------------------------------------------
+      //  PET Calculations
+      //-------------------------------------------------------------------
+      // last but not least - needs all of the forcing params calculated above
+      F.PET   =EstimatePET(F,_pHydroUnits[k],Options.evaporation,tt);
+      F.OW_PET=EstimatePET(F,_pHydroUnits[k],Options.ow_evaporation,tt);
+
+      CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev,k);
+
+      //-------------------------------------------------------------------
+      // Update
+      //-------------------------------------------------------------------
+      _pHydroUnits[k]->UpdateForcingFunctions(F);
+
+    }//end if (!_pHydroUnits[k]->IsDisabled())
+  }//end for k=0; k<nHRUs...
 }
 
 //////////////////////////////////////////////////////////////////

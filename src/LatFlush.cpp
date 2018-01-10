@@ -135,13 +135,14 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
   double stor,Afrom,Ato;
   double to_stor,max_to_stor,max_rate;
 
-  for(int q=0; q<_nLatConnections; q++){
-    stor=state_vars[_kFrom[q]][_iFromLat[q]];
-    to_stor=state_vars[_kTo[q]][_iToLat[q]];
+  for(int q=0; q<_nLatConnections; q++)
+  {
+    stor   =state_vars[_kFrom[q]][_iFromLat[q]];
+    to_stor=state_vars[_kTo  [q]][_iToLat[q]];
     Afrom=pHRUs[_kFrom[q]]->GetArea();
     Ato  =pHRUs[_kTo  [q]]->GetArea();
-    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(iTo[0],state_vars[_kTo[q]],Options);
-    max_rate=max(max_to_stor-to_stor,0.0)/Options.timestep*Ato;
+    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(iTo[q],state_vars[_kTo[q]],Options);
+    max_rate   =max(max_to_stor-to_stor,0.0)/Options.timestep*Ato;
 
     exchange_rates[q]=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
     exchange_rates[q]=min(exchange_rates[q],max_rate); //constrains so that it does not overfill receiving compartment

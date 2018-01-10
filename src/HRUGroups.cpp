@@ -147,9 +147,11 @@ double CHRUGroup::GetAvgForcing (const string &forcing_string) const
   double area;
   for (int k=0;k<_nHRUs;k++)
   {
-    area    =_pHRUs[k]->GetArea();
-    sum    +=_pHRUs[k]->GetForcing(forcing_string)*area;
-    areasum+=area;
+    if(_pHRUs[k]->IsEnabled()){
+      area    =_pHRUs[k]->GetArea();
+      sum    +=_pHRUs[k]->GetForcing(forcing_string)*area;
+      areasum+=area;
+    }
   }
   return sum/areasum;
 }
@@ -168,9 +170,11 @@ double CHRUGroup::GetAvgCumulFlux (const int i, const bool to) const
   double area;
   for (int k=0;k<_nHRUs;k++)
   {
-    area    =_pHRUs[k]->GetArea();
-    sum    +=_pHRUs[k]->GetCumulFlux(i,to)*area;
-    areasum+=area;
+    if(_pHRUs[k]->IsEnabled()){
+      area    =_pHRUs[k]->GetArea();
+      sum    +=_pHRUs[k]->GetCumulFlux(i,to)*area;
+      areasum+=area;
+    }
   }
   return sum/areasum;
 }

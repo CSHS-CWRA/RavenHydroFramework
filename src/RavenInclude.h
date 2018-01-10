@@ -13,7 +13,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 // #define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
-#define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
+// #define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
 #ifdef netcdf
 #define _RVNETCDF_ //If Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -582,7 +582,8 @@ enum condition_basis
 {
   BASIS_HRU_TYPE,  ///< condition is based upon HRU type (e.g., if is a lake...)
   BASIS_HRU_GROUP, ///< condition is based upon HRU group
-  BASIS_LANDCLASS  ///< condition is based upon land use/ land type class (e.g., if urban...)
+  BASIS_LANDCLASS, ///< condition is based upon land use/ land type class (e.g., if urban...)
+  BASIS_VEGETATION ///< condition is based upon vegetation class (e.g., if broadleaf...)
 };
 
 ////////////////////////////////////////////////////////////////////
