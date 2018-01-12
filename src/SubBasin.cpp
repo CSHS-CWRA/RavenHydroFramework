@@ -721,23 +721,25 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       }
       //cout<<"    *initial channel_storage:"<<_channel_storage<<" m3, RL: "<<_reach_length/1000<<" km, _aQout:"<<aQout[_nSegments-1]<<"m3/s Area:"<<_pChannel->GetArea(aQout[num_segments-1])<<endl;
     }
+
+
+    //generate catchment & routing hydrograph weights
+    //reserves memory and populates _aQinHist,_aQlatHist,_aRouteHydro
+    //------------------------------------------------------------------------
+    GenerateCatchmentHydrograph(Qlat_avg,Options);
+
+    GenerateRoutingHydrograph  (Qin_avg, Options);
+
+    //initialize rivulet storage
+    //------------------------------------------------------------------------
+    double sum(0.0);
+    for (int n=0;n<_nQlatHist;n++)
+    {
+      sum+=(n+1)*_aUnitHydro[n];
+    }
+    _rivulet_storage=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
+
   } //end if disabled
-
-  //generate catchment & routing hydrograph weights
-  //reserves memory and populates _aQinHist,_aQlatHist,_aRouteHydro
-  //------------------------------------------------------------------------
-  GenerateCatchmentHydrograph(Qlat_avg,Options);
-
-  GenerateRoutingHydrograph  (Qin_avg, Options);
-
-  //initialize rivulet storage
-  //------------------------------------------------------------------------
-  double sum(0.0);
-  for (int n=0;n<_nQlatHist;n++)
-  {
-    sum+=(n+1)*_aUnitHydro[n];
-  }
-  _rivulet_storage=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
 
   //initialize reservoir
   //------------------------------------------------------------------------

@@ -138,7 +138,7 @@ void CModel::Initialize(const optStruct &Options)
 
   //--check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
   //---------------------------------------------------------------
-  string disbasins="";
+  string disbasins="\n";
   bool anydisabled=false;
   int nDisBasins=0;
   for(p=0;p<_nSubBasins;p++){
@@ -152,8 +152,10 @@ void CModel::Initialize(const optStruct &Options)
       string warn="CModel::Initialize: only some of the HRUs in subbasin "+to_string(_pSubBasins[p]->GetID())+" are disabled. It is suggested to disable all or none of the HRUs in one subbasin to avoid uninterpretable results";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
-    if(one_disabled){ disbasins=disbasins+", "+to_string(_pSubBasins[p]->GetID()); anydisabled=true;nDisBasins++;}
-    if(nDisBasins % 50==1){disbasins=disbasins+'\n';}
+    if(one_disabled){
+      disbasins=disbasins+to_string(_pSubBasins[p]->GetID())+", "; anydisabled=true;nDisBasins++;
+      if(nDisBasins % 40==39){ disbasins=disbasins+'\n'; }
+    }
     if((one_disabled) && (!one_enabled)){
       _pSubBasins[p]->Disable(); //all HRUs in basin disabled -disable subbasin!
     }
