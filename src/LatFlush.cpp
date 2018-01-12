@@ -141,7 +141,7 @@ void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //ar
     to_stor=state_vars[_kTo  [q]][_iToLat[q]];
     Afrom=pHRUs[_kFrom[q]]->GetArea();
     Ato  =pHRUs[_kTo  [q]]->GetArea();
-    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(iTo[q],state_vars[_kTo[q]],Options);
+    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(_iToLat[q],state_vars[_kTo[q]],Options);
     max_rate   =max(max_to_stor-to_stor,0.0)/Options.timestep*Ato;
 
     exchange_rates[q]=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]

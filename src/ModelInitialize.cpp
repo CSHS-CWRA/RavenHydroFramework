@@ -140,6 +140,7 @@ void CModel::Initialize(const optStruct &Options)
   //---------------------------------------------------------------
   string disbasins="";
   bool anydisabled=false;
+  int nDisBasins=0;
   for(p=0;p<_nSubBasins;p++){
     bool one_enabled =false;
     bool one_disabled=false;
@@ -151,17 +152,18 @@ void CModel::Initialize(const optStruct &Options)
       string warn="CModel::Initialize: only some of the HRUs in subbasin "+to_string(_pSubBasins[p]->GetID())+" are disabled. It is suggested to disable all or none of the HRUs in one subbasin to avoid uninterpretable results";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
-    if(one_disabled){ disbasins=disbasins+", "+to_string(_pSubBasins[p]->GetID()); anydisabled=true;}
+    if(one_disabled){ disbasins=disbasins+", "+to_string(_pSubBasins[p]->GetID()); anydisabled=true;nDisBasins++;}
+    if(nDisBasins % 50==1){disbasins=disbasins+'\n';}
     if((one_disabled) && (!one_enabled)){
       _pSubBasins[p]->Disable(); //all HRUs in basin disabled -disable subbasin!
     }
   }
-  for(k=0; k<_nHydroUnits;k++){
+  /*for(k=0; k<_nHydroUnits;k++){
     cout<<" HRU "<<_pHydroUnits[k]->GetID()<<" "<<boolalpha<<_pHydroUnits[k]->IsEnabled()<<endl;
   }
   for(p=0;p<_nSubBasins;p++){
     cout<<" SB "<<_pSubBasins[p]->GetID()<<" "<<boolalpha<<_pSubBasins[p]->IsEnabled()<<endl;
-  }
+  }*/
   if(anydisabled){
     WriteWarning("CModel::Initialize: the following subbasins have one or more member HRUs disabled: "+disbasins,Options.noisy);
   }

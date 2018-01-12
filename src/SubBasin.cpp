@@ -35,16 +35,16 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   ExitGracefullyIf(((Qreference<=0.0) && (Qreference!=AUTO_COMPUTE)),
                    "CSubBasin::Constructor: Reference flow must be non-zero and positive (or _AUTO)",BAD_DATA);
 
-  _pModel=pMod;
+  _pModel            =pMod;
 
-  _ID=Identifier;
-  _name=Name;
+  _ID                =Identifier;
+  _name              =Name;
 
-  _basin_area           =0.0;
-  _drainage_area=0.0;
-  _avg_ann_flow =0.0;
-  _reach_length =reach_len;
-  _is_headwater =true;
+  _basin_area        =0.0;
+  _drainage_area     =0.0;
+  _avg_ann_flow      =0.0;
+  _reach_length      =reach_len;
+  _is_headwater      =true;
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -53,22 +53,18 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   _num_reservoirs    =1;
 
   _nSegments         =1;//0;
-
-  _disabled=false;
-
   ExitGracefullyIf(_nSegments>MAX_RIVER_SEGS,
                    "CSubBasin:Constructor: exceeded maximum river segments",BAD_DATA);
 
-  _downstream_ID=down_ID;
+  _downstream_ID     =down_ID;
   if (_downstream_ID<0){_downstream_ID=DOESNT_EXIST;}//outflow basin
-  _gauged       =gaged;
+  _gauged            =gaged;
+  _disabled          =false;
 
-  _pChannel=pChan; //Can be NULL
-
-  _pReservoir=NULL;
-
-  _nHydroUnits   =0;
-  _pHydroUnits   =NULL;
+  _pChannel          =pChan; //Can be NULL
+  _pReservoir        =NULL;
+  _nHydroUnits       =0;
+  _pHydroUnits       =NULL;
 
   //Initialized in Initialize
   _aQout=NULL;
@@ -91,11 +87,11 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   //initialized in SetInflowHydrograph
   _pInflowHydro  =NULL;
 
-  _Q_ref=Qreference;
-  _c_ref=AUTO_COMPUTE;
-  _w_ref=AUTO_COMPUTE;
+  _Q_ref     =Qreference;
+  _c_ref     =AUTO_COMPUTE;
+  _w_ref     =AUTO_COMPUTE;
   _mannings_n=AUTO_COMPUTE;
-  _slope=AUTO_COMPUTE;
+  _slope     =AUTO_COMPUTE;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -176,7 +172,6 @@ int                 CSubBasin::GetNumSegments          () const {return _nSegmen
 /// \return true if basin is enabled
 //
 bool                 CSubBasin::IsEnabled              () const {return !_disabled;    }
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns Unit Hydrograph as array pointer
@@ -663,69 +658,70 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
       ResetReferenceFlow(_Q_ref);
     }
-  }
 
-  // estimate reach length if needed
-  //------------------------------------------------------------------------
-  if (_reach_length==AUTO_COMPUTE)
-  {
-    //_reach_length =0.6581*pow(_basin_area,1.0317)*M_PER_KM;//[m] // \ref B. Annable, personal comm, 2009 (units wrong?)
-    _reach_length =pow(_basin_area,0.67)*M_PER_KM;//[m] // \ref from Grand river data, JRC 2010
-  }
 
-  //estimate avg annual flow due to rainfall in this basin & upstream flows
-  //------------------------------------------------------------------------
-  _avg_ann_flow=Qin_avg+Qlat_avg;
-
-  //Set initial conditions for flow history variables (if they weren't set in .rvc file)
-  //------------------------------------------------------------------------
-  for (seg=0;seg<_nSegments;seg++){
-    if (_aQout[seg]==AUTO_COMPUTE){
-      _aQout[seg]=Qin_avg+Qlat_avg*(double)(seg+1)/(double)(_nSegments);
-    }
-  }
-  if (_QoutLast==AUTO_COMPUTE){
-    _QoutLast    =_aQout[_nSegments-1];
-  }
-  if (_QlatLast==AUTO_COMPUTE){
-    _QlatLast    =Qlat_avg;
-  }
-
-  ///< \ref from Williams (1922), as cited in Handbook of Hydrology, eqn. 9.4.3 \cite williams1922
-  if (_t_conc==AUTO_COMPUTE){
-    //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
-    _t_conc=0.76/24*pow(_basin_area,0.38);// \ref Austrailian Rainfall and runoff
-  }
-  if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION){_t_peak=AUTO_COMPUTE;}
-  if(Options.catchment_routing==ROUTE_DUMP){_t_peak=AUTO_COMPUTE;}
-
-  if (_t_peak==AUTO_COMPUTE){
-    _t_peak=0.3*_t_conc;/// \todo [fix hack] better means of determining needed
-  }
-  if (_t_lag==AUTO_COMPUTE){
-    _t_lag=0.0;
-  }
-  if (_reservoir_constant==AUTO_COMPUTE){
-    _reservoir_constant=-log(_t_conc/(1+_t_conc));
-  }
-  ExitGracefullyIf(_t_conc<_t_peak,
-                   "CSubBasin::Initialize: time of concentration must be greater than time to peak",BAD_DATA);
-  ExitGracefullyIf(_t_peak<=0,
-                   "CSubBasin::Initialize: time to peak must be greater than zero",BAD_DATA);
-  ExitGracefullyIf(_t_conc<=0,
-                   "CSubBasin::Initialize: time of concentration must be greater than zero",BAD_DATA);
-
-  //Calculate Initial Channel Storage from flowrate
-  //------------------------------------------------------------------------
-  _channel_storage=0.0;
-  if (Options.routing!=ROUTE_NONE)
-  {
-    for (seg=0;seg<_nSegments;seg++)
+    // estimate reach length if needed
+    //------------------------------------------------------------------------
+    if (_reach_length==AUTO_COMPUTE)
     {
-      _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
+      //_reach_length =0.6581*pow(_basin_area,1.0317)*M_PER_KM;//[m] // \ref B. Annable, personal comm, 2009 (units wrong?)
+      _reach_length =pow(_basin_area,0.67)*M_PER_KM;//[m] // \ref from Grand river data, JRC 2010
     }
-    //cout<<"    *initial channel_storage:"<<_channel_storage<<" m3, RL: "<<_reach_length/1000<<" km, _aQout:"<<aQout[_nSegments-1]<<"m3/s Area:"<<_pChannel->GetArea(aQout[num_segments-1])<<endl;
-  }
+
+    //estimate avg annual flow due to rainfall in this basin & upstream flows
+    //------------------------------------------------------------------------
+    _avg_ann_flow=Qin_avg+Qlat_avg;
+
+    //Set initial conditions for flow history variables (if they weren't set in .rvc file)
+    //------------------------------------------------------------------------
+    for (seg=0;seg<_nSegments;seg++){
+      if (_aQout[seg]==AUTO_COMPUTE){
+        _aQout[seg]=Qin_avg+Qlat_avg*(double)(seg+1)/(double)(_nSegments);
+      }
+    }
+    if (_QoutLast==AUTO_COMPUTE){
+      _QoutLast    =_aQout[_nSegments-1];
+    }
+    if (_QlatLast==AUTO_COMPUTE){
+      _QlatLast    =Qlat_avg;
+    }
+
+    ///< \ref from Williams (1922), as cited in Handbook of Hydrology, eqn. 9.4.3 \cite williams1922
+    if (_t_conc==AUTO_COMPUTE){
+      //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
+      _t_conc=0.76/24*pow(_basin_area,0.38);// \ref Austrailian Rainfall and runoff
+    }
+    if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION){_t_peak=AUTO_COMPUTE;}
+    if(Options.catchment_routing==ROUTE_DUMP){_t_peak=AUTO_COMPUTE;}
+
+    if (_t_peak==AUTO_COMPUTE){
+      _t_peak=0.3*_t_conc;/// \todo [fix hack] better means of determining needed
+    }
+    if (_t_lag==AUTO_COMPUTE){
+      _t_lag=0.0;
+    }
+    if (_reservoir_constant==AUTO_COMPUTE){
+      _reservoir_constant=-log(_t_conc/(1+_t_conc));
+    }
+    ExitGracefullyIf(_t_conc<_t_peak,
+                     "CSubBasin::Initialize: time of concentration must be greater than time to peak",BAD_DATA);
+    ExitGracefullyIf(_t_peak<=0,
+                     "CSubBasin::Initialize: time to peak must be greater than zero",BAD_DATA);
+    ExitGracefullyIf(_t_conc<=0,
+                     "CSubBasin::Initialize: time of concentration must be greater than zero",BAD_DATA);
+
+    //Calculate Initial Channel Storage from flowrate
+    //------------------------------------------------------------------------
+    _channel_storage=0.0;
+    if (Options.routing!=ROUTE_NONE)
+    {
+      for (seg=0;seg<_nSegments;seg++)
+      {
+        _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
+      }
+      //cout<<"    *initial channel_storage:"<<_channel_storage<<" m3, RL: "<<_reach_length/1000<<" km, _aQout:"<<aQout[_nSegments-1]<<"m3/s Area:"<<_pChannel->GetArea(aQout[num_segments-1])<<endl;
+    }
+  } //end if disabled
 
   //generate catchment & routing hydrograph weights
   //reserves memory and populates _aQinHist,_aQlatHist,_aRouteHydro

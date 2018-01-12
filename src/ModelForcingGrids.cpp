@@ -59,8 +59,10 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   }
 
   // (1) set weighting
-  for (int ik=0; ik<pTave_daily->GetnHydroUnits(); ik++) {                           // loop over HRUs
-    for (int ic=0; ic<pTave_daily->GetRows()*pTave_daily->GetCols(); ic++) {         // loop over cells = rows*cols
+  int nGridHRUs=pTave_daily->GetnHydroUnits();
+  int nCells=pTave_daily->GetRows()*pTave_daily->GetCols();
+  for (int ik=0; ik<nGridHRUs; ik++) {                // loop over HRUs
+    for (int ic=0; ic<nCells; ic++) {                 // loop over cells = rows*cols
       pTave_daily->SetWeightVal(ik, ic, pTmin->GetGridWeight(ik, ic));
     }
   }
@@ -71,8 +73,11 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
 
   // (3) set forcing values
   double t=0.0;
-  for (int it=0; it<pTave_daily->GetChunkSize(); it++) {                    // loop over time points in buffer
-    for (int ic=0; ic<pTave_daily->GetNumberNonZeroGridCells();ic++){       // loop over non-zero grid cell indexes
+
+  int chunk_size=pTave_daily->GetChunkSize();
+  int nNonZero  =pTave_daily->GetNumberNonZeroGridCells();
+  for (int it=0; it<chunk_size; it++) {           // loop over time points in buffer
+    for (int ic=0; ic<nNonZero;ic++){             // loop over non-zero grid cell indexes
       // found in Gauge.cpp: CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       //    double t=0.0;//model time
       //    for (int n=0;n<nVals;n++)
@@ -104,7 +109,6 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   if (Options.timestep<(1.0-TIME_CORRECTION))
   {
     int    nVals     = (int)ceil(pTave_daily->GetChunkSize()/Options.timestep);
-    //double chunksize = (double)pTmin->GetChunkSize();
     int    GridDims[3];
     GridDims[0] = pTmin->GetCols(); GridDims[1] = pTmin->GetRows(); GridDims[2] = nVals;
 
@@ -126,8 +130,10 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     }
 
     // (1) set weighting
-    for (int ik=0; ik<pTmin->GetnHydroUnits(); ik++) {                           // loop over HRUs
-      for (int ic=0; ic<pTmin->GetRows()*pTmin->GetCols(); ic++) {               // loop over cells = rows*cols
+    int nGridHRUs=pTmin->GetnHydroUnits();
+    int nCells=pTmin->GetRows()*pTmin->GetCols();
+    for (int ik=0; ik<nGridHRUs; ik++) {              // loop over HRUs
+      for (int ic=0; ic<nCells; ic++) {               // loop over cells = rows*cols
         pTave->SetWeightVal(ik, ic, pTmin->GetGridWeight(ik, ic));
       }
     }
@@ -142,15 +148,15 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     // Tave       is with model time resolution
     // Tave_daily is with daily resolution
     double t=0.0; // model time
+    double time_idx_chunk,Tmax,Tmin,T1corr,T2corr,val;
     for (int it=0; it<GridDims[2]; it++) {                   // loop over all time points (nVals)
       for (int ic=0; ic<nNonZeroWeightedGridCells; ic++){    // loop over non-zero grid cell indexes
-
-        double time_idx_chunk = double(int((t+Options.timestep/2.0)/pTmin->GetInterval()));
-        double Tmax   = pTmax->GetValue(ic, time_idx_chunk);
-        double Tmin   = pTmin->GetValue(ic, time_idx_chunk);
-        double T1corr = pTave->DailyTempCorrection(t);
-        double T2corr = pTave->DailyTempCorrection(t+Options.timestep);
-        double val    = 0.5*(Tmax+Tmin)+0.5*(Tmax-Tmin)*0.5*(T1corr+T2corr);
+        time_idx_chunk = double(int((t+Options.timestep/2.0)/pTmin->GetInterval()));
+        Tmax   = pTmax->GetValue(ic, time_idx_chunk);
+        Tmin   = pTmin->GetValue(ic, time_idx_chunk);
+        T1corr = pTave->DailyTempCorrection(t);
+        T2corr = pTave->DailyTempCorrection(t+Options.timestep);
+        val    = 0.5*(Tmax+Tmin)+0.5*(Tmax-Tmin)*0.5*(T1corr+T2corr);
         pTave->SetValue( ic, it, val);
       }
       t += Options.timestep;
@@ -186,8 +192,10 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     }
 
     // (1) set weighting
-    for (int ik=0; ik<pTave->GetnHydroUnits(); ik++) {                           // loop over HRUs
-      for (int ic=0; ic<pTave->GetRows()*pTave->GetCols(); ic++) {               // loop over cells = rows*cols
+    int nGridHRUs=pTave->GetnHydroUnits();
+    int nCells=pTave->GetRows()*pTave->GetCols();
+    for (int ik=0; ik<nGridHRUs; ik++) {              
+      for (int ic=0; ic<nCells; ic++) {               
         pTave->SetWeightVal(ik, ic, pTave_daily->GetGridWeight(ik, ic)); // --> just copy daily average values
       }
     }
@@ -197,9 +205,11 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     pTave->SetIdxNonZeroGridCells(pTave->GetnHydroUnits(),pTave->GetRows()*pTave->GetCols());
 
     // (3) set forcing values
-    for (int it=0; it<pTave->GetChunkSize(); it++) {                       // loop over time points in buffer
-      for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
-        pTave->SetValue(ic, it , pTave_daily->GetValue(ic, (double)it)); // --> just copy daily average values
+    int chunk_size=pTave->GetChunkSize();
+    int nNonZero  =pTave->GetNumberNonZeroGridCells();
+    for (int it=0; it<chunk_size; it++) {                                 // loop over time points in buffer
+      for (int ic=0; ic<nNonZero; ic++){                                  // loop over non-zero grid cell indexes
+        pTave->SetValue(ic, it , pTave_daily->GetValue(ic, (double)it));  // --> just copy daily average values
       }
     }
 
@@ -284,9 +294,12 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   }
 
   // (1) set weighting
-  for (int ik=0; ik<pTave->GetnHydroUnits(); ik++) {                // loop over HRUs
-    for (int ic=0; ic<pTave->GetRows()*pTave->GetCols(); ic++) {    // loop over cells = rows*cols
-      double wt = pTave->GetGridWeight(ik, ic);
+  int nGridHRUs=pTave->GetnHydroUnits();
+  int nCells=pTave->GetRows()*pTave->GetCols();
+  double wt;
+  for (int ik=0; ik<nGridHRUs; ik++) {                
+    for (int ic=0; ic<nCells; ic++) {    
+      wt = pTave->GetGridWeight(ik, ic);
       pTmin_daily->SetWeightVal(ik, ic, wt);
       pTmax_daily->SetWeightVal(ik, ic, wt);
       pTave_daily->SetWeightVal(ik, ic, wt);
@@ -299,6 +312,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   pTave_daily->SetIdxNonZeroGridCells(pTave_daily->GetnHydroUnits(),pTave_daily->GetRows()*pTave_daily->GetCols());
 
   // (3) set forcing values
+  
   for (int it=0; it<nVals; it++) {                    // loop over time points in buffer
     for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
       pTmin_daily->SetValue(ic, it, pTave->GetValue_min(ic, (double)it*1.0/interval, int(1.0/interval)));
@@ -341,7 +355,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
 {
 
   CForcingGrid *pTmin_daily,*pTmax_daily,*pTave_daily;
-  double interval;
+  double interval,wt;
 
   pTave_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"));
   interval = pTave_daily->GetInterval();
@@ -354,10 +368,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   // below needed for correct mapping from time series to model time
   pTave_daily->Initialize(start_day,start_yr,duration,timestep,Options);
 
-  // int nVals=(int)ceil(pTave_daily->GetChunkSize()*pTave_daily->GetInterval()); // number of daily values
-  // int nVals=(int)ceil(pTave_daily->GetChunkSize()/Options.timestep);           // number of subdaily values (model resolution)
   int nVals=(int)ceil(pTave_daily->GetChunkSize());                            // number of subdaily values (input resolution)
-  double chunksize=(double)pTave_daily->GetChunkSize();
   int GridDims[3];
   GridDims[0] = pTave_daily->GetCols(); GridDims[1] = pTave_daily->GetRows(); GridDims[2] = nVals;
 
@@ -393,9 +404,11 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   }
 
   // (1) set weighting
-  for (int ik=0; ik<pTave_daily->GetnHydroUnits(); ik++) {                      // loop over HRUs
-    for (int ic=0; ic<pTave_daily->GetRows()*pTave_daily->GetCols(); ic++) {    // loop over cells = rows*cols
-      double wt = pTave_daily->GetGridWeight(ik, ic);
+  int nGridHRUs=pTave_daily->GetnHydroUnits();
+  int nCells=pTave_daily->GetRows()*pTave_daily->GetCols();
+  for (int ik=0; ik<nGridHRUs; ik++) {                     
+    for (int ic=0; ic<nCells; ic++) {   
+      wt = pTave_daily->GetGridWeight(ik, ic);
       pTmin_daily->SetWeightVal(ik, ic, wt);
       pTmax_daily->SetWeightVal(ik, ic, wt);
     }
@@ -410,10 +423,12 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   // Tmin       is with input time resolution
   // Tave       is with model time resolution
   // Tave_daily is with daily resolution
-  for (int it=0; it<nVals; it++) {                                          // loop over time points in buffer
-    for (int ic=0; ic<pTave_daily->GetNumberNonZeroGridCells(); ic++){      // loop over non-zero grid cell indexes
-      pTmin_daily->SetValue(ic, it, pTave_daily->GetValue(ic, min((double)chunksize,(double)it))-4.0); // should be it+0.5
-      pTmax_daily->SetValue(ic, it, pTave_daily->GetValue(ic, min((double)chunksize,(double)it))+4.0); // should be it+0.5
+  int chunksize=pTave_daily->GetChunkSize();
+  int nNonZero=pTave_daily->GetNumberNonZeroGridCells();
+  for (int it=0; it<nVals; it++) {          // loop over time points in buffer
+    for (int ic=0; ic<nNonZero; ic++){      // loop over non-zero grid cell indexes
+      pTmin_daily->SetValue(ic, it, pTave_daily->GetValue(ic, (double)(min(chunksize,it)))-4.0); // should be it+0.5
+      pTmax_daily->SetValue(ic, it, pTave_daily->GetValue(ic, (double)(min(chunksize,it)))+4.0); // should be it+0.5
     }
   }
 
@@ -489,18 +504,23 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
   }
 
   // (1) set weighting
-  for (int ik=0; ik<pPre->GetnHydroUnits(); ik++) {                          // loop over HRUs
-    for (int ic=0; ic<pPre->GetRows()*pPre->GetCols(); ic++) {               // loop over cells = rows*cols
+  int nGridHRUs=pPre->GetnHydroUnits();
+  int nCells=pPre->GetRows()*pPre->GetCols();
+  for (int ik=0; ik<nGridHRUs; ik++) {                          // loop over HRUs
+    for (int ic=0; ic<nCells; ic++) {               // loop over cells = rows*cols
       pPre->SetWeightVal(ik, ic, pSnow->GetGridWeight(ik, ic));
     }
   }
+  //replace with copyweights routine?
 
   // (2) set indexes of on-zero weighted grid cells
   pPre->SetIdxNonZeroGridCells(pPre->GetnHydroUnits(),pPre->GetRows()*pPre->GetCols());
 
   // (3) set forcing values
-  for (int it=0; it<pPre->GetChunkSize(); it++) {                    // loop over time points in buffer
-    for (int ic=0; ic<pPre->GetNumberNonZeroGridCells(); ic++){      // loop over non-zero grid cell indexes
+  int chunk_size=pPre->GetChunkSize();
+  int nNonZero  =pPre->GetNumberNonZeroGridCells();
+  for (int it=0; it<chunk_size; it++) {     // loop over time points in buffer
+    for (int ic=0; ic<nNonZero; ic++){      // loop over non-zero grid cell indexes
       pPre->SetValue(ic, it, pSnow->GetValue(ic, it) + pRain->GetValue(ic, it));  // precipitation = sum of snowfall and rainfall
     }
   }
@@ -561,8 +581,10 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   }
 
   // (1) set weighting
-  for (int ik=0; ik<pRain->GetnHydroUnits(); ik++) {                           // loop over HRUs
-    for (int ic=0; ic<pRain->GetRows()*pRain->GetCols(); ic++) {               // loop over cells = rows*cols
+  int nGridHRUs=pRain->GetnHydroUnits();
+  int nCells=pRain->GetRows()*pRain->GetCols();
+  for (int ik=0; ik<nGridHRUs; ik++) {              // loop over HRUs
+    for (int ic=0; ic<nCells; ic++) {               // loop over cells = rows*cols
       pRain->SetWeightVal(ik, ic, pPre->GetGridWeight(ik, ic));
     }
   }
@@ -571,9 +593,11 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   pRain->SetIdxNonZeroGridCells(pRain->GetnHydroUnits(),pRain->GetRows()*pRain->GetCols());
 
   // (3) set forcing values
-  for (int it=0; it<pRain->GetChunkSize(); it++) {                   // loop over time points in buffer
-    for (int ic=0; ic<pRain->GetNumberNonZeroGridCells(); ic++){     // loop over non-zero grid cell indexes
-      pRain->SetValue(ic, it , pPre->GetValue(ic, it));      // copies precipitation values
+  int chunk_size=pRain->GetChunkSize();
+  int nNonZero  =pRain->GetNumberNonZeroGridCells();
+  for (int it=0; it<chunk_size; it++) {                   // loop over time points in buffer
+    for (int ic=0; ic<nNonZero; ic++){                    // loop over non-zero grid cell indexes
+      pRain->SetValue(ic, it , pPre->GetValue(ic, it));   // copies precipitation values
     }
   }
 
@@ -631,8 +655,10 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   }
 
   // (1) set weighting
-  for (int ik=0; ik<pSnow->GetnHydroUnits(); ik++) {                           // loop over HRUs
-    for (int ic=0; ic<pSnow->GetRows()*pSnow->GetCols(); ic++) {               // loop over cells = rows*cols
+  int nGridHRUs=pSnow->GetnHydroUnits();
+  int nCells=pSnow->GetRows()*pSnow->GetCols();
+  for (int ik=0; ik<nGridHRUs; ik++) {                           
+    for (int ic=0; ic<nCells; ic++) {           
       pSnow->SetWeightVal(ik, ic, pPre->GetGridWeight(ik, ic));
     }
   }
@@ -641,9 +667,11 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   pSnow->SetIdxNonZeroGridCells(pSnow->GetnHydroUnits(),pSnow->GetRows()*pSnow->GetCols());
 
   // (3) set forcing values
-  for (int it=0; it<pSnow->GetChunkSize(); it++) {                   // loop over time points in buffer
-    for (int ic=0; ic<pSnow->GetNumberNonZeroGridCells(); ic++){     // loop over non-zero grid cell indexes
-      pSnow->SetValue(ic, it , 0.0);                                 // fills everything with 0.0
+  int chunk_size=pSnow->GetChunkSize();
+  int nNonZero  =pSnow->GetNumberNonZeroGridCells();
+  for (int it=0; it<chunk_size; it++) {                   // loop over time points in buffer
+    for (int ic=0; ic<nNonZero; ic++){                    // loop over non-zero grid cell indexes
+      pSnow->SetValue(ic, it , 0.0);                      // fills everything with 0.0
     }
   }
 

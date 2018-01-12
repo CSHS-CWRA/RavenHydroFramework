@@ -997,6 +997,8 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
   if(!Options.silent){
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
+    cout <<"    rvi filename:" <<Options.rvi_filename<<endl;
+    cout <<"Output Directory:" <<Options.output_dir  <<endl;
     cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<disablecount<<" disabled)"<<endl;
     cout <<"          # HRUs: "<<GetNumHRUs()        << " ("<<disablecount<<" disabled)"<<endl;
     cout <<"        # Gauges: "<<GetNumGauges()      <<endl;

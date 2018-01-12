@@ -122,11 +122,11 @@ public:/*------------------------------------------------------*/
     );
 
   // accessors
-  double GetValue                   (const int idx, const double t) const;
-  double GetValue                   (const int idx, const double t, const int n) const;
-  double GetValue_ave           (const int idx, const double t, const int n) const;
-  double GetValue_min           (const int idx, const double t, const int n) const;
-  double GetValue_max           (const int idx, const double t, const int n) const;
+  double GetValue                   (const int idx, const double &t) const;
+  double GetValue                   (const int idx, const double &t, const int n) const;
+  double GetValue_ave               (const int idx, const double &t, const int n) const;
+  double GetValue_min               (const int idx, const double &t, const int n) const;
+  double GetValue_max               (const int idx, const double &t, const int n) const;
 
   // Weighting matrix associated routines
   void   AllocateWeightArray(              const int        nHydroUnits,
@@ -189,7 +189,7 @@ public:/*------------------------------------------------------*/
   int          GetChunkSize()                      const;        ///< Current chunk size
   forcing_type GetName()                           const;        ///< Name of forcing data, e.g. PRECIP, TEMP
   int          GetnHydroUnits()                    const;        ///< get number of HRUs _nHydroUnits
-  double       GetTcorr()                          const;        ///< get correction time _t_corr
+  int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
   double       GetSnowfallCorr()                   const;        ///< snowfall correction factor
   double       GetRainfallCorr()                   const;        ///< rainfall correction factor
   double       GetCloudMinRange()                  const;        ///< Minimum temperature threshold used to determine cloud_cover factor

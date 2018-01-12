@@ -422,10 +422,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   _tag = to_string(long_name_f)+" in ["+to_string(unit_f)+"]";
 
   free( unit_f); free(long_name_f);
-  if (Options.noisy){ printf("Forcing found in NetCDF: %s \n",_tag.c_str()); }
+  if (Options.noisy){ printf("Forcing found in NetCDF file: %s \n",_tag.c_str()); }
 
   // -------------------------------
-  // Set number of pulses and pulse type to be consistent with calss CTimeSeries
+  // Set number of pulses and pulse type to be consistent with class CTimeSeries
   // -------------------------------
   _nPulses      = _GridDims[2];
   _pulse        = true;
@@ -855,7 +855,7 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
                                const optStruct &Options        // Options
   )
 {
-  //_t_corr is number of days between model start date and gauge
+  //_t_corr is number of days between model start date and forcing chunk
   // start date (positive if data exists before model start date)
 
   _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year);
@@ -895,10 +895,6 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
   if (Options.noisy){ cout << "Initialize time series '" << _varname.c_str() << "'" << endl; }
   if (Options.noisy){ cout << "  time series start day, year, duration : " << _start_day << "," << _start_year << " " << duration << endl; }
   if (Options.noisy){ cout << "  model start day, year, duration       : " << model_start_day << "," << model_start_year << " " << model_duration << endl; }
-
-  // determine in which _ichunk local_simulation_start falls
-  double length_chunk = _interval * _ChunkSize; // [days]
-
   if (Options.noisy){ cout << "Finished Initialize time series '" << _varname.c_str() << "'" << endl; }
   if (Options.noisy){ cout << endl; }
 
@@ -990,7 +986,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   int iCell;
 
   nonzero = NULL;
-  nonzero =  new bool [nGridCells];
+  nonzero =  new bool [nGridCells]; // \todo [optimization]: may wish to declare as static
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     nonzero[il] = false;
   }
@@ -1027,7 +1023,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
       iCell++;
     }
   }
-
+  delete[] nonzero;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1214,13 +1210,14 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
                                   const int CellID,
                                   const double weight)
 {
-  if (_GridWeight != NULL){
-    _GridWeight[HRUID][CellID] = weight;
-  }
-  else{
+#ifdef _STRICTCHECK_
+  if (_GridWeight == NULL){
     ExitGracefully(
-      "CForcingGrid: SetWeightVal: _GridWeight is not allocated yet. Call AllocateWeightArray(nHRUs) first.", BAD_DATA);
+      "CForcingGrid: SetWeightVal: _GridWeight is not allocated yet. Call AllocateWeightArray(nHRUs) first.",BAD_DATA);
   }
+#endif
+  _GridWeight[HRUID][CellID] = weight;
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1391,10 +1388,14 @@ forcing_type CForcingGrid::GetName()  const{return _ForcingType;}
 int CForcingGrid::GetnHydroUnits() const{return _nHydroUnits;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns correction time (_t_corr)
-/// \return correction time
+/// \brief returns time index idx corresponding to t+tstep/2
+/// \return time index idx corresponding to t+tstep/2
 //
-double CForcingGrid::GetTcorr() const {return _t_corr;}
+int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const 
+{
+  return int((_t_corr + t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
+}
+
 
 // ///////////////////////////////////////////////////////////////////
 // /// \brief Returns magnitude of time series data point for which t is a float index
@@ -1494,7 +1495,7 @@ double CForcingGrid::GetTcorr() const {return _t_corr;}
 /// \param t      [in] Time index
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double t) const 
+double CForcingGrid::GetValue(const int idx, const double &t) const 
 {
   return _aVal[(int)t][idx];
 }
@@ -1502,17 +1503,22 @@ double CForcingGrid::GetValue(const int idx, const double t) const
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns average over n timesteps of time series data point for which t is an index
 /// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param t      [in] Time index
+/// \param t      [in] local time (with respect to chunk start, in days)
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double t, const int n) const 
+double CForcingGrid::GetValue(const int idx, const double &t, const int n) const 
 {
 
   double sum = 0.0;
+  //int lim=min(_ChunkSize-1-(int)t,n);b 
+  //for (int ii=(int)t; ii<(int)t+lim;ii++){
+  //sum += _aVal[ii][idx];
+  //}
+  //sum /= double(lim);
   for (int ii=0; ii<n; ii++) {
     sum += _aVal[min(_ChunkSize-1,(int)t+ii)][idx];
-  };
+  }
   sum /= double(n);
 
   return sum;
@@ -1525,7 +1531,7 @@ double CForcingGrid::GetValue(const int idx, const double t, const int n) const
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_ave(const int idx, const double t, const int n) const 
+double CForcingGrid::GetValue_ave(const int idx, const double &t, const int n) const 
 {
   double sum = 0.0;
   for (int ii=0; ii<n; ii++) {
@@ -1543,7 +1549,7 @@ double CForcingGrid::GetValue_ave(const int idx, const double t, const int n) co
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_min(const int idx, const double t, const int n) const 
+double CForcingGrid::GetValue_min(const int idx, const double &t, const int n) const 
 {
   double mini = ALMOST_INF ;
   for (int ii=0; ii<n; ii++) {
@@ -1559,7 +1565,7 @@ double CForcingGrid::GetValue_min(const int idx, const double t, const int n) co
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_max(const int idx, const double t, const int n) const 
+double CForcingGrid::GetValue_max(const int idx, const double &t, const int n) const 
 {
   double maxi = -ALMOST_INF ;
   for (int ii=0; ii<n; ii++) {

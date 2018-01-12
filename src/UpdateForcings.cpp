@@ -205,6 +205,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       bool   new_chunk4;                                // true if new chunk was read, otherwise false
       double idx_new;                                   // index of forcing time series corresponding to current modelled time step
       double idx_new_day;                               // index of forcing time series corresponding to current modelled day
+      int    cell_idx;
+      int    nSteps;
+      int    nStepsDaily;
 
       //Override forcing functions with gridded data, if present
       // see if gridded forcing is available (either from NetCDF or derived)
@@ -223,11 +226,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(rain_gridded)            { pGrid_rain       = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); }
       if(snow_gridded)            { pGrid_snow       = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); }
       if(pet_gridded)             { pGrid_pet        = GetForcingGrid(GetForcingGridIndexFromName("PET")); }
-      if(temp_ave_gridded)       { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); }
-      if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
-      if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
-      if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
-      if(recharge_gridded)       { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); }
+      if(temp_ave_gridded)        { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); }
+      if(temp_daily_min_gridded)  { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
+      if(temp_daily_max_gridded)  { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
+      if(temp_daily_ave_gridded)  { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+      if(recharge_gridded)        { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); }
 
       // // --------------------------------------------------------
       // // print how many and which forcing grids are available
@@ -281,27 +284,32 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         nGridCells             = nRows * nCols;
         nNonZeroGridCells      = pGrid_pre->GetNumberNonZeroGridCells();
         interval_pre           = pGrid_pre->GetInterval();
-
-        idx_new     = int((pGrid_pre->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
-        idx_new_day = int((pGrid_pre->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
+        idx_new                = pGrid_pre->GetTimeIndex(tt.model_time,Options.timestep);
+        idx_new_day            = pGrid_pre->GetTimeIndex(double(int(tt.model_time)),Options.timestep);
+        nSteps                 = int(max(1.0,round(Options.timestep/interval_pre)));
+        nStepsDaily            = int(round(1.0/interval_pre));
 
         for(int gg = 0; gg < nNonZeroGridCells; gg++)
         {
-          int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
-
-          wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
+          cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
+          wt       = pGrid_pre->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
-            F.precip           += wt * pGrid_pre->GetValue(gg,idx_new,int(max(1.0,round(Options.timestep/interval_pre))));
-            F.precip_daily_ave += wt * pGrid_pre->GetValue(gg,idx_new_day,int(round(1.0/interval_pre)));
+            F.precip           += wt * pGrid_pre->GetValue(gg,idx_new    ,nSteps     );
+            F.precip_daily_ave += wt * pGrid_pre->GetValue(gg,idx_new_day,nStepsDaily);
             F.precip_5day      += wt * -9999.0;
           }
+          //JRC: jump out if wtsum=1.0?
         }
       }
+      //JRC: replace with 
+      //F.precip           = pGrid_pre->GetWeightedValue(tt.model_time,Options.timestep);
+      //F.precip_daily_ave = pGrid_pre->GetWeightedDailyValue(tt.model_time,Options.timestep);
 
       // ---------------------
       // (1b) update forcings: F.snow_frac
       // ---------------------
       double interval_snow;       // delta t of various gridded forcing data [d]
+
       if(snow_gridded && rain_gridded) //JRC: does this need to be a separate loop? After InitializeForcingGrids(), this should be true always
       {
         nRows                  = pGrid_snow->GetRows();
@@ -309,17 +317,15 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         nGridCells             = nRows * nCols;
         nNonZeroGridCells      = pGrid_snow->GetNumberNonZeroGridCells();
         interval_snow          = pGrid_snow->GetInterval();
-
-        idx_new     = int((pGrid_snow->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize();
-        //idx_new_day = int((pGrid_snow->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_snow->GetInterval())+Options.timestep/2.0)  % pGrid_snow->GetChunkSize(); //JRC: not used
+        idx_new                = pGrid_snow->GetTimeIndex(tt.model_time,Options.timestep);
+        nSteps                 = int(max(1.0,round(Options.timestep/interval_snow)));
 
         for(int gg = 0; gg < nNonZeroGridCells; gg++)
         {
-          int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
-
-          wt= pGrid_snow->GetGridWeight(k,cell_idx);
+          cell_idx = pGrid_snow->GetIdxNonZeroGridCell(gg);
+          wt       = pGrid_snow->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
-            F.snow_frac+= wt * GetAverageSnowFrac(gg,idx_new,int(max(1.0,round(Options.timestep/interval_snow))));
+            F.snow_frac+= wt * GetAverageSnowFrac(gg,idx_new,nSteps);
           }
         }
       }
@@ -358,7 +364,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         temp_daily_min_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MIN");
         temp_daily_max_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MAX");
 
-        if(temp_ave_gridded) { pGrid_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); } //JRC: Necessary conditional ? Isnt this always true after InitializeForcingGrids("TEMP")
+        if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); } //JRC: Necessary conditional ? Isnt this always true after InitializeForcingGrids("TEMP")
         if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
         if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
         if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
@@ -378,50 +384,49 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         nCols             = pGrid_tave->GetCols();  // assuming that it is the same for all grids
         nGridCells        = nRows * nCols;
         nNonZeroGridCells = pGrid_tave->GetNumberNonZeroGridCells();
-
-        interval_tmin   = pGrid_daily_tmin->GetInterval();
-        interval_tmax   = pGrid_daily_tmax->GetInterval();
+        interval_tmin     = pGrid_daily_tmin->GetInterval();
+        interval_tmax     = pGrid_daily_tmax->GetInterval();
 
         ExitGracefullyIf(interval_tmax != interval_tmin,
           "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
 
         for(int gg = 0; gg < nNonZeroGridCells; gg++)
         {
-          int cell_idx = pGrid_tave->GetIdxNonZeroGridCell(gg);
+          cell_idx = pGrid_tave->GetIdxNonZeroGridCell(gg);
 
           // Tmax       is with input time resolution
           // Tmin       is with input time resolution
           // Tave       is with model time resolution
           // Tave_daily is with daily resolution
-
-          idx_new = int((pGrid_daily_tmin->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmin->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmin->GetChunkSize();
-          wt                  = pGrid_daily_tmin->GetGridWeight(k,cell_idx);
+          idx_new = pGrid_daily_tmin->GetTimeIndex(tt.model_time,Options.timestep);
+          wt      = pGrid_daily_tmin->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
             F.temp_daily_min   += wt *  pGrid_daily_tmin->GetValue(gg,idx_new);
-            F.temp_month_min   += wt * NOT_SPECIFIED;
           }
+          //replace with F.temp_daily_min += pGrid_daily_tmin->GetWeightedValue(gg,idx_new);
 
-          idx_new = int((pGrid_daily_tmax->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tmax->GetInterval())+Options.timestep/2.0) % pGrid_daily_tmax->GetChunkSize();
-          wt                  = pGrid_daily_tmax->GetGridWeight(k,cell_idx);
+          idx_new  = pGrid_daily_tmax->GetTimeIndex(tt.model_time,Options.timestep);
+          wt       = pGrid_daily_tmax->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
             F.temp_daily_max   += wt *  pGrid_daily_tmax->GetValue(gg,idx_new);
-            F.temp_month_max   += wt * NOT_SPECIFIED;
           }
 
-          idx_new = int((pGrid_daily_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_daily_tave->GetInterval())+Options.timestep/2.0) % pGrid_daily_tave->GetChunkSize();
-          wt                  = pGrid_daily_tave->GetGridWeight(k,cell_idx);
+          idx_new = pGrid_daily_tave->GetTimeIndex(tt.model_time,Options.timestep);
+          wt      = pGrid_daily_tave->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
             F.temp_daily_ave   += wt *  pGrid_daily_tave->GetValue(gg,idx_new);
-            F.temp_month_ave    = NOT_SPECIFIED;
           }
 
-          idx_new = int((pGrid_tave->GetTcorr() + tt.model_time) * (1.0/pGrid_tave->GetInterval())+Options.timestep/2.0) % pGrid_tave->GetChunkSize();
-          wt                  = pGrid_tave->GetGridWeight(k,cell_idx);
+          idx_new = pGrid_tave->GetTimeIndex(tt.model_time,Options.timestep);
+          wt      = pGrid_tave->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
             F.temp_ave         += wt *  pGrid_tave->GetValue(gg,idx_new);
           }
+					
         }
-
+				F.temp_month_ave=NOT_SPECIFIED;
+				F.temp_month_min=NOT_SPECIFIED;
+				F.temp_month_max=NOT_SPECIFIED;
       }
 
       // ---------------------
@@ -438,19 +443,20 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         nGridCells             = nRows * nCols;
         nNonZeroGridCells      = pGrid_recharge->GetNumberNonZeroGridCells();
         interval               = pGrid_recharge->GetInterval();
-
-        idx_new     = int((pGrid_recharge->GetTcorr() + tt.model_time) * round(1.0/interval)+Options.timestep/2.0)  % pGrid_recharge->GetChunkSize();
+        idx_new                = pGrid_recharge->GetTimeIndex(tt.model_time,Options.timestep);
+        nSteps                 =int(max(1.0,round(Options.timestep/interval)));
 
         F.recharge = 0.0;
+
         for(int gg = 0; gg < nNonZeroGridCells; gg++)
         {
-          int cell_idx = pGrid_recharge->GetIdxNonZeroGridCell(gg);
-          wt = pGrid_recharge->GetGridWeight(k,cell_idx);
+          cell_idx = pGrid_recharge->GetIdxNonZeroGridCell(gg);
+          wt       = pGrid_recharge->GetGridWeight(k,cell_idx);
           if(wt != 0.0) {
-            F.recharge+= wt*pGrid_recharge->GetValue(gg,idx_new,int(max(1.0,round(Options.timestep/interval))));
+            F.recharge+= wt*pGrid_recharge->GetValue(gg,idx_new,nSteps);
           }
         }
-        //replace with -- F.recharge=pGrid_recharge->GetWeightedValue(Options.timestep);
+        //replace with -- F.recharge=pGrid_recharge->GetWeightedValue(tt.model_time,Options.timestep);
       }
 
       F.temp_ave_unc = F.temp_daily_ave;
@@ -512,16 +518,18 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
       else
       {
+        double rain_corr=pGrid_pre->GetRainfallCorr();
+        double snow_corr=pGrid_pre->GetSnowfallCorr();
         for(int gg = 0; gg < nNonZeroGridCells; gg++)
         {
-          int cell_idx = pGrid_pre->GetIdxNonZeroGridCell(gg);
+          cell_idx    = pGrid_pre->GetIdxNonZeroGridCell(gg);
 
-          grid_corr= F.snow_frac*pGrid_pre->GetSnowfallCorr() + (1.0-F.snow_frac)*pGrid_pre->GetRainfallCorr();
+          grid_corr= F.snow_frac*snow_corr + (1.0-F.snow_frac)*rain_corr;
 
-          idx_new     = int((pGrid_pre->GetTcorr() +            tt.model_time)   * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
-          idx_new_day = int((pGrid_pre->GetTcorr() + double(int(tt.model_time))) * round(1.0/pGrid_pre->GetInterval())+Options.timestep/2.0)  % pGrid_pre->GetChunkSize();
+          idx_new     = pGrid_pre->GetTimeIndex(tt.model_time,Options.timestep);
+          idx_new_day = pGrid_pre->GetTimeIndex(double(int(tt.model_time)),Options.timestep);
+          wt          = pGrid_pre->GetGridWeight(k,cell_idx);
 
-          wt                  = pGrid_pre->GetGridWeight(k,cell_idx);
           F.precip           += wt * grid_corr * pGrid_pre->GetValue(gg,idx_new,int(max(1.0,round(Options.timestep/interval_pre))));
           F.precip_daily_ave += wt * grid_corr * pGrid_pre->GetValue(gg,idx_new_day,int(round(1.0/interval_pre)));
           F.precip_5day      += wt * grid_corr * -9999.0;
