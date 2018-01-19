@@ -52,6 +52,15 @@ CForcingGrid::CForcingGrid(string       ForcingType,
     _aAvePET [i]=NOT_SPECIFIED;
   }
 
+  //initialized in ReallocateArraysInForcingGrid
+  _aVal                = NULL;
+  _GridWeight          = NULL;
+
+  //initialized in SetIdxNonZeroGridCells()
+  _IdxNonZeroGridCells = NULL; 
+  _aFirstNonZeroWt     = NULL;
+  _aLastNonZeroWt      = NULL;
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -88,17 +97,6 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   for (int ii=0; ii<12; ii++) {_aMaxTemp[ii] = grid._aMaxTemp[ii];}
   for (int ii=0; ii<12; ii++) {_aAvePET [ii] = grid._aAvePET [ii];}
 
-  // _aVal =  new double **[grid._ChunkSize];
-  // for (int it=0; it<grid._ChunkSize; it++) {           // loop over time points in buffer
-  //   _aVal[it] = new double * [grid._GridDims[1]];
-  //   for (int ir=0; ir<grid._GridDims[1]; ir++) {       // loop over rows
-  //     _aVal[it][ir] = new double [grid._GridDims[0]];
-  //     for (int ic=0; ic<grid._GridDims[0];ic++){       // loop over cols
-  //    _aVal[it][ir][ic]=grid._aVal[it][ir][ic];      // copy the value
-  //     }
-  //   }
-  // }
-
   _aVal =  new double *[grid._ChunkSize];
   for (int it=0; it<grid._ChunkSize; it++) {                       // loop over time points in buffer
     _aVal[it]=NULL;
@@ -108,7 +106,6 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
       _aVal[it][ic]=grid._aVal[it][ic];                            // copy the value
     }
   }
-
 
   _GridWeight =  new double *[grid._nHydroUnits];
   for (int ik=0; ik<grid._nHydroUnits; ik++) {                           // loop over HRUs
@@ -120,10 +117,32 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
     }
   }
 
+  _IdxNonZeroGridCells = NULL; 
   _IdxNonZeroGridCells = new int [grid._nNonZeroWeightedGridCells];
   for (int ic=0; ic<grid._nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
     _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              // copy the value
   }
+
+  _aFirstNonZeroWt=new int [grid._nHydroUnits];
+  _aLastNonZeroWt =new int [grid._nHydroUnits];
+  for(int k=0; k<_nHydroUnits;k++){
+    _aFirstNonZeroWt[k]=grid._aFirstNonZeroWt[k];
+    _aLastNonZeroWt [k]=grid._aLastNonZeroWt[k];
+  }
+}
+
+///////////////////////////////////////////////////////////////////
+/// \brief Implementation of the destructor
+//
+CForcingGrid::~CForcingGrid()
+{
+  if (DESTRUCTOR_DEBUG){cout<<"    DELETING GRIDDED DATA"<<endl;}
+  for(int it=0; it<_ChunkSize; it++) {delete[] _aVal[it]; _aVal[it]=NULL;} delete[] _aVal;_aVal= NULL;
+  for(int k=0; k<_nHydroUnits; k++) { delete[] _GridWeight[k];  _GridWeight[k]=NULL;}    delete[] _GridWeight;_GridWeight= NULL;   
+  delete [] _GridWeight;            _GridWeight          = NULL;
+  delete [] _IdxNonZeroGridCells;   _IdxNonZeroGridCells = NULL;
+  delete [] _aFirstNonZeroWt;       _aFirstNonZeroWt     = NULL;
+  delete [] _aLastNonZeroWt;        _aLastNonZeroWt     = NULL;
 }
 
 
@@ -499,10 +518,20 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   // -------------------------------
   _IdxNonZeroGridCells = NULL;
   _IdxNonZeroGridCells =  new int [_nNonZeroWeightedGridCells];
-
-  for (int il=0; il<_nNonZeroWeightedGridCells; il++) { // loop over all cells non-zero weighted grid cells
-    _IdxNonZeroGridCells[il] = -1;
+  for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) { // loop over all cells non-zero weighted grid cells
+    _IdxNonZeroGridCells[ic] = -1;
   }
+
+  //initialize _aFirstNonZeroWt and _aLastNonZeroWt
+  _aFirstNonZeroWt=new int [_nHydroUnits];
+  _aLastNonZeroWt =new int [_nHydroUnits];
+
+  for(int k=0; k<_nHydroUnits;k++){
+    _aFirstNonZeroWt[k]=0;
+    _aLastNonZeroWt [k]=_nNonZeroWeightedGridCells;
+  }
+
+  
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -982,8 +1011,6 @@ void CForcingGrid::SetNumberNonZeroGridCells(const int nNonZeroWeightedGridCells
 void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGridCells)
 {
   bool *nonzero;
-  int nNonZeroGridCells;
-  int iCell;
 
   nonzero = NULL;
   nonzero =  new bool [nGridCells]; // \todo [optimization]: may wish to declare as static
@@ -991,13 +1018,11 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
     nonzero[il] = false;
   }
 
-  nNonZeroGridCells = GetNumberNonZeroGridCells();
   //printf("ForcingGrid: nNonZeroGridCells = %i\n",nNonZeroGridCells);
 
   _IdxNonZeroGridCells = NULL;
-  _IdxNonZeroGridCells = new int [nNonZeroGridCells];
-
-  for (int il=0; il<nNonZeroGridCells; il++) { // loop over all cells non-zero weighted grid cells
+  _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
+  for (int il=0; il<_nNonZeroWeightedGridCells; il++) { // loop over all cells non-zero weighted grid cells
     _IdxNonZeroGridCells[il] = -1;
   }
 
@@ -1015,14 +1040,32 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
       "CForcingGrid: SetIdxNonZeroGridCells: _GridWeight is not allocated yet. Call AllocateWeightArray(nHRUs) first.", BAD_DATA);
   }
 
-  iCell = 0;
+  int ic = 0;
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     if ( nonzero[il] ) {
-      _IdxNonZeroGridCells[iCell] = il;
+      _IdxNonZeroGridCells[ic] = il;
       //printf("ForcingGrid: _IdxNonZeroGridCells[%i] = %i\n",iCell,il);
-      iCell++;
+      ic++;
     }
   }
+  //determine _aFirstNonZeroWt and _aLastNonZeroWt
+  _aFirstNonZeroWt=new int [_nHydroUnits];
+  _aLastNonZeroWt =new int [_nHydroUnits];
+  bool firstfound=false;
+  int cell_idx;
+  for(int k=0; k<_nHydroUnits;k++){
+    firstfound=false;
+    for(int ic = 0; ic < _nNonZeroWeightedGridCells; ic++)
+    {
+      cell_idx = _IdxNonZeroGridCells[ic];
+      if (_GridWeight[k][cell_idx]>REAL_SMALL) 
+      {
+        if(!firstfound){ _aFirstNonZeroWt[k]=ic; firstfound=true; }
+        _aLastNonZeroWt[k]=ic;
+      }
+    }
+  }
+
   delete[] nonzero;
 }
 
@@ -1308,7 +1351,7 @@ int CForcingGrid::NumberNonZeroWeightedGridCells(const int nHydroUnits, const in
 /// return weighting of HRU and CellID pair
 //
 double CForcingGrid::GetGridWeight(const int HRUID,
-                                   const int CellID)
+                                   const int CellID) const
 {
   return _GridWeight[HRUID][CellID];
 }
@@ -1396,98 +1439,46 @@ int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
   return int((_t_corr + t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
 }
 
+///////////////////////////////////////////////////////////////////
+/// \brief returns weighted value of gridded forcing in HRU k over timestep
+/// \param k    [in] HRU index
+/// \param t      [in] model time [days]
+/// \return tstep [in] model time step [days]
+//
+double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &tstep) const
+{
 
-// ///////////////////////////////////////////////////////////////////
-// /// \brief Returns magnitude of time series data point for which t is a float index
-// /// \param x_col  [in] Column index
-// /// \param y_row  [in] Row index
-// /// \param t      [in] Time index
-// /// \return Magnitude of time series data point for which t is an index
-// //
-// double CForcingGrid::GetValue(const int x_col, const int y_row, const double t) const {
+  int idx_new = GetTimeIndex(t,tstep);
+  int nSteps = (int)(max(1.0,round(tstep/_interval)));
+  double wt;
+  double sum=0;
 
-//   double val_1 = _aVal[(int)t][y_row][x_col];
-
-//   return val_1 ;
-// }
-
-// ///////////////////////////////////////////////////////////////////
-// /// \brief Returns average over n timesteps of time series data point for which t is an index
-// /// \param x_col  [in] Column index
-// /// \param y_row  [in] Row index
-// /// \param t      [in] Time index
-// /// \param n      [in] Number of time steps
-// /// \return Magnitude of time series data point for which t is an index
-// //
-// double CForcingGrid::GetValue(const int x_col, const int y_row, const double t, const int n) const {
-
-//   double sum = 0.0;
-//   for (int ii=0; ii<n; ii++) {
-//     sum += _aVal[min(_ChunkSize-1,(int)t+ii)][y_row][x_col];
-//   };
-//   sum /= double(n);
-
-//   return sum;
-
-// }
-
-// ///////////////////////////////////////////////////////////////////
-// /// \brief Returns average over n timesteps of time series data point for which t is an index
-// /// \param x_col  [in] Column index
-// /// \param y_row  [in] Row index
-// /// \param t      [in] Time index
-// /// \param n      [in] Number of time steps
-// /// \return Magnitude of time series data point for which t is an index
-// //
-// double CForcingGrid::GetValue_ave(const int x_col, const int y_row, const double t, const int n) const {
-
-//   double sum = 0.0;
-//   for (int ii=0; ii<n; ii++) {
-//     sum += _aVal[min(_ChunkSize-1,(int)t+ii)][y_row][x_col];
-//   };
-//   sum /= double(n);
-
-//   return sum;
-
-// }
-
-// ///////////////////////////////////////////////////////////////////
-// /// \brief Returns minimum of n timesteps of time series data point for which t is an index
-// /// \param x_col  [in] Column index
-// /// \param y_row  [in] Row index
-// /// \param t      [in] Time index
-// /// \param n      [in] Number of time steps
-// /// \return Magnitude of time series data point for which t is an index
-// //
-// double CForcingGrid::GetValue_min(const int x_col, const int y_row, const double t, const int n) const {
-
-//   double mini = ALMOST_INF ;
-//   for (int ii=0; ii<n; ii++) {
-//     if (_aVal[min(_ChunkSize-1,(int)t+ii)][y_row][x_col] < mini) {mini = _aVal[min(_ChunkSize-1,(int)t+ii)][y_row][x_col]; };
-//   };
-
-//   return mini;
-
-// }
-
-// ///////////////////////////////////////////////////////////////////
-// /// \brief Returns maximum of n timesteps of time series data point for which t is an index
-// /// \param x_col  [in] Column index
-// /// \param y_row  [in] Row index
-// /// \param t      [in] Time index
-// /// \param n      [in] Number of time steps
-// /// \return Magnitude of time series data point for which t is an index
-// //
-// double CForcingGrid::GetValue_max(const int x_col, const int y_row, const double t, const int n) const {
-
-//   double maxi = -ALMOST_INF ;
-//   for (int ii=0; ii<n; ii++) {
-//     if (_aVal[min(_ChunkSize-1,(int)t+ii)][y_row][x_col] > maxi) {maxi = _aVal[min(_ChunkSize-1,(int)t+ii)][y_row][x_col]; };
-//   };
-
-//   return maxi;
-
-// }
+  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)  
+	{
+    wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
+    sum += wt * GetValue(ic,idx_new,nSteps);
+  }
+  return sum;
+}
+///////////////////////////////////////////////////////////////////
+/// \brief returns daily weighted value of gridded forcing in HRU k
+/// \param k    [in] HRU index
+/// \param t      [in] model time [days]
+/// \return tstep [in] model time step [days]
+//
+double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const double &tstep) const
+{
+  int idx_new_day = GetTimeIndex((double)(int(t)),tstep);//start of day
+  int nStepsDaily  = (int)(round(1.0/_interval));//# of intervals in day
+  double wt;
+  double sum=0;
+  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  {
+    wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
+    sum += wt * GetValue(ic,idx_new_day,nStepsDaily);
+  }
+  return sum;
+}
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns magnitude of time series data point for which t is a float index
@@ -1507,19 +1498,17 @@ double CForcingGrid::GetValue(const int idx, const double &t) const
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double &t, const int n) const 
+double CForcingGrid::GetValue(const int idx, const double &t, const int nsteps) const 
 {
 
+
+  int ii_start=(int)(t);
+  int lim=min(nsteps,_ChunkSize-ii_start); 
   double sum = 0.0;
-  //int lim=min(_ChunkSize-1-(int)t,n);b 
-  //for (int ii=(int)t; ii<(int)t+lim;ii++){
-  //sum += _aVal[ii][idx];
-  //}
-  //sum /= double(lim);
-  for (int ii=0; ii<n; ii++) {
-    sum += _aVal[min(_ChunkSize-1,(int)t+ii)][idx];
+  for (int ii=ii_start; ii<ii_start+lim;ii++){
+    sum += _aVal[ii][idx];
   }
-  sum /= double(n);
+  sum /= (double)(lim);
 
   return sum;
 }
@@ -1715,14 +1704,4 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
   return (double)idx_chunk; // + delta;
 }
 
-///////////////////////////////////////////////////////////////////
-/// \brief Implementation of the destructor
-//
-CForcingGrid::~CForcingGrid()
-{
-  if (DESTRUCTOR_DEBUG){cout<<"    DELETING GRIDDED DATA"<<endl;}
-  delete [] _aVal;                  _aVal                = NULL;
-  delete [] _GridWeight;            _GridWeight          = NULL;
-  delete [] _IdxNonZeroGridCells;   _IdxNonZeroGridCells = NULL;
-}
 

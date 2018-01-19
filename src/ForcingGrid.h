@@ -33,20 +33,27 @@ private:/*------------------------------------------------------*/
   forcing_type _ForcingType;                 ///< Forcing type, e.g. PRECIP or TEMP
   string       _filename;                    ///< Name of NetCDF file
   string       _varname;                     ///< Name of forcing variable in NetCDF file
+
   string       _DimNames[3];                 ///< Names of all three dimensions as in NetCDF file
   ///                                        ///< [ dim_cols, dim_row, dim_time]
   int          _GridDims[3];                 ///< Length of dimensions of grid [ size = (x,y,t) = (NC, NR, _ChunkSize) ]
+
+  int          _nHydroUnits;                 ///< number of HRUs (important for weights)
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   ///                                        ///< This is effectively the number of data points which is stored from the original data.
   int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
+  int         *_aFirstNonZeroWt;             ///< array of first index in array _IdxNonZeroGridCells that is nonzero for HRU k [size:_nHydroUnits] 
+  int         *_aLastNonZeroWt;              ///< array of last index in array _IdxNonZeroGridCells that is nonzero for HRU k [size:_nHydroUnits] 
+
   int          _dim_order;                   ///< code (1-6) for different dimension orders  
   //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
   //                                         ///< (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
-  int          _nHydroUnits;                 ///< number of HRUs (important for weights)
+
   int          _ChunkSize;                   ///< number of time points read before upper limit of
   ///                                        ///< allowed storage is reached
   int          _nChunk;                      ///< number of chunks (blocks) which can be read
   int          _iChunk;                      ///< current chunk read and stored in _aVal
+
   double       _start_day;                   ///< Day corresponding to local TS time 0.0 (beginning of time series)
   int          _start_year;                  ///< Year corresponding to local TS time 0.0 (beginning of time series)
   string       _tag;                         ///< data tag (additional information for data)
@@ -70,7 +77,8 @@ private:/*------------------------------------------------------*/
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
   ///                                        ///< piecewise-linear time series
   double       _t_corr;                      ///< correction time _t_corr, i.e. distance between
-  ///                                        ///< time series start day and model start day
+  ///                                        ///< current chunk start day and model start day (in days)
+
   double       _rainfall_corr;               ///< correction factor for rainfall (stored with gauge, used elsewhere)
   double       _snowfall_corr;               ///< correction factor for snowfall (stored with gauge, used elsewhere)
   double       _cloud_min_temp;              ///< minimum temperature threshold used to determine cloud_cover factor
@@ -139,7 +147,7 @@ public:/*------------------------------------------------------*/
   int    NumberNonZeroWeightedGridCells(   const int        nHydroUnits,
                                            const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
   double GetGridWeight(                    const int        HRUID,
-                                           const int        CellID);         ///< returns weighting of HRU and CellID pair
+                                           const int        CellID) const;   ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
                                            const double     global_model_time)  const; ///< returns index in current chunk corresponding to model time step
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
@@ -200,6 +208,8 @@ public:/*------------------------------------------------------*/
   double       GetMonthlyAvePET(const int month)   const;        ///< Average PET over month
   double       DailyTempCorrection(const double t) const;        ///< Daily temperature correction [C]
 
+  double       GetWeightedValue(const int k, const double &t,const double &tstep) const; ///<returns weighted value in HRU k
+  double       GetDailyWeightedValue(const int k, const double &t,const double &tstep) const; ///<returns daily weighted value in HRU k
 };
 
 #endif

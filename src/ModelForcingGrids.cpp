@@ -68,7 +68,6 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   }
 
   // (2) set indexes of on-zero weighted grid cells
-  //int nNonZeroWeightedGridCells = pTave_daily->GetNumberNonZeroGridCells();
   pTave_daily->SetIdxNonZeroGridCells(pTave_daily->GetnHydroUnits(),pTave_daily->GetRows()*pTave_daily->GetCols());
 
   // (3) set forcing values
@@ -139,7 +138,6 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     }
 
     // (2) set indexes of on-zero weighted grid cells
-    int nNonZeroWeightedGridCells = pTave->GetNumberNonZeroGridCells();
     pTave->SetIdxNonZeroGridCells(pTave->GetnHydroUnits(),pTave->GetRows()*pTave->GetCols());
 
     // (3) set forcing values
@@ -149,6 +147,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     // Tave_daily is with daily resolution
     double t=0.0; // model time
     double time_idx_chunk,Tmax,Tmin,T1corr,T2corr,val;
+    int nNonZeroWeightedGridCells = pTave->GetNumberNonZeroGridCells();
     for (int it=0; it<GridDims[2]; it++) {                   // loop over all time points (nVals)
       for (int ic=0; ic<nNonZeroWeightedGridCells; ic++){    // loop over non-zero grid cell indexes
         time_idx_chunk = double(int((t+Options.timestep/2.0)/pTmin->GetInterval()));
@@ -201,7 +200,6 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     }
 
     // (2) set indexes of on-zero weighted grid cells
-    //int nNonZeroWeightedGridCells = pTave->GetNumberNonZeroGridCells();
     pTave->SetIdxNonZeroGridCells(pTave->GetnHydroUnits(),pTave->GetRows()*pTave->GetCols());
 
     // (3) set forcing values
