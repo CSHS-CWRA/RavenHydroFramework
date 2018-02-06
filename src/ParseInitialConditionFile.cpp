@@ -530,7 +530,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     for (int i=0; i<pModel->GetNumStateVars(); i++)
     {
       double maxv=max(pHRU->GetStateVarMax(i,v,Options),0.0);
-      if (fabs(v[i]-maxv)>REAL_SMALL)// check for capacity
+      if (v[i]-maxv>REAL_SMALL)// check for capacity
       {
         string name=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i));
         string warn ="maximum state variable limit exceeded in initial conditions for " + name+ " (in HRU "+to_string(pHRU->GetID())+") in .rvc file";
