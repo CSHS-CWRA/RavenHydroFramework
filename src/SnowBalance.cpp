@@ -375,13 +375,13 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
   else if (type==SNOBAL_HBV)
   {
     double Ka    =pHRU->GetSurfaceProps()->refreeze_factor;//[mm/d/K]
-    double Ta            =pHRU->GetForcingFunctions()->temp_daily_ave;
+    double Ta    =pHRU->GetForcingFunctions()->temp_daily_ave;
     double tstep =Options.timestep;
 
     double melt,refreeze, liq_cap;
 
-    double S            =state_var[iFrom[0]];//snow, SWE mm
-    double SL           =state_var[iFrom[1]];//liquid snow, mm
+    double S    =state_var[iFrom[0]];//snow, SWE mm
+    double SL   =state_var[iFrom[1]];//liquid snow, mm
     double SD   =state_var[iFrom[2]];//snow depth, mm
 
     melt    =max(pHRU->GetForcingFunctions()->potential_melt,0.0); //positive

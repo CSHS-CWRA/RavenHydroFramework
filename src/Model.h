@@ -300,7 +300,8 @@ public:/*-------------------------------------------------------*/
   /*--Other Functions: mostly called by Solver--*/
   //called only once prior to simulation:
   void        Initialize                 (const optStruct &Options);
-  void        InitializeForcingGrids     (const optStruct &Options, const string type);
+  void        GenerateGriddedPrecipVars  (const optStruct &Options);
+  void        GenerateGriddedTempVars    (const optStruct &Options);
 
   //called during simulation:
   //critical simulation routines (called once during each timestep)

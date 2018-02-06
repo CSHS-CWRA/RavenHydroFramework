@@ -1019,6 +1019,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
         filename = filedir + "//" + filename;
       }
+      
+      //check for file existence
+      ifstream TESTNETCDF;
+      TESTNETCDF.open(filename);
+      if(TESTNETCDF.fail()){
+        string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+        break;
+      }
+      TESTNETCDF.close();
 
       pGrid->SetFilename(filename);
 

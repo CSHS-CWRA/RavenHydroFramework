@@ -1695,6 +1695,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SNOBAL_SIMPLE_MELT"  )){sbtype=SNOBAL_SIMPLE_MELT;}
       else if (!strcmp(s[1],"UBC"                 )){sbtype=SNOBAL_UBCWM;}//backward compatible
       else if (!strcmp(s[1],"SNOBAL_UBCWM"        )){sbtype=SNOBAL_UBCWM;}
+      else if (!strcmp(s[1],"SNOBAL_HBV"          )){sbtype=SNOBAL_HBV;}
       else if (!strcmp(s[1],"SNOBAL_CEMA_NIEGE"   )){sbtype=SNOBAL_CEMA_NIEGE;}
       else if (!strcmp(s[1],"SNOBAL_TWO_LAYER"    )){sbtype=SNOBAL_TWO_LAYER;}
       else if (!strcmp(s[1],"SNOBAL_GAWSER"       )){sbtype=SNOBAL_GAWSER;}

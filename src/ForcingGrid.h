@@ -132,7 +132,7 @@ public:/*------------------------------------------------------*/
   // accessors
   double GetValue                   (const int idx, const double &t) const;
   double GetValue                   (const int idx, const double &t, const int n) const;
-  double GetValue_ave               (const int idx, const double &t, const int n) const;
+  /// GetValue_ave               (const int idx, const double &t, const int n) const;  //obsolete - equivalent to GetValue(idx,t,n)
   double GetValue_min               (const int idx, const double &t, const int n) const;
   double GetValue_max               (const int idx, const double &t, const int n) const;
 
@@ -210,6 +210,8 @@ public:/*------------------------------------------------------*/
 
   double       GetWeightedValue(const int k, const double &t,const double &tstep) const; ///<returns weighted value in HRU k
   double       GetDailyWeightedValue(const int k, const double &t,const double &tstep) const; ///<returns daily weighted value in HRU k
+
+  double       GetWeightedAverageSnowFrac(const int k, const double &t,const double &tstep,const CForcingGrid *pRain) const; ///<returns daily weighted value in HRU k
 };
 
 #endif

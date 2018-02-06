@@ -305,17 +305,16 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   }
 
   // (2) set indexes of on-zero weighted grid cells
-  pTmin_daily->SetIdxNonZeroGridCells(pTmin_daily->GetnHydroUnits(),pTmin_daily->GetRows()*pTmin_daily->GetCols());
-  pTmax_daily->SetIdxNonZeroGridCells(pTmax_daily->GetnHydroUnits(),pTmax_daily->GetRows()*pTmax_daily->GetCols());
-  pTave_daily->SetIdxNonZeroGridCells(pTave_daily->GetnHydroUnits(),pTave_daily->GetRows()*pTave_daily->GetCols());
+  pTmin_daily->SetIdxNonZeroGridCells(nGridHRUs,nCells);
+  pTmax_daily->SetIdxNonZeroGridCells(nGridHRUs,nCells);
+  pTave_daily->SetIdxNonZeroGridCells(nGridHRUs,nCells);
 
   // (3) set forcing values
-  
   for (int it=0; it<nVals; it++) {                    // loop over time points in buffer
     for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
       pTmin_daily->SetValue(ic, it, pTave->GetValue_min(ic, (double)it*1.0/interval, int(1.0/interval)));
       pTmax_daily->SetValue(ic, it, pTave->GetValue_max(ic, (double)it*1.0/interval, int(1.0/interval)));
-      pTave_daily->SetValue(ic, it, pTave->GetValue_ave(ic, (double)it*1.0/interval, int(1.0/interval)));
+      pTave_daily->SetValue(ic, it, pTave->GetValue    (ic, (double)it*1.0/interval, int(1.0/interval)));
     }
   }
 
@@ -452,7 +451,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   GenerateAveSubdailyTempFromMinMax(Options);
 }
 
-//////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////// 
 /// \brief Generates precipitation as sum of snowfall and rainfall
 /// \note  presumes existence of valid F_SNOWFALL and F_RAINFALL time series
 //
@@ -509,7 +508,6 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
       pPre->SetWeightVal(ik, ic, pSnow->GetGridWeight(ik, ic));
     }
   }
-  //replace with copyweights routine?
 
   // (2) set indexes of on-zero weighted grid cells
   pPre->SetIdxNonZeroGridCells(pPre->GetnHydroUnits(),pPre->GetRows()*pPre->GetCols());
@@ -570,7 +568,20 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
     pRain->SetInterval(pPre->GetInterval());        // will be at same time resolution as precipitation
     pRain->SetGridDims(GridDims);
     pRain->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
-    pRain->ReallocateArraysInForcingGrid();
+    pRain->ReallocateArraysInForcingGrid(); //This should NOT be done (JRC)
+
+    // copy weighting (is this even necessary? should already be there from Copy constructor \todo [optimize] JRC
+    int nGridHRUs=pRain->GetnHydroUnits();
+    int nCells=pRain->GetRows()*pRain->GetCols();
+    for(int ik=0; ik<nGridHRUs; ik++) {              // loop over HRUs
+      for(int ic=0; ic<nCells; ic++) {               // loop over cells = rows*cols
+        pRain->SetWeightVal(ik,ic,pPre->GetGridWeight(ik,ic));
+      }
+    }
+
+    // determine indexes of on-zero weighted grid cells //should already be there from Copy constructor \todo [optimize] JRC
+    pRain->SetIdxNonZeroGridCells(pRain->GetnHydroUnits(),pRain->GetRows()*pRain->GetCols());
+
   }
   else {
 
@@ -578,19 +589,8 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
     pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
   }
 
-  // (1) set weighting
-  int nGridHRUs=pRain->GetnHydroUnits();
-  int nCells=pRain->GetRows()*pRain->GetCols();
-  for (int ik=0; ik<nGridHRUs; ik++) {              // loop over HRUs
-    for (int ic=0; ic<nCells; ic++) {               // loop over cells = rows*cols
-      pRain->SetWeightVal(ik, ic, pPre->GetGridWeight(ik, ic));
-    }
-  }
 
-  // (2) set indexes of on-zero weighted grid cells
-  pRain->SetIdxNonZeroGridCells(pRain->GetnHydroUnits(),pRain->GetRows()*pRain->GetCols());
-
-  // (3) set forcing values
+  // set forcing values
   int chunk_size=pRain->GetChunkSize();
   int nNonZero  =pRain->GetNumberNonZeroGridCells();
   for (int it=0; it<chunk_size; it++) {                   // loop over time points in buffer
@@ -614,8 +614,6 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
 //
 void CModel::GenerateZeroSnow(const optStruct &Options)
 {
-
-  // AddTimeSeries(new CTimeSeries("SNOWFALL","",0.0),F_SNOWFALL); //blank series, all 0.0s
 
   CForcingGrid *pPre,*pSnow;
   if (ForcingGridIsAvailable("PRECIP"))   { pPre=GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); }
@@ -697,8 +695,8 @@ double CModel::GetAverageSnowFrac(const int idx, const double t, const int n) co
   pSnow=GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));
   pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
 
-  double snow = pSnow->GetValue_ave(idx, t, n);
-  double rain = pRain->GetValue_ave(idx, t, n);
+  double snow = pSnow->GetValue(idx, t, n);
+  double rain = pRain->GetValue(idx, t, n);
 
   if ((snow+rain)==0.0){return 0.0;}
   return snow/(snow+rain);

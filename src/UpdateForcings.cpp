@@ -10,8 +10,6 @@
 
 double EstimateRelativeHumidity(const relhum_method method,
                                 const force_struct &F);
-double EstimateWindVelocity    (const windvel_method method,
-                                const force_struct &F);
 double EstimateAirPressure     (const airpress_method method,
                                 const force_struct &F,
                                 const double       &elev);
@@ -194,24 +192,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Gridded data support
       //-------------------------------------------------------------------
-      int    nRows;                                     // number of rows of gridded data
-      int    nCols;                                     // number of columns of gridded data
-      int    nGridCells;                                // number of grid cells (rows x cols)
-      int    nNonZeroGridCells;                         // number of grid cells with non-zero weighting
-     // double interval_pre;                              // delta t of various gridded forcing data
       bool   new_chunk1;                                // true if new chunk was read, otherwise false
       bool   new_chunk2;                                // true if new chunk was read, otherwise false
       bool   new_chunk3;                                // true if new chunk was read, otherwise false
       bool   new_chunk4;                                // true if new chunk was read, otherwise false
-      double idx_new;                                   // index of forcing time series corresponding to current modelled time step
-      //double idx_new_day;                               // index of forcing time series corresponding to current modelled day
-      int    cell_idx;
-      int    nSteps;
-      //int    nStepsDaily;
 
       //Override forcing functions with gridded data, if present
       // see if gridded forcing is available (either from NetCDF or derived)
-      pre_gridded            = ForcingGridIsInput("PRECIP"); //JRC: NECCESARY? - isnt this above?
+      pre_gridded            = ForcingGridIsInput("PRECIP"); 
       rain_gridded           = ForcingGridIsInput("RAINFALL");
       snow_gridded           = ForcingGridIsInput("SNOWFALL");
       pet_gridded            = ForcingGridIsInput("PET");
@@ -232,17 +220,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(temp_daily_ave_gridded)  { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
       if(recharge_gridded)        { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); }
 
-      // // --------------------------------------------------------
-      // // print how many and which forcing grids are available
-      // // --------------------------------------------------------
-      // printf("_nForcingGrids = %i\n",_nForcingGrids);
-      // for (int ff=0;ff<_nForcingGrids;ff++)
-      //        {
-      //          forcing_type tmp = _pForcingGrids[ff]->GetName();
-      //          string       tmp2 = ForcingToString(tmp) ;
-      //          cout << "forcing_type = " << tmp << " : " << tmp2 << endl;
-      //        }
-
       // ---------------------
       // (1A) read gridded precip/snowfall/rainfall and populate additional time series
       // ---------------------
@@ -254,61 +231,19 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         if(snow_gridded) { new_chunk2 = pGrid_snow->ReadData(Options,tt.model_time); }
         if(rain_gridded) { new_chunk3 = pGrid_rain->ReadData(Options,tt.model_time); }
 
-        // populate derived data from the ones just read
-        if(new_chunk1 || new_chunk2 || new_chunk3) { InitializeForcingGrids(Options,"PREC"); } //only initialize for new chunk strarted
+        // populate derived data from the ones just read (e.g., precip -> (rain,snow), or (rain,snow)->(precip)
+        if(new_chunk1 || new_chunk2 || new_chunk3) { 
+          GenerateGriddedPrecipVars(Options);//only call if new data chunk found
+        } 
 
-        pre_gridded = ForcingGridIsAvailable("PRECIP");//JRC: Shouldnt these all be true if InitializeForcingGrids("PREC") was called
-        rain_gridded= ForcingGridIsAvailable("RAINFALL");
-        snow_gridded= ForcingGridIsAvailable("SNOWFALL");
-
-        if(pre_gridded || (snow_gridded && rain_gridded)) { //JRC: Shouldnt this be true if InitializeForcingGrids("PREC") was called
-          F.precip           = 0.0;
-          F.precip_daily_ave = 0.0;
-          F.precip_5day      = 0.0;
-          F.snow_frac        = 0.0;
-        }
-
-        if(pre_gridded)  { pGrid_pre  = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); }
-        if(rain_gridded) { pGrid_rain = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); }
-        if(snow_gridded) { pGrid_snow = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); }
-
-      }
-
-      // ---------------------
-      // (1B) update forcings: F.precip, F.precip_daily_ave, F.precip_5day
-      // ---------------------
-      if(pre_gridded) //JRC: does this need to be a separate loop?
-      {
+        pGrid_pre  = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); 
+        pGrid_rain = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); 
+        pGrid_snow = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); 
 
         F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
+        F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      =-9999.0;
-      }
-
-      // ---------------------
-      // (1b) update forcings: F.snow_frac
-      // ---------------------
-      double interval_snow;       // delta t of various gridded forcing data [d]
-
-      if(snow_gridded && rain_gridded) //JRC: does this need to be a separate loop? After InitializeForcingGrids(), this should be true always
-      {
-        nRows                  = pGrid_snow->GetRows();
-        nCols                  = pGrid_snow->GetCols();
-        nGridCells             = nRows * nCols;
-        nNonZeroGridCells      = pGrid_snow->GetNumberNonZeroGridCells();
-        interval_snow          = pGrid_snow->GetInterval();
-        idx_new                = pGrid_snow->GetTimeIndex(tt.model_time,Options.timestep);
-        nSteps                 = int(max(1.0,round(Options.timestep/interval_snow)));
-
-        for(int gg = 0; gg < nNonZeroGridCells; gg++)
-        {
-          cell_idx = pGrid_snow->GetIdxNonZeroGridCell(gg);
-          wt       = pGrid_snow->GetGridWeight(k,cell_idx);
-          if(wt != 0.0) {
-            F.snow_frac+= wt * GetAverageSnowFrac(gg,idx_new,nSteps);
-          }
-        }
-        //F.snow_frac  = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep);
       }
 
       // ---------------------
@@ -317,58 +252,30 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded)
       {
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
-        new_chunk1 = false; new_chunk2 = false; new_chunk3 = false; new_chunk4 = false;
+        new_chunk1 = new_chunk2 = new_chunk3 = new_chunk4 = false;
         if(temp_ave_gridded)       { new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
         if(temp_daily_ave_gridded) { new_chunk2 = pGrid_daily_tave->ReadData(Options,tt.model_time); }
         if(temp_daily_min_gridded) { new_chunk3 = pGrid_daily_tmin->ReadData(Options,tt.model_time); }
         if(temp_daily_max_gridded) { new_chunk4 = pGrid_daily_tmax->ReadData(Options,tt.model_time); }
 
         // populate derived data from the ones just read
-        if(new_chunk1 || new_chunk2 || new_chunk3 || new_chunk4) { InitializeForcingGrids(Options,"TEMP"); }
-        if((new_chunk3 && !new_chunk4) || (!new_chunk3 && new_chunk4)) {
-          ExitGracefully("CModel::UpdateHRUForcingFunctions: Min and max temperature have to have same time points.",BAD_DATA);
+        if(new_chunk1 || new_chunk2 || new_chunk3 || new_chunk4) { 
+          GenerateGriddedTempVars(Options);//only generate if new data chunk found
+        }
+        if (new_chunk3!=new_chunk4){
+          ExitGracefully("CModel::UpdateHRUForcingFunctions: Gridded Min and max temperature have to have same time discretization.",BAD_DATA);
         }
 
-        if(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded) //JRC: Necessary? Isnt this always true after InitializeForcingGrids("TEMP")
-        {
-          F.temp_ave         = 0.0;
-          F.temp_daily_ave   = 0.0;
-          F.temp_daily_min   = 0.0;
-          F.temp_daily_max   = 0.0;
-          F.temp_month_min   = 0.0;
-          F.temp_month_max   = 0.0;
-          F.temp_month_ave   = 0.0;
-        }
+        pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); 
+        pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); 
+        pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); 
+        pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); 
 
-        temp_ave_gridded        = ForcingGridIsAvailable("TEMP_AVE"); //necessary? shouldn't this always be true at this point?
-        temp_daily_ave_gridded  = ForcingGridIsAvailable("TEMP_DAILY_AVE");
-        temp_daily_min_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MIN");
-        temp_daily_max_gridded  = ForcingGridIsAvailable("TEMP_DAILY_MAX");
-
-        if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); } //JRC: Necessary conditional ? Isnt this always true after InitializeForcingGrids("TEMP")
-        if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
-        if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
-        if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
-      }
-
-      // ---------------------
-      // (2b) update forcings: F.temp_daily_min, F.temp_monthly_min,
-      //                       F.temp_daily_max, F.temp_monthly_max,
-      //                       F.temp_daily_ave, F.temp_monthly_ave,
-      //                       F.temp_ave
-      // ---------------------
-      //double interval_tmin;                             // delta t of Tmin gridded forcing data
-      //double interval_tmax;                             // delta t of Tmax gridded forcing data
-      if(temp_ave_gridded && temp_daily_min_gridded && temp_daily_max_gridded && temp_daily_ave_gridded)
-      {
-
-        ExitGracefullyIf(pGrid_daily_tmin->GetInterval() != pGrid_daily_tmax->GetInterval(),
-          "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
-
-        F.temp_daily_min   = pGrid_daily_tmin->GetWeightedValue(k,tt.model_time,Options.timestep);
-        F.temp_daily_min   = pGrid_daily_tmin->GetWeightedValue(k,tt.model_time,Options.timestep);
+        F.temp_ave         = pGrid_tave      ->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_ave   = pGrid_daily_tave->GetWeightedValue(k,tt.model_time,Options.timestep);
-        F.temp_daily_ave   = pGrid_tave      ->GetWeightedValue(k,tt.model_time,Options.timestep);
+        F.temp_daily_min   = pGrid_daily_tmin->GetWeightedValue(k,tt.model_time,Options.timestep);
+        F.temp_daily_max   = pGrid_daily_tmax->GetWeightedValue(k,tt.model_time,Options.timestep);
+        
 				F.temp_month_ave   = NOT_SPECIFIED;
 				F.temp_month_min   = NOT_SPECIFIED;
 				F.temp_month_max   = NOT_SPECIFIED;
@@ -377,11 +284,12 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // ---------------------
       // (3) read gridded recharge
       // ---------------------
-      //double interval;
       if(recharge_gridded)
       {
+        pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); 
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         pGrid_recharge-> ReadData(Options,tt.model_time);
+
         F.recharge   = pGrid_recharge->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
 
@@ -426,11 +334,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
 
       //--Gauge Corrections------------------------------------------------
-      double gauge_corr;
-      double grid_corr;
       if(!(pre_gridded || snow_gridded || rain_gridded)) //Gauge Data
-      {
-			  F.precip=F.precip_5day=F.precip_daily_ave=0.0;
+      {        
+				double gauge_corr;
+				F.precip=F.precip_5day=F.precip_daily_ave=0.0;
         for(int g=0; g<_nGauges; g++)
         {
           gauge_corr= F.snow_frac*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*_pGauges[g]->GetRainfallCorr();
@@ -443,14 +350,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
       else //Gridded Data
       {
+				double grid_corr;
         double rain_corr=pGrid_pre->GetRainfallCorr();
         double snow_corr=pGrid_pre->GetSnowfallCorr();
         grid_corr= F.snow_frac*snow_corr + (1.0-F.snow_frac)*rain_corr;
-        F.precip *=grid_corr;
+				
+        F.precip          *=grid_corr;
         F.precip_daily_ave*=grid_corr;
-        F.precip_5day  = -9999.0;
+        F.precip_5day      = -9999.0;
       }
-      
+
       //--Orographic corrections-------------------------------------------
       CorrectPrecip(Options,F,elev,ref_elev,k,tt);
 
@@ -1196,121 +1105,120 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   //...
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Creates all missing gridded data based on gridded information available,
-///        e.g when only sub-daily temperature is provided estimate daily average, minimum and maximum temperature.
-///        You have to specify the type of the forcing since 'TEMP'-kind of data and 'PREC'-kind of
-///        data are assumed to have the same resolution and hence can be initialized together.
+/// \brief Creates all missing gridded snow/rain/precip data based on gridded information available,
+///        precip data are assumed to have the same resolution and hence can be initialized together.
 ///
 /// \param Options [in]  major options of the model
-/// \param type    [in]  type of input; either 'TEMP' or 'PREC'
 //
-void CModel::InitializeForcingGrids(const optStruct &Options, const string type)
+void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 {
-
-  // grids
   CForcingGrid * pGrid_pre        = NULL;
   CForcingGrid * pGrid_rain       = NULL;
-  CForcingGrid * pGrid_snow       = NULL;
-  CForcingGrid * pGrid_pet        = NULL;
-  CForcingGrid * pGrid_tave       = NULL;
-  CForcingGrid * pGrid_daily_tmin = NULL;
-  CForcingGrid * pGrid_daily_tmax = NULL;
-  CForcingGrid * pGrid_daily_tave = NULL;
-  CForcingGrid * pGrid_recharge   = NULL;
-
+  CForcingGrid * pGrid_snow       = NULL; 
 
   // see if gridded forcing is read from a NetCDF
   bool pre_gridded            = ForcingGridIsInput("PRECIP")         ;
   bool rain_gridded           = ForcingGridIsInput("RAINFALL")       ;
   bool snow_gridded           = ForcingGridIsInput("SNOWFALL")       ;
-  bool pet_gridded            = ForcingGridIsInput("PET")            ;
-  bool temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE")       ;
-  bool temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN") ;
-  bool temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX") ;
-  bool temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE") ;
-  bool recharge_gridded       = ForcingGridIsInput("RECHARGE")       ;
-
+  
   // find the correct grid
   if ( pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP"));         }
   if ( rain_gridded)            { pGrid_rain       = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));       }
   if ( snow_gridded)            { pGrid_snow       = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));       }
-  if ( pet_gridded)             { pGrid_pet        = GetForcingGrid(GetForcingGridIndexFromName("PET"));            }
-  if ( temp_ave_gridded )       { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));       }
-  if ( temp_daily_min_gridded ) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
-  if ( temp_daily_max_gridded ) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
-  if ( temp_daily_ave_gridded ) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
-  if ( recharge_gridded )       { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE"));       }
 
-  if (type == "TEMP") {
+  // Minimum requirements of forcing grids: must have precip or rain
+  ExitGracefullyIf( !pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
 
-    // Temperature min/max grids must be both available
-    ExitGracefullyIf( (temp_daily_min_gridded && !temp_daily_max_gridded) || (!temp_daily_min_gridded && temp_daily_max_gridded),
-                      "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature have to be given either both as time series or both as gridded input.", BAD_DATA);
-
-    //--------------------------------------------------------------------------
-    // Populate Temperature forcing grid: by timestep, daily min/max/average
-    //--------------------------------------------------------------------------
-    string tmp[3];
-    tmp[0] = "NONE";  tmp[1] = "NONE";  tmp[2] = "NONE";
-
-    if ( temp_daily_ave_gridded )
-    {
-      // if daily temp is specified, copy to temp_daily_ave time series
-      // copy F_TEMP_AVE --> F_TEMP_DAILY_AVE
-    }
-
-    // Part (A) does not exist for nongridded input and I don't understand why
-    // if ( temp_min_gridded && temp_max_gridded && !temp_ave_gridded )  // (A) Sub-daily min/max temperature given but not subdaily avg
-    //   {
-    //  GenerateSubdailyAveTempFromSubdailyMinMax(Options);           // ---> Generate subdaily avg
-    //  temp_ave_gridded = ForcingGridIsAvailable("TEMP_AVE");        //      Update availability of data
-    //   }
-
-    if ( temp_ave_gridded )                                           // (B) Sub-daily temperature data provided
-    {
-      GenerateMinMaxAveTempFromSubdaily(Options);                   // ---> Generate daily min, max, & avg
-    }
-    else if ( (temp_daily_min_gridded && temp_daily_max_gridded) ||
-              (temp_daily_min_gridded && temp_daily_max_gridded) )    // (C) Daily min/max temperature data provided
-    {
-      GenerateAveSubdailyTempFromMinMax(Options);                   // --> Generate T_daily_ave, T_ave (downscaled)
-    }
-    else if ( temp_daily_ave_gridded )                                // (D) only daily average data provided
-    {
-      GenerateMinMaxSubdailyTempFromAve(Options);                   // --> Generate daily T_min, T_max, and subdaily ave (downscaled)
-    }
-    else
-    {
-      ExitGracefully("CModel::UpdateHRUForcingFunctions: Insufficient data to generate temperature forcing grids",BAD_DATA);
-    }
+  //--------------------------------------------------------------------------
+  // Handle snowfall availability
+  //--------------------------------------------------------------------------
+  if( snow_gridded && rain_gridded && (Options.rainsnow!=RAINSNOW_DATA))
+  {
+    WriteWarning("CModel::GenerateGriddedPrecipVars: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
   }
-
-  if (type == "PREC") {
-
-    // Minimum requirements of forcing grids: must have precip
-    ExitGracefullyIf( !pre_gridded && !rain_gridded,"CModel::UpdateHRUForcingFunctions: No precipitation forcing found",BAD_DATA);
-
-    //--------------------------------------------------------------------------
-    // Handle snowfall availability
-    //--------------------------------------------------------------------------
-
-    if( snow_gridded && rain_gridded && (Options.rainsnow!=RAINSNOW_DATA))
-    {
-      WriteWarning("CModel::UpdateHRUForcingFunctions: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
-    }
-    if ( snow_gridded && rain_gridded && !pre_gridded ){
-      GeneratePrecipFromSnowRain(Options);
-    }
-    if ( !rain_gridded && !snow_gridded && pre_gridded ){
-      GenerateRainFromPrecip(Options);
-    }
-    if ( !snow_gridded && (pre_gridded || rain_gridded) ){
-      GenerateZeroSnow(Options);
-      if ( !pre_gridded ) { GeneratePrecipFromSnowRain(Options); }
-    }
+  if ( snow_gridded && rain_gridded && !pre_gridded ){
+    GeneratePrecipFromSnowRain(Options);
+  }
+  if ( !rain_gridded && !snow_gridded && pre_gridded ){
+    GenerateRainFromPrecip(Options);
+  }
+  if ( !snow_gridded && (pre_gridded || rain_gridded) ){
+    GenerateZeroSnow(Options);
+    if ( !pre_gridded ) { GeneratePrecipFromSnowRain(Options); }
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Creates all missing gridded temperatur data based on gridded information available,
+///        e.g when only sub-daily temperature is provided estimate daily average, minimum and maximum temperature.
+///        data are assumed to have the same resolution and hence can be initialized together.
+///
+/// \param Options [in]  major options of the model
+//
+void CModel::GenerateGriddedTempVars(const optStruct &Options)
+{
 
+  CForcingGrid * pGrid_tave       = NULL;
+  CForcingGrid * pGrid_daily_tmin = NULL;
+  CForcingGrid * pGrid_daily_tmax = NULL;
+  CForcingGrid * pGrid_daily_tave = NULL;
+
+  // see if gridded forcing is read from a NetCDF
+  bool temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE");
+  bool temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN");
+  bool temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX");
+  bool temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE");
+
+  // find the correct grid
+  if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); }
+  if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
+  if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
+  if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+
+
+  // Temperature min/max grids must be both available
+  ExitGracefullyIf((temp_daily_min_gridded && !temp_daily_max_gridded) || (!temp_daily_min_gridded && temp_daily_max_gridded),
+    "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature have to be given either both as time series or both as gridded input.",BAD_DATA);
+
+  //--------------------------------------------------------------------------
+  // Populate Temperature forcing grid: by timestep, daily min/max/average
+  //--------------------------------------------------------------------------
+  string tmp[3];
+  tmp[0] = "NONE";  tmp[1] = "NONE";  tmp[2] = "NONE";
+
+  if(temp_daily_ave_gridded)
+  {
+    // if daily temp is specified, copy to temp_daily_ave time series
+    // copy F_TEMP_AVE --> F_TEMP_DAILY_AVE
+  }
+
+  // Part (A) does not exist for nongridded input and I don't understand why
+  // if ( temp_min_gridded && temp_max_gridded && !temp_ave_gridded )  // (A) Sub-daily min/max temperature given but not subdaily avg
+  //   {
+  //  GenerateSubdailyAveTempFromSubdailyMinMax(Options);           // ---> Generate subdaily avg
+  //  temp_ave_gridded = ForcingGridIsAvailable("TEMP_AVE");        //      Update availability of data
+  //   }
+
+  if(temp_ave_gridded)                                           // (B) Sub-daily temperature data provided
+  {
+    GenerateMinMaxAveTempFromSubdaily(Options);                   // ---> Generate daily min, max, & avg
+  }
+  else if((temp_daily_min_gridded && temp_daily_max_gridded) ||
+    (temp_daily_min_gridded && temp_daily_max_gridded))    // (C) Daily min/max temperature data provided
+  {
+    GenerateAveSubdailyTempFromMinMax(Options);                   // --> Generate T_daily_ave, T_ave (downscaled)
+  }
+  else if(temp_daily_ave_gridded)                                // (D) only daily average data provided
+  {
+    GenerateMinMaxSubdailyTempFromAve(Options);                   // --> Generate daily T_min, T_max, and subdaily ave (downscaled)
+  }
+  else
+  {
+    ExitGracefully("CModel::GenerateGriddedTempVars: Insufficient data to generate temperature forcing grids",BAD_DATA);
+  }
+
+  ExitGracefullyIf(pGrid_daily_tmin->GetInterval() != pGrid_daily_tmax->GetInterval(),
+    "CModel::InitializeForcingGrids: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Checks whether a forcing grid (by name) is read actually
 ///        from a NetCDF or is a derived grid.

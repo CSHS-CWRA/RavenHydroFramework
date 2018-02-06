@@ -182,8 +182,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 
   // open NetCDF read-only; ncid will be set
   // _filename.c_str() converts filename from 'string' to 'const char *'
+  if(Options.noisy){ cout<<"Initializing grid file "<<_filename<<endl; }
   retval = nc_open(_filename.c_str(), NC_NOWRITE, &ncid);
   HandleNetCDFErrors(retval);
+
 
   // Get the id of dimensions based on its name; dimid will be set
   // Find length of dimension and store it in GridDim
@@ -191,7 +193,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   retval = nc_inq_dimid (ncid, _DimNames[0].c_str(), &dimid_x);  HandleNetCDFErrors(retval);
   retval = nc_inq_dimlen(ncid, dimid_x, &GridDim_t);             HandleNetCDFErrors(retval);
   _GridDims[0] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
-
+  
   // dimension y = number of rows of the grid
   retval = nc_inq_dimid (ncid, _DimNames[1].c_str(), &dimid_y);  HandleNetCDFErrors(retval);
   retval = nc_inq_dimlen(ncid, dimid_y, &GridDim_t);             HandleNetCDFErrors(retval);
@@ -387,10 +389,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   // Determine chunk size (_ChunkSize),
   //           number of chunks read in total (_nChunk) and
   // Set       id of current chunk (_iChunk)
-  // depending on size of grid (#cols x #rows x buffersize x 8byte <=  1 MB=1024*1024 byte)
+  // depending on size of grid (#cols x #rows x buffersize x 8byte <=  10 MB=10*1024*1024 byte)
   // -------------------------------
   BytesPerTimestep = 8 * _GridDims[0] * _GridDims[1];
-  _ChunkSize = int(max(min((1024 * 1024) / BytesPerTimestep, _GridDims[2]),1));         // number of timesteps per chunk
+  _ChunkSize = int(max(min( (10*1024 * 1024) / BytesPerTimestep, _GridDims[2]),1));     // number of timesteps per chunk
   _ChunkSize = max(int(round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read
   _nChunk    = int(ceil(1.*_GridDims[2] / _ChunkSize));                                 // total number of chunks
   _iChunk    = -1;                                                                      // current chunk read (-1 = no chunk read, 0 = first chunk...)
@@ -525,10 +527,9 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   //initialize _aFirstNonZeroWt and _aLastNonZeroWt
   _aFirstNonZeroWt=new int [_nHydroUnits];
   _aLastNonZeroWt =new int [_nHydroUnits];
-
   for(int k=0; k<_nHydroUnits;k++){
     _aFirstNonZeroWt[k]=0;
-    _aLastNonZeroWt [k]=_nNonZeroWeightedGridCells;
+    _aLastNonZeroWt [k]=_nNonZeroWeightedGridCells-1;
   }
 
   
@@ -898,7 +899,7 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
   if (Options.noisy){ cout << endl; }
   if (duration < local_simulation_start)  //out of data before simulation starts!
   {
-    cout << "Initialize time series '" << _varname.c_str() << "'" << endl;
+    cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
     cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
     ExitGracefully(
@@ -906,7 +907,7 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
   }
   if (duration + model_timestep < local_simulation_end)    //run out of data before simulation finishes
   {                                                      //+model_timesteps is for coincdent duration & data
-    cout << "Initialize time series '" << _varname.c_str() << "'" << endl;
+    cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
     cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
     ExitGracefully(
@@ -914,18 +915,19 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
   }
   if ((local_simulation_start<0) || (_start_year>model_start_year))     //data does not begin until after simulation
   {
-    cout << "Initialize time series '" << _varname.c_str() << "'" << endl;
+    cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day << "," << _start_year << " " << duration << endl;
     cout << "  model start day, year, duration :" << model_start_day << "," << model_start_year << " " << model_duration << endl;
     ExitGracefully(
       "CForcingGrid::Initialize: gridded forcing data not available at beginning of model simulation", BAD_DATA);
   }
 
-  if (Options.noisy){ cout << "Initialize time series '" << _varname.c_str() << "'" << endl; }
-  if (Options.noisy){ cout << "  time series start day, year, duration : " << _start_day << "," << _start_year << " " << duration << endl; }
-  if (Options.noisy){ cout << "  model start day, year, duration       : " << model_start_day << "," << model_start_year << " " << model_duration << endl; }
-  if (Options.noisy){ cout << "Finished Initialize time series '" << _varname.c_str() << "'" << endl; }
-  if (Options.noisy){ cout << endl; }
+  /*if (Options.noisy){ 
+    cout << "Initialize forcing grid '" << _varname.c_str() << "'" << endl; 
+    cout << "  time series start day, year, duration : " << _start_day << "," << _start_year << " " << duration << endl; 
+    cout << "  model start day, year, duration       : " << model_start_day << "," << model_start_year << " " << model_duration << endl; 
+    cout << "Finished forcing grid'" << _varname.c_str() << "'" << endl<< endl; 
+  }*/
 
 }
 
@@ -1444,17 +1446,17 @@ int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 /// \param k    [in] HRU index
 /// \param t      [in] model time [days]
 /// \return tstep [in] model time step [days]
+/// \returns timestep weighted value of gridded forcing in HRU k
 //
 double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &tstep) const
 {
 
   int idx_new = GetTimeIndex(t,tstep);
-  int nSteps = (int)(max(1.0,round(tstep/_interval)));
+  int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
   double wt;
   double sum=0;
-
-  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)  
-	{
+  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  {
     wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
     sum += wt * GetValue(ic,idx_new,nSteps);
   }
@@ -1464,7 +1466,8 @@ double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &
 /// \brief returns daily weighted value of gridded forcing in HRU k
 /// \param k    [in] HRU index
 /// \param t      [in] model time [days]
-/// \return tstep [in] model time step [days]
+/// \param tstep [in] model time step [days]
+/// \returns daily weighted value of gridded forcing in HRU k
 //
 double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const double &tstep) const
 {
@@ -1476,6 +1479,32 @@ double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const dou
   {
     wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
     sum += wt * GetValue(ic,idx_new_day,nStepsDaily);
+  }
+  return sum;
+}
+///////////////////////////////////////////////////////////////////
+/// \brief returns daily weighted snowfrac value if this is a gridded snow dataset and pRain is provided 
+/// \param k    [in] HRU index
+/// \param t      [in] model time [days]
+/// \param pRain [in] pointer to gridded rain dataset
+/// \param tstep [in] model time step [days]
+//
+double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,const double &tstep,const CForcingGrid *pRain) const
+{
+
+  int idx_new = GetTimeIndex(t,tstep);
+  int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
+  double wt;
+  double sum=0.0;
+  double snow; double rain;
+  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  {
+    wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
+    snow = GetValue(idx_new, t, nSteps);
+    if(snow>=0.0){
+      rain=pRain->GetValue(idx_new, t, nSteps);
+      sum+= wt * snow/(snow+rain);
+    }
   }
   return sum;
 }
@@ -1520,7 +1549,7 @@ double CForcingGrid::GetValue(const int idx, const double &t, const int nsteps) 
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_ave(const int idx, const double &t, const int n) const 
+/*double CForcingGrid::GetValue_ave(const int idx, const double &t, const int n) const 
 {
   double sum = 0.0;
   for (int ii=0; ii<n; ii++) {
@@ -1529,7 +1558,7 @@ double CForcingGrid::GetValue_ave(const int idx, const double &t, const int n) c
   sum /= double(n);
 
   return sum;
-}
+}*/ //identical to GetValue()
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns minimum of n timesteps of time series data point for which t is an index
@@ -1538,13 +1567,22 @@ double CForcingGrid::GetValue_ave(const int idx, const double &t, const int n) c
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_min(const int idx, const double &t, const int n) const 
+double CForcingGrid::GetValue_min(const int idx, const double &t, const int nsteps) const 
 {
-  double mini = ALMOST_INF ;
-  for (int ii=0; ii<n; ii++) {
+  /*double mini = ALMOST_INF ;
+  for (int ii=0; ii<nsteps; ii++) {
     if (_aVal[min(_ChunkSize-1,(int)t+ii)][idx] < mini) {mini = _aVal[min(_ChunkSize-1,(int)t+ii)][idx]; };
   };
+  return mini;*/
+
+  double mini = ALMOST_INF ;
+  int ii_start=(int)(t);
+  int lim=min(nsteps,_ChunkSize-ii_start); 
+  for (int ii=ii_start; ii<ii_start+lim;ii++){
+    if(_aVal[ii][idx] < mini){mini=_aVal[ii][idx];}
+  }
   return mini;
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1554,13 +1592,21 @@ double CForcingGrid::GetValue_min(const int idx, const double &t, const int n) c
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_max(const int idx, const double &t, const int n) const 
+double CForcingGrid::GetValue_max(const int idx, const double &t, const int nsteps) const 
 {
-  double maxi = -ALMOST_INF ;
-  for (int ii=0; ii<n; ii++) {
+  /*double maxi = -ALMOST_INF ;
+  for (int ii=0; ii<nsteps; ii++) {
     if (_aVal[min(_ChunkSize-1,(int)t+ii)][idx] > maxi) {maxi = _aVal[min(_ChunkSize-1,(int)t+ii)][idx]; };
   };
 
+  return maxi;*/
+
+  double maxi = -ALMOST_INF ;
+  int ii_start=(int)(t);
+  int lim=min(nsteps,_ChunkSize-ii_start); 
+  for (int ii=ii_start; ii<ii_start+lim;ii++){
+    if(_aVal[ii][idx] > maxi){maxi=_aVal[ii][idx];}
+  }
   return maxi;
 }
 
