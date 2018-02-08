@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -112,6 +112,7 @@ public:/*-------------------------------------------------------*/
   double               GetAvgStateVar       (const int i) const;
   double               GetAvgForcing        (const string &forcing_string) const;
   double               GetAvgCumulFlux      (const int i, const bool to) const;
+  double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
   long                 GetDownstreamID      () const;
   int                  GetNumHRUs           () const;

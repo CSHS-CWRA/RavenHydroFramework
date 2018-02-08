@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "StateVariables.h"
@@ -150,6 +150,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     //Transport variables
   case(CONSTITUENT):        {name="Constituent";                break;}  //overwritten below
   case(CONSTITUENT_SRC):    {name="Constituent Source";         break;}  //overwritten below
+  case(CONSTITUENT_SINK):   {name="Constituent Sink";           break;}  //overwritten below
   case(CONSTITUENT_SW):     {name="Constituent in Surface Water"; break;}  //overwritten below
     //..
   default:
@@ -171,11 +172,17 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   if (typ==CONSTITUENT){
     name=CTransportModel::GetConstituentLongName(layerindex);
   }
-  if (typ==CONSTITUENT_SRC){
-    name="Source of "+CTransportModel::GetConstituentTypeName(layerindex);
+  else if (typ==CONSTITUENT_SRC){
+    int c=layerindex;
+    name="Source of "+CTransportModel::GetConstituentTypeName2(c);
   }
-  if (typ==CONSTITUENT_SW){
-    name="SW Sink of "+CTransportModel::GetConstituentTypeName(layerindex);
+  else if (typ==CONSTITUENT_SINK){
+    int c=layerindex;
+    name="Sink of "+CTransportModel::GetConstituentTypeName2(c);
+  }
+  else if (typ==CONSTITUENT_SW){
+    int c=layerindex;
+    name="SW Sink of "+CTransportModel::GetConstituentTypeName2(c);
   }
   return name;
 }
@@ -242,6 +249,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
 
   case(CONSTITUENT):      {units="mg/m2"; break;}
   case(CONSTITUENT_SRC):  {units="mg/m2"; break;}
+  case(CONSTITUENT_SINK): {units="mg/m2"; break;}
   case(CONSTITUENT_SW):   {units="mg/m2"; break;}
     //..
   default:
@@ -317,11 +325,13 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 
   else if (!tmp.compare("CONSTITUENT"     )){typ=CONSTITUENT;}
   else if (!tmp.compare("CONSTITUENT_SRC" )){typ=CONSTITUENT_SRC;}
+  else if (!tmp.compare("CONSTITUENT_SINK")){typ=CONSTITUENT_SINK;}
   else if (!tmp.compare("CONSTITUENT_SW"  )){typ=CONSTITUENT_SW;}
   else if (tmp.c_str()[0]=='!'             ){
-    if      (!tmp.substr(tmp.length()-4,4).compare("_SRC")){typ=CONSTITUENT_SRC;}
-    else if (!tmp.substr(tmp.length()-3,3).compare( "_SW")){typ=CONSTITUENT_SW;}
-    else                                                   {typ=CONSTITUENT;}
+    if      (!tmp.substr(tmp.length()-4,4).compare("_SRC" )){typ=CONSTITUENT_SRC;}
+    else if (!tmp.substr(tmp.length()-5,5).compare("_SINK")){typ=CONSTITUENT_SINK;}
+    else if (!tmp.substr(tmp.length()-3,3).compare( "_SW" )){typ=CONSTITUENT_SW;}
+    else                                                    {typ=CONSTITUENT;}
   }
   else                                      {typ=UNRECOGNIZED_SVTYPE;}
 
@@ -411,6 +421,11 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(CONSTITUENT_SRC):    {
       int c=layerindex;
       name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SRC"; //e.g., !Nitrogen_SRC
+      break;
+    }
+    case(CONSTITUENT_SINK):    {
+      int c=layerindex;
+      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SINK"; //e.g., !Nitrogen_SINK
       break;
     }
     case(CONSTITUENT_SW):    {

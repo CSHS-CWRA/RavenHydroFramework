@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 
@@ -173,6 +173,29 @@ double CHRUGroup::GetAvgCumulFlux (const int i, const bool to) const
     if(_pHRUs[k]->IsEnabled()){
       area    =_pHRUs[k]->GetArea();
       sum    +=_pHRUs[k]->GetCumulFlux(i,to)*area;
+      areasum+=area;
+    }
+  }
+  return sum/areasum;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of  cumulative flux between two compartments over HRU Group
+///
+/// \param iFrom [in] index of 'from' storage compartment
+/// \param iTo [in] index of 'to' storage compartment
+/// \return Area-weighted average of cumulative flux between two compartments over HRU Group
+//
+double CHRUGroup::GetAvgCumulFluxBet (const int iFrom, const int iTo) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  double areasum=0.0;
+  double area;
+  for (int k=0;k<_nHRUs;k++)
+  {
+    if(_pHRUs[k]->IsEnabled()){
+      area    =_pHRUs[k]->GetArea();
+      sum    +=_pHRUs[k]->GetCumulFluxBet(iFrom,iTo)*area;
       areasum+=area;
     }
   }

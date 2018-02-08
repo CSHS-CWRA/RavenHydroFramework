@@ -104,7 +104,13 @@ struct soil_struct
 
   double exchange_flow;     ///< [mm/d]    exchange flow rate with mixing zone (greater than 0)
 
-  double retardation[MAX_CONSTITUENTS]; ///< [-] soil/species retardation factor
+  //Transport parameters (all per soil/constituent combination)
+  double retardation   [MAX_CONSTITUENTS]; ///< [-] soil-specific retardation factor
+  double mineraliz_rate[MAX_CONSTITUENTS]; ///< [1/d] soil-specific mineralization rate 
+  double loss_rate     [MAX_CONSTITUENTS]; ///> [1/d] soil-specific unspecified linear loss rate
+  double transf_coeff  [MAX_CONSTITUENTS][MAX_CONSTITUENTS]; ///< [1/d] linear transformation coefficients (one per species-species combination) 
+  double stoichio_coeff[MAX_CONSTITUENTS][MAX_CONSTITUENTS]; ///< [1/d] linear transformation coefficients (one per species-species combination) 
+  
 };
 
 ///////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -309,9 +309,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":UBCSouthSWCorr"         )){code=751;}  //TEMP
     else if  (!strcmp(s[0],":GlobalParameter"        )){code=720;}
     //--------------------TRANSPORT-------------------------------
-    else if  (!strcmp(s[0],":DecayCoefficient"       )){code=900;}
+    else if  (!strcmp(s[0],":GlobalTransportParam"   )){code=900;}
     else if  (!strcmp(s[0],":SoilTransportParamList" )){code=901;}
-
+    else if  (!strcmp(s[0],":SoilTransportParameterList" )){code=901;}
     //--------------------OTHER ------- ------------------------
     else if  (!strcmp(s[0],":TransientParameter"     )){code=800;}
     else if  (!strcmp(s[0],":HRUTypeChange"          )){code=801;} 
@@ -332,16 +332,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
       if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;}
         
-      string filedir = GetDirectoryName(Options.rvp_filename); //if a relative path name, e.g., "/path/model.rvp", only returns e.g., "/path"
-      if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-        filename = filedir + "//" + filename;
-      }
+      filename =CorrectForRelativePath(filename ,Options.rvp_filename);
 
       INPUT2.open(filename.c_str()); 
       if (INPUT2.fail()){
-        ostrstream FILENAME;
-        FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
-        ExitGracefully(FILENAME.str() ,BAD_DATA); 
+        string warn=":RedirectToFile: Cannot find file "+filename;
+        ExitGracefully(warn.c_str(),BAD_DATA); 
       }
       else{
         pMainParser=p;    //save pointer to primary parser
@@ -1282,31 +1278,40 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       break;
     }
     case(900):  //----------------------------------------------
-    {/*:DecayCoefficient
-       :DecayCoefficient [constit_name] [value]*/
-      if (Options.noisy){cout <<"DecayCoefficient"<<endl;}
-      if (Len<3){p->ImproperFormat(s); break;}
+    {/*:GlobalTransportParam [NAME] [constit_name] [value]*/
+      if (Options.noisy){cout <<"GlobalTransportParam"<<endl;}
+      if (Len<4){p->ImproperFormat(s); break;}
       if (pModel->GetTransportModel()!=NULL){
-        //pModel->GetTransportModel()->SetParameter(s[1],"DECAY_COEFF",s_to_d(s[2]),0)
+        pModel->GetTransportModel()->SetGlobalParameter(s[2],s[1],s_to_d(s[3]),Options.noisy);
       }
       break;
     }
     case(901)://----------------------------------------------
-    {/*:SoilTransportParameterList (General) [optional comments]
-       string ":SoilTransportParameterList" [constit_name]
+    {/*:SoilTransportParameterList
+       string ":SoilTransportParameterList" [constit_name] {optional constit_name2}
        :Parameters, NAME_1,NAME_2,...,NAME_N
        :Units,      unit_1,unit_2,...,unit_N
        {string soil_tag, double param_1, param_2, ... ,param_3}x<=NumSoilClasses
        :EndSoilTransportParameterList*/
       if (Options.noisy) {cout <<"Soil Transport Parameter List"<<endl;}
-      done=false;
+      
       if (Len<2){p->ImproperFormat(s); break;}
+
       int constit_ind=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
       if (constit_ind==DOESNT_EXIST)
       {
-        ExitGracefully("Parsing property file: invalid constituent name in :SoilTransportParameterList command",BAD_DATA_WARN);
-        break;
+        ExitGracefully("Parsing property file: invalid constituent name in :SoilTransportParameterList command",BAD_DATA_WARN); break;
       }
+
+      int constit_ind2=DOESNT_EXIST;
+      if(Len>=3){
+        constit_ind2=pModel->GetTransportModel()->GetConstituentIndex(s[2]);
+        if (constit_ind2==DOESNT_EXIST) {
+          ExitGracefully("Parsing property file: invalid second constituent name in :SoilTransportParameterList command",BAD_DATA_WARN); break;
+        }
+      }
+
+      done=false;
       nParamStrings=0;
       while (!done)
       {
@@ -1327,7 +1332,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       }
       invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
       ExitGracefullyIf(invalid_index,
-                       "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
+                       "ParseClassPropertiesFile: Invalid soiltype code in SoilTransportParameterList command",BAD_DATA);
       if (Options.noisy){
         for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
       }
@@ -1335,7 +1340,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       {
         for (int j=0;j<nParamStrings-1;j++)
         {
-          CSoilClass::SetSoilTransportProperty(constit_ind,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
+          CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
         }
       }
       break;

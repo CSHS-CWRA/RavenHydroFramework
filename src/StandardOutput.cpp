@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
 
   Includes CModel routines for writing output headers and contents:
     CModel::CloseOutputStreams()
@@ -1803,5 +1803,23 @@ string GetDirectoryName(const string &fname)
   if (std::string::npos == pos){ return ""; }
   else                         { return fname.substr(0, pos);}
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns directory path given filename and relative path
+///
+/// \param filename [in] filename, e.g., C:\temp\thisfile.txt returns c:\temp
+/// \param relfile [in] filename of reference file 
+/// e.g., if filename = something.txt and relfile= c:\temp\myfile.rvi, returns c:\temp\something.txt
+///       if filename = something.txt and relfile= ..\dir\myfile.rvi, returns ..\dir\myfile.rvi
+///       if filename = c:\temp\something.txt and relfile= c:\temp\myfile.rvi,  returns c:\temp\something.txt
+//
+string CorrectForRelativePath(const string filename,const string relfile)
+{
+  string filedir = GetDirectoryName(relfile); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
+  if (StringToUppercase(filename).find(StringToUppercase(filedir+"//")) == string::npos){ //checks to see if absolute dir already included in redirect filename
+    return filedir + "//" + filename;
+  }
+  return filename;
+}
+
 
 

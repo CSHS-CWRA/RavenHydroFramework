@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team, Ayman Khedr
+  Copyright (c) 2008-2018 the Raven Development Team, Ayman Khedr
   ----------------------------------------------------------------*/
 
 #include "CustomOutput.h"
@@ -25,6 +25,7 @@ Constructor/Destructor
 CCustomOutput::CCustomOutput( const diagnostic    variable,
                               const sv_type       sv,
                               const int           sv_index,
+                              const int           sv_index2,
                               const string        force_string,
                               const agg_stat      stat,
                               const time_agg      time_aggregation,
@@ -38,9 +39,10 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   ExitGracefullyIf(pMod==NULL,"CCustomOutput Constructor: NULL model",BAD_DATA);
 
 // set up the objects member variables
-  _var      =variable;                                      // forcing variable, state variable, etc.
+  _var      =variable;                                      // forcing variable, state variable, flux, etc.
   _svtype   =sv;                                            // state variable type (if output var is a SV)
-  _svind    =sv_index;                                      // state variable index (if output var is a SV)
+  _svind    =sv_index;                                      // state variable index (if output var is a SV or flux)
+  _svind2   =sv_index2;                                     // state variable target index (if output var is a flux between)
   _force_str=force_string;                                  // name of forcing variable (if output var is a forcing function)
 
   _spaceAgg  =space_aggregation;                            // how we're aggregation the data (ByHRU,BySubbasin, etc.)
@@ -99,7 +101,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     _varUnits = GetForcingTypeUnits(typ);
     break;
   }
-  case (VAR_TO_FLUX) :
+  case (VAR_TO_FLUX) : //cumulative flux
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
@@ -107,12 +109,23 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     break;
   }
-  case (VAR_FROM_FLUX) :
+  case (VAR_FROM_FLUX) : //cumulative flux
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
     _varName  = "FROM_"+CStateVariable::SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
+    break;
+  }
+  case (VAR_BETWEEN_FLUX) :
+  {
+    sv_type typ=pModel->GetStateVarType(_svind);
+    int     ind=pModel->GetStateVarLayer(_svind);
+    ExitGracefullyIf(_svind2==DOESNT_EXIST,"Invalid second SV index in :CustomOutput :Between command",BAD_DATA_WARN);
+    sv_type typ2=pModel->GetStateVarType(_svind2);
+    int     ind2=pModel->GetStateVarLayer(_svind2);
+    _varName  = "BETWEEN_"+CStateVariable::SVTypeToString(typ,ind)+"_AND_"+CStateVariable::SVTypeToString(typ2,ind2);
+    _varUnits = CStateVariable::GetStateVarUnits(typ)+"/d";
     break;
   }
   default:
@@ -368,6 +381,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
   if      ((_var == VAR_FORCING_FUNCTION) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding "<<endl; }//period ending
   else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
   else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
+  else if ((_var == VAR_BETWEEN_FLUX    ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format PeriodEnding"<<endl;  }//period ending
   else if ((_var == VAR_STATE_VAR       ) && (_timeAgg==EVERY_TSTEP)){ _CUSTOM<<":Format Instantaneous"<<endl;  }//snapshot
   else                                                               { _CUSTOM<<":Format PeriodStarting"<<endl;  }//period starting
   _CUSTOM<<"#"<<endl;
@@ -436,8 +450,9 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 
   int colFormat;
   if      ((_var == VAR_FORCING_FUNCTION) && (_timeAgg==EVERY_TSTEP)){ colFormat = -1; }//period ending
-  else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0; }//snapshot
-  else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot
+  else if ((_var == VAR_FROM_FLUX       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot (cumulative)
+  else if ((_var == VAR_TO_FLUX         ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot (cumulative)
+  else if ((_var == VAR_BETWEEN_FLUX    ) && (_timeAgg==EVERY_TSTEP)){ colFormat = -1; }//period ending
   else if ((_var == VAR_STATE_VAR       ) && (_timeAgg==EVERY_TSTEP)){ colFormat = 0;  }//snapshot
   else                                                               { colFormat = 1;  }//period starting
 
@@ -653,23 +668,26 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str);}
     }
     else if (_var == VAR_TO_FLUX){
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,true);}
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux   (_svind,true);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,true);}
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,true);}
     }
     else if (_var == VAR_FROM_FLUX){
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,false);}
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux   (_svind,false);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,false);}
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
     }
-    /*else
-    //else if (...){
-    // more diagnostic variables needed here...
-    //}*/
+    else if (_var == VAR_BETWEEN_FLUX){
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFluxBet(_svind,_svind2);}
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFluxBet(_svind,_svind2);}
+      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFluxBet(_svind,_svind2);}
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFluxBet(_svind,_svind2);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFluxBet(_svind,_svind2);}
+    }
 
     if (k==0){count++;}//increment number of data items stored
 
@@ -806,231 +824,6 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   }
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief Write custom output to EnSim file by querying the model and calculating diagnostics
-/// \param &tt [in] Current model time
-/// \param &Options [in] Global model options information
-//
-/*void CCustomOutput::WriteEnSimCustomOutput(const time_struct &curDate,
-                                           const optStruct   &Options)
-{
-  //Check to see if it is time to write to file
-  bool reset=false;
-  double t=curDate.model_time;
-  int dday=curDate.day_of_month;
-  int dmon=curDate.month;
-
-  if (t==0){return;} //initial conditions should not be printed to custom output, only period data.
-
-  if      ((_timeAgg==YEARLY)  && (dday==1) && (dmon==1))                           {reset=true;}//Jan 1 - print preceding year
-  else if ((_timeAgg==MONTHLY) && (dday==1))                                                                                                            {reset=true;}//first day of month - print preceding month info
-  else if ((_timeAgg==DAILY)   && (floor(curDate.model_time)==curDate.model_time))  {reset=true;}//start of day (hopefully 0:00!)- print preceding day
-  else if ( _timeAgg==EVERY_TSTEP )                                                                                                                                                                                             {reset=true;}//every timestep
-  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))     {reset=true;}//~Oct 1 - print preceding year
-
-  // write the first 2 fields (year,month/date) and (model time)
-  if (reset)
-  {
-    // figure out "yesterday" (for yearly, monthly and daily aggregation)
-    time_struct prevDate;
-    JulianConvert(curDate.model_time-1, Options.julian_start_day, Options.julian_start_year, prevDate);
-
-    switch(_timeAgg)
-    {
-    case YEARLY:       _CUSTOM<<prevDate.year<<" "<<curDate.model_time<<" "; break;
-    case MONTHLY:      _CUSTOM<<prevDate.year<<"-"<<prevDate.month<<"-"<<prevDate.day_of_month<<" "<<curDate.model_time<<" "; break;
-    case DAILY:        _CUSTOM<<prevDate.year<<"-"<<prevDate.month<<"-"<<prevDate.day_of_month<<" "<<curDate.model_time<<" "; break;
-    case EVERY_TSTEP:
-    {
-      char dQuote = '"';
-      _CUSTOM<<dQuote<<curDate.date_string<<" "<<DecDaysToHours(curDate.julian_day)<<dQuote<<" "<<curDate.model_time<<" "; //period ending for forcings
-    }
-    break;
-    case WATER_YEARLY: _CUSTOM<<t<<","<<prevDate.year<<"-"<<prevDate.year+1<<","; break;
-    }
-  }
-
-  bool is_concentration=false;
-
-  is_concentration = (_var == VAR_STATE_VAR) && (pModel->GetStateVarType(_svind)==CONSTITUENT);
-
-  //Sift through HRUs, BASINs or watershed, updating aggregate statistics
-  //--------------------------------------------------------------------------
-  //numdata=1 if BY_WATERSHED, =nSubBasins if BY_BASIN, =nHRUs if BY_HRU...
-  //each custom output gets values of vals data[nHRUs] (max size)
-  double val=0;
-  for (int k=0;k<num_data;k++)
-  {
-    //---access current diagnostic variable (from end of timestep)------------
-    if (is_concentration){
-      int m = pModel->GetStateVarLayer(_svind);
-      int i_stor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
-      double conv=(MM_PER_METER/LITER_PER_M3);
-
-      if (_spaceAgg == BY_HRU){ val = pModel->GetHydroUnit(k)->GetStateVarValue(_svind)/pModel->GetHydroUnit(k)->GetStateVarValue(i_stor)*conv;}
-      else {
-        ExitGracefully("CustomOutput: cannot currently generate basin,watershed, or hru group based aggregate constituent concentrations",STUB);
-      }
-      //else if (_spaceAgg==BY_BASIN      ){val=-9999;}// \todo [funct] pTransModel->GetSubBasinAvgConc(k,_svind)
-      //else if (_spaceAgg==BY_WSHED      ){val=-9999;}
-      // else if (_spaceAgg==BY_HRU_GROUP  ){val=-9999;}
-      //  else if (_spaceAgg==BY_SELECT_HRUS){val=-9999;}
-    }
-    else if (_var==VAR_STATE_VAR){
-      switch(_spaceAgg)
-      {
-      case BY_HRU:                    val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind); break;
-      case BY_BASIN:                  val=pModel->GetSubBasin (k)->GetAvgStateVar  (_svind); break;
-      case BY_WSHED:                  val=pModel->                 GetAvgStateVar  (_svind); break;
-      case BY_HRU_GROUP:              val=pModel->GetHRUGroup (k)->GetAvgStateVar  (_svind); break;
-      case BY_SELECT_HRUS:            val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetStateVarValue(_svind); break;
-      }
-    }
-    else if (_var==VAR_FORCING_FUNCTION){
-      switch(_spaceAgg)
-      {
-      case BY_HRU:                    val=pModel->GetHydroUnit(k)->GetForcing   (_force_str); break;
-      case BY_BASIN:                  val=pModel->GetSubBasin (k)->GetAvgForcing(_force_str); break;
-      case BY_WSHED:                  val=pModel->                 GetAvgForcing(_force_str); break;
-      case BY_HRU_GROUP:              val=pModel->GetHRUGroup (k)->GetAvgForcing(_force_str); break;
-      case BY_SELECT_HRUS:            val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str); break;
-      }
-    }
-    else if (_var == VAR_TO_FLUX){
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,true);}
-      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,true);}
-      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,true);}
-      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,true);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,true);}
-    }
-    else if (_var == VAR_FROM_FLUX){
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetCumulFlux(_svind,false);}
-      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin (k)->GetAvgCumulFlux(_svind,false);}
-      else if (_spaceAgg==BY_WSHED      ){val=pModel->                 GetAvgCumulFlux(_svind,false);}
-      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup (k)->GetAvgCumulFlux(_svind,false);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
-    }
-    //else if (...){
-    // more diagnostic variables needed here...
-    //}
-
-    if (k==0){count++;}//increment number of data items stored
-
-    //---Update diagnostics--------------------------------------------------
-    //-----------------------------------------------------------------------
-    if      (_aggstat==AGG_AVERAGE)
-    {
-      // \todo - should handle pointwise variables (e.g., state vars) differently from periodwise variables (e.g., forcings)
-      if      (_var == VAR_STATE_VAR){
-        data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count; //NOT CURRENTLY VALID
-      }
-      else {
-        data[k][0]=(double)(count-1)/(double)(count)*data[k][0]+val/count;
-      }
-    }
-    else if (_aggstat==AGG_MAXIMUM)
-    {
-      upperswap(data[k][0],val);
-    }
-    else if (_aggstat==AGG_MINIMUM)
-    {
-      lowerswap(data[k][0],val);
-    }
-    else if (_aggstat==AGG_RANGE)
-    {
-      lowerswap(data[k][0],val);
-      upperswap(data[k][1],val);
-    }
-    else if ((_aggstat==AGG_MEDIAN)    ||
-             (_aggstat==AGG_QUARTILES) ||
-             (_aggstat==AGG_95CI)      ||
-             (_aggstat==AGG_HISTOGRAM))
-    {
-      //populate data
-      data [k][count-1] = val;
-    }
-    else
-    {
-      data[k][0]=val;//most recent value
-    }
-
-    //---Write output to file and reinitialize statistics, if needed---------
-    //-----------------------------------------------------------------------
-    if (reset)
-    {
-      //write to file
-      if      (_aggstat==AGG_AVERAGE){_CUSTOM<<FormatDouble(data[k][0])      <<" ";}
-      else if (_aggstat==AGG_MAXIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<" ";}
-      else if (_aggstat==AGG_MINIMUM){_CUSTOM<<FormatDouble(data[k][0])      <<" ";}
-      else if (_aggstat==AGG_RANGE  ){_CUSTOM<<FormatDouble(data[k][0])      <<" "<<FormatDouble(data[k][1])<<" ";}
-      else if (_aggstat==AGG_MEDIAN )
-      {
-        double Q1,Q2,Q3;
-        quickSort(data[k],0,count-1);
-        GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<FormatDouble(Q2)<<" ";
-      }
-      else if (_aggstat==AGG_QUARTILES ) //find lower quartile, median, then upper quartile
-      {
-        double Q1,Q2,Q3;
-        quickSort(data[k],0,count-1);
-        GetQuartiles(data[k],count,Q1,Q2,Q3);
-        _CUSTOM<<FormatDouble(Q1)<<" "<<FormatDouble(Q2)<<" "<<FormatDouble(Q3)<<" ";
-      }
-      else if (_aggstat==AGG_95CI)
-      {
-        quickSort(data[k],0,count-1);//take floor and ceiling of lower and upper intervals to be conservative
-        _CUSTOM  << FormatDouble(data[k][(int)floor((double)(count-1)*0.025)])<<" ";
-        _CUSTOM  << FormatDouble(data[k][(int) ceil((double)(count-1)*0.975)])<<" ";
-      }
-      else if (_aggstat==AGG_HISTOGRAM)
-      {
-        quickSort(data[k],0,count-1);
-        double binsize = (_hist_max-_hist_min)/_nBins;
-        int bincount[MAX_HISTOGRAM_BINS];
-
-        for (int bin=0;bin<_nBins;bin++){bincount[bin]=0;}
-        for (int a=0;a<count;a++)
-        {
-          for (int bin=0;bin<_nBins;bin++){
-            if ((data[k][a]>=(_hist_min+bin*binsize)) && (data[k][a]<(_hist_min+(bin+1)*binsize))){bincount[bin]++;}
-          }
-        }
-
-        for (int bin=0;bin<_nBins;bin++){
-          _CUSTOM<<bincount[bin]<<" ";
-        }
-      }
-
-      //-reset to initial conditions
-      //-----------------------------------------------------------------------
-      if      (_aggstat==AGG_AVERAGE){data[k][0]= 0.0;}
-      else if (_aggstat==AGG_MAXIMUM){data[k][0]=-ALMOST_INF;}
-      else if (_aggstat==AGG_MINIMUM){data[k][0]= ALMOST_INF;}
-      else if (_aggstat==AGG_RANGE  )
-      {
-        data[k][0]= ALMOST_INF;
-        data[k][1]=-ALMOST_INF;
-      }
-      else if ((_aggstat==AGG_MEDIAN)    ||
-               (_aggstat==AGG_QUARTILES) ||
-               (_aggstat==AGG_95CI)      ||
-               (_aggstat==AGG_HISTOGRAM))
-      {
-        for(int j=0;j<num_store;j++){
-          data[k][j]=0;
-        }
-      }
-      //...more stats here
-      if (k==num_data-1){count=0;}//don't reboot count until last HRU/basin is done
-    }//end if (reset)
-  }
-
-  if (reset){
-    _CUSTOM<<endl;
-  }
-}
-*/
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output stream after all information written to file
 //

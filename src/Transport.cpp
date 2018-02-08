@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Master Transport/Tracer class
   coordinates information about constituent storage
@@ -236,8 +236,7 @@ int    CTransportModel::GetNumConstituents() const{return _nConstituents;}
 const constituent *CTransportModel::GetConstituent(const int c) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf((c<0)||(c>=_nConstituents),
-                   "CTransportModel::GetConstituent: invalid index",BAD_DATA);
+  ExitGracefullyIf((c<0)||(c>=_nConstituents),"CTransportModel::GetConstituent: invalid index",BAD_DATA);
 #endif
   return _pConstituents[c];
 }
@@ -247,8 +246,7 @@ const constituent *CTransportModel::GetConstituent(const int c) const
 const transport_params *CTransportModel::GetConstituentParams(const int c) const
 {
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf((c<0) || (c >= _nConstituents),
-                   "CTransportModel::GetConstituent: invalid index", BAD_DATA);
+  ExitGracefullyIf((c<0) || (c >= _nConstituents),"CTransportModel::GetConstituent: invalid index", BAD_DATA);
 #endif
   return _pConstitParams[c];
 }
@@ -382,7 +380,6 @@ int    CTransportModel::GetLatToHRU(const int qq) const
   return _iLatToHRU[qq];
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief returns global state variable index i of water compartment ii
 /// \param ii [in] index of water storage (from 0 to _nWaterCompartments-1)
@@ -415,34 +412,25 @@ int CTransportModel::GetLatqsIndex(const int qq) const
 /// \param _iFromWater [in] index of "from" water storage state variable
 /// \param _iToWater [in] index of "to" water storage state variable
 //
-double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit       *pHRU, const  int _iFromWater,const int _iToWater) const
+double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit *pHRU, const  int _iFromWater,const int _iToWater) const
 {
   sv_type fromType,toType;
-  //int soil_ind;
   fromType=pModel->GetStateVarType(_iFromWater);
   toType  =pModel->GetStateVarType(_iToWater);
-  int    m=pModel->GetStateVarLayer(_iFromWater);
-#ifndef _STRICTCHECK_
-  ExitGracefullyIf(m==-1,"GetRetardationFactor:invalid _iFromWater",RUNTIME_ERR);
-#endif
+
   if (fromType==SOIL)
   {
-    if (toType!=ATMOSPHERE)
-    {
-      return pHRU->GetSoilProps(m)->retardation[c];
-      //return pHRU->GetSoilTransportProps(m)->retardation[c];
-    }
-    else if (toType==ATMOSPHERE)
-    {
+    int    m=pModel->GetStateVarLayer(_iFromWater);
+#ifdef _STRICTCHECK_
+    ExitGracefullyIf(m==DOESNT_EXIST,"GetRetardationFactor:invalid _iFromWater",RUNTIME_ERR);
+#endif
+    if (toType!=ATMOSPHERE){return pHRU->GetSoilProps(m)->retardation[c];}
+    else                   {
       return 1.0;
       //return pHRU->GetVegProps()->uptake_fact[c];
     }
-    return 1.0;
   }
-  else
-  {
-    return 1.0;
-  }
+  return 1.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns effective retardation factor for constituent c
@@ -451,7 +439,7 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit       
 /// \param _iFromWater [in] index of "from" water storage state variable
 /// \param _iToWater [in] index of "to" water storage state variable
 //
-double CTransportModel::GetDecayCoefficient(const int c,const CHydroUnit        *pHRU,const int iStorWater) const
+double CTransportModel::GetDecayCoefficient(const int c, const CHydroUnit *pHRU,const int iStorWater) const
 {
   sv_type storType;
   double decay_coeff = GetConstituentParams(c)->decay_coeff;
@@ -461,15 +449,61 @@ double CTransportModel::GetDecayCoefficient(const int c,const CHydroUnit        
   //add special decay_coefficients from other processes
   if (storType == SOIL)
   {
-    //int m = pModel->GetStateVarLayer(iStorWater);
-#ifndef _STRICTCHECK_
-    //ExitGracefullyIf(m==DOESNT_EXIST,"GetDecayCoefficient:invalid _iFromWater",RUNTIME_ERR);
+    int m = pModel->GetStateVarLayer(iStorWater);
+#ifdef _STRICTCHECK_
+    ExitGracefullyIf(m==DOESNT_EXIST,"GetDecayCoefficient:invalid _iFromWater",RUNTIME_ERR);
+    ExitGracefullyIf((c<0) || (c>MAX_CONSTITUENTS),"GetDecayCoefficient:invalid constit",RUNTIME_ERR);
 #endif
-    //decay_coeff += pHRU->GetSoilProps(m)->mineralization_rate[c];
-    //decay_coeff += pHRU->GetSoilProps(m)->loss_rate[c]; //e.g., denitrification
-
+    decay_coeff += pHRU->GetSoilProps(m)->mineraliz_rate[c];
+    decay_coeff += pHRU->GetSoilProps(m)->loss_rate     [c];//e.g., denitrification
   }
   return decay_coeff;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns effective retardation factor for constituent c
+/// being transported from storage compartment _iFromWater to storage compartment _iToWater
+/// \param c [in] constituent index
+/// \param _iFromWater [in] index of "from" water storage state variable
+/// \param _iToWater [in] index of "to" water storage state variable
+//
+double CTransportModel::GetTransformCoefficient(const int c, const int c2, const CHydroUnit *pHRU,const int iStorWater) const
+{
+  sv_type storType=pModel->GetStateVarType(iStorWater);
+
+  if (storType == SOIL)
+  {
+    int m = pModel->GetStateVarLayer(iStorWater);
+#ifdef _STRICTCHECK_
+    ExitGracefullyIf(m==DOESNT_EXIST,"GetTransformCoefficient:invalid iStorWater",RUNTIME_ERR);
+    ExitGracefullyIf((c<0) || (c>MAX_CONSTITUENTS),"GetTransformCoefficient:invalid constit",RUNTIME_ERR);
+    ExitGracefullyIf((c2<0) || (c2>MAX_CONSTITUENTS),"GetTransformCoefficient:invalid constit2",RUNTIME_ERR);
+#endif
+    return pHRU->GetSoilProps(m)->transf_coeff[c][c2];
+  }
+  return 0.0;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns effective retardation factor for constituent c
+/// being transported from storage compartment _iFromWater to storage compartment _iToWater
+/// \param c [in] constituent index
+/// \param _iFromWater [in] index of "from" water storage state variable
+/// \param _iToWater [in] index of "to" water storage state variable
+//
+double CTransportModel::GetStoichioCoefficient(const int c, const int c2, const CHydroUnit *pHRU,const int iStorWater) const
+{
+  sv_type storType=pModel->GetStateVarType(iStorWater);
+
+  if (storType == SOIL)
+  {
+    int m = pModel->GetStateVarLayer(iStorWater);
+#ifdef _STRICTCHECK_
+    ExitGracefullyIf(m==DOESNT_EXIST,"GetStoichioCoefficient:invalid iStorWater",RUNTIME_ERR);
+    ExitGracefullyIf((c<0) || (c>MAX_CONSTITUENTS),"GetStoichioCoefficient:invalid constit",RUNTIME_ERR);
+    ExitGracefullyIf((c2<0) || (c2>MAX_CONSTITUENTS),"GetStoichioCoefficient:invalid constit2",RUNTIME_ERR);
+#endif
+    return pHRU->GetSoilProps(m)->stoichio_coeff[c][c2];
+  }
+  return 0.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
@@ -513,6 +547,10 @@ void   CTransportModel::AddConstituent(string name, bool is_tracer)
   aLev[0]=c;
   pModel->AddStateVariables(aSV,aLev,1);
 
+  aSV [0]=CONSTITUENT_SINK;
+  aLev[0]=c;
+  pModel->AddStateVariables(aSV,aLev,1);
+
   aSV [0]=CONSTITUENT_SW;
   aLev[0]=c;
   pModel->AddStateVariables(aSV,aLev,1);
@@ -538,9 +576,6 @@ void   CTransportModel::AddConstituent(string name, bool is_tracer)
 void CTransportModel::InitializeConstitParams(transport_params *pP)
 {
   pP->decay_coeff = 0.0;
-  for (int m = 0; m < MAX_SOIL_CLASSES; m++){
-    pP->retardation[m] = 1.0;
-  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Preparation of all transport variables
@@ -553,6 +588,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   int js=0;
 
   //determine number of connections
+  //----------------------------------------------------------------------------
   _nAdvConnections=0;
   for (int j=0; j<pModel->GetNumProcesses(); j++)
   {
@@ -571,6 +607,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   }
 
   //determine _iFromWater, _iToWater indices and process index for each and every connection
+  //----------------------------------------------------------------------------
   js=0;
   int qq=0;
   _iFromWater=new int [_nAdvConnections];
@@ -602,6 +639,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   }
 
   //identify number of water storage compartments
+  //----------------------------------------------------------------------------
   _nWaterCompartments=0;
   for (int i=0;i<pModel->GetNumStateVars(); i++)
   {
@@ -629,6 +667,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   if (_nConstituents==0){return;}/// all of the above work necessary even with no transport?
 
   //Synopsis
+  //----------------------------------------------------------------------------
   if (!Options.silent){
     cout<<"===TRANSPORT MODEL SUMMARY=============================="<<endl;
     cout<<"   number of compartments: "<<_nWaterCompartments<<endl;
@@ -870,6 +909,30 @@ void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i
     ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
 
   pLast=pSource; //so source is not deleted upon leaving this routine
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Set transport parameter value for specified constituent
+//
+void   CTransportModel::SetGlobalParameter(const string const_name,const string param_name,const double &value, bool noisy)
+{
+  int constit_ind=DOESNT_EXIST;
+  for (int c=0; c<_nConstituents;c++){
+    if (StringToUppercase(const_name)==StringToUppercase(_pConstituents[c]->name)){
+      constit_ind=c;
+    }
+  }
+  if(constit_ind==DOESNT_EXIST){
+    WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized constituent name",noisy);
+  }
+
+  if(StringToUppercase(param_name)=="DECAY_COEFF"){
+    _pConstitParams[constit_ind]->decay_coeff=value;
+    ExitGracefullyIf(value<0.0," CTransportModel::SetGlobalParameter: decay coefficient cannot be negative",BAD_DATA_WARN);
+  }
+  else{
+    WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized parameter name",noisy);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1145,8 +1208,10 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     _pConstituents[c]->OUTPUT<<":FileType tb0 ASCII EnSim 1.0"<<endl;
     _pConstituents[c]->OUTPUT<<"#"<<endl;
     _pConstituents[c]->OUTPUT<<":Application   Raven"<<endl;
-    _pConstituents[c]->OUTPUT<<":Version       "<<Options.version<<endl;
-    _pConstituents[c]->OUTPUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    if(!Options.benchmarking){
+      _pConstituents[c]->OUTPUT<<":Version       "<<Options.version<<endl;
+      _pConstituents[c]->OUTPUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    }
     _pConstituents[c]->OUTPUT<<"#"<<endl;
     _pConstituents[c]->OUTPUT<<"#------------------------------------------------------------------------"<<endl;
     _pConstituents[c]->OUTPUT<<"#"<<endl;
@@ -1206,8 +1271,10 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     _pConstituents[c]->POLLUT<<":FileType tb0 ASCII EnSim 1.0"<<endl;
     _pConstituents[c]->POLLUT<<"#"<<endl;
     _pConstituents[c]->POLLUT<<":Application   Raven"<<endl;
-    _pConstituents[c]->POLLUT<<":Version       "<<Options.version<<endl;
-    _pConstituents[c]->POLLUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    if(!Options.benchmarking){
+      _pConstituents[c]->POLLUT<<":Version       "<<Options.version<<endl;
+      _pConstituents[c]->POLLUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    }
     _pConstituents[c]->POLLUT<<"#"<<endl;
     _pConstituents[c]->POLLUT<<"#------------------------------------------------------------------------"<<endl;
     _pConstituents[c]->POLLUT<<"#"<<endl;
@@ -1330,6 +1397,8 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     CumInflux =-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC,c))*(area*M2_PER_KM2);//mg
     CumInflux +=-atmos_prec;//mg
     CumOutflux=_pConstituents[c]->cumul_output;
+    CumOutflux+=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//mg
+
     initMass  =_pConstituents[c]->initial_mass;
 
     _pConstituents[c]->OUTPUT<<","<<currentMass*convert;
@@ -1419,6 +1488,7 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
     CumInflux =-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC,c))*(area*M2_PER_KM2);//mg
     CumInflux +=-atmos_prec;                       //mg
     CumOutflux=_pConstituents[c]->cumul_output;     //mg
+    CumOutflux+=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//mg
     initMass  =_pConstituents[c]->initial_mass;     //mg
 
     _pConstituents[c]->OUTPUT<<" "<<currentMass*convert; //kg

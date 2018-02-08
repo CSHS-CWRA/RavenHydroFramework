@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -408,12 +408,25 @@ double CHydroUnit::GetForcing(const string &forcing_string) const
 ///
 /// \param i [in] index of storage compartment
 /// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
-/// \return Area-weighted average of cumulative flux to storage compartment i
+/// \return cumulative flux to date to storage compartment i
 //
 double CHydroUnit::GetCumulFlux(const int i, const bool to) const
 {
   return _pModel->GetCumulativeFlux(_global_k, i,to);
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns cumulative flux between two compartments in HRU
+///
+/// \param iFrom [in] index of 'from' storage compartment
+/// \param iTo [in] index of 'to' storage compartment
+/// \return cumulative flux to date between two compartments within HRU
+//
+double CHydroUnit::GetCumulFluxBet(const int iFrom, const int iTo) const
+{
+  return _pModel->GetCumulFluxBetween(_global_k, iFrom,iTo);
+}
+
 
 /*****************************************************************
    Manipulators

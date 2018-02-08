@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -534,10 +534,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         }
         Options.interp_file+=s[Len-1];
 
-        string filedir = GetDirectoryName(Options.rvi_filename); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
-        if (StringToUppercase(Options.interp_file).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-          Options.interp_file = filedir + "//" + Options.interp_file;
-        }
+        Options.interp_file =CorrectForRelativePath(Options.interp_file ,Options.rvi_filename);
       }
       break;
     }
@@ -1389,11 +1386,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       //read in parameter information
       diagnostic diag;
       diag=VAR_STATE_VAR ;//For now, default
-      int SV_ind;
+      int SV_ind,SV_ind2;
       sv_type sv_typ;
       SV_ind= ParseSVTypeIndex(s[3], pModel);
+      SV_ind2=DOESNT_EXIST;
 
-      //cout<<"SV_ind:"<<SV_ind<<" diag:"<<diag<<endl;
+      //Special treatment of To:, From: and Between:1.And.2 fluxes
       string tmp = s[3];
       string right;
       if (!strcmp((tmp.substr(0, 3)).c_str(), "To:")){
@@ -1421,7 +1419,29 @@ bool ParseMainInputFile (CModel     *&pModel,
           diag=VAR_FROM_FLUX;
         }
       }
-      if (SV_ind==DOESNT_EXIST){//not a state variable or a flux to/from state var - try forcing function
+      //e.g., :Between SOIL[0].And.ATMOSPHERE for AET
+      if (!strcmp((tmp.substr(0, 8)).c_str(), "Between:")){
+        right = tmp.substr(8,string::npos);
+        string firstSV = tmp.substr(0,right.find(".And."));
+        string lastSV  = tmp.substr(right.find(".And.")+5,string::npos);
+
+        SV_ind =ParseSVTypeIndex(firstSV, pModel);
+        SV_ind2=ParseSVTypeIndex(lastSV,  pModel);
+        if (SV_ind == DOESNT_EXIST){
+          WriteWarning("Custom output Flux variable " + firstSV + " is unrecognized. No output will be written.", Options.noisy);
+          break;
+        }
+        else if (SV_ind2 == DOESNT_EXIST){
+          WriteWarning("Custom output Flux variable " + lastSV + " is unrecognized. No output will be written.", Options.noisy);
+          break;
+        }
+        else
+        {
+          diag=VAR_BETWEEN_FLUX;
+        }
+      }
+      //not a state variable or a flux to/from state var - try forcing function
+      if (SV_ind==DOESNT_EXIST){
         diag=VAR_FORCING_FUNCTION;
         sv_typ=UNRECOGNIZED_SVTYPE;
         force_str=s[3];
@@ -1457,7 +1477,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         }
       }
 
-      //get extra filename
+      // get custom filename, if specified
       int start=5;
       if ((sa==BY_SELECT_HRUS) && (Len>=7) && (string(s[5])=="ONLY")){start=7;}
       else if ((Len>=8) && (stat==AGG_HISTOGRAM))                    {start=8;}
@@ -1465,7 +1485,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len>start){for (int i=start;i<Len;i++){filename=filename+to_string(s[i]);}}
 
       CCustomOutput *pCustom;
-      pCustom=new CCustomOutput(diag,sv_typ,SV_ind,force_str,stat,ta,sa,filename,kk_only,pModel,Options);
+      pCustom=new CCustomOutput(diag,sv_typ,SV_ind,SV_ind2,force_str,stat,ta,sa,filename,kk_only,pModel,Options);
       pModel->AddCustomOutput(pCustom);
 
       if ((Len>=8) && (stat==AGG_HISTOGRAM)){
@@ -2269,6 +2289,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
       pModel->AddProcess(pMover);
 
+      // \todo [funct] should be only if advective processes are present...
       pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
       pModel->AddProcess(pMover);
 
@@ -2370,14 +2391,14 @@ bool ParseMainInputFile (CModel     *&pModel,
      */
       if (Options.noisy){cout <<"Decay Process"<<endl;}
       decay_type dec_type=DECAY_BASIC;
-      if (Len<4){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
+      if (Len<3){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
       if      (!strcmp(s[1],"DECAY_BASIC"    )){dec_type=DECAY_BASIC;}
       else if (!strcmp(s[1],"DECAY_ANALYTIC" )){dec_type=DECAY_ANALYTIC;}
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized decay process representation",BAD_DATA_WARN); break;
       }
-      pMover=new CmvDecay(s[1],dec_type,pModel->GetTransportModel());
+      pMover=new CmvDecay(s[2],dec_type,pModel->GetTransportModel());
       pModel->AddProcess(pMover);
       break;
     }
@@ -2394,6 +2415,17 @@ bool ParseMainInputFile (CModel     *&pModel,
      */
       if (Options.noisy){cout <<"Transformation process"<<endl;}
       ExitGracefully(":Transformation input command",STUB);
+      
+      transformation_type t_type=TRANSFORM_LINEAR_ANALYTIC;
+      if (Len<3){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"TRANSFORM_LINEAR"    )){t_type=TRANSFORM_LINEAR;}
+      else if (!strcmp(s[1],"TRANSFORM_LINEAR_ANALYTIC" )){t_type=TRANSFORM_LINEAR_ANALYTIC;}
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized transformation process representation",BAD_DATA_WARN); break;
+      }
+      pMover=new CmvTransformation(s[2],s[3],t_type,pModel->GetTransportModel());
+      pModel->AddProcess(pMover);
       break;
     }
     default://----------------------------------------------
@@ -2480,6 +2512,6 @@ int  ParseSVTypeIndex(string s,  CModel *&pModel)
 void ImproperFormatWarning(string command, CParser *p, bool noisy)
 {
   string warn;
-  warn=command+" command: improper line format at line "+to_string(p->GetLineNumber());
+  warn=command+" command: improper line length at line "+to_string(p->GetLineNumber());
   WriteWarning(warn,noisy);
 }

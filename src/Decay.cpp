@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ------------------------------------------------------------------
   Decay of soluble contaminant/tracer/nutrient
   ----------------------------------------------------------------*/
@@ -27,15 +27,15 @@ CmvDecay::CmvDecay(string           constit_name,
   ExitGracefullyIf(_constit_ind==-1,
                    "CmvDecay constructor: invalid constituent name in :Decay command",BAD_DATA_WARN);
 
-  int nCompartments = _pTransModel->GetNumWaterCompartments();
+  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
 
-  CHydroProcessABC::DynamicSpecifyConnections(nCompartments);
+  CHydroProcessABC::DynamicSpecifyConnections(nWaterCompartments);
 
   //decay occurs in all water storage compartments
-  for (int ii=0;ii<nCompartments;ii++)
+  for (int ii=0;ii<nWaterCompartments;ii++)
   {
-    iFrom[ii]=_pTransModel->GetStorIndex(_constit_ind,ii);
-    iTo  [ii]=CONSTITUENT_SINK; //CONSTITUENT_DECAY??
+    iFrom[ii]=_pTransModel->GetStorIndex(_constit_ind,ii); //mass in water compartment
+    iTo  [ii]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind); //'loss/sink' storage (for MB accounting)
   }
 }
 
@@ -59,7 +59,6 @@ void   CmvDecay::Initialize(){}
 void CmvDecay::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) const
 {
   nP=0;
-  //all decay coefficients initialized to zero
 }
 
 //////////////////////////////////////////////////////////////////
@@ -71,8 +70,8 @@ void CmvDecay::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) 
 /// \param &tt [in] Current model time
 /// \param *rates [out] rates of change in each water storage compartment due to decay
 //
-void   CmvDecay::GetRatesOfChange(const double                  *state_vars,
-                                  const CHydroUnit        *pHRU,
+void   CmvDecay::GetRatesOfChange(const double      *state_vars,
+                                  const CHydroUnit  *pHRU,
                                   const optStruct   &Options,
                                   const time_struct &tt,
                                   double            *rates) const
@@ -80,9 +79,10 @@ void   CmvDecay::GetRatesOfChange(const double                  *state_vars,
   int    k=pHRU->GetGlobalIndex();
   double junk,mass;
   int iStor,iConstit;
-  int nCompartments = _pTransModel->GetNumWaterCompartments();
+  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
   double decay_coeff;
-  for (int ii = 0; ii < nCompartments; ii++)
+
+  for (int ii = 0; ii < nWaterCompartments; ii++)
   {
     iStor   =_pTransModel->GetStorWaterIndex(ii);
     iConstit=_pTransModel->GetStorIndex     (_constit_ind,ii);   //global state variable index of this constituent in this water storage
@@ -90,19 +90,18 @@ void   CmvDecay::GetRatesOfChange(const double                  *state_vars,
     mass=state_vars[iConstit];
     decay_coeff = _pTransModel->GetDecayCoefficient(_constit_ind,pHRU,iStor);
 
-    if (_pTransModel->IsDirichlet(iStor, _constit_ind, k, tt, junk)){ }
+    if(_pTransModel->IsDirichlet(iStor,_constit_ind,k,tt,junk)){} //don't modify dirichlet source zones
     else {
       if (_dtype==DECAY_BASIC)
       {
         rates[ii]= -decay_coeff*mass; //[mg/m2/d]=[1/d]*[mg/m2]
       }
-      else if (_dtype==DECAY_ANALYTIC)
+      else if (_dtype==DECAY_ANALYTIC)//analytical approach - definitely preferred - solution to dm/dt=-km integrated from t to t+dt
       {
-        rates[ii] = - mass * (1 - exp(-decay_coeff*Options.timestep)); //analytical approach
+        rates[ii] = mass * (1 - exp(-decay_coeff*Options.timestep))/Options.timestep; 
       }
     }
   }
-
 }
 
 //////////////////////////////////////////////////////////////////
@@ -121,13 +120,11 @@ void   CmvDecay::ApplyConstraints(const double           *state_vars,
                                   double     *rates) const
 {
   int iConstit;
-
-  int nCompartments = _pTransModel->GetNumWaterCompartments();
-  //cannot remove more mass than is there
-  for (int ii = 0; ii < nCompartments; ii++)
+  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  for (int ii = 0; ii < nWaterCompartments; ii++)
   {
     iConstit=_pTransModel->GetStorIndex(_constit_ind,ii);
-    rates[ii] = min(rates[ii],state_vars[iConstit]/Options.timestep);
+    rates[ii] = min(rates[ii],state_vars[iConstit]/Options.timestep);//cannot remove more mass than is there
   }
 }
 

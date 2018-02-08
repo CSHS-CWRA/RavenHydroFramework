@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -13,7 +13,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 // #define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
-#define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
+//#define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
 #ifdef netcdf
 #define _RVNETCDF_ //If Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -743,7 +743,7 @@ enum process_type
   ADVECTION, LAT_ADVECTION,
 
   //in Decay.h
-  DECAY,
+  DECAY, TRANSFORMATION,
 
   //..
   NULL_PROCESS_TYPE
@@ -1199,7 +1199,7 @@ double FormatDouble            (const double &d);
 void   PrepareOutputdirectory    (const optStruct &Options);
 string GetDirectoryName          (const string &fname);
 void   HandleNetCDFErrors             (int error_code);        ///< NetCDF error handling
-
+string CorrectForRelativePath    (const string filename, const string relfile);
 #ifdef _WIN32
 #include <direct.h>
 #define GetCurrentDir _getcwd

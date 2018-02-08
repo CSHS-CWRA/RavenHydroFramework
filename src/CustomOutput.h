@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Custom output generation
   ----------------------------------------------------------------*/
@@ -63,8 +63,9 @@ enum diagnostic
   VAR_STATE_VAR,        ///< track state variable
   VAR_FORCING_FUNCTION, ///< track forcing function
   VAR_HYD_COND,         ///< track hydraulic conductivity
-  VAR_FROM_FLUX,        ///< track flux from specific state variable
-  VAR_TO_FLUX           ///< track flux to specific state variable
+  VAR_FROM_FLUX,        ///< track gross flux from specific state variable
+  VAR_TO_FLUX,          ///< track gross flux to specific state variable
+  VAR_BETWEEN_FLUX      ///< track net flux between specific state variables
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -77,12 +78,13 @@ private:/*------------------------------------------------------*/
 
   diagnostic   _var;       ///< output variable identifier
   sv_type      _svtype;    ///< state variable output type (if output var is a SV)
-  int          _svind;     ///< state variable index (if output var is a SV)
+  int          _svind;     ///< state variable index (if output var is a SV or flux)
+  int          _svind2;    ///< target state variable index (if output var is a flux between two compartments)
   string       _force_str; ///< forcing function name (if output var is a forcing function)
 
-  agg_stat               _aggstat;   ///< time aggregation statistic(average, max, min, etc.) (spatial average is always used)
-  time_agg               _timeAgg;   ///< how aggregated (monthly, daily, hourly, etc.)
-  spatial_agg    _spaceAgg;  ///< how aggregated (by HRU, by Basin, etc.)
+  agg_stat     _aggstat;   ///< time aggregation statistic(average, max, min, etc.) (spatial average is always used)
+  time_agg     _timeAgg;   ///< how aggregated (monthly, daily, hourly, etc.)
+  spatial_agg  _spaceAgg;  ///< how aggregated (by HRU, by Basin, etc.)
 
   double       _hist_min;  ///< histogram min
   double       _hist_max;  ///< Histogram max
@@ -90,11 +92,11 @@ private:/*------------------------------------------------------*/
 
   string       _filename;  ///< custom output filename (relative path, with extension)
 
-  string                        _varName;                       ///< forcing variable or state variable name
-  string                        _varUnits;              ///< forcing variable or state variable units
-  string                        timeAggStr;             ///< temporal aggregation type string
-  string                        statStr;                        ///< statistic type string
-  string                        spaceAggStr;    ///< spatial aggregation type string
+  string       _varName;   ///< forcing variable or state variable name
+  string       _varUnits;  ///< forcing variable or state variable units
+  string       timeAggStr; ///< temporal aggregation type string
+  string       statStr;    ///< statistic type string
+  string       spaceAggStr;///< spatial aggregation type string
 
   double     **data;      ///< stores accumulated data for each HRU,Basin, or WShed (size:[num_store][num_data])
   int          num_data;  ///< number of data points
@@ -112,6 +114,7 @@ public:/*------------------------------------------------------*/
   CCustomOutput(const diagnostic    variable,
                 const sv_type       sv,
                 const int           sv_index,
+                const int           sv_index2,
                 const string        force_string,
                 const agg_stat      stat,
                 const time_agg      time_aggregation,

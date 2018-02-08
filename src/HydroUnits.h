@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -129,6 +129,7 @@ public:/*-------------------------------------------------------*/
   double                 GetForcing         (const string &forcing_string) const;
 
   double                 GetCumulFlux       (const int i, const bool to) const;
+  double                 GetCumulFluxBet    (const int iFrom, const int iTo) const;
 
   double                 GetStateVarMax     (const int     i,
                                              const double *curr_state_var,
@@ -196,6 +197,7 @@ public:/*-------------------------------------------------------*/
   double            GetAvgStateVar     (const int i) const;
   double            GetAvgForcing      (const string &forcing_string) const;
   double            GetAvgCumulFlux    (const int i, const bool to) const;
+  double            GetAvgCumulFluxBet(const int iFrom, const int iTo) const;
   bool              IsInGroup          (const int k) const;
 
   bool              IsAggregatorGroup  (const int i) const;

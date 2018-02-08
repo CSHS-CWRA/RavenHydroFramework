@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Class CSoilClass
   Class CVegetationClass
@@ -63,7 +63,7 @@ public:/*-------------------------------------------------------*/
   static       CSoilClass *StringToSoilClass(const string s);
   static void              DestroyAllSoilClasses();
   static void              SetSoilProperty         (soil_struct &S, string param_name, const double value);
-  static void              SetSoilTransportProperty(int constit_ind, soil_struct &S, string param_name, const double value);
+  static void              SetSoilTransportProperty(int constit_ind, int constit_ind2,soil_struct &S, string param_name, const double value);
   static double            GetSoilProperty         (const soil_struct &S, string param_name);
   static double            GetSoilTransportProperty(const int constit_ind, const soil_struct &S, string param_name);
   static void              InitializeSoilProperties(soil_struct &S, bool is_template);

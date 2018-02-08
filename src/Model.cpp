@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -656,17 +656,44 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
       CLateralExchangeProcessABC *pProc=(CLateralExchangeProcessABC*)_pProcesses[j];
       for(int q = 0; q < _pProcesses[j]->GetNumLatConnections(); q++)//each process may have multiple connections
       {
-        
         if(( to) && (pProc->GetToHRUIndices()[q]  ==k) && (pProc->GetLateralToIndices()[q]  ==i)){sum+=_aCumulativeLatBal[jss]/area; }
         if((!to) && (pProc->GetFromHRUIndices()[q]==k) && (pProc->GetLateralFromIndices()[q]==i)){sum+=_aCumulativeLatBal[jss]/area; }
+        jss++;
       }
-      jss++;
     }
   }
   
   return sum;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns cumulative gross flux between unit iFrom and iTo in HRU k
+///
+/// \param k [in] index of HRU
+/// \param iFrom [in] index of storage compartment
+/// \param iTo [in] index of storage compartment
+/// \return cumulative gross flux between unit iFrom and iTo in HRU k
+//  does not address fluxes due to lateral flux
+double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((k<0) || (k>=_nHydroUnits),"CModel::GetCumulativeFlux: bad HRU index",RUNTIME_ERR);
+  ExitGracefullyIf((iFrom<0) || (iTo>=_nStateVars),"CModel::GetCumulativeFlux: bad state var index",RUNTIME_ERR);
+#endif
+  int js=0;
+  double sum=0;
+  int q;
+  for(int j = 0; j < _nProcesses; j++)
+  {
+    for(q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
+    {
+      if( (_pProcesses[j]->GetToIndices()  [q]== iTo) && (_pProcesses[j]->GetFromIndices()[q]== iFrom)){ sum+=_aCumulativeBal[k][js]; }
+      if( (_pProcesses[j]->GetFromIndices()[q]== iTo) && (_pProcesses[j]->GetToIndices()  [q]== iFrom)){ sum-=_aCumulativeBal[k][js]; }
+      js++;
+    }
+  }
+  
+  return sum;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns options structure model
 /// \return pointer to transport model
@@ -845,6 +872,26 @@ double CModel::GetAvgCumulFlux (const int i, const bool to) const
     if(_pHydroUnits[k]->IsEnabled())
     {
       sum +=GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+    }
+  }
+  return sum/_WatershedArea;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of  cumulative flux between two compartments over watershed
+///
+/// \param iFrom [in] index of 'from' storage compartment
+/// \param iTo [in] index of 'to' storage compartment
+/// \return Area-weighted average of cumulative flux between two compartments over watershed
+//
+double CModel::GetAvgCumulFluxBet (const int iFrom, const int iTo) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  for (int k=0;k<_nHydroUnits;k++)
+  {
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum +=GetCumulFluxBetween(k,iFrom,iTo)*_pHydroUnits[k]->GetArea();
     }
   }
   return sum/_WatershedArea;

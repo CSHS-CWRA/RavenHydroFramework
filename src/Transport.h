@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TRANSPORTMODEL_H
 #define TRANSPORTMODEL_H
@@ -15,7 +15,7 @@ struct constituent
   bool     is_tracer;     ///< true if tracer (actually unitless)
   bool     can_evaporate; ///< true if constituent can be trasported through evaporation
 
-  double   decay_rate;    ///< linear decay rate of constituent [1/d]
+  double   decay_rate;    ///< independent linear decay rate of constituent (happens everywhere; not environmentally mediated) [1/d]
 
   double   cumul_input;   ///< cumulative mass lost from system [mg]
   double   cumul_output;  ///< cumulative mass lost from system [mg]
@@ -27,20 +27,18 @@ struct constituent
 };
 struct constit_source
 {
-  bool dirichlet;         ///< =true for dirichlet, false for neumann
-  int constit_index;      ///< constituent index (c)
-  int i_stor;             ///< index of water storage compartment
-  int kk;                 ///< index of HRU group to which source is applied (default is all for DOESNT_EXIST)
+  bool   dirichlet;       ///< =true for dirichlet, false for neumann
+  int    constit_index;   ///< constituent index (c)
+  int    i_stor;          ///< index of water storage compartment
+  int    kk;              ///< index of HRU group to which source is applied (default is all for DOESNT_EXIST)
   double concentration;   ///< fixed concentration [mg/m2] (or DOESNT_EXIST=-1 if time series should be used)
   double flux;            ///< fixed flux [mg/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
-  const CTimeSeries *pTS; ///< time series of fixed concentration or flux (or NULL if fixed should be used)
+  const  CTimeSeries *pTS; ///< time series of fixed concentration or flux (or NULL if fixed should be used)
 };
 struct transport_params
 {
-  double decay_coeff;                          ///< constituent linear decay coefficient [1/d]
-  double retardation     [MAX_SOIL_CLASSES+1]; ///< constituent retardation factors (one per soil) [-]
-  //double uptake_moderator[MAX_VEG_CLASSES +1]; ///< constitutent uptake moderators for transpiration (one per vegetation class) [-]
-  //double transf_coeff    [MAX_SPECIES     +1]; ///< linear transformation coefficients (one per species) [1/d]
+  double decay_coeff;                          ///< constituent base linear decay coefficient [1/d]
+  //double uptake_moderator[MAX_VEG_CLASSES];  ///< constitutent uptake moderators for transpiration (one per vegetation class) [-]
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Class for coordinating transport simulation
@@ -135,6 +133,8 @@ public:/*-------------------------------------------------------*/
 
   double GetDecayCoefficient (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
   double GetRetardationFactor(const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
+  double GetTransformCoefficient(const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
+  double GetStoichioCoefficient (const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
 
   bool   IsDirichlet         (const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const;
   double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const;
@@ -154,6 +154,7 @@ public:/*-------------------------------------------------------*/
   void   IncrementCumulInput (const optStruct &Options, const time_struct &tt);
   void   IncrementCumulOutput(const optStruct &Options);
 
+  void   SetGlobalParameter(const string const_name, const string param_name, const double &value, bool noisy);
   void   SetMassInflows    (const int p, const double *aMinnew);
   void   SetLateralInfluxes(const int p, const double *aRoutedMass);
   void   RouteMass         (const int p,       double **aMoutnew, const optStruct &Options) const;

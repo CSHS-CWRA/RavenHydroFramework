@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -208,22 +208,26 @@ public:/*-------------------------------------------------------*/
   ~CModel();
 
   //Inherited Accessor functions (from ModelABC.h)
+  bool              StateVarExists     (sv_type type) const;
+
   int               GetNumStateVars    () const;
   sv_type           GetStateVarType    (const int i) const;
   int               GetStateVarIndex   (sv_type type) const; //assumes layer=0
   int               GetStateVarIndex   (sv_type type, int layer) const;//overriden for multilayer variables
   int               GetStateVarLayer   (const int i) const; //for multilayer variables
-//  double            GetFlux            (const int k, const int iFrom, const int iTo, const optStruct &Options) const;
+
   double            GetFlux            (const int k, const int js, const optStruct &Options) const;
   double            GetLatFlow         (const int js, const optStruct &Options) const;
   double            GetCumulativeFlux  (const int k, const int i, const bool to) const;
-  bool              StateVarExists     (sv_type type) const;
+  double            GetCumulFluxBetween(const int k,const int iFrom,const int iTo) const;
+
   double            GetAvgStateVar     (const int i) const;
   double            GetAvgForcing      (const string &forcing_string) const;
   double            GetAvgCumulFlux    (const int i, const bool to) const;
+  double            GetAvgCumulFluxBet (const int iFrom, const int iTo) const;
+
   int               GetNumSoilLayers   () const;
   int               GetNumAquiferLayers() const;
-
   int               GetLakeStorageIndex() const; //TMP?
 
   /*--below are only available to global routines--*/

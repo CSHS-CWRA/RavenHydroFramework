@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -276,6 +276,26 @@ double CSubBasin::GetAvgCumulFlux(const int i,const bool to) const
     if(_pHydroUnits[k]->IsEnabled())
     {
       sum    +=_pHydroUnits[k]->GetCumulFlux(i,to)*_pHydroUnits[k]->GetArea();
+    }
+  }
+  return sum/_basin_area;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of  cumulative flux between two compartments over subbasin
+///
+/// \param iFrom [in] index of 'from' storage compartment
+/// \param iTo [in] index of 'to' storage compartment
+/// \return Area-weighted average of cumulative flux between two compartments over subbasin
+//
+double CSubBasin::GetAvgCumulFluxBet(const int iFrom,const int iTo) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  for(int k=0;k<_nHydroUnits;k++)
+  {
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum    +=_pHydroUnits[k]->GetCumulFluxBet(iFrom,iTo)*_pHydroUnits[k]->GetArea();
     }
   }
   return sum/_basin_area;

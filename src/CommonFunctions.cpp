@@ -59,6 +59,8 @@ string GetProcessName(process_type p)
   case(ADVECTION):          {name="Advection";                break;}
   case(LAT_ADVECTION):      {name="Lateral Advection";        break;}
   case(LAT_FLUSH):          {name="Lateral Flush";            break;}
+  case(DECAY):              {name="Decay";                    break;}
+  case(TRANSFORMATION):     {name="Transformation";           break;}
     //..
   default:              {
     name="Unknown Hydrological Process";
