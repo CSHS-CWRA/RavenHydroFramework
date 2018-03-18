@@ -425,19 +425,14 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit *pHRU,
     ExitGracefullyIf(m==DOESNT_EXIST,"GetRetardationFactor:invalid _iFromWater",RUNTIME_ERR);
 #endif
     if (toType!=ATMOSPHERE){return pHRU->GetSoilProps(m)->retardation[c];}
-    else                   {
-      return 1.0;
-      //return pHRU->GetVegProps()->uptake_fact[c];
-    }
+    else                   {return pHRU->GetVegetationProps()->uptake_moderator[c];}
   }
   return 1.0;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns effective retardation factor for constituent c
-/// being transported from storage compartment _iFromWater to storage compartment _iToWater
+/// \brief returns decay coefficient for constituent c
 /// \param c [in] constituent index
-/// \param _iFromWater [in] index of "from" water storage state variable
-/// \param _iToWater [in] index of "to" water storage state variable
+/// \param iStorWater [in] index of water storage state variable
 //
 double CTransportModel::GetDecayCoefficient(const int c, const CHydroUnit *pHRU,const int iStorWater) const
 {
@@ -460,11 +455,9 @@ double CTransportModel::GetDecayCoefficient(const int c, const CHydroUnit *pHRU,
   return decay_coeff;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns effective retardation factor for constituent c
-/// being transported from storage compartment _iFromWater to storage compartment _iToWater
+/// \brief returns transformation coefficient for constituent c
 /// \param c [in] constituent index
-/// \param _iFromWater [in] index of "from" water storage state variable
-/// \param _iToWater [in] index of "to" water storage state variable
+/// \param iStorWater [in] index of water storage state variable
 //
 double CTransportModel::GetTransformCoefficient(const int c, const int c2, const CHydroUnit *pHRU,const int iStorWater) const
 {
@@ -483,11 +476,9 @@ double CTransportModel::GetTransformCoefficient(const int c, const int c2, const
   return 0.0;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns effective retardation factor for constituent c
-/// being transported from storage compartment _iFromWater to storage compartment _iToWater
+/// \brief returns stoichiometric transformation coefficient for constituent c
 /// \param c [in] constituent index
-/// \param _iFromWater [in] index of "from" water storage state variable
-/// \param _iToWater [in] index of "to" water storage state variable
+/// \param iStorWater [in] index of water storage state variable
 //
 double CTransportModel::GetStoichioCoefficient(const int c, const int c2, const CHydroUnit *pHRU,const int iStorWater) const
 {
@@ -1021,7 +1012,7 @@ void CTransportModel::IncrementCumulOutput(const optStruct &Options)
     {
       if (pModel->GetSubBasin(p)->GetDownstreamID()==DOESNT_EXIST)//outlet does not drain into another subbasin
       {
-        _pConstituents[c]->cumul_output+=GetIntegratedMassOutflow(p,c)*Options.timestep;
+        _pConstituents[c]->cumul_output+=GetIntegratedMassOutflow(p,c,Options.timestep);
       }
     }
   }

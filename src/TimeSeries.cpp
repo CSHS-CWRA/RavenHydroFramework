@@ -626,8 +626,9 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   CTimeSeries *pTimeSeries=NULL;
 
   p->Tokenize(s,Len);
+  if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
   if (Len<4){p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;}
-
+  
   if ((string(s[0]).length()==10) &&
       ((string(s[0]).substr(4,1)=="/") ||
        (string(s[0]).substr(4,1)=="-")))
@@ -677,6 +678,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   //cout << n << " "<<nMeasurements << " " << s[0] << " "<<Len<<" "<<strcmp(s[0],"&")<<" "<<p->Tokenize(s,Len)<<endl;
   while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
   {
+    if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
     for(int i=0;i<Len;i++){
       if (n>=nMeasurements)
       {
@@ -687,7 +689,9 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       {
         ExitGracefully( ("Non-numeric value found in time series (line " +to_string(p->GetLineNumber())+" of file "+p->GetFilename()+")").c_str(),BAD_DATA_WARN);
       }
-      aVal [n]=s_to_d(s[i]);n++;
+			aVal [n]=fast_s_to_d(s[i]);
+      //aVal [n]=s_to_d(s[i]);
+			n++;
     }
   }
 
@@ -730,6 +734,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
 
   //timestamp & numdata info ----------------------------------------------
   p->Tokenize(s,Len);
+  if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
   if (Len<4){p->ImproperFormat(s);}
 
   if ((string(s[0]).length()==10) &&
@@ -762,6 +767,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
 
   //:Parameters line ----------------------------------------------
   p->Tokenize(s,Len);
+  if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
   if (strcmp(s[0],":Parameters")){
     ExitGracefully("CTimeSeries::ParseMultiple : MultiData command improperly formatted",BAD_DATA);
   }
@@ -783,6 +789,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
 
   //:Units line ----------------------------------------------
   p->Tokenize(s,Len);
+  if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
   if (strcmp(s[0],":Units")){
     ExitGracefully("CTimeSeries::ParseMultiple : MultiData command improperly formatted",BAD_DATA);
   }
@@ -796,7 +803,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   int n=0;
   while (!p->Tokenize(s,Len))
   {
-    if (Len!=0)
+    if (!IsComment(s[0],Len))
     {
       if (!strcmp(s[0],":EndMultiData")){break;}
       else{

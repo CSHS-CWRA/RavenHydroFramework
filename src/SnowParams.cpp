@@ -19,6 +19,7 @@ double GetSnowThermCond(const double &sno_dens)
   return TC_AIR+(A1*sno_dens+A2*pow(sno_dens,2.0))*(TC_ICE-TC_AIR);
 }
 
+
 //////////////////////////////////////////////////////////////////
 /// \brief Estimates fraction of precipitation that is snow based temperature over timestep
 /// \ref Brook90 approximation is really only valid for daily time step \cite Dingman1994
@@ -171,7 +172,7 @@ double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, c
 /// \param &air_temp [in] Air temperature [C]
 /// \param &surf_temp [in] Surface temperature [C]
 /// \param &V [in] Velocity [m/s]
-/// \param ref_ht [in] Reference height [m]
+/// \param ref_ht [in] Measurement height [m]
 /// \param &rough Roughness coefficient [m]
 /// \return Sensible heat exchange with atmosphere from snow [MJ/m^2/d]
 //
@@ -228,12 +229,12 @@ double GetLatentHeatSnow(const double &P,
 /// \ref from Dingman pg 199-200 \cite Dingman1994
 ///
 /// \param &surf_temp [in] Surface temperature [C]
-/// \param &rain_rate [in] Rate at which rain is accumulating? [mm/d]
+/// \param &rainfall [in] rainfall rate [mm/d]
 /// \param &rel_humid [in] Relative humidity [0..1]
 /// \return Heat input from rain [MJ/m^2/d]
 //
 double GetRainHeatInput(const double &surf_temp,
-                        const double &rain_rate,
+                        const double &rainfall,
                         const double &rel_humid)
 {
   double R=0,rain_temp,vap_pres;
@@ -243,14 +244,14 @@ double GetRainHeatInput(const double &surf_temp,
 
   if(surf_temp < FREEZING_TEMP)
   {
-    R = DENSITY_WATER*(rain_rate/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP) + LH_FUSION);
+    R = DENSITY_WATER*(rainfall/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP) + LH_FUSION);
   }
-  if(surf_temp == FREEZING_TEMP)
+  if(surf_temp >= FREEZING_TEMP)
   {
-    R = DENSITY_WATER*(rain_rate/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP));
+    R = DENSITY_WATER*(rainfall/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP));
   }
 
-  return R; // [MJ m^-2 d^-1]
+  return R; // [MJ/m2/d]
 }
 
 

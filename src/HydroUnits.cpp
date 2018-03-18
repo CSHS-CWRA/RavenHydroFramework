@@ -79,6 +79,7 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _Centroid.UTM_x       =0.0;//corrected in Initialize Routine
   _Centroid.UTM_y       =0.0;
   _Disabled             =false;
+  _res_linked           =false;
   _HRUType              =typ;
 
   _aStateVar=new double [_pModel->GetNumStateVars()];
@@ -250,6 +251,13 @@ HRU_type  CHydroUnit::GetHRUType                        () const {return _HRUTyp
 /// \return Boolean showing if HRU is of type lake or not
 //
 bool      CHydroUnit::IsLake                            () const {return (_HRUType==HRU_LAKE);}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Checks if HRU is linked to reservoir
+///
+/// \return Boolean showing if HRU is linked to reservoir or not
+//
+bool    CHydroUnit::IsLinkedToReservoir                 () const {return _res_linked;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns canopy properties of vegetation in HRU
@@ -460,6 +468,12 @@ void CHydroUnit::Disable(){_Disabled=true;}
 void CHydroUnit::Enable(){_Disabled=false;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief links HRU to reservoir 
+//
+void CHydroUnit::LinkToReservoir(const long SBID){_res_linked=true;}
+
+
+//////////////////////////////////////////////////////////////////
 /// \brief Initializes HRU - converts coordinates of HRU centroid into UTM
 /// \remark Called prior to simulation or any interpolation;
 ///
@@ -585,8 +599,8 @@ double        CHydroUnit::GetStateVarMax(const int      i,
       break;
     }
     case(DEPRESSION):   {
-      if (_pSurface->dep_max>0){max_var=_pSurface->dep_max;}
-      else                     {max_var=ALMOST_INF;}
+      if (_pSurface->dep_max>=0){max_var=_pSurface->dep_max;}
+      else                      {max_var=ALMOST_INF;}
       break;
     }
     case(SNOW_LIQ):

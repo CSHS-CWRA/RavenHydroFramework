@@ -38,16 +38,23 @@ private:/*-------------------------------------------------------*/
   res_type     _type;                ///< reservoir type (default: RESROUTE_STANDARD)
 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
-  CTimeSeries *_pExtractTS;    ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
 
+  CTimeSeries *_pExtractTS;          ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
+  CTimeSeries *_pWeirHeightTS;       ///< Time series of weir heights [m] (or NULL for fixed weir height)
+  CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m]
+
+  //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
   double       _stage_last;          ///< stage at beginning of current time step [m]
   double       _Qout;                ///< outflow corresponding to current stage [m3/s]
   double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
   double       _MB_losses;           ///< losses over current time step [m3]
 
+  //rating curve characteristics :
   double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
   double       _max_stage;           ///< maximum reference elevation [m]
+
+  double       _crest_ht;            ///< absolute crest height, m.a.s.l (0 by default)
 
   int          _Np;                   ///< number of points on rating curves
   double      *_aStage;              ///< Rating curve for stage elevation [m]
@@ -59,12 +66,13 @@ private:/*-------------------------------------------------------*/
   int         *_aDates;              ///< Array of Julian days at which aQ changes [days after Jan 1]
   int          _nDates;              ///< size of aDates
 
-  double     GetVolume(const double &ht) const;
-  double     GetArea  (const double &ht) const;
-  double     GetOutflow(const double &ht) const;
+  double     GetVolume (const double &ht) const;
+  double     GetArea   (const double &ht) const;
+  double     GetOutflow(const double &ht, const double &adj) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors:
+  CReservoir(const string Name,const long SubID,const res_type typ);
   CReservoir(const string name, const long SubID, const res_type typ,
              const double a_v, const double b_v,
              const double a_Q, const double b_Q,
@@ -78,7 +86,7 @@ public:/*-------------------------------------------------------*/
              double **a_QQ, const double *a_A, const double *a_V,
              const int     nPoints);
   CReservoir(const string Name, const long SubID, const res_type typ, const double weircoeff, //Lake constructor
-             const double crestw, const double A, const double depth);
+             const double crestw, const double crestht, const double A, const double depth);
   ~CReservoir();
 
   //Accessors
@@ -87,13 +95,19 @@ public:/*-------------------------------------------------------*/
   double            GetOutflowRate       () const;//[m3/d]
   double            GetReservoirLosses   (const double &tstep) const;//[m3]
   double            GetIntegratedOutflow (const double &tstep) const;//[m3]
-  double            GetStage             () const;//[m]
+  double            GetResStage          () const;//[m]
+  double            GetOldOutflowRate    () const; //[m3/d]
+  double            GetOldStorage        () const; //[m3]
+  int               GetHRUIndex          () const;
 
   //Manipulators
   void              SetMinStage            (const double &min_z);
   void              Initialize             (const optStruct &Options);
-  void              SetInitialFlow         (const double &Q);
+  void              SetInitialFlow         (const double &Q,const double &t);
+  void              SetInitialStage        (const double &ht);
   void              AddExtractionTimeSeries(CTimeSeries *pOutflow);
+  void              AddWeirHeightTS        (CTimeSeries *pWeirHt);
+  void              AddMaxStageTimeSeries  (CTimeSeries *pMS);
   void              SetHRU                 (const CHydroUnit *pHRU);
   void              DisableOutflow         ();
 
@@ -101,8 +115,9 @@ public:/*-------------------------------------------------------*/
   double            RouteWater             (const double      &Qin_old,
                                             const double      &Qin_new,
                                             const double      &tstep,
-                                            const time_struct &tt) const;
-  void              UpdateStage            (const double &new_stage);
+                                            const time_struct &tt,
+                                                  double &res_outflow) const;
+  void              UpdateStage            (const double &new_stage,const double &new_ouflow, const optStruct &Options,const time_struct &tt);
   void              WriteToSolutionFile    (ofstream &OUT) const;
   void              UpdateFlowRules        (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance      (const time_struct &tt, const double &tstep);

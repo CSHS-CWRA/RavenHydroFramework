@@ -317,29 +317,29 @@ double EstimatePET(const force_struct &F,
   case(PET_PENMAN_MONTEITH):
   {
     double can_cond;
-    double ref_ht,zero_pl,rough;
+    double meas_ht,zero_pl,rough;
     double vap_rough_ht,atmos_cond;
 
     can_cond=pHRU->GetVegVarProps()->canopy_conductance;
-    ref_ht  =pHRU->GetVegVarProps()->reference_height;
+    meas_ht =2.0;
     zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
     rough   =pHRU->GetVegVarProps()->roughness;
 
     vap_rough_ht=0.1*rough;//=1.0*rough for dingman
 
-    atmos_cond=CalcAtmosphericConductance(F.wind_vel,ref_ht,zero_pl,rough,vap_rough_ht);
+    atmos_cond=CalcAtmosphericConductance(F.wind_vel,meas_ht,zero_pl,rough,vap_rough_ht);
 
     PET=PenmanMonteithEvap(&F,atmos_cond,can_cond); break;
   }
   case(PET_PENMAN_COMBINATION):
   {
-    double ref_ht,zero_pl,rough,vert_trans;
+    double meas_ht,zero_pl,rough,vert_trans;
 
-    ref_ht  =pHRU->GetVegVarProps()->reference_height;
+    meas_ht  =2.0;//[m]
     zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
     rough   =pHRU->GetVegVarProps()->roughness;
 
-    vert_trans =GetVerticalTransportEfficiency(F.air_pres,ref_ht,zero_pl,rough);
+    vert_trans =GetVerticalTransportEfficiency(F.air_pres,meas_ht,zero_pl,rough);
 
     PET   =PenmanCombinationEvap(&F,vert_trans); break;
   }
@@ -418,6 +418,7 @@ double EstimatePET(const force_struct &F,
 /// \param &VV [in] Reference to vegetation properties
 /// \param &wind_vel [in] Wind velocity [m/s]
 /// \return Ground air resistance [s/m]
+/// from Brook90
 //
 double GroundAirResistance(const surface_struct &G,   //ground surface
                            const veg_var_struct &VV,
@@ -556,6 +557,7 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
 /// \param ws_measurement_ht [in] Weather station measurement height for wind, above any zero plane [m]
 /// \param ws_roughness [in] Weather station roughness parameter
 /// \return Adjusted wind velocity ratio (v_{refht}/v_{met station})
+// ROUTINE CURENTLY UNUSED
 //
 double AdjustWindVel(const force_struct *F,
                      const veg_var_struct *VV,

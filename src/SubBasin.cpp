@@ -52,6 +52,9 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   _reservoir_constant=AUTO_COMPUTE;
   _num_reservoirs    =1;
 
+  _rain_corr         =1.0;
+  _snow_corr         =1.0;
+
   _nSegments         =1;//0;
   ExitGracefullyIf(_nSegments>MAX_RIVER_SEGS,
                    "CSubBasin:Constructor: exceeded maximum river segments",BAD_DATA);
@@ -165,13 +168,25 @@ bool                     CSubBasin::IsGauged            () const {return _gauged
 /// \brief Returns number of river segments used in routing
 /// \return Number of river segments used in routing
 //
-int                 CSubBasin::GetNumSegments          () const {return _nSegments;    }
+int                 CSubBasin::GetNumSegments          () const {return _nSegments;     }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns true if basin is enabled
 /// \return true if basin is enabled
 //
-bool                 CSubBasin::IsEnabled              () const {return !_disabled;    }
+bool                 CSubBasin::IsEnabled              () const {return !_disabled;     }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns rainfall correction factor for basin
+/// \return rainfall correction factor for basin
+//
+double            CSubBasin::GetRainCorrection         () const {return _rain_corr;     }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns snowfall correction factor for basin
+/// \return snowfall correction factor for basin
+//
+double            CSubBasin::GetSnowCorrection         () const{ return _snow_corr;     }
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns Unit Hydrograph as array pointer
@@ -453,6 +468,8 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("Q_REFERENCE"   ))  {_Q_ref=value;}
   else if (!label_n.compare("MANNINGS_N"    ))  {_mannings_n=value;}
   else if (!label_n.compare("SLOPE"         ))  {_slope=value;}
+  else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
+  else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
   else{
     return false;//bad string
   }
@@ -478,7 +495,7 @@ void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Adds reservoir extraction
-/// \param *pOutflow Outflow time series to be added
+/// \param *pOutflow Outflow time series [m3/s] to be added
 //
 void    CSubBasin::AddReservoirExtract (CTimeSeries *pOutflow)
 {
@@ -486,33 +503,58 @@ void    CSubBasin::AddReservoirExtract (CTimeSeries *pOutflow)
     _pReservoir->AddExtractionTimeSeries(pOutflow);
   }
   else{
-    WriteWarning("Reservoir extraction history specified for basin without reservoir",false);
+    WriteWarning("Reservoir extraction time series specified for basin without reservoir",false);
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Adds reservoir weir height time series
+/// \param *pWeirHt weir height time series [m] to be added
+//
+void CSubBasin::AddWeirHeightTS(CTimeSeries *pWeirHt)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddWeirHeightTS(pWeirHt);
+  }
+  else{
+    WriteWarning("Reservoir weir height time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds maximum reservoir stage time series
+/// \param *pMaxStage max stage time series [m] to be added
+//
+void CSubBasin::AddMaxStageTS(CTimeSeries *pMaxStage)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddMaxStageTimeSeries(pMaxStage);
+  }
+  else{
+    WriteWarning("Reservoir maximum stage time series specified for basin without reservoir",false);
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief sets (usually initial) reservoir flow rate & stage
 /// \param Q [in] flow rate [m3/s]
+/// \param t [in] model time [d]
 //
-void    CSubBasin::SetReservoirFlow(const double &Q)
+void    CSubBasin::SetReservoirFlow(const double &Q,const double &t)
 {
   if (_pReservoir==NULL){
     WriteWarning("CSubBasin::SetReservoirFlow: trying to set flow for non-existent reservoir.",false);return;
   }
-  _pReservoir->SetInitialFlow(Q);
+  _pReservoir->SetInitialFlow(Q,t);
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets reservoir stage (and recalculates flow rate)
 /// \param stage [m]
 //
-void    CSubBasin::SetReservoirStage(const double &stage)
+void    CSubBasin::SetInitialReservoirStage(const double &stage)
 {
   if (_pReservoir==NULL){
-    WriteWarning("CSubBasin::SetReservoirStage: trying to set stage for non-existent reservoir.",false);return;
+    WriteWarning("CSubBasin::SetInitialReservoirStage: trying to set stage for non-existent reservoir.",false);return;
   }
-  _pReservoir->UpdateStage(stage);
-  _pReservoir->UpdateStage(stage); //Called twice so that _Qlast, _StageLast is properly initialized
+  _pReservoir->SetInitialStage(stage);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1092,6 +1134,7 @@ void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
 //
 void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double &res_ht, //[m]
+                                  const double &res_outflow, //[m3/s]
                                   const optStruct &Options,
                                   const time_struct &tt,
                                   bool initialize)
@@ -1107,7 +1150,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   //_aQout[num_segments-1] is now the new outflow from the channel
 
   if (_pReservoir!=NULL){
-    _pReservoir->UpdateStage(res_ht);
+    _pReservoir->UpdateStage(res_ht,res_outflow,Options,tt);
     _pReservoir->UpdateMassBalance(tt,Options.timestep);
   }
 
@@ -1257,12 +1300,13 @@ double CSubBasin::TVDTheta(double In_old,double In_new,double Out_old,double Out
 //
 void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            double &res_ht, //[m]
+                           double &res_outflow, //[m3/s]
                            const optStruct &Options,
                            const time_struct &tt) const
 {
   int    seg;
   double tstep;       //[d] time step
-  double dx;                                    //[m]
+  double dx;          //[m]
   double Qlat_new;    //[m3/s] flow at end of timestep to reach from catchment storage
   double seg_fraction;//[0..1] % of reach length assoc with segment
 
@@ -1544,11 +1588,12 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],tstep,tt);
+    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],tstep,tt,res_outflow);
   }
   else
   {
     res_ht=0.0;
+    res_outflow=0.0;
   }
 
   /*if (aQout_new[_nSegments-1]<-REAL_SMALL){

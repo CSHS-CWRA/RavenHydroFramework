@@ -50,6 +50,10 @@ private:/*------------------------------------------------------*/
   double           _mannings_n;   ///< manning's n for channel (or uses channel one, if =AUTO_COMPUTE)
   double                _slope;   ///< channel slope (rise over run) (or uses channel one, if =AUTO_COMPUTE)
 
+  //Other params
+  double            _rain_corr;   ///< correction factor for rainfall [-]
+  double            _snow_corr;   ///< correction factor for snowfall [-]
+
   int               _nSegments;   ///< Number of river segments used in routing(>=1)
 
   //Reservoir
@@ -58,16 +62,16 @@ private:/*------------------------------------------------------*/
   //state variables:
   double               *_aQout;   ///< downstream river (out)flow [m3/s] at start of time step at end of each channel segment [size=_nSegments]
   double           *_aQlatHist;   ///< history of lateral runoff into surface water [m3/s][size:_nQlatHist] - uniform (time-averaged) over timesteps
-  ///  if Ql=Ql(t), aQlatHist[0]=Qlat(t to t+dt), aQlatHist[1]=Qlat(t-dt to t)...
+  //                              ///  if Ql=Ql(t), aQlatHist[0]=Qlat(t to t+dt), aQlatHist[1]=Qlat(t-dt to t)...
   int               _nQlatHist;   ///< size of _aQlatHist array
   double      _channel_storage;   ///< water storage in channel [m3]
   double      _rivulet_storage;   ///< water storage in rivulets [m3]
-  double             _QoutLast;   ///< Qout from downstream channel segment at start of previous timestep- needed for reporting integrated outflow
-  double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep
+  double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
+  double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
 
   //Hydrograph Memory
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
-  //_aQinHist[0]=Qin(t), _aQinHist[1]=Qin(t-dt), _aQinHist[2]=Qin(t-2dt)...
+  //                              ///  _aQinHist[0]=Qin(t), _aQinHist[1]=Qin(t-dt), _aQinHist[2]=Qin(t-2dt)...
   int                _nQinHist;   ///< size of _aQinHist array
 
   //characteristic weighted hydrographs
@@ -121,6 +125,8 @@ public:/*-------------------------------------------------------*/
   double               GetReachLength       () const;
   int                  GetNumSegments       () const;
   bool                 IsEnabled            () const;
+  double               GetRainCorrection    () const;
+  double               GetSnowCorrection    () const;
 
   const double        *GetUnitHydrograph    () const;
   const double        *GetRoutingHydrograph () const;
@@ -139,7 +145,7 @@ public:/*-------------------------------------------------------*/
   double               GetReservoirStorage  () const;                   //[m3] volume in reservoir
   double               GetSpecifiedInflow   (const double &t) const;    //[m3/s] to upstream end of channel at point in time
 
-  CReservoir    *GetReservoir         () const;
+  CReservoir          *GetReservoir         () const;
 
   //Manipulator functions
   //called during model construction/assembly:
@@ -155,9 +161,11 @@ public:/*-------------------------------------------------------*/
                                        const optStruct &Options);
   void            AddInflowHydrograph (    CTimeSeries *pInflow);
   void            AddReservoirExtract (    CTimeSeries *pOutflow);
+  void            AddWeirHeightTS     (    CTimeSeries *pWeirHt);
+  void            AddMaxStageTS       (    CTimeSeries *pMaxStage);
   void            ResetReferenceFlow  (const double    &Qreference);
-  void            SetReservoirFlow    (const double &Q);
-  void            SetReservoirStage   (const double &h);
+  void            SetReservoirFlow    (const double &Q,const double &t);
+  void            SetInitialReservoirStage   (const double &h);
   void            SetChannelStorage   (const double &V);
   void            SetRivuletStorage   (const double &V);
   void            SetQoutArray        (const int N, const double *aQo, const double QoLast);
@@ -172,6 +180,7 @@ public:/*-------------------------------------------------------*/
   void            UpdateFlowRules     (const time_struct &tt, const optStruct &Options);
   void            UpdateOutflows      (const double *Qout_new,
                                        const double &res_ht,
+                                       const double &res_outflow,
                                        const optStruct &Options,
                                        const time_struct &tt,
                                        bool initialize);//[m3/s]
@@ -179,6 +188,7 @@ public:/*-------------------------------------------------------*/
 
   void            RouteWater          (      double      *Qout_new,
                                              double      &res_ht,
+                                             double      &res_outflow,
                                              const optStruct   &Options,
                                              const time_struct &tt) const;
   double          ChannelLosses       (const double      &reach_volume,

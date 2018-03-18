@@ -82,6 +82,8 @@ CModel::CModel(const soil_model SM,
   CLateralExchangeProcessABC::SetModel(this);
 
   _aGaugeWeights =NULL; //Initialized in Initialize
+  _aGaugeWtTemp  =NULL;
+  _aGaugeWtPrecip=NULL;
 
   _aCumulativeBal   =NULL;
   _aFlowBal         =NULL;
@@ -137,6 +139,12 @@ CModel::~CModel()
   if (_aFlowLatBal      !=NULL){delete [] _aFlowLatBal;       _aFlowLatBal=NULL;}
   if (_aGaugeWeights!=NULL){
     for (k=0;k<_nHydroUnits;   k++){delete [] _aGaugeWeights[k]; } delete [] _aGaugeWeights;  _aGaugeWeights=NULL;
+  }
+  if (_aGaugeWtPrecip!=NULL){
+    for (k=0;k<_nHydroUnits;   k++){delete [] _aGaugeWtPrecip[k]; } delete [] _aGaugeWtPrecip;  _aGaugeWtPrecip=NULL;
+  }
+  if (_aGaugeWtTemp!=NULL){
+    for (k=0;k<_nHydroUnits;   k++){delete [] _aGaugeWtTemp[k]; } delete [] _aGaugeWtTemp;  _aGaugeWtTemp=NULL;
   }
   if (_aShouldApplyProcess!=NULL){
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
@@ -1618,7 +1626,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
       string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir stage time series "+_pObservedTS[i]->GetName();
       ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
-      value = pBasin->GetReservoir()->GetStage();
+      value = pBasin->GetReservoir()->GetResStage();
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)
     {

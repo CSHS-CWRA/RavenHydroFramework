@@ -51,6 +51,8 @@ string GetProcessName(process_type p)
   case(GLACIER_RELEASE):    {name="Glacier Release";          break;}
   case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}
   case(SNOW_ALBEDO_EVOLVE): {name="Snow Albedo Evolution";    break;}
+  case(BLOWING_SNOW):       {name="Blowing Snow";             break;}
+
   case(CROP_HEAT_UNIT_EVOLVE):{name="Crop Heat Unit Evolution";break;}
   case(ABSTRACTION):        {name="Abstraction";              break;}
   case(SNOWTEMP_EVOLVE):    {name="Snow Temp. Evolution";     break;}
@@ -664,21 +666,21 @@ double CelsiusToFarenheit(const double &T)
 /// \brief Calculates vertical transport efficiency of water vapor by turbulent eddies
 /// \remark From Dingman pg. 273 \cite Dingman1994
 ///
-/// \param &e [in] Water vapour pressure [kPa]
-/// \param &ref_ht [in] Reference height [m]
+/// \param &P [in] air pressure [kPa]
+/// \param &ref_ht [in] Measurement height [m]
 /// \param &z_p_dis [in] Zero plane displacement [m]
-/// \param &rough [in] Coefficient of roughness
+/// \param &z0 [in] Coefficient of roughness
 /// \return Vertical transport efficiency [m s^2/kg]
 //
-double GetVerticalTransportEfficiency(const double &e,
-                                      const double &ref_ht,
+double GetVerticalTransportEfficiency(const double &P,
+                                      const double &meas_ht,
                                       const double &z_p_dis,
-                                      const double &rough)
+                                      const double &z0)
 {
   double numer,denom;
 
   numer = AIR_H20_MW_RAT*DENSITY_AIR;
-  denom = e*DENSITY_WATER*(6.25*(pow((log(((ref_ht) - z_p_dis)/rough)),2)));
+  denom = P*DENSITY_WATER*(6.25*(pow((log((meas_ht - z_p_dis)/z0)),2)));
 
   return numer/denom; //[m s^2 Kg^-1]
 }
@@ -688,14 +690,14 @@ double GetVerticalTransportEfficiency(const double &e,
 /// \ref From Dingman eqn. 7-49 \cite Dingman1994, Howell, T.A and Evett, S.R., USDA-ARS \cite Howell2004
 ///
 /// \param &wind_vel [in] Wind velocity [m/d]
-/// \param &ref_ht [in] Reference height [m]
+/// \param &meas_ht [in] Measurement height of wind vel [m]
 /// \param &zero_pl [in] Zero plane displacement [m]
 /// \param &rough_ht [in] Roughness height [m]
 /// \param &vap_rough_ht [in] Vapour roughness height [m]
 /// \return Atmospheric conductivity [mm/s]
 //
 double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
-                                  const double &ref_ht,       //[m]
+                                  const double &meas_ht,      //[m]
                                   const double &zero_pl,      //[m]
                                   const double &rough_ht,     //[m]
                                   const double &vap_rough_ht) //[m]
@@ -705,7 +707,7 @@ double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
 
   //6.25 from Dingman equation 7-49 is roughly 1/VK^2 (~6)
   atmos_cond=(wind_vel*MM_PER_METER*pow(VON_KARMAN,2));
-  atmos_cond/=(log((ref_ht-zero_pl)/rough_ht)*log((ref_ht-zero_pl)/vap_rough_ht));
+  atmos_cond/=(log((meas_ht-zero_pl)/rough_ht)*log((meas_ht-zero_pl)/vap_rough_ht));
 
   return atmos_cond;//[mm/s]
 }
@@ -906,6 +908,20 @@ void WriteWarning(const string warn, bool noisy)
     WARNINGS.open((g_output_directory+"Raven_errors.txt").c_str(),ios::app);
     if (noisy){cout<<"WARNING!: "<<warn<<endl;}
     WARNINGS<<"WARNING : "<<warn<<endl;
+    WARNINGS.close();
+  }
+}
+/////////////////////////////////////////////////////////////////
+/// \brief writes advisory to screen and to Raven_errors.txt file
+/// \param warn [in] warning message printed
+//
+void WriteAdvisory(const string warn, bool noisy)
+{
+  if (!g_suppress_warnings){
+    ofstream WARNINGS;
+    WARNINGS.open((g_output_directory+"Raven_errors.txt").c_str(),ios::app);
+    if (noisy){cout<<"ADVISORY: "<<warn<<endl;}
+    WARNINGS<<"ADVISORY : "<<warn<<endl;
     WARNINGS.close();
   }
 }

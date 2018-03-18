@@ -72,58 +72,60 @@ void CGauge::Initialize(const optStruct   &Options,
                 _Loc.UTM_x,   _Loc.UTM_y);
 
   //Minimum requirements at gauge: must have precip
-  ExitGracefullyIf((GetTimeSeries(F_PRECIP      )==NULL) &&
-                   (GetTimeSeries(F_RAINFALL    )==NULL),"CGauge::Initialize: No precipitation time series found",BAD_DATA);
+  //ExitGracefullyIf((GetTimeSeries(F_PRECIP      )==NULL) &&
+  //                 (GetTimeSeries(F_RAINFALL    )==NULL),"CGauge::Initialize: No precipitation time series found",BAD_DATA);
 
 
   //Populate Temperature time series: by timestep, daily min/max/average
   //--------------------------------------------------------------------------
-  if ((GetTimeSeries(F_TEMP_AVE)!=NULL) && (GetTimeSeries(F_TEMP_AVE)->IsDaily()))
+  if((GetTimeSeries(F_TEMP_AVE)!=NULL) || (GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL) ||
+    ((GetTimeSeries(F_TEMP_DAILY_MAX)!=NULL) && (GetTimeSeries(F_TEMP_DAILY_MIN)!=NULL)))
   {
-    // if daily temp is specified, copy to temp_daily_ave time series
-    CTimeSeries *temp_daily_ave=new CTimeSeries("TEMP_DAILY_AVE",*GetTimeSeries(F_TEMP_AVE));
-    AddTimeSeries(temp_daily_ave,F_TEMP_DAILY_AVE);
+    if((GetTimeSeries(F_TEMP_AVE)!=NULL) && (GetTimeSeries(F_TEMP_AVE)->IsDaily()))
+    {
+      // if daily temp is specified, copy to temp_daily_ave time series
+      CTimeSeries *temp_daily_ave=new CTimeSeries("TEMP_DAILY_AVE",*GetTimeSeries(F_TEMP_AVE));
+      AddTimeSeries(temp_daily_ave,F_TEMP_DAILY_AVE);
+    }
+
+    if((GetTimeSeries(F_TEMP_AVE)!=NULL) && (!GetTimeSeries(F_TEMP_AVE)->IsDaily()))//Sub-daily temperature data provided
+    {
+      GenerateMinMaxAveTempFromSubdaily(Options);//Generate daily min,max, & avg
+    }
+    else if((GetTimeSeries(F_TEMP_DAILY_MAX)!=NULL) && //Min/max temperature data provided
+      (GetTimeSeries(F_TEMP_DAILY_MIN)!=NULL))
+    {
+      GenerateAveSubdailyTempFromMinMax(Options);//Generate T_daily_ave, T_ave (downscaled)
+    }
+    else if(GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL) //only daily average data provided
+    {
+      GenerateMinMaxSubdailyTempFromAve(Options);
+    }
   }
 
-  if ((GetTimeSeries(F_TEMP_AVE)!=NULL) && (!GetTimeSeries(F_TEMP_AVE)->IsDaily()))//Sub-daily temperature data provided
-  {
-    GenerateMinMaxAveTempFromSubdaily(Options);//Generate daily min,max, & avg
-  }
-  else if ((GetTimeSeries(F_TEMP_DAILY_MAX)!=NULL) && //Min/max temperature data provided
-           (GetTimeSeries(F_TEMP_DAILY_MIN)!=NULL))
-  {
-    GenerateAveSubdailyTempFromMinMax(Options);//Generate T_daily_ave, T_ave (downscaled)
-  }
-  else if (GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL) //only daily average data provided
-  {
-    GenerateMinMaxSubdailyTempFromAve(Options);
-  }
-  else
-  {
-    ExitGracefully("CGauge::Initialize: Insufficient data to generate temperature time series at gauge",BAD_DATA);
-  }
+  bool hasPrecip  =(GetTimeSeries(F_PRECIP)!=NULL);
+  bool hasSnowfall=(GetTimeSeries(F_SNOWFALL)!=NULL);
+  bool hasRainfall=(GetTimeSeries(F_RAINFALL)!=NULL);
 
   // Handle snowfall availability
   //--------------------------------------------------------------------------
-  ExitGracefullyIf((GetTimeSeries(F_SNOWFALL)==NULL) && (Options.rainsnow==RAINSNOW_DATA),
-                   "CGauge::Initialize: snow autogeneration is off, but no snow data has been supplied.",BAD_DATA);
+  ExitGracefullyIf((hasPrecip || hasRainfall) && (!hasSnowfall) && (Options.rainsnow==RAINSNOW_DATA),
+                   "CGauge::Initialize: snow autogeneration is off at gauge with precip data, but no snow data has been supplied.",BAD_DATA);
 
-  if((GetTimeSeries(F_SNOWFALL)!=NULL) && (GetTimeSeries(F_RAINFALL)!=NULL) && (Options.rainsnow!=RAINSNOW_DATA))
+  if(hasSnowfall && hasRainfall && (Options.rainsnow!=RAINSNOW_DATA))
   {
     WriteWarning("Gauge:Initialize: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
   }
 
-  if ((GetTimeSeries(F_SNOWFALL)!=NULL) && (GetTimeSeries(F_RAINFALL)!=NULL)){
+  if (hasSnowfall && hasRainfall){
     CTimeSeries *sum;
     sum=CTimeSeries::Sum(GetTimeSeries(F_RAINFALL),GetTimeSeries(F_SNOWFALL),"PRECIP");//sum together rain & snow to get precip
     AddTimeSeries(sum,F_PRECIP);
   }
-  if ((GetTimeSeries(F_RAINFALL)==NULL) && (GetTimeSeries(F_SNOWFALL)==NULL)){
-    ExitGracefullyIf(GetTimeSeries(F_PRECIP)==NULL,
-                     "CGauge::Initialize: no precipitation or rainfall/snowfall supplied at gauge",BAD_DATA);
-    AddTimeSeries(new CTimeSeries("RAINFALL",*GetTimeSeries(F_PRECIP)),F_RAINFALL); //if no snow or rain, copy precip to rain- (rainfall not used)
+  if (!hasRainfall && !hasSnowfall && hasPrecip){
+    AddTimeSeries(new CTimeSeries("RAINFALL",*GetTimeSeries(F_PRECIP)),F_RAINFALL); //if no snow or rain, copy precip to rainfall
   }
-  if (GetTimeSeries(F_SNOWFALL)==NULL)
+  if (!hasSnowfall && (hasRainfall || hasPrecip))
   {
     AddTimeSeries(new CTimeSeries("SNOWFALL","",0.0),F_SNOWFALL);//blank series, all 0.0s
   }
@@ -149,37 +151,43 @@ void CGauge::Initialize(const optStruct   &Options,
   //--------------------------------------------------------------------------
   double val;
   int index;
-  //precip greater than zero, daily less than 2000 mm/d (world record = 1825 mm/d)
-  index=_aTSindex[(int)(F_PRECIP)];
   int nSamples=(int)(ceil(model_duration/Options.timestep-TIME_CORRECTION));
-  if (index!=DOESNT_EXIST){
-    for (int nn=0;nn<nSamples; nn++)
-    {
-      val=_pTimeSeries[index]->GetSampledValue (nn);
-      if(val==CTimeSeriesABC::BLANK_DATA){
-        ExitGracefully("CGauge::Initialize: Raven cannot have blank data in precipitation time series",BAD_DATA);
-      }
-      if ((val<-REAL_SMALL) || (val>10000)){
-        cout<<GetName()<<" "<<nn<<" "<<val<<endl;
-        ExitGracefully("CGauge::Initialize: negative or excessively large (>10000mm/d) precipitation intensity reported at gauge",BAD_DATA);
+  hasPrecip  =(GetTimeSeries(F_PRECIP)!=NULL);
+  if(hasPrecip){
+    //precip greater than zero, daily less than 2000 mm/d (world record = 1825 mm/d)
+    index=_aTSindex[(int)(F_PRECIP)];
+    
+    if(index!=DOESNT_EXIST){
+      for(int nn=0;nn<nSamples; nn++)
+      {
+        val=_pTimeSeries[index]->GetSampledValue(nn);
+        if(val==CTimeSeriesABC::BLANK_DATA){
+          ExitGracefully("CGauge::Initialize: Raven cannot have blank data in precipitation time series",BAD_DATA);
+        }
+        if((val<-REAL_SMALL) || (val>10000)){
+          cout<<GetName()<<" "<<nn<<" "<<val<<endl;
+          ExitGracefully("CGauge::Initialize: negative or excessively large (>10000mm/d) precipitation intensity reported at gauge",BAD_DATA);
+        }
       }
     }
   }
   //temp greater than -60C less than 60C
-  index=_aTSindex[(int)(F_TEMP_DAILY_AVE)];
-  if (index!=DOESNT_EXIST){
-    for (int nn=0;nn<nSamples; nn++)
-    {
-      val=_pTimeSeries[index]->GetSampledValue (nn);
-      if(val==CTimeSeriesABC::BLANK_DATA){
-        ExitGracefully("CGauge::Initialize: Raven cannot have blank data in temperature time series",BAD_DATA);
-      }
-      if ((val<-60) || (val>60)){
-        ExitGracefully("CGauge::Initialize: excessively small or large average temperature (<-60C or >60C) reported at gauge",BAD_DATA);
+  bool hasAveTemp  =(GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL);
+  if(hasAveTemp){
+    index=_aTSindex[(int)(F_TEMP_DAILY_AVE)];
+    if(index!=DOESNT_EXIST){
+      for(int nn=0;nn<nSamples; nn++)
+      {
+        val=_pTimeSeries[index]->GetSampledValue(nn);
+        if(val==CTimeSeriesABC::BLANK_DATA){
+          ExitGracefully("CGauge::Initialize: Raven cannot have blank data in temperature time series",BAD_DATA);
+        }
+        if((val<-60) || (val>60)){
+          ExitGracefully("CGauge::Initialize: excessively small or large average temperature (<-60C or >60C) reported at gauge",BAD_DATA);
+        }
       }
     }
   }
-
   //PET unreasonable
   index=_aTSindex[(int)(F_PET)];
   if (index!=DOESNT_EXIST){
@@ -226,6 +234,15 @@ CTimeSeries *CGauge::GetTimeSeries(const forcing_type ftype) const
   int index=_aTSindex[(int)(ftype)];
   if (index!=DOESNT_EXIST){return _pTimeSeries[index];}
   return NULL;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if forcing exists at gauge
+/// \param ftype [in] forcing data type
+/// \returns true if forcing exists at gauge
+//
+bool     CGauge::TimeSeriesExists(const forcing_type ftype) const
+{
+  return (_aTSindex[(int)(ftype)]!=DOESNT_EXIST);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Checks if warnings about forcings are needed at this gauge, warns if required
@@ -437,7 +454,7 @@ double CGauge::GetForcingValue         (const forcing_type ftype, const int nn) 
 {
   CTimeSeries *pTS;
   pTS=GetTimeSeries(ftype);
-  if (pTS==NULL){return 0.0;}//Warning?
+  if (pTS==NULL){return 0.0;}
 
   return pTS->GetSampledValue(nn);
 }

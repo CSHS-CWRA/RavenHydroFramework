@@ -151,6 +151,7 @@ struct veg_struct
 
   double veg_dens;          ///< [1/m2]    vegetation count per meter squared (range: 1.0-500.0; recommended 300.0 for crops and grass, 1.0 for forests and shrubs)
   double veg_diam;          ///< [m]       vegetation diameter (range 0.0-2.0; recommended 0.003 for crops and grass, 0.5-1.0 for forests and shrubs [m]
+  double veg_mBeta;         ///< [-]       mBeta parameter
 
   //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
@@ -165,6 +166,9 @@ struct veg_struct
   double drip_proportion;   ///< [1/d]     drip proportion for bucket drip model: \math \f$ dS/dt=-dp*S \f$
   double max_intercept_rate;///< [mm/d]    maximum rate of rainfall interception
   double CHU_maturity;      ///< [-]       crop heat unit maturity; level at which PET is maximized
+
+  //Transport parameters 
+  double uptake_moderator   [MAX_CONSTITUENTS]; ///< [-] vegetation-specific uptake factor
 };
 
 ///////////////////////////////////////////////////////////////////

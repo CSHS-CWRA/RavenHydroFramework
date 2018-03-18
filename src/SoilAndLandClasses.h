@@ -36,11 +36,11 @@ class CSoilClass
 {
 protected:/*----------------------------------------------------*/
 
-  string              tag;                 ///< nickname for soil, e.g., "SILTY_SAND"
-  soil_struct         S;                   ///< corresponding properties for soil
+  string              _tag;                 ///< nickname for soil, e.g., "SILTY_SAND"
+  soil_struct         _S;                   ///< corresponding properties for soil
 
-  static CSoilClass **pAllSoilClasses;     ///< array of pointers to all soil classes that have been created
-  static int          NumSoilClasses;      ///< number of soil classes
+  static CSoilClass **_pAllSoilClasses;     ///< array of pointers to all soil classes that have been created
+  static int          _nAllSoilClasses;     ///< number of soil classes
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -50,9 +50,9 @@ public:/*-------------------------------------------------------*/
   //Accessors
   string                   GetTag() const;
   const soil_struct       *GetSoilStruct() const;
-  double                   GetSoilProperty(string param_name) const;
-  double                   GetSoilTransportProperty(int constit_ind, string param_name) const;
+  double                   GetSoilProperty(string &param_name) const;
   void                     SetSoilProperty(string &param_name, const double &value);
+  double                   GetSoilTransportProperty(int constit_ind, string &param_name) const;
   void                     SetSoilTransportProperty(int constit_ind, string &param_name, const double &value);
 
   //routines
@@ -99,7 +99,7 @@ protected:/*----------------------------------------------------*/
   veg_struct                V;                    ///< corresponding canopy/root properties
 
   static CVegetationClass **pAllVegClasses;       ///< array of pointers to all vegetation classes that have been created
-  static int                NumVegClasses;                  ///< Number of vegetation classes that have been created (length of pAllVegClasses array)
+  static int                NumVegClasses;        ///< Number of vegetation classes that have been created (length of pAllVegClasses array)
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -124,7 +124,10 @@ public:/*-------------------------------------------------------*/
   static void                    DestroyAllVegClasses();
 
   static void                    SetVegetationProperty(veg_struct &V, string param_name, const double value);
+  static void                    SetVegTransportProperty( int          constit_ind,int          constit_ind2,
+                                                          veg_struct  &V,string param_name, const double value);
   static double                  GetVegetationProperty(const veg_struct &V, string param_name);
+  static double                  GetVegTransportProperty(int constit_ind, const veg_struct &V,string &param_name);
 
   static void                    InitializeVegetationProps(string name, veg_struct &V, bool is_template);
   //static void                    InitializeVegetationProps(double *params, bool is_template);
@@ -176,7 +179,7 @@ protected:/*----------------------------------------------------*/
   surface_struct            S;                    ///< corresponding surface properties
 
   static CLandUseClass    **pAllLUClasses;        ///< array of pointers to all LU classes that have been created
-  static int                NumLUClasses;                       ///< Number of land use classes (length of pAllLUClasses array)
+  static int                NumLUClasses;         ///< Number of land use classes (length of pAllLUClasses array)
 
 public:/*-------------------------------------------------------*/
   //Constructors:

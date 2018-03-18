@@ -676,6 +676,9 @@ enum sv_type
   SNOW_COVER,         ///< [0..1] fractional snow cover
   GLACIER_CC,         ///< [mm] cold content of glacier
   SNOW_DEFICIT,       ///< [mm] remaining holding capacity of snowpack (surrogate for SNOW_LIQ)
+  SNOW_AGE,           ///< [d] snow age, in days
+  SNODRIFT_TEMP,      ///< [C] temperature of drifting snow 
+  SNOW_DRIFT,         ///< [mm] drifting snow storage
 
   SNOW_ALBEDO,        ///< [-] Snow Surface albedo
 
@@ -732,6 +735,9 @@ enum process_type
 
   //in Albedo.h
   SNOW_ALBEDO_EVOLVE,
+
+  //In PrairieSnow.h
+  BLOWING_SNOW,
 
   //in CropGrowth.h
   CROP_HEAT_UNIT_EVOLVE,
@@ -830,6 +836,7 @@ struct optStruct
   bool             write_energy;      ///< true if WatershedEneryStorage.csv is written
   bool             write_params;      ///< true if Parameters.csv is written
   bool             write_reservoir;   ///< true if ReservoirStages.csv is written
+  bool             write_reservoirMB; ///< true if ReservoirMassBalance.csv is written
   bool             ave_hydrograph;    ///< true if average flows over timestep are reported in hydrograph output
   bool             write_exhaustiveMB;///< true if exhaustive mass balance diagnostics are written
   int              write_group_mb;    ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written
@@ -837,6 +844,7 @@ struct optStruct
   bool             benchmarking;      ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;       ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
+  bool             period_starting;   ///< true if all timestep-averaged output is reported using starttime of timestep
   bool             pause;             ///< determines whether the simulation pauses at the end of the model run
   string           working_dir;       ///< working directory
   int              wateryr_mo;        ///< starting month of water year (typically 10=October)
@@ -1121,6 +1129,13 @@ inline std::string to_string (const T& t)
 }
 
 ///////////////////////////////////////////////////////////////////
+/// \brief Converts boolean to string
+/// \param b [in] boolean to be converted to string
+/// \return "true" or "false"
+//
+inline string          b_to_s (const bool b)            {return  (b ? "true" : "false");   } 
+
+///////////////////////////////////////////////////////////////////
 /// \brief returns the modulo of parameter n with respect to d
 /// \param &n [in] dividend
 /// \param &d [in] divisor
@@ -1190,6 +1205,7 @@ double AutoOrDouble            (const string s);
 string StringToUppercase       (const string &s);
 bool   IsComment               (const char *s, const int Len);
 void   WriteWarning            (const string warn, bool noisy);
+void   WriteAdvisory           (const string warn, bool noisy);
 HRU_type StringToHRUType       (const string s);
 double fast_s_to_d             (const char *s);
 double FormatDouble            (const double &d);
@@ -1248,11 +1264,11 @@ double GetLatentHeatVaporization(const double &T);
 double GetPsychometricConstant  (const double &P, const double &LH_vapor);
 double GetAirDensity            (const double &T, const double &P);
 double GetVerticalTransportEfficiency     (const double &P,   //[kPa]
-                                           const double &ref_ht,        //[m]
+                                           const double &meas_ht,        //[m]
                                            const double &zero_pl,       //[m]
                                            const double &rough);        //[m]
 double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
-                                  const double &ref_ht,       //[m]
+                                  const double &meas_ht,      //[m]
                                   const double &zero_pl,      //[m]
                                   const double &rough_ht,     //[m]
                                   const double &vap_rough_ht); //[m]

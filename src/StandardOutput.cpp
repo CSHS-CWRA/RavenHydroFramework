@@ -196,31 +196,63 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     ofstream RES_STAGE;
     tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
     RES_STAGE.open(tmpFilename.c_str());
-    if (RES_STAGE.fail()){
+    if(RES_STAGE.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
 
     RES_STAGE<<"time,date,hour";
     RES_STAGE<<",precip [mm/day]";
-    for (p=0;p<_nSubBasins;p++){
-      if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+    for(p=0;p<_nSubBasins;p++){
+      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
         string name;
-        if (_pSubBasins[p]->GetName()==""){RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" [m]";}
-        else                              {RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" [m]";}
+        if(_pSubBasins[p]->GetName()==""){ RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
+        else                              { RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
       }
       //if (Options.print_obs_hydro)
       {
-        for (int i = 0; i < _nObservedTS; i++){
-          if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+        for(int i = 0; i < _nObservedTS; i++){
+          if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
-            if (_pSubBasins[p]->GetName()==""){RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
-            else                              {RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
+            if(_pSubBasins[p]->GetName()==""){ RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]"; }
+            else                              { RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]"; }
           }
         }
       }
     }
     RES_STAGE<<endl;
+    RES_STAGE.close();
   }
+
+  //ReservoirMassBalance.csv
+  //--------------------------------------------------------------
+  if ((Options.write_reservoirMB) && (Options.output_format!=OUTPUT_NONE))
+  {
+    ofstream RES_MB;
+    string name;
+
+    tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
+    RES_MB.open(tmpFilename.c_str());
+    if (RES_MB.fail()){
+      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+    RES_MB<<"time,date,hour";
+    RES_MB<<",precip [mm/day]";
+    for(p=0;p<_nSubBasins;p++){
+      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+
+        if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
+        else                              { name=_pSubBasins[p]->GetName(); }
+        RES_MB<<","   <<name<<" inflow [m3]";
+        RES_MB<<","   <<name<<" outflow [m3]";
+        RES_MB<<","   <<name<<" volume [m3]";
+        RES_MB<<","   <<name<<" losses [m3]";
+        RES_MB<<","   <<name<<" MB error [m3]";
+      }
+    }
+    RES_MB<<endl;
+    RES_MB.close();
+  }
+
 
   //WatershedMassEnergyBalance.csv
   //--------------------------------------------------------------
@@ -490,6 +522,18 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     thishour=DecDaysToHours(tt.julian_day);
     t       =tt.model_time;
 
+    time_struct prev;
+    JulianConvert(t-Options.timestep,Options.julian_start_day,Options.julian_start_year,prev); //get start of time step, prev
+
+    double usetime=tt.model_time;
+    string usedate=thisdate;
+    string usehour=thishour;
+    if(Options.period_starting){
+      usedate=prev.date_string;
+      usehour=DecDaysToHours(prev.julian_day);
+      usetime=tt.model_time-Options.timestep;
+    }
+
     // Console output
     //----------------------------------------------------------------
     if ((quiet) && (!Options.silent) && (tt.day_of_month==1) && ((tt.julian_day)-floor(tt.julian_day)<Options.timestep))
@@ -550,7 +594,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       //----------------------------------------------------------------
       if ((Options.ave_hydrograph) && (t!=0.0))
       {
-        _HYDRO<<t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
+        
+        _HYDRO<<usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
         for (int p=0;p<_nSubBasins;p++){
           if (_pSubBasins[p]->IsGauged())
           {
@@ -566,7 +611,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                   if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
-                  else                                                         { _HYDRO << ", ";       }
+                  else                                                         { _HYDRO << ",";       }
                 }
               }
             }
@@ -577,35 +622,38 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
         _HYDRO<<endl;
       }
-      else //point value hydrograph
+      else //point value hydrograph or t==0
       {
-        _HYDRO<<t<<","<<thisdate<<","<<thishour;
-        if (t!=0){_HYDRO<<","<<GetAveragePrecip();}//watershed-wide precip
-        else     {_HYDRO<<",---";}
-        for (int p=0;p<_nSubBasins;p++){
-          if (_pSubBasins[p]->IsGauged())
-          {
-            _HYDRO<<","<<_pSubBasins[p]->GetOutflowRate();
-
-            //if (Options.print_obs_hydro)
+        if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+        else{
+          _HYDRO<<t<<","<<thisdate<<","<<thishour;
+          if(t!=0){ _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip
+          else     { _HYDRO<<",---"; }
+          for(int p=0;p<_nSubBasins;p++){
+            if(_pSubBasins[p]->IsGauged())
             {
-              for (int i = 0; i < _nObservedTS; i++){
-                if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-                {
-                  //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
-                  //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
-                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-                  if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
-                  else                                                         { _HYDRO << ", ";       }
+              _HYDRO<<","<<_pSubBasins[p]->GetOutflowRate();
+
+              //if (Options.print_obs_hydro)
+              {
+                for(int i = 0; i < _nObservedTS; i++){
+                  if(IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+                  {
+                    //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
+                    //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
+                    double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+                    if((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                    else                                                         { _HYDRO << ","; }
+                  }
                 }
               }
-            }
-            if (_pSubBasins[p]->GetReservoir() != NULL){
-              _HYDRO<<","<<_pSubBasins[p]->GetReservoirInflow();
+              if(_pSubBasins[p]->GetReservoir() != NULL){
+                _HYDRO<<","<<_pSubBasins[p]->GetReservoirInflow();
+              }
             }
           }
+          _HYDRO<<endl;
         }
-        _HYDRO<<endl;
       }
     }
     else if (Options.output_format==OUTPUT_ENSIM)
@@ -621,86 +669,133 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //----------------------------------------------------------------
     if (Options.write_group_mb!=DOESNT_EXIST)
     {
-      double sum;
-      int kk=Options.write_group_mb;
-      ofstream HGMB;
-      tmpFilename=FilenamePrepare(_pHRUGroups[kk]->GetName()+"_MassEnergyBalance.csv",Options);
-      HGMB.open(tmpFilename.c_str(),ios::app);
-      HGMB<<t<<","<<thisdate<<","<<thishour;
-      double areasum=0.0;
-      for(k = 0; k < _nHydroUnits; k++){
-        if(_pHRUGroups[kk]->IsInGroup(k)){
-          areasum+=_pHydroUnits[k]->GetArea();
-        }
-      }
-      for (int js=0;js<_nTotalConnections;js++)
-      {
-        sum=0.0;
-        for (k = 0; k < _nHydroUnits; k++){
-          if (_pHRUGroups[kk]->IsInGroup(k)){
-            sum += _aCumulativeBal[k][js] * _pHydroUnits[k]->GetArea();
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+        double sum;
+        int kk=Options.write_group_mb;
+        ofstream HGMB;
+        tmpFilename=FilenamePrepare(_pHRUGroups[kk]->GetName()+"_MassEnergyBalance.csv",Options);
+        HGMB.open(tmpFilename.c_str(),ios::app);
+        HGMB<<usetime<<","<<usedate<<","<<usehour;
+        double areasum=0.0;
+        for(k = 0; k < _nHydroUnits; k++){
+          if(_pHRUGroups[kk]->IsInGroup(k)){
+            areasum+=_pHydroUnits[k]->GetArea();
           }
         }
-        HGMB<<","<<sum/areasum;
+        for(int js=0;js<_nTotalConnections;js++)
+        {
+          sum=0.0;
+          for(k = 0; k < _nHydroUnits; k++){
+            if(_pHRUGroups[kk]->IsInGroup(k)){
+              sum += _aCumulativeBal[k][js] * _pHydroUnits[k]->GetArea();
+            }
+          }
+          HGMB<<","<<sum/areasum;
+        }
+        HGMB<<endl;
+        HGMB.close();
       }
-      HGMB<<endl;
-      HGMB.close();
     }
 
     //Write cumulative mass balance info to WatershedMassEnergyBalance.csv
     //----------------------------------------------------------------
     if (Options.write_mass_bal)
     {
-      double sum;
-      ofstream MB;
-      tmpFilename=FilenamePrepare("WatershedMassEnergyBalance.csv",Options);
-      MB.open(tmpFilename.c_str(),ios::app);
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+        double sum;
+        ofstream MB;
+        tmpFilename=FilenamePrepare("WatershedMassEnergyBalance.csv",Options);
+        MB.open(tmpFilename.c_str(),ios::app);
 
-      MB<<t<<","<<thisdate<<","<<thishour;
-      for (int js=0;js<_nTotalConnections;js++)
-      {
-        sum=0.0;
-        for (k=0;k<_nHydroUnits;k++){
-          if(_pHydroUnits[k]->IsEnabled())
-          {
-            sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+        MB<<usetime<<","<<usedate<<","<<usehour;
+        for(int js=0;js<_nTotalConnections;js++)
+        {
+          sum=0.0;
+          for(k=0;k<_nHydroUnits;k++){
+            if(_pHydroUnits[k]->IsEnabled())
+            {
+              sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+            }
           }
+          MB<<","<<sum/_WatershedArea;
         }
-        MB<<","<<sum/_WatershedArea;
+        MB<<endl;
+        MB.close();
       }
-      MB<<endl;
-      MB.close();
     }
 
     //ReservoirStages.csv
     //--------------------------------------------------------------
     if ((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
     {
-      ofstream RES_STAGE;
-      tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
-      RES_STAGE.open(tmpFilename.c_str(),ios::app);
+			if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+	      ofstream RES_STAGE;
+	      tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
+	      RES_STAGE.open(tmpFilename.c_str(),ios::app);
 
-      RES_STAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
-      for (int p=0;p<_nSubBasins;p++){
-        if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
-          RES_STAGE<<","<<_pSubBasins[p]->GetReservoir()->GetStage();
+	      RES_STAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
+	      for (int p=0;p<_nSubBasins;p++){
+	        if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+	          RES_STAGE<<","<<_pSubBasins[p]->GetReservoir()->GetResStage();
+	        }
+	        //if (Options.print_obs_hydro)
+	        {
+	          for (int i = 0; i < _nObservedTS; i++){
+	            if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+	            {
+	              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
+	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+	              if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
+	              else                                                         { RES_STAGE << ", ";       }
+	            }
+	          }
+	        }
+
+	      }
+	      RES_STAGE<<endl;
+				RES_STAGE.close();
+			}
+    }
+
+    //ReservoirMassBalance.csv
+    //----------------------------------------------------------------
+    if((Options.write_reservoirMB) && (Options.output_format!=OUTPUT_NONE))
+    {
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+        ofstream RES_MB;
+        tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
+        RES_MB.open(tmpFilename.c_str(),ios::app);
+        if(RES_MB.fail()){
+          ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
         }
-        //if (Options.print_obs_hydro)
-        {
-          for (int i = 0; i < _nObservedTS; i++){
-            if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-            {
-              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
-              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-              if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
-              else                                                         { RES_STAGE << ", ";       }
-            }
+
+        RES_MB<< usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
+        double in,out,loss,stor,oldstor;
+        for(int p=0;p<_nSubBasins;p++){
+          if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+
+            string name;
+            if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
+            else                              { name=_pSubBasins[p]->GetName(); }
+
+            in     =_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep);//m3
+            out    =_pSubBasins[p]->GetIntegratedOutflow(Options.timestep);//m3
+            stor   =_pSubBasins[p]->GetReservoir()->GetStorage();//m3
+            oldstor=_pSubBasins[p]->GetReservoir()->GetOldStorage();//m3
+            loss   =_pSubBasins[p]->GetReservoir()->GetReservoirLosses(Options.timestep);//m3
+            if(tt.model_time==0.0){ in=0.0; }
+            RES_MB<<","<<in<<","<<out<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor);
           }
         }
-
+        RES_MB<<endl;
+        RES_MB.close();
       }
-      RES_STAGE<<endl;
     }
+
 
     //Write current state of energy storage in system to WatershedEnergyStorage.csv
     //----------------------------------------------------------------
@@ -738,81 +833,86 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //--------------------------------------------------------------
     if (Options.write_exhaustiveMB)
     {
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+        int j,js,q;
+        double cumsum;
 
-      int j,js,q;
-      double cumsum;
+        ofstream MB;
+        tmpFilename=FilenamePrepare("ExhaustiveMassBalance.csv",Options);
+        MB.open(tmpFilename.c_str(),ios::app);
 
-      ofstream MB;
-      tmpFilename=FilenamePrepare("ExhaustiveMassBalance.csv",Options);
-      MB.open(tmpFilename.c_str(),ios::app);
-
-      MB<<t<<","<<thisdate<<","<<thishour;
-      for (int i=0;i<_nStateVars;i++)
-      {
-        if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
+        MB<<usetime<<","<<usedate<<","<<usehour;
+        for(int i=0;i<_nStateVars;i++)
         {
-          cumsum=0.0;
-          js=0;
-          for (j=0;j<_nProcesses;j++){
-            for (q=0;q<_pProcesses[j]->GetNumConnections();q++){
-              if (_pProcesses[j]->GetFromIndices()[q]==i)
-              {
-                sum=0.0;
-                for (k=0;k<_nHydroUnits;k++){
-                  if(_pHydroUnits[k]->IsEnabled())
-                  {
-                    sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+          if(CStateVariable::IsWaterStorage(_aStateVarType[i]))
+          {
+            cumsum=0.0;
+            js=0;
+            for(j=0;j<_nProcesses;j++){
+              for(q=0;q<_pProcesses[j]->GetNumConnections();q++){
+                if(_pProcesses[j]->GetFromIndices()[q]==i)
+                {
+                  sum=0.0;
+                  for(k=0;k<_nHydroUnits;k++){
+                    if(_pHydroUnits[k]->IsEnabled())
+                    {
+                      sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+                    }
                   }
+                  MB<<","<<-sum/_WatershedArea;
+                  cumsum-=sum/_WatershedArea;
                 }
-                MB<<","<<-sum/_WatershedArea;
-                cumsum-=sum/_WatershedArea;
+                js++;
               }
-              js++;
             }
-          }
-          js=0;
-          for (j=0;j<_nProcesses;j++){
-            for (q=0;q<_pProcesses[j]->GetNumConnections();q++){
-              if (_pProcesses[j]->GetToIndices()[q]==i)
-              {
-                sum=0.0;
-                for (k=0;k<_nHydroUnits;k++){
-                  if(_pHydroUnits[k]->IsEnabled())
-                  {
-                    sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+            js=0;
+            for(j=0;j<_nProcesses;j++){
+              for(q=0;q<_pProcesses[j]->GetNumConnections();q++){
+                if(_pProcesses[j]->GetToIndices()[q]==i)
+                {
+                  sum=0.0;
+                  for(k=0;k<_nHydroUnits;k++){
+                    if(_pHydroUnits[k]->IsEnabled())
+                    {
+                      sum+=_aCumulativeBal[k][js]*_pHydroUnits[k]->GetArea();
+                    }
                   }
+                  MB<<","<<sum/_WatershedArea;
+                  cumsum+=sum/_WatershedArea;
                 }
-                MB<<","<<sum/_WatershedArea;
-                cumsum+=sum/_WatershedArea;
+                js++;
               }
-              js++;
             }
+            //Cumulative, storage, error
+            double Initial_i=0.0; //< \todo [bug] need to evaluate and store initial storage actross watershed!!!
+            MB<<","<<cumsum<<","<<GetAvgStateVar(i)<<","<<cumsum-GetAvgStateVar(i)-Initial_i;
           }
-          //Cumulative, storage, error
-          double Initial_i=0.0; //< \todo [bug] need to evaluate and store initial storage actross watershed!!!
-          MB<<","<<cumsum<<","<<GetAvgStateVar(i)<<","<<cumsum-GetAvgStateVar(i)-Initial_i;
         }
+        MB<<endl;
+        MB.close();
       }
-      MB<<endl;
-      MB.close();
     }
 
     //Write wshed-averaged forcing functions to ForcingFunctions.csv
     //----------------------------------------------------------------
     if (Options.write_forcings)
     {
-      force_struct *pFave;
-      force_struct faveStruct = GetAverageForcings();
-      pFave = &faveStruct;
-      _FORCINGS<<t<<","<<thisdate<<","<<thishour<<","<<pFave->day_angle<<",";
-      _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<","<<pFave->precip*(pFave->snow_frac) <<",";
-      _FORCINGS<<pFave->temp_ave<<","<<pFave->temp_daily_min<<","<<pFave->temp_daily_max<<","<<pFave->temp_daily_ave<<","<<pFave->temp_month_min<<","<<pFave->temp_month_max<<",";
-      _FORCINGS<<pFave->air_dens<<","<<pFave->air_pres<<","<<pFave->rel_humidity<<",";
-      _FORCINGS<<pFave->cloud_cover<<",";
-      _FORCINGS<<pFave->ET_radia*MJ_PER_D_TO_WATT<<","<<pFave->SW_radia*MJ_PER_D_TO_WATT<<","<<pFave->LW_radia*MJ_PER_D_TO_WATT<<","<<pFave->wind_vel<<",";
-      _FORCINGS<<pFave->PET<<","<<pFave->OW_PET<<",";
-      _FORCINGS<<pFave->subdaily_corr<<","<<pFave->potential_melt;
-      _FORCINGS<<endl;
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+        force_struct *pFave;
+        force_struct faveStruct = GetAverageForcings();
+        pFave = &faveStruct;
+        _FORCINGS<<usetime<<","<<usedate<<","<<usehour<<","<<pFave->day_angle<<",";
+        _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<","<<pFave->precip*(pFave->snow_frac) <<",";
+        _FORCINGS<<pFave->temp_ave<<","<<pFave->temp_daily_min<<","<<pFave->temp_daily_max<<","<<pFave->temp_daily_ave<<","<<pFave->temp_month_min<<","<<pFave->temp_month_max<<",";
+        _FORCINGS<<pFave->air_dens<<","<<pFave->air_pres<<","<<pFave->rel_humidity<<",";
+        _FORCINGS<<pFave->cloud_cover<<",";
+        _FORCINGS<<pFave->ET_radia*MJ_PER_D_TO_WATT<<","<<pFave->SW_radia*MJ_PER_D_TO_WATT<<","<<pFave->LW_radia*MJ_PER_D_TO_WATT<<","<<pFave->wind_vel<<",";
+        _FORCINGS<<pFave->PET<<","<<pFave->OW_PET<<",";
+        _FORCINGS<<pFave->subdaily_corr<<","<<pFave->potential_melt;
+        _FORCINGS<<endl;
+      }
     }
 
     // Transport output files
@@ -997,8 +1097,8 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
   if(!Options.silent){
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
-    cout <<"    rvi filename:" <<Options.rvi_filename<<endl;
-    cout <<"Output Directory:" <<Options.output_dir  <<endl;
+    cout <<"    rvi filename: "<<Options.rvi_filename<<endl;
+    cout <<"Output Directory: "<<Options.output_dir  <<endl;
     cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<disablecount<<" disabled)"<<endl;
     cout <<"          # HRUs: "<<GetNumHRUs()        << " ("<<disablecount<<" disabled)"<<endl;
     cout <<"        # Gauges: "<<GetNumGauges()      <<endl;
@@ -1815,7 +1915,9 @@ string GetDirectoryName(const string &fname)
 string CorrectForRelativePath(const string filename,const string relfile)
 {
   string filedir = GetDirectoryName(relfile); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
-  if (StringToUppercase(filename).find(StringToUppercase(filedir+"//")) == string::npos){ //checks to see if absolute dir already included in redirect filename
+  if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
+
+    //+"//"
     return filedir + "//" + filename;
   }
   return filename;

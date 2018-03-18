@@ -37,8 +37,7 @@ struct constit_source
 };
 struct transport_params
 {
-  double decay_coeff;                          ///< constituent base linear decay coefficient [1/d]
-  //double uptake_moderator[MAX_VEG_CLASSES];  ///< constitutent uptake moderators for transpiration (one per vegetation class) [-]
+  double decay_coeff;     ///< constituent base linear decay coefficient [1/d]
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Class for coordinating transport simulation
@@ -75,7 +74,16 @@ private:/*------------------------------------------------------*/
 
   double ***_aMinHist;                ///< array used for storing routing upstream loading history [mg/d] [size: nSubBasins x _nConstituents x nMinhist(p)]
   double ***_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] [size: nSubBasins x _nConstituents x nMlathist(p)]
-  double ***_aMout;                   ///< array used for storing routing channel loading history [mg/d] [size: nSubBasins x _nConstituents x _nSegments(p)]
+  double ***_aMout;                   ///< array storing current mass flow at points along channel [mg/d] [size: nSubBasins x _nConstituents x _nSegments(p)]
+  double  **_aMout_last;              ///< array used for storing mass outflow from channel at start of timestep [mg/d] [size: nSubBasins x _nConstituents] 
+  double  **_aMres;                   ///< array used for storing reservoir masses [mg] [size: nSubBasins x _nConstituents]
+  double  **_aMres_last;              ///< array storing reservoir mass [m] as start of timestep [size: nSubBasins x _nConstituents]
+  double  **_aMlat_last;              ///< array storing mass outflow from start of timestep [size: nSubBasins x _nConstituents]
+
+  double  **_channel_storage;         ///< array storing channel storage [mg] [size: nSubBasins x _nConstituents] 
+  double  **_rivulet_storage;         ///< array storing rivulet storage [mg] [size: nSubBasins x _nConstituents] 
+
+
 
   constit_source **pSources;         ///< array of pointers to constituent sources [size: nSources]
   int              nSources;         ///< number of constituent sources
@@ -129,7 +137,7 @@ public:/*-------------------------------------------------------*/
   int    GetLayerIndex             (const int c, const int i_stor) const;
 
   double GetOutflowConcentration (const int p, const int c) const;
-  double GetIntegratedMassOutflow(const int p, const int c) const;
+  double GetIntegratedMassOutflow(const int p, const int c,const double &tstep) const;
 
   double GetDecayCoefficient (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
   double GetRetardationFactor(const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
@@ -157,8 +165,8 @@ public:/*-------------------------------------------------------*/
   void   SetGlobalParameter(const string const_name, const string param_name, const double &value, bool noisy);
   void   SetMassInflows    (const int p, const double *aMinnew);
   void   SetLateralInfluxes(const int p, const double *aRoutedMass);
-  void   RouteMass         (const int p,       double **aMoutnew, const optStruct &Options) const;
-  void   UpdateMassOutflows(const int p,       double **aMoutnew,double dummy_var,const optStruct &Options,bool initialize);
+  void   RouteMass         (const int p,       double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt) const;
+  void   UpdateMassOutflows(const int p,       double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt,bool initialize);
 
   void   WriteOutputFileHeaders     (const optStruct &Options) const;
   void   WriteMinorOutput           (const optStruct &Options, const time_struct &tt) const;

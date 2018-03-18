@@ -77,6 +77,8 @@ private:/*------------------------------------------------------*/
   int                  _nGauges;  ///< number of precip/temp gauges for forcing interpolation
   CGauge             **_pGauges;  ///< array of pointers to gauges which store time series info [size:_nGauges]
   double       **_aGaugeWeights;  ///< array of weights for each gauge/HRU pair [_nHydroUnits][_nGauges]
+  double        **_aGaugeWtTemp;
+  double      **_aGaugeWtPrecip;
 
   int            _nForcingGrids;  ///< number of gridded forcing input data
   CForcingGrid **_pForcingGrids;  ///< gridded input data [size: _nForcingGrids]
@@ -135,7 +137,7 @@ private:/*------------------------------------------------------*/
   const optStruct   *_pOptStruct; ///< pointer to model options information
 
   //initialization subroutines:
-  void           GenerateGaugeWeights (const optStruct 	 &Options);
+  void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
   void       InitializeRoutingNetwork ();
   void           InitializeBasinFlows (const optStruct 	 &Options);
   void         InitializeObservations (const optStruct 	 &Options);
@@ -158,18 +160,18 @@ private:/*------------------------------------------------------*/
                                       force_struct &F,
                                       const CHydroUnit *pHRU,
                                       const double elev,
-                                      const double ref_elev,
+                                      const double ref_elev_temp,
                                       const int k);
   void                  CorrectPrecip(const optStruct &Options,
                                       force_struct &F,
                                       const double elev,
-                                      const double ref_elev,
+                                      const double ref_elev_precip,
                                       const int    k,
                                       const time_struct  &tt) const;
   void                    CorrectTemp(const optStruct &Options,
                                       force_struct &F,
                                       const double elev,
-                                      const double ref_elev,
+                                      const double ref_elev_temp,
                                       const time_struct &tt);
   double         EstimateWindVelocity(const optStruct &Options,
                                       const force_struct &F,
@@ -180,7 +182,7 @@ private:/*------------------------------------------------------*/
   double  CalculateSubDailyCorrection(const force_struct &F,
                                       const optStruct    &Options,
                                       const double       &elev,
-                                      const double       &ref_elev,
+                                      const double       &ref_elev_temp,
                                       const time_struct  &tt,
                                       const int          k);
   double        EstimatePotentialMelt(const force_struct *F,

@@ -31,6 +31,7 @@ private:/*------------------------------------------------------*/
   location                  _Centroid;  ///< centroid of HRU
   HRU_type                   _HRUType;  ///< Standard, Lake, Glacier, etc...
   bool                      _Disabled;  ///< true if processes are not simulated for this HRU
+  bool                    _res_linked;  ///> true if HRU is linked to Reservoir
 
   //Model State variables:
   double                  *_aStateVar;  ///< Array of *current value* of state variable i with size CModel::nStateVars [mm] for water storage, permafrost depth, snow depth, [MJ/m^2] for energy storage
@@ -98,6 +99,7 @@ public:/*-------------------------------------------------------*/
   int                    GetSubBasinIndex() const;
   HRU_type               GetHRUType      () const;
   bool                   IsLake          () const;//TMP?
+  bool                   IsLinkedToReservoir() const;
 
   double                 GetStateVarValue(const int i) const;
   double*                GetStateVarArray() const;
@@ -146,6 +148,7 @@ public:/*-------------------------------------------------------*/
   //Manipulator functions (used in parser)
   void          Disable                 ();
   void          Enable                  ();
+  void          LinkToReservoir         (const long SBID);
 
   //Manipulator functions (used in initialization)
   void          Initialize              (const int UTM_zone);

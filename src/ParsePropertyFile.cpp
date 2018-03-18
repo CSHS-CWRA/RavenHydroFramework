@@ -1500,9 +1500,7 @@ bool ParsePropArray(CParser   *p,           //parser
 
   while (!done)
   { 
-    if      (Len==0){}
-    else if (!strcmp(s[0],"*")){} 
-    else if (!strcmp(s[0],"#")){}
+    if (IsComment(s[0],Len)){}
     else if (Len>=line_length)
     {
       int index=DOESNT_EXIST;

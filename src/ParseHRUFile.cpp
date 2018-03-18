@@ -316,6 +316,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
       {
         pp->Tokenize(s,Len);
         if      (IsComment(s[0],Len))          {}//comment line
+        else if (!strcmp(s[0],":RedirectToFile")){
+          ExitGracefully("Parse HRU File: :RedirectToFile cannot be inside at :SubBasinProperties block.",BAD_DATA_WARN);
+        }//done
         else if (!strcmp(s[0],":EndSubBasinProperties")){}//done
         else
         {

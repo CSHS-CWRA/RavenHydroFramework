@@ -24,6 +24,7 @@
 #include "CustomOutput.h"
 #include "Decay.h"
 #include "LatAdvection.h"
+#include "PrairieSnow.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
@@ -189,8 +190,10 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.debug_mode          =false;
   Options.ave_hydrograph      =true;
   Options.write_reservoir     =false;
+  Options.write_reservoirMB   =false;
   Options.suppressICs         =false;
   Options.period_ending       =false;
+  Options.period_starting     =false;//true;
   Options.write_group_mb      =DOESNT_EXIST;
   Options.diag_start_time     =-ALMOST_INF;
   Options.diag_end_time       = ALMOST_INF;
@@ -301,6 +304,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteNetCDFFormat"     )){code=78; } 
     else if  (!strcmp(s[0],":WriteChannelInfo"      )){code=79; } 
     else if  (!strcmp(s[0],":BenchmarkingMode"      )){code=85; } 
+    else if  (!strcmp(s[0],":WriteReservoirMBFile"  )){code=86; }
+    else if  (!strcmp(s[0],":PeriodStartingFormatOff")){code=87; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"        )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"       )){code=81; }
@@ -353,6 +358,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LateralFlush"          )){code=232;}
     else if  (!strcmp(s[0],":Seepage"               )){code=233;}
     else if  (!strcmp(s[0],":Recharge"              )){code=234;}
+    else if  (!strcmp(s[0],":BlowingSnow"           )){code=235;}
     //...
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
@@ -1081,19 +1087,19 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(60):  //--------------------------------------------
     {/*:rvp_Filename */
       if (Options.noisy) {cout <<"rvp filename: "<<s[1]<<endl;}
-      Options.rvp_filename=s[1];
-      break;
+      Options.rvp_filename=s[1]; //with .rvp extension!
+      break; 
     }
     case(61):  //--------------------------------------------
     {/*:rvt_Filename */
       if (Options.noisy) {cout <<"rvt filename: "<<s[1]<<endl;}
-      Options.rvt_filename=s[1];
+      Options.rvt_filename=s[1]; //with .rvt extension!
       break;
     }
     case(62):  //--------------------------------------------
     {/*:rvc_Filename */
       if (Options.noisy) {cout <<"rvc filename: "<<s[1]<<endl;}
-      Options.rvc_filename=s[1];
+      Options.rvc_filename=s[1]; //with .rvc extension!
       break;
     }
     case(63):  //--------------------------------------------
@@ -1105,6 +1111,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       Options.output_dir+=to_string(s[Len-1]);
       PrepareOutputdirectory(Options);
+
+      ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
+      WARNINGS.close();
       break;
     }
     case(64):  //--------------------------------------------
@@ -1243,7 +1252,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         WriteWarning("ParseMainInput: invalid HRU group specified in :WriteHRUGroupMBFile command. Please define groups using :DefineHRUGroups command prior to calling this command.",Options.noisy);
       }
       break;
-    }
+    }          
     case(75):  //--------------------------------------------
     {/*:EvaluationTime [yyyy-mm-dd] [00:00:00] {yyyy-mm-dd} {00:00:00}*/ //AFTER StartDate or JulianStartDay and JulianStartYear commands
       if (Options.noisy) { cout << "Evaluation Time" << endl; }
@@ -1336,6 +1345,18 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy) {cout <<"Benchmarking Mode"<<endl;}
       Options.benchmarking=true;
       g_suppress_zeros=true;
+      break;
+    }
+    case(86):  //--------------------------------------------
+    {/*:WriteReservoirMBFile*/
+      if (Options.noisy) {cout <<"Write Reservoir Mass Balance File ON"<<endl;}
+      Options.write_reservoirMB=true;
+      break;
+    }
+    case(87):  //--------------------------------------------
+    {/*:PeriodStartingFormatOff*/
+      if (Options.noisy) {cout <<"Backward compatible to version 2.7 output"<<endl;}
+      Options.period_starting=false;
       break;
     }
     case(98):  //--------------------------------------------
@@ -2205,6 +2226,19 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvRecharge(ParseSVTypeIndex(s[3],pModel));
+      pModel->AddProcess(pMover);
+      break;
+    }
+    case(235):  //----------------------------------------------
+    {/*Blowing snow redistribution & Sublimation
+       :BlowingSnow PBSM MULTIPLE MULTIPLE*/
+      if (Options.noisy){cout <<"Blowing Snow process"<<endl;}
+      if (Len<4){ImproperFormatWarning(":BlowingSnow",p,Options.noisy); break;}
+
+      CmvPrairieBlowingSnow::GetParticipatingStateVarList(PBSM_FULL,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover=new CmvPrairieBlowingSnow(PBSM_FULL);
       pModel->AddProcess(pMover);
       break;
     }

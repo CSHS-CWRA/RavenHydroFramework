@@ -312,8 +312,10 @@ void CheckForErrorWarnings(bool quiet)
 
   while (!(p->Tokenize(s,Len)))
   {
-    if  (!strcmp(s[0],"ERROR"  )){errors_found  =true;}
-    if  (!strcmp(s[0],"WARNING")){warnings_found=true;}
+    if(Len>0){
+      if(!strcmp(s[0],"ERROR")){ errors_found  =true; }
+      if(!strcmp(s[0],"WARNING")){ warnings_found=true; }
+    }
   }
   WARNINGS.close();
   if ((warnings_found) && (!quiet)){

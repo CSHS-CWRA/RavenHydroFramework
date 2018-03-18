@@ -11,10 +11,11 @@
 #include "StateVariables.h"
 
 //////////////////////////////////////////////////////////////////
-/// \brief Implentation of the Advection constructor
-/// \param constituent [in] name of contaminant beign tracked
-/// \param pFlow [in] flow process which drives advection (this acts as a wrapper for said process)
-/// \param pModel [in] Model object
+/// \brief Implentation of the Transfomation constructor
+/// \param constit_name [in] name of reactant constituent
+/// \param constit_name [in] name of product constituent
+/// \param ttyp [in] transformation process type
+/// \param pTransportModel [in] transport Model object
 //
 CmvTransformation::CmvTransformation(string           constit_name,
                                      string           constit_name2,
@@ -110,6 +111,10 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
       {
         rates[ii]= -transf_coeff*stoich_coeff*mass1; 
         rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
+
+        // dA/dt = - k * A
+        // dB/dt = + k * A * s
+        // dsink/dt = + k * A * (1-s) = dB/dt *(1-s)/s
       }
       else if (_ttype==TRANSFORM_LINEAR_ANALYTIC)//analytical approach - definitely preferred - solution to dm/dt=-km integrated from t to t+dt
       {
@@ -120,12 +125,14 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
       {
         rates[ii] = -transf_coeff*stoich_coeff *pow(mass1/vol1,n)*vol1; 
         rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
+        ExitGracefully("TRANSFORM_NONLINEAR - need way of storing n",STUB);
       }
       else if (_ttype==TRANSFORM_NONLIN_ANALYTIC)//analytical approach - definitely preferred - solution to dm/dt=-km integrated from t to t+dt
       {
         double C0=mass1/vol1;
         rates[ii] = stoich_coeff *(C0- pow(pow(C0,1.0-n)+(n-1)*transf_coeff*Options.timestep,1.0/(1.0-n)))/Options.timestep*vol1; 
         rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
+        ExitGracefully("TRANSFORM_NONLINEAR - need way of storing n",STUB);
       }
     }
   }

@@ -11,10 +11,10 @@
 #include "StateVariables.h"
 
 //////////////////////////////////////////////////////////////////
-/// \brief Implentation of the Advection constructor
-/// \param constituent [in] name of contaminant beign tracked
-/// \param pFlow [in] flow process which drives advection (this acts as a wrapper for said process)
-/// \param pModel [in] Model object
+/// \brief Implentation of the Decay constructor
+/// \param constit_name [in] name of decaying constituent
+/// \param dtyp [in] decay process type
+/// \param pTransportModel [in] transport Model object
 //
 CmvDecay::CmvDecay(string           constit_name,
                    decay_type       dtyp,
@@ -45,7 +45,7 @@ CmvDecay::CmvDecay(string           constit_name,
 CmvDecay::~CmvDecay(){}
 
 //////////////////////////////////////////////////////////////////
-/// \brief Initializes Advection object
+/// \brief Initializes Decay object
 //
 void   CmvDecay::Initialize(){}
 
@@ -62,7 +62,7 @@ void CmvDecay::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) 
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief For modeling changes contaminant mass/concentration linked to a flow process
+/// \brief For modeling changes in contaminant mass/concentration linked to a decay process
 ///
 /// \param *state_vars [in] array of current state variables
 /// \param *pHRU [in] Reference to pertinent HRU

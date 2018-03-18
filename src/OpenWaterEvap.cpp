@@ -85,6 +85,8 @@ void CmvOWEvaporation::GetRatesOfChange( const double                   *state_v
 {
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;            //open water PET rate [mm/d]
+  
+  if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 
   if (type==OPEN_WATER_EVAP)//-------------------------------------
   {
@@ -200,6 +202,8 @@ void CmvLakeEvaporation::GetRatesOfChange(const double                  *state_v
 
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;          //calls PET rate [mm/d]
+
+  if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 
   if (type==LAKE_EVAP_BASIC)//-------------------------------------
   {

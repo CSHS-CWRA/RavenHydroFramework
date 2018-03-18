@@ -75,23 +75,27 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
     if ( !(pre_gridded || snow_gridded || rain_gridded) )
     {
-      Fg[g].precip          =_pGauges[g]->GetForcingValue    (F_PRECIP        ,nn);     //mm/d
-      Fg[g].precip_daily_ave=_pGauges[g]->GetForcingValue    (F_PRECIP, model_day, 1);
-      Fg[g].precip_5day     =_pGauges[g]->GetForcingValue    (F_PRECIP,t-5.0,5.0)*5.0;
-      Fg[g].snow_frac       =_pGauges[g]->GetAverageSnowFrac (nn);
+      if(_pGauges[g]->TimeSeriesExists(F_PRECIP)){//if precip exists, others exist
+        Fg[g].precip          =_pGauges[g]->GetForcingValue(F_PRECIP,nn);     //mm/d
+        Fg[g].precip_daily_ave=_pGauges[g]->GetForcingValue(F_PRECIP,model_day,1);
+        Fg[g].precip_5day     =_pGauges[g]->GetForcingValue(F_PRECIP,t-5.0,5.0)*5.0;
+        Fg[g].snow_frac       =_pGauges[g]->GetAverageSnowFrac(nn);
+      }
     }
     if ( !(temp_daily_min_gridded && temp_daily_max_gridded) )
     {
-      Fg[g].temp_ave        =_pGauges[g]->GetForcingValue    (F_TEMP_AVE      ,nn);
-      Fg[g].temp_daily_ave  =_pGauges[g]->GetForcingValue    (F_TEMP_DAILY_AVE,nn);
-      Fg[g].temp_daily_min  =_pGauges[g]->GetForcingValue    (F_TEMP_DAILY_MIN,nn);
-      Fg[g].temp_daily_max  =_pGauges[g]->GetForcingValue    (F_TEMP_DAILY_MAX,nn);
-      Fg[g].temp_ave_unc    =Fg[g].temp_daily_ave;
-      Fg[g].temp_min_unc    =Fg[g].temp_daily_min;
-      Fg[g].temp_max_unc    =Fg[g].temp_daily_max;
-      if (Fg[g].temp_daily_max < Fg[g].temp_daily_min)
-      {
-        WriteWarning("UpdateHRUForcingFunctions: max_temp<min_temp at gauge: "+_pGauges[g]->GetName() + " on " + tt.date_string,Options.noisy);
+      if(_pGauges[g]->TimeSeriesExists(F_TEMP_AVE)){//if temp_ave exists, others exist
+        Fg[g].temp_ave        =_pGauges[g]->GetForcingValue(F_TEMP_AVE,nn);
+        Fg[g].temp_daily_ave  =_pGauges[g]->GetForcingValue(F_TEMP_DAILY_AVE,nn);
+        Fg[g].temp_daily_min  =_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MIN,nn);
+        Fg[g].temp_daily_max  =_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MAX,nn);
+        Fg[g].temp_ave_unc    =Fg[g].temp_daily_ave;
+        Fg[g].temp_min_unc    =Fg[g].temp_daily_min;
+        Fg[g].temp_max_unc    =Fg[g].temp_daily_max;
+        if(Fg[g].temp_daily_max < Fg[g].temp_daily_min)
+        {
+          WriteWarning("UpdateHRUForcingFunctions: max_temp<min_temp at gauge: "+_pGauges[g]->GetName() + " on " + tt.date_string,Options.noisy);
+        }
       }
     }
     Fg[g].temp_month_max  =_pGauges[g]->GetMonthlyMaxTemp  (mo);
@@ -126,7 +130,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
   //Generate HRU-specific forcings from gauge data
   //---------------------------------------------------------------------
-  double ref_elev;
+  double ref_elev_temp;
+  double ref_elev_precip;
   for (k = 0; k < _nHydroUnits; k++)
   {
     if(_pHydroUnits[k]->IsEnabled())
@@ -135,7 +140,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       slope = _pHydroUnits[k]->GetSlope();
 
       ZeroOutForcings(F);
-      ref_elev = 0.0;
+      ref_elev_temp=ref_elev_precip=0.0;
 
       //not gauge-based
       if(tt.day_changed)
@@ -148,16 +153,19 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       for(g = 0; g < _nGauges; g++)
       {
-        wt=_aGaugeWeights[k][g];
+        wt=_aGaugeWtPrecip[k][g];
         if(wt != 0.0){
-
           if(!(pre_gridded || snow_gridded || rain_gridded))
           {
             F.precip           += wt * Fg[g].precip;
             F.precip_daily_ave += wt * Fg[g].precip_daily_ave;
             F.precip_5day      += wt * Fg[g].precip_5day;
             F.snow_frac        += wt * Fg[g].snow_frac;
+            ref_elev_precip    += wt * _pGauges[g]->GetElevation();
           }
+        }
+        wt=_aGaugeWtTemp[k][g];
+        if(wt != 0.0){
           if(!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded))
           {
             F.temp_ave         += wt * Fg[g].temp_ave;
@@ -167,8 +175,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
             F.temp_month_min   += wt * Fg[g].temp_month_min;
             F.temp_month_max   += wt * Fg[g].temp_month_max;
             F.temp_month_ave   += wt * Fg[g].temp_month_ave;
+            ref_elev_temp      += wt * _pGauges[g]->GetElevation();
           }
-
+        }
+        wt=_aGaugeWeights[k][g];
+        if(wt != 0.0){
           F.rel_humidity   += wt * Fg[g].rel_humidity;
           F.wind_vel       += wt * Fg[g].wind_vel;
           F.cloud_cover    += wt * Fg[g].cloud_cover;
@@ -185,7 +196,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           }
           //F.subdaily_corr+= wt * Fg[g].subdaily_corr;
 
-          ref_elev         += wt * _pGauges[g]->GetElevation();
+          //ref_elev         += wt * _pGauges[g]->GetElevation();
         }
       }
 
@@ -300,7 +311,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Temperature Corrections
       //-------------------------------------------------------------------
-      CorrectTemp(Options,F,elev,ref_elev,tt);
+      CorrectTemp(Options,F,elev,ref_elev_temp,tt);
 
       //-------------------------------------------------------------------
       //  Copy Daily values from current day, earlier time steps
@@ -313,7 +324,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Subdaily Corrections
       //-------------------------------------------------------------------
-      F.subdaily_corr = CalculateSubDailyCorrection(F,Options,elev,ref_elev,tt,k);
+      F.subdaily_corr = CalculateSubDailyCorrection(F,Options,elev,ref_elev_temp,tt,k);
 
       //-------------------------------------------------------------------
       //  Air Pressure, Density, relative humidity
@@ -336,12 +347,15 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //--Gauge Corrections------------------------------------------------
       if(!(pre_gridded || snow_gridded || rain_gridded)) //Gauge Data
       {        
-				double gauge_corr;
+				double gauge_corr; double rc,sc;
 				F.precip=F.precip_5day=F.precip_daily_ave=0.0;
+        int p=_pHydroUnits[k]->GetSubBasinIndex();
+        rc=_pSubBasins[p]->GetRainCorrection();
+        sc=_pSubBasins[p]->GetSnowCorrection();
         for(int g=0; g<_nGauges; g++)
         {
-          gauge_corr= F.snow_frac*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*_pGauges[g]->GetRainfallCorr();
-          wt=_aGaugeWeights[k][g];
+          gauge_corr= F.snow_frac*sc*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*rc*_pGauges[g]->GetRainfallCorr();
+          wt=_aGaugeWtPrecip[k][g];
 
           F.precip         += wt*gauge_corr*Fg[g].precip;
           F.precip_daily_ave+=wt*gauge_corr*Fg[g].precip_daily_ave;
@@ -361,14 +375,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
 
       //--Orographic corrections-------------------------------------------
-      CorrectPrecip(Options,F,elev,ref_elev,k,tt);
+      CorrectPrecip(Options,F,elev,ref_elev_precip,k,tt);
 
       //-------------------------------------------------------------------
       //  Wind Velocity
       //-------------------------------------------------------------------
 
       F.wind_vel = EstimateWindVelocity(Options,F,k);
-
+      
       //-------------------------------------------------------------------
       //  Cloud Cover
       //-------------------------------------------------------------------
@@ -404,7 +418,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.PET   =EstimatePET(F,_pHydroUnits[k],Options.evaporation,tt);
       F.OW_PET=EstimatePET(F,_pHydroUnits[k],Options.ow_evaporation,tt);
 
-      CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev,k);
+      CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
       //-------------------------------------------------------------------
       // Update
@@ -499,15 +513,15 @@ double CModel::EstimateWindVelocity(const optStruct &Options,
     double TED, A1term;
     TED=max(F.temp_daily_max-F.temp_daily_min,0.0);
 
-    const double ref_elev=2000;
+    const double rf_elev=2000;
     double elev=_pHydroUnits[k]->GetElevation();
     double Fc  =_pHydroUnits[k]->GetSurfaceProps()->forest_coverage;
     double P0TEDL=CGlobalParams::GetParams()->UBC_lapse_params.P0TEDL;
     double P0TEDU=CGlobalParams::GetParams()->UBC_lapse_params.P0TEDU;
     double A0term=CGlobalParams::GetParams()->UBC_lapse_params.max_range_temp;
-    if (elev>=ref_elev)
+    if (elev>=rf_elev)
     {
-      A1term=25.0-P0TEDL*0.001*ref_elev-P0TEDU*0.001*(elev-ref_elev);
+      A1term=25.0-P0TEDL*0.001*rf_elev-P0TEDU*0.001*(elev-rf_elev);
     }
     else{
       A1term=25.0-P0TEDL*0.001*elev;
@@ -570,8 +584,8 @@ double CModel::EstimateCloudCover  (const optStruct &Options,
     double cloud_min_range(0.0),cloud_max_range(0.0);
 
     for (int g=0;g<_nGauges;g++){
-      cloud_min_range+=_aGaugeWeights[k][g]*_pGauges[g]->GetCloudMinRange();//[C] A0FOGY in UBC_WM
-      cloud_max_range+=_aGaugeWeights[k][g]*_pGauges[g]->GetCloudMaxRange();//[C] A0SUNY in UBC_WM
+      cloud_min_range+=_aGaugeWtTemp[k][g]*_pGauges[g]->GetCloudMinRange();//[C] A0FOGY in UBC_WM
+      cloud_max_range+=_aGaugeWtTemp[k][g]*_pGauges[g]->GetCloudMaxRange();//[C] A0SUNY in UBC_WM
     }
     cover=1.0-(range-cloud_min_range)/(cloud_max_range-cloud_min_range);
     lowerswap(cover,1.0);
@@ -586,7 +600,7 @@ double CModel::EstimateCloudCover  (const optStruct &Options,
 /// \param &Options [in] Global model options information
 /// \param &F [in] Reference to forcing functions for HRU
 /// \param &elev [in] elevation of HRU
-/// \param &ref_elev [in] reference elevation of gauge
+/// \param &ref_elev_temp [in] reference elevation of temperature gauge
 /// \param &tt [in] current time structure
 /// \param k [in] index of HRU
 /// \return sub-daily correction for daily snowmelt or PET calculations
@@ -594,7 +608,7 @@ double CModel::EstimateCloudCover  (const optStruct &Options,
 double CModel::CalculateSubDailyCorrection(const force_struct &F,
                                            const optStruct    &Options,
                                            const double       &elev,
-                                           const double       &ref_elev,
+                                           const double       &ref_elev_temp,
                                            const time_struct  &tt,
                                            const int          k)
 {
@@ -649,12 +663,13 @@ double CModel::CalculateSubDailyCorrection(const force_struct &F,
       ZeroOutForcings(Ftmp);
       for (int g=0;g<_nGauges;g++)
       {
-        Ftmp.precip_daily_ave+=_aGaugeWeights[k][g]*_pGauges[g]->GetForcingValue(F_PRECIP,floor(tt_tmp.model_time),1);
-        Ftmp.temp_ave        +=_aGaugeWeights[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_AVE,nnn);
-        Ftmp.temp_daily_max  +=_aGaugeWeights[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MAX,nnn);
-        Ftmp.temp_daily_min  +=_aGaugeWeights[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MIN,nnn);
+        Ftmp.precip_daily_ave+=_aGaugeWtPrecip[k][g]*_pGauges[g]->GetForcingValue(F_PRECIP,floor(tt_tmp.model_time),1);
+
+        Ftmp.temp_ave        +=_aGaugeWtTemp[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_AVE,nnn);
+        Ftmp.temp_daily_max  +=_aGaugeWtTemp[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MAX,nnn);
+        Ftmp.temp_daily_min  +=_aGaugeWtTemp[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MIN,nnn);
       }
-      CorrectTemp(Options,Ftmp,elev,ref_elev,tt_tmp);
+      CorrectTemp(Options,Ftmp,elev,ref_elev_temp,tt_tmp);
       sum+=max(Ftmp.temp_ave,0.0);
     }
 
@@ -826,7 +841,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; //JRCFLAG
     aP[nP]="RELATIVE_LAI";  aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="MAX_LEAF_COND"; aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;\
+    aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="ROUGHNESS";     aPC[nP]=CLASS_LANDUSE; nP++;
   }
   else if (Options.ow_evaporation==PET_PENMAN_COMBINATION)

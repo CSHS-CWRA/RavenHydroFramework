@@ -959,13 +959,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   case(DIAG_KLING_GUPTA)://-----------------------------------------
   case(DIAG_KLING_GUPTA_DER):
   {
-    switch (_type)
-    {
-    case(DIAG_KLING_GUPTA_DER):
-    {
-      nVals -= 1;      // Reduce nvals by 1 for derivative of Kling Gupta
-    }
-    }
+    if(_type==DIAG_KLING_GUPTA_DER){ nVals -= 1; }      // Reduce nvals by 1 for derivative of Kling Gupta
     bool ValidObs = false;
     bool ValidMod = false;
     bool ValidWeight = false;
@@ -980,11 +974,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
     for (nn = skip; nn < nVals; nn++)
     {
-      switch (_type)
+      weight = 1.0;
+      obsval=modval=0.0;
+      if (_type==DIAG_KLING_GUPTA)
       {
-      case(DIAG_KLING_GUPTA):
-      {
-        weight = 1.0;
         obsval = pTSObs->GetSampledValue(nn);
         modval = pTSMod->GetSampledValue(nn);
         if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
@@ -995,18 +988,14 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
         if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
-
-        break;
       }
-      case(DIAG_KLING_GUPTA_DER):
+      else if (_type==DIAG_KLING_GUPTA_DER)
       {
         // obsval and modval becomes (dS(n+1)-dS(n))/dt
-        weight = 1.0;
         obsval = pTSObs->GetSampledValue(nn + 1) - pTSObs->GetSampledValue(nn);
         modval = pTSMod->GetSampledValue(nn + 1) - pTSMod->GetSampledValue(nn);
         obsval /= dt;
         modval /= dt;
-
 
         // both values at current timestep and next time step need to be valid
         if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
@@ -1017,9 +1006,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
         if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
-
-        break;
-      }
       }
       ObsSum += obsval*weight;
       ModSum += modval*weight;
@@ -1030,9 +1016,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
     for (nn = skip; nn < nVals; nn++)
     {
-      switch (_type)
-      {
-      case(DIAG_KLING_GUPTA):
+      obsval=modval=0.0;
+      if (_type==DIAG_KLING_GUPTA)
       {
         weight = 1.0;
         obsval = pTSObs->GetSampledValue(nn);
@@ -1045,10 +1030,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
         if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
-
-        break;
       }
-      case(DIAG_KLING_GUPTA_DER):
+      else if (_type==DIAG_KLING_GUPTA_DER)
       {
         // obsval and modval becomes (dS(n+1)-dS(n))/dt
         weight = 1.0;
@@ -1067,9 +1050,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
         if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
-
-        break;
-      }
       }
       ObsStd += pow((obsval - ObsAvg), 2)*weight;
       ModStd += pow((modval - ModAvg), 2)*weight;
@@ -1085,7 +1065,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double Beta = ModAvg / ObsAvg;
     double Alpha = ModStd / ObsStd;
 
-
     if (ValidObs && ValidMod && ValidWeight)
     {
       return 1 - sqrt(pow((r - 1), 2) + pow((Alpha - 1), 2) + pow((Beta - 1), 2));
@@ -1099,22 +1078,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       if (ValidMod) { p2 = ""; }
       if (ValidWeight) { p3 = ""; }
 
-
-      switch (_type)
-      {
-      case(DIAG_KLING_GUPTA):
-      {
-        string warn = "DIAG_KLING_GUPTA not performed correctly. Check " + p1 + p2 + p3;
-        WriteWarning(warn, Options.noisy);
-        break;
-      }
-      case(DIAG_KLING_GUPTA_DER):
-      {
-        string warn = "DIAG_KLING_GUPTA_DER not performed correctly. Check " + p1 + p2 + p3;
-        WriteWarning(warn, Options.noisy);
-        break;
-      }
-      }
+      string warn;
+      if (_type==DIAG_KLING_GUPTA){warn = "DIAG_KLING_GUPTA not performed correctly. Check " + p1 + p2 + p3;}
+      else if (_type==DIAG_KLING_GUPTA_DER){warn = "DIAG_KLING_GUPTA_DER not performed correctly. Check " + p1 + p2 + p3;}
+      WriteWarning(warn, Options.noisy);
 
       return -ALMOST_INF;
     }

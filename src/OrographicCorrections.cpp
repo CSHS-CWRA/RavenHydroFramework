@@ -18,7 +18,7 @@ double UBCPreciptiationByElev(const double temp,
 /// \param &Options [in] Global model options information
 /// \param &F [out] Forcing functions for HRU
 /// \param elev [in] elevation of this HRU
-/// \param ref_elev [in] Reference elevation (usually met station elevation)
+/// \param ref_elev [in] Reference temperature elevation (usually met station elevation)
 /// \param &tt [in] current time strucure
 //
 void   CModel::CorrectTemp(const optStruct   &Options,
@@ -35,7 +35,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
   {
     double lapse=CGlobalParams::GetParams()->adiabatic_lapse;//[C/km]
     lapse/=1000.0;//convert to C/m
-    F.temp_ave                  -=lapse*(elev-ref_elev);
+    F.temp_ave-=lapse*(elev-ref_elev);
 
     if(tt.day_changed)
     {
@@ -319,15 +319,14 @@ void CModel::CorrectPET(const optStruct &Options,
                         force_struct &F,
                         const CHydroUnit *pHRU,
                         const double elev,
-                        const double ref_elev,
+                        const double ref_elev_temp,
                         const int k)
 {
   double factor;
   //---------------------------------------------------------------------------
   if (Options.orocorr_PET==OROCORR_HBV)
   {
-    factor=GLOBAL_PET_CORR*max(1.0-HBV_PET_ELEV_CORR*(elev-ref_elev),0.0);
-    //if (F.temp_ave<FREEZING_TEMP){factor=0.0;}//DOESNT REALLY BELONG HERE, but is in HBV
+    factor=GLOBAL_PET_CORR*max(1.0-HBV_PET_ELEV_CORR*(elev-ref_elev_temp),0.0);
     F.PET   *=factor;
     F.OW_PET*=factor;
   }
@@ -338,14 +337,14 @@ void CModel::CorrectPET(const optStruct &Options,
     double max_month_temp(0.0),min_month_temp(0.0);
     for (int g=0;g<_nGauges;g++)
     {
-      max_month_temp+=_aGaugeWeights[k][g]*_pGauges[g]->GetMonthlyAveTemp (7);//August
-      min_month_temp+=_aGaugeWeights[k][g]*_pGauges[g]->GetMonthlyAveTemp (2);//February
+      max_month_temp+=_aGaugeWtTemp[k][g]*_pGauges[g]->GetMonthlyAveTemp (7);//August
+      min_month_temp+=_aGaugeWtTemp[k][g]*_pGauges[g]->GetMonthlyAveTemp (2);//February
     }
     /// \todo: repair for southern hemisphere
 
     sat_vap_max=GetSaturatedVaporPressure(max_month_temp);
     sat_vap_min=GetSaturatedVaporPressure(min_month_temp);
-    c1=68.0-(3.6*(FEET_PER_METER*(elev-ref_elev))/1000);
+    c1=68.0-(3.6*(FEET_PER_METER*(elev-ref_elev_temp))/1000);
     ch=50/(sat_vap_max-sat_vap_min)*MB_PER_KPA;
 
     factor=1.0/(c1+(13.0*ch));
@@ -362,7 +361,7 @@ void CModel::CorrectPET(const optStruct &Options,
       double PET_corr=pHRU->GetSurfaceProps()->forest_PET_corr;
       double Fc      =pHRU->GetSurfaceProps()->forest_coverage;
       double forest_corr=((PET_corr)*Fc + 1.0*(1.0-Fc));
-      double xevap2=max(A0PELA*0.001*(ref_elev-elev),0.0);
+      double xevap2=max(A0PELA*0.001*(ref_elev-ref_elev_temp),0.0);
       //F.PET+=xevap2*forest_corr; //RFS correction - handled in UBCWM estimate PET command instead
       */
   }

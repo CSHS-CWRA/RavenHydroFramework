@@ -63,6 +63,7 @@ public:/*-------------------------------------------------------*/
   double   GetSnowfallCorr    () const;
   double   GetCloudMinRange   () const;
   double   GetCloudMaxRange   () const;
+  bool     TimeSeriesExists   (const forcing_type ftype) const;
 
   //special accessors (built from multiple time series):
   double   GetAverageSnowFrac (const double &t, const double &tstep) const; //snow & rain

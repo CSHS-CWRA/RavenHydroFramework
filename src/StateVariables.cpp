@@ -118,6 +118,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(CUM_INFIL):          {name="Cumulative infiltration";    break;}
   case(GA_MOISTURE_INIT):   {name="Green Ampt initial soil Water"; break;}
   case(LATERAL_EXCHANGE):   {name="Lateral exchange storage";   break;}
+  case(SNOW_DRIFT):         {name="Blowing Snow";               break;}
 
     //Temperature/Energy storage
   case(FREEZING_LOSS):      {name="Energy lost during freezing";    break;}
@@ -136,6 +137,9 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(SNOW_COVER):         {name="Fractional Snow Cover";      break;}
   case(CUM_SNOWMELT):       {name="Cumulative Snowmelt";        break;}
   case(SNOW_DEFICIT):       {name="Snow Deficit";               break;}
+
+  case(SNOW_AGE):           {name="Snow Age";                   break;}
+  case(SNODRIFT_TEMP):      {name="Blowing Snow Temperature";   break;}
 
   case(GLACIER):            {name="Glacier Liquid Storage";     break;}
   case(GLACIER_ICE):        {name="Glacier Ice";                break;}
@@ -217,35 +221,38 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(CUM_INFIL):        {units="mm"; break;}
   case(GA_MOISTURE_INIT): {units="mm"; break;}
   case(LATERAL_EXCHANGE): {units="mm"; break;}
+  case(SNOW_DRIFT):       {units="mm"; break;}
 
     //Temperature/Energy storage [C] or [MJ/m^2]
   case(FREEZING_LOSS):    {units="MJ/m2"; break;}
   case(MELTING_LOSS):     {units="MJ/m2"; break;}
   case(ENERGY_LOSSES):    {units="MJ/m2"; break;}
-  case(SURFACE_WATER_TEMP):{units="C"; break;}
-  case(SNOW_TEMP):        {units="C"; break;}
-  case(COLD_CONTENT):     {units="C"; break;}
-  case(SOIL_TEMP):        {units="C"; break;}
-  case(CANOPY_TEMP):      {units="C"; break;}
+  case(SURFACE_WATER_TEMP):{units="C";  break;}
+  case(SNOW_TEMP):        {units="C";   break;}
+  case(COLD_CONTENT):     {units="C";   break;}
+  case(SOIL_TEMP):        {units="C";   break;}
+  case(CANOPY_TEMP):      {units="C";   break;}
 
     //Snow variables
-  case(SNOW_DEPTH):       {units="mm"; break;}
-  case(PERMAFROST_DEPTH): {units="mm"; break;}
+  case(SNOW_DEPTH):       {units="mm";   break;}
+  case(PERMAFROST_DEPTH): {units="mm";   break;}
   case(SNOW_DEPTH_STDDEV):{units="log(mm)"; break;}
-  case(SNOW_COVER):       {units="0-1"; break;}
-  case(CUM_SNOWMELT):     {units="mm"; break;}
-  case(SNOW_DEFICIT):     {units="mm"; break;}
+  case(SNOW_COVER):       {units="0-1";  break;}
+  case(CUM_SNOWMELT):     {units="mm";   break;}
+  case(SNOW_DEFICIT):     {units="mm";   break;}
+  case(SNOW_AGE):         {units="d";    break;}
+  case(SNODRIFT_TEMP):    {units="C";    break;}
 
-  case(GLACIER):          {units="mm"; break;}
-  case(GLACIER_ICE):      {units="mm"; break;}
-  case(GLACIER_CC):       {units="mm"; break;}
+  case(GLACIER):          {units="mm";   break;}
+  case(GLACIER_ICE):      {units="mm";   break;}
+  case(GLACIER_CC):       {units="mm";   break;}
 
   case(SNOW_ALBEDO):      {units="none"; break;}
 
   case(CROP_HEAT_UNITS):  {units="none"; break;}
 
-  case(CONVOLUTION):      {units="mm"; break;}
-  case(CONV_STOR):        {units="mm"; break;}
+  case(CONVOLUTION):      {units="mm";   break;}
+  case(CONV_STOR):        {units="mm";   break;}
 
   case(CONSTITUENT):      {units="mg/m2"; break;}
   case(CONSTITUENT_SRC):  {units="mg/m2"; break;}
@@ -309,6 +316,9 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("ENERGY_LOSSES"   )){typ=ENERGY_LOSSES;}
   else if (!tmp.compare("SNOW_COVER"      )){typ=SNOW_COVER;}
   else if (!tmp.compare("SNOW_DEFICIT"    )){typ=SNOW_DEFICIT;}
+  else if (!tmp.compare("SNOW_AGE"        )){typ=SNOW_AGE;}
+  else if (!tmp.compare("SNODRIFT_TEMP"   )){typ=SNODRIFT_TEMP;}
+  else if (!tmp.compare("SNOW_DRIFT"      )){typ=SNOW_DRIFT;}
   else if (!tmp.compare("GLACIER"         )){typ=GLACIER;}
   else if (!tmp.compare("GLACIER_ICE"     )){typ=GLACIER_ICE;}
   else if (!tmp.compare("GLACIER_CC"      )){typ=GLACIER_CC;}
@@ -360,57 +370,59 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
   switch(typ)
   {
     //Water Storage [mm]
-    case(SURFACE_WATER):  {name="SURFACE_WATER";              break;}
-    case(ATMOSPHERE):     {name="ATMOSPHERE";                 break;}
-    case(ATMOS_PRECIP):   {name="ATMOS_PRECIP";               break;}
-    case(PONDED_WATER):   {name="PONDED_WATER";               break;}
-
-    case(SOIL):           {name="SOIL";                       break;}
-    case(CANOPY):         {name="CANOPY";                     break;}
-    case(CANOPY_SNOW):    {name="CANOPY_SNOW";                break;}
-    case(TRUNK):          {name="TRUNK";                      break;}
-    case(ROOT):           {name="ROOT";                       break;}
-    case(GROUNDWATER):    {name="GROUNDWATER";                break;}
-    case(DEPRESSION):     {name="DEPRESSION";                 break;}
-    case(SNOW):           {name="SNOW";                       break;}
-    case(NEW_SNOW):       {name="NEW_SNOW";                   break;}
-    case(SNOW_LIQ):       {name="SNOW_LIQ";                   break;}
-    case(WETLAND):        {name="WETLAND";                    break;}
-    case(CUM_INFIL):      {name="CUM_INFIL";                  break;}
-    case(GA_MOISTURE_INIT):{name="GA_MOISTURE_INIT";          break;}
+    case(SURFACE_WATER):      {name="SURFACE_WATER";            break;}
+    case(ATMOSPHERE):         {name="ATMOSPHERE";               break;}
+    case(ATMOS_PRECIP):       {name="ATMOS_PRECIP";             break;}
+    case(PONDED_WATER):       {name="PONDED_WATER";             break;}
+    case(SOIL):               {name="SOIL";                     break;}
+    case(CANOPY):             {name="CANOPY";                   break;}
+    case(CANOPY_SNOW):        {name="CANOPY_SNOW";              break;}
+    case(TRUNK):              {name="TRUNK";                    break;}
+    case(ROOT):               {name="ROOT";                     break;}
+    case(GROUNDWATER):        {name="GROUNDWATER";              break;}
+    case(DEPRESSION):         {name="DEPRESSION";               break;}
+    case(SNOW):               {name="SNOW";                     break;}
+    case(NEW_SNOW):           {name="NEW_SNOW";                 break;}
+    case(SNOW_LIQ):           {name="SNOW_LIQ";                 break;}
+    case(WETLAND):            {name="WETLAND";                  break;}
+    case(CUM_INFIL):          {name="CUM_INFIL";                break;}
+    case(GA_MOISTURE_INIT):   {name="GA_MOISTURE_INIT";         break;}
+    case(SNOW_DRIFT):         {name="SNOW_DRIFT";               break;}
 
     //Temperature/Energy storage
-    case(FREEZING_LOSS):    {name="FREEZING_LOSS";            break;}
-    case(MELTING_LOSS):     {name="MELTING_LOSS";             break;}
-    case(ENERGY_LOSSES):    {name="ENERGY_LOSSES";            break;}
-    case(SURFACE_WATER_TEMP): {name="SURFACE_WATER_TEMP";     break;}
-    case(SNOW_TEMP):        {name="SNOW_TEMP";                break;}
-    case(COLD_CONTENT):     {name="COLD_CONTENT";             break;}
-    case(SOIL_TEMP):        {name="SOIL_TEMP";                break;}
-    case(CANOPY_TEMP):      {name="CANOPY_TEMP";              break;}
+    case(FREEZING_LOSS):      {name="FREEZING_LOSS";            break;}
+    case(MELTING_LOSS):       {name="MELTING_LOSS";             break;}
+    case(ENERGY_LOSSES):      {name="ENERGY_LOSSES";            break;}
+    case(SURFACE_WATER_TEMP): {name="SURFACE_WATER_TEMP";       break;}
+    case(SNOW_TEMP):          {name="SNOW_TEMP";                break;}
+    case(COLD_CONTENT):       {name="COLD_CONTENT";             break;}
+    case(SOIL_TEMP):          {name="SOIL_TEMP";                break;}
+    case(CANOPY_TEMP):        {name="CANOPY_TEMP";              break;}
 
     //Snow variables
-    case(SNOW_DEPTH):         {name="SNOW_DEPTH";             break;}
-    case(PERMAFROST_DEPTH):   {name="PERMAFROST_DEPTH";       break;}
-    case(SNOW_DEPTH_STDDEV):  {name="SNOW_DEPTH_STDDEV";      break;}
-    case(SNOW_COVER):         {name="SNOW_COVER";             break;}
-    case(CUM_SNOWMELT):       {name="CUM_SNOWMELT";           break;}
-    case(SNOW_DEFICIT):       {name="SNOW_DEFICIT";           break;}
+    case(SNOW_DEPTH):         {name="SNOW_DEPTH";               break;}
+    case(PERMAFROST_DEPTH):   {name="PERMAFROST_DEPTH";         break;}
+    case(SNOW_DEPTH_STDDEV):  {name="SNOW_DEPTH_STDDEV";        break;}
+    case(SNOW_COVER):         {name="SNOW_COVER";               break;}
+    case(CUM_SNOWMELT):       {name="CUM_SNOWMELT";             break;}
+    case(SNOW_DEFICIT):       {name="SNOW_DEFICIT";             break;}
+    case(SNOW_AGE):           {name="SNOW_AGE";                 break;}
+    case(SNODRIFT_TEMP):      {name="SNODRIFT_TEMP";            break;}
 
     //Glacier variables
-    case(GLACIER):        {name="GLACIER";                    break;}
-    case(GLACIER_ICE):    {name="GLACIER_ICE";                break;}
-    case(GLACIER_CC):     {name="GLACIER_CC";                 break;}
+    case(GLACIER):            {name="GLACIER";                  break;}
+    case(GLACIER_ICE):        {name="GLACIER_ICE";              break;}
+    case(GLACIER_CC):         {name="GLACIER_CC";               break;}
 
-    case(SNOW_ALBEDO):    {name="SNOW_ALBEDO";                break;}
-    case(CROP_HEAT_UNITS):{name="CROP_HEAT_UNITS";            break;}
+    case(SNOW_ALBEDO):        {name="SNOW_ALBEDO";              break;}
+    case(CROP_HEAT_UNITS):    {name="CROP_HEAT_UNITS";          break;}
 
     //Convolution Variables
-    case(CONVOLUTION):    {name="CONVOLUTION";                break;}
-    case(CONV_STOR):      {name="CONV_STOR";                  break;}
+    case(CONVOLUTION):        {name="CONVOLUTION";              break;}
+    case(CONV_STOR):          {name="CONV_STOR";                break;}
 
     //Lateral exchange
-    case(LATERAL_EXCHANGE):{name="LATERAL_EXCHANGE";          break;}
+    case(LATERAL_EXCHANGE):   {name="LATERAL_EXCHANGE";         break;}
 
 
     //Transport variables
@@ -523,6 +535,7 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ)
   case(CONVOLUTION):    {return true;}
   case(NEW_SNOW):       {return true;}
   case(LATERAL_EXCHANGE):{return true;}
+  case(SNOW_DRIFT):      {return true;}
     //case(CONV_STOR):    {return true;} // \todo [fix hack] strictly speaking, is water storage (and should be treated as such for transport), but duplicated in CONVOLUTION
     //..
   default:

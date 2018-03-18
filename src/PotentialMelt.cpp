@@ -81,13 +81,13 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   //----------------------------------------------------------
   else if (Options.pot_melt==POTMELT_EB)
   {
-    double rain      = F->precip*(1-F->snow_frac);
+    double rainfall  = F->precip*(1-F->snow_frac);
     double air_temp  = F->temp_ave;
     double air_pres  = F->air_pres;
     double rel_humid = F->rel_humidity;
     double wind_vel  = F->wind_vel;
 
-    double ref_ht    = pHRU->GetVegVarProps()->reference_height;
+    double ref_ht    = 2.0; // [m];
     double roughness = pHRU->GetVegVarProps()->roughness ;
     double surf_temp = pHRU->GetSnowTemperature();
 
@@ -95,7 +95,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double L = F->LW_radia;       //net long wave radiation [MJ/m2/d]
     double H = GetSensibleHeatSnow(air_temp,surf_temp,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double LE= GetLatentHeatSnow  (air_pres,air_temp,surf_temp,rel_humid,wind_vel,ref_ht,roughness); //[MJ/m2/d]
-    double R = GetRainHeatInput   (surf_temp,rain ,rel_humid); //[MJ/m2/d]
+    double R = GetRainHeatInput   (surf_temp,rainfall ,rel_humid); //[MJ/m2/d]
 
     double S = K + L + H + LE + R;                //total heat input rate [MJ/m2/d]
     S*=(MM_PER_METER/DENSITY_WATER/LH_FUSION);    //[MJ/m2/d-->mm/d]

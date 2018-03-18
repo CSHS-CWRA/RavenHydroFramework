@@ -434,11 +434,11 @@
     <ClCompile Include="ParseInitialConditionFile.cpp" />
     <ClCompile Include="ParseLib.cpp" />
     <ClCompile Include="PotentialMelt.cpp" />
+    <ClCompile Include="PrairieSnow.cpp" />
     <ClCompile Include="Recharge.cpp" />
     <ClCompile Include="Reservoir.cpp" />
     <ClCompile Include="SnowAlbedo.cpp" />
     <ClCompile Include="SnowTempEvolve.cpp" />
-    <ClCompile Include="PBSM.cpp" />
     <ClCompile Include="LatFlush.cpp" />
     <ClCompile Include="StateVariables.cpp" />
     <ClCompile Include="TimeSeriesABC.cpp" />
@@ -593,6 +593,7 @@
     <ClInclude Include="LateralExchangeABC.h" />
     <ClInclude Include="OpenWaterEvap.h" />
     <ClInclude Include="ParseLib.h" />
+    <ClInclude Include="PrairieSnow.h" />
     <ClInclude Include="Properties.h" />
     <ClInclude Include="Radiation.h" />
     <ClInclude Include="RavenInclude.h" />

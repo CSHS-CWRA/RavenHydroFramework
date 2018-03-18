@@ -54,17 +54,17 @@ void CmvAbstraction::GetParticipatingParamList(string  *aP , class_type *aPC , i
   if (type==ABST_PERCENTAGE)
   {
     nP=1;
-    aP[0]="ABST_PERCENT";                       aPC[0]=CLASS_LANDUSE;
+    aP[0]="ABST_PERCENT";           aPC[0]=CLASS_LANDUSE;
   }
   else if (type==ABST_FILL)
   {
     nP=1;
-    aP[0]="DEP_MAX";                              aPC[0]=CLASS_LANDUSE;
+    aP[0]="DEP_MAX";                aPC[0]=CLASS_LANDUSE;
   }
   else if (type==ABST_SCS)
   {
     nP=2;
-    aP[0]="SCS_CN";                                             aPC[0]=CLASS_LANDUSE;
+    aP[0]="SCS_CN";                 aPC[0]=CLASS_LANDUSE;
     aP[1]="SCS_IA_FRACTION";        aPC[1]=CLASS_LANDUSE;
   }
   else
@@ -169,13 +169,16 @@ void   CmvAbstraction::ApplyConstraints(const double             *state_vars,
                                         const time_struct &tt,
                                         double     *rates) const
 {
+  
   //cant remove more than is there (should never be an option)
-  rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
+  double pond=max(state_vars[iFrom[0]],0.0);
+  rates[0]=min(rates[0],pond/Options.timestep);
 
   //reaching maximum depression storage
+  double stor=max(state_vars[iTo[0]],0.0);
   double max_stor=pHRU->GetStateVarMax(iTo[0],state_vars,Options);
-  double abst=threshMin(rates[0],
-                        max((max_stor-max(state_vars[iTo[0]],0.0))/Options.timestep,0.0),0.0);
+  double deficit = max(max_stor-stor,0.0);
+  double abst=min(rates[0],deficit/Options.timestep);
   rates[0]=abst;
 
 }

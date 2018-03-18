@@ -297,9 +297,6 @@
     <ClCompile Include="ForcingGrid.cpp">
       <Filter>Source Files\Forcing Functions</Filter>
     </ClCompile>
-    <ClCompile Include="PBSM.cpp">
-      <Filter>Source Files\Hydrological Routines</Filter>
-    </ClCompile>
     <ClCompile Include="ModelForcingGrids.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
@@ -320,6 +317,9 @@
     </ClCompile>
     <ClCompile Include="Transformation.cpp">
       <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="PrairieSnow.cpp">
+      <Filter>Source Files\Hydrological Processes\Snow Water Processes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -451,6 +451,9 @@
     </ClInclude>
     <ClInclude Include="LatAdvection.h">
       <Filter>Header Files\Transport</Filter>
+    </ClInclude>
+    <ClInclude Include="PrairieSnow.h">
+      <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

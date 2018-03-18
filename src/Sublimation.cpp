@@ -172,11 +172,11 @@ void CmvSublimation::GetRatesOfChange(const double               *state_vars,
   {
     double sat_vap,vap_pres,wind_ht,vap_ht,wind_v;
 
-    sat_vap             = (GetSaturatedVaporPressure(pHRU->GetSnowTemperature()))*MB_PER_KPA;   // [millibar]
-    vap_pres    = (GetVaporPressure(Ta,(pHRU->GetForcingFunctions()->rel_humidity)))*MB_PER_KPA;        //[millibar]
-    wind_ht             = (pHRU->GetVegVarProps()->reference_height)*FEET_PER_METER;    // height of wind measurement [feet]
-    vap_ht              = (pHRU->GetVegVarProps()->reference_height)*FEET_PER_METER;    // height of vapor pressure measurement [feet]
-    wind_v              = (pHRU->GetForcingFunctions()->wind_vel   )*MPH_PER_MPS;                       // wind speed [miles per hour]
+    sat_vap   = (GetSaturatedVaporPressure(pHRU->GetSnowTemperature()))*MB_PER_KPA;   // [millibar]
+    vap_pres  = (GetVaporPressure(Ta,(pHRU->GetForcingFunctions()->rel_humidity)))*MB_PER_KPA;        //[millibar]
+    wind_ht   = 2.0*FEET_PER_METER;    // height of wind measurement [feet]
+    vap_ht    = 2.0*FEET_PER_METER;    // height of vapor pressure measurement [feet]
+    wind_v    = (pHRU->GetForcingFunctions()->wind_vel   )*MPH_PER_MPS;                       // wind speed [miles per hour]
 
     rates[0]    = ((0.0063*(pow((wind_ht*vap_ht),(-1/6)))*(sat_vap-vap_pres)*wind_v)*MM_PER_INCH);      // [mm/day]
 

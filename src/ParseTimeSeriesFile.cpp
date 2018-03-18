@@ -56,10 +56,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   bool ended(false);
 
   // some tmp variables for gridded forcing input
-  bool ForcingTypeGiven; //
-  bool FileNameNCGiven;  //
-  bool VarNameNCGiven;   //
-  bool DimNamesNCGiven;  //
+  bool ForcingTypeGiven=false; //
+  bool FileNameNCGiven=false;  //
+  bool VarNameNCGiven=false;   //
+  bool DimNamesNCGiven=false;  //
 
   ifstream RVT;
   RVT.open(Options.rvt_filename.c_str());
@@ -130,9 +130,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":IrregularObservations" )){code=41; }
     else if  (!strcmp(s[0],":ObservationWeights"    )){code=42; }
     else if  (!strcmp(s[0],":IrregularWeights"      )){code=43; }
-    //--------------------HYDROGRAPHS --------------------------
+    //----------HYDROGRAPHS /RESERVOIR PARAMS -------------------
     else if  (!strcmp(s[0],":BasinInflowHydrograph" )){code=50; }
     else if  (!strcmp(s[0],":ReservoirExtraction"   )){code=51; }
+    else if  (!strcmp(s[0],":VariableWeirHeight"    )){code=52; }
+    else if  (!strcmp(s[0],":ReservoirMaxStage"     )){code=53; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -667,12 +669,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (51): //---------------------------------------------
-    {/*:ReservoirExtraction {long Basincode}
+    {/*:ReservoirExtraction {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Qout} x nMeasurements [m3/s]
        :EndReservoirExtraction
      */
-      if (Options.noisy) {cout <<"Reservoir Extraction Time History"<<endl;}
+      if (Options.noisy) {cout <<"Reservoir Extraction Time Series"<<endl;}
       long SBID=-1;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
@@ -689,6 +691,53 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case (52): //---------------------------------------------
+    {/*:VariableWeirHeight {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double delta_h} x nMeasurements [m]
+       :EndVariableWeirHeight
+     */
+      if (Options.noisy) {cout <<"Weir Height Time Series"<<endl;}
+      long SBID=-1;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"WeirHeight_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddWeirHeightTS(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn="Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir weir height";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (53): //---------------------------------------------
+    {/*:ReservoirMaxStage {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double delta_h} x nMeasurements [m]
+       :EndReservoirMaxStage
+     */
+      if (Options.noisy) {cout <<"Maximum stage time series "<<endl;}
+      long SBID=-1;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"MaxStage_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddMaxStageTS(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn="Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir maximum stage";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+               
     case (70): //---------------------------------------------
     {/*:MonthlyAveTemperature {temp x 12}*/
       if (Options.noisy) {cout <<"Monthly Average Temperatures"<<endl;}
@@ -1097,8 +1146,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       bool nHydroUnitsGiven = false;
       bool nGridCellsGiven  = false;
-      int  nHydroUnits;
-      int  nGridCells;
+      int  nHydroUnits=0;
+      int  nGridCells=0;
 
       if (Options.noisy) {cout <<"GridWeights..."<<endl;}
       while (((Len==0) || (strcmp(s[0],":EndGridWeights"))) && (!(p->Tokenize(s,Len))))

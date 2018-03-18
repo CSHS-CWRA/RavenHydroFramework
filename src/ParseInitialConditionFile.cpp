@@ -232,29 +232,43 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
         }
       }
-      k=0;
+      int parsedHRUs=0;
+      int HRUID;
+      CHydroUnit *pHRU;
       while ((Len==0) || (strcmp(s[0],":EndHRUStateVariableTable")))
       {
         pp->Tokenize(s,Len);
 
         if      (IsComment(s[0], Len)){}//comment line
-        else if (!strcmp(s[0],":Units")){}//ignored by raven
+        else if (!strcmp(s[0],":Units")){}//ignored by Raven
         else if (!strcmp(s[0],":EndHRUStateVariableTable")){}//end command
-        else
+        else //row in SV table
         {
           ExitGracefullyIf(Len!=(nSV+1),
-                           "Parse Initial Conditions File: incorrect number of columns in HRU State Variable Table ",BAD_DATA);
-          ExitGracefullyIf(k>=pModel->GetNumHRUs(),
-                           "Parse: HRUStateVariableTable: # of rows more than # of HRUs", BAD_DATA);
-          for (i=0;i<nSV;i++){
-            if (SVinds[i]!=DOESNT_EXIST){
-              pModel->GetHydroUnit(k)->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
-            }
+            "Parse :HRUStateVariableTable: incorrect number of columns in HRU State Variable Table row (.rvc file)",BAD_DATA);
+
+          ExitGracefullyIf(parsedHRUs>=pModel->GetNumHRUs(),
+            "Parse: :HRUStateVariableTable: # of rows more than # of HRUs (.rvc file)",BAD_DATA_WARN);
+
+          HRUID=s_to_i(s[0]);
+          pHRU=pModel->GetHRUByID(HRUID);
+          if(pHRU==NULL){
+            string warn="HRU ID ["+to_string(HRUID)+"]in .rvc file not found in model";
+            WriteWarning(warn,Options.noisy);
           }
-          k++;
-        }
-      }//end while //end for k=0 to nHRUs
-      // concern: not properly referenced by HRU ID!
+          else{
+            for(i=0;i<nSV;i++){
+              if(SVinds[i]!=DOESNT_EXIST){
+                pHRU->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
+              }
+            }
+            parsedHRUs++;
+          }
+        }//if Iscomment...
+      }//end while 
+      if(parsedHRUs!=pModel->GetNumHRUs()){
+        WriteWarning("Parse: :HRUStateVariableTable: number of HRUs in .rvc file not equal to that in model",Options.noisy);
+      }
       delete [] SVinds;
       break;
     }
@@ -421,7 +435,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if (!strcmp(s[0],":ResStage"))
         {
           if (Len>=3){
-            pBasin->SetReservoirStage(s_to_d(s[1]));
+            pBasin->SetInitialReservoirStage(s_to_d(s[1]));
           }
         }
         else if (!strcmp(s[0],":EndBasinStateVariables"))
@@ -441,7 +455,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       time_struct tt;
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
       pBasin->GetReservoir()->UpdateFlowRules(tt,Options); //ensures correct discharge rating curve is used to calculate flow
-      pBasin->SetReservoirFlow(AutoOrDouble(s[2]));
+      pBasin->SetReservoirFlow(AutoOrDouble(s[2]),0.0);
       break;
     }
     case(8):  //----------------------------------------------
@@ -451,7 +465,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
       ExitGracefullyIf(pBasin==NULL,
                        "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
-      pBasin->SetReservoirStage(s_to_d(s[2]));
+      pBasin->SetInitialReservoirStage(s_to_d(s[2]));
       break;
     }
     case(10):  //----------------------------------------------

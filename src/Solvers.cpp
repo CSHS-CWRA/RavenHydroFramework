@@ -45,6 +45,7 @@ void MassEnergyBalance( CModel            *pModel,
   static double    **aMinnew;     //[mg/d] mass loading of constituents to subbasin reach p at t+dt [size=_nSubBasins x nConstituents ]
   static double    **aMoutnew;    //[mg/d] final mass output from reach segment seg at time t+dt [size= MAX_RIVER_SEGS  x nConstituents ]
   static double    **aRoutedMass; //[mg/d] amount of mass [size= _nSubBasins xnConstituents]
+  static double     *aResMass;    //[mg]   amount of mass in reservoir [size= nConstitutents]
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
@@ -83,7 +84,7 @@ void MassEnergyBalance( CModel            *pModel,
 
     aMoutnew    =NULL;
     aRoutedMass =NULL;
-    aMoutnew    =NULL;
+    aResMass    =NULL;
     if (nConstituents>0)
     {
       aMinnew     =new double *[NB];
@@ -102,7 +103,7 @@ void MassEnergyBalance( CModel            *pModel,
         aMoutnew[i]=new double [nConstituents];
         ExitGracefullyIf(aMoutnew[i]==NULL,"MassEnergyBalance(4)",OUT_OF_MEMORY);
       }
-
+      aResMass=new double [nConstituents];
     }
 
     if(Options.sol_method==ITERATED_HEUN)
@@ -366,7 +367,7 @@ void MassEnergyBalance( CModel            *pModel,
   //-----------------------------------------------------------------
   //      ROUTING
   //-----------------------------------------------------------------
-  double res_ht;
+  double res_ht,res_outflow;
   //determine total outflow from HRUs into respective basins (aRouted[p])
   for (p=0;p<NB;p++)
   {
@@ -401,9 +402,9 @@ void MassEnergyBalance( CModel            *pModel,
       pBasin->SetInflow(aQinnew[p]);
       pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
-      pBasin->RouteWater(aQoutnew,res_ht,Options,tt);      //Where everything happens!
+      pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,Options,tt);      //Where everything happens!
 
-      pBasin->UpdateOutflows(aQoutnew,res_ht,Options,tt,false);//actually updates flow values here
+      pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,Options,tt,false);//actually updates flow values here
 
       pTo   =pModel->GetDownstreamBasin(p);
       if(pTo!=DOESNT_EXIST)//correct downstream inflows
@@ -420,6 +421,7 @@ void MassEnergyBalance( CModel            *pModel,
   //determine total mass loading from HRUs into respective basins (aRoutedMass[p])
   if (nConstituents>0)
   {
+    
     for (p=0;p<NB;p++){
       for (c=0;c<nConstituents;c++){
         aRoutedMass[p][c]=0.0;
@@ -441,6 +443,7 @@ void MassEnergyBalance( CModel            *pModel,
         }
       }
     }
+
     //Route mass over timestep
     //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
     for (pp=0;pp<NB;pp++)
@@ -451,10 +454,10 @@ void MassEnergyBalance( CModel            *pModel,
 
       if(pBasin->IsEnabled())
       {
-        pModel->GetTransportModel()->SetMassInflows(p,aMinnew[p]);
-        pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]);
-        pModel->GetTransportModel()->RouteMass(p,aMoutnew,Options);
-        pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,0.0,Options,false);
+        pModel->GetTransportModel()->SetMassInflows    (p,aMinnew[p]);
+        pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]); 
+        pModel->GetTransportModel()->RouteMass         (p,aMoutnew,aResMass,Options,tt);  //Where everything happens!
+        pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,aResMass,Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)
@@ -465,7 +468,7 @@ void MassEnergyBalance( CModel            *pModel,
         }
       }
     }//end for pp...
-  }
+  }//end if (nConstituents>0)
 
   //-----------------------------------------------------------------
   //          AGGREGATION ACROSS HRU GROUPS
@@ -545,6 +548,7 @@ void MassEnergyBalance( CModel            *pModel,
     delete [] aMinnew;      aMinnew     =NULL;
     delete [] aRoutedMass;  aRoutedMass =NULL;
     delete [] aMoutnew;     aMoutnew    =NULL;
+    delete [] aResMass;
   }
 }
 
