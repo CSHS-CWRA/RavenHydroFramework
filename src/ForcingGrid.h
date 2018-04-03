@@ -157,7 +157,7 @@ public:/*------------------------------------------------------*/
                                            int              &column);         ///< returns row and column index of cell ID
 
   // set class variables
-  void         SetForcingType(                const string ForcingType);               ///< set _ForcingType               of class
+  void         SetForcingType(         const forcing_type &ForcingType);               ///< set _ForcingType               of class
   void         SetFilename(                   const string filename);                  ///< set _filename                  of class
   void         SetVarname(                    const string varname);                   ///< set _varname                   of class
   void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames                  of class

@@ -112,7 +112,11 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   double tstep=Options.timestep;
   int    nAdvConnections=pTransModel->GetNumAdvConnections();
   int    k=pHRU->GetGlobalIndex();
-  double *Q=new double [nAdvConnections]; // \todo [optimize]: preallocate in initialize, save as member
+  static double    *Q=NULL; 
+
+  if(Q==NULL){
+    Q=new double [nAdvConnections]; // only done once at start of simulation for speed 
+  }
 
   ExitGracefullyIf(Options.sol_method!=ORDERED_SERIES,
                    "CmvAdvection: Advection only works with ordered series solution approach",BAD_DATA);// \todo [re-org] Should go in initialize
@@ -215,8 +219,10 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     int iFromWater = pTransModel->GetFromWaterIndex(q);
     rates[nAdvConnections + q] += pTransModel->GetSpecifiedMassFlux(iToWater, constit_ind, k, tt); //[mg/m2/d]
     }*/
-
-  delete [] Q;
+  if(tt.model_time>=Options.duration-Options.timestep/2)
+  {
+    delete [] Q;
+  }
 }
 
 //////////////////////////////////////////////////////////////////

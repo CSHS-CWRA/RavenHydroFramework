@@ -282,8 +282,9 @@ CGauge *CModel::GetGauge(const int g) const
 /// \param f [in] Forcing Grid index
 /// \return pointer to gauge corresponding to passed index g
 //
-CForcingGrid *CModel::GetForcingGrid(const int f) const
+CForcingGrid *CModel::GetForcingGrid(const forcing_type &ftyp) const
 {
+  int f=GetForcingGridIndexFromType(ftyp);
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((f<0) || (f>=_nForcingGrids),"CModel GetForcingGrid::improper index",BAD_DATA);
 #endif
@@ -551,9 +552,21 @@ int  CModel::GetGaugeIndexFromName (const string name) const{
 /// \return Integer index of forcing grid
 /// \param name [in] specified name
 //
-int  CModel::GetForcingGridIndexFromName (const string name) const{
+/*int  CModel::GetForcingGridIndexFromName (const string name) const{
   for (int f=0;f<_nForcingGrids;f++){
     if (name==ForcingToString(_pForcingGrids[f]->GetName())){return f;}
+  }
+  return DOESNT_EXIST;
+}*/
+//////////////////////////////////////////////////////////////////
+/// \brief Returns forcing grid index of forcing grid with specified type
+///
+/// \return Integer index of forcing grid
+/// \param name [in] specified type
+//
+int  CModel::GetForcingGridIndexFromType (const forcing_type &typ) const{
+  for (int f=0;f<_nForcingGrids;f++){
+    if (typ==_pForcingGrids[f]->GetName()){return f;}
   }
   return DOESNT_EXIST;
 }
@@ -690,12 +703,18 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
   int js=0;
   double sum=0;
   int q;
+  const int *iFromp; 
+  const int *iTop;
+  int nConn;
   for(int j = 0; j < _nProcesses; j++)
   {
-    for(q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
+    iFromp=_pProcesses[j]->GetFromIndices();
+    iTop  =_pProcesses[j]->GetToIndices();
+    nConn =_pProcesses[j]->GetNumConnections();
+    for (q = 0; q < nConn; q++)//each process may have multiple connections
     {
-      if( (_pProcesses[j]->GetToIndices()  [q]== iTo) && (_pProcesses[j]->GetFromIndices()[q]== iFrom)){ sum+=_aCumulativeBal[k][js]; }
-      if( (_pProcesses[j]->GetFromIndices()[q]== iTo) && (_pProcesses[j]->GetToIndices()  [q]== iFrom)){ sum-=_aCumulativeBal[k][js]; }
+      if( (iTop  [q]== iTo) && (iFromp[q]== iFrom)){ sum+=_aCumulativeBal[k][js]; }
+      if( (iFromp[q]== iTo) && (iTop  [q]== iFrom)){ sum-=_aCumulativeBal[k][js]; }
       js++;
     }
   }
@@ -1350,60 +1369,6 @@ void CModel::OverrideStreamflow   (const long SBID)
     }
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief overrides reservoir outflow with observed outflow
-/// \param SBID [in] subbasin identifier of basin with reservoir
-//
-void CModel::OverrideReservoirFlow(const long SBID)
-{
-  for (int i=0;i<_nObservedTS; i++)
-  {
-    if (IsContinuousFlowObs(_pObservedTS[i],SBID))
-    {
-      //check for blanks in observation TS
-      bool bad=false;
-      for (int n=0;n<_pObservedTS[i]->GetNumValues();n++){
-        if (_pObservedTS[i]->GetValue(n)==CTimeSeries::BLANK_DATA){bad=true;break;}
-      }
-      if (bad){
-        WriteWarning("CModel::OverrideReservoirFlow::cannot override reservoir flow if there are blanks in observation data",_pOptStruct->noisy);
-        return;
-      }
-
-      long downID=GetSubBasinByID(SBID)->GetDownstreamID();
-      CReservoir *pReservoir=GetSubBasinByID(SBID)->GetReservoir();
-      if (pReservoir==NULL){
-        WriteWarning("CModel::OverrideReservoirFlow:: indicated subbasin does not have a reservoir",_pOptStruct->noisy);
-        return;
-      }
-
-      //Copy time series of observed flows to new extraction time series
-      string name="Extraction_"+to_string(SBID);
-      CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
-      CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
-      pTS->SetTag(to_string(SBID));
-
-      //add as reservoir extraction time series
-      pReservoir->AddExtractionTimeSeries(pTS);
-      ExitGracefully("OverrideReservoirFlow",STUB);
-      pReservoir->DisableOutflow();
-
-      if (downID!=DOESNT_EXIST)
-      {
-        //Copy time series of observed flows to new time series
-        string name="Inflow_Hydrograph_"+to_string(SBID);
-        CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
-        CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
-        pTS->SetTag(to_string(SBID));
-
-        //add as inflow hydrograph to downstream
-        GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
-        GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
-        return;
-      }
-    }
-  }
-}
 
 /*****************************************************************
    Routines called repeatedly during model simulation
@@ -1422,7 +1387,9 @@ void CModel::OverrideReservoirFlow(const long SBID)
 void CModel::IncrementBalance(const int    q_star,
                               const int    k,
                               const double moved){
+#ifdef _STRICTCHECK_
   ExitGracefullyIf(q_star>_nTotalConnections,"CModel::IncrementBalance: bad index",RUNTIME_ERR);
+#endif
   _aCumulativeBal[k][q_star]+=moved;
   _aFlowBal      [k][q_star]= moved;
 }
@@ -1628,6 +1595,14 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
       value = pBasin->GetReservoir()->GetResStage();
     }
+    else if (datatype == "RESERVOIR_INFLOW")
+    {
+      CSubBasin *pBasin = NULL;
+      pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      string error = "CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir inflow time series " + _pObservedTS[i]->GetName();
+      ExitGracefullyIf(pBasin == NULL, error.c_str(), BAD_DATA);
+      value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+    }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)
     {
       CHydroUnit *pHRU=NULL;
@@ -1701,40 +1676,43 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
                                   int         &nConnections,         //number of connections between storage units/state vars
                                   double      *rates_of_change) const//loss/gain rates of water [mm/d] and energy [MJ/m2/d]
 {
+#ifdef _STRICTCHECK_
   ExitGracefullyIf((j<0) && (j>=_nProcesses),"CModel ApplyProcess::improper index",BAD_DATA);
+#endif
+  CHydroProcessABC *pProc=_pProcesses[j];
 
-  nConnections=_pProcesses[j]->GetNumConnections();//total connections: nConnections+nCascades
+  nConnections=pProc->GetNumConnections();//total connections: nConnections+nCascades
   if (!_aShouldApplyProcess[j][pHRU->GetGlobalIndex()]){return false;}
-  if(!pHRU->IsEnabled()){return false;}
+  if (!pHRU->IsEnabled()){return false;}
 
   for (int q=0;q<nConnections;q++)
   {
-    iFrom[q]=_pProcesses[j]->GetFromIndices()[q];
-    iTo  [q]=_pProcesses[j]->GetToIndices  ()[q];
+    iFrom[q]=pProc->GetFromIndices()[q];
+    iTo  [q]=pProc->GetToIndices  ()[q];
     rates_of_change[q]=0.0;
   }
 
-  _pProcesses[j]->GetRatesOfChange(state_var,pHRU,Options,tt,rates_of_change);
+  pProc->GetRatesOfChange(state_var,pHRU,Options,tt,rates_of_change);
 
   //special cascade handling (prior to applying constraints)
   //------------------------------------------------------------------------
-  if (_pProcesses[j]->HasCascade())
+  if (pProc->HasCascade())
   {
     int nCascades;
     static double max_state_var[MAX_STATE_VARS];
-    nCascades=_pProcesses[j]->GetNumCascades();
+    nCascades=pProc->GetNumCascades();
     for (int i=0;i<_nStateVars;i++){//should only calculate for participating compartments
       max_state_var[i]=pHRU->GetStateVarMax(i,state_var,Options);
     }
     for (int q=0;q<nCascades;q++)
     {
-      iFrom[nConnections-nCascades+q]=_pProcesses[j]->GetCascadeFromIndex();
-      iTo  [nConnections-nCascades+q]=_pProcesses[j]->GetCascadeToIndices()[q];
+      iFrom[nConnections-nCascades+q]=pProc->GetCascadeFromIndex();
+      iTo  [nConnections-nCascades+q]=pProc->GetCascadeToIndices()[q];
     }
-    _pProcesses[j]->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
+    pProc->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
   }
 
-  _pProcesses[j]->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
+  pProc->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
   return true;
 }
 //////////////////////////////////////////////////////////////////

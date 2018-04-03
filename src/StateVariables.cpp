@@ -119,6 +119,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(GA_MOISTURE_INIT):   {name="Green Ampt initial soil Water"; break;}
   case(LATERAL_EXCHANGE):   {name="Lateral exchange storage";   break;}
   case(SNOW_DRIFT):         {name="Blowing Snow";               break;}
+  case(LAKE_STORAGE):       {name="Net Lake Storage";           break;}
 
     //Temperature/Energy storage
   case(FREEZING_LOSS):      {name="Energy lost during freezing";    break;}
@@ -222,6 +223,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(GA_MOISTURE_INIT): {units="mm"; break;}
   case(LATERAL_EXCHANGE): {units="mm"; break;}
   case(SNOW_DRIFT):       {units="mm"; break;}
+  case(LAKE_STORAGE):     {units="mm"; break;}
 
     //Temperature/Energy storage [C] or [MJ/m^2]
   case(FREEZING_LOSS):    {units="MJ/m2"; break;}
@@ -313,6 +315,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("COLD_CONTENT"    )){typ=COLD_CONTENT;}
   else if (!tmp.compare("WETLAND"         )){typ=WETLAND;}
   else if (!tmp.compare("DEPRESSION"      )){typ=DEPRESSION;}
+  else if (!tmp.compare("LAKE_STORAGE"    )){typ=LAKE_STORAGE;}
   else if (!tmp.compare("ENERGY_LOSSES"   )){typ=ENERGY_LOSSES;}
   else if (!tmp.compare("SNOW_COVER"      )){typ=SNOW_COVER;}
   else if (!tmp.compare("SNOW_DEFICIT"    )){typ=SNOW_DEFICIT;}
@@ -388,6 +391,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(CUM_INFIL):          {name="CUM_INFIL";                break;}
     case(GA_MOISTURE_INIT):   {name="GA_MOISTURE_INIT";         break;}
     case(SNOW_DRIFT):         {name="SNOW_DRIFT";               break;}
+    case(LAKE_STORAGE):       {name="LAKE_STORAGE";             break;}
 
     //Temperature/Energy storage
     case(FREEZING_LOSS):      {name="FREEZING_LOSS";            break;}
@@ -517,25 +521,26 @@ bool  CStateVariable::IsWaterStorage (sv_type      typ)
 {
   switch(typ)
   {
-  case(SURFACE_WATER):  {return true;}
-  case(PONDED_WATER):   {return true;}
-  case(ATMOSPHERE):     {return true;}
-  case(ATMOS_PRECIP):   {return true;}
-  case(SNOW):           {return true;}
-  case(GROUNDWATER):    {return true;}
-  case(SOIL):           {return true;}
-  case(CANOPY):         {return true;}
-  case(CANOPY_SNOW):    {return true;}
-  case(ROOT):           {return true;}
-  case(DEPRESSION):     {return true;}
-  case(SNOW_LIQ):       {return true;}
-  case(WETLAND):        {return true;}
-  case(GLACIER):        {return true;}
-  case(GLACIER_ICE):    {return true;}
-  case(CONVOLUTION):    {return true;}
-  case(NEW_SNOW):       {return true;}
+  case(SURFACE_WATER):   {return true;}
+  case(PONDED_WATER):    {return true;}
+  case(ATMOSPHERE):      {return true;}
+  case(ATMOS_PRECIP):    {return true;}
+  case(SNOW):            {return true;}
+  case(GROUNDWATER):     {return true;}
+  case(SOIL):            {return true;}
+  case(CANOPY):          {return true;}
+  case(CANOPY_SNOW):     {return true;}
+  case(ROOT):            {return true;}
+  case(DEPRESSION):      {return true;}
+  case(SNOW_LIQ):        {return true;}
+  case(WETLAND):         {return true;}
+  case(GLACIER):         {return true;}
+  case(GLACIER_ICE):     {return true;}
+  case(CONVOLUTION):     {return true;}
+  case(NEW_SNOW):        {return true;}
   case(LATERAL_EXCHANGE):{return true;}
   case(SNOW_DRIFT):      {return true;}
+  case(LAKE_STORAGE):    {return true;}
     //case(CONV_STOR):    {return true;} // \todo [fix hack] strictly speaking, is water storage (and should be treated as such for transport), but duplicated in CONVOLUTION
     //..
   default:

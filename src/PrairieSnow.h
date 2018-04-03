@@ -24,7 +24,7 @@ enum pbsm_type
 ///////////////////////////////////////////////////////////////////
 /// \brief Calculates loss of water from snow to atmosphere
 //
-class CmvPrairieBlowingSnow: public CHydroProcessABC
+class CmvPrairieBlowingSnow: public CLateralExchangeProcessABC
 {
 private:/*------------------------------------------------------*/
 
@@ -77,6 +77,12 @@ public:/*-------------------------------------------------------*/
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(pbsm_type     stype,
                                            sv_type *aSV, int *aLev, int &nSV);
+
+  void GetLateralExchange(const double * const *state_vars, //array of all SVs for all HRUs, [k][i]
+                          const CHydroUnit * const *pHRUs,    
+                          const optStruct   &Options,
+                          const time_struct &tt,
+                                double      *exchange_rates) const;//purely virtual
 };
 
 #endif

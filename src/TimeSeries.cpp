@@ -676,7 +676,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
 
   int n=0;
   //cout << n << " "<<nMeasurements << " " << s[0] << " "<<Len<<" "<<strcmp(s[0],"&")<<" "<<p->Tokenize(s,Len)<<endl;
-  while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
+  while ((n<nMeasurements) && (!p->Tokenize(s,Len)))
   {
     if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
     for(int i=0;i<Len;i++){

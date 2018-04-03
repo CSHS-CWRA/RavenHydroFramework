@@ -111,20 +111,20 @@ double PenmanMonteithEvap(const force_struct     *F,
 /// \return Potential evaporation rate [mm/d]
 //
 double PenmanCombinationEvap(const force_struct *F,
-                             const double                           &vert_trans)    //[m*s^2/kg]
+                             const double &vert_trans)    //[m*s^2/kg]
 {
-  double gamma;                   //psychometric "constant" [kPa/K]
-  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double gamma;     //psychometric "constant" [kPa/K]
+  double LH_vapor;  //latent heat of vaporization [MJ/kg]
   double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
   double sat_vap;   //Saturation vapor pressure [kPa]
   double vapor_def; //vapor deficit [kPa]
 
   double numer,denom;
 
-  sat_vap                 =GetSaturatedVaporPressure(F->temp_ave);
-  de_dT                           =GetSatVapSlope           (F->temp_ave,sat_vap);
+  sat_vap               =GetSaturatedVaporPressure(F->temp_ave);
+  de_dT                 =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor              =GetLatentHeatVaporization(F->temp_ave);
-  gamma                         =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma                 =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
   vapor_def   =sat_vap*(1.0-(F->rel_humidity));
 
@@ -409,7 +409,9 @@ double EstimatePET(const force_struct &F,
     WriteWarning(warn,false);
     PET=0.0;
   }
-  return PET;
+
+  double veg_corr=pHRU->GetVegetationProps()->PET_veg_corr;
+  return PET*veg_corr;
 }
 
 //////////////////////////////////////////////////////////////////

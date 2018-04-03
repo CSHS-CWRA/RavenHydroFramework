@@ -213,8 +213,8 @@ void ClearSkyTest()
       day_angle=CRadiation::DayAngle(day,1999);
       declin=   CRadiation::SolarDeclination(day_angle);
       ecc   = CRadiation::EccentricityCorr(day_angle);
-      day_length = CRadiation::DayLength(lat*PI/180,declin);
-      rad   =CRadiation::CalcETRadiation(lat*PI/180,lat*PI/180,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
+      day_length = CRadiation::DayLength(lat*PI/180.0,declin);
+      rad   =CRadiation::CalcETRadiation(lat*PI/180.0,lat*PI/180.0,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
       CST<<day<<","<<lat<<","<<rad<<endl;
     }
   }
@@ -239,7 +239,7 @@ void OpticalAirMassTest()
     {
     cout<<dec<<endl;
     for (lat=0;lat<90;lat+=latstep){
-    OM=OpticalAirMass(lat*PI/180,dec*PI/180,0.0,true);
+    OM=OpticalAirMass(lat*PI/180.0,dec*PI/180.0,0.0,true);
     OAM<<dec<<","<<lat<<","<<OM<<endl;
     }
     }*/
@@ -261,9 +261,9 @@ void OpticalAirMassTest()
       cout<<tt.month<<endl;
       double day_angle =CRadiation::DayAngle(jday,1999);
       dec=CRadiation::SolarDeclination(day_angle);
-      double day_length = CRadiation::DayLength(lat*PI/180,dec*PI/180);
+      double day_length = CRadiation::DayLength(lat*PI/180.0,dec*PI/180.0);
       double tsol=t-floor(t)-0.5;
-      double OM=CRadiation::OpticalAirMass(lat*PI/180,dec*PI/180,day_length,tsol,false);
+      double OM=CRadiation::OpticalAirMass(lat*PI/180.0,dec*PI/180.0,day_length,tsol,false);
       OAM<<tt.date_string<<","<<t<<","<<tsol<<","<<dec<<","<<OM<<",";
       OAM<<CRadiation::OpticalAirMass(lat*PI/180,dec,day_length,tsol,true)<<endl;
     }
@@ -279,28 +279,85 @@ void OpticalAirMassTest()
 void ShortwaveTest()
 {
   ofstream SHORT;
-  SHORT.open("ShortwaveTest.csv");
+  SHORT.open("ShortwaveTest_ET.csv");
+  if(SHORT.fail()){ ExitGracefully("cannot open file.",BAD_DATA); }
   int year=2001; //no leap year
   double SW;
-  double slope=0.0;//15*PI/180;
-  double aspect=0.0;//180*PI/180;//east facing=90 south facing=180...
+  double slope;
+  double aspect;
   double dew_pt=GetDewPointTemp(10,0.5);
   double ET_rad;
-  double day_angle, declin, ecc, day_length;
-  //double elev=0.0;
+  double day_angle,declin,ecc,day_length;
+  double latrad;
+  double SW2(0),lateq,solar_noon;
+  double tstep=1.0;
 
-  double SW2;
-  for (double day=0;day<365;day++){
-    for (double lat=0;lat<90;lat+=1.0){
-      day_angle=CRadiation::DayAngle(day,year);
-      declin=   CRadiation::SolarDeclination(day_angle);
-      ecc   = CRadiation::EccentricityCorr(day_angle);
-      day_length = CRadiation::DayLength(lat*PI/180,declin);
-      SW=CRadiation::ClearSkySolarRadiation(day,lat,lat,slope,day_angle,day_length,aspect,dew_pt,ET_rad,true);
-      SW2=0.0;//CRadiation::UBC_SolarRadiation(day,year,lat,elev,true);
-      SHORT<<day<<","<<lat<<","<<SW<<","<<SW2<<endl;
+  //header
+  //double lat=39.7555; //Golden colorado
+  //double lat=44.0521; //Eugene oregon
+  double lat=45;
+
+  latrad=lat*PI/180.0;
+  SHORT<<"doy,";
+  for(double a=0;a<=270; a+=90){
+    for(double s=0;s<=90;s+=15.0){
+      SHORT<<"slope_"<<s<< "(asp="<<a<<"),";
     }
   }
+  double conv=MJ_PER_D_TO_WATT;
+  SHORT<<endl;
+  for (double day=0;day<365;day+=tstep){
+    SHORT<<day<<",";
+    //These aren't impacted by slope / aspect, and are OK
+    day_angle  = CRadiation::DayAngle(day,year);
+    declin     = CRadiation::SolarDeclination(day_angle);
+    ecc        = CRadiation::EccentricityCorr(day_angle);
+    day_length = CRadiation::DayLength(latrad,declin);
+    for(double a=0;a<=270; a+=90){
+      aspect=a*PI/180;//conv to rads
+      for(double s=0;s<=90;s+=15.0){
+        slope=s*PI/180.0;//conv to rads
+        lateq      = CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
+        solar_noon = CRadiation::CalculateSolarNoon    (latrad,slope,aspect); //relative to actual location
+        
+        SW=CRadiation::ClearSkySolarRadiation(day,latrad,lateq,slope,day_angle,day_length,solar_noon,dew_pt,ET_rad,(tstep==1.0));
+        SW=ET_rad;
+        SHORT<<SW*conv<<",";
+        //SHORT<<solar_noon*12/PI<<","; //report solar noon, in hrs
+        //SHORT<<solar_noon*12/PI<<","; //generate solar noon
+      }
+    }
+    SHORT<<endl;
+  }
+
+
+//check against Lee, 1964: confirms that dingman E23 is correct and Lee eqn 6 is wrong (asin, not acos)
+  cout<<"test1: (should be 26.21666667	28.83333333)"<<endl;
+  latrad=37.76666667*PI/180; aspect=-336.0*PI/180.0; slope=31.33333333*PI/180;
+  lateq=CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
+  solar_noon=CRadiation::CalculateSolarNoon(latrad,slope,aspect);
+  cout<<-(latrad-lateq)*180.0/PI<<" "<<solar_noon*EARTH_ANG_VEL*180.0/PI<<endl;
+
+  cout<<"test2: (should be -22.83333333	-28.93333333)"<<endl;
+  latrad=37.76666667*PI/180;	aspect=-124*PI/180.0;	slope=34.33333333*PI/180.0;
+  CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
+  solar_noon=CRadiation::CalculateSolarNoon(latrad,slope,aspect);
+  cout<<-(latrad-lateq)*180.0/PI<<" "<<solar_noon*EARTH_ANG_VEL*180.0/PI<<endl;
+
+  cout<<"test3: (should be 30.06666667	-40.83333333)"<<endl;
+  latrad=37.76666667*PI/180;	aspect=-24*PI/180.0;	slope=37.5*PI/180.0;
+  CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
+  solar_noon=CRadiation::CalculateSolarNoon(latrad,slope,aspect);
+  cout<<-(latrad-lateq)*180.0/PI<<" "<<solar_noon*EARTH_ANG_VEL*180.0/PI<<endl;
+
+  cout<<"test4: (should be -23.33333333	-21.3)"<<endl;
+  latrad=37.76666667*PI/180;	aspect=-135*PI/180.0;	slope=30*PI/180.0;
+  CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
+  solar_noon=CRadiation::CalculateSolarNoon(latrad,slope,aspect);
+  cout<<-(latrad-lateq)*180.0/PI<<" "<<solar_noon*EARTH_ANG_VEL*180.0/PI<<endl;
+
+
+
 
   //---------------------------------------------------
   // testing hourly for each month:
@@ -389,7 +446,7 @@ void ShortwaveGenerator()
 
     TIR  =CRadiation::ClearSkySolarRadiation(day,latrad,lateq,tan(slope),day_angle,day_length,solar_noon,dew_pt,ET_rad,false);
 
-    SHORT<<day<<","<<year<<","<<latrad*180/PI<<","<<tan(slope)<<","<<aspect*180/PI;
+    SHORT<<day<<","<<year<<","<<latrad*180.0/PI<<","<<tan(slope)<<","<<aspect*180/PI;
     SHORT<<","<<declin<<","<<ecc<<","<<t_sol<<",";
     SHORT<<albedo<<","<<dew_pt<<","<<Mopt<<","<<Ketp<<","<<Ket<<","<<TIR<<endl;
   }

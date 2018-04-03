@@ -46,6 +46,7 @@ void MassEnergyBalance( CModel            *pModel,
   static double    **aMoutnew;    //[mg/d] final mass output from reach segment seg at time t+dt [size= MAX_RIVER_SEGS  x nConstituents ]
   static double    **aRoutedMass; //[mg/d] amount of mass [size= _nSubBasins xnConstituents]
   static double     *aResMass;    //[mg]   amount of mass in reservoir [size= nConstitutents]
+  static double     *aMassOutflow;//[mg/d] rate of mass outflow from subbasin at time t+dt [size=nConstituents]
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
@@ -85,6 +86,7 @@ void MassEnergyBalance( CModel            *pModel,
     aMoutnew    =NULL;
     aRoutedMass =NULL;
     aResMass    =NULL;
+    aMassOutflow=NULL;
     if (nConstituents>0)
     {
       aMinnew     =new double *[NB];
@@ -104,6 +106,7 @@ void MassEnergyBalance( CModel            *pModel,
         ExitGracefullyIf(aMoutnew[i]==NULL,"MassEnergyBalance(4)",OUT_OF_MEMORY);
       }
       aResMass=new double [nConstituents];
+      aMassOutflow=new double [nConstituents];
     }
 
     if(Options.sol_method==ITERATED_HEUN)
@@ -389,6 +392,7 @@ void MassEnergyBalance( CModel            *pModel,
   }
   //Route water over timestep
   //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
+  double down_Q;
   for (pp=0;pp<NB;pp++)
   {
     p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index
@@ -400,7 +404,9 @@ void MassEnergyBalance( CModel            *pModel,
 
       aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
       pBasin->SetInflow(aQinnew[p]);
-      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
+
+      down_Q=pBasin->GetDownstreamInflow(t+tstep);
+      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 
       pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,Options,tt);      //Where everything happens!
 
@@ -421,7 +427,6 @@ void MassEnergyBalance( CModel            *pModel,
   //determine total mass loading from HRUs into respective basins (aRoutedMass[p])
   if (nConstituents>0)
   {
-    
     for (p=0;p<NB;p++){
       for (c=0;c<nConstituents;c++){
         aRoutedMass[p][c]=0.0;
@@ -439,7 +444,7 @@ void MassEnergyBalance( CModel            *pModel,
         {
           int iSWmass =pModel->GetStateVarIndex(CONSTITUENT,pModel->GetTransportModel()->GetLayerIndex(c,iSW));
           aRoutedMass[p][c]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//aRoutedMass=[mg/d]
-          aPhinew[k][iSWmass]=0.0;
+          aPhinew[k][iSWmass]=0.0; //empty out
         }
       }
     }
@@ -457,13 +462,13 @@ void MassEnergyBalance( CModel            *pModel,
         pModel->GetTransportModel()->SetMassInflows    (p,aMinnew[p]);
         pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]); 
         pModel->GetTransportModel()->RouteMass         (p,aMoutnew,aResMass,Options,tt);  //Where everything happens!
-        pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,aResMass,Options,tt,false); //actually updates mass flow values here
+        pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,aResMass,aMassOutflow, Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)
         {
           for(int c=0;c<nConstituents;c++){
-            aMinnew[pTo][c]+=aMoutnew[pBasin->GetNumSegments()-1][c];
+            aMinnew[pTo][c]+=aMassOutflow[c];
           }
         }
       }
@@ -549,6 +554,7 @@ void MassEnergyBalance( CModel            *pModel,
     delete [] aRoutedMass;  aRoutedMass =NULL;
     delete [] aMoutnew;     aMoutnew    =NULL;
     delete [] aResMass;
+    delete [] aMassOutflow;
   }
 }
 

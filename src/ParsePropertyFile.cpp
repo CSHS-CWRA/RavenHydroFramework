@@ -1085,11 +1085,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     case (704):  //----------------------------------------------
     {/*:WetAdiabaticLapse       
-       string ":WetAdiabaticLapse" [wet adiabatic lapse rate]  [A0PPTP] */
+       string ":WetAdiabaticLapse" [wet adiabatic lapse rate]  {A0PPTP} */
       if (Options.noisy){cout <<"UBC Precipitation Wet Adiabatic Lapse Rate Params"<<endl;}
-      if (Len<3){p->ImproperFormat(s); break;}
+      if (Len<2){p->ImproperFormat(s); break;}
       parsed_globals.wet_adiabatic_lapse =s_to_d(s[1]);
-      parsed_globals.UBC_lapse_params.A0PPTP =s_to_d(s[2]);
+      if(Len>=3){
+        parsed_globals.UBC_lapse_params.A0PPTP =s_to_d(s[2]);
+      }
       break;
     }
     case (705):  //----------------------------------------------

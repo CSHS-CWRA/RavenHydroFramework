@@ -235,7 +235,7 @@ const double  SMALL_ROOT_DENS  =0.00001;///< [mm/mm3] essentially negligible roo
 const double  SMALL_ROOT_LENGTH=0.1;    ///< [m] essentially negligible root length
 const double  SMALL_FLOWRATE   =0.0001; ///< [m3/s] essentially negligible flow rate
 const double  TIME_CORRECTION  =0.0001; ///< [d] offset for time series min/max functions
-
+const double  DEFAULT_MAX_REACHLENGTH=10000; ///< [km] very large maximum reach length (defaults to single segment per reach)
 //*****************************************************************
 //Exit Strategies
 //*****************************************************************
@@ -562,7 +562,14 @@ enum recharge_method
   RECHARGE_DATA        ///< recharge from (usually gridded) data (e.g., from other model)
 };
 
-
+////////////////////////////////////////////////////////////////////
+/// \brief Methods of estimating/generating net shortwave radiation
+//
+enum netSWRad_method
+{
+   NETSWRAD_DATA,     ///< data supplied
+   NETSWRAD_CALC      ///< determined via calculations
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of performing monthly interpolations
 //
@@ -647,9 +654,10 @@ enum sv_type
   SNOW,           ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
   NEW_SNOW,       ///< [mm] new snowfall waiting to be handled by snow balance
   SNOW_LIQ,       ///< [mm] liquid snow cover
-  WETLAND,        ///< [mm] deep depression storage
+  WETLAND,        ///< [mm] deep wetland depression storage
   GLACIER,        ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,    ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
+  LAKE_STORAGE,   ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
 
   CONVOLUTION,    ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
   CONV_STOR,      ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
@@ -743,7 +751,7 @@ enum process_type
   CROP_HEAT_UNIT_EVOLVE,
 
   //in DepressionProcesses.h
-  ABSTRACTION, DEPRESSION_OVERFLOW, SEEPAGE,
+  ABSTRACTION, DEPRESSION_OVERFLOW, SEEPAGE, LAKE_RELEASE,
 
   //in Advection.h
   ADVECTION, LAT_ADVECTION,
@@ -802,6 +810,7 @@ struct optStruct
   SW_method        SW_radiation;      ///< shortwave radiation estimation method
   SW_cloudcover_corr SW_cloudcovercorr;///<method for cloudcover correction of shortwave radiation
   SW_canopy_corr   SW_canopycorr;     ///< method for estimating canopy transmittance of shortwave radiation
+  netSWRad_method  SW_radia_net;      ///< method for calculating net shortwave radiation (calculated or data)
   evap_method      evaporation;       ///< PET estimation method
   evap_method      ow_evaporation;    ///< Open Water PET estimation method
   relhum_method    rel_humidity;      ///< Relative humidity estimation method
@@ -1163,8 +1172,9 @@ inline bool          s_to_bool (const char *s1)   {
 /// \return true if string is numeric
 /// \note possible (rare) exception: 00BAQ, or other string starting with 0
 //
+double fast_s_to_d             (const char *s);
 inline bool          is_numeric(const char *s1){
-  if ((s_to_d(s1) == 0.0) && (s1[0] != '0')){return false;} //likely numeric
+  if ((fast_s_to_d(s1) == 0.0) && (s1[0] != '0')){return false;} //likely numeric
   return true;
 }
 

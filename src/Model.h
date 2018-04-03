@@ -198,8 +198,8 @@ private:/*------------------------------------------------------*/
   void         GenerateRainFromPrecip                   (const optStruct &Options);
   void         GenerateZeroSnow                         (const optStruct &Options);
 
-  bool         ForcingGridIsInput                       (const string forcing_grid_name) const;
-  bool         ForcingGridIsAvailable                   (const string forcing_grid_name) const;
+  bool         ForcingGridIsInput                       (const forcing_type &ftype) const;
+  bool         ForcingGridIsAvailable                   (const forcing_type &ftype) const;
   double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
 
@@ -245,7 +245,7 @@ public:/*-------------------------------------------------------*/
   CSubBasin        *GetSubBasinByID                   (const long ID) const;
   CHydroProcessABC *GetProcess                        (const int j ) const;
   CGauge           *GetGauge                          (const int g) const;
-  CForcingGrid     *GetForcingGrid                    (const int f) const;
+  CForcingGrid     *GetForcingGrid                    (const forcing_type &ftype) const;
   int               GetNumGauges                      () const;
   int               GetNumForcingGrids                () const;
   int               GetNumProcesses                   () const;
@@ -257,7 +257,8 @@ public:/*-------------------------------------------------------*/
   int               GetDownstreamBasin                (const int p ) const;
   int               GetSubBasinIndex                  (const long ID) const;
   int               GetGaugeIndexFromName             (const string name) const;
-  int               GetForcingGridIndexFromName       (const string name) const;
+  int               GetForcingGridIndexFromType       (const forcing_type &ty) const;
+
   double            GetWatershedArea                  () const;
   bool              IsInHRUGroup                      (const int k,
                                                        const string HRUGroupName) const;
@@ -301,7 +302,6 @@ public:/*-------------------------------------------------------*/
   void    SetNumSnowLayers          (const int                nLayers           );
 
   void              OverrideStreamflow   (const long SBID);
-  void              OverrideReservoirFlow(const long SBID);
 
   /*--Other Functions: mostly called by Solver--*/
   //called only once prior to simulation:

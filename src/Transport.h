@@ -76,8 +76,12 @@ private:/*------------------------------------------------------*/
   double ***_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] [size: nSubBasins x _nConstituents x nMlathist(p)]
   double ***_aMout;                   ///< array storing current mass flow at points along channel [mg/d] [size: nSubBasins x _nConstituents x _nSegments(p)]
   double  **_aMout_last;              ///< array used for storing mass outflow from channel at start of timestep [mg/d] [size: nSubBasins x _nConstituents] 
+
   double  **_aMres;                   ///< array used for storing reservoir masses [mg] [size: nSubBasins x _nConstituents]
-  double  **_aMres_last;              ///< array storing reservoir mass [m] as start of timestep [size: nSubBasins x _nConstituents]
+  double  **_aMres_last;              ///< array storing reservoir mass [mg] at start of timestep [size: nSubBasins x _nConstituents]
+  double  **_aMout_res;               ///< array storing reservoir mass outflow [mg/d] [size: nSubBasins x _nConstituents]
+  double  **_aMout_res_last;          ///< array storing reservoir mass outflow [mg/d] at start of timestep  [size: nSubBasins x _nConstituents]
+
   double  **_aMlat_last;              ///< array storing mass outflow from start of timestep [size: nSubBasins x _nConstituents]
 
   double  **_channel_storage;         ///< array storing channel storage [mg] [size: nSubBasins x _nConstituents] 
@@ -166,7 +170,7 @@ public:/*-------------------------------------------------------*/
   void   SetMassInflows    (const int p, const double *aMinnew);
   void   SetLateralInfluxes(const int p, const double *aRoutedMass);
   void   RouteMass         (const int p,       double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt) const;
-  void   UpdateMassOutflows(const int p,       double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt,bool initialize);
+  void   UpdateMassOutflows(const int p,       double **aMoutnew, double *aResMass, double *aResMassOutflow, const optStruct &Options,const time_struct &tt,bool initialize);
 
   void   WriteOutputFileHeaders     (const optStruct &Options) const;
   void   WriteMinorOutput           (const optStruct &Options, const time_struct &tt) const;

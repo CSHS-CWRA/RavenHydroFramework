@@ -949,9 +949,9 @@ void CForcingGrid::CellIdxToRowCol(const int cellid, int &row, int &column)
 ///
 /// \param forcingtype  [in] string of forcing type, e.g. PRECIP
 //
-void CForcingGrid::SetForcingType(const string ForcingType)
+void CForcingGrid::SetForcingType(const forcing_type &ForcingType)
 {
-  _ForcingType=GetForcingTypeFromString(ForcingType);
+  _ForcingType=ForcingType;
 }
 
 ///////////////////////////////////////////////////////////////////

@@ -132,7 +132,46 @@ public:/*-------------------------------------------------------*/
                         double      *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-  static void GetParticipatingStateVarList(abstraction_type  snalbtype,
+  static void GetParticipatingStateVarList(abstraction_type  absttype,
+                                           sv_type *aSV,
+                                           int     *aLev,
+                                           int     &nSV);
+};
+///////////////////////////////////////////////////////////////////
+/// \brief Method of calculating release of lake storage into surface water
+//
+enum lakerel_type{
+  LAKEREL_LINEAR   ///< linear loss/gain rate
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief calculates release of lake storage into surface water
+//
+class CmvLakeRelease: public CHydroProcessABC
+{
+private:/*------------------------------------------------------*/
+  lakerel_type type; ///< Model of abstaction selected
+
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvLakeRelease(const lakerel_type absttype);
+  ~CmvLakeRelease();
+
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double      *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &t,
+                        double      *rates) const;
+
+  void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
+  static void GetParticipatingStateVarList(lakerel_type  lr_type,
                                            sv_type *aSV,
                                            int     *aLev,
                                            int     &nSV);

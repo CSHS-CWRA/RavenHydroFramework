@@ -21,19 +21,19 @@
 /// \param Qreference [in] Reference flow [m^3/s] [or AUTO_COMPUTE]
 /// \param gaged      [in] If true, hydrographs are generated
 //
-CSubBasin::CSubBasin( const long                                 Identifier,
-                      const string         Name,
-                      const CModelABC                   *pMod,
-                      const long                                 down_ID,     //index of downstream SB, if <0, downstream outlet
-                      const CChannelXSect *pChan,                               //Channel
-                      const double         reach_len,   //reach length [m]
-                      const double         Qreference,  //reference flow, m3/s [or AUTO_COMPUTE]
-                      const bool           gaged)       //if true, hydrographs are generated
+CSubBasin::CSubBasin(const long           Identifier,
+  const string         Name,
+  const CModelABC     *pMod,
+  const long           down_ID,     //index of downstream SB, if <0, downstream outlet
+  const CChannelXSect *pChan,                               //Channel
+  const double         reach_len,   //reach length [m]
+  const double         Qreference,  //reference flow, m3/s [or AUTO_COMPUTE]
+  const bool           gaged)       //if true, hydrographs are generated
 {
   ExitGracefullyIf(pMod==NULL,
-                   "CSubBasin:Constructor: NULL model",BAD_DATA);
+    "CSubBasin:Constructor: NULL model",BAD_DATA);
   ExitGracefullyIf(((Qreference<=0.0) && (Qreference!=AUTO_COMPUTE)),
-                   "CSubBasin::Constructor: Reference flow must be non-zero and positive (or _AUTO)",BAD_DATA);
+    "CSubBasin::Constructor: Reference flow must be non-zero and positive (or _AUTO)",BAD_DATA);
 
   _pModel            =pMod;
 
@@ -55,10 +55,24 @@ CSubBasin::CSubBasin( const long                                 Identifier,
   _rain_corr         =1.0;
   _snow_corr         =1.0;
 
-  _nSegments         =1;//0;
-  ExitGracefullyIf(_nSegments>MAX_RIVER_SEGS,
-                   "CSubBasin:Constructor: exceeded maximum river segments",BAD_DATA);
+  // estimate reach length if needed
+  //------------------------------------------------------------------------
 
+  double max_len=CGlobalParams::GetParams()->max_reach_seglength*M_PER_KM;
+
+  if((_reach_length==AUTO_COMPUTE) && (max_len/M_PER_KM<0.99*DEFAULT_MAX_REACHLENGTH))
+  {
+    string warn="Basin "+to_string(_ID)+" with _AUTO reach length will be assigned a single reach segment; to override, specify a specific reach length";
+    WriteWarning(warn.c_str(),BAD_DATA_WARN);
+    _nSegments = 1;
+  }
+  else{
+    _nSegments = max((int)(ceil(_reach_length/max_len)),1);
+  }
+
+  string warn="CSubBasin:Constructor: exceeded maximum river segments in basin " +to_string(_ID)+": MAX_REACH_SEGLENGTH may be too small";
+  if(_nSegments>MAX_RIVER_SEGS){ WriteWarning(warn,true); _nSegments=MAX_RIVER_SEGS-1; }
+  
   _downstream_ID     =down_ID;
   if (_downstream_ID<0){_downstream_ID=DOESNT_EXIST;}//outflow basin
   _gauged            =gaged;
@@ -89,6 +103,7 @@ CSubBasin::CSubBasin( const long                                 Identifier,
 
   //initialized in SetInflowHydrograph
   _pInflowHydro  =NULL;
+  _pInflowHydro2 =NULL;
 
   _Q_ref     =Qreference;
   _c_ref     =AUTO_COMPUTE;
@@ -325,7 +340,16 @@ double CSubBasin::GetSpecifiedInflow(const double &t) const
   if (_pInflowHydro==NULL){return 0.0;}
   return _pInflowHydro->GetValue(t);
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns specified downstream inflow to subbasin at time t
+/// \param &t [in] Model time at which the inflow to SB is to be determined
+/// \return specified inflow to subbasin at time t
+//
+double CSubBasin::GetDownstreamInflow(const double &t) const
+{
+  if (_pInflowHydro2==NULL){return 0.0;}
+  return _pInflowHydro2->GetValue(t);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel storage [m^3]
 /// \note Should only be called after _aQinHist has been updated by calling SetInflow
@@ -415,7 +439,10 @@ double CSubBasin::GetIntegratedReservoirInflow(const double &tstep) const
 double CSubBasin::GetIntegratedSpecInflow(const double &t, const double &tstep) const//[m3]
 {
   //used in mass balance to estimate water gain from unmodeled upstream sources
-  return 0.5*(GetSpecifiedInflow(t)+GetSpecifiedInflow(t+tstep))*(tstep*SEC_PER_DAY); //integrated
+  double sum=0.0; 
+  sum+=0.5*(GetSpecifiedInflow(t) +GetSpecifiedInflow (t+tstep))*(tstep*SEC_PER_DAY); //integrated
+  sum+=0.5*(GetDownstreamInflow(t)+GetDownstreamInflow(t+tstep))*(tstep*SEC_PER_DAY); //integrated
+  return sum;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reference discharge [m^3]
@@ -492,7 +519,16 @@ void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
                    "CSubBasin::AddInflowHydrograph: only one inflow hydrograph may be specified per basin",BAD_DATA);
   _pInflowHydro=pInflow;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Adds inflow hydrograph
+/// \param *pInflow Inflow time series to be added
+//
+void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
+{
+  ExitGracefullyIf(_pInflowHydro2!=NULL,
+                   "CSubBasin::AddDownstreamInflow: only one inflow hydrograph may be specified per basin",BAD_DATA);
+  _pInflowHydro2=pInflow;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds reservoir extraction
 /// \param *pOutflow Outflow time series [m3/s] to be added
@@ -530,6 +566,71 @@ void CSubBasin::AddMaxStageTS(CTimeSeries *pMaxStage)
   }
   else{
     WriteWarning("Reservoir maximum stage time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum stage time series
+/// \param *pMS minimum stage time series [m]
+//
+void CSubBasin::AddMinStageTimeSeries(CTimeSeries *pMS)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddMinStageTimeSeries(pMS);
+  }
+  else{
+    WriteWarning("Reservoir minimum stage time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum stage flow time series 
+/// \param *pQ minimum stage flow time series [m3/s]
+//
+void CSubBasin::AddMinStageFlowTimeSeries(CTimeSeries *pQ)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddMinStageFlowTimeSeries(pQ);
+  }
+  else{
+    WriteWarning("Reservoir minimum stage flow time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds target stage time series 
+/// \param *pTS target stage flow time series [m3/s]
+//
+void CSubBasin::AddTargetStageTimeSeries(CTimeSeries *pTS)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddTargetStageTimeSeries(pTS);
+  }
+  else{
+    WriteWarning("Reservoir target stage time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds maximum flow increase time series 
+/// \param *pQ maximum flow increase time series [m3/s/d]
+//
+void CSubBasin::AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddMaxQIncreaseTimeSeries(pQdelta);
+  }
+  else{
+    WriteWarning("Reservoir maximum flow increase time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds overridden flow time series
+/// \param *pQ overridden flow time series [m3/s] to be added
+//
+void CSubBasin::AddOverrideFlowTS(CTimeSeries *pQ)
+{
+  if (_pReservoir!=NULL){
+    _pReservoir->AddOverrideQTimeSeries(pQ);
+  }
+  else{
+    WriteWarning("Override flow time series specified for basin without reservoir",false);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -720,14 +821,12 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
       ResetReferenceFlow(_Q_ref);
     }
-
-
-    // estimate reach length if needed
-    //------------------------------------------------------------------------
+    
     if (_reach_length==AUTO_COMPUTE)
     {
-      //_reach_length =0.6581*pow(_basin_area,1.0317)*M_PER_KM;//[m] // \ref B. Annable, personal comm, 2009 (units wrong?)
       _reach_length =pow(_basin_area,0.67)*M_PER_KM;//[m] // \ref from Grand river data, JRC 2010
+      string advice="Reach length in basin " +to_string(_ID)+" was estimated from basin area to be "+to_string(_reach_length/M_PER_KM) +" km. (this will not be used in headwater basins)" ;
+      WriteAdvisory(advice,false);
     }
 
     //estimate avg annual flow due to rainfall in this basin & upstream flows
@@ -808,9 +907,11 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   if (_pReservoir!=NULL){
     _pReservoir->Initialize(Options);
   }
-
   if (_pInflowHydro != NULL){
-    _pInflowHydro->Initialize(Options.julian_start_day ,Options.julian_start_year,Options.duration,Options.timestep,false);
+    _pInflowHydro->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false);
+  }
+  if (_pInflowHydro2 != NULL){
+    _pInflowHydro2->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false);
   }
 
   //Check Muskingum parameters, if necessary
@@ -949,6 +1050,10 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
       sum+=_aRouteHydro[n];
     }
     _aRouteHydro[_nQinHist-1]=0.0;//must truncate infinite distrib.
+    if(_reach_length==0.0){
+      _aRouteHydro[0]=1.0;
+      for (n=1;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
+    }
   }
   //---------------------------------------------------------------
   else

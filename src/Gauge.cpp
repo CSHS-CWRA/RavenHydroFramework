@@ -164,7 +164,7 @@ void CGauge::Initialize(const optStruct   &Options,
         if(val==CTimeSeriesABC::BLANK_DATA){
           ExitGracefully("CGauge::Initialize: Raven cannot have blank data in precipitation time series",BAD_DATA);
         }
-        if((val<-REAL_SMALL) || (val>10000)){
+        if((val<-1e-6) || (val>10000)){
           cout<<GetName()<<" "<<nn<<" "<<val<<endl;
           ExitGracefully("CGauge::Initialize: negative or excessively large (>10000mm/d) precipitation intensity reported at gauge",BAD_DATA);
         }
@@ -205,7 +205,7 @@ void CGauge::Initialize(const optStruct   &Options,
 
 
   WarnAboutForcing(Options.SW_radiation==SW_RAD_DATA,F_SW_RADIA);
-  // WarnAboutForcing(Options.SW_radiation_net==SW_RAD_NET_DATA,F_SW_RADIA_NET);
+  WarnAboutForcing(Options.SW_radia_net==NETSWRAD_DATA,F_SW_RADIA_NET);
   WarnAboutForcing(Options.LW_radiation==LW_RAD_DATA,F_LW_RADIA);
   WarnAboutForcing(Options.cloud_cover==CLOUDCOV_DATA,F_CLOUD_COVER);
   WarnAboutForcing(Options.ow_evaporation ==PET_DATA,F_OW_PET);

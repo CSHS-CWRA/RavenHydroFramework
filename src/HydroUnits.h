@@ -41,20 +41,21 @@ private:/*------------------------------------------------------*/
 
   //property structures (from soil, veg, aq, surface classes, class-specific)
   double                _AvgElevation;  ///< average elevation of HRU [masl]
-  double                   _AvgAspect;  ///< average terrain aspect [rad]
+  double                   _AvgAspect;  ///< average terrain aspect [rad counterclockwise from north]
   double                    _AvgSlope;  ///< average terrain slope [rad]
 
-  double                                                    _LatRad;  ///< latitude of centroid [rad]
-  double                                                           _LatEq;  ///< equivalent latitude for slope/aspect  [rad]
-  double                                                 _SolarNoon;  ///< effective solar noon correction for slope [days]
+  double                      _LatRad;  ///< latitude of centroid [rad]
+  double                       _LatEq;  ///< equivalent latitude for slope/aspect  [rad]
+  double                   _SolarNoon;  ///< effective solar noon correction for slope [days]
 
-  double                                                _PrecipMult; ///< HRU-specific precipitation correction factor
+  double                  _PrecipMult; ///< HRU-specific precipitation correction factor
 
   const soil_struct           *_pSoil[MAX_SOILLAYERS];     //< array of pointers to structures with profile soil properties
   const soil_struct        *pAquifers[MAX_AQUIFER_LAYERS]; //< array of pointers to structures with aquifer layer properties
   //const soil_struct      *pAquitard[MAX_AQUIFER_LAYERS]; //< /todo Add aquitard information
+
   const veg_struct             *_pVeg;  //< pointer to structure with vegetation properties
-  const CVegetationClass * pVegetation;  //< pointer to corresponding vegetation class (not currently used)
+  const CVegetationClass *pVegetation;  //< pointer to corresponding vegetation class (not currently used)
   const surface_struct     *_pSurface;  //< pointer to structure with land use/land type properties
   const terrain_struct     *_pTerrain;  //< pointer to structure with terrain properties
 
@@ -79,7 +80,7 @@ public:/*-------------------------------------------------------*/
              const double            Latitude,         //decimal lat,long
              const double            Longitude,
              const double            slope,            //[rad]
-             const double            aspect,           //[rad from north]
+             const double            aspect,           //[rad counterclockwise from north]
              const HRU_type          type,
              const CSoilProfile     *soil_profile,     //soil profile
              const CVegetationClass *veg_class,        //vegetation class
@@ -146,9 +147,9 @@ public:/*-------------------------------------------------------*/
   double                 GetTotalAlbedo       () const;
 
   //Manipulator functions (used in parser)
-  void          Disable                 ();
-  void          Enable                  ();
-  void          LinkToReservoir         (const long SBID);
+  void                   Disable              ();
+  void                   Enable               ();
+  void                   LinkToReservoir      (const long SBID);
 
   //Manipulator functions (used in initialization)
   void          Initialize              (const int UTM_zone);

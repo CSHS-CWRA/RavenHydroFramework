@@ -29,11 +29,9 @@ bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if(pObs==NULL){return false;}
-  return (
-    (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")) && //name ="HYDROGRAPH"
-    (s_to_l(pObs->GetTag().c_str()) == SBID) &&        //SBID is correct
-    (pObs->GetType() == CTimeSeriesABC::ts_regular)    //not irregular time series
-    );
+  if (s_to_l(pObs->GetTag().c_str()) != SBID){ return false; }//SBID is correct
+  if(pObs->GetType() != CTimeSeriesABC::ts_regular){ return false; }
+  return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the reservoir stage series for subbasin SBID
@@ -49,6 +47,21 @@ bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
     (s_to_l(pObs->GetTag().c_str()) == SBID) &&
     (pObs->GetType() == CTimeSeriesABC::ts_regular)
     );
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if specified observation time series is the reservoir inflow series for subbasin SBID
+/// \param pObs [in] observation time series
+/// \param SBID [in] subbasin ID
+//
+bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
+{
+	// clears up  terribly ugly repeated if statements
+	if (pObs == NULL) { return false; }
+	return (
+		(!strcmp(pObs->GetName().c_str(), "RESERVOIR_INFLOW")) &&
+		(s_to_l(pObs->GetTag().c_str()) == SBID) &&
+		(pObs->GetType() == CTimeSeriesABC::ts_regular)
+		);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds output directory & prefix to base file name
@@ -749,7 +762,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
 	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
 	              if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
-	              else                                                         { RES_STAGE << ", ";       }
+	              else                                                         { RES_STAGE << ",";       }
 	            }
 	          }
 	        }

@@ -40,8 +40,14 @@ private:/*-------------------------------------------------------*/
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
   CTimeSeries *_pExtractTS;          ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
+
   CTimeSeries *_pWeirHeightTS;       ///< Time series of weir heights [m] (or NULL for fixed weir height)
-  CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m]
+  CTimeSeries *_pMaxStageTS;         ///< Time series of rule curve upper stage constraint [m] (or NULL for no maximum stage)
+  CTimeSeries *_pOverrideQ;          ///< Time series of overrride flows [m3/s] (or NULL for no override)
+  CTimeSeries *_pMinStageTS;         ///< Time series of minimum stage [m] (or NULL for no minimum)
+  CTimeSeries *_pMinStageFlowTS;     ///< Time series of flows when below minimum stage [m3/s] (or NULL for no minimum)
+  CTimeSeries *_pTargetStageTS;      ///< Time series of target stage [m] (or NULL for no target)
+  CTimeSeries *_pMaxQIncreaseTS;     ///< Time series maximum rate of flow increase [m3/s/d] (or NULL for no maximum)
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -58,7 +64,8 @@ private:/*-------------------------------------------------------*/
 
   int          _Np;                   ///< number of points on rating curves
   double      *_aStage;              ///< Rating curve for stage elevation [m]
-  double      *_aQ;                  ///< Rating curve for flow rates [m3/s]
+  double      *_aQ;                  ///< Rating curve for overflow (e.g., weir) flow rates [m3/s]
+  double      *_aQunder;             ///< Rating curve for underflow/orifice flow (if specified; 0 by default) [m3/s]
   double      *_aArea;               ///< Rating curve for surface area [m2]
   double      *_aVolume;             ///< Rating curve for storage volume [m3]
 
@@ -79,11 +86,11 @@ public:/*-------------------------------------------------------*/
              const double a_A, const double b_A);
   CReservoir(const string name, const long SubID, const res_type typ,
              const double *a_ht,
-             const double *a_Q, const double *a_A, const double *a_V,
+             const double *a_Q, const double *aQ_und,const double *a_A, const double *a_V,
              const int     nPoints);
   CReservoir(const string Name, const long SubID, const res_type typ,
              const int nDates, const int *aDates, const double *a_ht,
-             double **a_QQ, const double *a_A, const double *a_V,
+             double **a_QQ, const double *aQ_und, const double *a_A, const double *a_V,
              const int     nPoints);
   CReservoir(const string Name, const long SubID, const res_type typ, const double weircoeff, //Lake constructor
              const double crestw, const double crestht, const double A, const double depth);
@@ -108,6 +115,12 @@ public:/*-------------------------------------------------------*/
   void              AddExtractionTimeSeries(CTimeSeries *pOutflow);
   void              AddWeirHeightTS        (CTimeSeries *pWeirHt);
   void              AddMaxStageTimeSeries  (CTimeSeries *pMS);
+  void              AddOverrideQTimeSeries (CTimeSeries *pQ);
+  void              AddMinStageTimeSeries  (CTimeSeries *pMS);
+  void            AddMinStageFlowTimeSeries(CTimeSeries *pQ);
+  void             AddTargetStageTimeSeries(CTimeSeries *pTS);
+  void            AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+
   void              SetHRU                 (const CHydroUnit *pHRU);
   void              DisableOutflow         ();
 

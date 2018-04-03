@@ -58,15 +58,15 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_recharge   = NULL;
 
   // see if gridded forcing is read from a NetCDF
-  bool pre_gridded            = ForcingGridIsInput("PRECIP")         ;
-  bool rain_gridded           = ForcingGridIsInput("RAINFALL")       ;
-  bool snow_gridded           = ForcingGridIsInput("SNOWFALL")       ;
-  bool pet_gridded            = ForcingGridIsInput("PET")            ;
-  bool temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE")       ;
-  bool temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN") ;
-  bool temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX") ;
-  bool temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE") ;
-  bool recharge_gridded       = ForcingGridIsInput("RECHARGE")       ;
+  bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
+  bool rain_gridded           = ForcingGridIsInput(F_RAINFALL)       ;
+  bool snow_gridded           = ForcingGridIsInput(F_SNOWFALL)       ;
+  bool pet_gridded            = ForcingGridIsInput(F_PET)            ;
+  bool temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE)       ;
+  bool temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN) ;
+  bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX) ;
+  bool temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE) ;
+  bool recharge_gridded       = ForcingGridIsInput(F_RECHARGE)       ;
 
   //Extract data from gauge time series
   for (g=0;g<_nGauges;g++)
@@ -210,26 +210,26 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       //Override forcing functions with gridded data, if present
       // see if gridded forcing is available (either from NetCDF or derived)
-      pre_gridded            = ForcingGridIsInput("PRECIP"); 
-      rain_gridded           = ForcingGridIsInput("RAINFALL");
-      snow_gridded           = ForcingGridIsInput("SNOWFALL");
-      pet_gridded            = ForcingGridIsInput("PET");
-      temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE");
-      temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN");
-      temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX");
-      temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE");
-      recharge_gridded       = ForcingGridIsInput("RECHARGE");
+      pre_gridded            = ForcingGridIsInput(F_PRECIP); 
+      rain_gridded           = ForcingGridIsInput(F_RAINFALL);
+      snow_gridded           = ForcingGridIsInput(F_SNOWFALL);
+      pet_gridded            = ForcingGridIsInput(F_PET);
+      temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE);
+      temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN);
+      temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
+      temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE);
+      recharge_gridded       = ForcingGridIsInput(F_RECHARGE);
 
       // find the correct grid
-      if(pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); }
-      if(rain_gridded)            { pGrid_rain       = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); }
-      if(snow_gridded)            { pGrid_snow       = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); }
-      if(pet_gridded)             { pGrid_pet        = GetForcingGrid(GetForcingGridIndexFromName("PET")); }
-      if(temp_ave_gridded)        { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); }
-      if(temp_daily_min_gridded)  { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
-      if(temp_daily_max_gridded)  { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
-      if(temp_daily_ave_gridded)  { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
-      if(recharge_gridded)        { pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); }
+      if(pre_gridded)             { pGrid_pre        = GetForcingGrid((F_PRECIP)); }
+      if(rain_gridded)            { pGrid_rain       = GetForcingGrid((F_RAINFALL)); }
+      if(snow_gridded)            { pGrid_snow       = GetForcingGrid((F_SNOWFALL)); }
+      if(pet_gridded)             { pGrid_pet        = GetForcingGrid((F_PET)); }
+      if(temp_ave_gridded)        { pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); }
+      if(temp_daily_min_gridded)  { pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); }
+      if(temp_daily_max_gridded)  { pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); }
+      if(temp_daily_ave_gridded)  { pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); }
+      if(recharge_gridded)        { pGrid_recharge   = GetForcingGrid((F_RECHARGE)); }
 
       // ---------------------
       // (1A) read gridded precip/snowfall/rainfall and populate additional time series
@@ -247,9 +247,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           GenerateGriddedPrecipVars(Options);//only call if new data chunk found
         } 
 
-        pGrid_pre  = GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); 
-        pGrid_rain = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); 
-        pGrid_snow = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL")); 
+        pGrid_pre  = GetForcingGrid((F_PRECIP)); 
+        pGrid_rain = GetForcingGrid((F_RAINFALL)); 
+        pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
 
         F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
@@ -277,10 +277,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           ExitGracefully("CModel::UpdateHRUForcingFunctions: Gridded Min and max temperature have to have same time discretization.",BAD_DATA);
         }
 
-        pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); 
-        pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); 
-        pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); 
-        pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); 
+        pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); 
+        pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); 
+        pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); 
+        pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); 
 
         F.temp_ave         = pGrid_tave      ->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_ave   = pGrid_daily_tave->GetWeightedValue(k,tt.model_time,Options.timestep);
@@ -297,7 +297,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // ---------------------
       if(recharge_gridded)
       {
-        pGrid_recharge   = GetForcingGrid(GetForcingGridIndexFromName("RECHARGE")); 
+        pGrid_recharge   = GetForcingGrid((F_RECHARGE)); 
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         pGrid_recharge-> ReadData(Options,tt.model_time);
 
@@ -398,12 +398,12 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F);
       F.SW_radia *= CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
 
-      //if (Options.SW_radiation_net == SW_RAD_NET_CALCULATE) // \todo [funct] - handle user-specified SW_radia_net
+      if (Options.SW_radia_net == NETSWRAD_CALC) 
       {
         F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
       }//otherwise, uses data
 
-      F.LW_radia=CRadiation::EstimateLongwaveRadiation(Options,&F,_pHydroUnits[k]);
+      F.LW_radia=CRadiation::EstimateLongwaveRadiation(GetStateVarIndex(SNOW),Options,&F,_pHydroUnits[k]);
 
       //-------------------------------------------------------------------
       //  Potential Melt Rate
@@ -642,10 +642,10 @@ double CModel::CalculateSubDailyCorrection(const force_struct &F,
   //-----------------------------------------------------
   else if (Options.subdaily==SUBDAILY_UBC)
   {
-    if ( ForcingGridIsAvailable("PRECIP")         ||
-         ForcingGridIsAvailable("TEMP_AVE")       ||
-         ForcingGridIsAvailable("TEMP_DAILY_MIN") ||
-         ForcingGridIsAvailable("TEMP_DAILY_MAX")  ) {
+    if ( ForcingGridIsAvailable(F_PRECIP)         ||
+         ForcingGridIsAvailable(F_TEMP_AVE)       ||
+         ForcingGridIsAvailable(F_TEMP_DAILY_MIN) ||
+         ForcingGridIsAvailable(F_TEMP_DAILY_MAX)  ) {
       ExitGracefully( "CModel::CalculateSubDailyCorrection: Option SUBDAILY_UBC is not implemented when gridded inputs are given.", BAD_DATA);
     }
     //this is not pretty (and somewhat expensive), due to the need to correct all daily temperatures for every timestep, but it works
@@ -1132,14 +1132,14 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   CForcingGrid * pGrid_snow       = NULL; 
 
   // see if gridded forcing is read from a NetCDF
-  bool pre_gridded            = ForcingGridIsInput("PRECIP")         ;
-  bool rain_gridded           = ForcingGridIsInput("RAINFALL")       ;
-  bool snow_gridded           = ForcingGridIsInput("SNOWFALL")       ;
+  bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
+  bool rain_gridded           = ForcingGridIsInput(F_RAINFALL)       ;
+  bool snow_gridded           = ForcingGridIsInput(F_SNOWFALL)       ;
   
   // find the correct grid
-  if ( pre_gridded)             { pGrid_pre        = GetForcingGrid(GetForcingGridIndexFromName("PRECIP"));         }
-  if ( rain_gridded)            { pGrid_rain       = GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));       }
-  if ( snow_gridded)            { pGrid_snow       = GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));       }
+  if ( pre_gridded)             { pGrid_pre        = GetForcingGrid((F_PRECIP));         }
+  if ( rain_gridded)            { pGrid_rain       = GetForcingGrid((F_RAINFALL));       }
+  if ( snow_gridded)            { pGrid_snow       = GetForcingGrid((F_SNOWFALL));       }
 
   // Minimum requirements of forcing grids: must have precip or rain
   ExitGracefullyIf( !pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
@@ -1178,16 +1178,16 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
   CForcingGrid * pGrid_daily_tave = NULL;
 
   // see if gridded forcing is read from a NetCDF
-  bool temp_ave_gridded       = ForcingGridIsInput("TEMP_AVE");
-  bool temp_daily_min_gridded = ForcingGridIsInput("TEMP_DAILY_MIN");
-  bool temp_daily_max_gridded = ForcingGridIsInput("TEMP_DAILY_MAX");
-  bool temp_daily_ave_gridded = ForcingGridIsInput("TEMP_DAILY_AVE");
+  bool temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE);
+  bool temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN);
+  bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
+  bool temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE);
 
   // find the correct grid
-  if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE")); }
-  if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN")); }
-  if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX")); }
-  if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE")); }
+  if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); }
+  if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); }
+  if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); }
+  if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); }
 
 
   // Temperature min/max grids must be both available
@@ -1210,7 +1210,7 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
   // if ( temp_min_gridded && temp_max_gridded && !temp_ave_gridded )  // (A) Sub-daily min/max temperature given but not subdaily avg
   //   {
   //  GenerateSubdailyAveTempFromSubdailyMinMax(Options);           // ---> Generate subdaily avg
-  //  temp_ave_gridded = ForcingGridIsAvailable("TEMP_AVE");        //      Update availability of data
+  //  temp_ave_gridded = ForcingGridIsAvailable(F_TEMP_AVE);        //      Update availability of data
   //   }
 
   if(temp_ave_gridded)                                           // (B) Sub-daily temperature data provided
@@ -1239,34 +1239,27 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
 ///        from a NetCDF or is a derived grid.
 ///        In case grid does not exist false is returned.
 ///
-/// \param forcing_grid_name [in]  name of forcing grid, e.g. "TEMP_DAILY_MIN"
+/// \param ftype [in]  type of forcing grid, e.g. F_TEMP_DAILY_MIN
 //
-bool CModel::ForcingGridIsInput(const string forcing_grid_name) const
+bool CModel::ForcingGridIsInput(const forcing_type &ftype) const
 {
-  int ff;         // index of a forcing grid
-  bool is_input;  // class variable determining if grid is read from NetCDF (false) or is derived (true)
+  bool is_input = false; // class variable determining if grid is read from NetCDF (false) or is derived (true)
 
-  is_input = false;
-
-  if (GetForcingGridIndexFromName(forcing_grid_name) != DOESNT_EXIST) {
-    ff         = GetForcingGridIndexFromName(forcing_grid_name);
-    is_input = !(_pForcingGrids[ff]->GetIsDerived());
+  int f=GetForcingGridIndexFromType(ftype);
+  if (f != DOESNT_EXIST) {
+    is_input = !(_pForcingGrids[f]->GetIsDerived());
   }
 
   return is_input;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Checks whether a forcing grid (by name) is available (read from NetCDF or derived)
+/// \brief Checks whether a forcing grid (by type) is available (read from NetCDF or derived)
 ///        or not (means it is read from a non-gridded time series).
 ///
-/// \param forcing_grid_name [in]  name of forcing grid, e.g. "TEMP_DAILY_MIN"
+/// \param ftype [in]  type of forcing grid, e.g. "F_TEMP_DAILY_MIN"
 //
-bool CModel::ForcingGridIsAvailable(const string forcing_grid_name) const
+bool CModel::ForcingGridIsAvailable(const forcing_type &ftype) const
 {
-  bool is_available;  // class variable determining if grid is available (read from NetCDF or derived) or not
-
-  is_available = (GetForcingGridIndexFromName(forcing_grid_name) != DOESNT_EXIST);
-
-  return is_available;
+  return (GetForcingGridIndexFromType(ftype) != DOESNT_EXIST);
 }

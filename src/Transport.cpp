@@ -439,6 +439,7 @@ double CTransportModel::GetDecayCoefficient(const int c, const CHydroUnit *pHRU,
   sv_type storType;
   double decay_coeff = GetConstituentParams(c)->decay_coeff;
 
+
   storType=pModel->GetStateVarType(iStorWater);
 
   //add special decay_coefficients from other processes

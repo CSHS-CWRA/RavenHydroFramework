@@ -269,16 +269,16 @@ void CModel::Initialize(const optStruct &Options)
 
   //--Warn about interception handling
   if(!StateVarExists(CANOPY_SNOW)){
-    WriteWarning("Since no processes with CANOPY_SNOW variable have been specified, all snow interception will be directly moved to the atmosphere as if it had sublimated.",Options.noisy);
+    WriteAdvisory("Since no processes with CANOPY_SNOW variable have been specified, all snow interception will be directly moved to the atmosphere as if it had sublimated.",Options.noisy);
   }
   if(!StateVarExists(CANOPY)){
-    WriteWarning("Since no processes with CANOPY variable have been specified, all rain interception will be directly moved to the atmosphere as if it had evaporated.",Options.noisy);
+    WriteAdvisory("Since no processes with CANOPY variable have been specified, all rain interception will be directly moved to the atmosphere as if it had evaporated.",Options.noisy);
   }
   //--Check for empty HRU groups
   for (int kk = 0; kk < _nHRUGroups; kk++){
     if (_pHRUGroups[kk]->GetNumHRUs() == 0){
       string warn = "CModel::Initialize: HRU Group " + _pHRUGroups[kk]->GetName() + " is empty.";
-      WriteWarning(warn,Options.noisy);
+      WriteAdvisory(warn,Options.noisy);
     }
   }
   //--Check for repeated HRU groups
@@ -298,9 +298,20 @@ void CModel::Initialize(const optStruct &Options)
       long SBID=s_to_l(_pObservedTS[i]->GetTag().c_str());
       if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
         string warn="Observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
-        ExitGracefully(warn.c_str(),BAD_DATA);
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
     }
+  }
+  //--check for inflow observations not linked to valid reservoir
+  for (int i = 0; i<_nObservedTS; i++) {
+	  if (!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_INFLOW"))
+	  {
+		  long SBID = s_to_l(_pObservedTS[i]->GetTag().c_str());
+		  if (GetSubBasinByID(SBID)->GetReservoir() == NULL) {
+			  string warn = "Inflow observations supplied for non-existent reservoir in subbasin " + to_string(SBID);
+			  ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+		  }
+	  }
   }
   //--check for wetlands in model without depression storage
   bool wetlandsinmodel=false;
@@ -510,6 +521,7 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
       runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
     }
     aSBQlat[p]=runoff_est/MM_PER_METER*(aSBArea[p]*M2_PER_KM2)/SEC_PER_DAY;//[m3/s]
+    aSBQlat[p]+=_pSubBasins[p]->GetDownstreamInflow(0.0);//[m3/s]
 
     aSBQin [p]=_pSubBasins[p]->GetSpecifiedInflow(0.0);//initial conditions //[m3/s]
 
@@ -591,8 +603,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
     //cout<<" GaugeWts: "<<ForcingToString(forcing)<<" g: "<<g<<" "<<b_to_s(has_data[g])<<endl;
   }
   //handle the case that weights are allowed to sum to zero -netCDF is available
-  if (ForcingGridIsAvailable("PRECIP") && (forcing==F_PRECIP)){ return; }
-  if (ForcingGridIsAvailable("TEMP_AVE") && (forcing==F_TEMP_AVE)){ return; }
+  if (ForcingGridIsAvailable(forcing)){ return; }
 
   string warn="GenerateGaugeWeights: no gauges present with the following data: "+ForcingToString(forcing);
   ExitGracefullyIf(nGaugesWithData==0,warn.c_str(),BAD_DATA_WARN);

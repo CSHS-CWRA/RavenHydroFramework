@@ -153,6 +153,8 @@ struct veg_struct
   double veg_diam;          ///< [m]       vegetation diameter (range 0.0-2.0; recommended 0.003 for crops and grass, 0.5-1.0 for forests and shrubs [m]
   double veg_mBeta;         ///< [-]       mBeta parameter
 
+  double PET_veg_corr;      ///< [0..1]    vegetation-based PET correction (multiplicative)  
+
   //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
   double max_root_length;   ///< [mm/m2]   root length per unit canopy area
@@ -178,31 +180,31 @@ struct veg_var_struct
 {
   //derived properties (temporally variable)-------------------------------------------
   //Updated in CVegegtationClass::RecalculateCanopyParams
-  double LAI;               //[m2/m2]   Leaf Area Index
-  double SAI;               //[m2/m2]   Stem Area Index
-  double height;            //[m]       vegetation height
-  double capacity;          //[mm]      rain storage capacity
-  double snow_capacity;     //[mm SWE]  snow storage capacity
-  double leaf_cond;         //[mm/s]    leaf conductance (same as stomatal conductance?)
-  double canopy_conductance;//[mm/s]    leaf conductance corrected for shelter & LAI
-  double rain_icept_pct;    //[0..1]    percentage of rain intercepted  (only on canopy portion)
-  double snow_icept_pct;    //[0..1]    percentage of snow intercepted  (only on canopy portion)
+  double LAI;               //< [m2/m2] Leaf Area Index
+  double SAI;               //< [m2/m2] Stem Area Index
+  double height;            //< [m]     vegetation height
+  double capacity;          //< [mm]    rain storage capacity
+  double snow_capacity;     //< [mm SWE]snow storage capacity
+  double leaf_cond;         //< [mm/s]  leaf conductance (same as stomatal conductance?)
+  double canopy_conductance;//< [mm/s]  leaf conductance corrected for shelter & LAI
+  double rain_icept_pct;    //< [0..1]  percentage of rain intercepted  (only on canopy portion)
+  double snow_icept_pct;    //< [0..1]  percentage of snow intercepted  (only on canopy portion)
 
-  double shelter_factor;    ///< [-]       accounts for sheltered leaves : about 0.5-1.0
-  double skyview_fact;      ///< [0..1]    skyview factor, pct of ground visible from sky
+  double shelter_factor;    ///< [-]    accounts for sheltered leaves : about 0.5-1.0
+  double skyview_fact;      ///< [0..1] skyview factor, pct of ground visible from sky
 
-  double roughness;         ///< [m]       surface roughness parameter for momentum transfer
-  double zero_pln_disp;     ///< [m]       zero-plane displacement, height where wind vel. goes to zero
-  double reference_height;  ///< [m]       reference height for air properties above ground
+  double roughness;         ///< [m]    surface roughness parameter for momentum transfer
+  double zero_pln_disp;     ///< [m]    zero-plane displacement, height where wind vel. goes to zero
+  double reference_height;  ///< [m]    reference height for air properties above ground
 
   //derived root properties (temporally variable)-------------------------------------------
-  double root_length;       //[mm/m2]      root length per unit land area
-  double resistivity;       //[d/mm]       plant resistance to water flow
+  double root_length;       ///< [mm/m2]root length per unit land area
+  double resistivity;       ///< [d/mm] plant resistance to water flow
 
   //should be portioned out by soil layer (made array in HRU?)
-  double rel_rootden;       ///< [m/m3]    relative values of root length per unit volume
-  double root_resistance;   ///< [d]       root resistance for layer
-  double cowan_alpha;       ///< [MPa]     modified Cowan alpha for layer
+  double rel_rootden;       ///< [m/m3] relative values of root length per unit volume
+  double root_resistance;   ///< [d]    root resistance for layer
+  double cowan_alpha;       ///< [MPa]  modified Cowan alpha for layer
 
 };
 
@@ -262,6 +264,8 @@ struct surface_struct
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation
   double forest_PET_corr;   ///< [-]       fraction of PET to apply to forest evapotranspiration
+
+  double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient 
 
   double GR4J_x4;           ///< [d]       GR4J time routing parameter
 };
@@ -341,6 +345,8 @@ struct global_struct
                                       //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
   double           snow_temperature;  ///< [°C]   default snow temperature if not explicitly modelled
   double           snow_roughness;    ///< [mm]  roughness height of snow
+
+  double           max_reach_seglength;///< [km] maximum reach segment length
 
   double           airsnow_coeff;     ///< [1/d] air/snow heat transfer coefficient
   double           avg_annual_snow;   ///< [mm] avg annual snow as SWE

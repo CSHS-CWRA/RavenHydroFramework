@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
+#include "Radiation.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the HydroUnit (HRU) constructor
@@ -33,7 +34,7 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
                        const double            latit,
                        const double            longit,
                        const double            slope,//[rad]
-                       const double            aspect,//[rad]
+                       const double            aspect,//[rad counterclock from N]
                        const HRU_type          typ,
                        const CSoilProfile     *soil_profile,
                        //const CAquiferStack  *aquifer_system,
@@ -90,23 +91,19 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   ZeroOutForcings(_Forcings);
 
   _AvgElevation =elevation;
-  _AvgAspect    =aspect;
+  _AvgAspect    =aspect; //counterclockwise from north
   _AvgSlope     =slope;
 
-  _LatRad       = latit/180*PI;
-  _LatEq        = asin(cos(slope)*sin(_LatRad) + sin(slope)*cos(_LatRad)*cos(aspect));
+  _LatRad       = latit/180.0*PI;
+  _LatEq        = CRadiation::CalculateEquivLatitude(_LatRad,slope,aspect);
 
   //calculate corrected solar noon for given slope/aspect
-  double denom=cos(slope)*cos(_LatRad) - sin(slope)*sin(_LatRad)*cos(aspect);
-  if (denom==0.0){denom = REAL_SMALL;}
-  _SolarNoon = -atan(sin(slope)*sin(aspect)/denom)/EARTH_ANG_VEL;
-  if (_SolarNoon> 0.5){_SolarNoon-=1.0;}
-  if (_SolarNoon<-0.5){_SolarNoon+=1.0;}
+  _SolarNoon =CRadiation::CalculateSolarNoon(_LatRad,slope,aspect);
 
   pVegetation=veg_class;
   _pVeg      =veg_class    ->GetVegetationStruct();
   _pSurface  =lult_class   ->GetSurfaceStruct();
-  _pTerrain   =terrain_class->GetTerrainStruct();
+  _pTerrain  =terrain_class->GetTerrainStruct();
 
   soil_profile->AllocateSoilLayers(_pModel->GetNumSoilLayers(),_pSoil,aThickness);
 
@@ -630,7 +627,7 @@ double        CHydroUnit::GetStateVarMax(const int      i,
 /// \brief returns snow albedo
 /// \note uses default snow albedo if not tracked as state variable
 /// \note lagged - information specific to start of time step only
-///
+/// 
 /// \return current snow albedo in HRU [dimensionless]
 //
 double CHydroUnit::GetSnowAlbedo() const

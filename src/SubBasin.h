@@ -83,7 +83,8 @@ private:/*------------------------------------------------------*/
   CHydroUnit    **_pHydroUnits;   ///< [size:nHydroUnits] Array of pointers to constituent HRUs
 
   //Treatment Plant/Other incoming hydrograph
-  CTimeSeries   *_pInflowHydro;   ///< pointer to time series of inflows; NULL if no specified input - Inflow assumed to be at upstream entrance of basin
+  CTimeSeries   *_pInflowHydro;   ///< pointer to time series of inflows; NULL if no specified input - Inflow at upstream entrance of basin
+  CTimeSeries   *_pInflowHydro2;  ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
 
   //Methods implemented in SubBasin.cpp
   double               GetMuskingumK(const double &dx) const;
@@ -144,6 +145,7 @@ public:/*-------------------------------------------------------*/
   double               GetChannelStorage    () const;                   //[m3] volume in channel
   double               GetReservoirStorage  () const;                   //[m3] volume in reservoir
   double               GetSpecifiedInflow   (const double &t) const;    //[m3/s] to upstream end of channel at point in time
+  double               GetDownstreamInflow  (const double &t) const;    //[m3/s] to downstream end of channel at point in time
 
   CReservoir          *GetReservoir         () const;
 
@@ -159,10 +161,16 @@ public:/*-------------------------------------------------------*/
                                        const double    &Qlat_avg,         //[m3/s]
                                        const double    &total_drain_area, //[km2]
                                        const optStruct &Options);
-  void            AddInflowHydrograph (    CTimeSeries *pInflow);
-  void            AddReservoirExtract (    CTimeSeries *pOutflow);
-  void            AddWeirHeightTS     (    CTimeSeries *pWeirHt);
-  void            AddMaxStageTS       (    CTimeSeries *pMaxStage);
+  void            AddInflowHydrograph (CTimeSeries *pInflow);
+  void            AddDownstreamInflow (CTimeSeries *pInflow);
+  void            AddReservoirExtract (CTimeSeries *pOutflow);
+  void            AddWeirHeightTS     (CTimeSeries *pWeirHt);
+  void            AddMaxStageTS       (CTimeSeries *pMaxStage);
+  void            AddOverrideFlowTS   (CTimeSeries *pQoverride);
+  void           AddMinStageTimeSeries(CTimeSeries *pMS);
+  void       AddMinStageFlowTimeSeries(CTimeSeries *pQ);
+  void        AddTargetStageTimeSeries(CTimeSeries *pTS);
+  void       AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
   void            ResetReferenceFlow  (const double    &Qreference);
   void            SetReservoirFlow    (const double &Q,const double &t);
   void            SetInitialReservoirStage   (const double &h);

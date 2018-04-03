@@ -4,6 +4,8 @@
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
+double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom);
+
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir 
 /// \param Name [in] Nickname for reservoir
@@ -28,6 +30,12 @@ CReservoir::CReservoir(const string Name,const long SubID,const res_type typ)
   _pExtractTS=NULL;
   _pWeirHeightTS=NULL;
   _pMaxStageTS=NULL;
+  _pOverrideQ=NULL;
+  _pMinStageTS=NULL;     
+  _pMinStageFlowTS=NULL;  
+  _pTargetStageTS=NULL;
+  _pMaxQIncreaseTS=NULL; 
+
   _crest_ht=0.0;
 
   _aQ_back=NULL;
@@ -35,12 +43,11 @@ CReservoir::CReservoir(const string Name,const long SubID,const res_type typ)
   _aDates=NULL;
 
   _Np=0;
-  _aStage =NULL;
-  _aQ     =NULL;
-  _aArea  =NULL;
-  _aVolume=NULL;
-
-
+  _aStage  =NULL;
+  _aQ      =NULL;
+  _aQunder =NULL;
+  _aArea   =NULL;
+  _aVolume =NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -60,6 +67,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _Np=30;
   _aStage =new double [_Np];
   _aQ     =new double [_Np];
+  _aQunder=new double [_Np];
   _aArea  =new double [_Np];
   _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor",OUT_OF_MEMORY);
@@ -74,6 +82,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
     _aQ     [i]=a_Q*pow(ht,b_Q);
     _aArea  [i]=a_A*pow(ht,b_Q);
     _aVolume[i]=a_V*pow(ht,b_Q);
+    _aQunder[i]=0.0;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -87,7 +96,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
 //
 CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
                        const double *a_ht,
-                       const double *a_Q, const double *a_A, const double *a_V,
+                       const double *a_Q, const double *a_Qund,const double *a_A, const double *a_V,
                        const int     nPoints) :CReservoir(Name,SubID,typ)
 {
   _min_stage =ALMOST_INF;
@@ -98,13 +107,12 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
 
   _aStage =new double [_Np];
   _aQ     =new double [_Np];
+  _aQunder=new double [_Np];
   _aArea  =new double [_Np];
   _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor (2)",OUT_OF_MEMORY);
 
-  double dh;
   string warn;
-  dh=a_ht[1]-a_ht[0];
   for (int i=0;i<_Np;i++)
   {
     _aStage [i]=a_ht[i];
@@ -113,6 +121,8 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
     _aQ     [i]=a_Q[i];
     _aArea  [i]=a_A[i];
     _aVolume[i]=a_V[i];
+    if(a_Qund==NULL){ _aQunder[i]=0.0; }
+    else            { _aQunder[i]=a_Qund[i];   }
     if ((i > 0) && ((_aStage[i]-_aStage[i-1])<0)){
       warn = "CReservoir::constructor: stage relations must be specified in order of increasing stage. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -123,6 +133,10 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
     }
     if ((i > 0) && ((_aQ[i] - _aQ[i-1]) < -REAL_SMALL)){
       warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if ((i > 0) && ((_aQunder[i] - _aQunder[i-1]) < -REAL_SMALL)){
+      warn = "CReservoir::constructor: stage-discharge (underflow) relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
@@ -144,6 +158,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
                        const int my_nDates, const int *my_aDates, 
                        const double *a_ht,
                        double      **a_QQ, 
+                       const double *a_Qund,
                        const double *a_A, 
                        const double *a_V,
                        const int     nPoints):CReservoir(Name,SubID,typ)
@@ -163,21 +178,21 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
 
   _aStage =new double [_Np];
   _aQ     =new double [_Np];
+  _aQunder=new double [_Np];
   _aArea  =new double [_Np];
   _aQ_back = new double *[_nDates];
   for (int v = 0; v<_nDates; v++){ _aQ_back[v] = new double[_Np]; }
   _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor (2)",OUT_OF_MEMORY);
 
-  double dh;
   string warn;
-  dh=a_ht[1]-a_ht[0];
   for (int i=0;i<_Np;i++)
   {
     _aStage [i]=a_ht[i];
     lowerswap(_min_stage,_aStage[i]);
     upperswap(_max_stage,_aStage[i]);
     _aQ     [i]=a_QQ[0][i];
+    _aQunder[i]=0.0;if(a_Qund!=NULL){ _aQunder[i]=a_Qund[i]; }
     _aArea  [i]=a_A[i];
     _aVolume[i]=a_V[i];
     for (int v = 0; v < _nDates; v++){
@@ -187,15 +202,16 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
       }
     }
-    if ((i>0) && (fabs(dh-(_aStage[i]-_aStage[i-1]))>REAL_SMALL)){
-      ExitGracefully("CReservoir::constructor: stage relations must be specified using equal stage intervals",BAD_DATA_WARN);
-    }
-    if ((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= 0)){
+    if ((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)){
       warn = "CReservoir::constructor: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
     if ((i > 0) && ((_aQ[i] - _aQ[i-1]) < -REAL_SMALL)){
       warn = "CReservoir::constructor: stage-discharge relationships must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+    if ((i > 0) && ((_aQunder[i] - _aQunder[i-1]) < -REAL_SMALL)){
+      warn = "CReservoir::constructor: stage-discharge relationships (underflow) must be increasing or flat for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+ "]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
@@ -228,6 +244,7 @@ CReservoir::CReservoir(const string Name,
   _Np=30;
   _aStage =new double [_Np];
   _aQ     =new double [_Np];
+  _aQunder=new double [_Np];
   _aArea  =new double [_Np];
   _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor (4)",OUT_OF_MEMORY);
@@ -243,6 +260,7 @@ CReservoir::CReservoir(const string Name,
     else{
       _aQ[i]=2.0/3.0*sqrt(2*GRAVITY)*crestw*pow(_aStage[i],1.5); //Overflow weir equation
     }
+    _aQunder[i]=0.0;
     _aArea  [i]=A;
     _aVolume[i]=A*(_aStage[i]-_min_stage);
   }
@@ -254,14 +272,20 @@ CReservoir::CReservoir(const string Name,
 CReservoir::~CReservoir()
 {
   delete [] _aQ;      _aQ    =NULL;
+  delete [] _aQunder; _aQunder=NULL; 
   delete [] _aArea;   _aArea =NULL;
   delete [] _aVolume; _aVolume=NULL;
   for (int v = 0; v<_nDates; v++){ delete[] _aQ_back[v]; } delete [] _aQ_back; _aQ_back=NULL;
   delete[] _aDates; _aDates=NULL;
 
-  delete _pExtractTS;
-  delete _pWeirHeightTS;
-  delete _pMaxStageTS;
+  delete _pExtractTS;_pExtractTS=NULL;
+  delete _pWeirHeightTS;_pWeirHeightTS=NULL;
+  delete _pMaxStageTS;_pMaxStageTS=NULL;
+  delete _pOverrideQ;_pOverrideQ=NULL;
+  delete _pMinStageTS;_pMinStageTS=NULL;     
+  delete _pMinStageFlowTS;_pMinStageFlowTS=NULL;  
+  delete _pTargetStageTS;_pTargetStageTS=NULL;
+  delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL; 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -341,6 +365,26 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pMaxStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
   }
+  if(_pOverrideQ!=NULL)
+  {
+    _pOverrideQ->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
+  if(_pMinStageTS!=NULL)
+  {
+    _pMinStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
+  if(_pMinStageFlowTS!=NULL)
+  {
+    _pMinStageFlowTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
+  if(_pTargetStageTS!=NULL)
+  {
+    _pTargetStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
+  if(_pMaxQIncreaseTS!=NULL) 
+  {
+    _pMaxQIncreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -364,7 +408,7 @@ void    CReservoir::AddWeirHeightTS (CTimeSeries *pWH)
   _pWeirHeightTS=pWH;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Adds maximum stage time series [m]
+/// \brief Adds maximum stage time series
 /// \param *pMS maximum stage time series [m]
 //
 void    CReservoir::AddMaxStageTimeSeries(CTimeSeries *pMS)
@@ -372,6 +416,51 @@ void    CReservoir::AddMaxStageTimeSeries(CTimeSeries *pMS)
   ExitGracefullyIf(_pMaxStageTS!=NULL,
                    "CReservoir::AddWeirHeightTS: only one weir height time series may be specified per reservoir",BAD_DATA_WARN);
   _pMaxStageTS=pMS;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds override flow time series 
+/// \param *pQ override flow time series [m3/s]
+//
+void    CReservoir::AddOverrideQTimeSeries(CTimeSeries *pQ){
+  ExitGracefullyIf(_pOverrideQ!=NULL,
+                   "CReservoir::AddOverrideQTimeSeries: only one overridden flow time series may be specified per reservoir",BAD_DATA_WARN);
+  _pOverrideQ=pQ;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum stage time series
+/// \param *pMS minimum stage time series [m]
+//
+void    CReservoir::AddMinStageTimeSeries(CTimeSeries *pMS){
+  ExitGracefullyIf(_pMinStageTS!=NULL,
+                   "CReservoir::AddMinStageTimeSeries: only one minimum stage time series may be specified per reservoir",BAD_DATA_WARN);
+  _pMinStageTS=pMS;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum stage flow time series 
+/// \param *pQ minimum stage flow time series [m3/s]
+//
+void    CReservoir::AddMinStageFlowTimeSeries(CTimeSeries *pQ){
+  ExitGracefullyIf(_pMinStageFlowTS!=NULL,
+                   "CReservoir::AddMinStageFlowTimeSeries: only one minimum stage flow time series may be specified per reservoir",BAD_DATA_WARN);
+  _pMinStageFlowTS=pQ;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds target stage time series 
+/// \param *pTS target stage flow time series [m3/s]
+//
+void    CReservoir::AddTargetStageTimeSeries(CTimeSeries *pTS){
+  ExitGracefullyIf(_pTargetStageTS!=NULL,
+                   "CReservoir::AddTargetStageTimeSeries: only one target stage time series may be specified per reservoir",BAD_DATA_WARN);
+  _pTargetStageTS=pTS;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds maximum flow increase time series 
+/// \param *pQ maximum flow increase time series [m3/s/d]
+//
+void    CReservoir::AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta){
+  ExitGracefullyIf(_pMaxQIncreaseTS!=NULL,
+                   "CReservoir::AddMaxQIncreaseTimeSeries: only one maximum flow increase time series may be specified per reservoir",BAD_DATA_WARN);
+  _pMaxQIncreaseTS=pQdelta;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief links reservoir to HRU
@@ -386,7 +475,7 @@ void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
 //
 void  CReservoir::DisableOutflow()
 {
-  for (int i=0;i<_Np;i++){_aQ[i]=0.0;}
+  for (int i=0;i<_Np;i++){_aQ[i]=0.0;_aQunder[i]=0.0;}
 }
 
 //////////////////////////////////////////////////////////////////
@@ -416,7 +505,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 
   if(_pExtractTS!=NULL){
     int nn        =(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
-    _MB_losses+=0.5*(_pExtractTS->GetSampledValue(nn+1)+_pExtractTS->GetSampledValue(nn))*SEC_PER_DAY*tstep;
+    _MB_losses+=_pExtractTS->GetSampledValue(nn)*SEC_PER_DAY*tstep;
   }
 }
 
@@ -431,11 +520,13 @@ void CReservoir::UpdateFlowRules(const time_struct &tt, const optStruct &Options
   if (_nDates == 0){return;}
   int vv=_nDates-1;
   for (int v = 0; v < _nDates; v++){
-    if (tt.julian_day >= _aDates[v]){vv=v;}
+    if (tt.julian_day >= _aDates[v]){vv=v; }
   }
+  
   for (int i = 0; i < _Np; i++){
     _aQ[i] = _aQ_back[vv][i];
   }
+  //cout<<"using flow "<<vv<<" max flow: "<<_aQ[_Np-1]<<" Qund: "<<_aQunder[0]<<endl;
   return;
 }
 //////////////////////////////////////////////////////////////////
@@ -459,7 +550,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &t)
 
   for (int i=0;i<_Np;i++)
   {
-    if (_aQ[i]>0.0){h_guess=_min_stage+(double)(i)/(double)(_Np)*(_max_stage-_min_stage);break;}
+    if (_aQ[i]>0.0){h_guess=_min_stage+(double)(i)/(double)(_Np)*(_max_stage-_min_stage);break;}//initialize to just topping over crest
   }
   int    iter=0;
   double change=0;
@@ -519,10 +610,21 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   const int RES_MAXITER=100;
   double stage_limit=ALMOST_INF;
   double weir_adj=0.0;
+  double Qoverride=CTimeSeriesABC::BLANK_DATA;
+  double min_stage=-ALMOST_INF;
+  double Qminstage=0.0;
+  double Qtarget=CTimeSeriesABC::BLANK_DATA;
+  double Qdelta=ALMOST_INF;
+
   int nn=(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
 
-  if(_pWeirHeightTS!=NULL){ weir_adj   =_pWeirHeightTS->GetSampledValue(nn);}
-  if(_pMaxStageTS!=NULL)  { stage_limit=_pMaxStageTS->  GetSampledValue(nn);}
+  if(_pWeirHeightTS!=NULL)  { weir_adj   =_pWeirHeightTS->  GetSampledValue(nn);}
+  if(_pMaxStageTS!=NULL)    { stage_limit=_pMaxStageTS->    GetSampledValue(nn);}
+  if(_pOverrideQ!=NULL)     { Qoverride  =_pOverrideQ->     GetSampledValue(nn);}
+  if(_pMinStageTS!=NULL)    { min_stage  =_pMinStageTS->    GetSampledValue(nn);}    
+  if(_pMinStageFlowTS!=NULL){ Qminstage  =_pMinStageFlowTS->GetSampledValue(nn);}  
+  if(_pTargetStageTS!=NULL) { Qtarget    =_pTargetStageTS-> GetSampledValue(nn);}
+  if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);} 
 
   if (_type==RESROUTE_NONE)
   {
@@ -564,7 +666,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if (_pExtractTS!=NULL)
     {
       ext_old=_pExtractTS->GetSampledValue(nn);
-      ext_new=_pExtractTS->GetSampledValue(nn+1);
+      ext_new=_pExtractTS->GetSampledValue(nn); //steady rate over time step
+      //ext_new=_pExtractTS->GetSampledValue(nn+1);
     }
 
     double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
@@ -609,12 +712,43 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     //standard case - outflow determined through stage-discharge curve
     res_outflow=GetOutflow(stage_new,weir_adj);
 
+    //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
+    if (Qoverride==CTimeSeriesABC::BLANK_DATA)
+    {
+      if(stage_new<min_stage)
+      {
+        Qoverride=Qminstage;
+      }
+      else if(Qtarget!=CTimeSeriesABC::BLANK_DATA)
+      {
+        if ((Qtarget-_Qout)/tstep>Qdelta){
+          Qtarget=_Qout+Qdelta*tstep; //maximum flow change
+        }
+        Qoverride=Qtarget;
+      }
+    }
+    
+    //special correction - flow overridden
+    if(Qoverride!=CTimeSeriesABC::BLANK_DATA)
+    {
+      // \todo[funct] may wish to ensure that V_new is not negative
+      res_outflow=2*Qoverride-_Qout;
+      double A_guess=A_old;
+      double A_last,V_new;
+      do{
+        V_new= V_old+((Qin_old+Qin_new)-(_Qout+Qoverride)-ET*(A_old+A_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
+        stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
+        A_last=A_guess;
+        A_guess=GetArea(stage_new);
+      } while(fabs(1.0-A_guess/A_last)>0.00001); //0.1% area error - done in one iter for constant area case
+    }
+    
     //special correction : exceeded limiting stage; fix stage and re-calculate reservoir outflow
     if(stage_new>stage_limit){
       stage_new=stage_limit;
       double V_limit=GetVolume(stage_limit);
       double A_limit=GetArea(stage_limit);
-      res_outflow=-2*(V_limit-V_old)/tstep-(-_Qout+(Qin_old+Qin_new)-ET*(A_old+A_limit)-(ext_old+ext_new));//[m3/s]
+	    res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (ext_old + ext_new));//[m3/s]
     }
 
   }
@@ -709,6 +843,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   double *aQ(NULL),*aQ_ht(NULL); int NQ(0);
   double *aV(NULL),*aV_ht(NULL); int NV(0);
   double *aA(NULL),*aA_ht(NULL); int NA(0);
+  double *aQund(NULL);
   int nDates(0);
   double **aQQ=NULL;
   int *aDates(NULL);
@@ -824,6 +959,13 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
           if (Len >= 2){ a_A = s_to_d(s[0]); b_A = s_to_d(s[1]); }
           p->Tokenize(s, Len); //:EndAreaStageRelation
         }
+          else if (!strcmp(s[1], "CONSTANT"))
+        {
+          type = CURVE_LINEAR;
+          p->Tokenize(s, Len);
+          if (Len >= 1){ a_A = s_to_d(s[0]); b_A = 0.0; }
+          p->Tokenize(s, Len); //:EndAreaStageRelation
+        }
         else if (!strcmp(s[1], "LINEAR"))
         {
           type = CURVE_LINEAR;
@@ -906,14 +1048,24 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       aQ = new double[NQ];
       aV = new double[NQ];
       aA = new double[NQ];
+      aQund=new double[NQ];
       for (int i = 0; i < NQ; i++){
         p->Tokenize(s, Len);
         if(IsComment(s[0],Len)){i--;}
         else{
-          aQ_ht[i] = s_to_d(s[0]);
-          aQ[i] = s_to_d(s[1]);
-          aV[i] = s_to_d(s[2]);
-          aA[i] = s_to_d(s[3]);
+          if(Len>=4){
+            aQ_ht[i] = s_to_d(s[0]);
+            aQ[i] = s_to_d(s[1]);
+            aV[i] = s_to_d(s[2]);
+            aA[i] = s_to_d(s[3]);
+            aQund[i]=0.0;
+            if(Len>=5){
+              aQund[i]=s_to_d(s[4]);
+            }
+          }
+          else{
+            WriteWarning("Incorrect line length (<4) in :Reservoir :StageRelations command",Options.noisy);
+          }
         }
       }
       p->Tokenize(s, Len); //:EndStageRelations
@@ -925,13 +1077,16 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":VaryingStageRelations"))
     {
+      bool hasQund=false;
+      int shift=0;
       if (Options.noisy){ cout << ":VaryingStageRelations" << endl; }
       type = CURVE_VARYING;
       p->Tokenize(s, Len);
       if (Len >= 1){ NQ = s_to_i(s[0]); } //# of flows
-
+      if(Len>=2){hasQund=true;shift=1;} //TMP DEBUG - shoudld have flag for extra column
       p->Tokenize(s, Len);
       nDates = Len;
+      
       aDates = new int[nDates];
       for (int v = 0; v < nDates; v++){ aDates[v] = s_to_i(s[v]); }
 
@@ -942,6 +1097,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       }
       aV = new double[NQ];
       aA = new double[NQ];
+      aQund=new double[NQ];
       for (int i = 0; i < NQ; i++){
         p->Tokenize(s, Len);
         if(IsComment(s[0],Len)){i--;}
@@ -955,8 +1111,10 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
           aQ_ht[i] = s_to_d(s[0]); //stage
           aV[i] = s_to_d(s[1]); //volume
           aA[i] = s_to_d(s[2]); //area
+          if(hasQund){ aQund[i] = s_to_d(s[3]); } //Qund
+          else       { aQund[i]=0.0; }
           for (int v = 0; v < nDates; v++){
-            aQQ[v][i] = s_to_d(s[3 + v]); //flows for each date
+            aQQ[v][i] = s_to_d(s[3 + v +shift]); //flows for each date
           }
         }
       }
@@ -978,11 +1136,11 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   }
   else if (type==CURVE_DATA)
   {
-    pRes=new CReservoir(name,SBID,restype,aQ_ht,aQ,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
+    pRes=new CReservoir(name,SBID,restype,aQ_ht,aQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
   }
   else if (type==CURVE_VARYING)
   {
-    pRes=new CReservoir(name,SBID,restype,nDates,aDates,aQ_ht,aQQ,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
+    pRes=new CReservoir(name,SBID,restype,nDates,aDates,aQ_ht,aQQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
   }
   else if(type==CURVE_LAKE)
   {
@@ -999,6 +1157,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   for (int i = 0; i < nDates; i++){ delete[] aQQ[i]; }delete aQQ;
   delete [] aQ;
   delete [] aQ_ht;
+  delete [] aQund;
   delete [] aV;
   delete [] aV_ht;
   delete [] aA;
@@ -1041,7 +1200,7 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
 /// \param y [in] array (size:N)  of values corresponding to N evenly spaced points in x
 /// \param N size of array y
 /// \returns y value corresponding to interpolation point
-/// \note assumes regular spacing between min and max x value
+/// \note does not regular spacing between min and max x value
 //
 double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom)
 {
@@ -1075,7 +1234,6 @@ double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom)
 //
 double     CReservoir::GetVolume(const double &ht) const
 {
-  //return Interpolate(ht,_min_stage,_max_stage,_aVolume,_Np,true);
   return Interpolate2(ht,_aStage,_aVolume,_Np,true);
 }
 //////////////////////////////////////////////////////////////////
@@ -1086,7 +1244,6 @@ double     CReservoir::GetVolume(const double &ht) const
 //
 double     CReservoir::GetArea  (const double &ht) const
 {
-  //return Interpolate(ht,_min_stage,_max_stage,_aArea,_Np,false);
   return Interpolate2(ht,_aStage,_aArea,_Np,false);
 }
 //////////////////////////////////////////////////////////////////
@@ -1095,11 +1252,10 @@ double     CReservoir::GetArea  (const double &ht) const
 /// \returns reservoir outflow [m3/s] corresponding to stage ht
 /// \note assumes regular spacing between min and max stage
 //
-double     CReservoir::GetOutflow(const double &ht, const double &adj) const{
-
-  //return Interpolate(ht,_min_stage,_max_stage,_aQ,_Np,false);
-
-  return Interpolate2(ht-adj,_aStage,_aQ,_Np,false);
+double     CReservoir::GetOutflow(const double &ht, const double &adj) const
+{
+  double underflow=Interpolate2(ht,_aStage,_aQunder,_Np,false); //no adjustments
+  return Interpolate2(ht-adj,_aStage,_aQ,_Np,false)+underflow;
 }
 
 

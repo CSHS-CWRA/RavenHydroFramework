@@ -163,6 +163,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.cloud_cover         =CLOUDCOV_NONE;
   Options.SW_canopycorr       =SW_CANOPY_CORR_NONE;
   Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
+  Options.SW_radia_net        =NETSWRAD_CALC;
   Options.wind_velocity       =WINDVEL_CONSTANT;
   Options.rel_humidity        =RELHUM_CONSTANT;
   Options.air_pressure        =AIRPRESS_BASIC;
@@ -270,6 +271,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":RetainUBCWMBugs"       )){code=40; }
     else if  (!strcmp(s[0],":EndDate"               )){code=41; }
     else if  (!strcmp(s[0],":RechargeMethod"        )){code=42; }
+    else if  (!strcmp(s[0],":NetSWRadMethod"        )){code=43; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"             )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"  )){code=51; }
@@ -359,6 +361,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Seepage"               )){code=233;}
     else if  (!strcmp(s[0],":Recharge"              )){code=234;}
     else if  (!strcmp(s[0],":BlowingSnow"           )){code=235;}
+    else if  (!strcmp(s[0],":LakeRelease"           )){code=236;}
     //...
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
@@ -649,7 +652,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(17): //----------------------------------------------
     {/*Determines where to send lake precipitation - must be after :SoilModel command
-       ":LakeStorage" sv_type lake_storage */
+       ":LakeStorage" [sv_type lake_storage] */
       if (Options.noisy) {cout <<"Lake Storage"<<endl;}
       if (Len<2){ImproperFormatWarning(":LakeStorage",p,Options.noisy); break;}
       if (pModel==NULL){
@@ -991,6 +994,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"RECHARGE_NONE"     )){Options.recharge=RECHARGE_NONE;}
       else if (!strcmp(s[1],"RECHARGE_DATA"     )){Options.recharge=RECHARGE_DATA;}
       else {ExitGracefully("ParseInput:RechargeMethod: Unrecognized method",BAD_DATA_WARN);}
+      break;
+    }
+    case(43)://----------------------------------------------
+    {/*:NetSWRadMethod"  string method */
+      if (Options.noisy) {cout <<"Net Shortwave Radiation calculation Method"<<endl;}
+      if (Len<2){ImproperFormatWarning(":NetSWRadMethod",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"NETSWRAD_CALC"     )){Options.SW_radia_net=NETSWRAD_CALC;}
+      else if (!strcmp(s[1],"NETSWRAD_DATA"     )){Options.SW_radia_net=NETSWRAD_DATA;}
+      else {ExitGracefully("ParseInput :NetSWRadMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
     case(50):  //--------------------------------------------
@@ -1443,8 +1455,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       //e.g., :Between SOIL[0].And.ATMOSPHERE for AET
       if (!strcmp((tmp.substr(0, 8)).c_str(), "Between:")){
         right = tmp.substr(8,string::npos);
-        string firstSV = tmp.substr(0,right.find(".And."));
-        string lastSV  = tmp.substr(right.find(".And.")+5,string::npos);
+        string firstSV = right.substr(0,right.find(".And."));
+        string lastSV  = right.substr(right.find(".And.")+5,string::npos);
 
         SV_ind =ParseSVTypeIndex(firstSV, pModel);
         SV_ind2=ParseSVTypeIndex(lastSV,  pModel);
@@ -1478,6 +1490,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       if      (!strcmp(s[4],"BY_HRU"          )){sa=BY_HRU;}
       else if (!strcmp(s[4],"BY_BASIN"        )){sa=BY_BASIN;}
+      else if (!strcmp(s[4],"BY_SUBBASIN"     )){sa=BY_BASIN;}
       else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;}
       else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;}
       else if (!strcmp(s[4],"BY_GROUP"        )){sa=BY_HRU_GROUP;}
@@ -1749,8 +1762,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (sbtype == SNOBAL_SIMPLE_MELT) {
         tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
+        pMover=new CmvSnowBalance(sbtype, ParseSVTypeIndex(s[3],pModel)); 
       }
-      pMover=new CmvSnowBalance(sbtype);
+      else{
+        pMover=new CmvSnowBalance(sbtype);
+      }
       pModel->AddProcess(pMover);
       break;
     }
@@ -2239,6 +2255,24 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvPrairieBlowingSnow(PBSM_FULL);
+      pModel->AddProcess(pMover);
+      break;
+    }
+    case(236):  //----------------------------------------------
+    {/*Lake Release 
+       :LakeRelease LAKEREL_LINEAR LAKE SURFACE_WATER*/
+      if (Options.noisy){cout <<"Lake Release process"<<endl;}
+      if (Len<4){ImproperFormatWarning(":LakeRelease",p,Options.noisy); break;}
+      lakerel_type l_type=LAKEREL_LINEAR;
+      if      (!strcmp(s[1],"LAKEREL_LINEAR"      )){l_type=LAKEREL_LINEAR;}
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized lake release algorithm",BAD_DATA_WARN); break;
+      }
+      CmvLakeRelease::GetParticipatingStateVarList(l_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover=new CmvLakeRelease(l_type);
       pModel->AddProcess(pMover);
       break;
     }

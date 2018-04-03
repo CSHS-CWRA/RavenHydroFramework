@@ -294,3 +294,113 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
   room=threshMax(pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]],0.0,0.0);
   rates[0]=threshMin(rates[0],room/Options.timestep,0.0);
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the lake release constructor
+/// \param lktype [in] Model of lake release used
+/// \param fromIndex [in] Index of lake from which water is released
+//
+CmvLakeRelease::CmvLakeRelease(lakerel_type lktype)
+  :CHydroProcessABC(LAKE_RELEASE)
+{
+  type =lktype;
+  CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
+  iFrom[0]=pModel->GetLakeStorageIndex();
+  iTo  [0]=pModel->GetStateVarIndex(SURFACE_WATER);     //rates[0]: LAKE->SURFACE_WATER
+
+  ExitGracefullyIf(iFrom[0]==DOESNT_EXIST,
+                  "CmvLakeRelease Constructor: invalid lake storage compartment specified",BAD_DATA);
+  if(iFrom[0]==SURFACE_WATER){
+    string warn="CmvLakeRelease Constructor: shouldn't use lake release if surface water is lake reservoir - it does nothing";
+    WriteWarning(warn,true);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the default destructor
+//
+CmvLakeRelease::~CmvLakeRelease(){}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Verify that process moves water to atmosphere
+//
+void CmvLakeRelease::Initialize()
+{
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns participating parameter list
+///
+/// \param *aP [out] array of parameter names needed for baseflow algorithm
+/// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
+/// \param &nP [out] Number of parameters required by baseflow algorithm (size of aP[] and aPC[])
+//
+void CmvLakeRelease::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
+{
+  if(type==LAKEREL_LINEAR)//-------------------------------------
+  {
+    nP=1;
+    aP[0]="LAKE_REL_COEFF"; aPC[0]=CLASS_LANDUSE;
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Sets reference to state variable types needed by evaporation algorithm
+/// \note "From" compartment specified by :LakeStorage command
+///
+/// \param lktype [in] Model of open water evaporation used
+/// \param *aSV [out] Array of state variable types needed by ow evaporation algorithm
+/// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
+/// \param &nSV [out] Number of state variables required by lake evaporation algorithm (size of aSV[] and aLev[] arrays)
+//
+void CmvLakeRelease::GetParticipatingStateVarList(lakerel_type  lr_type,sv_type *aSV, int *aLev, int &nSV)
+{
+  nSV=1;
+  aSV[0]=SURFACE_WATER;  aLev[0]=DOESNT_EXIST;
+  //'from' compartment specified by :LakeStorage command
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns rate of loss of water from lake to atmosphere [mm/d]
+/// \details  if type==LAKE_EVAP_BASIC, evaporation is calculated using fraction of PET method
+///
+/// \param *state_vars [in] Array of current state variables in HRU
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Current model time structure
+/// \param *rates [out] rates[0] is rate of loss from lake to atmosphere [mm/d]
+//
+void CmvLakeRelease::GetRatesOfChange(const double      *state_vars,
+                                      const CHydroUnit  *pHRU,
+                                      const optStruct   &Options,
+                                      const time_struct &tt,
+                                      double            *rates) const
+{
+  if (!pHRU->IsLake()){return;}
+
+  if(pHRU->IsLinkedToReservoir()){rates[0]= iFrom[0]/Options.timestep;}//reservoir-linked HRUs release directly to surface water
+
+  if (type==LAKEREL_LINEAR)//-------------------------------------
+  {
+    double K=pHRU->GetSurfaceProps()->lake_rel_coeff;
+    rates[0]= iFrom[0]*(1-exp(-K*Options.timestep))/Options.timestep; // analytical formulation
+    //rate can be positive or negative
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
+/// \details Ensures that the rate of flow ccannot drain lake over timestep
+///
+/// \param *state_vars [in] Array of current state variables in HRU
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Current model time structure
+/// \param *rates [out] rates[0] is rate of loss from lake to atmosphere [mm/d]
+//
+void  CmvLakeRelease::ApplyConstraints( const double                *state_vars,
+                                            const CHydroUnit  *pHRU,
+                                            const optStruct   &Options,
+                                            const time_struct &t,
+                                            double      *rates) const
+{
+  //can't create negative surface water storage
+  rates[0]=threshMax(rates[0],-state_vars[iTo[0]]/Options.timestep,0.0);
+}

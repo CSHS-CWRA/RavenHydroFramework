@@ -54,7 +54,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     CHydroProcessABC::DynamicSpecifyConnections(2); //nConnections=2
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
-    iFrom[1]=iSnowLiq;          iTo[1]=iSoil;          //rates[1]: SNOW_LIQ->?SOIL
+    iFrom[1]=iSnowLiq;    iTo[1]=iSoil;          //rates[1]: SNOW_LIQ->?SOIL
   }
   else if (type==SNOBAL_UBCWM)
   {
@@ -71,10 +71,10 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     CHydroProcessABC::DynamicSpecifyConnections(7); //nConnections=7
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
-    iFrom[1]=iSnowLiq;          iTo[1]=iPonded;        //rates[1]: SNOW_LIQ->PONDED
-    iFrom[2]=iSnow;                 iTo[2]=iPonded;        //rates[2]: SNOW->PONDED
-    iFrom[3]=iColdCont;         iTo[3]=iColdCont;      //rates[3]: CC modification
-    iFrom[4]=iSnowCov;          iTo[4]=iSnowCov;       //rates[4]: snow cover modification
+    iFrom[1]=iSnowLiq;    iTo[1]=iPonded;        //rates[1]: SNOW_LIQ->PONDED
+    iFrom[2]=iSnow;       iTo[2]=iPonded;        //rates[2]: SNOW->PONDED
+    iFrom[3]=iColdCont;   iTo[3]=iColdCont;      //rates[3]: CC modification
+    iFrom[4]=iSnowCov;    iTo[4]=iSnowCov;       //rates[4]: snow cover modification
     iFrom[5]=iCumMelt;    iTo[5]=iCumMelt;       //rates[5]: cumulative melt modification
     iFrom[6]=iSnowDef;    iTo[6]=iSnowDef;       //rates[6]: snow deficit modification
   }
@@ -86,8 +86,8 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
 
     CHydroProcessABC::DynamicSpecifyConnections(2); //nConnections=2
 
-    iFrom[0]=iSnow;                 iTo[0]=iPonded;            //rates[0]: SNOW->PONDED
-    iFrom[1]=iSnowCov;          iTo[1]=iSnowCov;           //rates[1]: snow cover modification
+    iFrom[0]=iSnow;       iTo[0]=iPonded;            //rates[0]: SNOW->PONDED
+    iFrom[1]=iSnowCov;    iTo[1]=iSnowCov;           //rates[1]: snow cover modification
   }
   else if(type==SNOBAL_TWO_LAYER)
   {
@@ -105,7 +105,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
 
     iFrom[0]=iSnowfall;   iTo[0]=iSnow;      //rates[0]: SNOWFALL         -> SNOW
     iFrom[1]=iPonded;     iTo[1]=iSLSurf;    //rates[1]: Rain             -> SNOW_LIQ surface
-    iFrom[2]=iSnow;           iTo[2]=iSLSurf;    //rates[2]: SNOW             -> SNOW_LIQ surface
+    iFrom[2]=iSnow;       iTo[2]=iSLSurf;    //rates[2]: SNOW             -> SNOW_LIQ surface
     iFrom[3]=iSLSurf;     iTo[3]=iSLPack;    //rates[3]: SNOW_LIQ surface -> pack
     iFrom[4]=iSLPack;     iTo[4]=iSnow;      //rates[4]: SNOW_LIQ pack    -> SNOW
     iFrom[5]=iSLPack;     iTo[5]=iPonded;    //rates[5]: SNOW_LIQ pack    -> ponded water
@@ -127,13 +127,13 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     CHydroProcessABC::DynamicSpecifyConnections(10); //nConnections=10
 
     iFrom[0]=iSWC;        iTo[0]=iLWC;       //rates[0]: SNOW             -> SNOW_LIQ       (MELT_I in GAWSER)
-    iFrom[1]=iPonded;       iTo[1]=iLWC;       //rates[1]: RAIN                         -> LWC
+    iFrom[1]=iPonded;     iTo[1]=iLWC;       //rates[1]: RAIN              -> LWC
     iFrom[2]=iLWC;        iTo[2]=iSWC;       //rates[2]: SNOW_LIQ         -> SNOW           (REFREZ in GAWSER)
     iFrom[3]=iSDEP;       iTo[3]=iSDEP;      //rates[3]: SNOW_DEPTH       -> SNOW_DEPTH     (COMPACTION in GAWSER)
     iFrom[4]=iSDEP;       iTo[4]=iSDEP;      //rates[4]: SNOW_DEPTH       -> SNOW_DEPTH     (SNOW_MELT and SUBLIMATION in GAWSER)
     iFrom[5]=iSDEP;       iTo[5]=iSDEP;      //rates[5]: SNOW_DEPTH       -> SNOW_DEPTH     (SNOWFALL in GAWSER)
     iFrom[6]=iSnowfall;   iTo[6]=iSWC;       //rates[6]: SNOWFALL         -> SNOW           (SNOWFALL in GAWSER)
-    iFrom[7]=iSWC;        iTo[7]=iAtm;             //rates[7]: SNOW                 -> ATMOSPHERE     (sublimation)
+    iFrom[7]=iSWC;        iTo[7]=iAtm;       //rates[7]: SNOW             -> ATMOSPHERE     (sublimation)
     iFrom[8]=iLWC;        iTo[8]=iPonded;    //rates[8]: LWC              -> PONDED         (EXCESS_LWC in GAWSER)
     iFrom[9]=iSWC;        iTo[9]=iPonded;    //rates[9]: SNOW             -> PONDED         (MELT_2 in GAWSER)
 
@@ -195,14 +195,14 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   else if (type==SNOBAL_COLD_CONTENT)
   {
     nP=1;
-    aP[0]="SNOW_SWI";                aPC[0]=CLASS_GLOBAL;
+    aP[0]="SNOW_SWI";        aPC[0]=CLASS_GLOBAL;
   }
   else if (type==SNOBAL_HBV)
   {
     nP=3;
     aP[0]="REFREEZE_FACTOR"; aPC[0]=CLASS_LANDUSE;
     aP[1]="MELT_FACTOR";     aPC[1]=CLASS_LANDUSE;
-    aP[2]="SNOW_SWI";                aPC[2]=CLASS_GLOBAL;
+    aP[2]="SNOW_SWI";        aPC[2]=CLASS_GLOBAL;
   }
   else if (type==SNOBAL_UBCWM)
   {
@@ -220,7 +220,7 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   {
     nP=2;
     aP[0]="MAX_SWE_SURFACE";    aPC[0]=CLASS_GLOBAL;
-    aP[1]="SNOW_SWI";                 aPC[1]=CLASS_GLOBAL;
+    aP[1]="SNOW_SWI";           aPC[1]=CLASS_GLOBAL;
   }
   else if (type==SNOBAL_GAWSER)
   {
@@ -729,7 +729,7 @@ void CmvSnowBalance::ColdContentBalance(const double             *state_vars,
 /// \brief Balances cold content from snow melt/refreeze
 ///
 /// \note Precipitation should come before snow balance for this to work as intended.
-///
+///    written by N. Sgro, 2016
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
 /// \param &Options [in] Global model options information

@@ -135,6 +135,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirExtraction"   )){code=51; }
     else if  (!strcmp(s[0],":VariableWeirHeight"    )){code=52; }
     else if  (!strcmp(s[0],":ReservoirMaxStage"     )){code=53; }
+    else if  (!strcmp(s[0],":OverrideReservoirFlow" )){code=54; }
+    else if  (!strcmp(s[0],":ReservoirMinStage"     )){code=55; }
+    else if  (!strcmp(s[0],":ReservoirMinStageFlow" )){code=56; }
+    else if  (!strcmp(s[0],":ReservoirTargetStage"  )){code=57; }
+    else if  (!strcmp(s[0],":ReservoirMaxQDelta"    )){code=58; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -149,7 +154,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":MonthlyAveTemperatures" )){code=77; }
     //-----------------CONTROLS ---------------------------------
     else if  (!strcmp(s[0],":OverrideStreamflow"      )){code=100; }
-    else if  (!strcmp(s[0],":OverrideReservoirOutflow")){code=101; }
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":ConcentrationTimeSeries")){code=300; }
     else if  (!strcmp(s[0],":MassFluxTimeSeries     ")){code=300; }
@@ -652,7 +656,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :EndBasinInflowHydrograph
      */
       if (Options.noisy) {cout <<"Basin Inflow Hydrograph"<<endl;}
-      long SBID=-1;
+      long SBID=DOESNT_EXIST;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
@@ -663,7 +667,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         string warn;
-        warn="Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
+        warn=":BasinInflowHydrograph Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -675,7 +679,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :EndReservoirExtraction
      */
       if (Options.noisy) {cout <<"Reservoir Extraction Time Series"<<endl;}
-      long SBID=-1;
+      long SBID=DOESNT_EXIST;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
@@ -686,7 +690,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         string warn;
-        warn="Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir Extraction";
+        warn=":ReservoirExtraction Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir Extraction";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -698,7 +702,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :EndVariableWeirHeight
      */
       if (Options.noisy) {cout <<"Weir Height Time Series"<<endl;}
-      long SBID=-1;
+      long SBID=DOESNT_EXIST;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
@@ -709,7 +713,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         string warn;
-        warn="Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir weir height";
+        warn=":VariableWeirHeight Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir weir height";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -717,11 +721,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (53): //---------------------------------------------
     {/*:ReservoirMaxStage {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-       {double delta_h} x nMeasurements [m]
+       {double stage} x nMeasurements [m]
        :EndReservoirMaxStage
      */
       if (Options.noisy) {cout <<"Maximum stage time series "<<endl;}
-      long SBID=-1;
+      long SBID=DOESNT_EXIST;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
@@ -732,12 +736,126 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         string warn;
-        warn="Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir maximum stage";
+        warn=":ReservoirMaxStage Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir maximum stage";
         WriteWarning(warn,Options.noisy);
       }
       break;
     }
-               
+    case (54): //---------------------------------------------
+    {/*:OverrideReservoirFlow {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Q} x nMeasurements [m3/s]
+       :EndOverrideReservoirFlow
+     */
+      if (Options.noisy) {cout <<"Forced Reservoir Outflow Time Series"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"ResFlow_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddOverrideFlowTS(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":OverrideReservoirFlow Subbasin "+to_string(SBID)+" not in model, cannot set overriden discharge";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }     
+    case (55): //---------------------------------------------
+    {/*:ReservoirMinStage {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double stage} x nMeasurements [m]
+       :EndReservoirMinStage
+     */
+      if (Options.noisy) {cout <<"Reservoir Minimum Stage Time Series"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"MinStage_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddMinStageTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirMinStage Subbasin "+to_string(SBID)+" not in model, cannot set minimum stage";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }             
+    case (56): //---------------------------------------------
+    {/*:ReservoirMinStageFlow {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Q_min} x nMeasurements [m3/s]
+       :EndReservoirMinStageFlow
+     */
+      if (Options.noisy) {cout <<"Reservoir Minimum Stage Discharge Time Series"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"MinStageFlow_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddMinStageFlowTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirMinStageFlow Subbasin "+to_string(SBID)+" not in model, cannot set minimum stage discharge";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }          
+    case (57): //---------------------------------------------
+    {/*:ReservoirTargetStage {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double h_target} x nMeasurements [m]
+       :EndReservoirTargetStage
+     */
+      if (Options.noisy) {cout <<"Reservoir Target Stage Time Series"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"TargetStage_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddTargetStageTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirTargetStage Subbasin "+to_string(SBID)+" not in model, cannot set target stage";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }  
+    case (58): //---------------------------------------------
+    {/*:ReservoirMaxQDelta {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qdelta} x nMeasurements [m3/s/d]
+       :EndReservoirMaxQDelta
+     */
+      if (Options.noisy) {cout <<"Reservoir Maximum Discharge Delta Time Series"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"QDelta_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddMaxQIncreaseTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirMaxQDelta Subbasin "+to_string(SBID)+" not in model, cannot set maximum Qdelta";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }  
     case (70): //---------------------------------------------
     {/*:MonthlyAveTemperature {temp x 12}*/
       if (Options.noisy) {cout <<"Monthly Average Temperatures"<<endl;}
@@ -897,18 +1015,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pModel->OverrideStreamflow(SBID);
       break;
     }
-    case(101):
-    {/*:OverrideReservoirOutflow  [SBID]*/
-      if (Options.noisy){cout <<"Override reservoir outflow"<<endl;}
-      long SBID=s_to_l(s[1]);
-      if (pModel->GetSubBasinByID(SBID)==NULL){
-        WriteWarning("ParseTimeSeries::Trying to override streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
-        break;
-      }
-      ExitGracefully(":OverrideReservoirOutflow: not bonded to correct SB right now",STUB);
-      pModel->OverrideReservoirFlow(SBID);
-      break;
-    }
     case (300)://----------------------------------------------
     {/*:ConcentrationTimeSeries
        :ConcentrationTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
@@ -1038,7 +1144,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
                        "ParseTimeSeriesFile: :ForcingType command must be within a :GriddedForcings block",BAD_DATA);
 
       ForcingTypeGiven = true;
-      pGrid->SetForcingType(s[1]);
+      pGrid->SetForcingType(GetForcingTypeFromString(s[1]));
 
       // Grid can be initialized as soon as all basic information are known
       if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven ) {pGrid->ForcingGridInit(Options);}

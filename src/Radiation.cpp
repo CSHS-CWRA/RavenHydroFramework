@@ -30,7 +30,7 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
   double lateq =pHRU->GetLatEq();
   switch(Options.SW_radiation)
   {
-    //--------------------------------------------------------
+  //--------------------------------------------------------
   case(SW_RAD_DATA):
   {
     return F->SW_radia;
@@ -39,12 +39,12 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
   //--------------------------------------------------------
   case(SW_RAD_DEFAULT)://Dingman
   {
-    double dew_pt;
-    dew_pt=GetDewPointTemp(F->temp_ave,F->rel_humidity);
+    double dew_pt    =GetDewPointTemp(F->temp_ave,F->rel_humidity);
+    double slope     =pHRU->GetSlope();
+    double solar_noon=pHRU->GetSolarNoon();
 
-    double slope=pHRU->GetSlope();
-    double solar_noon= pHRU->GetSolarNoon();
-    return ClearSkySolarRadiation(tt.julian_day,latrad,lateq,slope,F->day_angle,F->day_length,solar_noon,dew_pt,ET_rad,(Options.timestep>=1));
+    return ClearSkySolarRadiation(tt.julian_day,latrad,lateq,slope,F->day_angle,F->day_length,solar_noon,dew_pt,ET_rad,(Options.timestep>=1.0));
+
     break;
   }
   //--------------------------------------------------------
@@ -93,7 +93,8 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
 /// \param *pHRU [in] pointer to HRU for which radiation is calculated
 /// \return Double value representing longwave radiation [MJ/m2/d]
 //
-double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
+double CRadiation::EstimateLongwaveRadiation(const int iSnow,
+                                             const optStruct     &Options,
                                              const force_struct  *F,
                                              const CHydroUnit    *pHRU)
 {
@@ -136,10 +137,10 @@ double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
   case (LW_RAD_UBCWM):
   {
     double cloud=F->cloud_cover;
-    double LW_open=(1-cloud)*(-20+0.94*F->temp_daily_ave)+(cloud)*(1.24*F->temp_daily_min);
+    double LW_open=(1-cloud)*(-20+0.94*F->temp_daily_ave)+(cloud)*(1.24*F->temp_daily_min);//[mm/d]
 
     double P0BLUE=CGlobalParams::GetParams()->UBC_LW_forest_fact;//actually P0BLUE * P0LWVF , [mm/d/K]
-    double LW_forest=P0BLUE*F->temp_daily_ave;
+    double LW_forest=P0BLUE*F->temp_daily_ave; //[mm/d]
 
     double tmp=(LH_FUSION*DENSITY_WATER/MM_PER_METER); //[mm/d]-->[MJ/m2/d]
 
@@ -160,6 +161,7 @@ double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
     if (LW<0){LW*=(1.0-F->cloud_cover);}
 
     LW*=HR_PER_DAY*MJ_PER_M2_LANGLEY;//convert Langleys/hr->MH/m2/day
+    return LW;
     break;
   }
   //--------------------------------------------------------
@@ -168,11 +170,13 @@ double CRadiation::EstimateLongwaveRadiation(const optStruct     &Options,
     double f;
     double eps;
     double sat_vap,ea;
-    sat_vap=GetSaturatedVaporPressure(F->temp_ave);
-    ea =F->rel_humidity*sat_vap;
-    eps= 0.34 - 0.14*sqrt(ea);
-    f=(1.35*(F->SW_radia/F->SW_radia_unc)-0.35);
-    return f*eps*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0);
+    sat_vap=GetSaturatedVaporPressure(F->temp_ave); //[kPa]
+    ea =F->rel_humidity*sat_vap;                    //[kPa]
+    
+    f=max(1.35*(F->SW_radia/F->SW_radia_unc)-0.35,0.0); //cloud cover adjustment Valiantzas (2006) eqn 40 
+    eps= 0.34 - 0.14*sqrt(ea);                   //net emissivity Valiantzas (2006) eqn 41 
+
+    return -f*eps*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0);
     break;
   }
   /*case (LW_RAD_UNFAO):
@@ -320,42 +324,44 @@ double CRadiation::DayLength(const double lat,    //latitude (in radians)
                              const double declin) //solar declination (in radians)
 {
   double hd = -tan(declin) * tan(lat);
-  if                    (hd>= 1.0) {return 0.0;}//sun stays below horizon
+  if      (hd>= 1.0) {return 0.0;}//sun stays below horizon
   else if (hd<=-1.0) {return 1.0;}//sun stays above horizon
   return acos(hd)/PI;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief LOCAL function that applies a correction to extraterrestrial radiation
-/// \details Applies multiplication factor to solar constant and eccentricity factor for daily incoming radiation
-/// \ref from Dingman E-25 or E-6/E-7 \cite Dingman1994
-/// \return Correction factor for shortwave radiation
+/// \brief  function thatdetermines solar noon, in days, on a surface with arbitrary slope/aspect 
+/// \ref from Dingman E-22 \cite Dingman1994
+/// \param lat [in] Latitude [rad]
+/// \param slope [in] slope [rad]
+/// \param aspect [in] aspect [rad counterclock from north]
 ///
-double CRadiation::RadCorr (const double declin,                 //declination, radians
-                            const double solar_noon, //time of solar noon, days
-                            const double lat_eq,     //equivalent latitude, radians
-                            const double t_sunrise,  //time of sunrise, days before solar noon
-                            const double t_sunset,   //time of sunrise, days after solar noon,
-                            const double t_sol,                  //time of day w.r.t. solar noon, days (not adjusted for slope)
-                            const bool   avg_daily)      //in radians
+double CRadiation::CalculateSolarNoon(const double &latrad,
+                                      const double &slope,
+                                      const double &aspect)
 {
-  if (avg_daily)
-  {
-    //averaged daily correction
-    return sin(declin)*sin(lat_eq)*(t_sunset-t_sunrise) +
-      cos(declin)*cos(lat_eq)*(sin(EARTH_ANG_VEL*(t_sunset -solar_noon))-
-                               sin(EARTH_ANG_VEL*(t_sunrise-solar_noon)))/EARTH_ANG_VEL;
-  }
-  else if ((t_sol<=t_sunrise) || (t_sol>=t_sunset))//nighttime
-  {
-    return 0.0;
-  }
-  else{//eqn E-6 Dingman
-    return sin(declin)*sin(lat_eq) +
-      cos(declin)*cos(lat_eq)*cos(EARTH_ANG_VEL*(t_sol-solar_noon));
-  }
-}
+  double solar_noon; //[d]
 
+  double denom=cos(slope)*cos(latrad) - sin(slope)*sin(latrad)*cos(aspect);
+  if (denom==0.0){denom = REAL_SMALL;}
+  solar_noon = -atan(sin(slope)*sin(-aspect)/denom)/EARTH_ANG_VEL; // Dingman eqn E-22
+  if (solar_noon> 0.5){solar_noon-=1.0;} 
+  if (solar_noon<-0.5){solar_noon+=1.0;}
+
+  return solar_noon;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief  function thatdetermines solar noon, in days, on a surface with arbitrary slope/aspect 
+/// \ref from Dingman E-22 \cite Dingman1994
+///
+double CRadiation::CalculateEquivLatitude(const double &latrad,
+                                          const double &slope,
+                                          const double &aspect)
+{
+  //double arg=cos(slope)*sin(latrad) + sin(slope)*cos(latrad)*cos(aspect);
+  //cout<<arg<<" "<<asin(arg)<<endl;
+  return asin(min(cos(slope)*sin(latrad) + sin(slope)*cos(latrad)*cos(aspect),1.0)); //Dingman eqn E-23
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns solar declination [rad]
 /// \ref Uses Dingman eqn E-3 \cite Dingman1994
@@ -378,22 +384,6 @@ double CRadiation::SolarDeclination(const double day_angle)
   return 0.40928*sin(day_angle-1.384);//UBCWM
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief Returns solar zenith angle [rad]
-/// \param lat_eq [in] Equivalent latitude [rad]
-/// \param declin [in] Solar declination [rad]
-/// \param t [in] Absolute time [d]
-/// \return Solar zenith angle [rad]
-//
-double CRadiation::SolarZenithAngle(const double lat_eq,//equivalent latitude, radians
-                                    const double declin,//solar declination, radians
-                                    const double t)     //absolute time, days
-{
-  double Z,H;
-  H=PI*(t-0.5);//hour angle (=0 at noon, -PI..PI over day)
-  Z = acos( sin(lat_eq)*sin(declin) + cos(lat_eq)*cos(declin)*cos(H));
-  return Z;
-}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the eccentricity correction, E0 [-]
@@ -411,37 +401,67 @@ double CRadiation::EccentricityCorr(const double day_angle)
   //return  pow(1.0 - 0.0167 * cos(0.0172 * (julian_day - 3)),-2);//Brook90
   //return  1+0.033*cos(day_angle);//WATFLOOD, Valiantzas (2006)
 }
+//////////////////////////////////////////////////////////////////
+/// \brief LOCAL function that applies a correction to extraterrestrial radiation
+/// \details Applies multiplication factor to solar constant and eccentricity factor for daily incoming radiation
+/// \ref from Dingman E-25 or E-6/E-7 \cite Dingman1994
+/// \return Correction factor for shortwave radiation
+///
+double CRadiation::RadCorr (const double declin,     //declination, radians
+                            const double solar_noon, //time of solar noon, days
+                            const double lat_eq,     //equivalent latitude, radians
+                            const double t_sunrise,  //time of sunrise, days before solar noon
+                            const double t_sunset,   //time of sunrise, days after solar noon,
+                            const double t_sol,      //time of day w.r.t. solar noon, days (not adjusted for slope)
+                            const bool   avg_daily)  
+{
+  if(t_sunset<=t_sunrise){return 0.0;}
+  if (avg_daily)
+  {
+    //averaged daily correction - just integrating the point value
+    return sin(declin)*sin(lat_eq)*(t_sunset-t_sunrise) +
+           cos(declin)*cos(lat_eq)*(sin(EARTH_ANG_VEL*(t_sunset -solar_noon))-
+                                    sin(EARTH_ANG_VEL*(t_sunrise-solar_noon)))/EARTH_ANG_VEL;
+  }
+  else if ((t_sol<=t_sunrise) || (t_sol>=t_sunset))//nighttime
+  {
+    return 0.0;
+  }
+  else{//eqn E-6 Dingman (instantaneous)
+    return sin(declin)*sin(lat_eq) +
+           cos(declin)*cos(lat_eq)*cos(EARTH_ANG_VEL*(t_sol-solar_noon));
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates extraterrestrial radiation on an inclined plane
 /// \details Returns total incoming solar radation, K_{ET}, in [MJ/m2/d], corrected for slope and aspect
-/// \note Has been tested and is working for zero-aspect slope
 /// \ref from Swift (1976), Lee (1964) via Dingman \cite Swift1976WRR \cite Lee1964IJoB
 ///
 /// \param latrad [in] Latitude in radians
 /// \param lateq [in] Equivalent latitude for slope (Dingman E-23)
 /// \param declin [in] Solar declination in radians
 /// \param ecc [in] Eccentricity correction
-/// \param slope [in] Slope [rad]
-/// \param aspect [in] Aspect [rad]
+/// \param solar_noon, //effective solar noon corrected for slope [days]
+/// \param day_length, //length of day (not corrected for slope) [days]
 /// \param t_sol [in] Time of day with respecto solar noon [d]
 /// \param avg_daily [in] True if average daily total incoming solar radiation is to be computed instead
 /// \return Double clear sky total radiation
 //
-double CRadiation::CalcETRadiation( const double latrad,//latitude in radians
-                                    const double lateq, //equivalent latitude for slope in radians
-                                    const double declin,//solar declination in radians
-                                    const double ecc,           //eccentricity correction [-]
-                                    const double slope, //in radians
-                                    const double solar_noon, //effective solar noon correction for slope [days]
-                                    const double day_length, // length of day (not corrected for slope) [days]
-                                    const double t_sol, //time of day w.r.t. solar noon [days] [-0.5..0.5]
-                                    const bool   avg_daily)//in radians
+double CRadiation::CalcETRadiation( const double latrad,     //latitude in radians
+                                    const double lateq,      //equivalent latitude for slope/aspect in radians
+                                    const double declin,     //solar declination in radians
+                                    const double ecc,        //eccentricity correction [-]
+                                    const double slope,      //in radians
+                                    const double solar_noon, //effective solar noon corrected for slope [days]
+                                    const double day_length, //length of day (not corrected for slope) [days]
+                                    const double t_sol,      //time of day w.r.t. solar noon [days] [-0.5..0.5]
+                                    const bool   avg_daily)  //true if this is to be averaged over the day
 {
-  double ExTerCorr;     //Extraterrestrial radiation correction [-]
-  double hd;                                    //half day length [days]
-  double t_rise,t_set;//time of sunrise, sunset (w.r.t. solar noon)[days] [-0.5..0.5]
-  double lat_eq;                        //slope-corrected equivalent latitude [rad]
+  double ExTerCorr;      //Extraterrestrial radiation correction [-]
+  double half_day;       //half day length [days]
+  double lat_eq;         //slope-corrected equivalent latitude [rad]
+  double t_rise,t_set;   //time of sunrise, sunset (w.r.t. solar noon) [days] [-0.5..0.5]
   double t_rise1,t_set1;
   double t_rise2,t_set2;
   bool   TwoDawns;
@@ -449,44 +469,39 @@ double CRadiation::CalcETRadiation( const double latrad,//latitude in radians
   //---slope corrections-------------------------------------------
   lat_eq =latrad;
   if (slope!=0.0){
-    lat_eq = lateq;     //equivalent latitude for slope (Dingman E-23)
+    lat_eq = lateq;     //equivalent latitude for slope/aspect (Dingman E-23)
   }
 
   //calculate sunrise & sunset--------------------------------------------
-  hd=0.5*day_length;
-  t_rise=-hd;                   //actual sunrise/set: Dingman E-5a,b
-  t_set = hd;
+  half_day=0.5*day_length;
+  t_rise=-half_day;     //uncorrected sunrise/set: Dingman E-5a,b
+  t_set = half_day;
 
   //sunrise/set corrected for slope & aspect
-  if(slope !=0){
-    hd=0.5*DayLength(lat_eq, declin);}
+  if(slope !=0){half_day=0.5*DayLength(lat_eq, declin);}
 
-  t_rise1=max(t_rise,solar_noon-hd);//Dingman E-24a,b
-  t_set1 =min(t_set ,solar_noon+hd);
+  t_rise1=max(t_rise,solar_noon-half_day);//Dingman E-24a,b
+  t_set1 =min(t_set ,solar_noon+half_day);
   if (t_rise1>t_set1) {t_rise1=t_set1=0.0;}//Correct for those endless nights...
 
   ExTerCorr=RadCorr(declin, solar_noon, lat_eq, t_rise1, t_set1,t_sol,avg_daily);
 
-  //Corrections for two sunrises
+  //Corrections for two sunrises--------------------------------------------
   TwoDawns = false;
-  t_rise2=solar_noon+1.0-hd;
-  t_set2 =solar_noon-1.0+hd;
-  if      (t_rise2<t_set ){t_set2 =t_set; TwoDawns=true;}
-  else if (t_set2 >t_rise){t_rise2=t_rise;TwoDawns=true;}
+  double fnoon=0; //fake noon
+  t_rise2=solar_noon+1.0-half_day;
+  t_set2 =solar_noon-1.0+half_day;
+  if      (t_rise2<t_set ){t_set2 =t_set; fnoon=solar_noon+1.0; TwoDawns=true;}
+  else if (t_set2 >t_rise){t_rise2=t_rise;fnoon=solar_noon-1.0; TwoDawns=true;}
+  
   if (TwoDawns){
-    ExTerCorr+=RadCorr(declin, solar_noon, lat_eq, t_rise2,t_set2,t_sol,avg_daily);
+    //cout<<"TwoDawns: "<<t_set1-t_rise1<<" "<<t_set2-t_rise2<<" slope, lat"<< slope*180.0/PI<<" "<<latrad*180.0/PI<<endl;
+    if (t_rise2>t_set2) {t_rise2=t_set2=0.0;}//Correct for those endless nights...
+    ExTerCorr+=RadCorr(declin, fnoon, lat_eq, t_rise2,t_set2,t_sol,avg_daily);
   }
-  //---end sunrise/sunset correction----------------------------------------
+  //---end two sunrise/sunset correction-------------------------------------
 
   return SOLAR_CONSTANT*ecc*ExTerCorr;//[MJ/m2/d] E-25 dingman
-
-  //Watflood approach (slope/aspect insensitive):
-  /*
-    double hdrad=0.5*DayLength(latrad,declin)/EARTH_ANG_VEL;
-    double tmp  = 15.392*ecc*(hdrad*sin(latrad)*sin(declin)+cos(latrad)*cos(declin)*sin(hdrad));//[mm/d]
-    //[MJ/m2/d] =[mm/d]*(J/kg)*(MJ/J)*(kg/m3)*(m/mm)
-    return tmp*(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/d]
-  */
 }
 
 //////////////////////////////////////////////////////////////////
@@ -655,42 +670,42 @@ double CRadiation::OpticalAirMass(const double latrad,//in radians
 /// \return Double clear sky solar radiation
 //
 double CRadiation::ClearSkySolarRadiation(const double julian_day,
-                                          const double latrad,   //[rad]
-                                          const double lateq, //[rad]
-                                          const double slope, //[rad]
+                                          const double latrad,    //[rad]
+                                          const double lateq,     //[rad]
+                                          const double slope,     //[rad]
                                           const double day_angle,
                                           const double day_length,
                                           const double solar_noon,//[days]
-                                          const double dew_pt,//dew point temp, [C]
-                                          double &ET_radia, //ET radiation [MJ/m2/d]
-                                          const bool   avg_daily)       //true if average daily is to be computed
+                                          const double dew_pt,    //dew point temp, [C]
+                                                double &ET_radia, //Extraterrestrial radiation [MJ/m2/d]
+                                          const bool   avg_daily) //true if average daily is to be computed
 {
-  double Ket,Ketp;                              //daily solar radiation with (Ket) and without (Ketp) slope correction, [MJ/m2/d]
-  double tau;                                                   //total atmospheric transmissivity [-]
-  double tau2;                                          //50% of solar beam attenuation from vapor and dust [-]
-  double Mopt;                                          //optical air mass [-]
-  double gamma_dust=0.025;//attenuation due to dust
-  double declin;                                        //solar declination
-  double ecc;                                                   //eccentricity correction [-]
-  double t_sol;                                   //time of day w.r.t. solar noon [d]
+  double Ket,Ketp;          //daily solar radiation with (Ket) and without (Ketp) slope correction, [MJ/m2/d]
+  double tau;               //total atmospheric transmissivity [-]
+  double tau2;              //50% of solar beam attenuation from vapor and dust [-]
+  double Mopt;              //optical air mass [-]
+  double gamma_dust=0.025;  //attenuation due to dust
+  double declin;            //solar declination
+  double ecc;               //eccentricity correction [-]
+  double t_sol;             //time of day w.r.t. solar noon [d]
 
-  declin=       SolarDeclination(day_angle);
+  declin= SolarDeclination(day_angle);
   ecc   = EccentricityCorr(day_angle);
 
   t_sol=julian_day-floor(julian_day)-0.5;
   Mopt =OpticalAirMass(latrad,declin,day_length,t_sol,avg_daily);
-  tau  =CalcScatteringTransmissivity(dew_pt,Mopt)-gamma_dust;                                                     //Dingman E-9
+  tau  =CalcScatteringTransmissivity(dew_pt,Mopt)-gamma_dust;               //Dingman E-9
   tau2 =0.5*(1.0-CalcDiffScatteringTransmissivity(dew_pt,Mopt)+gamma_dust); //Dingman E-15
 
-  Ketp =CalcETRadiation(latrad,lateq,declin,ecc,slope,solar_noon,day_length,t_sol,avg_daily);
-  Ket  =CalcETRadiation(latrad,lateq,declin,ecc,0.0  ,0.0, day_length,t_sol,avg_daily);
+  Ketp =CalcETRadiation(latrad,lateq ,declin,ecc,slope,solar_noon,day_length,t_sol,avg_daily);
+  Ket  =CalcETRadiation(latrad,latrad,declin,ecc,0.0  ,0.0,       day_length,t_sol,avg_daily);
 
   ET_radia=Ketp;
 
   //DingmanE-26 (from E-8,E-14,E-19,E-20)
-  return tau *Ketp+                                                                                              //direct solar radiation on surface
-    tau2*Ket+                                                                                            //diffuse radiation
-    tau2*GLOBAL_ALBEDO*(tau2+tau)*Ketp;      //backscattered radiation
+  return tau *Ketp+                               //direct solar radiation on surface
+         tau2*Ket+                                //diffuse radiation
+         tau2*GLOBAL_ALBEDO*(tau2+tau)*Ketp;      //backscattered radiation
 }
 
 

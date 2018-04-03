@@ -22,8 +22,8 @@
 void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
 {
   CForcingGrid *pTmin,*pTmax,*pTave,*pTave_daily;
-  pTmin=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN"));  // This is not necessarily a daily temperature!
-  pTmax=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX"));  // This is not necessarily a daily temperature!
+  pTmin=GetForcingGrid(F_TEMP_DAILY_MIN);  
+  pTmax=GetForcingGrid(F_TEMP_DAILY_MAX); 
 
   double start_day=Options.julian_start_day;
   int    start_yr =Options.julian_start_year;
@@ -42,11 +42,11 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // Generate daily average values Tave=(Tmin+Tmax)/2
   // --> This is always a daily time series (also if TEMP_DAILY_MIN and TEMP_DAILY_MAX are subdaily)
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_AVE") == DOESNT_EXIST )
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_AVE) == DOESNT_EXIST )
   {
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTave_daily = new CForcingGrid(* pTmin);  // copy everything from tmin; matrixes are deep copies
-    pTave_daily->SetForcingType("TEMP_DAILY_AVE");
+    pTave_daily->SetForcingType(F_TEMP_DAILY_AVE);
     pTave_daily->SetInterval(1.0);        // always daily
     pTave_daily->SetGridDims(GridDims);
     pTave_daily->SetChunkSize(nVals);     // if Tmin/Tmax are subdaily, several timesteps might be merged to one
@@ -55,7 +55,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   else
   {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pTave_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"));
+    pTave_daily=GetForcingGrid(F_TEMP_DAILY_AVE);
   }
 
   // (1) set weighting
@@ -94,7 +94,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     t+=1.0;
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_AVE") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_AVE) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTave_daily);
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_AVE Added \n"); }
   }
@@ -112,11 +112,11 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     GridDims[0] = pTmin->GetCols(); GridDims[1] = pTmin->GetRows(); GridDims[2] = nVals;
 
     // Generate subdaily average values
-    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST )
+    if ( GetForcingGridIndexFromType(F_TEMP_AVE) == DOESNT_EXIST )
     {
       // for the first chunk the derived grid does not exist and has to be added to the model
       pTave = new CForcingGrid(* pTave_daily);  // copy everything from tmin; matrixes are deep copies
-      pTave->SetForcingType("TEMP_AVE");
+      pTave->SetForcingType(F_TEMP_AVE);
       pTave->SetInterval(Options.timestep);  // is always model time step; no matter which _interval Tmin/Tmax had
       pTave->SetGridDims(GridDims);
       pTave->SetChunkSize(nVals);
@@ -125,7 +125,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     else
     {
       // for all latter chunks the the grid already exists and values will be just overwritten
-      pTave=GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));
+      pTave=GetForcingGrid((F_TEMP_AVE));
     }
 
     // (1) set weighting
@@ -161,7 +161,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       t += Options.timestep;
     }
 
-    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) {
+    if ( GetForcingGridIndexFromType(F_TEMP_AVE) == DOESNT_EXIST ) {
       this->AddForcingGrid(pTave);
       if (Options.noisy){ printf("\n------------------------> TEMP_AVE case 1 Added \n"); }
     }
@@ -178,16 +178,16 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
 
     // model does not run with subdaily time step
     // --> just copy daily average values
-    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST )
+    if ( GetForcingGridIndexFromType(F_TEMP_AVE) == DOESNT_EXIST )
     {
       // for the first chunk the derived grid does not exist and has to be added to the model
       pTave = new CForcingGrid(* pTave_daily);  // copy everything from tave; matrixes are deep copies
-      pTave->SetForcingType("TEMP_AVE");
+      pTave->SetForcingType(F_TEMP_AVE);
     }
     else
     {
       // for all latter chunks the the grid already exists and values will be just overwritten
-      pTave = GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));
+      pTave = GetForcingGrid((F_TEMP_AVE));
     }
 
     // (1) set weighting
@@ -211,7 +211,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       }
     }
 
-    if ( GetForcingGridIndexFromName("TEMP_AVE") == DOESNT_EXIST ) {
+    if ( GetForcingGridIndexFromType(F_TEMP_AVE) == DOESNT_EXIST ) {
       this->AddForcingGrid(pTave);
       if (Options.noisy){ printf("\n------------------------> TEMP_AVE case 2 Added \n"); }
     }
@@ -231,7 +231,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   CForcingGrid *pTave,*pTmin_daily,*pTmax_daily,*pTave_daily;
   double interval;
 
-  pTave=GetForcingGrid(GetForcingGridIndexFromName("TEMP_AVE"));
+  pTave=GetForcingGrid((F_TEMP_AVE));
   interval = pTave->GetInterval();
 
   double start_day = Options.julian_start_day; //floor(pT->GetStartDay());
@@ -249,10 +249,10 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   // ----------------------------------------------------
   // Generate daily values (min, max, ave) from subdaily
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MIN") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MIN) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTmin_daily = new CForcingGrid(* pTave);  // copy everything from tave; matrixes are deep copies
-    pTmin_daily->SetForcingType("TEMP_DAILY_MIN");
+    pTmin_daily->SetForcingType(F_TEMP_DAILY_MIN);
     pTmin_daily->SetInterval(1.0);
     pTmin_daily->SetGridDims(GridDims);
     pTmin_daily->SetChunkSize(nVals);
@@ -260,13 +260,13 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   }
   else {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pTmin_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN"));
+    pTmin_daily=GetForcingGrid(F_TEMP_DAILY_MIN);
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MAX") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MAX) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTmax_daily = new CForcingGrid(* pTave);  // copy everything from tave; matrixes are deep copies
-    pTmax_daily->SetForcingType("TEMP_DAILY_MAX");
+    pTmax_daily->SetForcingType(F_TEMP_DAILY_MAX);
     pTmax_daily->SetInterval(1.0);
     pTmax_daily->SetGridDims(GridDims);
     pTmax_daily->SetChunkSize(nVals);
@@ -274,13 +274,13 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   }
   else {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pTmax_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX"));
+    pTmax_daily=GetForcingGrid(F_TEMP_DAILY_MAX);
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_AVE") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_AVE) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTave_daily = new CForcingGrid(* pTave);  // copy everything from tave; matrixes are deep copies
-    pTave_daily->SetForcingType("TEMP_DAILY_AVE");
+    pTave_daily->SetForcingType(F_TEMP_DAILY_AVE);
     pTave_daily->SetInterval(1.0);
     pTave_daily->SetGridDims(GridDims);
     pTave_daily->SetChunkSize(nVals);
@@ -288,7 +288,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   }
   else {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pTave_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"));
+    pTave_daily=GetForcingGrid((F_TEMP_DAILY_AVE));
   }
 
   // (1) set weighting
@@ -318,7 +318,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     }
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MIN") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MIN) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTmin_daily);
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MIN Added \n"); }
   }
@@ -326,7 +326,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MIN Replace \n"); }
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MAX") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MAX) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTmax_daily);
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MAX Added \n"); }
   }
@@ -334,7 +334,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MAX Replace \n"); }
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_AVE") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_AVE) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTave_daily);
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_AVE Added \n"); }
   }
@@ -354,7 +354,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   CForcingGrid *pTmin_daily,*pTmax_daily,*pTave_daily;
   double interval,wt;
 
-  pTave_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_AVE"));
+  pTave_daily=GetForcingGrid((F_TEMP_DAILY_AVE));
   interval = pTave_daily->GetInterval();
 
   double start_day = Options.julian_start_day; //floor(pT->GetStartDay());
@@ -372,10 +372,10 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   // ----------------------------------------------------
   // Generate daily values (min, max) from daily average
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MIN") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MIN) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTmin_daily = new CForcingGrid(* pTave_daily);  // copy everything from tave_daily; matrixes are deep copies
-    pTmin_daily->SetForcingType("TEMP_DAILY_MIN");
+    pTmin_daily->SetForcingType(F_TEMP_DAILY_MIN);
     pTmin_daily->SetInterval(interval);  // input tmp_ave resolution //Options.timestep);
     pTmin_daily->SetGridDims(GridDims);
     pTmin_daily->SetChunkSize(nVals);
@@ -383,13 +383,13 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   }
   else {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pTmin_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MIN"));
+    pTmin_daily=GetForcingGrid((F_TEMP_DAILY_MIN));
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MAX") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MAX) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTmax_daily = new CForcingGrid(* pTave_daily);  // copy everything from tave_daily; matrixes are deep copies
-    pTmax_daily->SetForcingType("TEMP_DAILY_MAX");
+    pTmax_daily->SetForcingType(F_TEMP_DAILY_MAX);
     pTmax_daily->SetInterval(interval); // input tmp_ave resolution //Options.timestep);
     pTmax_daily->SetGridDims(GridDims);
     pTmax_daily->SetChunkSize(nVals);
@@ -397,7 +397,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   }
   else {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pTmax_daily=GetForcingGrid(GetForcingGridIndexFromName("TEMP_DAILY_MAX"));
+    pTmax_daily=GetForcingGrid((F_TEMP_DAILY_MAX));
   }
 
   // (1) set weighting
@@ -429,7 +429,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
     }
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MIN") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MIN) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTmin_daily);
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MIN Added \n"); }
   }
@@ -437,7 +437,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MIN Replace \n"); }
   }
 
-  if ( GetForcingGridIndexFromName("TEMP_DAILY_MAX") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MAX) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTmax_daily);
     if (Options.noisy){ printf("\n------------------------> TEMP_DAILY_MAX Added \n"); }
   }
@@ -459,8 +459,8 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
 {
 
   CForcingGrid *pPre,*pSnow,*pRain;
-  pSnow=GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));
-  pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
+  pSnow=GetForcingGrid((F_SNOWFALL));
+  pRain=GetForcingGrid((F_RAINFALL));
 
   double start_day=Options.julian_start_day;
   int    start_yr =Options.julian_start_year;
@@ -484,11 +484,11 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
   // ----------------------------------------------------
   // Generate precipitation
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("PRECIP") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_PRECIP) == DOESNT_EXIST ) {
 
     // for the first chunk the derived grid does not exist and has to be added to the model
     pPre = new CForcingGrid(* pSnow);  // copy everything from snowfall; matrixes are deep copies
-    pPre->SetForcingType("PRECIP");
+    pPre->SetForcingType(F_PRECIP);
     pPre->SetInterval(pSnow->GetInterval());        // will be at same time resolution as precipitation
     pPre->SetGridDims(GridDims);
     pPre->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
@@ -497,7 +497,7 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
   else {
 
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pPre=GetForcingGrid(GetForcingGridIndexFromName("PRECIP"));
+    pPre=GetForcingGrid((F_PRECIP));
   }
 
   // (1) set weighting
@@ -521,7 +521,7 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
     }
   }
 
-  if ( GetForcingGridIndexFromName("PRECIP") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_PRECIP) == DOESNT_EXIST ) {
     this->AddForcingGrid(pPre);
     if (Options.noisy){ printf("\n------------------------> PRECIP Added \n"); }
   }
@@ -537,13 +537,8 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
 //
 void CModel::GenerateRainFromPrecip(const optStruct &Options)
 {
-
-  // ExitGracefullyIf(GetTimeSeries(F_PRECIP)==NULL,
-  //     "CGauge::Initialize: no precipitation or rainfall/snowfall supplied at gauge",BAD_DATA);
-  // AddTimeSeries(new CTimeSeries("RAINFALL",*GetTimeSeries(F_PRECIP)),F_RAINFALL); //if no snow or rain, copy precip to rain- (rainfall not used)
-
   CForcingGrid *pPre,*pRain;
-  pPre=GetForcingGrid(GetForcingGridIndexFromName("PRECIP"));
+  pPre=GetForcingGrid((F_PRECIP));
 
   double start_day=Options.julian_start_day;
   int    start_yr =Options.julian_start_year;
@@ -560,11 +555,11 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   // ----------------------------------------------------
   // Generate rainfall
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("RAINFALL") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_RAINFALL) == DOESNT_EXIST ) {
 
     // for the first chunk the derived grid does not exist and has to be added to the model
     pRain = new CForcingGrid(* pPre);  // copy everything from precip; matrixes are deep copies
-    pRain->SetForcingType("RAINFALL");
+    pRain->SetForcingType(F_RAINFALL);
     pRain->SetInterval(pPre->GetInterval());        // will be at same time resolution as precipitation
     pRain->SetGridDims(GridDims);
     pRain->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
@@ -586,7 +581,7 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   else {
 
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
+    pRain=GetForcingGrid((F_RAINFALL));
   }
 
 
@@ -599,7 +594,7 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
     }
   }
 
-  if ( GetForcingGridIndexFromName("RAINFALL") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_RAINFALL) == DOESNT_EXIST ) {
     this->AddForcingGrid(pRain);
     if (Options.noisy){ printf("\n------------------------> RAINFALL Added \n"); }
   }
@@ -615,9 +610,9 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
 void CModel::GenerateZeroSnow(const optStruct &Options)
 {
 
-  CForcingGrid *pPre,*pSnow;
-  if (ForcingGridIsAvailable("PRECIP"))   { pPre=GetForcingGrid(GetForcingGridIndexFromName("PRECIP")); }
-  if (ForcingGridIsAvailable("RAINFALL")) { pPre=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL")); }
+  CForcingGrid *pPre(NULL),*pSnow;
+  if (ForcingGridIsAvailable(F_PRECIP))   { pPre=GetForcingGrid((F_PRECIP)); }
+  if (ForcingGridIsAvailable(F_RAINFALL)) { pPre=GetForcingGrid((F_RAINFALL)); }
 
   double start_day=Options.julian_start_day;
   int    start_yr =Options.julian_start_year;
@@ -634,11 +629,11 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   // ----------------------------------------------------
   // Generate snowfall
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromName("SNOWFALL") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_SNOWFALL) == DOESNT_EXIST ) {
 
     // for the first chunk the derived grid does not exist and has to be added to the model
     pSnow = new CForcingGrid(* pPre);  // copy everything from precip; matrixes are deep copies
-    pSnow->SetForcingType("SNOWFALL");
+    pSnow->SetForcingType(F_SNOWFALL);
     pSnow->SetInterval(pPre->GetInterval());        // will be at same time resolution as precipitation
     pSnow->SetGridDims(GridDims);
     pSnow->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
@@ -647,7 +642,7 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   else {
 
     // for all latter chunks the the grid already exists and values will be just overwritten
-    pSnow=GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));
+    pSnow=GetForcingGrid((F_SNOWFALL));
   }
 
   // (1) set weighting
@@ -671,7 +666,7 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
     }
   }
 
-  if ( GetForcingGridIndexFromName("SNOWFALL") == DOESNT_EXIST ) {
+  if ( GetForcingGridIndexFromType(F_SNOWFALL) == DOESNT_EXIST ) {
     this->AddForcingGrid(pSnow);
     if (Options.noisy){ printf("\n------------------------> SNOWFALL Added \n"); }
   }
@@ -692,8 +687,8 @@ double CModel::GetAverageSnowFrac(const int idx, const double t, const int n) co
 {
 
   CForcingGrid *pSnow,*pRain;
-  pSnow=GetForcingGrid(GetForcingGridIndexFromName("SNOWFALL"));
-  pRain=GetForcingGrid(GetForcingGridIndexFromName("RAINFALL"));
+  pSnow=GetForcingGrid((F_SNOWFALL));
+  pRain=GetForcingGrid((F_RAINFALL));
 
   double snow = pSnow->GetValue(idx, t, n);
   double rain = pRain->GetValue(idx, t, n);

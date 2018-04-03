@@ -17,24 +17,30 @@ void CTransportModel::InitializeRoutingVars()
   _aMinHist =new double **[nSB];
   _aMlatHist=new double **[nSB];
   _aMout    =new double **[nSB];
+  _aMout_last  =new double *[nSB];
   _aMres     =new double *[nSB];
   _aMres_last=new double *[nSB];
   _aMlat_last=new double *[nSB];
+  _aMout_res =new double *[nSB];
+  _aMout_res_last =new double *[nSB];
   _channel_storage=new double *[nSB];
   _rivulet_storage=new double *[nSB];
-  _aMout_last  =new double *[nSB];
+  
   for (int p=0;p<nSB;p++)
   {
     _rivulet_storage[p]=NULL;
     _aMinHist  [p]=new double *[_nConstituents];
     _aMlatHist [p]=new double *[_nConstituents];
     _aMout     [p]=new double *[_nConstituents];
+    _aMout_last[p]=new double [_nConstituents];
     _aMres     [p]=new double  [_nConstituents];
     _aMres_last[p]=new double [_nConstituents];
     _aMlat_last[p]=new double [_nConstituents];
-    _channel_storage[p]=new double [_nConstituents];;
-    _rivulet_storage[p]=new double [_nConstituents];;
-    _aMout_last[p]=new double [_nConstituents];
+    _aMout_res [p]=new double [_nConstituents];
+    _aMout_res_last [p] =new double [_nConstituents];
+    _channel_storage[p]=new double [_nConstituents];
+    _rivulet_storage[p]=new double [_nConstituents];
+    
     ExitGracefullyIf(_rivulet_storage[p]==NULL,"CTransportModel::InitializeRoutingVars(1)",OUT_OF_MEMORY);
     int nMinHist=pModel->GetSubBasin(p)->GetInflowHistorySize();
     int nMlatHist=pModel->GetSubBasin(p)->GetLatHistorySize();
@@ -48,12 +54,15 @@ void CTransportModel::InitializeRoutingVars()
       for (int i=0; i<nMinHist;i++){_aMinHist[p][c][i]=0.0;}
       for (int i=0; i<nMinHist;i++){_aMinHist[p][c][i]=0.0;}
       for (int i=0; i<nSegments;i++){_aMout  [p][c][i]=0.0;}
+      _aMout_last[p][c]=0.0;
       _aMres[p][c]=0.0;
       _aMres_last[p][c]=0.0;
       _aMlat_last[p][c]=0.0;
+      _aMout_res [p][c]=0.0;
+      _aMout_res_last [p][c]=0.0;
       _channel_storage[p][c]=0.0;
       _rivulet_storage[p][c]=0.0;
-      _aMout_last[p][c]=0.0;
+
     }
   }
 
@@ -80,6 +89,8 @@ void CTransportModel::DeleteRoutingVars()
       delete [] _aMres     [p];
       delete [] _aMres_last[p];
       delete [] _aMlat_last[p];
+      delete [] _aMout_res [p];
+      delete [] _aMout_res_last [p];
       delete [] _channel_storage[p];
       delete [] _rivulet_storage[p];
       delete [] _aMout_last[p];
@@ -90,6 +101,8 @@ void CTransportModel::DeleteRoutingVars()
     delete [] _aMres;    _aMres    =NULL;
     delete [] _aMres_last; _aMres_last=NULL;
     delete [] _aMlat_last; _aMlat_last=NULL;
+    delete [] _aMout_res; _aMout_res=NULL;
+    delete [] _aMout_res_last; _aMout_res_last=NULL;
     delete [] _channel_storage;_channel_storage=NULL;
     delete [] _rivulet_storage;_rivulet_storage=NULL;
     delete [] _aMout_last;_aMout_last=NULL;
@@ -139,7 +152,7 @@ void   CTransportModel::SetLateralInfluxes(const int p, const double *aMlat)
 //
 void   CTransportModel::RouteMass(const int          p,         // SB index
                                   double           **aMout_new, // [mg/d][size: nsegs x _nConstituents]
-                                  double            *aRes_mass,   // [mg][size: _nConstituents]
+                                  double            *aRes_mass, // [mg][size: _nConstituents]
                                   const optStruct   &Options,   
                                   const time_struct &tt) const
 {
@@ -207,22 +220,42 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
 
   //Reservoir Routing
   //-----------------------------------------------------------------
-
-  if (pModel->GetSubBasin(p)->GetReservoir()!=NULL)
+  CReservoir *pRes=pModel->GetSubBasin(p)->GetReservoir();
+  if (pRes!=NULL)
   {
-    for(c=0;c<_nConstituents;c++){
-      aRes_mass[c]=_aMres[p][c]; 
-        
-      aRes_mass[c]+=0.5*(_aMout[p][c][nSegments-1]+_aMout_last[p][c])*Options.timestep;
-      aRes_mass[c]-=0.5*(_aMout[p][c][nSegments-1]+_aMout_last[p][c])*Options.timestep;
-      // STUB!!
-      ExitGracefully("ResRoute",STUB);
+    double decay_coeff(0.0);
+    int iSW=pModel->GetStateVarIndex(SURFACE_WATER);
+    CHydroUnit *pHRU=pModel->GetHydroUnit(pRes->GetHRUIndex());
+    
+    double tmp;
+    double V_new=pRes->GetStorage();
+    double V_old=pRes->GetOldStorage();
+    double Q_new=pRes->GetOutflowRate()*SEC_PER_DAY;
+    double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
+
+    for(c=0;c<_nConstituents;c++)
+    {
+      decay_coeff=0.0;
+      if(pHRU!=NULL){ decay_coeff =GetDecayCoefficient(c,pHRU,iSW)*aRes_mass[c]; }
+
+      //Explicit solution of Crank-nicolson problem
+      //dM/dt=QC_in-QC_out-lambda*C
+      //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))-0.5*lambda*(C^(n+1)+C^n)
+
+      tmp=_aMres[p][c]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff));
+      tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1][c]+_aMout[p][c][nSegments-1]);//inflow is outflow from channel
+      tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
+      aRes_mass[c]=tmp;
+
+      if((V_old<=0.0) || (V_new<=0.0)){aRes_mass[c]=0.0;} //handles dried out reservoir/lake
     }
   }
   else
   {
     for(c=0;c<_nConstituents;c++){aRes_mass[c]=0.0;}
   }
+
+  delete [] Mlat_new;
 
   return;
 }
@@ -234,10 +267,11 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
 ///
 /// \param **aMoutnew [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
 /// \param *aResMass [in] Array of new reservoir masses [mg] [size:  _nConstituents]
+/// \param *aMassOutflow [out] Array of new mass outflows [mg/d] from last segment or reservoir [size:  _nConstituents]
 /// \param &Options [in] Global model options information
 /// \param initialize Flag to indicate if flows are to only be initialized
 //
-void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt,bool initialize)
+void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, double *aResMass, double *aMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize)
 {
   double tstep=Options.timestep;
 
@@ -251,7 +285,7 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
     for (int seg=0;seg<pBasin->GetNumSegments();seg++){
       _aMout[p][c][seg]=aMoutnew[seg][c];
     }
-    //_aMout[p][c][num_segments-1] is now the new mass outflow from the channel
+    aMassOutflow[c]=_aMout[p][c][pBasin->GetNumSegments()-1];// is now the new mass outflow from the channel
 
     //Update reservoir concentrations
     //-----------------------------------------------------
@@ -261,24 +295,21 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
       _aMres_last[p][c]=_aMres[p][c];
       _aMres     [p][c]=aResMass[c];
 
-      /*_Mout_res_last[p][c] =_Mout_res;
-     _Mout_res=      Qout*_aMres[p][c]/pRes->GetStorage();*/
+      _aMout_res_last[p][c]=_aMout_res[p][c];
+      _aMout_res     [p][c]=(pRes->GetOutflowRate()*SEC_PER_DAY/pRes->GetStorage())*_aMres[p][c]; //mg/d
 
+      aMassOutflow[c]=_aMout_res[p][c];
 
       // \todo[funct] - properly handle reservoir extraction in mass balance
       // assume inflow is clean, outflow has concentration Cres
       /*_MBres_losses[p][c]=0.0;
-      CTimeSeries *pEx=pRes->GetExtrationTS();
+      CTimeSeries *pExpRes->GetExtractionTS();
       if(pEx!=NULL){
-        double stor_new;
-        double stor_old;
         int nn        =(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
-        _MBres_losses[p][c]+=0.5*(pEx->GetSampledValue(nn+1)*_aMres[p][c]/pRes->GetStorage()+pEx->GetSampledValue(nn)*_aMres_last[p][c]/pRes->GetOldStorage())*SEC_PER_DAY*tstep;
+        _MBres_losses[p][c]+=0.5*max(pEx->GetSampledValue(nn)*SEC_PER_DAY,0.0)*(_aMres[p][c]/pRes->GetStorage()+_aMres_last[p][c]/pRes->GetOldStorage())*tstep;
       }*/
-
     }
-
-
+    
     if (initialize){return;}//entering initial conditions
 
     //Update channel storage
@@ -308,7 +339,6 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
     dM-=0.5*(Mlat_new+_aMlat_last[p][c])*dt;//outflow to channel (integrated over time step)
 
     _rivulet_storage[p][c]+=dM;//[mg]
-
 
     _aMlat_last[p][c]=Mlat_new;
 
@@ -356,9 +386,7 @@ double CTransportModel::GetIntegratedMassOutflow(const int p, const int c,const 
   }
   else
   {
-    double oldmassflow=pRes->GetOldOutflowRate()*_aMres_last[p][c]/pRes->GetOldStorage();
-    double newmassflow=pRes->GetOutflowRate()   *_aMres     [p][c]/pRes->GetStorage(); //[mg/s]
-    return 0.5*(newmassflow+oldmassflow)*(SEC_PER_DAY)*tstep; //integrated - [mg]
+    return 0.5*(_aMout_res[p][c]+_aMout_res_last[p][c])*tstep; //integrated - [mg]
   }
 
 }

@@ -30,7 +30,8 @@ double CalculateSnowEnergyContent(const double &SWE,            //[mm]
 /// \brief Implementation of the prairie blowing snow constructor
 //
 CmvPrairieBlowingSnow::CmvPrairieBlowingSnow(pbsm_type sub_type):
-  CHydroProcessABC(BLOWING_SNOW){
+  //CHydroProcessABC(BLOWING_SNOW):
+  CLateralExchangeProcessABC(BLOWING_SNOW){
   type=sub_type;
 
   int iSnowAge      =pModel->GetStateVarIndex(SNOW_AGE);
@@ -317,11 +318,11 @@ void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [
 
         SBsum+=SublimRateCoefficient(Mpr,alpha,Vsusp,rel_hum_z,T)*Nz*dz;  // Pomeroy1988 Eq. 6.12/6.13
 
-        if(z<5.0) { Qsum+=(Nz*Uz)*dz; }              // Pomeroy1988 Eq. 5.4
+        if(z<5.0) { Qsum+=(Nz*Uz)*dz; }               // Pomeroy1988 Eq. 5.4
 
         if(Nz<=0.00001) { //drift density small enough to finish
           SublH =-min(SBsum+SBsalt,0.0); //[kg/m^2/s]
-          DriftH=(Qsalt+Qsum);         //[kg/m/s]
+          DriftH=(Qsalt+Qsum);           //[kg/m/s]
           return;
         }
         else{
@@ -582,6 +583,36 @@ double wt_average(const double &v1,const double &v2,const double &w1,const doubl
   if((w1+w2)==0){ return 0.5*(v1+v2); }//equal zero weights
   return (w1*v1+w2*v2)/(w1+w2);
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns lateral blowing snow exchange rates ([mm-m2/day]) 
+/// \param **state_vars [in] 2D array of current state variables [nHRUs][nSVs]
+/// \param **pHRUs [in] array of pointers to HRUs
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Specified point at time at which this accessing takes place
+/// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-m2/day]
+//
+void CmvPrairieBlowingSnow::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
+                                              const CHydroUnit * const *pHRUs,    
+                                              const optStruct          &Options,
+                                              const time_struct        &tt,
+                                                    double             *exchange_rates) const
+{
+  double stor,Afrom,Ato;
+  double to_stor,max_to_stor;
+
+  for(int q=0; q<_nLatConnections; q++)
+  {
+    stor   =state_vars[_kFrom[q]][_iFromLat[q]];
+    to_stor=state_vars[_kTo  [q]][_iToLat[q]];
+    Afrom=pHRUs[_kFrom[q]]->GetArea();
+    Ato  =pHRUs[_kTo  [q]]->GetArea();
+    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(_iToLat[q],state_vars[_kTo[q]],Options);
+
+    exchange_rates[q]=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
+  }
+}
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief redistributes drifting snow between HRUs in a subbasin

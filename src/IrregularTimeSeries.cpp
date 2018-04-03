@@ -291,7 +291,7 @@ CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string nam
 
   int n=0;
   s[0]=NULL;
-  while ((n<nMeasurements) && (strcmp(s[0],"&")) && (!p->Tokenize(s,Len)))
+  while ((n<nMeasurements) && (!p->Tokenize(s,Len)))
   {
     if (Len<3){
       p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;

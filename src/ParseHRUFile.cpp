@@ -366,7 +366,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
       CHRUGroup *pHRUGrp=NULL;
       pHRUGrp=pModel->GetHRUGroup(s[1]);
       if (pHRUGrp==NULL){//group not yet defined
-        WriteWarning("HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file",Options.noisy);
+        WriteAdvisory("HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file",Options.noisy);
         pHRUGrp=new CHRUGroup(s[1],pModel->GetNumHRUGroups());
         pModel->AddHRUGroup(pHRUGrp);
       }
@@ -480,8 +480,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
         if(!strcmp(s[4],"BETWEEN")){
           for(k=0;k<pModel->GetNumHRUs();k++)
           {
-            if((pModel->GetHydroUnit(k)->GetElevation()>s_to_d(s[5])) &&
-               (pModel->GetHydroUnit(k)->GetElevation()>s_to_d(s[6]))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetElevation()>=s_to_d(s[5])) &&
+               (pModel->GetHydroUnit(k)->GetElevation()<s_to_d(s[6]))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
           }
         }
       }
