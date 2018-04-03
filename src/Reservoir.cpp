@@ -25,6 +25,7 @@ CReservoir::CReservoir(const string Name,const long SubID,const res_type typ)
   _Qout      =0.0;
   _Qout_last =0.0;
   _MB_losses =0.0;
+  _AET		   =0.0;
 
   _pHRU=NULL;
   _pExtractTS=NULL;
@@ -327,6 +328,13 @@ double  CReservoir::GetReservoirLosses(const double &tstep) const
   return _MB_losses;
 }
 //////////////////////////////////////////////////////////////////
+/// \returns evaporative losses only integrated over previous timestep [m3]
+//
+double  CReservoir::GetReservoirEvapLosses(const double &tstep) const
+{
+	return _AET;
+}
+//////////////////////////////////////////////////////////////////
 /// \returns outflow integrated over timestep [m3/d]
 //
 double  CReservoir::GetIntegratedOutflow        (const double &tstep) const
@@ -500,7 +508,9 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0;
   if(_pHRU!=NULL){
-    _MB_losses+=_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
+    _AET      =_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
+    _MB_losses+=_AET;
+	  
   }
 
   if(_pExtractTS!=NULL){
@@ -526,7 +536,6 @@ void CReservoir::UpdateFlowRules(const time_struct &tt, const optStruct &Options
   for (int i = 0; i < _Np; i++){
     _aQ[i] = _aQ_back[vv][i];
   }
-  //cout<<"using flow "<<vv<<" max flow: "<<_aQ[_Np-1]<<" Qund: "<<_aQunder[0]<<endl;
   return;
 }
 //////////////////////////////////////////////////////////////////
@@ -1200,7 +1209,7 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
 /// \param y [in] array (size:N)  of values corresponding to N evenly spaced points in x
 /// \param N size of array y
 /// \returns y value corresponding to interpolation point
-/// \note does not regular spacing between min and max x value
+/// \note does not assume regular spacing between min and max x value
 //
 double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom)
 {

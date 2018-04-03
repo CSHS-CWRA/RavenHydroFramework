@@ -1204,6 +1204,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       for (int i=1; i<Len; i++)
       {
         invalid=false;pDiag=NULL;
+		    int width = DOESNT_EXIST;
+		    string tmp = CStateVariable::SVStringBreak(s[i], width);
         if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
         else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
         else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
@@ -1221,6 +1223,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
+		    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) { pDiag = new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
           pModel->AddDiagnostic(pDiag);

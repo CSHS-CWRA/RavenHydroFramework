@@ -26,6 +26,7 @@ enum diag_type {
   DIAG_NASH_SUTCLIFFE_DER,
   DIAG_RMSE_DER,
   DIAG_KLING_GUPTA_DER,
+  DIAG_NASH_SUTCLIFFE_RUN,
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -35,10 +36,12 @@ class CDiagnostic
 private:/*------------------------------------------------------*/
 
   diag_type     _type;    ///< output file stream
+  int _width;
 
 public:/*------------------------------------------------------*/
 
-  CDiagnostic(const diag_type  typ);
+	CDiagnostic(const diag_type  typ);
+  CDiagnostic(const diag_type  typ, const int wid);
   ~CDiagnostic();
 
   string GetName() const;

@@ -313,6 +313,17 @@ void CModel::Initialize(const optStruct &Options)
 		  }
 	  }
   }
+  //--check for net inflow observations not linked to valid reservoir
+  for (int i = 0; i<_nObservedTS; i++) {
+	  if (!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_NETINFLOW"))
+	  {
+		  long SBID = s_to_l(_pObservedTS[i]->GetTag().c_str());
+		  if (GetSubBasinByID(SBID)->GetReservoir() == NULL) {
+			  string warn = "Net inflow Observations supplied for non-existent reservoir in subbasin " + to_string(SBID);
+			  ExitGracefully(warn.c_str(), BAD_DATA);
+		  }
+	  }
+  }
   //--check for wetlands in model without depression storage
   bool wetlandsinmodel=false;
   for(k=0;k<_nHydroUnits;k++) {

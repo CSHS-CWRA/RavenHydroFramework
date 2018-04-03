@@ -409,6 +409,15 @@ double CSubBasin::GetReservoirLosses(const double &tstep) const
   if(_pReservoir==NULL){ return 0.0; }
   return _pReservoir->GetReservoirLosses(tstep);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Reservoir losses from AET only integrated over specified timestep [m^3]
+/// \return Reservoir losses from AET over specified timestep  [m^3]
+//
+double CSubBasin::GetReservoirEvapLosses(const double &tstep) const
+{
+	if (_pReservoir == NULL) { return 0.0; }
+	return _pReservoir->GetReservoirEvapLosses(tstep);
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total volume lost from main reach over timestep [m^3]

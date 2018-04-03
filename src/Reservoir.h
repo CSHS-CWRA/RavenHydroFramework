@@ -55,6 +55,7 @@ private:/*-------------------------------------------------------*/
   double       _Qout;                ///< outflow corresponding to current stage [m3/s]
   double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
   double       _MB_losses;           ///< losses over current time step [m3]
+  double       _AET;                 ///< losses through AET only [m3]
 
   //rating curve characteristics :
   double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
@@ -101,6 +102,7 @@ public:/*-------------------------------------------------------*/
   double            GetStorage           () const;//[m3]
   double            GetOutflowRate       () const;//[m3/d]
   double            GetReservoirLosses   (const double &tstep) const;//[m3]
+  double            GetReservoirEvapLosses (const double &tstep) const;//[m3]
   double            GetIntegratedOutflow (const double &tstep) const;//[m3]
   double            GetResStage          () const;//[m]
   double            GetOldOutflowRate    () const; //[m3/d]

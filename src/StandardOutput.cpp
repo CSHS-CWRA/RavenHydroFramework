@@ -64,6 +64,21 @@ bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
 		);
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns true if specified observation time series is the reservoir inflow series for subbasin SBID
+/// \param pObs [in] observation time series
+/// \param SBID [in] subbasin ID
+//
+bool IsContinuousNetInflowObs(CTimeSeriesABC *pObs, long SBID)
+{
+	// clears up  terribly ugly repeated if statements
+	if (pObs == NULL) { return false; }
+	return (
+		(!strcmp(pObs->GetName().c_str(), "RESERVOIR_NETINFLOW")) &&
+		(s_to_l(pObs->GetTag().c_str()) == SBID) &&
+		(pObs->GetType() == CTimeSeriesABC::ts_regular)
+		);
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Adds output directory & prefix to base file name
 /// \param filebase [in] base filename, with extension, no directory information
 /// \param &Options [in] Global model options information

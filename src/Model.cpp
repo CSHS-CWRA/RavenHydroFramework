@@ -1603,6 +1603,28 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       ExitGracefullyIf(pBasin == NULL, error.c_str(), BAD_DATA);
       value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
     }
+		else if (datatype == "RESERVOIR_NETINFLOW")
+		{
+			CSubBasin *pBasin = NULL;
+			pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+			string error = "CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir inflow time series " + _pObservedTS[i]->GetName();
+			ExitGracefullyIf(pBasin == NULL, error.c_str(), BAD_DATA);
+			CReservoir *pRes=pBasin->GetReservoir(); 
+		
+			CHydroUnit *pHRU = NULL;
+			pHRU = GetHRUByID(pRes->GetHRUIndex());
+			double avg_area = pHRU->GetArea();
+
+			if (pHRU == NULL) {
+				avg_area = 0.0;
+			}
+
+			double tem_precip1 = pBasin->GetAvgForcing("PRECIP")*avg_area*M2_PER_KM2/MM_PER_METER / (Options.timestep*SEC_PER_DAY); 
+			double losses = pBasin->GetReservoirEvapLosses(Options.timestep) / (Options.timestep*SEC_PER_DAY);
+
+			value = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
+
+		}
     else if (svtyp!=UNRECOGNIZED_SVTYPE)
     {
       CHydroUnit *pHRU=NULL;

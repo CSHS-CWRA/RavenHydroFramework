@@ -10,7 +10,6 @@
 Constructor/Destructor
 ------------------------------------------------------------------
 *****************************************************************/
-
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the CDiagnostic constructor
 /// \param typ [in] type of diagnostics
@@ -18,6 +17,16 @@ Constructor/Destructor
 CDiagnostic::CDiagnostic(diag_type typ)
 {
   _type =typ;
+  _width =DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the CDiagnostic constructor
+/// \param typ [in] type of diagnostics
+//
+CDiagnostic::CDiagnostic(diag_type typ, int wid)
+{
+  _type =typ;
+  _width =wid;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the CDiagnostic destructor
@@ -47,9 +56,11 @@ string CDiagnostic::GetName() const
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; break;}
   case(DIAG_RMSE_DER):      {return "DIAG_RMSE_DER"; break;}
   case(DIAG_KLING_GUPTA_DER):{return "DIAG_KLING_GUPTA_DER"; break;}
+  case(DIAG_NASH_SUTCLIFFE_RUN): {return"DIAG_NASH_SUTCLIFFE_RUN"; break;}
   default:                  {return "";break;}
   }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the CDiagnostic constructor
 /// \param typ [in] type of diagnostics
@@ -61,6 +72,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 {
   int nn;
   double N=0;
+  int width = _width;
   int nVals=pTSObs->GetNumSampledValues();
   double obsval,modval;
   double weight=1;
@@ -73,11 +85,30 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   {
   case(DIAG_NASH_SUTCLIFFE)://-----------------------------------------
   case(DIAG_NASH_SUTCLIFFE_DER):
+  case(DIAG_NASH_SUTCLIFFE_RUN):
   {
     if(_type==DIAG_NASH_SUTCLIFFE_DER)
     {
       nVals -= 1;     // Reduce nvals by 1 for derivative of NSE
     }
+		else if(_type==DIAG_NASH_SUTCLIFFE_RUN)
+		{
+			if (width < 2)
+			{
+				string warn = "Provide average width greater than 1 in format: DIAG_NASH_SUTCLIFFE_RUN[n]";
+				WriteWarning(warn, Options.noisy);
+				return -ALMOST_INF;
+			}
+			if (width * 2 > nVals)
+			{
+				string warn = "Not enough sample values. Check width and timeseries";
+				WriteWarning(warn, Options.noisy);
+				return -ALMOST_INF;
+			}
+			nVals -= width;
+			skip = width;
+
+		}
    
     bool ValidObs = false;
     bool ValidMod = false;
@@ -96,7 +127,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
         if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
       }
-      else // (DIAG_NASH_SUTCLIFFE_DER)
+      else if(_type==DIAG_NASH_SUTCLIFFE_DER)
       {
         // obsval and modval becomes (dS(n+1)-dS(n))/dt
         weight=1.0;
@@ -110,6 +141,31 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
       }
+		  else if (_type == DIAG_NASH_SUTCLIFFE_RUN)
+		  {
+			  int front = 0;
+			  int back = 0;
+			  double modavg = 0.0;
+			  double obsavg = 0.0;
+			  weight = 1.0;
+        front = (int)(floor(width / 2));
+			  if (width % 2 == 1) {
+				  back = front;
+			  }
+			  else{
+				  back = front - 1;
+			  }
+
+			  for (int k = nn - front; k <= nn + back; k++)
+			  {
+				  modavg += pTSMod->GetSampledValue(k);
+				  obsavg += pTSObs->GetSampledValue(k);
+				  if (pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k); }
+			  }
+
+			  modval = modavg / width;
+			  obsval = obsavg / width;
+		  }
 
       if (weight != 0) { ValidWeight = true; }
 
@@ -137,7 +193,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
         else {weight = 0;}
       }
-      else //(DIAG_NASH_SUTCLIFFE_DER)
+      else if(_type==DIAG_NASH_SUTCLIFFE_DER)
       {
         // obsval and modval becomes (dS(n+1)-dS(n))/dt
         weight=1.0;
@@ -156,6 +212,49 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true;}
         else {weight = 0;}
       }
+		  else if (_type == DIAG_NASH_SUTCLIFFE_RUN)
+		  {
+			  int front = 0;
+			  int back = 0;
+			  double modavg = 0.0;
+			  double obsavg = 0.0;
+			  weight = 1.0;
+
+        front = (int) floor(width / 2);
+			  if (width % 2 == 1) {
+				  back = front;
+			  }
+			  else {
+				  back = front - 1;
+			  }
+
+			  for (int k = nn - front; k <= nn + back; k++)
+			  {
+				  modavg += pTSMod->GetSampledValue(k);
+				  obsavg += pTSObs->GetSampledValue(k);
+				  if (pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k); }
+			  }
+
+			  modval = modavg / width;
+			  obsval = obsavg / width;
+
+
+			  // Track that all values in width are valid to be used in calculation
+			  int validtrack_obs = 0;
+			  int validtrack_mod = 0;
+
+			  for (int k = nn - front; k <= nn + back; k++)
+			  {
+				  if (pTSObs->GetSampledValue(k) != CTimeSeriesABC::BLANK_DATA) { validtrack_obs += 1; }
+				  if (pTSMod->GetSampledValue(k) != CTimeSeriesABC::BLANK_DATA) { validtrack_mod += 1; }
+				  if (pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k);}
+			  }
+
+			  if (validtrack_obs == width) { ValidObs = true; } else{weight = 0;}
+			  if (validtrack_mod == width) { ValidMod = true; } else{weight = 0;}
+			  if (weight != 0) { ValidWeight = true; }
+		
+		  }
 
       sum1 += pow(obsval - modval,2)*weight;
       sum2 += pow(obsval - avg, 2)*weight;
@@ -189,6 +288,12 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         WriteWarning(warn, Options.noisy);
         break;
       }
+		  case(DIAG_NASH_SUTCLIFFE_RUN):
+		  {
+			  string warn = "DIAG_NASH_SUTCLIFFE_RUN not performed correctly. Check " + p1 + p2 + p3;
+			  WriteWarning(warn, Options.noisy);
+			  break;
+		  }
       }
       return -ALMOST_INF;
     }

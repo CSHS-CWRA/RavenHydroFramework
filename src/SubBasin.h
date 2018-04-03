@@ -140,6 +140,7 @@ public:/*-------------------------------------------------------*/
                                              const double &tstep) const;//[m3] from specified inflows integrated over timestep
   double               GetReservoirInflow   () const;                   //[m3/s] from final segment upstream of reservoir, point in time
   double               GetReservoirLosses   (const double &tstep) const;//[m3] from reservoir integrated over timestep
+  double             GetReservoirEvapLosses (const double &tstep) const;//[m3] from reservoir integrated over timestep AET only
   double        GetIntegratedReservoirInflow(const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
   double               GetRivuletStorage    () const;                   //[m3] volume en route to outflow
   double               GetChannelStorage    () const;                   //[m3] volume in channel
