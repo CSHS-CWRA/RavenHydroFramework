@@ -161,7 +161,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   //these parameters are required
   S.landuse_name    =Stmp.landuse_name;
   S.impermeable_frac=Stmp.impermeable_frac;
-  ExitGracefullyIf(S.impermeable_frac<0.0 || S.impermeable_frac>1.0,"Invalid parameter value for IMPERM: must be between 0 and 1",BAD_DATA_WARN);
+  ExitGracefullyIf(S.impermeable_frac<0.0 || S.impermeable_frac>1.0,"Invalid parameter value for IMPERMEABLE_FRAC: must be between 0 and 1",BAD_DATA_WARN);
 
   //Forest coverage
   autocalc=SetCalculableValue(S.forest_coverage,Stmp.forest_coverage,Sdefault.forest_coverage);

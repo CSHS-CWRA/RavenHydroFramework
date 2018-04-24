@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2018 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -124,8 +124,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         obsval = pTSObs->GetSampledValue(nn);
         modval = pTSMod->GetSampledValue(nn);
         if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
-        if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-        if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+        if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       }
       else if(_type==DIAG_NASH_SUTCLIFFE_DER)
       {
@@ -137,8 +137,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         modval /= dt;
 
         // both values at current timestep and next time step need to be valid
-        if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-        if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidObs = true; }
+        if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidMod = true; }
         if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
       }
 		  else if (_type == DIAG_NASH_SUTCLIFFE_RUN)
@@ -169,7 +169,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
       if (weight != 0) { ValidWeight = true; }
 
-      if ((obsval != CTimeSeriesABC::BLANK_DATA) && (modval != CTimeSeriesABC::BLANK_DATA) && weight != 0) {
+      if ((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && weight != 0) {
         avg+=obsval*weight;
         N+= weight;
       }
@@ -187,10 +187,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
         if (weight != 0) { ValidWeight = true; }
 
-        if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+        if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
         else {weight = 0;}
 
-        if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (modval != RAV_BLANK_DATA) { ValidMod = true; }
         else {weight = 0;}
       }
       else if(_type==DIAG_NASH_SUTCLIFFE_DER)
@@ -206,10 +206,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if(pTSWeights != NULL){ weight=0.5*(pTSWeights->GetSampledValue(nn+1))+(pTSWeights->GetSampledValue(nn));}
         if (weight != 0) { ValidWeight = true; }
 
-        if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true;}
+        if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidObs = true;}
         else {weight = 0;}
 
-        if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true;}
+        if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidMod = true;}
         else {weight = 0;}
       }
 		  else if (_type == DIAG_NASH_SUTCLIFFE_RUN)
@@ -245,8 +245,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
 			  for (int k = nn - front; k <= nn + back; k++)
 			  {
-				  if (pTSObs->GetSampledValue(k) != CTimeSeriesABC::BLANK_DATA) { validtrack_obs += 1; }
-				  if (pTSMod->GetSampledValue(k) != CTimeSeriesABC::BLANK_DATA) { validtrack_mod += 1; }
+				  if (pTSObs->GetSampledValue(k) != RAV_BLANK_DATA) { validtrack_obs += 1; }
+				  if (pTSMod->GetSampledValue(k) != RAV_BLANK_DATA) { validtrack_mod += 1; }
 				  if (pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k);}
 			  }
 
@@ -322,10 +322,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
         if (weight != 0) { ValidWeight = true; }
 
-        if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+        if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
         else {weight = 0;}
 
-        if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (modval != RAV_BLANK_DATA) { ValidMod = true; }
         else {weight = 0;}
 
         break;
@@ -343,10 +343,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
         if (weight != 0) { ValidWeight = true; }
 
-        if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true;}
+        if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidObs = true;}
         else {weight = 0;}
 
-        if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn+1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true;}
+        if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidMod = true;}
         else {weight = 0;}
 
         break;
@@ -404,11 +404,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0) {
         sum1+=(modval-obsval)*weight;
         sum2+=obsval*weight;
       }
@@ -449,11 +449,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0){
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0){
         sum += abs(obsval - modval)*weight;
         N+=weight;
       }
@@ -494,11 +494,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0) {
         if (obsval > maxObs) {
           maxObs = obsval;
         }
@@ -541,11 +541,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0) {
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0) {
         if (abs(obsval - modval) > maxerr ) {
           maxerr = abs(obsval - modval);
         }
@@ -589,7 +589,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
       {
         time_struct tt;
         JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, tt);
@@ -606,11 +606,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
       {
         time_struct tt2;
         JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, tt2);
@@ -681,11 +681,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); nxtweight = pTSWeights->GetSampledValue(nn + 1); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && nxtobsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA && nxtmodval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA && nxtobsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA && nxtmodval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0 && nxtweight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && nxtobsval != CTimeSeriesABC::BLANK_DATA && nxtmodval != CTimeSeriesABC::BLANK_DATA && weight != 0 && nxtweight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && nxtobsval != RAV_BLANK_DATA && nxtmodval != RAV_BLANK_DATA && weight != 0 && nxtweight != 0)
       {
         ModSum += modval;
         ObsSum += obsval;
@@ -710,11 +710,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); nxtweight = pTSWeights->GetSampledValue(nn + 1); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && nxtobsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA && nxtmodval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA && nxtobsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA && nxtmodval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0 && nxtweight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && nxtobsval != CTimeSeriesABC::BLANK_DATA && nxtmodval != CTimeSeriesABC::BLANK_DATA && weight != 0 && nxtweight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && nxtobsval != RAV_BLANK_DATA && nxtmodval != RAV_BLANK_DATA && weight != 0 && nxtweight != 0)
       {
         TopSum += (nxtmodval - nxtobsval) * (modval - obsval);
         ModDiffSum += pow((modval - ModAvg), 2);
@@ -764,11 +764,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); nxtweight = pTSWeights->GetSampledValue(nn + 1); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && nxtobsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA && nxtmodval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA && nxtobsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA && nxtmodval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0 && nxtweight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && nxtobsval != CTimeSeriesABC::BLANK_DATA && nxtmodval != CTimeSeriesABC::BLANK_DATA && weight != 0 && nxtweight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && nxtobsval != RAV_BLANK_DATA && nxtmodval != RAV_BLANK_DATA && weight != 0 && nxtweight != 0)
       {
         if ((ceil((obsval - modval)*1000)/1000)*(ceil((nxtobsval - nxtmodval)*1000)/1000) < 0)
         {
@@ -815,11 +815,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
       {
         ObsSum += obsval*weight;
         N+=weight;
@@ -836,11 +836,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
       {
         TopSum += pow((obsval - modval),2)*weight;
         BotSum += pow((obsval - ObsAvg),2)*weight;
@@ -886,11 +886,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
       {
         ObsSum += obsval*weight;
         ModSum += modval*weight;
@@ -909,11 +909,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA && modval != CTimeSeriesABC::BLANK_DATA && weight != 0)
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
       {
         CovXY += weight*(modval-ModAvg)*(obsval-ObsAvg);
         CovXX += weight*(modval-ModAvg)*(modval-ModAvg);
@@ -962,16 +962,16 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
       //log transformation
-      if (obsval <= 0.0){obsval=CTimeSeriesABC::BLANK_DATA;} //negative values treated as invalid observations/modeled
+      if (obsval <= 0.0){obsval=RAV_BLANK_DATA;} //negative values treated as invalid observations/modeled
       else              {obsval=log(obsval);               }
-      if (modval <= 0.0){modval=CTimeSeriesABC::BLANK_DATA;}
+      if (modval <= 0.0){modval=RAV_BLANK_DATA;}
       else              {modval=log(modval);               }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if ((obsval != CTimeSeriesABC::BLANK_DATA) && (modval != CTimeSeriesABC::BLANK_DATA) && (weight != 0))
+      if ((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && (weight != 0))
       {
         avg+=obsval*weight;
         N+= weight;
@@ -988,12 +988,12 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
 
       //log transformation
-      if (obsval <= 0.0){obsval=CTimeSeriesABC::BLANK_DATA;} //negative values treated as invalid observations/modeled
+      if (obsval <= 0.0){obsval=RAV_BLANK_DATA;} //negative values treated as invalid observations/modeled
       else              {obsval=log(obsval);               }
-      if (modval <= 0.0){modval=CTimeSeriesABC::BLANK_DATA;}
+      if (modval <= 0.0){modval=RAV_BLANK_DATA;}
       else              {modval=log(modval);               }
 
-      if ((obsval != CTimeSeriesABC::BLANK_DATA) && (modval != CTimeSeriesABC::BLANK_DATA) && (weight != 0)) {
+      if ((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && (weight != 0)) {
         sum1+=pow(obsval-modval,2)*weight;
         sum2+=pow(obsval-avg   ,2)*weight;
       }
@@ -1033,11 +1033,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       weight=1.0;
       if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
 
-      if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
-      if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA) { ValidMod = true; }
       if (weight != 0) { ValidWeight = true; }
 
-      if ((obsval != CTimeSeriesABC::BLANK_DATA) && (modval != CTimeSeriesABC::BLANK_DATA) && (weight != 0))
+      if ((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && (weight != 0))
       {
         sumobs+=obsval*weight;
         summod+=modval*weight;
@@ -1088,10 +1088,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
         if (weight != 0) { ValidWeight = true; }
 
-        if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+        if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
         else { weight = 0; }
 
-        if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (modval != RAV_BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
       }
       else if (_type==DIAG_KLING_GUPTA_DER)
@@ -1106,10 +1106,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
         if (weight != 0) { ValidWeight = true; }
 
-        if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+        if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn + 1) != RAV_BLANK_DATA) { ValidObs = true; }
         else { weight = 0; }
 
-        if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != RAV_BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
       }
       ObsSum += obsval*weight;
@@ -1130,10 +1130,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
         if (weight != 0) { ValidWeight = true; }
 
-        if (obsval != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+        if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
         else { weight = 0; }
 
-        if (modval != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (modval != RAV_BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
       }
       else if (_type==DIAG_KLING_GUPTA_DER)
@@ -1150,10 +1150,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
         if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
         if (weight != 0) { ValidWeight = true; }
 
-        if (pTSObs->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSObs->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidObs = true; }
+        if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn + 1) != RAV_BLANK_DATA) { ValidObs = true; }
         else { weight = 0; }
 
-        if (pTSMod->GetSampledValue(nn) != CTimeSeriesABC::BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != CTimeSeriesABC::BLANK_DATA) { ValidMod = true; }
+        if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn + 1) != RAV_BLANK_DATA) { ValidMod = true; }
         else { weight = 0; }
       }
       ObsStd += pow((obsval - ObsAvg), 2)*weight;

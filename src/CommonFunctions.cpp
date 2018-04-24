@@ -669,19 +669,19 @@ double CelsiusToFarenheit(const double &T)
 ///
 /// \param &P [in] air pressure [kPa]
 /// \param &ref_ht [in] Measurement height [m]
-/// \param &z_p_dis [in] Zero plane displacement [m]
+/// \param &zero_pl [in] Zero plane displacement [m]
 /// \param &z0 [in] Coefficient of roughness
 /// \return Vertical transport efficiency [m s^2/kg]
 //
 double GetVerticalTransportEfficiency(const double &P,
-                                      const double &meas_ht,
-                                      const double &z_p_dis,
+                                      const double &ref_ht,
+                                      const double &zero_pl,
                                       const double &z0)
 {
   double numer,denom;
 
   numer = AIR_H20_MW_RAT*DENSITY_AIR;
-  denom = P*DENSITY_WATER*(6.25*(pow((log((meas_ht - z_p_dis)/z0)),2)));
+  denom = P*DENSITY_WATER*(1.0/pow(VON_KARMAN,2)*(pow((log((ref_ht - zero_pl)/z0)),2)));
 
   return numer/denom; //[m s^2 Kg^-1]
 }
@@ -691,7 +691,7 @@ double GetVerticalTransportEfficiency(const double &P,
 /// \ref From Dingman eqn. 7-49 \cite Dingman1994, Howell, T.A and Evett, S.R., USDA-ARS \cite Howell2004
 ///
 /// \param &wind_vel [in] Wind velocity [m/d]
-/// \param &meas_ht [in] Measurement height of wind vel [m]
+/// \param &meas_ht [in] Measurement height of wind vel [m] - must be greater than zero plane displacement
 /// \param &zero_pl [in] Zero plane displacement [m]
 /// \param &rough_ht [in] Roughness height [m]
 /// \param &vap_rough_ht [in] Vapour roughness height [m]
@@ -706,7 +706,7 @@ double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
   double atmos_cond;
   if (zero_pl==0.0){return 0.0;}
 
-  //6.25 from Dingman equation 7-49 is roughly 1/VK^2 (~6)
+  //'6.25' from Dingman equation 7-49 is roughly 1/VK^2 (~6)
   atmos_cond=(wind_vel*MM_PER_METER*pow(VON_KARMAN,2));
   atmos_cond/=(log((meas_ht-zero_pl)/rough_ht)*log((meas_ht-zero_pl)/vap_rough_ht));
 

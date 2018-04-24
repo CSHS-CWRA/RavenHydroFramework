@@ -119,7 +119,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
       Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
       Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
-      //Fg[g].subdaily_corr =_pGauges[g]->GetForcingValue    (F_SUBDAILY_CORR,nn);
     }
 
     if(!(recharge_gridded)){
@@ -132,6 +131,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   //---------------------------------------------------------------------
   double ref_elev_temp;
   double ref_elev_precip;
+  double ref_measurement_ht; //m above land surface
   for (k = 0; k < _nHydroUnits; k++)
   {
     if(_pHydroUnits[k]->IsEnabled())
@@ -141,6 +141,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       ZeroOutForcings(F);
       ref_elev_temp=ref_elev_precip=0.0;
+      ref_measurement_ht=0.0;
 
       //not gauge-based
       if(tt.day_changed)
@@ -194,8 +195,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           if(!(recharge_gridded)){
             F.recharge       += wt * Fg[g].recharge;
           }
-          //F.subdaily_corr+= wt * Fg[g].subdaily_corr;
-
+          ref_measurement_ht+=wt*_pGauges[g]->GetMeasurementHt();
           //ref_elev         += wt * _pGauges[g]->GetElevation();
         }
       }
@@ -254,7 +254,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
-        F.precip_5day      =-9999.0;
+        F.precip_5day      = NETCDF_BLANK_VALUE;
       }
 
       // ---------------------
@@ -324,6 +324,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Subdaily Corrections
       //-------------------------------------------------------------------
+      // always calculated, never from gauge
       F.subdaily_corr = CalculateSubDailyCorrection(F,Options,elev,ref_elev_temp,tt,k);
 
       //-------------------------------------------------------------------
@@ -371,7 +372,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 				
         F.precip          *=grid_corr;
         F.precip_daily_ave*=grid_corr;
-        F.precip_5day      = -9999.0;
+        F.precip_5day      =NETCDF_BLANK_VALUE;
       }
 
       //--Orographic corrections-------------------------------------------
@@ -381,7 +382,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  Wind Velocity
       //-------------------------------------------------------------------
 
-      F.wind_vel = EstimateWindVelocity(Options,F,k);
+      F.wind_vel = EstimateWindVelocity(Options,F,ref_measurement_ht,k);
       
       //-------------------------------------------------------------------
       //  Cloud Cover
@@ -415,8 +416,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  PET Calculations
       //-------------------------------------------------------------------
       // last but not least - needs all of the forcing params calculated above
-      F.PET   =EstimatePET(F,_pHydroUnits[k],Options.evaporation,tt);
-      F.OW_PET=EstimatePET(F,_pHydroUnits[k],Options.ow_evaporation,tt);
+      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,Options.evaporation,tt);
+      F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,Options.ow_evaporation,tt);
 
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
@@ -493,9 +494,10 @@ double EstimateRelativeHumidity(const relhum_method method,
 /// \param &F [in] Reference to forcing functions for HRU k
 /// \param k [in] index of HRU
 /// \return Estimated wind velocity in HRU k [m/s]
-double CModel::EstimateWindVelocity(const optStruct &Options,
+double CModel::EstimateWindVelocity(const optStruct    &Options,
                                     const force_struct &F,
-                                    const int k)
+                                    const double       &wind_measurement_ht,
+                                    const int           k)
 {
   //---------------------------------------------------------------------
   if (Options.wind_velocity==WINDVEL_CONSTANT)
@@ -693,7 +695,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   nP=0;
 
   //Just assume needed:
-  aP[nP]="FOREST_COVERAGE";   aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
+  aP[nP]="FOREST_COVERAGE";   aPC[nP]=CLASS_LANDUSE; nP++; 
   aP[nP]="POROSITY";          aPC[nP]=CLASS_SOIL;    nP++;
 
   // Interpolation Method parameters
@@ -722,7 +724,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     // Manning's n
   }
 
-  // Catchement Route Method
+  // Catchment Route Method
   //----------------------------------------------------------------------
   if (Options.catchment_routing==ROUTE_DELAYED_FIRST_ORDER)
   {
@@ -806,14 +808,16 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
 
   //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
-  if ((Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE) ||
-      (Options.evaporation==PET_PENMAN_MONTEITH) || (Options.evaporation==PET_PENMAN_COMBINATION) ||
-      (Options.evaporation==PET_JENSEN_HAISE))
+  if((Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE) ||
+     (Options.evaporation==PET_PENMAN_MONTEITH)  || (Options.evaporation==PET_PENMAN_COMBINATION) ||
+     (Options.evaporation==PET_JENSEN_HAISE))
   {
-    aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
-    aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
-    aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
-    aP[nP]="SVF_EXTINCTION";    aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
+    if(Options.SW_radia_net == NETSWRAD_CALC) {
+      aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
+      aP[nP]="SVF_EXTINCTION";    aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
+    }
   }
 
   // OW_Evaporation Method
@@ -1049,7 +1053,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   else if (Options.pot_melt==POTMELT_UBCWM)
   {
     aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
-    aP[nP]="UBC_MIN_SNOW_ALBEDO"; aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="MIN_SNOW_ALBEDO";     aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
   }
@@ -1119,6 +1123,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
 
   //...
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Creates all missing gridded snow/rain/precip data based on gridded information available,
 ///        precip data are assumed to have the same resolution and hence can be initialized together.

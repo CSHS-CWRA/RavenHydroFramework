@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Snow albedo evolution routines
   ----------------------------------------------------------------*/
@@ -52,12 +52,12 @@ void CmvSnowAlbedoEvolve::GetParticipatingParamList(string *aP, class_type *aPC,
   if (type==SNOALB_UBCWM)
   {
     nP=6;
-    aP[0]="UBC_MAX_SNOW_ALBEDO"; aPC[0]=CLASS_GLOBAL;
-    aP[1]="UBC_MIN_SNOW_ALBEDO"; aPC[1]=CLASS_GLOBAL;
-    aP[2]="UBC_ALBASE";                      aPC[2]=CLASS_GLOBAL;
-    aP[3]="UBC_ALBREC";                      aPC[3]=CLASS_GLOBAL;
-    aP[4]="UBC_MAX_CUM_MELT";      aPC[4]=CLASS_GLOBAL;
-    aP[5]="UBC_ALBSNW";                      aPC[5]=CLASS_GLOBAL;
+    aP[0]="MAX_SNOW_ALBEDO";     aPC[0]=CLASS_GLOBAL;
+    aP[1]="MIN_SNOW_ALBEDO";     aPC[1]=CLASS_GLOBAL;
+    aP[2]="UBC_ALBASE";          aPC[2]=CLASS_GLOBAL;
+    aP[3]="UBC_ALBREC";          aPC[3]=CLASS_GLOBAL;
+    aP[4]="UBC_MAX_CUM_MELT";    aPC[4]=CLASS_GLOBAL;
+    aP[5]="UBC_ALBSNW";          aPC[5]=CLASS_GLOBAL;
   }
   else
   {
@@ -111,6 +111,8 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
     double snow,albedo,cum_melt,snowfall,old_albedo;
 
     UBC_snow_par PP=CGlobalParams::GetParams()->UBC_snow_params;
+    double min_alb=CGlobalParams::GetParams()->min_snow_albedo;
+    double max_alb=CGlobalParams::GetParams()->max_snow_albedo;
 
     snow    =state_var[pModel->GetStateVarIndex(SNOW)];
     albedo  =state_var[pModel->GetStateVarIndex(SNOW_ALBEDO)];
@@ -121,7 +123,7 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
     //snow albedo decay
     if (snow>REAL_SMALL || snowfall>REAL_SMALL)
     {
-      lowerswap(albedo,PP.MAX_SNOW_ALBEDO);
+      lowerswap(albedo,max_alb);
 
       if (albedo>PP.ALBASE){
         static double albrec_factor = pow(PP.ALBREC,Options.timestep);
@@ -131,11 +133,11 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
       else if (albedo<PP.ALBASE){ //separate if in case the previous change goes below ALBASE
         albedo = PP.ALBASE*exp(-cum_melt/PP.MAX_CUM_MELT);
       }
-      upperswap(albedo,PP.MIN_SNOW_ALBEDO);
+      upperswap(albedo,min_alb);
 
       if (snowfall >0)//increase in snow albedo
       {
-        albedo += min(snowfall*Options.timestep / PP.ALBSNW,1.0) * (PP.MAX_SNOW_ALBEDO - albedo);
+        albedo += min(snowfall*Options.timestep / PP.ALBSNW,1.0) * (max_alb - albedo);
       }
     }
 

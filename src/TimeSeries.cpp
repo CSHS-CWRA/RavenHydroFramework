@@ -108,7 +108,7 @@ CTimeSeries::CTimeSeries(string    Name,
 
   for (int n=0; n<_nPulses;n++)
   {
-    _aVal [n]=BLANK_DATA;
+    _aVal [n]=RAV_BLANK_DATA;
   }
 
   _sub_daily=(_interval<(1.0-TIME_CORRECTION));//to account for potential roundoff error
@@ -318,7 +318,7 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
 
   //Initialize with blanks
   for (int nn=0;nn<_nSampVal;nn++){
-    _aSampVal[nn] = BLANK_DATA;
+    _aSampVal[nn] = RAV_BLANK_DATA;
   }
 }
 
@@ -345,7 +345,7 @@ double CTimeSeries::GetValue(const double &t) const
   double t_loc = t + _t_corr;
   n = GetTimeIndex(t_loc);
 
-  //if ((n < 0) ||(n>_nPulses - 1)){ return CTimeSeries::BLANK_DATA;}
+  //if ((n < 0) ||(n>_nPulses - 1)){ return RAV_BLANK_DATA;}
 
   if (_pulse){return _aVal[n];}
   else      {
@@ -372,29 +372,29 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
   //t_loc+tstep is now between n2*_interval and (n2+1)*_interval
   double inc;
   double blank = 0;
-  if (t_loc < -TIME_CORRECTION) {return CTimeSeriesABC::BLANK_DATA; }
-  if (t_loc >= _nPulses*_interval) {return CTimeSeriesABC::BLANK_DATA; }
+  if (t_loc < -TIME_CORRECTION) {return RAV_BLANK_DATA; }
+  if (t_loc >= _nPulses*_interval) {return RAV_BLANK_DATA; }
   if (_pulse){
     if (n1 == n2){ return _aVal[n1]; }
     else{
       sum = 0;
       inc = ((double)(n1 + 1)*_interval - t_loc);
-      if (_aVal[n1] == CTimeSeriesABC::BLANK_DATA)  { blank += inc; }
+      if (_aVal[n1] == RAV_BLANK_DATA)  { blank += inc; }
       else                                          { sum += _aVal[n1] * inc; }
 
       for (int n = n1 + 1; n < n2; n++){
-        if (_aVal[n] == CTimeSeriesABC::BLANK_DATA) { blank += _interval; }
+        if (_aVal[n] == RAV_BLANK_DATA) { blank += _interval; }
         else                                        { sum += _aVal[n] * _interval; }
       }
       inc = ((t_loc + tstep) - (double)(n2)*_interval);
-      if (_aVal[n2] == CTimeSeriesABC::BLANK_DATA)  { blank += inc; }
+      if (_aVal[n2] == RAV_BLANK_DATA)  { blank += inc; }
       else                                          { sum += _aVal[n2] * inc; }
     }
   }
   else{
     ExitGracefully("CTimeSeries::GetAvgValue (non-pulse)", STUB);
   }
-  if (blank / tstep > 0.001){return BLANK_DATA;}
+  if (blank / tstep > 0.001){return RAV_BLANK_DATA;}
 
   return sum/tstep;
 }
@@ -463,7 +463,7 @@ double CTimeSeries::GetSampledValue(const int nn) const
 {
   if (nn>_nSampVal-1){
     //cout <<"CTimeSeries::GetSampledValue "<< nn << " "<<_nSampVal<<endl;
-    return CTimeSeriesABC::BLANK_DATA;
+    return RAV_BLANK_DATA;
   }
   return _aSampVal[nn];
 }

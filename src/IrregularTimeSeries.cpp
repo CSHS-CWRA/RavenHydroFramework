@@ -187,7 +187,7 @@ double CIrregularTimeSeries::GetAvgValue(const double &t, const double &tstep) c
     }
   }
   if (count > 0){ return sum / count; }
-  else { return BLANK_DATA; }
+  else { return RAV_BLANK_DATA; }
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -209,7 +209,7 @@ double CIrregularTimeSeries::GetMinValue(const double &t, const double &tstep) c
       blank = false;
     }
   }
-  if (blank){ return BLANK_DATA; }
+  if (blank){ return RAV_BLANK_DATA; }
 
   return vmin;
 }
@@ -233,7 +233,7 @@ double CIrregularTimeSeries::GetMaxValue(const double &t, const double &tstep) c
       blank = false;
     }
   }
-  if (blank){ return BLANK_DATA; }
+  if (blank){ return RAV_BLANK_DATA; }
 
   return vmax;
 }

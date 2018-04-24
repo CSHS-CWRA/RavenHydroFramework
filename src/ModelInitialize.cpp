@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -125,14 +125,6 @@ void CModel::Initialize(const optStruct &Options)
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups[kk]->Initialize(); }
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
-  /*for(kk=0;kk<_nHRUGroups;kk++){
-    cout<<"    GROUP MEMBERSHIP: "<<_pHRUGroups[kk]->GetName()<<" : ";
-    for(k=0;k<_pHRUGroups[kk]->GetNumHRUs();k++){
-      cout<<_pHRUGroups[kk]->GetHRU(k)->GetID()<<",";
-    }
-    cout<<endl;
-  }*/
-
   //--check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
   //---------------------------------------------------------------
   string disbasins="\n";
@@ -157,12 +149,7 @@ void CModel::Initialize(const optStruct &Options)
       _pSubBasins[p]->Disable(); //all HRUs in basin disabled -disable subbasin!
     }
   }
-  /*for(k=0; k<_nHydroUnits;k++){
-    cout<<" HRU "<<_pHydroUnits[k]->GetID()<<" "<<boolalpha<<_pHydroUnits[k]->IsEnabled()<<endl;
-  }
-  for(p=0;p<_nSubBasins;p++){
-    cout<<" SB "<<_pSubBasins[p]->GetID()<<" "<<boolalpha<<_pSubBasins[p]->IsEnabled()<<endl;
-  }*/
+
   if(anydisabled){
     WriteWarning("CModel::Initialize: the following subbasins have one or more member HRUs disabled: "+disbasins,Options.noisy);
   }
@@ -229,7 +216,7 @@ void CModel::Initialize(const optStruct &Options)
     _pTransModel->Initialize();
   }
 
-  // precalculate whether individual processes should apply (for speed)
+  //Precalculate whether individual processes should apply (for speed)
   //--------------------------------------------------------------
   _aShouldApplyProcess = new bool *[_nProcesses];
   for (int j=0; j<_nProcesses;j++){
@@ -290,7 +277,6 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
-
   //--check for stage observations not linked to valid reservoir
   for(int i=0; i<_nObservedTS; i++){
     if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE"))
@@ -611,9 +597,9 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   for(g=0;g<_nGauges;g++){
     has_data[g]=_pGauges[g]->TimeSeriesExists(forcing);
     if(has_data[g]){ nGaugesWithData++; }
-    //cout<<" GaugeWts: "<<ForcingToString(forcing)<<" g: "<<g<<" "<<b_to_s(has_data[g])<<endl;
   }
   //handle the case that weights are allowed to sum to zero -netCDF is available
+  //still need to allocate all zeros
   if (ForcingGridIsAvailable(forcing)){ return; }
 
   string warn="GenerateGaugeWeights: no gauges present with the following data: "+ForcingToString(forcing);

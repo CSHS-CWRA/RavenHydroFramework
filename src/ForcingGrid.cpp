@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 
 // start of compilation if NetCDF library is available
@@ -497,7 +497,7 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
     _aVal[it] = new double [_nNonZeroWeightedGridCells];
     ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReallocateArraysInForcingGrid",OUT_OF_MEMORY);
     for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
-      _aVal[it][ic]=-9999.0;                                       // initialize
+      _aVal[it][ic]=NETCDF_BLANK_VALUE;                       // initialize
     }
   }
 
@@ -511,7 +511,7 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
     _GridWeight[ik] = new double [_GridDims[0]*_GridDims[1]];
     ExitGracefullyIf(_GridWeight[ik]==NULL,"CForcingGrid::ReallocateArraysInForcingGrid(2)",OUT_OF_MEMORY);
     for (int ic=0; ic<_GridDims[0]*_GridDims[1]; ic++) {       // loop over cells = rows*cols
-      _GridWeight[ik][ic]=-9999.0;
+      _GridWeight[ik][ic]=NETCDF_BLANK_VALUE;
     }
   }
 
@@ -620,7 +620,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       _aVal[it] = new double [_nNonZeroWeightedGridCells];
       ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReadData",OUT_OF_MEMORY);
       for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){    // loop over all non-zero weighted grid cells
-        _aVal[it][ic]=-9999.0;
+        _aVal[it][ic]=NETCDF_BLANK_VALUE;
       }
     }
 
@@ -734,7 +734,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     double *aVec=new double[dim1*dim2*dim3];//stores actual data
     for(int i=0; i<dim1*dim2*dim3; i++) {
-      aVec[i]=-9999.0;
+      aVec[i]=NETCDF_BLANK_VALUE;
     }
     ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
 

@@ -62,14 +62,24 @@ public:/*------------------------------------------------------*/
                                            const double day_length,	// length of day (not corrected for slope) [days]
                                            const double t_sol,			//time of day w.r.t. solar noon [days] [-0.5..0.5]
                                            const bool   avg_daily);	//true if avg_daily is to be calculated
-  static double ClearSkySolarRadiation    (const double julian_day,
-                                           const double latrad,			//[rad]
-                                           const double lateq,			//[rad]
-                                           const double slope,			//[rad]
-                                           const double day_angle,
-                                           const double day_length,
-                                           const double solar_noon,	//[days]
-                                           const double dew_pt,			//dew point temp, [C]
+  static double CalcETRadiation2          (const double &latrad,			//latitude in radians
+                                           const double &aspect,			//equivalent latitude for slope
+                                           const double &declin,			//declination in radians
+                                           const double &ecc,			  //eccentricity correction [-]
+                                           const double &slope,			//in radians
+                                           const double &t1,         //starttime of timeestep w.r.t. solar noon [days] [-0.5..0.5]
+                                           const double &t2,         //endtime of timeestep w.r.t. solar noon [days] [-0.5..0.5] (must be > t1)
+                                           const bool   avg_daily);
+  static double ClearSkySolarRadiation    (const double &julian_day,
+                                           const double &tstep,
+                                           const double &latrad,			//[rad]
+                                           const double &lateq,			//[rad]
+                                           const double &slope,			//[rad]
+                                           const double &aspect,     //[rad]
+                                           const double &day_angle,
+                                           const double &day_length,
+                                           const double &solar_noon,	//[days]
+                                           const double &dew_pt,			//dew point temp, [C]
                                            double &ET_radia,			  //ET radiation [MJ/m2/d]
                                            const bool   avg_daily);	//true if average daily is to be computed
   static double EstimateShortwaveRadiation(const optStruct &Options,

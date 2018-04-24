@@ -25,8 +25,6 @@ private:/*------------------------------------------------------*/
   CTimeSeriesABC(const CTimeSeriesABC &t); //suppresses default copy constructor
 
 public:/*-------------------------------------------------------*/
-  const static double BLANK_DATA;
-
   //Constructors:
   CTimeSeriesABC(ts_type type,
                  string  name,

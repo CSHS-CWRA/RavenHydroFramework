@@ -875,6 +875,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"POTMELT_DEGREE_DAY")){Options.pot_melt=POTMELT_DEGREE_DAY;}
       else if (!strcmp(s[1],"POTMELT_EB"        )){Options.pot_melt=POTMELT_EB;}
       else if (!strcmp(s[1],"POTMELT_RESTRICTED")){Options.pot_melt=POTMELT_RESTRICTED;}
+      else if (!strcmp(s[1],"POTMELT_DD_RAIN"   )){Options.pot_melt=POTMELT_DD_RAIN;}
       else if (!strcmp(s[1],"POTMELT_UBCWM"     )){Options.pot_melt=POTMELT_UBCWM;}
       else if (!strcmp(s[1],"POTMELT_HBV"       )){Options.pot_melt=POTMELT_HBV;}
       else if (!strcmp(s[1],"POTMELT_DATA"      )){Options.pot_melt=POTMELT_DATA;}

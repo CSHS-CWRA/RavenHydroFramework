@@ -433,7 +433,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
     _FORCINGS<<" air dens. [kg/m3], air pres. [KPa], rel hum. [-],";
     _FORCINGS<<" cloud cover [-],";
-    _FORCINGS<<" ET radiation [W/m2], SW radiation [W/m2], LW radiation [W/m2], wind vel. [m/s],";
+    _FORCINGS<<" ET radiation [MJ/m2/d], SW radiation [MJ/m2/d], net SW radiation [MJ/m2/d], LW radiation [MJ/m2/d], wind vel. [m/s],";
     _FORCINGS<<" PET [mm/d], OW PET [mm/d],";
     _FORCINGS<<" daily correction [-], potential melt [mm/d]";
     _FORCINGS<<endl;
@@ -638,7 +638,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
-                  if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                  if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                   else                                                         { _HYDRO << ",";       }
                 }
               }
@@ -670,7 +670,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                     //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
                     //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                     double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-                    if((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                    if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                     else                                                         { _HYDRO << ","; }
                   }
                 }
@@ -776,8 +776,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	            {
 	              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
 	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-	              if ((val != CTimeSeriesABC::BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
-	              else                                                         { RES_STAGE << ",";       }
+	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
+	              else                                             { RES_STAGE << ",";       }
 	            }
 	          }
 	        }
@@ -936,7 +936,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         _FORCINGS<<pFave->temp_ave<<","<<pFave->temp_daily_min<<","<<pFave->temp_daily_max<<","<<pFave->temp_daily_ave<<","<<pFave->temp_month_min<<","<<pFave->temp_month_max<<",";
         _FORCINGS<<pFave->air_dens<<","<<pFave->air_pres<<","<<pFave->rel_humidity<<",";
         _FORCINGS<<pFave->cloud_cover<<",";
-        _FORCINGS<<pFave->ET_radia*MJ_PER_D_TO_WATT<<","<<pFave->SW_radia*MJ_PER_D_TO_WATT<<","<<pFave->LW_radia*MJ_PER_D_TO_WATT<<","<<pFave->wind_vel<<",";
+        _FORCINGS<<pFave->ET_radia<<","<<pFave->SW_radia<<","<<pFave->SW_radia_net<<","<<pFave->LW_radia<<",";
+        _FORCINGS<<pFave->wind_vel<<",";
         _FORCINGS<<pFave->PET<<","<<pFave->OW_PET<<",";
         _FORCINGS<<pFave->subdaily_corr<<","<<pFave->potential_melt;
         _FORCINGS<<endl;
@@ -1426,11 +1427,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   retval = nc_put_att_text(_HYDRO_ncid, varid_pre, "long_name", strlen("Precipitation"), "Precipitation");
   HandleNetCDFErrors(retval);
 
-  static double fill_val[] = {-9999.0}; /* attribute vals */
+  static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
   retval = nc_put_att_double(_HYDRO_ncid, varid_pre, "_FillValue", NC_DOUBLE, 1, fill_val);
   HandleNetCDFErrors(retval);
   
-  static double miss_val[] = {-9999.0}; /* attribute vals */
+  static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
   retval = nc_put_att_double(_HYDRO_ncid, varid_pre, "missing_value", NC_DOUBLE, 1, miss_val);
   HandleNetCDFErrors(retval);
 
@@ -1475,11 +1476,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "units", strlen(tmp),tmp);
     HandleNetCDFErrors(retval);
 
-    static double fill_val[] = {-9999.0}; /* attribute vals */
+    static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
     retval = nc_put_att_double(_HYDRO_ncid, varid_qsim, "_FillValue", NC_DOUBLE,1, fill_val);
     HandleNetCDFErrors(retval);
     
-    static double miss_val[] = {-9999.0}; /* attribute vals */
+    static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
     retval = nc_put_att_double(_HYDRO_ncid, varid_qsim, "missing_value", NC_DOUBLE,1, miss_val);
     HandleNetCDFErrors(retval);
   }// end if nSim>0
@@ -1532,11 +1533,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "units", strlen(tmp),tmp);
     HandleNetCDFErrors(retval);
 
-    static double fill_val[] = {-9999.0}; /* attribute vals */
+    static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
     retval = nc_put_att_double(_HYDRO_ncid, varid_qobs, "_FillValue", NC_DOUBLE,1, fill_val);
     HandleNetCDFErrors(retval);
         
-    static double miss_val[] = {-9999.0}; /* attribute vals */
+    static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
     retval = nc_put_att_double(_HYDRO_ncid, varid_qobs, "missing_value", NC_DOUBLE,1, miss_val);
     HandleNetCDFErrors(retval);
   }// end if nObs>0
@@ -1583,11 +1584,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "units", strlen(tmp),tmp);
     HandleNetCDFErrors(retval);
     
-    static double fill_val[] = {-9999.0}; /* attribute vals */
+    static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
     retval = nc_put_att_double(_HYDRO_ncid, varid_qin, "_FillValue", NC_DOUBLE,1, fill_val);
     HandleNetCDFErrors(retval);
     
-    static double miss_val[] = {-9999.0}; /* attribute vals */
+    static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
     retval = nc_put_att_double(_HYDRO_ncid, varid_qin, "missing_value", NC_DOUBLE,1, miss_val);
     HandleNetCDFErrors(retval);
   }// end if nRes>0
@@ -1784,7 +1785,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   iObs = 0;
   iRes = 0;
   current_time[0] = tt.model_time;
-  current_prec[0] = -9999.0;
+  current_prec[0] = NETCDF_BLANK_VALUE;
   if ((Options.ave_hydrograph) && (current_time[0] != 0.0)){
     current_prec[0] = GetAveragePrecip();
     
@@ -1799,7 +1800,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
             if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
             {
               double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep); //time shift handled in CTimeSeries::Parse
-              if ((val != CTimeSeriesABC::BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
+              if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
               else                                                           { outflow_obs[iObs] = -9999.; }
               iObs++;
             }
@@ -1826,7 +1827,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
             if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
             {
               double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep);
-              if ((val != CTimeSeriesABC::BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
+              if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
               else                                                           { outflow_obs[iObs] = -9999.; }
               iObs++;
             }

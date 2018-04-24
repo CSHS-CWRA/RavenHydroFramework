@@ -1107,8 +1107,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        string ":UBCSnowParams" P0ALBMIN P0ALBMAX P0ALBREC P0ALBASE P0ALBSNW P0ALBMLX */
       if (Options.noisy){cout <<"UBC Snow Parameters"<<endl;}
       if (Len<7){p->ImproperFormat(s); break;}
-      parsed_globals.UBC_snow_params.MIN_SNOW_ALBEDO=s_to_d(s[1]);
-      parsed_globals.UBC_snow_params.MAX_SNOW_ALBEDO=s_to_d(s[2]);
+      parsed_globals.min_snow_albedo=s_to_d(s[1]);
+      parsed_globals.max_snow_albedo=s_to_d(s[2]);
       parsed_globals.UBC_snow_params.ALBREC         =s_to_d(s[3]);
       parsed_globals.UBC_snow_params.ALBASE         =s_to_d(s[4]);
       parsed_globals.UBC_snow_params.ALBSNW         =s_to_d(s[5]);
@@ -1655,7 +1655,6 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
 
   for (int ii=0;ii<nP;ii++)
   {
-    if (aPC[ii]==CLASS_GLOBAL){TEMPLATE<<":GlobalParameter "<<std::setw (sp+5) <<aP[ii]<<std::setw (1) <<" ** "<<endl;}
     if(aPC[ii]==CLASS_VEGETATION){nVP++;}
     if(aPC[ii]==CLASS_SOIL){nSP++;}
     if(aPC[ii]==CLASS_LANDUSE){nLP++;}
@@ -1673,8 +1672,60 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
   TEMPLATE<<"  ...          "<<endl;
   TEMPLATE<<":EndSoilClasses"<<endl;
   TEMPLATE<<endl;
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  TEMPLATE<<"# Land Use Classes"<<endl;
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  TEMPLATE<<":LandUseClasses, "<<endl;
+  TEMPLATE<<std::setw (sp) <<"  :Attributes, "  << std::setw (sp) <<"IMPERM, "<< std::setw (sp) <<"FOREST_COV, " <<endl;
+  TEMPLATE<<std::setw (sp) <<"  :Units, "       << std::setw (sp) <<"frac, "<< std::setw (sp) <<"frac, " <<endl;
+  TEMPLATE<<std::setw (sp) <<"  *LANDUSE_1*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " <<endl;
+  TEMPLATE<<std::setw (sp) <<"  *LANDUSE_2*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " <<endl;
+  TEMPLATE<<"  ...          "<<endl;
+  TEMPLATE<<":EndLandUseClasses"<<endl;
+  TEMPLATE<<endl;
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  TEMPLATE<<"# Vegetation Classes"<<endl;
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  TEMPLATE<<":VegetationClasses, "<<endl;
+  TEMPLATE<<std::setw (sp) <<"  :Attributes, "  << std::setw (sp) <<"MAX_HT, "<< std::setw (sp) <<"MAX_LAI, " << std::setw (sp) <<"MAX_LEAF_COND, " <<endl;
+  TEMPLATE<<std::setw (sp) <<"  :Units, "       << std::setw (sp) <<"m, "<< std::setw (sp) <<"none, " << std::setw (sp) <<"mm_per_s, " <<endl;
+  TEMPLATE<<std::setw (sp) <<"  *VEGET_1*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " << std::setw (sp) <<"**, " <<endl;
+  TEMPLATE<<std::setw (sp) <<"  *VEGET_2*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " << std::setw (sp) <<"**, " <<endl;
+  TEMPLATE<<"  ...          "<<endl;
+  TEMPLATE<<":EndVegetationClasses"<<endl;
+  TEMPLATE<<endl;
+  
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  TEMPLATE<<"# Soil Profiles"<<endl;
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
 
-  if(nSP>0){
+  TEMPLATE<<":SoilProfiles"<<endl;
+  TEMPLATE<<"         LAKE, 0"<<endl;
+  TEMPLATE<<"         ROCK, 0"<<endl;
+  TEMPLATE<<"  *PROFILE_1*, "<<Options.num_soillayers<<", ";
+  for(int i=0;i<Options.num_soillayers;i++){
+    TEMPLATE<<"*SOILTYPE*, *THICKNESS (in m)*, ";
+  }
+  TEMPLATE<<endl;
+  TEMPLATE<<"  *PROFILE_2*, "<<Options.num_soillayers<<", ";
+  for(int i=0;i<Options.num_soillayers;i++){
+    TEMPLATE<<"*SOILTYPE*, *THICKNESS (in m)*, ";
+  }
+  TEMPLATE<<endl;
+  TEMPLATE<<"  ..."<<endl;
+  TEMPLATE<<":EndSoilProfiles"<<endl<<endl;
+  
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  TEMPLATE<<"# Global Parameters"<<endl;
+  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
+  for (int ii=0;ii<nP;ii++)
+  {
+    if (aPC[ii]==CLASS_GLOBAL){TEMPLATE<<":GlobalParameter "<<std::setw (sp+5) <<aP[ii]<<std::setw (1) <<" ** "<<endl;}
+  }
+  TEMPLATE<<endl;
+
+  if(nSP>0)
+  {
     TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
     TEMPLATE<<"# Soil Parameters"<<endl;
     TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
@@ -1729,39 +1780,9 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     TEMPLATE<<":EndSoilParameterList"<<endl;
     TEMPLATE<<endl;
   }
-  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
-  TEMPLATE<<"# Soil Profiles"<<endl;
-  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
 
-  TEMPLATE<<":SoilProfiles"<<endl;
-  TEMPLATE<<"         LAKE, 0"<<endl;
-  TEMPLATE<<"         ROCK, 0"<<endl;
-  TEMPLATE<<"  *PROFILE_1*, "<<Options.num_soillayers<<", ";
-  for(int i=0;i<Options.num_soillayers;i++){
-    TEMPLATE<<"*SOILTYPE*, *THICKNESS (in m)*, ";
-  }
-  TEMPLATE<<endl;
-  TEMPLATE<<"  *PROFILE_2*, "<<Options.num_soillayers<<", ";
-  for(int i=0;i<Options.num_soillayers;i++){
-    TEMPLATE<<"*SOILTYPE*, *THICKNESS (in m)*, ";
-  }
-  TEMPLATE<<endl;
-  TEMPLATE<<"  ..."<<endl;
-  TEMPLATE<<":EndSoilProfiles"<<endl<<endl;
-  
-  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
-  TEMPLATE<<"# Land Use Classes"<<endl;
-  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
-  TEMPLATE<<":LandUseClasses, "<<endl;
-  TEMPLATE<<std::setw (sp) <<"  :Attributes, "  << std::setw (sp) <<"IMPERM, "<< std::setw (sp) <<"FOREST_COV, " <<endl;
-  TEMPLATE<<std::setw (sp) <<"  :Units, "       << std::setw (sp) <<"frac, "<< std::setw (sp) <<"frac, " <<endl;
-  TEMPLATE<<std::setw (sp) <<"  *LANDUSE_1*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " <<endl;
-  TEMPLATE<<std::setw (sp) <<"  *LANDUSE_2*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " <<endl;
-  TEMPLATE<<"  ...          "<<endl;
-  TEMPLATE<<":EndLandUseClasses"<<endl;
-  TEMPLATE<<endl;
-
-  if(nLP>0){
+  if(nLP>0)
+  {
     TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
     TEMPLATE<<"# Land Use Parameters"<<endl;
     TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
@@ -1815,18 +1836,6 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     TEMPLATE<<":EndLandUseParameterList"<<endl;
     TEMPLATE<<endl;
   }
-
-  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
-  TEMPLATE<<"# Vegetation Classes"<<endl;
-  TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
-  TEMPLATE<<":VegetationClasses, "<<endl;
-  TEMPLATE<<std::setw (sp) <<"  :Attributes, "  << std::setw (sp) <<"MAX_HT, "<< std::setw (sp) <<"MAX_LAI, " << std::setw (sp) <<"MAX_LEAF_COND, " <<endl;
-  TEMPLATE<<std::setw (sp) <<"  :Units, "       << std::setw (sp) <<"m, "<< std::setw (sp) <<"none, " << std::setw (sp) <<"mm_per_s, " <<endl;
-  TEMPLATE<<std::setw (sp) <<"  *VEGET_1*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " << std::setw (sp) <<"**, " <<endl;
-  TEMPLATE<<std::setw (sp) <<"  *VEGET_2*, "  << std::setw (sp) <<"**, "<< std::setw (sp) <<"**, " << std::setw (sp) <<"**, " <<endl;
-  TEMPLATE<<"  ...          "<<endl;
-  TEMPLATE<<":EndVegetationClasses"<<endl;
-  TEMPLATE<<endl;
 
   if(nVP>0){
     TEMPLATE<<"#-----------------------------------------------------------------"<<endl;

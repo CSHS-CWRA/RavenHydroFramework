@@ -43,6 +43,10 @@ CModel::CModel(const soil_model SM,
 
   _pOptStruct = &Options;
 
+  _HYDRO_ncid=-9; 
+  _STORAGE_ncid=-9;
+  _FORCINGS_ncid=-9; 
+
   ExitGracefullyIf(nsoillayers<1,
                    "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);
 
@@ -1342,7 +1346,7 @@ void CModel::OverrideStreamflow   (const long SBID)
       //check for blanks in observation TS
       bool bad=false;
       for (int n=0;n<_pObservedTS[i]->GetNumValues();n++){
-        if (_pObservedTS[i]->GetValue(n)==CTimeSeries::BLANK_DATA){bad=true;break;}
+        if (_pObservedTS[i]->GetValue(n)==RAV_BLANK_DATA){bad=true;break;}
       }
       if (bad){
         WriteWarning("CModel::OverrideStreamflow::cannot override streamflow if there are blanks in observation data",_pOptStruct->noisy);
@@ -1657,7 +1661,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 		while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
 			(_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
-      value=CTimeSeries::BLANK_DATA;
+      value=RAV_BLANK_DATA;
       // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
       if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
       {

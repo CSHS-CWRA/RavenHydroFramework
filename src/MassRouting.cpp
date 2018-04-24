@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ------------------------------------------------------------------
   routing of mass in catchment and channel
   ----------------------------------------------------------------*/
@@ -239,8 +239,8 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
       if(pHRU!=NULL){ decay_coeff =GetDecayCoefficient(c,pHRU,iSW)*aRes_mass[c]; }
 
       //Explicit solution of Crank-nicolson problem
-      //dM/dt=QC_in-QC_out-lambda*C
-      //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))-0.5*lambda*(C^(n+1)+C^n)
+      //dM/dt=QC_in-QC_out-lambda*M
+      //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))-0.5*lambda*(C^(n+1)+C^n)/V
 
       tmp=_aMres[p][c]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff));
       tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1][c]+_aMout[p][c][nSegments-1]);//inflow is outflow from channel

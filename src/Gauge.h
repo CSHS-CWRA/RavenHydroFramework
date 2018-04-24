@@ -19,7 +19,8 @@ private:/*------------------------------------------------------*/
 
   string        _name;           ///< Gauge name
   location      _Loc;            ///< Gauge Location
-  double        _elevation;      ///< Gauge Elevation
+  double        _elevation;      ///< Gauge Elevation [masl]
+  double        _meas_ht;        ///< Gauge Measurement height above land surface [m]
 
   CTimeSeries **_pTimeSeries;    ///< Array of pointers to time series
   int           _nTimeSeries;    ///< number of time series linked to gauge
@@ -59,6 +60,7 @@ public:/*-------------------------------------------------------*/
   string   GetName            () const;
   location GetLocation        () const;
   double   GetElevation       () const;
+  double   GetMeasurementHt   () const;
   double   GetRainfallCorr    () const;
   double   GetSnowfallCorr    () const;
   double   GetCloudMinRange   () const;
@@ -82,6 +84,7 @@ public:/*-------------------------------------------------------*/
   void     SetLatitude        (const double &l);
   void     SetLongitude       (const double &l);
   void     SetElevation       (const double &e);
+  void     SetMeasurementHt   (const double &ht);
   bool     SetProperty        (const string prop_tag, const double &value);
 
   void     AddTimeSeries        (CTimeSeries *pTS, const forcing_type ftype);

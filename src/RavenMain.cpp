@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
@@ -8,16 +8,17 @@
 #include "UnitTesting.h"
 
 //Defined in ParseInput.cpp
-bool ParseInputFiles (CModel      *&pModel,
-                      optStruct    &Options);
+bool ParseInputFiles  (CModel      *&pModel,
+                       optStruct    &Options);
 //Defined in Solvers.cpp
-void MassEnergyBalance(      CModel      *pModel,
-                             const optStruct   &Options,
-                             const time_struct &tt);        //time
-//Defined below
+void MassEnergyBalance(CModel            *pModel,
+                       const optStruct   &Options,
+                       const time_struct &tt);        //time
+
+//Local functions defined below
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
-void CheckForErrorWarnings(bool quiet);
-bool CheckForStopfile(const time_struct &tt);
+void CheckForErrorWarnings     (bool quiet);
+bool CheckForStopfile          (const int step, const time_struct &tt);
 
 // Main Driver Variables------------------------------------------
 static optStruct   Options;
@@ -51,7 +52,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.7.2";
+  Options.version="2.8.0";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif 
@@ -62,13 +63,13 @@ int main(int argc, char* argv[])
 
   if (!Options.silent){
     int year = s_to_i(RavenBuildDate.substr(RavenBuildDate.length()-4,4).c_str());
-    cout <<"=========================================================="<<endl;
-    cout <<"                        RAVEN                             "<<endl;
-    cout <<" a numerically robust semi-distributed hydrological model "<<endl;
-    cout <<"    Copyright 2008-"<<year<<", the Raven Development Team "<<endl;
-    cout <<"                    Version "<<Options.version             <<endl;
-    cout <<"                BuildDate "<<RavenBuildDate                <<endl;
-    cout <<"=========================================================="<<endl;
+    cout <<"============================================================"<<endl;
+    cout <<"                        RAVEN                               "<<endl;
+    cout <<" a robust semi-distributed hydrological modelling framework "<<endl;
+    cout <<"    Copyright 2008-"<<year<<", the Raven Development Team "  <<endl;
+    cout <<"                    Version "<<Options.version               <<endl;
+    cout <<"                BuildDate "<<RavenBuildDate                  <<endl;
+    cout <<"============================================================"<<endl;
   }
 
   ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
@@ -123,7 +124,7 @@ int main(int argc, char* argv[])
       JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,tt);//increments time structure
       pModel->WriteMinorOutput          (Options,tt);
 
-      if ((step%100==0) && (CheckForStopfile(tt))){break;}
+      if (CheckForStopfile(step,tt)){break;}
       step++;
     }
 
@@ -232,14 +233,6 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   //char basePath[255] = "";
   //_fullpath(basePath, argv[0], sizeof(basePath)); //_realpath in linux
   //cout << to_string(basePath) << endl;
-
-  /*cout<<"PROCESSED:"<<endl;
-    cout<<Options.rvi_filename<<endl;
-    cout<<Options.rvp_filename<<endl;
-    cout<<Options.rvh_filename<<endl;
-    cout<<Options.rvt_filename<<endl;
-    cout<<Options.rvc_filename<<endl;
-    cout<<Options.output_dir<<endl;*/
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Exits gracefully from program, explaining reason for exit and destructing simulation all pertinent parameters
@@ -334,8 +327,9 @@ void CheckForErrorWarnings(bool quiet)
 /// \note called during simulation to determine whether progress should be stopped
 ///
 //
-bool CheckForStopfile(const time_struct &tt)
+bool CheckForStopfile(const int step, const time_struct &tt)
 {
+  if(step%100!=0){ return false; } //only check every 100th timestep 
   ifstream STOP;
   STOP.open("stop");
   if (!STOP.is_open()){return false;}

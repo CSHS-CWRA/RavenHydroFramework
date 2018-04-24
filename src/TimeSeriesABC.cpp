@@ -6,7 +6,7 @@
 
 
 // Should be moved to RavenInclude??
-const double CTimeSeriesABC::BLANK_DATA=-1.2345;
+
 
 /*****************************************************************
    Constructor/Destructor

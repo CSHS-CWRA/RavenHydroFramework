@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
 
   Routines for calculating PET:
   -Penman Monteith Equation
@@ -27,8 +27,8 @@
 double Makkink1957Evap(const force_struct *F)
 {
   double PET;
-  double gamma;                   //psychometric "constant" [kPa/K]
-  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double gamma;     //psychometric "constant" [kPa/K]
+  double LH_vapor;  //latent heat of vaporization [MJ/kg]
   double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
   double sat_vap;   //Saturation vapor pressure [kPa]
 
@@ -44,7 +44,8 @@ double Makkink1957Evap(const force_struct *F)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates PET using Turc 1961 method \cite Lu2005JotAWRA
-/// \ref From Turc, 1961 as defined in "A comparison of six potential \cite turc1961AA
+/// \ref From Turc, L., 1961. Evaluation de besoins en eau d’irrigation, ET potentielle, Ann. Agron. 12:13-49. \cite turc1961AA
+/// as defined in "A comparison of six potential 
 /// evapotranspiration methods for regional use in the southeastern
 /// united states", American Water Resources Association, 2005.
 /// \note This is a utility function called by EstimatePET
@@ -76,11 +77,11 @@ double TurcEvap(const force_struct *F)
 //
 double PenmanMonteithEvap(const force_struct     *F,
                           const double       &atmos_cond,   //[mm/s]
-                          const double                     &canopy_cond)  //[mm/s]
+                          const double       &canopy_cond)  //[mm/s]
 {
   double numer, denom;
-  double gamma;                   //psychometric "constant" [kPa/K]
-  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double gamma;     //psychometric "constant" [kPa/K]
+  double LH_vapor;  //latent heat of vaporization [MJ/kg]
   double de_dT;     //Vapor pressure-temp slope=de* / dT [kPa/K]
   double sat_vap;   //Saturation vapor pressure [kPa]
   double vapor_def; //vapor deficit [kPa]
@@ -148,9 +149,9 @@ double PenmanCombinationEvap(const force_struct *F,
 //
 double PriestleyTaylorEvap(const force_struct *F)
 {
-  double gamma;                 //psychometric "constant" [kPa/K]
+  double gamma;     //psychometric "constant" [kPa/K]
   double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
-  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double LH_vapor;  //latent heat of vaporization [MJ/kg]
   double sat_vap;   //Saturation vapor pressure
 
   sat_vap =GetSaturatedVaporPressure(F->temp_ave);
@@ -186,7 +187,7 @@ double HargreavesEvap(const force_struct *F)//[C]
   if (rel_hum>=0.54){Ct=0.035*pow(100*(1.0-rel_hum),0.333);}
 
   delT=CelsiusToFarenheit(F->temp_month_max)-
-    CelsiusToFarenheit(F->temp_month_min);
+       CelsiusToFarenheit(F->temp_month_min);
 
   // \todo [optimize] - move this check to initialization routine
   ExitGracefullyIf(F->temp_month_max==NOT_SPECIFIED,
@@ -220,10 +221,10 @@ double Hargreaves1985Evap(const force_struct *F)//[C]
   return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_ave+17.8));
 }
 /*****************************************************************
-                                                Jensen Haise Evaporation
-                                                ******************************************************************
-                                                /// returns the potential evaporation rate (mm/d) using the Jensen &
-                                                /// Haise (1963) model as outlined in the PRMS Manual \cite jensen1963JoIDD
+Jensen Haise Evaporation
+******************************************************************
+/// returns the potential evaporation rate (mm/d) using the Jensen &
+/// Haise (1963) model as outlined in the PRMS Manual \cite jensen1963JoIDD
 ----------------------------------------------------------------*/
 /*double JensenHaise1963Evap(const force_struct *F,
   const double       &sat_vap_max,// monthly ave. saturated vapor pressure in hottest summer month[KPa]
@@ -273,6 +274,7 @@ double Hamon1961Evap(const force_struct *F)
 //
 double EstimatePET(const force_struct &F,
                    const CHydroUnit   *pHRU,
+                   const double       &wind_measurement_ht,
                    const evap_method   evap_type ,
                    const time_struct  &tt)
 {
@@ -317,29 +319,34 @@ double EstimatePET(const force_struct &F,
   case(PET_PENMAN_MONTEITH):
   {
     double can_cond;
-    double meas_ht,zero_pl,rough;
+    double zero_pl,rough;
     double vap_rough_ht,atmos_cond;
+    double ref_ht;
 
     can_cond=pHRU->GetVegVarProps()->canopy_conductance;
-    meas_ht =2.0;
     zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
     rough   =pHRU->GetVegVarProps()->roughness;
+    ref_ht  =pHRU->GetVegVarProps()->reference_height; //default veght+2.0 m
+
+    if(wind_measurement_ht>ref_ht){ref_ht=wind_measurement_ht;} //correction if real measurement height data is available
 
     vap_rough_ht=0.1*rough;//=1.0*rough for dingman
 
-    atmos_cond=CalcAtmosphericConductance(F.wind_vel,meas_ht,zero_pl,rough,vap_rough_ht);
+    atmos_cond=CalcAtmosphericConductance(F.wind_vel,ref_ht,zero_pl,rough,vap_rough_ht);
 
     PET=PenmanMonteithEvap(&F,atmos_cond,can_cond); break;
   }
   case(PET_PENMAN_COMBINATION):
   {
-    double meas_ht,zero_pl,rough,vert_trans;
+    double zero_pl,z0,vert_trans,ref_ht;
 
-    meas_ht  =2.0;//[m]
     zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
-    rough   =pHRU->GetVegVarProps()->roughness;
+    z0   =pHRU->GetVegVarProps()->roughness;
+    ref_ht  =pHRU->GetVegVarProps()->reference_height; //default veght+2.0 m
 
-    vert_trans =GetVerticalTransportEfficiency(F.air_pres,meas_ht,zero_pl,rough);
+    if(wind_measurement_ht>ref_ht){ref_ht=wind_measurement_ht;} //correction if real measurement height data is available
+
+    vert_trans =GetVerticalTransportEfficiency(F.air_pres,ref_ht,zero_pl,z0);
 
     PET   =PenmanCombinationEvap(&F,vert_trans); break;
   }
@@ -462,8 +469,8 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
                                const surface_struct &G,   //ground surface
                                const veg_var_struct &VV)        //canopy
 {
-  double gamma;                   //psychometric "constant" [kPa/K]
-  double LH_vapor;        //latent heat of vaporization [MJ/kg]
+  double gamma;     //psychometric "constant" [kPa/K]
+  double LH_vapor;  //latent heat of vaporization [MJ/kg]
   double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
   double sat_vap;   //Saturation vapor pressure [kPa]
   double vapor_def; //vapor deficit [kPa]
@@ -479,26 +486,27 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
   //Rga=GroundAirResistance(G,VV,F->wind_vel);
   double closed_roughness,closed_zerodisp;
   double ustar,KH;
+  double zero_pl=VV.zero_pln_disp;
 
   //function of height, ground roughness, refht, z0, canopy rough,
   closed_roughness=CVegetationClass::CalcClosedRoughness(VV.height);
   closed_zerodisp =CVegetationClass::CalcClosedZeroPlaneDisp(VV.height,closed_roughness);
   upperswap(closed_roughness,G.roughness);
 
-  ustar=VON_KARMAN*F->wind_vel/(log((VV.reference_height-VV.zero_pln_disp)/VV.roughness));
-  KH   =VON_KARMAN*ustar*(VV.height-VV.zero_pln_disp);
+  ustar=VON_KARMAN*F->wind_vel/(log((VV.reference_height-zero_pl)/VV.roughness));
+  KH   =VON_KARMAN*ustar*(VV.height-zero_pl);
 
   Rga  =VV.height/(WIND_EXTINCT*KH)*exp(WIND_EXTINCT * (1.0-G.roughness/VV.height));
   Rga-=exp(-WIND_EXTINCT*(closed_roughness + closed_zerodisp)/VV.height);
   upperswap(Rga,1);//why?
 
   double Raa;//boundary layer resistance, s/m
-  Raa =log((VV.reference_height- VV.zero_pln_disp)/(VV.height-VV.zero_pln_disp))/(VON_KARMAN*ustar);
+  Raa =log((VV.reference_height- zero_pl)/(VV.height-zero_pl))/(VON_KARMAN*ustar);
   Raa+=(VV.height / (WIND_EXTINCT * KH)) * (-1.0 + exp(WIND_EXTINCT * (VV.height - closed_roughness - closed_zerodisp) / VV.height));
 
   double Rac;//leaf-air resistance, s/m
   double leaf_width=1.0; //leaf width, m
-  double UH = (ustar / VON_KARMAN) * log((VV.height - VV.zero_pln_disp) / VV.roughness );
+  double UH = (ustar / VON_KARMAN) * log((VV.height - zero_pl) / VV.roughness );
   double RB = (100.0 * WIND_EXTINCT) * sqrt(leaf_width / UH) / (1.0 - exp(-WIND_EXTINCT / 2.0));
   Rac = RB / (LEAF_PROJ_RAT * VV.LAI + PI * VV.SAI);
 

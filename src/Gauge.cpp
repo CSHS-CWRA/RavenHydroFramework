@@ -24,10 +24,12 @@ CGauge::CGauge(string gauge_name,
   _Loc.UTM_y                    =0.0;//set in initialize
 
   _elevation     =elev;
+  _meas_ht       =2.0; // [m], default
   _rainfall_corr =1.0;
   _snowfall_corr =1.0;
   _cloud_min_temp=-20.0;//ensures cloud-free status always unless overriden
   _cloud_max_temp= 40.0;
+
 
   _name=gauge_name;
 
@@ -161,7 +163,7 @@ void CGauge::Initialize(const optStruct   &Options,
       for(int nn=0;nn<nSamples; nn++)
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
-        if(val==CTimeSeriesABC::BLANK_DATA){
+        if(val==RAV_BLANK_DATA){
           ExitGracefully("CGauge::Initialize: Raven cannot have blank data in precipitation time series",BAD_DATA);
         }
         if((val<-1e-6) || (val>10000)){
@@ -179,7 +181,7 @@ void CGauge::Initialize(const optStruct   &Options,
       for(int nn=0;nn<nSamples; nn++)
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
-        if(val==CTimeSeriesABC::BLANK_DATA){
+        if(val==RAV_BLANK_DATA){
           ExitGracefully("CGauge::Initialize: Raven cannot have blank data in temperature time series",BAD_DATA);
         }
         if((val<-60) || (val>60)){
@@ -194,7 +196,7 @@ void CGauge::Initialize(const optStruct   &Options,
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
-      if(val==CTimeSeriesABC::BLANK_DATA){
+      if(val==RAV_BLANK_DATA){
         ExitGracefully("CGauge::Initialize: Raven cannot have blank data in PET time series",BAD_DATA);
       }
       if (val<-REAL_SMALL){
@@ -282,9 +284,15 @@ void     CGauge::SetLongitude         (const double &lon){_Loc.longitude=lon;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets gauge elevation
-/// \param &e [in] Elevation of gauge [degrees]
+/// \param &e [in] Elevation of gauge [masl]
 //
 void     CGauge::SetElevation         (const double &e){_elevation=e;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets gauge height w.r.t. land surface (default=2.0m)
+/// \param &ht [in] Height of gauge [m]
+//
+void     CGauge::SetMeasurementHt     (const double &ht){_meas_ht=ht;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets gauge property
@@ -389,7 +397,12 @@ location CGauge::GetLocation                    () const {return _Loc;}
 /// \brief Returns elevation of gauge
 /// \return Elevation of gauge [masl]
 //
-double   CGauge::GetElevation             () const {return _elevation;}
+double   CGauge::GetElevation     () const {return _elevation;}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns measurement height of gauge above land surface
+/// \return Height of gauge [m]
+//
+double   CGauge::GetMeasurementHt () const {return _meas_ht;}
 //----------------------------------------------------------------
 double   CGauge::GetRainfallCorr  () const {return _rainfall_corr;}
 //----------------------------------------------------------------

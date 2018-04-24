@@ -228,6 +228,8 @@ const double  NOT_SPECIFIED      =-33333.3;///< arbitrary value indicating that 
 const double  USE_TEMPLATE_VALUE =-55555.5;///< arbitrary value indicating that a parameter should be set to the template value
 const double  NOT_NEEDED         =-66666.6;///< arbitrary value indicating that a non-auto parameter is not needed for the current model configuration
 const double  NOT_NEEDED_AUTO    =-77777.7;///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
+const double  NETCDF_BLANK_VALUE =-9999.0;
+const double  RAV_BLANK_DATA     =-1.2345;
 
 //Decision constants
 const double  HUGE_RESIST      =1e20;   ///< [d/mm] essentially infinite resistance
@@ -273,13 +275,13 @@ inline void ExitGracefullyIf(bool condition, const char *statement, exitcode cod
 //  Global Constants
 //*****************************************************************
 const bool    DESTRUCTOR_DEBUG=false;    ///< if true, screen output is generated when destructor is called
-const int     MAX_SV_LAYERS    =100;      ///< maximum # of layers per state variable (>=MAX_SOILLAYERS)
+const int     MAX_SV_LAYERS    =100;     ///< maximum number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS   =50;      ///< maximum number of soil layers in profile
 const int     MAX_STATE_VARS   =200;     ///< maximum number of state variables in model
 const int     MAX_CONNECTIONS  =200;     ///< maximum number of to/from connections in any single process (CAdvection worst offender)
-const int     MAX_SOIL_CLASSES =250;      ///< Max number of soil classes
-const int     MAX_SOIL_PROFILES=200;      ///< Max number of soil profiles
-const int     MAX_VEG_CLASSES  =200;      ///< Max number of vegetation classes
+const int     MAX_SOIL_CLASSES =250;     ///< Max number of soil classes
+const int     MAX_SOIL_PROFILES=200;     ///< Max number of soil profiles
+const int     MAX_VEG_CLASSES  =200;     ///< Max number of vegetation classes
 const int     MAX_LULT_CLASSES =200;     ///< Max number of lult classes
 const int     MAX_AQUIFER_LAYERS=10;     ///< Max number aquifer layers
 const int     MAX_AQUIFER_STACKS=50;     ///< Max number aquifer stacks
@@ -547,6 +549,7 @@ enum potmelt_method
   POTMELT_DEGREE_DAY,  ///< simple degree day method
   POTMELT_EB,          ///< energy balance approach
   POTMELT_RESTRICTED,  ///< restricted degree-day method
+  POTMELT_DD_RAIN,     ///< degree day with rain-on-snow
   POTMELT_UBCWM,       ///< UBC watershed model approach
   POTMELT_HBV,         ///< custom degree day model used in HBV-EC
   POTMELT_DATA,        ///< user-specified potential melt forcing
@@ -668,9 +671,10 @@ enum sv_type
   CUM_SNOWMELT,       ///< [mm] Cumulative snowmelt
 
   //Temperature/Energy storage [C] or [MJ/m^2]
-  FREEZING_LOSS,      ///< [MJ/m2] Energy lost during freezing (for mass balance)
-  MELTING_LOSS,       ///< [MJ/m2] Energy consumed during melting
-  ENERGY_LOSSES,      ///< [MJ/m2] general energy losses
+  FREEZING_LOSS,      ///< [MJ/m2] Energy lost during freezing (for mass balance) // \ todo[clean] - remove- not used
+  MELTING_LOSS,       ///< [MJ/m2] Energy consumed during melting // \ todo[clean] - remove- not used
+  ENERGY_LOSSES,      ///< [MJ/m2] general energy losses // \ todo[clean] - remove- not used
+
   SURFACE_WATER_TEMP, ///< [C] Temperature of surface water
   SNOW_TEMP,          ///< [C] Temperature of snow
   COLD_CONTENT,       ///< [C] Cold content of snowpack

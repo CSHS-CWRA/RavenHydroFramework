@@ -46,9 +46,6 @@
     <Filter Include="Input Files">
       <UniqueIdentifier>{a8391a88-b29f-4b94-9d6c-aacb2ba960ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Forcing Functions\Gauge/Time Series">
-      <UniqueIdentifier>{e72ddcb4-a56e-432c-90fc-5efe0c618b17}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Hydrological Routines">
       <UniqueIdentifier>{e8dea0ba-cf66-44c3-a56d-b4836b9ea6e2}</UniqueIdentifier>
     </Filter>
@@ -87,6 +84,9 @@
     </Filter>
     <Filter Include="Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes">
       <UniqueIdentifier>{20a8ebdf-d839-4ed1-9055-283117ab477a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid">
+      <UniqueIdentifier>{e72ddcb4-a56e-432c-90fc-5efe0c618b17}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -142,10 +142,10 @@
       <Filter>Source Files\Land Partitions</Filter>
     </ClCompile>
     <ClCompile Include="Gauge.cpp">
-      <Filter>Source Files\Forcing Functions\Gauge/Time Series</Filter>
+      <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
     <ClCompile Include="TimeSeries.cpp">
-      <Filter>Source Files\Forcing Functions\Gauge/Time Series</Filter>
+      <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
     <ClCompile Include="ChannelXSect.cpp">
       <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
@@ -274,10 +274,10 @@
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
     <ClCompile Include="TimeSeriesABC.cpp">
-      <Filter>Source Files\Forcing Functions\Gauge/Time Series</Filter>
+      <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
     <ClCompile Include="IrregularTimeSeries.cpp">
-      <Filter>Source Files\Forcing Functions\Gauge/Time Series</Filter>
+      <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
     <ClCompile Include="Forcings.cpp">
       <Filter>Source Files\Forcing Functions</Filter>
@@ -293,9 +293,6 @@
     </ClCompile>
     <ClCompile Include="UnitTesting.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ForcingGrid.cpp">
-      <Filter>Source Files\Forcing Functions</Filter>
     </ClCompile>
     <ClCompile Include="ModelForcingGrids.cpp">
       <Filter>Source Files\_Driver</Filter>
@@ -320,6 +317,9 @@
     </ClCompile>
     <ClCompile Include="PrairieSnow.cpp">
       <Filter>Source Files\Hydrological Processes\Snow Water Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="ForcingGrid.cpp">
+      <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

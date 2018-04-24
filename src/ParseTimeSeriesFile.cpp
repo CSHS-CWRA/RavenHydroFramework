@@ -116,6 +116,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":TotalPrecip"           )){code=7;  } //should make obsolete
     else if  (!strcmp(s[0],":Precipitation"         )){code=7;  } //should make obsolete
     else if  (!strcmp(s[0],":AveTemperature"        )){code=12; } //should make obsolete
+    else if  (!strcmp(s[0],":MeasurementHeight"     )){code=16; }
 
     else if  (!strcmp(s[0],":Data"                  )){code=8;  }
     else if  (!strcmp(s[0],":MultiData"             )){code=13; }
@@ -540,6 +541,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
       }
 
+      break;
+    }
+    case(16):  //----------------------------------------------
+    {/*:MeasurementHeight [value] */
+      if (Options.noisy) {cout <<"Gauge measurement height (above land surface)"<<endl;}
+      ExitGracefullyIf(pGage==NULL,
+                       "ParseTimeSeriesFile::MeasurementHeight specified outside of a :Gauge-:EndGauge statement",BAD_DATA);
+      pGage->SetMeasurementHt(s_to_d(s[1]));
       break;
     }
     case(20):  //----------------------------------------------
@@ -1156,8 +1165,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy){cout <<"   :FileNameNC"<<endl;}
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcings are only allowed when NetCDF library is available!",BAD_DATA);
-#endif
-
+#else
       ExitGracefullyIf(pGrid==NULL,
                        "ParseTimeSeriesFile: :FileNameNC command must be within a :GriddedForcings block",BAD_DATA);
 
@@ -1169,7 +1177,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       
       //check for file existence
       ifstream TESTNETCDF;
-      TESTNETCDF.open(filename);
+      TESTNETCDF.open(filename.c_str());
       if(TESTNETCDF.fail()){
         string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -1181,7 +1189,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       // Grid can be initialized as soon as all basic information are known
       if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven ) {pGrid->ForcingGridInit(Options);}
-
+#endif
       break;
     }
     case (403)://----------------------------------------------

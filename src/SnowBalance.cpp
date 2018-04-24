@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Fully coupled snow balance routines
   ----------------------------------------------------------------*/
@@ -225,7 +225,7 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   else if (type==SNOBAL_GAWSER)
   {
     nP=3;
-    aP[0]="SNOW_SWI";                 aPC[0]=CLASS_GLOBAL;
+    aP[0]="SNOW_SWI";         aPC[0]=CLASS_GLOBAL;
     aP[1]="REFREEZE_FACTOR";  aPC[1]=CLASS_LANDUSE;
     aP[2]="MELT_FACTOR";      aPC[2]=CLASS_LANDUSE;
   }
@@ -762,19 +762,19 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //parameters
   //------------------------------------------------------------------------
-  double MAXLIQ = CGlobalParams::GetParams()->snow_SWI;       // maximum liquid water fraction of snow, dimensionless
+  double MAXLIQ     = CGlobalParams::GetParams()->snow_SWI;         // maximum liquid water fraction of snow, dimensionless
   double MAXSWESURF = CGlobalParams::GetParams()->max_SWE_surface;  // maximum swe of surface layer of snowpack
 
   // forcings
   //------------------------------------------------------------------------
-  double Mf = pHRU->GetForcingFunctions()->potential_melt*Options.timestep;
+  double Mf = pHRU->GetForcingFunctions()->potential_melt*Options.timestep; //[mm]
   double Ta = pHRU->GetForcingFunctions()->temp_ave;
 
   //Rates
   //------------------------------------------------------------------------
   double meltSurf = 0.0;    // melt rate from snow surface layer
   double surfToPack = 0.0;  // liquid percolating from surface to pack
-  double freezePack = 0.0;  // refreeze in the pack layer
+  double freezePack = 0.0;  // refreeze in the pack layer [mm]
   double SnowOutflow = 0.0; // outflow from the snow
 
   //INTERNAL
@@ -834,8 +834,9 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   SlwcSurf += rainthru;
 
   //add CC to Mf to get total energy available for melt/freeze
+  // converts cold content to equivalent melt amount
   //------------------------------------------------------------------------
-  Mf -= CcSurf / LH_FUSION;
+  Mf -= CcSurf / LH_FUSION / DENSITY_ICE*MM_PER_METER; // [MJ/m2] / [MJ/kg] /[kg/m3]*[mm/m]= [mm]
 
   //snowpack cooling or warming
   //engergy exchange occurs only between snow surface layer and atmosphere
@@ -855,7 +856,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     {
       posMf -= SlwcSurf;
       meltSurf -= SlwcSurf;
-      CcSurf = posMf * LH_FUSION; // leftover energy is new CC
+      CcSurf = posMf * LH_FUSION  * DENSITY_ICE / MM_PER_METER; // leftover energy is new CC
 
       if (SweSurf < 50.0) //dont cool below gruTa when Swe is below 10 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
       {
@@ -881,7 +882,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   //Calculate how much liquid stays in surface layer, and pass the rest to the pack layer
   //------------------------------------------------------------------------
   SweSurf -= meltSurf; //new SWE after melt/freeze
-  SlwcSurf += meltSurf; //new Slwc after melt/freeze
+  SlwcSurf+= meltSurf; //new Slwc after melt/freeze
   if (SlwcSurf >= MAXLIQ * SweSurf)
   {
     surfToPack = SlwcSurf - MAXLIQ * SweSurf;
@@ -897,21 +898,22 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //re-freeze liquid water in snowpack layer
   //------------------------------------------------------------------------
-  if (CcPack > SlwcPack * LH_FUSION) //snow pack layer cold content not fully satisfied
+  double ccLwcPack_eq=SlwcPack * LH_FUSION* DENSITY_ICE / MM_PER_METER; //[MJ/m2]
+  if (CcPack > ccLwcPack_eq) //snow pack layer cold content not fully satisfied -freeze all water
   {
-    CcPack -= SlwcPack * LH_FUSION;        //freeze all water
-    freezePack += SlwcPack * LH_FUSION;
+    CcPack     -= ccLwcPack_eq;  
+    freezePack += SlwcPack;
   }
-  else //eliminate cold content
+  else //freeze only part of water
   {
-    freezePack += CcPack / LH_FUSION;      //freeze only part of water
+    freezePack += CcPack / LH_FUSION / DENSITY_ICE * MM_PER_METER;      
     CcPack = 0.0;
   }
 
   //update snow pack layer liquid water content
   //------------------------------------------------------------------------
   SwePack += freezePack; //new SWE after melt/freeze
-  SlwcPack -= freezePack; //new Slwc after melt/freeze
+  SlwcPack-= freezePack; //new Slwc after melt/freeze
   if (SlwcPack > SwePack * MAXLIQ)
   {
     SnowOutflow = SlwcPack - SwePack * MAXLIQ;
@@ -921,25 +923,24 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     SnowOutflow = 0;
   }
 
-  //Snow Temp - assumes an isothermal snow surface layer
+  //Surface snow Temp - assumes an isothermal snow surface layer
   snowT = -CcSurf / (HCP_ICE*MJ_PER_J* max(1.0, SweSurf)/MM_PER_METER);
-  snowT *= 0.2; // There's no physical basis for this, but snowT was always way too low.
-  // This correction puts snowT close to the air temperature.
-
-//    if (snowT < -30) { snowT = -30; }
+  snowT *= 0.2; // NS: There's no physical basis for this, but snowT was always way too low.
+  //            //     This correction puts snowT close to the air temperature.
+  //            // JRC: this is effectively a density transformation assuming SnowDensity= 200 kg/m3
 
   cum_melt += meltSurf;
 
-  rates[0] = newSnow / Options.timestep;     // SNOWFALL -> SNOW
-  rates[1] = rainthru / Options.timestep;    // PONDEDWATER -> SNOW_LIQ surface
-  rates[2] = meltSurf / Options.timestep;    // SNOW -> SNOW_LIQ surface
-  rates[3] = surfToPack / Options.timestep;  // SNOW_LIQ surface -> SNOW_LIQ pack
-  rates[4] = freezePack / Options.timestep;  // SNOW_LIQ pack -> SNOW
-  rates[5] = SnowOutflow / Options.timestep; // SNOW_LIQ pack -> ponded water
-  rates[6] = (CcSurf - state_vars[iFrom[6]]) / Options.timestep;   //CC pack layer
-  rates[7] = (CcPack - state_vars[iFrom[7]]) / Options.timestep;   //CC pack layer
-  rates[8] = (snowT - state_vars[iFrom[8]]) / Options.timestep;   //SNOW_TEMP
-  rates[9] = (cum_melt - state_vars[iFrom[9]]) / Options.timestep; //Cumulative Melt
+  rates[0] = newSnow     / Options.timestep;  // SNOWFALL -> SNOW [mm/d]
+  rates[1] = rainthru    / Options.timestep;  // PONDEDWATER -> SNOW_LIQ surface [mm/d]
+  rates[2] = meltSurf    / Options.timestep;  // SNOW -> SNOW_LIQ surface [mm/d]
+  rates[3] = surfToPack  / Options.timestep;  // SNOW_LIQ surface -> SNOW_LIQ pack [mm/d]
+  rates[4] = freezePack  / Options.timestep;  // SNOW_LIQ pack -> SNOW [mm/d]
+  rates[5] = SnowOutflow / Options.timestep;  // SNOW_LIQ pack -> ponded water [mm/d]
+  rates[6] = (CcSurf   - state_vars[iFrom[6]]) / Options.timestep; //CC pack layer  [mJ/m2/d]
+  rates[7] = (CcPack   - state_vars[iFrom[7]]) / Options.timestep; //CC pack layer  [mJ/m2/d]
+  rates[8] = (snowT    - state_vars[iFrom[8]]) / Options.timestep; //SNOW_TEMP   [C/d]
+  rates[9] = (cum_melt - state_vars[iFrom[9]]) / Options.timestep; //Cumulative Melt [mm/d]
 }
 
 //////////////////////////////////////////////////////////////////

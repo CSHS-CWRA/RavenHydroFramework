@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -73,6 +73,8 @@ private:/*-------------------------------------------------------*/
   double     **_aQ_back;             ///< Rating curve for flow rates for different times [m3/s]
   int         *_aDates;              ///< Array of Julian days at which aQ changes [days after Jan 1]
   int          _nDates;              ///< size of aDates
+
+  void       BaseConstructor(const string Name,const long SubID,const res_type typ); //because some versions of c++ don't like delegating constructors
 
   double     GetVolume (const double &ht) const;
   double     GetArea   (const double &ht) const;

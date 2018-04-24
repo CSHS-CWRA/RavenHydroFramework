@@ -28,7 +28,8 @@
 
 double EstimatePET          (const force_struct &F,
                              const CHydroUnit   *pHRU,
-                             evap_method   evap_type ,
+                             const double       &wind_measurement_ht,
+                             evap_method        evap_type ,
                              const time_struct  &tt);
 
 class CHydroProcessABC;
@@ -126,9 +127,9 @@ private:/*------------------------------------------------------*/
   ofstream                _HYDRO; ///< output file stream for Hydrographs.csv
   ofstream              _STORAGE; ///< output file stream for WatershedStorage.csv
   ofstream             _FORCINGS; ///< output file stream for ForcingFunctions.csv
-  int                _HYDRO_ncid=-9; ///< output file ID  for Hydrographs.nc;        -9 = not existing
-  int              _STORAGE_ncid=-9; ///< output file ID  for WatershedStorage.nc;   -9 = not existing
-  int             _FORCINGS_ncid=-9; ///< output file ID  for ForcingFunctions.nc;   -9 = not existing
+  int                _HYDRO_ncid; ///< output file ID  for Hydrographs.nc;     
+  int              _STORAGE_ncid; ///< output file ID  for WatershedStorage.nc; 
+  int             _FORCINGS_ncid; ///< output file ID  for ForcingFunctions.nc;   
   double          *_aOutputTimes; ///< array of model major output times (LOCAL times at which full solution is written)
   int              _nOutputTimes; ///< size of array of model major output times
   int         _currOutputTimeInd; ///< index of current output time
@@ -175,6 +176,7 @@ private:/*------------------------------------------------------*/
                                       const time_struct &tt);
   double         EstimateWindVelocity(const optStruct &Options,
                                       const force_struct &F,
+                                      const double &wind_measurement_ht,
                                       const int k);
   double         EstimateCloudCover  (const optStruct &Options,
                                       const force_struct &F,

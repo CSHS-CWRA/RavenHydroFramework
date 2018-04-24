@@ -1,18 +1,19 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
 double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom);
 
 //////////////////////////////////////////////////////////////////
-/// \brief Base Constructor for reservoir 
+/// \brief Base Constructor for reservoir called by all other constructors
 /// \param Name [in] Nickname for reservoir
 /// \param SubID [in] subbasin ID
 /// \param typ [in] reservoir type 
+/// \details needed because versions of c++ prior to v11 don't necessaarily support delegating constructors
 //
-CReservoir::CReservoir(const string Name,const long SubID,const res_type typ)
+void CReservoir::BaseConstructor(const string Name,const long SubID,const res_type typ)
 {
   _name=Name;
   _SBID=SubID;
@@ -52,6 +53,17 @@ CReservoir::CReservoir(const string Name,const long SubID,const res_type typ)
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Base Constructor for reservoir 
+/// \param Name [in] Nickname for reservoir
+/// \param SubID [in] subbasin ID
+/// \param typ [in] reservoir type 
+//
+CReservoir::CReservoir(const string Name,const long SubID,const res_type typ)
+{
+  BaseConstructor(Name,SubID,typ);
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Constructor for reservoir using power law rating curves
 /// \param Name [in] Nickname for reservoir
 /// \param SubID [in] subbasin ID
@@ -62,8 +74,9 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
                        //min_stage
                        const double a_V, const double b_V,
                        const double a_Q, const double b_Q,
-                       const double a_A,const double b_A) :CReservoir(Name,SubID,typ)
+                       const double a_A,const double b_A)
 {
+   BaseConstructor(Name,SubID,typ);
 
   _Np=30;
   _aStage =new double [_Np];
@@ -98,8 +111,10 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
 CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
                        const double *a_ht,
                        const double *a_Q, const double *a_Qund,const double *a_A, const double *a_V,
-                       const int     nPoints) :CReservoir(Name,SubID,typ)
+                       const int     nPoints)
 {
+   BaseConstructor(Name,SubID,typ);
+
   _min_stage =ALMOST_INF;
   _max_stage=-ALMOST_INF; 
 
@@ -162,8 +177,9 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
                        const double *a_Qund,
                        const double *a_A, 
                        const double *a_V,
-                       const int     nPoints):CReservoir(Name,SubID,typ)
+                       const int     nPoints)
 {
+  BaseConstructor(Name,SubID,typ);
 
   _nDates=my_nDates;
   _aDates = new int[_nDates];
@@ -233,8 +249,10 @@ CReservoir::CReservoir(const string Name,
                        const double crestw,
                        const double crestht, 
                        const double A,
-                       const double depth):CReservoir(Name,SubID,typ)
+                       const double depth)
 {
+   BaseConstructor(Name,SubID,typ);
+
   _type=RESROUTE_STANDARD;
 
   _crest_ht=crestht;
@@ -619,10 +637,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   const int RES_MAXITER=100;
   double stage_limit=ALMOST_INF;
   double weir_adj=0.0;
-  double Qoverride=CTimeSeriesABC::BLANK_DATA;
+  double Qoverride=RAV_BLANK_DATA;
   double min_stage=-ALMOST_INF;
   double Qminstage=0.0;
-  double Qtarget=CTimeSeriesABC::BLANK_DATA;
+  double Qtarget=RAV_BLANK_DATA;
   double Qdelta=ALMOST_INF;
 
   int nn=(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
@@ -722,13 +740,13 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     res_outflow=GetOutflow(stage_new,weir_adj);
 
     //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
-    if (Qoverride==CTimeSeriesABC::BLANK_DATA)
+    if (Qoverride==RAV_BLANK_DATA)
     {
       if(stage_new<min_stage)
       {
         Qoverride=Qminstage;
       }
-      else if(Qtarget!=CTimeSeriesABC::BLANK_DATA)
+      else if(Qtarget!=RAV_BLANK_DATA)
       {
         if ((Qtarget-_Qout)/tstep>Qdelta){
           Qtarget=_Qout+Qdelta*tstep; //maximum flow change
@@ -738,7 +756,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     }
     
     //special correction - flow overridden
-    if(Qoverride!=CTimeSeriesABC::BLANK_DATA)
+    if(Qoverride!=RAV_BLANK_DATA)
     {
       // \todo[funct] may wish to ensure that V_new is not negative
       res_outflow=2*Qoverride-_Qout;

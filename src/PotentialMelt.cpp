@@ -11,18 +11,6 @@ double UBC_DailyPotentialMelt( const optStruct &Options,
 /// \brief Estimates potential melt rate [mm/d]
 /// \details can be positive or negative
 ///
-/// \details if type==POTMELT_DEGREE_DAY
-///             <ul> <li> potential melt is linearly proportional to temperature </ul>
-/// if type==POTMELT_DATA
-///             <ul> <li> potential melt is user-specified </ul>
-/// if type==POTMELT_HBV
-///   <ul> <li> potential melt is linearly proportional to temperature, but corrected for aspect, forest cover </ul>
-/// if type==POTMELT_EB
-///   <ul> <li> \ref adapted from Dingman pg 189-192 \cite Dingman1994
-/// if type==POTMELT_RESTRICTED
-///             <ul> <li> melt is based on radiation inputs with a 'restricted' melt factor [mm/d]</ul>
-/// \ref Dingman eqn 5-61 \cite Dingman1994
-///
 /// \param *F [in] Forcing functions for a particular HRU over current time step
 /// \param Options [in] global options structure
 /// \param *pHRU [in] pointer to HRU for which radiation is calculated
@@ -112,6 +100,15 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     convert = MM_PER_METER/DENSITY_WATER/LH_FUSION;//for converting radiation to mm/d [mm/m]/[kg/m3]/[MJ/kg] = [mm-m2/MJ]
 
     return tmp_rate+ threshPositive(rad*convert);
+  }
+  //----------------------------------------------------------
+  else if (Options.pot_melt==POTMELT_DD_RAIN)
+  {
+    //degree-day with rain-on-snow correction
+    double Ma=pHRU->GetSurfaceProps()->melt_factor;
+    double rainfall=F->precip*(1-F->snow_frac);
+    double adv_melt= SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*rainfall; //[mm/d]
+    return Ma*(F->temp_daily_ave-FREEZING_TEMP)+adv_melt;
   }
   //----------------------------------------------------------
   else if (Options.pot_melt==POTMELT_UBCWM)
@@ -211,7 +208,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
 
   if ((pHRU->GetHRUType()==HRU_GLACIER) && (snowSWE<=0))
   {
-    double minalb=CGlobalParams::GetParams()->UBC_snow_params.MIN_SNOW_ALBEDO;
+    double minalb=CGlobalParams::GetParams()->min_snow_albedo;
     albedo=1-(1.0-albedo)*(1-minalb);//UBCWM RFS implmentation
   }
 

@@ -311,8 +311,6 @@ struct UBC_lapse
 ///
 //
 struct UBC_snow_par{
-  double MAX_SNOW_ALBEDO; ///< P0ALBMAX, albedo of fresh snow (~0.95)
-  double MIN_SNOW_ALBEDO; ///< P0ALBMIN, very old snow/glacier albedo
   double ALBASE;          ///< P0ALBASE, albedo exponential decay threshold value (0.65)
   double ALBREC;          ///< P0ALBREC, recession constant (0.9/day)
   double MAX_CUM_MELT;    ///< P0ALBMLX, "max annual melt" (~4000mm)
@@ -325,35 +323,37 @@ struct UBC_snow_par{
 //
 struct global_struct
 {
-  UBC_lapse        UBC_lapse_params;  ///< parameters for orographic corrections
-  double           UBC_s_corr[12];    ///< UBC solar radiation corrections
-  double           UBC_n_corr[12];    ///<
-  UBC_snow_par     UBC_snow_params;   ///< UBC snow parameters
-  double           UBC_GW_split;      ///< UBC GW Split parameter [0..1]
-  double           UBC_exposure_fact; ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1]
-  double           UBC_cloud_penet;   ///< UBC Fraction of solar radiation penetrating cloud cover [0..1]
-  double           UBC_LW_forest_fact;///< UBC mulitplier of temperature to estimate LW radiation in forests (P0BLUE*P0LWVF) [mm/d/K]
-  double           UBC_flash_ponding; ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
+  double           adiabatic_lapse;     ///< [°C/km]
+  double           wet_adiabatic_lapse; ///< [°C/km]
+  double           precip_lapse;        ///< [mm/d/km] precipitation lapse rate for orographic correction
 
-  double           adiabatic_lapse;   ///< [°C/km]
-  double           wet_adiabatic_lapse;///< [°C/km]
-  double           precip_lapse;      ///< [mm/d/km] precipitation lapse rate for orographic correction
+  double           rainsnow_temp;       ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
+  double           rainsnow_delta;      ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
+  double           snow_SWI;            ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow (as pct of snow porosity)
+                                        //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
+  double           snow_temperature;    ///< [°C]   default snow temperature if not explicitly modelled
+  double           snow_roughness;      ///< [mm]  roughness height of snow
+  double           min_snow_albedo;     ///< [0..1] albedo of fresh snow  (~0.3)
+  double           max_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.95)
 
-  double           rainsnow_temp;     ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
-  double           rainsnow_delta;    ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
-  double           snow_SWI;          ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow (as pct of snow porosity)
-                                      //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
-  double           snow_temperature;  ///< [°C]   default snow temperature if not explicitly modelled
-  double           snow_roughness;    ///< [mm]  roughness height of snow
+  double           avg_annual_snow;     ///< [mm] avg annual snow as SWE
+  double           avg_annual_runoff;   ///< [mm] avg annual runoff from basin
 
-  double           max_reach_seglength;///< [km] maximum reach segment length
+  double           max_reach_seglength; ///< [km] maximum reach segment length
+  double           max_SWE_surface;     ///< [mm] maximum SWE in surface snow layer
 
-  double           airsnow_coeff;     ///< [1/d] air/snow heat transfer coefficient
-  double           avg_annual_snow;   ///< [mm] avg annual snow as SWE
-  double           avg_annual_runoff; ///< [mm] avg annual runoff from basin
+  UBC_lapse        UBC_lapse_params;    ///< parameters for orographic corrections
+  double           UBC_s_corr[12];      ///< UBC solar radiation corrections
+  double           UBC_n_corr[12];      ///<
+  UBC_snow_par     UBC_snow_params;     ///< UBC snow parameters
+  double           UBC_GW_split;        ///< UBC GW Split parameter [0..1]
+  double           UBC_exposure_fact;   ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1]
+  double           UBC_cloud_penet;     ///< UBC Fraction of solar radiation penetrating cloud cover [0..1]
+  double           UBC_LW_forest_fact;  ///< UBC mulitplier of temperature to estimate LW radiation in forests (P0BLUE*P0LWVF) [mm/d/K]
+  double           UBC_flash_ponding;   ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
 
-  double           max_SWE_surface;   ///< [mm] maximum SWE in surface snow layer
+  double           airsnow_coeff;       ///< [1/d] air/snow heat transfer coefficient
 
-  double           TOC_multiplier;    ///< [mm] time of concentration multiplier
+  double           TOC_multiplier;      ///< [mm] time of concentration multiplier
 };
 #endif

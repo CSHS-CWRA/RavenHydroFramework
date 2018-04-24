@@ -290,12 +290,12 @@ void ShortwaveTest()
   double day_angle,declin,ecc,day_length;
   double latrad;
   double SW2(0),lateq,solar_noon;
-  double tstep=1.0;
+  double tstep=1.0/100.0;
 
   //header
   //double lat=39.7555; //Golden colorado
   //double lat=44.0521; //Eugene oregon
-  double lat=45;
+  double lat=70;
 
   latrad=lat*PI/180.0;
   SHORT<<"doy,";
@@ -307,6 +307,7 @@ void ShortwaveTest()
   double conv=MJ_PER_D_TO_WATT;
   SHORT<<endl;
   for (double day=0;day<365;day+=tstep){
+    if(int(day*24+0.001) % 24==0){cout<<day<<endl;}
     SHORT<<day<<",";
     //These aren't impacted by slope / aspect, and are OK
     day_angle  = CRadiation::DayAngle(day,year);
@@ -320,7 +321,7 @@ void ShortwaveTest()
         lateq      = CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
         solar_noon = CRadiation::CalculateSolarNoon    (latrad,slope,aspect); //relative to actual location
         
-        SW=CRadiation::ClearSkySolarRadiation(day,latrad,lateq,slope,day_angle,day_length,solar_noon,dew_pt,ET_rad,(tstep==1.0));
+        SW=CRadiation::ClearSkySolarRadiation(day+0.001,tstep,latrad,lateq,slope,aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,(tstep==1.0));
         SW=ET_rad;
         SHORT<<SW*conv<<",";
         //SHORT<<solar_noon*12/PI<<","; //report solar noon, in hrs
@@ -374,7 +375,7 @@ void ShortwaveTest()
     if (ceil(dday)==21)//21st day of the month
     {
     cout<<dmon<<endl;
-    SW=ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,false);
+    SW=ClearSkySolarRadiation(jday,tstep,year,lat,slope,aspect,dew_pt,ET_rad,false);
     SHORT<<thisdate<<","<<t<<","<<t-floor(t)+dmon-1<<","<<SW<<",";
     SHORT<<ClearSkySolarRadiation(jday,year,lat,slope,aspect,dew_pt,ET_rad,true)<<endl;
     }
@@ -390,7 +391,7 @@ void ShortwaveTest()
 /// \brief a routine for taking input of day, slope,aspect, dewpoint, and albedo and calculating shortwave rafiation parameters
 /// \details input file (ShortwaveInput.csv in working directory) in the following format:
 /// input file
-/// # of entries
+/// # of entries [tstep]
 /// day,year,lat(dec),slope(m/m),aspect (degrees from north),dewpoint,albedo
 /// output file
 /// day, year, lat,slope,aspect,declin,ecc,solar_time,OAM,Ketp,Ket
@@ -412,6 +413,7 @@ void ShortwaveGenerator()
   CParser *p=new CParser(IN,line);
   p->Tokenize(s,Len);
   int NumLines=s_to_i(s[0]);
+  double tstep=s_to_d(s[1]);
   p->Tokenize(s,Len);//header
   for (int i=0;i<NumLines;i++)
   {
@@ -444,7 +446,7 @@ void ShortwaveGenerator()
     Ketp =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,slope,solar_noon,day_length,t_sol,false);
     Ket  =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,0.0  ,0.0       ,day_length,t_sol,false);
 
-    TIR  =CRadiation::ClearSkySolarRadiation(day,latrad,lateq,tan(slope),day_angle,day_length,solar_noon,dew_pt,ET_rad,false);
+    TIR  =CRadiation::ClearSkySolarRadiation(day,tstep,latrad,lateq,tan(slope),aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,tstep==1.0);
 
     SHORT<<day<<","<<year<<","<<latrad*180.0/PI<<","<<tan(slope)<<","<<aspect*180/PI;
     SHORT<<","<<declin<<","<<ecc<<","<<t_sol<<",";

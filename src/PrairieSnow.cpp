@@ -395,14 +395,14 @@ void CmvPrairieBlowingSnow::GetRatesOfChange(const double              *state_va
   double veg_diam=pHRU->GetVegetationProps()->veg_diam;    // [m] vegetation diameter (why is this m2 in MESH documentation?)
   double mBeta   =pHRU->GetVegetationProps()->veg_mBeta;   // [-] ?? ~170 or 32 if FCS>FGS
   double veg_ht  =pHRU->GetVegVarProps()->height;          // [m] vegetation height
-  double meas_ht =2.0;                                     // [m] wind speed measurement height
+  double meas_ht =pHRU->GetVegVarProps()->reference_height;// [m] wind speed measurement height
   double z0_mom  =pHRU->GetVegVarProps()->roughness;       // [m] momentum roughness height
-  double zdp     =pHRU->GetVegVarProps()->zero_pln_disp;   // [m] zero plane displacement 
+  double zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;   // [m] zero plane displacement 
   
-  veg_ht=1.0;
+  veg_ht=1.0;//TMP DEBUG
   fetch=200;
   z0_mom=0.05;
-  zdp=0.5;
+  zero_pl=0.5;
 
   //cout<<"PBSM Params: "<<fetch<<" "<<veg_dens<<" "<<mBeta<<" "<<veg_ht<<" "<<ZREFM<<" "<<z0_mom<<endl;
   if(snow_depth>REAL_SMALL) 
@@ -428,8 +428,8 @@ void CmvPrairieBlowingSnow::GetRatesOfChange(const double              *state_va
 
     z0=max(z0,meas_ht*0.5);//added by JRC
     
-    u10=u_meas*log(10.0/z0)/log(meas_ht/z0); //assumes z0<10, z0<ZREFM (assumes no zdp!)
-    //u10=F->wind_vel*max(log((10.0-zdp)/z0)/log((meas_ht-zdp)/z0),0.0); //JRC preferred: meas_ht mus be larger than zdp+z0!
+    u10=u_meas*log(10.0/z0)/log((meas_ht)/z0); //assumes z0<10, z0<ZREFM (assumes no zero plane displacement!)
+    //u10=F->wind_vel*max(log((10.0-zero_pl)/z0)/log((meas_ht-zero_pl)/z0),0.0); //JRC preferred: meas_ht mus be larger than zdp+z0!
 
     //cout<<" u10: "<<u10<<" "<<z0<<" "<<meas_ht<<endl;
     //ExitGracefullyIf(u10<0,"Blowing Snow: u10<0: bad reference heights",RUNTIME_ERR);
