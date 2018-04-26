@@ -343,9 +343,10 @@ struct global_struct
   double           max_SWE_surface;     ///< [mm] maximum SWE in surface snow layer
 
   UBC_lapse        UBC_lapse_params;    ///< parameters for orographic corrections
+  UBC_snow_par     UBC_snow_params;     ///< UBC snow parameters
   double           UBC_s_corr[12];      ///< UBC solar radiation corrections
   double           UBC_n_corr[12];      ///<
-  UBC_snow_par     UBC_snow_params;     ///< UBC snow parameters
+
   double           UBC_GW_split;        ///< UBC GW Split parameter [0..1]
   double           UBC_exposure_fact;   ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1]
   double           UBC_cloud_penet;     ///< UBC Fraction of solar radiation penetrating cloud cover [0..1]

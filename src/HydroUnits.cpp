@@ -733,6 +733,11 @@ double  CHydroUnit::GetTotalAlbedo() const
     //correction for urban surfaces?
 
     veg_albedo    =_pVeg->albedo; //correction for wetness?
+    
+    //JRC: checks put in just in case parameters not supplied (only cosmetic in Forcings.csv, since if not supplied, SW_RADIA_NET not used in calcs).
+    if (veg_albedo<0 ){veg_albedo=0.14;}
+    if (svf>1.0      ){svf=0.0;}
+    if (land_albedo<0){land_albedo=0.3;}
 
     return (1.0-svf)*(Fc)*veg_albedo+((svf)*(Fc)+(1.0-Fc))*land_albedo;
 

@@ -37,7 +37,7 @@ class CSoilClass
 protected:/*----------------------------------------------------*/
 
   string              _tag;                 ///< nickname for soil, e.g., "SILTY_SAND"
-  soil_struct         _S;                   ///< corresponding properties for soil
+  soil_struct         _Soil;                ///< corresponding properties for soil
 
   static CSoilClass **_pAllSoilClasses;     ///< array of pointers to all soil classes that have been created
   static int          _nAllSoilClasses;     ///< number of soil classes
