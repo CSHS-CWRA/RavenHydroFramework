@@ -10,8 +10,8 @@
 # Modified   Feb 2017    Juliane Mai    - add NetCDF support
 #            Mar 2017    Juliane Mai    - increase stack size to 256 MB from standard 64MB
 ###
-#appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g').exe
-appname := raven_rev.exe
+appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g').exe
+# appname := raven_rev.exe
 
 CXX      := g++
 CXXFLAGS := -Wno-deprecated

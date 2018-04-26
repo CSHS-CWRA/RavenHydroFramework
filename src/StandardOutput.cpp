@@ -1357,7 +1357,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
   const char *current_basin_name[1];                 // current time in days since start time
 
-  char *      tmp;
+  string      tmp;
 
   /* initialize all potential file IDs with -9 == "not existing and hence not opened" */
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
@@ -1458,7 +1458,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
     //(d) set some attributes to variable "basin_name_sim"  
     tmp="Name/ID of sub-basins with simulated outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
   
     //(e) create variable "q_sim" which will contain at the end simulated outflows; shape=(tt,nSim) 
@@ -1469,11 +1469,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
     //(f) set some attributes to variable "q_sim"   
     tmp="Simulated outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "long_name", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "long_name", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
 
     tmp="m**3 s**-1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "units", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "units", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
 
     static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
@@ -1516,7 +1516,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   
     // (d) set some attributes to variable "basin_name_obs"       
     tmp="Name/ID of sub-basins with observed outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bobs, "long_name", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bobs, "long_name", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
   
     // (e) create variable "q_obs" which will contain at the end observed outflows; shape=(tt,nObs) */
@@ -1527,10 +1527,10 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   
     // (f) set some attributes to variable "q_obs"       
     tmp="Observed outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "long_name", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "long_name", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
     tmp="m**3 s**-1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "units", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "units", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
 
     static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
@@ -1566,7 +1566,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
  
     //(d) set some attributes to variable "basin_name_res"      
     tmp="Name/ID of sub-basins with inflows";
-    retval = nc_put_att_text(_HYDRO_ncid,varid_bres,"long_name",strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid,varid_bres,"long_name",tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval); 
 
     //(e) create variable "q_in" which will contain at the end observed inflows; shape=(tt,nRes) 
@@ -1577,11 +1577,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     
     //(f) set some attributes to variable "q_in"       
     tmp="Observed outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "long_name", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "long_name", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
 
     tmp="m**3 s**-1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "units", strlen(tmp),tmp);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "units", tmp.length(),tmp.c_str());
     HandleNetCDFErrors(retval);
     
     static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
