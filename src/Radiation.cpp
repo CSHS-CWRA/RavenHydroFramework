@@ -704,7 +704,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
     //day_length=w2_24-w1_24;
   }
 
-  return max(0.0,SOLAR_CONSTANT*cos_theta*ecc);
+  return max(0.0,SOLAR_CONSTANT*cos_theta*ecc)/2.0/PI/(t2-t1);
  
 }
 //////////////////////////////////////////////////////////////////

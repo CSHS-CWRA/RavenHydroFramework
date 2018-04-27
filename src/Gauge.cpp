@@ -73,11 +73,6 @@ void CGauge::Initialize(const optStruct   &Options,
                 UTM_zone,
                 _Loc.UTM_x,   _Loc.UTM_y);
 
-  //Minimum requirements at gauge: must have precip
-  //ExitGracefullyIf((GetTimeSeries(F_PRECIP      )==NULL) &&
-  //                 (GetTimeSeries(F_RAINFALL    )==NULL),"CGauge::Initialize: No precipitation time series found",BAD_DATA);
-
-
   //Populate Temperature time series: by timestep, daily min/max/average
   //--------------------------------------------------------------------------
   if((GetTimeSeries(F_TEMP_AVE)!=NULL) || (GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL) ||

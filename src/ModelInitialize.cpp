@@ -169,9 +169,9 @@ void CModel::Initialize(const optStruct &Options)
   //Generate Gauge Weights from Interpolation
   //--------------------------------------------------------------
   if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
-  GenerateGaugeWeights(_aGaugeWeights,F_PRECIP,Options);
-  GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP,Options);
-  GenerateGaugeWeights(_aGaugeWtTemp,F_TEMP_AVE,Options);
+  GenerateGaugeWeights(_aGaugeWeights ,F_PRECIP  ,Options);
+  GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
+  GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
 
   //Initialize SubBasins, calculate routing orders, topology
   //--------------------------------------------------------------
@@ -601,6 +601,8 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   //handle the case that weights are allowed to sum to zero -netCDF is available
   //still need to allocate all zeros
   if (ForcingGridIsAvailable(forcing)){ return; }
+  if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_MIN))){return;} //this is also acceptable
+  if ((forcing==F_PRECIP  ) && (ForcingGridIsAvailable(F_RAINFALL))){return;} //this is also acceptable
 
   string warn="GenerateGaugeWeights: no gauges present with the following data: "+ForcingToString(forcing);
   ExitGracefullyIf(nGaugesWithData==0,warn.c_str(),BAD_DATA_WARN);

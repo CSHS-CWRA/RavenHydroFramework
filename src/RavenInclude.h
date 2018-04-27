@@ -210,7 +210,6 @@ const double  WIND_EXTINCT  =2.5;     ///< [-]wind/diffusivity extinction coeffi
 /// \note This is always 2 for broadleaves, and ranges from 2 for flat needles to pi for cylindrical needles.
 const double  LEAF_PROJ_RAT =2.2;     ///< [m2/m2] ratio of total leaf area to projected area.
 
-
 const double HBV_REFERENCE_ELEV=1000;   ///< [masl] (zref in HBV)
 const double HBV_PRECIP_CORR   =0.00008;///< [1/m] precipitation lapse rate for low elevations (PCALT in HBV, PGRADL in HBV-EC)
 const double HBV_PRECIP_CORR_UP=0.0;    ///< [1/m] precipitation lapse rate for high elevations(PCALTUP in HBV, PGRADH in HBV-EC)
