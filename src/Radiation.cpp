@@ -184,8 +184,9 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     {
     ///< from Crop evapotranspiration - Guidelines for computing crop water requirements - FAO Irrigation and drainage paper 56 \cite Allen1998FR
     //http://www.fao.org/docrep/X0490E/X0490E00.htm
-    double tmp,ea;
-    ea=F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); //actual vapor pressure
+    double tmp;
+    double ea;
+    ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); //[kPa]
     tmp=(0.34-0.14*pow(ea,0.5))*(1.35*(F->SW_radia/F->CS_radia)-0.35);
     return STEFAN_BOLTZ*tmp*(pow(F->temp_daily_min,4)+pow(F->temp_daily_max,4));
     }*/
@@ -197,20 +198,35 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     const double C3=0.2;
     //Brutsaert (1982) equation for effective clear sky emissivity
     double cloud_corr; //cloud correction
-    double ratio=solar_radiation/potential_solar_rad;//if solar_radiation is specified
+    double ratio=F->SW_radia/F->SW_radia_unc;
     cloud_corr=C3+(1.0-C3)*min(max((ratio - C1) / C2,1.0),0.0);
     return STEFAN_BOLTZ*emmissivity*cloud_corr*(emiss_eff*pow(Tair,4)-pow(Tair,4));
     }
+  */  
+   /*
+   case (LW_RAD_CRHM):
+   { //from CRHM netall based upon Brutsaert
+     double LW_net = -0.85;
+     double emiss=0.97;
+     double ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);                    //[kPa]
+     if(clear_sky_SW > 0.0)
+     {
+        LW_net = -0.85 + emiss*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0)*(-0.39+0.093*sqrt(ea))*(0.26+0.81*(F->SW_radia/F->SW_radia_unc));
+     }
+     return LW_net;
+   } 
   */
   /*case(LW_RAD_SWAT):
     {
     // calculate net long-wave radiation
     double rbo,rout;
     double incoming =F->SW_radia;
-    double rmx=??;
-    rbo = -(0.34 - 0.139 * sqrt(sat_vap*F->rel_humidity));                        // net emissivity  equation 2.2.20 in SWAT manual - SHOULD CHECK - is RH 0-100 in SWAT???
+    double sat_vap,ea;
+    sat_vap=GetSaturatedVaporPressure(F->temp_ave); //[kPa]
+    ea =F->rel_humidity*sat_vap;                    //[kPa]
+    rbo = -(0.34 - 0.139 * sqrt(ea));                        // net emissivity  equation 2.2.20 in SWAT manual
     if (rmx < 1e-4){rto = 0.0;}
-    else           {rto = 0.9 * (F->SW_radia / rmx) + 0.1;}                             // cloud cover factor equation 2.2.19 SWAT
+    else           {rto = 0.9 * (F->SW_radia / F->SW_radia_unc) + 0.1;}                             // cloud cover factor equation 2.2.19 SWAT
     rout= rbo * rto * 4.9e-9 * pow(F->temp_ave+ZERO_CELSIUS,4);   // net long-wave radiation equation 2.2.21 SWAT
     }*/
 

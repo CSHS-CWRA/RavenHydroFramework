@@ -34,6 +34,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _filename     = filename;
   _varname      = varname;
   _DimNames[0]  = DimNames[0]; _DimNames[1]  = DimNames[1]; _DimNames[2]  = DimNames[2];
+  _deaccumulate = false;
 
   // -------------------------------
   // Additional variables initialized and eventually overwritten by ParseTimeSeries
@@ -73,6 +74,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   _ForcingType                 = grid._ForcingType                     ;
   _filename                    = grid._filename                        ;
   _varname                     = grid._varname                         ;
+  _deaccumulate                = grid._deaccumulate                    ;
   for (int ii=0; ii<3;  ii++) {_DimNames[ii] = grid._DimNames[ii]; }
   for (int ii=0; ii<3;  ii++) {_GridDims[ii] = grid._GridDims[ii]; }
   _nNonZeroWeightedGridCells   = grid._nNonZeroWeightedGridCells;
@@ -1203,12 +1205,18 @@ void CForcingGrid::SetaAvePET(const double aAvePET [12]){
 ///////////////////////////////////////////////////////////////////
 /// \brief sets the _aVal in class CForcingGrid
 ///
-/// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
+/// \param ic    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
 /// \param t      [in] time   index of _aVal[t][idx]
 /// \param aVal   [in] value to be set
 //
-void CForcingGrid::SetValue( const int idx, const int t, const double aVal) {
-  _aVal[t][idx] = aVal;
+void CForcingGrid::SetValue( const int ic, const int t, const double aVal) {
+  _aVal[t][ic] = aVal;
+}
+///////////////////////////////////////////////////////////////////
+/// \brief indicates that the forcing grid stores an accumulated variable
+//
+void CForcingGrid::SetToDeaccumulate(){
+  _deaccumulate=true;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1286,8 +1294,13 @@ bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCell
       for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
         sum_HRU = sum_HRU + _GridWeight[ik][il];
       }
-      if ( abs(sum_HRU - 1.0) > 0.00001 ) {
-        printf("\n");
+      if(abs(sum_HRU - 1.0) < 0.05) {//repair if less than 5%
+        for(int il=0; il<nGridCells; il++) {
+          _GridWeight[ik][il]/=sum_HRU;
+        }    
+        sum_HRU = 1.0;
+      }
+      if ( abs(sum_HRU - 1.0) > 0.0001 ) {
         printf("HRU ID = %i    Sum Forcing Weights = %f\n", ik,sum_HRU);
         check = false;
       }
@@ -1412,7 +1425,7 @@ int CForcingGrid::GetNumberNonZeroGridCells() const{return _nNonZeroWeightedGrid
 /// \brief Returns ID of i-th grid cell with non-zero weighting
 /// \return ID of i-th grid cell with non-zero weighting
 //
-int CForcingGrid::GetIdxNonZeroGridCell(int i) const{return _IdxNonZeroGridCells[i];}
+int CForcingGrid::GetIdxNonZeroGridCell(int ic) const{return _IdxNonZeroGridCells[ic];}
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns current chunk size
@@ -1492,7 +1505,6 @@ double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const dou
 double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,const double &tstep,const CForcingGrid *pRain) const
 {
 
-  int idx_new = GetTimeIndex(t,tstep);
   int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
   double wt;
   double sum=0.0;
@@ -1500,9 +1512,9 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
   {
     wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    snow = GetValue(idx_new, t, nSteps);
-    if(snow>=0.0){
-      rain=pRain->GetValue(idx_new, t, nSteps);
+    snow = GetValue(ic, t, nSteps);
+    if(snow>0.0){
+      rain=pRain->GetValue(ic, t, nSteps);
       sum+= wt * snow/(snow+rain);
     }
   }
@@ -1511,23 +1523,23 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns magnitude of time series data point for which t is a float index
-/// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
+/// \param ic    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
 /// \param t      [in] Time index
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double &t) const 
+double CForcingGrid::GetValue(const int ic, const double &t) const 
 {
-  return _aVal[(int)t][idx];
+  return _aVal[(int)t][ic];
 }
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns average over n timesteps of time series data point for which t is an index
-/// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
+/// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
 /// \param t      [in] local time (with respect to chunk start, in days)
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int idx, const double &t, const int nsteps) const 
+double CForcingGrid::GetValue(const int ic, const double &t, const int nsteps) const 
 {
 
 
@@ -1535,7 +1547,7 @@ double CForcingGrid::GetValue(const int idx, const double &t, const int nsteps) 
   int lim=min(nsteps,_ChunkSize-ii_start); 
   double sum = 0.0;
   for (int ii=ii_start; ii<ii_start+lim;ii++){
-    sum += _aVal[ii][idx];
+    sum += _aVal[ii][ic];
   }
   sum /= (double)(lim);
 
@@ -1562,12 +1574,12 @@ double CForcingGrid::GetValue(const int idx, const double &t, const int nsteps) 
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns minimum of n timesteps of time series data point for which t is an index
-/// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
+/// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
 /// \param t      [in] Time index
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_min(const int idx, const double &t, const int nsteps) const 
+double CForcingGrid::GetValue_min(const int ic, const double &t, const int nsteps) const 
 {
   /*double mini = ALMOST_INF ;
   for (int ii=0; ii<nsteps; ii++) {
@@ -1579,7 +1591,7 @@ double CForcingGrid::GetValue_min(const int idx, const double &t, const int nste
   int ii_start=(int)(t);
   int lim=min(nsteps,_ChunkSize-ii_start); 
   for (int ii=ii_start; ii<ii_start+lim;ii++){
-    if(_aVal[ii][idx] < mini){mini=_aVal[ii][idx];}
+    if(_aVal[ii][ic] < mini){mini=_aVal[ii][ic];}
   }
   return mini;
 
@@ -1587,12 +1599,12 @@ double CForcingGrid::GetValue_min(const int idx, const double &t, const int nste
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns maximum of n timesteps of time series data point for which t is an index
-/// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
+/// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
 /// \param t      [in] Time index
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue_max(const int idx, const double &t, const int nsteps) const 
+double CForcingGrid::GetValue_max(const int ic, const double &t, const int nsteps) const 
 {
   /*double maxi = -ALMOST_INF ;
   for (int ii=0; ii<nsteps; ii++) {
@@ -1605,7 +1617,7 @@ double CForcingGrid::GetValue_max(const int idx, const double &t, const int nste
   int ii_start=(int)(t);
   int lim=min(nsteps,_ChunkSize-ii_start); 
   for (int ii=ii_start; ii<ii_start+lim;ii++){
-    if(_aVal[ii][idx] > maxi){maxi=_aVal[ii][idx];}
+    if(_aVal[ii][ic] > maxi){maxi=_aVal[ii][ic];}
   }
   return maxi;
 }
@@ -1750,4 +1762,8 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
   return (double)idx_chunk; // + delta;
 }
 
-
+///////////////////////////////////////////////////////////////////
+/// \brief  true if the variable should be deaccumulated
+/// \return true if the variable should be deaccumulated
+///
+bool CForcingGrid::ShouldDeaccumulate()                const{return _deaccumulate;}

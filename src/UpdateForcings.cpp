@@ -251,6 +251,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_rain = GetForcingGrid((F_RAINFALL)); 
         pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
 
+        
         F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
@@ -340,7 +341,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // Snow fraction Calculations
       //-------------------------------------------------------------------
       F.snow_frac =EstimateSnowFraction(Options.rainsnow,&F,Options);
-
+      
       //-------------------------------------------------------------------
       //  Precip Corrections
       //-------------------------------------------------------------------
@@ -964,6 +965,10 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     aP[nP]="RAINSNOW_TEMP";  aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="RAINSNOW_DELTA"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
+  else if(Options.rainsnow==RAINSNOW_HARDER){
+
+  }
+
 
   // Precipitation Interception Fraction Method
   //----------------------------------------------------------------------
@@ -1156,6 +1161,24 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   {
     WriteWarning("CModel::GenerateGriddedPrecipVars: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
   }
+  //deaccumulate if necessary
+  double rainfall_rate;
+  if(pGrid_pre->ShouldDeaccumulate())
+  {
+    for(int it=0; it<pGrid_pre->GetChunkSize()-1; it++) {                   // loop over time points in buffer
+      for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++){       // loop over non-zero grid cell indexes
+        double old=pGrid_pre->GetValue(ic,it);
+        rainfall_rate=(pGrid_pre->GetValue(ic,it+1)-pGrid_pre->GetValue(ic,it))/pGrid_pre->GetInterval()*300;
+        pGrid_pre->SetValue(ic,it,rainfall_rate);   // copies precipitation values
+      }
+    }
+    for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++){       // loop over non-zero grid cell indexes
+      rainfall_rate=0;
+      pGrid_pre->SetValue(ic,pGrid_pre->GetChunkSize()-1,rainfall_rate);  
+    }
+    //pGrid_pre->SetChunkSize(pGrid_pre->GetChunkSize()-1);
+  }
+
   if ( snow_gridded && rain_gridded && !pre_gridded ){
     GeneratePrecipFromSnowRain(Options);
   }
@@ -1166,6 +1189,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
     GenerateZeroSnow(Options);
     if ( !pre_gridded ) { GeneratePrecipFromSnowRain(Options); }
   }
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Creates all missing gridded temperatur data based on gridded information available,
@@ -1236,7 +1260,7 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
     ExitGracefully("CModel::GenerateGriddedTempVars: Insufficient data to generate temperature forcing grids",BAD_DATA);
   }
 
-  ExitGracefullyIf(pGrid_daily_tmin->GetInterval() != pGrid_daily_tmax->GetInterval(),
+  ExitGracefullyIf(GetForcingGrid(F_TEMP_DAILY_MAX)->GetInterval() != GetForcingGrid(F_TEMP_DAILY_MIN)->GetInterval(),
     "CModel::InitializeForcingGrids: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
 }
 //////////////////////////////////////////////////////////////////

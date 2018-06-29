@@ -601,7 +601,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   //handle the case that weights are allowed to sum to zero -netCDF is available
   //still need to allocate all zeros
   if (ForcingGridIsAvailable(forcing)){ return; }
-  if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_MIN))){return;} //this is also acceptable
+  if ((forcing==F_TEMP_AVE) && (ForcingGridIsAvailable(F_TEMP_DAILY_MIN))){return;} //this is also acceptable
   if ((forcing==F_PRECIP  ) && (ForcingGridIsAvailable(F_RAINFALL))){return;} //this is also acceptable
 
   string warn="GenerateGaugeWeights: no gauges present with the following data: "+ForcingToString(forcing);

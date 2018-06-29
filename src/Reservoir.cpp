@@ -37,6 +37,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _pMinStageFlowTS=NULL;  
   _pTargetStageTS=NULL;
   _pMaxQIncreaseTS=NULL; 
+  _pDroughtLineTS=NULL;
 
   _crest_ht=0.0;
 
@@ -256,9 +257,10 @@ CReservoir::CReservoir(const string Name,
   _type=RESROUTE_STANDARD;
 
   _crest_ht=crestht;
-  _min_stage =-depth;
-  _max_stage=6.0; //reasonable default?
+  _min_stage =-depth+_crest_ht;
+  _max_stage=6.0+_crest_ht; //reasonable default?
   ExitGracefullyIf(depth<0,"CReservoir::Constructor (Lake): cannot have negative maximum lake depth",BAD_DATA_WARN);
+  
 
   _Np=30;
   _aStage =new double [_Np];
@@ -271,13 +273,13 @@ CReservoir::CReservoir(const string Name,
   double dh;
   string warn;
   dh=(_max_stage-_min_stage)/(_Np-1);
-  for (int i=0;i<_Np;i++)
+  for (int i=0;i<_Np;i++) // - Edited by KL to reference crest height properly
   {
     _aStage [i]=_min_stage+i*dh;
-    if((_min_stage+(i-1)*dh)*(_min_stage+i*dh)<0.0){_aStage[i]=0.0;} //ensures zero point is included
-    if(_aStage[i]<0.0){_aQ[i]=0.0;}
+    if((_min_stage+(i-1)*dh-_crest_ht)*(_min_stage+i*dh-_crest_ht)<0.0){_aStage[i]=_crest_ht;} //ensures zero point is included
+    if(_aStage[i]<_crest_ht){_aQ[i]=0.0;}
     else{
-      _aQ[i]=2.0/3.0*sqrt(2*GRAVITY)*crestw*pow(_aStage[i],1.5); //Overflow weir equation
+      _aQ[i]=2.0/3.0*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
     }
     _aQunder[i]=0.0;
     _aArea  [i]=A;
@@ -305,6 +307,7 @@ CReservoir::~CReservoir()
   delete _pMinStageFlowTS;_pMinStageFlowTS=NULL;  
   delete _pTargetStageTS;_pTargetStageTS=NULL;
   delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL; 
+  delete _pDroughtLineTS; _pDroughtLineTS=NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -325,7 +328,7 @@ double  CReservoir::GetOutflowRate        () const{return _Qout;}
 //////////////////////////////////////////////////////////////////
 /// \returns current stage [m]
 //
-double  CReservoir::GetResStage           () const{return _stage+_crest_ht;}
+double  CReservoir::GetResStage           () const{return _stage;}
 
 //////////////////////////////////////////////////////////////////
 /// \returns previous outflow rate [m3/s]
@@ -411,6 +414,10 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pMaxQIncreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
   }
+  if(_pDroughtLineTS!=NULL)
+  {
+    _pDroughtLineTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -478,6 +485,15 @@ void    CReservoir::AddTargetStageTimeSeries(CTimeSeries *pTS){
   ExitGracefullyIf(_pTargetStageTS!=NULL,
                    "CReservoir::AddTargetStageTimeSeries: only one target stage time series may be specified per reservoir",BAD_DATA_WARN);
   _pTargetStageTS=pTS;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds drought line time series 
+/// \param *pTS drought linee flow time series [m3/s]
+//
+void    CReservoir::AddDroughtLineTimeSeries(CTimeSeries *pTS){
+  ExitGracefullyIf(_pDroughtLineTS!=NULL,
+                   "CReservoir::AddDroughtLineTimeSeries: only one target stage time series may be specified per reservoir",BAD_DATA_WARN);
+  _pDroughtLineTS=pTS;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds maximum flow increase time series 
@@ -641,6 +657,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double min_stage=-ALMOST_INF;
   double Qminstage=0.0;
   double Qtarget=RAV_BLANK_DATA;
+  double htarget=RAV_BLANK_DATA;
   double Qdelta=ALMOST_INF;
 
   int nn=(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
@@ -650,7 +667,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pOverrideQ!=NULL)     { Qoverride  =_pOverrideQ->     GetSampledValue(nn);}
   if(_pMinStageTS!=NULL)    { min_stage  =_pMinStageTS->    GetSampledValue(nn);}    
   if(_pMinStageFlowTS!=NULL){ Qminstage  =_pMinStageFlowTS->GetSampledValue(nn);}  
-  if(_pTargetStageTS!=NULL) { Qtarget    =_pTargetStageTS-> GetSampledValue(nn);}
+  if(_pTargetStageTS!=NULL) { htarget    =_pTargetStageTS-> GetSampledValue(nn);}
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);} 
 
   if (_type==RESROUTE_NONE)
@@ -740,6 +757,14 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     res_outflow=GetOutflow(stage_new,weir_adj);
 
     //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
+    if(htarget!=RAV_BLANK_DATA){
+			double V_targ=GetVolume(htarget);
+      double A_targ=GetArea(htarget);
+      Qtarget = -2 * (V_targ - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_targ) - (ext_old + ext_new));//[m3/s]
+      Qtarget=(Qtarget+_Qout)/2.0; //should be over entire timestep
+		  Qtarget=max(Qtarget,Qminstage);
+    }
+
     if (Qoverride==RAV_BLANK_DATA)
     {
       if(stage_new<min_stage)
@@ -1246,7 +1271,8 @@ double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom)
   {
     //int i=0; while ((x>xx[i+1]) && (i<(N-2))){i++;}//Dumb Search
     int i=SmartIntervalSearch(x,xx,N,ilast);
-    ExitGracefullyIf(i==DOESNT_EXIST,"Interpolate2::mis-ordered list?",RUNTIME_ERR);
+    if(i==DOESNT_EXIST){return 0.0;}
+    ExitGracefullyIf(i==DOESNT_EXIST,"Interpolate2::mis-ordered list or infinite x",RUNTIME_ERR);
     ilast=i;
     return y[i]+(y[i+1]-y[i])/(xx[i+1]-xx[i])*(x-xx[i]);
   }

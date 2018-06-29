@@ -11,6 +11,7 @@
 //
 CVegetationClass::CVegetationClass(const string name)
 {
+  this->V.vegetation_name=name;
   if (!DynArrayAppend((void**&)(pAllVegClasses),(void*)(this),NumVegClasses)){
     ExitGracefully("CVegetationClass::Constructor: creating NULL vegetation class",BAD_DATA);};
 }

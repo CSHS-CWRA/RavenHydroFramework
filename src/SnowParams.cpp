@@ -60,7 +60,7 @@ double EstimateSnowFraction( const rainsnow_method method,
       frac= 0.5+(temp-F->temp_daily_ave)/delta;
     }
     if      (method==RAINSNOW_UBCWM){return frac;}
-    //HBV-EC implementation - correction only applied to rain portion of snow
+    //HBV-EC implementation - correction only applied to rain portion of snow (assumes snow data provided)
     else if (method==RAINSNOW_HBV){return frac*(1.0-F->snow_frac)+F->snow_frac;}
   }
   //-----------------------------------------------------------
@@ -75,6 +75,50 @@ double EstimateSnowFraction( const rainsnow_method method,
     if (F->temp_ave<snowtemp){return 1.0;}
     else                     {return 0.0;}
 
+  }
+  //-----------------------------------------------------------
+  else if(method==RAINSNOW_HARDER) // Ported from CRHM (Pomeroy, 2007)
+  {
+    // \todo[funct] replace with T_icebulb=GetIcebulbTemp(T,rel_hum);
+    double Tk,D,lambda,pta,L,snowfrac,T_icebulb;
+    double rel_hum;
+    rel_hum= F->rel_humidity;
+    Tk     = F->temp_ave + ZERO_CELSIUS;
+
+    D      = 0.0000206*pow(Tk/ZERO_CELSIUS,1.75);
+    lambda = 0.000063*Tk + 0.00673;
+    pta    = 18.01528*((rel_hum)*0.611*exp((17.3*F->temp_ave)/(237.3 + F->temp_ave)))/(0.00831441*Tk)/1000.0;
+
+    if(F->temp_ave > FREEZING_TEMP){ L = 1000.0*(2501.0 - 2.361*F->temp_ave);}
+    else                           { L = 1000.0*(2834.1 - 0.29*F->temp_ave - 0.004*F->temp_ave*F->temp_ave); }
+    
+    double crit = ALMOST_INF;
+    double T_old(250.0),T_guess(250.0);
+    double T1,T2;
+    double dT=0.002; //deg C
+    double a,b,c;
+    while(crit > 0.0001)
+    { //ice bulb temp found using the newton-raphston method
+
+      dT=0.002*T_old;
+      T1 = T_old + dT/2.0;
+      T2 = T_old - dT/2.0;
+      a = (-T_old + Tk + (L*D/lambda)*(pta - (18.01528*(0.611*exp((17.3*(T_old-ZERO_CELSIUS))/(237.3 + (T_old-ZERO_CELSIUS))))/(0.00831441*T_old)/1000)));
+      b = (-T1    + Tk + (L*D/lambda)*(pta - (18.01528*(0.611*exp((17.3*(T1  - ZERO_CELSIUS))/(237.3 + (T1  - ZERO_CELSIUS))))/(0.00831441*T1)/1000)));
+      c = (-T2    + Tk + (L*D/lambda)*(pta - (18.01528*(0.611*exp((17.3*(T2  - ZERO_CELSIUS))/(237.3 + (T2  - ZERO_CELSIUS))))/(0.00831441*T2)/1000)));
+
+      T_guess = T_old - (a/((b - c)/dT));
+      crit = fabs(T_old - T_guess);
+      T_old = T_guess;
+    } // end while
+
+    T_icebulb = T_guess - ZERO_CELSIUS;
+
+    snowfrac=1.0;
+    if(T_icebulb > -10.0){ 
+      snowfrac = 1.0-1.0/(1.0 + 2.50286*pow(0.125,T_icebulb));
+    }
+    return snowfrac;
   }
   return 0.0;
   //Should check/add:

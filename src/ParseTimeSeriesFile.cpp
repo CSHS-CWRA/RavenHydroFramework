@@ -166,6 +166,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":DimNamesNC"              )){code=404;}
     else if  (!strcmp(s[0],":GridWeights"             )){code=405;}
     else if  (!strcmp(s[0],":EndGriddedForcing"       )){code=406;}
+    else if  (!strcmp(s[0],":Deaccumulate"            )){code=407;}
 
     switch(code)
     {
@@ -370,7 +371,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Multiple Time Series"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile:: :MultiData command added before specifying a gauge station and its properties",BAD_DATA);
-
+      
       int nSeries=0;
       CTimeSeries **pTimeSerArray=NULL;
       forcing_type       aTypes[MAX_MULTIDATA];
@@ -1336,7 +1337,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid=NULL;
       break;
     }
-
+    case (407)://----------------------------------------------
+    {/*:Deaccumulate */
+      if (Options.noisy){cout <<"   :Deaccumulate"<<endl;}
+      ExitGracefullyIf(pGrid==NULL,
+                       "ParseTimeSeriesFile: :Deaccumulate command must be within a :GriddedForcings block",BAD_DATA);
+      ForcingTypeGiven = true;
+      pGrid->SetToDeaccumulate();
+      break;
+    }
     default: //----------------------------------------------
     {
       char firstChar = *(s[0]);

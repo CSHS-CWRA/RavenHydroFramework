@@ -1149,7 +1149,7 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
     const CSubBasin *pBasin;
     for (int p=0;p<pModel->GetNumSubBasins();p++){
       pBasin=pModel->GetSubBasin(p);
-      if (pBasin->IsGauged()){
+      if (pBasin->IsGauged() && (pBasin->IsEnabled())){
         string name;
         if (pBasin->GetName()==""){_pConstituents[c]->POLLUT<<",ID="<<pBasin->GetID()  <<" "<<mgL;}
         else                      {_pConstituents[c]->POLLUT<<","   <<pBasin->GetName()<<" "<<mgL;}
@@ -1291,7 +1291,7 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     _pConstituents[c]->POLLUT<<"  :ColumnName";
     for (int p=0;p<pModel->GetNumSubBasins();p++){
       pBasin=pModel->GetSubBasin(p);
-      if (pBasin->IsGauged()){
+      if (pBasin->IsGauged() && (pBasin->IsEnabled())){
         if (pBasin->GetName()==""){_pConstituents[c]->POLLUT<<" ID="<<pBasin->GetID()  ;}
         else                      {_pConstituents[c]->POLLUT<<" "   <<pBasin->GetName();}
       }
@@ -1300,19 +1300,22 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
 
     _pConstituents[c]->POLLUT<<"  :ColumnUnits";
     for (int p=0;p<pModel->GetNumSubBasins();p++){
-      if (pModel->GetSubBasin(p)->IsGauged()){_pConstituents[c]->POLLUT<<" "<<mgL;}
+      pBasin=pModel->GetSubBasin(p);
+      if (pBasin->IsGauged() && (pBasin->IsEnabled())){_pConstituents[c]->POLLUT<<" "<<mgL;}
     }
     _pConstituents[c]->POLLUT<<endl;
 
     _pConstituents[c]->POLLUT<<"  :ColumnType";
     for (int p=0;p<pModel->GetNumSubBasins();p++){
-      if (pModel->GetSubBasin(p)->IsGauged()){_pConstituents[c]->POLLUT<<" float";}
+      pBasin=pModel->GetSubBasin(p);
+      if(pBasin->IsGauged() && (pBasin->IsEnabled())) { _pConstituents[c]->POLLUT<<" float";}
     }
     _pConstituents[c]->POLLUT<<endl;
 
     _pConstituents[c]->POLLUT << "  :ColumnFormat";
     for (int p=0;p<pModel->GetNumSubBasins();p++){
-      if (pModel->GetSubBasin(p)->IsGauged()){_pConstituents[c]->POLLUT<<" 0";}
+      pBasin=pModel->GetSubBasin(p);
+      if(pBasin->IsGauged() && (pBasin->IsEnabled())){_pConstituents[c]->POLLUT<<" 0";}
     }
     _pConstituents[c]->POLLUT<< endl;
 
@@ -1403,7 +1406,8 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     //----------------------------------------------------------------
     _pConstituents[c]->POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;
     for (int p=0;p<pModel->GetNumSubBasins();p++){
-      if (pModel->GetSubBasin(p)->IsGauged())
+      CSubBasin *pBasin=pModel->GetSubBasin(p);
+      if(pBasin->IsGauged() && (pBasin->IsEnabled()))
       {
         _pConstituents[c]->POLLUT<<","<<GetOutflowConcentration(p,c);
       }
@@ -1492,7 +1496,8 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
     // Pollutographs.tb0
     //----------------------------------------------------------------
     for (int p=0;p<pModel->GetNumSubBasins();p++){
-      if (pModel->GetSubBasin(p)->IsGauged())
+      CSubBasin *pBasin=pModel->GetSubBasin(p);
+      if (pBasin->IsGauged() && pBasin->IsEnabled())
       {
         _pConstituents[c]->POLLUT<<" "<<GetOutflowConcentration(p,c);
       }

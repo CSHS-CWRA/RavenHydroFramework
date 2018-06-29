@@ -108,4 +108,35 @@ void CmvSnowTempEvolve::GetParticipatingStateVarList(snowtemp_evolve_type ste_ty
   aSV[0]=SNOW_TEMP; aLev[0]=DOESNT_EXIST;
 }
 
+/*double Qs(double air_pres,double T){
+  return 1.0; //TMP DEBUG
+}
 
+void GetSnowTemperature(force_struct *F, CHydroUnit *pHRU, const double ref_elev){
+  const double EMISS=0.97;//?
+  const double  LS=??;
+  const double SBC=??;
+  const double CP=??; //heat cap?
+
+  double air_temp, air_dens;
+  double LWi;
+  double u1,zref,z0snow,ra;
+
+  air_temp = F->temp_ave + ZERO_CELSIUS;
+  air_dens = F->air_pres*1000/(UNIV_GAS_CONST*air_temp);
+  u1       = F->wind_vel; // Wind speed (m/s)
+  LWi      = F->LW_incoming;
+
+  zref   = pHRU->GetVegVarProps()->reference_height;
+  z0snow =1.0; //JRC - MUST ATTEND TO
+  ra     = (log(zref/z0snow)*log(ref_elev/z0snow))/sqrt(VON_KARMAN)/u1;
+
+  double Qss=Qs(F->air_pres,air_temp);
+  double delta = AIR_H20_MW_RAT*LS*Qss/(UNIV_GAS_CONST*sqrt(air_temp));
+
+  double q = F->rel_humidity*Qs(F->air_pres,air_temp); // specific humidity (kg/kg)
+  
+  double snow_temp = air_temp + (EMISS*(LWi - SBC*pow(air_temp,4.0)) + LS*(q - Qss)*air_dens/ra)/(4*EMISS*SBC*pow(air_temp,3.0) + (CP + LS*delta)*air_dens/ra);
+
+  return min(snow_temp-ZERO_CELSIUS,FREEZING_TEMP);
+}*/

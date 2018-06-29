@@ -54,7 +54,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     CHydroProcessABC::DynamicSpecifyConnections(2); //nConnections=2
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
-    iFrom[1]=iSnowLiq;    iTo[1]=iSoil;          //rates[1]: SNOW_LIQ->?SOIL
+    iFrom[1]=iSnowLiq;    iTo[1]=iSoil;          //rates[1]: SNOW_LIQ->SOIL
   }
   else if (type==SNOBAL_UBCWM)
   {
@@ -262,6 +262,14 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
     aSV[3]=SURFACE_WATER; aLev[3]=DOESNT_EXIST;
     aSV[4]=SNOW;          aLev[4]=DOESNT_EXIST;
   }
+  else if (bal_type==SNOBAL_HBV)
+  {
+    nSV=3;
+    aSV[0]=SNOW;          aLev[0]=DOESNT_EXIST;
+    aSV[1]=SNOW_LIQ;      aLev[1]=DOESNT_EXIST;
+    aSV[2]=SNOW_DEPTH;    aLev[2]=DOESNT_EXIST;
+    //plus top soil, which is always present
+  }
   else if (bal_type==SNOBAL_UBCWM)
   {
     nSV=8;
@@ -377,12 +385,13 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     double Ka    =pHRU->GetSurfaceProps()->refreeze_factor;//[mm/d/K]
     double Ta    =pHRU->GetForcingFunctions()->temp_daily_ave;
     double tstep =Options.timestep;
-
+    int    iSnowDepth = pModel->GetStateVarIndex(SNOW_DEPTH);
+    
     double melt,refreeze, liq_cap;
 
     double S    =state_var[iFrom[0]];//snow, SWE mm
     double SL   =state_var[iFrom[1]];//liquid snow, mm
-    double SD   =state_var[iFrom[2]];//snow depth, mm
+    double SD   =state_var[iSnowDepth];//snow depth, mm
 
     melt    =max(pHRU->GetForcingFunctions()->potential_melt,0.0); //positive
     refreeze=Ka*min(Ta-FREEZING_TEMP,0.0);//negatively valued

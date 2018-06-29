@@ -693,6 +693,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"RAINSNOW_HBV"       )){Options.rainsnow=RAINSNOW_HBV;}
       else if (!strcmp(s[1],"RAINSNOW_UBCWM"     )){Options.rainsnow=RAINSNOW_UBCWM;}
       else if (!strcmp(s[1],"RAINSNOW_HSPF"      )){Options.rainsnow=RAINSNOW_HSPF;}
+      else if (!strcmp(s[1],"RAINSNOW_HARDER"    )){Options.rainsnow=RAINSNOW_HARDER;}
       else {ExitGracefully("ParseInput:RainSnowMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -920,7 +921,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"SW_CLOUD_CORR_NONE"     )){Options.SW_cloudcovercorr=SW_CLOUD_CORR_NONE;}
       else if (!strcmp(s[1],"SW_CLOUD_CORR_UBCWM"    )){Options.SW_cloudcovercorr=SW_CLOUD_CORR_UBCWM;}
       else if (!strcmp(s[1],"SW_CLOUD_CORR_DINGMAN"  )){Options.SW_cloudcovercorr=SW_CLOUD_CORR_DINGMAN;}
-      else {ExitGracefully("ParseInput:SWCanopyCorrect: Unrecognized method",BAD_DATA_WARN);}
+      else {ExitGracefully("ParseInput:SWCloudCorrect: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
     case(38): //----------------------------------------------
@@ -1094,25 +1095,29 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(59):  //--------------------------------------------
     {/*:rvh_Filename */
       if (Options.noisy) {cout <<"rvh filename: "<<s[1]<<endl;}
-      Options.rvh_filename=s[1];
+      //Options.rvh_filename=s[1];
+      Options.rvh_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
       break;
     }
     case(60):  //--------------------------------------------
     {/*:rvp_Filename */
       if (Options.noisy) {cout <<"rvp filename: "<<s[1]<<endl;}
-      Options.rvp_filename=s[1]; //with .rvp extension!
+      //Options.rvp_filename=s[1]; //with .rvp extension!
+      Options.rvp_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
       break; 
     }
     case(61):  //--------------------------------------------
     {/*:rvt_Filename */
       if (Options.noisy) {cout <<"rvt filename: "<<s[1]<<endl;}
-      Options.rvt_filename=s[1]; //with .rvt extension!
+      //Options.rvt_filename=s[1]; //with .rvt extension!
+      Options.rvt_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
       break;
     }
     case(62):  //--------------------------------------------
     {/*:rvc_Filename */
       if (Options.noisy) {cout <<"rvc filename: "<<s[1]<<endl;}
-      Options.rvc_filename=s[1]; //with .rvc extension!
+      //Options.rvc_filename=s[1]; //with .rvc extension!
+      Options.rvc_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
       break;
     }
     case(63):  //--------------------------------------------
@@ -1224,7 +1229,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-		    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) { pDiag = new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
+		    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
           pModel->AddDiagnostic(pDiag);

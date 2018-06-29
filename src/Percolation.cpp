@@ -277,7 +277,7 @@ void   CmvPercolation::GetRatesOfChange( const double                   *state_v
     if (m==0){max_stor2= pHRU->GetSoilCapacity(m2);}
     else     {max_stor2= ALMOST_INF;               }
 
-    free_stor                   = max(0.0,stor-tens_stor);      //free water content in soil layer [mm]
+    free_stor     = max(0.0,stor-tens_stor);      //free water content in soil layer [mm]
     free_stor_max = (max_stor-tens_stor);         //max free water content in soil layer [mm]
     max_baseflow  = pHRU->GetSoilProps(m)->max_baseflow_rate;
     lz_perc       = 1.0 + alpha * pow((1-(stor2/max_stor2)),psi);       //lower zone percolation demand

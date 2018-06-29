@@ -184,7 +184,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     if (i!=argc){
       word=to_string(argv[i]);
     }
-    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (i==argc))
+    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (word=="-n") || (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -207,6 +207,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-c"){mode=4;}
       else if (word=="-o"){mode=5;}
       else if (word=="-s"){Options.silent=true;}//should be specified prior to other flags
+      else if (word=="-n"){Options.noisy=true;}//should be specified prior to other flags
       else if (word=="-r"){mode=6;}
     }
     else{

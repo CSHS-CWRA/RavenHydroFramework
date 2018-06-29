@@ -612,6 +612,11 @@ double GetSatVapSlope(const double &T, const double &satvap)
   //calculate d(sat_vap)/dT - Dingman 7.6 , SWAT 1:2.3.4
   if (T>0){return A2*A3/pow(T+A3,2)*satvap;}
   else    {return A4*A5/pow(T+A5,2)*satvap;}
+
+  //from CRHM routine ClassCRHMCanopyClearingGap::delta
+  //if(T>0) { return(2504.0*exp(17.27 * T/(T+237.3)) / sqrt(T+237.3)); }
+  //else    { return(3549.0*exp(21.88 * T/(T+265.5)) / sqrt(T+265.5)); }
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1040,7 +1045,7 @@ double LambertN(const double &x, const int N)
 /// \param x [in] Argument whose gamma function will be determined
 /// \return Gamma function of argument x
 //
-double gamma(double x)
+double gamma2(double x)
 {
   int i,k,m;
   double ga=0,gr,r=0,z;
@@ -1125,7 +1130,7 @@ double GammaDist(const double &x, const double &alpha, const double &beta)
 {
   //mean=alpha/beta
   double bx=beta*x;
-  return pow(bx,alpha)/x/gamma(x)*exp(-bx);
+  return pow(bx,alpha)/x/gamma2(x)*exp(-bx);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates two parameter cumulative gamma distribution \cite Clark2008WRR
@@ -1138,7 +1143,7 @@ double GammaDist(const double &x, const double &alpha, const double &beta)
 double GammaCumDist(const double &t, const double &a)
 {
   //two-parameter cumulative gamma distribution (Clark et al., 2007)
-  return two_param_gamma(t,a)/gamma(a);
+  return two_param_gamma(t,a)/gamma2(a);
 }
 
 //////////////////////////////////////////////////////////////////

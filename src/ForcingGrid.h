@@ -78,6 +78,7 @@ private:/*------------------------------------------------------*/
   ///                                        ///< piecewise-linear time series
   double       _t_corr;                      ///< correction time _t_corr, i.e. distance between
   ///                                        ///< current chunk start day and model start day (in days)
+  bool         _deaccumulate;                ///< true if input precipitation needs to be deaccumulated from cum. mm to mm/d
 
   double       _rainfall_corr;               ///< correction factor for rainfall (stored with gauge, used elsewhere)
   double       _snowfall_corr;               ///< correction factor for snowfall (stored with gauge, used elsewhere)
@@ -163,6 +164,7 @@ public:/*------------------------------------------------------*/
   void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames                  of class
   void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims                  of class
   void         SetNumberNonZeroGridCells(     const int    nNonZeroWeightedGridCells); ///< set _nNonZeroWeightedGridCells of class
+  void         SetToDeaccumulate();                                                    ///< set _deaccumulate
   void         SetIdxNonZeroGridCells(        const int    nHydroUnits,
                                               const int    nGridCells);                ///< set _IdxNonZeroGridCells of class
   void         SetnHydroUnits(                const int    nHydroUnits);               ///< set _nHydroUnits               of class
@@ -198,6 +200,7 @@ public:/*------------------------------------------------------*/
   forcing_type GetName()                           const;        ///< Name of forcing data, e.g. PRECIP, TEMP
   int          GetnHydroUnits()                    const;        ///< get number of HRUs _nHydroUnits
   int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
+  bool         ShouldDeaccumulate()                const;        ///< true if data must be deaccumulated
   double       GetSnowfallCorr()                   const;        ///< snowfall correction factor
   double       GetRainfallCorr()                   const;        ///< rainfall correction factor
   double       GetCloudMinRange()                  const;        ///< Minimum temperature threshold used to determine cloud_cover factor

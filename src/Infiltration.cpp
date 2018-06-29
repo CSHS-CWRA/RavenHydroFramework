@@ -336,7 +336,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     stor    =state_vars[iTopSoil];
     max_stor=pHRU->GetSoilCapacity(0);        //maximum storage of top soil layer [mm]
-    b                             =pHRU->GetSurfaceProps()->b_exp;        //ARNO/VIC b exponent for runoff [-]
+    b       =pHRU->GetSurfaceProps()->b_exp;  //ARNO/VIC b exponent for runoff [-]
     sat     =min(stor/max_stor,1.0);          //soil saturation
     sat_area=1.0 - pow(1.0-sat,b);            //saturated area [-] fraction
 

@@ -48,6 +48,7 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pMinStageFlowTS;     ///< Time series of flows when below minimum stage [m3/s] (or NULL for no minimum)
   CTimeSeries *_pTargetStageTS;      ///< Time series of target stage [m] (or NULL for no target)
   CTimeSeries *_pMaxQIncreaseTS;     ///< Time series maximum rate of flow increase [m3/s/d] (or NULL for no maximum)
+  CTimeSeries *_pDroughtLineTS;      ///< Time series of drought line stage [m] (or NULL if none exists)
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -124,6 +125,7 @@ public:/*-------------------------------------------------------*/
   void            AddMinStageFlowTimeSeries(CTimeSeries *pQ);
   void             AddTargetStageTimeSeries(CTimeSeries *pTS);
   void            AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+  void             AddDroughtLineTimeSeries(CTimeSeries *pTS);
 
   void              SetHRU                 (const CHydroUnit *pHRU);
   void              DisableOutflow         ();

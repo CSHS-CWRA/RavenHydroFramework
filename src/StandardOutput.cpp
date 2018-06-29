@@ -104,6 +104,7 @@ void CModel::CloseOutputStreams()
   if ( _STORAGE.is_open()){ _STORAGE.close();}
   if (   _HYDRO.is_open()){   _HYDRO.close();}
   if (_FORCINGS.is_open()){_FORCINGS.close();}
+  if (_RESSTAGE.is_open()){_RESSTAGE.close();}
 
 #ifdef _RVNETCDF_
   
@@ -164,7 +165,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     _HYDRO<<"time,date,hour";
     _HYDRO<<",precip [mm/day]";
     for (p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged()){
+      if (_pSubBasins[p]->IsGauged() && _pSubBasins[p]->IsEnabled()){
         string name;
         if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" [m3/s]";}
         else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" [m3/s]";}
@@ -221,34 +222,32 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   //--------------------------------------------------------------
   if((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
   {
-    ofstream RES_STAGE;
     tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
-    RES_STAGE.open(tmpFilename.c_str());
-    if(RES_STAGE.fail()){
+    _RESSTAGE.open(tmpFilename.c_str());
+    if(_RESSTAGE.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-
-    RES_STAGE<<"time,date,hour";
-    RES_STAGE<<",precip [mm/day]";
+  
+    _RESSTAGE<<"time,date,hour";
+    _RESSTAGE<<",precip [mm/day]";
     for(p=0;p<_nSubBasins;p++){
-      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
         string name;
-        if(_pSubBasins[p]->GetName()==""){ RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
-        else                              { RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
+        if(_pSubBasins[p]->GetName()==""){ _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
+        else                             { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
       }
       //if (Options.print_obs_hydro)
       {
         for(int i = 0; i < _nObservedTS; i++){
           if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
-            if(_pSubBasins[p]->GetName()==""){ RES_STAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]"; }
-            else                              { RES_STAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]"; }
+            if(_pSubBasins[p]->GetName()==""){ _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]"; }
+            else                             { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]"; }
           }
         }
       }
     }
-    RES_STAGE<<endl;
-    RES_STAGE.close();
+    _RESSTAGE<<endl;
   }
 
   //ReservoirMassBalance.csv
@@ -257,7 +256,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     ofstream RES_MB;
     string name;
-
+    cout<<"RESERVOIR"<<endl;
     tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
     RES_MB.open(tmpFilename.c_str());
     if (RES_MB.fail()){
@@ -266,7 +265,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     RES_MB<<"time,date,hour";
     RES_MB<<",precip [mm/day]";
     for(p=0;p<_nSubBasins;p++){
-      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+      if((_pSubBasins[p]->IsGauged())  && (_pSubBasins[p]->IsEnabled())  && (_pSubBasins[p]->GetReservoir()!=NULL)) {
 
         if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
         else                              { name=_pSubBasins[p]->GetName(); }
@@ -564,7 +563,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     // Console output
     //----------------------------------------------------------------
-    if ((quiet) && (!Options.silent) && (tt.day_of_month==1) && ((tt.julian_day)-floor(tt.julian_day)<Options.timestep))
+    if ((quiet) && (!Options.silent) && (tt.day_of_month==1) && ((tt.julian_day)-floor(tt.julian_day)<Options.timestep/2))
     {
       cout<<thisdate <<endl;
     }
@@ -625,7 +624,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         
         _HYDRO<<usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
         for (int p=0;p<_nSubBasins;p++){
-          if (_pSubBasins[p]->IsGauged())
+          if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
           {
             _HYDRO<<","<<_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
 
@@ -639,7 +638,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                   if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
-                  else                                                         { _HYDRO << ",";       }
+                  else                                             { _HYDRO << ",";       }
                 }
               }
             }
@@ -658,7 +657,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if(t!=0){ _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip
           else     { _HYDRO<<",---"; }
           for(int p=0;p<_nSubBasins;p++){
-            if(_pSubBasins[p]->IsGauged())
+            if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
             {
               _HYDRO<<","<<_pSubBasins[p]->GetOutflowRate();
 
@@ -760,14 +759,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     {
 			if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
-	      ofstream RES_STAGE;
-	      tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
-	      RES_STAGE.open(tmpFilename.c_str(),ios::app);
-
-	      RES_STAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
+	      _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
 	      for (int p=0;p<_nSubBasins;p++){
-	        if ((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
-	          RES_STAGE<<","<<_pSubBasins[p]->GetReservoir()->GetResStage();
+	        if ((_pSubBasins[p]->IsGauged())  && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+	          _RESSTAGE<<","<<_pSubBasins[p]->GetReservoir()->GetResStage();
 	        }
 	        //if (Options.print_obs_hydro)
 	        {
@@ -776,15 +771,14 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	            {
 	              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
 	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ RES_STAGE << "," << val; }
-	              else                                             { RES_STAGE << ",";       }
+	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
+	              else                                             { _RESSTAGE << ",";       }
 	            }
 	          }
 	        }
 
 	      }
-	      RES_STAGE<<endl;
-				RES_STAGE.close();
+	      _RESSTAGE<<endl;
 			}
     }
 
@@ -794,7 +788,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     {
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
-        ofstream RES_MB;
+        ofstream RES_MB; 
         tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
         RES_MB.open(tmpFilename.c_str(),ios::app);
         if(RES_MB.fail()){
@@ -804,7 +798,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         RES_MB<< usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
         double in,out,loss,stor,oldstor;
         for(int p=0;p<_nSubBasins;p++){
-          if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+          if((_pSubBasins[p]->IsGauged()) &&  (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
 
             string name;
             if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
@@ -1128,7 +1122,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"       Model Run: "<<Options.run_name    <<endl;
     cout <<"    rvi filename: "<<Options.rvi_filename<<endl;
     cout <<"Output Directory: "<<Options.output_dir  <<endl;
-    cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<disablecount<<" disabled)"<<endl;
+    cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<SBdisablecount<<" disabled)"<<endl;
     cout <<"          # HRUs: "<<GetNumHRUs()        << " ("<<disablecount<<" disabled)"<<endl;
     cout <<"        # Gauges: "<<GetNumGauges()      <<endl;
     cout <<"#State Variables: "<<GetNumStateVars()   <<endl;
@@ -1442,7 +1436,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   // (a) count number of simulated outflows "nSim"             
   nSim = 0;
   for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()){nSim++;}
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){nSim++;}
   }
   
   if (nSim > 0)
@@ -1491,7 +1485,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   /* (a) count number of simulated outflows "nObs  "            */
   nObs = 0;
   for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()){
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
       {
         for (int i = 0; i < _nObservedTS; i++){
           if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
@@ -1548,7 +1542,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   //count number of simulated outflows "nRes"    
   nRes = 0;
   for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()){
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
       if (_pSubBasins[p]->GetReservoir() != NULL){nRes++;}
     }
   }
@@ -1602,7 +1596,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   // (a) write gauged basin names/IDs to variable "basin_name_sim" 
   ibasin = 0;
   for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()){
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
       if (_pSubBasins[p]->GetName()==""){current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str();}
       else                              {current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str();}
       // write sub-basin name
@@ -1618,7 +1612,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   ibasin = 0;
   for (p=0;p<_nSubBasins;p++)
   {
-    if (_pSubBasins[p]->IsGauged())
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
     {
       for (int i = 0; i < _nObservedTS; i++)
       {
@@ -1639,7 +1633,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   // (c) write gauged basin names/IDs to variable "basin_name_res" 
   ibasin = 0;
   for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()){
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
       if (_pSubBasins[p]->GetReservoir() != NULL){
         if (_pSubBasins[p]->GetName()==""){current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str();}
         else                              {current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str();}
@@ -1705,7 +1699,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   {
     _HYDRO<<" "<<GetAveragePrecip();
     for (int p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged())
+      if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
       {
         _HYDRO<<" "<<_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
       }
@@ -1717,7 +1711,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
     if (tt.model_time!=0){_HYDRO<<" "<<GetAveragePrecip();}
     else                 {_HYDRO<<" 0.0";}
     for (int p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged())
+      if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled()))
       {
         _HYDRO<<" "<<_pSubBasins[p]->GetOutflowRate();
       }
@@ -1758,7 +1752,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   nRes = 0;
   
   for (int p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()){
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
       nSim++;
       for (int i = 0; i < _nObservedTS; i++){
         if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
@@ -1790,7 +1784,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     current_prec[0] = GetAveragePrecip();
     
     for (int p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged()){
+      if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){
         outflow_sim[iSim] = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
         iSim++;
   
@@ -1817,7 +1811,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     if (current_time[0] != 0.0){current_prec[0] = GetAveragePrecip();} //watershed-wide precip
     else                       {current_prec[0] = -9999.;}   // was originally '---'
     for (int p=0;p<_nSubBasins;p++){
-      if (_pSubBasins[p]->IsGauged()){
+      if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){
         outflow_sim[iSim] = _pSubBasins[p]->GetOutflowRate();
         iSim++;
   

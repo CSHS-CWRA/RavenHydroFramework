@@ -78,6 +78,8 @@ struct soil_struct
   double VIC_alpha;         ///< [-]
   double VIC_evap_gamma;    ///< [-]       power law exponent for VIC soil evaporation
 
+  double b_exp;             ///< [-]       power law exponent for VIC_ARNO infiltration model \ref (Clark et al, 2008)
+
   double max_perc_rate;     ///< [mm/d]    VIC/ARNO/GAWSER percolation rate - user defined between 0.010 - 1000.0
   double perc_coeff;        ///< [1/d]     Linear percolation storage coefficient
   double perc_n;            ///< [-]       VIC/ARNO percolation exponent - user defined between 1.00 - 20.00

@@ -127,6 +127,7 @@ private:/*------------------------------------------------------*/
   ofstream                _HYDRO; ///< output file stream for Hydrographs.csv
   ofstream              _STORAGE; ///< output file stream for WatershedStorage.csv
   ofstream             _FORCINGS; ///< output file stream for ForcingFunctions.csv
+  ofstream             _RESSTAGE; ///< output file stream for ReservoirStages.csv
   int                _HYDRO_ncid; ///< output file ID  for Hydrographs.nc;     
   int              _STORAGE_ncid; ///< output file ID  for WatershedStorage.nc; 
   int             _FORCINGS_ncid; ///< output file ID  for ForcingFunctions.nc;   

@@ -14,6 +14,7 @@
 //
 CLandUseClass::CLandUseClass(const string name)
 {
+  this->S.landuse_name=name;
   if (!DynArrayAppend((void**&)(pAllLUClasses),(void*)(this),NumLUClasses)){
     ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
 }

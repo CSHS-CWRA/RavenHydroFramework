@@ -393,7 +393,8 @@ enum rainsnow_method
   RAINSNOW_DINGMAN, ///< from Dingman - based upon min & max daily temperatures
   RAINSNOW_HBV,     ///< Linear variation between two temperatures - corrects only rain portion
   RAINSNOW_HSPF,    ///< HSPF approach - variable transition temperature
-  RAINSNOW_UBCWM    ///< Linear variation between two temperatures
+  RAINSNOW_UBCWM,   ///< Linear variation between two temperatures
+  RAINSNOW_HARDER   ///< Harder (19??) method ported over from CRHM (Pomeroy et al 2007)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -906,7 +907,7 @@ enum forcing_type
 {
   F_PRECIP,         F_PRECIP_DAILY_AVE, F_PRECIP_5DAY,    F_SNOW_FRAC,
   F_RAINFALL,       F_SNOWFALL,
-  F_TEMP_MIN,       F_TEMP_MAX,         F_TEMP_AVE,
+  F_TEMP_AVE,
   F_TEMP_DAILY_MIN, F_TEMP_DAILY_MAX,   F_TEMP_DAILY_AVE,
   F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
   F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,

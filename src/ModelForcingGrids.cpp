@@ -231,7 +231,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   CForcingGrid *pTave,*pTmin_daily,*pTmax_daily,*pTave_daily;
   double interval;
 
-  pTave=GetForcingGrid((F_TEMP_AVE));
+  pTave=GetForcingGrid(F_TEMP_AVE);
   interval = pTave->GetInterval();
 
   double start_day = Options.julian_start_day; //floor(pT->GetStartDay());
@@ -242,7 +242,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   // below needed for correct mapping from time series to model time
   pTave->Initialize(start_day,start_yr,duration,timestep,Options);
 
-  int nVals=(int)ceil(pTave->GetChunkSize()*interval); //Options.timestep);  // number of daily values
+  int nVals=(int)ceil(pTave->GetChunkSize()*interval); // number of daily values
   int GridDims[3];
   GridDims[0] = pTave->GetCols(); GridDims[1] = pTave->GetRows(); GridDims[2] = nVals;
 
@@ -310,13 +310,49 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   pTave_daily->SetIdxNonZeroGridCells(nGridHRUs,nCells);
 
   // (3) set forcing values
+  double time;
+  int nsteps_in_day=int(1.0/interval);
   for (int it=0; it<nVals; it++) {                    // loop over time points in buffer
+    time=(double)it*1.0/interval;
     for (int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
-      pTmin_daily->SetValue(ic, it, pTave->GetValue_min(ic, (double)it*1.0/interval, int(1.0/interval)));
-      pTmax_daily->SetValue(ic, it, pTave->GetValue_max(ic, (double)it*1.0/interval, int(1.0/interval)));
-      pTave_daily->SetValue(ic, it, pTave->GetValue    (ic, (double)it*1.0/interval, int(1.0/interval)));
+      pTmin_daily->SetValue(ic, it, pTave->GetValue_min(ic, time, nsteps_in_day));
+      pTmax_daily->SetValue(ic, it, pTave->GetValue_max(ic, time, nsteps_in_day));
+      pTave_daily->SetValue(ic, it, pTave->GetValue    (ic, time, nsteps_in_day));
     }
   }
+  /*  int row, col;int idx;
+  double **nonzero=new double *[pTave->GetRows()];
+  for(int i=0;i<pTave->GetRows();i++){
+    nonzero[i]=new double [pTave->GetCols()];
+    for(int j=0;j<pTave->GetCols();j++){
+      //pTave->Get
+      idx=i*pTave->GetCols()+j;
+      nonzero[i][j]=-1;
+    }
+  }
+  for(int ic=0; ic<pTave->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
+    pTave->CellIdxToRowCol(pTave->GetIdxNonZeroGridCell(ic),row,col);
+    nonzero[row][col]=pTave->GetIdxNonZeroGridCell(ic);
+  }
+  time=0;
+  int ic=0;
+  for(int i=0;i<pTave->GetRows();i++){
+    for(int j=0;j<pTave->GetCols();j++){
+      if(nonzero[i][j]<0){
+        cout<<setw(8)<<nonzero[i][j]<<" ";
+      }
+      else{
+        
+        //cout<<setw(8)<<nonzero[i][j]<<" ";
+        cout<<setw(8)<<pTave->GetValue(ic,time,1)<<" ";
+        ic++;
+      }
+       //cout<<setw(4)<<pTave->GetIdxNonZeroGridCell(nonzero[i][j]);
+    }
+    delete[] nonzero[i];
+    cout<<endl;
+  }
+  delete[] nonzero;*/
 
   if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MIN) == DOESNT_EXIST ) {
     this->AddForcingGrid(pTmin_daily);
@@ -555,10 +591,10 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   // ----------------------------------------------------
   // Generate rainfall
   // ----------------------------------------------------
-  if ( GetForcingGridIndexFromType(F_RAINFALL) == DOESNT_EXIST ) {
+  if(GetForcingGridIndexFromType(F_RAINFALL) == DOESNT_EXIST) {
 
     // for the first chunk the derived grid does not exist and has to be added to the model
-    pRain = new CForcingGrid(* pPre);  // copy everything from precip; matrixes are deep copies
+    pRain = new CForcingGrid(*pPre);  // copy everything from precip; matrixes are deep copies
     pRain->SetForcingType(F_RAINFALL);
     pRain->SetInterval(pPre->GetInterval());        // will be at same time resolution as precipitation
     pRain->SetGridDims(GridDims);
@@ -588,11 +624,42 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   // set forcing values
   int chunk_size=pRain->GetChunkSize();
   int nNonZero  =pRain->GetNumberNonZeroGridCells();
-  for (int it=0; it<chunk_size; it++) {                   // loop over time points in buffer
-    for (int ic=0; ic<nNonZero; ic++){                    // loop over non-zero grid cell indexes
-      pRain->SetValue(ic, it , pPre->GetValue(ic, it));   // copies precipitation values
+  for(int it=0; it<chunk_size; it++) {                   // loop over time points in buffer
+    for(int ic=0; ic<nNonZero; ic++){                    // loop over non-zero grid cell indexes
+      pRain->SetValue(ic,it,pPre->GetValue(ic,it));   // copies precipitation values
     }
   }
+  /*int idx,row,col;
+  double **nonzero=new double *[pRain->GetRows()];
+  for(int i=0;i<pRain->GetRows();i++){
+    nonzero[i]=new double [pRain->GetCols()];
+    for(int j=0;j<pRain->GetCols();j++){
+      idx=i*pRain->GetCols()+j;
+      nonzero[i][j]=-1;
+    }
+  }
+  for(int ic=0; ic<pRain->GetNumberNonZeroGridCells(); ic++){         // loop over non-zero grid cell indexes
+    pRain->CellIdxToRowCol(pRain->GetIdxNonZeroGridCell(ic),row,col);
+    nonzero[row][col]=pRain->GetIdxNonZeroGridCell(ic);
+  }
+  double time=3.0;
+  int ic=0;
+  for(int i=0;i<pRain->GetRows();i++){
+    for(int j=0;j<pRain->GetCols();j++){
+      if(nonzero[i][j]<0){
+        cout<<setw(8)<<nonzero[i][j]<<" ";
+      }
+      else{
+        
+        //cout<<setw(8)<<nonzero[i][j]<<" ";
+        cout<<setw(8)<<pRain->GetValue(ic,time,1)<<" ";
+        ic++;
+      }
+    }
+    delete[] nonzero[i];
+    cout<<endl;
+  }
+  delete[] nonzero;*/
 
   if ( GetForcingGridIndexFromType(F_RAINFALL) == DOESNT_EXIST ) {
     this->AddForcingGrid(pRain);
