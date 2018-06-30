@@ -240,8 +240,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 
   // -------------------------------
   // Start day and year are extracted from the UNITS attribute of time axis
-  // can be, e.g., "days  since 1989-01-01 00:00:00" or
-  //               "hours since 1989-01-01 00:00:00"
+  // can be, e.g., "days    since 1989-01-01 00:00:00" or
+  //               "hours   since 1989-01-01 00:00:00" or
+  //               "minutes since 1989-01-01 00:00:00" or
+  //               "seconds since 1989-01-01 00:00:00" 
   // then whole time variable has to be read and first time step needs to be added to get _start_year and _start_day
   // difference between t[0] and t[1] is then used to get _interval
   // -------------------------------
@@ -276,8 +278,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   // -------------------------------
   // delta t (in days)
   // -------------------------------
-  if (strstr(unit_t, "hours")) 
-  {  // if unit of time in hours: hours since 1989-01-01 00:00:00
+  if (strstr(unit_t, "hours")) {  // if unit of time in hours: hours since 1989-01-01 00:00:00
 
     // ---------------------------
     // check if format is YYYY-MM-DD HH:MM:SS
@@ -316,7 +317,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
                        "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
     }
     _interval   = (time[1] - time[0])/24.;
-    _start_day  = tt.julian_day + time[0]*(1./24.0);  // I hope this is not more than one year
+    _start_day  = tt.julian_day + time[0]*(1./24.);  // I hope this is not more than one year
     _start_year = tt.year;
 
   /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
@@ -333,6 +334,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   else 
   {
     if (strstr(unit_t, "days")) {  // if unit of time in days: days since 1989-01-01 00:00:00
+      
       // ---------------------------
       // check if format is YYYY-MM-DD HH:MM:SS
       // fill with leading zeros if necessary
@@ -371,13 +373,120 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
       }
       _interval   = (time[1] - time[0])/1.;
       _start_day  = tt.julian_day + time[0]*(1.);  // I hope this is not more than one year
-      _start_year = tt.year; //2006; //
+      _start_year = tt.year; 
     }
     else {
-      ExitGracefullyIf(_interval<=0,
-                       "CForcingGrid: ForcingGridInit: this unit in time is not implemented yet (only days and hours)",BAD_DATA);
+      if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
+	  
+	  // ---------------------------
+	  // check if format is YYYY-MM-DD HH:MM:SS
+	  // fill with leading zeros if necessary
+	  // ---------------------------
+	  unit_t_str = to_string(unit_t);
+	  dash = unit_t_str.substr(18, 1);  // first dash in date
+	  if ( !strstr(dash.c_str(), "-") ){
+	    printf("time unit string: %s\n",unit_t_str.c_str());
+	    ExitGracefully("CForcingGrid: ForcingGridInit: time unit string has weird format!",BAD_DATA);
+	  }
+	  dash  = unit_t_str.substr(21, 1);  // second dash in date
+	  if ( !strstr(dash.c_str(), "-") ){
+	    unit_t_str.insert(19,"0");
+	    //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+	  }
+	  colon = unit_t_str.substr(27, 1);  // first colon in time
+	  if ( !strstr(colon.c_str(), ":") ){
+	    unit_t_str.insert(25,"0");
+	    //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+	  }
+	  colon = unit_t_str.substr(30, 1);  // second colon in time
+	  if ( !strstr(colon.c_str(), ":") ){
+	    unit_t_str.insert(28,"0");
+	    //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+	  }
+	  
+	  // ---------------------------
+	  // set class variables
+	  // ---------------------------
+	  string sDate = unit_t_str.substr(14,10);
+	  string sTime = unit_t_str.substr(25,8);
+	  time_struct tt = DateStringToTimeStruct(sDate, sTime);
+	  if (time[0]*_interval > 365.) {
+	    ExitGracefullyIf(_interval<=0,
+			     "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
+	  }
+	  _interval   = (time[1] - time[0])/24./60.;
+	  _start_day  = tt.julian_day + time[0]*(1./24./60.);  // I hope this is not more than one year
+	  _start_year = tt.year;
+	  
+	  /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
+	     printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
+	     printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
+	     printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
+	     printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
+	     printf("ForcingGrid: tt.month:        %i\n",tt.month);
+	     printf("ForcingGrid: tt.year:         %i\n",tt.year);
+	     printf("ForcingGrid: time[0]:         %i\n",time[0]);
+	     printf("ForcingGrid: _interval:       %f\n",_interval);*/
+	  
+      }
+      else {
+	if (strstr(unit_t, "seconds")) {  // if unit of time in seconds: seconds since 1989-01-01 00:00:00
+	  
+	  // ---------------------------
+	  // check if format is YYYY-MM-DD HH:MM:SS
+	  // fill with leading zeros if necessary
+	  // ---------------------------
+	  unit_t_str = to_string(unit_t);
+	  dash = unit_t_str.substr(18, 1);  // first dash in date
+	  if ( !strstr(dash.c_str(), "-") ){
+	    printf("time unit string: %s\n",unit_t_str.c_str());
+	    ExitGracefully("CForcingGrid: ForcingGridInit: time unit string has weird format!",BAD_DATA);
+	  }
+	  dash  = unit_t_str.substr(21, 1);  // second dash in date
+	  if ( !strstr(dash.c_str(), "-") ){
+	    unit_t_str.insert(19,"0");
+	    //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+	  }
+	  colon = unit_t_str.substr(27, 1);  // first colon in time
+	  if ( !strstr(colon.c_str(), ":") ){
+	    unit_t_str.insert(25,"0");
+	    //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+	  }
+	  colon = unit_t_str.substr(30, 1);  // second colon in time
+	  if ( !strstr(colon.c_str(), ":") ){
+	    unit_t_str.insert(28,"0");
+	    //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+	  }
+	  
+	  // ---------------------------
+	  // set class variables
+	  // ---------------------------
+	  string sDate = unit_t_str.substr(14,10);
+	  string sTime = unit_t_str.substr(25,8);
+	  time_struct tt = DateStringToTimeStruct(sDate, sTime);
+	  if (time[0]*_interval > 365.) {
+	    ExitGracefullyIf(_interval<=0,
+			     "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
+	  }
+	  _interval   = (time[1] - time[0])/24./60./60.;
+	  _start_day  = tt.julian_day + time[0]*(1./24./60./60.);  // I hope this is not more than one year
+	  _start_year = tt.year;
+	  
+	  /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
+	     printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
+	     printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
+	     printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
+	     printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
+	     printf("ForcingGrid: tt.month:        %i\n",tt.month);
+	     printf("ForcingGrid: tt.year:         %i\n",tt.year);
+	     printf("ForcingGrid: time[0]:         %i\n",time[0]);
+	     printf("ForcingGrid: _interval:       %f\n",_interval);*/
+	  
+	}
+	ExitGracefullyIf(_interval<=0,
+			 "CForcingGrid: ForcingGridInit: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
+      }
     }
-
   }
   ExitGracefullyIf(_interval<=0,
                    "CForcingGrid: ForcingGridInit: negative time interval is not allowed",BAD_DATA);
