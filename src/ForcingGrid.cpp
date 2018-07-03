@@ -312,13 +312,12 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     string sDate = unit_t_str.substr(12,10);
     string sTime = unit_t_str.substr(23,8);
     time_struct tt = DateStringToTimeStruct(sDate, sTime);
-    if (time[0]*_interval > 365.) {
-      ExitGracefullyIf(_interval<=0,
-                       "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
-    }
     _interval   = (time[1] - time[0])/24.;
-    _start_day  = tt.julian_day + time[0]*(1./24.);  // I hope this is not more than one year
-    _start_year = tt.year;
+    ExitGracefullyIf(_interval<=0,
+		     "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+    // _start_day  = tt.julian_day + time[0]*(1./24.);  // I hope this is not more than one year
+    // _start_year = tt.year;
+    AddTime(tt.julian_day,tt.year,time[0]*(1./24.),_start_day,_start_year) ;
 
   /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
      printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -367,13 +366,12 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
       string sDate = unit_t_str.substr(11,10);
       string sTime = unit_t_str.substr(22,8);
       time_struct tt = DateStringToTimeStruct(sDate, sTime);
-      if (time[0]*_interval > 365.) {
-        ExitGracefullyIf(_interval<=0,
-                         "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
-      }
       _interval   = (time[1] - time[0])/1.;
-      _start_day  = tt.julian_day + time[0]*(1.);  // I hope this is not more than one year
-      _start_year = tt.year; 
+      ExitGracefullyIf(_interval<=0,
+		       "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+      // _start_day  = tt.julian_day + time[0]*(1.);  // I hope this is not more than one year
+      // _start_year = tt.year;
+      AddTime(tt.julian_day,tt.year,time[0]*(1.),_start_day,_start_year) ;
     }
     else {
       if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
@@ -410,13 +408,12 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 	  string sDate = unit_t_str.substr(14,10);
 	  string sTime = unit_t_str.substr(25,8);
 	  time_struct tt = DateStringToTimeStruct(sDate, sTime);
-	  if (time[0]*_interval > 365.) {
-	    ExitGracefullyIf(_interval<=0,
-			     "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
-	  }
 	  _interval   = (time[1] - time[0])/24./60.;
-	  _start_day  = tt.julian_day + time[0]*(1./24./60.);  // I hope this is not more than one year
-	  _start_year = tt.year;
+	  ExitGracefullyIf(_interval<=0,
+			   "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+	  // _start_day  = tt.julian_day + time[0]*(1./24./60.);  // I hope this is not more than one year
+	  // _start_year = tt.year;
+	  AddTime(tt.julian_day,tt.year,time[0]*(1./24./60.),_start_day,_start_year) ;
 	  
 	  /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
 	     printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -426,7 +423,9 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 	     printf("ForcingGrid: tt.month:        %i\n",tt.month);
 	     printf("ForcingGrid: tt.year:         %i\n",tt.year);
 	     printf("ForcingGrid: time[0]:         %i\n",time[0]);
-	     printf("ForcingGrid: _interval:       %f\n",_interval);*/
+	     printf("ForcingGrid: _interval:       %f\n",_interval);
+	     printf("ForcingGrid: _start_day:      %f\n",_start_day);
+	     printf("ForcingGrid: _start_year:     %d\n",_start_year); */
 	  
       }
       else {
@@ -464,13 +463,12 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 	  string sDate = unit_t_str.substr(14,10);
 	  string sTime = unit_t_str.substr(25,8);
 	  time_struct tt = DateStringToTimeStruct(sDate, sTime);
-	  if (time[0]*_interval > 365.) {
-	    ExitGracefullyIf(_interval<=0,
-			     "CForcingGrid: ForcingGridInit: first time step in NetCDF is more than one year apart from date written in time unit!",BAD_DATA);
-	  }
 	  _interval   = (time[1] - time[0])/24./60./60.;
-	  _start_day  = tt.julian_day + time[0]*(1./24./60./60.);  // I hope this is not more than one year
-	  _start_year = tt.year;
+	  ExitGracefullyIf(_interval<=0,
+			   "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+	  // _start_day  = tt.julian_day + time[0]*(1./24./60./60.);  // I hope this is not more than one year
+	  // _start_year = tt.year;
+	  AddTime(tt.julian_day,tt.year,time[0]*(1./24./60./60.),_start_day,_start_year) ;
 	  
 	  /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
 	     printf("ForcingGrid: sDate:           %s\n",sDate.c_str());

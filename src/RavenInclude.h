@@ -982,24 +982,30 @@ double threshMin     (const double &val1, const double &val2, const double &smoo
 double threshMax     (const double &val1, const double &val2, const double &smooth_coeff);
 
 //Time/Date Functions----------------------------------------------
-bool      IsLeapYear (const int          year);
-void JulianConvert   (      double       model_time,
-                            const double       start_date,
-                            const int          start_year,
-                            time_struct &tt);
-string DecDaysToHours(const double       dec_date);
-double InterpolateMo (const double      aVal[12],
-                      const time_struct &tt,
-                      const optStruct   &Options);
-bool   IsDaytime     (const double      &julian_day,
-                      const optStruct   &Options);
-time_struct DateStringToTimeStruct(const string sDate, string sTime);
-double TimeDifference(const double       jul_day1,
-                      const int          year1,
-                      const double       jul_day2,
-                      const int          year2);
-string GetCurrentTime(void);
-double    FixTimestep(double tstep);
+bool        IsLeapYear(            const int         year);
+void        JulianConvert(               double      model_time,
+                                   const double      start_date,
+                                   const int         start_year,
+                                                     time_struct &tt);
+string      DecDaysToHours(        const double      dec_date);
+double      InterpolateMo(         const double      aVal[12],
+                                   const time_struct &tt,
+                                   const optStruct   &Options);
+bool        IsDaytime(             const double      &julian_day,
+                                   const optStruct   &Options);
+time_struct DateStringToTimeStruct(const string      sDate,
+				         string      sTime);
+double      TimeDifference(        const double      jul_day1,
+                                   const int         year1,
+                                   const double      jul_day2,
+                                   const int         year2);
+void        AddTime(               const double      &jul_day1,
+                                   const int         &year1,
+                                   const double      &daysadded,
+                                         double      &jul_day_out,
+				         int         &year_out);
+string      GetCurrentTime(              void);
+double      FixTimestep(                 double      tstep);
 
 //Conversion Functions-------------------------------------------
 double CelsiusToFarenheit       (const double &T);

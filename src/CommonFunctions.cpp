@@ -449,6 +449,7 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 
   return tt;
 }
+
 ///////////////////////////////////////////////////////////////////
 /// \brief calculates time difference, in days, between two specified dates
 /// \details positive if day 2 is after day 1
@@ -457,7 +458,6 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 /// \param year1 [in] year of date 1
 /// \param jul_day2 [in] Julian day of date 2 (measured from Jan 1 of year @ 00:00:00)
 /// \param year1 [in] year of date 2
-
 double TimeDifference(const double jul_day1,const int year1,const double jul_day2,const int year2)
 {
   int leap,yr;
@@ -478,6 +478,40 @@ double TimeDifference(const double jul_day1,const int year1,const double jul_day
   }
   return diff;
 }
+
+///////////////////////////////////////////////////////////////////
+/// \brief adds specified number of days to julian date and returns resultant julian date
+///
+/// \param jul_day1    [in]  Julian day of date 1 (measured from Jan 1 of year @ 00:00:00)
+/// \param year1       [in]  year of date 1
+/// \param daysadded   [in]  positive number of days (can be fractional days) added to date 1
+/// \param jul_day_out [out] Julian day of output date (measured from Jan 1 of year @ 00:00:00)
+/// \param year_out    [out] year of output date
+//
+void AddTime(const double &jul_day1,const int &year1,const double &daysadded,double &jul_day_out,int &year_out) 
+{
+  int    yr;
+  double leap;
+  double daysleft;
+  yr=year1;
+  daysleft=daysadded;  
+  jul_day_out=jul_day1;
+  do {
+    leap=0; if(IsLeapYear(yr)) { leap=1; }
+    if((jul_day_out+daysleft)<(365.0+leap)) { 
+      jul_day_out+=daysleft;
+      year_out=yr;
+      return;
+    }
+    else {
+      yr++;
+      daysleft-=(365.0+leap-jul_day_out);
+      jul_day_out=0.0;
+    }
+    ExitGracefullyIf(daysleft<0.0, "Invalid input to AddTime routine (negative julian day or added days)",RUNTIME_ERR);
+  } while (true);
+}
+
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Round the timestep to the nearest fractional day
 /// \return improved timestep
@@ -488,6 +522,7 @@ double    FixTimestep(double tstep)
                    "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
   return 1.0/tmp;
 }
+
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time
 /// \return "now" as an ISO formatted string
