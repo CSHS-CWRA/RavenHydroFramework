@@ -1830,8 +1830,7 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
 #ifdef _RVNETCDF_
   int retval;
   int dimids2[2];
-  dimids2[0] = time_dimid;
-  
+
   static double fill_val[] = {NETCDF_BLANK_VALUE};
   static double miss_val[] = {NETCDF_BLANK_VALUE}; 
   
@@ -1839,7 +1838,7 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
   dimids2[1] = nbasins_dimid;
 
   // (a) create variable 
-  retval = nc_def_var(fileid,shortname.c_str(),NC_DOUBLE,1,dimids2,&varid); HandleNetCDFErrors(retval);
+  retval = nc_def_var(fileid,shortname.c_str(),NC_DOUBLE,2,dimids2,&varid); HandleNetCDFErrors(retval);
 
   // (b) add attributes to variable
   retval = nc_put_att_text  (fileid,varid,"units",units.length(),units.c_str());              HandleNetCDFErrors(retval);
