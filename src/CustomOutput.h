@@ -76,6 +76,8 @@ private:/*------------------------------------------------------*/
 
   ofstream     _CUSTOM;    ///< output file stream
 
+  int          _netcdf_ID; ///< netCDF file identifier
+
   diagnostic   _var;       ///< output variable identifier
   sv_type      _svtype;    ///< state variable output type (if output var is a SV)
   int          _svind;     ///< state variable index (if output var is a SV or flux)
@@ -94,14 +96,15 @@ private:/*------------------------------------------------------*/
 
   string       _varName;   ///< forcing variable or state variable name
   string       _varUnits;  ///< forcing variable or state variable units
-  string       timeAggStr; ///< temporal aggregation type string
-  string       statStr;    ///< statistic type string
-  string       spaceAggStr;///< spatial aggregation type string
+  string       _timeAggStr;///< temporal aggregation type string
+  string       _statStr;   ///< statistic type string
+  string       _spaceAggStr;///< spatial aggregation type string
 
   double     **data;      ///< stores accumulated data for each HRU,Basin, or WShed (size:[num_store][num_data])
   int          num_data;  ///< number of data points
   int          num_store; ///< number of data items needed for each HRU, Basin or WShed
   //(e.g., =2 if max and min are both tracked)
+  int         _time_index;///< index tracking current output line (e.g., 3=3 years/months/days passed, dependent upon _timeAgg
 
   int          count;     ///< counts accumulated data (# of timesteps since last output dump)
 

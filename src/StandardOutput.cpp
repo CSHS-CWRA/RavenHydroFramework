@@ -20,6 +20,8 @@
 #elif defined(__linux__)
 #include <sys/stat.h>
 #endif
+int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,string longname,string units);
+int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the flow series for subbasin SBID
 /// \param pObs [in] observation time series
@@ -1322,6 +1324,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
 /// \brief Writes output headers for WatershedStorage.nc and Hydrographs.nc
 ///
 /// \param &Options [in] global model options
+/// original code developed by J. Mai
 //
 void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 {
@@ -1332,15 +1335,10 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   const int   ndims1 = 1;
   const int   ndims2 = 2;
   int         dimids1[ndims1];                       // array which will contain all dimension ids for a variable
-  int         dimids2[ndims2];                       // array which will contain all dimension ids for a variable
   int         ncid, varid_pre;                       // When we create netCDF variables and dimensions, we get back an ID for each one.
   int         time_dimid, varid_time;                // dimension ID (holds number of time steps) and variable ID (holds time values) for time
-  int         nSim, nbasin_sim_dimid, varid_bsim;    // # of sub-basins with simulated outflow, dimension ID, and
+  int         nSim, nbasins_dimid, varid_bsim;       // # of sub-basins with simulated outflow, dimension ID, and
   //                                                 // variable to write basin IDs for simulated outflows
-  int         nObs, nbasin_obs_dimid, varid_bobs;    // # of sub-basins with observed outflow, dimension ID, and
-  //                                                 //  variable to write basin IDs for observed outflows
-  int         nRes, nbasin_res_dimid, varid_bres;    // # of sub-basins with observed (reservoir) inflows, dimension ID, and
-  //                                                 //  variable to write basin IDs for observed (reservoir) inflows
   int         varid_qsim;                            // variable ID for simulated outflows
   int         varid_qobs;                            // variable ID for observed outflows
   int         varid_qin;                             // variable ID for observed inflows
@@ -1351,88 +1349,48 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
   const char *current_basin_name[1];                 // current time in days since start time
 
-  string      tmp;
+  string      tmp,tmp2;
+  static double fill_val[] = {NETCDF_BLANK_VALUE};
+  static double miss_val[] = {NETCDF_BLANK_VALUE}; 
 
-  /* initialize all potential file IDs with -9 == "not existing and hence not opened" */
+  // initialize all potential file IDs with -9 == "not existing and hence not opened" 
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
-  
-  tmpFilename = FilenamePrepare("Hydrographs.nc", Options);
 
-  /* Create the file. 
-     NC_CLOBBER parameter tells netCDF to overwrite this file, if it already exists. 
-     NC_NETCDF4 tells that NetCDF version 4 file is created. */
-  retval = nc_create(tmpFilename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid);
-  HandleNetCDFErrors(retval);
-
-  _HYDRO_ncid = ncid;
-
-  /* ---------------------------------------------------------- */
-  /* time                                                       */
-  /* ---------------------------------------------------------- */
-  /* (a) Define the DIMENSIONS. NetCDF will hand back an ID for each. */
-  retval = nc_def_dim(_HYDRO_ncid, "time", NC_UNLIMITED, &time_dimid);
-  HandleNetCDFErrors(retval);
-
-  /* (b) The dimids array is used to pass the IDs of the dimensions of
-   *     the variable. */
-  dimids1[0] = time_dimid;
-  
-  /* (c) Define the VARIABLES. The type of the variable can be: 
-    	 NC_BYTE   	   signed 1 byte integer, 
-    	 NC_CHAR   	   ISO/ASCII character, 
-    	 NC_SHORT  	   signed 2 byte integer, 
-    	 NC_INT    	   signed 4-byte integer,  
-    	 NC_FLOAT  	   single precision floating point number,
-    	 NC_DOUBLE 	   double precision floating point number,
-    	 nc_UBYTE  	   unsigned 1 byte int,
-    	 nc_USHORT 	   unsigned 2-byte int,
-    	 nc_UINT   	   unsigned 4-byte int,
-    	 nc_INT64  	   signed 8-byte int,
-    	 nc_UINT64 	   unsigned 8-byte int, or
-    	 nc_STRING 	   string */
-  retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time);
-  HandleNetCDFErrors(retval);
-
-  /* (d) Assign units attributes to the netCDF VARIABLES. 
-       --> converts start day into "days since YYYY-MM-DD HH:MM:SS" */
+  //converts start day into "days since YYYY-MM-DD HH:MM:SS"  (model start time)
   char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
   JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, tt);
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");
-  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "units"   , strlen(starttime)  , starttime);
-  HandleNetCDFErrors(retval);
 
-  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "calendar", strlen("gregorian"), "gregorian");
-  HandleNetCDFErrors(retval);
+  //====================================================================
+  //  Hydrographs.nc
+  //====================================================================
+  // Create the file. 
+  tmpFilename = FilenamePrepare("Hydrographs.nc", Options);
+  retval = nc_create(tmpFilename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid);  HandleNetCDFErrors(retval);
+  _HYDRO_ncid = ncid;
 
-  /* ---------------------------------------------------------- */
-  /* precipitation                                              */
-  /* ---------------------------------------------------------- */
-  /* (a) create variable precipitation */
-  retval = nc_def_var(_HYDRO_ncid, "precip", NC_DOUBLE, ndims1, dimids1, &varid_pre);
-  HandleNetCDFErrors(retval);
-  
-  /* (b) add attributes to variable */
-  retval = nc_put_att_text(_HYDRO_ncid, varid_pre, "units", strlen("mm d**-1"), "mm d**-1");
-  HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_HYDRO_ncid, varid_pre, "long_name", strlen("Precipitation"), "Precipitation");
-  HandleNetCDFErrors(retval);
+  // ---------------------------------------------------------- 
+  // time                                                       
+  // ---------------------------------------------------------- 
+  // (a) Define the DIMENSIONS. NetCDF will hand back an ID 
+  retval = nc_def_dim(_HYDRO_ncid, "time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
 
-  static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-  retval = nc_put_att_double(_HYDRO_ncid, varid_pre, "_FillValue", NC_DOUBLE, 1, fill_val);
-  HandleNetCDFErrors(retval);
-  
-  static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-  retval = nc_put_att_double(_HYDRO_ncid, varid_pre, "missing_value", NC_DOUBLE, 1, miss_val);
-  HandleNetCDFErrors(retval);
+  /// Define the time variable. Assign units attributes to the netCDF VARIABLES. 
+  dimids1[0] = time_dimid;
+  retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "units"   , strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "calendar", strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
 
+  // define precipitation variable
+  varid_pre= NetCDFAddMetadata(_HYDRO_ncid, time_dimid,"precip","Precipitation","mm d**-1");
 
-  /* ---------------------------------------------------------- */
-  /* simulated outflows                                         */
-  /* ---------------------------------------------------------- */
+  // ---------------------------------------------------------- 
+  // simulated/observed outflows                                      
+  // ---------------------------------------------------------- 
   // (a) count number of simulated outflows "nSim"             
   nSim = 0;
   for (p=0;p<_nSubBasins;p++){
@@ -1441,214 +1399,84 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   
   if (nSim > 0)
   {
-    // (b) create dimension "nbasin_sim"                          
-    retval = nc_def_dim(_HYDRO_ncid, "nbasin_sim", nSim, &nbasin_sim_dimid);
-    HandleNetCDFErrors(retval);
+    // (b) create dimension "nbasins"                          
+    retval = nc_def_dim(_HYDRO_ncid, "nbasins", nSim, &nbasins_dimid);                             HandleNetCDFErrors(retval);
 
-    // (c) create variable "basin_name_sim"                       
-    dimids1[0] = nbasin_sim_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "basin_name_sim", NC_STRING, ndims1, dimids1, &varid_bsim);
-    HandleNetCDFErrors(retval);
-
-    //(d) set some attributes to variable "basin_name_sim"  
-    tmp="Name/ID of sub-basins with simulated outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-  
-    //(e) create variable "q_sim" which will contain at the end simulated outflows; shape=(tt,nSim) 
-    dimids2[0] = time_dimid;
-    dimids2[1] = nbasin_sim_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "q_sim", NC_DOUBLE, ndims2, dimids2, &varid_qsim);
-    HandleNetCDFErrors(retval);
-
-    //(f) set some attributes to variable "q_sim"   
-    tmp="Simulated outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "long_name", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-
-    tmp="m**3 s**-1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qsim, "units", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-
-    static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-    retval = nc_put_att_double(_HYDRO_ncid, varid_qsim, "_FillValue", NC_DOUBLE,1, fill_val);
-    HandleNetCDFErrors(retval);
+    // (c) create variable  and set attributes for"basin_name"                       
+    dimids1[0] = nbasins_dimid;
+    retval = nc_def_var(_HYDRO_ncid, "basin_name", NC_STRING, ndims1, dimids1, &varid_bsim);       HandleNetCDFErrors(retval); 
+    tmp ="Name/ID of sub-basins with simulated outflows";
+    tmp2="timeseries_ID";
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
     
-    static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-    retval = nc_put_att_double(_HYDRO_ncid, varid_qsim, "missing_value", NC_DOUBLE,1, miss_val);
-    HandleNetCDFErrors(retval);
+    varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
+    varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
+    varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Observed inflows"  ,"m**3 s**-1");
   }// end if nSim>0
-  
-  /* ---------------------------------------------------------- */
-  /* observed outflows                                          */
-  /* ---------------------------------------------------------- */
-  /* (a) count number of simulated outflows "nObs  "            */
-  nObs = 0;
-  for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      {
-        for (int i = 0; i < _nObservedTS; i++){
-          if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-          {
-            nObs++;
-          }
-        }
-      }
-    }
-  }
-                      
-  if (nObs > 0)
-  {
-    // (b) create dimension "nbasin_obs"     
-    retval = nc_def_dim(_HYDRO_ncid, "nbasin_obs", nObs, &nbasin_obs_dimid);
-    HandleNetCDFErrors(retval);
-    
-    // (c) create variable "basin_name_obs"                       
-    dimids1[0] = nbasin_obs_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "basin_name_obs", NC_STRING, ndims1, dimids1, &varid_bobs);
-    HandleNetCDFErrors(retval);
-  
-    // (d) set some attributes to variable "basin_name_obs"       
-    tmp="Name/ID of sub-basins with observed outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_bobs, "long_name", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-  
-    // (e) create variable "q_obs" which will contain at the end observed outflows; shape=(tt,nObs) */
-    dimids2[0] = time_dimid;
-    dimids2[1] = nbasin_obs_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "q_obs", NC_DOUBLE, ndims2, dimids2, &varid_qobs);
-    HandleNetCDFErrors(retval);
-  
-    // (f) set some attributes to variable "q_obs"       
-    tmp="Observed outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "long_name", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-    tmp="m**3 s**-1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qobs, "units", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-
-    static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-    retval = nc_put_att_double(_HYDRO_ncid, varid_qobs, "_FillValue", NC_DOUBLE,1, fill_val);
-    HandleNetCDFErrors(retval);
-        
-    static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-    retval = nc_put_att_double(_HYDRO_ncid, varid_qobs, "missing_value", NC_DOUBLE,1, miss_val);
-    HandleNetCDFErrors(retval);
-  }// end if nObs>0
-
-  /* ---------------------------------------------------------- */
-  /* inflows                                                    */
-  /* ---------------------------------------------------------- */
-  //count number of simulated outflows "nRes"    
-  nRes = 0;
-  for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      if (_pSubBasins[p]->GetReservoir() != NULL){nRes++;}
-    }
-  }
-                         
-  if (nRes > 0)
-  {
-    //(b) create dimension "nbasin_res"   
-    retval = nc_def_dim(_HYDRO_ncid, "nbasin_res", nRes, &nbasin_res_dimid);
-    HandleNetCDFErrors(retval);
-    
-    //(c) create variable "basin_name_res"                   
-    dimids1[0] = nbasin_res_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "basin_name_res", NC_STRING, ndims1, dimids1, &varid_bres);
-    HandleNetCDFErrors(retval);
- 
-    //(d) set some attributes to variable "basin_name_res"      
-    tmp="Name/ID of sub-basins with inflows";
-    retval = nc_put_att_text(_HYDRO_ncid,varid_bres,"long_name",tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval); 
-
-    //(e) create variable "q_in" which will contain at the end observed inflows; shape=(tt,nRes) 
-    dimids2[0] = time_dimid;
-    dimids2[1] = nbasin_res_dimid;
-    retval = nc_def_var(_HYDRO_ncid, "q_in", NC_DOUBLE, ndims2, dimids2, &varid_qin);
-    HandleNetCDFErrors(retval);
-    
-    //(f) set some attributes to variable "q_in"       
-    tmp="Observed outflows";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "long_name", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-
-    tmp="m**3 s**-1";
-    retval = nc_put_att_text(_HYDRO_ncid, varid_qin, "units", tmp.length(),tmp.c_str());
-    HandleNetCDFErrors(retval);
-    
-    static double fill_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-    retval = nc_put_att_double(_HYDRO_ncid, varid_qin, "_FillValue", NC_DOUBLE,1, fill_val);
-    HandleNetCDFErrors(retval);
-    
-    static double miss_val[] = {NETCDF_BLANK_VALUE}; /* attribute vals */
-    retval = nc_put_att_double(_HYDRO_ncid, varid_qin, "missing_value", NC_DOUBLE,1, miss_val);
-    HandleNetCDFErrors(retval);
-  }// end if nRes>0
 
   // End define mode. This tells netCDF we are done defining metadata. 
-  retval = nc_enddef(_HYDRO_ncid);
-  HandleNetCDFErrors(retval);
+  retval = nc_enddef(_HYDRO_ncid);  HandleNetCDFErrors(retval);
     
-
-  /* write values to NetCDF */
-  // (a) write gauged basin names/IDs to variable "basin_name_sim" 
+  // write values to NetCDF 
+  // (a) write gauged basin names/IDs to variable "basin_name" 
   ibasin = 0;
-  for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      if (_pSubBasins[p]->GetName()==""){current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str();}
-      else                              {current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str();}
+  for(p=0;p<_nSubBasins;p++){
+    if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
+      if(_pSubBasins[p]->GetName()==""){ current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str(); }
+      else                             { current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str(); }
       // write sub-basin name
       start[0] = ibasin;
       count[0] = 1;
-      retval = nc_put_vara_string(_HYDRO_ncid, varid_bsim, start, count, &current_basin_name[0]);  
-      HandleNetCDFErrors(retval);
-     
+      retval = nc_put_vara_string(_HYDRO_ncid,varid_bsim,start,count,&current_basin_name[0]);  HandleNetCDFErrors(retval);
       ibasin++;
     }
   }
-  // (b) write gauged basin names/IDs to variable "basin_name_obs"  
-  ibasin = 0;
-  for (p=0;p<_nSubBasins;p++)
-  {
-    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
-    {
-      for (int i = 0; i < _nObservedTS; i++)
-      {
-        if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-        {
-          if (_pSubBasins[p]->GetName()==""){current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str();}
-          else                              {current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str();}
-          // write sub-basin name
-          start[0] = ibasin;
-          count[0] = 1;
-          retval = nc_put_vara_string(_HYDRO_ncid, varid_bobs, start, count, &current_basin_name[0]);
-          HandleNetCDFErrors(retval);
-          ibasin++;
-        }
-      }
-    }
-  }
-  // (c) write gauged basin names/IDs to variable "basin_name_res" 
-  ibasin = 0;
-  for (p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      if (_pSubBasins[p]->GetReservoir() != NULL){
-        if (_pSubBasins[p]->GetName()==""){current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str();}
-        else                              {current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str();}
-        // write sub-basin name
-        start[0] = ibasin;
-        count[0] = 1;
-        retval = nc_put_vara_string(_HYDRO_ncid, varid_bres, start, count, &current_basin_name[0]);
-        HandleNetCDFErrors(retval);
-        ibasin++;
-      }
-    }
-  }
+  //====================================================================
+  //  WatershedStorage.nc
+  //====================================================================
+  tmpFilename = FilenamePrepare("WatershedStorage.nc", Options);
+  retval = nc_create(tmpFilename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid);  HandleNetCDFErrors(retval);
+  _STORAGE_ncid = ncid;
 
+  // ---------------------------------------------------------- 
+  // time vector                                                       
+  // ---------------------------------------------------------- 
+  // Define the DIMENSIONS. NetCDF will hand back an ID
+  retval = nc_def_dim(_STORAGE_ncid, "time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
+
+  /// Define the time variable. 
+  dimids1[0] = time_dimid;
+  retval = nc_def_var(_STORAGE_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_STORAGE_ncid, varid_time, "units"   , strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_STORAGE_ncid, varid_time, "calendar", strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+
+  // ---------------------------------------------------------- 
+  // precipitation / channel storage / state vars / MB diagnostics                                             
+  // ---------------------------------------------------------- 
+  int varid;
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"rainfall","rainfall","mm d**-1");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"snowfall","snowfall","mm d**-1");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Channel Storage","Channel Storage","mm");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Reservoir Storage","Reservoir Storage","mm");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Rivulet Storage","Rivulet Storage","mm");
+
+  int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+  for(int i=0;i<_nStateVars;i++){
+    if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+      string name =CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+      varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,name,name,"mm");
+    }
+  }
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Total","total water storage","mm");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Input","cumulative water input","mm");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Outflow","cumulative water output","mm");
+  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"MB Error","mass balance error","mm");
+
+  // End define mode. This tells netCDF we are done defining metadata. 
+  retval = nc_enddef(_STORAGE_ncid);  HandleNetCDFErrors(retval);
+    
 #endif   // end compilation if NetCDF library is available
-
 }
 
 
@@ -1676,7 +1504,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   if ((tt.model_time==0) && (Options.suppressICs==true) && (Options.period_ending)){return;}
 
   //----------------------------------------------------------------
-  // write watershed state variables
+  // write watershed state variables  (WatershedStorage.tb0)
   if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
   else                 {_STORAGE<<" 0.0 0.0";}
   _STORAGE<<" "<<channel_stor+reservoir_stor<<" "<<rivulet_stor;
@@ -1694,7 +1522,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   _STORAGE<<endl;
 
   //----------------------------------------------------------------
-  //Write hydrographs for gauged watersheds (ALWAYS DONE)
+  //Write hydrographs for gauged watersheds (ALWAYS DONE) (Hydrographs.tb0)
   if ((Options.ave_hydrograph) && (tt.model_time!=0))
   {
     _HYDRO<<" "<<GetAveragePrecip();
@@ -1733,165 +1561,192 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   
   int    retval;                // error value for NetCDF routines
   int    time_id;               // variable id in NetCDF for time
-  int    precip_id;             // variable id in NetCDF for precipitation
-  int    qsim_id;               // variable id in NetCDF for simulated outflow
-  int    qobs_id;               // variable id in NetCDF for observed outflow
-  int    qin_id;                // variable id in NetCDF for observed inflow
   size_t start1[1], count1[1];  // determines where and how much will be written to NetCDF; 1D variable (pre, time)
   size_t start2[2], count2[2];  // determines where and how much will be written to NetCDF; 2D variable (qsim, qobs, qin)
   double current_time[1];       // current time in days since start time
   double current_prec[1];       // precipitation of current time step
 
+  current_time[0] = tt.model_time;
+
+  //====================================================================
+  //  Hydrographs.nc
+  //====================================================================
+  int    precip_id;             // variable id in NetCDF for precipitation
+  int    qsim_id;               // variable id in NetCDF for simulated outflow
+  int    qobs_id;               // variable id in NetCDF for observed outflow
+  int    qin_id;                // variable id in NetCDF for observed inflow
+
+  // (a) count how many values need to be written for q_obs, q_sim, q_in 
   int iSim, nSim; // current and total # of sub-basins with simulated outflows
-  int iObs, nObs; // current and total # of sub-basins with observed outflows
-  int iRes, nRes; // current and total # of sub-basins with observed inflows
-
-  /* (a) count how many values need to be written for q_obs, q_sim, q_in */
   nSim = 0;
-  nObs = 0;
-  nRes = 0;
-  
   for (int p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      nSim++;
-      for (int i = 0; i < _nObservedTS; i++){
-        if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-        {
-          nObs++;
-        }
-      }
-      if (_pSubBasins[p]->GetReservoir() != NULL){ nRes++;}
-    }
+    if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){nSim++;}
   }      
- 
 
-  /* (b) allocate memory if necessary */
-  
+  // (b) allocate memory if necessary 
   double *outflow_obs=NULL;   // q_obs
   double *outflow_sim=NULL;   // q_sim
   double *inflow_obs =NULL;    // q_in
-  if(nObs>0){outflow_obs=new double[nObs];}
-  if(nSim>0){outflow_sim=new double[nSim];}
-  if(nRes>0){inflow_obs =new double[nRes];}
+  if(nSim>0){
+    outflow_sim=new double[nSim];
+    outflow_obs=new double[nSim];
+    inflow_obs =new double[nSim];
+  }
 
-  /* (c) read data */
+  // (c) obtain data 
   iSim = 0;
-  iObs = 0;
-  iRes = 0;
-  current_time[0] = tt.model_time;
   current_prec[0] = NETCDF_BLANK_VALUE;
-  if ((Options.ave_hydrograph) && (current_time[0] != 0.0)){
+  if ((Options.ave_hydrograph) && (current_time[0] != 0.0))
+  {
     current_prec[0] = GetAveragePrecip();
-    
-    for (int p=0;p<_nSubBasins;p++){
+    for (int p=0;p<_nSubBasins;p++)
+    {
       if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){
         outflow_sim[iSim] = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-        iSim++;
-  
-        //if (Options.print_obs_hydro)
-        {
-          for (int i = 0; i < _nObservedTS; i++){
-            if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-            {
-              double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep); //time shift handled in CTimeSeries::Parse
-              if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
-              else                                                           { outflow_obs[iObs] = -9999.; }
-              iObs++;
-            }
+        outflow_obs[iSim] = NETCDF_BLANK_VALUE;
+        for (int i = 0; i < _nObservedTS; i++){
+          if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+          {
+            double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep); //time shift handled in CTimeSeries::Parse
+            if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iSim] = val;    }
           }
         }
+        inflow_obs[iSim] =NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
-          inflow_obs[iRes] = _pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-          iRes++;
+          inflow_obs[iSim] = _pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
         }
+        iSim++;
       }
     }      
   }
   else {  // point-value hydrograph
     if (current_time[0] != 0.0){current_prec[0] = GetAveragePrecip();} //watershed-wide precip
-    else                       {current_prec[0] = -9999.;}   // was originally '---'
-    for (int p=0;p<_nSubBasins;p++){
+    else                       {current_prec[0] = NETCDF_BLANK_VALUE;} // was originally '---'
+    for (int p=0;p<_nSubBasins;p++)
+    {
       if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){
         outflow_sim[iSim] = _pSubBasins[p]->GetOutflowRate();
-        iSim++;
-  
-        //if (Options.print_obs_hydro)
-        {
-          for (int i = 0; i < _nObservedTS; i++){
-            if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-            {
-              double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep);
-              if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iObs] = val;    }
-              else                                                           { outflow_obs[iObs] = -9999.; }
-              iObs++;
-            }
+        outflow_obs[iSim] = NETCDF_BLANK_VALUE;
+        for (int i = 0; i < _nObservedTS; i++){
+          if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+          {
+            double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep);
+            if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iSim] = val;    }
           }
         }
+        inflow_obs[iSim] =NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
-          inflow_obs[iRes] = _pSubBasins[p]->GetReservoirInflow();
-          iRes++;
+          inflow_obs[iSim] = _pSubBasins[p]->GetReservoirInflow();
         }
+        iSim++;
       }
     }
   }
 
-  /* (d) write values to NetCDF (one time step) */
+  // (d) write values to NetCDF (one time step) 
   start1[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
   count1[0] = 1;                                              // writes exactly one time step
-  start2[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
-  start2[1] = 0;                                              // element of NetCDF array that will be written
-  count2[0] = 1;                                              // writes exactly one time step
 
-  /* (d1) inquire variable IDs */
-  retval = nc_inq_varid (_HYDRO_ncid, "time",   &time_id);
-  HandleNetCDFErrors(retval);
+  // write new time step 
+  retval = nc_inq_varid (_HYDRO_ncid, "time",   &time_id);                             HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_HYDRO_ncid, time_id, start1, count1, &current_time[0]); HandleNetCDFErrors(retval);
   
-  retval = nc_inq_varid (_HYDRO_ncid, "precip", &precip_id);
-  HandleNetCDFErrors(retval);
+  // write precipitation values 
+  retval = nc_inq_varid (_HYDRO_ncid, "precip", &precip_id);                           HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_HYDRO_ncid,precip_id,start1,count1,&current_prec[0]);   HandleNetCDFErrors(retval);
 
+  // write simulated outflow/obs outflow/obs inflow values 
   if (nSim > 0){
-    retval = nc_inq_varid (_HYDRO_ncid, "q_sim", &qsim_id);
-    HandleNetCDFErrors(retval);
-  }
-  if (nObs > 0){
-    retval = nc_inq_varid (_HYDRO_ncid, "q_obs", &qobs_id);
-    HandleNetCDFErrors(retval);
-  }
-  if (nRes > 0){
-    retval = nc_inq_varid (_HYDRO_ncid, "q_in",  &qin_id);
-    HandleNetCDFErrors(retval);
-  }
-
-  // (d2) write new time step 
-  retval = nc_put_vara_double(_HYDRO_ncid, time_id, start1, count1, &current_time[0]);
-  HandleNetCDFErrors(retval);
-  
-  // (d3) write precipitation values 
-  retval = nc_put_vara_double(_HYDRO_ncid,precip_id,start1,count1,&current_prec[0]);
-  HandleNetCDFErrors(retval);
-
-  // (d4) write simulated outflow values 
-  if (nSim > 0){
+    start2[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
+    start2[1] = 0;                                              // element of NetCDF array that will be written
+    count2[0] = 1;      // writes exactly one time step
     count2[1] = nSim;   // writes exactly nSim elements
-    retval = nc_put_vara_double(_HYDRO_ncid, qsim_id, start2, count2, &outflow_sim[0]);
-    HandleNetCDFErrors(retval);
-  }
-  // (d5) write observed  outflow values 
-  if (nObs > 0){
-    count2[1] = nObs;   // writes exactly nObs elements
-    retval = nc_put_vara_double(_HYDRO_ncid, qobs_id, start2, count2, &outflow_obs[0]);
-    HandleNetCDFErrors(retval);
-  }
-  // (d6) write observed  inflow  values 
-  if (nRes > 0){
-    count2[1] = nRes;   // writes exactly nRes elements
-    retval = nc_put_vara_double(_HYDRO_ncid, qin_id, start2, count2, &inflow_obs[0]);
-    HandleNetCDFErrors(retval);
+    retval = nc_inq_varid (_HYDRO_ncid, "q_sim", &qsim_id);                             HandleNetCDFErrors(retval);
+    retval = nc_inq_varid (_HYDRO_ncid, "q_obs", &qobs_id);                             HandleNetCDFErrors(retval);
+    retval = nc_inq_varid (_HYDRO_ncid, "q_in",  &qin_id);                              HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_HYDRO_ncid, qsim_id, start2, count2, &outflow_sim[0]); HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_HYDRO_ncid, qobs_id, start2, count2, &outflow_obs[0]); HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_HYDRO_ncid, qin_id, start2, count2, &inflow_obs[0]);   HandleNetCDFErrors(retval);
   }
   
   delete[] outflow_obs;
   delete[] outflow_sim;
   delete[] inflow_obs;
+
+  //====================================================================
+  //  WatershedStorage.nc
+  //====================================================================
+  double snowfall      =GetAverageSnowfall();
+  double precip        =GetAveragePrecip();
+  double channel_stor  =GetTotalChannelStorage();
+  double reservoir_stor=GetTotalReservoirStorage();
+  double rivulet_stor  =GetTotalRivuletStorage();
+  double currentWater;
+  int var_id;
+  double value[1];
+
+  // write new time step 
+  retval = nc_inq_varid (_STORAGE_ncid, "time",   &time_id);                             HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, time_id, start1, count1, &current_time[0]); HandleNetCDFErrors(retval);
+  
+
+  if(tt.model_time!=0){
+    value[0]=precip-snowfall;
+    retval = nc_inq_varid (_STORAGE_ncid, "rainfall",   &var_id);                  HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]); HandleNetCDFErrors(retval);
+    value[0]=snowfall;
+    retval = nc_inq_varid (_STORAGE_ncid, "snowfall",   &var_id);                  HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]); HandleNetCDFErrors(retval);
+  }
+  value[0]=channel_stor;
+  retval = nc_inq_varid (_STORAGE_ncid, "Channel Storage",   &var_id);           HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]); HandleNetCDFErrors(retval);
+  value[0]=reservoir_stor;
+  retval = nc_inq_varid (_STORAGE_ncid, "Reservoir Storage",   &var_id);         HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]); HandleNetCDFErrors(retval);
+  value[0]=rivulet_stor;
+  retval = nc_inq_varid (_STORAGE_ncid, "Rivulet Storage",   &var_id);           HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]); HandleNetCDFErrors(retval);
+
+  currentWater=0.0;
+  double S;string short_name;
+  int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+  for (int i=0;i<GetNumStateVars();i++)
+  {
+    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
+    {
+      S=FormatDouble(GetAvgStateVar(i));
+      value[0]=S;
+      short_name=CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+      retval = nc_inq_varid (_STORAGE_ncid, short_name.c_str(),   &var_id);          HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]); HandleNetCDFErrors(retval);
+      currentWater+=S;
+    }
+  }
+
+  currentWater+=channel_stor+rivulet_stor+reservoir_stor;
+  if(tt.model_time==0){
+    // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+    // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
+    for(int p=0;p<_nSubBasins;p++){
+      if(_pSubBasins[p]->GetReservoir()!=NULL){
+        currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+        currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+      }
+    }
+  }
+  value[0]=currentWater;
+  retval = nc_inq_varid (_STORAGE_ncid, "Total",   &var_id);                      HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]);  HandleNetCDFErrors(retval);
+  value[0]=_CumulInput;
+  retval = nc_inq_varid (_STORAGE_ncid, "Cum. Input",   &var_id);                 HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]);  HandleNetCDFErrors(retval);
+  value[0]=_CumulOutput;
+  retval = nc_inq_varid (_STORAGE_ncid, "Cum. Outflow",   &var_id);               HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]);  HandleNetCDFErrors(retval);
+  value[0]=FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
+  retval = nc_inq_varid (_STORAGE_ncid, "MB Error",   &var_id);                   HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_STORAGE_ncid, var_id, start1, count1, &value[0]);  HandleNetCDFErrors(retval);
 
 #endif
 }
@@ -1947,4 +1802,44 @@ string CorrectForRelativePath(const string filename,const string relfile)
 }
 
 
+int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,string longname,string units)
+{
+  int retval,varid;
+  int dimids[1];
+  dimids[0] = time_dimid;
+  
+  static double fill_val[] = {NETCDF_BLANK_VALUE};
+  static double miss_val[] = {NETCDF_BLANK_VALUE}; 
 
+  // (a) create variable precipitation 
+  retval = nc_def_var(fileid,shortname.c_str(),NC_DOUBLE,1,dimids,&varid); HandleNetCDFErrors(retval);
+
+  // (b) add attributes to variable
+  retval = nc_put_att_text  (fileid,varid,"units",units.length(),units.c_str());              HandleNetCDFErrors(retval);
+  retval = nc_put_att_text  (fileid,varid,"long_name",longname.length(),longname.c_str());    HandleNetCDFErrors(retval);
+  retval = nc_put_att_double(fileid,varid,"_FillValue",NC_DOUBLE,1,fill_val);                 HandleNetCDFErrors(retval);
+  retval = nc_put_att_double(fileid,varid,"missing_value",NC_DOUBLE,1,miss_val);              HandleNetCDFErrors(retval);
+  return varid;
+}
+int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units)
+{
+  int retval,varid;
+  int dimids2[2];
+  dimids2[0] = time_dimid;
+  
+  static double fill_val[] = {NETCDF_BLANK_VALUE};
+  static double miss_val[] = {NETCDF_BLANK_VALUE}; 
+  
+  dimids2[0] = time_dimid;
+  dimids2[1] = nbasins_dimid;
+
+  // (a) create variable 
+  retval = nc_def_var(fileid,shortname.c_str(),NC_DOUBLE,1,dimids2,&varid); HandleNetCDFErrors(retval);
+
+  // (b) add attributes to variable
+  retval = nc_put_att_text  (fileid,varid,"units",units.length(),units.c_str());              HandleNetCDFErrors(retval);
+  retval = nc_put_att_text  (fileid,varid,"long_name",longname.length(),longname.c_str());    HandleNetCDFErrors(retval);
+  retval = nc_put_att_double(fileid,varid,"_FillValue",NC_DOUBLE,1,fill_val);                 HandleNetCDFErrors(retval);
+  retval = nc_put_att_double(fileid,varid,"missing_value",NC_DOUBLE,1,miss_val);              HandleNetCDFErrors(retval);
+  return varid;
+}

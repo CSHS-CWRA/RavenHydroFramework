@@ -449,7 +449,6 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 
   return tt;
 }
-
 ///////////////////////////////////////////////////////////////////
 /// \brief calculates time difference, in days, between two specified dates
 /// \details positive if day 2 is after day 1
@@ -458,6 +457,7 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 /// \param year1 [in] year of date 1
 /// \param jul_day2 [in] Julian day of date 2 (measured from Jan 1 of year @ 00:00:00)
 /// \param year1 [in] year of date 2
+
 double TimeDifference(const double jul_day1,const int year1,const double jul_day2,const int year2)
 {
   int leap,yr;
@@ -522,7 +522,6 @@ double    FixTimestep(double tstep)
                    "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
   return 1.0/tmp;
 }
-
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time
 /// \return "now" as an ISO formatted string
