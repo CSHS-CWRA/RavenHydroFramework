@@ -1804,7 +1804,9 @@ string CorrectForRelativePath(const string filename,const string relfile)
 
 int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,string longname,string units)
 {
-  int retval,varid;
+ int varid(0);
+#ifdef _RVNETCDF_
+  int retval;
   int dimids[1];
   dimids[0] = time_dimid;
   
@@ -1819,11 +1821,14 @@ int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,str
   retval = nc_put_att_text  (fileid,varid,"long_name",longname.length(),longname.c_str());    HandleNetCDFErrors(retval);
   retval = nc_put_att_double(fileid,varid,"_FillValue",NC_DOUBLE,1,fill_val);                 HandleNetCDFErrors(retval);
   retval = nc_put_att_double(fileid,varid,"missing_value",NC_DOUBLE,1,miss_val);              HandleNetCDFErrors(retval);
+#endif
   return varid;
 }
 int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units)
 {
-  int retval,varid;
+  int varid(0);
+#ifdef _RVNETCDF_
+  int retval;
   int dimids2[2];
   dimids2[0] = time_dimid;
   
@@ -1841,5 +1846,6 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
   retval = nc_put_att_text  (fileid,varid,"long_name",longname.length(),longname.c_str());    HandleNetCDFErrors(retval);
   retval = nc_put_att_double(fileid,varid,"_FillValue",NC_DOUBLE,1,fill_val);                 HandleNetCDFErrors(retval);
   retval = nc_put_att_double(fileid,varid,"missing_value",NC_DOUBLE,1,miss_val);              HandleNetCDFErrors(retval);
+#endif
   return varid;
 }
