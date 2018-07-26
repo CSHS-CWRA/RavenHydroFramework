@@ -1248,15 +1248,18 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
 {
   ExitGracefullyIf(D<=0,"ADRCumDist: Invalid diffusivity",RUNTIME_ERR);
   double dt,integ;
-  double term=L/2*pow(PI*D,-0.5);
-  dt=t/500.0; //t in [day] (500.0 is # of integral divisions)
+  double term=L/2.0*pow(PI*D,-0.5);
+  dt=t/1000.0; //t in [day] (1000.0 is # of integral divisions)
   integ=0.0;
+  double beta=L/sqrt(D);
+  double alpha=v/sqrt(D);
   for (double tt=0.5*dt;tt<t;tt+=dt)
   {
-    integ+=pow(tt,-1.5)*exp(-((v*tt-L)*(v*tt-L))/4/D/tt);
     // D: unit = m2 / day
     // [m]/[day]^1.5/[m]/[day]^0.5 * exp([m/day]*[day]-[m])^2/([m]^2)/[day])
-
+    integ+=pow(tt,-1.5)*exp(-((alpha*tt-beta)*(alpha*tt-beta))/4.0/tt);
+    // equivalent to (old) version, but more stable since alpha, beta ~1-10 whereas both v^2 and D can be very large
+    //integ+=pow(tt,-1.5)*exp(-((v*tt-L)*(v*tt-L))/4.0/D/tt);
   }
   return integ*term*dt;
 }

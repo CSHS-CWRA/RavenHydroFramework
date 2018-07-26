@@ -1720,8 +1720,12 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
   TEMPLATE<<"#-----------------------------------------------------------------"<<endl;
   for (int ii=0;ii<nP;ii++)
   {
-    if (aPC[ii]==CLASS_GLOBAL){TEMPLATE<<":GlobalParameter "<<std::setw (sp+5) <<aP[ii]<<std::setw (1) <<" ** "<<endl;}
+    repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
+    if ((aPC[ii]==CLASS_GLOBAL) && (!repeat)){
+      TEMPLATE<<":GlobalParameter "<<std::setw (sp+5) <<aP[ii]<<std::setw (1) <<" ** "<<endl;
+    }
   }
+
   TEMPLATE<<endl;
 
   if(nSP>0)
@@ -1791,7 +1795,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat) && (aP[ii]!="FOREST_COVERAGE")){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat) && (aP[ii]!="FOREST_COVERAGE") && (aP[ii]!="IMPERMEABLE_FRAC")){
         TEMPLATE<<std::setw(sp) <<aP[ii]<<std::setw(1)<<", ";
       }
     }
@@ -1800,7 +1804,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat) && (aP[ii]!="FOREST_COVERAGE")){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat) && (aP[ii]!="FOREST_COVERAGE") && (aP[ii]!="IMPERMEABLE_FRAC")){
         TEMPLATE<<std::setw(sp) <<"-"<<std::setw(1)<<", ";
       }
     }
@@ -1809,7 +1813,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE") ){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE") && (aP[ii]!="IMPERMEABLE_FRAC")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1818,7 +1822,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE")){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE")  && (aP[ii]!="IMPERMEABLE_FRAC")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1827,7 +1831,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE")){
+      if((aPC[ii]==CLASS_LANDUSE) && (!repeat)  && (aP[ii]!="FOREST_COVERAGE") && (aP[ii]!="IMPERMEABLE_FRAC")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1846,7 +1850,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")&& (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
         TEMPLATE<<std::setw(sp) <<aP[ii]<<std::setw(1)<<", ";
       }
     }
@@ -1855,7 +1859,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
         TEMPLATE<<std::setw(sp) <<"-"<<std::setw(1)<<", ";
       }
     }
@@ -1864,7 +1868,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1873,7 +1877,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1882,7 +1886,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     for(int ii=0;ii<nP;ii++)
     {
       repeat=false;for(int iii=0;iii<ii;iii++){ if(aP[ii]==aP[iii]){ repeat=true; } }
-      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI")){
+      if((aPC[ii]==CLASS_VEGETATION) && (!repeat) && (aP[ii]!="MAX_LAI") && (aP[ii]!="RELATIVE_LAI")&& (aP[ii]!="RELATIVE_HT")){
         TEMPLATE<<std::setw(sp) <<"**"<<std::setw(1)<<", ";
       }
     }
@@ -1890,6 +1894,24 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
     TEMPLATE<<"  ... "<<endl;
     TEMPLATE<<":EndVegetationParameterList"<<endl;
     TEMPLATE<<endl;
+    for(int ii=0;ii<nP;ii++)
+    {
+      if((aPC[ii]==CLASS_VEGETATION) && (aP[ii]!="RELATIVE_LAI")){
+        TEMPLATE<<":SeasonalRelativeLAI"<<endl;
+        TEMPLATE<<"  *VEGET_1*, *J*,*F*,*M*,*A*,*M*,*J*,*J*,*A*,*S*,*O*,*N*,*D*"<<endl;
+        TEMPLATE<<":EndSeasonalRelativeLAI"<<endl;
+        break;
+      }
+    }
+    for(int ii=0;ii<nP;ii++)
+    {
+      if((aPC[ii]==CLASS_VEGETATION) && (aP[ii]!="RELATIVE_HT")){
+        TEMPLATE<<":SeasonalRelativeHeight"<<endl;
+        TEMPLATE<<"  *VEGET_1*, *J*,*F*,*M*,*A*,*M*,*J*,*J*,*A*,*S*,*O*,*N*,*D*"<<endl;
+        TEMPLATE<<":EndSeasonalRelativeHeight"<<endl;
+        break;
+      }
+    }
   }
   TEMPLATE.close();
 }

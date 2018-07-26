@@ -8,7 +8,7 @@
 #include "Radiation.h"
 #include "GlobalParams.h"
 #include "UnitTesting.h"
-
+void AddTimeTest();
 void RavenUnitTesting(const optStruct &Options)
 {
   //cout<<"RAVEN UNIT TESTING MODE"<<endl;
@@ -22,6 +22,7 @@ void RavenUnitTesting(const optStruct &Options)
   //JulianConvertTest();
   //SmartLookupUnitTest();
   //SmartIntervalTest();
+  //AddTimeTest();
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function
@@ -46,7 +47,25 @@ void DateTest()
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
   ExitGracefully("DateTest",SIMULATION_DONE);
 }
+void AddTimeTest() {
+  time_struct tt,tt2;
+  double outday;int outyear;
+  AddTime(360,1999,5,outday,outyear);
+  JulianConvert(0.0,360,1999,tt);
+  JulianConvert(0.0,outday,outyear,tt2);
+  cout<<tt.date_string<<" plus 5: "<<tt2.date_string<<endl;
 
+  AddTime(360,1999,365,outday,outyear);
+  JulianConvert(0.0,360,1999,tt);
+  JulianConvert(0.0,outday,outyear,tt2);
+  cout<<tt.date_string<<" plus 365: "<<tt2.date_string<<endl;
+
+  AddTime(360,1999,731,outday,outyear);
+  JulianConvert(0.0,360,1999,tt);
+  JulianConvert(0.0,outday,outyear,tt2);
+  cout<<tt.date_string<<" plus 731: "<<tt2.date_string<<endl;
+
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Tests JulianConvert method
 //

@@ -612,6 +612,15 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 /// \param *p [in] CParser object pointing to input file
 /// \param is_pulse [in] Flag determining time-series type (piecewise-uniform [pulsed] vs. piecewise-linear)
 /// \return Pointer to created time series
+// Assumed format: 
+//  [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
+//  data1 data2
+//  data3 data4 data5
+//  ...
+//  dataN-1 dataN
+// where N=nMeasurements
+// OR 
+// :AnnualCycle J F M A M J J A S O N D 
 //
 CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
 {
@@ -629,6 +638,30 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
   if (Len<4){p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;}
   
+  // ANNUALCYCLE FORMAT ==============================================================
+  if(!strcmp(s[0],":AnnualCycle"))
+  {
+    if(Len<13){ ExitGracefully("CTimeSeries::Parse: incorrect format of AnnualCycle command",BAD_DATA); return NULL; }
+    double *aVal;
+    int nVals=int(Options.duration)+1;
+    aVal =new double [nVals];
+    time_struct tt;   
+    double aMonVal[12];
+    for(int i=0;i<12;i++){ aMonVal[i]=s_to_d(s[i+1]); }
+    for(int n=0;n<nVals;n++){
+      JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,tt);
+      aVal[n]=InterpolateMo(aMonVal,tt,Options);
+    }
+    pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse); 
+    delete[] aVal; aVal =NULL;
+    p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
+    if(string(s[0]).substr(0,4)!=":End"){
+      ExitGracefully("CTimeSeries: Parse: no :EndData command used with :AnnualCycle command ",BAD_DATA);
+    }
+    return pTimeSeries;
+  }
+
+  // REGULAR FORMAT ==============================================================
   if ((string(s[0]).length()==10) &&
       ((string(s[0]).substr(4,1)=="/") ||
        (string(s[0]).substr(4,1)=="-")))
@@ -700,7 +733,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     cout << " n | nMeasurements " << n << " "<<nMeasurements<<endl;
     ExitGracefully("CTimeSeries::Parse: Bad number of time series points",BAD_DATA);}
 
-  p->Tokenize(s,Len);//read closing term (e.g., ":EndRain")
+  p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
   if(string(s[0]).substr(0,4)!=":End"){
     ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
   }

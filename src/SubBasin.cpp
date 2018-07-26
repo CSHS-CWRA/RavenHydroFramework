@@ -1054,8 +1054,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     diffusivity*=SEC_PER_DAY;//convert to m2/d
     for (n=0;n<_nQinHist;n++)
     {
-      t=(n-1)*tstep;
-      _aRouteHydro[n  ]=ADRCumDist(t+tstep,_reach_length,cc,diffusivity)-sum;
+      _aRouteHydro[n  ]=max(ADRCumDist(n*tstep,_reach_length,cc,diffusivity)-sum,0.0);
       sum+=_aRouteHydro[n];
     }
     _aRouteHydro[_nQinHist-1]=0.0;//must truncate infinite distrib.
