@@ -108,9 +108,9 @@ void   CmvInterflow::GetRatesOfChange(const double                      *state_v
   {
     double tens_stor,K,max_stor;
 
-    max_stor  = pHRU  ->GetSoilCapacity(m);                                                                         //maximum storage of soil layer [mm]
-    tens_stor = pHRU  ->GetSoilTensionStorageCapacity(m);                                   // [mm]
-    K                                       = pHRU  ->GetSoilProps(m)->max_interflow_rate;                  //interflow rate [mm/d]
+    max_stor  = pHRU  ->GetSoilCapacity(m);                     //maximum storage of soil layer [mm]
+    tens_stor = pHRU  ->GetSoilTensionStorageCapacity(m);       // [mm]
+    K         = pHRU  ->GetSoilProps(m)->max_interflow_rate;    //interflow rate [mm/d]
 
     rates[0] = K * max(stor - tens_stor ,0.0)/(max_stor-tens_stor);
   }

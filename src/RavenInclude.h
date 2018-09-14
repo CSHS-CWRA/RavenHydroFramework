@@ -369,6 +369,7 @@ enum evap_method
   PET_SHUTTLEWORTH_WALLACE,///<
   PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
   PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
+  PET_GRANGER,             ///< Granger PET from CRHM 
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -553,7 +554,8 @@ enum potmelt_method
   POTMELT_UBCWM,       ///< UBC watershed model approach
   POTMELT_HBV,         ///< custom degree day model used in HBV-EC
   POTMELT_DATA,        ///< user-specified potential melt forcing
-  POTMELT_USACE        ///< US Army Corps of Engineers Snow Melt
+  POTMELT_USACE,       ///< US Army Corps of Engineers Snow Melt
+  POTMELT_CRHM_EBSM    ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -763,6 +765,8 @@ enum process_type
   //in Decay.h
   DECAY, TRANSFORMATION,
 
+  //in ProcessGroup.h
+  PROCESS_GROUP,
   //..
   NULL_PROCESS_TYPE
 };
@@ -847,7 +851,6 @@ struct optStruct
   bool             write_forcings;    ///< true if ForcingFunctions.csv is written
   bool             write_mass_bal;    ///< true if WatershedMassEnergyBalance.csv is written
   bool             write_energy;      ///< true if WatershedEneryStorage.csv is written
-  bool             write_params;      ///< true if Parameters.csv is written
   bool             write_reservoir;   ///< true if ReservoirStages.csv is written
   bool             write_reservoirMB; ///< true if ReservoirMassBalance.csv is written
   bool             ave_hydrograph;    ///< true if average flows over timestep are reported in hydrograph output
@@ -994,7 +997,7 @@ double      InterpolateMo(         const double      aVal[12],
 bool        IsDaytime(             const double      &julian_day,
                                    const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
-				         string      sTime);
+				                                 string      sTime);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
@@ -1003,7 +1006,7 @@ void        AddTime(               const double      &jul_day1,
                                    const int         &year1,
                                    const double      &daysadded,
                                          double      &jul_day_out,
-				         int         &year_out);
+				                                 int         &year_out);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 
@@ -1303,6 +1306,7 @@ double EstimateSnowFraction       (const rainsnow_method method,
                                    const force_struct       *F,
                                    const optStruct          &Options);
 double CalcFreshSnowDensity       (const double &air_temp);
+double GetSnowThermCond           (const double &snow_dens);
 double GetSensibleHeatSnow        (const double &air_temp,const double &surf_temp,const double &V, const double &ref_ht, const double &rough);
 double GetLatentHeatSnow          (const double &P,const double &air_temp,const double &surf_temp,const double &rel_humid,const double &V,const double &ref_ht,const double &rough);
 double GetRainHeatInput           (const double &surf_temp, const double &rain_rate,const double &rel_humid);

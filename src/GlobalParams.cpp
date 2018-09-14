@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "GlobalParams.h"
@@ -39,25 +39,6 @@ const global_struct *CGlobalParams::GetParams() {return &G;}
 void CGlobalParams::SummarizeToScreen()
 {
   //Nothing, for now
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Write global parameters to file
-/// \param &OUT [out] Output stream to which information is written
-//
-void CGlobalParams::WriteParamsToFile(ofstream &OUT)
-{
-  OUT<<endl<<"---Global Parameters---------------------"<<endl;
-  OUT<<"ADIABATIC_LAPSE,WET_ADIABATIC_LAPSE,PRECIP_LAPSE,";
-  OUT<<"RAINSNOW_DELTA,RAINSNOW_TEMP,";
-  OUT<<"SNOW_SWI,SNOW_TEMPERATURE,SNOW_ROUGHNESS,";
-  OUT<<endl;
-
-  OUT<<G.adiabatic_lapse<<","<<G.wet_adiabatic_lapse<<","<<G.precip_lapse<<",";
-  OUT<<G.rainsnow_delta<<","<<G.rainsnow_temp<<",";
-  OUT<<G.snow_SWI<<","<<G.snow_temperature<<","<<G.snow_roughness<<",";
-  /// \todo [add funct]: write out all parameters, if used
-  OUT<<endl;
 }
 
 //////////////////////////////////////////////////////////////////

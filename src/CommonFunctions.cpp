@@ -59,6 +59,8 @@ string GetProcessName(process_type p)
   case(SNOWTEMP_EVOLVE):    {name="Snow Temp. Evolution";     break;}
   case(CONVOLVE):           {name="Convolution";              break;}
 
+  case(PROCESS_GROUP):      {name="Process Group";            break;}
+
   case(ADVECTION):          {name="Advection";                break;}
   case(LAT_ADVECTION):      {name="Lateral Advection";        break;}
   case(LAT_FLUSH):          {name="Lateral Flush";            break;}
@@ -479,39 +481,6 @@ double TimeDifference(const double jul_day1,const int year1,const double jul_day
   return diff;
 }
 
-// ///////////////////////////////////////////////////////////////////
-// /// \brief adds specified number of days to julian date and returns resultant julian date
-// ///
-// /// \param jul_day1    [in]  Julian day of date 1 (measured from Jan 1 of year @ 00:00:00)
-// /// \param year1       [in]  year of date 1
-// /// \param daysadded   [in]  positive number of days (can be fractional days) added to date 1
-// /// \param jul_day_out [out] Julian day of output date (measured from Jan 1 of year @ 00:00:00)
-// /// \param year_out    [out] year of output date
-// //
-// void AddTime(const double &jul_day1,const int &year1,const double &daysadded,double &jul_day_out,int &year_out) 
-// {
-//   int    yr;
-//   double leap;
-//   double daysleft;
-//   yr=year1;
-//   daysleft=daysadded;  
-//   jul_day_out=jul_day1;
-//   do {
-//     leap=0; if(IsLeapYear(yr)) { leap=1; }
-//     if((jul_day_out+daysleft)<(365.0+leap)) { 
-//       jul_day_out+=daysleft;
-//       year_out=yr;
-//       return;
-//     }
-//     else {
-//       yr++;
-//       daysleft-=(365.0+leap-jul_day_out);
-//       jul_day_out=0.0;
-//     }
-//     ExitGracefullyIf(daysleft<0.0, "Invalid input to AddTime routine (negative julian day or added days)",RUNTIME_ERR);
-//   } while (true);
-// }
-
 ///////////////////////////////////////////////////////////////////
 /// \brief adds specified number of days to julian date and returns resultant julian date
 ///
@@ -560,7 +529,7 @@ void AddTime(const double &jul_day1,const int &year1,const double &daysadded,dou
         leap=0; if(IsLeapYear(yr)) { leap=1; }
         daysleft-=jul_day_out;
         if(daysleft<(365+leap)){ jul_day_out=(365+leap)-daysleft;year_out=yr;return; }
-        else                   { jul_day_out=0.0;daysleft-=(365+leap); }//skip whole year
+        else                   { jul_day_out=0.0;daysleft-=(365+leap); }//skip whole year 
       }
       ExitGracefullyIf(daysleft<0.0,"Invalid input to AddTime routine (negative julian day?)",RUNTIME_ERR);
     } while(true);
@@ -1209,6 +1178,7 @@ double two_param_gamma(const double &x, const double &a)
 
 /////////////////////////////////////////////////////////////////
 /// \brief returns value of Gamma distribution for argument x, with parameters alpha and beta
+/// gamma(x,a,b)=b^a/Gamma(x)*x^(a-1)*exp(-b*x)
 ///
 /// \param &x [in] Argument x whose Gamma distribution value will be determined
 /// \param &alpha [in] shape parameter

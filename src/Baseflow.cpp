@@ -169,7 +169,7 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
   pSoil=NULL;
   max_stor=0.0;
   if      (fromType==SOIL)       {
-    m                            = pModel->GetStateVarLayer(iFrom[0]); //which soil layer
+    m        = pModel->GetStateVarLayer(iFrom[0]); //which soil layer
     pSoil    = pHRU->GetSoilProps(m);
     max_stor = pHRU->GetSoilCapacity(m);  //maximum storage of soil layer [mm]
   }

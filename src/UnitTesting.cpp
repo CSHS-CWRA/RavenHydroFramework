@@ -65,6 +65,21 @@ void AddTimeTest() {
   JulianConvert(0.0,outday,outyear,tt2);
   cout<<tt.date_string<<" plus 731: "<<tt2.date_string<<endl;
 
+  AddTime(360,1999,-5,outday,outyear);
+  JulianConvert(0.0,360,1999,tt);
+  JulianConvert(0.0,outday,outyear,tt2);
+  cout<<tt.date_string<<" minus 5: "<<tt2.date_string<<endl;
+
+  AddTime(360,1999,-365,outday,outyear);
+  JulianConvert(0.0,360,1999,tt);
+  JulianConvert(0.0,outday,outyear,tt2);
+  cout<<tt.date_string<<" minus 365: "<<tt2.date_string<<endl;
+
+  AddTime(360,1999,-731,outday,outyear);
+  JulianConvert(0.0,360,1999,tt);
+  JulianConvert(0.0,outday,outyear,tt2);
+  cout<<tt.date_string<<" minus 731: "<<tt2.date_string<<endl;
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Tests JulianConvert method

@@ -10,13 +10,22 @@
 /// \ref from Jordan (1991)/CLM 3.0 eqn 6.65 \cite Jordan1991
 ///
 /// \param &sno_dens [in] Snow density [kg/m^3]
-/// \return Thermal conductivity of snow [W/m/K]
+/// \return Thermal conductivity of snow [MJ/d/m/K]
 //
 double GetSnowThermCond(const double &sno_dens)
 {
   const double A1=7.75e-15;
   const double A2=1.105e-6;
-  return TC_AIR+(A1*sno_dens+A2*pow(sno_dens,2.0))*(TC_ICE-TC_AIR);
+  return WATT_TO_MJ_PER_D*(TC_AIR+(A1*sno_dens+A2*pow(sno_dens,2.0))*(TC_ICE-TC_AIR));
+
+  //Sturm et al. 1997. The thermal conductivity of seasonal snow Journal of Glaciology, Vol. 43, No. 143
+  //Snow conductivity used in CRHM
+  /*
+  double rho=sno_dens*GPCM3_PER_KGPM3;//density in g/cm3
+  if(rho < 0.156){return WATT_TO_MJ_PER_D*(0.023 + 0.234*rho*rho);}
+  else           {return WATT_TO_MJ_PER_D*(0.138-1.01*rho+3.233*rho*rho);}
+  */
+
 }
 
 

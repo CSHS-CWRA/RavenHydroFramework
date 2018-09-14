@@ -1029,7 +1029,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   _aRouteHydro=new double [_nQinHist+1 ];
   for (n=0;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
 
-  double sum,t;
+  double sum;
   //---------------------------------------------------------------
   if (Options.routing==ROUTE_PLUG_FLOW)
   {

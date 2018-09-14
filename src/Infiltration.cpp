@@ -467,11 +467,11 @@ void   CmvInfiltration::ApplyConstraints( const double     *storage,
 /// \return Runoff from rainfall [mm/d] according to SCS curve number method
 //
 double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
-                                     const optStruct         &Options,
-                                     const time_struct &tt,
-                                     const double     &rainthru) const
+                                      const optStruct         &Options,
+                                      const time_struct &tt,
+                                      const double     &rainthru) const
 {
-  int              condition=2;                   //antecedent moisture condition
+  int    condition=2;     //antecedent moisture condition
   double S,CN,W,Weff;     //retention parameter [mm], CNII, rainfall [mm], runoff [mm]
   double TR;              //total rain over past 5 days [in]
   double Ia;              //initial abstraction, [mm]
@@ -480,23 +480,24 @@ double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
   CN=pHRU->GetSurfaceProps()->SCS_CN;
 
   //correct curve number for antecedent moisture conditions
-  if ((tt.month>4) && (tt.month<9)){//growing season?? (northern hemisphere)
+  if((tt.month>4) && (tt.month<9)) {//growing season?? (northern hemisphere)
     //if (pHRU->GetForcingFunctions()->is_growing_season){
     //if (pHRU->GetStateVarValue(pModel->GetStateVarIndex(CROP_HEAT_UNITS))>-0.5){
-    if      (TR<1.4){condition=1;}
-    else if (TR>2.1){condition=3;}
+    if     (TR<1.4) { condition=1; }
+    else if(TR>2.1) { condition=3; }
   }
-  else{
-    if      (TR<0.5){condition=1;}
-    else if (TR>1.1){condition=3;}
+  else {
+    if     (TR<0.5) { condition=1; }
+    else if(TR>1.1) { condition=3; }
   }
-  if      (condition==1){CN = 5E-05 *pow(CN,3) + 0.0008*pow(CN,2) + 0.4431*CN;}//0.999R^2 with tabulated values (JRC)
-  else if (condition==3){CN = 7E-05 *pow(CN,3) - 0.0185*pow(CN,2) + 2.1586*CN;}//0.999R^2 with tabulated values (JRC)
+  if     (condition==1) { CN = 5E-05 *pow(CN,3) + 0.0008*pow(CN,2) + 0.4431*CN; }//0.999R^2 with tabulated values (JRC)
+  else if(condition==3) { CN = 7E-05 *pow(CN,3) - 0.0185*pow(CN,2) + 2.1586*CN; }//0.999R^2 with tabulated values (JRC)
+  CN=min(CN,100.0);
 
   //calculate amount of runoff
-  S   =MM_PER_INCH*(1000.0/CN-100.0);
+  S   =MM_PER_INCH*(1000.0/CN-10.0);
   W   =rainthru*Options.timestep;//[mm]
-  if (type!=INF_SCS_NOABSTRACTION)
+  if(type!=INF_SCS_NOABSTRACTION)
   {
     Ia  =(pHRU->GetSurfaceProps()->SCS_Ia_fraction)*S;//SCS_Ia_fraction is =0.2 for standard SCS implementation
   }
@@ -507,10 +508,8 @@ double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
     //"rainthru" is what remains after abstraction, i.e., W=W-Ia, or SCS_Ia_fraction=0.0
   }
   Weff=pow(threshPositive(W-Ia),2)/(W+(S-Ia));//[mm]
-
-  //alternate conceptualization  Weff=W*(1/(1+S/W))
-  //more clearly indicates trend: Weff=0.5 W when S=W, =0 for W=0, =1 as W->infty
-
+  if (W+(S-Ia)==0.0){Weff=0.0;}
+  
   return Weff/Options.timestep;
 
 }

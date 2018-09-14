@@ -25,6 +25,7 @@
 #include "Decay.h"
 #include "LatAdvection.h"
 #include "PrairieSnow.h"
+#include "ProcessGroup.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
@@ -35,7 +36,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 int *ParseSVTypeArray          (char *string,  CModel *&pModel, int size);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
-
+void AddProcess(CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
 //////////////////////////////////////////////////////////////////
 /// \brief This method is the primary Raven input routine that parses input files, called by main
 ///
@@ -104,6 +105,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   int i;
   CHydroProcessABC *pMover;
   CmvPrecipitation *pPrecip=NULL;
+  CProcessGroup    *pProcGroup=NULL;
   bool              transprepared(false);
   bool              runname_overridden(false);
   ifstream INPUT;
@@ -183,7 +185,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_energy        =false;
   Options.write_forcings      =false;
   Options.write_mass_bal      =false;
-  Options.write_params        =false;
   Options.write_exhaustiveMB  =false;
   Options.write_channels      =false;
   Options.benchmarking        =false;
@@ -266,7 +267,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SubdailyMethod"        )){code=35; }
     else if  (!strcmp(s[0],":SWCanopyCorrect"       )){code=36; }
     else if  (!strcmp(s[0],":SWCloudCorrect"        )){code=37; }
-    else if  (!strcmp(s[0],":EmulationMode"         )){code=38; }
     else if  (!strcmp(s[0],":MultilayerSnow"        )){code=39; }//AFTER SoilModel Commmand
     else if  (!strcmp(s[0],":RetainUBCWMBugs"       )){code=40; }
     else if  (!strcmp(s[0],":EndDate"               )){code=41; }
@@ -363,6 +363,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":BlowingSnow"           )){code=235;}
     else if  (!strcmp(s[0],":LakeRelease"           )){code=236;}
     //...
+    else if  (!strcmp(s[0],":ProcessGroup"          )){code=295;}
+    else if  (!strcmp(s[0],":EndProcessGroup"       )){code=296;}
     else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
     else if  (!strcmp(s[0],":-->Cascade"            )){code=299;}
@@ -511,6 +513,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_MONTHLY_FACTOR"    )){Options.evaporation =PET_MONTHLY_FACTOR;}
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.evaporation =PET_PENMAN_SIMPLE33;}
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.evaporation =PET_PENMAN_SIMPLE39;}
+      else if (!strcmp(s[1],"PET_GRANGER"           )){Options.evaporation =PET_GRANGER;}
 
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
@@ -580,18 +583,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(13): //----------------------------------------------
     {/*Pause at the end of the simulation
-       string ":EndPause", string "YES" or "NO" */
-      bool bVal = false;
-      if(Len>1)
-      {
-        string sVal = StringToUppercase(string(s[1]));
-        bVal = ((sVal=="YES") || (sVal=="ON") || (sVal=="TRUE"));
-      }
-      else { bVal = true; }
-
-      Options.pause = bVal;
-      if (bVal && Options.noisy) { cout <<"End of Simulation Pause ON"<<endl; }
-      else if    (Options.noisy) { cout <<"End of Simulation Pause OFF"<<endl; }
+       string ":EndPause"*/
+      if (Options.noisy) { cout <<"End of Simulation Pause "<<endl; }
+      Options.pause = true;
       break;
     }
     case(14): //----------------------------------------------
@@ -883,6 +877,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"UBC"               )){Options.pot_melt=POTMELT_UBCWM;}
       else if (!strcmp(s[1],"HBV"               )){Options.pot_melt=POTMELT_HBV;}
       else if (!strcmp(s[1],"POTMELT_USACE"     )){Options.pot_melt=POTMELT_USACE;}
+      else if (!strcmp(s[1],"POTMELT_CRHM_EBSM" )){Options.pot_melt=POTMELT_CRHM_EBSM; }
       else {ExitGracefully("ParseInput:PotentialMelt: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -925,42 +920,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(38): //----------------------------------------------
-    {/*:EmulationMode" string emulated_code */
-      if (Options.noisy) {cout <<"EmulationMode "<< s[1] <<endl;}
-      if (Len<2){ImproperFormatWarning(":EmulationMode",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"UBCWM"       ))
-      {
-        Options.routing          =ROUTE_NONE;
-        Options.catchment_routing=ROUTE_DUMP;
-        Options.evaporation      =PET_MONTHLY_FACTOR;
-        Options.ow_evaporation   =PET_MONTHLY_FACTOR;
-        Options.SW_radiation     =SW_RAD_UBCWM;
-        Options.SW_canopycorr    =SW_CANOPY_CORR_UBCWM;
-        Options.LW_radiation     =LW_RAD_UBCWM;
-        Options.wind_velocity    =WINDVEL_UBCWM;
-        Options.rainsnow         =RAINSNOW_UBCWM;
-        Options.pot_melt         =POTMELT_UBCWM;
-        Options.orocorr_temp     =OROCORR_UBCWM;
-        Options.orocorr_precip   =OROCORR_UBCWM;
-        Options.cloud_cover      =CLOUDCOV_UBCWM;
-        Options.interception_factor=PRECIP_ICEPT_USER;
-        Options.month_interp     =MONTHINT_LINEAR_21;
-        Options.ave_hydrograph   =false;
-      }
-      else if (!strcmp(s[1],"HBV-EC"      ))
-      {
-        Options.routing          =ROUTE_NONE;
-        Options.catchment_routing=ROUTE_TRI_CONVOLUTION;
-        Options.evaporation      =PET_FROMMONTHLY;
-        Options.ow_evaporation   =PET_FROMMONTHLY;
-        Options.rainsnow         =RAINSNOW_HBV;
-        Options.pot_melt         =POTMELT_HBV;
-        Options.orocorr_temp     =OROCORR_HBV;
-        Options.orocorr_precip   =OROCORR_HBV;
-        Options.orocorr_PET      =OROCORR_HBV;
-        Options.interception_factor=PRECIP_ICEPT_USER;
-      }
-      else {ExitGracefully("ParseInput:EmulationMode: Unrecognized method",BAD_DATA_WARN);}
+    {
       break;
     }
     case(39):  //--------------------------------------------
@@ -1009,23 +969,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(50):  //--------------------------------------------
     {/*:DebugMode */
-      bool bVal = false;
-      if(Len>1)
-      {
-        string sVal = StringToUppercase(string(s[1]));
-        bVal = ((sVal=="YES") || (sVal=="ON") || (sVal=="TRUE"));
-      }
-      else { bVal = true; }
-
-      if (bVal) {
-        if (Options.noisy){cout <<"Debug Mode ON"<<endl;}
-        Options.debug_mode      =true;
-        Options.write_mass_bal  =true;
-        Options.write_energy    =true;
-        Options.write_forcings  =true;
-        Options.write_params    =true;
-        Options.write_channels  =true;
-      }
+      if (Options.noisy){cout <<"Debug Mode ON"<<endl;}
+      Options.debug_mode      =true;
+      Options.write_mass_bal  =true;
+      Options.write_energy    =true;
+      Options.write_forcings  =true;
+      Options.write_channels  =true;
       break;
     }
     case(51):  //--------------------------------------------
@@ -1048,8 +997,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(54):  //--------------------------------------------
     {/*:WriteParameters */
-      if (Options.noisy) {cout <<"Write Parameters File ON"<<endl;}
-      Options.write_params =true;
+      WriteWarning(":WriteParameters command no longer supported by Raven after v2.8.1",Options.noisy);
       break;
     }
     case(55):  //--------------------------------------------
@@ -1247,18 +1195,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(73):  //--------------------------------------------
     {/*:SuppressOutput */
-      bool bVal = true;
-      if(Len>1)
-      {
-        string sVal = StringToUppercase(string(s[1]));
-        if ((sVal == "NO") || (sVal == "OFF") || (sVal == "FALSE")) { bVal = false; }
-      }
-
-      if (bVal)
-      {
-        if (Options.noisy){cout <<"Suppressing output"<<endl;}
-        Options.output_format=OUTPUT_NONE;
-      }
+      if (Options.noisy){cout <<"Suppressing output"<<endl;}
+      Options.output_format=OUTPUT_NONE;
       break;
     }
     case(74):  //--------------------------------------------
@@ -1305,18 +1243,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(78):  //--------------------------------------------
     {/*:WriteNetCDFFormat */
-      bool bVal = true;
-      if(Len>1)
-      {
-        string sVal = StringToUppercase(string(s[1]));
-        if ((sVal == "NO") || (sVal == "OFF") || (sVal == "FALSE")) { bVal = false; }
-      }
-
-      if (bVal)
-      {
-        if (Options.noisy){cout <<"Write NetCDF Format ON"<<endl;}
-        Options.output_format=OUTPUT_NETCDF;
-      }
+      if (Options.noisy){cout <<"Write NetCDF Format ON"<<endl;}
+      Options.output_format=OUTPUT_NETCDF;
       break;
     }
     case(79):  //--------------------------------------------
@@ -1589,7 +1517,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvBaseflow(btype,ParseSVTypeIndex(s[2],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
 
 
       break;
@@ -1611,7 +1539,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvCanopyEvap(ce_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(203):  //----------------------------------------------
@@ -1631,7 +1559,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvCanopyDrip(ctype,ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(204):  //----------------------------------------------
@@ -1659,7 +1587,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvInfiltration(itype);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(205):  //----------------------------------------------
@@ -1680,6 +1608,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PERC_GR4J"       )){p_type=PERC_GR4J;}
       else if (!strcmp(s[1],"PERC_GR4JEXCH"   )){p_type=PERC_GR4JEXCH;}
       else if (!strcmp(s[1],"PERC_GR4JEXCH2"  )){p_type=PERC_GR4JEXCH2;}
+      else if (!strcmp(s[1],"PERC_ASPEN"      )){p_type=PERC_ASPEN;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized percolation process representation",BAD_DATA_WARN); break;
       }
@@ -1692,7 +1621,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvPercolation(p_type,
                                 ParseSVTypeIndex(s[2],pModel),
                                 ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(206):  //----------------------------------------------
@@ -1712,7 +1641,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover=new CmvSnowMelt(stype,
                              ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(207):  //----------------------------------------------
@@ -1742,7 +1671,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSoilEvap(se_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(209):  //----------------------------------------------
@@ -1762,6 +1691,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SNOBAL_CEMA_NIEGE"   )){sbtype=SNOBAL_CEMA_NIEGE;}
       else if (!strcmp(s[1],"SNOBAL_TWO_LAYER"    )){sbtype=SNOBAL_TWO_LAYER;}
       else if (!strcmp(s[1],"SNOBAL_GAWSER"       )){sbtype=SNOBAL_GAWSER;}
+      else if (!strcmp(s[1],"SNOBAL_CRHM_EBSM"    )){sbtype=SNOBAL_CRHM_EBSM;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized snow balance process representation",BAD_DATA_WARN); break;
       }
@@ -1776,7 +1706,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else{
         pMover=new CmvSnowBalance(sbtype);
       }
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(210):  //----------------------------------------------
@@ -1790,6 +1720,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SUBLIM_CENTRAL_SIERRA"  )){sub_type=SUBLIM_CENTRAL_SIERRA;}
       else if (!strcmp(s[1],"SUBLIM_PBSM"            )){sub_type=SUBLIM_PBSM;}
       else if (!strcmp(s[1],"SUBLIM_WILLIAMS"        )){sub_type=SUBLIM_WILLIAMS;}
+      else if (!strcmp(s[1],"SUBLIM_CRHM_MARKS"      )){sub_type=SUBLIM_CRHM_MARKS; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized sublimation process representation",BAD_DATA_WARN); break;
       }
@@ -1797,7 +1728,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSublimation(sub_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(211):  //----------------------------------------------
@@ -1817,7 +1748,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvOWEvaporation(ow_type,ParseSVTypeIndex(s[2],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(212):  //----------------------------------------------
@@ -1829,7 +1760,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=pPrecip=new CmvPrecipitation();
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(213):  //----------------------------------------------
@@ -1848,7 +1779,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvInterflow(inttype,ParseSVTypeIndex(s[2],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(214):  //----------------------------------------------
@@ -1865,7 +1796,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSnowRefreeze(rtype);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(215):  //----------------------------------------------
@@ -1880,7 +1811,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
                           ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(216):  //----------------------------------------------
@@ -1903,7 +1834,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvCapillaryRise(ctype,
                                   ParseSVTypeIndex(s[2],pModel),
                                   ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(217):  //----------------------------------------------
@@ -1929,7 +1860,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         lake_ind=pModel->GetLakeStorageIndex();
       }
       pMover=new CmvLakeEvaporation(lk_type,lake_ind);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(218):  //----------------------------------------------
@@ -1944,7 +1875,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvSnowSqueeze(ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(219):  //----------------------------------------------
@@ -1966,7 +1897,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvGlacierMelt(gm_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(220):  //----------------------------------------------
@@ -1987,7 +1918,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvGlacierRelease(gm_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(221):  //----------------------------------------------
@@ -2011,7 +1942,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvCanopySnowEvap(ce_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(222):  //----------------------------------------------
@@ -2027,7 +1958,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvOverflow(ParseSVTypeIndex(s[2],pModel),
                              ParseSVTypeIndex(s[3],pModel));
 
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(223):  //----------------------------------------------
@@ -2047,7 +1978,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSnowAlbedoEvolve(snalb_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(224):  //----------------------------------------------
@@ -2065,7 +1996,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvCropHeatUnitEvolve(CHU_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
 
@@ -2086,7 +2017,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvAbstraction(abst_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
 
@@ -2104,7 +2035,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvGlacierInfil(gi_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
 
@@ -2124,7 +2055,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                           ParseSVTypeIndex(s[3],pModel),
                           ParseSVTypeIndex(s[4],pModel),
                           s_to_d(s[5]));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(228):  //----------------------------------------------
@@ -2144,7 +2075,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvConvolution(c_type,ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(229):  //----------------------------------------------
@@ -2162,7 +2093,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSnowTempEvolve(ste_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(230):  //----------------------------------------------
@@ -2182,7 +2113,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvDepressionOverflow(d_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(231):  //----------------------------------------------
@@ -2197,7 +2128,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
                           ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(232):  //----------------------------------------------
@@ -2219,7 +2150,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                                 pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
                                 pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
                                 pModel->GetHRUGroup(s[5])->GetGlobalIndex());
-        pModel->AddProcess(pMover);
+        AddProcess(pModel,pMover,pProcGroup);
       }
       break;
     }
@@ -2238,7 +2169,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvSeepage(s_type,ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(234):  //----------------------------------------------
@@ -2251,7 +2182,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       pMover=new CmvRecharge(ParseSVTypeIndex(s[3],pModel));
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(235):  //----------------------------------------------
@@ -2264,7 +2195,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvPrairieBlowingSnow(PBSM_FULL);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(236):  //----------------------------------------------
@@ -2282,7 +2213,35 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvLakeRelease(l_type);
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case (295)://----------------------------------------------
+    {/*ProcessGroup
+       string ":ProcessGroup" [name]*/
+      if(Options.noisy) { cout <<"Process Group Start"<<endl; }
+      if(Len<1) { ImproperFormatWarning(":ProcessGroup",p,Options.noisy); break; }
+      else {
+        pProcGroup=new CProcessGroup(s[1]);
+      }
+      break;
+    }
+    case (296)://----------------------------------------------
+    {/*End ProcessGroup
+       string ":EndProcessGroup {wt1 wt2 wt3 ... wtN}" */
+      if (Options.noisy){cout <<"Process Group End"<<endl;}
+      
+      int N=pProcGroup->GetGroupSize();
+      if(Len==N+1) {
+        double *aWts=new double [N];
+        for (i=0;i<N;i++){aWts[i]=s_to_d(s[i+1]); }
+        pProcGroup->SetWeights(aWts,N);
+      }
+      else if(Len>1) {
+        WriteWarning("ParseMainInputFile: incorrect number of weights in :EndProcessGroup command. Contents ignored.",Options.noisy);
+      }
+      pModel->AddProcess(pProcGroup);
+      pProcGroup=NULL;
       break;
     }
     case (297)://----------------------------------------------
@@ -2364,11 +2323,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->GetTransportModel()->AddConstituent(s[1],false);
 
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
 
       // \todo [funct] should be only if advective processes are present...
       pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
 
       break;
     }
@@ -2476,7 +2435,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized decay process representation",BAD_DATA_WARN); break;
       }
       pMover=new CmvDecay(s[2],dec_type,pModel->GetTransportModel());
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case (306)://----------------------------------------------
@@ -2502,7 +2461,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized transformation process representation",BAD_DATA_WARN); break;
       }
       pMover=new CmvTransformation(s[2],s[3],t_type,pModel->GetTransportModel());
-      pModel->AddProcess(pMover);
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     default://----------------------------------------------
@@ -2591,4 +2550,12 @@ void ImproperFormatWarning(string command, CParser *p, bool noisy)
   string warn;
   warn=command+" command: improper line length at line "+to_string(p->GetLineNumber());
   WriteWarning(warn,noisy);
+}
+///////////////////////////////////////////////////////////////////
+/// \brief add process to either model or process group
+//
+void AddProcess(CModel *pModel,CHydroProcessABC* pMover,CProcessGroup *pProcGroup)
+{
+  if(pProcGroup==NULL){ pModel->AddProcess(pMover); }
+  else                { pProcGroup->AddProcess(pMover); }
 }

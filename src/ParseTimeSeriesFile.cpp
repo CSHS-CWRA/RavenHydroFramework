@@ -1420,7 +1420,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (500)://----------------------------------------------
     {/*:StationForcing
        :ForcingType PRECIP
-       :FileNameNC  /Users/mai/Desktop/Tolson_SVN/btolson/trunk/basins/york_lumped/York_daily_2d.nc
+       :FileNameNC  [filename.nc]
        :VarNameNC   pre
        :DimNamesNC  nstations ntime
        :GrdiWeights

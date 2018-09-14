@@ -447,9 +447,9 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   else if (type == SOILEVAP_ROOT_CONSTRAIN)
   {
     const  veg_var_struct *pVegVar;
-    double stor_u, stor_l;                                              //soil layer storage [mm]
+    double stor_u, stor_l;              //soil layer storage [mm]
     double tens_stor_u, tens_stor_l;    //maximum layer tension storage [mm]
-    double rootfrac_u, rootfrac_l;              //relative root fraction soil layers [unitless]
+    double rootfrac_u, rootfrac_l;      //relative root fraction soil layers [unitless]
 
     pVegVar = pHRU->GetVegVarProps();
 

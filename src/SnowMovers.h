@@ -24,7 +24,8 @@ enum sublimation_type
   SUBLIM_KUZMIN,          ///< Kuzmin 1953 : adapted from Gray 1973
   SUBLIM_CENTRAL_SIERRA,  ///< US Army Corps of Engineers : adapted from Gray 1973 \cite Engineers1956NPDPO
   SUBLIM_PBSM,            ///< Pomeroy Prairie Blowing Snow Model Sublimation : adapted from Pomeroy 1993 \cite Pomeroy1993JoH
-  SUBLIM_WILLIAMS         ///< Canadian Nathional Research Council [1959] -> developed from Sverdrup
+  SUBLIM_WILLIAMS,        ///< Canadian National Research Council [1959] -> developed from Sverdrup
+  SUBLIM_CRHM_MARKS       ///< Marks et al. (1997)
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -179,7 +180,8 @@ enum snowbal_type
   SNOBAL_UBCWM,        ///< UBCWM method
   SNOBAL_CEMA_NIEGE,    ///< Cema Niege method
   SNOBAL_TWO_LAYER,    ///< Two layer cold content (converted from GJ C# code)
-  SNOBAL_GAWSER        ///< GAWSER snow melt model (modified from Object GAWSER to replicate behavior)
+  SNOBAL_GAWSER,       ///< GAWSER snow melt model (modified from Object GAWSER to replicate behavior)
+  SNOBAL_CRHM_EBSM     ///< CRHM's energy balance snow model (from Marks, 1997)
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -190,18 +192,28 @@ class CmvSnowBalance: public CHydroProcessABC
 private:/*------------------------------------------------------*/
   snowbal_type type; ///< Method of energy-balance selected
 
-  void ColdContentBalance(const double           *storage, const CHydroUnit *pHRU,
-                          const optStruct        &Options, const time_struct     &t,
-                          double     *rates) const;
+  void ColdContentBalance(const double           *state_vars,
+                            const CHydroUnit       *pHRU,
+                            const optStruct        &Options,
+                            const time_struct      &t,
+                            double           *rates) const;
 
-  void TwoLayerBalance(const double      *storage,const CHydroUnit  *pHRU,
-                       const optStruct &Options,const time_struct &t,
-                       double    *rates
-    ) const;
+  void TwoLayerBalance(const double           *state_vars,
+                            const CHydroUnit       *pHRU,
+                            const optStruct        &Options,
+                            const time_struct      &t,
+                            double           *rates) const;
 
-  void GawserBalance    (const double            *storage,  const CHydroUnit  *pHRU,
-                         const optStruct        &Options, const time_struct &t,
-                         double    *rates) const;
+  void GawserBalance    (const double           *state_vars,
+                            const CHydroUnit       *pHRU,
+                            const optStruct        &Options,
+                            const time_struct      &t,
+                            double           *rates) const;
+  void CRHMSnowBalance  (const double           *state_vars,
+                            const CHydroUnit       *pHRU,
+                            const optStruct        &Options,
+                            const time_struct      &t,
+                                  double           *rates) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

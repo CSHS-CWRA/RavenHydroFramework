@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -62,29 +62,6 @@ void CTerrainClass::SummarizeToScreen()
   for (int c=0; c<NumTerrainClasses;c++){
     cout<<"-Terrain. class \""<<pAllTerrainClasses[c]->GetTag()<<"\" "<<endl;
     cout<<"    drainage density: "<<pAllTerrainClasses[c]->GetTerrainStruct()->drainage_density<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Write terrain class properties to file
-/// \param &OUT [out] Output stream to which information is written
-//
-void CTerrainClass::WriteParamsToFile(ofstream &OUT)
-{
-  CTerrainClass *s;
-  const terrain_struct *t;
-  OUT<<endl<<"---Terrain Class Parameters---------------------"<<endl;
-  OUT<<"CLASS,";
-  OUT<<"DRAINAGE_DENSITY,HILLSLOPE_LENGTH,LAMBDA,";
-  OUT<<endl;
-
-  for (int c=0; c<NumTerrainClasses;c++)
-  {
-    s=pAllTerrainClasses[c];
-    t=s->GetTerrainStruct();
-    OUT<<s->GetTag()<<",";
-    OUT<<t->drainage_density<<","<<t->hillslope_length<<","<<t->lambda<<",";
-    OUT<<endl;
   }
 }
 

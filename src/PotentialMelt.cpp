@@ -147,35 +147,28 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     // rain on snow
     if (Pr > 0) {
       //Heavily Forested
-      if (SF >= 0.8) {
-        Ma = (3.38 + 0.0126*Pr)*Ta + 1.3;
-      }
-      else {
-        Ma = (1.33 + 0.239*k1*v + 0.0126*Pr)*Ta + 2.3;
-      }
+      if (SF >= 0.8) {Ma = (3.38 + 0.0126*Pr)*Ta + 1.3;}
+      else           {Ma = (1.33 + 0.239*k1*v + 0.0126*Pr)*Ta + 2.3;}
     }
     // no rain
     else {
-      // Heavily Forested (> 80 %)
-      if (SF >= 0.8){
-        Ma = 3.38*(0.53*TaP + 0.47*TdP);
-      }
-      // Forested (60 - 80 %)
-      else if (SF >= 0.6){
-        Ma = k2*(0.239*v)*(0.22*TaP + 0.78*TdP) + SF*1.33*TaP;
-      }
-      // Partly Forested (10 - 60 %)
-      else if (SF >= 0.1) {
-        Ma = kP*(1 - SF)*(2.43*I)*(1 - a) + k2*(0.239*v)*(0.22*TaP + 0.78*TdP) + SF*(1.33*TaP);
-      }
-      // Open (< 10%)
-      else {
-        Ma = kP*(1 - SF)*(3.08*I)*(1 - a) + (1 - N)*(0.969*TaP - 21.34)+N*(1.33*TcP) + k2*(0.239*v)*(0.22*TaP + 0.78*TdP);
-      }
+
+      if      (SF >= 0.8){ Ma = 3.38*(0.53*TaP + 0.47*TdP);}      // Heavily Forested (> 80 %)
+      else if (SF >= 0.6){ Ma = k2*(0.239*v)*(0.22*TaP + 0.78*TdP) + SF*1.33*TaP;}// Forested (60 - 80 %)
+      else if (SF >= 0.1){ Ma = kP*(1 - SF)*(2.43*I)*(1 - a) + k2*(0.239*v)*(0.22*TaP + 0.78*TdP) + SF*(1.33*TaP);}// Partly Forested (10 - 60 %)
+      else               { Ma = kP*(1 - SF)*(3.08*I)*(1 - a) + (1 - N)*(0.969*TaP - 21.34)+N*(1.33*TcP) + k2*(0.239*v)*(0.22*TaP + 0.78*TdP);}// Open (< 10%)
     }
     return Ma;
   }
+  //----------------------------------------------------------
+  else if(Options.pot_melt == POTMELT_CRHM_EBSM)
+  {
+    double Qn_ebsm=(F->SW_radia_net+F->LW_radia);
+    double Qh_ebsm=-0.92+0.076*F->wind_vel+0.19*F->temp_daily_max;
+    double Qp_ebsm=(F->precip*(1.0-F->snow_frac))*F->temp_ave*4.2/1000.0;
 
+    return  Qn_ebsm + Qh_ebsm + Qp_ebsm; 
+  }
   return 0.0;
 }
 
@@ -200,8 +193,9 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   double pressure,vel,RI,RM;
   double Fc,orient;
 
-  const double P0CONV=0.113; //convection melt multiplier
-  const double P0COND=0.44;  //condensation melt multiplier
+  const double P0CONV= pHRU->GetSurfaceProps()->conv_melt_mult; //convection melt multiplier
+  const double P0COND= pHRU->GetSurfaceProps()->cond_melt_mult;  //condensation melt multiplier
+  const double P0RAIN= pHRU->GetSurfaceProps()->rain_melt_mult;  //rain melt multiplier
 
   double albedo   =pHRU->GetSnowAlbedo();
   double snowSWE  =pHRU->GetSnowSWE();
@@ -248,7 +242,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
     RAINMELT=0.00125            *max(F.temp_daily_ave,0.0)*F.precip_daily_ave*(1.0-F.snow_frac); //[mm/d]
   }
   else{
-    RAINMELT=SPH_WATER/LH_FUSION*max(F.temp_daily_ave,0.0)*F.precip_daily_ave*(1.0-F.snow_frac); //[mm/d]
+    RAINMELT= P0RAIN*SPH_WATER/LH_FUSION*max(F.temp_daily_ave,0.0)*F.precip_daily_ave*(1.0-F.snow_frac); //[mm/d]
   }
   potential_melt= SHORM + ONGWMO + CONVM + CONDM + RAINMELT;             //[mm/d]
 

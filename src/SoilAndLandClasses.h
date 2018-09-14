@@ -86,7 +86,6 @@ public:/*-------------------------------------------------------*/
                                               const soil_struct *pS);
 
   static void              SummarizeToScreen();
-  static void              WriteParamsToFile(ofstream &PARAMS);
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -133,7 +132,6 @@ public:/*-------------------------------------------------------*/
   //static void                    InitializeVegetationProps(double *params, bool is_template);
 
   static void                    SummarizeToScreen();
-  static void                    WriteParamsToFile(ofstream &PARAMS);
 
   //----------------------------------------------------------------
   //below routines defined in VegetationParams.cpp:
@@ -206,7 +204,6 @@ public:/*-------------------------------------------------------*/
   static double                  GetSurfaceProperty         (const surface_struct &S, string param_name);
 
   static void                    SummarizeToScreen();
-  static void                    WriteParamsToFile(ofstream &PARAMS);
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -249,7 +246,6 @@ public:/*-------------------------------------------------------*/
   static double                  GetTerrainProperty(const terrain_struct &T, string param_name);
 
   static void                    SummarizeToScreen();
-  static void                    WriteParamsToFile(ofstream &PARAMS);
 };
 
 #endif

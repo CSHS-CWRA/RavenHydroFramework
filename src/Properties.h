@@ -85,6 +85,7 @@ struct soil_struct
   double perc_n;            ///< [-]       VIC/ARNO percolation exponent - user defined between 1.00 - 20.00
   double SAC_perc_alpha;    ///< [-]       Sacremento percolation multiplier - user defined between 1.00 - 250.00
   double SAC_perc_expon;    ///< [-]       Sacremento percolation exponent - user defined between 1.00 - 5.00
+  double perc_aspen;        ///< [mm/d]    constant max percolation rate for PERC_ASPEN model (S. Grass, 2018)
 
   double max_baseflow_rate; ///< [mm/d]    max baseflow rate (e.g., VIC_ARNO)- user defined between 0.001 - 10000.00
   double baseflow_n;        ///< [-]       VIC/ARNO baseflow exponent - user defined between 1.0 - 10.0
@@ -94,9 +95,9 @@ struct soil_struct
   double max_cap_rise_rate; ///< [mm/d]    HBV max capillary rise rate
 
   double max_interflow_rate;///< [mm/d]    PRMS max_interflow rate
-  double interflow_coeff;         ///< [1/d]     Linear Interflow storage coefficient
+  double interflow_coeff;   ///< [1/d]     Linear Interflow storage coefficient
 
-  double HBV_beta;          ///< [?]               soil infiltration param from HBV (move to Surface struct?)
+  double HBV_beta;          ///< [?]       soil infiltration param from HBV (move to Surface struct?)
 
   double UBC_evap_soil_def; ///< [mm]      soil deficit at which AET=0.1*PET (UBCWM P0EGEN)
   double UBC_infil_soil_def;///< [mm]      soil deficit at which effective impermeable fraction depletes to 0.1 (UBCWM P0AGEN)
@@ -235,6 +236,9 @@ struct surface_struct
   double HBV_melt_asp_corr; ///< [-]       HBV snowmelt aspect correction (AM in HBV-EC)
   double snow_patch_limit;  ///< [mm]      SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
   double fetch;             ///< [m]       distance of unobstructed wind flow (g.t. 300m)
+  double conv_melt_mult;    ///< [-]       convection melt multiplier
+  double cond_melt_mult;    ///< [-]       condensation melt multiplier
+  double rain_melt_mult;    ///< [-]       rain melt multiplier
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
@@ -335,8 +339,8 @@ struct global_struct
                                         //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
   double           snow_temperature;    ///< [°C]   default snow temperature if not explicitly modelled
   double           snow_roughness;      ///< [mm]  roughness height of snow
-  double           min_snow_albedo;     ///< [0..1] albedo of fresh snow  (~0.3)
-  double           max_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.95)
+  double           min_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.3)
+  double           max_snow_albedo;     ///< [0..1] albedo of fresh snow  (~0.95)
 
   double           avg_annual_snow;     ///< [mm] avg annual snow as SWE
   double           avg_annual_runoff;   ///< [mm] avg annual runoff from basin

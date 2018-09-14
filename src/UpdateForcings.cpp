@@ -98,31 +98,32 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         }
       }
     }
-    Fg[g].temp_month_max  =_pGauges[g]->GetMonthlyMaxTemp(mo);
-    Fg[g].temp_month_min  =_pGauges[g]->GetMonthlyMinTemp(mo);
-    Fg[g].temp_month_ave  =_pGauges[g]->GetMonthlyAveTemp(mo);
-    Fg[g].PET_month_ave   =_pGauges[g]->GetMonthlyAvePET(mo);
+    Fg[g].temp_month_max  =_pGauges[g]->GetMonthlyMaxTemp  (mo);
+    Fg[g].temp_month_min  =_pGauges[g]->GetMonthlyMinTemp  (mo);
+    Fg[g].temp_month_ave  =_pGauges[g]->GetMonthlyAveTemp  (mo);
+    Fg[g].PET_month_ave   =_pGauges[g]->GetMonthlyAvePET   (mo);
 
     //if (Options.uses_full_data)
     {
       // \todo [optimize] should add Options.uses_full_data to be calculated if LW,SW,etc. methods=USE_DATA or otherwise need data streams
-      Fg[g].LW_radia        =_pGauges[g]->GetForcingValue(F_LW_RADIA,nn);
-      Fg[g].SW_radia        =_pGauges[g]->GetForcingValue(F_SW_RADIA,nn);
-      Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue(F_SW_RADIA_NET,nn);
-      Fg[g].ET_radia        =_pGauges[g]->GetForcingValue(F_ET_RADIA,nn);
+      Fg[g].LW_radia        =_pGauges[g]->GetForcingValue    (F_LW_RADIA,nn);
+      Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
+      Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
+      Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
       Fg[g].SW_radia_unc    =Fg[g].SW_radia;
 
-      Fg[g].PET             =_pGauges[g]->GetForcingValue(F_PET,nn);
-      Fg[g].potential_melt  =_pGauges[g]->GetForcingValue(F_POTENTIAL_MELT,nn);
+      Fg[g].PET             =_pGauges[g]->GetForcingValue    (F_PET,nn);
+      Fg[g].potential_melt  =_pGauges[g]->GetForcingValue    (F_POTENTIAL_MELT,nn);
 
-      Fg[g].air_pres        =_pGauges[g]->GetForcingValue(F_AIR_PRES,nn);
-      Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue(F_REL_HUMIDITY,nn);
-      Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue(F_CLOUD_COVER,nn);
-      Fg[g].wind_vel        =_pGauges[g]->GetForcingValue(F_WIND_VEL,nn);
+      Fg[g].air_pres        =_pGauges[g]->GetForcingValue    (F_AIR_PRES,nn);
+      Fg[g].air_dens        =_pGauges[g]->GetForcingValue    (F_AIR_DENS,nn);
+      Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
+      Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
+      Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
     }
 
     if(!(recharge_gridded)){
-      Fg[g].recharge        =_pGauges[g]->GetForcingValue(F_RECHARGE,nn);
+      Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
     }
   }
   if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//RFS Emulation cheat
@@ -166,7 +167,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           }
         }
         wt=_aGaugeWtTemp[k][g];
-        if(wt != 0.0){
+        if(wt != 0.0) {
           if(!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded))
           {
             F.temp_ave         += wt * Fg[g].temp_ave;
@@ -182,6 +183,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         wt=_aGaugeWeights[k][g];
         if(wt != 0.0){
           F.rel_humidity   += wt * Fg[g].rel_humidity;
+          F.air_pres       += wt * Fg[g].air_pres;
+          F.air_dens       += wt * Fg[g].air_dens;
           F.wind_vel       += wt * Fg[g].wind_vel;
           F.cloud_cover    += wt * Fg[g].cloud_cover;
           F.ET_radia       += wt * Fg[g].ET_radia;
@@ -244,19 +247,20 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
         // populate derived data from the ones just read (e.g., precip -> (rain,snow), or (rain,snow)->(precip)
         if(new_chunk1 || new_chunk2 || new_chunk3) { 
-          GenerateGriddedPrecipVars(Options); //only call if new data chunk found
-        }
+          GenerateGriddedPrecipVars(Options);//only call if new data chunk found
+        } 
 
         pGrid_pre  = GetForcingGrid((F_PRECIP)); 
         pGrid_rain = GetForcingGrid((F_RAINFALL)); 
-        pGrid_snow = GetForcingGrid((F_SNOWFALL));
+        pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
+
         
         F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      = NETCDF_BLANK_VALUE;
-
       }
+
       // ---------------------
       // (2a) read gridded temperature (average or min/max) and populate additional time series
       // ---------------------
@@ -287,10 +291,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.temp_daily_min   = pGrid_daily_tmin->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_max   = pGrid_daily_tmax->GetWeightedValue(k,tt.model_time,Options.timestep);
         
-        F.temp_month_ave   = NOT_SPECIFIED;
-        F.temp_month_min   = NOT_SPECIFIED;
-        F.temp_month_max   = NOT_SPECIFIED;
+				F.temp_month_ave   = NOT_SPECIFIED;
+				F.temp_month_min   = NOT_SPECIFIED;
+				F.temp_month_max   = NOT_SPECIFIED;
       }
+
       // ---------------------
       // (3) read gridded recharge
       // ---------------------
@@ -303,12 +308,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.recharge   = pGrid_recharge->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
 
-      F.temp_ave_unc = F.temp_daily_ave;
-      F.temp_min_unc = F.temp_daily_min;
-      F.temp_max_unc = F.temp_daily_max;
       //-------------------------------------------------------------------
       //  Temperature Corrections
       //-------------------------------------------------------------------
+      F.temp_ave_unc = F.temp_daily_ave;
+      F.temp_min_unc = F.temp_daily_min;
+      F.temp_max_unc = F.temp_daily_max;
+      
       CorrectTemp(Options,F,elev,ref_elev_temp,tt);
 
       //-------------------------------------------------------------------
@@ -346,8 +352,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //--Gauge Corrections------------------------------------------------
       if(!(pre_gridded || snow_gridded || rain_gridded)) //Gauge Data
       {        
-        double gauge_corr; double rc,sc;
-        F.precip=F.precip_5day=F.precip_daily_ave=0.0;
+				double gauge_corr; double rc,sc;
+				F.precip=F.precip_5day=F.precip_daily_ave=0.0;
         int p=_pHydroUnits[k]->GetSubBasinIndex();
         rc=_pSubBasins[p]->GetRainCorrection();
         sc=_pSubBasins[p]->GetSnowCorrection();
@@ -363,11 +369,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
       else //Gridded Data
       {
-                                double grid_corr;
+				double grid_corr;
         double rain_corr=pGrid_pre->GetRainfallCorr();
         double snow_corr=pGrid_pre->GetSnowfallCorr();
         grid_corr= F.snow_frac*snow_corr + (1.0-F.snow_frac)*rain_corr;
-                                
+				
         F.precip          *=grid_corr;
         F.precip_daily_ave*=grid_corr;
         F.precip_5day      =NETCDF_BLANK_VALUE;
@@ -808,7 +814,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
   if((Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE) ||
      (Options.evaporation==PET_PENMAN_MONTEITH)  || (Options.evaporation==PET_PENMAN_COMBINATION) ||
-     (Options.evaporation==PET_JENSEN_HAISE))
+     (Options.evaporation==PET_JENSEN_HAISE) || (Options.evaporation==PET_GRANGER))
   {
     if(Options.SW_radia_net == NETSWRAD_CALC) {
       aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
@@ -853,7 +859,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if ((Options.ow_evaporation==PET_CONSTANT) || (Options.ow_evaporation==PET_HAMON) || (Options.ow_evaporation==PET_HARGREAVES)
            || (Options.ow_evaporation==PET_HARGREAVES_1985) || (Options.ow_evaporation==PET_TURC_1961)
-           || (Options.ow_evaporation==PET_MAKKINK_1957) || (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR))
+           || (Options.ow_evaporation==PET_MAKKINK_1957) || (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR) || (Options.ow_evaporation==PET_GRANGER))
   {
     // no parameter required/listed
   }
@@ -1055,6 +1061,10 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   else if (Options.pot_melt==POTMELT_UBCWM)
   {
     aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
+    aP[nP]="RAIN_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="CONV_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="COND_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+
     aP[nP]="MIN_SNOW_ALBEDO";     aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
@@ -1069,6 +1079,10 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     aP[nP]="RELATIVE_HT";      aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="ROUGHNESS";        aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="SNOW_TEMPERATURE"; aPC[nP]=CLASS_GLOBAL; nP++;
+  }
+  else if(Options.pot_melt==POTMELT_CRHM_EBSM)
+  {
+    //aP[nP]="WIND_EXPOSURE";       aPC[nP]=CLASS_LANDUSE; nP++;
   }
   // Sub Daily Method
   //----------------------------------------------------------------------

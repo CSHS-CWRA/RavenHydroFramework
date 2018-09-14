@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Class CGlobalParams
   ----------------------------------------------------------------*/
@@ -38,7 +38,6 @@ public:/*-------------------------------------------------------*/
   static double GetGlobalProperty        (const global_struct &G, string  param_name);
 
   static void SummarizeToScreen();
-  static void WriteParamsToFile(ofstream &PARAMS);
 };
 
 #endif

@@ -28,7 +28,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
 
     iFrom[0]=iSnow;  iTo[0]=iPond;
   }
-  else if (type==SNOBAL_COLD_CONTENT)
+  else if (type==SNOBAL_COLD_CONTENT) 
   {
     int iSnowLiq,iCC,iAtmosEn,iSW;
     iSnowLiq=pModel->GetStateVarIndex(SNOW_LIQ);
@@ -138,6 +138,22 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     iFrom[9]=iSWC;        iTo[9]=iPonded;    //rates[9]: SNOW             -> PONDED         (MELT_2 in GAWSER)
 
   }
+  else if(type==SNOBAL_CRHM_EBSM)
+  {
+    int iSnowLiq,iPonded,iColdCont;
+    iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
+    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
+    iColdCont =pModel->GetStateVarIndex(COLD_CONTENT);
+
+    CHydroProcessABC::DynamicSpecifyConnections(5); //nConnectons=5
+
+    iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
+    iFrom[1]=iSnow;       iTo[1]=iPonded;        //rates[1]: SNOW->PONDED
+    iFrom[2]=iSnowLiq;    iTo[2]=iPonded;        //rates[2]: SNOW_LIQ->PONDED
+    iFrom[3]=iSnowLiq;    iTo[3]=iSnow;          //rates[3]: SNOW_LIQ->SNOW [refreeze]
+    iFrom[4]=iColdCont;   iTo[4]=iColdCont;      //rates[4]: CC modification
+  }
+
   else{
     ExitGracefully("CmvSnowBalance::Constructor: undefined snow balance type",BAD_DATA);
   }
@@ -229,6 +245,11 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
     aP[1]="REFREEZE_FACTOR";  aPC[1]=CLASS_LANDUSE;
     aP[2]="MELT_FACTOR";      aPC[2]=CLASS_LANDUSE;
   }
+  else if(type==SNOBAL_CRHM_EBSM)
+  {
+    nP=1;
+    aP[0]="SNOW_SWI";         aPC[0]=CLASS_GLOBAL;
+  }
   else
   {
     ExitGracefully("CmvSnowBalance::GetParticipatingParamList: undefined snow balance algorithm",BAD_DATA);
@@ -310,6 +331,14 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
     aSV[2]=SNOW_LIQ;      aLev[2]=DOESNT_EXIST;
     aSV[3]=SNOW_DEPTH;    aLev[3]=DOESNT_EXIST;
     aSV[4]=PONDED_WATER;  aLev[4]=DOESNT_EXIST;
+  }
+  else if(bal_type==SNOBAL_CRHM_EBSM)
+  {
+    nSV=4;
+    aSV[0]=SNOW;          aLev[0]=DOESNT_EXIST;
+    aSV[1]=SNOW_LIQ;      aLev[1]=DOESNT_EXIST;
+    aSV[2]=PONDED_WATER;  aLev[2]=DOESNT_EXIST;
+    aSV[3]=COLD_CONTENT;  aLev[3]=DOESNT_EXIST;
   }
   else{
     nSV=0;
@@ -401,6 +430,11 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     rates[0] =max(-SL/tstep,refreeze);
     rates[0]+=max(melt,(liq_cap-SL)/tstep);     //melt
     rates[1] =max(melt-(liq_cap-SL)/tstep,0.0); //overflow to soil
+  }
+  //------------------------------------------------------------
+  else if(type==SNOBAL_CRHM_EBSM)
+  {
+    CRHMSnowBalance(state_var,pHRU,Options,tt,rates);
   }
   //------------------------------------------------------------
   else if (type == SNOBAL_UBCWM)
@@ -1068,6 +1102,96 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
 
 }
 //////////////////////////////////////////////////////////////////
+/// \brief CRHM EBSM Snowmelt model
+/// From ClassEBSM in CRHM
+/// The model was first presented by Marks (1988), described conceptually by
+/// Marks,et. al(1992) and Marks and Dozier(1992),and then described in great detail by Marks,et. al
+/// (1997).
+///
+/// \param *state_vars [in] Array of current state variables in HRU
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Current model time
+/// \param *rates [out] Rate of change in state variables due to snow balance calculations
+//
+void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
+                                     const CHydroUnit *pHRU,
+                                     const optStruct &Options,
+                                     const time_struct &tt,
+                                     double *rates) const
+{
+
+  int iSnowLiq=pModel->GetStateVarIndex(SNOW_LIQ);
+  int iSWE    =pModel->GetStateVarIndex(SNOW);
+  int iSnowEn =pModel->GetStateVarIndex(COLD_CONTENT); //assumes [MJ/m2]
+
+  double snow_liq   =state_vars[iSnowLiq];
+  double SWE        =state_vars[iSWE];
+  double snow_energy=-state_vars[iSnowEn];
+  double snow_energy_old=snow_energy;
+
+  if(SWE <= 0.0) { return; }
+
+  double pot_melt =pHRU->GetForcingFunctions()->potential_melt;
+  double T_min    =pHRU->GetForcingFunctions()->temp_daily_min;
+
+  double snoliq_max = CalculateSnowLiquidCapacity(SWE,SWE/MAX_SNOW_DENS,Options);
+  double t_minus = min(T_min,0.0);
+  double Umin = SWE*(2.115+0.00779*t_minus)*t_minus/1000.0; //[MJ/m2] minimum snow energy (negative), documentation??
+  double refreeze=0.0;;
+  double snowmelt0(0.0),snowmelt1(0.0),snowmelt2(0.0);
+
+  snow_energy += pot_melt;
+  snow_energy = max(Umin,snow_energy);
+  if(snow_energy > 0.0)
+  {
+    double B=0.95; //thermal quality
+    double melt = snow_energy/LH_FUSION/DENSITY_WATER*MM_PER_METER/B;   // [mm] = [MJ/m2]/[MJ/kg]/[kg/m3]*[mm/m] 
+    if(melt > (snoliq_max-snow_liq)) //ripening
+    {
+      if(SWE > melt) { //only snow melts, fills pores and overflows           
+        snowmelt0=snoliq_max-snow_liq;        //snow->snowliq
+        snowmelt1=melt -(snoliq_max-snow_liq);//snow->surface w
+        snowmelt2=0.0;                        //snow_liq->surface w
+      }
+      else { //everything melts and overflows
+        snowmelt0=0;
+        snowmelt1=SWE; //snow->sw
+        snowmelt2=snow_liq;//snow_liq->sw
+      }
+    }
+    else { // melt retained in snowpack
+      snowmelt0=melt;
+      snowmelt1=0;
+      snowmelt2=0;
+    }
+    snow_energy = 0.0; //all energy used
+  }
+  else { // no melt - refreeze - reduce snow_energy accordingly
+    snowmelt0=snowmelt1=snowmelt2=0;
+    if(snow_energy < 0.0) { 
+      refreeze = -snow_energy/LH_FUSION/DENSITY_WATER*MM_PER_METER;
+      if(snow_liq > refreeze) { //partial refreeze
+        snow_energy   = 0.0;
+        refreeze=refreeze;
+      }
+      else { //total refreeze /cooling
+        snow_energy  +=snow_liq*LH_FUSION/DENSITY_WATER*MM_PER_METER;
+        refreeze=snow_liq;
+      }
+    }
+  } // no melt
+
+  rates[0]=snowmelt0; //SNOW->LIQ_SNOW [mm]
+  rates[1]=snowmelt1; //SNOW->PONDED_WATER [mm]
+  rates[2]=snowmelt2; //SNOW_LIQ->PONDED_WATER [mm]
+  rates[3]=refreeze; //LIQ_SNOW->SNOW [mm]
+  rates[4]=-(snow_energy_old-snow_energy)/Options.timestep; // COLD_CONTENT->COLD_CONTENT [MJ/m2]
+
+  return;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \note All constraints contained in routine itself- this routine is blank
 ///
@@ -1102,4 +1226,3 @@ void  CmvSnowBalance::ApplyConstraints( const double             *state_vars,
 
   return;//most constraints contained in routine itself
 }
-

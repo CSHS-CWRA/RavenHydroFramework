@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Percolation
   ----------------------------------------------------------------*/
@@ -115,6 +115,11 @@ void CmvPercolation::GetParticipatingParamList(string  *aP, class_type *aPC , in
   {
     nP=1;
     aP[0]="GR4J_X2";     aPC[0]=CLASS_SOIL;
+  }
+  else if (type==PERC_ASPEN)
+  {
+    nP=1;
+    aP[0]="PERC_ASPEN"; aPC[0]=CLASS_SOIL;
   }
   else
   {
@@ -306,6 +311,12 @@ void   CmvPercolation::GetRatesOfChange( const double                   *state_v
     max_stor= pHRU->GetSoilCapacity(1);
     rates[0]=-x2*pow(max(min(stor/x3,1.0),0.0),3.5); //note - x2 can be negative (exports) or positive (imports/baseflow)
   }
+  else if (type==PERC_ASPEN)
+  {
+    //constant percolation but with separate rate to be kept seperate from regular percolation process
+    rates[0]=pHRU->GetSoilProps(m)->perc_aspen;
+  }
+  //-----------------------------------------------------------------
   //-----------------------------------------------------------------
   else
   {

@@ -679,7 +679,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
           }
         }
       }
-      if(!strcmp(s[0],":StationIdx"))      { StationIdx = s_to_d(s[1]); }
+      if(!strcmp(s[0],":StationIdx"))      { StationIdx = s_to_i(s[1]); }
       if(!strcmp(s[0],":TimeShift"))       { TimeShift  = s_to_d(s[1]); }
       if(!strcmp(s[0],":LinearTransform")) {
         if (Len != 3) {
@@ -706,14 +706,13 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF: If there are multiple stations in NetCDF file, the StationIdx argument must be given (numbering starts with 1) to identify station that should be read in",BAD_DATA); return NULL;
     }
 
-    // cout <<"Filename   = "<<FileNameNC<<endl;
-    // cout <<"VarNameNC  = "<<VarNameNC<<endl;
-    // cout <<"DimNamesNC = "<<DimNamesNC_stations<<endl;
-    // cout <<"DimNamesNC = "<<DimNamesNC_time<<endl;
-    // cout <<"StationIdx = "<<StationIdx<<endl;
-    // cout <<"TimeShift  = "<<TimeShift<<endl;
+    /* cout <<"Filename   = "<<FileNameNC<<endl;
+     cout <<"VarNameNC  = "<<VarNameNC<<endl;
+     cout <<"DimNamesNC = "<<DimNamesNC_stations<<endl;
+     cout <<"DimNamesNC = "<<DimNamesNC_time<<endl;
+     cout <<"StationIdx = "<<StationIdx<<endl;
+     cout <<"TimeShift  = "<<TimeShift<<endl; */
 
-    double *aVal;
     // if DimNamesNC_stations == "None" then NetCDF variable is assumed to be 1D (only time)
     // if DimNamesNC_stations != "None" then StationIdx must be >= 1
     pTimeSeries = ReadTimeSeriesFromNetCDF(
@@ -820,9 +819,8 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       {
         ExitGracefully( ("Non-numeric value found in time series (line " +to_string(p->GetLineNumber())+" of file "+p->GetFilename()+")").c_str(),BAD_DATA_WARN);
       }
-                        aVal [n]=fast_s_to_d(s[i]);
-      //aVal [n]=s_to_d(s[i]);
-                        n++;
+      aVal [n]=fast_s_to_d(s[i]);
+      n++;
     }
   }
 

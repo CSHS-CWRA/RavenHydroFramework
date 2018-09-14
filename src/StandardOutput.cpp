@@ -383,20 +383,29 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         for (j=0;j<_nProcesses;j++){
           for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
             if (_pProcesses[j]->GetFromIndices()[q]==i){
-              if (!first){MB<<",";}
-              first=false;
+              if (!first){MB<<",";}first=false;
             }
           }
         }
         for (j=0;j<_nProcesses;j++){
           for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
             if (_pProcesses[j]->GetToIndices()[q]==i){
-              if (!first){MB<<",";}
-              first=false;
+              if (!first){MB<<",";}first=false;
             }
           }
         }
-        MB<<",,,";
+        for(j=0;j<_nProcesses;j++){
+          for(int q=0;q<_pProcesses[j]->GetNumLatConnections();q++){
+            CLateralExchangeProcessABC *pProc=static_cast<CLateralExchangeProcessABC *>(_pProcesses[j]);
+            if(pProc->GetLateralToIndices()[q]==i){
+              if(!first){ MB<<","; }first=false;break;
+            }
+            if (pProc->GetLateralFromIndices()[q]==i){
+              if (!first){MB<<",";}first=false;break;
+            }
+          }
+        }
+        MB<<",,,";//cum, stor, error
       }
     }
     MB<<endl;
@@ -412,6 +421,13 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         for (j=0;j<_nProcesses;j++){
           for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
             if (_pProcesses[j]->GetToIndices()[q]==i){MB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());}
+          }
+        }
+        for(j=0;j<_nProcesses;j++){
+          for(int q=0;q<_pProcesses[j]->GetNumLatConnections();q++){
+            CLateralExchangeProcessABC *pProc=static_cast<CLateralExchangeProcessABC *>(_pProcesses[j]);
+            if (pProc->GetLateralToIndices()[q]==i){MB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());break;}
+            if (pProc->GetLateralFromIndices()[q]==i){MB<<","<<GetProcessName(_pProcesses[j]->GetProcessType());break;}
           }
         }
         MB<<",cumulative,storage,error";
@@ -533,8 +549,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   double  t;
 
   string tmpFilename;
-
-
+  
   if ((tt.model_time==0) && (Options.suppressICs)){return;}
 
   //converts the 'write every x timesteps' into a 'write at time y' value
@@ -804,7 +819,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
             string name;
             if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
-            else                              { name=_pSubBasins[p]->GetName(); }
+            else                             { name=_pSubBasins[p]->GetName(); }
 
             in     =_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep);//m3
             out    =_pSubBasins[p]->GetIntegratedOutflow(Options.timestep);//m3
@@ -908,6 +923,27 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                 js++;
               }
             }
+            js=0;
+            bool found;
+            for(j=0;j<_nProcesses;j++){
+              sum=0;
+              found=false;
+              for(int q=0;q<_pProcesses[j]->GetNumLatConnections();q++){
+                CLateralExchangeProcessABC *pProc=static_cast<CLateralExchangeProcessABC *>(_pProcesses[j]);
+                if (pProc->GetLateralToIndices()[q]==i){
+                  sum+=_aCumulativeLatBal[js];found=true;
+                }
+                if (pProc->GetLateralFromIndices()[q]==i){
+                  sum-=_aCumulativeLatBal[js];found=true;
+                }
+                js++;
+              }
+              if((_pProcesses[j]->GetNumLatConnections()>0) && (found==true)){
+                MB<<","<<sum/_WatershedArea; 
+                cumsum+=sum/_WatershedArea;
+              }
+            }
+
             //Cumulative, storage, error
             double Initial_i=0.0; //< \todo [bug] need to evaluate and store initial storage actross watershed!!!
             MB<<","<<cumsum<<","<<GetAvgStateVar(i)<<","<<cumsum-GetAvgStateVar(i)-Initial_i;
@@ -927,15 +963,29 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         force_struct *pFave;
         force_struct faveStruct = GetAverageForcings();
         pFave = &faveStruct;
-        _FORCINGS<<usetime<<","<<usedate<<","<<usehour<<","<<pFave->day_angle<<",";
-        _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<","<<pFave->precip*(pFave->snow_frac) <<",";
-        _FORCINGS<<pFave->temp_ave<<","<<pFave->temp_daily_min<<","<<pFave->temp_daily_max<<","<<pFave->temp_daily_ave<<","<<pFave->temp_month_min<<","<<pFave->temp_month_max<<",";
-        _FORCINGS<<pFave->air_dens<<","<<pFave->air_pres<<","<<pFave->rel_humidity<<",";
+        _FORCINGS<<usetime<<","<<usedate<<","<<usehour<<",";
+        _FORCINGS<<pFave->day_angle<<",";
+        _FORCINGS<<pFave->precip*(1-pFave->snow_frac) <<",";
+        _FORCINGS<<pFave->precip*(pFave->snow_frac) <<",";
+        _FORCINGS<<pFave->temp_ave<<",";
+        _FORCINGS<<pFave->temp_daily_min<<",";
+        _FORCINGS<<pFave->temp_daily_max<<",";
+        _FORCINGS<<pFave->temp_daily_ave<<",";
+        _FORCINGS<<pFave->temp_month_min<<",";
+        _FORCINGS<<pFave->temp_month_max<<",";
+        _FORCINGS<<pFave->air_dens<<",";
+        _FORCINGS<<pFave->air_pres<<",";
+        _FORCINGS<<pFave->rel_humidity<<",";
         _FORCINGS<<pFave->cloud_cover<<",";
-        _FORCINGS<<pFave->ET_radia<<","<<pFave->SW_radia<<","<<pFave->SW_radia_net<<","<<pFave->LW_radia<<",";
+        _FORCINGS<<pFave->ET_radia<<",";
+        _FORCINGS<<pFave->SW_radia<<",";
+        _FORCINGS<<pFave->SW_radia_net<<",";
+        _FORCINGS<<pFave->LW_radia<<",";
         _FORCINGS<<pFave->wind_vel<<",";
-        _FORCINGS<<pFave->PET<<","<<pFave->OW_PET<<",";
-        _FORCINGS<<pFave->subdaily_corr<<","<<pFave->potential_melt;
+        _FORCINGS<<pFave->PET<<",";
+        _FORCINGS<<pFave->OW_PET<<",";
+        _FORCINGS<<pFave->subdaily_corr<<",";
+        _FORCINGS<<pFave->potential_melt;
         _FORCINGS<<endl;
       }
     }
@@ -1029,23 +1079,6 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
 {
   int i,k;
   string tmpFilename;
-
-  // parameters.csv - parameters file
-  if ((Options.write_params) && (final==true))
-  {
-    ofstream PARAMS;
-    tmpFilename=FilenamePrepare("parameters.csv",Options);
-    PARAMS.open(tmpFilename.c_str());
-    if (PARAMS.fail()){
-      ExitGracefully(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-    CGlobalParams   ::WriteParamsToFile(PARAMS);
-    CSoilClass      ::WriteParamsToFile(PARAMS);
-    CVegetationClass::WriteParamsToFile(PARAMS);
-    CLandUseClass   ::WriteParamsToFile(PARAMS);
-    CTerrainClass   ::WriteParamsToFile(PARAMS);
-    PARAMS.close();
-  }
 
   // WRITE {RunName}_solution.rvc - final state variables file
   ofstream OUT;
@@ -1517,7 +1550,16 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
     }
   }
   currentWater+=channel_stor+rivulet_stor;
-
+  if(tt.model_time==0){
+    // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+    // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
+    for(int p=0;p<_nSubBasins;p++){
+      if(_pSubBasins[p]->GetReservoir()!=NULL){
+        currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+        currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+      }
+    }
+  }
   _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
   _STORAGE<<endl;
 

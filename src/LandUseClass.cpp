@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -65,38 +65,6 @@ void CLandUseClass::SummarizeToScreen()
     cout<<"    impermeable: "<<pAllLUClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
     cout<<"       forested: "<<pAllLUClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
     cout<<"max melt factor: "<<pAllLUClasses[c]->GetSurfaceStruct()->melt_factor <<" mm/d/K"<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Write LU class properties to file
-/// \param &OUT [out] Output stream to which information is written
-//
-void CLandUseClass::WriteParamsToFile(ofstream &OUT)
-{
-  CLandUseClass *s;
-  const surface_struct *t;
-  OUT<<endl<<"---Land Use Parameters---------------------"<<endl;
-  OUT<<"CLASS,";
-  OUT<<"IMPERMEABLE_FRAC,FOREST_COVERAGE,ROUGHNESS,FOREST_SPARSENESS,";
-  OUT<<"MELT_FACTOR [mm/d/K],MIN_MELT_FACTOR [mm/d/K],REFREEZE_FACTOR [mm/d/K],HBV_MELT_FOR_CORR,HBV_MELT_ASP_CORR,";
-  OUT<<"HBV_MELT_GLACIER_CORR[-],HBV_GLACIER_KMIN[-],GLACIER_STORAGE_COEFF[-],HBV_GLACIER_AG[1/mm SWE],CC_DECAY_COEFF[1/d],";
-  OUT<<"SCS_CN,PARTITION_COEFF,SCS_IA_FRACTION,MAX_SAT_AREA_FRAC[-],B_EXP[-],";
-  OUT<<"DEP_MAX,ABST_PERCENT,OW_PET_CORR,LAKE_PET_CORR,FOREST_PET_CORR,";
-
-  OUT<<endl;
-  for (int c=0; c<NumLUClasses;c++)
-  {
-    s=pAllLUClasses[c];
-    t=s->GetSurfaceStruct();
-    OUT<<s->GetLanduseName()<<",";
-    OUT<<t->impermeable_frac<<","<<t->forest_coverage<<","<<t->roughness<<","<<t->forest_sparseness<<",";
-    OUT<<t->melt_factor<<","<<t->min_melt_factor<<","<<t->refreeze_factor<<","<<t->HBV_melt_for_corr<<","<<t->HBV_melt_asp_corr<<",";
-    OUT<<t->HBV_melt_glacier_corr<<","<<t->HBV_glacier_Kmin<<","<<t->glac_storage_coeff<<","<<t->HBV_glacier_Ag<<","<<t->CC_decay_coeff<<",";
-    OUT<<t->SCS_CN<<","<<t->partition_coeff<<","<<t->SCS_Ia_fraction<<","<<t->max_sat_area_frac<<","<<t->b_exp<<",";
-    OUT<<t->dep_max<<","<<t->abst_percent<<","<<t->ow_PET_corr<<","<<t->lake_PET_corr<<","<<t->forest_PET_corr<<",";
-
-    OUT<<endl;
   }
 }
 
@@ -272,6 +240,25 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
     //no warning - default is no patching
   }
 
+  autocalc = SetCalculableValue(S.conv_melt_mult, Stmp.conv_melt_mult, Sdefault.conv_melt_mult);
+  if(autocalc)
+  {
+	  S.conv_melt_mult = 0.113; //UBCWM default
+  }
+
+  autocalc = SetCalculableValue(S.cond_melt_mult, Stmp.cond_melt_mult, Sdefault.cond_melt_mult);
+  if (autocalc)
+  {
+	  S.cond_melt_mult = 0.44; //UBCWM default
+  }
+
+  autocalc = SetCalculableValue(S.rain_melt_mult, Stmp.rain_melt_mult, Sdefault.rain_melt_mult);
+  if (autocalc)
+  {
+	  S.rain_melt_mult = 1.0; //UBCWM default
+  }
+
+
   autocalc = SetCalculableValue(S.UBC_icept_factor, Stmp.UBC_icept_factor, Sdefault.UBC_icept_factor);
   if (autocalc){
     S.UBC_icept_factor = 0.0; //Temporary for UBCWM until translator repaired - should not have default
@@ -332,6 +319,9 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.forest_PET_corr  =DefaultParameterValue(is_template,true);//1.0;      //[-]
   S.SCS_Ia_fraction  =DefaultParameterValue(is_template,true);//0.2
   S.snow_patch_limit = DefaultParameterValue(is_template,true);//0.0
+  S.conv_melt_mult = DefaultParameterValue(is_template, true);
+  S.cond_melt_mult = DefaultParameterValue(is_template, true);
+  S.rain_melt_mult = DefaultParameterValue(is_template, true);
 
   //User-specified parameters
   S.partition_coeff   =DefaultParameterValue(is_template,false);//0.4;//needs reasonable defaults
@@ -393,6 +383,10 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("HBV_GLACIER_KMIN"       )){S.HBV_glacier_Kmin=value;}
   else if (!name.compare("GLAC_STORAGE_COEFF"     )){S.glac_storage_coeff=value;}
   else if (!name.compare("HBV_GLACIER_AG"         )){S.HBV_glacier_Ag=value;}
+  else if (!name.compare("SNOW_PATCH_LIMIT"		    )){S.snow_patch_limit = value; }
+  else if (!name.compare("CONV_MELT_MULT"		      )){S.conv_melt_mult = value; }
+  else if (!name.compare("COND_MELT_MULT"		      )){S.cond_melt_mult = value; }
+  else if (!name.compare("RAIN_MELT_MULT"		      )){S.rain_melt_mult = value; }
   else if (!name.compare("CC_DECAY_COEFF"         )){S.CC_decay_coeff=value;}
   else if (!name.compare("PARTITION_COEFF"        )){S.partition_coeff=value;}
   else if (!name.compare("SCS_CN"                 )){S.SCS_CN=value;}
@@ -411,7 +405,6 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("OW_PET_CORR"            )){S.ow_PET_corr=value;}
   else if (!name.compare("LAKE_PET_CORR"          )){S.lake_PET_corr=value;}
   else if (!name.compare("FOREST_PET_CORR"        )){S.forest_PET_corr=value;}
-  else if (!name.compare("SNOW_PATCH_LIMIT"       )){S.snow_patch_limit=value;}
   else if (!name.compare("GR4J_X4"                )){S.GR4J_x4=value;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){S.UBC_icept_factor=value;}
   else if (!name.compare("WIND_EXPOSURE"          )){S.wind_exposure=value;}
@@ -454,6 +447,10 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("MAX_SAT_AREA_FRAC"      )){return S.max_sat_area_frac;}
   else if (!name.compare("HBV_MELT_GLACIER_CORR"  )){return S.HBV_melt_glacier_corr;}
   else if (!name.compare("HBV_GLACIER_KMIN"       )){return S.HBV_glacier_Kmin;}
+  else if (!name.compare("SNOW_PATCH_LIMIT"		    )){return S.snow_patch_limit; }
+  else if (!name.compare("CONV_MELT_MULT"		      )){return S.conv_melt_mult; }
+  else if (!name.compare("COND_MELT_MULT"		      )){return S.cond_melt_mult; }
+  else if (!name.compare("RAIN_MELT_MULT"		      )){return S.rain_melt_mult; }
   else if (!name.compare("GLAC_STORAGE_COEFF"     )){return S.glac_storage_coeff;}
   else if (!name.compare("HBV_GLACIER_AG"         )){return S.HBV_glacier_Ag;}
   else if (!name.compare("CC_DECAY_COEFF"         )){return S.CC_decay_coeff;}
@@ -474,7 +471,6 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}
   else if (!name.compare("LAKE_PET_CORR"          )){return S.lake_PET_corr;}
   else if (!name.compare("FOREST_PET_CORR"        )){return S.forest_PET_corr;}
-  else if (!name.compare("SNOW_PATCH_LIMIT"       )){return S.snow_patch_limit;}
   else if (!name.compare("GR4J_X4"                )){return S.GR4J_x4;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){return S.UBC_icept_factor;}
   else if (!name.compare("WIND_EXPOSURE"          )){return S.wind_exposure;}

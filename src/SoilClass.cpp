@@ -70,70 +70,6 @@ void CSoilClass::SummarizeToScreen()
   }
 }
 
-
-//////////////////////////////////////////////////////////////////
-/// \brief Write soil class properties to file
-/// \param &OUT [out] Output stream to which information is written
-/// \todo [add funct] repair such that only parameters that are used by model are written to parameters.csv.
-/// one way to do this would be to store the template soil structure with class, and use NOT_NEEDED status of variables as indicator.
-//
-void CSoilClass::WriteParamsToFile(ofstream &OUT)
-{
-  CSoilClass *s;
-  const soil_struct *t;
-  OUT<<endl<<"---Soil Class Parameters---------------------"<<endl;
-  OUT<<"CLASS,";
-  OUT<<"SAND_CON,CLAY_CON,SILT_CON,ORG_CON,POROSITY,STONE_FRAC,BULK_DENSITY,";
-  //if (GetSoilProperty(S_template,"POROSITY")!=NOT_NEEDED_AUTO){cout<<"POROSITY,"<<endl;}
-  //if (GetSoilProperty(S_template,"BULK_DENSITY")!=NOT_NEEDED_AUTO){cout<<"BULK_DENSITY,"<<endl;}
-  OUT<<"HEAT_CAPACITY,THERMAL_COND,";
-  OUT<<"HYDRAUL_COND,";
-  OUT<<"CLAPP_B,CLAPP_N,CLAPP_M,";
-  OUT<<"SAT_RES,SAT_WILT,FIELD_CAPACITY,";
-  OUT<<"AIR_ENTRY_PRESSURE,WILTING_PRESSURE,WETTING_FRONT_PSI,KSAT_STD_DEVIATION,";
-  OUT<<"EVAP_RES_FC,SHUTTLEWORTH_B,";
-  OUT<<"PET_CORRECTION,";
-  OUT<<"ALBEDO_WET,ALBEDO_DRY,";
-  //
-  OUT<<"VIC_ZMIN,VIC_ZMAX,VIC_ALPHA,VIC_EVAP_GAMMA,";
-  OUT<<"B_EXP,";
-  OUT<<"MAX_PERC_RATE,PERC_N,PERC_COEFF,SAC_PERC_ALPHA,SAC_PERC_EXPON,";
-  OUT<<"MAX_BASEFLOW_RATE,BASEFLOW_N,BASEFLOW_COEFF,";
-  OUT<<"MAX_CAP_RISE_RATE,";
-  OUT<<"MAX_INTERFLOW_RATE,INTERFLOW_COEFF,";
-  OUT<<"HBV_BETA,";
-  OUT<<"UBC_EVAP_SOIL_DEF,UBC_INFIL_SOIL_DEF,";
-
-  OUT<<endl;
-  for (int c=0; c<_nAllSoilClasses;c++)
-  {
-    s=_pAllSoilClasses[c];
-    t=s->GetSoilStruct();
-    OUT<<s->GetTag()<<",";
-    OUT<<t->sand_con          <<","<<t->clay_con        <<","<<(1.0-t->sand_con-t->clay_con)<<","<<t->org_con<<","<<t->porosity<<","<<t->stone_frac<<","<<t->bulk_density<<",";
-    //if (GetSoilProperty(S_template,"POROSITY")!=NOT_NEEDED_AUTO){cout<<t->porosity<<","<<endl;}
-    //if (GetSoilProperty(S_template,"BULK_DENSITY")!=NOT_NEEDED_AUTO){cout<<t->bulk_density<<","<<endl;}
-    OUT<<t->heat_capacity     <<","<<t->thermal_cond    <<",";
-    OUT<<t->hydraul_cond      <<",";
-    OUT<<t->clapp_b           <<","<<t->clapp_n         <<","<<t->clapp_m<<",";
-    OUT<<t->sat_res           <<","<<t->sat_wilt        <<","<<t->field_capacity<<",";
-    OUT<<t->air_entry_pressure<<","<<t->wilting_pressure<<","<<t->wetting_front_psi<<","<<t->ksat_std_deviation<<",";
-    OUT<<t->evap_res_fc       <<","<<t->shuttleworth_b  <<",";
-    OUT<<t->PET_correction    <<",";
-    OUT<<t->albedo_wet        <<","<<t->albedo_dry<<",";
-
-    OUT<<t->VIC_zmin          <<","<<t->VIC_zmax  <<","<<t->VIC_alpha     <<","<<t->VIC_evap_gamma<<",";
-    OUT<<t->b_exp<<",";
-    OUT<<t->max_perc_rate     <<","<<t->perc_n    <<","<<t->perc_coeff    <<","<<t->SAC_perc_alpha<<","<<t->SAC_perc_expon<<",";
-    OUT<<t->max_baseflow_rate <<","<<t->baseflow_n<<","<<t->baseflow_coeff<<",";
-    OUT<<t->max_cap_rise_rate <<",";
-    OUT<<t->max_interflow_rate<<","<<t->interflow_coeff<<",";
-    OUT<<t->HBV_beta<<",";
-    OUT<<t->UBC_evap_soil_def<<","<<t->UBC_infil_soil_def<<",";
-    OUT<<endl;
-  }
-}
-
 //////////////////////////////////////////////////////////////////
 /// \brief Destroy all soil classes
 //
@@ -494,6 +430,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   bad=SetSpecifiedValue(_Soil.perc_coeff,Stmp.perc_coeff,Sdefault.perc_coeff,needed,"PERC_COEFF");
   bad=SetSpecifiedValue(_Soil.SAC_perc_alpha,Stmp.SAC_perc_alpha,Sdefault.SAC_perc_alpha,needed,"SAC_PERC_ALPHA");
   bad=SetSpecifiedValue(_Soil.SAC_perc_expon,Stmp.SAC_perc_expon,Sdefault.SAC_perc_expon,needed,"SAC_PERC_EXPON");
+  bad=SetSpecifiedValue(_Soil.perc_aspen,Stmp.perc_aspen,Sdefault.perc_aspen,needed,"PERC_ASPEN");
   bad=SetSpecifiedValue(_Soil.max_interflow_rate,Stmp.max_interflow_rate,Sdefault.max_interflow_rate,needed,"MAX_INTERFLOW_RATE");
   bad=SetSpecifiedValue(_Soil.interflow_coeff,Stmp.interflow_coeff,Sdefault.interflow_coeff,needed,"INTERFLOW_COEFF");
   bad=SetSpecifiedValue(_Soil.max_cap_rise_rate,Stmp.max_cap_rise_rate,Sdefault.max_cap_rise_rate,needed,"MAX_CAP_RISE_RATE");
@@ -565,6 +502,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.perc_coeff        =DefaultParameterValue(is_template,false);//
   S.SAC_perc_alpha    =DefaultParameterValue(is_template,false);//100;
   S.SAC_perc_expon    =DefaultParameterValue(is_template,false);//3.0;
+  S.perc_aspen        =DefaultParameterValue(is_template,false);//
   S.max_interflow_rate=DefaultParameterValue(is_template,false);//500;    //[mm/d]
   S.interflow_coeff   =DefaultParameterValue(is_template,false);//0.1;
   S.max_baseflow_rate =DefaultParameterValue(is_template,false);//5000;   //[mm/d]
@@ -641,6 +579,7 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
   else if (!name.compare("SAC_PERC_ALPHA"      )){S.SAC_perc_alpha=value;}
   else if (!name.compare("SAC_PERC_EXPON"      )){S.SAC_perc_expon=value;}
   else if (!name.compare("SAC_PERC_ALPHA"      )){S.SAC_perc_alpha=value;}
+  else if (!name.compare("PERC_ASPEN"          )){S.perc_aspen=value;}
   else if (!name.compare("MAX_INTERFLOW_RATE"  )){S.max_interflow_rate=value;}
   else if (!name.compare("INTERFLOW_COEFF"     )){S.interflow_coeff=value;}
   else if (!name.compare("MAX_BASEFLOW_RATE"   )){S.max_baseflow_rate=value;}
@@ -767,6 +706,7 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
   else if (!name.compare("SAC_PERC_ALPHA"      )){return S.SAC_perc_alpha;}
   else if (!name.compare("SAC_PERC_EXPON"      )){return S.SAC_perc_expon;}
   else if (!name.compare("SAC_PERC_ALPHA"      )){return S.SAC_perc_alpha;}
+  else if (!name.compare("PERC_ASPEN"          )){return S.perc_aspen;}
   else if (!name.compare("MAX_INTERFLOW_RATE"  )){return S.max_interflow_rate;}
   else if (!name.compare("INTERFLOW_COEFF"     )){return S.interflow_coeff;}
   else if (!name.compare("MAX_BASEFLOW_RATE"   )){return S.max_baseflow_rate;}
