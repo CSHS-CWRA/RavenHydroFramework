@@ -27,8 +27,8 @@ CTimeSeries::CTimeSeries(string Name, string tag, double one_value)
   _sub_daily=false;
   _t_corr   =0.0;
   _pulse    =true;
-  _aSampVal =NULL;//generated in Resample() routine
-  _nSampVal =0;//generated in Resample() routine
+  _aSampVal =NULL; //generated in Resample() routine
+  _nSampVal =0;    //generated in Resample() routine
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -41,14 +41,14 @@ CTimeSeries::CTimeSeries(string Name, string tag, double one_value)
 /// \param NumPulses     [in] Number of pulses which occur
 /// \param is_pulse_type [in] Flag determining time-series type (pulse-based vs. piecewise-linear)
 //
-CTimeSeries::CTimeSeries(string    Name,
-                         string    tag,
-                         string    filename,
-                         double    strt_day,
-                         int   start_yr,
-                         double    data_interval,
-                         double   *aValues,
-                         const int NumPulses,
+CTimeSeries::CTimeSeries(string     Name,
+                         string     tag,
+                         string     filename,
+                         double     strt_day,
+                         int        start_yr,
+                         double     data_interval,
+                         double    *aValues,
+                         const int  NumPulses,
                          const bool is_pulse_type)
   :CTimeSeriesABC(ts_regular,Name,tag,filename)
 {
@@ -81,13 +81,13 @@ CTimeSeries::CTimeSeries(string    Name,
 ///////////////////////////////////////////////////////////////////
 /// \brief Implementation of the time series constructor for empty time series used to store model generated data
 ///
-CTimeSeries::CTimeSeries(string    Name,
-                         string    tag,
-                         string    filename,
-                         double    strt_day,
-                         int   start_yr,
-                         double    data_interval,
-                         const int NumPulses,
+CTimeSeries::CTimeSeries(string     Name,
+                         string     tag,
+                         string     filename,
+                         double     strt_day,
+                         int        start_yr,
+                         double     data_interval,
+                         const int  NumPulses,
                          const bool is_pulse_type)
   :CTimeSeriesABC(ts_regular,Name,tag,filename)
 {
@@ -209,7 +209,6 @@ double CTimeSeries::GetValue(const int n)const{return _aVal[n];}
 /// \return True if time series is pulse-based (i.e., data points represent a constant value over the time interval)
 //
 bool CTimeSeries::IsPulseType()  const{return _pulse;}
-
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Enables queries of time series values using model time
@@ -625,20 +624,119 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
 {
 
-  char *s[MAXINPUTITEMS];
-  int Len;
+  char   *s[MAXINPUTITEMS];
+  int    Len;
   double start_day;
   int    start_yr;
   double tstep;
   int    nMeasurements;
 
+  // for NetCDF handling
+  string FileNameNC;            // filename of NetCDF
+  string VarNameNC;             // name of variable in NetCDF
+  string DimNamesNC_stations;   // name of station dimension (optional)
+  string DimNamesNC_time;       // name of time dimension
+  int    StationIdx;            // station to read (numbering starts with 1;
+  //                            // mandatory if DimNamesNC_stations given)
+  double TimeShift;             // time shift of data (fractional day by which
+  //                            // read data should be shifted)
+  double LinTrans_a;            // Linear transformation: new = a*data + b
+  double LinTrans_b;            // Linear transformation: new = a*data + b
+
   CTimeSeries *pTimeSeries=NULL;
 
   p->Tokenize(s,Len);
-  if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
+  if (IsComment(s[0],Len)){p->Tokenize(s,Len);} //try again
+
+  // READFROMNETCDF FORMAT =======================================================
+  if(!strcmp(s[0],":ReadFromNetCDF"))
+  {
+
+    // initialize
+    FileNameNC = "None";
+    VarNameNC  = "None";
+    StationIdx = 0;   // numbering starts with 1
+    TimeShift  = 0.0; // no time shift applied
+    LinTrans_a = 1.0; // no linear transformation: 1.0*x+0.0 --> a = 1.0
+    LinTrans_b = 0.0; // no linear transformation: 1.0*x+0.0 --> b = 0.0 
+    
+    while (strcmp(s[0],":EndReadFromNetCDF")) {
+      p->Tokenize(s,Len);
+      if(!strcmp(s[0],":FileNameNC")) { FileNameNC = s[1]; FileNameNC = CorrectForRelativePath(FileNameNC ,Options.rvt_filename); }
+      if(!strcmp(s[0],":VarNameNC"))  { VarNameNC  = s[1]; }
+      if(!strcmp(s[0],":DimNamesNC")) {
+        if (Len == 2) {
+          DimNamesNC_stations = "None";
+          DimNamesNC_time     = s[1];
+        }
+        else {
+          if (Len == 3) {
+            DimNamesNC_stations = s[1];
+            DimNamesNC_time     = s[2];
+          }
+          else {
+            ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF requires 1 or 2 arguments for :DimNamesNC",BAD_DATA); return NULL;
+          }
+        }
+      }
+      if(!strcmp(s[0],":StationIdx"))      { StationIdx = s_to_d(s[1]); }
+      if(!strcmp(s[0],":TimeShift"))       { TimeShift  = s_to_d(s[1]); }
+      if(!strcmp(s[0],":LinearTransform")) {
+        if (Len != 3) {
+          ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF 2 arguments for :LinearTransform (i.e. a,b in a*x+b)",BAD_DATA); return NULL;
+        }
+        else {
+          LinTrans_a = s_to_d(s[1]);
+          LinTrans_b = s_to_d(s[2]);
+        }
+      }
+    }
+
+    // Check that all information given and consistent
+    if ( !strcmp(FileNameNC.c_str(),"None") ) {
+      ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF: FileNameNC needs to be given",BAD_DATA); return NULL;
+    }
+    if ( !strcmp(VarNameNC.c_str(),"None") ) {
+      ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF: VarNameNC needs to be given",BAD_DATA); return NULL;
+    }
+    if ( !strcmp(DimNamesNC_time.c_str(),"None") ) {
+      ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF: DimNamesNC needs to be given",BAD_DATA); return NULL;
+    }
+    if ( strcmp(DimNamesNC_stations.c_str(),"None") && (StationIdx == 0) ) {
+      ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF: If there are multiple stations in NetCDF file, the StationIdx argument must be given (numbering starts with 1) to identify station that should be read in",BAD_DATA); return NULL;
+    }
+
+    // cout <<"Filename   = "<<FileNameNC<<endl;
+    // cout <<"VarNameNC  = "<<VarNameNC<<endl;
+    // cout <<"DimNamesNC = "<<DimNamesNC_stations<<endl;
+    // cout <<"DimNamesNC = "<<DimNamesNC_time<<endl;
+    // cout <<"StationIdx = "<<StationIdx<<endl;
+    // cout <<"TimeShift  = "<<TimeShift<<endl;
+
+    double *aVal;
+    // if DimNamesNC_stations == "None" then NetCDF variable is assumed to be 1D (only time)
+    // if DimNamesNC_stations != "None" then StationIdx must be >= 1
+    pTimeSeries = ReadTimeSeriesFromNetCDF(
+                                           Options,              // model options (such as simulation period)
+                                           name,                 // ForcingType
+                                           FileNameNC,           // file name of NetCDF
+                                           VarNameNC,            // name of variable in NetCDF
+                                           DimNamesNC_stations,  // name of station dimension (optional; default=None)
+                                           DimNamesNC_time,      // name of time dimension (mandatory)
+                                           StationIdx,           // idx of station to be read
+                                           //                    // (only used if DimNamesNC_stations not None)
+                                           TimeShift,            // time shift of data (fractional day by which
+                                           //                    // read data should be shifted)
+                                           LinTrans_a,           // linear transformation: a in new = a*data+b
+                                           LinTrans_b            // linear transformation: b in new = a*data+b
+                                           );
+
+    return pTimeSeries;
+  }
+  
   if (Len<4){p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;}
   
-  // ANNUALCYCLE FORMAT ==============================================================
+  // ANNUALCYCLE FORMAT ==========================================================
   if(!strcmp(s[0],":AnnualCycle"))
   {
     if(Len<13){ ExitGracefully("CTimeSeries::Parse: incorrect format of AnnualCycle command",BAD_DATA); return NULL; }
@@ -722,9 +820,9 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       {
         ExitGracefully( ("Non-numeric value found in time series (line " +to_string(p->GetLineNumber())+" of file "+p->GetFilename()+")").c_str(),BAD_DATA_WARN);
       }
-			aVal [n]=fast_s_to_d(s[i]);
+                        aVal [n]=fast_s_to_d(s[i]);
       //aVal [n]=s_to_d(s[i]);
-			n++;
+                        n++;
     }
   }
 
@@ -1041,4 +1139,508 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
   }
   INPUT.close();
   return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Reads a time series from a NetCDF file
+/// \note  Will return just a vector that needs to be converted into TimeSeries object afterwards
+///
+/// \param  Options             [in] global model otions such as simulation period
+/// \param  name                [in] forcing type
+/// \param  FileNameNC          [in] file name of NetCDF
+/// \param  VarNameNC           [in] name of variable in NetCDF
+/// \param  DimNamesNC_stations [in] name of station dimension (optional; default=None)
+/// \param  DimNamesNC_time     [in] name of time dimension (mandatory)
+/// \param  StationIdx          [in] idx of station to be read (only used if DimNamesNC_stations not None)
+/// \param  TimeShift           [in] time shift of data (fractional day by which read data should be shifted)
+/// \param  LinTrans_a,         [in] linear transformation: a in new = a*data+b
+/// \param  LinTrans_b          [in] linear transformation: b in new = a*data+b
+/// \return array (size nTS) of pointers to time series
+//
+CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
+                                                   string FileNameNC, string VarNameNC,
+                                                   string DimNamesNC_stations, string DimNamesNC_time,
+                                                   int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
+{
+  CTimeSeries *pTimeSeries=NULL; // time series of data
+  
+#ifdef _RVNETCDF_
+  int    ncid;                  // file unit
+  int    retval;                // error value for NetCDF routines
+  int    dimid_x;               // id of x dimension
+  int    dimid_t;               // id of time dimension 
+  size_t dummy;                 // special type for GridDims required by nc routine
+  int    nstations;             // length of x dimension (columns)
+  int    ntime;                 // length of t dimension (time)
+  int    varid_t;               // id of time variable
+  int    varid_f;               // id of VarNameNC variable
+  char   unit_t[200];           // special type for string of variable's unit required by nc routine
+  string dash;                  // to check format of time unit string
+  string colon;                 // to check format of time unit string
+  string unit_t_str;            // to check format of time unit string
+  int    ii;                    // counter
+  
+  // handling variable dimension orders
+  int    dimids_var[2];         // ids of dimensions of a NetCDF variable
+  int    dim1;                  // length of 1st dimension in NetCDF data
+  int    dim2;                  // length of 2nd dimension in NetCDF data
+  int    dim_order;             // order of dimensions of variable to read
+
+  // extracting tag (variable long name and unit) information from NetCDF
+  string tag;                   // tag contains variable long name and unit
+  int    iatt;
+  char   attrib_name[500];
+  int    retval1;
+  size_t att_len;               // length of the attribute's text
+  char * unit_f;                // special type for string of variable's unit required by nc routine
+  char * long_name_f;           // special type for string of variable's long name required by nc routine
+
+  // final variables to create time series object
+  int    nMeasurements;          // number of data points read
+  double start_day=0.0;          // start day of time series
+  int    start_yr=1900;          // start year of time series
+  double tstep=1.0;              // time difference between two data points
+  bool   is_pulse;               // if data are pulses
+
+  // -------------------------------
+  // (1) open NetCDF read-only (get ncid)
+  // -------------------------------
+  if (Options.noisy){ cout<<"Start reading time series for "<< VarNameNC << " from NetCDF file "<< FileNameNC << endl; }
+  retval = nc_open(FileNameNC.c_str(), NC_NOWRITE, &ncid);
+  HandleNetCDFErrors(retval);
+
+  // -------------------------------
+  // (2) get dimension lengths
+  // -------------------------------
+  //     (a) time dimension 
+  retval = nc_inq_dimid (ncid, DimNamesNC_time.c_str(), &dimid_t);  HandleNetCDFErrors(retval);
+  retval = nc_inq_dimlen(ncid, dimid_t, &dummy);                    HandleNetCDFErrors(retval);
+  ntime  = static_cast<int>(dummy);  // convert returned 'size_t' to 'int'
+  //     (b) other dimension (optional)
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
+    retval = nc_inq_dimid (ncid, DimNamesNC_stations.c_str(), &dimid_x);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid, dimid_x, &dummy);                        HandleNetCDFErrors(retval);
+    nstations  = static_cast<int>(dummy);  // convert returned 'size_t' to 'int'
+  }
+  else {
+    nstations = 0;
+  }
+
+  // -------------------------------
+  // (3) time values and unit
+  // -------------------------------
+  //     (a) ID of time variable
+  retval = nc_inq_varid(ncid,DimNamesNC_time.c_str(),&varid_t);
+  HandleNetCDFErrors(retval);
+  //     (b) time unit
+  retval = nc_get_att_text(ncid,varid_t,"units",unit_t);   
+  HandleNetCDFErrors(retval);
+  //     (c) allocate array for time values
+  int *time=NULL;
+  time=new int [ntime];
+  ExitGracefullyIf(time==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF",OUT_OF_MEMORY);
+  //     (d) time values
+  retval = nc_get_var_int(ncid,varid_t,&time[0]);
+  HandleNetCDFErrors(retval);
+
+  // -------------------------------
+  // (4) check if time intervals are equal and set tstep
+  // -------------------------------
+  double delta_t = time[1] - time[0];
+  for (int ii=1; ii<ntime-1 ; ii++)
+  {
+    double delta_t2 = time[ii+1] - time[ii];
+    if ( abs(delta_t2 - delta_t) > 0.00001 )
+    {
+      printf("\n\n\nCTimeSeries::ReadTimeSeriesFromNetCDF: variable name: %s\n",VarNameNC.c_str());
+      ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDFt: time steps are not equal in NetCDF time variable",BAD_DATA);
+    }
+  }
+
+  // -------------------------------
+  // (5) determine tstep, start_day and start_yr depending on time unit
+  // -------------------------------
+  if (strstr(unit_t, "hours")) {  // if unit of time in hours: hours since 1989-01-01 00:00:00
+
+    // ---------------------------
+    // check if format is YYYY-MM-DD HH:MM:SS
+    // fill with leading zeros if necessary
+    // ---------------------------
+    unit_t_str = to_string(unit_t);
+    dash = unit_t_str.substr(16, 1);  // first dash in date
+    if ( !strstr(dash.c_str(), "-") ){
+      printf("time unit string: %s\n",unit_t_str.c_str());
+      ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
+    }
+    dash  = unit_t_str.substr(19, 1);  // second dash in date
+    if ( !strstr(dash.c_str(), "-") ){
+      unit_t_str.insert(17,"0");
+    }
+    colon = unit_t_str.substr(25, 1);  // first colon in time
+    if ( !strstr(colon.c_str(), ":") ){
+      unit_t_str.insert(23,"0");
+    }
+    colon = unit_t_str.substr(28, 1);  // second colon in time
+    if ( !strstr(colon.c_str(), ":") ){
+      unit_t_str.insert(26,"0");
+    }
+    string sDate = unit_t_str.substr(12,10);
+    string sTime = unit_t_str.substr(23,8);
+    time_struct tt = DateStringToTimeStruct(sDate, sTime);
+    tstep   = (time[1] - time[0])/24.;
+    ExitGracefullyIf(tstep<=0,
+                     "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
+    AddTime(tt.julian_day,tt.year,time[0]*(1./24.),start_day,start_yr) ;
+
+  }
+  else
+  {
+    if (strstr(unit_t, "days")) {  // if unit of time in days: days since 1989-01-01 00:00:00
+
+      // ---------------------------
+      // check if format is YYYY-MM-DD HH:MM:SS
+      // fill with leading zeros if necessary
+      // ---------------------------
+      unit_t_str = to_string(unit_t);
+      dash = unit_t_str.substr(15, 1);  // first dash in date
+      if ( !strstr(dash.c_str(), "-") ){
+        printf("time unit string: %s\n",unit_t_str.c_str());
+        ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
+      }
+      dash  = unit_t_str.substr(18, 1);  // second dash in date
+      if ( !strstr(dash.c_str(), "-") ){
+        unit_t_str.insert(16,"0");
+        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+      }
+      colon = unit_t_str.substr(24, 1);  // first colon in time
+      if ( !strstr(colon.c_str(), ":") ){
+        unit_t_str.insert(22,"0");
+        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+      }
+      colon = unit_t_str.substr(27, 1);  // second colon in time
+      if ( !strstr(colon.c_str(), ":") ){
+        unit_t_str.insert(25,"0");
+        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+      }
+      string sDate = unit_t_str.substr(11,10);
+      string sTime = unit_t_str.substr(22,8);
+      time_struct tt = DateStringToTimeStruct(sDate, sTime);
+      tstep   = (time[1] - time[0])/1.;
+      ExitGracefullyIf(tstep<=0, "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
+      AddTime(tt.julian_day,tt.year,time[0]*(1.),start_day,start_yr) ;
+    }
+    else {
+      if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
+
+        // ---------------------------
+        // check if format is YYYY-MM-DD HH:MM:SS
+        // fill with leading zeros if necessary
+        // ---------------------------
+        unit_t_str = to_string(unit_t);
+        dash = unit_t_str.substr(18, 1);  // first dash in date
+        if ( !strstr(dash.c_str(), "-") ){
+          printf("time unit string: %s\n",unit_t_str.c_str());
+          ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
+        }
+        dash  = unit_t_str.substr(21, 1);  // second dash in date
+        if ( !strstr(dash.c_str(), "-") ){
+          unit_t_str.insert(19,"0");
+          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+        }
+        colon = unit_t_str.substr(27, 1);  // first colon in time
+        if ( !strstr(colon.c_str(), ":") ){
+          unit_t_str.insert(25,"0");
+          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+        }
+        colon = unit_t_str.substr(30, 1);  // second colon in time
+        if ( !strstr(colon.c_str(), ":") ){
+          unit_t_str.insert(28,"0");
+          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
+        }
+        string sDate = unit_t_str.substr(14,10);
+        string sTime = unit_t_str.substr(25,8);
+        time_struct tt = DateStringToTimeStruct(sDate, sTime);
+        tstep   = (time[1] - time[0])/24./60.;
+        ExitGracefullyIf(tstep<=0,
+                         "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
+        AddTime(tt.julian_day,tt.year,time[0]*(1./24./60.),start_day,start_yr) ;
+
+      }
+      else
+        {
+          if (strstr(unit_t, "seconds")) {  // if unit of time in seconds: seconds since 1989-01-01 00:00:00
+
+            // ---------------------------
+            // check if format is YYYY-MM-DD HH:MM:SS
+            // fill with leading zeros if necessary
+            // ---------------------------
+            unit_t_str = to_string(unit_t);
+            dash = unit_t_str.substr(18, 1);  // first dash in date
+            if ( !strstr(dash.c_str(), "-") ){
+              printf("time unit string: %s\n",unit_t_str.c_str());
+              ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
+            }
+            dash  = unit_t_str.substr(21, 1);  // second dash in date
+            if ( !strstr(dash.c_str(), "-") ){
+              unit_t_str.insert(19,"0");
+            }
+            colon = unit_t_str.substr(27, 1);  // first colon in time
+            if ( !strstr(colon.c_str(), ":") ){
+              unit_t_str.insert(25,"0");
+            }
+            colon = unit_t_str.substr(30, 1);  // second colon in time
+            if ( !strstr(colon.c_str(), ":") ){
+              unit_t_str.insert(28,"0");
+            }
+            string sDate = unit_t_str.substr(14,10);
+            string sTime = unit_t_str.substr(25,8);
+            time_struct tt = DateStringToTimeStruct(sDate, sTime);
+            tstep   = (time[1] - time[0])/24./60./60.;
+            ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
+            AddTime(tt.julian_day,tt.year,time[0]*(1./24./60./60.),start_day,start_yr) ;
+
+          }
+          ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
+        }
+    }
+  }
+
+  // -------------------------------
+  // (6) set n (= number of datapoints)
+  // -------------------------------
+  nMeasurements = ntime;
+
+  // -------------------------------
+  // (7) determine dimension order in variable
+  // -------------------------------
+  //     (a) Get the id of the data variable based on its name; varid will be set
+  retval = nc_inq_varid(ncid, VarNameNC.c_str(), &varid_f);       HandleNetCDFErrors(retval);
+  //     (b) determine in which order the dimensions are in variable
+  retval = nc_inq_vardimid(ncid, varid_f, dimids_var);          HandleNetCDFErrors(retval);
+  //     (c) determine order
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
+    if      ((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_t))  {  // dimensions are (x,t)
+      dim_order = 1;
+      dim1 = nstations;
+      dim2 = ntime;
+    }
+    else {                                                                 // dimensions are (t,x)
+      dim_order = 2;
+      dim1 = ntime;
+      dim2 = nstations;
+    }
+  }
+  else {                                                                   // dimensions are (t)
+    dim_order = 1;
+    dim1 = ntime;
+    dim2 = 1;
+  }
+
+  // -------------------------------
+  // (8) set tag
+  //     ---> looks for attributes "long_name" and "units" of forcing variable
+  //     --> if either attribute not available it will be set to "?"
+  // -------------------------------
+  retval = 0;
+  iatt   = 0;
+  long_name_f = (char *) malloc(2);
+  strcpy(long_name_f, "?\0");
+  unit_f = (char *) malloc(2);
+  strcpy(unit_f, "?\0");
+
+  while (retval==0)
+  {
+    // inquire attributes name
+    retval = nc_inq_attname(ncid, varid_f, iatt, attrib_name);
+
+    // long_name of forcing
+    if (strcmp(attrib_name,"long_name") == 0)
+    {
+      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
+      HandleNetCDFErrors(retval1);
+      long_name_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, long_name_f);// read attribute text
+      HandleNetCDFErrors(retval1);
+      long_name_f[att_len] = '\0';// add string determining character
+    }
+
+    // unit of forcing
+    if (strcmp(attrib_name,"units") == 0)
+    {
+      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
+      HandleNetCDFErrors(retval1);
+      unit_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, unit_f);// read attribute text
+      HandleNetCDFErrors(retval1);
+      unit_f[att_len] = '\0';// add string determining character
+    }
+
+    iatt++;
+
+  }
+
+  tag = to_string(long_name_f)+" in ["+to_string(unit_f)+"]";
+
+  free( unit_f); free(long_name_f);
+  if (Options.noisy){ printf("Forcing found in NetCDF file: %s \n",tag.c_str()); }
+
+  // -------------------------------
+  // (9) Initialize data array (data type that is needed by NetCDF library)
+  // -------------------------------
+  double *aVec=new double[dim1*dim2];//stores actual data
+  for(int i=0; i<dim1*dim2; i++) {
+    aVec[i]=NETCDF_BLANK_VALUE;
+  }
+  ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
+    
+  double **aTmp2D=NULL; //stores pointers to rows/columns of 2D data (ntime x nstations)
+  double  *aTmp1D=NULL; //stores pointers to rows/columns of 1D data (ntime)
+
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
+    aTmp2D=new double *[dim1];
+    ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadData : aTmp2D(0)",OUT_OF_MEMORY);
+    for(int it=0;it<dim1;it++){
+      aTmp2D[it]=&aVec[it*dim2]; //points to correct location in aVec data storage
+    }
+  }
+  else {
+    aTmp1D=new double [dim1];
+    ExitGracefullyIf(aTmp1D==NULL,"CForcingGrid::ReadData : aTmp1D(0)",OUT_OF_MEMORY);
+  }
+
+  // -------------------------------
+  // (10) Read data
+  // -------------------------------
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
+
+    size_t    nc_start [2];
+    size_t    nc_length[2];
+    ptrdiff_t nc_stride[2];
+    
+    switch(dim_order) {
+    case(1): // dimensions are (x,t)
+      nc_start[0]  = StationIdx-1; nc_length[0] = (size_t)(1);      nc_stride[0] = 1;
+      nc_start[1]  = 0;            nc_length[1] = (size_t)(ntime);  nc_stride[1] = 1;
+      retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);
+      HandleNetCDFErrors(retval);
+      break;
+    case(2): // dimensions are (t,x)
+      nc_start[0]  = 0;            nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
+      nc_start[1]  = StationIdx-1; nc_length[1] = (size_t)(1);      nc_stride[1] = 1;
+      retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);
+      HandleNetCDFErrors(retval);
+      break;
+    }
+    if (Options.noisy) {
+      printf("  Dim of chunk read: dim1 = %i   dim2 = %i\n",dim1,dim2);
+      printf("  start  chunk: (%lu, %lu)\n", nc_start[0], nc_start[1]);
+      printf("  length chunk: (%lu, %lu)\n", nc_length[0],nc_length[1]);
+      printf("  stride chunk: (%lu, %lu)\n", nc_stride[0],nc_stride[1]);
+      printf("  Data read: [%.4f, %.4f, %.4f ... %.4f]\n",aTmp2D[0][0], aTmp2D[0][1], aTmp2D[0][2], aTmp2D[0][ntime-1]);
+    }
+  }
+  else {
+
+    size_t    nc_start [1];
+    size_t    nc_length[1];
+    ptrdiff_t nc_stride[1];
+    
+    switch(dim_order) {
+      case(1):
+        nc_start [0] = 0;  nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
+        retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp1D[0]);
+        HandleNetCDFErrors(retval);
+        break;
+      }
+    if (Options.noisy) {
+      printf("  Dim of chunk read: dim1 = %i \n",dim1);
+      printf("  start  chunk: (%lu)\n", nc_start[0]);
+      printf("  length chunk: (%lu)\n", nc_length[0]);
+      printf("  stride chunk: (%lu)\n", nc_stride[0]);
+      printf("  Data read: [%.4f, %.4f, %.4f ... %.4f]\n",aTmp1D[0], aTmp1D[1], aTmp1D[2], aTmp1D[ntime-1]);
+    }
+  }
+
+  // -------------------------------
+  // (11) close NetCDF
+  // -------------------------------
+  retval = nc_close(ncid);
+  HandleNetCDFErrors(retval);
+
+  // -------------------------------
+  // (12) Initialize data array (data type that is needed by RAVEN)
+  // -------------------------------
+  double *aVal;
+  aVal = NULL;
+  aVal =  new double [ntime];
+  for (int it=0; it<ntime; it++) {                   // loop over time points in buffer
+      aVal[it]=NETCDF_BLANK_VALUE;                   // initialize
+  }
+
+  // -------------------------------
+  // (13) Convert into RAVEN data array and apply linear transformation: new = a*data+b
+  // -------------------------------
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
+
+    // no switch of dim_order required because aTmp2D already points to
+    // correct location in aVec data storage (see step 9)
+
+    for (int it=0; it<ntime; it++){                     // loop over time points read
+      for (int ic=0; ic<1; ic++){                       // loop over stations
+        aVal[it] = LinTrans_a * aTmp2D[ic][it] + LinTrans_b;
+      }
+    };
+
+  }
+  else {
+
+    // no switch of dim_order required because aTmp2D already points to
+    // correct location in aVec data storage (see step 9)
+
+    for (int it=0; it<ntime; it++){                     // loop over time points read
+      aVal[it]=aTmp1D[it];
+    };
+  }
+
+  if (Options.noisy) {
+    printf("  aVal: [%.4f, %.4f, %.4f ... %.4f]\n",aVal[0], aVal[1], aVal[2], aVal[ntime-1]);
+  }
+
+  // -------------------------------
+  // (14) add time shift to data
+  //      --> only applied when tstep < 1.0 (daily)
+  //      --> otherwise ignored and warning written to RavenErrors.txt
+  // -------------------------------
+
+  if (tstep >= 1.0) {   // data are not sub-daily
+    if ( ceilf(TimeShift) == TimeShift) {  // time shift of whole days requested
+      // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
+      AddTime(start_day,start_yr,TimeShift,start_day,start_yr) ;
+      // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
+    }
+    else {  // sub-daily shifts (e.g. 1.25) of daily data requested
+      WriteAdvisory("CTimeSeries::ReadTimeSeriesFromNetCDF: time shift specified for NetCDF time series will be ignored", Options.noisy);
+      WriteAdvisory("                                       because inputs are daily and time shift is sub-daily", Options.noisy);
+    }
+  }
+  else {  // data are sub-daily
+    // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
+    AddTime(start_day,start_yr,TimeShift,start_day,start_yr) ;
+    // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
+  }
+
+  // -------------------------------
+  // (15) convert to time series object
+  // -------------------------------
+  is_pulse = true;
+  pTimeSeries=new CTimeSeries(name,tag,FileNameNC.c_str(),start_day,start_yr,tstep,aVal,nMeasurements,is_pulse);
+
+  // -------------------------------
+  // (16) delete dynamic memory
+  // -------------------------------
+  delete [] aVal;  aVal =NULL;  
+#endif   // ends #ifdef _RVNETCDF_
+  
+  return pTimeSeries;
+    
 }

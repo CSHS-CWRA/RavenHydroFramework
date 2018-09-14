@@ -119,6 +119,20 @@ public:/*-------------------------------------------------------*/
   double GetModelledValue(const double &t,const ts_type type) const;
   void   SetValue(const int n, const double &val);
   void   SetSampledValue(const int nn, const double &val);
+
+  static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)
+                                               string name,                 // forcing type
+                                               string FileNameNC,           // file name of NetCDF
+                                               string VarNameNC,            // name of variable in NetCDF
+                                               string DimNamesNC_stations,  // name of station dimension (optional; default=None)
+                                               string DimNamesNC_time,      // name of time dimension (mandatory)
+                                               int StationIdx,              // idx of station to be read
+                                               //                           // (only used if DimNamesNC_stations not None)
+                                               double TimeShift,            // time shift of data (fractional day by which
+                                               //                           // read data should be shifted)
+                                               double LinTrans_a,           // linear transformation: a in new = a*data+b
+                                               double LinTrans_b            // linear transformation: b in new = a*data+b
+                                               );
 };
 
 #endif

@@ -79,7 +79,10 @@ private:/*------------------------------------------------------*/
   double       _t_corr;                      ///< correction time _t_corr, i.e. distance between
   ///                                        ///< current chunk start day and model start day (in days)
   bool         _deaccumulate;                ///< true if input precipitation needs to be deaccumulated from cum. mm to mm/d
-
+  double       _TimeShift;                   ///< time shift of data (fractional day by which read data should be shifted)
+  double       _LinTrans_a;                  ///< linear transformation of read data: new = a*data + b
+  double       _LinTrans_b;                  ///< linear transformation of read data: new = a*data + b
+  bool         _is_3D;                       ///< true if forcings are 3D (lat, lon, time); false if 2D (stations, time)
   double       _rainfall_corr;               ///< correction factor for rainfall (stored with gauge, used elsewhere)
   double       _snowfall_corr;               ///< correction factor for snowfall (stored with gauge, used elsewhere)
   double       _cloud_min_temp;              ///< minimum temperature threshold used to determine cloud_cover factor
@@ -98,7 +101,11 @@ public:/*------------------------------------------------------*/
     string       ForcingType,
     string       filename,
     string       varname,
-    string       DimNames[3]
+    string       DimNames[3],
+    bool         is_3D,
+    double       TimeShift,
+    double       LinTrans_a,
+    double       LinTrans_b
     );
 
   // (b) copy constructor
@@ -127,8 +134,7 @@ public:/*------------------------------------------------------*/
 
   // ReadData populates _aVal or does nothing if no new chunk need to be read (= current modeling time step is within current chunk)
   bool   ReadData(const optStruct   &Options,
-                  const double global_model_time
-    );
+                  const double global_model_time);
 
   // accessors
   double GetValue                   (const int idx, const double &t) const;
@@ -153,7 +159,7 @@ public:/*------------------------------------------------------*/
                                            const double     global_model_time)  const; ///< returns index in current chunk corresponding to model time step
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
                                            const double     global_model_time)  const; ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
-  void CellIdxToRowCol(                    const int        cellid,
+  void   CellIdxToRowCol(                  const int        cellid,
                                            int              &row,
                                            int              &column);         ///< returns row and column index of cell ID
 
@@ -164,9 +170,13 @@ public:/*------------------------------------------------------*/
   void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames                  of class
   void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims                  of class
   void         SetNumberNonZeroGridCells(     const int    nNonZeroWeightedGridCells); ///< set _nNonZeroWeightedGridCells of class
-  void         SetToDeaccumulate();                                                    ///< set _deaccumulate
+  void         SetToDeaccumulate();                                                    ///< set _deaccumulate              of class
+  void         SetLinearTransform(            const double LinTrans_a,                 ///< set _LinTrans_a and _b         of class
+                                              const double LinTrans_b);
+  void         SetTimeShift(                  const double TimeShift);                 ///< set _TimeShift                 of class
+  void         SetIs3D(                       const bool   is3D);                      ///< set _is3D                      of class
   void         SetIdxNonZeroGridCells(        const int    nHydroUnits,
-                                              const int    nGridCells);                ///< set _IdxNonZeroGridCells of class
+                                              const int    nGridCells);                ///< set _IdxNonZeroGridCells       of class
   void         SetnHydroUnits(                const int    nHydroUnits);               ///< set _nHydroUnits               of class
   void         SetChunkSize(                  const int    ChunkSize);                 ///< set _ChunkSize                 of class
   void         SetInterval(                   const double interval);                  ///< set _interval                  of class
@@ -178,10 +188,6 @@ public:/*------------------------------------------------------*/
   void         SetaMinTemp(                   const double aMinTemp[12]);              ///< set _aMinTemp[12]              of class
   void         SetaMaxTemp(                   const double aMaxTemp[12]);              ///< set _aMaxTemp[12]              of class
   void         SetaAvePET(                    const double aAvePET [12]);              ///< set _aAvePET [12]              of class
-  /* void         SetValue(                      const int x_col, */
-  /*                                             const int y_row, */
-  /*                                             const int t, */
-  /*                                             const double aVal);                      ///< set _aVal              of class */
   void         SetValue(                      const int idx,
                                               const int t,
                                               const double aVal);                      ///< set _aVal              of class
@@ -189,6 +195,7 @@ public:/*------------------------------------------------------*/
   // get class variables
   double       GetInterval()                       const;        ///< data interval (in days)
   bool         GetIsDerived()                      const;        ///< if data are read from NetCDF (false) or derived from these data (true)
+  bool         GetIs3D()                           const;        ///< true if NetCDF data are (lat,lon,time), false if data are (nstations,time)
   int          GetStartYear()                      const;        ///< start year of gridded time series data
   double       GetStartDay()                       const;        ///< start day of time series data
   int          GetCols()                           const;        ///< Number of columns (= 1st dimension of gridded data)

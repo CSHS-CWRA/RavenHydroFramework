@@ -98,31 +98,31 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         }
       }
     }
-    Fg[g].temp_month_max  =_pGauges[g]->GetMonthlyMaxTemp  (mo);
-    Fg[g].temp_month_min  =_pGauges[g]->GetMonthlyMinTemp  (mo);
-    Fg[g].temp_month_ave  =_pGauges[g]->GetMonthlyAveTemp  (mo);
-    Fg[g].PET_month_ave   =_pGauges[g]->GetMonthlyAvePET   (mo);
+    Fg[g].temp_month_max  =_pGauges[g]->GetMonthlyMaxTemp(mo);
+    Fg[g].temp_month_min  =_pGauges[g]->GetMonthlyMinTemp(mo);
+    Fg[g].temp_month_ave  =_pGauges[g]->GetMonthlyAveTemp(mo);
+    Fg[g].PET_month_ave   =_pGauges[g]->GetMonthlyAvePET(mo);
 
     //if (Options.uses_full_data)
     {
       // \todo [optimize] should add Options.uses_full_data to be calculated if LW,SW,etc. methods=USE_DATA or otherwise need data streams
-      Fg[g].LW_radia        =_pGauges[g]->GetForcingValue    (F_LW_RADIA,nn);
-      Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
-      Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
-      Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
+      Fg[g].LW_radia        =_pGauges[g]->GetForcingValue(F_LW_RADIA,nn);
+      Fg[g].SW_radia        =_pGauges[g]->GetForcingValue(F_SW_RADIA,nn);
+      Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue(F_SW_RADIA_NET,nn);
+      Fg[g].ET_radia        =_pGauges[g]->GetForcingValue(F_ET_RADIA,nn);
       Fg[g].SW_radia_unc    =Fg[g].SW_radia;
 
-      Fg[g].PET             =_pGauges[g]->GetForcingValue    (F_PET,nn);
-      Fg[g].potential_melt  =_pGauges[g]->GetForcingValue    (F_POTENTIAL_MELT,nn);
+      Fg[g].PET             =_pGauges[g]->GetForcingValue(F_PET,nn);
+      Fg[g].potential_melt  =_pGauges[g]->GetForcingValue(F_POTENTIAL_MELT,nn);
 
-      Fg[g].air_pres        =_pGauges[g]->GetForcingValue    (F_AIR_PRES,nn);
-      Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
-      Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
-      Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
+      Fg[g].air_pres        =_pGauges[g]->GetForcingValue(F_AIR_PRES,nn);
+      Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue(F_REL_HUMIDITY,nn);
+      Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue(F_CLOUD_COVER,nn);
+      Fg[g].wind_vel        =_pGauges[g]->GetForcingValue(F_WIND_VEL,nn);
     }
 
     if(!(recharge_gridded)){
-      Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
+      Fg[g].recharge        =_pGauges[g]->GetForcingValue(F_RECHARGE,nn);
     }
   }
   if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//RFS Emulation cheat
@@ -244,20 +244,19 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
         // populate derived data from the ones just read (e.g., precip -> (rain,snow), or (rain,snow)->(precip)
         if(new_chunk1 || new_chunk2 || new_chunk3) { 
-          GenerateGriddedPrecipVars(Options);//only call if new data chunk found
-        } 
+          GenerateGriddedPrecipVars(Options); //only call if new data chunk found
+        }
 
         pGrid_pre  = GetForcingGrid((F_PRECIP)); 
         pGrid_rain = GetForcingGrid((F_RAINFALL)); 
-        pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
-
+        pGrid_snow = GetForcingGrid((F_SNOWFALL));
         
         F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      = NETCDF_BLANK_VALUE;
-      }
 
+      }
       // ---------------------
       // (2a) read gridded temperature (average or min/max) and populate additional time series
       // ---------------------
@@ -288,11 +287,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.temp_daily_min   = pGrid_daily_tmin->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_max   = pGrid_daily_tmax->GetWeightedValue(k,tt.model_time,Options.timestep);
         
-				F.temp_month_ave   = NOT_SPECIFIED;
-				F.temp_month_min   = NOT_SPECIFIED;
-				F.temp_month_max   = NOT_SPECIFIED;
+        F.temp_month_ave   = NOT_SPECIFIED;
+        F.temp_month_min   = NOT_SPECIFIED;
+        F.temp_month_max   = NOT_SPECIFIED;
       }
-
       // ---------------------
       // (3) read gridded recharge
       // ---------------------
@@ -308,7 +306,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.temp_ave_unc = F.temp_daily_ave;
       F.temp_min_unc = F.temp_daily_min;
       F.temp_max_unc = F.temp_daily_max;
-
       //-------------------------------------------------------------------
       //  Temperature Corrections
       //-------------------------------------------------------------------
@@ -349,8 +346,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //--Gauge Corrections------------------------------------------------
       if(!(pre_gridded || snow_gridded || rain_gridded)) //Gauge Data
       {        
-				double gauge_corr; double rc,sc;
-				F.precip=F.precip_5day=F.precip_daily_ave=0.0;
+        double gauge_corr; double rc,sc;
+        F.precip=F.precip_5day=F.precip_daily_ave=0.0;
         int p=_pHydroUnits[k]->GetSubBasinIndex();
         rc=_pSubBasins[p]->GetRainCorrection();
         sc=_pSubBasins[p]->GetSnowCorrection();
@@ -366,11 +363,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
       else //Gridded Data
       {
-				double grid_corr;
+                                double grid_corr;
         double rain_corr=pGrid_pre->GetRainfallCorr();
         double snow_corr=pGrid_pre->GetSnowfallCorr();
         grid_corr= F.snow_frac*snow_corr + (1.0-F.snow_frac)*rain_corr;
-				
+                                
         F.precip          *=grid_corr;
         F.precip_daily_ave*=grid_corr;
         F.precip_5day      =NETCDF_BLANK_VALUE;
@@ -1137,19 +1134,19 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
 //
 void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 {
-  CForcingGrid * pGrid_pre        = NULL;
-  CForcingGrid * pGrid_rain       = NULL;
-  CForcingGrid * pGrid_snow       = NULL; 
+  CForcingGrid * pGrid_pre  = NULL;
+  CForcingGrid * pGrid_rain = NULL;
+  CForcingGrid * pGrid_snow = NULL; 
 
   // see if gridded forcing is read from a NetCDF
-  bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
-  bool rain_gridded           = ForcingGridIsInput(F_RAINFALL)       ;
-  bool snow_gridded           = ForcingGridIsInput(F_SNOWFALL)       ;
-  
+  bool pre_gridded   = ForcingGridIsInput(F_PRECIP)   ;
+  bool rain_gridded  = ForcingGridIsInput(F_RAINFALL) ;
+  bool snow_gridded  = ForcingGridIsInput(F_SNOWFALL) ;
+
   // find the correct grid
-  if ( pre_gridded)             { pGrid_pre        = GetForcingGrid((F_PRECIP));         }
-  if ( rain_gridded)            { pGrid_rain       = GetForcingGrid((F_RAINFALL));       }
-  if ( snow_gridded)            { pGrid_snow       = GetForcingGrid((F_SNOWFALL));       }
+  if ( pre_gridded)   { pGrid_pre   = GetForcingGrid((F_PRECIP));   }
+  if ( rain_gridded)  { pGrid_rain  = GetForcingGrid((F_RAINFALL)); }
+  if ( snow_gridded)  { pGrid_snow  = GetForcingGrid((F_SNOWFALL)); }
 
   // Minimum requirements of forcing grids: must have precip or rain
   ExitGracefullyIf( !pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
@@ -1238,22 +1235,22 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
   // Part (A) does not exist for nongridded input and I don't understand why
   // if ( temp_min_gridded && temp_max_gridded && !temp_ave_gridded )  // (A) Sub-daily min/max temperature given but not subdaily avg
   //   {
-  //  GenerateSubdailyAveTempFromSubdailyMinMax(Options);           // ---> Generate subdaily avg
-  //  temp_ave_gridded = ForcingGridIsAvailable(F_TEMP_AVE);        //      Update availability of data
+  //  GenerateSubdailyAveTempFromSubdailyMinMax(Options);              // ---> Generate subdaily avg
+  //  temp_ave_gridded = ForcingGridIsAvailable(F_TEMP_AVE);           //      Update availability of data
   //   }
 
-  if(temp_ave_gridded)                                           // (B) Sub-daily temperature data provided
+  if(temp_ave_gridded)                                                 // (B) Sub-daily temperature data provided
   {
-    GenerateMinMaxAveTempFromSubdaily(Options);                   // ---> Generate daily min, max, & avg
+    GenerateMinMaxAveTempFromSubdaily(Options);                        // ---> Generate daily min, max, & avg
   }
   else if((temp_daily_min_gridded && temp_daily_max_gridded) ||
-    (temp_daily_min_gridded && temp_daily_max_gridded))    // (C) Daily min/max temperature data provided
+    (temp_daily_min_gridded && temp_daily_max_gridded))                // (C) Daily min/max temperature data provided
   {
-    GenerateAveSubdailyTempFromMinMax(Options);                   // --> Generate T_daily_ave, T_ave (downscaled)
+    GenerateAveSubdailyTempFromMinMax(Options);                        // --> Generate T_daily_ave, T_ave (downscaled)
   }
-  else if(temp_daily_ave_gridded)                                // (D) only daily average data provided
+  else if(temp_daily_ave_gridded)                                      // (D) only daily average data provided
   {
-    GenerateMinMaxSubdailyTempFromAve(Options);                   // --> Generate daily T_min, T_max, and subdaily ave (downscaled)
+    GenerateMinMaxSubdailyTempFromAve(Options);                        // --> Generate daily T_min, T_max, and subdaily ave (downscaled)
   }
   else
   {

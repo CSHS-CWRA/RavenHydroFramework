@@ -994,7 +994,7 @@ double      InterpolateMo(         const double      aVal[12],
 bool        IsDaytime(             const double      &julian_day,
                                    const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
-				                                 string      sTime);
+				         string      sTime);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
@@ -1003,7 +1003,7 @@ void        AddTime(               const double      &jul_day1,
                                    const int         &year1,
                                    const double      &daysadded,
                                          double      &jul_day_out,
-				                                 int         &year_out);
+				         int         &year_out);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 

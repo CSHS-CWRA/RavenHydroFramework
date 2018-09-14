@@ -37,6 +37,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());
   int    GridDims[3];
   GridDims[0] = pTmin->GetCols(); GridDims[1] = pTmin->GetRows(); GridDims[2] = nVals;
+  // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
   // ----------------------------------------------------
   // Generate daily average values Tave=(Tmin+Tmax)/2
@@ -47,9 +48,10 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     // for the first chunk the derived grid does not exist and has to be added to the model
     pTave_daily = new CForcingGrid(* pTmin);  // copy everything from tmin; matrixes are deep copies
     pTave_daily->SetForcingType(F_TEMP_DAILY_AVE);
-    pTave_daily->SetInterval(1.0);        // always daily
+    pTave_daily->SetInterval(1.0);            // always daily
+    pTave_daily->SetIs3D(pTmin->GetIs3D());   // will be at same type as Tmin/Tmax
     pTave_daily->SetGridDims(GridDims);
-    pTave_daily->SetChunkSize(nVals);     // if Tmin/Tmax are subdaily, several timesteps might be merged to one
+    pTave_daily->SetChunkSize(nVals);         // if Tmin/Tmax are subdaily, several timesteps might be merged to one
     pTave_daily->ReallocateArraysInForcingGrid();
   }
   else
@@ -110,14 +112,16 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     int    nVals     = (int)ceil(pTave_daily->GetChunkSize()/Options.timestep);
     int    GridDims[3];
     GridDims[0] = pTmin->GetCols(); GridDims[1] = pTmin->GetRows(); GridDims[2] = nVals;
+    // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
     // Generate subdaily average values
     if ( GetForcingGridIndexFromType(F_TEMP_AVE) == DOESNT_EXIST )
     {
       // for the first chunk the derived grid does not exist and has to be added to the model
-      pTave = new CForcingGrid(* pTave_daily);  // copy everything from tmin; matrixes are deep copies
+      pTave = new CForcingGrid(* pTave_daily);   // copy everything from tmin; matrixes are deep copies
       pTave->SetForcingType(F_TEMP_AVE);
-      pTave->SetInterval(Options.timestep);  // is always model time step; no matter which _interval Tmin/Tmax had
+      pTave->SetInterval(Options.timestep);      // is always model time step; no matter which _interval Tmin/Tmax had
+      pTave->SetIs3D(pTmin->GetIs3D());          // will be at same type as Tmin/Tmax
       pTave->SetGridDims(GridDims);
       pTave->SetChunkSize(nVals);
       pTave->ReallocateArraysInForcingGrid();
@@ -245,6 +249,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   int nVals=(int)ceil(pTave->GetChunkSize()*interval); // number of daily values
   int GridDims[3];
   GridDims[0] = pTave->GetCols(); GridDims[1] = pTave->GetRows(); GridDims[2] = nVals;
+  // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
   // ----------------------------------------------------
   // Generate daily values (min, max, ave) from subdaily
@@ -254,6 +259,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     pTmin_daily = new CForcingGrid(* pTave);  // copy everything from tave; matrixes are deep copies
     pTmin_daily->SetForcingType(F_TEMP_DAILY_MIN);
     pTmin_daily->SetInterval(1.0);
+    pTmin_daily->SetIs3D(pTave->GetIs3D());             // will be at same type as Tave
     pTmin_daily->SetGridDims(GridDims);
     pTmin_daily->SetChunkSize(nVals);
     pTmin_daily->ReallocateArraysInForcingGrid();
@@ -268,6 +274,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     pTmax_daily = new CForcingGrid(* pTave);  // copy everything from tave; matrixes are deep copies
     pTmax_daily->SetForcingType(F_TEMP_DAILY_MAX);
     pTmax_daily->SetInterval(1.0);
+    pTmax_daily->SetIs3D(pTave->GetIs3D());             // will be at same type as Tave
     pTmax_daily->SetGridDims(GridDims);
     pTmax_daily->SetChunkSize(nVals);
     pTmax_daily->ReallocateArraysInForcingGrid();
@@ -282,6 +289,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     pTave_daily = new CForcingGrid(* pTave);  // copy everything from tave; matrixes are deep copies
     pTave_daily->SetForcingType(F_TEMP_DAILY_AVE);
     pTave_daily->SetInterval(1.0);
+    pTave_daily->SetIs3D(pTave->GetIs3D());             // will be at same type as Tave
     pTave_daily->SetGridDims(GridDims);
     pTave_daily->SetChunkSize(nVals);
     pTave_daily->ReallocateArraysInForcingGrid();
@@ -404,15 +412,17 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   int nVals=(int)ceil(pTave_daily->GetChunkSize());                            // number of subdaily values (input resolution)
   int GridDims[3];
   GridDims[0] = pTave_daily->GetCols(); GridDims[1] = pTave_daily->GetRows(); GridDims[2] = nVals;
+  // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
   // ----------------------------------------------------
   // Generate daily values (min, max) from daily average
   // ----------------------------------------------------
   if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MIN) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
-    pTmin_daily = new CForcingGrid(* pTave_daily);  // copy everything from tave_daily; matrixes are deep copies
+    pTmin_daily = new CForcingGrid(* pTave_daily);       // copy everything from tave_daily; matrixes are deep copies
     pTmin_daily->SetForcingType(F_TEMP_DAILY_MIN);
-    pTmin_daily->SetInterval(interval);  // input tmp_ave resolution //Options.timestep);
+    pTmin_daily->SetInterval(interval);                  // input tmp_ave resolution //Options.timestep);
+    pTmin_daily->SetIs3D(pTave_daily->GetIs3D());        // will be at same type as Tave_daily
     pTmin_daily->SetGridDims(GridDims);
     pTmin_daily->SetChunkSize(nVals);
     pTmin_daily->ReallocateArraysInForcingGrid();
@@ -424,9 +434,10 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
 
   if ( GetForcingGridIndexFromType(F_TEMP_DAILY_MAX) == DOESNT_EXIST ) {
     // for the first chunk the derived grid does not exist and has to be added to the model
-    pTmax_daily = new CForcingGrid(* pTave_daily);  // copy everything from tave_daily; matrixes are deep copies
+    pTmax_daily = new CForcingGrid(* pTave_daily);       // copy everything from tave_daily; matrixes are deep copies
     pTmax_daily->SetForcingType(F_TEMP_DAILY_MAX);
-    pTmax_daily->SetInterval(interval); // input tmp_ave resolution //Options.timestep);
+    pTmax_daily->SetInterval(interval);                  // input tmp_ave resolution //Options.timestep);
+    pTmax_daily->SetIs3D(pTave_daily->GetIs3D());        // will be at same type as precipitation
     pTmax_daily->SetGridDims(GridDims);
     pTmax_daily->SetChunkSize(nVals);
     pTmax_daily->ReallocateArraysInForcingGrid();
@@ -516,6 +527,7 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
   int    nVals     = pSnow->GetChunkSize();
   int    GridDims[3];
   GridDims[0] = pSnow->GetCols(); GridDims[1] = pSnow->GetRows(); GridDims[2] = nVals;
+  // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
   // ----------------------------------------------------
   // Generate precipitation
@@ -525,9 +537,10 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
     // for the first chunk the derived grid does not exist and has to be added to the model
     pPre = new CForcingGrid(* pSnow);  // copy everything from snowfall; matrixes are deep copies
     pPre->SetForcingType(F_PRECIP);
-    pPre->SetInterval(pSnow->GetInterval());        // will be at same time resolution as precipitation
+    pPre->SetInterval(pSnow->GetInterval());        // will be at same time resolution as snow
+    pPre->SetIs3D(pSnow->GetIs3D());                // will be at same type as snow
     pPre->SetGridDims(GridDims);
-    pPre->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
+    pPre->SetChunkSize(nVals);                      // has same number of timepoints as snow
     pPre->ReallocateArraysInForcingGrid();
   }
   else {
@@ -587,6 +600,7 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   int    nVals     = pPre->GetChunkSize();
   int    GridDims[3];
   GridDims[0] = pPre->GetCols(); GridDims[1] = pPre->GetRows(); GridDims[2] = nVals;
+  // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
   // ----------------------------------------------------
   // Generate rainfall
@@ -594,12 +608,13 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
   if(GetForcingGridIndexFromType(F_RAINFALL) == DOESNT_EXIST) {
 
     // for the first chunk the derived grid does not exist and has to be added to the model
-    pRain = new CForcingGrid(*pPre);  // copy everything from precip; matrixes are deep copies
+    pRain = new CForcingGrid(*pPre);             // copy everything from precip; matrixes are deep copies
     pRain->SetForcingType(F_RAINFALL);
-    pRain->SetInterval(pPre->GetInterval());        // will be at same time resolution as precipitation
+    pRain->SetInterval(pPre->GetInterval());     // will be at same time resolution as precipitation
+    pRain->SetIs3D(pPre->GetIs3D());             // will be at same type as precipitation
     pRain->SetGridDims(GridDims);
-    pRain->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
-    pRain->ReallocateArraysInForcingGrid(); //This should NOT be done (JRC)
+    pRain->SetChunkSize(nVals);                  // has same number of timepoints as precipitation
+    pRain->ReallocateArraysInForcingGrid();      // This should NOT be done (JRC)
 
     // copy weighting (is this even necessary? should already be there from Copy constructor \todo [optimize] JRC
     int nGridHRUs=pRain->GetnHydroUnits();
@@ -620,13 +635,12 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
     pRain=GetForcingGrid((F_RAINFALL));
   }
 
-
   // set forcing values
   int chunk_size=pRain->GetChunkSize();
   int nNonZero  =pRain->GetNumberNonZeroGridCells();
   for(int it=0; it<chunk_size; it++) {                   // loop over time points in buffer
     for(int ic=0; ic<nNonZero; ic++){                    // loop over non-zero grid cell indexes
-      pRain->SetValue(ic,it,pPre->GetValue(ic,it));   // copies precipitation values
+      pRain->SetValue(ic,it,pPre->GetValue(ic,it));      // copies precipitation values
     }
   }
   /*int idx,row,col;
@@ -692,6 +706,7 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   int    nVals     = pPre->GetChunkSize();
   int    GridDims[3];
   GridDims[0] = pPre->GetCols(); GridDims[1] = pPre->GetRows(); GridDims[2] = nVals;
+  // cout<<"Dims :: "<<GridDims[0]<<","<<GridDims[1]<<","<<GridDims[2]<<endl;
 
   // ----------------------------------------------------
   // Generate snowfall
@@ -702,6 +717,7 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
     pSnow = new CForcingGrid(* pPre);  // copy everything from precip; matrixes are deep copies
     pSnow->SetForcingType(F_SNOWFALL);
     pSnow->SetInterval(pPre->GetInterval());        // will be at same time resolution as precipitation
+    pSnow->SetIs3D(pPre->GetIs3D());                // will be at same type as precipitation
     pSnow->SetGridDims(GridDims);
     pSnow->SetChunkSize(nVals);                     // has same number of timepoints as precipitation
     pSnow->ReallocateArraysInForcingGrid();
