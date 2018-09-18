@@ -49,6 +49,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
   _t_lag             =AUTO_COMPUTE;
+  _gamma_shape       =3.0;
   _reservoir_constant=AUTO_COMPUTE;
   _num_reservoirs    =1;
 
@@ -506,6 +507,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("SLOPE"         ))  {_slope=value;}
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
+  else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
   else{
     return false;//bad string
   }
@@ -861,24 +863,20 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
       _t_conc=0.76/24*pow(_basin_area,0.38);// \ref Austrailian Rainfall and runoff
     }
-    if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION){_t_peak=AUTO_COMPUTE;}
+    if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION ){_t_peak=AUTO_COMPUTE;}
     if(Options.catchment_routing==ROUTE_DUMP){_t_peak=AUTO_COMPUTE;}
 
-    if (_t_peak==AUTO_COMPUTE){
-      _t_peak=0.3*_t_conc;/// \todo [fix hack] better means of determining needed
-    }
-    if (_t_lag==AUTO_COMPUTE){
-      _t_lag=0.0;
-    }
+    if (_t_peak     ==AUTO_COMPUTE){_t_peak=0.3*_t_conc; }/// \todo [fix hack] better means of determining needed
+    if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
+    if (_gamma_shape==AUTO_COMPUTE){_gamma_shape=3.0; }
+
     if (_reservoir_constant==AUTO_COMPUTE){
       _reservoir_constant=-log(_t_conc/(1+_t_conc));
     }
-    ExitGracefullyIf(_t_conc<_t_peak,
-                     "CSubBasin::Initialize: time of concentration must be greater than time to peak",BAD_DATA);
-    ExitGracefullyIf(_t_peak<=0,
-                     "CSubBasin::Initialize: time to peak must be greater than zero",BAD_DATA);
-    ExitGracefullyIf(_t_conc<=0,
-                     "CSubBasin::Initialize: time of concentration must be greater than zero",BAD_DATA);
+    ExitGracefullyIf(_t_conc<_t_peak,"CSubBasin::Initialize: time of concentration must be greater than time to peak",BAD_DATA);
+    ExitGracefullyIf(_t_peak<=0,     "CSubBasin::Initialize: time to peak must be greater than zero",BAD_DATA);
+    ExitGracefullyIf(_t_conc<=0,     "CSubBasin::Initialize: time of concentration must be greater than zero",BAD_DATA);
+    ExitGracefullyIf(_gamma_shape<=0,"CSubBasin::Initialize: gamma shape parameter must be greater than zero",BAD_DATA);
 
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
@@ -889,10 +887,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       {
         _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
       }
-      //cout<<"    *initial channel_storage:"<<_channel_storage<<" m3, RL: "<<_reach_length/1000<<" km, _aQout:"<<aQout[_nSegments-1]<<"m3/s Area:"<<_pChannel->GetArea(aQout[num_segments-1])<<endl;
     }
-
-
+    
     //generate catchment & routing hydrograph weights
     //reserves memory and populates _aQinHist,_aQlatHist,_aRouteHydro
     //------------------------------------------------------------------------
@@ -1139,12 +1135,11 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   //---------------------------------------------------------------
   if (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION)
   {
-    const double GAMMA_SHAPE=3.0;/// \ref fixed as in Clark et. al 2007
     sum=0;
     for (n=0;n<_nQlatHist;n++)
     {
       t=n*tstep-_t_lag;
-      _aUnitHydro[n]=GammaCumDist((t+tstep)/_t_peak*GAMMA_SHAPE,GAMMA_SHAPE)-sum;
+      _aUnitHydro[n]=GammaCumDist((t+tstep)/_t_peak*_gamma_shape,_gamma_shape)-sum;
       ExitGracefullyIf(!_finite(_aUnitHydro[n]),
                        "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
 

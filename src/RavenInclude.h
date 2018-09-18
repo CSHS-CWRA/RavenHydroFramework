@@ -369,7 +369,8 @@ enum evap_method
   PET_SHUTTLEWORTH_WALLACE,///<
   PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
   PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
-  PET_GRANGER,             ///< Granger PET from CRHM 
+  PET_GRANGER,             ///< Granger PET from CRHM
+  PET_MOHYSE               ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -827,6 +828,7 @@ struct optStruct
   potmelt_method   pot_melt;          ///< Potential melt estimation method
   subdaily_method  subdaily;          ///< Subdaily PET/Snowmelt temporal downscaling correction
   recharge_method  recharge;          ///< aquifer/soil recharge method
+  bool             direct_evap;       ///< true if PET is used to directly reduce precipitation
 
   precip_icept_method interception_factor; ///< method for calculating canopy interception factor
 

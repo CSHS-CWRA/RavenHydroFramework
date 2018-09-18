@@ -192,7 +192,7 @@ double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //
 /// \param SublH [out] 
 //
 // Li L, Pomeroy JW. 1997. Probability of occurrence of blowing snow. Journal of Geophysical Research 102: 21955-21964.
-// Raupach MR, Gillette DA, Leys JF. 1993. The eect of roughness elements on wind erosion threshold. Journal of Geophysical Research 98: 3023-3029.
+// Raupach MR, Gillette DA, Leys JF. 1993. The effect of roughness elements on wind erosion threshold. Journal of Geophysical Research 98: 3023-3029.
 // Pomeroy JW. 1988. Wind transport of snow . Ph.D. Thesis, University of Saskatchewan.
 //
 void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [m]
@@ -603,6 +603,7 @@ void CmvPrairieBlowingSnow::GetLateralExchange( const double * const     *state_
 
   for(int q=0; q<_nLatConnections; q++)
   {
+    /*TMP DEBUG */
     stor   =state_vars[_kFrom[q]][_iFromLat[q]];
     to_stor=state_vars[_kTo  [q]][_iToLat[q]];
     Afrom=pHRUs[_kFrom[q]]->GetArea();

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Radiation.h"
@@ -426,6 +426,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
       //-------------------------------------------------------------------
+      // Direct evaporation of rainfall
+      //-------------------------------------------------------------------
+      if(Options.direct_evap) {
+        double reduce=min(F.PET,F.precip*(1.0-F.snow_frac));
+        if(F.precip-reduce>=0.0) { F.snow_frac=1.0-(F.precip*(1.0-F.snow_frac)-reduce)/(F.precip-reduce); }
+        F.precip-=reduce;
+        F.PET   -=reduce;
+      }
+
+      //-------------------------------------------------------------------
       // Update
       //-------------------------------------------------------------------
       _pHydroUnits[k]->UpdateForcingFunctions(F);
@@ -745,7 +755,8 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   else if (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION)
   {
     // Parameters are located in the RVH file, and there's no checking routine for that file yet.
-    //aP[nP]="TIME_TO_PEAK"; aPC[nP]=CLASS_; nP++;
+    //aP[nP]="TIME_TO_PEAK"; aPC[nP]=CLASS_SUBBASIN; nP++;
+    //aP[nP]="GAMMA_SHAPE"; aPC[nP]=CLASS_SUBBASIN; nP++;
   }
   else if (Options.catchment_routing==ROUTE_TRI_CONVOLUTION)
   {
@@ -804,6 +815,10 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     // Need Max and Min Monthly Temp
     //aP[nP]="TEMP_MONTH_MAX";  aPC[nP]=CLASS_; nP++;
     //aP[nP]="TEMP_MONTH_MIN";  aPC[nP]=CLASS_; nP++;
+  }
+  else if(Options.evaporation==PET_MOHYSE)
+  {
+    aP[nP]="MOHYSE_PET_COEFF"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
   else if ((Options.evaporation==PET_CONSTANT) || (Options.evaporation==PET_HAMON) || (Options.evaporation==PET_HARGREAVES_1985)
            || (Options.evaporation==PET_TURC_1961) || (Options.evaporation==PET_MAKKINK_1957) || (Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE))

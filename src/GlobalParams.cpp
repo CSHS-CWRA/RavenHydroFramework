@@ -226,6 +226,8 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   SetSpecifiedValue(G.airsnow_coeff,Gtmp.airsnow_coeff,Gtemplate.airsnow_coeff,false,"AIRSNOW_COEFF");
   SetSpecifiedValue(G.avg_annual_snow,Gtmp.avg_annual_snow,Gtemplate.avg_annual_snow,false,"AVG_ANNUAL_SNOW");
   SetSpecifiedValue(G.avg_annual_runoff,Gtmp.avg_annual_runoff,Gtemplate.avg_annual_runoff,false,"AVG_ANNUAL_RUNOFF");
+  SetSpecifiedValue(G.MOHYSE_PET_coeff,Gtmp.MOHYSE_PET_coeff,Gtemplate.MOHYSE_PET_coeff,false,"MOHYSE_PET_COEFF");
+  
 }
 
 //////////////////////////////////////////////////////////////////
@@ -247,6 +249,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.wet_adiabatic_lapse =DefaultParameterValue(is_template,true);
   g.precip_lapse        =DefaultParameterValue(is_template,true);
   g.airsnow_coeff       =DefaultParameterValue(is_template,true);
+  g.MOHYSE_PET_coeff    =DefaultParameterValue(is_template,true);
   g.max_snow_albedo     =DefaultParameterValue(is_template,true);
   g.min_snow_albedo     =DefaultParameterValue(is_template,true);
 
@@ -365,7 +368,7 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("AVG_ANNUAL_SNOW"     )){G.avg_annual_snow=value;}
   else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){G.avg_annual_runoff=value;}
   else if (!name.compare("MAX_SWE_SURFACE"     )){G.max_SWE_surface=value;}
-
+  else if (!name.compare("MOHYSE_PET_COEFF"    )){G.MOHYSE_PET_coeff=value;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){G.max_reach_seglength=value;}
 
   else{
@@ -443,7 +446,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("AVG_ANNUAL_SNOW"     )){return G.avg_annual_snow;}
   else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){return G.avg_annual_runoff;}
   else if (!name.compare("MAX_SWE_SURFACE"     )){return G.max_SWE_surface;}
-
+  else if (!name.compare("MOHYSE_PET_COEFF"     )){return G.MOHYSE_PET_coeff;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){return G.max_reach_seglength;}
 
   else{

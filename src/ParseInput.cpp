@@ -175,6 +175,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.subdaily            =SUBDAILY_NONE;
   Options.interception_factor =PRECIP_ICEPT_USER;
   Options.recharge            =RECHARGE_NONE;
+  Options.direct_evap         =false;
   Options.keepUBCWMbugs       =false;
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
@@ -272,6 +273,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EndDate"               )){code=41; }
     else if  (!strcmp(s[0],":RechargeMethod"        )){code=42; }
     else if  (!strcmp(s[0],":NetSWRadMethod"        )){code=43; }
+    else if  (!strcmp(s[0],":DirectEvaporation"     )){code=44; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"             )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"  )){code=51; }
@@ -514,7 +516,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.evaporation =PET_PENMAN_SIMPLE33;}
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.evaporation =PET_PENMAN_SIMPLE39;}
       else if (!strcmp(s[1],"PET_GRANGER"           )){Options.evaporation =PET_GRANGER;}
-
+      else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.evaporation =PET_MOHYSE;}
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
       }
@@ -965,6 +967,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"NETSWRAD_CALC"     )){Options.SW_radia_net=NETSWRAD_CALC;}
       else if (!strcmp(s[1],"NETSWRAD_DATA"     )){Options.SW_radia_net=NETSWRAD_DATA;}
       else {ExitGracefully("ParseInput :NetSWRadMethod: Unrecognized method",BAD_DATA_WARN);}
+      break;
+    }
+    case(43)://----------------------------------------------
+    {/*:DirectEvaporation"  */
+      if(Options.noisy) { cout <<"Use Direct Evaporation"<<endl; }
+      Options.direct_evap=true;
       break;
     }
     case(50):  //--------------------------------------------
@@ -1664,6 +1672,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_UBC"          )){se_type=SOILEVAP_UBC;}
       else if (!strcmp(s[1],"SOILEVAP_CHU"          )){se_type=SOILEVAP_CHU;}
       else if (!strcmp(s[1],"SOILEVAP_GR4J"         )){se_type=SOILEVAP_GR4J;}
+      else if (!strcmp(s[1],"SOILEVAP_LINEAR"       )){se_type=SOILEVAP_LINEAR;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
       }

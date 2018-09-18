@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Soil Evaporation
   ----------------------------------------------------------------*/
@@ -39,7 +39,8 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
            (type==SOILEVAP_HBV) ||
            (type==SOILEVAP_UBC) ||
            (type==SOILEVAP_CHU) ||
-           (type==SOILEVAP_GR4J))
+           (type==SOILEVAP_GR4J) ||
+           (type==SOILEVAP_LINEAR))
   {
     CHydroProcessABC::DynamicSpecifyConnections(1);
 
@@ -151,6 +152,11 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     nP=2;
     aP[0]="CHU_MATURITY";      aPC[0]=CLASS_VEGETATION;
   }
+  else if (type==SOILEVAP_LINEAR)
+  {
+    nP=1;
+    aP[0]="AET_COEFF";         aPC[0]=CLASS_LANDUSE;
+  }
   else if (type==SOILEVAP_GR4J)
   {
     nP=0;
@@ -179,7 +185,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     aSV [0]=SOIL;  aSV  [1]=SOIL;  aSV [2]=ATMOSPHERE;    aSV [3]=DEPRESSION;
     aLev[0]=0;     aLev [1]=1;     aLev[2]=DOESNT_EXIST;  aLev[3]=DOESNT_EXIST;
   }
-  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV))
+  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR))
   {
     nSV=2;
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
@@ -293,6 +299,16 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       m=soil_ind[q];
       rates[q]=PET*(root_frac[m]/rootsum)*threshMin(1.0,state_vars[iFrom[q]]/cap[m],0.0);
     }
+  }
+  //------------------------------------------------------------
+  else if (type==SOILEVAP_LINEAR) //linear function of saturation
+  {
+    double stor    = state_vars[iFrom[0]];//[mm]
+    double max_stor=pHRU->GetSoilCapacity(0);
+
+    double alpha   =pHRU->GetSurfaceProps()->AET_coeff;
+
+    rates[0]  = alpha*PET*(stor/max_stor);  //evaporation rate [mm/d]
   }
   //------------------------------------------------------------
   else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV))

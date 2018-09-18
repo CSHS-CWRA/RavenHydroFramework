@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -270,6 +270,7 @@ struct surface_struct
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation
   double forest_PET_corr;   ///< [-]       fraction of PET to apply to forest evapotranspiration
+  double AET_coeff;         ///< [-]       linear AET coefficient
 
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient 
 
@@ -360,6 +361,8 @@ struct global_struct
   double           UBC_flash_ponding;   ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
 
   double           airsnow_coeff;       ///< [1/d] air/snow heat transfer coefficient
+
+  double           MOHYSE_PET_coeff;    ///< [mm/d] MOHYSE PET constant (PET @ equinox when temperature is 10 degC)
 
   double           TOC_multiplier;      ///< [mm] time of concentration multiplier
 };

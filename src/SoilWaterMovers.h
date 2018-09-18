@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvBaseflow
@@ -78,18 +78,19 @@ public:/*-------------------------------------------------------*/
 //
 enum soilevap_type
 {
-  SOILEVAP_GAWSER,  ///< uses GAWSER approach
-  SOILEVAP_FEDERER, ///< uses Federer 1979 resistance calculations \ref Federer 1979 \cite federer1979WRR
-  SOILEVAP_ROOTFRAC,///< linear relation between ET and tension storage, distributed by root fraction
-  SOILEVAP_VIC,                 ///< variable infiltration capacity model
-  SOILEVAP_TOPMODEL,///< linear relation between ET and tension storage
-  SOILEVAP_SEQUEN,      ///< Sequential soil evaporation method for FUSE emulation - VIC ONLY
+  SOILEVAP_GAWSER,        ///< uses GAWSER approach
+  SOILEVAP_FEDERER,       ///< uses Federer 1979 resistance calculations \ref Federer 1979 \cite federer1979WRR
+  SOILEVAP_ROOTFRAC,      ///< linear relation between ET and tension storage, distributed by root fraction
+  SOILEVAP_VIC,           ///< variable infiltration capacity model
+  SOILEVAP_TOPMODEL,      ///< linear relation between ET and tension storage
+  SOILEVAP_SEQUEN,        ///< Sequential soil evaporation method for FUSE emulation - VIC ONLY
   SOILEVAP_ROOT,          ///< Root weighting soil evaporation method for FUSE emulation - VIC ONLY
   SOILEVAP_ROOT_CONSTRAIN,///< same as ROOT, but top layer constrained to be above sat_wilt
-  SOILEVAP_HBV,                 ///< Simple HBV model -linear relation between ET and tension storage, with snow correction
-  SOILEVAP_UBC,     ///< UBCWM Model
-  SOILEVAP_CHU,     ///< Crop Heat Unit method
-  SOILEVAP_GR4J     ///< GR4J model approach
+  SOILEVAP_HBV,           ///< Simple HBV model -linear relation between ET and tension storage, with snow correction
+  SOILEVAP_UBC,           ///< UBCWM Model
+  SOILEVAP_CHU,           ///< Crop Heat Unit method
+  SOILEVAP_GR4J,          ///< GR4J model approach
+  SOILEVAP_LINEAR         ///< AET a linear function of soil moisture
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction of loss of water from multiple soil layers to atmosphere
@@ -99,9 +100,9 @@ enum soilevap_type
 class CmvSoilEvap: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  soilevap_type                          type; ///< Model of soil evaporation selected
-  int                                                   *soil_ind;      ///< array of soil indices
-  int                                           nSoilLayers;  ///< number of soil layers subject to evaporation
+  soilevap_type   type;         ///< Model of soil evaporation selected
+  int            *soil_ind;     ///< array of soil indices
+  int             nSoilLayers;  ///< number of soil layers subject to evaporation
 
   void FedererSoilEvap           (const double      &PET,
                                   const double            *storage,
@@ -154,7 +155,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvInterflow( interflow_type  itype,
-                int                                                     from_index);
+                int             from_index);
   ~CmvInterflow();
 
   //inherited functions
@@ -209,11 +210,9 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvPercolation(perc_type      p_type,
-                 int                            In_indices,                     //soil water storage
-                 int                            Out_index);
+                 int            In_indices,                     //soil water storage
+                 int            Out_index);
   ~CmvPercolation();
-  /*CmvPercolation(perc_type                    ptype);
-    ~CmvPercolation(); */
 
   //inherited functions
   void Initialize();
@@ -248,9 +247,9 @@ enum crise_type
 class CmvCapillaryRise: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  crise_type                                    type; ///< Model of capillary rise selected
-  int                                            *soil_ind;     ///< array of soil indices
-  int                                    nSoilLayers; ///< number of soil layers subject to evaporation
+  crise_type      type;        ///< Model of capillary rise selected
+  int            *soil_ind;    ///< array of soil indices
+  int             nSoilLayers; ///< number of soil layers subject to evaporation
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

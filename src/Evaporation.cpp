@@ -13,6 +13,7 @@
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
+#include "Radiation.h"
 #include "HydroUnits.h"
 double EvapGranger(const force_struct *F,const CHydroUnit *pHRU);
 
@@ -405,6 +406,15 @@ double EstimatePET(const force_struct &F,
     double rel_hum=F.rel_humidity; //[0..1]
 
     PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
+    break;
+  }
+  case(PET_MOHYSE) :
+  {
+    double lat_rad=pHRU->GetLatRad();
+    double declin=CRadiation::SolarDeclination(F.day_angle);
+    double cpet=CGlobalParams::GetParams()->MOHYSE_PET_coeff;
+
+    PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
     break;
   }
   case (PET_GRANGER):
