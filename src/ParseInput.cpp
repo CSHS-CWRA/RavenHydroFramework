@@ -969,7 +969,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {ExitGracefully("ParseInput :NetSWRadMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
-    case(43)://----------------------------------------------
+    case(44)://----------------------------------------------
     {/*:DirectEvaporation"  */
       if(Options.noisy) { cout <<"Use Direct Evaporation"<<endl; }
       Options.direct_evap=true;
