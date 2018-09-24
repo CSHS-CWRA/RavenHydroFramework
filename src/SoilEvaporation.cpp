@@ -308,7 +308,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     double alpha   =pHRU->GetSurfaceProps()->AET_coeff;
 
-    rates[0]  = alpha*PET*(stor/max_stor);  //evaporation rate [mm/d]
+    rates[0]  = min(alpha*stor,PET);  //evaporation rate [mm/d]
   }
   //------------------------------------------------------------
   else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV))

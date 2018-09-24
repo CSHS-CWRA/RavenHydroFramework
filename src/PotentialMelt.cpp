@@ -25,6 +25,8 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   double albedo;
   albedo=pHRU->GetSnowAlbedo();
 
+
+  
   //----------------------------------------------------------
   if (Options.pot_melt==POTMELT_DATA)
   {
@@ -34,7 +36,8 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   else if (Options.pot_melt==POTMELT_DEGREE_DAY)
   {
     double Ma=pHRU->GetSurfaceProps()->melt_factor;
-    return Ma*(F->temp_daily_ave-FREEZING_TEMP);
+    double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    return Ma*(F->temp_daily_ave-melt_temp);
   }
   //----------------------------------------------------------
   else if (Options.pot_melt==POTMELT_HBV)
@@ -46,6 +49,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double AM    =surf->HBV_melt_asp_corr;
     double MRF   =surf->HBV_melt_for_corr;
     double Fc    =surf->forest_coverage;
+    double melt_temp=surf->DD_melt_temp;
     double slope_corr;
 
     //annual variation
@@ -64,7 +68,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     //aspect corrections
     Ma*=max(1.0-AM*slope_corr*cos(pHRU->GetAspect()),0.0);//north facing slopes (aspect=0) have lower melt rates
 
-    return Ma*(F->temp_daily_ave-FREEZING_TEMP);
+    return Ma*(F->temp_daily_ave-melt_temp);
   }
   //----------------------------------------------------------
   else if (Options.pot_melt==POTMELT_EB)
@@ -93,8 +97,9 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   else if (Options.pot_melt==POTMELT_RESTRICTED)
   {
     double rad,convert;
-    double Ma=pHRU->GetSurfaceProps()->melt_factor;
-    double tmp_rate=threshPositive(Ma*(F->temp_daily_ave-FREEZING_TEMP));
+    double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    double Ma       =pHRU->GetSurfaceProps()->melt_factor;
+    double tmp_rate=threshPositive(Ma*(F->temp_daily_ave-melt_temp));
 
     rad     = ((1-albedo)*F->SW_radia+F->LW_radia);//[MJ/m2/d]
     convert = MM_PER_METER/DENSITY_WATER/LH_FUSION;//for converting radiation to mm/d [mm/m]/[kg/m3]/[MJ/kg] = [mm-m2/MJ]
@@ -105,10 +110,11 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   else if (Options.pot_melt==POTMELT_DD_RAIN)
   {
     //degree-day with rain-on-snow correction
-    double Ma=pHRU->GetSurfaceProps()->melt_factor;
+    double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double rainfall=F->precip*(1-F->snow_frac);
     double adv_melt= SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*rainfall; //[mm/d]
-    return Ma*(F->temp_daily_ave-FREEZING_TEMP)+adv_melt;
+    return Ma*(F->temp_daily_ave-melt_temp)+adv_melt;
   }
   //----------------------------------------------------------
   else if (Options.pot_melt==POTMELT_UBCWM)

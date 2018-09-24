@@ -430,7 +430,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       if(Options.direct_evap) {
         double reduce=min(F.PET,F.precip*(1.0-F.snow_frac));
-        if(F.precip-reduce>=0.0) { F.snow_frac=1.0-(F.precip*(1.0-F.snow_frac)-reduce)/(F.precip-reduce); }
+        if(F.precip-reduce>0.0) { F.snow_frac=1.0-(F.precip*(1.0-F.snow_frac)-reduce)/(F.precip-reduce); }
         F.precip-=reduce;
         F.PET   -=reduce;
       }
@@ -755,7 +755,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   else if (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION)
   {
     // Parameters are located in the RVH file, and there's no checking routine for that file yet.
-    //aP[nP]="TIME_TO_PEAK"; aPC[nP]=CLASS_SUBBASIN; nP++;
+    //aP[nP]="TIME_CONC"; aPC[nP]=CLASS_SUBBASIN; nP++;
     //aP[nP]="GAMMA_SHAPE"; aPC[nP]=CLASS_SUBBASIN; nP++;
   }
   else if (Options.catchment_routing==ROUTE_TRI_CONVOLUTION)
@@ -1061,14 +1061,17 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   else if (Options.pot_melt == POTMELT_DEGREE_DAY)
   {
     aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
   }
   else if (Options.pot_melt==POTMELT_RESTRICTED)
   {
     aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
   }
   else if (Options.pot_melt==POTMELT_HBV)
   {
     aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
@@ -1097,7 +1100,6 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if(Options.pot_melt==POTMELT_CRHM_EBSM)
   {
-    //aP[nP]="WIND_EXPOSURE";       aPC[nP]=CLASS_LANDUSE; nP++;
   }
   // Sub Daily Method
   //----------------------------------------------------------------------
@@ -1185,7 +1187,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   //--------------------------------------------------------------------------
   if( snow_gridded && rain_gridded && (Options.rainsnow!=RAINSNOW_DATA))
   {
-    WriteWarning("CModel::GenerateGriddedPrecipVars: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
+    WriteWarning("CModel::GenerateGriddedPrecipVars: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than RAINSNOW_DATA. Snow fraction will be recalculated.",Options.noisy);
   }
   //deaccumulate if necessary
   double rainfall_rate;

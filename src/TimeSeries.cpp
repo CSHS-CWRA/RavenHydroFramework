@@ -1176,7 +1176,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   string dash;                  // to check format of time unit string
   string colon;                 // to check format of time unit string
   string unit_t_str;            // to check format of time unit string
-  int    ii;                    // counter
   
   // handling variable dimension orders
   int    dimids_var[2];         // ids of dimensions of a NetCDF variable
@@ -1611,7 +1610,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
 
   if (tstep >= 1.0) {   // data are not sub-daily
-    if ( ceilf(TimeShift) == TimeShift) {  // time shift of whole days requested
+    if ( ceil(TimeShift) == TimeShift) {  // time shift of whole days requested
       // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
       AddTime(start_day,start_yr,TimeShift,start_day,start_yr) ;
       // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }

@@ -111,7 +111,7 @@ void CGauge::Initialize(const optStruct   &Options,
 
   if(hasSnowfall && hasRainfall && (Options.rainsnow!=RAINSNOW_DATA))
   {
-    WriteWarning("Gauge:Initialize: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than USE_DATA. Snow fraction will be recalculated.",Options.noisy);
+    WriteWarning("Gauge:Initialize: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than RAINSNOW_DATA. Snow fraction will be recalculated.",Options.noisy);
   }
 
   if (hasSnowfall && hasRainfall){
