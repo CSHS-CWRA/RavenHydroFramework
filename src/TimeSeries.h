@@ -123,6 +123,7 @@ public:/*-------------------------------------------------------*/
   static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)
                                                string name,                 // forcing type
 					       string tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
+					       bool   shift_to_per_ending,  // true if data are period ending rtaher than period ending
                                                string FileNameNC,           // file name of NetCDF
                                                string VarNameNC,            // name of variable in NetCDF
                                                string DimNamesNC_stations,  // name of station dimension (optional; default=None)
