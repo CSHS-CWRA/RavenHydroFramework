@@ -706,18 +706,19 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF: If there are multiple stations in NetCDF file, the StationIdx argument must be given (numbering starts with 1) to identify station that should be read in",BAD_DATA); return NULL;
     }
 
-    /* cout <<"Filename   = "<<FileNameNC<<endl;
+     /* cout <<"Filename   = "<<FileNameNC<<endl;
      cout <<"VarNameNC  = "<<VarNameNC<<endl;
      cout <<"DimNamesNC = "<<DimNamesNC_stations<<endl;
      cout <<"DimNamesNC = "<<DimNamesNC_time<<endl;
      cout <<"StationIdx = "<<StationIdx<<endl;
-     cout <<"TimeShift  = "<<TimeShift<<endl; */
+     cout <<"TimeShift  = "<<TimeShift<<endl;  */
 
     // if DimNamesNC_stations == "None" then NetCDF variable is assumed to be 1D (only time)
     // if DimNamesNC_stations != "None" then StationIdx must be >= 1
     pTimeSeries = ReadTimeSeriesFromNetCDF(
                                            Options,              // model options (such as simulation period)
                                            name,                 // ForcingType
+					   tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
                                            FileNameNC,           // file name of NetCDF
                                            VarNameNC,            // name of variable in NetCDF
                                            DimNamesNC_stations,  // name of station dimension (optional; default=None)
@@ -1145,6 +1146,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 ///
 /// \param  Options             [in] global model otions such as simulation period
 /// \param  name                [in] forcing type
+/// \param  tag                 [in] critical information about timeseries, e.g. subbasin ID or HRU ID
 /// \param  FileNameNC          [in] file name of NetCDF
 /// \param  VarNameNC           [in] name of variable in NetCDF
 /// \param  DimNamesNC_stations [in] name of station dimension (optional; default=None)
@@ -1156,7 +1158,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-                                                   string FileNameNC, string VarNameNC,
+						   string tag, string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
 {
@@ -1182,15 +1184,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   int    dim1;                  // length of 1st dimension in NetCDF data
   int    dim2;                  // length of 2nd dimension in NetCDF data
   int    dim_order;             // order of dimensions of variable to read
-
-  // extracting tag (variable long name and unit) information from NetCDF
-  string tag;                   // tag contains variable long name and unit
-  int    iatt;
-  char   attrib_name[500];
-  int    retval1;
-  size_t att_len;               // length of the attribute's text
-  char * unit_f;                // special type for string of variable's unit required by nc routine
-  char * long_name_f;           // special type for string of variable's long name required by nc routine
 
   // final variables to create time series object
   int    nMeasurements;          // number of data points read
@@ -1434,55 +1427,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (8) set tag
-  //     ---> looks for attributes "long_name" and "units" of forcing variable
-  //     --> if either attribute not available it will be set to "?"
-  // -------------------------------
-  retval = 0;
-  iatt   = 0;
-  long_name_f = (char *) malloc(2);
-  strcpy(long_name_f, "?\0");
-  unit_f = (char *) malloc(2);
-  strcpy(unit_f, "?\0");
-
-  while (retval==0)
-  {
-    // inquire attributes name
-    retval = nc_inq_attname(ncid, varid_f, iatt, attrib_name);
-
-    // long_name of forcing
-    if (strcmp(attrib_name,"long_name") == 0)
-    {
-      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
-      HandleNetCDFErrors(retval1);
-      long_name_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
-      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, long_name_f);// read attribute text
-      HandleNetCDFErrors(retval1);
-      long_name_f[att_len] = '\0';// add string determining character
-    }
-
-    // unit of forcing
-    if (strcmp(attrib_name,"units") == 0)
-    {
-      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
-      HandleNetCDFErrors(retval1);
-      unit_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
-      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, unit_f);// read attribute text
-      HandleNetCDFErrors(retval1);
-      unit_f[att_len] = '\0';// add string determining character
-    }
-
-    iatt++;
-
-  }
-
-  tag = to_string(long_name_f)+" in ["+to_string(unit_f)+"]";
-
-  free( unit_f); free(long_name_f);
-  if (Options.noisy){ printf("Forcing found in NetCDF file: %s \n",tag.c_str()); }
-
-  // -------------------------------
-  // (9) Initialize data array (data type that is needed by NetCDF library)
+  // (8) Initialize data array (data type that is needed by NetCDF library)
   // -------------------------------
   double *aVec=new double[dim1*dim2];//stores actual data
   for(int i=0; i<dim1*dim2; i++) {
@@ -1506,7 +1451,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (10) Read data
+  // (9) Read data
   // -------------------------------
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
 
@@ -1559,13 +1504,13 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (11) close NetCDF
+  // (10) close NetCDF
   // -------------------------------
   retval = nc_close(ncid);
   HandleNetCDFErrors(retval);
 
   // -------------------------------
-  // (12) Initialize data array (data type that is needed by RAVEN)
+  // (11) Initialize data array (data type that is needed by RAVEN)
   // -------------------------------
   double *aVal;
   aVal = NULL;
@@ -1575,7 +1520,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (13) Convert into RAVEN data array and apply linear transformation: new = a*data+b
+  // (12) Convert into RAVEN data array and apply linear transformation: new = a*data+b
   // -------------------------------
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
 
@@ -1604,7 +1549,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (14) add time shift to data
+  // (13) add time shift to data
   //      --> only applied when tstep < 1.0 (daily)
   //      --> otherwise ignored and warning written to RavenErrors.txt
   // -------------------------------
@@ -1627,13 +1572,14 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (15) convert to time series object
+  // (14) convert to time series object
   // -------------------------------
   is_pulse = true;
+  
   pTimeSeries=new CTimeSeries(name,tag,FileNameNC.c_str(),start_day,start_yr,tstep,aVal,nMeasurements,is_pulse);
 
   // -------------------------------
-  // (16) delete dynamic memory
+  // (15) delete dynamic memory
   // -------------------------------
   delete [] aVal;  aVal =NULL;  
 #endif   // ends #ifdef _RVNETCDF_
