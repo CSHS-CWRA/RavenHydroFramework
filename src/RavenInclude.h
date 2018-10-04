@@ -278,7 +278,6 @@ const int     MAX_SV_LAYERS    =100;     ///< maximum number of layers per state
 const int     MAX_SOILLAYERS   =50;      ///< maximum number of soil layers in profile
 const int     MAX_STATE_VARS   =200;     ///< maximum number of state variables in model
 const int     MAX_CONNECTIONS  =200;     ///< maximum number of to/from connections in any single process (CAdvection worst offender)
-const int     MAX_SOIL_CLASSES =250;     ///< Max number of soil classes
 const int     MAX_SOIL_PROFILES=200;     ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES  =200;     ///< Max number of vegetation classes
 const int     MAX_LULT_CLASSES =200;     ///< Max number of lult classes

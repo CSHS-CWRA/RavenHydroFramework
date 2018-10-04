@@ -18,6 +18,8 @@ void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStru
 
 void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int       &nPm, 
                               const string  *aP , const class_type *aPC , const int &nP); 
+void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_soils,string *&soiltags,int &num_parsed_soils, const string name, bool isdefault);
+
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the class properties .rvp file
 ///
@@ -59,9 +61,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   string            lulttags    [MAX_LULT_CLASSES];
 
   int               num_parsed_soils=0;
-  CSoilClass       *pSoilClasses[MAX_SOIL_CLASSES];
-  soil_struct       parsed_soils[MAX_SOIL_CLASSES];
-  string            soiltags    [MAX_SOIL_CLASSES];
+  CSoilClass      **pSoilClasses=NULL;
+  soil_struct     **parsed_soils=NULL;
+  string           *soiltags    =NULL;
 
   int               num_parsed_terrs=0;
   CTerrainClass    *pTerrClasses[MAX_TERRAIN_CLASSES];
@@ -76,16 +78,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   const int         MAX_PROPERTIES_PER_LINE=20;
 
-  int               MAX_NUM_IN_CLASS=max(max(MAX_SOIL_CLASSES,MAX_VEG_CLASSES),MAX_LULT_CLASSES);
+  int               MAX_NUM_IN_CLASS=max(MAX_VEG_CLASSES,MAX_LULT_CLASSES);
   bool              invalid_index;
   int               num_read;
   int              *indices;
   double          **properties;
   string            aParamStrings[MAXINPUTITEMS];
   int               nParamStrings=0;
-
-
-  
 
   CGlobalParams::InitializeGlobalParameters(global_template,true);
   CGlobalParams::InitializeGlobalParameters(parsed_globals,false); 
@@ -94,9 +93,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   vegtags    [0]="[DEFAULT]";
   num_parsed_veg++;
 
-  CSoilClass::InitializeSoilProperties(parsed_soils[0],true);//zero-index soil is template - does not create class
-  soiltags    [0]="[DEFAULT]";
-  num_parsed_soils++;
+  AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,"[DEFAULT]",true);//zero-index soil is template
 
   CLandUseClass::InitializeSurfaceProperties("[DEFAULT]",parsed_surf[0],true);//zero-index LULT is template
   lulttags    [0]="[DEFAULT]";
@@ -165,10 +162,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   {
     if      (aPCmaster[p]==CLASS_SOIL      )
     {      
-      val=CSoilClass::GetSoilProperty(parsed_soils[0],aPmaster[p]);
+      val=CSoilClass::GetSoilProperty(*parsed_soils[0],aPmaster[p]);
       if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
       else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
-      CSoilClass::SetSoilProperty    (parsed_soils[0],aPmaster[p],val);
+      CSoilClass::SetSoilProperty    (*parsed_soils[0],aPmaster[p],val);
     }
     else if (aPCmaster[p]==CLASS_VEGETATION)
     {
@@ -365,29 +362,21 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
         else if (Len >= 1)
         {
-          if (num_parsed_soils >= MAX_SOIL_CLASSES - 1){
-            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil classes", BAD_DATA);
-          }
+          AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,s[0],false);
 
-          CSoilClass::InitializeSoilProperties(parsed_soils[num_parsed_soils], false);
-          pSoilClasses[num_parsed_soils - 1] = new CSoilClass(s[0]);
-          soiltags[num_parsed_soils] = s[0];
-
-          if (Len >= 5){
-            parsed_soils[num_parsed_soils].sand_con = s_to_d(s[1]);
-            parsed_soils[num_parsed_soils].clay_con = s_to_d(s[2]);
+          //default - common for conceptual models
+          parsed_soils[num_parsed_soils-1]->sand_con = 0.4111111; //special code for autogeneration of soil params
+          parsed_soils[num_parsed_soils-1]->clay_con = 0.0;
+          parsed_soils[num_parsed_soils-1]->org_con  = 0.0;
+          if(Len >= 5){
+            parsed_soils[num_parsed_soils-1]->sand_con = s_to_d(s[1]);
+            parsed_soils[num_parsed_soils-1]->clay_con = s_to_d(s[2]);
+            parsed_soils[num_parsed_soils-1]->org_con  = s_to_d(s[4]);
             double silt_con = s_to_d(s[3]);
-            if (fabs(silt_con + s_to_d(s[1]) + s_to_d(s[2]) - 1.0) > REAL_SMALL){
-              WriteWarning("sand, clay, and silt content should add up to one for soil class " + to_string(s[0]) + ". Silt content will be recalculated.", Options.noisy);
+            if(fabs(silt_con + s_to_d(s[1]) + s_to_d(s[2]) - 1.0) > REAL_SMALL){
+              WriteWarning("sand, clay, and silt content should add up to one for soil class " + to_string(s[0]) + ". Silt content will be recalculated.",Options.noisy);
             }
-            parsed_soils[num_parsed_soils].org_con = s_to_d(s[4]); 
           }
-          else{//default - common for conceptual models
-            parsed_soils[num_parsed_soils].sand_con = 0.4111111; //special code for autogeneration of soil params
-            parsed_soils[num_parsed_soils].clay_con = 0.0;
-            parsed_soils[num_parsed_soils].org_con  = 0.0;
-          }
-          num_parsed_soils++;
         }
         else{
           WriteWarning("Incorrect number of terms in :SoilClasses entry",Options.noisy );
@@ -405,14 +394,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :EndSoilProperties*/
       if (Options.noisy) {cout <<"Soil Properties"<<endl;}
       if (Len!=1){p->ImproperFormat(s); break;} 
+
       invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid soiltype code in SoilProperties command",BAD_DATA);
       for (int i=0;i<num_read;i++)
       {
-        parsed_soils[indices[i]].porosity    =properties[i][0]; 
-        parsed_soils[indices[i]].stone_frac  =properties[i][1];
-        parsed_soils[indices[i]].bulk_density=properties[i][2];
+        parsed_soils[indices[i]]->porosity    =properties[i][0]; 
+        parsed_soils[indices[i]]->stone_frac  =properties[i][1];
+        parsed_soils[indices[i]]->bulk_density=properties[i][2];
       } 
       break;
     }
@@ -454,9 +444,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
             double thisthick;
             thisthick=s_to_d(s[2*m+2+1]);
             pHorizon =CSoilClass::StringToSoilClass(string(s[2*m+2]));
-            if (pHorizon==NULL){cout<<"Offending soilcode: "<<string(s[2*m+2])<<endl;}
-            ExitGracefullyIf(pHorizon==NULL,
-                             "ParseClassPropertiesFile: bad soiltype code in soil profile",BAD_DATA);
+            if(pHorizon==NULL){
+              string warning="ParseClassPropertiesFile: bad soiltype code '"+string(s[2*m+2])+"' in soil profile";
+              ExitGracefully(warning.c_str(),BAD_DATA);
+            }
             pProfiles[num_parsed_profiles]->AddHorizon(thisthick,pHorizon);
           }
           num_parsed_profiles++;
@@ -507,7 +498,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       {
         for (int j=0;j<nParamStrings-1;j++)
         {
-          CSoilClass::SetSoilProperty(parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
+          CSoilClass::SetSoilProperty(*parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
         }
       }
       break;
@@ -1342,7 +1333,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       {
         for (int j=0;j<nParamStrings-1;j++)
         {
-          CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
+          //CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
+          CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,*parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
         }
       }
       break;
@@ -1402,7 +1394,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     pVegClasses [c-1]->AutoCalculateVegetationProps (parsed_veg[c],parsed_veg[0]); 
   }
   for (int c=1;c<num_parsed_soils;c++){
-    pSoilClasses[c-1]->AutoCalculateSoilProps       (parsed_soils[c],parsed_soils[0]); 
+    pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0]); 
   }
   for (int c=1;c<num_parsed_lult;c++){
     pLUClasses  [c-1]->AutoCalculateLandUseProps    (parsed_surf[c],parsed_surf[0]); 
@@ -1446,19 +1438,16 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   
   if (!Options.silent){cout<<"...Done Checking"<<endl;}
    
-  //Check if there is at least one class for each major classification genre
+  //Check if there is at least one class for each major classification genre (beyond the default class)
   //Won't be needed if GetParticipatingParamList() populated for all processes
-  ExitGracefullyIf(num_parsed_soils==0,
+  ExitGracefullyIf(num_parsed_soils<1,
                    "No soil classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
-  ExitGracefullyIf(num_parsed_veg==0,
+  ExitGracefullyIf(num_parsed_veg<1,
                    "No vegetation classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
-  ExitGracefullyIf(num_parsed_lult==0,
+  ExitGracefullyIf(num_parsed_lult<1,
                    "No land use classes specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
-  ExitGracefullyIf(num_parsed_profiles==0,
+  ExitGracefullyIf(num_parsed_profiles<1,
                    "No soil profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
-
-  //CVegetationClass::SummarizeToScreen();
-
   
   ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE),
                    "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
@@ -1622,6 +1611,48 @@ void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int 
   aPCm=aPCm_new;
   nPm=nPm+nP;
 }
+///////////////////////////////////////////////////////////////////
+/// \brief dynamically adds a new soil class to the array of parsed soil classes. 
+///
+/// \param **pSoilClasses [in/out] array of pointers to soil classes
+/// \param **parsed_soils [in/out] array of pointers to soil structures
+/// \param  *soiltags [in/out] array of soil names
+/// \param &Options global options structure
+//
+void  AddNewSoilClass(CSoilClass **&pSoilClasses,
+                      soil_struct **&parsed_soils,
+                      string *&soiltags,
+                      int &num_parsed_soils,
+                      const string name, bool isdefault)
+{
+  //cout<<"ADDING NEW SOIL CLASS ! "<<num_parsed_soils<<" : "<<name<<endl;
+  //create new soil class, dynamically add to array
+  CSoilClass *pSC;
+  pSC=new CSoilClass(name);
+  int tmp=num_parsed_soils;
+  if (!DynArrayAppend((void**&)(pSoilClasses),(void*)(pSC),tmp)){
+    ExitGracefully("AddNewSoilClass: creating NULL soil class",BAD_DATA);}
+ 
+  //create new soil structure, dynamically add to array, initialize properties
+  soil_struct *pSS;
+  pSS=new soil_struct();
+  tmp=num_parsed_soils;
+  if (!DynArrayAppend((void**&)(parsed_soils),(void*)(pSS),tmp)){
+    ExitGracefully("AddNewSoilClass: creating NULL soil class",BAD_DATA);}
+
+  CSoilClass::InitializeSoilProperties(*parsed_soils[num_parsed_soils], isdefault);
+
+  //create new soil name, dynamically add to array
+  string *tmpSoil=new string[num_parsed_soils+1];
+  for(int i=0;i<num_parsed_soils;i++){ tmpSoil[i]= soiltags[i];}
+  delete[] soiltags;
+  soiltags=tmpSoil;
+  soiltags[num_parsed_soils] = name;
+
+  //cout<<" SOIL CLASS ADDED: "<<soiltags[num_parsed_soils]<<endl; 
+  num_parsed_soils++;
+}
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Given list of nP needed parameters aP[] of type aPC[], generates template .rvp file
 ///
