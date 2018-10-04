@@ -417,6 +417,11 @@ double EstimatePET(const force_struct &F,
     PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
     break;
   }
+  case(PET_OUDIN) :
+  {
+    PET=max(F.ET_radia/DENSITY_WATER/LH_VAPOR*(F.temp_daily_ave+5.0)/100.0,0.0);
+    break;
+  }
   case (PET_GRANGER):
     PET=EvapGranger(&F,pHRU);
     break;

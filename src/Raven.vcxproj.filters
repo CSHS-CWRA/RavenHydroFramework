@@ -321,6 +321,9 @@
     <ClCompile Include="ForcingGrid.cpp">
       <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
     </ClCompile>
+    <ClCompile Include="ProcessGroup.cpp">
+      <Filter>Source Files\Hydrological Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -453,6 +456,9 @@
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
     <ClInclude Include="PrairieSnow.h">
+      <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessGroup.h">
       <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>
   </ItemGroup>

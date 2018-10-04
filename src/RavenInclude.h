@@ -370,7 +370,8 @@ enum evap_method
   PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
   PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
   PET_GRANGER,             ///< Granger PET from CRHM
-  PET_MOHYSE               ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
+  PET_MOHYSE,               ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
+  PET_OUDIN                ///< Simple PET from Oudin et. al., 2005
 };
 
 ////////////////////////////////////////////////////////////////////

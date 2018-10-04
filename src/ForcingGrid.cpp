@@ -534,7 +534,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   //      --> otherwise ignored and warning written to RavenErrors.txt
   // -------------------------------             
   if (_interval >= 1.0) {   // data are not sub-daily
-    if ( ceilf(_TimeShift) == _TimeShift) {  // time shift of whole days requested
+    if ( ceil(_TimeShift) == _TimeShift) {  // time shift of whole days requested
       // if (_TimeShift != 0.0) { cout<<"before: start_day "<<_start_day<<"  start_yr "<<_start_year<<endl; }
       AddTime(_start_day,_start_year,_TimeShift,_start_day,_start_year) ;
       // if (_TimeShift != 0.0) { cout<<"after:  start_day "<<_start_day<<"  start_yr "<<_start_year<<endl; }

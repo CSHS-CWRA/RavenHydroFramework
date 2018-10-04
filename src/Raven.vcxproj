@@ -566,6 +566,7 @@
     <ClCompile Include="ParseLib.cpp" />
     <ClCompile Include="PotentialMelt.cpp" />
     <ClCompile Include="PrairieSnow.cpp" />
+    <ClCompile Include="ProcessGroup.cpp" />
     <ClCompile Include="Recharge.cpp" />
     <ClCompile Include="Reservoir.cpp" />
     <ClCompile Include="SnowAlbedo.cpp" />
@@ -765,6 +766,7 @@
     <ClInclude Include="OpenWaterEvap.h" />
     <ClInclude Include="ParseLib.h" />
     <ClInclude Include="PrairieSnow.h" />
+    <ClInclude Include="ProcessGroup.h" />
     <ClInclude Include="Properties.h" />
     <ClInclude Include="Radiation.h" />
     <ClInclude Include="RavenInclude.h" />

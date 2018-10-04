@@ -517,6 +517,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.evaporation =PET_PENMAN_SIMPLE39;}
       else if (!strcmp(s[1],"PET_GRANGER"           )){Options.evaporation =PET_GRANGER;}
       else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.evaporation =PET_MOHYSE;}
+      else if (!strcmp(s[1],"PET_OUDIN"             )){Options.evaporation =PET_OUDIN;}
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
       }

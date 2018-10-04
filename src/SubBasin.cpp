@@ -862,6 +862,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if (_t_conc==AUTO_COMPUTE){
       //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
       _t_conc=0.76/24*pow(_basin_area,0.38);// \ref Austrailian Rainfall and runoff
+      //WriteAdvisory("Time of concentration has been estimated as "+to_string(_t_conc)<<" days for basin "<)
     }
     if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION ){_t_peak=AUTO_COMPUTE;}
     if(Options.catchment_routing==ROUTE_DUMP){_t_peak=AUTO_COMPUTE;}

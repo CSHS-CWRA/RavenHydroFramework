@@ -718,8 +718,8 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     pTimeSeries = ReadTimeSeriesFromNetCDF(
                                            Options,              // model options (such as simulation period)
                                            name,                 // ForcingType
-					   tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
-					   shift_to_per_ending,  // true if data are period ending rtaher than period ending
+                                           tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
+                                           shift_to_per_ending,  // true if data are period ending rtaher than period ending
                                            FileNameNC,           // file name of NetCDF
                                            VarNameNC,            // name of variable in NetCDF
                                            DimNamesNC_stations,  // name of station dimension (optional; default=None)
@@ -1159,7 +1159,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-						   string tag, bool shift_to_per_ending, string FileNameNC, string VarNameNC,
+                                                   string tag, bool shift_to_per_ending, string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
 {

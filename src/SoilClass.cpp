@@ -96,7 +96,7 @@ CSoilClass *CSoilClass::StringToSoilClass(const string s)
   for (int c=0;c<_nAllSoilClasses;c++)
   {
     if (!sup.compare(StringToUppercase(_pAllSoilClasses[c]->GetTag()))){return _pAllSoilClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))           {return _pAllSoilClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                 {return _pAllSoilClasses[c];}
   }
   return NULL;
 }
@@ -523,7 +523,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CSoilClass::SetSoilProperty(string       &param_name,
+void  CSoilClass::SetSoilProperty(string        param_name,
                                   const double &value)
 {
   SetSoilProperty(_Soil,param_name,value);

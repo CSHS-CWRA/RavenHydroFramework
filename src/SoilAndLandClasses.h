@@ -51,7 +51,7 @@ public:/*-------------------------------------------------------*/
   string                   GetTag() const;
   const soil_struct       *GetSoilStruct() const;
   double                   GetSoilProperty(string &param_name) const;
-  void                     SetSoilProperty(string &param_name, const double &value);
+  void                     SetSoilProperty(string param_name, const double &value);
   double                   GetSoilTransportProperty(int constit_ind, string &param_name) const;
   void                     SetSoilTransportProperty(int constit_ind, string &param_name, const double &value);
 

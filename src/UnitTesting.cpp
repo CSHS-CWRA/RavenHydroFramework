@@ -323,7 +323,7 @@ void ShortwaveTest()
   double ET_rad;
   double day_angle,declin,ecc,day_length;
   double latrad;
-  double SW2(0),lateq,solar_noon;
+  double lateq,solar_noon;
   double tstep=1.0/100.0;
 
   //header
