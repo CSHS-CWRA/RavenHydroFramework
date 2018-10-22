@@ -1826,20 +1826,43 @@ string GetDirectoryName(const string &fname)
 //////////////////////////////////////////////////////////////////
 /// \brief returns directory path given filename and relative path
 ///
-/// \param filename [in] filename, e.g., C:\temp\thisfile.txt returns c:\temp
+/// \param filename [in] filename, e.g., C:/temp/thisfile.txt returns c:/temp
 /// \param relfile [in] filename of reference file 
-/// e.g., if filename = something.txt and relfile= c:\temp\myfile.rvi, returns c:\temp\something.txt
-///       if filename = something.txt and relfile= ..\dir\myfile.rvi, returns ..\dir\myfile.rvi
-///       if filename = c:\temp\something.txt and relfile= c:\temp\myfile.rvi,  returns c:\temp\something.txt
+/// e.g.,
+///       absolute path of reference file is adopted 
+///       if filename = something.txt         and relfile= c:/temp/myfile.rvi,  returns c:/temp/something.txt
+///
+///       relative path of reference file is adopted
+///       if filename = something.txt         and relfile= ../dir/myfile.rvi,   returns ../dir/myfile.rvi
+///       
+///       if path of reference file is same as file, then nothing changes
+///       if filename = ../temp/something.txt and relfile= ../temp/myfile.rvi,  returns ../temp/something.txt
+///
+///       if absolute paths of file is given, nothing changes
+///       if filename = c:/temp/something.txt and relfile= ../temp/myfile.rvi,  returns c:/temp/something.txt
 //
 string CorrectForRelativePath(const string filename,const string relfile)
 {
   string filedir = GetDirectoryName(relfile); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
+  
   if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
+    
+    string firstchar  = filename.substr(0, 1);   // if '/' --> absolute path on UNIX systems
+    string secondchar = filename.substr(1, 1);   // if ':' --> absolute path on WINDOWS system
 
-    //+"//"
-    return filedir + "//" + filename;
+    if ( (firstchar.compare("/") != 0) && (secondchar.compare(":") != 0) ){
+
+      // cout << "This is not an absolute filename!  --> " << filename << endl;
+      
+      //+"//"
+      //cout << "StandardOutput: corrected filename: " << filedir + "//" + filename << endl;
+      return filedir + "//" + filename;
+
+    }
+    
   }
+  
+  // cout << "StandardOutput: corrected filename: " << filename << endl;
   return filename;
 }
 

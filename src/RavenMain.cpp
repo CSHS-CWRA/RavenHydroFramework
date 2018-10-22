@@ -224,6 +224,9 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvc_filename="model.rvc";
   }
 
+  // make sure that output dir has trailing '/'
+  Options.output_dir=Options.output_dir+"/";
+
   char cCurrentPath[FILENAME_MAX];
   if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))){
     ExitGracefully("RavenMain: unable to retrieve current directory.", RUNTIME_ERR);

@@ -1080,13 +1080,15 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(63):  //--------------------------------------------
     {/*:OutputDirectory */
-      if (Options.noisy) {cout <<"Output directory: "<<s[1]<<endl;}
+      if (Options.noisy) {cout <<"Output directory: "<<s[1]<<"/"<<endl;}
       Options.output_dir="";
       for (int i=1;i<Len-1;i++){
-        Options.output_dir+=to_string(s[i])+" ";
+        Options.output_dir+=to_string(s[i])+"/ ";   // append backslash to make sure it's a folder
       }
-      Options.output_dir+=to_string(s[Len-1]);
+      Options.output_dir+=to_string(s[Len-1])+"/";  // append backslash to make sure it's a folder
       PrepareOutputdirectory(Options);
+
+      cout << "JMJMJM: Options.output_dir = "<<Options.output_dir<<endl;
 
       ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
       WARNINGS.close();

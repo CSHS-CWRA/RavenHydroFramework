@@ -732,6 +732,11 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
                                            LinTrans_b            // linear transformation: b in new = a*data+b
                                            );
 
+    p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
+    if(string(s[0]).substr(0,4)!=":End"){
+      ExitGracefully("CTimeSeries: Parse: no :EndData command used. ",BAD_DATA);
+    }
+
     return pTimeSeries;
   }
   
