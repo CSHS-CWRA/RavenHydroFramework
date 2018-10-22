@@ -13,7 +13,7 @@ bool ParseInputFiles  (CModel      *&pModel,
 //Defined in Solvers.cpp
 void MassEnergyBalance(CModel            *pModel,
                        const optStruct   &Options,
-                       const time_struct &tt);        //time
+                       const time_struct &tt);        
 
 //Local functions defined below
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.8.2";
+  Options.version="2.8.3";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif 
