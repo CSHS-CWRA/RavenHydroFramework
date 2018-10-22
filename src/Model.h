@@ -26,12 +26,6 @@
 #include "Diagnostics.h"
 #include "ForcingGrid.h"        ///> CForcingGrid
 
-double EstimatePET          (const force_struct &F,
-                             const CHydroUnit   *pHRU,
-                             const double       &wind_measurement_ht,
-                             evap_method        evap_type ,
-                             const time_struct  &tt);
-
 class CHydroProcessABC;
 class CGauge;
 class CCustomOutput;
@@ -175,6 +169,13 @@ private:/*------------------------------------------------------*/
                                       const double elev,
                                       const double ref_elev_temp,
                                       const time_struct &tt);
+  double                  EstimatePET(const force_struct &F,
+                                      const CHydroUnit   *pHRU,
+                                      const double       &wind_measurement_ht,
+                                      const double       &ref_elevation,
+                                      const evap_method   evap_type,
+                                      const optStruct    &Options,
+                                      const time_struct  &tt);
   double         EstimateWindVelocity(const optStruct &Options,
                                       const force_struct &F,
                                       const double &wind_measurement_ht,
@@ -192,6 +193,9 @@ private:/*------------------------------------------------------*/
                                       const optStruct &Options,
                                       const CHydroUnit *pHRU,
                                       const time_struct &tt);
+
+  void         AssimilateStreamflow  (const time_struct &tt, 
+                                      const optStruct &Options);
 
   //Routines for deriving missing data based on gridded data provided
   void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);

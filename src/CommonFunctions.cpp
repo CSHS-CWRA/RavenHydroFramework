@@ -1153,13 +1153,13 @@ double gamma2(double x)
   return ga;
 }
 /////////////////////////////////////////////////////////////////
-/// \brief returns value of two parameter gamma function  with parameter a for input x \cite Toth2012
-/// \docminor This function and its parameters need to be documented
-/// \param &x [in]
-/// \param &a [in]
-/// \return
+/// \brief returns value of incomplete gamma function  with parameter a for input x 
+/// incomplete Gamma is g(x,a)=int_0^x of t^a-1 exp(-t) dt
+/// \param &x [in] upper limit of integral
+/// \param &a [in] shape parameter 
+/// \return Incomplete gamma function g(x,a)
 //
-double two_param_gamma(const double &x, const double &a)
+double IncompleteGamma(const double &x, const double &a)
 {
   //cumulative distribution
   /// \ref from http://algolist.manual.ru/maths/count_fast/gamma_function.php
@@ -1192,17 +1192,17 @@ double GammaDist(const double &x, const double &alpha, const double &beta)
   return pow(bx,alpha)/x/gamma2(x)*exp(-bx);
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates two parameter cumulative gamma distribution \cite Clark2008WRR
+/// \brief Calculates cumulative two parameter cumulative gamma distribution \cite Clark2008WRR
 /// \todo [bug] does not handle large values of t!
 ///
-/// \param &t [in] First input parameter
-/// \param &a [in] Second input parameter
-/// \return Cumulative gamma distribution
+/// \param &t [in] time
+/// \param &alpha [in] shape parameter
+/// \param &beta [in] scaling parameter 
+/// \return integrated gamma distribution from 0..t 
 //
-double GammaCumDist(const double &t, const double &a)
+double GammaCumDist(const double &t,  const double &alpha,const double &beta)
 {
-  //two-parameter cumulative gamma distribution (Clark et al., 2007)
-  return two_param_gamma(t,a)/gamma2(a);
+  return IncompleteGamma(beta*t,alpha)/gamma2(alpha);
 }
 
 //////////////////////////////////////////////////////////////////

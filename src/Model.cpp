@@ -1138,7 +1138,7 @@ void CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &O
 {
 
   //local time
-  double t_loc = TimeDifference(tt_out.julian_day,tt_out.year,Options.julian_start_day,Options.julian_start_year);
+  double t_loc = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt_out.julian_day,tt_out.year);
 
   ExitGracefullyIf(t_loc<0,
                    "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);
@@ -1570,6 +1570,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
   int n=(int)(floor((tt.model_time+TIME_CORRECTION)/Options.timestep));//current timestep index
   double value, obsTime;
   int layer_ind;
+  CSubBasin *pBasin=NULL;  
   for (int i=0;i<_nObservedTS;i++)
   {
     string datatype=_pObservedTS[i]->GetName();
@@ -1577,10 +1578,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     if (datatype=="HYDROGRAPH")
     {
-      CSubBasin *pBasin=NULL;
       pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
-      string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed hydrograph time series "+_pObservedTS[i]->GetName();
-      ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
 
       if ((Options.ave_hydrograph) && (tt.model_time!=0))
       {
@@ -1593,41 +1591,26 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     }
     else if (datatype == "RESERVOIR_STAGE")
     {
-      CSubBasin *pBasin=NULL;
       pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
-      string error="CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir stage time series "+_pObservedTS[i]->GetName();
-      ExitGracefullyIf(pBasin==NULL,error.c_str(),BAD_DATA);
       value = pBasin->GetReservoir()->GetResStage();
     }
     else if (datatype == "RESERVOIR_INFLOW")
     {
-      CSubBasin *pBasin = NULL;
       pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
-      string error = "CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir inflow time series " + _pObservedTS[i]->GetName();
-      ExitGracefullyIf(pBasin == NULL, error.c_str(), BAD_DATA);
       value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
     }
 		else if (datatype == "RESERVOIR_NETINFLOW")
 		{
-			CSubBasin *pBasin = NULL;
 			pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
-			string error = "CModel::UpdateDiagnostics: Invalid subbasin ID specified in observed reservoir inflow time series " + _pObservedTS[i]->GetName();
-			ExitGracefullyIf(pBasin == NULL, error.c_str(), BAD_DATA);
-			CReservoir *pRes=pBasin->GetReservoir(); 
-		
-			CHydroUnit *pHRU = NULL;
-			pHRU = GetHRUByID(pRes->GetHRUIndex());
+			CReservoir *pRes= pBasin->GetReservoir(); 
+			CHydroUnit *pHRU= GetHRUByID(pRes->GetHRUIndex());
 			double avg_area = pHRU->GetArea();
 
-			if (pHRU == NULL) {
-				avg_area = 0.0;
-			}
+			if (pHRU == NULL) {avg_area = 0.0;}
 
 			double tem_precip1 = pBasin->GetAvgForcing("PRECIP")*avg_area*M2_PER_KM2/MM_PER_METER / (Options.timestep*SEC_PER_DAY); 
 			double losses = pBasin->GetReservoirEvapLosses(Options.timestep) / (Options.timestep*SEC_PER_DAY);
-
 			value = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
-
 		}
     else if (svtyp!=UNRECOGNIZED_SVTYPE)
     {

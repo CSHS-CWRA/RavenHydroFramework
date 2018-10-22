@@ -850,7 +850,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       :Type RESROUTE_STANDARD
       :StageRelations
         21 # number of points
-        0.09 0 0 0.0  (h [m], Q [m3/s], A [m2], V [m3])
+        0.09 0 0 0.0  (h [m], Q [m3/s], V [m3], A [m2])
         0.1 2 43 0.2
         ...
         3.0 20000 3500 200

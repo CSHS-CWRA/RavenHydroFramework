@@ -32,7 +32,8 @@ enum infil_type{
   INF_PRMS,                     ///< PRMS Infiltration model
   INF_HBV,                      ///< HBV Infiltration model
   INF_UBC,                      ///< UBC Watershed model infiltration algorithm
-  INF_GR4J			///< GR4J Watershed model infiltration algorithm
+  INF_GR4J,                     ///< GR4J Watershed model infiltration algorithm
+  INF_HMETS                     ///< HMETS model infiltration algorithm
 };
 
 ////////////////////////////////////////////////////////////////////

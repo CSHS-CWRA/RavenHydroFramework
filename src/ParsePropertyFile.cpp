@@ -78,7 +78,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   const int         MAX_PROPERTIES_PER_LINE=20;
 
-  int               MAX_NUM_IN_CLASS=max(MAX_VEG_CLASSES,MAX_LULT_CLASSES);
+  int               MAX_NUM_IN_CLASS=max(max(MAX_VEG_CLASSES,MAX_LULT_CLASSES),2000);
   bool              invalid_index;
   int               num_read;
   int              *indices;

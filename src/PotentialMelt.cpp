@@ -175,6 +175,23 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
 
     return  Qn_ebsm + Qh_ebsm + Qp_ebsm; 
   }
+  //----------------------------------------------------------
+  else if(Options.pot_melt == POTMELT_HMETS)
+  {
+    double Ma;
+    double Ma_min   =pHRU->GetSurfaceProps()->min_melt_factor;
+    double Ma_max   =pHRU->GetSurfaceProps()->max_melt_factor;
+    double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    double Kcum     =pHRU->GetSurfaceProps()->DD_aggradation;
+    int iCumMelt=GetStateVarIndex(CUM_SNOWMELT);
+    
+    double cum_melt=0.0;
+    if(iCumMelt!=DOESNT_EXIST){cum_melt= pHRU->GetStateVarValue(iCumMelt); }
+
+    Ma=min(Ma_max,Ma_min*(1+Kcum*cum_melt));
+
+    return Ma*(F->temp_daily_ave-melt_temp);
+  }
   return 0.0;
 }
 

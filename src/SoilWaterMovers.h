@@ -90,7 +90,8 @@ enum soilevap_type
   SOILEVAP_UBC,           ///< UBCWM Model
   SOILEVAP_CHU,           ///< Crop Heat Unit method
   SOILEVAP_GR4J,          ///< GR4J model approach
-  SOILEVAP_LINEAR         ///< AET a linear function of soil moisture
+  SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
+  SOILEVAP_ALL            ///< AET=PET
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction of loss of water from multiple soil layers to atmosphere

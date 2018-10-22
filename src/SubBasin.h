@@ -184,6 +184,7 @@ public:/*-------------------------------------------------------*/
   void            SetDownstreamID     (const long down_SBID);
   void            Disable             ();
   void            Enable              ();
+  double          ScaleAllFlows       (const double &scale_factor, const double &tstep);
 
   //called during model operation:
   void            SetInflow           (const double &Qin );//[m3/s]

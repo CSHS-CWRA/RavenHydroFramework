@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ------------------------------------------------------------------
   Convolution (routing water through UH)
   ----------------------------------------------------------------*/
@@ -86,6 +86,16 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
     double x4=pHRU->GetSurfaceProps()->GR4J_x4;
     max_time=2*x4;
   }
+  else if(_type==CONVOL_GAMMA){
+    double alpha=pHRU->GetSurfaceProps()->gamma_shape;
+    double beta=pHRU->GetSurfaceProps()->gamma_scale;
+    max_time=min((double)MAX_CONVOL_STORES,5.0*(alpha-1)/beta);
+  }
+  else if(_type==CONVOL_GAMMA_2){
+    double alpha=pHRU->GetSurfaceProps()->gamma_shape2;
+    double beta=pHRU->GetSurfaceProps()->gamma_scale2;
+    max_time=min((double)MAX_CONVOL_STORES,5.0*(alpha-1)/beta);
+  }
 
   N =(int)(ceil(max_time/tstep));
   if (N>MAX_CONVOL_STORES) { printf("N = %i    MAX_CONVOL_STORES = %i ",N,MAX_CONVOL_STORES ); }
@@ -108,11 +118,33 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
       aUnitHydro[n]=min(pow((n+1)*tstep/x4,2.5),1.0)-min(pow(n*tstep/x4,2.5),1.0);
     }
   }
-  else if (_type==CONVOL_GR4J_2){
+  else if (_type==CONVOL_GR4J_2)
+  {
     double x4=pHRU->GetSurfaceProps()->GR4J_x4;
     for (int n=0; n<N; n++)
     {
       aUnitHydro[n]=GR4J_SH2((n+1)*tstep,x4)-GR4J_SH2(n*tstep,x4);
+    }
+  }
+  else if(_type==CONVOL_GAMMA)
+  {
+    double beta=pHRU->GetSurfaceProps()->gamma_scale;
+    double alpha=pHRU->GetSurfaceProps()->gamma_shape;
+    double sum=0;
+    for (int n=0;n<N;n++)
+    {
+      aUnitHydro[n]=GammaCumDist((n+1)*tstep,alpha,beta)-sum;
+      sum+=aUnitHydro[n];
+    }
+  }
+  else if(_type==CONVOL_GAMMA_2){
+    double beta=pHRU->GetSurfaceProps()->gamma_scale2;
+    double alpha=pHRU->GetSurfaceProps()->gamma_shape2;
+    double sum=0;
+    for (int n=0;n<N;n++)
+    {
+      aUnitHydro[n]=GammaCumDist((n+1)*tstep,alpha,beta)-sum;
+      sum+=aUnitHydro[n];
     }
   }
   //cout<<"** ";for (int i=0;i<N;i++){cout<<aUnitHydro[i]<<" ";} cout<<endl;
@@ -136,9 +168,21 @@ void CmvConvolution::GetParticipatingParamList(string  *aP , class_type *aPC , i
     nP=1;
     aP[0]="GR4J_X4";                    aPC[0]=CLASS_LANDUSE;
   }
+  else if (_type==CONVOL_GAMMA) 
+  {
+    nP=2;
+    aP[0]="GAMMA_SHAPE";                aPC[0]=CLASS_LANDUSE;
+    aP[1]="GAMMA_SCALE";                aPC[1]=CLASS_LANDUSE;
+  }
+  else if(_type==CONVOL_GAMMA_2)
+  {
+    nP=2;
+    aP[0]="GAMMA_SHAPE2";               aPC[0]=CLASS_LANDUSE;
+    aP[1]="GAMMA_SCALE2";               aPC[1]=CLASS_LANDUSE;
+  }
   else
   {
-    ExitGracefully("CmvConvolution::GetParticipatingParamList: undefined abstraction algorithm",BAD_DATA);
+    ExitGracefully("CmvConvolution::GetParticipatingParamList: undefined convolution algorithm",BAD_DATA);
   }
 }
 

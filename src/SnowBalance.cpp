@@ -153,7 +153,21 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     iFrom[3]=iSnowLiq;    iTo[3]=iSnow;          //rates[3]: SNOW_LIQ->SNOW [refreeze]
     iFrom[4]=iColdCont;   iTo[4]=iColdCont;      //rates[4]: CC modification
   }
+  else if(type==SNOBAL_HMETS)
+  {
+    int iSnowLiq,iCumMelt,iPonded;
+    iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
+    iPonded   =pModel->GetStateVarIndex(PONDED_WATER);
+    iCumMelt  =pModel->GetStateVarIndex(CUM_SNOWMELT);
 
+    CHydroProcessABC::DynamicSpecifyConnections(5); //nConnectons=5
+
+    iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
+    iFrom[1]=iSnow;       iTo[1]=iPonded;        //rates[1]: SNOW->PONDED
+    iFrom[2]=iSnowLiq;    iTo[2]=iPonded;        //rates[2]: SNOW_LIQ->PONDED
+    iFrom[3]=iSnowLiq;    iTo[3]=iSnow;          //rates[3]: SNOW_LIQ->SNOW [refreeze]
+    iFrom[4]=iCumMelt;    iTo[4]=iCumMelt;       //rates[4]: modification of cumulative snow
+  }
   else{
     ExitGracefully("CmvSnowBalance::Constructor: undefined snow balance type",BAD_DATA);
   }
@@ -224,7 +238,7 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   {
     nP=3;
     aP[0]="CC_DECAY_COEFF";   aPC[0]=CLASS_LANDUSE;
-    aP[1]="SNOW_SWI";                 aPC[1]=CLASS_GLOBAL;
+    aP[1]="SNOW_SWI";         aPC[1]=CLASS_GLOBAL;
     aP[2]="SNOW_PATCH_LIMIT"; aPC[2]=CLASS_LANDUSE;
   }
   else if (type==SNOBAL_CEMA_NIEGE)
@@ -249,6 +263,16 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   {
     nP=1;
     aP[0]="SNOW_SWI";         aPC[0]=CLASS_GLOBAL;
+  }
+  else if(type==SNOBAL_HMETS)
+  {
+    nP=6;
+    aP[0]="REFREEZE_FACTOR";     aPC[0]=CLASS_LANDUSE;
+    aP[1]="REFREEZE_EXP";        aPC[1]=CLASS_LANDUSE;
+    aP[2]="DD_REFREEZE_TEMP";    aPC[2]=CLASS_LANDUSE;
+    aP[3]="SNOW_SWI_MIN";        aPC[3]=CLASS_GLOBAL;
+    aP[4]="SNOW_SWI_MAX";        aPC[4]=CLASS_GLOBAL;
+    aP[5]="SWI_REDUCT_COEFF";    aPC[5]=CLASS_GLOBAL;
   }
   else
   {
@@ -339,6 +363,14 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
     aSV[1]=SNOW_LIQ;      aLev[1]=DOESNT_EXIST;
     aSV[2]=PONDED_WATER;  aLev[2]=DOESNT_EXIST;
     aSV[3]=COLD_CONTENT;  aLev[3]=DOESNT_EXIST;
+  }
+  else if(bal_type==SNOBAL_HMETS)
+  {
+    nSV=4;
+    aSV[0]=SNOW;          aLev[0]=DOESNT_EXIST;
+    aSV[1]=SNOW_LIQ;      aLev[1]=DOESNT_EXIST;
+    aSV[2]=PONDED_WATER;  aLev[2]=DOESNT_EXIST;
+    aSV[3]=CUM_SNOWMELT;  aLev[3]=DOESNT_EXIST;
   }
   else{
     nSV=0;
@@ -435,6 +467,62 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
   else if(type==SNOBAL_CRHM_EBSM)
   {
     CRHMSnowBalance(state_var,pHRU,Options,tt,rates);
+  }
+  //------------------------------------------------------------
+  else if(type==SNOBAL_HMETS)
+  {
+    double SWE     =state_var[iFrom[0]];//snow, SWE mm
+    double SL      =state_var[iFrom[3]];//liquid snow, mm
+    double cum_melt=state_var[iFrom[4]];//cumulative melt mm
+
+    double Kf    =pHRU->GetSurfaceProps()->refreeze_factor;
+    double Tbf   =pHRU->GetSurfaceProps()->DD_refreeze_temp;
+    double exp_fe=pHRU->GetSurfaceProps()->refreeze_exp;
+    double fcmin =CGlobalParams::GetParams()->snow_SWI_min;
+    double fcmax =CGlobalParams::GetParams()->snow_SWI_max;
+    double Ccum  =CGlobalParams::GetParams()->SWI_reduct_coeff;
+    
+    double potmelt=max(pHRU->GetForcingFunctions()->potential_melt,0.0);
+    double Tdiurnal=0.5*(pHRU->GetForcingFunctions()->temp_daily_ave+pHRU->GetForcingFunctions()->temp_daily_min);
+
+    double pot_freeze,freeze,melt,SWI,deficit,to_liq;
+    double tstep=Options.timestep;
+
+    SL=max(SL,0.0);
+    pot_freeze = Kf*pow(max(Tbf-Tdiurnal,0.0),exp_fe);   //refreeze rate, mm/d 
+
+    freeze = min(pot_freeze*tstep,SL);                   // Cannot freeze more water than available
+    SL -=freeze;                                         // Adjust free water in snowpack
+    SWE+=freeze;                                         // Water frozen becomes part of the snowpack
+       
+    melt = min(potmelt*tstep,SWE);    
+    SWE     -=melt;
+    cum_melt+=melt;
+
+    if(SWE<=0.0){ cum_melt=0.0; }
+    
+    SWI = max(fcmin,fcmax*(1-Ccum*cum_melt));        // Calculation of the water retention capacity of the snowpack. 
+
+    string tmp="SWI";
+    CGlobalParams::SetGlobalProperty(tmp,SWI);
+
+    deficit=max(SWI*SWE-SL,0.0);
+    to_liq=min(melt,deficit);                        //melt first fills deficit
+    melt-=to_liq;                                       
+    SL  +=to_liq;
+
+    //what if SL>SWI*SWE
+    double ripe=max(SL-SWI*SWE,0.0);
+    SL-=ripe;
+
+   // cout << cum_melt<<" "<<SWE<<" "<<SL<<" "<<melt<<" "<<freeze<<endl;
+    rates[0]=to_liq/tstep;   //SNOW->SNOW_LIQ
+    rates[1]=melt  /tstep;   //SNOW->PONDED_WATER (runoff)
+    rates[2]=ripe;           //SNOW_LIQ->PONDED (not explicit here)
+    rates[3]=freeze/tstep;   //SNOW_LIQ->SNOW (refreeze)
+    rates[4]=(melt+to_liq)/tstep;   //CUM_SNOWMELT->CUM_SNOWMELT
+
+    if(SWE<=0.0){ rates[4]=-state_var[iFrom[4]]/tstep; } //reset to zero as needed
   }
   //------------------------------------------------------------
   else if (type == SNOBAL_UBCWM)

@@ -640,7 +640,31 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      */
       if (Options.noisy) {cout <<"Observation data"<<endl;}
       if (Len<3){p->ImproperFormat(s); break;}
+      
+      bool ishyd      =!strcmp(s[1], "HYDROGRAPH");
+      bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
+      bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
+      bool isnetinflow=!strcmp(s[1], "RESERVOIR_NET_INFLOW");
+      bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
+        
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,(!strcmp(s[1], "HYDROGRAPH")));
+
+      if (ishyd && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
+      if(isstage && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir stage time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
+      if(isinflow && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
+      if(isnetinflow && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy);  break;
+      }
       pModel->AddObservedTimeSeries(pTimeSer);
       break;
     }
@@ -664,7 +688,32 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      */
       if (Options.noisy) {cout <<"Observation weights"<<endl;}
       if (Len<3){p->ImproperFormat(s); break;}
+
+      bool ishyd      =!strcmp(s[1], "HYDROGRAPH");
+      bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
+      bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
+      bool isnetinflow=!strcmp(s[1], "RESERVOIR_NET_INFLOW");
+      bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
+
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options);
+
+      if (ishyd && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
+      if(isstage && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir stage weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
+      if(isinflow && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy); break;
+      }
+      if(isnetinflow && invalidSB){
+        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy);  break;
+      }
+
       pModel->AddObservedWeightsTS(pTimeSer);
       break;
     }

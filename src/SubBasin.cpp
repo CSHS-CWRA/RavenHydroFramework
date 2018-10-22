@@ -739,6 +739,62 @@ void CSubBasin::SetQinHist          (const int N, const double *aQi)
   for (int i=0;i<_nQinHist;i++){_aQinHist[i]=aQi[i];}
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Sets inflow into primary channel and updates flow history
+/// \remark Called *before* RouteWater routine in Solver.cpp, updating the
+/// input flow rates to the valid values so that _aQinHist[0]
+/// the *current* inflow rate needed for RouteWater and the history is properly stored
+/// \note This water will eventually reach the reach outflow, but possibly
+/// after a lag or convolution (due to channel/rivulet storage within
+/// the basin)
+///
+/// \param &Qin [in] New flow [m^3/s]
+//
+void CSubBasin::SetInflow    (const double &Qin)//[m3/s]
+{
+  for (int n=_nQinHist-1;n>0;n--){
+    _aQinHist[n]=_aQinHist[n-1];
+  }
+  _aQinHist[0]=Qin;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets lateral inflow into primary channel and updates flow history
+/// \remark Called *before* RouteWater routine in Solver.cpp, updating the
+/// input flow rate to the valid values so that _aQlatHist[0] are the
+/// *current* inflow rates needed for RouteWater and the history is properly stored
+///
+/// \param &Qlat [in] New lateral inflow [m^3/s]
+//
+void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
+{
+  for (int n=_nQlatHist-1;n>0;n--){
+    _aQlatHist[n]=_aQlatHist[n-1];
+  }
+  _aQlatHist[0]=Qlat;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief scales all internal flows by scale factor (for assimilation/nudging)
+/// \remark Messes with mass balance something fierce!
+///
+/// \param &Qlat [in] New lateral inflow [m^3/s]
+//
+double CSubBasin::ScaleAllFlows(const double &scale, const double &tstep)
+{
+  double ma=0.0; //mass added
+  double sf=(scale-1.0)/scale;
+  for (int n=0;n<_nQlatHist;n++){_aQlatHist[n]*=scale; ma+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;}
+  for (int n=0;n<_nQinHist; n++){ _aQinHist[n]*=scale; }
+  for (int i=0;i<_nSegments;i++){    _aQout[i]*=scale; } _QoutLast*=scale;
+
+  for (int n=0;n<_nQinHist-1; n++){ma+=0.5*(_aQinHist[n]+_aQinHist[n+1])*sf*tstep*SEC_PER_DAY;}
+  //for (int n=0;n<_nSegments; n++){ma+=0.5*(_aQout   [n]+aQoutLast[n+1]   )*sf*tstep*SEC_PER_DAY;}
+  
+  //ma calcs for _aQin/_aQout likely at issue - need to use 1/2 (Qin^n+Qin^n+1)
+  _channel_storage*=scale; ma+=_channel_storage*sf;
+  _rivulet_storage*=scale; ma+=_rivulet_storage*sf;
+  return ma;
+}
 /////////////////////////////////////////////////////////////////
 /// \brief Sets Downstream ID (use sparingly!)
 /// \param down_SBID [in] ID of downstream subbasin
@@ -1137,10 +1193,13 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   if (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION)
   {
     sum=0;
+    double alpha= _gamma_shape;
+    double beta = (_gamma_shape-1.0)/_t_peak; ////should be (_gamma_shape-1.0)/_t_peak;
     for (n=0;n<_nQlatHist;n++)
     {
       t=n*tstep-_t_lag;
-      _aUnitHydro[n]=GammaCumDist((t+tstep)/_t_peak*_gamma_shape,_gamma_shape)-sum;
+      _aUnitHydro[n]=GammaCumDist(t+tstep,alpha, beta)-sum; 
+
       ExitGracefullyIf(!_finite(_aUnitHydro[n]),
                        "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
 
@@ -1187,24 +1246,6 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Sets inflow into primary channel and updates flow history
-/// \remark Called *before* RouteWater routine in Solver.cpp, updating the
-/// input flow rates to the valid values so that _aQinHist[0]
-/// the *current* inflow rate needed for RouteWater and the history is properly stored
-/// \note This water will eventually reach the reach outflow, but possibly
-/// after a lag or convolution (due to channel/rivulet storage within
-/// the basin)
-///
-/// \param &Qin [in] New flow [m^3/s]
-//
-void CSubBasin::SetInflow    (const double &Qin)//[m3/s]
-{
-  for (int n=_nQinHist-1;n>0;n--){
-    _aQinHist[n]=_aQinHist[n-1];
-  }
-  _aQinHist[0]=Qin;
-}
-//////////////////////////////////////////////////////////////////
 /// \brief updates flow algorithms based upon the time
 /// \notes can later support quite generic temporal changes to treatment of flow phenom (e.g., changes to unit hydrograph)
 /// \param tt [in] current model time
@@ -1213,21 +1254,6 @@ void CSubBasin::SetInflow    (const double &Qin)//[m3/s]
 void  CSubBasin::UpdateFlowRules(const time_struct &tt, const optStruct &Options)
 {
   if (_pReservoir != NULL){ _pReservoir->UpdateFlowRules(tt,Options); }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Sets lateral inflow into primary channel and updates flow history
-/// \remark Called *before* RouteWater routine in Solver.cpp, updating the
-/// input flow rate to the valid values so that _aQlatHist[0] are the
-/// *current* inflow rates needed for RouteWater and the history is properly stored
-///
-/// \param &Qlat [in] New lateral inflow [m^3/s]
-//
-void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
-{
-  for (int n=_nQlatHist-1;n>0;n--){
-    _aQlatHist[n]=_aQlatHist[n-1];
-  }
-  _aQlatHist[0]=Qlat;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets outflow from primary channel and updates flow history

@@ -231,8 +231,12 @@ struct surface_struct
   //snow parameters
   double melt_factor;       ///< [mm/d/C]  maximum snow melt factor used in degree day and hybrid snowmelt models
   double min_melt_factor;   ///< [mm/d/C]  minimum snow melt factor used in degree day and hybrid snowmelt models
+  double max_melt_factor;   ///< [mm/d/C]  maximum snow melt factor used in degree day and hybrid snowmelt models
   double DD_melt_temp;      ///< [C]       melting base temperature in degree day methods
+  double DD_aggradation;    ///< [1/mm]    rate of increase of melt factor with cumulative snowmelt (Kcum in HMETS)
   double refreeze_factor;   ///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
+  double DD_refreeze_temp;  ///< [C]       degree day refreeze temperature (refreeze base temperature)
+  double refreeze_exp;      ///< [-]       empirical exponent for DD freezing equation 
   double HBV_melt_for_corr; ///< [-]       HBV snowmelt forest correction (MRF in HBV-EC)
   double HBV_melt_asp_corr; ///< [-]       HBV snowmelt aspect correction (AM in HBV-EC)
   double snow_patch_limit;  ///< [mm]      SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
@@ -254,6 +258,7 @@ struct surface_struct
   double partition_coeff;   ///< [0..1]    simple partitioning coefficient: percentage of rainfall that runs off
                             //             used for rational method
   double SCS_Ia_fraction;   ///< [0..1]    fraction of rainfall/melt which is initially abstracted to depression storage (default=0.2)
+  double HMETS_runoff_coeff;///< [0..1]    HMETS algorithm runoff coeff - maximum fraction of ponded water which can infiltrate
 
   //surface storage variables
   double max_sat_area_frac; ///< [-]       PRMS maximum saturated area (pct)- user defined between 0.050 - 0.950
@@ -276,6 +281,10 @@ struct surface_struct
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient 
 
   double GR4J_x4;           ///< [d]       GR4J time routing parameter
+  double gamma_shape;       ///< [-]       gamma distribution shape parameter for convolution routing
+  double gamma_scale;       ///< [-]       gamma distribution scaling parameter for convolution routing
+  double gamma_shape2;      ///< [-]       gamma distribution shape parameter for convolution routing (v2)
+  double gamma_scale2;      ///< [-]       gamma distribution scaling parameter for convolution routing (v2)
 };
 
 //////////////////////////////////////////////////////////////////
@@ -337,8 +346,11 @@ struct global_struct
 
   double           rainsnow_temp;       ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
   double           rainsnow_delta;      ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
-  double           snow_SWI;            ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow (as pct of snow porosity)
+  double           snow_SWI;            ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow 
                                         //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
+  double           snow_SWI_min;        ///< [0..1] minimum irreducible sat fraction 
+  double           snow_SWI_max;        ///< [0..1] maximum irreducible sat fraction
+  double           SWI_reduct_coeff;    ///< [1/mm] SWI reduction factor with cumulative snowmelt 
   double           snow_temperature;    ///< [°C]   default snow temperature if not explicitly modelled
   double           snow_roughness;      ///< [mm]  roughness height of snow
   double           min_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.3)

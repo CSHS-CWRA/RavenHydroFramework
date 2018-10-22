@@ -572,6 +572,7 @@
     <ClCompile Include="SnowAlbedo.cpp" />
     <ClCompile Include="SnowTempEvolve.cpp" />
     <ClCompile Include="LatFlush.cpp" />
+    <ClCompile Include="Assimilate.cpp" />
     <ClCompile Include="StateVariables.cpp" />
     <ClCompile Include="TimeSeriesABC.cpp" />
     <ClCompile Include="Transformation.cpp" />

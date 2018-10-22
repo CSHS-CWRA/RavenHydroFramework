@@ -881,6 +881,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"HBV"               )){Options.pot_melt=POTMELT_HBV;}
       else if (!strcmp(s[1],"POTMELT_USACE"     )){Options.pot_melt=POTMELT_USACE;}
       else if (!strcmp(s[1],"POTMELT_CRHM_EBSM" )){Options.pot_melt=POTMELT_CRHM_EBSM; }
+      else if (!strcmp(s[1],"POTMELT_HMETS"     )){Options.pot_melt=POTMELT_HMETS; }
       else {ExitGracefully("ParseInput:PotentialMelt: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -1589,6 +1590,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_GR4J"        )){itype=INF_GR4J;      }
       else if (!strcmp(s[1],"INF_SCS"         )){itype=INF_SCS;       }
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
+      else if (!strcmp(s[1],"INF_HMETS"       )){itype=INF_HMETS;     }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
       }
@@ -1674,6 +1676,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_CHU"          )){se_type=SOILEVAP_CHU;}
       else if (!strcmp(s[1],"SOILEVAP_GR4J"         )){se_type=SOILEVAP_GR4J;}
       else if (!strcmp(s[1],"SOILEVAP_LINEAR"       )){se_type=SOILEVAP_LINEAR;}
+      else if (!strcmp(s[1],"SOILEVAP_ALL"          )){se_type=SOILEVAP_ALL;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
       }
@@ -1702,6 +1705,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SNOBAL_TWO_LAYER"    )){sbtype=SNOBAL_TWO_LAYER;}
       else if (!strcmp(s[1],"SNOBAL_GAWSER"       )){sbtype=SNOBAL_GAWSER;}
       else if (!strcmp(s[1],"SNOBAL_CRHM_EBSM"    )){sbtype=SNOBAL_CRHM_EBSM;}
+      else if (!strcmp(s[1],"SNOBAL_HMETS"        )){sbtype=SNOBAL_HMETS;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized snow balance process representation",BAD_DATA_WARN); break;
       }
@@ -2077,6 +2081,8 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       if      (!strcmp(s[1],"CONVOL_GR4J_1"  )){c_type=CONVOL_GR4J_1;}
       else if (!strcmp(s[1],"CONVOL_GR4J_2"  )){c_type=CONVOL_GR4J_2;}
+      else if (!strcmp(s[1],"CONVOL_GAMMA"   )){c_type=CONVOL_GAMMA;}
+      else if (!strcmp(s[1],"CONVOL_GAMMA_2"  )){c_type=CONVOL_GAMMA_2;}
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized convolution process representation",BAD_DATA_WARN); break;

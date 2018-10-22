@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -23,6 +23,7 @@ void RavenUnitTesting(const optStruct &Options)
   //SmartLookupUnitTest();
   //SmartIntervalTest();
   //AddTimeTest();
+  //GammaTest();
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function
@@ -201,14 +202,16 @@ void SmartIntervalTest()
 void GammaTest()
 {
   ofstream GAMMA; GAMMA.open("GammaTest.csv");
-  double dt=0.2;
-  for(double t=0;t<10.0;t+=dt){
+  double dt=0.1;
+  for(double t=0;t<20.0;t+=dt){
     GAMMA<<t<<",";
 
-    for(double mu=1;mu<4;mu+=1.0){
+    /*for(double mu=1;mu<4;mu+=1.0){
       GAMMA<<(TriCumDist(t+dt,10,mu)-TriCumDist(t,10,mu))<<",";
+    }*/
+    for (double mu=1;mu<=4;mu+=1.0){
+      GAMMA<<(GammaCumDist(t+dt,3,(3-1)/mu)-GammaCumDist(t,3,(3-1)/mu))<<","<<GammaCumDist(t+dt,3,(3-1)/mu)<<",";
     }
-    //  for (double mu=1;mu<4;mu+=1.0){GAMMA<<(GammaCumDist2((t+dt)/mu*3.0,3)-GammaCumDist2(t/mu*3.0,3))<<",";}
     GAMMA<<endl;
   }
   ExitGracefully("GammaTest",SIMULATION_DONE);

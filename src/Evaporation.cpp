@@ -15,6 +15,8 @@
 #include "Properties.h"
 #include "Radiation.h"
 #include "HydroUnits.h"
+#include "Model.h"
+
 double EvapGranger(const force_struct *F,const CHydroUnit *pHRU);
 
 //////////////////////////////////////////////////////////////////
@@ -272,14 +274,17 @@ double Hamon1961Evap(const force_struct *F)
 /// \param *F [in] Model forcing functions
 /// \param *pHRU [in] Reference to the specified HRU
 /// \param evap_type [in] Method of evaporation calculation selected
+/// \param ref_elevation [in] reference elevation for forcing function estimation
 /// \param &tt [in] Current model time
 /// \return Calculated PET [mm/d]
 //
-double EstimatePET(const force_struct &F,
-                   const CHydroUnit   *pHRU,
-                   const double       &wind_measurement_ht,
-                   const evap_method   evap_type ,
-                   const time_struct  &tt)
+double CModel::EstimatePET(const force_struct &F,
+                           const CHydroUnit   *pHRU,
+                           const double       &wind_measurement_ht,
+                           const double       &ref_elevation,
+                           const evap_method   evap_type ,
+                           const optStruct    &Options,
+                           const time_struct  &tt)
 {
   double PET=0.0;
 
@@ -303,19 +308,21 @@ double EstimatePET(const force_struct &F,
   case(PET_MONTHLY_FACTOR):
   {
     double forest_corr,max_temp;
-    double PET_corr=pHRU->GetSurfaceProps()->forest_PET_corr; //(A0PEFO in UBC)
+    double PET_corr=pHRU->GetSurfaceProps()->forest_PET_corr; //(A0PEFO in UBCWM)
     double Fc      =pHRU->GetSurfaceProps()->forest_coverage;
 
     //max_temp=F.temp_daily_max;//MQ UBCWM
     max_temp=F.temp_max_unc;
     forest_corr=((PET_corr)*Fc + 1.0*(1.0-Fc)); //XEVAP3
 
-    //orographic corrections
+    //orographic corrections - necessary evil for UBCWM emulation; can't separate
     const double A0PELA=0.9;
-    double XEVAP2=A0PELA * 0.001 * (g_debug_vars[4] - pHRU->GetElevation());
+    double refelev=ref_elevation;
+    if(Options.keepUBCWMbugs){refelev=g_debug_vars[4];}
+    double XEVAP2=A0PELA * 0.001 * (refelev - pHRU->GetElevation());
     PET=forest_corr*(F.PET_month_ave*max_temp+XEVAP2); //PET_month_ave actually stores Monthly evap factors [mm/d/K]
 
-    PET=max(PET,0.0); //orographic corrections must be in here if this clause is retained; otherwise this routine should be able to return negative PET
+    PET=max(PET,0.0); 
 
     break;
   }

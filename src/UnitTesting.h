@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef UNITTESTING_H
 #define UNITTESTING_H
@@ -15,6 +15,7 @@ void ShortwaveGenerator();
 void JulianConvertTest();
 void SmartLookupUnitTest();
 void SmartIntervalTest();
+void GammaTest();
 
 void RavenUnitTesting(const optStruct &Options);
 #endif

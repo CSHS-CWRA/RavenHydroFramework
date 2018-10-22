@@ -393,7 +393,7 @@ void CModel::InitializeObservations(const optStruct &Options)
 void CModel::InitializeRoutingNetwork()
 {
   int p,pp,pTo,ord;
-  const int max_iter=100;
+  
   bool noisy=false;//useful for debugging
 
   _aDownstreamInds=NULL;
@@ -420,6 +420,7 @@ void CModel::InitializeRoutingNetwork()
   //here, order goes from 0 (trunk) to _maxSubBasinOrder (leaf)
   //This is NOT Strahler ordering!!!
   //JRC:  there might be a faster way to do this
+  const int MAX_ITER=100;
   int last_ordersum;
   int iter(0),ordersum(0);
   do
@@ -429,7 +430,7 @@ void CModel::InitializeRoutingNetwork()
     {
       pTo=_aDownstreamInds[p];
       if (pTo==DOESNT_EXIST){_aSubBasinOrder[p]=0;}//no downstream basin
-      else                                                                {_aSubBasinOrder[p]=_aSubBasinOrder[pTo]+1;}
+      else                  {_aSubBasinOrder[p]=_aSubBasinOrder[pTo]+1;}
     }
     ordersum=0;
     for (p=0;p<_nSubBasins;p++)
@@ -438,9 +439,9 @@ void CModel::InitializeRoutingNetwork()
       upperswap(_maxSubBasinOrder,_aSubBasinOrder[p]);
     }
     iter++;
-  } while ((ordersum>last_ordersum) && (iter<max_iter));
+  } while ((ordersum>last_ordersum) && (iter<MAX_ITER));
 
-  ExitGracefullyIf(iter>=max_iter,
+  ExitGracefullyIf(iter>=MAX_ITER,
                    "CModel::InitializeRoutingNetwork: exceeded maximum iterations. Circular reference in basin connections?",BAD_DATA);
 
   //this while loop should go through at most _maxSubBasinOrder times

@@ -181,7 +181,8 @@ enum snowbal_type
   SNOBAL_CEMA_NIEGE,    ///< Cema Niege method
   SNOBAL_TWO_LAYER,    ///< Two layer cold content (converted from GJ C# code)
   SNOBAL_GAWSER,       ///< GAWSER snow melt model (modified from Object GAWSER to replicate behavior)
-  SNOBAL_CRHM_EBSM     ///< CRHM's energy balance snow model (from Marks, 1997)
+  SNOBAL_CRHM_EBSM,    ///< CRHM's energy balance snow model (from Marks, 1997)
+  SNOBAL_HMETS         ///< HMETS single layer snow balance routine (Martel et al., 2017)
 };
 
 ///////////////////////////////////////////////////////////////////

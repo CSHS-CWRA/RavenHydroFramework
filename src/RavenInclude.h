@@ -556,7 +556,8 @@ enum potmelt_method
   POTMELT_HBV,         ///< custom degree day model used in HBV-EC
   POTMELT_DATA,        ///< user-specified potential melt forcing
   POTMELT_USACE,       ///< US Army Corps of Engineers Snow Melt
-  POTMELT_CRHM_EBSM    ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM)
+  POTMELT_CRHM_EBSM,   ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM)
+  POTMELT_HMETS        ///< From HMETS model (Martel et al., 2017)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -1260,13 +1261,13 @@ double DefaultParameterValue   (bool is_template, bool is_computable);
 //defined in CommonFunctions.cpp
 double rvn_erfc         (const double &x);
 double rvn_erf          (const double &x);
-double log_pdf      (const double &x, const double &mu, const double &sig);
-double LambertN     (const double &x, const int N);
-double GammaCumDist (const double &t, const double &a);
-double two_param_gamma(const double &t, const double &a);
-double TriCumDist   (const double &t, const double &tc, const double &tp);
-double NashCumDist  (const double &t, const double &k, const int &NR);
-double ADRCumDist   (const double &t, const double &L, const double &v, const double &D);
+double log_pdf          (const double &x, const double &mu, const double &sig);
+double LambertN         (const double &x, const int N);
+double GammaCumDist     (const double &t, const double &a, const double &b);
+double IncompleteGamma  (const double &betat, const double &a);
+double TriCumDist       (const double &t, const double &tc, const double &tp);
+double NashCumDist      (const double &t, const double &k, const int &NR);
+double ADRCumDist       (const double &t, const double &L, const double &v, const double &D);
 
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp

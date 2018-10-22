@@ -40,7 +40,8 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
            (type==SOILEVAP_UBC) ||
            (type==SOILEVAP_CHU) ||
            (type==SOILEVAP_GR4J) ||
-           (type==SOILEVAP_LINEAR))
+           (type==SOILEVAP_LINEAR) ||
+           (type==SOILEVAP_ALL))
   {
     CHydroProcessABC::DynamicSpecifyConnections(1);
 
@@ -157,7 +158,7 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     nP=1;
     aP[0]="AET_COEFF";         aPC[0]=CLASS_LANDUSE;
   }
-  else if (type==SOILEVAP_GR4J)
+  else if((type==SOILEVAP_GR4J) || (type==SOILEVAP_ALL))
   {
     nP=0;
   }
@@ -185,7 +186,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     aSV [0]=SOIL;  aSV  [1]=SOIL;  aSV [2]=ATMOSPHERE;    aSV [3]=DEPRESSION;
     aLev[0]=0;     aLev [1]=1;     aLev[2]=DOESNT_EXIST;  aLev[3]=DOESNT_EXIST;
   }
-  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR))
+  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR) || (se_type==SOILEVAP_ALL))
   {
     nSV=2;
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
@@ -304,11 +305,14 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   else if (type==SOILEVAP_LINEAR) //linear function of saturation
   {
     double stor    = state_vars[iFrom[0]];//[mm]
-    double max_stor=pHRU->GetSoilCapacity(0);
-
     double alpha   =pHRU->GetSurfaceProps()->AET_coeff;
 
     rates[0]  = min(alpha*stor,PET);  //evaporation rate [mm/d]
+  }
+  //------------------------------------------------------------
+  else if (type==SOILEVAP_ALL) 
+  {
+    rates[0]  = PET;  //evaporation rate [mm/d]
   }
   //------------------------------------------------------------
   else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV))

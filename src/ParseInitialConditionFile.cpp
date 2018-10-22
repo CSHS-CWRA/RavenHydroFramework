@@ -253,7 +253,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           HRUID=s_to_i(s[0]);
           pHRU=pModel->GetHRUByID(HRUID);
           if(pHRU==NULL){
-            string warn="HRU ID ["+to_string(HRUID)+"]in .rvc file not found in model";
+            string warn="HRU ID ["+to_string(HRUID)+"] in .rvc file not found in model";
             WriteWarning(warn,Options.noisy);
           }
           else{

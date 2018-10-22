@@ -27,9 +27,9 @@ private:/*------------------------------------------------------*/
   int                             _ID;  ///< Unique HRU identifier
   int                       _global_k;  ///< Global model index as stored in CModel array (can/will be different from ID)
   double                        _Area;  ///< contributing drainage area for HydroUnit [km^2]
-  int                    _SubbasinInd;  ///< global index (not ID!) of subbasin this HRU is in
+  int                    _SubbasinInd;  ///< global index p (not ID!) of subbasin this HRU is in
   location                  _Centroid;  ///< centroid of HRU
-  HRU_type                   _HRUType;  ///< Standard, Lake, Glacier, etc...
+  HRU_type                   _HRUType;  ///< Standard, Lake, Rock, Glacier, etc...
   bool                      _Disabled;  ///< true if processes are not simulated for this HRU
   bool                    _res_linked;  ///> true if HRU is linked to Reservoir
 
@@ -48,16 +48,16 @@ private:/*------------------------------------------------------*/
   double                       _LatEq;  ///< equivalent latitude for slope/aspect  [rad]
   double                   _SolarNoon;  ///< effective solar noon correction for slope [days]
 
-  double                  _PrecipMult; ///< HRU-specific precipitation correction factor
+  double                  _PrecipMult;  ///< HRU-specific precipitation correction factor
 
-  const soil_struct           *_pSoil[MAX_SOILLAYERS];     //< array of pointers to structures with profile soil properties
-  const soil_struct        *pAquifers[MAX_AQUIFER_LAYERS]; //< array of pointers to structures with aquifer layer properties
-  //const soil_struct      *pAquitard[MAX_AQUIFER_LAYERS]; //< /todo Add aquitard information
+  const soil_struct           *_pSoil[MAX_SOILLAYERS];     ///< array of pointers to structures with profile soil properties
+  const soil_struct        *pAquifers[MAX_AQUIFER_LAYERS]; ///< array of pointers to structures with aquifer layer properties
+  //const soil_struct      *pAquitard[MAX_AQUIFER_LAYERS]; ///< /todo Add aquitard information
 
-  const veg_struct             *_pVeg;  //< pointer to structure with vegetation properties
-  const CVegetationClass *pVegetation;  //< pointer to corresponding vegetation class (not currently used)
-  const surface_struct     *_pSurface;  //< pointer to structure with land use/land type properties
-  const terrain_struct     *_pTerrain;  //< pointer to structure with terrain properties
+  const veg_struct             *_pVeg;  ///< pointer to structure with vegetation properties
+  const CVegetationClass *pVegetation;  ///< pointer to corresponding vegetation class (not currently used)
+  const surface_struct     *_pSurface;  ///< pointer to structure with land use/land type properties
+  const terrain_struct     *_pTerrain;  ///< pointer to structure with terrain properties
 
   //variable property structures (locally stored, HRU-specific)
   double                   aThickness[MAX_SOILLAYERS];     ///< soil layer thicknesses [m]
@@ -99,7 +99,7 @@ public:/*-------------------------------------------------------*/
   double                 GetArea         () const;
   int                    GetSubBasinIndex() const;
   HRU_type               GetHRUType      () const;
-  bool                   IsLake          () const;//TMP?
+  bool                   IsLake          () const;
   bool                   IsLinkedToReservoir() const;
 
   double                 GetStateVarValue(const int i) const;
@@ -108,25 +108,25 @@ public:/*-------------------------------------------------------*/
   double                 GetElevation    () const;//[masl]
   double                 GetSlope        () const;//[rad]
   double                 GetAspect       () const;//[rad]
-  double                                         GetLatRad       () const;//[rad]
+  double                 GetLatRad       () const;//[rad]
   double                 GetLatEq        () const;//[rad]
   double                 GetSolarNoon    () const;//[days]
 
-  double                                         GetPrecipMultiplier () const;
+  double                 GetPrecipMultiplier() const;
 
-  soil_struct     const *GetSoilProps    (const int m) const;
-  double                 GetSoilThickness(const int m) const;//[mm]
-  double                 GetSoilCapacity (const int m) const;//[mm]
+  soil_struct     const *GetSoilProps       (const int m) const;
+  double                 GetSoilThickness   (const int m) const;//[mm]
+  double                 GetSoilCapacity    (const int m) const;//[mm]
   double                 GetSoilTensionStorageCapacity(const int m) const;//[mm]
 
   soil_struct     const *GetAquiferProps    (const int m) const;
   double                 GetAquiferThickness(const int m) const;//[mm]
   double                 GetAquiferCapacity (const int m) const;//[mm]
 
-  veg_struct      const *GetVegetationProps() const;
-  veg_var_struct  const *GetVegVarProps    () const;
-  surface_struct  const *GetSurfaceProps   () const;
-  terrain_struct  const *GetTerrainProps   () const;
+  veg_struct      const *GetVegetationProps () const;
+  veg_var_struct  const *GetVegVarProps     () const;
+  surface_struct  const *GetSurfaceProps    () const;
+  terrain_struct  const *GetTerrainProps    () const;
 
   force_struct    const *GetForcingFunctions() const;
   double                 GetForcing         (const string &forcing_string) const;
@@ -159,7 +159,7 @@ public:/*-------------------------------------------------------*/
                                          const double       &new_value);
   void          UpdateForcingFunctions  (const force_struct &Fnew);
   void          CopyDailyForcings       (force_struct &F);
-  void                            SetPrecipMultiplier     (const double factor);
+  void          SetPrecipMultiplier     (const double factor);
   void          ChangeLandUse           (const CLandUseClass    *lult_class);
   void          ChangeVegetation        (const CVegetationClass *veg_class);
   void          ChangeHRUType           (const HRU_type typ);

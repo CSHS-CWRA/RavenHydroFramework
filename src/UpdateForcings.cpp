@@ -420,8 +420,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  PET Calculations
       //-------------------------------------------------------------------
       // last but not least - needs all of the forcing params calculated above
-      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,Options.evaporation,tt);
-      F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,Options.ow_evaporation,tt);
+      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation,Options,tt);
+      F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.ow_evaporation,Options,tt);
 
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
@@ -1100,6 +1100,13 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if(Options.pot_melt==POTMELT_CRHM_EBSM)
   {
+  }
+  else if(Options.pot_melt==POTMELT_HMETS)
+  {
+    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++; 
+    aP[nP]="MAX_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_AGGRADATION";    aPC[nP]=CLASS_LANDUSE; nP++;
   }
   // Sub Daily Method
   //----------------------------------------------------------------------

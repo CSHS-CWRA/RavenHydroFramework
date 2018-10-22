@@ -40,6 +40,13 @@ CmvInfiltration::CmvInfiltration(infil_type  itype)
     iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [3]=pModel->GetStateVarIndex(SOIL,2);
     iFrom[4]=pModel->GetStateVarIndex(PONDED_WATER);    iTo  [4]=pModel->GetStateVarIndex(SOIL,3);
   }
+  else if(type==INF_HMETS) {
+    CHydroProcessABC::DynamicSpecifyConnections(4);
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[0]=pModel->GetStateVarIndex(SOIL,0);
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[1]=pModel->GetStateVarIndex(SURFACE_WATER);
+    iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[2]=pModel->GetStateVarIndex(CONVOLUTION,0);
+    iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[3]=pModel->GetStateVarIndex(CONVOLUTION,1);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -110,6 +117,11 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
   else if (type==INF_PHILIP_1957)
   {
     nP=0;
+  }
+  else if(type==INF_HMETS)
+  {
+    nP=1;
+    aP[0]="HMETS_RUNOFF_COEFF"; aPC[0]=CLASS_LANDUSE;
   }
   else if (type==INF_VIC)
   {
@@ -197,6 +209,12 @@ void CmvInfiltration::GetParticipatingStateVarList(infil_type  itype,sv_type *aS
     aSV[2]=SOIL;    aLev[2]=1;
     aSV[3]=SOIL;    aLev[3]=2;
     aSV[4]=SOIL;    aLev[4]=3;
+  }
+  else if (itype==INF_HMETS)
+  { //requires 4 soil layers (topsoil, interflow, GW_U, GW_L)
+    nSV=4;
+    aSV[2]=CONVOLUTION;    aLev[2]=0;
+    aSV[3]=CONVOLUTION;    aLev[3]=1;
   }
   //...
 }
@@ -421,9 +439,32 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[1]=rainthru-infil;
   }
   //-----------------------------------------------------------------
+  else if(type==INF_HMETS)
+  {
+    double infil,runoff,delayed,direct;
 
-  //ExitGracefullyIf(rates[0]<-REAL_SMALL,"negative infiltration",RUNTIME_ERR);
-  //ExitGracefullyIf(rates[1]<-REAL_SMALL,"negative runoffs",RUNTIME_ERR);
+    double stor       =state_vars[iTopSoil];
+    double max_stor   =pHRU->GetSoilCapacity(0);
+    double coef_runoff=pHRU->GetSurfaceProps()->HMETS_runoff_coeff; //[-]
+
+    double PET=0.0*pHRU->GetForcingFunctions()->PET; //shouldnt be here
+
+    direct=Fimp*rainthru;
+
+    runoff=coef_runoff*(stor/max_stor)*(1.0-Fimp)*rainthru; //[mm/d] 'horizontal transfer'
+
+    infil=(1.0-Fimp)*rainthru-runoff-PET;
+
+    delayed=coef_runoff*pow(stor/max_stor,2.0)*infil; //[mm/d]
+    infil-=delayed;
+
+    rates[0]=infil;     //PONDED->SOIL[0]
+    rates[1]=direct;    //PONDED->SW
+    rates[2]=runoff;    //PONDED->CONVOL[0]
+    rates[3]=delayed;   //PONDED->CONVOL[1]
+  }
+  //-----------------------------------------------------------------
+
 }
 
 //////////////////////////////////////////////////////////////////
