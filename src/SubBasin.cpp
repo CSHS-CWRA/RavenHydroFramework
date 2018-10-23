@@ -50,6 +50,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _t_peak            =AUTO_COMPUTE;
   _t_lag             =AUTO_COMPUTE;
   _gamma_shape       =3.0;
+  _gamma_scale       =1.0;
   _reservoir_constant=AUTO_COMPUTE;
   _num_reservoirs    =1;
 
@@ -508,6 +509,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
   else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
+  else if (!label_n.compare("GAMMA_SCALE"   ))  {_gamma_scale=value;}
   else{
     return false;//bad string
   }
@@ -926,6 +928,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if (_t_peak     ==AUTO_COMPUTE){_t_peak=0.3*_t_conc; }/// \todo [fix hack] better means of determining needed
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
     if (_gamma_shape==AUTO_COMPUTE){_gamma_shape=3.0; }
+    if (_gamma_scale==AUTO_COMPUTE){_gamma_scale=max((_gamma_shape-1.0)/_t_peak,0.01); } //only really should be used if _gamma_shape>1.0
 
     if (_reservoir_constant==AUTO_COMPUTE){
       _reservoir_constant=-log(_t_conc/(1+_t_conc));
@@ -934,6 +937,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     ExitGracefullyIf(_t_peak<=0,     "CSubBasin::Initialize: time to peak must be greater than zero",BAD_DATA);
     ExitGracefullyIf(_t_conc<=0,     "CSubBasin::Initialize: time of concentration must be greater than zero",BAD_DATA);
     ExitGracefullyIf(_gamma_shape<=0,"CSubBasin::Initialize: gamma shape parameter must be greater than zero",BAD_DATA);
+		ExitGracefullyIf(_gamma_scale<=0,"CSubBasin::Initialize: gamma scale parameter must be greater than zero",BAD_DATA);
 
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
@@ -1194,7 +1198,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   {
     sum=0;
     double alpha= _gamma_shape;
-    double beta = (_gamma_shape-1.0)/_t_peak; ////should be (_gamma_shape-1.0)/_t_peak;
+    double beta = _gamma_scale; 
     for (n=0;n<_nQlatHist;n++)
     {
       t=n*tstep-_t_lag;

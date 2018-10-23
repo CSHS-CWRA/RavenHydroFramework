@@ -40,6 +40,7 @@ private:/*------------------------------------------------------*/
   double   _reservoir_constant;   ///< linear basin/catchment routing constant [1/d]
   int          _num_reservoirs;   ///< number of linear reservoirs used for in-catchment routing
   double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph 
+  double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
 
   //River/stream  channel data:
   const CChannelXSect*_pChannel;  ///< Main channel
