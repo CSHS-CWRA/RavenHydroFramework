@@ -1088,8 +1088,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.output_dir+=to_string(s[Len-1])+"/";  // append backslash to make sure it's a folder
       PrepareOutputdirectory(Options);
 
-      cout << "JMJMJM: Options.output_dir = "<<Options.output_dir<<endl;
-
       ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
       WARNINGS.close();
       break;
