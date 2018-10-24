@@ -937,7 +937,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     ExitGracefullyIf(_t_peak<=0,     "CSubBasin::Initialize: time to peak must be greater than zero",BAD_DATA);
     ExitGracefullyIf(_t_conc<=0,     "CSubBasin::Initialize: time of concentration must be greater than zero",BAD_DATA);
     ExitGracefullyIf(_gamma_shape<=0,"CSubBasin::Initialize: gamma shape parameter must be greater than zero",BAD_DATA);
-		ExitGracefullyIf(_gamma_scale<=0,"CSubBasin::Initialize: gamma scale parameter must be greater than zero",BAD_DATA);
+    ExitGracefullyIf(_gamma_scale<=0,"CSubBasin::Initialize: gamma scale parameter must be greater than zero",BAD_DATA);
 
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
@@ -1154,10 +1154,13 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 
   int OldnQlatHist=_nQlatHist;
 
-  if ((Options.catchment_routing==ROUTE_TRI_CONVOLUTION) ||
-      (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION))
+  if (Options.catchment_routing==ROUTE_TRI_CONVOLUTION)
   {
     _nQlatHist=(int)(ceil((_t_conc)/tstep))+3;
+  }
+  else if (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION)
+  {
+    _nQlatHist=(int)(ceil(4.5*pow(_gamma_shape,0.6)/_gamma_scale/tstep))+1;
   }
   else if (Options.catchment_routing==ROUTE_DELAYED_FIRST_ORDER)
   {
@@ -1246,6 +1249,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   sum=0.0;
   for (n=0;n<_nQlatHist;n++){sum+=_aUnitHydro[n];}
   ExitGracefullyIf(sum==0.0,"CSubBasin::GenerateCatchmentHydrograph: bad unit hydrograph constructed",RUNTIME_ERR);
+  if(fabs(sum-1.0)<0.05){ WriteWarning("CSubBasin::GenerateCatchmentHydrograph: unit hydrograph truncated",Options.noisy); }
   for (n=0;n<_nQlatHist;n++){_aUnitHydro[n]/=sum;}
 }
 

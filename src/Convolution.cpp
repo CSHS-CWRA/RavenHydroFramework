@@ -89,12 +89,12 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   else if(_type==CONVOL_GAMMA){
     double alpha=pHRU->GetSurfaceProps()->gamma_shape;
     double beta=pHRU->GetSurfaceProps()->gamma_scale;
-    max_time=min((double)MAX_CONVOL_STORES,5.0*(alpha-1)/beta);
+    max_time=min((double)MAX_CONVOL_STORES,4.5*pow(alpha,0.6)/beta);
   }
   else if(_type==CONVOL_GAMMA_2){
     double alpha=pHRU->GetSurfaceProps()->gamma_shape2;
     double beta=pHRU->GetSurfaceProps()->gamma_scale2;
-    max_time=min((double)MAX_CONVOL_STORES,5.0*(alpha-1)/beta);
+    max_time=min((double)MAX_CONVOL_STORES,4.5*pow(alpha,0.6)/beta);
   }
 
   N =(int)(ceil(max_time/tstep));
@@ -102,7 +102,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   ExitGracefullyIf(N>MAX_CONVOL_STORES,"CmvConvolution::GenerateUnitHydrograph: unit hydrograph duration for convolution too long",BAD_DATA);
 
   if (N==0){N=1;}
-  ExitGracefullyIf(max_time<=0.0,"CmvConvolution::GenerateUnitHydrograph: negative or zero duration of unit hydrograph (bad GR4J_x4)",BAD_DATA);
+  ExitGracefullyIf(max_time<=0.0,"CmvConvolution::GenerateUnitHydrograph: negative or zero duration of unit hydrograph (bad GR4J_x4, or GAMMA_SHAPE/GAMMA_SCALE)",BAD_DATA);
 
   if (_type==CONVOL_TRIANGLE){
     for (int n=0; n<N; n++)
