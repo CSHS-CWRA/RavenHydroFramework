@@ -77,6 +77,7 @@ int main(int argc, char* argv[])
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RUNTIME_ERR);
   }
   WARNINGS.close();
+  
   t0=clock();
 
   CStateVariable::Initialize();
@@ -174,7 +175,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.rvp_filename="";
   Options.rvt_filename="";
   Options.rvc_filename="";
-  Options.output_dir="";
+  Options.output_dir  ="";
   Options.silent=false;
   Options.noisy =false;
 
@@ -224,8 +225,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvc_filename="model.rvc";
   }
 
-  // make sure that output dir has trailing '/'
-  Options.output_dir=Options.output_dir+"/";
+  // make sure that output dir has trailing '/' if not empty
+  if (Options.output_dir.compare("") != 0) { Options.output_dir=Options.output_dir+"/"; }
 
   char cCurrentPath[FILENAME_MAX];
   if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))){
