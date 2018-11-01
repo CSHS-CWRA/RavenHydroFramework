@@ -503,8 +503,8 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     
     SWI = max(fcmin,fcmax*(1-Ccum*cum_melt));        // Calculation of the water retention capacity of the snowpack. 
 
-    string tmp="SWI";
-    CGlobalParams::SetGlobalProperty(tmp,SWI);
+    // string tmp="SWI";
+    // CGlobalParams::SetGlobalProperty(tmp,SWI);
 
     deficit=max(SWI*SWE-SL,0.0);
     to_liq=min(melt,deficit);                        //melt first fills deficit
