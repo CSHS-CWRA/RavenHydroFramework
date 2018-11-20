@@ -78,7 +78,7 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     iFrom[5]=iCumMelt;    iTo[5]=iCumMelt;       //rates[5]: cumulative melt modification
     iFrom[6]=iSnowDef;    iTo[6]=iSnowDef;       //rates[6]: snow deficit modification
   }
-  else if (type==SNOBAL_CEMA_NIEGE)
+  else if (type==SNOBAL_CEMA_NEIGE)
   {
     int iSnowCov,iPonded;
     iSnowCov  =pModel->GetStateVarIndex(SNOW_COVER);
@@ -241,7 +241,7 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
     aP[1]="SNOW_SWI";         aPC[1]=CLASS_GLOBAL;
     aP[2]="SNOW_PATCH_LIMIT"; aPC[2]=CLASS_LANDUSE;
   }
-  else if (type==SNOBAL_CEMA_NIEGE)
+  else if (type==SNOBAL_CEMA_NEIGE)
   {
     nP=1;
     aP[0]="AVG_ANNUAL_SNOW";  aPC[0]=CLASS_GLOBAL;
@@ -327,7 +327,7 @@ void CmvSnowBalance::GetParticipatingStateVarList(snowbal_type bal_type,
     aSV[6]=SNOW_ALBEDO;   aLev[6]=DOESNT_EXIST;//Used, but not modified
     aSV[7]=SNOW_DEFICIT;  aLev[7]=DOESNT_EXIST;
   }
-  else if (bal_type==SNOBAL_CEMA_NIEGE)
+  else if (bal_type==SNOBAL_CEMA_NEIGE)
   {
     nSV=3;
     aSV[0]=SNOW;          aLev[0]=DOESNT_EXIST;
@@ -409,7 +409,7 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     rates[0]=max(pHRU->GetForcingFunctions()->potential_melt,0.0);
   }
   //------------------------------------------------------------
-  else if (type==SNOBAL_CEMA_NIEGE)
+  else if (type==SNOBAL_CEMA_NEIGE)
   {
     double pot_melt,snow_cov,SWE;
     double avg_annual_snow=CGlobalParams::GetParams()->avg_annual_snow;

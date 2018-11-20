@@ -178,7 +178,7 @@ enum snowbal_type
   SNOBAL_COLD_CONTENT, ///< Cold content-based
   SNOBAL_HBV,          ///< HBV method
   SNOBAL_UBCWM,        ///< UBCWM method
-  SNOBAL_CEMA_NIEGE,    ///< Cema Niege method
+  SNOBAL_CEMA_NEIGE,   ///< Cema Neige method
   SNOBAL_TWO_LAYER,    ///< Two layer cold content (converted from GJ C# code)
   SNOBAL_GAWSER,       ///< GAWSER snow melt model (modified from Object GAWSER to replicate behavior)
   SNOBAL_CRHM_EBSM,    ///< CRHM's energy balance snow model (from Marks, 1997)
@@ -244,7 +244,7 @@ public:/*-------------------------------------------------------*/
 //
 enum snowtemp_evolve_type
 {
-  SNOTEMP_NEWTONS  ///< Cema Niege approach - linear exchange with atmosphere
+  SNOTEMP_NEWTONS  ///< Cema Neige approach - linear exchange with atmosphere
 };
 
 ///////////////////////////////////////////////////////////////////

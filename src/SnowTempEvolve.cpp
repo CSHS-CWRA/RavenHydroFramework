@@ -32,24 +32,24 @@ void CmvSnowTempEvolve::Initialize(){}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rates of change of state variables
 ///
-/// \param *state_vars [in] Array of current state variables in HRU
-/// \param *pHRU [in] Reference to pertinent HRU
-/// \param &Options [in] Global model options information
-/// \param &tt [in] Current model time
-/// \param *rates [out] Rate of loss from "from" compartment [mm/d]
+/// \param *state_vars [in]  Array of current state variables in HRU
+/// \param *pHRU       [in]  Reference to pertinent HRU
+/// \param &Options    [in]  Global model options information
+/// \param &tt         [in]  Current model time
+/// \param *rates      [out] Rate of loss from "from" compartment [mm/d]
 //
-void CmvSnowTempEvolve::GetRatesOfChange( const double            *state_vars,
+void CmvSnowTempEvolve::GetRatesOfChange( const double      *state_vars,
                                           const CHydroUnit  *pHRU,
-                                          const optStruct         &Options,
+                                          const optStruct   &Options,
                                           const time_struct &tt,
-                                          double      *rates) const
+                                          double            *rates) const
 {
   double Tsnow=state_vars[iFrom[0]];
   double Tair=pHRU->GetForcingFunctions()->temp_ave;
   if (_type==SNOTEMP_NEWTONS)
   {
     //linear heat transfer coefficient
-    double alpha=CGlobalParams::GetParams()->airsnow_coeff; // = (1-x6) as used in original cema niege =[1/d]
+    double alpha=CGlobalParams::GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
     rates[0]=alpha*(Tair-Tsnow);
   }
 }
@@ -57,17 +57,17 @@ void CmvSnowTempEvolve::GetRatesOfChange( const double            *state_vars,
 //////////////////////////////////////////////////////////////////
 /// \brief Applies constraints to calculations in GetRatesOfChange
 ///
-/// \param *state_vars [in] Array of current state variables in HRU
-/// \param *pHRU [in] Reference to pertinent HRU
-/// \param &Options [in] Global model options information
-/// \param &tt [in] Current model time
-/// \param *rates [out] Rate of loss from "from" compartment [mm/d]
+/// \param *state_vars [in]  Array of current state variables in HRU
+/// \param *pHRU       [in]  Reference to pertinent HRU
+/// \param &Options    [in]  Global model options information
+/// \param &tt         [in]  Current model time
+/// \param *rates      [out] Rate of loss from "from" compartment [mm/d]
 //
 void CmvSnowTempEvolve::ApplyConstraints( const double      *state_vars,
                                           const CHydroUnit  *pHRU,
-                                          const optStruct         &Options,
+                                          const optStruct   &Options,
                                           const time_struct &tt,
-                                          double      *rates) const
+                                          double            *rates) const
 {
   //can't exceed a temperature of freezing
   double Tsnow=state_vars[iFrom[0]];
@@ -97,10 +97,10 @@ void CmvSnowTempEvolve::GetParticipatingParamList(string *aP, class_type *aPC, i
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to participating state variables
 ///
-/// \param ste_type [in] modelling type selected
-/// \param *aSV [out] Array of state variable types needed by algorithm
-/// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
-/// \param &nSV [out] Number of state variables required by algorithm (size of aSV[] and aLev[] arrays)
+/// \param ste_type [in]  modelling type selected
+/// \param *aSV     [out] Array of state variable types needed by algorithm
+/// \param *aLev    [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
+/// \param &nSV     [out] Number of state variables required by algorithm (size of aSV[] and aLev[] arrays)
 //
 void CmvSnowTempEvolve::GetParticipatingStateVarList(snowtemp_evolve_type ste_type,sv_type *aSV, int *aLev, int &nSV)
 {
