@@ -224,162 +224,163 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     code=0;
     //---------------------SPECIAL -----------------------------
-    if       (Len==0)                                {code=-1; }
-    else if  (!strcmp(s[0],"*"                     )){code=-2; }//comment
-    else if  (!strcmp(s[0],"%"                     )){code=-2; }//comment
-    else if  (!strcmp(s[0],"#"                     )){code=-2; }//comment
-    else if  (s[0][0]=='#')                          {code=-2; }//comment
-    else if  (!strcmp(s[0],":End"                  )){code=-3; }//premature end of file
+    if       (Len==0)                                     {code=-1; }
+    else if  (!strcmp(s[0],"*"                          )){code=-2; }//comment
+    else if  (!strcmp(s[0],"%"                          )){code=-2; }//comment
+    else if  (!strcmp(s[0],"#"                          )){code=-2; }//comment
+    else if  (s[0][0]=='#')                               {code=-2; }//comment
+    else if  (!strcmp(s[0],":End"                       )){code=-3; }//premature end of file
     //--------------------MODEL OPTIONS ------------------------
-    else if  (!strcmp(s[0],"?? "                    )){code=1;  }
-    else if  (!strcmp(s[0],":JulianStartDay"        )){code=2;  }
-    else if  (!strcmp(s[0],":JulianStartYear"       )){code=3;  }
-    else if  (!strcmp(s[0],":Duration"              )){code=4;  }
-    else if  (!strcmp(s[0],":Method"                )){code=5;  }
-    else if  (!strcmp(s[0],":NumericalMethod"       )){code=5;  }
-    else if  (!strcmp(s[0],":TimeStep"              )){code=6;  }
-    else if  (!strcmp(s[0],":Routing"               )){code=8;  }
-    else if  (!strcmp(s[0],":Evaporation"           )){code=9;  }
-    else if  (!strcmp(s[0],":InterpolationMethod"   )){code=10; }
-    else if  (!strcmp(s[0],":Interpolation"         )){code=10; }
-    else if  (!strcmp(s[0],":MetGaugeInterpolation" )){code=10; }
-    else if  (!strcmp(s[0],":OW_Evaporation"        )){code=12; }
-    else if  (!strcmp(s[0],":EndPause"              )){code=13; }
-    else if  (!strcmp(s[0],":SoilModel"             )){code=14; }//REQUIRED- CREATES MODEL!
-    else if  (!strcmp(s[0],":CatchmentRouting"      )){code=16; }
-    else if  (!strcmp(s[0],":CatchmentRoute"        )){code=16; }
-    else if  (!strcmp(s[0],":LakeStorage"           )){code=17; }//AFTER SoilModel Commmand
-    else if  (!strcmp(s[0],":OroPETCorrect"         )){code=18; }
-    else if  (!strcmp(s[0],":RainSnowMethod"        )){code=21; }
-    else if  (!strcmp(s[0],":RainSnowFraction"      )){code=21; }
-    else if  (!strcmp(s[0],":CloudCoverMethod"      )){code=22; }
-    else if  (!strcmp(s[0],":LWRadiationMethod"     )){code=23; }
-    else if  (!strcmp(s[0],":SWRadiationMethod"     )){code=24; }
+    else if  (!strcmp(s[0],"?? "                        )){code=1;  }
+    else if  (!strcmp(s[0],":JulianStartDay"            )){code=2;  }
+    else if  (!strcmp(s[0],":JulianStartYear"           )){code=3;  }
+    else if  (!strcmp(s[0],":Duration"                  )){code=4;  }
+    else if  (!strcmp(s[0],":Method"                    )){code=5;  }
+    else if  (!strcmp(s[0],":NumericalMethod"           )){code=5;  }
+    else if  (!strcmp(s[0],":TimeStep"                  )){code=6;  }
+    else if  (!strcmp(s[0],":Routing"                   )){code=8;  }
+    else if  (!strcmp(s[0],":Evaporation"               )){code=9;  }
+    else if  (!strcmp(s[0],":InterpolationMethod"       )){code=10; }
+    else if  (!strcmp(s[0],":Interpolation"             )){code=10; }
+    else if  (!strcmp(s[0],":MetGaugeInterpolation"     )){code=10; }
+    else if  (!strcmp(s[0],":OW_Evaporation"            )){code=12; }
+    else if  (!strcmp(s[0],":EndPause"                  )){code=13; }
+    else if  (!strcmp(s[0],":SoilModel"                 )){code=14; }//REQUIRED- CREATES MODEL!
+    else if  (!strcmp(s[0],":CatchmentRouting"          )){code=16; }
+    else if  (!strcmp(s[0],":CatchmentRoute"            )){code=16; }
+    else if  (!strcmp(s[0],":LakeStorage"               )){code=17; }//AFTER SoilModel Commmand
+    else if  (!strcmp(s[0],":OroPETCorrect"             )){code=18; }
+    else if  (!strcmp(s[0],":RainSnowMethod"            )){code=21; }
+    else if  (!strcmp(s[0],":RainSnowFraction"          )){code=21; }
+    else if  (!strcmp(s[0],":CloudCoverMethod"          )){code=22; }
+    else if  (!strcmp(s[0],":LWRadiationMethod"         )){code=23; }
+    else if  (!strcmp(s[0],":SWRadiationMethod"         )){code=24; }
     else if  (!strcmp(s[0],":MonthlyInterpolationMethod")){code=25; }
-    else if  (!strcmp(s[0],":RelativeHumidityMethod")){code=26; }
-    else if  (!strcmp(s[0],":StartDate"             )){code=27; }
-    else if  (!strcmp(s[0],":WindspeedMethod"       )){code=28; }
-    else if  (!strcmp(s[0],":AirPressureMethod"     )){code=29; }
-    else if  (!strcmp(s[0],":PrecipIceptFract"      )){code=30; }
-    else if  (!strcmp(s[0],":OroTempCorrect"        )){code=31; }
-    else if  (!strcmp(s[0],":OroPrecipCorrect"      )){code=32; }
-    else if  (!strcmp(s[0],":AquiferLayers"         )){code=33; }//AFTER SoilModel Commmand
-    else if  (!strcmp(s[0],":PotentialMeltMethod"   )){code=34; }
-    else if  (!strcmp(s[0],":SubdailyMethod"        )){code=35; }
-    else if  (!strcmp(s[0],":SWCanopyCorrect"       )){code=36; }
-    else if  (!strcmp(s[0],":SWCloudCorrect"        )){code=37; }
-    else if  (!strcmp(s[0],":MultilayerSnow"        )){code=39; }//AFTER SoilModel Commmand
-    else if  (!strcmp(s[0],":RetainUBCWMBugs"       )){code=40; }
-    else if  (!strcmp(s[0],":EndDate"               )){code=41; }
-    else if  (!strcmp(s[0],":RechargeMethod"        )){code=42; }
-    else if  (!strcmp(s[0],":NetSWRadMethod"        )){code=43; }
-    else if  (!strcmp(s[0],":DirectEvaporation"     )){code=44; }
+    else if  (!strcmp(s[0],":RelativeHumidityMethod"    )){code=26; }
+    else if  (!strcmp(s[0],":StartDate"                 )){code=27; }
+    else if  (!strcmp(s[0],":WindspeedMethod"           )){code=28; }
+    else if  (!strcmp(s[0],":AirPressureMethod"         )){code=29; }
+    else if  (!strcmp(s[0],":PrecipIceptFract"          )){code=30; }
+    else if  (!strcmp(s[0],":OroTempCorrect"            )){code=31; }
+    else if  (!strcmp(s[0],":OroPrecipCorrect"          )){code=32; }
+    else if  (!strcmp(s[0],":AquiferLayers"             )){code=33; }//AFTER SoilModel Commmand
+    else if  (!strcmp(s[0],":PotentialMeltMethod"       )){code=34; }
+    else if  (!strcmp(s[0],":SubdailyMethod"            )){code=35; }
+    else if  (!strcmp(s[0],":SWCanopyCorrect"           )){code=36; }
+    else if  (!strcmp(s[0],":SWCloudCorrect"            )){code=37; }
+    else if  (!strcmp(s[0],":MultilayerSnow"            )){code=39; }//AFTER SoilModel Commmand
+    else if  (!strcmp(s[0],":RetainUBCWMBugs"           )){code=40; }
+    else if  (!strcmp(s[0],":EndDate"                   )){code=41; }
+    else if  (!strcmp(s[0],":RechargeMethod"            )){code=42; }
+    else if  (!strcmp(s[0],":NetSWRadMethod"            )){code=43; }
+    else if  (!strcmp(s[0],":DirectEvaporation"         )){code=44; }
+    //------------------------------------------------------------
+    else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
+    else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=51; }
+    else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=52; }
+    else if  (!strcmp(s[0],":WriteEnergyStorage"        )){code=53; }
+    else if  (!strcmp(s[0],":WriteParametersFile"       )){code=54; }
+    else if  (!strcmp(s[0],":WriteEnsimFormat"          )){code=55; }
+    else if  (!strcmp(s[0],":WriteNetcdfFormat"         )){code=78; }
+    else if  (!strcmp(s[0],":WriteNetCDFFormat"         )){code=78; }
+    else if  (!strcmp(s[0],":RunName"                   )){code=56; }
+    else if  (!strcmp(s[0],":NoisyMode"                 )){code=57; }
+    else if  (!strcmp(s[0],":SilentMode"                )){code=58; }
+    else if  (!strcmp(s[0],":PavicsMode"                )){code=88; }//some special options only for PAVICS
+    else if  (!strcmp(s[0],":rvh_Filename"              )){code=59; }
+    else if  (!strcmp(s[0],":rvp_Filename"              )){code=60; }
+    else if  (!strcmp(s[0],":rvt_Filename"              )){code=61; }
+    else if  (!strcmp(s[0],":rvc_Filename"              )){code=62; }
+    else if  (!strcmp(s[0],":OutputDirectory"           )){code=63; }//Ideally, called before everything else
+    else if  (!strcmp(s[0],":OutputDump"                )){code=64; }
+    else if  (!strcmp(s[0],":MajorOutputInterval"       )){code=65; }
+    else if  (!strcmp(s[0],":SnapshotHydrograph"        )){code=66; }
+    else if  (!strcmp(s[0],":HRUStorageOutput"          )){code=67; }//After corresponding DefineHRUGroup(s) command
+    else if  (!strcmp(s[0],":SuppressWarnings"          )){code=68; }
+    else if  (!strcmp(s[0],":QuietMode"                 )){code=69; }
+    else if  (!strcmp(s[0],":WriteExhaustiveMB"         )){code=70; }
+    else if  (!strcmp(s[0],":EvaluationMetrics"         )){code=71; }
+    else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=72; }
+    else if  (!strcmp(s[0],":SuppressOutput"            )){code=73; }
+    else if  (!strcmp(s[0],":WriteHRUGroupMBFile"       )){code=74; }
+    else if  (!strcmp(s[0],":OutputInterval"            )){code=15; }
+    else if  (!strcmp(s[0],":EvaluationTime"            )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
+    else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
+    else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; } 
+    else if  (!strcmp(s[0],":WriteChannelInfo"          )){code=79; } 
+    else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=85; } 
+    else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=86; }
+    else if  (!strcmp(s[0],":PeriodStartingFormatOff"   )){code=87; }
     //-----------------------------------------------------------
-    else if  (!strcmp(s[0],":DebugMode"             )){code=50; }
-    else if  (!strcmp(s[0],":WriteMassBalanceFile"  )){code=51; }
-    else if  (!strcmp(s[0],":WriteForcingFunctions" )){code=52; }
-    else if  (!strcmp(s[0],":WriteEnergyStorage"    )){code=53; }
-    else if  (!strcmp(s[0],":WriteParametersFile"   )){code=54; }
-    else if  (!strcmp(s[0],":WriteEnsimFormat"      )){code=55; }
-    else if  (!strcmp(s[0],":WriteNetcdfFormat"     )){code=78; }
-    else if  (!strcmp(s[0],":RunName"               )){code=56; }
-    else if  (!strcmp(s[0],":NoisyMode"             )){code=57; }
-    else if  (!strcmp(s[0],":SilentMode"            )){code=58; }
-    else if  (!strcmp(s[0],":rvh_Filename"          )){code=59; }
-    else if  (!strcmp(s[0],":rvp_Filename"          )){code=60; }
-    else if  (!strcmp(s[0],":rvt_Filename"          )){code=61; }
-    else if  (!strcmp(s[0],":rvc_Filename"          )){code=62; }
-    else if  (!strcmp(s[0],":OutputDirectory"       )){code=63; }//Ideally, called before everything else
-    else if  (!strcmp(s[0],":OutputDump"            )){code=64; }
-    else if  (!strcmp(s[0],":MajorOutputInterval"   )){code=65; }
-    else if  (!strcmp(s[0],":SnapshotHydrograph"    )){code=66; }
-    else if  (!strcmp(s[0],":HRUStorageOutput"      )){code=67; }//After corresponding DefineHRUGroup(s) command
-    else if  (!strcmp(s[0],":SuppressWarnings"      )){code=68; }
-    else if  (!strcmp(s[0],":QuietMode"             )){code=69; }
-    else if  (!strcmp(s[0],":WriteExhaustiveMB"     )){code=70; }
-    else if  (!strcmp(s[0],":EvaluationMetrics"     )){code=71; }
-    else if  (!strcmp(s[0],":SuppressOutputICs"     )){code=72; }
-    else if  (!strcmp(s[0],":SuppressOutput"        )){code=73; }
-    else if  (!strcmp(s[0],":WriteHRUGroupMBFile"   )){code=74; }
-    else if  (!strcmp(s[0],":OutputInterval"        )){code=15; }
-    else if  (!strcmp(s[0],":EvaluationTime"        )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
-    else if  (!strcmp(s[0],":WaterYearStartMonth"   )){code=76; }
-    else if  (!strcmp(s[0],":CreateRVPTemplate"     )){code=77; }
-    else if  (!strcmp(s[0],":WriteNetCDFFormat"     )){code=78; } 
-    else if  (!strcmp(s[0],":WriteChannelInfo"      )){code=79; } 
-    else if  (!strcmp(s[0],":BenchmarkingMode"      )){code=85; } 
-    else if  (!strcmp(s[0],":WriteReservoirMBFile"  )){code=86; }
-    else if  (!strcmp(s[0],":PeriodStartingFormatOff")){code=87; }
+    else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }
+    else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }
+    else if  (!strcmp(s[0],":DisableHRUGroup"           )){code=82; } 
     //-----------------------------------------------------------
-    else if  (!strcmp(s[0],":DefineHRUGroup"        )){code=80; }
-    else if  (!strcmp(s[0],":DefineHRUGroups"       )){code=81; }
-    else if  (!strcmp(s[0],":DisableHRUGroup"       )){code=82; } 
-    //-----------------------------------------------------------
-    else if  (!strcmp(s[0],":Alias"                 )){code=98; }
-    else if  (!strcmp(s[0],":CustomOutput"          )){code=99; }
+    else if  (!strcmp(s[0],":Alias"                     )){code=98; }
+    else if  (!strcmp(s[0],":CustomOutput"              )){code=99; }
     //--------------------SYSTEM OPTIONS -----------------------
-    else if  (!strcmp(s[0],":StorageVars"           )){code=100;}//OBSOLETE
-    else if  (!strcmp(s[0],":StateVariables"        )){code=100;}//OBSOLETE
-    else if  (!strcmp(s[0],":AggregatedVariable"    )){code=101;}//After corresponding DefineHRUGroup(s) command
+    else if  (!strcmp(s[0],":StorageVars"               )){code=100;}//OBSOLETE
+    else if  (!strcmp(s[0],":StateVariables"            )){code=100;}//OBSOLETE
+    else if  (!strcmp(s[0],":AggregatedVariable"        )){code=101;}//After corresponding DefineHRUGroup(s) command
     //--------------------HYDROLOGICAL PROCESSES ---------------
-    if       (!strcmp(s[0],":ProcessBegin"          )){code=200;}//REQUIRED
-    else if  (!strcmp(s[0],":HydrologicProcesses"   )){code=200;}//REQUIRED
-    else if  (!strcmp(s[0],":Baseflow"              )){code=201;}
-    else if  (!strcmp(s[0],":CanopyEvaporation"     )){code=202;}
-    else if  (!strcmp(s[0],":CanopyDrip"            )){code=203;}
-    else if  (!strcmp(s[0],":Infiltration"          )){code=204;}//GENERALLY REQUIRED
-    else if  (!strcmp(s[0],":Percolation"           )){code=205;}
-    else if  (!strcmp(s[0],":Snowmelt"              )){code=206;}
-    else if  (!strcmp(s[0],":SnowMelt"              )){code=206;}
-    else if  (!strcmp(s[0],":SoilEvaporation"       )){code=208;}
-    else if  (!strcmp(s[0],":SnowBalance"           )){code=209;}
-    else if  (!strcmp(s[0],":Sublimation"           )){code=210;}
-    else if  (!strcmp(s[0],":OpenWaterEvaporation"  )){code=211;}
-    else if  (!strcmp(s[0],":Precipitation"         )){code=212;}//GENERALLY REQUIRED
-    else if  (!strcmp(s[0],":Interflow"             )){code=213;}
-    else if  (!strcmp(s[0],":SnowRefreeze"          )){code=214;}
-    else if  (!strcmp(s[0],":Refreeze"              )){code=214;}
-    else if  (!strcmp(s[0],":Flush"                 )){code=215;}
-    else if  (!strcmp(s[0],":CapillaryRise"         )){code=216;}
-    else if  (!strcmp(s[0],":LakeEvaporation"       )){code=217;}
-    else if  (!strcmp(s[0],":SnowSqueeze"           )){code=218;}
-    else if  (!strcmp(s[0],":GlacialMelt"           )){code=219;}
-    else if  (!strcmp(s[0],":GlacierMelt"           )){code=219;}
-    else if  (!strcmp(s[0],":GlacierRelease"        )){code=220;}
-    else if  (!strcmp(s[0],":CanopySnowEvaporation" )){code=221;}
-    else if  (!strcmp(s[0],":CanopySnowEvap"        )){code=221;}
-    else if  (!strcmp(s[0],":Overflow"              )){code=222;}
-    else if  (!strcmp(s[0],":-->Overflow"           )){code=222;}
-    else if  (!strcmp(s[0],":SnowAlbedoEvolve"      )){code=223;}
-    else if  (!strcmp(s[0],":CropHeatUnitEvolve"    )){code=224;}
-    else if  (!strcmp(s[0],":Abstraction"           )){code=225;}
-    else if  (!strcmp(s[0],":GlacierInfiltration"   )){code=226;}
-    else if  (!strcmp(s[0],":Split"                 )){code=227;}
-    else if  (!strcmp(s[0],":Convolve"              )){code=228;}
-    else if  (!strcmp(s[0],":SnowTempEvolve"        )){code=229;}
-    else if  (!strcmp(s[0],":DepressionOverflow"    )){code=230;}
-    else if  (!strcmp(s[0],":ExchangeFlow"          )){code=231;}
-    else if  (!strcmp(s[0],":LateralFlush"          )){code=232;}
-    else if  (!strcmp(s[0],":Seepage"               )){code=233;}
-    else if  (!strcmp(s[0],":Recharge"              )){code=234;}
-    else if  (!strcmp(s[0],":BlowingSnow"           )){code=235;}
-    else if  (!strcmp(s[0],":LakeRelease"           )){code=236;}
+    if       (!strcmp(s[0],":ProcessBegin"              )){code=200;}//REQUIRED
+    else if  (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
+    else if  (!strcmp(s[0],":Baseflow"                  )){code=201;}
+    else if  (!strcmp(s[0],":CanopyEvaporation"         )){code=202;}
+    else if  (!strcmp(s[0],":CanopyDrip"                )){code=203;}
+    else if  (!strcmp(s[0],":Infiltration"              )){code=204;}//GENERALLY REQUIRED
+    else if  (!strcmp(s[0],":Percolation"               )){code=205;}
+    else if  (!strcmp(s[0],":Snowmelt"                  )){code=206;}
+    else if  (!strcmp(s[0],":SnowMelt"                  )){code=206;}
+    else if  (!strcmp(s[0],":SoilEvaporation"           )){code=208;}
+    else if  (!strcmp(s[0],":SnowBalance"               )){code=209;}
+    else if  (!strcmp(s[0],":Sublimation"               )){code=210;}
+    else if  (!strcmp(s[0],":OpenWaterEvaporation"      )){code=211;}
+    else if  (!strcmp(s[0],":Precipitation"             )){code=212;}//GENERALLY REQUIRED
+    else if  (!strcmp(s[0],":Interflow"                 )){code=213;}
+    else if  (!strcmp(s[0],":SnowRefreeze"              )){code=214;}
+    else if  (!strcmp(s[0],":Refreeze"                  )){code=214;}
+    else if  (!strcmp(s[0],":Flush"                     )){code=215;}
+    else if  (!strcmp(s[0],":CapillaryRise"             )){code=216;}
+    else if  (!strcmp(s[0],":LakeEvaporation"           )){code=217;}
+    else if  (!strcmp(s[0],":SnowSqueeze"               )){code=218;}
+    else if  (!strcmp(s[0],":GlacialMelt"               )){code=219;}
+    else if  (!strcmp(s[0],":GlacierMelt"               )){code=219;}
+    else if  (!strcmp(s[0],":GlacierRelease"            )){code=220;}
+    else if  (!strcmp(s[0],":CanopySnowEvaporation"     )){code=221;}
+    else if  (!strcmp(s[0],":CanopySnowEvap"            )){code=221;}
+    else if  (!strcmp(s[0],":Overflow"                  )){code=222;}
+    else if  (!strcmp(s[0],":-->Overflow"               )){code=222;}
+    else if  (!strcmp(s[0],":SnowAlbedoEvolve"          )){code=223;}
+    else if  (!strcmp(s[0],":CropHeatUnitEvolve"        )){code=224;}
+    else if  (!strcmp(s[0],":Abstraction"               )){code=225;}
+    else if  (!strcmp(s[0],":GlacierInfiltration"       )){code=226;}
+    else if  (!strcmp(s[0],":Split"                     )){code=227;}
+    else if  (!strcmp(s[0],":Convolve"                  )){code=228;}
+    else if  (!strcmp(s[0],":SnowTempEvolve"            )){code=229;}
+    else if  (!strcmp(s[0],":DepressionOverflow"        )){code=230;}
+    else if  (!strcmp(s[0],":ExchangeFlow"              )){code=231;}
+    else if  (!strcmp(s[0],":LateralFlush"              )){code=232;}
+    else if  (!strcmp(s[0],":Seepage"                   )){code=233;}
+    else if  (!strcmp(s[0],":Recharge"                  )){code=234;}
+    else if  (!strcmp(s[0],":BlowingSnow"               )){code=235;}
+    else if  (!strcmp(s[0],":LakeRelease"               )){code=236;}
     //...
-    else if  (!strcmp(s[0],":ProcessGroup"          )){code=295;}
-    else if  (!strcmp(s[0],":EndProcessGroup"       )){code=296;}
-    else if  (!strcmp(s[0],":-->Conditional"        )){code=297;}
-    else if  (!strcmp(s[0],":EndHydrologicProcesses")){code=298;}
-    else if  (!strcmp(s[0],":-->Cascade"            )){code=299;}
+    else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
+    else if  (!strcmp(s[0],":EndProcessGroup"           )){code=296;}
+    else if  (!strcmp(s[0],":-->Conditional"            )){code=297;}
+    else if  (!strcmp(s[0],":EndHydrologicProcesses"    )){code=298;}
+    else if  (!strcmp(s[0],":-->Cascade"                )){code=299;}
     //...
     //--------------------TRANSPORT PROCESSES ---------------
-    if       (!strcmp(s[0],":Transport"             )){code=300;}
-    else if  (!strcmp(s[0],":FixedConcentration"    )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
-    else if  (!strcmp(s[0],":MassInflux"            )){code=302;}//After corresponding DefineHRUGroup(s) command, if used
-    else if  (!strcmp(s[0],":GeochemicalProcesses"  )){code=303;}
-    else if  (!strcmp(s[0],":EndGeochemicalProcesses")){code=304;}
-    else if  (!strcmp(s[0],":Decay"                 )){code=305;}
-    else if  (!strcmp(s[0],":Advection"             )){code=306;}
-    else if  (!strcmp(s[0],":Transformation"        )){code=307;}
+    if       (!strcmp(s[0],":Transport"                 )){code=300;}
+    else if  (!strcmp(s[0],":FixedConcentration"        )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
+    else if  (!strcmp(s[0],":MassInflux"                )){code=302;}//After corresponding DefineHRUGroup(s) command, if used
+    else if  (!strcmp(s[0],":GeochemicalProcesses"      )){code=303;}
+    else if  (!strcmp(s[0],":EndGeochemicalProcesses"   )){code=304;}
+    else if  (!strcmp(s[0],":Decay"                     )){code=305;}
+    else if  (!strcmp(s[0],":Advection"                 )){code=306;}
+    else if  (!strcmp(s[0],":Transformation"            )){code=307;}
 
     ExitGracefullyIf((code>200) && (code<300) && (pModel==NULL),
                      "ParseMainInputFile: :HydrologicalProcesses AND :SoilModel commands must be called before hydrological processes are specified",BAD_DATA);
@@ -1050,6 +1051,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.noisy=false;Options.silent=true;
       break;
     }
+    case(88):  //--------------------------------------------
+    {/*:PavicsMode */
+      if (Options.noisy) {cout<<endl;}
+      Options.pavics=true;
+      ofstream PROGRESS((Options.output_dir+"Raven_progress.txt").c_str());
+      if (PROGRESS.fail()){
+        ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
+      }
+      PROGRESS.close();
+      break;
+    }
     case(59):  //--------------------------------------------
     {/*:rvh_Filename */
       if (Options.noisy) {cout <<"rvh filename: "<<s[1]<<endl;}
@@ -1168,8 +1180,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       for (int i=1; i<Len; i++)
       {
         invalid=false;pDiag=NULL;
-		    int width = DOESNT_EXIST;
-		    string tmp = CStateVariable::SVStringBreak(s[i], width);
+                    int width = DOESNT_EXIST;
+                    string tmp = CStateVariable::SVStringBreak(s[i], width);
         if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
         else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
         else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
@@ -1187,7 +1199,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-		    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
+                    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
           pModel->AddDiagnostic(pDiag);

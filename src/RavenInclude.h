@@ -12,10 +12,10 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
-// #define _STRICTCHECK_ //uncomment if strict checking should be enabled (slows down model)
-//#define _RVNETCDF_    //Uncomment if netCDF library is available for compilation
+// #define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+//#define _RVNETCDF_     // uncomment if netCDF library is available for compilation
 #ifdef netcdf
-#define _RVNETCDF_ //If Makefile is used this will be automatically be uncommented if netCDF library is available
+#define _RVNETCDF_       // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
 
 #ifdef _RVNETCDF_
@@ -91,152 +91,155 @@ extern bool   g_suppress_zeros;   ///< converts all output numbers less than REA
 //*****************************************************************
 // Global Constants
 //*****************************************************************
-const double  ALMOST_INF      =1e99;     ///< Largest possible double value to be used
-const double  REAL_SMALL      =1e-12;    ///< Smallest possible double value to be used
-const double  PI              =3.1415926535898; ///< Double approximation of pi
+const double  ALMOST_INF              =1e99;                                    ///< Largest possible double value to be used
+const double  REAL_SMALL              =1e-12;                                   ///< Smallest possible double value to be used
+const double  PI                      =3.1415926535898;                         ///< Double approximation of pi
 
-const double  GRAVITY         =9.80616;  ///< Standard acceleration due to gravity [m/s2]
-const double  ZERO_CELSIUS    =273.16;   ///< Zero degrees in Kelvin
+const double  GRAVITY                 =9.80616;                                 ///< Standard acceleration due to gravity [m/s2]
+const double  ZERO_CELSIUS            =273.16;                                  ///< Zero degrees in Kelvin
 
-const double  UNIV_GAS_CONST  =8314.47;  ///< Universal gas constant [J/K/kmol]
-const double  DRY_GAS_CONST   =287.042;  ///< Specific gas constant for dry air [J/K/kg]
-const double  VAP_GAS_CONST   =461.504;  ///< Specific gas constant for water vapour [J/K/kmol]
-const double  STEFAN_BOLTZ    =4.90e-9;  ///< Stephan-Boltzmann constant [MJ/m2/d/K4]
-const double  VON_KARMAN      =0.42;     ///< Von Karmann constant
+const double  UNIV_GAS_CONST          =8314.47;                                 ///< Universal gas constant [J/K/kmol]
+const double  DRY_GAS_CONST           =287.042;                                 ///< Specific gas constant for dry air [J/K/kg]
+const double  VAP_GAS_CONST           =461.504;                                 ///< Specific gas constant for water vapour [J/K/kmol]
+const double  STEFAN_BOLTZ            =4.90e-9;                                 ///< Stephan-Boltzmann constant [MJ/m2/d/K4]
+const double  VON_KARMAN              =0.42;                                    ///< Von Karmann constant
 
 //units conversion constants
-const double  MM_PER_INCH     =25.4;     ///< [in] to [mm]
-const double  MM_PER_METER    =1000;     ///< [m] to [mm]
-const double  MM_PER_CM       =10;       ///< [cm] to [mm]
-const double  CM_PER_METER    =100;      ///< [m] to [cm]
-const double  CM3_PER_METER3  =1e6;      ///< [m3] to [ccm]
-const double  METER_PER_CM    =0.01;     ///< [cm] to [m]
-const double  M2_PER_KM2      =1e6;      ///< [km2] to [m2]
-const double  M_PER_KM        =1000;     ///< [km] to [m]
-const double  GRAMS_PER_KG    =1000;     ///< [kg] to [g]
-const double  MG_PER_KG       =1000000;  ///< [kg] to [mg]
-const double  LITER_PER_M3    =0.001;    ///< [m3] to [l]
-const double  GPCM3_PER_KGPM3 =0.001;    ///< [kg/m3] to [g/ccm]
-const double  MJ_PER_J        =1e-6;     ///< [J] to [MJ]
-const double  KPA_PER_MPA     =1000;     ///< [MPa] to [KPa]
-const double  PA_PER_KPA      =1000;     ///< [kPa] to [Pa]
-const double  MB_PER_KPA      =10;       ///< [KPa] to [millibars]
-const double  KPA_PER_ATM     =101.325;  ///< [atm] to [KPa]
-const double  SEC_PER_DAY     =86400;    ///< days to seconds
-const double  MIN_PER_DAY     =1440;     ///< days to minutes
-const double  SEC_PER_HR      =3600;     ///< hours to seconds
-const double  DAYS_PER_YEAR   =365.25;   ///< years to days
-const double  HR_PER_DAY      =24;       ///< days to hours
-const double  MJ_PER_D_TO_WATT=11.574;   ///< [MJ/d] to [W]
-const double  WATT_TO_MJ_PER_D=0.0864;   ///< [W] to [MJ/d]
-const double  MJ_PER_M2_LANGLEY=0.04184; ///< Langley to [MJ/m2]
-const double  INCH_PER_METER  =39.37;    ///< [m] to [in]
-const double  FEET_PER_METER  =3.28;     ///< [m] to [ft]
-const double  MPH_PER_KPH     =1.609;    ///< [kph] to [mph]
-const double  MPH_PER_MPS     =2.237;    ///< [m/s] to [mph]
+const double  MM_PER_INCH             =25.4;                                    ///< [in] to [mm]
+const double  MM_PER_METER            =1000;                                    ///< [m] to [mm]
+const double  MM_PER_CM               =10;                                      ///< [cm] to [mm]
+const double  CM_PER_METER            =100;                                     ///< [m] to [cm]
+const double  CM3_PER_METER3          =1e6;                                     ///< [m3] to [ccm]
+const double  METER_PER_CM            =0.01;                                    ///< [cm] to [m]
+const double  M2_PER_KM2              =1e6;                                     ///< [km2] to [m2]
+const double  M_PER_KM                =1000;                                    ///< [km] to [m]
+const double  GRAMS_PER_KG            =1000;                                    ///< [kg] to [g]
+const double  MG_PER_KG               =1000000;                                 ///< [kg] to [mg]
+const double  LITER_PER_M3            =0.001;                                   ///< [m3] to [l]
+const double  GPCM3_PER_KGPM3         =0.001;                                   ///< [kg/m3] to [g/ccm]
+const double  MJ_PER_J                =1e-6;                                    ///< [J] to [MJ]
+const double  KPA_PER_MPA             =1000;                                    ///< [MPa] to [KPa]
+const double  PA_PER_KPA              =1000;                                    ///< [kPa] to [Pa]
+const double  MB_PER_KPA              =10;                                      ///< [KPa] to [millibars]
+const double  KPA_PER_ATM             =101.325;                                 ///< [atm] to [KPa]
+const double  SEC_PER_DAY             =86400;                                   ///< days to seconds
+const double  MIN_PER_DAY             =1440;                                    ///< days to minutes
+const double  SEC_PER_HR              =3600;                                    ///< hours to seconds
+const double  DAYS_PER_YEAR           =365.25;                                  ///< years to days
+const double  HR_PER_DAY              =24;                                      ///< days to hours
+const double  MJ_PER_D_TO_WATT        =11.574;                                  ///< [MJ/d] to [W]
+const double  WATT_TO_MJ_PER_D        =0.0864;                                  ///< [W] to [MJ/d]
+const double  MJ_PER_M2_LANGLEY       =0.04184;                                 ///< Langley to [MJ/m2]
+const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
+const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
+const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
+const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
 
 /// \details 0.278*(24hr/d)*(1000^2m^2/km)*(0.001m/mm)*(1/86400s/day) \n
 /// runoff=RATIONAL_CONV*C_R*rainfall intensity \n
 /// [mm/d]=                  [mm/d]
-const double  RATIONAL_CONV   =0.7722;///< Allows rational method to be applied
-const double  DAYS_PER_MONTH[12]={31,28,31,30,31,30,31,31,30,31,30,31}; ///< Array of doubles containing the number of days in each month
+const double  RATIONAL_CONV           =0.7722;                                  ///< Allows rational method to be applied
+const double  DAYS_PER_MONTH[12]      ={31,28,31,30,31,30,31,31,30,31,30,31};   ///< Array of doubles containing the number of days in each month
 
-const double  FREEZING_TEMP =0.0;     ///< [C] Freezing temperature of water
+const double  FREEZING_TEMP           =0.0;                                     ///< [C] Freezing temperature of water
 
-const double  DENSITY_AIR   =1.2466;  ///< [kg/m3] Ambient Air Density (@ 10 C)
-const double  DENSITY_WATER =1.000e3; ///< [kg/m3] Water Density
-const double  DENSITY_ICE   =0.917e3; ///< [kg/m3] Ice Density
-const double  DENSITY_SAND  =2.650e3; ///< [kg/m3] Sand Density
-const double  DENSITY_CLAY  =2.650e3; ///< [kg/m3] Clay Density
-const double  DENSITY_OM    =1.300e3; ///< [kg/m3] Organic Matter Density
-const double  MAX_SNOW_DENS =0.350e3; ///< [kg/m3] maximum dry density of snowpack (GAWSER)
-const double  FRESH_SNOW_DENS=0.119e3;///< [kg/m3] fresh snow density @ 0 deg. C
+const double  DENSITY_AIR             =1.2466;                                  ///< [kg/m3] Ambient Air Density (@ 10 C)
+const double  DENSITY_WATER           =1.000e3;                                 ///< [kg/m3] Water Density
+const double  DENSITY_ICE             =0.917e3;                                 ///< [kg/m3] Ice Density
+const double  DENSITY_SAND            =2.650e3;                                 ///< [kg/m3] Sand Density
+const double  DENSITY_CLAY            =2.650e3;                                 ///< [kg/m3] Clay Density
+const double  DENSITY_OM              =1.300e3;                                 ///< [kg/m3] Organic Matter Density
+const double  MAX_SNOW_DENS           =0.350e3;                                 ///< [kg/m3] maximum dry density of snowpack (GAWSER)
+const double  FRESH_SNOW_DENS         =0.119e3;                                 ///< [kg/m3] fresh snow density @ 0 deg. C
 
-const double  TC_WATER      =0.57;    ///< [W/m/K] Thermal conductivity of Water
-const double  TC_ICE        =2.24;    ///< [W/m/K] Thermal conductivity of Ice
-const double  TC_SAND       =8.0;     ///< [W/m/K] Thermal conductivity of sand (8.8 in CLM)
-const double  TC_CLAY       =2.5;     ///< [W/m/K] Thermal conductivity of clay (2.92 in CLM)
-const double  TC_ORGANIC    =0.25;    ///< [W/m/K] Thermal conductivity of organic matter
-const double  TC_DRYS       =0.275;   ///< [W/m/K] Thermal conductivity of dry soil
-const double  TC_AIR        =0.023;   ///< [W/m/K] Thermal conductivity of air
+const double  TC_WATER                =0.57;                                    ///< [W/m/K] Thermal conductivity of Water
+const double  TC_ICE                  =2.24;                                    ///< [W/m/K] Thermal conductivity of Ice
+const double  TC_SAND                 =8.0;                                     ///< [W/m/K] Thermal conductivity of sand (8.8 in CLM)
+const double  TC_CLAY                 =2.5;                                     ///< [W/m/K] Thermal conductivity of clay (2.92 in CLM)
+const double  TC_ORGANIC              =0.25;                                    ///< [W/m/K] Thermal conductivity of organic matter
+const double  TC_DRYS                 =0.275;                                   ///< [W/m/K] Thermal conductivity of dry soil
+const double  TC_AIR                  =0.023;                                   ///< [W/m/K] Thermal conductivity of air
 
-const double  HCP_WATER     =4.187e6; ///< [J/m3/K] Volumetric Heat Capacity of Water
-const double  HCP_ICE       =1.938e6; ///< [J/m3/K] Volumetric Heat Capacity of Ice
-const double  HCP_CLAY      =2.380e6; ///< [J/m3/K] Volumetric Heat Capacity of Clay
-const double  HCP_SAND      =2.130e6; ///< [J/m3/K] Volumetric Heat Capacity of Sand
-const double  HCP_ORGANIC   =2.500e6; ///< [J/m3/K] Volumetric Heat Capacity of Organic Matter
-const double  HCP_AIR       =1.240e3; ///< [J/m3/K] Volumetric Heat capacity of air
+const double  HCP_WATER               =4.187e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Water
+const double  HCP_ICE                 =1.938e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Ice
+const double  HCP_CLAY                =2.380e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Clay
+const double  HCP_SAND                =2.130e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Sand
+const double  HCP_ORGANIC             =2.500e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Organic Matter
+const double  HCP_AIR                 =1.240e3;                                 ///< [J/m3/K] Volumetric Heat capacity of air
 
-const double  SPH_ICE       =2.100e-3; ///< [MJ/kg/K] Specific heat capacity of ice
-const double  SPH_WATER     =4.186e-3; ///< [MJ/kg/K] Specific heat capacity of water
-const double  SPH_SAND      =0.835e-3; ///< [MJ/kg/K] Specific heat capacity of water
-const double  SPH_VEGETATION=2.700e-3; ///< [MJ/kg/K] Specific heat capacity of vegetation
-const double  SPH_AIR       =1.012e-3; ///< [MJ/kg/K] Specific heat capacity of air
+const double  SPH_ICE                 =2.100e-3;                                ///< [MJ/kg/K] Specific heat capacity of ice
+const double  SPH_WATER               =4.186e-3;                                ///< [MJ/kg/K] Specific heat capacity of water
+const double  SPH_SAND                =0.835e-3;                                ///< [MJ/kg/K] Specific heat capacity of water
+const double  SPH_VEGETATION          =2.700e-3;                                ///< [MJ/kg/K] Specific heat capacity of vegetation
+const double  SPH_AIR                 =1.012e-3;                                ///< [MJ/kg/K] Specific heat capacity of air
 
-const double  LH_FUSION     =0.334;   ///< [MJ/kg]  Latent heat of fusion
-const double  LH_VAPOR      =2.501;   ///< [MJ/kg]  Latent heat of vaporization
-const double  LH_SUBLIM     =2.845;   ///< [MJ/kg]  Latent heat of vaporization
+const double  LH_FUSION               =0.334;                                   ///< [MJ/kg]  Latent heat of fusion
+const double  LH_VAPOR                =2.501;                                   ///< [MJ/kg]  Latent heat of vaporization
+const double  LH_SUBLIM               =2.845;                                   ///< [MJ/kg]  Latent heat of vaporization
 
-const double  EMISS_ATM     =0.985;   ///< [-] emissivity of the atmosphere and snowpack
-const double  EMISS_CANOPY  =0.96;    ///< [-] emissivity of the canopy
+const double  EMISS_ATM               =0.985;                                   ///< [-] emissivity of the atmosphere and snowpack
+const double  EMISS_CANOPY            =0.96;                                    ///< [-] emissivity of the canopy
 
-const double  AIR_H20_MW_RAT=0.622;   ///< ratio of molecular weight of air to that of water
-const double  AMBIENT_AIR_PRESSURE=101.3; ///< [kPa]
+const double  AIR_H20_MW_RAT          =0.622;                                   ///< ratio of molecular weight of air to that of water
+const double  AMBIENT_AIR_PRESSURE    =101.3;                                   ///< [kPa]
 
-const double  EARTH_RADIUS  =6.3712e6;///< [m]
-const double  EARTH_ANG_VEL =6.283185;///< Earth's angular velocity [rad/d]
-const double  SOLAR_NOON    =0.5;     ///< The fraction of a day at which solar noon occurs (12:00 PM)
-const double  SOLAR_CONSTANT=118.1;   ///< [MJ/m2/d]
-const double  GLOBAL_ALBEDO =0.3;     ///< Global Albedo used to calculate the backscattered radiation according to Dingman (Dingman 2008, E-20)
-const double  PEAK_TEMP_HR  =3;       ///< if =3, 3:00 PM is time of max temperature, 3:00 AM is time of min temp
-const double  WINTER_SOLSTICE_ANG=6.111043;///< Dec 21 as day angle
+const double  EARTH_RADIUS            =6.3712e6;                                ///< [m]
+const double  EARTH_ANG_VEL           =6.283185;                                ///< Earth's angular velocity [rad/d]
+const double  SOLAR_NOON              =0.5;                                     ///< The fraction of a day at which solar noon occurs (12:00 PM)
+const double  SOLAR_CONSTANT          =118.1;                                   ///< [MJ/m2/d]
+const double  GLOBAL_ALBEDO           =0.3;                                     ///< Global Albedo used to calculate the backscattered radiation according to Dingman (Dingman 2008, E-20)
+const double  PEAK_TEMP_HR            =3;                                       ///< if =3, 3:00 PM is time of max temperature, 3:00 AM is time of min temp
+const double  WINTER_SOLSTICE_ANG     =6.111043;                                ///< Dec 21 as day angle
 
 //Hard-coded Empirical parameters
-const double  CAP_LAI_RATIO =0.15;    ///< [mm] maximum ratio of canopy capacity to LAI+SAI (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60)) \cite Federer2010 \cite Dingman1994
-const double  SCAP_LAI_RATIO=0.6;     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
-const double  SAT_INF       =0.92;    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
-const double  MIN_PRESSURE  =1e10;    ///< [-mm] minimum matric potential in soil
+const double  CAP_LAI_RATIO           =0.15;                                    ///< [mm] maximum ratio of canopy capacity to LAI+SAI \n
+//                                                                              ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60)) \n
+//                                                                              ///> \cite Federer2010 \cite Dingman1994
+const double  SCAP_LAI_RATIO          =0.6;                                     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI \n
+//                                                                              ///< (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
+const double  SAT_INF                 =0.92;                                    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
+const double  MIN_PRESSURE            =1e10;                                    ///< [-mm] minimum matric potential in soil
 
-const double  DEFAULT_SNOW_ALBEDO=0.8;///< [0..1] default snow albedo used for all snow, if not tracked explicitly
-const double  NEGLIGBLE_SNOW=0.1;     ///< [mm] SWE at which snow cover no longer impacts albedo/evap calculations (i.e., snow cover~0)
-const double  CZS           =0.13;    ///< [0..1] ratio of roughness to height for smooth closed canopies (from Brook90)
-const double  CZS_HEIGHT    =1.0;     ///< [m] height below which CZS applies
-const double  CZR           =0.05;    ///< [0..1] ratio of roughness to height for rough closed canopies
-const double  CZR_HEIGHT    =10.0;    ///< [m] height above which czr applies
-const double  CLOSED_LAI    =4.0;     ///< [m2/m2]   minimum LAI defining a closed canopy (Shuttleworth and Wallace (1985))
-const double  Z_REF_ADJUST  =2.0;     ///< [m] reference height for weather data above canopy height
-const double  WIND_EXTINCT  =2.5;     ///< [-]wind/diffusivity extinction coefficient
+const double  DEFAULT_SNOW_ALBEDO     =0.8;                                     ///< [0..1] default snow albedo used for all snow, if not tracked explicitly
+const double  NEGLIGBLE_SNOW          =0.1;                                     ///< [mm] SWE at which snow cover no longer impacts albedo/evap calculations (i.e., snow cover~0)
+const double  CZS                     =0.13;                                    ///< [0..1] ratio of roughness to height for smooth closed canopies (from Brook90)
+const double  CZS_HEIGHT              =1.0;                                     ///< [m] height below which CZS applies
+const double  CZR                     =0.05;                                    ///< [0..1] ratio of roughness to height for rough closed canopies
+const double  CZR_HEIGHT              =10.0;                                    ///< [m] height above which czr applies
+const double  CLOSED_LAI              =4.0;                                     ///< [m2/m2]   minimum LAI defining a closed canopy (Shuttleworth and Wallace (1985))
+const double  Z_REF_ADJUST            =2.0;                                     ///< [m] reference height for weather data above canopy height
+const double  WIND_EXTINCT            =2.5;                                     ///< [-]wind/diffusivity extinction coefficient
 
 /// \note This is always 2 for broadleaves, and ranges from 2 for flat needles to pi for cylindrical needles.
-const double  LEAF_PROJ_RAT =2.2;     ///< [m2/m2] ratio of total leaf area to projected area.
+const double  LEAF_PROJ_RAT           =2.2;                                     ///< [m2/m2] ratio of total leaf area to projected area.
 
-const double HBV_REFERENCE_ELEV=1000;   ///< [masl] (zref in HBV)
-const double HBV_PRECIP_CORR   =0.00008;///< [1/m] precipitation lapse rate for low elevations (PCALT in HBV, PGRADL in HBV-EC)
-const double HBV_PRECIP_CORR_UP=0.0;    ///< [1/m] precipitation lapse rate for high elevations(PCALTUP in HBV, PGRADH in HBV-EC)
-const double HBV_PRECIP_CORR_ELEV=5000; ///< [masl] reference correction elevation (PCALTL/EMID in HBV-EC)
-const double HBV_PET_ELEV_CORR =0.0005; ///< [mm/m-d] PET lapse rate (ECALT in HBV-EC)
-const double HBV_PET_TEMP_CORR =0.5;    ///< [-] (ETF in HBV-EC)
-const double GLOBAL_PET_CORR   =1.0;    ///< [-] (ECORR in HBV-EC)
+const double HBV_REFERENCE_ELEV       =1000;                                    ///< [masl] (zref in HBV)
+const double HBV_PRECIP_CORR          =0.00008;                                 ///< [1/m] precipitation lapse rate for low elevations (PCALT in HBV, PGRADL in HBV-EC)
+const double HBV_PRECIP_CORR_UP       =0.0;                                     ///< [1/m] precipitation lapse rate for high elevations(PCALTUP in HBV, PGRADH in HBV-EC)
+const double HBV_PRECIP_CORR_ELEV     =5000;                                    ///< [masl] reference correction elevation (PCALTL/EMID in HBV-EC)
+const double HBV_PET_ELEV_CORR        =0.0005;                                  ///< [mm/m-d] PET lapse rate (ECALT in HBV-EC)
+const double HBV_PET_TEMP_CORR        =0.5;                                     ///< [-] (ETF in HBV-EC)
+const double GLOBAL_PET_CORR          =1.0;                                     ///< [-] (ECORR in HBV-EC)
 
 //Flag variables
-const int     DOESNT_EXIST       =-1;      ///< return value for nonexistent index
-const int     INDEX_NOT_FOUND    =-2;      ///< return value for index not found
+const int     DOESNT_EXIST            =-1;                                      ///< return value for nonexistent index
+const int     INDEX_NOT_FOUND         =-2;                                      ///< return value for index not found
 
-const double  AUTO_COMPUTE       =-11111.1;///< arbitrary value indicating that a parameter is to be autocalculated
-const double  NOT_SPECIFIED      =-33333.3;///< arbitrary value indicating that a parameter has not been specified
-const double  USE_TEMPLATE_VALUE =-55555.5;///< arbitrary value indicating that a parameter should be set to the template value
-const double  NOT_NEEDED         =-66666.6;///< arbitrary value indicating that a non-auto parameter is not needed for the current model configuration
-const double  NOT_NEEDED_AUTO    =-77777.7;///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
-const double  NETCDF_BLANK_VALUE =-9999.0;
-const double  RAV_BLANK_DATA     =-1.2345;
+const double  AUTO_COMPUTE            =-11111.1;                                ///< arbitrary value indicating that a parameter is to be autocalculated
+const double  NOT_SPECIFIED           =-33333.3;                                ///< arbitrary value indicating that a parameter has not been specified
+const double  USE_TEMPLATE_VALUE      =-55555.5;                                ///< arbitrary value indicating that a parameter should be set to the template value
+const double  NOT_NEEDED              =-66666.6;                                ///< arbitrary value indicating that a non-auto parameter is not needed for the current model configuration
+const double  NOT_NEEDED_AUTO         =-77777.7;                                ///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
+const double  NETCDF_BLANK_VALUE      =-9999.0;
+const double  RAV_BLANK_DATA          =-1.2345;
 
 //Decision constants
-const double  HUGE_RESIST      =1e20;   ///< [d/mm] essentially infinite resistance
-const double  SMALL_ROOT_DENS  =0.00001;///< [mm/mm3] essentially negligible root density
-const double  SMALL_ROOT_LENGTH=0.1;    ///< [m] essentially negligible root length
-const double  SMALL_FLOWRATE   =0.0001; ///< [m3/s] essentially negligible flow rate
-const double  TIME_CORRECTION  =0.0001; ///< [d] offset for time series min/max functions
-const double  DEFAULT_MAX_REACHLENGTH=10000; ///< [km] very large maximum reach length (defaults to single segment per reach)
+const double  HUGE_RESIST             =1e20;                                    ///< [d/mm] essentially infinite resistance
+const double  SMALL_ROOT_DENS         =0.00001;                                 ///< [mm/mm3] essentially negligible root density
+const double  SMALL_ROOT_LENGTH       =0.1;                                     ///< [m] essentially negligible root length
+const double  SMALL_FLOWRATE          =0.0001;                                  ///< [m3/s] essentially negligible flow rate
+const double  TIME_CORRECTION         =0.0001;                                  ///< [d] offset for time series min/max functions
+const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km] very large maximum reach length (defaults to single segment per reach)
 //*****************************************************************
 //Exit Strategies
 //*****************************************************************
@@ -273,24 +276,24 @@ inline void ExitGracefullyIf(bool condition, const char *statement, exitcode cod
 //*****************************************************************
 //  Global Constants
 //*****************************************************************
-const bool    DESTRUCTOR_DEBUG=false;    ///< if true, screen output is generated when destructor is called
-const int     MAX_SV_LAYERS    =100;     ///< maximum number of layers per state variable (greater than MAX_SOILLAYERS)
-const int     MAX_SOILLAYERS   =50;      ///< maximum number of soil layers in profile
-const int     MAX_STATE_VARS   =200;     ///< maximum number of state variables in model
-const int     MAX_CONNECTIONS  =200;     ///< maximum number of to/from connections in any single process (CAdvection worst offender)
-const int     MAX_SOIL_PROFILES=200;     ///< Max number of soil profiles
-const int     MAX_VEG_CLASSES  =200;     ///< Max number of vegetation classes
-const int     MAX_LULT_CLASSES =200;     ///< Max number of lult classes
-const int     MAX_AQUIFER_LAYERS=10;     ///< Max number aquifer layers
-const int     MAX_AQUIFER_STACKS=50;     ///< Max number aquifer stacks
-const int     MAX_TERRAIN_CLASSES=50;    ///< Max number of terrain classes
-const int     MAX_SURVEY_PTS  =50;       ///< Max number of survey points
-const int     MAX_GAUGES      =250;      ///< Max number of gauges
-const int     MAX_CONSTITUENTS=10;       ///< Max number of transport constituents
-const int     MAX_RIVER_SEGS  =50;       ///< Max number of river segments
-const int     MAX_FILENAME_LENGTH=256;   ///< Max filename length
-const int     MAX_MULTIDATA   =10;       ///< Max multidata length
-const int     MAX_LAT_CONNECTIONS=4000;  ///< Maximum number of lateral HRU flow connections
+const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is generated when destructor is called
+const int     MAX_SV_LAYERS       =100;         ///< maximum number of layers per state variable (greater than MAX_SOILLAYERS)
+const int     MAX_SOILLAYERS      =50;          ///< maximum number of soil layers in profile
+const int     MAX_STATE_VARS      =200;         ///< maximum number of state variables in model
+const int     MAX_CONNECTIONS     =200;         ///< maximum number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
+const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
+const int     MAX_LULT_CLASSES    =200;         ///< Max number of lult classes
+const int     MAX_AQUIFER_LAYERS  =10;          ///< Max number aquifer layers
+const int     MAX_AQUIFER_STACKS  =50;          ///< Max number aquifer stacks
+const int     MAX_TERRAIN_CLASSES =50;          ///< Max number of terrain classes
+const int     MAX_SURVEY_PTS      =50;          ///< Max number of survey points
+const int     MAX_GAUGES          =250;         ///< Max number of gauges
+const int     MAX_CONSTITUENTS    =10;          ///< Max number of transport constituents
+const int     MAX_RIVER_SEGS      =50;          ///< Max number of river segments
+const int     MAX_FILENAME_LENGTH =256;         ///< Max filename length
+const int     MAX_MULTIDATA       =10;          ///< Max multidata length
+const int     MAX_LAT_CONNECTIONS =4000;        ///< Maximum number of lateral HRU flow connections
 /******************************************************************
 Enumerated Types
    found in optStruct - the structure of global model options
@@ -327,11 +330,11 @@ enum routing_method
 //
 enum interp_method
 {
-  INTERP_AVERAGE_ALL,      ///< Interpolation by taking the average of all values
-  INTERP_NEAREST_NEIGHBOR, ///< Interpolation by assuming the value of the nearest-neighbour
-  INTERP_INVERSE_DISTANCE, ///< Interpolates by a average of all values, weighted by the inverse distance to the interpolated point
+  INTERP_AVERAGE_ALL,                ///< Interpolation by taking the average of all values
+  INTERP_NEAREST_NEIGHBOR,           ///< Interpolation by assuming the value of the nearest-neighbour
+  INTERP_INVERSE_DISTANCE,           ///< Interpolates by a average of all values, weighted by the inverse distance to the interpolated point
   INTERP_INVERSE_DISTANCE_ELEVATION, ///< Interpolates by a average of all values, weighted by the inverse elevation distance to the interpolated point
-  INTERP_FROM_FILE         ///< User-specified file used to specify interpolation weights for all HRUs
+  INTERP_FROM_FILE                   ///< User-specified file used to specify interpolation weights for all HRUs
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -352,25 +355,25 @@ enum catchment_route//methods used for routing water (lateral flow) to catchment
 //
 enum evap_method
 {
-  PET_CONSTANT,            ///< constant uniform PET
-  PET_DATA,                ///< read PET from time series files (not currently implemented)
-  PET_FROMMONTHLY,         ///< PET estimated from specified monthly averages and daily temperature
-  PET_MONTHLY_FACTOR,      ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
-  PET_PENMAN_MONTEITH,     ///< Penman-Monteith equation
-  PET_PENMAN_COMBINATION,  ///< Penman Combination approach
-  PET_PRIESTLEY_TAYLOR,    ///< Priestley Taylor
-  PET_HARGREAVES,          ///< Hargreaves method
-  PET_HARGREAVES_1985,     ///< Hargreaves (1985) method
-  PET_HAMON,               ///< Hamon (19??) method
-  PET_JENSEN_HAISE,        ///<
-  PET_TURC_1961,           ///<
-  PET_MAKKINK_1957,        ///<
-  PET_SHUTTLEWORTH_WALLACE,///<
-  PET_PENMAN_SIMPLE33,     ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
-  PET_PENMAN_SIMPLE39,     ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
-  PET_GRANGER,             ///< Granger PET from CRHM
-  PET_MOHYSE,               ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
-  PET_OUDIN                ///< Simple PET from Oudin et. al., 2005
+  PET_CONSTANT,                 ///< constant uniform PET
+  PET_DATA,                     ///< read PET from time series files (not currently implemented)
+  PET_FROMMONTHLY,              ///< PET estimated from specified monthly averages and daily temperature
+  PET_MONTHLY_FACTOR,           ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
+  PET_PENMAN_MONTEITH,          ///< Penman-Monteith equation
+  PET_PENMAN_COMBINATION,       ///< Penman Combination approach
+  PET_PRIESTLEY_TAYLOR,         ///< Priestley Taylor
+  PET_HARGREAVES,               ///< Hargreaves method
+  PET_HARGREAVES_1985,          ///< Hargreaves (1985) method
+  PET_HAMON,                    ///< Hamon (19??) method
+  PET_JENSEN_HAISE,             ///<
+  PET_TURC_1961,                ///<
+  PET_MAKKINK_1957,             ///<
+  PET_SHUTTLEWORTH_WALLACE,     ///<
+  PET_PENMAN_SIMPLE33,          ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
+  PET_PENMAN_SIMPLE39,          ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
+  PET_GRANGER,                  ///< Granger PET from CRHM
+  PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
+  PET_OUDIN                     ///< Simple PET from Oudin et. al., 2005
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -378,12 +381,12 @@ enum evap_method
 //
 enum orographic_corr
 {
-  OROCORR_NONE,       ///< no orographic corrections
-  OROCORR_SIMPLELAPSE,///< simple linear adiabatic lapse
-  OROCORR_HBV,        ///< HBV-EC style orographic corrections
-  OROCORR_UBCWM,      ///< UBCWM-style orographic corrections
-  OROCORR_UBCWM2,     ///< UBCWM-style orographic corrections (simpler)
-  OROCORR_PRMS        ///< PRMS-style orographic corrections
+  OROCORR_NONE,          ///< no orographic corrections
+  OROCORR_SIMPLELAPSE,   ///< simple linear adiabatic lapse
+  OROCORR_HBV,           ///< HBV-EC style orographic corrections
+  OROCORR_UBCWM,         ///< UBCWM-style orographic corrections
+  OROCORR_UBCWM2,        ///< UBCWM-style orographic corrections (simpler)
+  OROCORR_PRMS           ///< PRMS-style orographic corrections
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -391,12 +394,12 @@ enum orographic_corr
 //
 enum rainsnow_method
 {
-  RAINSNOW_DATA,    ///< Use data instead of calculating rain/snow partition
-  RAINSNOW_DINGMAN, ///< from Dingman - based upon min & max daily temperatures
-  RAINSNOW_HBV,     ///< Linear variation between two temperatures - corrects only rain portion
-  RAINSNOW_HSPF,    ///< HSPF approach - variable transition temperature
-  RAINSNOW_UBCWM,   ///< Linear variation between two temperatures
-  RAINSNOW_HARDER   ///< Harder (19??) method ported over from CRHM (Pomeroy et al 2007)
+  RAINSNOW_DATA,         ///< Use data instead of calculating rain/snow partition
+  RAINSNOW_DINGMAN,      ///< from Dingman - based upon min & max daily temperatures
+  RAINSNOW_HBV,          ///< Linear variation between two temperatures - corrects only rain portion
+  RAINSNOW_HSPF,         ///< HSPF approach - variable transition temperature
+  RAINSNOW_UBCWM,        ///< Linear variation between two temperatures
+  RAINSNOW_HARDER        ///< Harder (19??) method ported over from CRHM (Pomeroy et al 2007)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -404,9 +407,9 @@ enum rainsnow_method
 //
 enum cloudcov_method
 {
-  CLOUDCOV_NONE, ///< Cloud cover corrections not used
-  CLOUDCOV_DATA, ///< Uses gauge data for cloud cover
-  CLOUDCOV_UBCWM ///< Temperature range-based approach from UBCWM
+  CLOUDCOV_NONE,         ///< Cloud cover corrections not used
+  CLOUDCOV_DATA,         ///< Uses gauge data for cloud cover
+  CLOUDCOV_UBCWM         ///< Temperature range-based approach from UBCWM
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -414,9 +417,9 @@ enum cloudcov_method
 //      \a stub that defaults to SW_CLOUD_CORR_UBCWM
 enum SW_cloudcover_corr
 {
-  SW_CLOUD_CORR_NONE,   ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
-  SW_CLOUD_CORR_UBCWM,  ///< Based on UBCWM apporach, which is identical to Dingman (2008) Eq. 5-31
-  SW_CLOUD_CORR_DINGMAN ///< Dingman (2008) Eq. 5-30     (does not require a parameter)
+  SW_CLOUD_CORR_NONE,    ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
+  SW_CLOUD_CORR_UBCWM,   ///< Based on UBCWM apporach, which is identical to Dingman (2008) Eq. 5-31
+  SW_CLOUD_CORR_DINGMAN  ///< Dingman (2008) Eq. 5-30     (does not require a parameter)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -424,17 +427,17 @@ enum SW_cloudcover_corr
 //
 enum snalbedo_method
 {
-  SNOW_ALBEDO_UBC   ///< snow albedo according to UBCWM
+  SNOW_ALBEDO_UBC        ///< snow albedo according to UBCWM
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating canopy transmittance of shortwave radiation
 //
 enum SW_canopy_corr
 {
-  SW_CANOPY_CORR_NONE,          ///< Applies no canopy correction for shortwave radiation
-  SW_CANOPY_CORR_STATIC,        ///< Bulk shortwave canopy transmittance (no hourly or seasonal variation)
-  SW_CANOPY_CORR_DYNAMIC,       ///< Dynamic (varies hourly and seasonal) shortwave canopy transmittance
-  SW_CANOPY_CORR_UBCWM    ///< shortwave canopy transmittance according to UBCWM  (simple factor)
+  SW_CANOPY_CORR_NONE,      ///< Applies no canopy correction for shortwave radiation
+  SW_CANOPY_CORR_STATIC,    ///< Bulk shortwave canopy transmittance (no hourly or seasonal variation)
+  SW_CANOPY_CORR_DYNAMIC,   ///< Dynamic (varies hourly and seasonal) shortwave canopy transmittance
+  SW_CANOPY_CORR_UBCWM      ///< shortwave canopy transmittance according to UBCWM  (simple factor)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -442,11 +445,11 @@ enum SW_canopy_corr
 //
 enum LW_method
 {
-  LW_RAD_DATA,    ///< Longwave radiation specified in time series files
-  LW_RAD_DEFAULT, ///< from Dingman text: uses Kustas (1994) approach for effective emissivity \cite Moran1994WRR
-  LW_RAD_UBCWM,   ///< UBCWM approach
-  LW_RAD_HSPF,    ///< HSPF approach (U.S. Corps of Engineers, 1956)
-  LW_RAD_VALIANTZAS ///< From Valiantzas, 2006 via Doorenbos and Pruit (1977) and Shuttleworth and Wallace (1952)
+  LW_RAD_DATA,              ///< Longwave radiation specified in time series files
+  LW_RAD_DEFAULT,           ///< from Dingman text: uses Kustas (1994) approach for effective emissivity \cite Moran1994WRR
+  LW_RAD_UBCWM,             ///< UBCWM approach
+  LW_RAD_HSPF,              ///< HSPF approach (U.S. Corps of Engineers, 1956)
+  LW_RAD_VALIANTZAS         ///< From Valiantzas, 2006 via Doorenbos and Pruit (1977) and Shuttleworth and Wallace (1952)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -454,28 +457,28 @@ enum LW_method
 //
 enum SW_method
 {
-  SW_RAD_DATA,    ///< Shortwave radiation specified in time series files
-  SW_RAD_DEFAULT, ///< from Dingman text
-  SW_RAD_UBCWM,    ///< UBCWM approach
-  SW_RAD_VALIANTZAS ///< From Valiantzas, 2006
+  SW_RAD_DATA,              ///< Shortwave radiation specified in time series files
+  SW_RAD_DEFAULT,           ///< from Dingman text
+  SW_RAD_UBCWM,             ///< UBCWM approach
+  SW_RAD_VALIANTZAS         ///< From Valiantzas, 2006
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for subdaily temporal downscaling of daily average PET and snowmelt
 //
 enum subdaily_method
 {
-  SUBDAILY_NONE,    ///< no correction for daily average values used
-  SUBDAILY_SIMPLE,  ///< Use half-sine wave pulse from dawn to dusk
-  SUBDAILY_UBC,     ///< from UBCWM - based upon cumulative temperature hours above zero Celsius
+  SUBDAILY_NONE,            ///< no correction for daily average values used
+  SUBDAILY_SIMPLE,          ///< Use half-sine wave pulse from dawn to dusk
+  SUBDAILY_UBC,             ///< from UBCWM - based upon cumulative temperature hours above zero Celsius
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Representations of soil characteristic curves
 //
 enum soil_charact
 {
-  BROOKS_COREY,       ///< Brooks-Corey model
-  CLAPP_HORNBERGER,   ///< Clapp-Hornberger model
-  MUALEM_VANGENUCHTEN ///< Mualem-Van Genuchten model
+  BROOKS_COREY,             ///< Brooks-Corey model
+  CLAPP_HORNBERGER,         ///< Clapp-Hornberger model
+  MUALEM_VANGENUCHTEN       ///< Mualem-Van Genuchten model
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -483,9 +486,9 @@ enum soil_charact
 //
 enum soil_model
 {
-  SOIL_ONE_LAYER, ///< Single soil layer with additional groundwater storage
-  SOIL_TWO_LAYER, ///< Two soil layers with additional groundwater storage
-  SOIL_MULTILAYER ///< Multiple (2+) soil layers with additional groundwater storage
+  SOIL_ONE_LAYER,           ///< Single soil layer with additional groundwater storage
+  SOIL_TWO_LAYER,           ///< Two soil layers with additional groundwater storage
+  SOIL_MULTILAYER           ///< Multiple (2+) soil layers with additional groundwater storage
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -494,12 +497,12 @@ enum soil_model
 //
 enum HRU_type
 {
-  HRU_STANDARD,  ///< Standard HRU
-  HRU_LAKE,      ///< Lake HRU
-  HRU_GLACIER,   ///< Glacier HRU
-  HRU_WETLAND,   ///< Wetland HRU
-  HRU_ROCK,      ///< Open Rock HRUs
-  HRU_INVALID_TYPE ///< returned if type is invalid
+  HRU_STANDARD,             ///< Standard HRU
+  HRU_LAKE,                 ///< Lake HRU
+  HRU_GLACIER,              ///< Glacier HRU
+  HRU_WETLAND,              ///< Wetland HRU
+  HRU_ROCK,                 ///< Open Rock HRUs
+  HRU_INVALID_TYPE          ///< returned if type is invalid
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -507,9 +510,9 @@ enum HRU_type
 //
 enum relhum_method
 {
-  RELHUM_CONSTANT, ///< naive: constant relative humidity of 0.5
-  RELHUM_MINDEWPT, ///< uses minimum daily temperature as estimate of dew point
-  RELHUM_DATA      ///< relative humidity specfied as time series at gauge
+  RELHUM_CONSTANT,          ///< naive: constant relative humidity of 0.5
+  RELHUM_MINDEWPT,          ///< uses minimum daily temperature as estimate of dew point
+  RELHUM_DATA               ///< relative humidity specfied as time series at gauge
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -517,10 +520,10 @@ enum relhum_method
 //
 enum airpress_method
 {
-  AIRPRESS_CONST, ///< standard atm pressure at 20C
-  AIRPRESS_DATA,  ///< air pressure specified as time series at gauge
-  AIRPRESS_BASIC, ///< power law correction for elevation (source unknown)
-  AIRPRESS_UBC    ///< from UBC Watershed model - simple elevation correction
+  AIRPRESS_CONST,           ///< standard atm pressure at 20C
+  AIRPRESS_DATA,            ///< air pressure specified as time series at gauge
+  AIRPRESS_BASIC,           ///< power law correction for elevation (source unknown)
+  AIRPRESS_UBC              ///< from UBC Watershed model - simple elevation correction
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -528,19 +531,19 @@ enum airpress_method
 //
 enum windvel_method
 {
-  WINDVEL_CONSTANT, ///< naive: constant wind velocity of 3 m/s
-  WINDVEL_DATA,     ///< wind velocity specfied as time series at gauge
-  WINDVEL_UBCWM     ///< from UBC Watershed model: daily temperature range-based
+  WINDVEL_CONSTANT,         ///< naive: constant wind velocity of 3 m/s
+  WINDVEL_DATA,             ///< wind velocity specfied as time series at gauge
+  WINDVEL_UBCWM             ///< from UBC Watershed model: daily temperature range-based
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating precipitation interception fraction
 //
 enum precip_icept_method
 {
-  PRECIP_ICEPT_USER,    ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
-  PRECIP_ICEPT_LAI,     ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
-  PRECIP_ICEPT_EXPLAI,  ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
-  PRECIP_ICEPT_HEDSTROM ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
+  PRECIP_ICEPT_USER,        ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
+  PRECIP_ICEPT_LAI,         ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
+  PRECIP_ICEPT_EXPLAI,      ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
+  PRECIP_ICEPT_HEDSTROM     ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -548,16 +551,16 @@ enum precip_icept_method
 //
 enum potmelt_method
 {
-  POTMELT_DEGREE_DAY,  ///< simple degree day method
-  POTMELT_EB,          ///< energy balance approach
-  POTMELT_RESTRICTED,  ///< restricted degree-day method
-  POTMELT_DD_RAIN,     ///< degree day with rain-on-snow
-  POTMELT_UBCWM,       ///< UBC watershed model approach
-  POTMELT_HBV,         ///< custom degree day model used in HBV-EC
-  POTMELT_DATA,        ///< user-specified potential melt forcing
-  POTMELT_USACE,       ///< US Army Corps of Engineers Snow Melt
-  POTMELT_CRHM_EBSM,   ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM)
-  POTMELT_HMETS        ///< From HMETS model (Martel et al., 2017)
+  POTMELT_DEGREE_DAY,       ///< simple degree day method
+  POTMELT_EB,               ///< energy balance approach
+  POTMELT_RESTRICTED,       ///< restricted degree-day method
+  POTMELT_DD_RAIN,          ///< degree day with rain-on-snow
+  POTMELT_UBCWM,            ///< UBC watershed model approach
+  POTMELT_HBV,              ///< custom degree day model used in HBV-EC
+  POTMELT_DATA,             ///< user-specified potential melt forcing
+  POTMELT_USACE,            ///< US Army Corps of Engineers Snow Melt
+  POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM)
+  POTMELT_HMETS             ///< From HMETS model (Martel et al., 2017)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -565,8 +568,8 @@ enum potmelt_method
 //
 enum recharge_method
 {
-  RECHARGE_NONE,       ///< assumes recharge=0
-  RECHARGE_DATA        ///< recharge from (usually gridded) data (e.g., from other model)
+  RECHARGE_NONE,            ///< assumes recharge=0
+  RECHARGE_DATA             ///< recharge from (usually gridded) data (e.g., from other model)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -646,72 +649,72 @@ enum out_format
 enum sv_type
 {
   //Water Storage
-  SURFACE_WATER,  ///< [mm] Streams & rivers: see surface_struct (REQUIRED)
-  ATMOSPHERE,     ///< [mm] atmosphere : recieves water only!! (REQUIRED)
-  ATMOS_PRECIP,   ///< [mm] atmosphere : provides water only!! (REQUIRED)
-  PONDED_WATER,   ///< [mm] water (melt & precip) waiting to infiltrate/runoff (REQUIRED)
+  SURFACE_WATER,           ///< [mm] Streams & rivers: see surface_struct (REQUIRED)
+  ATMOSPHERE,              ///< [mm] atmosphere : recieves water only!! (REQUIRED)
+  ATMOS_PRECIP,            ///< [mm] atmosphere : provides water only!! (REQUIRED)
+  PONDED_WATER,            ///< [mm] water (melt & precip) waiting to infiltrate/runoff (REQUIRED)
 
-  SOIL,           ///< [mm] Shallow subsurface/vadose zone
-  CANOPY,         ///< [mm] Trees & vegetation
-  CANOPY_SNOW,    ///< [mm] snow in canopy
-  TRUNK,          ///< [mm] water stored in trunks of trees
-  ROOT,           ///< [mm] water stored in roots
-  GROUNDWATER,    ///< [mm] Deep groundwater
-  DEPRESSION,     ///< [mm] depression/surface storage
-  SNOW,           ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
-  NEW_SNOW,       ///< [mm] new snowfall waiting to be handled by snow balance
-  SNOW_LIQ,       ///< [mm] liquid snow cover
-  WETLAND,        ///< [mm] deep wetland depression storage
-  GLACIER,        ///< [mm] Glacier melt/reservoir storage
-  GLACIER_ICE,    ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
-  LAKE_STORAGE,   ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
+  SOIL,                    ///< [mm] Shallow subsurface/vadose zone
+  CANOPY,                  ///< [mm] Trees & vegetation
+  CANOPY_SNOW,             ///< [mm] snow in canopy
+  TRUNK,                   ///< [mm] water stored in trunks of trees
+  ROOT,                    ///< [mm] water stored in roots
+  GROUNDWATER,             ///< [mm] Deep groundwater
+  DEPRESSION,              ///< [mm] depression/surface storage
+  SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
+  NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance
+  SNOW_LIQ,                ///< [mm] liquid snow cover
+  WETLAND,                 ///< [mm] deep wetland depression storage
+  GLACIER,                 ///< [mm] Glacier melt/reservoir storage
+  GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
+  LAKE_STORAGE,            ///< [mm] Net lake storage - relative to equilibrium datum - can go negative
 
-  CONVOLUTION,    ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
-  CONV_STOR,      ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
+  CONVOLUTION,             ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
+  CONV_STOR,               ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
 
   // Memory variables
-  CUM_INFIL,          ///< [mm] Cumulative infiltration to topsoil
-  GA_MOISTURE_INIT,   ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
-  CUM_SNOWMELT,       ///< [mm] Cumulative snowmelt
+  CUM_INFIL,               ///< [mm] Cumulative infiltration to topsoil
+  GA_MOISTURE_INIT,        ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
+  CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt
 
   //Temperature/Energy storage [C] or [MJ/m^2]
-  FREEZING_LOSS,      ///< [MJ/m2] Energy lost during freezing (for mass balance) // \ todo[clean] - remove- not used
-  MELTING_LOSS,       ///< [MJ/m2] Energy consumed during melting // \ todo[clean] - remove- not used
-  ENERGY_LOSSES,      ///< [MJ/m2] general energy losses // \ todo[clean] - remove- not used
+  FREEZING_LOSS,           ///< [MJ/m2] Energy lost during freezing (for mass balance) // \ todo[clean] - remove- not used
+  MELTING_LOSS,            ///< [MJ/m2] Energy consumed during melting // \ todo[clean] - remove- not used
+  ENERGY_LOSSES,           ///< [MJ/m2] general energy losses // \ todo[clean] - remove- not used
 
-  SURFACE_WATER_TEMP, ///< [C] Temperature of surface water
-  SNOW_TEMP,          ///< [C] Temperature of snow
-  COLD_CONTENT,       ///< [C] Cold content of snowpack
-  SOIL_TEMP,          ///< [C] Temperature of soil
-  CANOPY_TEMP,        ///< [C] Temperature fo canopy
+  SURFACE_WATER_TEMP,      ///< [C] Temperature of surface water
+  SNOW_TEMP,               ///< [C] Temperature of snow
+  COLD_CONTENT,            ///< [C] Cold content of snowpack
+  SOIL_TEMP,               ///< [C] Temperature of soil
+  CANOPY_TEMP,             ///< [C] Temperature fo canopy
 
   //Snow/Glacier variables
-  SNOW_DEPTH,         ///< [mm] Snow depth - surrogate for density
-  PERMAFROST_DEPTH,   ///< [mm] depth of permafrost
-  SNOW_DEPTH_STDDEV,  ///< log([mm]) Snow depth standard deviation
-  SNOW_COVER,         ///< [0..1] fractional snow cover
-  GLACIER_CC,         ///< [mm] cold content of glacier
-  SNOW_DEFICIT,       ///< [mm] remaining holding capacity of snowpack (surrogate for SNOW_LIQ)
-  SNOW_AGE,           ///< [d] snow age, in days
-  SNODRIFT_TEMP,      ///< [C] temperature of drifting snow 
-  SNOW_DRIFT,         ///< [mm] drifting snow storage
+  SNOW_DEPTH,              ///< [mm] Snow depth - surrogate for density
+  PERMAFROST_DEPTH,        ///< [mm] depth of permafrost
+  SNOW_DEPTH_STDDEV,       ///< log([mm]) Snow depth standard deviation
+  SNOW_COVER,              ///< [0..1] fractional snow cover
+  GLACIER_CC,              ///< [mm] cold content of glacier
+  SNOW_DEFICIT,            ///< [mm] remaining holding capacity of snowpack (surrogate for SNOW_LIQ)
+  SNOW_AGE,                ///< [d] snow age, in days
+  SNODRIFT_TEMP,           ///< [C] temperature of drifting snow 
+  SNOW_DRIFT,              ///< [mm] drifting snow storage
 
-  SNOW_ALBEDO,        ///< [-] Snow Surface albedo
+  SNOW_ALBEDO,             ///< [-] Snow Surface albedo
 
   //Crop variables
-  CROP_HEAT_UNITS,    ///< [-] cumulative crop heat units
+  CROP_HEAT_UNITS,         ///< [-] cumulative crop heat units
 
   //Transport variables
-  CONSTITUENT,        ///< [mg/m2] chemical species or tracer
-  CONSTITUENT_SRC,    ///< [mg/m2] chemical species or tracer cumulative source
-  CONSTITUENT_SW,     ///< [mg/m2] chemical species dumped to surface water
-  CONSTITUENT_SINK,   ///< [mg/m2] chemical species or tracer cumulative sink (e.g., decay)
+  CONSTITUENT,             ///< [mg/m2] chemical species or tracer
+  CONSTITUENT_SRC,         ///< [mg/m2] chemical species or tracer cumulative source
+  CONSTITUENT_SW,          ///< [mg/m2] chemical species dumped to surface water
+  CONSTITUENT_SINK,        ///< [mg/m2] chemical species or tracer cumulative sink (e.g., decay)
 
   //Lateral exchange
-  LATERAL_EXCHANGE,   ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
+  LATERAL_EXCHANGE,        ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
 
   //Special
-  UNRECOGNIZED_SVTYPE ///< Unrecognized type of state variable
+  UNRECOGNIZED_SVTYPE      ///< Unrecognized type of state variable
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -784,93 +787,95 @@ enum process_type
 //
 struct optStruct
 {
-  string           version;           ///< Raven version - written to output file headers
+  string           version;                   ///< Raven version - written to output file headers
 
-  double           julian_start_day;  ///< julian day corresponding to t=0, simulation time
-                                      ///< e.g., 45.25 corresponds to 6AM on Feb. 14
-  int              julian_start_year; ///< year corresponding to t=0
-  double           duration;          ///< simulation duration
+  double           julian_start_day;          ///< julian day corresponding to t=0, simulation time
+                                              ///< e.g., 45.25 corresponds to 6AM on Feb. 14
+  int              julian_start_year;         ///< year corresponding to t=0
+  double           duration;                  ///< simulation duration
 
-  numerical_method sol_method;        ///< numerical solution method
-  double           convergence_crit;  ///< convergence criteria
-  double           max_iterations;    ///< maximum number of iterations for iterative solver method
-  double           timestep;          ///< numerical method timestep (in days)
-  double           output_interval;   ///< write to output file every x number of timesteps
+  numerical_method sol_method;                ///< numerical solution method
+  double           convergence_crit;          ///< convergence criteria
+  double           max_iterations;            ///< maximum number of iterations for iterative solver method
+  double           timestep;                  ///< numerical method timestep (in days)
+  double           output_interval;           ///< write to output file every x number of timesteps
 
-  interp_method    interpolation;     ///< Method for interpolating Met Station/Gauge data to HRUs
-  string           interp_file;       ///< name of file (in working directory) which stores interpolation weights
+  interp_method    interpolation;             ///< Method for interpolating Met Station/Gauge data to HRUs
+  string           interp_file;               ///< name of file (in working directory) which stores interpolation weights
 
-  string           run_name;          ///< prefix to be used for all output files
-  string           rvi_filename;      ///< fully qualified filename of rvi (main input) file
-  string           rvh_filename;      ///< fully qualified filename of rvh (HRU-basin) file
-  string           rvp_filename;      ///< fully qualified filename of rvp (parameters) file
-  string           rvt_filename;      ///< fully qualified filename of rvt (time series) file
-  string           rvc_filename;      ///< fully qualified filename of rvc (initial conditions) file
-  string           output_dir;        ///< output directory
+  string           run_name;                  ///< prefix to be used for all output files
+  string           rvi_filename;              ///< fully qualified filename of rvi (main input) file
+  string           rvh_filename;              ///< fully qualified filename of rvh (HRU-basin) file
+  string           rvp_filename;              ///< fully qualified filename of rvp (parameters) file
+  string           rvt_filename;              ///< fully qualified filename of rvt (time series) file
+  string           rvc_filename;              ///< fully qualified filename of rvc (initial conditions) file
+  string           output_dir;                ///< output directory
 
-  orographic_corr  orocorr_temp;      ///< method for correcting interpolated temperatures for elevation
-  orographic_corr  orocorr_precip;    ///< method for correcting interpolated precipitation for elevation
-  orographic_corr  orocorr_PET;       ///< method for correcting interpolated PET for elevation
+  orographic_corr  orocorr_temp;              ///< method for correcting interpolated temperatures for elevation
+  orographic_corr  orocorr_precip;            ///< method for correcting interpolated precipitation for elevation
+  orographic_corr  orocorr_PET;               ///< method for correcting interpolated PET for elevation
 
   //Algorithm Choices
-  rainsnow_method  rainsnow;          ///< method for converting total precip to rain/snow
-  cloudcov_method  cloud_cover;       ///< cloud cover estimation method
-  snalbedo_method  snow_albedo;       ///< method for estimating snow albedo
-  LW_method        LW_radiation;      ///< net longwave radiation estimation method
-  SW_method        SW_radiation;      ///< shortwave radiation estimation method
-  SW_cloudcover_corr SW_cloudcovercorr;///<method for cloudcover correction of shortwave radiation
-  SW_canopy_corr   SW_canopycorr;     ///< method for estimating canopy transmittance of shortwave radiation
-  netSWRad_method  SW_radia_net;      ///< method for calculating net shortwave radiation (calculated or data)
-  evap_method      evaporation;       ///< PET estimation method
-  evap_method      ow_evaporation;    ///< Open Water PET estimation method
-  relhum_method    rel_humidity;      ///< Relative humidity estimation method
-  airpress_method  air_pressure;      ///< Air pressure estimation method
-  windvel_method   wind_velocity;     ///< Wind velocity estimation mehtod
-  potmelt_method   pot_melt;          ///< Potential melt estimation method
-  subdaily_method  subdaily;          ///< Subdaily PET/Snowmelt temporal downscaling correction
-  recharge_method  recharge;          ///< aquifer/soil recharge method
-  bool             direct_evap;       ///< true if PET is used to directly reduce precipitation
+  rainsnow_method    rainsnow;                ///< method for converting total precip to rain/snow
+  cloudcov_method    cloud_cover;             ///< cloud cover estimation method
+  snalbedo_method    snow_albedo;             ///< method for estimating snow albedo
+  LW_method          LW_radiation;            ///< net longwave radiation estimation method
+  SW_method          SW_radiation;            ///< shortwave radiation estimation method
+  SW_cloudcover_corr SW_cloudcovercorr;       ///< method for cloudcover correction of shortwave radiation
+  SW_canopy_corr     SW_canopycorr;           ///< method for estimating canopy transmittance of shortwave radiation
+  netSWRad_method    SW_radia_net;            ///< method for calculating net shortwave radiation (calculated or data)
+  evap_method        evaporation;             ///< PET estimation method
+  evap_method        ow_evaporation;          ///< Open Water PET estimation method
+  relhum_method      rel_humidity;            ///< Relative humidity estimation method
+  airpress_method    air_pressure;            ///< Air pressure estimation method
+  windvel_method     wind_velocity;           ///< Wind velocity estimation mehtod
+  potmelt_method     pot_melt;                ///< Potential melt estimation method
+  subdaily_method    subdaily;                ///< Subdaily PET/Snowmelt temporal downscaling correction
+  recharge_method    recharge;                ///< aquifer/soil recharge method
+  bool               direct_evap;             ///< true if PET is used to directly reduce precipitation
 
-  precip_icept_method interception_factor; ///< method for calculating canopy interception factor
+  precip_icept_method interception_factor;    ///< method for calculating canopy interception factor
 
-  routing_method   routing;           ///< channel routing method
-  catchment_route  catchment_routing; ///< catchment routing method
-  bool             distrib_lat_inflow;///< true if lateral inflow to a reach is distributed at all subsegment nodes; if false, deposited at downstream only
+  routing_method   routing;                   ///< channel routing method
+  catchment_route  catchment_routing;         ///< catchment routing method
+  bool             distrib_lat_inflow;        ///< true if lateral inflow to a reach is distributed at all subsegment nodes; if false, deposited at downstream only
 
-  monthly_interp   month_interp;      ///< means of interpolating monthly data
+  monthly_interp   month_interp;              ///< means of interpolating monthly data
 
-  bool             keepUBCWMbugs;     ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
+  bool             keepUBCWMbugs;             ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
 
   //Soil model information
-  soil_model       soil_modeltype;    ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
-  int              num_soillayers;    ///< number of soil layers
-  soil_charact     soil_representation;///< characteristic curves for unsaturated flow
+  soil_model       soil_modeltype;            ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
+  int              num_soillayers;            ///< number of soil layers
+  soil_charact     soil_representation;       ///< characteristic curves for unsaturated flow
 
   //Output Options
-  bool             debug_mode;        ///< true if debugging mode is on
-  bool             noisy;             ///< true if parsing information written to screen
-  bool             silent;            ///< true if nothing should be written to screen (overrides noisy)
-  out_format       output_format;     ///< output format (default: OUTPUT_STANDARD)
-  bool             write_forcings;    ///< true if ForcingFunctions.csv is written
-  bool             write_mass_bal;    ///< true if WatershedMassEnergyBalance.csv is written
-  bool             write_energy;      ///< true if WatershedEneryStorage.csv is written
-  bool             write_reservoir;   ///< true if ReservoirStages.csv is written
-  bool             write_reservoirMB; ///< true if ReservoirMassBalance.csv is written
-  bool             ave_hydrograph;    ///< true if average flows over timestep are reported in hydrograph output
-  bool             write_exhaustiveMB;///< true if exhaustive mass balance diagnostics are written
-  int              write_group_mb;    ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written
-  bool             write_channels;    ///< true if writing channel rating curve information
-  bool             benchmarking;      ///< true if benchmarking output - removes version/timestamps in output   
-  bool             suppressICs;       ///< true if initial conditions are suppressed when writing output time series
-  bool             period_ending;     ///< true if period ending convention should be used for reading/writing Ensim files
-  bool             period_starting;   ///< true if all timestep-averaged output is reported using starttime of timestep
-  bool             pause;             ///< determines whether the simulation pauses at the end of the model run
-  string           working_dir;       ///< working directory
-  int              wateryr_mo;        ///< starting month of water year (typically 10=October)
-  bool             create_rvp_template;///< create an rvp template file after reading the .rvi
-  //diagnostic options
-  double           diag_start_time;   ///< Model time to start diagnostics
-  double           diag_end_time;     ///< Model time to start diagnostics
+  bool             debug_mode;                ///< true if debugging mode is on
+  bool             noisy;                     ///< true if parsing information written to screen
+  bool             silent;                    ///< true if nothing should be written to screen (overrides noisy)
+  bool             pavics;                    ///< true if specific setings for PAVICS system are applied \n
+  //                                          ///< (such as simulation status JSON file) (default: FALSE)
+  out_format       output_format;             ///< output format (default: OUTPUT_STANDARD)
+  bool             write_forcings;            ///< true if ForcingFunctions.csv is written
+  bool             write_mass_bal;            ///< true if WatershedMassEnergyBalance.csv is written
+  bool             write_energy;              ///< true if WatershedEneryStorage.csv is written
+  bool             write_reservoir;           ///< true if ReservoirStages.csv is written
+  bool             write_reservoirMB;         ///< true if ReservoirMassBalance.csv is written
+  bool             ave_hydrograph;            ///< true if average flows over timestep are reported in hydrograph output
+  bool             write_exhaustiveMB;        ///< true if exhaustive mass balance diagnostics are written
+  int              write_group_mb;            ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written
+  bool             write_channels;            ///< true if writing channel rating curve information
+  bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
+  bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
+  bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files
+  bool             period_starting;           ///< true if all timestep-averaged output is reported using starttime of timestep
+  bool             pause;                     ///< determines whether the simulation pauses at the end of the model run
+  string           working_dir;               ///< working directory
+  int              wateryr_mo;                ///< starting month of water year (typically 10=October)
+  bool             create_rvp_template;       ///< create an rvp template file after reading the .rvi
+  //                                          ///< diagnostic options
+  double           diag_start_time;           ///< Model time to start diagnostics
+  double           diag_end_time;             ///< Model time to start diagnostics
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -930,46 +935,46 @@ enum forcing_type
 //
 struct force_struct
 {
-  double precip;          ///< precipitaiton rate over time step [mm/d]
-  double precip_daily_ave;///< average precipitaiton over day (0:00-24:00) [mm/d]
-  double precip_5day;     ///< 5-day precipitation total [mm] (needed for SCS)
-  double snow_frac;       ///< fraction of precip that is snow [0..1]
+  double precip;              ///< precipitaiton rate over time step [mm/d]
+  double precip_daily_ave;    ///< average precipitaiton over day (0:00-24:00) [mm/d]
+  double precip_5day;         ///< 5-day precipitation total [mm] (needed for SCS)
+  double snow_frac;           ///< fraction of precip that is snow [0..1]
 
-  double temp_ave;        ///< average air temp over time step [C]
-  double temp_daily_min;  ///< minimum air temperature over day (0:00-24:00)[C]
-  double temp_daily_max;  ///< maximum air temperature over day (0:00-24:00)[C]
-  double temp_daily_ave;  ///< average air temp over day (0:00-24:00) [C]
-  double temp_month_max;  ///< maximum air temp during month [C]
-  double temp_month_min;  ///< minimum air temp during month [C]
-  double temp_month_ave;  ///< average air temp during month [C]
-  double temp_ave_unc;    ///< uncorrected daily average air temp  [C]
-  double temp_min_unc;    ///< uncorrected daily min air temp  [C]
-  double temp_max_unc;    ///< uncorrected daily max air temp  [C]
+  double temp_ave;            ///< average air temp over time step [C]
+  double temp_daily_min;      ///< minimum air temperature over day (0:00-24:00)[C]
+  double temp_daily_max;      ///< maximum air temperature over day (0:00-24:00)[C]
+  double temp_daily_ave;      ///< average air temp over day (0:00-24:00) [C]
+  double temp_month_max;      ///< maximum air temp during month [C]
+  double temp_month_min;      ///< minimum air temp during month [C]
+  double temp_month_ave;      ///< average air temp during month [C]
+  double temp_ave_unc;        ///< uncorrected daily average air temp  [C]
+  double temp_min_unc;        ///< uncorrected daily min air temp  [C]
+  double temp_max_unc;        ///< uncorrected daily max air temp  [C]
 
-  double air_dens;        ///< Air density [kg/m3]
-  double air_pres;        ///< Air pressure [kPa]
-  double rel_humidity;    ///< relative humidity [0..1]
+  double air_dens;            ///< Air density [kg/m3]
+  double air_pres;            ///< Air pressure [kPa]
+  double rel_humidity;        ///< relative humidity [0..1]
 
-  double cloud_cover;     ///< Cloud cover [0..1]
-  double ET_radia;        ///< uncorrected extraterrestrial shortwave radiation [MJ/m2/d]
-  double SW_radia_unc;    ///< uncorrected shortwave radiation (before cloud and canopy corrections)[MJ/m2/d]
-  double SW_radia;        ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) [MJ/m2/d]
-  double SW_radia_net;    ///< Net shortwave radiation (albedo corrected) [MJ/m2/d]
-  double LW_radia;        ///< Net longwave radiation [MJ/m2/d]
-  double day_length;      ///< day length [d]  (e.g., ~0.5 for equinox @ 45lat, 0.0 for the north pole during winter)
-  double day_angle;       ///< day angle [0..2PI] =0 for Jan 1, 2pi for Dec 31
+  double cloud_cover;         ///< Cloud cover [0..1]
+  double ET_radia;            ///< uncorrected extraterrestrial shortwave radiation [MJ/m2/d]
+  double SW_radia_unc;        ///< uncorrected shortwave radiation (before cloud and canopy corrections)[MJ/m2/d]
+  double SW_radia;            ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) [MJ/m2/d]
+  double SW_radia_net;        ///< Net shortwave radiation (albedo corrected) [MJ/m2/d]
+  double LW_radia;            ///< Net longwave radiation [MJ/m2/d]
+  double day_length;          ///< day length [d]  (e.g., ~0.5 for equinox @ 45lat, 0.0 for the north pole during winter)
+  double day_angle;           ///< day angle [0..2PI] =0 for Jan 1, 2pi for Dec 31
 
-  double potential_melt;  ///< potential snowmelt rate [mm/d]
+  double potential_melt;      ///< potential snowmelt rate [mm/d]
 
-  double wind_vel;        ///< Wind velocity [m/s]
+  double wind_vel;            ///< Wind velocity [m/s]
 
-  double PET;             ///< Potential Evapotranspiration [mm/d]
-  double OW_PET;          ///< Open Water Potential Evapotranspiration [mm/d]
-  double PET_month_ave;   ///< average PET during month [mm/d]
+  double PET;                 ///< Potential Evapotranspiration [mm/d]
+  double OW_PET;              ///< Open Water Potential Evapotranspiration [mm/d]
+  double PET_month_ave;       ///< average PET during month [mm/d]
 
-  double recharge;        ///< recharge to groundwater (typically from external model) [mm/d]
+  double recharge;            ///< recharge to groundwater (typically from external model) [mm/d]
 
-  double subdaily_corr;   ///< a subdaily correction factor to re-distribute daily average PET or snowmelt [-]
+  double subdaily_corr;       ///< a subdaily correction factor to re-distribute daily average PET or snowmelt [-]
 };
 
 
@@ -1000,7 +1005,7 @@ double      InterpolateMo(         const double      aVal[12],
 bool        IsDaytime(             const double      &julian_day,
                                    const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
-				                                 string      sTime);
+                                                                 string      sTime);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
@@ -1009,7 +1014,7 @@ void        AddTime(               const double      &jul_day1,
                                    const int         &year1,
                                    const double      &daysadded,
                                          double      &jul_day_out,
-				                                 int         &year_out);
+                                                                 int         &year_out);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 

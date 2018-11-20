@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     t1=clock();
     int step=0;
 
-    for (t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)
+    for (t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
     {
       pModel->UpdateTransientParams      (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 
       JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,tt);//increments time structure
       pModel->WriteMinorOutput          (Options,tt);
+      pModel->WriteProgressOutput       (Options,clock()-t1,step,int((Options.duration-TIME_CORRECTION)/Options.timestep));
 
       if (CheckForStopfile(step,tt)){break;}
       step++;

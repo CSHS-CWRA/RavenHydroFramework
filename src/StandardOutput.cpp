@@ -1133,6 +1133,42 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Writes progress file in JSON format (mainly for PAVICS runs)
+///        Looks like:
+///               {
+///               	"% progress": 65,
+///               	"seconds remaining": 123
+///               }
+///
+/// \note  Does not account for initialization (reading) and final writing of model outputs. Only pure modeling time.
+///
+/// \param &Options      [in] Global model options information
+/// \param &elapsed_time [in] elapsed time  (computational time markers)
+/// \param elapsed_steps [in] elapsed number of simulation steps to perform (to determine % progress)
+/// \param total_steps   [in]   total number of simulation steps to perform (to determine % progress)
+//
+void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time, int elapsed_steps, int total_steps)
+{
+  if (Options.pavics){
+
+    ofstream PROGRESS((Options.output_dir+"Raven_progress.txt").c_str());
+    if (PROGRESS.fail()){
+      ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
+    }
+    
+    float total_time = (float(total_steps) * float(elapsed_time) / float(elapsed_steps)) / CLOCKS_PER_SEC;
+    PROGRESS<< Options.output_interval <<endl;
+    PROGRESS<<"{"<<endl;
+    PROGRESS<<"       \"% progress\": ,"      << int( float(elapsed_steps) * 100.0 / float(total_steps) ) <<endl;
+    PROGRESS<<"       \"seconds remaining\": "<< total_time - float(elapsed_time) / CLOCKS_PER_SEC <<endl;
+    PROGRESS<<"}"<<endl;
+    
+    PROGRESS.close();
+    
+  }
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Writes model summary information to screen
 /// \param &Options [in] Global model options information
 //
