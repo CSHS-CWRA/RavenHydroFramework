@@ -719,7 +719,7 @@ void   CTransportModel::CalculateLateralConnections()
     pProc=pModel->GetProcess(j);
     pLatProc=(CLateralExchangeProcessABC*)pProc;//re-cast
     if(pLatProc->GetNumLatConnections()>0){
-      cout<<"CTransport: CalculateLateralConnections: process "<< j<<" #conns: " <<pLatProc->GetNumLatConnections()<<endl;
+      //cout<<"CTransport: CalculateLateralConnections: process "<< j<<" #conns: " <<pLatProc->GetNumLatConnections()<<endl;
     }
     for(int q=0; q<pLatProc->GetNumLatConnections(); q++)
     {
@@ -841,7 +841,7 @@ void   CTransportModel::AddDirichletTimeSeries(const string const_name, const in
 /// \brief adds influx (Neumann) source
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
-/// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
+/// \param kk [in] HRU group index (or DOESNT_EXIST if this applies to all HRUs)
 /// \param flux [in] specified fixed mass influx rate [mg/m2/d]
 //
 void   CTransportModel::AddInfluxSource(const string const_name, const int i_stor, const int kk, const double flux)
@@ -874,7 +874,7 @@ void   CTransportModel::AddInfluxSource(const string const_name, const int i_sto
 /// \brief adds influx (Neumann) source source time series
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
-/// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
+/// \param kk [in] HRU group index (or DOESNT_EXIST if this applies to all HRUs)
 /// \param pTS [in] Time series of Dirichlet source flux rate [mg/m2/d]
 //
 void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS)
@@ -951,8 +951,8 @@ void CTransportModel::Initialize()
         watstor = pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
         if (watstor<1e-9){pModel->GetHydroUnit (k)->SetStateVarValue(i,0.0);}
       }
-      //update initial model mass
-      _pConstituents[c]->initial_mass+=pModel->GetAvgStateVar(i)*(area*M2_PER_KM2);
+      //update initial model mass (initialized from .rvc file)
+      _pConstituents[c]->initial_mass+=pModel->GetAvgStateVar(i)*(area*M2_PER_KM2); //mg
     }
   }
 
@@ -995,13 +995,16 @@ void CTransportModel::Initialize()
 //
 void CTransportModel::IncrementCumulInput (const optStruct &Options, const time_struct &tt)
 {
+  //double influx;
   for (int c=0;c<_nConstituents;c++)
   {
     _pConstituents[c]->cumul_input+=0;// \todo [funct]: increment cumulative input [mg]
+
+    //Most of this is handled using the CONSTITUENT_SRC storage compartment
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Increment cumulative output of mass from watershed.
+/// \brief Increment cumulative output of mass from watershed exiting via stream channel
 /// \note called within solver to track mass balance
 /// \param Options [in] Global model options structure
 //
@@ -1084,7 +1087,7 @@ double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, con
   }
   if (retrieve)
   {
-    flux=pSources[i_source]->concentration;
+    flux=pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
     if (flux == DOESNT_EXIST){//get from time series
       flux=pSources[i_source]->pTS->GetValue(tt.model_time );
     }
@@ -1112,14 +1115,17 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
 
     //units names
     kg="[kg]"; kgd="[kg/d]"; mgL="[mg/l]";
-    //kg="[mg/m2]"; kgd="[mg/m2/d]"; mgL="[mg/m2]";//TMP DEBUG OUTPUT OVERRIDE
     if (_pConstituents[c]->is_tracer){
       kg="[-]"; kgd="[-]"; mgL="[-]";
+    }
+    if(Options.write_constitmass){
+      kg="[mg/m2]"; kgd="[mg/m2/d]"; //mgL="[mg/m2]";
     }
 
     //Concentrations file
     //--------------------------------------------------------------------
     filename=_pConstituents[c]->name+"Concentrations.csv";
+    if(Options.write_constitmass){ filename=_pConstituents[c]->name+"Mass.csv"; }
     filename=FilenamePrepare(filename,Options);
 
     _pConstituents[c]->OUTPUT.open(filename.c_str());
@@ -1346,7 +1352,7 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
 
   double convert;//
   convert=1.0/MG_PER_KG; //[mg->kg]
-  //convert=1.0/(area*M2_PER_KM2); //[mg->mg/m2]//TMP DEBUG OUTPUT OVERRIDE
+  if(Options.write_constitmass){ convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2]
 
   if ((Options.suppressICs) && (tt.model_time==0.0)) { return; }
 
@@ -1370,12 +1376,11 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     {
       //Get constituent concentration
       int m=j+c*_nWaterCompartments;
-      M=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT,m)); //mg/m2
+      M=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2
       V=pModel->GetAvgStateVar(_iWaterStorage[j]); //mm
       if (fabs(V)<=1e-6){concentration=0.0;}
       else              {concentration=(M/V)*(MM_PER_METER/LITER_PER_M3);}//[mg/mm/m2]->[mg/L]
-
-      //concentration=M;//TMP DEBUG OUTPUT OVERRIDE [mg/m2]
+      if(Options.write_constitmass){ concentration=M; }//[mg/m2]
 
       if (_iWaterStorage[j]!=iCumPrecip)
       {
@@ -1389,10 +1394,12 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     }
     currentMass+=channel_stor+rivulet_stor;
 
-    CumInflux =-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC,c))*(area*M2_PER_KM2);//mg
+    double sink  = pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//mg
+    double source=-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC ,c))*(area*M2_PER_KM2);//mg
+    CumInflux =source;
     CumInflux +=-atmos_prec;//mg
-    CumOutflux=_pConstituents[c]->cumul_output;
-    CumOutflux+=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//mg
+    CumOutflux=_pConstituents[c]->cumul_output;//outflow from system (mg)
+    CumOutflux+=sink;
 
     initMass  =_pConstituents[c]->initial_mass;
 

@@ -202,6 +202,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.diag_end_time       = ALMOST_INF;
   Options.wateryr_mo          =10; //October
   Options.create_rvp_template =false;
+  Options.write_constitmass   =false;
 
   pModel=NULL;
   pMover=NULL;
@@ -311,6 +312,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=85; } 
     else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=86; }
     else if  (!strcmp(s[0],":PeriodStartingFormatOff"   )){code=87; }
+    else if  (!strcmp(s[0],":OutputConstituentMass"     )){code=89; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }
@@ -1180,8 +1182,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       for (int i=1; i<Len; i++)
       {
         invalid=false;pDiag=NULL;
-                    int width = DOESNT_EXIST;
-                    string tmp = CStateVariable::SVStringBreak(s[i], width);
+		    int width = DOESNT_EXIST;
+		    string tmp = CStateVariable::SVStringBreak(s[i], width);
         if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
         else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
         else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
@@ -1199,7 +1201,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-                    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
+		    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
           pModel->AddDiagnostic(pDiag);
@@ -1328,6 +1330,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:PeriodStartingFormatOff*/
       if (Options.noisy) {cout <<"Backward compatible to version 2.7 output"<<endl;}
       Options.period_starting=false;
+      break;
+    }
+    case(89):  //--------------------------------------------
+    {/*:OutputConstituentMass*/
+      if (Options.noisy) {cout <<"Write constituent mass instead of concentrations"<<endl;}
+      Options.write_constitmass=true;
       break;
     }
     case(98):  //--------------------------------------------
@@ -2415,7 +2423,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       int i_stor;
       sv_type typ=CStateVariable::StringToSVType(s[2],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
-        WriteWarning(":FixedConcentration command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
+        WriteWarning(":MassInflux command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
       }
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);

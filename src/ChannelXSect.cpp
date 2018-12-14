@@ -565,7 +565,6 @@ const CChannelXSect*CChannelXSect::StringToChannelXSect(const string s)
   for (int p=0;p<NumChannelXSects;p++)
   {
     if (!sup.compare(StringToUppercase(pAllChannelXSects[p]->GetTag()))){return pAllChannelXSects[p];}
-    //else if (s_to_i(s.c_str())==(p+1))         {return pAllChannelXSects[p];}
   }
   return NULL;
 }

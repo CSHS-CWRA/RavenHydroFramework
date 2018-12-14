@@ -112,7 +112,7 @@ void CModel::Initialize(const optStruct &Options)
   {
     pHRU=_pHydroUnits[k];
     area_tot+=pHRU->GetArea();
-    cen_long+=pHRU->GetCentroid().longitude/_nHydroUnits*(pHRU->GetArea());
+    cen_long+=pHRU->GetCentroid().longitude*(pHRU->GetArea());
   }
   cen_long/=area_tot;
   _UTM_zone =(int)(floor ((cen_long + 180.0) / 6) + 1);

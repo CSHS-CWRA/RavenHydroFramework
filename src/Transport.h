@@ -86,12 +86,10 @@ private:/*------------------------------------------------------*/
 
   double  **_channel_storage;         ///< array storing channel storage [mg] [size: nSubBasins x _nConstituents] 
   double  **_rivulet_storage;         ///< array storing rivulet storage [mg] [size: nSubBasins x _nConstituents] 
-
-
-
+  
   constit_source **pSources;         ///< array of pointers to constituent sources [size: nSources]
   int              nSources;         ///< number of constituent sources
-  int            **_aSourceIndices;   ///> lookup table to convert constitutent and (global) water storage index to corresponding source, if any [size: _nConstituents x nStateVariables]
+  int            **_aSourceIndices;  ///< lookup table to convert constitutent and (global) water storage index to corresponding source, if any [size: _nConstituents x nStateVariables]
 
   void m_to_cj(const int layerindex, int &c, int &j) const;
   void DeleteRoutingVars();
@@ -143,8 +141,8 @@ public:/*-------------------------------------------------------*/
   double GetOutflowConcentration (const int p, const int c) const;
   double GetIntegratedMassOutflow(const int p, const int c,const double &tstep) const;
 
-  double GetDecayCoefficient (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
-  double GetRetardationFactor(const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
+  double GetDecayCoefficient    (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
+  double GetRetardationFactor   (const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
   double GetTransformCoefficient(const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
   double GetStoichioCoefficient (const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
 

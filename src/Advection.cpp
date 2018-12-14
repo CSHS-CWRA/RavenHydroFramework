@@ -214,11 +214,11 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   //Handle Neumann influx conditions, if present
   //-------------------------------------------------------
   /*for (q = 0; q < nAdvConnections; q++)
-    {
+  {
     rates[q] = 0.0;
     int iFromWater = pTransModel->GetFromWaterIndex(q);
     rates[nAdvConnections + q] += pTransModel->GetSpecifiedMassFlux(iToWater, constit_ind, k, tt); //[mg/m2/d]
-    }*/
+  }*/
   if(tt.model_time>=Options.duration-Options.timestep/2)
   {
     delete [] Q;

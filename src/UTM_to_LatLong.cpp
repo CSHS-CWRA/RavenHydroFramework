@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 
 /* Ellipsoid model constants (actual values here are for WGS84) */
-const double sm_a                                               = 6378137.0;         ///< Ellipsoid model constant for WGS 1964
-const double sm_b                                               =       6356752.314;       ///< Ellipsoid model constant for WGS 1964
-const double sm_EccSquared      = 6.69437999013e-03; ///< Ellipsoid model constant for WGS 1964
-const double UTMScaleFactor = 0.9996;            ///< UTM scale factor for WGS 1964
+const double sm_a           = 6378137.0;         ///< Ellipsoid model constant for WGS 1984
+const double sm_b           = 6356752.314;       ///< Ellipsoid model constant for WGS 1984
+const double sm_EccSquared  = 6.69437999013e-03; ///< Ellipsoid model constant for WGS 1984
+const double UTMScaleFactor = 0.9996;            ///< UTM scale factor for WGS 1984
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Computes ellipsoidal distance from the equator to a point at a given latitude
@@ -85,7 +85,7 @@ double FootpointLatitude (const double &y)
 /// \param &x [out] Output x coordinate of point (transverse mercator)
 /// \param &y [out] Output y coordinate of point (transverse mercator)
 //
-void MapLatLonToXY (const double phi,            //latitude, radians
+void MapLatLonToXY (const double phi,    //latitude, radians
                     const double lambda, //longitude, radians
                     const double lambda0,//central meridian, radians
                     double &x,

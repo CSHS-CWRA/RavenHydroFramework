@@ -1202,7 +1202,6 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   {
     for(int it=0; it<pGrid_pre->GetChunkSize()-1; it++) {                   // loop over time points in buffer
       for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++){       // loop over non-zero grid cell indexes
-        double old=pGrid_pre->GetValue(ic,it);
         rainfall_rate=(pGrid_pre->GetValue(ic,it+1)-pGrid_pre->GetValue(ic,it))/pGrid_pre->GetInterval()*300;
         pGrid_pre->SetValue(ic,it,rainfall_rate);   // copies precipitation values
       }

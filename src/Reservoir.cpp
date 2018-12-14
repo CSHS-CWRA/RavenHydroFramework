@@ -340,7 +340,6 @@ double CReservoir::GetOldOutflowRate() const { return _Qout_last; }
 //
 double CReservoir::GetOldStorage() const{return GetVolume(_stage_last);}
 
-
 //////////////////////////////////////////////////////////////////
 /// \returns evaporative losses integrated over previous timestep [m3]
 //
@@ -376,8 +375,6 @@ int CReservoir::GetHRUIndex() const
 //
 void CReservoir::Initialize(const optStruct &Options)
 {
-  /// \todo [QA/QC]: could check here whether all rating curves are monotonic, ordered...
-
   double model_start_day=Options.julian_start_day;
   int    model_start_yr =Options.julian_start_year;
   double model_duration =Options.duration;
@@ -531,7 +528,6 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
 
   _Qout_last =_Qout;
   _Qout      =res_outflow;
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief updates current mass balance (called at end of time step)
@@ -544,7 +540,6 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
   if(_pHRU!=NULL){
     _AET      =_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
     _MB_losses+=_AET;
-	  
   }
 
   if(_pExtractTS!=NULL){
@@ -586,8 +581,6 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &t)
 
   double weir_adj=0.0;
   if(_pWeirHeightTS!=NULL){ 
-    //int nn=(int)((t+REAL_SMALL)/tstep);//current timestep index
-    //weir_adj=_pWeirHeightTS->GetSampledValue(nn); 
     weir_adj=_pWeirHeightTS->GetValue(t); 
   }
 
@@ -600,7 +593,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &t)
   double Q,dQdh;
   do //Newton's method with discrete approximation of dQ/dh
   {
-    Q   =GetOutflow(h_guess    ,weir_adj);
+    Q   = GetOutflow(h_guess   ,weir_adj);
     dQdh=(GetOutflow(h_guess+dh,weir_adj)-Q)/dh;
     change=-(Q-initQ)/dQdh;//[m]
     if (dh==0.0){change=1e-7;}
@@ -609,7 +602,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &t)
     //cout <<iter<<": "<<h_guess<<" "<<Q<<" "<<dQdh<<" "<<change<<endl;
     iter++;
   } while ((iter<RES_MAXITER) && (fabs(change)>RES_TOLERANCE));
-  //the above should be really fast for most trivial changes in flow, since f is locally linear
+
   if (iter==RES_MAXITER){
     string warn="CReservoir::SetInitialFlow did not converge after "+to_string(RES_MAXITER)+"  iterations for basin "+to_string(_SBID);
     WriteWarning(warn,false);
@@ -668,8 +661,9 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pMinStageTS!=NULL)    { min_stage  =_pMinStageTS->    GetSampledValue(nn);}    
   if(_pMinStageFlowTS!=NULL){ Qminstage  =_pMinStageFlowTS->GetSampledValue(nn);}  
   if(_pTargetStageTS!=NULL) { htarget    =_pTargetStageTS-> GetSampledValue(nn);}
-  if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);} 
+  if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
 
+  //=============================================================================
   if (_type==RESROUTE_NONE)
   {
     //find stage such that Qout=Qin_new
@@ -711,7 +705,6 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     {
       ext_old=_pExtractTS->GetSampledValue(nn);
       ext_new=_pExtractTS->GetSampledValue(nn); //steady rate over time step
-      //ext_new=_pExtractTS->GetSampledValue(nn+1);
     }
 
     double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
@@ -799,7 +792,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if(stage_new>stage_limit){
       stage_new=stage_limit;
       double V_limit=GetVolume(stage_limit);
-      double A_limit=GetArea(stage_limit);
+      double A_limit=GetArea  (stage_limit);
 	    res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (ext_old + ext_new));//[m3/s]
     }
 
@@ -1206,7 +1199,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
   }
 
-  for (int i = 0; i < nDates; i++){ delete[] aQQ[i]; }delete aQQ;
+  for (int i = 0; i < nDates; i++){ delete[] aQQ[i]; }delete [] aQQ;
   delete [] aQ;
   delete [] aQ_ht;
   delete [] aQund;
