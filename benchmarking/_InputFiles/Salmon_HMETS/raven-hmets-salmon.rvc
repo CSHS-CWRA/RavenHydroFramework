@@ -1,0 +1,20 @@
+#########################################################################                                  
+:FileType          rvc ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of HMETS simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------                                 
+#
+
+# initialize to 1/2 full
+# x(20)/2
+:UniformInitialConditions SOIL[0] 155.36055
+# x(21)/2
+:UniformInitialConditions SOIL[1] 458.09735 
+
+:HRUStateVariableTable
+   :Attributes SOIL[0] SOIL[1]
+   :Units mm mm
+   1 155.36055 458.09735
+:EndHRUStateVariableTable

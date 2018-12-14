@@ -2,13 +2,14 @@ REM Benchmarking Batch File For Raven version evaluation
 echo off
 Setlocal EnableDelayedExpansion
 cls
-echo benchmarking raven...
 
 REM Location of Working directory (no end slash)
 SET workingdir=C:\James\Software\Raven\BenchmarkProtocol
 
 REM version name 
-SET ver_name=v619
+SET ver_name=vTest
+
+echo Benchmarking Raven version %ver_name%...
 
 REM Location of Raven executable
 SET ravexe=%workingdir%\_Executables\%ver_name%\Raven.exe
@@ -52,6 +53,30 @@ chdir %workingdir%\_InputFiles\Irondequoit\
 mkdir %workingdir%\out_%ver_name%\Nith\
 chdir %workingdir%\_InputFiles\Nith\
 %ravexe% Nith -o %workingdir%\out_%ver_name%\Nith\
+
+mkdir %workingdir%\out_%ver_name%\York\
+chdir %workingdir%\_InputFiles\York\
+%ravexe% York_gridded_m_daily_i_daily -o %workingdir%\out_%ver_name%\York\
+
+mkdir %workingdir%\out_%ver_name%\LOTW\
+chdir %workingdir%\_InputFiles\LOTW\
+%ravexe% LOWRL -o %workingdir%\out_%ver_name%\LOTW\
+
+mkdir %workingdir%\out_%ver_name%\Salmon_GR4J\
+chdir %workingdir%\_InputFiles\Salmon_GR4J\
+%ravexe% raven-gr4j-salmon -o %workingdir%\out_%ver_name%\Salmon_GR4J\
+
+mkdir %workingdir%\out_%ver_name%\Salmon_HBV\
+chdir %workingdir%\_InputFiles\Salmon_HBV\
+%ravexe% raven-hbv-salmon -o %workingdir%\out_%ver_name%\Salmon_HBV\
+
+mkdir %workingdir%\out_%ver_name%\Salmon_HMETS\
+chdir %workingdir%\_InputFiles\Salmon_HMETS\
+%ravexe% raven-hmets-salmon -o %workingdir%\out_%ver_name%\Salmon_HMETS\
+
+mkdir %workingdir%\out_%ver_name%\Salmon_MOHYSE\
+chdir %workingdir%\_InputFiles\Salmon_MOHYSE\
+%ravexe% raven-mohyse-salmon -o %workingdir%\out_%ver_name%\Salmon_MOHYSE\
 
 echo -------------------------------------------
 echo ...BENCHMARKING DONE.

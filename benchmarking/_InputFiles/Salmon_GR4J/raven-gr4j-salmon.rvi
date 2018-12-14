@@ -1,0 +1,60 @@
+#########################################################################                                  
+:FileType          rvi ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of GR4J simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------                                  
+#        
+:SilentMode
+:BenchmarkingMode
+                                                                                                                                                                       
+:StartDate             1954-01-01 00:00:00                                                                   
+:Duration              20819                                                                                   
+:TimeStep              1.0                                                                                   
+:Method                ORDERED_SERIES                                                                       
+                                                                                                           
+:SoilModel             SOIL_MULTILAYER  4                                                                    
+:Routing               ROUTE_NONE                                                                            
+:CatchmentRoute        ROUTE_DUMP                                                                            
+:Evaporation           PET_DATA                                                                              
+:RainSnowFraction      RAINSNOW_DINGMAN                                                                      
+:PotentialMeltMethod   POTMELT_DEGREE_DAY                                                                    
+:OroTempCorrect        OROCORR_SIMPLELAPSE                                                                   
+:OroPrecipCorrect      OROCORR_SIMPLELAPSE                                                                   
+                                                                                                           
+#------------------------------------------------------------------------                                  
+# Soil Layer Alias Definitions                                                                             
+#                                                                                                          
+:Alias PRODUCT_STORE      SOIL[0]                                                                          
+:Alias ROUTING_STORE      SOIL[1]                                                                          
+:Alias TEMP_STORE         SOIL[2]                                                                          
+:Alias GW_STORE           SOIL[3]                                                                          
+                                                                                                           
+#------------------------------------------------------------------------                                  
+# Hydrologic process order for GR4J Emulation                                                              
+#                                                                                                          
+:HydrologicProcesses                                                                                       
+ :Precipitation            PRECIP_RAVEN       ATMOS_PRECIP    MULTIPLE                                     
+ :SnowTempEvolve           SNOTEMP_NEWTONS    SNOW_TEMP                                                    
+ :SnowBalance              SNOBAL_CEMA_NIEGE  SNOW            PONDED_WATER                                 
+ :OpenWaterEvaporation     OPEN_WATER_EVAP    PONDED_WATER    ATMOSPHERE     			 # Pn                            
+ :Infiltration             INF_GR4J           PONDED_WATER    MULTIPLE       			 # Ps-                           
+ :SoilEvaporation          SOILEVAP_GR4J      PRODUCT_STORE   ATMOSPHERE     			 # Es                           
+ :Percolation              PERC_GR4J          PRODUCT_STORE   TEMP_STORE     			 # Perc                          
+ :Flush                    RAVEN_DEFAULT      SURFACE_WATER   TEMP_STORE     			 # Pn-Ps                         
+ :Split                    RAVEN_DEFAULT      TEMP_STORE      CONVOLUTION[0] CONVOLUTION[1] 0.9  # Split Pr
+ :Convolve                 CONVOL_GR4J_1      CONVOLUTION[0]  ROUTING_STORE  			 # Q9                            
+ :Convolve                 CONVOL_GR4J_2      CONVOLUTION[1]  TEMP_STORE     			 # Q1                            
+ :Percolation              PERC_GR4JEXCH      ROUTING_STORE   GW_STORE       			 # F(x1)                        
+ :Percolation              PERC_GR4JEXCH2     TEMP_STORE      GW_STORE       			 # F(x1)                        
+ :Flush                    RAVEN_DEFAULT      TEMP_STORE      SURFACE_WATER  			 # Qd                           
+ :Baseflow                 BASE_GR4J          ROUTING_STORE   SURFACE_WATER  			 # Qr                           
+:EndHydrologicProcesses                                                                                    
+#------------------------------------------------------------------------                                  
+                                                                                                           
+#---------------------------------------------------------                                                 
+# Output Options                                                                                           
+#
+:WriteForcingFunctions
+:EvaluationMetrics NASH_SUTCLIFFE RMSE

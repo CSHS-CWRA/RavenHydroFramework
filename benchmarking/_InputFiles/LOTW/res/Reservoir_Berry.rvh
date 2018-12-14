@@ -1,0 +1,15 @@
+:Reservoir Berry
+
+      :SubBasinID 48
+
+      :HRUID 480
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 1.658711E+02
+
+      :MaxDepth 5
+	  
+      :LakeArea 15200000
+
+:EndReservoir

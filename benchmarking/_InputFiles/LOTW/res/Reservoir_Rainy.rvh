@@ -1,0 +1,15 @@
+:Reservoir Rainy
+
+      :SubBasinID 43
+
+      :HRUID 430
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 3.029261E+02
+
+      :MaxDepth 5
+	  
+      :LakeArea 1003000000
+
+:EndReservoir

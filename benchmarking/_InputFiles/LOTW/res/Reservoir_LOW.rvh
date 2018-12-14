@@ -1,0 +1,15 @@
+:Reservoir LOW
+
+      :SubBasinID 42
+
+      :HRUID 420
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 3.559933E+02
+
+      :MaxDepth 5
+	  
+      :LakeArea 4374000000
+
+:EndReservoir

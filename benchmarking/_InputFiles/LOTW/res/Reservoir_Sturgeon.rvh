@@ -1,0 +1,15 @@
+:Reservoir Sturgeon
+
+      :SubBasinID 66
+
+      :HRUID 660
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 1.708609E+01
+
+      :MaxDepth 5
+	  
+      :LakeArea 31900000
+
+:EndReservoir

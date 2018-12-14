@@ -7,14 +7,23 @@
 # --------------------------------------------
 
 :Gauge Stratford WWTP EC Climate Station
+  :Latitude   43.36888 
+  :Longitude -81.00473
+  :Elevation  345.0
   :RedirectToFile Stratford.rvt
 :EndGauge
 
 :Gauge UW Weather Station
+  :Latitude 43.4738
+  :Longitude -80.5576
+  :Elevation 334.4  
   :RedirectToFile UWStation.rvt
 :EndGauge
 
 :Gauge Glen Allan EC Climate Station
+  :Latitude   43.68390 
+  :Longitude -80.71030
+  :Elevation  400.0
   :RedirectToFile GlenAllan.rvt
 :EndGauge
 

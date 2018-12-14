@@ -1,0 +1,51 @@
+#########################################################################                                  
+:FileType          rvi ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of MOHYSE simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------                                   
+#                                                                                                          
+:SilentMode
+:BenchmarkingMode
+                                                                     
+:StartDate             1954-01-01 00:00:00                                                                   
+:Duration              20819                                                                                   
+:TimeStep              1.0                                                                                   
+:Method                ORDERED_SERIES 
+
+:SoilModel             SOIL_TWO_LAYER
+:PotentialMeltMethod   POTMELT_DEGREE_DAY
+:Routing               ROUTE_NONE 
+:CatchmentRoute        ROUTE_GAMMA_CONVOLUTION
+:Evaporation           PET_MOHYSE
+:DirectEvaporation     
+:RainSnowFraction      RAINSNOW_DATA
+ 
+:HydrologicProcesses
+     :SoilEvaporation  SOILEVAP_LINEAR    SOIL[0]            ATMOSPHERE
+     :SnowBalance      SNOBAL_SIMPLE_MELT SNOW PONDED_WATER
+     :Precipitation    RAVEN_DEFAULT      ATMOS_PRECIP       MULTIPLE
+     :Infiltration     INF_HBV            PONDED_WATER       SOIL[0]
+     :Baseflow         BASE_LINEAR        SOIL[0]            SURFACE_WATER
+     :Percolation      PERC_LINEAR        SOIL[0]            SOIL[1]
+     :Baseflow         BASE_LINEAR        SOIL[1]            SURFACE_WATER
+:EndHydrologicProcesses
+
+# :Alias MOHYSE_PARA_1      1.5589    # :GlobalParameter         MOHYSE_PET_COEFF
+# :Alias MOHYSE_PARA_2	    0.9991    # LandUseParameterList --> AET_COEFF
+# :Alias MOHYSE_PARA_3	    2.1511    # LandUseParameterList --> MELT_FACTOR
+# :Alias MOHYSE_PARA_4	   -1.6101    # LandUseParameterList --> DD_MELT_TEMP
+# :Alias MOHYSE_PARA_5	    0.5000    # SoilProfiles         --> thickness of TOPSOIL (in mm????? must be m!!!)
+# :Alias MOHYSE_PARA_6	    0.1050    # SoilParameterList    --> PERC_COEFF (TOPSOIL)
+# :Alias MOHYSE_PARA_7	    0.0533    # SoilParameterList    --> BASEFLOW_COEFF (TOPSOIL)
+# :Alias MOHYSE_PARA_8	    0.0132    # SoilParameterList    --> BASEFLOW_COEFF (GWSOIL)
+# :Alias MOHYSE_PARA_9	    1.0474    # :SubBasinProperties  --> GAMMA_SHAPE
+# :Alias MOHYSE_PARA_10	    7.9628    # :SubBasinProperties  --> TIME_CONC = MOHYSE_PARA_10 / 0.3 = 26.542666666
+
+#---------------------------------------------------------
+# Output Options
+#
+:EvaluationMetrics NASH_SUTCLIFFE RMSE
+
+

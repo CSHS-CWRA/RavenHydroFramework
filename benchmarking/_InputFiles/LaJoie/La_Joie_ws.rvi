@@ -38,11 +38,6 @@
 :RetainUBCWMBugs
 
 #------------------------------------------------------------------------
-#Flags and output settings
-:SuppressOutputICs
-:SilentMode
-:SuppressWarnings
-#------------------------------------------------------------------------
 #Flags and ouput settings
 :SuppressOutputICs
 :SilentMode
@@ -52,8 +47,6 @@
 :MonthlyInterpolationMethod          LINEAR_21
 :SoilModel          SOIL_MULTILAYER  6
 
-:DebugMode          no
-:EndPause           no
 :WriteEnsimFormat   yes
 :WriteEnsimFormat   PeriodEnding
 
@@ -132,3 +125,5 @@
 :CustomOutput CONTINUOUS AVERAGE SOIL[2] BY_HRU
 :CustomOutput CONTINUOUS AVERAGE SOIL[3] BY_HRU
 :CustomOutput CONTINUOUS AVERAGE SOIL[4] BY_HRU
+
+:BenchmarkingMode

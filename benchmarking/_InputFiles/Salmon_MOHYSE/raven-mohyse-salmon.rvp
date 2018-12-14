@@ -1,0 +1,72 @@
+#########################################################################                                  
+:FileType          rvp ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of MOHYSE simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------
+
+:SoilClasses
+  :Attributes,
+  :Units,
+  TOPSOIL
+  GWSOIL 
+:EndSoilClasses
+
+:SoilProfiles
+         LAKE, 0
+         ROCK, 0
+       # DEFAULT_P,      2, TOPSOIL, MOHYSE_PARA_5, GWSOIL, 10.0
+         DEFAULT_P,      2, TOPSOIL,     0.4038076, GWSOIL, 10.0
+:EndSoilProfiles
+
+:LandUseClasses, 
+  :Attributes,        IMPERM,    FOREST_COV, 
+  :Units,             frac,      frac, 
+  LU_ALL,             0.0,       1.0          
+:EndLandUseClasses
+
+:VegetationClasses, 
+  :Attributes,        MAX_HT,       MAX_LAI,    MAX_LEAF_COND, 
+  :Units,             m,            none,       mm_per_s, 
+ VEG_ALL,             0.0,          0.0,        0.0         
+:EndVegetationClasses
+
+
+
+#:GlobalParameter      RAINSNOW_TEMP              -2.0           
+:GlobalParameter       TOC_MULTIPLIER              1.0           
+# :GlobalParameter     MOHYSE_PET_COEFF  MOHYSE_PARA_1        
+:GlobalParameter       MOHYSE_PET_COEFF         1.0000 
+
+#-----------------------------------------------------------------
+# Soil Parameters
+#-----------------------------------------------------------------
+:SoilParameterList
+  :Parameters,        POROSITY,  PET_CORRECTION,        HBV_BETA,  BASEFLOW_COEFF,      PERC_COEFF, 
+       :Units,               -,               -,               -,             1/d,             1/d, 
+    # TOPSOIL,            1.0 ,             1.0,             1.0,   MOHYSE_PARA_7,   MOHYSE_PARA_6,
+    #  GWSOIL,            1.0 ,             1.0,             1.0,   MOHYSE_PARA_8,             0.0,
+      TOPSOIL,            1.0 ,             1.0,             1.0,          0.0273,          0.0621,
+       GWSOIL,            1.0 ,             1.0,             1.0,          0.0453,             0.0,
+:EndSoilParameterList
+
+#-----------------------------------------------------------------
+# Land Use Parameters
+#-----------------------------------------------------------------
+:LandUseParameterList
+  :Parameters,     MELT_FACTOR,       AET_COEFF, FOREST_SPARSENESS, DD_MELT_TEMP,
+       :Units,          mm/d/K,            mm/d,                 -,         degC,
+  # [DEFAULT],   MOHYSE_PARA_3,   MOHYSE_PARA_2,               0.0,MOHYSE_PARA_4, 
+    [DEFAULT],          4.2952,          0.0468,               0.0,       2.6580,
+:EndLandUseParameterList
+
+#-----------------------------------------------------------------
+# Vegetation Parameters
+#-----------------------------------------------------------------
+:VegetationParameterList
+  :Parameters,    SAI_HT_RATIO,  RAIN_ICEPT_PCT,  SNOW_ICEPT_PCT, 
+       :Units,               -,               -,               -, 
+    [DEFAULT],             0.0,             0.0,             0.0,   
+:EndVegetationParameterList
+

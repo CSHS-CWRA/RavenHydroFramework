@@ -48,9 +48,9 @@
 #
 # --Output Options-------------------------------
 #
-:EndPause            NO
 :WriteForcingFunctions
 :CustomOutput DAILY AVERAGE SNOW BY_HRU
 :AggregatedVariable FAST_RESERVOIR AllHRUs
 :AggregatedVariable SLOW_RESERVOIR AllHRUs
 :EvaluationMetrics NASH_SUTCLIFFE
+:BenchmarkingMode

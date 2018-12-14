@@ -38,22 +38,16 @@
 
 :RetainUBCWMBugs
 #------------------------------------------------------------------------
-#Flags and output settings
-:SuppressOutputICs
-:SilentMode
-:SuppressWarnings
-#------------------------------------------------------------------------
 #Flags and ouput settings
 :SuppressOutputICs
 :SilentMode
 :SuppressWarnings
 :SnapshotHydrograph
+:BenchmarkingMode
 :PrecipIceptFract   USER_SPECIFIED
 :MonthlyInterpolationMethod          LINEAR_21
 :SoilModel          SOIL_MULTILAYER  6
 
-:DebugMode          no
-:EndPause           no
 :WriteEnsimFormat   yes
 :WriteEnsimFormat   PeriodEnding
 

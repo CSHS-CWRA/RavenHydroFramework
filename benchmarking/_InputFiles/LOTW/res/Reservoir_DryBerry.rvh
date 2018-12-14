@@ -1,0 +1,15 @@
+:Reservoir DryBerry
+
+      :SubBasinID 47
+
+      :HRUID 470
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 2.049821E+02
+
+      :MaxDepth 5
+	  
+      :LakeArea 94500000
+
+:EndReservoir

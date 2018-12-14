@@ -1,0 +1,871 @@
+#-----------------------------------------------------------------																	
+#	Raven	Properties	file	Template.	Created	by	Raven	v2.7.0									
+#-----------------------------------------------------------------																	
+#	all	expressions	of	format	*xxx*	need	to	be	specified	by	the	user					
+#	all	parameter	values	of	format	**	need	to	be	specified	by	the	user				
+#	soil,	land	use,	and	vegetation	classes	should	be	made	consistent	with	user-generated	.rvh	file			
+#-----------------------------------------------------------------																	
+#	#NAME?	snow	parameters-------------------------------------														
+:RainSnowTransition	-9.792014E-01	1.010278E+00															
+:AirSnowCoeff	2.19E-01																
+:AvgAnnualSnow	373.4	#mm															
+																	
+#	#NAME?	Corrections-------------------------------------															
+:PrecipitationLapseRate	0.0004																
+:AdiabaticLapseRate	0.0065																
+:IrreducibleSnowSaturation	1.347386E-03																
+#-----------------------------------------------------------------																	
+#	Soil	Classes															
+#-----------------------------------------------------------------																	
+:SoilClasses																	
+	:Attributes,	%SAND	%CLAY	%SILT	%ORGANIC												
+	:Units,	none	none	none	none												
+	SOIL_0_Agr	0.79	0.06	0.15	0.05												
+	SOIL_1_Agr	0.1	0.9	0	0												
+	SOIL_2_Agr	0.1	0.9	0	0												
+																	
+	SOIL_0_Con	0.79	0.06	0.15	0.05												
+	SOIL_1_Con	0.1	0.9	0	0												
+	SOIL_2_Con	0.1	0.9	0	0												
+																	
+	SOIL_0_Dec	0.79	0.06	0.15	0.05												
+	SOIL_1_Dec	0.1	0.9	0	0												
+	SOIL_2_Dec	0.1	0.9	0	0												
+																	
+	SOIL_0_Mix	0.79	0.06	0.15	0.05												
+	SOIL_1_Mix	0.1	0.9	0	0												
+	SOIL_2_Mix	0.1	0.9	0	0												
+																	
+	SOIL_0_Spa	0.79	0.06	0.15	0.05												
+	SOIL_1_Spa	0.1	0.9	0	0												
+	SOIL_2_Spa	0.1	0.9	0	0												
+																	
+	SOIL_0_Reg	0.79	0.06	0.15	0.05												
+	SOIL_1_Reg	0.1	0.9	0	0												
+	SOIL_2_Reg	0.1	0.9	0	0												
+																	
+	SOIL_0_Wet	0.79	0.06	0.15	0.05												
+	SOIL_1_Wet	0.1	0.9	0	0												
+	SOIL_2_Wet	0.1	0.9	0	0												
+																	
+	SOIL_0_Imp	0.79	0.06	0.15	0.05												
+	SOIL_1_Imp	0.1	0.9	0	0												
+	SOIL_2_Imp	0.1	0.9	0	0												
+:EndSoilClasses																	
+																	
+#-----------------------------------------------------------------																	
+#	Soil	Parameters															
+#-----------------------------------------------------------------																	
+:SoilParameterList																	
+	:Parameters,	POROSITY,	FIELD_CAPACITY,	SAT_WILT,	HBV_BETA,	MAX_PERC_RATE,	MAX_INTERFLOW_RATE,	BASEFLOW_COEFF,	BASEFLOW_N,	PET_CORRECTION,							
+	:Units,	none,	none,	none,	none,	mm/d,	mm/d	1/d,	none,	fract,	#	(units	not	generated	by	.rvp	template)
+	[DEFAULT],	0.3	0.15	0.10,	6.8805,	10.8604,	10	1.0,	0.091776,	0.801,							
+	SOIL_0_Agr	0.3	0.15	1.000000E-01,	1.716506E+01	3.887038E-01	1.198965E+01	-1.2345	-1.2345	4.084970E-01							
+	SOIL_1_Agr	0.3	0.15	1.000000E-01,	-1.2345	1.872672E+01	-1.2345	1.230381E-01	3.904239E+00	-1.2345							
+	SOIL_2_Agr	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Con	0.3	0.15	1.000000E-01,	1.192222E+01	1.819235E-01	3.884472E+01	-1.2345	-1.2345	2.632998E-01							
+	SOIL_1_Con	0.3	0.15	1.000000E-01,	-1.2345	2.602465E+01	-1.2345	9.377611E+00	3.719568E+00	-1.2345							
+	SOIL_2_Con	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Dec	0.3	0.15	1.000000E-01,	1.418906E+01	1.513405E+01	3.167370E+01	-1.2345	-1.2345	1.102405E+00							
+	SOIL_1_Dec	0.3	0.15	1.000000E-01,	-1.2345	9.600420E+00	-1.2345	4.161454E+00	2.458392E+00	-1.2345							
+	SOIL_2_Dec	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Mix	0.3	0.15	1.000000E-01,	6.141119E-01	3.304882E-01	2.374074E+01	-1.2345	-1.2345	4.692806E-01							
+	SOIL_1_Mix	0.3	0.15	1.000000E-01,	-1.2345	1.041747E+01	-1.2345	1.513782E+00	3.569769E+00	-1.2345							
+	SOIL_2_Mix	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Spa	0.3	0.15	1.000000E-01,	1.852153E+01	2.162818E+01	1.794160E+00	-1.2345	-1.2345	9.066406E-01							
+	SOIL_1_Spa	0.3	0.15	1.000000E-01,	-1.2345	6.333094E+00	-1.2345	1.082572E+00	5.309733E-01	-1.2345							
+	SOIL_2_Spa	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Reg	0.3	0.15	1.000000E-01,	4.688730E-01	2.425245E-01	2.361780E+01	-1.2345	-1.2345	1.001018E-01							
+	SOIL_1_Reg	0.3	0.15	1.000000E-01,	-1.2345	4.748040E+01	-1.2345	7.658525E+00	2.201409E+00	-1.2345							
+	SOIL_2_Reg	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Wet	0.3	0.15	1.000000E-01,	1.415565E+01	6.452601E-01	4.056966E+01	-1.2345	-1.2345	4.468103E-01							
+	SOIL_1_Wet	0.3	0.15	1.000000E-01,	-1.2345	4.396997E+00	-1.2345	8.909501E-01	3.948745E+00	-1.2345							
+	SOIL_2_Wet	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+																	
+	SOIL_0_Imp	0.3	0.15	1.000000E-01,	1.00E-11	1.00E-11	1.00E-11	-1.2345	-1.2345	3.119104E-01,							
+	SOIL_1_Imp	0.3	0.15	1.000000E-01,	-1.2345	1.00E-11	-1.2345	1.00E-11	1.00E+00	-1.2345							
+	SOIL_2_Imp	1.234567E-01,	1.234567E-01,	1.234567E-01,	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345	-1.2345							
+:EndSoilParameterList																	
+																	
+#-----------------------------------------------------------------																	
+#	Soil	Profiles															
+#-----------------------------------------------------------------																	
+:SoilProfiles																	
+	Agr	3	SOIL_0_Agr	9.772165E+00	SOIL_1_Agr	5.765675E+00	SOIL_2_Agr	0								
+	Con	3	SOIL_0_Con	4.868315E+00	SOIL_1_Con	8.351500E+02	SOIL_2_Con	0							
+	Dec	3	SOIL_0_Dec	1.651707E+02	SOIL_1_Dec	7.926897E+02	SOIL_2_Dec	0						
+	Mix	3	SOIL_0_Mix	2.588220E+00	SOIL_1_Mix	3.298127E+00	SOIL_2_Mix	0						
+	Spa	3	SOIL_0_Spa	5.084989E-01	SOIL_1_Spa	7.620904E+02	SOIL_2_Spa	0							
+	Reg	3	SOIL_0_Reg	1.749873E+00	SOIL_1_Reg	9.939206E+01	SOIL_2_Reg	0							
+	Wet	3	SOIL_0_Wet	3.911739E+00	SOIL_1_Wet	7.889098E+02	SOIL_2_Wet	0							
+	LAKE	0															
+	Imp	3	SOIL_0_Imp	soild_imp_1	SOIL_1_Imp	soild_imp_2	SOIL_2_Imp	0						
+:EndSoilProfiles																	
+																	
+#-----------------------------------------------------------------																	
+#	Land	Use	Classes														
+#-----------------------------------------------------------------																	
+:LandUseClasses,																	
+	:Attributes,	IMPERM,	FOREST_COV,														
+	:Units,	frac,	frac,														
+	Agr	0	1														
+	Con	0	1														
+	Dec	0	1														
+	Mix	0	1														
+	Spa	0	1														
+	Reg	0	1														
+	Wet	0	1														
+	LAKE	0	0														
+	Imp	1	0														
+:EndLandUseClasses																	
+																	
+#-----------------------------------------------------------------																	
+#	Land	Use	Parameters														
+#-----------------------------------------------------------------																	
+:LandUseParameterList																	
+	:Parameters,	FOREST_SPARSENESS,	MELT_FACTOR,	REFREEZE_FACTOR,	DEP_MAX,	OW_PET_CORR,	IMPERMEABLE_FRAC,	LAKE_PET_CORR									
+	:Units,	-,	-,	-,	-,	-,	-,	fract	(units	not	generated	by	.rvp	template)			
+	[DEFAULT],	0	3.92E+00	3.92E+00	20	1	0	1									
+	Agr	0	 7.466453E+00 	 7.466453E+00 	1.802425E+01	2.502233E-01	0	1									
+	Con	0	 7.487688E+00 	 7.487688E+00 	1.654917E+02	4.553626E-01	0	1									
+	Dec	0	 1.361897E+00 	 1.361897E+00 	1.339218E+02	3.700351E-01	0	1									
+	Mix	0	 7.489223E+00 	 7.489223E+00 	1.587028E+02	6.937247E-01	0	1									
+	Spa	0	 7.447232E+00 	 7.447232E+00 	9.279090E+02	5.237919E-01	0	1									
+	Reg	0	 7.468352E+00 	 7.468352E+00 	2.926709E+01	2.565029E-01	0	1									
+	Wet	0	 7.481562E+00 	 7.481562E+00 	2.193570E+02	9.104658E-01	0	1									
+	LAKE	0	 5.095586E+00 	 5.095586E+00 	0	0.755	0	1									
+	Imp	0	 7.483550E+00 	 7.483550E+00 	1	2.692112E-01	1	2.409553E-01									
+:EndLandUseParameterList																	
+																	
+#-----------------------------------------------------------------																	
+#	Vegetation	Classes															
+#-----------------------------------------------------------------																	
+:VegetationClasses,																	
+	:Attributes,	MAX_HT,	MAX_LAI,	MAX_LEAF_COND,													
+	:Units,	m,	none,	mm_per_s,													
+	[DEFAULT],	15	10	10													
+	Agr	1.772441E+00	1.173996E-01	8.771790E+00
+	Con	1.797659E+01	5.871267E-02	8.551102E+00
+	Dec	7.267589E+00	7.553710E+00	7.051789E+00
+	Mix	1.354999E+01	3.454226E+00	4.590341E+00
+	Spa	1.058525E+01	1.527950E+00	2.864321E+00
+	Reg	2.741147E+00	1.390610E-01	8.445468E+00
+	Wet	2.041484E+00	1.336542E-01	4.061633E+00									
+	LAKE	0	0	0													
+	Imp	0	0	0													
+:EndVegetationClasses																	
+																	
+#-----------------------------------------------------------------																	
+#	Vegetation	Parameters															
+#-----------------------------------------------------------------																	
+:VegetationParameterList																	
+	:Parameters,	RELATIVE_LAI,	SVF_EXTINCTION,	SAI_HT_RATIO,	MAX_CAPACITY,	RAIN_ICEPT_FACT,	MAX_SNOW_CAPACITY,	SNOW_ICEPT_FACT,									
+	:Units,	-,	-,	-,	-,	-,	-,	-,	#	(units	not	generated	by	.rvp	template)		
+	[DEFAULT],	1	1	0	1	1	2	1									
+	Agr	_AUTO	1	0	4	1	8	1									
+	Con	_AUTO	1	0	1.5	1	3	1									
+	Dec	_AUTO	1	0	1.2	1	2.4	1									
+	Mix	_AUTO	1	0	1.35	1	2.7	1									
+	Spa	_AUTO	1	0	2	1	4	1									
+	Reg	_AUTO	1	0	2	1	4	1									
+	Wet	_AUTO	1	0	0.1	1	0.2	1									
+	LAKE	_AUTO	1	0	0.1	1	0.2	1									
+	Imp	_AUTO	1	0	0.01	1	0.02	1									
+:EndVegetationParameterList																	
+																	
+:SeasonalCanopyLAI																	
+	#	J	F	M	A	M	J	J	A	S	O	N	D				
+	[DEFAULT]	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1				
+	Agr	0.50	0.50	0.50	0.50	0.69	0.88	1.00	1.00	0.75	0.50	0.50	0.50				
+	Con	0.50	0.50	0.50	0.50	0.67	1.00	1.00	1.00	0.67	0.50	0.50	0.50				
+	Dec	0.50	0.50	0.50	0.50	0.67	1.00	1.00	1.00	1.00	0.67	0.50	0.50				
+	Mix	0.52	0.52	0.52	0.74	1.00	1.00	1.00	1.00	1.00	0.52	0.52	0.52				
+	Spa	0.50	0.50	0.50	0.50	0.75	0.75	1.00	1.00	1.00	0.75	0.50	0.50				
+	Reg	0.50	0.50	0.50	0.50	0.75	0.75	1.00	1.00	1.00	0.75	0.50	0.50				
+	Wet	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00				
+	LAKE	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00				
+	Imp	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00	1.00				
+:EndSeasonalCanopyLAI																	
+																	
+# Relative LAI																	
+#	#	J	F	M	A	M	J	J	A	S	O	N	D				
+#	[DEFAULT]	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1.0,	1				
+#	Agr	2	2	2	2	2.75	3.5	4	4	3	2	2	2				
+#	Con	0.75	0.75	0.75	0.75	1	1.5	1.5	1.5	1	0.75	0.75	0.75				
+#	Dec	0.6	0.6	0.6	0.6	0.8	1.2	1.2	1.2	1.2	0.8	0.6	0.6				
+#	Mix	0.7	0.7	0.7	1	1.35	1.35	1.35	1.35	1.35	0.7	0.7	0.7				
+#	Spa	1	1	1	1	1.5	1.5	2	2	2	1.5	1	1				
+#	Reg	1	1	1	1	1.5	1.5	2	2	2	1.5	1	1				
+#	Wet	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1				
+#	LAKE	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1	0.1				
+#	Imp	0.01	0.01	0.01	0.01	0.01	0.01	0.01	0.01	0.01	0.01	0.01	0.01				
+#:EndSeasonalCanopyLAI																	
+																	
+:SnowParameterList																	
+	:Parameters,	MELT_FACTOR,	MIN_MELT_FACTOR,	HBV_MELT_FOR_CORR,	REFREEZE_FACTOR,	HBV_MELT_ASP_CORR											
+	:Units,	mm/d/K,	mm/d/K,	none,	mm/d/K,	none											
+	[DEFAULT],	3.92E+00	2.35E+00	1	3.92E+00	1.00E+00											
+	Agr	 7.466453E+00 	2.35E+00	1	 7.466453E+00 	1.00E+00											
+	Con	 7.487688E+00 	2.35E+00	1	 7.487688E+00 	1.00E+00											
+	Dec	 1.361897E+00 	2.35E+00	1	 1.361897E+00 	1.00E+00											
+	Mix	 7.489223E+00 	2.35E+00	1	 7.489223E+00 	1.00E+00											
+	Spa	 7.447232E+00 	2.35E+00	1	 7.447232E+00 	1.00E+00											
+	Reg	 7.468352E+00 	2.35E+00	1	 7.468352E+00 	1.00E+00											
+	Wet	 7.481562E+00 	2.35E+00	1	 7.481562E+00 	1.00E+00											
+	LAKE	 5.095586E+00 	2.35E+00	1	 5.095586E+00 	1.00E+00											
+	Imp	 7.483550E+00 	2.35E+00	1	 7.483550E+00 	1.00E+00											
+:EndSnowParams																	
+																	
+#---Average Annual Runoff---																	
+:AvgAnnualRunoff 	220.6															
+																	
+# ----Channel Profile ----																	
+:ChannelProfile	Chn_1																
+	:Bedslope	0.0016171															
+	:SurveyPoints																
+	0	362.857															
+	13.028	362.857															
+	13.029	363.509															
+	113.029	364.509															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00														
+	13.029	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_2																
+	:Bedslope	0.0021782															
+	:SurveyPoints																
+	0	369.819															
+	21.55	369.819															
+	21.551	370.897															
+	121.551	371.897															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	21.551	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_3																
+	:Bedslope	0.0021988															
+	:SurveyPoints																
+	0	337.5															
+	53.149	337.5															
+	53.15	340.157															
+	153.15	341.157															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	53.15	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_4																
+	:Bedslope	0.0014941															
+	:SurveyPoints																
+	0	368.188															
+	16.504	368.188															
+	16.505	369.013															
+	116.505	370.013															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	16.505	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_5																
+	:Bedslope	0.0012064															
+	:SurveyPoints																
+	0	325.8															
+	70.175	325.8															
+	70.176	329.309															
+	170.176	330.309															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	70.176	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_6																
+	:Bedslope	0.0011068															
+	:SurveyPoints																
+	0	333.556															
+	18.413	333.556															
+	18.414	334.476															
+	118.414	335.476															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.649943E+00															
+	18.414	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_7																
+	:Bedslope	0.001															
+	:SurveyPoints																
+	0	339															
+	48.195	339															
+	48.196	341.41															
+	148.196	342.41															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	48.196	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_8																
+	:Bedslope	0.001															
+	:SurveyPoints																
+	0	370															
+	56.537	370															
+	56.538	372.827															
+	156.538	373.827															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	56.538	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_9																
+	:Bedslope	0.0019129															
+	:SurveyPoints																
+	0	344.923															
+	15.659	344.923															
+	15.66	345.706															
+	115.66	346.706															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	15.66	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_10																
+	:Bedslope	0.0013192															
+	:SurveyPoints																
+	0	418															
+	49.625	418															
+	49.626	420.481															
+	149.626	421.481															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	49.626	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_11																
+	:Bedslope	0.0024615															
+	:SurveyPoints																
+	0	356															
+	59.206	356															
+	59.207	358.96															
+	159.207	359.96															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	59.207	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_12																
+	:Bedslope	0.0013194															
+	:SurveyPoints																
+	0	347															
+	50.131	347															
+	50.132	349.507															
+	150.132	350.507															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	50.132	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_13																
+	:Bedslope	0.0023178															
+	:SurveyPoints																
+	0	431															
+	46.476	431															
+	46.477	433.324															
+	146.477	434.324															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	46.477	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_14																
+	:Bedslope	0.0055425															
+	:SurveyPoints																
+	0	407.333															
+	116.929	407.333															
+	116.93	413.18															
+	216.93	414.18															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	116.93	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_15																
+	:Bedslope	0.0014653															
+	:SurveyPoints																
+	0	314.983															
+	180.035	314.983															
+	180.036	323.985															
+	280.036	324.985															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	180.036	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_16																
+	:Bedslope	0.0013826															
+	:SurveyPoints																
+	0	373.179															
+	83.514	373.179															
+	83.515	377.354															
+	183.515	378.354															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	83.515	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_17																
+	:Bedslope	0.0011204															
+	:SurveyPoints																
+	0	435.923															
+	94.258	435.923															
+	94.259	440.636															
+	194.259	441.636															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	94.259	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_18																
+	:Bedslope	0.0021047															
+	:SurveyPoints																
+	0	423															
+	41.686	423															
+	41.687	425.084															
+	141.687	426.084															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	41.687	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_19																
+	:Bedslope	0.0010756															
+	:SurveyPoints																
+	0	442.875															
+	23.672	442.875															
+	23.673	444.059															
+	123.673	445.059															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	23.673	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_20																
+	:Bedslope	0.001															
+	:SurveyPoints																
+	0	414															
+	44.826	414															
+	44.827	416.241															
+	144.827	417.241															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00														
+	44.827	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_21																
+	:Bedslope	0.0030113															
+	:SurveyPoints																
+	0	312.7															
+	114.663	312.7															
+	114.664	318.433															
+	214.664	319.433															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	114.664	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_22																
+	:Bedslope	0.001															
+	:SurveyPoints																
+	0	454.286															
+	64.463	454.286															
+	64.464	457.509															
+	164.464	458.509															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.249161E-02														
+	64.464	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_23																
+	:Bedslope	0.0019254															
+	:SurveyPoints																
+	0	386.826															
+	17.162	386.826															
+	17.163	387.684															
+	117.163	388.684															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	17.163	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_24																
+	:Bedslope	0.001															
+	:SurveyPoints																
+	0	407															
+	55.33	407															
+	55.331	409.766															
+	155.331	410.766															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00															
+	55.331	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_25																
+	:Bedslope	0.0013772															
+	:SurveyPoints																
+	0	309.372															
+	324.366	309.372															
+	324.367	325.591															
+	424.367	326.591															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.401485E-03														
+	324.367	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_26																
+	:Bedslope	0.0013053															
+	:SurveyPoints																
+	0	311.75															
+	152.806	311.75															
+	152.807	319.39															
+	252.807	320.39															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00														
+	152.807	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_27																
+	:Bedslope	0.0017977															
+	:SurveyPoints																
+	0	378.875															
+	120.703	378.875															
+	120.704	384.91															
+	220.704	385.91															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00														
+	120.704	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_28																
+	:Bedslope	0.0010549															
+	:SurveyPoints																
+	0	397.418															
+	86.739	397.418															
+	86.74	401.755															
+	186.74	402.755															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	3.104741E+00														
+	86.74	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_29																
+	:Bedslope	0.0022713															
+	:SurveyPoints																
+	0	322.842															
+	261.336	322.842															
+	261.337	335.909															
+	361.337	336.909															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.401485E-03														
+	261.337	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_30																
+	:Bedslope	0.0012637															
+	:SurveyPoints																
+	0	393.2															
+	12.207	393.2															
+	12.208	393.81															
+	112.208	394.81															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.649943E+00														
+	12.208	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_31																
+	:Bedslope	0.0011522															
+	:SurveyPoints																
+	0	356															
+	111.618	356															
+	111.619	361.581															
+	211.619	362.581															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.401485E-03															
+	111.619	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_32																
+	:Bedslope	0.0012746															
+	:SurveyPoints																
+	0	374.875															
+	136.206	374.875															
+	136.207	381.685															
+	236.207	382.685															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00														
+	136.207	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_33																
+	:Bedslope	0.0014976															
+	:SurveyPoints																
+	0	383.5															
+	65.386	383.5															
+	65.387	386.769															
+	165.387	387.769															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00														
+	65.387	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_34																
+	:Bedslope	0.0013839															
+	:SurveyPoints																
+	0	351.417															
+	157.511	351.417															
+	157.512	359.292															
+	257.512	360.292															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00														
+	157.512	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_35																
+	:Bedslope	0.0018478															
+	:SurveyPoints																
+	0	433.889															
+	61.069	433.889															
+	61.07	436.942															
+	161.07	437.942															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.649943E+00															
+	61.07	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_36																
+	:Bedslope	0.0010959															
+	:SurveyPoints																
+	0	397.429															
+	84.876	397.429															
+	84.877	401.672															
+	184.877	402.672															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00														
+	84.877	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_37																
+	:Bedslope	0.0026956															
+	:SurveyPoints																
+	0	482.4															
+	21.442	482.4															
+	21.443	483.472															
+	121.443	484.472															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00															
+	21.443	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_38																
+	:Bedslope	0.0010463															
+	:SurveyPoints																
+	0	387.95															
+	86.64	387.95															
+	86.641	392.282															
+	186.641	393.282															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	2.401381E+00															
+	86.641	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_39																
+	:Bedslope	0.0010854															
+	:SurveyPoints																
+	0	385.545															
+	68.872	385.545															
+	68.873	388.989															
+	168.873	389.989															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.401485E-03															
+	68.873	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_40																
+	:Bedslope	0.0013348															
+	:SurveyPoints																
+	0	412															
+	55.576	412															
+	55.577	414.779															
+	155.577	415.779															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00															
+	55.577	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_41																
+	:Bedslope	0.0015888															
+	:SurveyPoints																
+	0	436.875															
+	71.852	436.875															
+	71.853	440.468															
+	171.853	441.468															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	1.059499E+00															
+	71.853	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_42																
+	:Bedslope	0.0012804															
+	:SurveyPoints																
+	0	307.606															
+	294.895	307.606															
+	294.896	322.351															
+	394.896	323.351															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.145263E+00															
+	294.896	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_43																
+	:Bedslope	0.0019919															
+	:SurveyPoints																
+	0	321.52															
+	210.275	321.52															
+	210.276	332.034															
+	310.276	333.034															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.145263E+00															
+	210.276	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_44																
+	:Bedslope	0.001															
+	:SurveyPoints																
+	0	337															
+	192.594	337															
+	192.595	346.63															
+	292.595	347.63															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.145263E+00														
+	192.595	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+																	
+:ChannelProfile	Chn_45																
+	:Bedslope	0.0010174															
+	:SurveyPoints																
+	0	357.5															
+	175.552	357.5															
+	175.553	366.278															
+	275.553	367.278															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.145263E+00													
+	175.553	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile																	
+
+:ChannelProfile	Chn_LAKE																
+	:Bedslope	0.0010174															
+	:SurveyPoints																
+	0	357.5															
+	175.552	357.5															
+	175.553	366.278															
+	275.553	367.278															
+	:EndSurveyPoints																
+	:RoughnessZones																
+	0	4.145263E+00															
+	175.553	0.4															
+	:EndRoughnessZones																
+:EndChannelProfile		

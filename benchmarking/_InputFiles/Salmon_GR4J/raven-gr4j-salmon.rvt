@@ -1,0 +1,18 @@
+#########################################################################                                  
+:FileType          rvt ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of GR4J simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------
+
+# meteorological forcings
+:Gauge 08KC001
+  :Latitude    54.4848
+  :Longitude -123.3659
+  :Elevation  843.0
+  :RedirectToFile data_obs/Salmon-River-Near-Prince-George_meteo_daily.rvt
+:EndGauge
+
+# observed streamflow
+:RedirectToFile data_obs/Salmon-River-Near-Prince-George_Qobs_daily.rvt

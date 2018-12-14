@@ -1,0 +1,15 @@
+:Reservoir Pelican
+
+      :SubBasinID 68
+
+      :HRUID 680
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 2.527953E+02
+
+      :MaxDepth 5
+	  
+      :LakeArea 46100000
+
+:EndReservoir

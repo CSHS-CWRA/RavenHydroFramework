@@ -1,0 +1,23 @@
+#########################################################################                                  
+:FileType          rvc ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Nov 2018
+#
+# Emulation of HBV simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------                              
+#
+
+:BasinInitialConditions
+ :Attributes, ID,              Q
+ :Units,      none,         m3/s
+ #                  HBV_PARA_???
+              1,             1.0
+:EndBasinInitialConditions
+
+#---------------------------------------------------------
+# Initial Lower groundwater storage - for each HRU
+
+:InitialConditions SOIL[2]
+     # derived from thickness: HBV_PARA_17 [m] * 1000.0 / 2.0
+     0.50657
+:EndInitialConditions

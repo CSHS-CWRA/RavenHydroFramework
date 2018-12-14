@@ -1,0 +1,311 @@
+# observation data
+:RedirectToFile data_obs/ObservedFlow_of_BasswoodLake.rvt
+:RedirectToFile data_obs/ObservedFlow_of_LacLaCroix.rvt
+:RedirectToFile data_obs/ObservedFlow_of_VermilionRiver.rvt
+:RedirectToFile data_obs/ObservedFlow_of_AtikokanR.rvt
+:RedirectToFile data_obs/ObservedFlow_of_SturgeonF.rvt
+:RedirectToFile data_obs/ObservedFlow_of_TurtleR.rvt
+:RedirectToFile data_obs/ObservedFlow_of_RainyTotal.rvt
+:RedirectToFile data_obs/ObservedFlow_of_BigForkR.rvt
+:RedirectToFile data_obs/ObservedFlow_of_LittleForkR.rvt
+:RedirectToFile data_obs/ObservedFlow_of_RainyMantinou.rvt
+:RedirectToFile data_obs/ObservedFlow_of_LakeofTheWoods.rvt
+:RedirectToFile data_obs/ObservedFlow_of_KawishiwiRiver.rvt
+
+# observation weights
+:RedirectToFile data_obs/ObservedFlow_of_BasswoodLake_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_LacLaCroix_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_VermilionRiver_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_AtikokanR_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_SturgeonF_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_TurtleR_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_RainyTotal_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_BigForkR_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_LittleForkR_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_RainyMantinou_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_LakeofTheWoods_Weights.rvt
+:RedirectToFile data_obs/ObservedFlow_of_KawishiwiRiver_Weights.rvt
+
+# forced inflows
+:RedirectToFile data_obs/Forced_Inflow_From_Rainy.rvt
+:RedirectToFile data_obs/Forced_Inflow_From_Nam.rvt
+
+# Reservoir Extraction
+:RedirectToFile data_obs/ResExtraction_of_RainyTotal.rvt
+:RedirectToFile data_obs/ResExtraction_of_LakeofTheWoods.rvt
+:RedirectToFile data_obs/ResExtraction_of_Nam.rvt
+
+# forced inflows (new)
+#:RedirectToFile data_obs/RainyOverrideFlow.rvt
+
+# Gauge
+:Gauge Gauge_Basin_1
+   :Latitude  49.723
+   :Longitude   -94.107
+   :RedirectToFile data_obs/Gauge_Basin_1.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_2
+   :Latitude  49.621
+   :Longitude   -93.825
+   :RedirectToFile data_obs/Gauge_Basin_2.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_3
+   :Latitude  49.488
+   :Longitude   -93.921
+   :RedirectToFile data_obs/Gauge_Basin_3.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_4
+   :Latitude  49.482
+   :Longitude   -93.475
+   :RedirectToFile data_obs/Gauge_Basin_4.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_5
+   :Latitude  49.361
+   :Longitude   -93.748
+   :RedirectToFile data_obs/Gauge_Basin_5.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_6
+   :Latitude  49.222
+   :Longitude   -93.832
+   :RedirectToFile data_obs/Gauge_Basin_6.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_7
+   :Latitude  49.302
+   :Longitude   -93.385
+   :RedirectToFile data_obs/Gauge_Basin_7.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_8
+   :Latitude  49.276
+   :Longitude   -92.945
+   :RedirectToFile data_obs/Gauge_Basin_8.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_9
+   :Latitude  49.046
+   :Longitude   -93.843
+   :RedirectToFile data_obs/Gauge_Basin_9.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_10
+   :Latitude  49.115
+   :Longitude   -91.834
+   :RedirectToFile data_obs/Gauge_Basin_10.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_11
+   :Latitude  49.118
+   :Longitude   -92.769
+   :RedirectToFile data_obs/Gauge_Basin_11.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_12
+   :Latitude  49.016
+   :Longitude   -93.598
+   :RedirectToFile data_obs/Gauge_Basin_12.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_13
+   :Latitude  49.064
+   :Longitude   -91.611
+   :RedirectToFile data_obs/Gauge_Basin_13.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_14
+   :Latitude  48.949
+   :Longitude   -91.559
+   :RedirectToFile data_obs/Gauge_Basin_14.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_15
+   :Latitude  49.222
+   :Longitude   -94.802
+   :RedirectToFile data_obs/Gauge_Basin_15.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_16
+   :Latitude  49.081
+   :Longitude   -92.272
+   :RedirectToFile data_obs/Gauge_Basin_16.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_17
+   :Latitude  49.009
+   :Longitude   -90.973
+   :RedirectToFile data_obs/Gauge_Basin_17.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_18
+   :Latitude  48.772
+   :Longitude   -91.291
+   :RedirectToFile data_obs/Gauge_Basin_18.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_19
+   :Latitude  48.789
+   :Longitude   -90.918
+   :RedirectToFile data_obs/Gauge_Basin_19.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_20
+   :Latitude  48.745
+   :Longitude   -91.488
+   :RedirectToFile data_obs/Gauge_Basin_20.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_21
+   :Latitude  48.797
+   :Longitude   -91.855
+   :RedirectToFile data_obs/Gauge_Basin_21.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_22
+   :Latitude  48.914
+   :Longitude   -90.341
+   :RedirectToFile data_obs/Gauge_Basin_22.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_23
+   :Latitude  48.601
+   :Longitude   -91.825
+   :RedirectToFile data_obs/Gauge_Basin_23.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_24
+   :Latitude  48.673
+   :Longitude   -91.185
+   :RedirectToFile data_obs/Gauge_Basin_24.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_25
+   :Latitude  48.577
+   :Longitude   -94.554
+   :RedirectToFile data_obs/Gauge_Basin_25.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_26
+   :Latitude  48.693
+   :Longitude   -92.984
+   :RedirectToFile data_obs/Gauge_Basin_26.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_27
+   :Latitude  48.458
+   :Longitude   -91.518
+   :RedirectToFile data_obs/Gauge_Basin_27.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_28
+   :Latitude  48.430
+   :Longitude   -90.998
+   :RedirectToFile data_obs/Gauge_Basin_28.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_29
+   :Latitude  48.374
+   :Longitude   -93.902
+   :RedirectToFile data_obs/Gauge_Basin_29.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_30
+   :Latitude  48.070
+   :Longitude   -92.897
+   :RedirectToFile data_obs/Gauge_Basin_30.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_31
+   :Latitude  48.195
+   :Longitude   -93.335
+   :RedirectToFile data_obs/Gauge_Basin_31.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_32
+   :Latitude  48.233
+   :Longitude   -91.880
+   :RedirectToFile data_obs/Gauge_Basin_32.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_33
+   :Latitude  48.096
+   :Longitude   -92.610
+   :RedirectToFile data_obs/Gauge_Basin_33.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_34
+   :Latitude  48.324
+   :Longitude   -92.495
+   :RedirectToFile data_obs/Gauge_Basin_34.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_35
+   :Latitude  48.245
+   :Longitude   -90.604
+   :RedirectToFile data_obs/Gauge_Basin_35.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_36
+   :Latitude  48.041
+   :Longitude   -91.415
+   :RedirectToFile data_obs/Gauge_Basin_36.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_37
+   :Latitude  47.911
+   :Longitude   -91.205
+   :RedirectToFile data_obs/Gauge_Basin_37.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_38
+   :Latitude  47.795
+   :Longitude   -93.803
+   :RedirectToFile data_obs/Gauge_Basin_38.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_39
+   :Latitude  47.778
+   :Longitude   -92.930
+   :RedirectToFile data_obs/Gauge_Basin_39.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_40
+   :Latitude  47.793
+   :Longitude   -92.371
+   :RedirectToFile data_obs/Gauge_Basin_40.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_41
+   :Latitude  47.721
+   :Longitude   -91.561
+   :RedirectToFile data_obs/Gauge_Basin_41.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_42
+   :Latitude  49.241
+   :Longitude   -94.655
+   :RedirectToFile data_obs/Gauge_Basin_42.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_43
+   :Latitude  48.697
+   :Longitude   -93.101
+   :RedirectToFile data_obs/Gauge_Basin_43.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_44
+   :Latitude  48.462
+   :Longitude   -92.812
+   :RedirectToFile data_obs/Gauge_Basin_44.rvt
+:EndGauge
+
+:Gauge Gauge_Basin_45
+   :Latitude  48.340
+   :Longitude   -92.295
+   :RedirectToFile data_obs/Gauge_Basin_45.rvt
+:EndGauge
+

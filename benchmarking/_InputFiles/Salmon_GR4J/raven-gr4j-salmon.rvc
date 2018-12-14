@@ -1,0 +1,16 @@
+#########################################################################                                  
+:FileType          rvc ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of GR4J simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------                                 
+#
+# SOIL[0] = GR4J_X1 * 1000. / 2.0 (initialize to 1/2 full)
+# SOIL[1] = 0.3m * 1000. / 2.0   (initialize to 1/2 full)
+
+:HRUStateVariableTable
+   :Attributes SOIL[0] SOIL[1]
+   :Units      mm      mm
+   1           264.5   15.0
+:EndHRUStateVariableTable

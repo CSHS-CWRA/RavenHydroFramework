@@ -1,0 +1,15 @@
+:Reservoir Marmion
+
+      :SubBasinID 60
+
+      :HRUID 600
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 9.717327E+00
+
+      :MaxDepth 5
+	  
+      :LakeArea 62100000
+
+:EndReservoir

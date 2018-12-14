@@ -1,0 +1,69 @@
+#########################################################################                                  
+:FileType          rvp ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Sep 2018
+#
+# Emulation of HMETS simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------                                 
+#
+:SoilClasses
+  :Attributes,
+  :Units,
+  TOPSOIL,
+  PHREATIC,    
+:EndSoilClasses
+
+:LandUseClasses, 
+  :Attributes,        IMPERM,    FOREST_COV, 
+       :Units,          frac,          frac, 
+       FOREST,           0.0,           1.0,    
+:EndLandUseClasses
+
+:VegetationClasses, 
+  :Attributes,        MAX_HT,       MAX_LAI, MAX_LEAF_COND, 
+       :Units,             m,          none,      mm_per_s, 
+       FOREST,             4,             5,             5,     
+:EndVegetationClasses
+
+:SoilProfiles
+         LAKE, 0
+         ROCK, 0
+  DEFAULT_P, 2, TOPSOIL,     0.3107, PHREATIC,     0.9162, 
+# DEFAULT_P, 2, TOPSOIL, x(20)/1000, PHREATIC, x(21)/1000, 
+:EndSoilProfiles
+
+#-----------------------------------------------------------------
+# Parameters
+#-----------------------------------------------------------------
+:GlobalParameter         SNOW_SWI_MIN 0.0464 # x(9)    
+:GlobalParameter         SNOW_SWI_MAX 0.2462 # x(9)+x(10) 
+:GlobalParameter     SWI_REDUCT_COEFF 0.0222 # x(11)
+:GlobalParameter             SNOW_SWI 0.05   #not sure why/if needed... 
+
+:SoilParameterList
+  :Parameters,        POROSITY,      PERC_COEFF,  PET_CORRECTION, BASEFLOW_COEFF
+       :Units,               -,             1/d,               -,            1/d
+      TOPSOIL,             1.0,          0.0114,             1.0,         0.0243 
+     PHREATIC,             1.0,             0.0,             0.0,         0.0069    
+ #    TOPSOIL,             1.0,           x(17),           x(15),          x(18)
+ #   PHREATIC,             1.0,             0.0,             0.0,          x(19)
+:EndSoilParameterList
+
+:LandUseParameterList
+  :Parameters, MIN_MELT_FACTOR, MAX_MELT_FACTOR,    DD_MELT_TEMP,  DD_AGGRADATION, REFREEZE_FACTOR,    REFREEZE_EXP, DD_REFREEZE_TEMP, HMETS_RUNOFF_COEFF,
+       :Units,          mm/d/C,          mm/d/C,               C,            1/mm,          mm/d/C,               -,                C,                  -,
+    [DEFAULT],          1.2875,          6.7009,          2.3641,          0.0973,          2.6851,          0.3740,          -1.0919,             0.4739,
+#                         x(5),       x(5)+x(6),            x(7),            x(8),           x(13),           x(14),            x(12),              x(16),        
+:EndLandUseParameterList
+:LandUseParameterList
+  :Parameters,   GAMMA_SHAPE,     GAMMA_SCALE,    GAMMA_SHAPE2,    GAMMA_SCALE2, 
+       :Units,             -,             1/d,               -,             1/d, 
+    [DEFAULT],        9.5019,          0.2774,          6.3942,          0.6884, 
+    #                   x(1),            x(2),            x(3),            x(4), 
+:EndLandUseParameterList
+
+:VegetationParameterList
+  :Parameters,  RAIN_ICEPT_PCT,  SNOW_ICEPT_PCT, 
+       :Units,               -,               -,
+    [DEFAULT],             0.0,             0.0,
+:EndVegetationParameterList

@@ -1,0 +1,73 @@
+#########################################################################                                  
+:FileType          rvp ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Nov 2018
+#
+# Emulation of HBV simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------
+
+:SoilClasses
+ :Attributes, 
+ :Units,      
+   TOPSOIL,      1.0,    0.0,       0
+   SLOW_RES,     1.0,    0.0,       0
+   FAST_RES,     1.0,    0.0,       0  
+:EndSoilClasses
+
+:SoilProfiles
+# name, layers, {soilClass, thickness} x layers
+#                        HBV_PARA_17,           CONSTANT,           CONSTANT,
+   DEFAULT_P, 3, TOPSOIL,   2.036937, FAST_RES,    100.0, SLOW_RES,    100.0
+:EndSoilProfiles
+
+:VegetationClasses
+ :Attributes,   MAX_HT,  MAX_LAI, MAX_LEAF_COND
+ :Units,             m,     none,      mm_per_s
+   VEG_ALL,         25,      6.0,           5.3
+:EndVegetationClasses
+
+:VegetationParameterList
+  :Parameters,  MAX_CAPACITY, MAX_SNOW_CAPACITY,  TFRAIN,  TFSNOW,
+  :Units,                 mm,                mm,    frac,    frac,
+  VEG_ALL,             10000,             10000,    0.88,    0.88,
+:EndVegetationParameterList
+
+:LandUseClasses
+ :Attributes,     IMPERM, FOREST_COV
+ :Units,            frac,       frac
+      LU_ALL,        0.0,          1
+:EndLandUseClasses
+
+#------------------------------------------------------------------------
+# Parameters
+#      
+:GlobalParameter ADIABATIC_LAPSE     0.5718813 #HBV_PARA_13=TCALT
+:GlobalParameter RAINSNOW_TEMP       0.05984519 # HBV_PARA_01
+:GlobalParameter RAINSNOW_DELTA             2.0 # constant
+:GlobalParameter SNOW_SWI            0.03473693 # HBV_PARA_04
+:GlobalParameter PRECIP_LAPSE          4.873686 # HBV_PARA_12=PCALT
+
+:LandUseParameterList
+  :Parameters,   MELT_FACTOR, MIN_MELT_FACTOR,   HBV_MELT_FOR_CORR, REFREEZE_FACTOR, HBV_MELT_ASP_CORR
+  :Units     ,        mm/d/K,          mm/d/K,                none,          mm/d/K,              none
+  #              HBV_PARA_02,        CONSTANT,         HBV_PARA_18,     HBV_PARA_03,          CONSTANT
+    [DEFAULT],      4.072232,             2.2,           0.4452843,        2.001574,              0.48
+:EndLandUseParameterList
+
+:LandUseParameterList
+ :Parameters, HBV_MELT_GLACIER_CORR,   HBV_GLACIER_KMIN, GLAC_STORAGE_COEFF, HBV_GLACIER_AG
+ :Units     ,                  none,                1/d,                1/d,           1/mm  
+   #                       CONSTANT,           CONSTANT,        HBV_PARA_19,       CONSTANT,
+   [DEFAULT],                  1.64,               0.05,          0.6771759,           0.05
+:EndLandUseParameterList
+
+:SoilParameterList
+  :Parameters,                POROSITY,FIELD_CAPACITY,    SAT_WILT,    HBV_BETA, MAX_CAP_RISE_RATE,MAX_PERC_RATE,BASEFLOW_COEFF,            BASEFLOW_N
+  :Units     ,                    none,          none,        none,        none,              mm/d,         mm/d,           1/d,                  none
+  #                        HBV_PARA_05,   HBV_PARA_06, HBV_PARA_14, HBV_PARA_07,       HBV_PARA_16,     CONSTANT,      CONSTANT,              CONSTANT,
+    [DEFAULT],              0.09985144,     0.5060520,  0.04505643,    3.438486,          18.94145,          0.0,           0.0,                   0.0
+  #                                                       CONSTANT,                                  HBV_PARA_08,   HBV_PARA_09, 1+HBV_PARA_15=1+ALPHA,                 
+     FAST_RES,                _DEFAULT,      _DEFAULT,         0.0,    _DEFAULT,          _DEFAULT,     38.32455,     0.4606565,              1.877607
+  #                                                       CONSTANT,                                                 HBV_PARA_10,              CONSTANT,
+     SLOW_RES,                _DEFAULT,      _DEFAULT,         0.0,    _DEFAULT,          _DEFAULT,     _DEFAULT,    0.06303738,                   1.0
+:EndSoilParameterList

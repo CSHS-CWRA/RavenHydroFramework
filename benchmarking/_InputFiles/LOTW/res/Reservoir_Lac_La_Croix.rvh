@@ -1,0 +1,15 @@
+:Reservoir Lac_La_Croix
+
+      :SubBasinID 45
+
+      :HRUID 450
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 5.616296E+01
+
+      :MaxDepth 5
+	  
+      :LakeArea 235000000
+
+:EndReservoir

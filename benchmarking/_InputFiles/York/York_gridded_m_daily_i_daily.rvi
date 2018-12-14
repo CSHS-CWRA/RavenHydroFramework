@@ -64,4 +64,5 @@
 # calibration settings
 :SilentMode
 #:EvaluationMetrics RMSE
+:BenchmarkingMode
 

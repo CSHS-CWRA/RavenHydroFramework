@@ -1,0 +1,15 @@
+:Reservoir LittleTurtle
+
+      :SubBasinID 59
+
+      :HRUID 590
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 3.141823E+00
+
+      :MaxDepth 5
+	  
+      :LakeArea 23400000
+
+:EndReservoir

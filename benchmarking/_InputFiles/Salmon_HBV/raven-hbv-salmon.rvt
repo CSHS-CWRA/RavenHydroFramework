@@ -1,0 +1,34 @@
+#########################################################################                                  
+:FileType          rvt ASCII Raven 2.8.2                                                                              
+:WrittenBy         Juliane Mai & James Craig                                                                             
+:CreationDate      Nov 2018
+#
+# Emulation of HBV simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------
+
+# meteorological forcings
+:Gauge
+  :Latitude               54.4848
+  :Longitude             -123.3659
+  :Elevation              843.0     
+
+  :RainCorrection         1.141608   # HBV_PAR_20 == RFCF
+  :SnowCorrection         1.024278   # HBV_PAR_21 == SFCF
+
+  # Julie has a script "monthly_average_values.sh" that can be shared
+  # call:
+  #     ./monthly_average_values.sh data_obs/Salmon-River-Near-Prince-George_meteo_daily.nc
+  # result:
+  #     You can copy the following two lines to your *.rvt file for the HBV-EC setup:
+  #     :MonthlyAveEvaporation, 0.028, 0.089, 0.315, 1.003, 2.077, 2.959, 3.190, 2.548, 1.382, 0.520, 0.101, 0.023,
+  #     :MonthlyAveTemperature, -11.4, -7.2, -2.8, 2.8, 8.1, 12.2, 14.4, 13.5, 8.9, 3.4, -4.0, -9.3,
+  #
+  #                       Jan    Feb    Mar    Apr    May    Jun    Jul    Aug    Sep    Oct    Nov    Dec
+  :MonthlyAveEvaporation, 0.028, 0.089, 0.315, 1.003, 2.077, 2.959, 3.190, 2.548, 1.382, 0.520, 0.101, 0.023,
+  :MonthlyAveTemperature, -11.4, -7.2,  -2.8,  2.8,   8.1,   12.2,  14.4,  13.5,  8.9,   3.4,   -4.0,  -9.3,
+  
+  :RedirectToFile data_obs/Salmon-River-Near-Prince-George_meteo_daily.rvt
+:EndGauge
+
+# observed streamflow
+:RedirectToFile data_obs/Salmon-River-Near-Prince-George_Qobs_daily.rvt

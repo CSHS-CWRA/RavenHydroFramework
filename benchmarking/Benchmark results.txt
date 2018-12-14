@@ -1,0 +1,54 @@
+
+
+v8->v56 changes [PASSED BENCHMARKING]
+-All UBCWM Models/Alouette2/Nith generate identical hydrographs
+-Shift in irondequoit peaks in 5 decimal point due to changes in convolution algorithm
+-New reservoir columns added to watershed.csv output; numbers identical
+-Nash calculation change in 4th decimal place in Alouette2/Irondequoit simulations
+-Fixed bug in Longwave calcualtions of Nith model
+
+v56->v69 [PASSED BENCHMARKING]
+RAVEN v2.7
+-NO issues - only timestamp differences in output
+
+v69->v70 [PASSED BENCHMARKING]
+-NSE diagnostic off in 5th digit of Alouette2 and Nith Model
+  -should check into before re-release
+  
+v85->v99 [PASSED BENCHMARKING] (Nov 20, 2017)
+-bug fix of :LakeEvaporation (which was effectively shut off) changed Alouette2 results significantly
+-no other changes
+
+v99->v100 (Dec 29, 2017)
+-something has minutely changed glacier and snowmelt modelling in UBCWM models, predominantly in 2nd digit and beyond in hydrograph. I cannot find the change!
+-there is nothing that should impact these model - changes were primarily to netCDF support and the addition of HRU disabling
+
+ADDED BENCHMARKING MODE TO AvOID SPURIOUS DATE_BASED COMPARISON ISSUES
+
+v100->v108 [PASSED BENCHMARKING](Feb 6, 2018)
+
+v108->v114 [PASSED BENCHMARKING] (Apr 3, 2018)
+-minor changes to snowpack in Alouette2 & Nith despite identical forcings 
+- due to change in parsing of SNOBAL_SIMPLE_MELT, SNOW_LIQ was previously incorrect
+-all UBCWM models identical, passing benchmark
+
+LOTW MODEL ADDED TO BENCHMARK (Apr 3, 2018)
+
+v114->v118 [PASSED BENCHMARKING] (Apr 27 2018) [VERSION 2.8]
+-minor changes due to upgrade of shortwave radiation default calculation
+-all UBCWM models identical
+-ForcingFunctions.csv now has SW radiation column and energy in MJ/m2/d
+
+v123->v129 [PASSED BENCHMARKING] (Jul 6, 2018) [VERSION 2.8.1]
+
+October 4, 2018
+MODIFIED BENCHMARK FILES ; REMOVED UNSUPPORTED :EndPause No / :DebugMode No
+NITH BENCHMARK HAS REVISED RVT FILES - INFORMATION CONTENT IDENTICAL
+
+v129->v139 [PASSED BENCHMARKING] (Oct 4, 2018) 
+v139->v142 [PASSED BENCHMARKING] (Oct 4, 2018) 
+-minor 5th digit changes to UBCWM model hydrographs 
+
+v142->v145 [PASSED BENCHMARKING] (Oct 4, 2018)
+v146->v145 [PASSED BENCHMARKING] (Oct 21, 2018)
+-increase of MAX_CONVOL_STORES from 20 to 50 led to differences in Irond solution file

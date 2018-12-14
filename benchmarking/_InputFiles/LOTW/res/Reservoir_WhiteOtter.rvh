@@ -1,0 +1,15 @@
+:Reservoir WhiteOtter
+
+      :SubBasinID 56
+
+      :HRUID 560
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 1.704769E+01
+
+      :MaxDepth 5
+	  
+      :LakeArea 84200000
+
+:EndReservoir

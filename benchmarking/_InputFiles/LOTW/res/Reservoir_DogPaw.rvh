@@ -1,0 +1,15 @@
+:Reservoir DogPaw
+
+      :SubBasinID 50
+
+      :HRUID 500
+
+      :WeirCoefficient 1.7
+
+      :CrestWidth 7.410710E+01
+
+      :MaxDepth 5
+	  
+      :LakeArea 24500000
+
+:EndReservoir

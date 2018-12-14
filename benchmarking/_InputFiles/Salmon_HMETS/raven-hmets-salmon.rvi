@@ -1,0 +1,49 @@
+#########################################################################                                  
+:FileType          rvi ASCII Raven 2.8.2                                                                              
+:WrittenBy         James Craig & Juliane Mai                                                                       
+:CreationDate      Oct 2018
+#
+# Emulation of HMETS simulation of Salmon River near Prince George                                                             
+#------------------------------------------------------------------------
+#
+:SilentMode
+:BenchmarkingMode
+
+:StartDate             1954-01-01 00:00:00                                                                   
+:Duration              20819                                                                                   
+:TimeStep              1.0                                                                                   
+:Method                ORDERED_SERIES 
+
+:PotentialMeltMethod     POTMELT_HMETS
+:RainSnowFraction        RAINSNOW_DATA
+:Evaporation             PET_DATA
+#:Evaporation            PET_OUDIN
+:CatchmentRoute          ROUTE_DUMP
+:Routing                 ROUTE_NONE 
+
+:SoilModel               SOIL_TWO_LAYER
+
+:Alias DELAYED_RUNOFF CONVOLUTION[1] 
+
+:HydrologicProcesses
+  :SnowBalance     SNOBAL_HMETS    MULTIPLE     MULTIPLE
+  :Precipitation   RAVEN_DEFAULT   ATMOS_PRECIP MULTIPLE 
+  :Infiltration    INF_HMETS       PONDED_WATER MULTIPLE 
+    :Overflow      OVERFLOW_RAVEN  SOIL[0]      DELAYED_RUNOFF
+  :Baseflow        BASE_LINEAR     SOIL[0]      SURFACE_WATER   # interflow, really
+  :Percolation     PERC_LINEAR     SOIL[0]      SOIL[1]         # recharge
+    :Overflow      OVERFLOW_RAVEN  SOIL[1]      DELAYED_RUNOFF
+  :SoilEvaporation SOILEVAP_ALL    SOIL[0]      ATMOSPHERE      # AET
+  :Convolve        CONVOL_GAMMA    CONVOLUTION[0] SURFACE_WATER #'surface runoff'
+  :Convolve        CONVOL_GAMMA_2  DELAYED_RUNOFF SURFACE_WATER #'delayed runoff'
+  :Baseflow        BASE_LINEAR     SOIL[1]      SURFACE_WATER
+:EndHydrologicProcesses
+
+#:CreateRVPTemplate
+
+#---------------------------------------------------------
+# Output Options
+#
+# :WriteForcingFunctions
+:EvaluationMetrics NASH_SUTCLIFFE RMSE
+:CustomOutput DAILY AVERAGE SNOW BY_HRU

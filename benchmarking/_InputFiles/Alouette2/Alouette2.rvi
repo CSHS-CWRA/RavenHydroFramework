@@ -97,8 +97,7 @@
 
 #---------------------------------------------------------
 # Output Options
-#:EndPause
 :EvaluationMetrics NASH_SUTCLIFFE
-
-
+:BenchmarkingMode
+:WriteForcingFunctions
 
