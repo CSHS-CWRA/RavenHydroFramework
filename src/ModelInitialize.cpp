@@ -70,7 +70,8 @@ void CModel::Initialize(const optStruct &Options)
       } 
     }
   }
-
+  // reserve memory for mass balance arrays 
+  //--------------------------------------------------------------
   _aCumulativeBal = new double * [_nHydroUnits];
   _aFlowBal       = new double * [_nHydroUnits];
   for (k=0; k<_nHydroUnits;k++)
@@ -104,7 +105,7 @@ void CModel::Initialize(const optStruct &Options)
   _CumulInput   =_CumulOutput  =0.0;
   _CumEnergyGain=_CumEnergyLoss=0.0;
 
-  //Identify model UTM_zone for interpolation
+  // Identify model UTM_zone for interpolation
   //--------------------------------------------------------------
   double cen_long(0),area_tot(0);//longiturde of area-weighted watershed centroid, total wshed area
   CHydroUnit *pHRU;
@@ -117,15 +118,15 @@ void CModel::Initialize(const optStruct &Options)
   cen_long/=area_tot;
   _UTM_zone =(int)(floor ((cen_long + 180.0) / 6) + 1);
 
-  //Initialize HRUs, gauges and transient parameters
+  // Initialize HRUs, gauges and transient parameters
   //--------------------------------------------------------------
-  for (k=0;k<_nHydroUnits; k++){_pHydroUnits [k]->Initialize(_UTM_zone);}
-  for (g=0;g<_nGauges;     g++){_pGauges     [g]->Initialize(Options,_UTM_zone);}
-  for (j=0;j<_nTransParams;j++){_pTransParams[j]->Initialize(Options);}
-  for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups[kk]->Initialize(); }
+  for (k=0;k<_nHydroUnits; k++ ){_pHydroUnits [k ]->Initialize(_UTM_zone);}
+  for (g=0;g<_nGauges;     g++ ){_pGauges     [g ]->Initialize(Options,_UTM_zone);}
+  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(Options);}
+  for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups  [kk]->Initialize(); }
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
-  //--check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
+  // Check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
   //---------------------------------------------------------------
   string disbasins="\n";
   bool anydisabled=false;
@@ -154,7 +155,7 @@ void CModel::Initialize(const optStruct &Options)
     WriteWarning("CModel::Initialize: the following subbasins have one or more member HRUs disabled: "+disbasins,Options.noisy);
   }
 
-  //Identify reservoir-linked HRUs and link them
+  // Identify reservoir-linked HRUs and link them
   //--------------------------------------------------------------
   CReservoir *pRes;
   for(p=0;p<_nSubBasins;p++){
@@ -166,7 +167,7 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
   
-  //Generate Gauge Weights from Interpolation
+  // Generate Gauge Weights from Interpolation
   //--------------------------------------------------------------
   if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
   forcing_type f_gauge=F_PRECIP;
@@ -179,7 +180,7 @@ void CModel::Initialize(const optStruct &Options)
   else if (Options.LW_radiation==LW_RAD_DATA  ){f_gauge=F_LW_RADIA;}
   if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
   
-  GenerateGaugeWeights(_aGaugeWeights ,f_gauge  ,Options);//'other' forcings
+  GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
   GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
   GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
 
@@ -195,7 +196,7 @@ void CModel::Initialize(const optStruct &Options)
   if (!Options.silent){cout<<"  Initializing Basins, calculating watershed area, setting initial flow conditions..."<<endl;}
   InitializeBasinFlows(Options);
 
-  //Calculate initial system water storage
+  // Calculate initial system water storage
   //--------------------------------------------------------------
   if (!Options.silent){cout<<"  Calculating initial system water storage..."<<endl;}
   _initWater=0.0;
@@ -219,14 +220,14 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
 
-  //Initialize Transport
+  // Initialize Transport
   //--------------------------------------------------------------
   if (_pTransModel->GetNumConstituents()>0){
     if (!Options.silent){cout<<"  Initializing Transport Model..."<<endl;}
     _pTransModel->Initialize();
   }
 
-  //Precalculate whether individual processes should apply (for speed)
+  // Precalculate whether individual processes should apply (for speed)
   //--------------------------------------------------------------
   _aShouldApplyProcess = new bool *[_nProcesses];
   for (int j=0; j<_nProcesses;j++){
@@ -238,7 +239,7 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
 
-  //Initialize NetCDF Output File IDs
+  // Initialize NetCDF Output File IDs
   //--------------------------------------------------------------
   /* initialize all potential NetCDF file IDs with -9 == "not existing and hence not opened" */
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
@@ -348,15 +349,15 @@ void CModel::InitializeObservations(const optStruct &Options)
   CTimeSeriesABC** tmp = new CTimeSeriesABC *[_nObservedTS];
   for (int i = 0; i < _nObservedTS; i++)
   {
-    _pModeledTS[i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(), _pObservedTS[i]->GetTag(),"",Options.julian_start_day,Options.julian_start_year,Options.timestep,nModeledValues,true);
+    _pModeledTS [i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(), _pObservedTS[i]->GetTag(),"",Options.julian_start_day,Options.julian_start_year,Options.timestep,nModeledValues,true);
     _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true);
-    _pModeledTS[i]->InitializeResample(_pObservedTS[i]->GetNumSampledValues(),_pObservedTS[i]->GetSampledInterval());
-    _aObsIndex[i]=0;
+    _pModeledTS [i]->InitializeResample(_pObservedTS[i]->GetNumSampledValues(),_pObservedTS[i]->GetSampledInterval());
+    _aObsIndex  [i]=0;
 
     //Match weights with observations based on Name, tag and numValues
     tmp[i] = NULL;
     for (int n = 0; n < _nObsWeightTS; n++){
-      if ( _pObsWeightTS[n]!=NULL
+      if (    _pObsWeightTS[n]!=NULL
            && _pObsWeightTS[n]->GetName()     == _pObservedTS[i]->GetName()
            && _pObsWeightTS[n]->GetTag()      == _pObservedTS[i]->GetTag()
            && _pObsWeightTS[n]->GetNumValues()== _pObservedTS[n]->GetNumValues()  )
@@ -415,11 +416,9 @@ void CModel::InitializeRoutingNetwork()
     _aDownstreamInds[p]=pp;
   }
 
-  //iterative identification of subbasin orders
+  // Iterative identification of subbasin orders
   //----------------------------------------------------------------------
-  //here, order goes from 0 (trunk) to _maxSubBasinOrder (leaf)
-  //This is NOT Strahler ordering!!!
-  //JRC:  there might be a faster way to do this
+  // here, order goes from 0 (trunk) to _maxSubBasinOrder (leaf). This is NOT Strahler ordering!!!
   const int MAX_ITER=100;
   int last_ordersum;
   int iter(0),ordersum(0);
@@ -523,8 +522,6 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
   {
     aSBArea[p]=_pSubBasins[p]->GetBasinArea();
 
-    //runoff_est=EstimateInitialRunoff(p,Options);//[mm/d]
-
     if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
       runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
     }
@@ -532,8 +529,6 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
     aSBQlat[p]+=_pSubBasins[p]->GetDownstreamInflow(0.0);//[m3/s]
 
     aSBQin [p]=_pSubBasins[p]->GetSpecifiedInflow(0.0);//initial conditions //[m3/s]
-
-    //cout<<p<<": "<< aSBQin[p]<<" "<<runoff_est<<" "<<aSBQlat[p]<<" "<<aSBArea[p]<<endl;
   }
 
   //Propagate flows and drainage areas downstream
@@ -550,7 +545,7 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
       aSBQin [pTo]+=aSBQlat[p]+aSBQin[p];
       aSBArea[pTo]+=aSBArea[p];//now aSBArea==drainage area
     }
-    //cout<<p<<": "<< aSBQin[p]<<" "<<aSBQlat[p]<<" "<<aSBArea[p]<<endl;
+
     if (_pSubBasins[p]->GetReferenceFlow() == AUTO_COMPUTE){warn =true;}
     if (_pSubBasins[p]->GetOutflowRate()   == AUTO_COMPUTE){warn2=true;}
     _pSubBasins[p]->Initialize(aSBQin[p],aSBQlat[p],aSBArea[p],Options);
@@ -567,7 +562,7 @@ void CModel::InitializeBasinFlows(const optStruct &Options)
     for (p=0;p<_nSubBasins;p++){
     cout<< _aSubBasinOrder[p]<<" "<< _aOrderedSBind[p]<<" "<<aDownstreamInds[p]<<" ";
     cout <<aSBQin [p]<<" "<< aSBQlat[p]<<" "<<aSBArea[p]<<endl;
-    }*/
+    }*/ //Keep for debugging
   delete [] aSBQin;
   delete [] aSBArea;
   delete [] aSBQlat;
@@ -792,9 +787,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   double sum;
   for (k=0;k<_nHydroUnits;k++){
     sum=0.0;
-    for (g=0;g<_nGauges;g++){
-      sum+=aWts[k][g];
-    }
+    for (g=0;g<_nGauges;g++){sum+=aWts[k][g];}
 
     ExitGracefullyIf((fabs(sum-1.0)>REAL_SMALL) && (INTERP_FROM_FILE) && (_nGauges>1),
                      "GenerateGaugeWeights: Bad weighting scheme- weights for each HRU must sum to 1",BAD_DATA);

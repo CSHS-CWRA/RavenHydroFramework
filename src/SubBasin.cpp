@@ -1249,7 +1249,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   sum=0.0;
   for (n=0;n<_nQlatHist;n++){sum+=_aUnitHydro[n];}
   ExitGracefullyIf(sum==0.0,"CSubBasin::GenerateCatchmentHydrograph: bad unit hydrograph constructed",RUNTIME_ERR);
-  if(fabs(sum-1.0)<0.05){ WriteWarning("CSubBasin::GenerateCatchmentHydrograph: unit hydrograph truncated",Options.noisy); }
+  if(fabs(sum-1.0)>0.05){ WriteWarning("CSubBasin::GenerateCatchmentHydrograph: unit hydrograph truncated",Options.noisy); }
   for (n=0;n<_nQlatHist;n++){_aUnitHydro[n]/=sum;}
 }
 

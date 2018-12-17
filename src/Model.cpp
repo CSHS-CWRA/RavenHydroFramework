@@ -85,10 +85,9 @@ CModel::CModel(const soil_model SM,
   CHydroProcessABC::SetModel(this);
   CLateralExchangeProcessABC::SetModel(this);
 
-  _aGaugeWeights =NULL; //Initialized in Initialize
-  _aGaugeWtTemp  =NULL;
-  _aGaugeWtPrecip=NULL;
-
+  _aGaugeWeights    =NULL; //Initialized in Initialize
+  _aGaugeWtTemp     =NULL;
+  _aGaugeWtPrecip   =NULL;
   _aCumulativeBal   =NULL;
   _aFlowBal         =NULL;
   _aCumulativeLatBal=NULL;
@@ -317,7 +316,7 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 //
 CHydroUnit *CModel::GetHRUByID(const int HRUID) const
 {
-  for (int k=0;k<_nHydroUnits;k++){
+  for (int k=0;k<_nHydroUnits;k++){ //could be very slow
     if (HRUID==_pHydroUnits[k]->GetID()){return _pHydroUnits[k];}
   }
   return NULL;
@@ -359,8 +358,8 @@ CHRUGroup  *CModel::GetHRUGroup(const string name) const
 /// \param HRUGroupName [in] String name of HRU group
 /// \return true if HRU k is in HRU Group specified by HRUGroupName
 //
-bool              CModel::IsInHRUGroup(const int k, const string HRUGroupName) const{
-
+bool CModel::IsInHRUGroup(const int k, const string HRUGroupName) const
+{
   CHRUGroup *pGrp=NULL;
   pGrp=GetHRUGroup(HRUGroupName);
   if (pGrp == NULL){ return false; }//throw warning?
@@ -551,18 +550,6 @@ int  CModel::GetGaugeIndexFromName (const string name) const{
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns forcing grid index of forcing grid with specified name
-///
-/// \return Integer index of forcing grid
-/// \param name [in] specified name
-//
-/*int  CModel::GetForcingGridIndexFromName (const string name) const{
-  for (int f=0;f<_nForcingGrids;f++){
-    if (name==ForcingToString(_pForcingGrids[f]->GetName())){return f;}
-  }
-  return DOESNT_EXIST;
-}*/
-//////////////////////////////////////////////////////////////////
 /// \brief Returns forcing grid index of forcing grid with specified type
 ///
 /// \return Integer index of forcing grid
@@ -575,49 +562,6 @@ int  CModel::GetForcingGridIndexFromType (const forcing_type &typ) const{
   return DOESNT_EXIST;
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief Returns current mass/energy flux (mm/d, MJ/m2/d, mg/m2/d) between two storage compartments iFrom and iTo
-/// \details required for advective transport processes
-///
-/// \param k [in] HRU index
-/// \param iFrom_test [in] index of "from" storage state variable
-/// \param iTo_test [in] index of "to" storage state variable
-/// \param &Options [in] Global model options information
-/// \todo [optimize]
-//
-/*double CModel::GetFlux(const int k, const int iFrom_test, const int iTo_test, const optStruct &Options) const
-{
-  int q,j,js(0);
-  double flow=0;
-  const int *iFrom,*iTo;
-  int nConnections;
-
-  ExitGracefullyIf((k<0) || (k>=_nHydroUnits),"CModel::GetFlux: bad HRU index",RUNTIME_ERR);
-
-  //Not Optimized
-  //much more effective to store aFlowBal as aFlowRate[k][iFrom][iTo]?
-  if (iFrom_test==iTo_test){return 0.0;}
-  for (j=0;j<_nProcesses;j++)
-  {
-    iTo  =_pProcesses[j]->GetToIndices();
-    iFrom=_pProcesses[j]->GetFromIndices();
-    nConnections=_pProcesses[j]->GetNumConnections();
-    for (q=0;q<nConnections;q++)
-    {
-      if ((iTo_test==iTo[q]) && (iFrom_test==iFrom[q]))
-      {
-        flow+=_aFlowBal[k][js]/Options.timestep;
-      }
-      if ((iTo_test==iFrom[q]) && (iFrom_test==iTo[q]))
-      {
-        flow-=_aFlowBal[k][js]/Options.timestep;
-      }
-      js++;
-    }//end for q=0 to nConnections
-  }//end for j=0 to nProcesses
-
-  return flow;
-}*/
 //////////////////////////////////////////////////////////////////
 /// \brief Returns current mass/energy flux (mm/d, MJ/m2/d, mg/m2/d) between two storage compartments iFrom and iTo
 /// \details required for advective transport processes
@@ -704,9 +648,8 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
   ExitGracefullyIf((k<0) || (k>=_nHydroUnits),"CModel::GetCumulativeFlux: bad HRU index",RUNTIME_ERR);
   ExitGracefullyIf((iFrom<0) || (iTo>=_nStateVars),"CModel::GetCumulativeFlux: bad state var index",RUNTIME_ERR);
 #endif
-  int js=0;
+  int q,js=0;
   double sum=0;
-  int q;
   const int *iFromp; 
   const int *iTop;
   int nConn;
@@ -1624,7 +1567,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else
     {
       if (tt.model_time ==0){
-        WriteWarning("CModel::UpdateDiagnostics: invalid tag used for specifying Observation type",BAD_DATA);
+        string warn="CModel::UpdateDiagnostics: invalid tag ("+datatype+")used for specifying Observation type";
+        WriteWarning(warn.c_str(),BAD_DATA);
       }
       value=0;
     }
@@ -1633,14 +1577,6 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
 
-		/* K. Lee - The +Options.timestep is breaking irregular observation diagnostics.
-		Do not fully understand what Nick intended to fix by adding +Options.timestep, but taking it out fixes the issue 
-		and does not break regular observations when tested with the tutorial files.
-		Regular observations filled with blanks and irregular observations yield same result when taken out
-	
-	    while((tt.model_time+Options.timestep >= obsTime+_pObservedTS[i]->GetSampledInterval()) &&  //N .Sgro Fix
-	          (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
-	    */
 		while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
 			(_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{

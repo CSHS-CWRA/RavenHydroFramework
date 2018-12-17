@@ -42,11 +42,11 @@ void AddProcess(CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGr
 ///
 /// \details This method provides an interface by which the main method can parse input files\n
 ///   Files used include:\n
-///   - \b model.rvi: input file that determines general model settings, nHRUs, timesteps,etc
-///   - \b model.rvp: default properties for LULT & soil type (not yet used)
-///   - \b model.rvh: HRU/basin property files
-///   - \b model.rvt: time series precip/temp input
-///   - \b model.rvc: initial conditions file
+///   - \b [modelname].rvi: input file that determines general model settings, nHRUs, timesteps,etc
+///   - \b [modelname].rvp: default properties for LULT & soil type 
+///   - \b [modelname].rvh: HRU/basin property files
+///   - \b [modelname].rvt: time series precip/temp input
+///   - \b [modelname].rvc: initial conditions file
 ///
 /// \param *&pModel [in] The input model object
 /// \param &Options [in] Global model options information
@@ -59,6 +59,9 @@ bool ParseInputFiles (CModel      *&pModel,
 
   //Main input file
   if (!ParseMainInputFile        (pModel,Options)){
+    if(Options.rvi_filename.compare("nomodel.rvi")==0){
+      ExitGracefully("A model input file name must be supplied as an argument to the Raven executable.",BAD_DATA);return false;
+    }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;}
 
   //Class Property file
@@ -1153,7 +1156,6 @@ bool ParseMainInputFile (CModel     *&pModel,
           pModel->SetOutputGroup(pModel->GetHRUGroup(kk));
         }
       }
-
       break;
     }
     case(68):  //--------------------------------------------

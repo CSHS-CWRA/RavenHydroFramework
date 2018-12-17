@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.8.3";
+  Options.version="2.9";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif 
@@ -119,12 +119,12 @@ int main(int argc, char* argv[])
 
       MassEnergyBalance(pModel,Options,tt); //where the magic happens!
 
-      pModel->IncrementCumulInput       (Options,tt);
-      pModel->IncrementCumOutflow       (Options);
+      pModel->IncrementCumulInput        (Options,tt);
+      pModel->IncrementCumOutflow        (Options);
 
       JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,tt);//increments time structure
-      pModel->WriteMinorOutput          (Options,tt);
-      pModel->WriteProgressOutput       (Options,clock()-t1,step,int((Options.duration-TIME_CORRECTION)/Options.timestep));
+      pModel->WriteMinorOutput           (Options,tt);
+      pModel->WriteProgressOutput        (Options,clock()-t1,step,int((Options.duration-TIME_CORRECTION)/Options.timestep));
 
       if (CheckForStopfile(step,tt)){break;}
       step++;
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
       cout <<"  Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
       cout <<"                Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
       if (Options.output_dir!=""){
-        cout <<"  Output written to "        <<Options.output_dir                                        <<endl;
+      cout <<"  Output written to "        << Options.output_dir                                       <<endl;
       }
       cout <<"======================================================"<<endl;
     }
@@ -208,8 +208,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-t"){mode=3;}
       else if (word=="-c"){mode=4;}
       else if (word=="-o"){mode=5;}
-      else if (word=="-s"){Options.silent=true;}//should be specified prior to other flags
-      else if (word=="-n"){Options.noisy=true;}//should be specified prior to other flags
+      else if (word=="-s"){Options.silent=true; mode=10;}
+      else if (word=="-n"){Options.noisy=true;  mode=10;}
       else if (word=="-r"){mode=6;}
     }
     else{
@@ -219,11 +219,11 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     i++;
   }
   if (argc==1){//no arguments
-    Options.rvi_filename="model.rvi";
-    Options.rvp_filename="model.rvp";
-    Options.rvh_filename="model.rvh";
-    Options.rvt_filename="model.rvt";
-    Options.rvc_filename="model.rvc";
+    Options.rvi_filename="nomodel.rvi";
+    Options.rvp_filename="nomodel.rvp";
+    Options.rvh_filename="nomodel.rvh";
+    Options.rvt_filename="nomodel.rvt";
+    Options.rvc_filename="nomodel.rvc";
   }
 
   // make sure that output dir has trailing '/' if not empty
@@ -298,21 +298,21 @@ void ExitGracefully(const char *statement,exitcode code)
 //
 void CheckForErrorWarnings(bool quiet)
 {
+  int      Len;
+  char    *s[MAXINPUTITEMS];
+  bool     errors_found(false);
+  bool     warnings_found(false);
 
   ifstream WARNINGS;
   WARNINGS.open((Options.output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){WARNINGS.close();return;}
 
   CParser *p=new CParser(WARNINGS,Options.output_dir+"Raven_errors.txt",0);
-  int      Len;
-  char    *s[MAXINPUTITEMS];
-  bool     errors_found(false);
-  bool     warnings_found(false);
 
   while (!(p->Tokenize(s,Len)))
   {
     if(Len>0){
-      if(!strcmp(s[0],"ERROR")){ errors_found  =true; }
+      if(!strcmp(s[0],"ERROR"  )){ errors_found  =true; }
       if(!strcmp(s[0],"WARNING")){ warnings_found=true; }
     }
   }

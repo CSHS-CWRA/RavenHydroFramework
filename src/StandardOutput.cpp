@@ -20,7 +20,7 @@
 #elif defined(__linux__)
 #include <sys/stat.h>
 #endif
-int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,string longname,string units);
+int NetCDFAddMetadata  (const int fileid,const int time_dimid,                  string shortname,string longname,string units);
 int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the flow series for subbasin SBID
@@ -836,7 +836,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     }
 
 
-    //Write current state of energy storage in system to WatershedEnergyStorage.csv
+    // WatershedEnergyStorage.csv
     //----------------------------------------------------------------
     double sum=0.0;
     if (Options.write_energy)
@@ -868,7 +868,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     if (!silent){cout<<endl;}
 
-    //ExhaustiveMassBalance.csv
+    // ExhaustiveMassBalance.csv
     //--------------------------------------------------------------
     if (Options.write_exhaustiveMB)
     {
@@ -954,7 +954,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       }
     }
 
-    //Write wshed-averaged forcing functions to ForcingFunctions.csv
+    // ForcingFunctions.csv
     //----------------------------------------------------------------
     if (Options.write_forcings)
     {
@@ -1014,7 +1014,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       DEBUG.close();
     }
 
-    // HRU storage output
+    // HRU storage output (HRUStorage_HRUID.csv)
     //--------------------------------------------------------------
     if (_pOutputGroup!=NULL)
     {
@@ -1149,8 +1149,8 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
 //
 void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time, int elapsed_steps, int total_steps)
 {
-  if (Options.pavics){
-
+  if (Options.pavics)
+  {
     ofstream PROGRESS((Options.output_dir+"Raven_progress.txt").c_str());
     if (PROGRESS.fail()){
       ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
@@ -1163,7 +1163,6 @@ void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time,
     PROGRESS<<"}"<<endl;
     
     PROGRESS.close();
-    
   }
 }
 
@@ -1563,11 +1562,11 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   int i;
   int iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
 
-  double snowfall    =GetAverageSnowfall();
-  double precip      =GetAveragePrecip();
-  double channel_stor=GetTotalChannelStorage();
+  double snowfall      =GetAverageSnowfall();
+  double precip        =GetAveragePrecip();
+  double channel_stor  =GetTotalChannelStorage();
   double reservoir_stor=GetTotalReservoirStorage();
-  double rivulet_stor=GetTotalRivuletStorage();
+  double rivulet_stor  =GetTotalRivuletStorage();
 
   if ((tt.model_time==0) && (Options.suppressICs==true) && (Options.period_ending)){return;}
 
@@ -1576,7 +1575,6 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
   else                 {_STORAGE<<" 0.0 0.0";}
   _STORAGE<<" "<<channel_stor+reservoir_stor<<" "<<rivulet_stor;
-  //_STORAGE<<" "<<channel_stor<<" "<<reservoir_stor<<" "<<rivulet_stor;  // \todo [update] - backwards incompatible
 
   currentWater=0.0;
   for (i=0;i<GetNumStateVars();i++){
@@ -1880,23 +1878,18 @@ string CorrectForRelativePath(const string filename,const string relfile)
 {
   string filedir = GetDirectoryName(relfile); //if a relative path name, e.g., "/path/model.rvt", only returns e.g., "/path"
   
-  if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos){ //checks to see if absolute dir already included in redirect filename
-    
+  if (StringToUppercase(filename).find(StringToUppercase(filedir)) == string::npos)//checks to see if absolute dir already included in redirect filename
+  { 
     string firstchar  = filename.substr(0, 1);   // if '/' --> absolute path on UNIX systems
     string secondchar = filename.substr(1, 1);   // if ':' --> absolute path on WINDOWS system
 
     if ( (firstchar.compare("/") != 0) && (secondchar.compare(":") != 0) ){
-
       // cout << "This is not an absolute filename!  --> " << filename << endl;
-      
       //+"//"
       //cout << "StandardOutput: corrected filename: " << filedir + "//" + filename << endl;
       return filedir + "//" + filename;
-
     }
-    
   }
-  
   // cout << "StandardOutput: corrected filename: " << filename << endl;
   return filename;
 }

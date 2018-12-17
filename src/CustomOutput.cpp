@@ -272,17 +272,11 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
   {
   case OUTPUT_STANDARD:
   default:
-    WriteCSVFileHeader();
-    return;
-    break;
-  case OUTPUT_ENSIM:
-    WriteEnSimFileHeader(Options);
-    return;
-    break;
+    WriteCSVFileHeader();           return; break;
+  case OUTPUT_ENSIM: 
+    WriteEnSimFileHeader(Options);  return; break;
   case OUTPUT_NETCDF:
-    WriteNetCDFFileHeader(Options);
-    return;
-    break;
+    WriteNetCDFFileHeader(Options); return; break;
   }
 }
 

@@ -39,25 +39,25 @@ string CDiagnostic::GetName() const
 {
   switch (_type)
   {
-  case(DIAG_NASH_SUTCLIFFE):{return "DIAG_NASH_SUTCLIFFE"; break;}
-  case(DIAG_RMSE):          {return "DIAG_RMSE";break;}
-  case(DIAG_PCT_BIAS):      {return "DIAG_PCT_BIAS";break;}
-  case(DIAG_ABSERR):        {return "DIAG_ABSERR";break;}
-  case(DIAG_ABSMAX):        {return "DIAG_ABSMAX";break;}
-  case(DIAG_PDIFF):         {return "DIAG_PDIFF";break;}
-  case(DIAG_TMVOL):         {return "DIAG_TMVOL";break;}
-  case(DIAG_RCOEF):         {return "DIAG_RCOEF"; break;}
-  case(DIAG_NSC):           {return "DIAG_NSC";break;}
-  case(DIAG_RSR):           {return "DIAG_RSR";break;}
-  case(DIAG_R2):            {return "DIAG_R2";break;}
-  case(DIAG_CUMUL_FLOW):    {return "DIAG_CUMUL_FLOW";break;}
-  case(DIAG_LOG_NASH):      {return "DIAG_LOG_NASH";break;}
-  case(DIAG_KLING_GUPTA):   {return "DIAG_KLING_GUPTA";break;}
+  case(DIAG_NASH_SUTCLIFFE):    {return "DIAG_NASH_SUTCLIFFE"; break;}
+  case(DIAG_RMSE):              {return "DIAG_RMSE";break;}
+  case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";break;}
+  case(DIAG_ABSERR):            {return "DIAG_ABSERR";break;}
+  case(DIAG_ABSMAX):            {return "DIAG_ABSMAX";break;}
+  case(DIAG_PDIFF):             {return "DIAG_PDIFF";break;}
+  case(DIAG_TMVOL):             {return "DIAG_TMVOL";break;}
+  case(DIAG_RCOEF):             {return "DIAG_RCOEF"; break;}
+  case(DIAG_NSC):               {return "DIAG_NSC";break;}
+  case(DIAG_RSR):               {return "DIAG_RSR";break;}
+  case(DIAG_R2):                {return "DIAG_R2";break;}
+  case(DIAG_CUMUL_FLOW):        {return "DIAG_CUMUL_FLOW";break;}
+  case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";break;}
+  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";break;}
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; break;}
-  case(DIAG_RMSE_DER):      {return "DIAG_RMSE_DER"; break;}
-  case(DIAG_KLING_GUPTA_DER):{return "DIAG_KLING_GUPTA_DER"; break;}
-  case(DIAG_NASH_SUTCLIFFE_RUN): {return"DIAG_NASH_SUTCLIFFE_RUN"; break;}
-  default:                  {return "";break;}
+  case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; break;}
+  case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; break;}
+  case(DIAG_NASH_SUTCLIFFE_RUN):{return"DIAG_NASH_SUTCLIFFE_RUN"; break;}
+  default:                      {return "";break;}
   }
 }
 
