@@ -498,8 +498,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // ---------------------------------------------------------- 
   retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "Conventions", strlen("CF-1.6"),          "CF-1.6");           HandleNetCDFErrors(retval);
   retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "featureType", strlen("timeSeries"),      "timeSeries");       HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "history", strlen("Created by Raven"),    "Created by Raven"); HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "description", strlen("Custom Output"), "Standard Output");  HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "history",     strlen("Created by Raven"),"Created by Raven"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "description", strlen("Custom Output"),   "Standard Output");  HandleNetCDFErrors(retval);
 
   // ---------------------------------------------------------- 
   // time                                                       
@@ -563,10 +563,10 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     tmp2=_varUnits;
     static double fill_val[] = {NETCDF_BLANK_VALUE}; 
     static double miss_val[] = {NETCDF_BLANK_VALUE}; 
-    retval = nc_put_att_text  (_netcdf_ID, varid_data, "long_name"    ,  tmp.length(), tmp.c_str());HandleNetCDFErrors(retval);
-    retval = nc_put_att_text  (_netcdf_ID, varid_data, "units"        , tmp2.length(),tmp2.c_str());HandleNetCDFErrors(retval);
-    retval = nc_put_att_double(_netcdf_ID, varid_data, "_FillValue"   , NC_DOUBLE,1, fill_val);     HandleNetCDFErrors(retval);
-    retval = nc_put_att_double(_netcdf_ID, varid_data, "missing_value", NC_DOUBLE,1, miss_val);     HandleNetCDFErrors(retval);
+    retval = nc_put_att_text  (_netcdf_ID, varid_data, "long_name"    , tmp.length(), tmp.c_str());  HandleNetCDFErrors(retval);
+    retval = nc_put_att_text  (_netcdf_ID, varid_data, "units"        , tmp2.length(),tmp2.c_str()); HandleNetCDFErrors(retval);
+    retval = nc_put_att_double(_netcdf_ID, varid_data, "_FillValue"   , NC_DOUBLE,1,  fill_val);     HandleNetCDFErrors(retval);
+    retval = nc_put_att_double(_netcdf_ID, varid_data, "missing_value", NC_DOUBLE,1,  miss_val);     HandleNetCDFErrors(retval);
 
   }// end if (num_data>0)
 
@@ -946,11 +946,11 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   }//end for (k=0;...
 
   if (reset){
-  	if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
+        if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
     { 
       _CUSTOM<<endl;//valid for ensim or .csv format
-		}
-		else if (Options.output_format==OUTPUT_NETCDF)
+                }
+                else if (Options.output_format==OUTPUT_NETCDF)
     {
 #ifdef _RVNETCDF_
       // Write to NetCDF (done entire vector of data at once)
@@ -967,7 +967,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       }
       delete [] output;
 #endif
-		}
+                }
     _time_index++;
   }
 }
