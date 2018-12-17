@@ -1416,7 +1416,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
   const char *current_basin_name[1];                 // current time in days since start time
 
-  string      tmp,tmp2;
+  string      tmp,tmp2,tmp3;
   static double fill_val[] = {NETCDF_BLANK_VALUE};
   static double miss_val[] = {NETCDF_BLANK_VALUE}; 
 
@@ -1440,6 +1440,14 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   retval = nc_create(tmpFilename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid);  HandleNetCDFErrors(retval);
   _HYDRO_ncid = ncid;
 
+  // ----------------------------------------------------------
+  // global attributes
+  // ---------------------------------------------------------- 
+  retval = nc_put_att_text(_HYDRO_ncid, NC_GLOBAL, "Conventions", strlen("CF-1.6"),          "CF-1.6");           HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, NC_GLOBAL, "featureType", strlen("timeSeries"),      "timeSeries");       HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, NC_GLOBAL, "history", strlen("Created by Raven"),    "Created by Raven"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, NC_GLOBAL, "description", strlen("Standard Output"), "Standard Output");  HandleNetCDFErrors(retval);
+  
   // ---------------------------------------------------------- 
   // time                                                       
   // ---------------------------------------------------------- 
@@ -1449,8 +1457,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   /// Define the time variable. Assign units attributes to the netCDF VARIABLES. 
   dimids1[0] = time_dimid;
   retval = nc_def_var(_HYDRO_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "units"   , strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "calendar", strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_HYDRO_ncid, varid_time, "standard_name", strlen("time"),      "time");      HandleNetCDFErrors(retval);
 
   // define precipitation variable
   varid_pre= NetCDFAddMetadata(_HYDRO_ncid, time_dimid,"precip","Precipitation","mm d**-1");
@@ -1473,9 +1482,11 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     dimids1[0] = nbasins_dimid;
     retval = nc_def_var(_HYDRO_ncid, "basin_name", NC_STRING, ndims1, dimids1, &varid_bsim);       HandleNetCDFErrors(retval); 
     tmp ="Name/ID of sub-basins with simulated outflows";
-    tmp2="timeseries_ID";
+    tmp2="timeseries_id";
+    tmp3="1";
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_HYDRO_ncid, varid_bsim, "units"    , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
     
     varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
     varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
@@ -1919,10 +1930,11 @@ int NetCDFAddMetadata(const int fileid,const int time_dimid,string shortname,str
 }
 int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units)
 {
-  int varid(0);
+  int    varid(0);
 #ifdef _RVNETCDF_
-  int retval;
-  int dimids2[2];
+  int    retval;
+  int    dimids2[2];
+  string tmp;
 
   static double fill_val[] = {NETCDF_BLANK_VALUE};
   static double miss_val[] = {NETCDF_BLANK_VALUE}; 
@@ -1933,11 +1945,15 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
   // (a) create variable 
   retval = nc_def_var(fileid,shortname.c_str(),NC_DOUBLE,2,dimids2,&varid); HandleNetCDFErrors(retval);
 
+  tmp = "basin_name";
+
   // (b) add attributes to variable
-  retval = nc_put_att_text  (fileid,varid,"units",units.length(),units.c_str());              HandleNetCDFErrors(retval);
-  retval = nc_put_att_text  (fileid,varid,"long_name",longname.length(),longname.c_str());    HandleNetCDFErrors(retval);
-  retval = nc_put_att_double(fileid,varid,"_FillValue",NC_DOUBLE,1,fill_val);                 HandleNetCDFErrors(retval);
-  retval = nc_put_att_double(fileid,varid,"missing_value",NC_DOUBLE,1,miss_val);              HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(  fileid,varid,"units",         units.length(),   units.c_str());    HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(  fileid,varid,"long_name",     longname.length(),longname.c_str()); HandleNetCDFErrors(retval);
+  retval = nc_put_att_double(fileid,varid,"_FillValue",    NC_DOUBLE,1,      fill_val);         HandleNetCDFErrors(retval);
+  retval = nc_put_att_double(fileid,varid,"missing_value", NC_DOUBLE,1,      miss_val);         HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(  fileid,varid,"coordinates",   tmp.length(),     tmp.c_str());      HandleNetCDFErrors(retval);
+  
 #endif
   return varid;
 }

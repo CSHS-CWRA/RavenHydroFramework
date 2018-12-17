@@ -482,7 +482,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
   int         retval;                                // error value for NetCDF routines
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
-  string      tmp,tmp2;
+  string      tmp,tmp2,tmp3,tmp4;
 
   bool cant_support=(_aggstat==AGG_RANGE || _aggstat==AGG_95CI || _aggstat==AGG_QUARTILES || _aggstat==AGG_HISTOGRAM);
   if(cant_support){
@@ -492,6 +492,14 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // create file and obtain _netcdf_ID 
   _CUSTOM.close(); //because netcdf does the opening/closing  
   retval = nc_create(_filename.c_str(), NC_CLOBBER|NC_NETCDF4, &_netcdf_ID);       HandleNetCDFErrors(retval);
+
+    // ----------------------------------------------------------
+  // global attributes
+  // ---------------------------------------------------------- 
+  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "Conventions", strlen("CF-1.6"),          "CF-1.6");           HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "featureType", strlen("timeSeries"),      "timeSeries");       HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "history", strlen("Created by Raven"),    "Created by Raven"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "description", strlen("Custom Output"), "Standard Output");  HandleNetCDFErrors(retval);
 
   // ---------------------------------------------------------- 
   // time                                                       
@@ -510,8 +518,9 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");
-  retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   , strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar", strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "standard_name", strlen("time"),      "time");      HandleNetCDFErrors(retval);
 
   // ---------------------------------------------------------- 
   // custom data                                      
@@ -535,9 +544,13 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
     //(c) set some attributes to variable "HRUID" or "SBID"  
     tmp =long_name;
-    tmp2="timeseries_ID";
-    retval = nc_put_att_text(_netcdf_ID, varid_grps, "long_name",  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
-    retval = nc_put_att_text(_netcdf_ID, varid_grps, "cf_role"  , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+    tmp2="timeseries_id";
+    tmp3="1";
+    tmp4="basin_name";
+    retval = nc_put_att_text(_netcdf_ID, varid_grps, "long_name"  ,  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_netcdf_ID, varid_grps, "cf_role"    , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_netcdf_ID, varid_grps, "units"      , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_netcdf_ID, varid_grps, "coordinates", tmp4.length(),tmp4.c_str());    HandleNetCDFErrors(retval);
     
     //(d) create variable "custom_data" which will contain at the end custom data; shape=(tt,num_data) 
     string netCDFtag=_statStr+"_"+_varName;
