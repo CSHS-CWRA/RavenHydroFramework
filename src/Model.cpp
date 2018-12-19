@@ -73,12 +73,12 @@ CModel::CModel(const soil_model SM,
 
   int count=0;
   for (i=4;i<4+_nSoilVars;i++)
-  {
-    _aStateVarType [i]=SOIL;
-    _aStateVarLayer[i]=count;
-    _aStateVarIndices[(int)(SOIL)][count]=i;
-    count++;
-  }
+    {
+      _aStateVarType [i]=SOIL;
+      _aStateVarLayer[i]=count;
+      _aStateVarIndices[(int)(SOIL)][count]=i;
+      count++;
+    }
   _lake_sv=0; //by default, rain on lake goes direct to surface storage [0]
 
 
@@ -366,9 +366,9 @@ bool CModel::IsInHRUGroup(const int k, const string HRUGroupName) const
 
   int kk = pGrp->GetGlobalIndex();
   for (int k_loc=0; k_loc<_pHRUGroups[kk]->GetNumHRUs(); k_loc++)
-  {
-    if (_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex()==k){return true;}
-  }
+    {
+      if (_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex()==k){return true;}
+    }
   return false;
 }
 
@@ -612,25 +612,25 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
   double area=_pHydroUnits[k]->GetArea();
   int jss=0;
   for(int j = 0; j < _nProcesses; j++)
-  {
-    for(int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
     {
-      if(( to) && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js]; }
-      if((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js]; }
-      js++;
-    }
+      for(int q = 0; q < _pProcesses[j]->GetNumConnections(); q++)//each process may have multiple connections
+        {
+          if(( to) && (_pProcesses[j]->GetToIndices()[q]   == i)){ sum+=_aCumulativeBal[k][js]; }
+          if((!to) && (_pProcesses[j]->GetFromIndices()[q] == i)){ sum+=_aCumulativeBal[k][js]; }
+          js++;
+        }
 
-    if(_pProcesses[j]->GetNumLatConnections()>0)
-    {
-      CLateralExchangeProcessABC *pProc=(CLateralExchangeProcessABC*)_pProcesses[j];
-      for(int q = 0; q < _pProcesses[j]->GetNumLatConnections(); q++)//each process may have multiple connections
-      {
-        if(( to) && (pProc->GetToHRUIndices()[q]  ==k) && (pProc->GetLateralToIndices()[q]  ==i)){sum+=_aCumulativeLatBal[jss]/area; }
-        if((!to) && (pProc->GetFromHRUIndices()[q]==k) && (pProc->GetLateralFromIndices()[q]==i)){sum+=_aCumulativeLatBal[jss]/area; }
-        jss++;
-      }
+      if(_pProcesses[j]->GetNumLatConnections()>0)
+        {
+          CLateralExchangeProcessABC *pProc=(CLateralExchangeProcessABC*)_pProcesses[j];
+          for(int q = 0; q < _pProcesses[j]->GetNumLatConnections(); q++)//each process may have multiple connections
+            {
+              if(( to) && (pProc->GetToHRUIndices()[q]  ==k) && (pProc->GetLateralToIndices()[q]  ==i)){sum+=_aCumulativeLatBal[jss]/area; }
+              if((!to) && (pProc->GetFromHRUIndices()[q]==k) && (pProc->GetLateralFromIndices()[q]==i)){sum+=_aCumulativeLatBal[jss]/area; }
+              jss++;
+            }
+        }
     }
-  }
   
   return sum;
 }
@@ -654,17 +654,17 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
   const int *iTop;
   int nConn;
   for(int j = 0; j < _nProcesses; j++)
-  {
-    iFromp=_pProcesses[j]->GetFromIndices();
-    iTop  =_pProcesses[j]->GetToIndices();
-    nConn =_pProcesses[j]->GetNumConnections();
-    for (q = 0; q < nConn; q++)//each process may have multiple connections
     {
-      if( (iTop  [q]== iTo) && (iFromp[q]== iFrom)){ sum+=_aCumulativeBal[k][js]; }
-      if( (iFromp[q]== iTo) && (iTop  [q]== iFrom)){ sum-=_aCumulativeBal[k][js]; }
-      js++;
+      iFromp=_pProcesses[j]->GetFromIndices();
+      iTop  =_pProcesses[j]->GetToIndices();
+      nConn =_pProcesses[j]->GetNumConnections();
+      for (q = 0; q < nConn; q++)//each process may have multiple connections
+        {
+          if( (iTop  [q]== iTo) && (iFromp[q]== iFrom)){ sum+=_aCumulativeBal[k][js]; }
+          if( (iFromp[q]== iTo) && (iTop  [q]== iFrom)){ sum-=_aCumulativeBal[k][js]; }
+          js++;
+        }
     }
-  }
   
   return sum;
 }
@@ -694,12 +694,12 @@ double CModel::GetAveragePrecip() const
 {
   double sum(0);
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          sum+=_pHydroUnits[k]->GetForcingFunctions()->precip*_pHydroUnits[k]->GetArea();
+        }
     }
-  }
   return sum/_WatershedArea;
 }
 
@@ -713,13 +713,13 @@ double CModel::GetAverageSnowfall() const
   double sum(0);
   const force_struct *f;
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      f=_pHydroUnits[k]->GetForcingFunctions();
-      sum+=(f->precip*f->snow_frac)*_pHydroUnits[k]->GetArea();
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          f=_pHydroUnits[k]->GetForcingFunctions();
+          sum+=(f->precip*f->snow_frac)*_pHydroUnits[k]->GetArea();
+        }
     }
-  }
   return sum/_WatershedArea;
 }
 
@@ -736,55 +736,55 @@ force_struct CModel::GetAverageForcings() const
   ZeroOutForcings(Fave);
 
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      pF_hru =_pHydroUnits[k]->GetForcingFunctions();
-      area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          pF_hru =_pHydroUnits[k]->GetForcingFunctions();
+          area_wt=_pHydroUnits[k]->GetArea()/_WatershedArea;
 
-      Fave.precip          +=area_wt*pF_hru->precip;
-      Fave.precip_daily_ave+=area_wt*pF_hru->precip_daily_ave;
-      Fave.precip_5day     +=area_wt*pF_hru->precip_5day;
-      Fave.snow_frac       +=area_wt*pF_hru->snow_frac;
+          Fave.precip          +=area_wt*pF_hru->precip;
+          Fave.precip_daily_ave+=area_wt*pF_hru->precip_daily_ave;
+          Fave.precip_5day     +=area_wt*pF_hru->precip_5day;
+          Fave.snow_frac       +=area_wt*pF_hru->snow_frac;
 
-      Fave.temp_ave       +=area_wt*pF_hru->temp_ave;
-      Fave.temp_daily_min +=area_wt*pF_hru->temp_daily_min;
-      Fave.temp_daily_max +=area_wt*pF_hru->temp_daily_max;
-      Fave.temp_daily_ave +=area_wt*pF_hru->temp_daily_ave;
-      Fave.temp_month_max +=area_wt*pF_hru->temp_month_max;
-      Fave.temp_month_min +=area_wt*pF_hru->temp_month_min;
-      Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
+          Fave.temp_ave       +=area_wt*pF_hru->temp_ave;
+          Fave.temp_daily_min +=area_wt*pF_hru->temp_daily_min;
+          Fave.temp_daily_max +=area_wt*pF_hru->temp_daily_max;
+          Fave.temp_daily_ave +=area_wt*pF_hru->temp_daily_ave;
+          Fave.temp_month_max +=area_wt*pF_hru->temp_month_max;
+          Fave.temp_month_min +=area_wt*pF_hru->temp_month_min;
+          Fave.temp_month_ave +=area_wt*pF_hru->temp_month_ave;
 
-      Fave.temp_ave_unc   +=area_wt*pF_hru->temp_ave_unc;
-      Fave.temp_min_unc   +=area_wt*pF_hru->temp_min_unc;
-      Fave.temp_max_unc   +=area_wt*pF_hru->temp_max_unc;
+          Fave.temp_ave_unc   +=area_wt*pF_hru->temp_ave_unc;
+          Fave.temp_min_unc   +=area_wt*pF_hru->temp_min_unc;
+          Fave.temp_max_unc   +=area_wt*pF_hru->temp_max_unc;
 
-      Fave.air_dens       +=area_wt*pF_hru->air_dens;
-      Fave.air_pres       +=area_wt*pF_hru->air_pres;
-      Fave.rel_humidity   +=area_wt*pF_hru->rel_humidity;
+          Fave.air_dens       +=area_wt*pF_hru->air_dens;
+          Fave.air_pres       +=area_wt*pF_hru->air_pres;
+          Fave.rel_humidity   +=area_wt*pF_hru->rel_humidity;
 
-      Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
-      Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
-      Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
-      Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
-      Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
-      Fave.LW_radia       +=area_wt*pF_hru->LW_radia;
-      Fave.day_length     +=area_wt*pF_hru->day_length;
-      Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc.
+          Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
+          Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
+          Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
+          Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
+          Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
+          Fave.LW_radia       +=area_wt*pF_hru->LW_radia;
+          Fave.day_length     +=area_wt*pF_hru->day_length;
+          Fave.day_angle      +=area_wt*pF_hru->day_angle;   //not really necc.
 
-      Fave.wind_vel       +=area_wt*pF_hru->wind_vel;
+          Fave.wind_vel       +=area_wt*pF_hru->wind_vel;
 
-      Fave.PET            +=area_wt*pF_hru->PET;
-      Fave.OW_PET         +=area_wt*pF_hru->OW_PET;
-      Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave;
+          Fave.PET            +=area_wt*pF_hru->PET;
+          Fave.OW_PET         +=area_wt*pF_hru->OW_PET;
+          Fave.PET_month_ave  +=area_wt*pF_hru->PET_month_ave;
 
-      Fave.potential_melt +=area_wt*pF_hru->potential_melt;
+          Fave.potential_melt +=area_wt*pF_hru->potential_melt;
 
-      Fave.recharge       +=area_wt*pF_hru->recharge;
+          Fave.recharge       +=area_wt*pF_hru->recharge;
 
-      Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
+          Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
+        }
     }
-  }
   return Fave;
 }
 
@@ -802,12 +802,12 @@ double CModel::GetAvgStateVar(const int i) const
 #endif
   double sum(0.0);
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      sum+=(_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea());
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          sum+=(_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea());
+        }
     }
-  }
   return sum/_WatershedArea;
 }
 
@@ -822,12 +822,12 @@ double CModel::GetAvgForcing (const string &forcing_string) const
   //Area-weighted average
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if (_pHydroUnits[k]->IsEnabled())
     {
-      sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+      if (_pHydroUnits[k]->IsEnabled())
+        {
+          sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+        }
     }
-  }
   return sum/_WatershedArea;
 }
 //////////////////////////////////////////////////////////////////
@@ -842,12 +842,12 @@ double CModel::GetAvgCumulFlux (const int i, const bool to) const
   //Area-weighted average
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      sum +=GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          sum +=GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+        }
     }
-  }
   return sum/_WatershedArea;
 }
 //////////////////////////////////////////////////////////////////
@@ -862,12 +862,12 @@ double CModel::GetAvgCumulFluxBet (const int iFrom, const int iTo) const
   //Area-weighted average
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      sum +=GetCumulFluxBetween(k,iFrom,iTo)*_pHydroUnits[k]->GetArea();
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          sum +=GetCumulFluxBetween(k,iFrom,iTo)*_pHydroUnits[k]->GetArea();
+        }
     }
-  }
   return sum/_WatershedArea;
 }
 //////////////////////////////////////////////////////////////////
@@ -879,9 +879,9 @@ double CModel::GetTotalChannelStorage() const
   double sum(0);
 
   for (int p=0;p<_nSubBasins;p++)
-  {
-    sum+=_pSubBasins[p]->GetChannelStorage();            //[m3]
-  }
+    {
+      sum+=_pSubBasins[p]->GetChannelStorage();            //[m3]
+    }
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
 //////////////////////////////////////////////////////////////////
@@ -893,9 +893,9 @@ double CModel::GetTotalReservoirStorage() const
   double sum(0);
 
   for (int p=0;p<_nSubBasins;p++)
-  {
-    sum+=_pSubBasins[p]->GetReservoirStorage();          //[m3]
-  }
+    {
+      sum+=_pSubBasins[p]->GetReservoirStorage();          //[m3]
+    }
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
 //////////////////////////////////////////////////////////////////
@@ -907,9 +907,9 @@ double CModel::GetTotalRivuletStorage() const
   double sum(0);
 
   for (int p=0;p<_nSubBasins;p++)
-  {
-    sum+=_pSubBasins[p]->GetRivuletStorage();//[m3]
-  }
+    {
+      sum+=_pSubBasins[p]->GetRivuletStorage();//[m3]
+    }
 
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
@@ -1004,9 +1004,9 @@ void CModel::AddPropertyClassChange(const string HRUgroup,
   pCC->HRU_groupID=DOESNT_EXIST;
   for (int kk = 0; kk < _nHRUGroups; kk++){
     if (!strcmp(_pHRUGroups[kk]->GetName().c_str(), HRUgroup.c_str()))
-    {
-      pCC->HRU_groupID=kk;
-    }
+      {
+        pCC->HRU_groupID=kk;
+      }
   }
   if (pCC->HRU_groupID == DOESNT_EXIST){
     string warning = "CModel::AddPropertyClassChange: invalid HRU Group name: " + HRUgroup+ ". HRU group names should be defined in .rvi file using :DefineHRUGroups command. ";
@@ -1111,12 +1111,12 @@ void CModel::AddProcess(CHydroProcessABC *pHydroProc)
 {
   ExitGracefullyIf(pHydroProc==NULL                 ,"CModel AddProcess::NULL process"  ,BAD_DATA);
   for (int q=0;q<pHydroProc->GetNumConnections();q++)
-  {
-    int i=pHydroProc->GetFromIndices()[q];
-    int j=pHydroProc->GetToIndices  ()[q];
-    ExitGracefullyIf((i<0) && (i>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
-    ExitGracefullyIf((j<0) && (j>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
-  }
+    {
+      int i=pHydroProc->GetFromIndices()[q];
+      int j=pHydroProc->GetToIndices  ()[q];
+      ExitGracefullyIf((i<0) && (i>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
+      ExitGracefullyIf((j<0) && (j>=_nStateVars),"CModel AddProcess::improper storage index",BAD_DATA);
+    }
   if (!DynArrayAppend((void**&)(_pProcesses),(void*)(pHydroProc),_nProcesses)){
     ExitGracefully("CModel::AddProcess: adding NULL hydrological process",BAD_DATA);}
 }
@@ -1139,44 +1139,44 @@ void  CModel::AddStateVariables( const sv_type *aSV,
   int i,ii;
   bool found;
   for (ii=0;ii<nSV;ii++)
-  {
-    found=false;
-    for (i=0;i<_nStateVars;i++){
-      if ((_aStateVarType [i]==aSV [ii]) &&
-          (_aStateVarLayer[i]==aLev[ii])){found=true;}
-    }
-    //found=(_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]!=DOESNT_EXIST);
-    if (!found)
     {
-      sv_type *tmpSV=new sv_type[_nStateVars+1];
-      int     *tmpLy=NULL;
-      tmpLy=new int    [_nStateVars+1];
-      ExitGracefullyIf(tmpLy==NULL,"CModel::AddStateVariables",OUT_OF_MEMORY);
-      for (i=0;i<_nStateVars;i++)//copy old arrays
-      {
-        tmpSV[i]=_aStateVarType  [i];
-        tmpLy[i]=_aStateVarLayer [i];
+      found=false;
+      for (i=0;i<_nStateVars;i++){
+        if ((_aStateVarType [i]==aSV [ii]) &&
+            (_aStateVarLayer[i]==aLev[ii])){found=true;}
       }
-      //set values of new array items
-      tmpSV[_nStateVars]=aSV[ii];
-      tmpLy[_nStateVars]=aLev[ii];
-      //add index to state variable lookup table
-      ExitGracefullyIf((int)(aSV[ii])>MAX_STATE_VARS,
-                       "CModel::AddStateVariables: bad type specified",RUNTIME_ERR);
-      ExitGracefullyIf((aLev[ii]<-1) || (aLev[ii]>=MAX_SV_LAYERS),
-                       "CModel::AddStateVariables: bad layer index specified",RUNTIME_ERR);
-      if (aLev[ii]==DOESNT_EXIST){_aStateVarIndices[(int)(aSV[ii])][0       ]=_nStateVars;}
-      else                       {_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]=_nStateVars;}
-      //delete & replace old arrays
-      delete [] _aStateVarType;  _aStateVarType=NULL;
-      delete [] _aStateVarLayer; _aStateVarLayer=NULL;
-      _aStateVarType =tmpSV;
-      _aStateVarLayer=tmpLy;
-      _nStateVars++;
-      ExitGracefullyIf(_nStateVars>MAX_STATE_VARS,
-                       "CModel::AddStateVariables: exceeded maximum number of state variables in model",RUNTIME_ERR);
+      //found=(_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]!=DOESNT_EXIST);
+      if (!found)
+        {
+          sv_type *tmpSV=new sv_type[_nStateVars+1];
+          int     *tmpLy=NULL;
+          tmpLy=new int    [_nStateVars+1];
+          ExitGracefullyIf(tmpLy==NULL,"CModel::AddStateVariables",OUT_OF_MEMORY);
+          for (i=0;i<_nStateVars;i++)//copy old arrays
+            {
+              tmpSV[i]=_aStateVarType  [i];
+              tmpLy[i]=_aStateVarLayer [i];
+            }
+          //set values of new array items
+          tmpSV[_nStateVars]=aSV[ii];
+          tmpLy[_nStateVars]=aLev[ii];
+          //add index to state variable lookup table
+          ExitGracefullyIf((int)(aSV[ii])>MAX_STATE_VARS,
+                           "CModel::AddStateVariables: bad type specified",RUNTIME_ERR);
+          ExitGracefullyIf((aLev[ii]<-1) || (aLev[ii]>=MAX_SV_LAYERS),
+                           "CModel::AddStateVariables: bad layer index specified",RUNTIME_ERR);
+          if (aLev[ii]==DOESNT_EXIST){_aStateVarIndices[(int)(aSV[ii])][0       ]=_nStateVars;}
+          else                       {_aStateVarIndices[(int)(aSV[ii])][aLev[ii]]=_nStateVars;}
+          //delete & replace old arrays
+          delete [] _aStateVarType;  _aStateVarType=NULL;
+          delete [] _aStateVarLayer; _aStateVarLayer=NULL;
+          _aStateVarType =tmpSV;
+          _aStateVarLayer=tmpLy;
+          _nStateVars++;
+          ExitGracefullyIf(_nStateVars>MAX_STATE_VARS,
+                           "CModel::AddStateVariables: exceeded maximum number of state variables in model",RUNTIME_ERR);
+        }
     }
-  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds aquifer state variables during model construction
@@ -1190,10 +1190,10 @@ void CModel::AddAquiferStateVars(const int nLayers)
   sv_type *aSV =new sv_type [_nAquiferLayers];
   int     *aLev=new int       [_nAquiferLayers];
   for (int i=0;i<_nAquiferLayers;i++)
-  {
-    aSV [i]=GROUNDWATER;
-    aLev[i]=i;
-  }
+    {
+      aSV [i]=GROUNDWATER;
+      aLev[i]=i;
+    }
   AddStateVariables(aSV,aLev,_nAquiferLayers);
   delete [] aSV;
   delete [] aLev;
@@ -1283,38 +1283,38 @@ bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID);
 void CModel::OverrideStreamflow   (const long SBID)
 {
   for (int i=0;i<_nObservedTS; i++)
-  {
-    if (IsContinuousFlowObs(_pObservedTS[i],SBID))
     {
-      //check for blanks in observation TS
-      bool bad=false;
-      for (int n=0;n<_pObservedTS[i]->GetNumValues();n++){
-        if (_pObservedTS[i]->GetValue(n)==RAV_BLANK_DATA){bad=true;break;}
-      }
-      if (bad){
-        WriteWarning("CModel::OverrideStreamflow::cannot override streamflow if there are blanks in observation data",_pOptStruct->noisy);
-        return;
-      }
+      if (IsContinuousFlowObs(_pObservedTS[i],SBID))
+        {
+          //check for blanks in observation TS
+          bool bad=false;
+          for (int n=0;n<_pObservedTS[i]->GetNumValues();n++){
+            if (_pObservedTS[i]->GetValue(n)==RAV_BLANK_DATA){bad=true;break;}
+          }
+          if (bad){
+            WriteWarning("CModel::OverrideStreamflow::cannot override streamflow if there are blanks in observation data",_pOptStruct->noisy);
+            return;
+          }
 
-      long downID=GetSubBasinByID(SBID)->GetDownstreamID();
-      if (downID!=DOESNT_EXIST)
-      {
-        //Copy time series of observed flows to new time series
-        string name="Inflow_Hydrograph_"+to_string(SBID);
-        CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
-        CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
-        pTS->SetTag(to_string(SBID));
+          long downID=GetSubBasinByID(SBID)->GetDownstreamID();
+          if (downID!=DOESNT_EXIST)
+            {
+              //Copy time series of observed flows to new time series
+              string name="Inflow_Hydrograph_"+to_string(SBID);
+              CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
+              CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
+              pTS->SetTag(to_string(SBID));
 
-        //add as inflow hydrograph to downstream
-        GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
-        GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
-        return;
-      }
-      else{
-        WriteWarning("CModel::OverrideStreamflow: overriding streamflow at an outlet subbasin has no impact on model operation",_pOptStruct->noisy);
-      }
+              //add as inflow hydrograph to downstream
+              GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
+              GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
+              return;
+            }
+          else{
+            WriteWarning("CModel::OverrideStreamflow: overriding streamflow at an outlet subbasin has no impact on model operation",_pOptStruct->noisy);
+          }
+        }
     }
-  }
 }
 
 /*****************************************************************
@@ -1384,20 +1384,20 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
 {
   double area=(_WatershedArea*M2_PER_KM2);
   for(int p=0;p<_nSubBasins;p++)
-  {
-    bool outflowdisabled;
-    CSubBasin *pSBdown=NULL;
-    pSBdown=GetSubBasinByID(_pSubBasins[p]->GetDownstreamID());
-    outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
+    {
+      bool outflowdisabled;
+      CSubBasin *pSBdown=NULL;
+      pSBdown=GetSubBasinByID(_pSubBasins[p]->GetDownstreamID());
+      outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
 
-    if(_pSubBasins[p]->IsEnabled()){
-      if((_aSubBasinOrder[p]==0) || (outflowdisabled))//outlet does not drain into another subbasin
-      {
-        _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
+      if(_pSubBasins[p]->IsEnabled()){
+        if((_aSubBasinOrder[p]==0) || (outflowdisabled))//outlet does not drain into another subbasin
+          {
+            _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
+          }
+        _CumulOutput+=_pSubBasins[p]->GetReservoirLosses(Options.timestep)/area*MM_PER_METER;
       }
-      _CumulOutput+=_pSubBasins[p]->GetReservoirLosses(Options.timestep)/area*MM_PER_METER;
     }
-  }
   _pTransModel->IncrementCumulOutput(Options);
 }
 
@@ -1412,71 +1412,71 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 {
   int nn=(int)((tt.model_time+REAL_SMALL)/Options.timestep);//current timestep index
   for (int j=0;j<_nTransParams;j++)
-  {
-    class_type ctype=_pTransParams[j]->GetParameterClassType();
-    string     pname=_pTransParams[j]->GetParameterName();
-    string     cname=_pTransParams[j]->GetParameterClass();
-    double     value=_pTransParams[j]->GetTimeSeries()->GetSampledValue(nn);
+    {
+      class_type ctype=_pTransParams[j]->GetParameterClassType();
+      string     pname=_pTransParams[j]->GetParameterName();
+      string     cname=_pTransParams[j]->GetParameterClass();
+      double     value=_pTransParams[j]->GetTimeSeries()->GetSampledValue(nn);
 
-    if (ctype==CLASS_SOIL)
-    {
-      CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
+      if (ctype==CLASS_SOIL)
+        {
+          CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
+        }
+      else if (ctype==CLASS_VEGETATION)
+        {
+          CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
+        }
+      else if (ctype==CLASS_TERRAIN)
+        {
+          CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
+        }
+      else if (ctype==CLASS_LANDUSE)
+        {
+          CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+        }
+      else if (ctype==CLASS_GLOBAL)
+        {
+          CGlobalParams::SetGlobalProperty(pname,value);
+        }
     }
-    else if (ctype==CLASS_VEGETATION)
-    {
-      CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
-    }
-    else if (ctype==CLASS_TERRAIN)
-    {
-      CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
-    }
-    else if (ctype==CLASS_LANDUSE)
-    {
-      CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
-    }
-    else if (ctype==CLASS_GLOBAL)
-    {
-      CGlobalParams::SetGlobalProperty(pname,value);
-    }
-  }
   int k;
   for (int j = 0; j<_nClassChanges; j++)
-  {
-    if ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
-        (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
-    {//change happens this time step
+    {
+      if ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
+          (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
+        {//change happens this time step
 
-      int kk = _pClassChanges[j]->HRU_groupID;
-      if (_pClassChanges[j]->tclass == CLASS_LANDUSE){
-        //cout << "LAND USE CHANGE!"<<endl;
-        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
-        {
-          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
-          CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
-          _pHydroUnits[k]->ChangeLandUse(lult_class);
+          int kk = _pClassChanges[j]->HRU_groupID;
+          if (_pClassChanges[j]->tclass == CLASS_LANDUSE){
+            //cout << "LAND USE CHANGE!"<<endl;
+            for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+              {
+                k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+                CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
+                _pHydroUnits[k]->ChangeLandUse(lult_class);
+              }
+          }
+          else if (_pClassChanges[j]->tclass == CLASS_VEGETATION){
+            //cout << "VEGETATION CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
+            for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+              {
+                k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+                CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
+                _pHydroUnits[k]->ChangeVegetation(veg_class);
+              }
+          }
+          else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE){
+            //cout << "HRU TYPE CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
+            for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
+              {
+                k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
+                HRU_type typ;
+                typ=StringToHRUType(_pClassChanges[j]->newclass);
+                _pHydroUnits[k]->ChangeHRUType(typ);
+              }
+          }
         }
-      }
-      else if (_pClassChanges[j]->tclass == CLASS_VEGETATION){
-        //cout << "VEGETATION CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
-        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
-        {
-          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
-          CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
-          _pHydroUnits[k]->ChangeVegetation(veg_class);
-        }
-      }
-      else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE){
-        //cout << "HRU TYPE CHANGE! "<< _pClassChanges[j]->modeltime << " "<<tt.model_time<<endl;
-        for (int k_loc = 0; k_loc < _pHRUGroups[kk]->GetNumHRUs();k_loc++)
-        {
-          k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
-          HRU_type typ;
-          typ=StringToHRUType(_pClassChanges[j]->newclass);
-          _pHydroUnits[k]->ChangeHRUType(typ);
-        }
-      }
     }
-  }
 
 }
 //////////////////////////////////////////////////////////////////
@@ -1491,12 +1491,12 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
                                          const time_struct  &tt)
 {
   for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
     {
-      _pHydroUnits[k]->RecalculateDerivedParams(Options,tt);
+      if(_pHydroUnits[k]->IsEnabled())
+        {
+          _pHydroUnits[k]->RecalculateDerivedParams(Options,tt);
+        }
     }
-  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1515,83 +1515,84 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
   int layer_ind;
   CSubBasin *pBasin=NULL;  
   for (int i=0;i<_nObservedTS;i++)
-  {
-    string datatype=_pObservedTS[i]->GetName();
-    sv_type svtyp=CStateVariable::StringToSVType(datatype,layer_ind,false);
-
-    if (datatype=="HYDROGRAPH")
     {
-      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      string datatype=_pObservedTS[i]->GetName();
+      sv_type svtyp=CStateVariable::StringToSVType(datatype,layer_ind,false);
 
-      if ((Options.ave_hydrograph) && (tt.model_time!=0))
-      {
-        value=pBasin->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-      }
+      if (datatype=="HYDROGRAPH")
+        {
+          pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+
+          if ((Options.ave_hydrograph) && (tt.model_time!=0))
+            {
+              value=pBasin->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+            }
+          else
+            {
+              value=pBasin->GetOutflowRate();
+            }
+        }
+      else if (datatype == "RESERVOIR_STAGE")
+        {
+          pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+          value = pBasin->GetReservoir()->GetResStage();
+        }
+      else if (datatype == "RESERVOIR_INFLOW")
+        {
+          pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+          value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+        }
+      else if (datatype == "RESERVOIR_NETINFLOW")
+        {
+          pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+          CReservoir *pRes= pBasin->GetReservoir(); 
+          CHydroUnit *pHRU= GetHRUByID(pRes->GetHRUIndex());
+          double avg_area = pHRU->GetArea();
+
+          if (pHRU == NULL) {avg_area = 0.0;}
+
+          double tem_precip1 = pBasin->GetAvgForcing("PRECIP")*avg_area*M2_PER_KM2/MM_PER_METER / (Options.timestep*SEC_PER_DAY); 
+          double losses = pBasin->GetReservoirEvapLosses(Options.timestep) / (Options.timestep*SEC_PER_DAY);
+          value = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
+        }
+      else if (svtyp!=UNRECOGNIZED_SVTYPE)
+        {
+          CHydroUnit *pHRU=NULL;
+          pHRU=GetHRUByID(s_to_i(_pObservedTS[i]->GetTag().c_str()));
+          string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
+          ExitGracefullyIf(pHRU==NULL,error.c_str(),BAD_DATA);
+          int sv_index=this->GetStateVarIndex(svtyp,layer_ind);
+          value=pHRU->GetStateVarValue(sv_index);
+        }
       else
-      {
-        value=pBasin->GetOutflowRate();
-      }
-    }
-    else if (datatype == "RESERVOIR_STAGE")
-    {
-      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
-      value = pBasin->GetReservoir()->GetResStage();
-    }
-    else if (datatype == "RESERVOIR_INFLOW")
-    {
-      pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
-      value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-    }
-		else if (datatype == "RESERVOIR_NETINFLOW")
-		{
-			pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
-			CReservoir *pRes= pBasin->GetReservoir(); 
-			CHydroUnit *pHRU= GetHRUByID(pRes->GetHRUIndex());
-			double avg_area = pHRU->GetArea();
-
-			if (pHRU == NULL) {avg_area = 0.0;}
-
-			double tem_precip1 = pBasin->GetAvgForcing("PRECIP")*avg_area*M2_PER_KM2/MM_PER_METER / (Options.timestep*SEC_PER_DAY); 
-			double losses = pBasin->GetReservoirEvapLosses(Options.timestep) / (Options.timestep*SEC_PER_DAY);
-			value = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
-		}
-    else if (svtyp!=UNRECOGNIZED_SVTYPE)
-    {
-      CHydroUnit *pHRU=NULL;
-      pHRU=GetHRUByID(s_to_i(_pObservedTS[i]->GetTag().c_str()));
-      string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
-      ExitGracefullyIf(pHRU==NULL,error.c_str(),BAD_DATA);
-      int sv_index=this->GetStateVarIndex(svtyp,layer_ind);
-      value=pHRU->GetStateVarValue(sv_index);
-    }
-    else
-    {
-      if (tt.model_time ==0){
-        string warn="CModel::UpdateDiagnostics: invalid tag ("+datatype+")used for specifying Observation type";
-        WriteWarning(warn.c_str(),BAD_DATA);
-      }
-      value=0;
-    }
-    _pModeledTS[i]->SetValue (n,value);
+        {
+          if (tt.model_time ==0){
+            string warn="CModel::UpdateDiagnostics: invalid tag ("+datatype+")used for specifying Observation type";
+            WriteWarning(warn.c_str(),BAD_DATA);
+          }
+          value=0;
+        }
+      _pModeledTS[i]->SetValue       (n,value);
+      _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time step
 
 
-    obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
+      obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
 
-		while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
-			(_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
-		{
-      value=RAV_BLANK_DATA;
-      // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
-      if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
-      {
-        value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
-      }
+      while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
+             (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
+        {
+          value=RAV_BLANK_DATA;
+          // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
+          if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
+            {
+              value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
+            }
 
-      _pModeledTS[i]->SetSampledValue(_aObsIndex[i],value);
-      _aObsIndex[i]++;
-      obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);
+          _pModeledTS[i]->SetSampledValue(_aObsIndex[i],value);
+          _aObsIndex[i]++;
+          obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);
+        }
     }
-  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Apply hydrological process to model
@@ -1616,10 +1617,10 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
                             const CHydroUnit  *pHRU,                 //pointer to HRU
                             const optStruct   &Options,
                             const time_struct &tt,
-                                  int         *iFrom,                //indices of state variable losing water or heat
-                                  int         *iTo,                  //indices of state variable gaining water or heat
-                                  int         &nConnections,         //number of connections between storage units/state vars
-                                  double      *rates_of_change) const//loss/gain rates of water [mm/d] and energy [MJ/m2/d]
+                            int         *iFrom,                //indices of state variable losing water or heat
+                            int         *iTo,                  //indices of state variable gaining water or heat
+                            int         &nConnections,         //number of connections between storage units/state vars
+                            double      *rates_of_change) const//loss/gain rates of water [mm/d] and energy [MJ/m2/d]
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((j<0) && (j>=_nProcesses),"CModel ApplyProcess::improper index",BAD_DATA);
@@ -1631,31 +1632,31 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
   if (!pHRU->IsEnabled()){return false;}
 
   for (int q=0;q<nConnections;q++)
-  {
-    iFrom[q]=pProc->GetFromIndices()[q];
-    iTo  [q]=pProc->GetToIndices  ()[q];
-    rates_of_change[q]=0.0;
-  }
+    {
+      iFrom[q]=pProc->GetFromIndices()[q];
+      iTo  [q]=pProc->GetToIndices  ()[q];
+      rates_of_change[q]=0.0;
+    }
 
   pProc->GetRatesOfChange(state_var,pHRU,Options,tt,rates_of_change);
 
   //special cascade handling (prior to applying constraints)
   //------------------------------------------------------------------------
   if (pProc->HasCascade())
-  {
-    int nCascades;
-    static double max_state_var[MAX_STATE_VARS];
-    nCascades=pProc->GetNumCascades();
-    for (int i=0;i<_nStateVars;i++){//should only calculate for participating compartments
-      max_state_var[i]=pHRU->GetStateVarMax(i,state_var,Options);
-    }
-    for (int q=0;q<nCascades;q++)
     {
-      iFrom[nConnections-nCascades+q]=pProc->GetCascadeFromIndex();
-      iTo  [nConnections-nCascades+q]=pProc->GetCascadeToIndices()[q];
+      int nCascades;
+      static double max_state_var[MAX_STATE_VARS];
+      nCascades=pProc->GetNumCascades();
+      for (int i=0;i<_nStateVars;i++){//should only calculate for participating compartments
+        max_state_var[i]=pHRU->GetStateVarMax(i,state_var,Options);
+      }
+      for (int q=0;q<nCascades;q++)
+        {
+          iFrom[nConnections-nCascades+q]=pProc->GetCascadeFromIndex();
+          iTo  [nConnections-nCascades+q]=pProc->GetCascadeToIndices()[q];
+        }
+      pProc->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
     }
-    pProc->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
-  }
 
   pProc->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
   return true;
@@ -1684,12 +1685,12 @@ bool CModel::ApplyLateralProcess( const int          j,
                                   const double* const* state_vars,
                                   const optStruct   &Options,
                                   const time_struct &tt,
-                                        int         *kFrom,
-                                        int         *kTo,
-                                        int         *iFrom,
-                                        int         *iTo,
-                                        int         &nLatConnections,
-                                        double      *exchange_rates) const
+                                  int         *kFrom,
+                                  int         *kTo,
+                                  int         *iFrom,
+                                  int         *iTo,
+                                  int         &nLatConnections,
+                                  double      *exchange_rates) const
 {
   CLateralExchangeProcessABC *pLatProc;
 
@@ -1704,18 +1705,18 @@ bool CModel::ApplyLateralProcess( const int          j,
   
   
   for (int q=0;q<nLatConnections;q++)
-  {
-    iFrom[q]=pLatProc->GetLateralFromIndices()[q];
-    iTo  [q]=pLatProc->GetLateralToIndices()[q];
-    kFrom[q]=pLatProc->GetFromHRUIndices()[q];
-    kTo  [q]=pLatProc->GetToHRUIndices()[q];
-    exchange_rates[q]=0.0;
-  }
+    {
+      iFrom[q]=pLatProc->GetLateralFromIndices()[q];
+      iTo  [q]=pLatProc->GetLateralToIndices()[q];
+      kFrom[q]=pLatProc->GetFromHRUIndices()[q];
+      kTo  [q]=pLatProc->GetToHRUIndices()[q];
+      exchange_rates[q]=0.0;
+    }
   for(int q=0;q<nLatConnections;q++)
-  {
-    if(!_pHydroUnits[kFrom[q]]->IsEnabled()) { return false; }
-    if(!_pHydroUnits[kTo  [q]]->IsEnabled()) { return false; } //ALL participating HRUs must be enabled to apply
-  }
+    {
+      if(!_pHydroUnits[kFrom[q]]->IsEnabled()) { return false; }
+      if(!_pHydroUnits[kTo  [q]]->IsEnabled()) { return false; } //ALL participating HRUs must be enabled to apply
+    }
   pLatProc->GetLateralExchange(state_vars,_pHydroUnits,Options,tt,exchange_rates);
 
   return true;
