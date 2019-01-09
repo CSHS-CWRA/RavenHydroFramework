@@ -195,6 +195,8 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   string colon;          // to check format of time unit string
   string unit_t_str;     // to check format of time unit string
   int    ntime;          // number of time steps
+  nc_type type;          // type of a NetCDF variable, e.g., nc_INT, nc_FLOAT, nc_DOUBLE
+  int    itime;          // counter time
 
   // open NetCDF read-only; ncid will be set
   // _filename.c_str() converts filename from 'string' to 'const char *'
@@ -298,30 +300,81 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   retval = nc_get_att_text(ncid,varid_t,"units",unit_t);    // unit of time
   HandleNetCDFErrors(retval);
 
-  int *time=NULL;
   if (_is_3D) {
     ntime = _GridDims[2];
   }
   else {
     ntime = _GridDims[1];
   }
-  time=new int [ntime];
 
-  ExitGracefullyIf(time==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
+  // the final time variable will be in double precision no matter what the incoming time variable type was
+  double *my_time=NULL;
+  my_time=new double [ntime];
+  ExitGracefullyIf(my_time==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
 
-  retval = nc_get_var_int(ncid,varid_t,&time[0]);
-  HandleNetCDFErrors(retval);
+  // find out if time is an integer or double variable
+  retval = nc_inq_var( ncid, varid_t,
+		       NULL,     // out: name
+		       &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
+		       NULL,     // out: dims
+                       NULL,     // out: dimids
+                       NULL );   // out: natts
+
+  if (NC_DOUBLE == type)    // time is given as double --> use as is
+  {
+    retval = nc_get_var_double(ncid,varid_t,&my_time[0]);
+    HandleNetCDFErrors(retval);
+  }
+  else if (NC_FLOAT == type)    // time is given as float (single precision) --> convert to double
+  {
+    float *ttime=NULL;
+    ttime=new float [ntime];
+    ExitGracefullyIf(ttime==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
+
+    retval = nc_get_var_float(ncid,varid_t,&ttime[0]);
+    HandleNetCDFErrors(retval);
+
+    // convert to double to proceed
+    for (int itime=0; itime<ntime;itime++){       // loop over all time steps
+      my_time[itime]=double(ttime[itime]);        // convert to double
+    }
+    delete[] ttime;
+  }
+  else if (NC_INT == type)    // time is given as integer --> convert to double
+  {
+    int *ttime=NULL;
+    ttime=new int [ntime];
+    ExitGracefullyIf(ttime==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
+
+    retval = nc_get_var_int(ncid,varid_t,&ttime[0]);
+    HandleNetCDFErrors(retval);
+
+    // convert to double to proceed
+    for (int itime=0; itime<ntime;itime++){       // loop over all time steps
+      my_time[itime]=(double) ttime[itime];        // convert to double
+      //cout << "my_time[" << itime << "] = " << my_time[itime] << endl;
+    }
+    delete[] ttime;
+  }
+  else
+  {
+    ExitGracefully("CForcingGrid: ForcingGridInit: time variable is not of type DOUBLE, FLOAT, or INT. Contact the developers to implement the type you need.",BAD_DATA);
+  }
 
   // -------------------------------
   // check if we have equal time steps
-  // -------------------------------
-  double delta_t = time[1] - time[0];
+  // -------------------------------  
+  double delta_t = my_time[1] - my_time[0];
   for (int ii=1; ii<ntime-1 ; ii++)
   {
-    double delta_t2 = time[ii+1] - time[ii];
+    double delta_t2 = my_time[ii+1] - my_time[ii];
     if ( abs(delta_t2 - delta_t) > 0.00001 )
     {
       printf("\n\n\nCForcingGrid: ForcingGridInit: variable name: %s\n",_varname.c_str());
+      printf("\n\n\n              expected delta_t = %15.8lf\n",delta_t);
+      printf("\n\n\n              derived  delta_t = %15.8lf\n",delta_t2);
+      printf("\n\n\n                       i  =%i  t[i]  =%15.8lf\n",ii,  my_time[ii]);
+      printf("\n\n\n                       i+1=%i  t[i+1]=%15.8lf\n",ii+1,my_time[ii+1]);
       ExitGracefully("CForcingGrid: ForcingGridInit: time steps are not equal in gridded input",BAD_DATA);
     }
   }
@@ -360,11 +413,11 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     string sDate = unit_t_str.substr(12,10);
     string sTime = unit_t_str.substr(23,8);
     time_struct tt = DateStringToTimeStruct(sDate, sTime);
-    _interval   = (time[1] - time[0])/24.;
+    _interval   = (my_time[1] - my_time[0])/24.;
     ExitGracefullyIf(_interval<=0,
                      "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
 
-    AddTime(tt.julian_day,tt.year,time[0]*(1./24.),_start_day,_start_year) ;
+    AddTime(tt.julian_day,tt.year,my_time[0]*(1./24.),_start_day,_start_year) ;
 
   /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
      printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -373,7 +426,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
      printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
      printf("ForcingGrid: tt.month:        %i\n",tt.month);
      printf("ForcingGrid: tt.year:         %i\n",tt.year);
-     printf("ForcingGrid: time[0]:         %i\n",time[0]);
+     printf("ForcingGrid: my_time[0]:      %i\n",my_time[0]);
      printf("ForcingGrid: _interval:       %f\n",_interval);*/
 
   }
@@ -413,9 +466,9 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
       string sDate = unit_t_str.substr(11,10);
       string sTime = unit_t_str.substr(22,8);
       time_struct tt = DateStringToTimeStruct(sDate, sTime);
-      _interval   = (time[1] - time[0])/1.;
+      _interval   = (my_time[1] - my_time[0])/1.;
       ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-      AddTime(tt.julian_day,tt.year,time[0]*(1.),_start_day,_start_year) ;
+      AddTime(tt.julian_day,tt.year,my_time[0]*(1.),_start_day,_start_year) ;
     }
     else {
       if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
@@ -452,10 +505,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
         string sDate = unit_t_str.substr(14,10);
         string sTime = unit_t_str.substr(25,8);
         time_struct tt = DateStringToTimeStruct(sDate, sTime);
-        _interval   = (time[1] - time[0])/24./60.;
+        _interval   = (my_time[1] - my_time[0])/24./60.;
         ExitGracefullyIf(_interval<=0,
                          "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,time[0]*(1./24./60.),_start_day,_start_year) ;
+        AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60.),_start_day,_start_year) ;
 
         /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
            printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -464,7 +517,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
            printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
            printf("ForcingGrid: tt.month:        %i\n",tt.month);
            printf("ForcingGrid: tt.year:         %i\n",tt.year);
-           printf("ForcingGrid: time[0]:         %i\n",time[0]);
+           printf("ForcingGrid: my_time[0]:      %i\n",my_time[0]);
            printf("ForcingGrid: _interval:       %f\n",_interval);
            printf("ForcingGrid: _start_day:      %f\n",_start_day);
            printf("ForcingGrid: _start_year:     %d\n",_start_year); */
@@ -503,9 +556,9 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
             string sDate = unit_t_str.substr(14,10);
             string sTime = unit_t_str.substr(25,8);
             time_struct tt = DateStringToTimeStruct(sDate, sTime);
-            _interval   = (time[1] - time[0])/24./60./60.;
+            _interval   = (my_time[1] - my_time[0])/24./60./60.;
             ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,time[0]*(1./24./60./60.),_start_day,_start_year) ;
+            AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60./60.),_start_day,_start_year) ;
 
             /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
                printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -514,7 +567,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
                printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
                printf("ForcingGrid: tt.month:        %i\n",tt.month);
                printf("ForcingGrid: tt.year:         %i\n",tt.year);
-               printf("ForcingGrid: time[0]:         %i\n",time[0]);
+               printf("ForcingGrid: my_time[0]:         %i\n",my_time[0]);
                printf("ForcingGrid: _interval:       %f\n",_interval);*/
 
           }
@@ -550,7 +603,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     // if (_TimeShift != 0.0) { cout<<"after:  _start_day "<<_start_day<<"  _start_yr "<<_start_year<<endl; }
   }
 
-  delete[] time;
+  delete[] my_time;
 
   // -------------------------------
   // Determine chunk size (_ChunkSize),
