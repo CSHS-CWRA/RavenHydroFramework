@@ -398,7 +398,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       forcing_type       aTypes[MAX_MULTIDATA];
       for (int i=0;i<MAX_MULTIDATA;i++){aTypes[i]=F_UNRECOGNIZED;}
 
-      pTimeSerArray=CTimeSeries::ParseMultiple(p,nSeries,aTypes,true);
+      pTimeSerArray=CTimeSeries::ParseMultiple(p,nSeries,aTypes,true,Options);
 
       ExitGracefullyIf(nSeries<=0,"Parse :Multidata command - no series specified",BAD_DATA);
       for (int i=0; i<nSeries; i++)
@@ -512,7 +512,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else if (!strcmp(s[0],":NumMeasurements")){nMeasurements=s_to_l(s[1]);}
         else if (!strcmp(s[0],":TimeIncrement")){interval=s_to_d(s[1]);}
         else if (!strcmp(s[0],":StartTime"    )){
-          tt=DateStringToTimeStruct(string(s[1]),string(s[2]));
+          tt=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
           start_day=tt.julian_day;
           start_yr =tt.year;
         }
@@ -589,7 +589,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
 
-      pTimeSerArray=CTimeSeries::ParseEnsimTb0(filename,nSeries,aTypes);
+      pTimeSerArray=CTimeSeries::ParseEnsimTb0(filename,nSeries,aTypes,Options);
 
       ExitGracefullyIf(nSeries<=0,"Parse :EnsimTimeSeries command - no series specified- likely incorrect .tb0 format",BAD_DATA);
       for (int i=0; i<nSeries; i++)

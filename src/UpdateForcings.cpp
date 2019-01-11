@@ -147,7 +147,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //not gauge-based
       if(tt.day_changed)
       {
-        F.day_angle  = CRadiation::DayAngle(mid_day,yr);
+        F.day_angle  = CRadiation::DayAngle(mid_day,yr,Options.calendar);
         F.day_length = CRadiation::DayLength(_pHydroUnits[k]->GetLatRad(),CRadiation::SolarDeclination(F.day_angle));
       }
 

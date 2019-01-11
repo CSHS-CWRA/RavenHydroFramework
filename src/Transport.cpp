@@ -1181,8 +1181,8 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
 
   int i;
   time_struct tt,tt2;
-  JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
-  JulianConvert(Options.timestep, Options.julian_start_day, Options.julian_start_year, tt2);//end of the timestep
+  JulianConvert(0.0,              Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
+  JulianConvert(Options.timestep, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt2);//end of the timestep
 
   for (int c=0;c<_nConstituents;c++)
   {

@@ -514,13 +514,14 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // (c) Assign units attributes to the netCDF VARIABLES. 
   //     --> converts start day into "days since YYYY-MM-DD HH:MM:SS" 
   char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
-  JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, tt);
+  JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");
   retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);  // TODO
   retval = nc_put_att_text(_netcdf_ID, varid_time, "standard_name", strlen("time"),      "time");      HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "long_name",     strlen("time"),      "time");      HandleNetCDFErrors(retval);
 
   // ---------------------------------------------------------- 
   // custom data                                      
@@ -669,7 +670,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   double t=tt.model_time;
 
   time_struct yest;
-  JulianConvert(t-1,Options.julian_start_day,Options.julian_start_year,yest); //get previous day, yest
+  JulianConvert(t-1,Options.julian_start_day,Options.julian_start_year,Options.calendar,yest); //get previous day, yest
   yesterday=yest.date_string;
   thisdate=tt.date_string;
   dday    =tt.day_of_month;
@@ -735,7 +736,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_timeAgg==WATER_YEARLY){
         double days_to_first_of_month=0;
         for (int m=0; m<Options.wateryr_mo;m++){days_to_first_of_month+=DAYS_PER_MONTH[m];}
-        if (IsLeapYear(yest.year) && (Options.wateryr_mo>2)){days_to_first_of_month+=1;}
+        if (IsLeapYear(yest.year,Options.calendar) && (Options.wateryr_mo>2)){days_to_first_of_month+=1;}
         current_time[0]=yest.model_time-yest.julian_day+days_to_first_of_month;
       }
       

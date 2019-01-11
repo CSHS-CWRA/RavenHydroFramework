@@ -107,22 +107,24 @@ CIrregularTimeSeries::~CIrregularTimeSeries()
 /// \details Calculates _indexCorr, correction to global index to get only values within model time.
 /// \remark t=0 corresponds to first day with recorded values at that gauge
 ///
-/// \param model_start_day [in] Julian start day of model
+/// \param model_start_day  [in] Julian start day of model
 /// \param model_start_year [in] start year of model
-/// \param model_duration [in] Duration of model, in days
-/// \param timestep [in] mdoel timestep, in days
-/// \param is_observation [in] - true if this is an observation time series, rather than model input
+/// \param model_duration   [in] Duration of model, in days
+/// \param timestep         [in] mdoel timestep, in days
+/// \param is_observation   [in] true if this is an observation time series, rather than model input
+/// \param calendar         [in] enum int calendar used
 void CIrregularTimeSeries::Initialize(const double model_start_day,
                                       const    int model_start_year,
                                       const double model_duration,
                                       const double timestep,
-                                      const   bool is_observation)
+                                      const   bool is_observation,
+				      const    int calendar)
 {
 
   _aTimes = new double[_nVals]; //array of time series times in model time
   for (int n = 0; n < _nVals; n++)
   {
-    _aTimes[n] = TimeDifference(model_start_day,model_start_year,_aDays[n],_aYears[n]);
+    _aTimes[n] = TimeDifference(model_start_day,model_start_year,_aDays[n],_aYears[n],calendar);
 
     if ((_indexCorr == -1) && (_aTimes[n] >= 0)){ _indexCorr = n; }
     if ((_aTimes[n] >= 0) && (_aTimes[n] < model_duration)){ _nSampVal++; }
@@ -304,7 +306,7 @@ CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string nam
          (string(s[0]).substr(4,1)=="-")))
     { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0]
       time_struct tt;
-      tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
+      tt=DateStringToTimeStruct(string(s[0]),string(s[1]),2);
       aDays[n]=tt.julian_day;
       aYears[n] =tt.year;
     }

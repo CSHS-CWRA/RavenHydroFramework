@@ -224,12 +224,13 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
                               const    int model_start_year,  //year
                               const double model_duration,     //days
                               const double timestep,           //days
-                              const bool   is_observation)
+                              const bool   is_observation,
+			      const  int   calendar)
 {
   //_t_corr is number of days between model start date and gauge
   //start date (positive if data exists before model start date)
 
-  _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year);
+  _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year,calendar);
 
   //QA/QC: Check for overlap issues between time series duration and model duration
   //------------------------------------------------------------------------------
@@ -753,7 +754,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     double aMonVal[12];
     for(int i=0;i<12;i++){ aMonVal[i]=s_to_d(s[i+1]); }
     for(int n=0;n<nVals;n++){
-      JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,tt);
+      JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       aVal[n]=InterpolateMo(aMonVal,tt,Options);
     }
     pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse); 
@@ -772,14 +773,14 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
 
-    tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
+    tt=DateStringToTimeStruct(string(s[0]),string(s[1]),Options.calendar);
     start_day=tt.julian_day;
     start_yr =tt.year;
 
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
       time_struct tt;
-      tt=DateStringToTimeStruct("0000-01-01",tString);
+      tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
       tstep=FixTimestep(tt.julian_day);
     }
     else{
@@ -801,7 +802,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   {
     start_day+=Options.timestep;
     int leap=0;
-    if (IsLeapYear(start_yr)){ leap = 1; }
+    if (IsLeapYear(start_yr,Options.calendar)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
   }
 
@@ -850,22 +851,23 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
 /// \brief Parses multicolumn single time series format and create array of time series objects
 /// \note Creates output array and aType array; these must be
 ///  deleted outside of this routine
-/// \param *p [in] CParser object pointing to input file
-/// \param &nTS [out] number of time series parsed
-/// \param *aType [out] array (size nTS)  of forcing types, one per time series parsed
-/// \param is_pulse [in] Flag determining time-series type (pulse-based vs. piecewise-linear)
+/// \param *p       [in]  CParser object pointing to input file
+/// \param &nTS     [out] number of time series parsed
+/// \param *aType   [out] array (size nTS)  of forcing types, one per time series parsed
+/// \param is_pulse [in]  Flag determining time-series type (pulse-based vs. piecewise-linear)
+/// \param &Options [in]  Global model options information
 /// \return array (size nTS) of pointers to time series
 //
-CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse)
+CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse, const optStruct &Options)
 {
-  char *s[MAXINPUTITEMS];
-  int Len;
-  int i;
-  double start_day;
-  int    start_yr;
-  double tstep;
-  int    nMeasurements;
-  bool   noisy=false;
+  char        *s[MAXINPUTITEMS];
+  int         Len;
+  int         i;
+  double      start_day;
+  int         start_yr;
+  double      tstep;
+  int         nMeasurements;
+  bool        noisy=false;
   CTimeSeries **pTimeSeries=NULL;
 
   //timestamp & numdata info ----------------------------------------------
@@ -878,14 +880,14 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
        (string(s[0]).substr(4,1)=="-")))
   {//in timestamp format  [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
-    tt=DateStringToTimeStruct(string(s[0]),string(s[1]));
+    tt=DateStringToTimeStruct(string(s[0]),string(s[1]),Options.calendar);
     start_day=tt.julian_day;
     start_yr =tt.year;
 
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
       time_struct tt;
-      tt=DateStringToTimeStruct("0000-01-01",tString);
+      tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
       tstep=FixTimestep(tt.julian_day);
     }
     else{
@@ -994,12 +996,13 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
 /// \brief Parses set of time series from Ensim .tb0 file format
 /// \note Column names must correspond to Raven forcing tags
 ///
-/// \param filename [in] Ensim file name, with .tb0 extension
-/// \param &nTS [out] number of time series parsed
-/// \param *aType [out] array (size nTS)  of forcing types, one per time series parsed
+/// \param filename [in]  Ensim file name, with .tb0 extension
+/// \param &nTS     [out] number of time series parsed
+/// \param *aType   [out] array (size nTS)  of forcing types, one per time series parsed
+/// \param &Options [in]  Global model options information
 /// \return array (size nTS) of pointers to time series
 //
-CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type *aType)
+CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type *aType, const optStruct &Options)
 {
   char *s[MAXINPUTITEMS];
   int    Len;
@@ -1055,7 +1058,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
           ((string(s[1]).substr(4,1)=="/") || (string(s[1]).substr(4,1)=="-")))
         //if (IsValidDateString(s[1]))
       {//in timestamp format
-        tt=DateStringToTimeStruct(string(s[1]),string(s[2]));
+        tt=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
         start_day=tt.julian_day;
         start_yr =tt.year;
       }
@@ -1070,7 +1073,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       if (noisy){cout<<"DeltaT"<<endl;}
       string tString=s[1];
       if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format
-        tstep=DateStringToTimeStruct("0000-01-01",tString).julian_day;
+        tstep=DateStringToTimeStruct("0000-01-01",tString,Options.calendar).julian_day;
       }
       else{
         string errString = "ParseEnsimTb0: Bad DeltaT format: " + string(s[1]);
@@ -1123,7 +1126,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       // finished. Now process data --------------------------------
       if (period_ending){
         start_day=start_day-tstep;
-        if ((start_day<0) && IsLeapYear(start_yr-1)){start_day+=366;start_yr-=1;}
+        if ((start_day<0) && IsLeapYear(start_yr-1,Options.calendar)){start_day+=366;start_yr-=1;}
         else if (start_day<0)                       {start_day+=365;start_yr-=1;}
       }
       pTimeSeries=new CTimeSeries *[nTS];
@@ -1180,7 +1183,9 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   int    ntime;                 // length of t dimension (time)
   int    varid_t;               // id of time variable
   int    varid_f;               // id of VarNameNC variable
-  char   unit_t[200];           // special type for string of variable's unit required by nc routine
+  char   unit_t[200];           // special type for string of variable's unit     required by nc routine
+  char   calendar_t[200];       // special type for string of variable's calendar required by nc routine
+  int    calendar;              // enum int of calendar
   string dash;                  // to check format of time unit string
   string colon;                 // to check format of time unit string
   string unit_t_str;            // to check format of time unit string
@@ -1229,13 +1234,17 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   retval = nc_inq_varid(ncid,DimNamesNC_time.c_str(),&varid_t);
   HandleNetCDFErrors(retval);
   //     (b) time unit
-  retval = nc_get_att_text(ncid,varid_t,"units",unit_t);   
+  retval = nc_get_att_text(ncid,varid_t,"units",unit_t);
   HandleNetCDFErrors(retval);
-  //     (c) allocate array for time values
+  //     (c) calendar
+  retval = nc_get_att_text(ncid,varid_t,"calendar",calendar_t);
+  HandleNetCDFErrors(retval);
+  calendar = StringToCalendar(calendar_t);
+  //     (d) allocate array for time values
   int *time=NULL;
   time=new int [ntime];
   ExitGracefullyIf(time==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF",OUT_OF_MEMORY);
-  //     (d) time values
+  //     (e) time values
   retval = nc_get_var_int(ncid,varid_t,&time[0]);
   HandleNetCDFErrors(retval);
 
@@ -1282,11 +1291,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     }
     string sDate = unit_t_str.substr(12,10);
     string sTime = unit_t_str.substr(23,8);
-    time_struct tt = DateStringToTimeStruct(sDate, sTime);
+    time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);  // <--- Calendar from NetcdF file
     tstep   = (time[1] - time[0])/24.;
     ExitGracefullyIf(tstep<=0,
                      "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-    AddTime(tt.julian_day,tt.year,time[0]*(1./24.),start_day,start_yr) ;
+    AddTime(tt.julian_day,tt.year,time[0]*(1./24.),calendar,start_day,start_yr) ;
 
   }
   else
@@ -1320,10 +1329,10 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       }
       string sDate = unit_t_str.substr(11,10);
       string sTime = unit_t_str.substr(22,8);
-      time_struct tt = DateStringToTimeStruct(sDate, sTime);
+      time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
       tstep   = (time[1] - time[0])/1.;
       ExitGracefullyIf(tstep<=0, "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-      AddTime(tt.julian_day,tt.year,time[0]*(1.),start_day,start_yr) ;
+      AddTime(tt.julian_day,tt.year,time[0]*(1.),calendar,start_day,start_yr) ;
     }
     else {
       if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
@@ -1355,11 +1364,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
         }
         string sDate = unit_t_str.substr(14,10);
         string sTime = unit_t_str.substr(25,8);
-        time_struct tt = DateStringToTimeStruct(sDate, sTime);
+        time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
         tstep   = (time[1] - time[0])/24./60.;
         ExitGracefullyIf(tstep<=0,
                          "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,time[0]*(1./24./60.),start_day,start_yr) ;
+        AddTime(tt.julian_day,tt.year,time[0]*(1./24./60.),calendar,start_day,start_yr) ;
 
       }
       else
@@ -1390,10 +1399,10 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
             }
             string sDate = unit_t_str.substr(14,10);
             string sTime = unit_t_str.substr(25,8);
-            time_struct tt = DateStringToTimeStruct(sDate, sTime);
+            time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
             tstep   = (time[1] - time[0])/24./60./60.;
             ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,time[0]*(1./24./60./60.),start_day,start_yr) ;
+            AddTime(tt.julian_day,tt.year,time[0]*(1./24./60./60.),calendar,start_day,start_yr) ;
 
           }
           ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
@@ -1405,7 +1414,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   if (shift_to_per_ending) {
     start_day += Options.timestep;
     int leap   = 0;
-    if (IsLeapYear(start_yr)){ leap = 1; }
+    if (IsLeapYear(start_yr,calendar)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
   }
 
@@ -1571,7 +1580,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   if (tstep >= 1.0) {   // data are not sub-daily
     if ( ceil(TimeShift) == TimeShift) {  // time shift of whole days requested
       // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
-      AddTime(start_day,start_yr,TimeShift,start_day,start_yr) ;
+      AddTime(start_day,start_yr,TimeShift,calendar,start_day,start_yr) ;
       // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
     }
     else {  // sub-daily shifts (e.g. 1.25) of daily data requested
@@ -1581,7 +1590,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
   else {  // data are sub-daily
     // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
-    AddTime(start_day,start_yr,TimeShift,start_day,start_yr) ;
+    AddTime(start_day,start_yr,TimeShift,calendar,start_day,start_yr) ;
     // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
   }
 

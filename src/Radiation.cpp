@@ -320,14 +320,16 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates day angle [rad]
 /// \param &julian_day [in] Julian identifier of a specfic day
-/// \param year [in] Year in which this day occurs
+/// \param year        [in] Year in which this day occurs
+/// \param calendar    [in] enum int of calendar used
 /// \return The day angle of this day [rad]
 //
 double CRadiation::DayAngle(const double&julian_day,
-                            const int    year)
+                            const int    year,
+			    const int    calendar)
 {
   double leap=0.0;
-  if (IsLeapYear(year)){leap=1.0;}
+  if (IsLeapYear(year,calendar)){leap=1.0;}
   return 2.0*PI*(julian_day/(365.0+leap));
 }
 

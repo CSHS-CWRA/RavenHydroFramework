@@ -793,6 +793,8 @@ struct optStruct
                                               ///< e.g., 45.25 corresponds to 6AM on Feb. 14
   int              julian_start_year;         ///< year corresponding to t=0
   double           duration;                  ///< simulation duration
+  int              calendar;                  ///< enum int that specifies calendar of all dates used,
+  //                                          ///< e.g., 2 = "CALENDAR_PROLEPTIC_GREGORIAN"
 
   numerical_method sol_method;                ///< numerical solution method
   double           convergence_crit;          ///< convergence criteria
@@ -906,6 +908,22 @@ struct time_struct
 };
 
 ///////////////////////////////////////////////////////////////////
+/// \brief Possible calendars
+//
+enum calendars
+{
+    CALENDAR_STANDARD,
+    CALENDAR_GREGORIAN,
+    CALENDAR_PROLEPTIC_GREGORIAN,
+    CALENDAR_NOLEAP,
+    CALENDAR_365_DAY,
+    CALENDAR_360_DAY,
+    CALENDAR_JULIAN,
+    CALENDAR_ALL_LEAP,
+    CALENDAR_366_DAY
+};
+
+///////////////////////////////////////////////////////////////////
 /// \brief Stores external forcing functions for single HRU over current time step
 /// \note if an additional forcing function is added, the following routines must be revised: \n
 /// - CModel::UpdateHRUForcingFunctions \n
@@ -994,10 +1012,12 @@ double threshMin     (const double &val1, const double &val2, const double &smoo
 double threshMax     (const double &val1, const double &val2, const double &smooth_coeff);
 
 //Time/Date Functions----------------------------------------------
-bool        IsLeapYear(            const int         year);
+bool        IsLeapYear(            const int         year,
+				   const int         calendar);
 void        JulianConvert(               double      model_time,
                                    const double      start_date,
                                    const int         start_year,
+				   const int         calendar,	 
                                                      time_struct &tt);
 string      DecDaysToHours(        const double      dec_date);
 double      InterpolateMo(         const double      aVal[12],
@@ -1006,16 +1026,20 @@ double      InterpolateMo(         const double      aVal[12],
 bool        IsDaytime(             const double      &julian_day,
                                    const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
-                                                                 string      sTime);
+                                         string      sTime,
+				   const int         calendar);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
-                                   const int         year2);
+                                   const int         year2,
+				   const int         calendar);
 void        AddTime(               const double      &jul_day1,
                                    const int         &year1,
                                    const double      &daysadded,
+				   const int         calendar,
                                          double      &jul_day_out,
-                                                                 int         &year_out);
+                                         int         &year_out);
+int         StringToCalendar(            char *cal_chars);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 

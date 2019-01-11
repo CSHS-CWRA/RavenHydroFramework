@@ -584,8 +584,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (Options.noisy) {cout <<"Change in Land Use Class"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;} 
       time_struct tt;
-      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
-      pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt);
+      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
+      pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt, Options);
       break;
     }
 
@@ -720,8 +720,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (Options.noisy) {cout <<"Change in Vegetation"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;} 
       time_struct tt;
-      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
-      pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt);
+      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
+      pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt, Options);
       break;
     }
     //==========================================================
@@ -1266,8 +1266,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (Options.noisy) {cout <<"Change in HRU Type"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;} 
       time_struct tt;
-      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"));
-      pModel->AddPropertyClassChange(s[1],CLASS_HRUTYPE,s[2], tt);
+      tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
+      pModel->AddPropertyClassChange(s[1],CLASS_HRUTYPE,s[2], tt, Options);
       break;
     }
     case(900):  //----------------------------------------------

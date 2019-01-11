@@ -38,7 +38,8 @@ private:/*------------------------------------------------------*/
 public:/*------------------------------------------------------*/
 
   static double DayAngle                  (const double&day,
-                                           const int    year);
+                                           const int    year,
+			                   const int    calendar);
   static double DayLength                 (const double lat,			  //latitude (in radians)
                                            const double declin);		//solar declination (in radians)
   static double SolarDeclination          (const double day_angle);

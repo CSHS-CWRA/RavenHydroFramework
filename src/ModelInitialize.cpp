@@ -350,7 +350,7 @@ void CModel::InitializeObservations(const optStruct &Options)
   for (int i = 0; i < _nObservedTS; i++)
   {
     _pModeledTS [i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(), _pObservedTS[i]->GetTag(),"",Options.julian_start_day,Options.julian_start_year,Options.timestep,nModeledValues,true);
-    _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true);
+    _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true,Options.calendar);
     _pModeledTS [i]->InitializeResample(_pObservedTS[i]->GetNumSampledValues(),_pObservedTS[i]->GetSampledInterval());
     _aObsIndex  [i]=0;
 
@@ -364,7 +364,7 @@ void CModel::InitializeObservations(const optStruct &Options)
       {
         tmp[i] = _pObsWeightTS[n];
         _pObsWeightTS[n] = NULL;
-        tmp[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration,Options.timestep,true);
+        tmp[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration,Options.timestep,true,Options.calendar);
       }
     }
   }

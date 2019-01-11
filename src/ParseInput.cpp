@@ -140,6 +140,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.julian_start_day    =0;//Jan 1
   Options.julian_start_year   =1666;
   Options.duration            =365;
+  Options.calendar            =StringToCalendar("PROLEPTIC_GREGORIAN"); // Default calendar
   Options.timestep            =1;
   Options.output_interval     =1;
   Options.sol_method          =ORDERED_SERIES;
@@ -458,7 +459,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       string tString=s[1];
       if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format
         time_struct tt;
-        tt=DateStringToTimeStruct("0000-01-01",tString);
+        tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
         Options.timestep=FixTimestep(tt.julian_day);
       }
       else{
@@ -780,7 +781,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy) {cout <<"Simulation Start Date"<<endl;}
       if (Len<3){ImproperFormatWarning(":StartDate",p,Options.noisy); break;}
       time_struct tt;
-      tt=DateStringToTimeStruct(s[1],s[2]);
+      tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
       Options.julian_start_day =tt.julian_day;
       Options.julian_start_year=tt.year;
       break;
@@ -954,8 +955,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       ExitGracefullyIf(Options.julian_start_year==1666,":EndDate command must be after :StartDate command in .rvi file.",BAD_DATA_WARN);
       if (Len<3){ImproperFormatWarning(":EndDate",p,Options.noisy); break;}
       time_struct tt;
-      tt=DateStringToTimeStruct(s[1],s[2]);
-      Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year);
+      tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
       ExitGracefullyIf(Options.duration<=0, "ParseInput: :EndDate must be later than :StartDate.",BAD_DATA_WARN);
       break;
     }
@@ -1117,7 +1118,7 @@ bool ParseMainInputFile (CModel     *&pModel,
           ((string(s[1]).substr(4,1)=="/") || (string(s[1]).substr(4,1)=="-")))
         //if (IsValidDateString(s[1]))
       {//in timestamp format
-        time_struct tt_out=DateStringToTimeStruct(string(s[1]),string(s[2]));
+        time_struct tt_out=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
         pModel->AddModelOutputTime(tt_out,Options);
       }
       else{
@@ -1133,7 +1134,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       double tstep=s_to_d(s[1]);
       for (double t=tstep;t<Options.duration;t+=tstep)
       {
-        JulianConvert(t,Options.julian_start_day,Options.julian_start_year,tt_out);
+        JulianConvert(t,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt_out);
         pModel->AddModelOutputTime(tt_out,Options);
       }
       break;
@@ -1244,12 +1245,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<3) { ImproperFormatWarning(":EvaluationTime", p, Options.noisy); break; }
 
       time_struct tt;
-      tt = DateStringToTimeStruct(s[1], s[2]);
-      Options.diag_start_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year);
+      tt = DateStringToTimeStruct(s[1], s[2], Options.calendar);
+      Options.diag_start_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
       if (Len >= 5) // optional diagnostic end time
       {
-        tt = DateStringToTimeStruct(s[3], s[4]);
-        Options.diag_end_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year);
+        tt = DateStringToTimeStruct(s[3], s[4], Options.calendar);
+        Options.diag_end_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
       }
       break;
     }

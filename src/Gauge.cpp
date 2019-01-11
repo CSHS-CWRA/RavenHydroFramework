@@ -141,7 +141,7 @@ void CGauge::Initialize(const optStruct   &Options,
     }
     }*/
   for (int i=0; i<_nTimeSeries;i++){
-    _pTimeSeries[i]->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pTimeSeries[i]->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
 
   //QA/QC: check time series for valid values
@@ -537,7 +537,7 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   double timestep =Options.timestep;
 
   //below needed for correct mapping from time series to model time
-  pT->Initialize(start_day,start_yr,duration,timestep,false);
+  pT->Initialize(start_day,start_yr,duration,timestep,false,Options.calendar);
 
   int nVals=(int)ceil(duration);
   double *aMin=new double [nVals];
@@ -576,8 +576,8 @@ void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   double timestep =Options.timestep;
 
   //below needed for correct mapping from time series to model time
-  pTmin->Initialize(start_day,start_yr,duration,timestep,false);
-  pTmax->Initialize(start_day,start_yr,duration,timestep,false);
+  pTmin->Initialize(start_day,start_yr,duration,timestep,false,Options.calendar);
+  pTmax->Initialize(start_day,start_yr,duration,timestep,false,Options.calendar);
 
   //Generate daily average values Tave=(Tmin+Tmax)/2 unless provided
   if(pTdaily_ave==NULL)
@@ -636,7 +636,7 @@ void CGauge::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   double timestep =Options.timestep;
 
   //below needed for correct mapping from time series to model time
-  pT->Initialize(start_day,start_yr,duration,timestep,false);
+  pT->Initialize(start_day,start_yr,duration,timestep,false,Options.calendar);
 
   int nVals=(int)ceil(duration);
   double *aMin=new double [nVals];

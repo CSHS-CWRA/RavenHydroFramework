@@ -16,6 +16,7 @@ void JulianConvertTest();
 void SmartLookupUnitTest();
 void SmartIntervalTest();
 void GammaTest();
+void AddTimeTest( );
 
 void RavenUnitTesting(const optStruct &Options);
 #endif

@@ -59,7 +59,7 @@ void MassEnergyBalance( CModel            *pModel,
   tstep        =Options.timestep;
   t            =tt.model_time;
 
-  JulianConvert(t+tstep,Options.julian_start_day,Options.julian_start_year,tt_end);
+  JulianConvert(t+tstep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt_end);
 
   //Reserve static memory ===========================================
   //(only gets called once in course of simulation)

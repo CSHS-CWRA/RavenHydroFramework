@@ -81,9 +81,10 @@ public:/*-------------------------------------------------------*/
                   const    int model_start_year,//year
                   const double model_duration,  //days
                   const double timestep,        //days
-                  const   bool is_observation);
+                  const   bool is_observation,
+		  const    int calendar);
 
-  void        InitializeResample(const int nSampVal, const double sampInterval);
+  void InitializeResample(const int nSampVal, const double sampInterval);
 
   bool   IsDaily      () const;
   int    GetStartYear () const;
@@ -111,8 +112,8 @@ public:/*-------------------------------------------------------*/
 
   static CTimeSeries  *Sum          (CTimeSeries *pTS1, CTimeSeries *pTS2, string name);
   static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending=false);
-  static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse);
-  static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType);
+  static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse, const optStruct &Options);
+  static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType, const optStruct &Options);
 
   void   Multiply       (const double &factor);
 

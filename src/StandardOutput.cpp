@@ -567,7 +567,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     t       =tt.model_time;
 
     time_struct prev;
-    JulianConvert(t-Options.timestep,Options.julian_start_day,Options.julian_start_year,prev); //get start of time step, prev
+    JulianConvert(t-Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,prev); //get start of time step, prev
 
     double usetime=tt.model_time;
     string usedate=thisdate;
@@ -1261,8 +1261,8 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   int i;
   time_struct tt, tt2;
 
-  JulianConvert(0.0, Options.julian_start_day, Options.julian_start_year, tt);//start of the timestep
-  JulianConvert(Options.timestep, Options.julian_start_day, Options.julian_start_year, tt2);//end of the timestep
+  JulianConvert(0.0, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);//start of the timestep
+  JulianConvert(Options.timestep, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt2);//end of the timestep
 
   //WatershedStorage.tb0
   //--------------------------------------------------------------
@@ -1427,7 +1427,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
   //converts start day into "days since YYYY-MM-DD HH:MM:SS"  (model start time)
   char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
-  JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, tt);
+  JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");

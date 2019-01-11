@@ -68,7 +68,8 @@ void CTransientParam::Initialize(const optStruct &Options)
                           Options.julian_start_year,
                           Options.duration,
                           Options.timestep,
-                          false);
+                          false,
+			  Options.calendar);
 
   if (param_type==CLASS_SOIL)
   {

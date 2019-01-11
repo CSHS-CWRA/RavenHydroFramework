@@ -43,7 +43,8 @@ public:/*-------------------------------------------------------*/
                   const    int model_start_year,//year
                   const double model_duration,   //days
                   const double timestep,         //days
-                  const   bool is_observation);
+                  const   bool is_observation,
+		  const    int calendar);
 
   int    GetNumValues() const;
   double GetTime      (const int n) const;

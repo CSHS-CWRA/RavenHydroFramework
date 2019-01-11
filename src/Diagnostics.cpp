@@ -592,7 +592,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 	    if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
 	      {
 		time_struct tt;
-		JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, tt);
+		JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
 		mon = tt.month;
 		break;
 	      }
@@ -613,7 +613,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 	    if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && weight != 0)
 	      {
 		time_struct tt2;
-		JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, tt2);
+		JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt2);
 		// When in the same month
 		if (tt2.month == mon)
 		  {

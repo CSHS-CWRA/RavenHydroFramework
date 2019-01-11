@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   Options.version="2.9";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
-#endif 
+#endif
 
   for (int i=0;i<5;i++){g_debug_vars[i]=0;}
 
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
       cout <<"Simulation Start..."<<endl;}
 
     //Write initial conditions-------------------------------------
-    JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
+    JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
     pModel->RecalculateHRUDerivedParams(Options,tt);
     pModel->UpdateHRUForcingFunctions  (Options,tt);
     pModel->UpdateDiagnostics          (Options,tt);
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
       pModel->IncrementCumulInput        (Options,tt);
       pModel->IncrementCumOutflow        (Options);
 
-      JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,tt);//increments time structure
+      JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
       pModel->WriteMinorOutput           (Options,tt);
       pModel->WriteProgressOutput        (Options,clock()-t1,step,int((Options.duration-TIME_CORRECTION)/Options.timestep));
 

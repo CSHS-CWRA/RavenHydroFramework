@@ -272,11 +272,33 @@ double threshMin(const double &v1, const double &v2, const double &smooth_coeff)
 /// \brief Returns boolean value indicating if year passed is a leap year
 /// \note Only valid until ~4000 AD
 ///
-/// \param year [in] Integer year
+/// \param year     [in] Integer year
+/// \param calendar [in] enum int of calendar used
 /// \return Boolean value indicating if year passed is a leap year
-bool IsLeapYear(const int year)
+
+bool IsLeapYear(const int year, const int calendar) 
 {
-  return (((year%4==0) && (year%100!=0)) || (year%400==0));//valid until ~4000 AD:)
+    bool leap = false;
+
+    // handle default CALENDAR_PROLEPTIC_GREGORIAN first for code efficiency
+    if (calendar == CALENDAR_PROLEPTIC_GREGORIAN){
+      leap = (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)); //valid until ~4000 AD:)
+      return leap;
+    }
+    
+    // other calendars 
+    if ((calendar == CALENDAR_JULIAN ||
+         calendar == CALENDAR_STANDARD ||
+         calendar == CALENDAR_GREGORIAN ) &&
+        (year % 4 == 0)) {
+      leap = true;
+      if ((calendar == CALENDAR_STANDARD ||
+	   calendar == CALENDAR_GREGORIAN) &&
+	  (year % 100 == 0) && (year % 400 != 0) && (year > 1583)) {
+	leap = false;
+      }
+    }
+    return leap;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -284,12 +306,13 @@ bool IsLeapYear(const int year)
 /// \details Converts Julian decimal date to string and returns day of month, month,
 /// and year in time_struct. \n If dec_date >365/366, then year is incremented. Accounts for leap years
 ///
-/// \param &model_time [in] Time elapsed since start of simulation
-/// \param start_date [in] double simulation start date (Julian date)
-/// \param start_year [in] Integer simulation start year
-/// \param &tt [out] Time structure to house date information
+/// \param &model_time [in]  Time elapsed since start of simulation
+/// \param start_date  [in]  double simulation start date (Julian date)
+/// \param start_year  [in]  Integer simulation start year
+/// \param calendar    [in]  enum int of calendar used
+/// \param &tt         [out] Time structure to house date information
 //
-void JulianConvert(double model_time, const double start_date, const int start_year, time_struct &tt)
+void JulianConvert(double model_time, const double start_date, const int start_year, const int calendar, time_struct &tt)
 {
   int leap(0);
   string mon;
@@ -308,12 +331,12 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   dyear=start_year;
   ddate=dec_date;
 
-  if (IsLeapYear(dyear)){leap=1;}
+  if (IsLeapYear(dyear,calendar)){leap=1;}
   while (ddate>=(365+leap)) //correct for years
   {
     ddate-=(365.0+leap);
     dyear++;
-    leap=0;if (IsLeapYear(dyear)){leap=1;}
+    leap=0;if (IsLeapYear(dyear,calendar)){leap=1;}
   }
   //ddate is now decimal julian date from Jan 1 0:00:00 of current dyear
 
@@ -346,7 +369,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   sprintf(out,"%4.4d-%2.2i-%2.2d",dyear,tt.month,tt.day_of_month); //2006-02-28 (ISO Standard)
 
   tt.date_string=string(out);
-  tt.leap_yr=IsLeapYear(tt.year);
+  tt.leap_yr=IsLeapYear(tt.year,calendar);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -389,11 +412,12 @@ bool  IsDaytime     (const double &julian_day,
 
 ////////////////////////////////////////////////////////////////////////////
 /// \brief returns time struct corresponding to string in the following format
-/// \param sDate [in] date string in ISO standard format yyyy-mm-dd or yyyy/mm/dd
-/// \param sTime [in] time string in ISO standard format hh:mm:ss.00
+/// \param sDate    [in] date string in ISO standard format yyyy-mm-dd or yyyy/mm/dd
+/// \param calendar [in] Enum int of calendar used
+/// \param sTime    [in] time string in ISO standard format hh:mm:ss.00
 /// \return Time structure equivalent of passed date and time
 //
-time_struct DateStringToTimeStruct(const string sDate, string sTime)
+time_struct DateStringToTimeStruct(const string sDate, string sTime, const int calendar)
 {
 
   static time_struct tt;
@@ -415,7 +439,7 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
   }
   tt.day_of_month=s_to_i(sDate.substr(8,2).c_str());
   tt.model_time  =0.0;//unspecified
-  tt.leap_yr     =IsLeapYear(tt.year);
+  tt.leap_yr     =IsLeapYear(tt.year,calendar);
   tt.julian_day  =tt.day_of_month-1;
 
   if (tt.month>= 2){tt.julian_day+=31;}
@@ -447,7 +471,7 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
   tt.julian_day+=(double)(sec)/SEC_PER_DAY;
 
   //Below reprocesses date string (optional)
-  JulianConvert(0.0, tt.julian_day, tt.year, tt);
+  JulianConvert(0.0, tt.julian_day, tt.year, calendar, tt);
 
   return tt;
 }
@@ -456,25 +480,26 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime)
 /// \details positive if day 2 is after day 1
 ///
 /// \param jul_day1 [in] Julian day of date 1 (measured from Jan 1 of year @ 00:00:00)
-/// \param year1 [in] year of date 1
+/// \param year1    [in] year of date 1
 /// \param jul_day2 [in] Julian day of date 2 (measured from Jan 1 of year @ 00:00:00)
-/// \param year1 [in] year of date 2
+/// \param year1    [in] year of date 2
+/// \param calendar [in] enum int of calendar used
 
-double TimeDifference(const double jul_day1,const int year1,const double jul_day2,const int year2)
+double TimeDifference(const double jul_day1,const int year1,const double jul_day2,const int year2, const int calendar)
 {
   int leap,yr;
   double diff= jul_day2 - jul_day1;
   yr=year2-1;
   while (yr >= year1)
   {
-    leap=0; if (IsLeapYear(yr)){ leap = 1; }
+    leap=0; if (IsLeapYear(yr,calendar)){ leap = 1; }
     diff += (365+leap);
     yr--;
   }
   yr=year2;
   while (yr<year1)
   {
-    leap=0; if (IsLeapYear(yr)){ leap = 1; }
+    leap=0; if (IsLeapYear(yr,calendar)){ leap = 1; }
     diff -= (365+leap);
     yr++;
   }
@@ -487,25 +512,28 @@ double TimeDifference(const double jul_day1,const int year1,const double jul_day
 /// \param jul_day1    [in]  Julian day of date 1 (measured from Jan 1 of year @ 00:00:00)
 /// \param year1       [in]  year of date 1
 /// \param daysadded   [in]  positive or negative number of days (can be fractional days) added to date 1
+/// \param &Options    [in] Global model options information
 /// \param jul_day_out [out] Julian day of output date (measured from Jan 1 of year @ 00:00:00)
 /// \param year_out    [out] year of output date
 //
-void AddTime(const double &jul_day1,const int &year1,const double &daysadded,double &jul_day_out,int &year_out)
+void AddTime(const double &jul_day1,const int &year1,const double &daysadded,const int calendar, double &jul_day_out,int &year_out)
 {
   int    yr;
   double leap;
   double daysleft;
+  
   yr=year1;
   jul_day_out=jul_day1;
+  
   if(daysadded>=0)
   {
     daysleft=daysadded;
     do {
-      leap=0; if(IsLeapYear(yr)) { leap=1; }
+      leap=0; if(IsLeapYear(yr,calendar)) { leap=1; }
       if((jul_day_out+daysleft)<(365.0+leap)) {
         jul_day_out+=daysleft;
         year_out=yr;
-        return;
+        break;
       }
       else {
         yr++;
@@ -526,14 +554,85 @@ void AddTime(const double &jul_day1,const int &year1,const double &daysadded,dou
       }
       else {
         yr--;
-        leap=0; if(IsLeapYear(yr)) { leap=1; }
+        leap=0; if(IsLeapYear(yr,calendar)) { leap=1; }
         daysleft-=jul_day_out;
-        if(daysleft<(365+leap)){ jul_day_out=(365+leap)-daysleft;year_out=yr;return; }
+        if(daysleft<(365+leap)){ jul_day_out=(365+leap)-daysleft;year_out=yr;break; }
         else                   { jul_day_out=0.0;daysleft-=(365+leap); }//skip whole year 
       }
       ExitGracefullyIf(daysleft<0.0,"Invalid input to AddTime routine (negative julian day?)",RUNTIME_ERR);
     } while(true);
   }
+
+  // if calendar is STANDARD or GREGORIAN and the original time is before 4 October 1582
+  // while the final time is after, one has to add additional 10 days
+  // because in this calendar the day following 4 October 1582 is 15 October 1582 (there are 10 days missing)
+  // --> THIS is why people usually use the Proleptic Gregorian calendar :)
+  if ((calendar == CALENDAR_STANDARD || calendar == CALENDAR_GREGORIAN) &&
+      ((year1 == 1582 && jul_day1 <= 277) || (year1 < 1582)) &&
+      ((year_out > 1582) || ((year_out == 1582) && (jul_day_out >= 278)))) {
+
+    double tmp_day;
+    int    tmp_yr;
+      
+    tmp_yr  = year_out;
+    tmp_day = jul_day_out;
+      
+    AddTime(tmp_day,tmp_yr,10.0,calendar,jul_day_out,year_out);
+    return;
+    
+  }
+  return;
+  
+}
+
+///////////////////////////////////////////////////////////////////
+/// \brief Parse chars of calendar and return calendar integer
+///
+/// \param cal_chars        [in]  String conatining calendar name, e.g., "PROLEPTIC_GREGORIAN"
+/// \param StringToCalendar [out] enum integer representing calendar
+//
+int StringToCalendar(char *cal_chars)
+{
+  //strcpy(cal_chars, "?\0");
+  
+  if (strcasecmp("STANDARD", cal_chars) == 0) {
+    return CALENDAR_STANDARD;
+  }
+  else if (strcasecmp("GREGORIAN", cal_chars) == 0) {
+    return CALENDAR_GREGORIAN;
+  }
+  else if (strcasecmp("PROLEPTIC_GREGORIAN", cal_chars) == 0) {
+    return CALENDAR_PROLEPTIC_GREGORIAN;
+  }
+  else if ((strcasecmp("NOLEAP", cal_chars) == 0) ||
+	   (strcasecmp("NO_LEAP", cal_chars) == 0)) {
+    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support NOLEAP calendars!", BAD_DATA);
+    return CALENDAR_NOLEAP;
+  }
+  else if (strcasecmp("365_DAY", cal_chars) == 0) {
+    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 365_DAY calendars!", BAD_DATA);
+    return CALENDAR_365_DAY;
+  }
+  else if (strcasecmp("360_DAY", cal_chars) == 0) {
+    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 360_DAY calendars!", BAD_DATA);
+    return CALENDAR_360_DAY;
+  }
+  else if (strcasecmp("JULIAN", cal_chars) == 0) {
+    return CALENDAR_JULIAN;
+  }
+  else if (strcasecmp("ALL_LEAP", cal_chars) == 0) {
+    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support ALL_LEAP calendars!", BAD_DATA);
+    return CALENDAR_ALL_LEAP;
+  }
+  else if (strcasecmp("366_DAY", cal_chars) == 0) {
+    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 366_DAY calendars!", BAD_DATA);
+    return CALENDAR_366_DAY;
+  }
+  else {
+    printf("Calendar used: %s", cal_chars);
+    ExitGracefully("CommonFunctions: StringToCalendar: Unknown calendar specified!", BAD_DATA);
+  }
+  return -1;  // just to avoid compiler warning of void function return
 }
 
 ////////////////////////////////////////////////////// /////////////////////
@@ -569,8 +668,8 @@ string GetCurrentTime(void)
 /// \brief Interpolates monthly data stored in array aVal during year based on specified time
 /// \remark Model time, t[days] is specified
 ///
-/// \param aVal [in] Array of doubles representing monthly data
-/// \param &tt [in] Time structure which specifies interpolation
+/// \param aVal     [in] Array of doubles representing monthly data
+/// \param &tt      [in] Time structure which specifies interpolation
 /// \param &Options [in] Global model options information
 /// \return Interpolated value at time denoted by &tt
 double InterpolateMo(const double       aVal[12],
@@ -594,7 +693,7 @@ double InterpolateMo(const double       aVal[12],
     mo=month-1;
     nextmo=mo+1;
     if (nextmo==12){nextmo=0;}
-    leap=0;if ((IsLeapYear(year)) && (mo==1)){leap=1;}
+    leap=0;if ((IsLeapYear(year,Options.calendar)) && (mo==1)){leap=1;}
     wt=1.0-(double)(day)/(DAYS_PER_MONTH[mo]+leap);
     return wt*aVal[mo]+(1-wt)*aVal[nextmo];
   }
@@ -606,7 +705,7 @@ double InterpolateMo(const double       aVal[12],
     if      (Options.month_interp==MONTHINT_LINEAR_21){pivot=21;}
     else if (Options.month_interp==MONTHINT_LINEAR_MID){
       pivot=0.5*DAYS_PER_MONTH[month-1];
-      if ((IsLeapYear(year)) && (month==2)){pivot+=0.5;}
+      if ((IsLeapYear(year,Options.calendar)) && (month==2)){pivot+=0.5;}
     }
 
     if (day<=pivot)
@@ -614,14 +713,14 @@ double InterpolateMo(const double       aVal[12],
       mo=month-2;
       nextmo=mo+1;
       if (mo==-1){mo=11;nextmo=0;}
-      leap=0;if ((IsLeapYear(year)) && (mo==1)){leap=1;}
+      leap=0;if ((IsLeapYear(year,Options.calendar)) && (mo==1)){leap=1;}
       wt=1.0-(double)((day+DAYS_PER_MONTH[mo]+leap-pivot)/(DAYS_PER_MONTH[mo]+leap));
     }
     else{
       mo=month-1;
       nextmo=mo+1;
       if (nextmo==12){nextmo=0;}
-      leap=0;if ((IsLeapYear(year)) && (mo==1)){leap=1;}
+      leap=0;if ((IsLeapYear(year,Options.calendar)) && (mo==1)){leap=1;}
       wt=1.0-(double)((day-pivot)/(DAYS_PER_MONTH[mo]+leap));
     }
     //\math \f$ wt=0.5-0.5*cos(wt*PI) \f$ ; //Useful smoothing function

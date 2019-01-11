@@ -994,10 +994,11 @@ void CModel::AddTransientParameter(CTransientParam   *pTP)
 ///
 /// \param *pTP [in] (valid) pointer to transient parameter to be added to model
 //
-void CModel::AddPropertyClassChange(const string HRUgroup,
-                                    const class_type tclass,
-                                    const string new_class,
-                                    const time_struct &tt)
+void CModel::AddPropertyClassChange(const string      HRUgroup,
+                                    const class_type  tclass,
+                                    const string      new_class,
+                                    const time_struct &tt,
+				    const optStruct   &Options)
 {
   class_change *pCC=NULL;
   pCC=new class_change;
@@ -1029,7 +1030,7 @@ void CModel::AddPropertyClassChange(const string HRUgroup,
   }
 
   //convert time to model time
-  pCC->modeltime= TimeDifference(_pOptStruct->julian_start_day,_pOptStruct->julian_start_year ,tt.julian_day, tt.year);
+  pCC->modeltime= TimeDifference(_pOptStruct->julian_start_day,_pOptStruct->julian_start_year,tt.julian_day, tt.year, Options.calendar);
   if ((pCC->modeltime<0) || (pCC->modeltime>_pOptStruct->duration)){
     string warn;
     warn="Property Class change dated "+tt.date_string+" does not occur during model simulation time";
@@ -1081,7 +1082,7 @@ void CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &O
 {
 
   //local time
-  double t_loc = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt_out.julian_day,tt_out.year);
+  double t_loc = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt_out.julian_day,tt_out.year,Options.calendar);
 
   ExitGracefullyIf(t_loc<0,
                    "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);

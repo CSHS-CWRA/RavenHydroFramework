@@ -974,10 +974,10 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     _pReservoir->Initialize(Options);
   }
   if (_pInflowHydro != NULL){
-    _pInflowHydro->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false);
+    _pInflowHydro->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
   if (_pInflowHydro2 != NULL){
-    _pInflowHydro2->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false);
+    _pInflowHydro2->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
 
   //Check Muskingum parameters, if necessary

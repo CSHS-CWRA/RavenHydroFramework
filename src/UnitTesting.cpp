@@ -8,7 +8,7 @@
 #include "Radiation.h"
 #include "GlobalParams.h"
 #include "UnitTesting.h"
-void AddTimeTest();
+
 void RavenUnitTesting(const optStruct &Options)
 {
   //cout<<"RAVEN UNIT TESTING MODE"<<endl;
@@ -22,7 +22,7 @@ void RavenUnitTesting(const optStruct &Options)
   //JulianConvertTest();
   //SmartLookupUnitTest();
   //SmartIntervalTest();
-  //AddTimeTest();
+  //AddTimeTest( );
   //GammaTest();
 }
 /////////////////////////////////////////////////////////////////
@@ -32,54 +32,86 @@ void DateTest()
 {
   time_struct tt;
   cout<<"2012-03-27 12:43:02.01"<<endl;
-  tt=DateStringToTimeStruct("2012-03-27","12:43:02.01");
+  tt=DateStringToTimeStruct("2012-03-27","12:43:02.01",StringToCalendar("PROLEPTIC_GREGORIAN"));
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
 
   cout<<"2000-12-31 12:00:00"<<endl;
-  tt=DateStringToTimeStruct("2000-12-31","12:00:00");
+  tt=DateStringToTimeStruct("2000-12-31","12:00:00",StringToCalendar("PROLEPTIC_GREGORIAN"));
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
 
   cout<<"1997/12/31 23:00:00.0000"<<endl;
-  tt=DateStringToTimeStruct("1997/12/31","23:00:00.0000");
+  tt=DateStringToTimeStruct("1997/12/31","23:00:00.0000",StringToCalendar("PROLEPTIC_GREGORIAN"));
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
 
   cout<<"0000/01/01 24:00:00.0000"<<endl;
-  tt=DateStringToTimeStruct("0000/01/01","23:59:00.0000");
+  tt=DateStringToTimeStruct("0000/01/01","23:59:00.0000",StringToCalendar("PROLEPTIC_GREGORIAN"));
   cout<<tt.date_string<<" month, day, year: "<<tt.month <<","<<tt.day_of_month<<","<<tt.year<<" julian: "<<tt.julian_day<<endl;
   ExitGracefully("DateTest",SIMULATION_DONE);
 }
-void AddTimeTest() {
+void AddTimeTest( ) {
+  
   time_struct tt,tt2;
-  double outday;int outyear;
-  AddTime(360,1999,5,outday,outyear);
-  JulianConvert(0.0,360,1999,tt);
-  JulianConvert(0.0,outday,outyear,tt2);
-  cout<<tt.date_string<<" plus 5: "<<tt2.date_string<<endl;
+  double      outday;
+  int         outyear;
+  
+  AddTime(360,1999,5,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
+  JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 5:      "<<tt2.date_string<<"   (expected   0th of 2000 (  leap) = 2000-01-01)"<<endl;
 
-  AddTime(360,1999,365,outday,outyear);
-  JulianConvert(0.0,360,1999,tt);
-  JulianConvert(0.0,outday,outyear,tt2);
-  cout<<tt.date_string<<" plus 365: "<<tt2.date_string<<endl;
+  AddTime(360,1999,365,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
+  JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 365:    "<<tt2.date_string<<"   (expected 360th of 2000 (  leap) = 2000-12-26)"<<endl;
 
-  AddTime(360,1999,731,outday,outyear);
-  JulianConvert(0.0,360,1999,tt);
-  JulianConvert(0.0,outday,outyear,tt2);
-  cout<<tt.date_string<<" plus 731: "<<tt2.date_string<<endl;
+  AddTime(360,1999,731,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
+  JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 731:    "<<tt2.date_string<<"   (expected 360th of 2001 (noleap) = 2001-12-27)"<<endl;
 
-  AddTime(360,1999,-5,outday,outyear);
-  JulianConvert(0.0,360,1999,tt);
-  JulianConvert(0.0,outday,outyear,tt2);
-  cout<<tt.date_string<<" minus 5: "<<tt2.date_string<<endl;
+  AddTime(360,1999,-5,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
+  JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" minus 5:     "<<tt2.date_string<<"   (expected 355th of 1999 (noleap) = 1999-12-22)"<<endl;
 
-  AddTime(360,1999,-365,outday,outyear);
-  JulianConvert(0.0,360,1999,tt);
-  JulianConvert(0.0,outday,outyear,tt2);
-  cout<<tt.date_string<<" minus 365: "<<tt2.date_string<<endl;
+  AddTime(360,1999,-365,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
+  JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" minus 365:   "<<tt2.date_string<<"   (expected 360th of 1998 (noleap) = 1998-12-27)"<<endl;
 
-  AddTime(360,1999,-731,outday,outyear);
-  JulianConvert(0.0,360,1999,tt);
-  JulianConvert(0.0,outday,outyear,tt2);
-  cout<<tt.date_string<<" minus 731: "<<tt2.date_string<<endl;
+  AddTime(360,1999,-731,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
+  JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" minus 731:   "<<tt2.date_string<<"   (expected 359th of 1997 (noleap) = 1997-12-26)"<<endl;
+
+  AddTime(0,1,733774,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);  // must be 2010-01-03
+  JulianConvert(0.0,0,1,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 733774: "<<tt2.date_string<<"   (expected   2th of 2010          = 2010-01-03)"<<endl;
+
+  // GREGORIAN has 10 days missing (4 October 1582 is followed by 15 October 1582)
+  // and leap years where different before 1582
+  AddTime(0,1,733774,StringToCalendar("GREGORIAN"),outday,outyear);  // must be 2010-01-01
+  JulianConvert(0.0,0,1,StringToCalendar("GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 733774: "<<tt2.date_string<<"   (expected   0th of 2010          = 2010-01-01)"<<endl;
+
+  // STANDARD is same as GREGORIAN  
+  AddTime(0,1,733774,StringToCalendar("STANDARD"),outday,outyear);  // must be 2010-01-01
+  JulianConvert(0.0,0,1,StringToCalendar("STANDARD"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("STANDARD"),tt2);
+  cout<<tt.date_string<<" plus 733774: "<<tt2.date_string<<"   (expected   0th of 2010          = 2010-01-01)"<<endl;
+
+
+  AddTime(0,1,689945.0,StringToCalendar("GREGORIAN"),outday,outyear);  //must be 1890-01-01
+  JulianConvert(0.0,0,1,StringToCalendar("GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 689945: "<<tt2.date_string<<"   (expected   0th of 1890          = 1890-01-01)"<<endl;
+											   
+  AddTime(0,1,489800.0,StringToCalendar("GREGORIAN"),outday,outyear);  //1342, 1, 1, 0, 0, 0, 0, 1, 1)
+  JulianConvert(0.0,0,1,StringToCalendar("GREGORIAN"),tt);
+  JulianConvert(0.0,outday,outyear,StringToCalendar("GREGORIAN"),tt2);
+  cout<<tt.date_string<<" plus 489800: "<<tt2.date_string<<"   (expected   0th of 1342          = 1342-01-01)"<<endl;
 
 }
 //////////////////////////////////////////////////////////////////
@@ -88,28 +120,28 @@ void AddTimeTest() {
 void JulianConvertTest()
 {
   time_struct tt;
-  JulianConvert(0.0,0.0,2000,tt);
+  JulianConvert(0.0,0.0,2000,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Jan 1, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(0.0,154,2004,tt);
+  JulianConvert(0.0,154,2004,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Jun 2, 2004 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(366.0,0.0,2000,tt);
+  JulianConvert(366.0,0.0,2000,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Jan 1, 2001 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(400.0,0.5,2000,tt);
+  JulianConvert(400.0,0.5,2000,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Feb 4, 2001 @ 12:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(0.0,0.0,1999,tt);
+  JulianConvert(0.0,0.0,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Jan 1, 1999 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(366.0,0.0,1999,tt);
+  JulianConvert(366.0,0.0,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Jan 2, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(397.0,3.75,1999,tt);
+  JulianConvert(397.0,3.75,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Feb 5, 2000 @ 18:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
-  JulianConvert(1.0,0.0,2000,tt);
+  JulianConvert(1.0,0.0,2000,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   cout<<"Jan 2, 2000 @ 0:00: "<<tt.month<<" "<<tt.day_of_month<<", "<<tt.year<<" julian:"<<tt.julian_day<<" "<<tt.date_string<<endl;
 
   ExitGracefully("JulianConvertTest",SIMULATION_DONE);
@@ -247,11 +279,11 @@ void ClearSkyTest()
   CST.open("ClearSkyTest.csv");
   for (double day=0;day<365;day++){
     for (double lat=0;lat<90;lat+=1.0){
-      day_angle=CRadiation::DayAngle(day,1999);
-      declin=   CRadiation::SolarDeclination(day_angle);
-      ecc   = CRadiation::EccentricityCorr(day_angle);
+      day_angle  = CRadiation::DayAngle(day,1999,StringToCalendar("PROLEPTIC_GREGORIAN"));
+      declin     = CRadiation::SolarDeclination(day_angle);
+      ecc        = CRadiation::EccentricityCorr(day_angle);
       day_length = CRadiation::DayLength(lat*PI/180.0,declin);
-      rad   =CRadiation::CalcETRadiation(lat*PI/180.0,lat*PI/180.0,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
+      rad        = CRadiation::CalcETRadiation(lat*PI/180.0,lat*PI/180.0,declin,ecc,slope,solar_noon,day_length,0.0,true);//[MJ/m2/d]
       CST<<day<<","<<lat<<","<<rad<<endl;
     }
   }
@@ -290,17 +322,19 @@ void OpticalAirMassTest()
   for (double t=0;t<365;t+=1.0/24.0)
   {
     time_struct tt;
-    JulianConvert(t,0.0,2001,tt);
+    JulianConvert(t,0.0,2001,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
     tt.model_time=t;
 
     if (tt.day_of_month==21)//21st day of the month
     {
       cout<<tt.month<<endl;
-      double day_angle =CRadiation::DayAngle(jday,1999);
-      dec=CRadiation::SolarDeclination(day_angle);
+      
+      double day_angle  = CRadiation::DayAngle(jday,1999,StringToCalendar("PROLEPTIC_GREGORIAN"));
+      dec               = CRadiation::SolarDeclination(day_angle);
       double day_length = CRadiation::DayLength(lat*PI/180.0,dec*PI/180.0);
-      double tsol=t-floor(t)-0.5;
-      double OM=CRadiation::OpticalAirMass(lat*PI/180.0,dec*PI/180.0,day_length,tsol,false);
+      double tsol       = t-floor(t)-0.5;
+      double OM         = CRadiation::OpticalAirMass(lat*PI/180.0,dec*PI/180.0,day_length,tsol,false);
+      
       OAM<<tt.date_string<<","<<t<<","<<tsol<<","<<dec<<","<<OM<<",";
       OAM<<CRadiation::OpticalAirMass(lat*PI/180,dec,day_length,tsol,true)<<endl;
     }
@@ -347,7 +381,7 @@ void ShortwaveTest()
     if(int(day*24+0.001) % 24==0){cout<<day<<endl;}
     SHORT<<day<<",";
     //These aren't impacted by slope / aspect, and are OK
-    day_angle  = CRadiation::DayAngle(day,year);
+    day_angle  = CRadiation::DayAngle(day,year,StringToCalendar("PROLEPTIC_GREGORIAN"));
     declin     = CRadiation::SolarDeclination(day_angle);
     ecc        = CRadiation::EccentricityCorr(day_angle);
     day_length = CRadiation::DayLength(latrad,declin);
@@ -466,7 +500,7 @@ void ShortwaveGenerator()
     dew_pt  =s_to_d(s[5]);
     albedo  =s_to_d(s[6]);
 
-    day_angle= CRadiation::DayAngle(day,year);
+    day_angle= CRadiation::DayAngle(day,year,StringToCalendar("PROLEPTIC_GREGORIAN"));
     declin   = CRadiation::SolarDeclination(day_angle);
     ecc      = CRadiation::EccentricityCorr(day_angle);
     day_length = CRadiation::DayLength(latrad,declin);
@@ -479,7 +513,7 @@ void ShortwaveGenerator()
     if (solar_noon<-0.5){solar_noon+=1.0;}
 
 
-    Mopt =CRadiation::OpticalAirMass (latrad,declin,                       day_length,t_sol,false);
+    Mopt =CRadiation::OpticalAirMass (latrad,declin,                           day_length,t_sol,false);
     Ketp =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,slope,solar_noon,day_length,t_sol,false);
     Ket  =CRadiation::CalcETRadiation(latrad,lateq,declin,ecc,0.0  ,0.0       ,day_length,t_sol,false);
 

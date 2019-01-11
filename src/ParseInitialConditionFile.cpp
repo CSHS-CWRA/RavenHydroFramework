@@ -453,7 +453,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pBasin==NULL,
                        "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
       time_struct tt;
-      JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,tt);
+      JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pBasin->GetReservoir()->UpdateFlowRules(tt,Options); //ensures correct discharge rating curve is used to calculate flow
       pBasin->SetReservoirFlow(AutoOrDouble(s[2]),0.0);
       break;
@@ -476,7 +476,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       //purely QA/QC check
       if (Len<3){break;}
       time_struct tt;
-      tt=DateStringToTimeStruct(s[1],s[2]);
+      tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
       if ((Options.julian_start_day!=tt.julian_day) || (Options.julian_start_year!=tt.year)){
         WriteWarning(":Timestamp command in initial conditions (.rvc) file is not consistent with :StartDate command in model (.rvi) file",Options.noisy);
       }

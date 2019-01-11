@@ -180,8 +180,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   int    varid_f;               // id of forcing variable read
   int    retval;                // error value for NetCDF routines
   size_t GridDim_t;             // special type for GridDims required by nc routine
-  char   unit_t[200];           // special type for string of variable's unit required by nc routine
-  char * unit_f;                // special type for string of variable's unit required by nc routine
+  char   unit_t[200];           // special type for string of variable's unit     required by nc routine
+  char * unit_f;                // special type for string of variable's unit     required by nc routine
+  char * calendar_t;            // special type for string of variable's calendar required by nc routine
+  int    calendar;              // enum int of calendar used
   char * long_name_f;           // special type for string of variable's long name required by nc routine
   int    BytesPerTimestep;      // Memory requirement for one timestep of gridded forcing file [Bytes]
 
@@ -297,8 +299,21 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     HandleNetCDFErrors(retval);
   }
 
+  // unit of time
   retval = nc_get_att_text(ncid,varid_t,"units",unit_t);    // unit of time
   HandleNetCDFErrors(retval);
+
+  // calendar attribute
+  // just making sure that the string is read with proper null terminating character
+  calendar_t = (char *) malloc(2);
+  strcpy(calendar_t, "?\0");
+  retval = nc_inq_attlen (ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
+  HandleNetCDFErrors(retval);
+  calendar_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+  retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
+  HandleNetCDFErrors(retval);
+  calendar_t[att_len] = '\0';// add string determining character
+  calendar = StringToCalendar(calendar_t);
 
   if (_is_3D) {
     ntime = _GridDims[2];
@@ -412,12 +427,12 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     // ---------------------------
     string sDate = unit_t_str.substr(12,10);
     string sTime = unit_t_str.substr(23,8);
-    time_struct tt = DateStringToTimeStruct(sDate, sTime);
+    time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
     _interval   = (my_time[1] - my_time[0])/24.;
     ExitGracefullyIf(_interval<=0,
                      "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
 
-    AddTime(tt.julian_day,tt.year,my_time[0]*(1./24.),_start_day,_start_year) ;
+    AddTime(tt.julian_day,tt.year,my_time[0]*(1./24.),calendar,_start_day,_start_year) ;
 
   /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
      printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -465,10 +480,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
       // ---------------------------
       string sDate = unit_t_str.substr(11,10);
       string sTime = unit_t_str.substr(22,8);
-      time_struct tt = DateStringToTimeStruct(sDate, sTime);
+      time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
       _interval   = (my_time[1] - my_time[0])/1.;
       ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-      AddTime(tt.julian_day,tt.year,my_time[0]*(1.),_start_day,_start_year) ;
+      AddTime(tt.julian_day,tt.year,my_time[0]*(1.),calendar,_start_day,_start_year) ;
     }
     else {
       if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
@@ -504,11 +519,11 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
         // ---------------------------
         string sDate = unit_t_str.substr(14,10);
         string sTime = unit_t_str.substr(25,8);
-        time_struct tt = DateStringToTimeStruct(sDate, sTime);
+        time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
         _interval   = (my_time[1] - my_time[0])/24./60.;
         ExitGracefullyIf(_interval<=0,
                          "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60.),_start_day,_start_year) ;
+        AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60.),calendar,_start_day,_start_year) ;
 
         /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
            printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -555,10 +570,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
             // ---------------------------
             string sDate = unit_t_str.substr(14,10);
             string sTime = unit_t_str.substr(25,8);
-            time_struct tt = DateStringToTimeStruct(sDate, sTime);
+            time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
             _interval   = (my_time[1] - my_time[0])/24./60./60.;
             ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60./60.),_start_day,_start_year) ;
+            AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60./60.),calendar,_start_day,_start_year) ;
 
             /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
                printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -589,7 +604,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   if (_interval >= 1.0) {   // data are not sub-daily
     if ( ceil(_TimeShift) == _TimeShift) {  // time shift of whole days requested
       // if (_TimeShift != 0.0) { cout<<"before: start_day "<<_start_day<<"  start_yr "<<_start_year<<endl; }
-      AddTime(_start_day,_start_year,_TimeShift,_start_day,_start_year) ;
+      AddTime(_start_day,_start_year,_TimeShift,calendar,_start_day,_start_year) ;
       // if (_TimeShift != 0.0) { cout<<"after:  start_day "<<_start_day<<"  start_yr "<<_start_year<<endl; }
     }
     else {  // sub-daily shifts (e.g. 1.25) of daily data requested
@@ -599,7 +614,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   }
   else {  // data are sub-daily
     // if (_TimeShift != 0.0) { cout<<"before: _start_day "<<_start_day<<"  _start_yr "<<_start_year<<endl; }
-    AddTime(_start_day,_start_year,_TimeShift,_start_day,_start_year) ;
+    AddTime(_start_day,_start_year,_TimeShift,calendar,_start_day,_start_year) ;
     // if (_TimeShift != 0.0) { cout<<"after:  _start_day "<<_start_day<<"  _start_yr "<<_start_year<<endl; }
   }
 
@@ -1275,7 +1290,7 @@ void CForcingGrid::Initialize( const double model_start_day,   // fractional day
   //_t_corr is number of days between model start date and forcing chunk
   // start date (positive if data exists before model start date)
 
-  _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year);
+  _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year,Options.calendar);
 
   //QA/QC: Check for overlap issues between time series duration and model duration
   //------------------------------------------------------------------------------

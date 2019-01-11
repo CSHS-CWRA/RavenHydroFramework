@@ -381,39 +381,39 @@ void CReservoir::Initialize(const optStruct &Options)
   double timestep       =Options.timestep;
   if (_pExtractTS!=NULL)
   {
-    _pExtractTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pExtractTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pWeirHeightTS!=NULL)
   {
-    _pWeirHeightTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pWeirHeightTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pMaxStageTS!=NULL)
   {
-    _pMaxStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pMaxStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pOverrideQ!=NULL)
   {
-    _pOverrideQ->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pOverrideQ->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pMinStageTS!=NULL)
   {
-    _pMinStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pMinStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pMinStageFlowTS!=NULL)
   {
-    _pMinStageFlowTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pMinStageFlowTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pTargetStageTS!=NULL)
   {
-    _pTargetStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pTargetStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pMaxQIncreaseTS!=NULL) 
   {
-    _pMaxQIncreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pMaxQIncreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
   if(_pDroughtLineTS!=NULL)
   {
-    _pDroughtLineTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false);
+    _pDroughtLineTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
 }
 
