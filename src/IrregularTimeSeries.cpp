@@ -118,7 +118,7 @@ void CIrregularTimeSeries::Initialize(const double model_start_day,
                                       const double model_duration,
                                       const double timestep,
                                       const   bool is_observation,
-				      const    int calendar)
+				                              const    int calendar)
 {
 
   _aTimes = new double[_nVals]; //array of time series times in model time

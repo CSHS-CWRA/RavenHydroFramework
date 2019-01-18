@@ -97,14 +97,17 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
 double CRadiation::EstimateLongwaveRadiation(const int iSnow,
                                              const optStruct     &Options,
                                              const force_struct  *F,
-                                             const CHydroUnit    *pHRU)
+                                             const CHydroUnit    *pHRU,
+                                                   double        &LW_incoming)
 {
+  LW_incoming=0.0; //not explicitly calculated, by default
+
   switch(Options.LW_radiation)
   {
-    //--------------------------------------------------------
+  //--------------------------------------------------------
   case(LW_RAD_DATA):
   {
-    return F->LW_radia;
+    return F->LW_radia_net;
     break;
   }
   //--------------------------------------------------------
@@ -131,6 +134,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 
     eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody
 
+    LW_incoming=STEFAN_BOLTZ*emissivity*eps_at*pow(Tair,4);
     return STEFAN_BOLTZ*emissivity*(eps_at*pow(Tair,4)-pow(Tsurf,4));
     break;
   }
@@ -146,7 +150,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double tmp=(LH_FUSION*DENSITY_WATER/MM_PER_METER); //[mm/d]-->[MJ/m2/d]
 
     double Fc=pHRU->GetSurfaceProps()->forest_coverage;
-
+    
     return tmp*((1.0-Fc)*LW_open+(Fc)*LW_forest);
 
     break;
@@ -180,6 +184,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     return -f*eps*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0);
     break;
   }
+  //--------------------------------------------------------
   /*case (LW_RAD_UNFAO):
     {
     ///< from Crop evapotranspiration - Guidelines for computing crop water requirements - FAO Irrigation and drainage paper 56 \cite Allen1998FR
@@ -187,22 +192,22 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double tmp;
     double ea;
     ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); //[kPa]
-    tmp=(0.34-0.14*pow(ea,0.5))*(1.35*(F->SW_radia/F->CS_radia)-0.35);
+    tmp=(0.34-0.14*pow(ea,0.5))*(1.35*(F->SW_radia/F->SW_uncorr)-0.35);
     return STEFAN_BOLTZ*tmp*(pow(F->temp_daily_min,4)+pow(F->temp_daily_max,4));
     }*/
+  //--------------------------------------------------------
   /*
-    case(LW_RAD_BRUTSAERT):
+  case(LW_RAD_BRUTSAERT):
     {//Brook90-Brutsaert
     const double C1=0.25;
     const double C2=0.5;
     const double C3=0.2;
     //Brutsaert (1982) equation for effective clear sky emissivity
-    double cloud_corr; //cloud correction
-    double ratio=F->SW_radia/F->SW_radia_unc;
-    cloud_corr=C3+(1.0-C3)*min(max((ratio - C1) / C2,1.0),0.0);
+    double cloud_corr=0.2+0.8*min(max((F->SW_radia/F->SW_radia_unc - 0.25) / 0.5,1.0),0.0);
     return STEFAN_BOLTZ*emmissivity*cloud_corr*(emiss_eff*pow(Tair,4)-pow(Tair,4));
     }
   */  
+  //--------------------------------------------------------
    /*
    case (LW_RAD_CRHM):
    { //from CRHM netall based upon Brutsaert
@@ -212,6 +217,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
      if(clear_sky_SW > 0.0)
      {
         LW_net = -0.85 + emiss*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0)*(-0.39+0.093*sqrt(ea))*(0.26+0.81*(F->SW_radia/F->SW_radia_unc));
+        LW_incoming = 0.85;
      }
      return LW_net;
    } 
@@ -219,15 +225,13 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   /*case(LW_RAD_SWAT):
     {
     // calculate net long-wave radiation
-    double rbo,rout;
-    double incoming =F->SW_radia;
+    double emiss,cloud_corr;
     double sat_vap,ea;
     sat_vap=GetSaturatedVaporPressure(F->temp_ave); //[kPa]
     ea =F->rel_humidity*sat_vap;                    //[kPa]
-    rbo = -(0.34 - 0.139 * sqrt(ea));                        // net emissivity  equation 2.2.20 in SWAT manual
-    if (rmx < 1e-4){rto = 0.0;}
-    else           {rto = 0.9 * (F->SW_radia / F->SW_radia_unc) + 0.1;}                             // cloud cover factor equation 2.2.19 SWAT
-    rout= rbo * rto * 4.9e-9 * pow(F->temp_ave+ZERO_CELSIUS,4);   // net long-wave radiation equation 2.2.21 SWAT
+    emiss      = -(0.34 - 0.139 * sqrt(ea));                  // net emissivity  equation 2.2.20 in SWAT manual
+    cloud_corr = 0.1+ 0.9 * (F->SW_radia / F->SW_radia_unc);  // cloud cover factor equation 2.2.19 SWAT
+    return emiss * cloud_corr * STEFAN_BOLTZ * pow(F->temp_ave+ZERO_CELSIUS,4);   // net long-wave radiation equation 2.2.21 SWAT
     }*/
 
   }
@@ -326,7 +330,7 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
 //
 double CRadiation::DayAngle(const double&julian_day,
                             const int    year,
-			    const int    calendar)
+                            const int    calendar)
 {
   double leap=0.0;
   if (IsLeapYear(year,calendar)){leap=1.0;}

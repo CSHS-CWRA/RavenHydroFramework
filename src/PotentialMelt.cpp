@@ -84,7 +84,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double surf_temp = pHRU->GetSnowTemperature();
 
     double K = (1-albedo)* F->SW_radia;   //net short wave radiation to snowpack [MJ/m2/d]
-    double L = F->LW_radia;       //net long wave radiation [MJ/m2/d]
+    double L = F->LW_radia_net;       //net long wave radiation [MJ/m2/d]
     double H = GetSensibleHeatSnow(air_temp,surf_temp,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double LE= GetLatentHeatSnow  (air_pres,air_temp,surf_temp,rel_humid,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double R = GetRainHeatInput   (surf_temp,rainfall ,rel_humid); //[MJ/m2/d]
@@ -101,7 +101,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double tmp_rate=threshPositive(Ma*(F->temp_daily_ave-melt_temp));
 
-    rad     = ((1-albedo)*F->SW_radia+F->LW_radia);//[MJ/m2/d]
+    rad     = ((1-albedo)*F->SW_radia+F->LW_radia_net);//[MJ/m2/d]
     convert = MM_PER_METER/DENSITY_WATER/LH_FUSION;//for converting radiation to mm/d [mm/m]/[kg/m3]/[MJ/kg] = [mm-m2/MJ]
 
     return tmp_rate+ threshPositive(rad*convert);
@@ -169,11 +169,11 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   //----------------------------------------------------------
   else if(Options.pot_melt == POTMELT_CRHM_EBSM)
   {
-    double Qn_ebsm=(F->SW_radia_net+F->LW_radia);
-    double Qh_ebsm=-0.92+0.076*F->wind_vel+0.19*F->temp_daily_max;
-    double Qp_ebsm=(F->precip*(1.0-F->snow_frac))*F->temp_ave*4.2/1000.0;
+    double Qn_ebsm=(F->SW_radia_net+F->LW_radia_net);
+    double Qh_ebsm=(-0.92+0.076*F->wind_vel+0.19*F->temp_daily_max);
+    double Qp_ebsm=(F->precip*(1.0-F->snow_frac))*max(F->temp_ave,0.0)*SPH_WATER*DENSITY_WATER/MM_PER_METER;
 
-    return  Qn_ebsm + Qh_ebsm + Qp_ebsm; 
+    return  (Qn_ebsm + Qh_ebsm + Qp_ebsm)/LH_FUSION/DENSITY_WATER*MM_PER_METER; //[MJ/m2/d]->[mm/d]
   }
   //----------------------------------------------------------
   else if(Options.pot_melt == POTMELT_HMETS)
@@ -237,7 +237,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   SHORM*=(MM_PER_METER/DENSITY_WATER/LH_FUSION);   //[MJ/m2/d-->mm/d]
 
   //longwave energy component
-  ONGWMO=F.LW_radia;                                //[MJ/m2/d]
+  ONGWMO=F.LW_radia_net;                           //[MJ/m2/d]
   ONGWMO*=(MM_PER_METER/DENSITY_WATER/LH_FUSION);  //[MJ/m2/d-->mm/d]
 
   //calculate reduction factor RM

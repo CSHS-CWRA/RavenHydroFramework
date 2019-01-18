@@ -447,13 +447,11 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     double max_stor   =pHRU->GetSoilCapacity(0);
     double coef_runoff=pHRU->GetSurfaceProps()->HMETS_runoff_coeff; //[-]
 
-    double PET=0.0*pHRU->GetForcingFunctions()->PET; //shouldnt be here
-
     direct=Fimp*rainthru;
 
     runoff=coef_runoff*(stor/max_stor)*(1.0-Fimp)*rainthru; //[mm/d] 'horizontal transfer'
 
-    infil=(1.0-Fimp)*rainthru-runoff-PET;
+    infil=(1.0-Fimp)*rainthru-runoff;
 
     delayed=coef_runoff*pow(stor/max_stor,2.0)*infil; //[mm/d]
     infil-=delayed;

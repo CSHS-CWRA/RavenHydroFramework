@@ -508,11 +508,10 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     melt-=to_liq;                                       
     SL  +=to_liq;
 
-    //what if SL>SWI*SWE
+    //what if SL>SWI*SWE?
     double ripe=max(SL-SWI*SWE,0.0);
     SL-=ripe;
 
-   // cout << cum_melt<<" "<<SWE<<" "<<SL<<" "<<melt<<" "<<freeze<<endl;
     rates[0]=to_liq/tstep;   //SNOW->SNOW_LIQ
     rates[1]=melt  /tstep;   //SNOW->PONDED_WATER (runoff)
     rates[2]=ripe;           //SNOW_LIQ->PONDED (not explicit here)
@@ -1270,7 +1269,7 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
   rates[0]=snowmelt0; //SNOW->LIQ_SNOW [mm]
   rates[1]=snowmelt1; //SNOW->PONDED_WATER [mm]
   rates[2]=snowmelt2; //SNOW_LIQ->PONDED_WATER [mm]
-  rates[3]=refreeze; //LIQ_SNOW->SNOW [mm]
+  rates[3]=refreeze;  //LIQ_SNOW->SNOW [mm]
   rates[4]=-(snow_energy_old-snow_energy)/Options.timestep; // COLD_CONTENT->COLD_CONTENT [MJ/m2]
 
   return;

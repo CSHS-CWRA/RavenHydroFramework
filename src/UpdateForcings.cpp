@@ -36,16 +36,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   int                 mo,yr;
   int                 k,g,nn;
   double              mid_day;
-  int                 model_day;
+  double              model_day;
   double              wt;
 
   double t  = tt.model_time;
   mo        = tt.month;
   yr        = tt.year;
   nn        = (int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index.
-  model_day = (int)(floor(tt.model_time));          //current day (measured from simulation start)
-
-  mid_day   = ((int)tt.julian_day)+0.5;//mid day
+  model_day = floor(tt.model_time);          //current day (measured from simulation start)
+  //model_day = floor(tt.model_time-(tt.julian_day-floor(tt.julian_day))+TIME_CORRECTION);
+  mid_day   = floor(tt.julian_day+TIME_CORRECTION)+0.5;//mid day
 
   CForcingGrid *pGrid_pre        = NULL;            // forcing grids
   CForcingGrid *pGrid_rain       = NULL;
@@ -106,9 +106,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     //if (Options.uses_full_data)
     {
       // \todo [optimize] should add Options.uses_full_data to be calculated if LW,SW,etc. methods=USE_DATA or otherwise need data streams
-      Fg[g].LW_radia        =_pGauges[g]->GetForcingValue    (F_LW_RADIA,nn);
+      Fg[g].LW_radia_net    =_pGauges[g]->GetForcingValue    (F_LW_RADIA_NET,nn);
       Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
       Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
+      Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
       Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
       Fg[g].SW_radia_unc    =Fg[g].SW_radia;
 
@@ -188,7 +189,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           F.wind_vel       += wt * Fg[g].wind_vel;
           F.cloud_cover    += wt * Fg[g].cloud_cover;
           F.ET_radia       += wt * Fg[g].ET_radia;
-          F.LW_radia       += wt * Fg[g].LW_radia;
+          F.LW_incoming    += wt * Fg[g].LW_incoming;
+          F.LW_radia_net   += wt * Fg[g].LW_radia_net;
           F.SW_radia       += wt * Fg[g].SW_radia;
           F.SW_radia_net   += wt * Fg[g].SW_radia_net;
           F.PET_month_ave  += wt * Fg[g].PET_month_ave;
@@ -408,7 +410,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
       }//otherwise, uses data
 
-      F.LW_radia=CRadiation::EstimateLongwaveRadiation(GetStateVarIndex(SNOW),Options,&F,_pHydroUnits[k]);
+      F.LW_radia_net=CRadiation::EstimateLongwaveRadiation(GetStateVarIndex(SNOW),Options,&F,_pHydroUnits[k],F.LW_incoming);
 
       //-------------------------------------------------------------------
       //  Potential Melt Rate
@@ -641,7 +643,7 @@ double CModel::CalculateSubDailyCorrection(const force_struct &F,
     double DL=F.day_length;
     double dawn=0.5-0.5*DL;
     double dusk=0.5+0.5*DL;
-    double t=tt.model_time-floor(tt.model_time); //time of day [d]
+    double t=tt.julian_day-floor(tt.julian_day); //time of day [d]
     double dt=Options.timestep;
 
     if      ((t>dawn) && (t+dt<=dusk)){
@@ -669,17 +671,19 @@ double CModel::CalculateSubDailyCorrection(const force_struct &F,
     int nn_end  =(int)(floor(tt.model_time+1.0)/Options.timestep);//index of first timestp in following day
     force_struct Ftmp;
     time_struct  tt_tmp;
+    double start_of_day;
     tt_tmp=tt;
     tt_tmp.day_changed=true;
-
+    
     double sum=0.0;
     for (int nnn=nn_start;nnn<nn_end;nnn++)
     {
       tt_tmp.model_time=nnn*Options.timestep;
+      start_of_day=floor(tt_tmp.model_time);
       ZeroOutForcings(Ftmp);
       for (int g=0;g<_nGauges;g++)
       {
-        Ftmp.precip_daily_ave+=_aGaugeWtPrecip[k][g]*_pGauges[g]->GetForcingValue(F_PRECIP,floor(tt_tmp.model_time),1);
+        Ftmp.precip_daily_ave+=_aGaugeWtPrecip[k][g]*_pGauges[g]->GetForcingValue(F_PRECIP,start_of_day,1);
 
         Ftmp.temp_ave        +=_aGaugeWtTemp[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_AVE,nnn);
         Ftmp.temp_daily_max  +=_aGaugeWtTemp[k][g]*_pGauges[g]->GetForcingValue(F_TEMP_DAILY_MAX,nnn);
@@ -829,7 +833,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
   if((Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE) ||
      (Options.evaporation==PET_PENMAN_MONTEITH)  || (Options.evaporation==PET_PENMAN_COMBINATION) ||
-     (Options.evaporation==PET_JENSEN_HAISE) || (Options.evaporation==PET_GRANGER))
+     (Options.evaporation==PET_JENSEN_HAISE) || (Options.evaporation==PET_GRANGERGRAY))
   {
     if(Options.SW_radia_net == NETSWRAD_CALC) {
       aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
@@ -874,7 +878,7 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if ((Options.ow_evaporation==PET_CONSTANT) || (Options.ow_evaporation==PET_HAMON) || (Options.ow_evaporation==PET_HARGREAVES)
            || (Options.ow_evaporation==PET_HARGREAVES_1985) || (Options.ow_evaporation==PET_TURC_1961)
-           || (Options.ow_evaporation==PET_MAKKINK_1957) || (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR) || (Options.ow_evaporation==PET_GRANGER))
+           || (Options.ow_evaporation==PET_MAKKINK_1957) || (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR) || (Options.ow_evaporation==PET_GRANGERGRAY))
   {
     // no parameter required/listed
   }

@@ -32,7 +32,7 @@ inline double CalculateLeafConductance( const double       &max_leaf_cond,     /
   ///< \ref Brook90: \cite Federer2010
   /// \todo [fix] - Brook90 corrections for radiation
   /*f1=0.0;
-    double radiation=(F->LW_radia+F->SW_radia_net)*MJ_PER_D_TO_WATT;
+    double radiation=(F->LW_radia_net+F->SW_radia_net)*MJ_PER_D_TO_WATT;
     const double RM=1000;//[W/m2]
     const double R5=75;//[W/m2]
     double R0= RM * R5 / (RM - 2.0 * R5);

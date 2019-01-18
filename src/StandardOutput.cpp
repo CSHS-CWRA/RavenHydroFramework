@@ -651,8 +651,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               {
                 if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
                 {
-                  //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
-                  //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                   if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                   else                                             { _HYDRO << ",";       }
@@ -683,8 +681,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                 for(int i = 0; i < _nObservedTS; i++){
                   if(IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
                   {
-                    //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
-                    //double val=_pObservedTS[i]->GetSampledValue(nn); //fails for interval>timestep
                     double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
                     if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
                     else                                                         { _HYDRO << ","; }
@@ -786,7 +782,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	          for (int i = 0; i < _nObservedTS; i++){
 	            if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
 	            {
-	              //int nn=int(floor((tt.model_time+TIME_CORRECTION)/ Options.timestep));
 	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
 	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
 	              else                                             { _RESSTAGE << ",";       }
@@ -980,7 +975,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         _FORCINGS<<pFave->ET_radia<<",";
         _FORCINGS<<pFave->SW_radia<<",";
         _FORCINGS<<pFave->SW_radia_net<<",";
-        _FORCINGS<<pFave->LW_radia<<",";
+        //_FORCINGS<<pFave->LW_incoming<<",";
+        _FORCINGS<<pFave->LW_radia_net<<",";
         _FORCINGS<<pFave->wind_vel<<",";
         _FORCINGS<<pFave->PET<<",";
         _FORCINGS<<pFave->OW_PET<<",";

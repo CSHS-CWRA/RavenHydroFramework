@@ -41,8 +41,9 @@ void ZeroOutForcings(force_struct &F)
   F.cloud_cover=0.0;
   F.ET_radia=0.0;
   F.SW_radia=0.0;
+  F.LW_incoming=0.0;
   F.SW_radia_net=0.0;
-  F.LW_radia=0.0;
+  F.LW_radia_net=0.0;
 
   F.day_length=0.0;
   F.day_angle=0.0;
@@ -97,10 +98,12 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
 
   else if (f=="ET_RADIA"         ){return F_ET_RADIA;}
   else if (f=="SW_RADIA"         ){return F_SW_RADIA;}
-  else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}
+  else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}//alias
   else if (f=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
-  else if (f=="LW_RADIA"         ){return F_LW_RADIA;}
-  else if (f=="LONGWAVE"         ){return F_LW_RADIA;}
+  else if (f=="LW_INCOMING"      ){return F_LW_INCOMING;}
+  else if (f=="LW_RADIA"         ){return F_LW_RADIA_NET;}//alias
+  else if (f=="LONGWAVE"         ){return F_LW_RADIA_NET;}//alias
+  else if (f=="LW_RADIA_NET"     ){return F_LW_RADIA_NET;}
   else if (f=="CLOUD_COVER"      ){return F_CLOUD_COVER;}
 
   else if (f=="DAY_LENGTH"       ){return F_DAY_LENGTH;}
@@ -114,7 +117,7 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
 
   else if (f=="POTENTIAL_MELT"   ){return F_POTENTIAL_MELT;}
 
-  else if(f=="RECHARGE"          ){return F_RECHARGE;}
+  else if (f=="RECHARGE"          ){return F_RECHARGE;}
 
   else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
@@ -167,8 +170,9 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
   else if (ftype==F_ET_RADIA        ){return f.ET_radia;}
   else if (ftype==F_SW_RADIA        ){return f.SW_radia;}
   else if (ftype==F_SW_RADIA_UNC    ){return f.SW_radia_unc;}
+  else if (ftype==F_LW_INCOMING     ){return f.LW_incoming;}
   else if (ftype==F_SW_RADIA_NET    ){return f.SW_radia_net;}
-  else if (ftype==F_LW_RADIA        ){return f.LW_radia;}
+  else if (ftype==F_LW_RADIA_NET    ){return f.LW_radia_net;}
 
   else if (ftype==F_DAY_LENGTH      ){return f.day_length;}
   else if (ftype==F_DAY_ANGLE       ){return f.day_angle;}
@@ -230,8 +234,10 @@ string GetForcingTypeUnits(forcing_type ftype)
   case F_CLOUD_COVER:     {units="0-1"; break;}
   case F_ET_RADIA:        {units="MJ/m2/d"; break;}
   case F_SW_RADIA:        {units="MJ/m2/d"; break;}
+  case F_SW_RADIA_UNC:    {units="MJ/m2/d"; break;}
+  case F_LW_INCOMING:     {units="MJ/m2/d"; break;}
   case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}
-  case F_LW_RADIA:        {units="MJ/m2/d"; break;}
+  case F_LW_RADIA_NET:    {units="MJ/m2/d"; break;}
 
   case F_DAY_LENGTH:      {units="d"; break;}
   case F_DAY_ANGLE:       {units="rad"; break;}
@@ -289,8 +295,10 @@ string ForcingToString(const forcing_type ftype)
   case F_CLOUD_COVER:     {fstring="CLOUD_COVER"; break;}
   case F_ET_RADIA:        {fstring="ET_RADIA"; break;}
   case F_SW_RADIA:        {fstring="SW_RADIA"; break;}
+  case F_SW_RADIA_UNC:    {fstring="SW_RADIA_UNC"; break;}
+  case F_LW_INCOMING:     {fstring="LW_INCOMING"; break;}
   case F_SW_RADIA_NET:    {fstring="SW_RADIA_NET"; break;}
-  case F_LW_RADIA:        {fstring="LW_RADIA"; break;}
+  case F_LW_RADIA_NET:    {fstring="LW_RADIA_NET"; break;}
 
   case F_DAY_LENGTH:      {fstring="DAY_LENGTH"; break;}
   case F_DAY_ANGLE:       {fstring="DAY_ANGLE"; break;}

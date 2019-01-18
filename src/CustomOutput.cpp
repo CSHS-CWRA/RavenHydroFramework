@@ -947,11 +947,11 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   }//end for (k=0;...
 
   if (reset){
-        if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
+  	if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
     { 
       _CUSTOM<<endl;//valid for ensim or .csv format
-                }
-                else if (Options.output_format==OUTPUT_NETCDF)
+		}
+		else if (Options.output_format==OUTPUT_NETCDF)
     {
 #ifdef _RVNETCDF_
       // Write to NetCDF (done entire vector of data at once)
@@ -968,7 +968,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       }
       delete [] output;
 #endif
-                }
+		}
     _time_index++;
   }
 }

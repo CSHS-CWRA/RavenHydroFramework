@@ -21,11 +21,11 @@
 enum sublimation_type
 {
   SUBLIM_SVERDRUP,        ///< Sverdrup 1946 : adapted from Gray 1973 \cite Sverdrup1946JoAS \cite gray1974
-  SUBLIM_KUZMIN,          ///< Kuzmin 1953 : adapted from Gray 1973
+  SUBLIM_KUZMIN,          ///< Kuzmin 1972 : adapted from Gray 1973
   SUBLIM_CENTRAL_SIERRA,  ///< US Army Corps of Engineers : adapted from Gray 1973 \cite Engineers1956NPDPO
   SUBLIM_PBSM,            ///< Pomeroy Prairie Blowing Snow Model Sublimation : adapted from Pomeroy 1993 \cite Pomeroy1993JoH
   SUBLIM_WILLIAMS,        ///< Canadian National Research Council [1959] -> developed from Sverdrup
-  SUBLIM_CRHM_MARKS       ///< Marks et al. (1997)
+  SUBLIM_CRHM             ///< Pomeroy et al. (2007) variation of Kuzmin
 };
 
 ///////////////////////////////////////////////////////////////////

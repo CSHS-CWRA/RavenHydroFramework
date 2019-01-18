@@ -39,7 +39,7 @@ public:/*-------------------------------------------------------*/
                           const double model_duration,  //days
                           const double timestep,        //days
                           const   bool is_observation,
-			  const    int calendar) =0;
+                          const    int calendar) =0;
 
   ts_type GetType      () const;
   string  GetName      () const;

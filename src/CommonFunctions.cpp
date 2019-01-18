@@ -293,9 +293,9 @@ bool IsLeapYear(const int year, const int calendar)
         (year % 4 == 0)) {
       leap = true;
       if ((calendar == CALENDAR_STANDARD ||
-	   calendar == CALENDAR_GREGORIAN) &&
-	  (year % 100 == 0) && (year % 400 != 0) && (year > 1583)) {
-	leap = false;
+	         calendar == CALENDAR_GREGORIAN) &&
+	         (year % 100 == 0) && (year % 400 != 0) && (year > 1583)) {
+	      leap = false;
       }
     }
     return leap;
@@ -593,43 +593,41 @@ void AddTime(const double &jul_day1,const int &year1,const double &daysadded,con
 //
 int StringToCalendar(char *cal_chars)
 {
-  //strcpy(cal_chars, "?\0");
-  
-  if (strcasecmp("STANDARD", cal_chars) == 0) {
+  string str=StringToUppercase(cal_chars);
+  if (strcmp("STANDARD", str.c_str()) == 0) {
     return CALENDAR_STANDARD;
   }
-  else if (strcasecmp("GREGORIAN", cal_chars) == 0) {
+  else if (strcmp("GREGORIAN", str.c_str()) == 0) {
     return CALENDAR_GREGORIAN;
   }
-  else if (strcasecmp("PROLEPTIC_GREGORIAN", cal_chars) == 0) {
+  else if (strcmp("PROLEPTIC_GREGORIAN", str.c_str()) == 0) {
     return CALENDAR_PROLEPTIC_GREGORIAN;
   }
-  else if ((strcasecmp("NOLEAP", cal_chars) == 0) ||
-	   (strcasecmp("NO_LEAP", cal_chars) == 0)) {
+  else if ((strcmp("NOLEAP", str.c_str()) == 0) || (strcmp("NO_LEAP", str.c_str()) == 0)) {
     ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support NOLEAP calendars!", BAD_DATA);
     return CALENDAR_NOLEAP;
   }
-  else if (strcasecmp("365_DAY", cal_chars) == 0) {
+  else if (strcmp("365_DAY", str.c_str()) == 0) {
     ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 365_DAY calendars!", BAD_DATA);
     return CALENDAR_365_DAY;
   }
-  else if (strcasecmp("360_DAY", cal_chars) == 0) {
+  else if (strcmp("360_DAY", str.c_str()) == 0) {
     ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 360_DAY calendars!", BAD_DATA);
     return CALENDAR_360_DAY;
   }
-  else if (strcasecmp("JULIAN", cal_chars) == 0) {
+  else if (strcmp("JULIAN", str.c_str()) == 0) {
     return CALENDAR_JULIAN;
   }
-  else if (strcasecmp("ALL_LEAP", cal_chars) == 0) {
+  else if (strcmp("ALL_LEAP", str.c_str()) == 0) {
     ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support ALL_LEAP calendars!", BAD_DATA);
     return CALENDAR_ALL_LEAP;
   }
-  else if (strcasecmp("366_DAY", cal_chars) == 0) {
+  else if (strcmp("366_DAY", str.c_str()) == 0) {
     ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 366_DAY calendars!", BAD_DATA);
     return CALENDAR_366_DAY;
   }
   else {
-    printf("Calendar used: %s", cal_chars);
+    printf("Calendar used: %s", str.c_str());
     ExitGracefully("CommonFunctions: StringToCalendar: Unknown calendar specified!", BAD_DATA);
   }
   return -1;  // just to avoid compiler warning of void function return
@@ -873,18 +871,6 @@ double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
   atmos_cond/=(log((meas_ht-zero_pl)/rough_ht)*log((meas_ht-zero_pl)/vap_rough_ht));
 
   return atmos_cond;//[mm/s]
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Calculates vapor pressure using humidity and temperature
-/// \remark from Dingman eqn 7-5 \cite Dingman1994
-///
-/// \param &T [in] Temperature in Celsius
-/// \param &rel_humid [in] Relative humidity [0..1]
-//
-double GetVaporPressure(const double &T,const double &rel_humid)
-{
-  return GetSaturatedVaporPressure(T)*rel_humid;
 }
 
 //////////////////////////////////////////////////////////////////

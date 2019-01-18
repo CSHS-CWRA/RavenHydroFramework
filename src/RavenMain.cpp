@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 
   ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){
-    ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RUNTIME_ERR);
+    ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
   WARNINGS.close();
   

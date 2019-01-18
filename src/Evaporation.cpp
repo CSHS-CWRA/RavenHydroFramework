@@ -9,7 +9,7 @@
   -Hargreaves Equation
   -Hargreaves Equation
   =Shuttle-Wallace
-  -Granger
+  -Granger-Gray
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -17,7 +17,7 @@
 #include "HydroUnits.h"
 #include "Model.h"
 
-double EvapGranger(const force_struct *F,const CHydroUnit *pHRU);
+double EvapGrangerGray(const force_struct *F,const CHydroUnit *pHRU);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates PET using Makink 1957 method \cite Lu2005JotAWRA
@@ -98,7 +98,7 @@ double PenmanMonteithEvap(const force_struct     *F,
   vapor_def=sat_vap*(1.0-F->rel_humidity);
 
   //Calculate evaporation - Dingman eqn 7-56
-  numer =de_dT*max(F->SW_radia_net + F->LW_radia,0.0); //[kPa/K*MJ/m2/d]
+  numer =de_dT*max(F->SW_radia_net + F->LW_radia_net,0.0); //[kPa/K*MJ/m2/d]
   numer+=(F->air_dens)*SPH_AIR*vapor_def*(atmos_cond*SEC_PER_DAY/MM_PER_METER);//[kPa/K*MJ/m2/d]
   denom = (de_dT+gamma*(1.0+(atmos_cond/canopy_cond)))*LH_vapor*DENSITY_WATER; //[kPa/K*MJ/m3]
   if (canopy_cond==0){return 0.0;}//zero conductance means no ET
@@ -135,7 +135,7 @@ double PenmanCombinationEvap(const force_struct *F,
   vapor_def   =sat_vap*(1.0-(F->rel_humidity));
 
   /// \ref Calculate evaporation - Dingman eqn 7-33
-  numer =de_dT*max((F->SW_radia_net) + (F->LW_radia),0.0);
+  numer =de_dT*max((F->SW_radia_net) + (F->LW_radia_net),0.0);
   numer+=gamma*vert_trans*DENSITY_WATER*LH_vapor*(F->wind_vel)*vapor_def;
 
   denom =DENSITY_WATER*LH_vapor*(de_dT + gamma);
@@ -164,7 +164,7 @@ double PriestleyTaylorEvap(const force_struct *F)
   LH_vapor=GetLatentHeatVaporization(F->temp_ave);
   gamma   =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
-  return 1.28 * (de_dT/(de_dT+gamma))*max(F->SW_radia_net+F->LW_radia,0.0)/LH_vapor/DENSITY_WATER*MM_PER_METER;
+  return 1.28 * (de_dT/(de_dT+gamma))*max(F->SW_radia_net+F->LW_radia_net,0.0)/LH_vapor/DENSITY_WATER*MM_PER_METER;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -247,7 +247,7 @@ Jensen Haise Evaporation
 
   ctx=27.5-0.25*(sat_vap_max-sat_vap_min)*MB_PER_KPA-((FEET_PER_METER*elev)/1000);
 
-  Rin=(F->LW_radia+F->SW_radia_net);
+  Rin=(F->LW_radia_net+F->SW_radia_net);
   Rin/=(LH_VAPOR*DENSITY_WATER/MM_PER_METER);//[MJ/m2/day]->[mm/d]
 
   return cts*(Ta-ctx)*Rin; */
@@ -351,7 +351,7 @@ double CModel::EstimatePET(const force_struct &F,
     double zero_pl,z0,vert_trans,ref_ht;
 
     zero_pl =pHRU->GetVegVarProps()->zero_pln_disp;
-    z0   =pHRU->GetVegVarProps()->roughness;
+    z0      =pHRU->GetVegVarProps()->roughness;
     ref_ht  =pHRU->GetVegVarProps()->reference_height; //default veght+2.0 m
 
     if(wind_measurement_ht>ref_ht){ref_ht=wind_measurement_ht;} //correction if real measurement height data is available
@@ -407,8 +407,8 @@ double CModel::EstimatePET(const force_struct &F,
   }
   case(PET_PENMAN_SIMPLE39) :
   {
-    double Rs =F.SW_radia;   //[MJ/m2/d]
-    double R_et =F.ET_radia; //[MJ/m2/d]
+    double Rs  =F.SW_radia;   //[MJ/m2/d]
+    double R_et=F.ET_radia; //[MJ/m2/d]
     double Tave=F.temp_ave;  //[C]
     double rel_hum=F.rel_humidity; //[0..1]
 
@@ -429,8 +429,8 @@ double CModel::EstimatePET(const force_struct &F,
     PET=max(F.ET_radia/DENSITY_WATER/LH_VAPOR*(F.temp_daily_ave+5.0)/100.0,0.0);
     break;
   }
-  case (PET_GRANGER):
-    PET=EvapGranger(&F,pHRU);
+  case (PET_GRANGERGRAY):
+    PET=EvapGrangerGray(&F,pHRU);
     break;
   default:
   {
@@ -554,7 +554,7 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
 
   double AE; //Availabale energy at canopy top, [MJ/d/m2]
   double AE_grnd;//Available energy at ground, [MJ/d/m2]
-  AE = (F->SW_radia_net + F->LW_radia);
+  AE = (F->SW_radia_net + F->LW_radia_net);
   AE_grnd =AE*VV.skyview_fact;
 
   double Rsoil=(de_dT+gamma)*Rga+gamma*Rss; //ground,canopy, and leaf resistances [Kpa-s/K-m]
@@ -660,7 +660,7 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
 
   double AE;     //Available energy at canopy top, [MJ/d/m2]
   double AE_grnd;//Available energy at ground, [MJ/d/m2]
-  AE = (F->SW_radia_net + F->LW_radia);
+  AE = (F->SW_radia_net + F->LW_radia_net);
   AE_grnd =AE*VV.skyview_fact;
 
   double Rs = (de_dT + gamma) * Rga + gamma * Rss;
@@ -725,30 +725,28 @@ double Blaneycriddle(const force_struct *F)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief calculates drying power modifier for wind thru canopy
-/// \details from Granger \cite ?
+/// \details from Granger & Gray \cite GrangerGray1989
 /// \ref ported from classEvap in CRHM 
 /// \param wind_vel [in] wind velocity in m/s
 /// \param veg_ht [in] canopy height in meters
-/// \return drying power modifying coefficient
+/// \return drying power modifying coefficient (mm/d/kPa)
 //
 double GetDryingPower(const double &wind_vel,const double &veg_ht) //u in m/s; canopy height in m
 {
   // returns Drying power f(u) (mm/d/kPa)
-  double Z0 = veg_ht*100.0/7.6;
+  double Z0 = (veg_ht*CM_PER_METER)/7.6; //Brutsaert, 1982
   return (8.19 + 0.22*Z0) + (1.16 + 0.08*Z0)*wind_vel;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates evaporation using Granger method
-/// \details from Granger \cite ?
+/// \brief Calculates evaporation using Granger & Gray method
+/// \details from Granger & Gray \cite GrangerGray1989
 /// \ref ported from classEvap in CRHM 
 /// \param *F [in] Model forcing functions
 /// \param *pHRU pointer to HRU
 /// \return Calculated PET [mm/d]
 //
-double EvapGranger(const force_struct *F,const CHydroUnit *pHRU)
+double EvapGrangerGray(const force_struct *F,const CHydroUnit *pHRU)
 {
-  //
-
   double gamma;     //psychometric "constant" [kPa/K]
   double LH_vapor;  //latent heat of vaporization [MJ/kg]
   double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
@@ -756,9 +754,9 @@ double EvapGranger(const force_struct *F,const CHydroUnit *pHRU)
   double PET=0.0;
 
   double F_Qg=0.1;//fraction to ground flux
-  double Q = (F->SW_radia_net+F->LW_radia)*(1.0 - F_Qg); // CRHM supposes daily value (mm/d)
+  double Rnet = (F->SW_radia_net+F->LW_radia_net)*(1.0 - F_Qg); // CRHM supposes daily value (MJ/m2/d)
 
-  if(Q > 0.0)
+  if(Rnet > 0.0)
   {
     sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
     de_dT    =GetSatVapSlope(F->temp_ave,sat_vap);
@@ -769,10 +767,10 @@ double EvapGranger(const force_struct *F,const CHydroUnit *pHRU)
     double ea_mod=GetDryingPower(F->wind_vel,veg_ht)*(sat_vap*(1.0-F->rel_humidity));
 
     double D=0;
-    if(ea_mod > 0.0) { D = min(ea_mod / (ea_mod + Q),1.0); }
-    double G = 1.0 / (0.793 + 0.2*exp(4.902*D)) + 0.006 * D;
+    if(ea_mod > 0.0) { D = min(1.0 / (1.0 + Rnet/LH_VAPOR/DENSITY_WATER/ea_mod),1.0); } //D-relative drying power
+    double G = (1.0 / (0.793 + 0.2*exp(4.902*D)) + 0.006 * D); //relative evaporation
 
-    PET=  (de_dT * Q + gamma * ea_mod)/(de_dT + gamma / G);
+    PET=  (de_dT * Rnet + gamma * ea_mod)/(de_dT + gamma / G)/LH_VAPOR/DENSITY_WATER;
   }
   return max(PET,0.0);
 }

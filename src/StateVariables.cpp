@@ -134,6 +134,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     //Snow variables
   case(SNOW_DEPTH):         {name="Snow depth";                 break;}
   case(PERMAFROST_DEPTH):   {name="Permafrost depth";           break;}
+  case(THAW_DEPTH):         {name="Ground thaw depth";          break;}
   case(SNOW_DEPTH_STDDEV):  {name="Snow depth sigma";           break;}
   case(SNOW_COVER):         {name="Fractional Snow Cover";      break;}
   case(CUM_SNOWMELT):       {name="Cumulative Snowmelt";        break;}
@@ -238,6 +239,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
     //Snow variables
   case(SNOW_DEPTH):       {units="mm";   break;}
   case(PERMAFROST_DEPTH): {units="mm";   break;}
+  case(THAW_DEPTH):       {units="mm";   break;}
   case(SNOW_DEPTH_STDDEV):{units="log(mm)"; break;}
   case(SNOW_COVER):       {units="0-1";  break;}
   case(CUM_SNOWMELT):     {units="mm";   break;}
@@ -405,7 +407,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
 
     //Snow variables
     case(SNOW_DEPTH):         {name="SNOW_DEPTH";               break;}
-    case(PERMAFROST_DEPTH):   {name="PERMAFROST_DEPTH";         break;}
+    case(THAW_DEPTH):         {name="THAW_DEPTH";               break;}
     case(SNOW_DEPTH_STDDEV):  {name="SNOW_DEPTH_STDDEV";        break;}
     case(SNOW_COVER):         {name="SNOW_COVER";               break;}
     case(CUM_SNOWMELT):       {name="CUM_SNOWMELT";             break;}

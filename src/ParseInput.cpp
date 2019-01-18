@@ -522,7 +522,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_MONTHLY_FACTOR"    )){Options.evaporation =PET_MONTHLY_FACTOR;}
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.evaporation =PET_PENMAN_SIMPLE33;}
       else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.evaporation =PET_PENMAN_SIMPLE39;}
-      else if (!strcmp(s[1],"PET_GRANGER"           )){Options.evaporation =PET_GRANGER;}
+      else if (!strcmp(s[1],"PET_GRANGERGRAY"       )){Options.evaporation =PET_GRANGERGRAY;}
       else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.evaporation =PET_MOHYSE;}
       else if (!strcmp(s[1],"PET_OUDIN"             )){Options.evaporation =PET_OUDIN;}
       else{
@@ -1758,7 +1758,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SUBLIM_CENTRAL_SIERRA"  )){sub_type=SUBLIM_CENTRAL_SIERRA;}
       else if (!strcmp(s[1],"SUBLIM_PBSM"            )){sub_type=SUBLIM_PBSM;}
       else if (!strcmp(s[1],"SUBLIM_WILLIAMS"        )){sub_type=SUBLIM_WILLIAMS;}
-      else if (!strcmp(s[1],"SUBLIM_CRHM_MARKS"      )){sub_type=SUBLIM_CRHM_MARKS; }
+      else if (!strcmp(s[1],"SUBLIM_CRHM"            )){sub_type=SUBLIM_CRHM; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized sublimation process representation",BAD_DATA_WARN); break;
       }
@@ -2005,8 +2005,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Snow Albedo Evolution Process"<<endl;}
       snowalb_type snalb_type=SNOALB_UBCWM;
       if (Len<2){ImproperFormatWarning(":SnowAlbedoEvolve",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"UBC"           )){snalb_type=SNOALB_UBCWM;}
-      else if (!strcmp(s[1],"SNOALB_UBCWM"  )){snalb_type=SNOALB_UBCWM;}
+      if      (!strcmp(s[1],"UBC"                )){snalb_type=SNOALB_UBCWM;}
+      else if (!strcmp(s[1],"SNOALB_UBCWM"       )){snalb_type=SNOALB_UBCWM;}
+      else if (!strcmp(s[1],"SNOALB_CRHM_ESSERY" )){snalb_type=SNOALB_CRHM_ESSERY; }
+      else if (!strcmp(s[1],"SNOALB_BAKER"       )){snalb_type=SNOALB_BAKER; }
       else
       {
         string message="ParseMainInputFile: Unrecognized snow albedo algorithm "+string(s[1]);

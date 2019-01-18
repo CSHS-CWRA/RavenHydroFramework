@@ -16,7 +16,9 @@
 ////////////////////////////////////////////////////////////////////
 /// \brief enumerated type for snow albedo evolution algorithms
 enum snowalb_type{
-  SNOALB_UBCWM ///< UBCWM method
+  SNOALB_UBCWM,         ///< UBCWM method
+  SNOALB_CRHM_ESSERY,   ///< ported from CRHM (Pomeroy et al., 2007) ClassalbedoRichard
+  SNOALB_BAKER          ///< Baker et al (1990) as ported from CRHM
 };
 
 ////////////////////////////////////////////////////////////////////

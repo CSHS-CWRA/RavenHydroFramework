@@ -86,7 +86,7 @@ double EstimateSnowFraction( const rainsnow_method method,
 
   }
   //-----------------------------------------------------------
-  else if(method==RAINSNOW_HARDER) // Ported from CRHM (Pomeroy, 2007)
+  else if(method==RAINSNOW_HARDER) // From Harder & Pomeroy 2013, Ported from CRHM (Pomeroy, 2007)
   {
     // \todo[funct] replace with T_icebulb=GetIcebulbTemp(T,rel_hum);
     double Tk,D,lambda,pta,L,snowfrac,T_icebulb;
@@ -263,8 +263,8 @@ double GetLatentHeatSnow(const double &P,
 {
   double numer,denom,temp_var,vap_pres,surf_pres,LE;
 
-  vap_pres  = GetVaporPressure(air_temp,rel_humid);
-  surf_pres = GetVaporPressure(surf_temp,rel_humid);
+  vap_pres  = GetSaturatedVaporPressure(air_temp)*rel_humid;
+  surf_pres = GetSaturatedVaporPressure(surf_temp)*rel_humid;
 
   numer = AIR_H20_MW_RAT * DENSITY_AIR * pow(VON_KARMAN,2);
   denom = P * pow(log(ref_ht/rough),2);
@@ -292,7 +292,7 @@ double GetRainHeatInput(const double &surf_temp,
 {
   double R=0,rain_temp,vap_pres;
 
-  vap_pres = GetVaporPressure(surf_temp,rel_humid); //[kPa]
+  vap_pres = GetSaturatedVaporPressure(surf_temp)*rel_humid; //[kPa]
   rain_temp = GetDewPointTemp(vap_pres); //[C]
 
   if(surf_temp < FREEZING_TEMP)

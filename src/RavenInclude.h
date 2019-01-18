@@ -175,12 +175,13 @@ const double  SPH_AIR                 =1.012e-3;                                
 
 const double  LH_FUSION               =0.334;                                   ///< [MJ/kg]  Latent heat of fusion
 const double  LH_VAPOR                =2.501;                                   ///< [MJ/kg]  Latent heat of vaporization
-const double  LH_SUBLIM               =2.845;                                   ///< [MJ/kg]  Latent heat of vaporization
+const double  LH_SUBLIM               =2.845;                                   ///< [MJ/kg]  Latent heat of sublimation
 
 const double  EMISS_ATM               =0.985;                                   ///< [-] emissivity of the atmosphere and snowpack
 const double  EMISS_CANOPY            =0.96;                                    ///< [-] emissivity of the canopy
 
 const double  AIR_H20_MW_RAT          =0.622;                                   ///< ratio of molecular weight of air to that of water
+const double  MOLWT_WATER             =18.01528;                                ///< [g/mol] molecular weight of H2O
 const double  AMBIENT_AIR_PRESSURE    =101.3;                                   ///< [kPa]
 
 const double  EARTH_RADIUS            =6.3712e6;                                ///< [m]
@@ -371,7 +372,7 @@ enum evap_method
   PET_SHUTTLEWORTH_WALLACE,     ///<
   PET_PENMAN_SIMPLE33,          ///< Simplified Penman equation from eqn 33 of Valiantzas (2006)
   PET_PENMAN_SIMPLE39,          ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
-  PET_GRANGER,                  ///< Granger PET from CRHM
+  PET_GRANGERGRAY,              ///< Granger  Gray PET from CRHM (Granger and Gray, 1989)
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
   PET_OUDIN                     ///< Simple PET from Oudin et. al., 2005
 };
@@ -399,7 +400,7 @@ enum rainsnow_method
   RAINSNOW_HBV,          ///< Linear variation between two temperatures - corrects only rain portion
   RAINSNOW_HSPF,         ///< HSPF approach - variable transition temperature
   RAINSNOW_UBCWM,        ///< Linear variation between two temperatures
-  RAINSNOW_HARDER        ///< Harder (19??) method ported over from CRHM (Pomeroy et al 2007)
+  RAINSNOW_HARDER        ///< Harder & Pomeroy (2013) method ported over from CRHM (Pomeroy et al 2007)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -559,7 +560,7 @@ enum potmelt_method
   POTMELT_HBV,              ///< custom degree day model used in HBV-EC
   POTMELT_DATA,             ///< user-specified potential melt forcing
   POTMELT_USACE,            ///< US Army Corps of Engineers Snow Melt
-  POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM)
+  POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM) (Pomeroy, 2007)
   POTMELT_HMETS             ///< From HMETS model (Martel et al., 2017)
 };
 
@@ -691,6 +692,7 @@ enum sv_type
   //Snow/Glacier variables
   SNOW_DEPTH,              ///< [mm] Snow depth - surrogate for density
   PERMAFROST_DEPTH,        ///< [mm] depth of permafrost
+  THAW_DEPTH,              ///< [mm] depth of thaw
   SNOW_DEPTH_STDDEV,       ///< log([mm]) Snow depth standard deviation
   SNOW_COVER,              ///< [0..1] fractional snow cover
   GLACIER_CC,              ///< [mm] cold content of glacier
@@ -942,7 +944,7 @@ enum forcing_type
   F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
   F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
   F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
-  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA,       F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC,
+  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA_NET,   F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC, F_LW_INCOMING,
   F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
@@ -979,7 +981,8 @@ struct force_struct
   double SW_radia_unc;        ///< uncorrected shortwave radiation (before cloud and canopy corrections)[MJ/m2/d]
   double SW_radia;            ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) [MJ/m2/d]
   double SW_radia_net;        ///< Net shortwave radiation (albedo corrected) [MJ/m2/d]
-  double LW_radia;            ///< Net longwave radiation [MJ/m2/d]
+  double LW_radia_net;        ///< Net longwave radiation [MJ/m2/d]
+  double LW_incoming;         ///< Incoming longwave radiation [MJ/m2/d]
   double day_length;          ///< day length [d]  (e.g., ~0.5 for equinox @ 45lat, 0.0 for the north pole during winter)
   double day_angle;           ///< day angle [0..2PI] =0 for Jan 1, 2pi for Dec 31
 
@@ -1013,11 +1016,11 @@ double threshMax     (const double &val1, const double &val2, const double &smoo
 
 //Time/Date Functions----------------------------------------------
 bool        IsLeapYear(            const int         year,
-				   const int         calendar);
+                                   const int         calendar);
 void        JulianConvert(               double      model_time,
                                    const double      start_date,
                                    const int         start_year,
-				   const int         calendar,	 
+                                   const int         calendar,	 
                                                      time_struct &tt);
 string      DecDaysToHours(        const double      dec_date);
 double      InterpolateMo(         const double      aVal[12],
@@ -1027,16 +1030,16 @@ bool        IsDaytime(             const double      &julian_day,
                                    const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
                                          string      sTime,
-				   const int         calendar);
+                                   const int         calendar);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
                                    const int         year2,
-				   const int         calendar);
+                                   const int         calendar);
 void        AddTime(               const double      &jul_day1,
                                    const int         &year1,
                                    const double      &daysadded,
-				   const int         calendar,
+                                   const int         calendar,
                                          double      &jul_day_out,
                                          int         &year_out);
 int         StringToCalendar(            char *cal_chars);
@@ -1328,7 +1331,6 @@ double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
                                   const double &zero_pl,      //[m]
                                   const double &rough_ht,     //[m]
                                   const double &vap_rough_ht); //[m]
-double GetVaporPressure         (const double &T,const double &rel_humid);
 double GetDewPointTemp          (const double &Ta,const double &rel_hum);
 double GetDewPointTemp          (const double &E);
 

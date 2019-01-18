@@ -355,6 +355,10 @@ struct global_struct
   double           snow_roughness;      ///< [mm]  roughness height of snow
   double           min_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.3)
   double           max_snow_albedo;     ///< [0..1] albedo of fresh snow  (~0.95)
+  double           alb_decay_cold;      ///< [1/d] 1st order albedo decay rate for cold conditions (~0.008/d)
+  double           alb_decay_melt;      ///< [1/d] albedo decay rate for melt conditions (~0.12/d)
+  double           bare_ground_albedo;  ///< [0..1] bare ground albedo (~0.1-0.4)
+  double           snowfall_albthresh;  ///< [mm/d] threshold snowfall rate to refresh albedo to fresh snow (~10 mm/d)
 
   double           avg_annual_snow;     ///< [mm] avg annual snow as SWE
   double           avg_annual_runoff;   ///< [mm] avg annual runoff from basin

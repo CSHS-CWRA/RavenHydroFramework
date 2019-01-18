@@ -44,7 +44,7 @@ public:/*-------------------------------------------------------*/
                   const double model_duration,   //days
                   const double timestep,         //days
                   const   bool is_observation,
-		  const    int calendar);
+                  const    int calendar);
 
   int    GetNumValues() const;
   double GetTime      (const int n) const;

@@ -39,7 +39,7 @@ public:/*------------------------------------------------------*/
 
   static double DayAngle                  (const double&day,
                                            const int    year,
-			                   const int    calendar);
+                                           const int    calendar);
   static double DayLength                 (const double lat,			  //latitude (in radians)
                                            const double declin);		//solar declination (in radians)
   static double SolarDeclination          (const double day_angle);
@@ -50,10 +50,11 @@ public:/*------------------------------------------------------*/
   static double CalculateEquivLatitude    (const double &latrad,
                                            const double &slope,
                                            const double &aspect);
-  static double EstimateLongwaveRadiation (const int iSnow,
-                                          const optStruct    &Options,
+  static double EstimateLongwaveRadiation (const int     iSnow,
+                                           const optStruct    &Options,
                                            const force_struct *F,
-                                           const CHydroUnit   *pHRU);
+                                           const CHydroUnit   *pHRU,
+                                                 double &LW_incoming);
   static double CalcETRadiation           (const double latrad,			//latitude in radians
                                            const double lateq,			//equivalent latitude for slope
                                            const double declin,			//declination in radians

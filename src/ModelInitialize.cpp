@@ -177,7 +177,7 @@ void CModel::Initialize(const optStruct &Options)
   else if (Options.evaporation ==PET_DATA     ){f_gauge=F_PET; }
   else if (Options.rel_humidity==RELHUM_DATA  ){f_gauge=F_REL_HUMIDITY;}
   else if (Options.SW_radia_net==NETSWRAD_DATA){f_gauge=F_SW_RADIA_NET;}
-  else if (Options.LW_radiation==LW_RAD_DATA  ){f_gauge=F_LW_RADIA;}
+  else if (Options.LW_radiation==LW_RAD_DATA  ){f_gauge=F_LW_RADIA_NET;}
   if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
   
   GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
@@ -329,7 +329,16 @@ void CModel::Initialize(const optStruct &Options)
   if((wetlandsinmodel) && (GetStateVarIndex(DEPRESSION)==DOESNT_EXIST)) {
     ExitGracefully("CModel::Initialize: At least one WETLAND-type soil profile is included but no DEPRESSION storage processes included in hydrologic process list.",BAD_DATA_WARN);
   }
-
+  //--Check for aggregated HRUs and Transport
+  int nAgg=0;
+  for(i=0;i<_nStateVars; i++){
+    for(int kk=0;kk<_nHRUGroups;kk++){
+      if(_pHRUGroups[kk]->IsAggregatorGroup(i)){ nAgg++; }
+    }
+  }
+  if((_pTransModel->GetNumConstituents()>0) && (nAgg>0)) {
+    ExitGracefully("CModel::Initialize: Transport processes will not work properly with aggregation of state variables (:AggregatedVariable command)",BAD_DATA_WARN);
+  }
   
 }
 

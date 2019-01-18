@@ -86,7 +86,7 @@ void CmvSublimation::GetParticipatingParamList(string *aP, class_type *aPC, int 
     nP=1;
     aP[0]="SNOW_TEMPERATURE"; aPC[0]=CLASS_GLOBAL;
   }
-  else if(type==SUBLIM_CRHM_MARKS)
+  else if(type==SUBLIM_CRHM)
   {
     nP=0;
   }
@@ -141,7 +141,7 @@ void CmvSublimation::GetRatesOfChange(const double               *state_vars,
     wind_vel    = (pHRU->GetForcingFunctions()->wind_vel)*CM_PER_METER;                            // [cm/s]
     air_pres    = (pHRU->GetForcingFunctions()->air_pres)*MB_PER_KPA;                              // [millibars]
     sat_vap     = (GetSaturatedVaporPressure(pHRU->GetSnowTemperature()))*MB_PER_KPA;              // [millibars]
-    vap_pres    = (GetVaporPressure((pHRU->GetForcingFunctions()->temp_ave),rel_humid))*MB_PER_KPA;// [millibars]
+    vap_pres    = (GetSaturatedVaporPressure(pHRU->GetForcingFunctions()->temp_ave)*rel_humid)*MB_PER_KPA;// [millibars]
 
     numer = 0.623 * air_density * (pow(VON_KARMAN,2)) * wind_vel * (sat_vap - vap_pres);
     denom = air_pres * (pow((log(800/roughness)),2));
@@ -152,24 +152,35 @@ void CmvSublimation::GetRatesOfChange(const double               *state_vars,
   }
   else if(type==SUBLIM_KUZMIN)                          // needs to be tested still
   {
-    double sat_vap,vap_pres;
-    sat_vap             = (GetSaturatedVaporPressure(Ta))*MB_PER_KPA;   // [millibar]
-    vap_pres    = (GetVaporPressure(Ta,(pHRU->GetForcingFunctions()->rel_humidity)))*MB_PER_KPA;        //[millibar]
+    double rel_hum =pHRU->GetForcingFunctions()->rel_humidity;
+    double sat_vap = GetSaturatedVaporPressure(Ta)*MB_PER_KPA;   // [millibar]
+    double vap_pres= sat_vap*rel_hum;        //[millibar]
 
     rates[0]= ((0.18 + 0.098 * (pHRU->GetForcingFunctions()->wind_vel))*(sat_vap-vap_pres)); //[mm/day]
   }
+  else if(type==SUBLIM_CRHM) 
+  {
+    //a variation of the Kuzmin (1972) approach; see KutchmentGelfan1996 
+    double T       =pHRU->GetForcingFunctions()->temp_daily_ave;
+    double rel_hum =pHRU->GetForcingFunctions()->rel_humidity;
+    double wind_vel=pHRU->GetForcingFunctions()->wind_vel;
+    double ea      =GetSaturatedVaporPressure(T)*rel_hum;
+
+    const double PSAT_ZERO=0.6117; //Saturation pressure at zero degrees [kPa]
+
+    //From Kuzmin, but multiplied by 0.08 when it should be by ~2.84 (LH_SUBLIM) - what is this?
+    rates[0] =0.08*(0.18+0.098*wind_vel)*max(PSAT_ZERO-ea,0.0)*MB_PER_KPA/LH_SUBLIM*(MM_PER_METER/DENSITY_WATER); //[mm/d]
+  }
   else if(type==SUBLIM_CENTRAL_SIERRA)                  // needs to be tested still
   {
-    double sat_vap,vap_pres,wind_ht,vap_ht,wind_v;
-
-    sat_vap   = (GetSaturatedVaporPressure(pHRU->GetSnowTemperature()))*MB_PER_KPA;   // [millibar]
-    vap_pres  = (GetVaporPressure(Ta,(pHRU->GetForcingFunctions()->rel_humidity)))*MB_PER_KPA;        //[millibar]
-    wind_ht   = 2.0*FEET_PER_METER;    // height of wind measurement [feet]
-    vap_ht    = 2.0*FEET_PER_METER;    // height of vapor pressure measurement [feet]
-    wind_v    = (pHRU->GetForcingFunctions()->wind_vel   )*MPH_PER_MPS;                       // wind speed [miles per hour]
+    double rel_hum =pHRU->GetForcingFunctions()->rel_humidity;
+    double sat_vap   = GetSaturatedVaporPressure(pHRU->GetSnowTemperature())*MB_PER_KPA;   // [millibar]
+    double vap_pres  = sat_vap*rel_hum;        //[millibar]
+    double wind_ht   = 2.0*FEET_PER_METER;    // height of wind measurement [feet]
+    double vap_ht    = 2.0*FEET_PER_METER;    // height of vapor pressure measurement [feet]
+    double wind_v    = (pHRU->GetForcingFunctions()->wind_vel   )*MPH_PER_MPS;                       // wind speed [miles per hour]
 
     rates[0]    = ((0.0063*(pow((wind_ht*vap_ht),(-1/6)))*(sat_vap-vap_pres)*wind_v)*MM_PER_INCH);      // [mm/day]
-
   }
   else if(type==SUBLIM_PBSM)
   {
@@ -177,28 +188,18 @@ void CmvSublimation::GetRatesOfChange(const double               *state_vars,
   }
   else if(type==SUBLIM_WILLIAMS)
   {
-    double sat_vap,vap_pres,air_density,rel_humid,wind_vel;
-
-    air_density = (pHRU->GetForcingFunctions()->air_dens)*GRAMS_PER_KG/CM3_PER_METER3;  // [grams/cm3]
-    rel_humid   = (pHRU->GetForcingFunctions()->rel_humidity);                                                                                  // []
-    wind_vel    = (pHRU->GetForcingFunctions()->wind_vel)*CM_PER_METER;                                 // [cm/s]
-    sat_vap     = (GetSaturatedVaporPressure(pHRU->GetSnowTemperature()))*MB_PER_KPA;           // [millibars]
-    vap_pres    = (GetVaporPressure((pHRU->GetForcingFunctions()->temp_ave),rel_humid))*MB_PER_KPA;     // [millibars]
+    double air_density = pHRU->GetForcingFunctions()->air_dens*GRAMS_PER_KG/CM3_PER_METER3;   // [grams/cm3]
+    double rel_hum     = pHRU->GetForcingFunctions()->rel_humidity;                                                                                  // []
+    double wind_vel    = pHRU->GetForcingFunctions()->wind_vel*CM_PER_METER;                  // [cm/s]
+    double sat_vap     = GetSaturatedVaporPressure(pHRU->GetSnowTemperature())*MB_PER_KPA;    // [millibars]
+    double vap_pres    = sat_vap*rel_hum;                                                     //[millibar]
 
     ExitGracefully("CmvSublimation:WILLIAMS: not working correctly",STUB);//***** Resolve errors in output, way too high/low!
 
     rates[0]= ((0.00011 * air_density * wind_vel * (vap_pres - sat_vap)) * MIN_PER_DAY * (1/(DENSITY_ICE * GRAMS_PER_KG *(1/CM3_PER_METER3))) * MM_PER_CM) / Options.timestep;          // [mm/day]
     // 0.00011 sec/min/mb
   }
-  else if(type==SUBLIM_CRHM_MARKS) 
-  {
-    double T       =pHRU->GetForcingFunctions()->temp_daily_ave;
-    double rel_hum =pHRU->GetForcingFunctions()->rel_humidity;
-    double wind_vel=pHRU->GetForcingFunctions()->wind_vel;
-    double ea      =GetSaturatedVaporPressure(T)*rel_hum;
 
-    rates[0] =0.08*(0.18+0.098*wind_vel)*(6.11-ea*10.0)/LH_SUBLIM;
-  }
 };
 
 //////////////////////////////////////////////////////////////////

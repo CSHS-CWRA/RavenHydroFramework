@@ -225,7 +225,7 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
                               const double model_duration,     //days
                               const double timestep,           //days
                               const bool   is_observation,
-			      const  int   calendar)
+                              const  int   calendar)
 {
   //_t_corr is number of days between model start date and gauge
   //start date (positive if data exists before model start date)
@@ -1127,7 +1127,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       if (period_ending){
         start_day=start_day-tstep;
         if ((start_day<0) && IsLeapYear(start_yr-1,Options.calendar)){start_day+=366;start_yr-=1;}
-        else if (start_day<0)                       {start_day+=365;start_yr-=1;}
+        else if (start_day<0)                                        {start_day+=365;start_yr-=1;}
       }
       pTimeSeries=new CTimeSeries *[nTS];
       for (i=0;i<nTS;i++){

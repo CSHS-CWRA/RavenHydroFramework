@@ -295,7 +295,7 @@ public:/*-------------------------------------------------------*/
                                      const class_type         tclass,
                                      const string             new_class,
                                      const time_struct       &tt,
-				     const optStruct         &Options           );
+                                     const optStruct         &Options           );
   void    AddObservedTimeSeries     (        CTimeSeriesABC    *pTS             );
   void    AddObservedWeightsTS      (        CTimeSeriesABC    *pTS             );
   void    AddDiagnostic             (        CDiagnostic       *pDiag           );
