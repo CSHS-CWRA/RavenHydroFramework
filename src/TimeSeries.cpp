@@ -15,7 +15,7 @@
 /// \param one_value [in] Constant value of time series
 //
 CTimeSeries::CTimeSeries(string Name, string tag, double one_value)
-  :CTimeSeriesABC(ts_regular,Name,tag)
+  :CTimeSeriesABC(TS_REGULAR,Name,tag)
 {
   _start_day=0.0;
   _start_year=1900;
@@ -50,7 +50,7 @@ CTimeSeries::CTimeSeries(string     Name,
                          double    *aValues,
                          const int  NumPulses,
                          const bool is_pulse_type)
-  :CTimeSeriesABC(ts_regular,Name,tag,filename)
+  :CTimeSeriesABC(TS_REGULAR,Name,tag,filename)
 {
   _start_day =strt_day;
   _start_year=start_yr;
@@ -89,7 +89,7 @@ CTimeSeries::CTimeSeries(string     Name,
                          double     data_interval,
                          const int  NumPulses,
                          const bool is_pulse_type)
-  :CTimeSeriesABC(ts_regular,Name,tag,filename)
+  :CTimeSeriesABC(TS_REGULAR,Name,tag,filename)
 {
   _start_day =strt_day;
   _start_year=start_yr;
@@ -308,7 +308,7 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
 {
   _nSampVal=nSampVal;
   _sampInterval=sampInterval;
-  ExitGracefullyIf(_nSampVal<=0,"CTimeSeries::Resample: bad # of samples",RUNTIME_ERR);
+  ExitGracefullyIf(_nSampVal<=0,"CTimeSeries::InitializeResample: bad # of samples",RUNTIME_ERR);
 
   if(_aSampVal!=NULL){delete[] _aSampVal;}
 
@@ -380,15 +380,15 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
       sum = 0;
       inc = ((double)(n1 + 1)*_interval - t_loc);
       if (_aVal[n1] == RAV_BLANK_DATA)  { blank += inc; }
-      else                                          { sum += _aVal[n1] * inc; }
+      else                              { sum += _aVal[n1] * inc; }
 
       for (int n = n1 + 1; n < n2; n++){
         if (_aVal[n] == RAV_BLANK_DATA) { blank += _interval; }
-        else                                        { sum += _aVal[n] * _interval; }
+        else                            { sum += _aVal[n] * _interval; }
       }
       inc = ((t_loc + tstep) - (double)(n2)*_interval);
       if (_aVal[n2] == RAV_BLANK_DATA)  { blank += inc; }
-      else                                          { sum += _aVal[n2] * inc; }
+      else                              { sum += _aVal[n2] * inc; }
     }
   }
   else{
@@ -462,7 +462,6 @@ void   CTimeSeries::Multiply     (const double &factor)
 double CTimeSeries::GetSampledValue(const int nn) const
 {
   if (nn>_nSampVal-1){
-    //cout <<"CTimeSeries::GetSampledValue "<< nn << " "<<_nSampVal<<endl;
     return RAV_BLANK_DATA;
   }
   return _aSampVal[nn];
@@ -541,7 +540,7 @@ double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
   double t_loc=t+_t_corr;
   n=GetTimeIndex(t_loc);
 
-  if (type == ts_regular){return GetAvgValue(t,_sampInterval);}
+  if (type == TS_REGULAR){return GetAvgValue(t,_sampInterval);}
   else      {
     if (n==_nPulses-1){return _aVal[n];}
     return _aVal[n]+(t_loc-(double)(n)*_interval)/(_interval)*(_aVal[n+1]-_aVal[n]);
@@ -557,7 +556,9 @@ double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
 //
 void CTimeSeries::SetValue(const int n, const double &val)
 {
-  ExitGracefullyIf(n>=_nPulses, "CTimeSeries::SetValue: Overwriting array allocation",BAD_DATA);
+#if _STRICTCHECK_
+  ExitGracefullyIf(n>=_nPulses, "CTimeSeries::SetValue: Overwriting array allocation",RUNTIME_ERR);
+#endif
   _aVal[n]=val;
 }
 
@@ -570,7 +571,9 @@ void CTimeSeries::SetValue(const int n, const double &val)
 //
 void CTimeSeries::SetSampledValue(const int nn, const double &val)
 {
-  ExitGracefullyIf(nn>=_nSampVal, "CTimeSeries::SetSampledValue: Overwriting array allocation",BAD_DATA);
+#if _STRICTCHECK_
+  ExitGracefullyIf(nn>=_nSampVal, "CTimeSeries::SetSampledValue: Overwriting array allocation",RUNTIME_ERR);
+#endif
   _aSampVal[nn]=val;
 }
 
@@ -767,16 +770,14 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   }
 
   // REGULAR FORMAT ==============================================================
-  if ((string(s[0]).length()==10) &&
-      ((string(s[0]).substr(4,1)=="/") ||
-       (string(s[0]).substr(4,1)=="-")))
+  if(IsValidDateString(s[0]))
   { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
 
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]),Options.calendar);
     start_day=tt.julian_day;
     start_yr =tt.year;
-
+    
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
       time_struct tt;
@@ -875,9 +876,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   if (IsComment(s[0],Len)){p->Tokenize(s,Len);}//try again
   if (Len<4){p->ImproperFormat(s);}
 
-  if ((string(s[0]).length()==10) &&
-      ((string(s[0]).substr(4,1)=="/") ||
-       (string(s[0]).substr(4,1)=="-")))
+  if(IsValidDateString(s[0]))
   {//in timestamp format  [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]),Options.calendar);
@@ -1054,9 +1053,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
     else if (!strcmp(s[0],":StartTime")      )
     {
       if (noisy){cout<<"StartTime"<<endl;}
-      if ((string(s[1]).length()==10) &&
-          ((string(s[1]).substr(4,1)=="/") || (string(s[1]).substr(4,1)=="-")))
-        //if (IsValidDateString(s[1]))
+      if(IsValidDateString(s[1]))
       {//in timestamp format
         tt=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
         start_day=tt.julian_day;
@@ -1368,7 +1365,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
         tstep   = (time[1] - time[0])/24./60.;
         ExitGracefullyIf(tstep<=0,
                          "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,time[0]*(1./24./60.),calendar,start_day,start_yr) ;
+        AddTime(tt.julian_day,tt.year,time[0]*(1.0/MIN_PER_DAY),calendar,start_day,start_yr) ;
 
       }
       else
@@ -1402,7 +1399,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
             time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
             tstep   = (time[1] - time[0])/24./60./60.;
             ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,time[0]*(1./24./60./60.),calendar,start_day,start_yr) ;
+            AddTime(tt.julian_day,tt.year,time[0]*(1.0/SEC_PER_DAY),calendar,start_day,start_yr) ;
 
           }
           ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);

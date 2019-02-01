@@ -359,7 +359,7 @@ double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,co
 
   ExitGracefullyIf(aQ==NULL,"CChannelXSect::GetCelerity: Rating curves not yet generated",RUNTIME_ERR);
   double Q_mult;
-  double junk;
+  double junk;//unused output
   GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
 
   if (Qref/Q_mult<0){return 0.0;}

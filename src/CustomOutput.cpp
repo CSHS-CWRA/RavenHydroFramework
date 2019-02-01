@@ -668,9 +668,11 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   bool   reset;
 
   double t=tt.model_time;
+  double time_of_day=tt.julian_day-floor(tt.julian_day);
+  double time_shift=Options.julian_start_day-floor(Options.julian_start_day);
 
   time_struct yest;
-  JulianConvert(t-1,Options.julian_start_day,Options.julian_start_year,Options.calendar,yest); //get previous day, yest
+  JulianConvert(t-time_shift-1.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,yest); //get 00:00 AM previous day, yest
   yesterday=yest.date_string;
   thisdate=tt.date_string;
   dday    =tt.day_of_month;
@@ -689,9 +691,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   reset=false;
   if      ((_timeAgg==YEARLY)  && (dday==1) && (dmon==1))    {reset=true;}//Jan 1 - print preceding year
   else if ((_timeAgg==MONTHLY) && (dday==1))                 {reset=true;}//first day of month - print preceding month info
-  else if ((_timeAgg==DAILY)   &&
-           ((fabs(floor(t)-t) <0.5*Options.timestep) ||
-            (fabs( ceil(t)-t) <0.5*Options.timestep)))       {reset=true;}//start of day (hopefully 0:00!)- print preceding day
+  else if ((_timeAgg==DAILY)   && (fabs(floor(t+time_shift+TIME_CORRECTION)-(t+time_shift)) <0.5*Options.timestep))       
+                                                             {reset=true;}//start of day - print preceding day
   else if (_timeAgg==EVERY_TSTEP)                            {reset=true;}//every timestep
   else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    {reset=true;}//Oct 1 - print preceding year
   //cout <<t <<" ->"<<fabs(floor(t)-t)<<"   "<<(fabs(floor(t)-t) <0.5*Options.timestep)<<endl;

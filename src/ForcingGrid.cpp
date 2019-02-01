@@ -520,10 +520,10 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
         string sDate = unit_t_str.substr(14,10);
         string sTime = unit_t_str.substr(25,8);
         time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-        _interval   = (my_time[1] - my_time[0])/24./60.;
+        _interval   = (my_time[1] - my_time[0])/MIN_PER_DAY;
         ExitGracefullyIf(_interval<=0,
                          "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60.),calendar,_start_day,_start_year) ;
+        AddTime(tt.julian_day,tt.year,my_time[0]/MIN_PER_DAY,calendar,_start_day,_start_year) ;
 
         /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
            printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -571,9 +571,9 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
             string sDate = unit_t_str.substr(14,10);
             string sTime = unit_t_str.substr(25,8);
             time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-            _interval   = (my_time[1] - my_time[0])/24./60./60.;
+            _interval   = (my_time[1] - my_time[0])/SEC_PER_DAY.;
             ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,my_time[0]*(1./24./60./60.),calendar,_start_day,_start_year) ;
+            AddTime(tt.julian_day,tt.year,my_time[0]*(1.0/SEC_PER_DAY),calendar,_start_day,_start_year) ;
 
             /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
                printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
@@ -843,9 +843,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       iChunkSize = _ChunkSize;
     }
     else {
-      //
-      // t1 = Options.duration - global_model_time       --> days still to simulate
-      // t2 = t1 / _interval                             --> number of timesteps need to be read from forcing
       iChunkSize = int((Options.duration - global_model_time) / _interval);
     }
 
@@ -1590,27 +1587,15 @@ void CForcingGrid::SetaAvePET(const double aAvePET [12]){
   }
 }
 
-// ///////////////////////////////////////////////////////////////////
-// /// \brief sets the _aVal in class CForcingGrid
-// ///
-// /// \param x_col  [in] column index of _aVal[t][row][col]
-// /// \param y_row  [in] row    index of _aVal[t][row][col]
-// /// \param t      [in] time   index of _aVal[t][row][col]
-// /// \param aVal   [in] value to be set
-// //
-// void CForcingGrid::SetValue( const int x_col, const int y_row, const int t, const double aVal) {
-//   _aVal[t][y_row][x_col] = aVal;
-// }
-
 ///////////////////////////////////////////////////////////////////
 /// \brief sets the _aVal in class CForcingGrid
 ///
 /// \param ic    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param t      [in] time   index of _aVal[t][idx]
+/// \param it      [in] time   index of _aVal[t][idx]
 /// \param aVal   [in] value to be set
 //
-void CForcingGrid::SetValue( const int ic, const int t, const double aVal) {
-  _aVal[t][ic] = aVal;
+void CForcingGrid::SetValue( const int ic, const int it, const double aVal) {
+  _aVal[it][ic] = aVal;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1847,13 +1832,10 @@ int CForcingGrid::GetCols() const{return _GridDims[0];}
 /// \brief Returns number of rows (= 2nd dimension of gridded data)
 /// \return Number of rows (= 2nd dimension of gridded data)
 //
-int CForcingGrid::GetRows() const{
-  if (_is_3D) {
-    return _GridDims[1];
-  }
-  else {
-    return 1;
-  }
+int CForcingGrid::GetRows() const
+{
+  if (_is_3D) {return _GridDims[1];}
+  else        {return 1;}
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -2002,24 +1984,6 @@ double CForcingGrid::GetValue(const int ic, const double &t, const int nsteps) c
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns average over n timesteps of time series data point for which t is an index
-/// \param idx    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param t      [in] Time index
-/// \param n      [in] Number of time steps
-/// \return Magnitude of time series data point for which t is an index
-//
-/*double CForcingGrid::GetValue_ave(const int idx, const double &t, const int n) const
-{
-  double sum = 0.0;
-  for (int ii=0; ii<n; ii++) {
-    sum += _aVal[min(_ChunkSize-1,(int)t+ii)][idx];
-  };
-  sum /= double(n);
-
-  return sum;
-}*/ //identical to GetValue()
-
-///////////////////////////////////////////////////////////////////
 /// \brief Returns minimum of n timesteps of time series data point for which t is an index
 /// \param ic     [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
 /// \param t      [in] Time index
@@ -2028,12 +1992,6 @@ double CForcingGrid::GetValue(const int ic, const double &t, const int nsteps) c
 //
 double CForcingGrid::GetValue_min(const int ic, const double &t, const int nsteps) const
 {
-  /*double mini = ALMOST_INF ;
-  for (int ii=0; ii<nsteps; ii++) {
-    if (_aVal[min(_ChunkSize-1,(int)t+ii)][idx] < mini) {mini = _aVal[min(_ChunkSize-1,(int)t+ii)][idx]; };
-  };
-  return mini;*/
-
   double mini = ALMOST_INF ;
   int ii_start=(int)(t);
   int lim=min(nsteps,_ChunkSize-ii_start);
@@ -2053,13 +2011,6 @@ double CForcingGrid::GetValue_min(const int ic, const double &t, const int nstep
 //
 double CForcingGrid::GetValue_max(const int ic, const double &t, const int nsteps) const
 {
-  /*double maxi = -ALMOST_INF ;
-  for (int ii=0; ii<nsteps; ii++) {
-    if (_aVal[min(_ChunkSize-1,(int)t+ii)][idx] > maxi) {maxi = _aVal[min(_ChunkSize-1,(int)t+ii)][idx]; };
-  };
-
-  return maxi;*/
-
   double maxi = -ALMOST_INF ;
   int ii_start=(int)(t);
   int lim=min(nsteps,_ChunkSize-ii_start);

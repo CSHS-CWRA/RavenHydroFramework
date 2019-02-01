@@ -320,7 +320,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   double dday;
   int    dmonth,dyear;
 
-  //handles roundoff error, (e.g., t=4.999873->t=5.0)
+  //handles daily roundoff error, (e.g., t=4.999873->t=5.0)
   if( (model_time-floor(model_time)) > (1-TIME_CORRECTION))
   {
     model_time = floor(model_time+TIME_CORRECTION);
@@ -355,8 +355,6 @@ void JulianConvert(double model_time, const double start_date, const int start_y
 
   dday=ddate-sum+days; //decimal days since 0:00 on first of month
 
-  if (model_time <= REAL_SMALL || (int)(model_time)>(int)(tt.model_time)){ tt.day_changed = true; }
-  else { tt.day_changed = false;}
 
   tt.model_time=model_time;
   tt.julian_day=ddate;
@@ -364,6 +362,9 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   if (tt.day_of_month==0){tt.day_of_month=1;}
   tt.month =dmonth;
   tt.year=dyear;
+
+  tt.day_changed = false;
+  if((model_time <= REAL_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<REAL_SMALL)) { tt.day_changed = true; }
 
   static char out[50];
   sprintf(out,"%4.4d-%2.2i-%2.2d",dyear,tt.month,tt.day_of_month); //2006-02-28 (ISO Standard)
@@ -394,20 +395,6 @@ string DecDaysToHours(const double dec_date)
   static char out[12];
   sprintf(out,"%2.2d:%2.2d:%05.2f",hr,min,sec);
   return string(out);
-}
-
-////////////////////////////////////////////////////////////////////////////
-/// \brief Returns boolean indicating if the double &julian_day corresponds to daytime
-///
-/// \param &julian_day [in] Input Julian day
-/// \param &Options [in] Global model options information
-/// \return Boolean indicating if the double &julian_day corresponds to daytime
-//
-bool  IsDaytime     (const double &julian_day,
-                     const optStruct &Options)
-{
-  double daytime=(julian_day-floor(julian_day));
-  return ((daytime>0.25) && (daytime<0.75));/// \todo [fix hack] better ways to do this
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -466,8 +453,8 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
   hr        =s_to_i(sTime.substr(0,2).c_str());
   min       =s_to_i(sTime.substr(3,2).c_str());
   sec       =s_to_d(sTime.substr(6,6).c_str());
-  tt.julian_day+=(double)(hr)/HR_PER_DAY;
-  tt.julian_day+=(double)(min)/HR_PER_DAY/60;
+  tt.julian_day+=(double)(hr )/HR_PER_DAY;
+  tt.julian_day+=(double)(min)/MIN_PER_DAY;
   tt.julian_day+=(double)(sec)/SEC_PER_DAY;
 
   //Below reprocesses date string (optional)
@@ -642,6 +629,16 @@ double    FixTimestep(double tstep)
   ExitGracefullyIf(fabs(tstep*tmp-1.0)>0.1,
                    "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
   return 1.0/tmp;
+}
+////////////////////////////////////////////////////// /////////////////////
+/// \brief True if string is proper iso date (e.g., yyyy-mm-dd or yyyy/mm/dd)
+/// \return true if valid date string
+//
+bool IsValidDateString(const string sDate)
+{
+  return ((sDate.length()==10) && 
+          ((sDate.substr(4,1)=="/") || (sDate.substr(4,1)=="-")) && 
+          ((sDate.substr(7,1)=="/") || (sDate.substr(7,1)=="-")));
 }
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time

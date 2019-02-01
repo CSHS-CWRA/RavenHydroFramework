@@ -96,7 +96,7 @@ private:/*------------------------------------------------------*/
 public:/*------------------------------------------------------*/
   //Constructors:
 
-  // (a) simple constructor
+  // simple constructor
   CForcingGrid(
     string       ForcingType,
     string       filename,
@@ -108,10 +108,9 @@ public:/*------------------------------------------------------*/
     double       LinTrans_b
     );
 
-  // (b) copy constructor
+  // copy constructor
   CForcingGrid( const CForcingGrid &grid );
 
-  // (c) destructor
   ~CForcingGrid();
 
   // Parses all information from NetCDF file and sets variables like grid dimensions and buffer size

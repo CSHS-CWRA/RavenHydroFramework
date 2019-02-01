@@ -305,7 +305,7 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
       /*_MBres_losses[p][c]=0.0;
       CTimeSeries *pExpRes->GetExtractionTS();
       if(pEx!=NULL){
-        int nn        =(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
+        int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
         _MBres_losses[p][c]+=0.5*max(pEx->GetSampledValue(nn)*SEC_PER_DAY,0.0)*(_aMres[p][c]/pRes->GetStorage()+_aMres_last[p][c]/pRes->GetOldStorage())*tstep;
       }*/
     }

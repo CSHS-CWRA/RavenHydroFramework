@@ -138,7 +138,7 @@ public:/*-------------------------------------------------------*/
                                              const double *curr_state_var,
                                              const optStruct &Options) const;
 
-  //specialized state variable accessors // \todo [funct] - should likely hand in representative state_var array
+  //specialized state variable accessors 
   double                 GetSnowAlbedo        () const;
   double                 GetSnowTemperature   () const;
   double                 GetSnowSWE           () const;

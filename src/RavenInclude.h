@@ -679,7 +679,7 @@ enum sv_type
   CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt
 
   //Temperature/Energy storage [C] or [MJ/m^2]
-  FREEZING_LOSS,           ///< [MJ/m2] Energy lost during freezing (for mass balance) // \ todo[clean] - remove- not used
+  FREEZING_LOSS,           ///< [MJ/m2] Energy lost during freezing (for energy balance) // \ todo[clean] - remove- not used
   MELTING_LOSS,            ///< [MJ/m2] Energy consumed during melting // \ todo[clean] - remove- not used
   ENERGY_LOSSES,           ///< [MJ/m2] general energy losses // \ todo[clean] - remove- not used
 
@@ -1026,8 +1026,6 @@ string      DecDaysToHours(        const double      dec_date);
 double      InterpolateMo(         const double      aVal[12],
                                    const time_struct &tt,
                                    const optStruct   &Options);
-bool        IsDaytime(             const double      &julian_day,
-                                   const optStruct   &Options);
 time_struct DateStringToTimeStruct(const string      sDate,
                                          string      sTime,
                                    const int         calendar);
@@ -1045,6 +1043,7 @@ void        AddTime(               const double      &jul_day1,
 int         StringToCalendar(            char *cal_chars);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
+bool        IsValidDateString     (const string      sDate);
 
 //Conversion Functions-------------------------------------------
 double CelsiusToFarenheit       (const double &T);

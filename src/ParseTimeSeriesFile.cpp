@@ -225,11 +225,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       //if (Options.noisy) {cout <<"  Creating Gauge: "<< gName <<endl;}
       pGage=new CGauge(gName,NOT_SPECIFIED,NOT_SPECIFIED,0.0);
-
+      ExitGracefullyIf(pModel->GetNumGauges()+1>MAX_GAUGES,"ParseTimeSeriesFile: exceeded maximum number of gauges",BAD_DATA);
       pModel->AddGauge(pGage);
-
-      //todo [QA/QC]: require check here (or somewhere in the parsing process) to determine if the gauge count is greter than the specified global limit.
-      //                if number is exceeded we need to exit gracefully (WJ).
 
       break;
     }
@@ -1428,23 +1425,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy){cout <<"   :Deaccumulate"<<endl;}
       ExitGracefullyIf(pGrid==NULL,
                        "ParseTimeSeriesFile: :Deaccumulate command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      // ForcingTypeGiven = true;
       pGrid->SetToDeaccumulate();
       break;
     }
     case (408)://----------------------------------------------
     {/*:TimeShift */
       if (Options.noisy){cout <<"   :TimeShift"<<endl;}
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :TimeShift command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(Len!=2,
-                       "ParseTimeSeriesFile: :TimeShift expects exactly one argument",BAD_DATA);
+      ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :TimeShift command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(Len!=2,          "ParseTimeSeriesFile: :TimeShift expects exactly one argument",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :TimeShift argument in :GriddedForcing or :StationForcing block needs to be before :GridWeights block",BAD_DATA);
       double TimeShift=atof(s[1]);
-
-      if (grid_initialized) {
-        ExitGracefully("ParseTimeSeriesFile: :TimeShift argument in :GriddedForcing or :StationForcing block needs to be before :GridWeights block",BAD_DATA);
-      }
-      
       TimeShiftNCGiven = true;
       pGrid->SetTimeShift(TimeShift);
 
@@ -1472,7 +1462,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :FileNameNC  [filename.nc]
        :VarNameNC   pre
        :DimNamesNC  nstations ntime
-       :GrdiWeights
+       :GridWeights
        [#HRUs] [#STATIONS NC]
        [STATION#] [HRUID] [w_lk]
        ....

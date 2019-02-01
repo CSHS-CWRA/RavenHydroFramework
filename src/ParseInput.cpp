@@ -331,6 +331,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //--------------------HYDROLOGICAL PROCESSES ---------------
     if       (!strcmp(s[0],":ProcessBegin"              )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
+    else if  (!strcmp(s[0],":HydrologicalProcesses"     )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":Baseflow"                  )){code=201;}
     else if  (!strcmp(s[0],":CanopyEvaporation"         )){code=202;}
     else if  (!strcmp(s[0],":CanopyDrip"                )){code=203;}
@@ -389,7 +390,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
 
     ExitGracefullyIf((code>200) && (code<300) && (pModel==NULL),
-                     "ParseMainInputFile: :HydrologicalProcesses AND :SoilModel commands must be called before hydrological processes are specified",BAD_DATA);
+                     "ParseMainInputFile: :HydrologicProcesses AND :SoilModel commands must be called before hydrologic processes are specified",BAD_DATA);
     ExitGracefullyIf((code>300) && (code<400) && (pModel->GetTransportModel()==NULL),
                      "ParseMainInputFile: :Transport command must be called before geochemical processes are specified",BAD_DATA);
 
@@ -425,10 +426,20 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(4):  //----------------------------------------------
     {/*Simulation Duration
-       :Duration [double time] */
+       :Duration [double time]  /or/
+       :Duration [double time] [hh:mm:ss.00]       
+       */
       if (Options.noisy) {cout <<"Simulation duration"<<endl;}
       if (Len<2){ImproperFormatWarning(":Duration",p,Options.noisy);  break;}
-      Options.duration =s_to_d(s[1]);
+      double partday=0.0;
+      if ((Len>=3) &&  (*(s[2])!='#') && (*(s[2])!='*')){
+        string tString=s[2];
+        if((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":")))//support for hh:mm:ss.00 format
+        {
+          partday=DateStringToTimeStruct("0000-01-01",tString,Options.calendar).julian_day;
+        }
+      }
+      Options.duration =s_to_d(s[1])+partday;
       break;
     }
     case(5):  //----------------------------------------------
@@ -1071,29 +1082,25 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(59):  //--------------------------------------------
     {/*:rvh_Filename */
       if (Options.noisy) {cout <<"rvh filename: "<<s[1]<<endl;}
-      //Options.rvh_filename=s[1];
       Options.rvh_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
       break;
     }
     case(60):  //--------------------------------------------
     {/*:rvp_Filename */
       if (Options.noisy) {cout <<"rvp filename: "<<s[1]<<endl;}
-      //Options.rvp_filename=s[1]; //with .rvp extension!
-      Options.rvp_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
+      Options.rvp_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);//with .rvp extension!
       break; 
     }
     case(61):  //--------------------------------------------
     {/*:rvt_Filename */
       if (Options.noisy) {cout <<"rvt filename: "<<s[1]<<endl;}
-      //Options.rvt_filename=s[1]; //with .rvt extension!
-      Options.rvt_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
+      Options.rvt_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);//with .rvt extension!
       break;
     }
     case(62):  //--------------------------------------------
     {/*:rvc_Filename */
       if (Options.noisy) {cout <<"rvc filename: "<<s[1]<<endl;}
-      //Options.rvc_filename=s[1]; //with .rvc extension!
-      Options.rvc_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);
+      Options.rvc_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);//with .rvc extension!
       break;
     }
     case(63):  //--------------------------------------------
@@ -1113,11 +1120,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(64):  //--------------------------------------------
     {/*:OutputDump YYYY-MM-DD hh:mm:ss */
       if (Options.noisy) {cout <<"Output dump @ "<<s[1]<<endl;}
-
-      if ((string(s[1]).length()==10) &&
-          ((string(s[1]).substr(4,1)=="/") || (string(s[1]).substr(4,1)=="-")))
-        //if (IsValidDateString(s[1]))
-      {//in timestamp format
+      if (IsValidDateString(s[1]))
+      {
         time_struct tt_out=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
         pModel->AddModelOutputTime(tt_out,Options);
       }
@@ -2367,7 +2371,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
 
-      // \todo [funct] should be only if advective processes are present...
       pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
 
@@ -2539,8 +2542,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
   ExitGracefullyIf(Options.timestep<=0,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
-  ExitGracefullyIf(Options.julian_start_day-(int)(Options.julian_start_day)> REAL_SMALL,
-                   "ParseMainInputFile: the simulation starting time must be at midnight",BAD_DATA);
+ /* ExitGracefullyIf(Options.julian_start_day-(int)(Options.julian_start_day)> REAL_SMALL,
+                   "ParseMainInputFile: the simulation starting time must be at midnight",BAD_DATA);*/
   ExitGracefullyIf((pModel->GetStateVarIndex(CONVOLUTION,0)!=DOESNT_EXIST) && (pModel->GetTransportModel()->GetNumConstituents()>0),
                    "ParseMainInputFile: cannot currently perform transport with convolution processes",BAD_DATA);
 

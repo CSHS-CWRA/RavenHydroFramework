@@ -25,7 +25,7 @@ CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
     CHydroProcessABC::DynamicSpecifyConnections(1);
     iFrom[0]=iSnowAlbedo;       iTo[0]=iSnowAlbedo;//rates[0]: SNOW_ALBEDO->SNOW_ALBEDO
   }
-  if(type==SNOALB_BAKER) 
+  else if(type==SNOALB_BAKER) 
   {
     int iSnowAge=pModel->GetStateVarIndex(SNOW_AGE);
     CHydroProcessABC::DynamicSpecifyConnections(2);

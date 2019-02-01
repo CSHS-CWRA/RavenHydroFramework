@@ -283,7 +283,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     else 
     {
       rates[iDep] =rainthru;
-      /*if(!wetland_frozen){ // \todo [funct] handle snow on unfrozen wetlands
+      /*if(!wetland_frozen){ // \todo [funct] handle snow on frozen wetlands
         rates[iSnow]-=snowthru;
         rates[iDep] +=snowthru;
       }*/
@@ -292,7 +292,14 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   else // in lake, all water just added
   {
     /// \todo should check if iLake==DOESNT_EXIST
+    /*if(lake_frozen)
+    { // \todo [funct] handle snow on frozen lakes
+      rates[iSnow]    +=snowfall;
+      rates[iSnowLiq] +=min(rainfall,(SWI*SWE-snow_liq)/Options.timestep);
+      rates[iLake]    +=min(rainfall-(SWI*SWE-snow_liq)/Options.timestep,0.0);
+    }*/
     rates[iLake]=snowfall+rainfall;
+
   }
 }
 //////////////////////////////////////////////////////////////////

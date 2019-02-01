@@ -26,7 +26,7 @@ CIrregularTimeSeries::CIrregularTimeSeries(     string    Name,
                                                 double   *aDays,
                                                 int      *aYears,
                                                 const int NumValues)
-  :CTimeSeriesABC(ts_irregular,Name,tag,filename)
+  :CTimeSeriesABC(TS_IRREGULAR,Name,tag,filename)
 {
   _nVals= NumValues;
 
@@ -301,9 +301,7 @@ CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string nam
     }
     ExitGracefullyIf(n>=nMeasurements,"CIrregularTimeSeries::Parse: Bad number of time series points",BAD_DATA);
 
-    if ((string(s[0]).length()==10) &&
-        ((string(s[0]).substr(4,1)=="/") ||
-         (string(s[0]).substr(4,1)=="-")))
+    if(IsValidDateString(s[0]))
     { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0]
       time_struct tt;
       tt=DateStringToTimeStruct(string(s[0]),string(s[1]),2);

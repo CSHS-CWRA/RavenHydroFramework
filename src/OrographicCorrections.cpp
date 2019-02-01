@@ -27,8 +27,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
                            const double       ref_elev,
                            const time_struct &tt)
 {
-  double t=tt.model_time;
-
+  
   //---------------------------------------------------------------------------
   if ((Options.orocorr_temp==OROCORR_SIMPLELAPSE) ||
       (Options.orocorr_temp==OROCORR_HBV        ))
@@ -134,6 +133,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
   {
     double elev1=_pGauges[0]->GetElevation();
     double elev2=_pGauges[1]->GetElevation();
+    double t=tt.model_time;
 
     if(tt.day_changed)
     {

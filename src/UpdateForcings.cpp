@@ -35,16 +35,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   double              elev,slope;
   int                 mo,yr;
   int                 k,g,nn;
-  double              mid_day;
-  double              model_day;
+  double              mid_day,model_day, time_shift;
   double              wt;
 
   double t  = tt.model_time;
   mo        = tt.month;
   yr        = tt.year;
   nn        = (int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index.
-  model_day = floor(tt.model_time);          //current day (measured from simulation start)
-  //model_day = floor(tt.model_time-(tt.julian_day-floor(tt.julian_day))+TIME_CORRECTION);
+ 
+  time_shift= Options.julian_start_day-floor(Options.julian_start_day);
+  model_day = floor(tt.model_time+time_shift+TIME_CORRECTION); //model time of 00:00 of current day
   mid_day   = floor(tt.julian_day+TIME_CORRECTION)+0.5;//mid day
 
   CForcingGrid *pGrid_pre        = NULL;            // forcing grids
@@ -257,8 +257,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
 
         
-        F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
-        F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep);
+        F.precip           = pGrid_pre->GetWeightedValue           (k,tt.model_time,Options.timestep);
+        F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue      (k,tt.model_time,Options.timestep);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      = NETCDF_BLANK_VALUE;
       }
@@ -667,19 +667,21 @@ double CModel::CalculateSubDailyCorrection(const force_struct &F,
       ExitGracefully( "CModel::CalculateSubDailyCorrection: Option SUBDAILY_UBC is not implemented when gridded inputs are given.", BAD_DATA);
     }
     //this is not pretty (and somewhat expensive), due to the need to correct all daily temperatures for every timestep, but it works
-    int nn_start=(int)(floor(tt.model_time    )/Options.timestep);//index of first timestp in day
-    int nn_end  =(int)(floor(tt.model_time+1.0)/Options.timestep);//index of first timestp in following day
+    double time_shift=Options.julian_start_day-floor(Options.julian_start_day)+TIME_CORRECTION;
+    int nn_start=(int)(floor(tt.model_time+time_shift    )/Options.timestep);//index of first timestp in day
+    int nn_end  =(int)(floor(tt.model_time+time_shift+1.0)/Options.timestep);//index of first timestp in following day
     force_struct Ftmp;
     time_struct  tt_tmp;
     double start_of_day;
     tt_tmp=tt;
     tt_tmp.day_changed=true;
-    
+
     double sum=0.0;
     for (int nnn=nn_start;nnn<nn_end;nnn++)
     {
       tt_tmp.model_time=nnn*Options.timestep;
-      start_of_day=floor(tt_tmp.model_time);
+
+      start_of_day=floor(tt_tmp.model_time+time_shift);
       ZeroOutForcings(Ftmp);
       for (int g=0;g<_nGauges;g++)
       {

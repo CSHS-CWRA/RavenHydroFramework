@@ -430,7 +430,7 @@ double CGauge::GetAverageSnowFrac       (const double &t, const double &tstep) c
   if ((snow+rain)==0){return 0.0;}
   return snow/(snow+rain);
 }
-double CGauge::GetAverageSnowFrac                       (const int nn) const
+double CGauge::GetAverageSnowFrac       (const int nn) const
 {
   double rain=GetTimeSeries(F_RAINFALL)->GetSampledValue(nn);
   double snow=GetTimeSeries(F_SNOWFALL)->GetSampledValue(nn);
@@ -543,16 +543,17 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   double *aMin=new double [nVals];
   double *aMax=new double [nVals];
   double *aAvg=new double [nVals];
+  double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
   double t=0.0;//model time
   for (int n=0;n<nVals;n++){
-    aMin[n]=pT->GetMinValue(t,1.0);
-    aMax[n]=pT->GetMaxValue(t,1.0);
-    aAvg[n]=pT->GetAvgValue(t,1.0);
+    aMin[n]=pT->GetMinValue(t-time_shift,1.0); //t-time_shift corresponds to 00:00 on day of model time t
+    aMax[n]=pT->GetMaxValue(t-time_shift,1.0);
+    aAvg[n]=pT->GetAvgValue(t-time_shift,1.0);
     t+=1.0;
   }
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX","","",start_day,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE","","",start_day,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day-time_shift,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX","","",start_day-time_shift,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE","","",start_day-time_shift,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
   delete [] aMin;
   delete [] aMax;
   delete [] aAvg;

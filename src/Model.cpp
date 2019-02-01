@@ -1033,11 +1033,11 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
   }
 
   //convert time to model time
-  pCC->modeltime= TimeDifference(_pOptStruct->julian_start_day,_pOptStruct->julian_start_year,tt.julian_day, tt.year, Options.calendar);
-  if ((pCC->modeltime<0) || (pCC->modeltime>_pOptStruct->duration)){
+  pCC->modeltime= TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
+  if ((pCC->modeltime<0) || (pCC->modeltime>Options.duration)){
     string warn;
     warn="Property Class change dated "+tt.date_string+" does not occur during model simulation time";
-    WriteWarning(warn,_pOptStruct->noisy);
+    WriteWarning(warn,Options.noisy);
   }
 
   //cout << "PROPERTY CLASS CHANGE " << pCC->HRU_groupID << " " << pCC->tclass << " "<<pCC->modeltime<<endl;
@@ -1296,7 +1296,7 @@ void CModel::OverrideStreamflow   (const long SBID)
         if (_pObservedTS[i]->GetValue(n)==RAV_BLANK_DATA){bad=true;break;}
       }
       if (bad){
-        WriteWarning("CModel::OverrideStreamflow::cannot override streamflow if there are blanks in observation data",_pOptStruct->noisy);
+        WriteWarning("CModel::OverrideStreamflow::cannot override streamflow if there are blanks in observation data",GetOptStruct()->noisy);
         return;
       }
 
@@ -1315,7 +1315,7 @@ void CModel::OverrideStreamflow   (const long SBID)
         return;
       }
       else{
-        WriteWarning("CModel::OverrideStreamflow: overriding streamflow at an outlet subbasin has no impact on model operation",_pOptStruct->noisy);
+        WriteWarning("CModel::OverrideStreamflow: overriding streamflow at an outlet subbasin has no impact on model operation",GetOptStruct()->noisy);
       }
     }
   }

@@ -32,7 +32,7 @@ bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID)
  // clears up  terribly ugly repeated if statements
   if(pObs==NULL){return false;}
   if (s_to_l(pObs->GetTag().c_str()) != SBID){ return false; }//SBID is correct
-  if(pObs->GetType() != CTimeSeriesABC::ts_regular){ return false; }
+  if(pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
   return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
 }
 //////////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
   return (
     (!strcmp(pObs->GetName().c_str(),"RESERVOIR_STAGE")) &&
     (s_to_l(pObs->GetTag().c_str()) == SBID) &&
-    (pObs->GetType() == CTimeSeriesABC::ts_regular)
+    (pObs->GetType() == CTimeSeriesABC::TS_REGULAR)
     );
 }
 //////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
 	return (
 		(!strcmp(pObs->GetName().c_str(), "RESERVOIR_INFLOW")) &&
 		(s_to_l(pObs->GetTag().c_str()) == SBID) &&
-		(pObs->GetType() == CTimeSeriesABC::ts_regular)
+		(pObs->GetType() == CTimeSeriesABC::TS_REGULAR)
 		);
 }
 //////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ bool IsContinuousNetInflowObs(CTimeSeriesABC *pObs, long SBID)
 	return (
 		(!strcmp(pObs->GetName().c_str(), "RESERVOIR_NETINFLOW")) &&
 		(s_to_l(pObs->GetTag().c_str()) == SBID) &&
-		(pObs->GetType() == CTimeSeriesABC::ts_regular)
+		(pObs->GetType() == CTimeSeriesABC::TS_REGULAR)
 		);
 }
 //////////////////////////////////////////////////////////////////
@@ -555,7 +555,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   //converts the 'write every x timesteps' into a 'write at time y' value
   output_int = Options.output_interval * Options.timestep;
   mod_final  = ffmod(tt.model_time,output_int);
-  //cout<<"time: "<<setprecision(12)<<t<<"  timestep: "<<setprecision(12)<<Options.timestep<<"  output at: "<<setprecision(12)<<output_int<<"  answer: "<<setprecision(12)<<test_mod<<"  mod: "<<setprecision(12)<<mod_final<<endl;
 
   iCumPrecip=GetStateVarIndex(ATMOS_PRECIP);
 
@@ -1023,7 +1022,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
         const force_struct *F=_pOutputGroup->GetHRU(kk)->GetForcingFunctions();
 
-        HRUSTOR<<tt.model_time <<","<<thisdate<<","<<thishour;
+        HRUSTOR<<tt.model_time <<","<<thisdate<<","<<thishour;//instantaneous -no period starting correction
 
         if (t!=0){HRUSTOR<<","<<F->precip*(1-F->snow_frac)<<","<<F->precip*(F->snow_frac);}//precip
         else     {HRUSTOR<<",---,---";}
@@ -1104,6 +1103,7 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
   //Data----------------------------
   for (k=0;k<_nHydroUnits;k++)
   {
+    OUT<<std::fixed; OUT.precision(5);
     OUT<<"  "<<_pHydroUnits[k]->GetID()<<",";
     for (i=0;i<GetNumStateVars();i++)
     {

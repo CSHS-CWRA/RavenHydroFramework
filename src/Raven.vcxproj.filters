@@ -76,9 +76,6 @@
     <Filter Include="Header Files\Profiles/XSects/Reservoirs">
       <UniqueIdentifier>{8448587a-0329-4cec-acdb-91f7e0c6618f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Land Partitions">
-      <UniqueIdentifier>{25b248eb-f632-415a-8496-fc4992d2c143}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Transport">
       <UniqueIdentifier>{56bc8cff-8585-4c16-97b5-fb3cf3c0f2cc}</UniqueIdentifier>
     </Filter>
@@ -87,6 +84,9 @@
     </Filter>
     <Filter Include="Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid">
       <UniqueIdentifier>{e72ddcb4-a56e-432c-90fc-5efe0c618b17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HRUs and Subbasins">
+      <UniqueIdentifier>{25b248eb-f632-415a-8496-fc4992d2c143}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -136,10 +136,10 @@
       <Filter>Source Files\Hydrological Routines</Filter>
     </ClCompile>
     <ClCompile Include="HydroUnits.cpp">
-      <Filter>Source Files\Land Partitions</Filter>
+      <Filter>Source Files\HRUs and Subbasins</Filter>
     </ClCompile>
     <ClCompile Include="SubBasin.cpp">
-      <Filter>Source Files\Land Partitions</Filter>
+      <Filter>Source Files\HRUs and Subbasins</Filter>
     </ClCompile>
     <ClCompile Include="Gauge.cpp">
       <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
@@ -193,7 +193,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HRUGroups.cpp">
-      <Filter>Source Files\Land Partitions</Filter>
+      <Filter>Source Files\HRUs and Subbasins</Filter>
     </ClCompile>
     <ClCompile Include="OpenWaterEvap.cpp">
       <Filter>Source Files\Hydrological Processes\Lake/Glacier/Wetland Processes</Filter>

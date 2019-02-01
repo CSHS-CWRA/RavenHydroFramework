@@ -14,7 +14,7 @@
 class CTimeSeriesABC
 {
 public:
-  enum ts_type {ts_regular, ts_irregular};
+  enum ts_type {TS_REGULAR, TS_IRREGULAR};
 
 private:/*------------------------------------------------------*/
   ts_type     _type;

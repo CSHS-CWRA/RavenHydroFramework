@@ -543,7 +543,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
   }
 
   if(_pExtractTS!=NULL){
-    int nn        =(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
+    int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
     _MB_losses+=_pExtractTS->GetSampledValue(nn)*SEC_PER_DAY*tstep;
   }
 }
@@ -653,7 +653,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double htarget=RAV_BLANK_DATA;
   double Qdelta=ALMOST_INF;
 
-  int nn=(int)((tt.model_time+REAL_SMALL)/tstep);//current timestep index
+  int nn=(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
 
   if(_pWeirHeightTS!=NULL)  { weir_adj   =_pWeirHeightTS->  GetSampledValue(nn);}
   if(_pMaxStageTS!=NULL)    { stage_limit=_pMaxStageTS->    GetSampledValue(nn);}
