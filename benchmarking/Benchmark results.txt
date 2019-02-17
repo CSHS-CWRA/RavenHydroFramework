@@ -41,9 +41,8 @@ v114->v118 [PASSED BENCHMARKING] (Apr 27 2018) [VERSION 2.8]
 
 v123->v129 [PASSED BENCHMARKING] (Jul 6, 2018) [VERSION 2.8.1]
 
-October 4, 2018
-MODIFIED BENCHMARK FILES ; REMOVED UNSUPPORTED :EndPause No / :DebugMode No
-NITH BENCHMARK HAS REVISED RVT FILES - INFORMATION CONTENT IDENTICAL
+MODIFIED BENCHMARK FILES ; REMOVED UNSUPPORTED :EndPause No / :DebugMode No (October 4, 2018)
+NITH BENCHMARK HAS REVISED RVT FILES - INFORMATION CONTENT IDENTICAL (October 4, 2018)
 
 v129->v139 [PASSED BENCHMARKING] (Oct 4, 2018) 
 v139->v142 [PASSED BENCHMARKING] (Oct 4, 2018) 
@@ -52,3 +51,15 @@ v139->v142 [PASSED BENCHMARKING] (Oct 4, 2018)
 v142->v145 [PASSED BENCHMARKING] (Oct 4, 2018)
 v146->v145 [PASSED BENCHMARKING] (Oct 21, 2018)
 -increase of MAX_CONVOL_STORES from 20 to 50 led to differences in Irond solution file
+
+MODIFIED BENCHMARK - ADDED Salmon_MOHYSE, Salmon_HMETS, Salmon_HBV, and Salmon_GR4J (Jan 29, 2019)
+
+v145->v160->169 [PASSED BENCHMARKING] (Jan 29, 2019)
+-fix in correct inclusion of last data point in diagnostics impacted diagnostics.csv
+-additional QA/QC warning thrown on Alouette2 because of AggregatedVariables + Transport
+
+MODIFIED BENCHMARK - ADDED ALL York_nc NetCDF benchmark tests from Julie (Feb 17, 2019)
+
+v169->v170 (Feb 17, 2019)
+RAVEN v2.9
+-fixed issues with deaccumulation in York_nc3 causing older version to get memory error.

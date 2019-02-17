@@ -1,0 +1,10 @@
+#########################################################################
+:FileType rvc ASCII Raven 2.6
+:WrittenBy         Robert Chlumsky
+:CreationDate      May 2016
+#------------------------------------------------------------------------
+#
+#:UniformInitialConditions SOIL[0] 418.116
+#:UniformInitialConditions SOIL[1] 13.78
+
+# :InitialReservoirStage  81  350.3

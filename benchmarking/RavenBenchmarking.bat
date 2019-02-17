@@ -78,6 +78,30 @@ mkdir %workingdir%\out_%ver_name%\Salmon_MOHYSE\
 chdir %workingdir%\_InputFiles\Salmon_MOHYSE\
 %ravexe% raven-mohyse-salmon -o %workingdir%\out_%ver_name%\Salmon_MOHYSE\
 
+mkdir %workingdir%\out_%ver_name%\York_nc1\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York -o %workingdir%\out_%ver_name%\York_nc1\
+
+mkdir %workingdir%\out_%ver_name%\York_nc2\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York_gridded_m_daily_i_daily -o %workingdir%\out_%ver_name%\York_nc2\
+
+mkdir %workingdir%\out_%ver_name%\York_nc3\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York_gridded_m_daily_i_subdaily -o %workingdir%\out_%ver_name%\York_nc3\
+
+mkdir %workingdir%\out_%ver_name%\York_nc4\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York_gridded_m_subdaily_i_daily -o %workingdir%\out_%ver_name%\York_nc4\
+
+mkdir %workingdir%\out_%ver_name%\York_nc5\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York_gridded_m_subdaily_i_subdaily -o %workingdir%\out_%ver_name%\York_nc5\
+
+mkdir %workingdir%\out_%ver_name%\York_nc6\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York_nongridded_m_subdaily_i_daily -o %workingdir%\out_%ver_name%\York_nc6\
+
 echo -------------------------------------------
 echo ...BENCHMARKING DONE.
 echo -------------------------------------------
