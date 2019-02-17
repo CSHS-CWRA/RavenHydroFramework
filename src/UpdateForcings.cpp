@@ -258,7 +258,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
         
         F.precip           = pGrid_pre->GetWeightedValue           (k,tt.model_time,Options.timestep);
-        F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue      (k,tt.model_time,Options.timestep);
+        F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue      (k,tt.model_time,Options.timestep,Options);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      = NETCDF_BLANK_VALUE;
       }
@@ -853,14 +853,14 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
   }
   else if (Options.ow_evaporation==PET_FROMMONTHLY)
   {
-    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    // \todo [funct] Parameters are located in the RVT file, and there's no checking routine for that file yet.
     //aP[nP]=":MonthlyAveEvaporation"; aPC[nP]=CLASS_; nP++;
     //aP[nP]=":MonthlyAveTemperature"; aPC[nP]=CLASS_; nP++;
   }
   else if (Options.ow_evaporation==PET_MONTHLY_FACTOR)
   {
     aP[nP]="FOREST_PET_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    // \todo [funct] Parameters are located in the RVT file, and there's no checking routine for that file yet.
     //aP[nP]=":MonthlyEvapFactor";   aPC[nP]=CLASS_; nP++;
   }
   else if (Options.ow_evaporation==PET_PENMAN_MONTEITH)
@@ -878,9 +878,10 @@ void CModel::GetParticipatingParamList(string *aP, class_type *aPC, int &nP, con
     aP[nP]="MAX_HEIGHT";  aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="RELATIVE_HT"; aPC[nP]=CLASS_VEGETATION; nP++;
   }
-  else if ((Options.ow_evaporation==PET_CONSTANT) || (Options.ow_evaporation==PET_HAMON) || (Options.ow_evaporation==PET_HARGREAVES)
-           || (Options.ow_evaporation==PET_HARGREAVES_1985) || (Options.ow_evaporation==PET_TURC_1961)
-           || (Options.ow_evaporation==PET_MAKKINK_1957) || (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR) || (Options.ow_evaporation==PET_GRANGERGRAY))
+  else if ((Options.ow_evaporation==PET_CONSTANT  ) || (Options.ow_evaporation==PET_HAMON) || 
+           (Options.ow_evaporation==PET_HARGREAVES) || (Options.ow_evaporation==PET_HARGREAVES_1985) || 
+           (Options.ow_evaporation==PET_TURC_1961 ) || (Options.ow_evaporation==PET_MAKKINK_1957) || 
+           (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR) || (Options.ow_evaporation==PET_GRANGERGRAY))
   {
     // no parameter required/listed
   }
@@ -1204,11 +1205,11 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   }
   //deaccumulate if necessary
   double rainfall_rate;
-  if(pGrid_pre->ShouldDeaccumulate())
+  if ((pre_gridded) && (pGrid_pre->ShouldDeaccumulate()))
   {
     for(int it=0; it<pGrid_pre->GetChunkSize()-1; it++) {                   // loop over time points in buffer
       for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++){       // loop over non-zero grid cell indexes
-        rainfall_rate=(pGrid_pre->GetValue(ic,it+1)-pGrid_pre->GetValue(ic,it))/pGrid_pre->GetInterval()*300;
+        rainfall_rate=(pGrid_pre->GetValue(ic,it+1)-pGrid_pre->GetValue(ic,it))/pGrid_pre->GetInterval();
         pGrid_pre->SetValue(ic,it,rainfall_rate);   // copies precipitation values
       }
     }
@@ -1275,19 +1276,11 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
     // copy F_TEMP_AVE --> F_TEMP_DAILY_AVE
   }
 
-  // Part (A) does not exist for nongridded input and I don't understand why
-  // if ( temp_min_gridded && temp_max_gridded && !temp_ave_gridded )  // (A) Sub-daily min/max temperature given but not subdaily avg
-  //   {
-  //  GenerateSubdailyAveTempFromSubdailyMinMax(Options);              // ---> Generate subdaily avg
-  //  temp_ave_gridded = ForcingGridIsAvailable(F_TEMP_AVE);           //      Update availability of data
-  //   }
-
-  if(temp_ave_gridded)                                                 // (B) Sub-daily temperature data provided
+  if (temp_ave_gridded)                                                // (B) Sub-daily temperature data provided
   {
     GenerateMinMaxAveTempFromSubdaily(Options);                        // ---> Generate daily min, max, & avg
   }
-  else if((temp_daily_min_gridded && temp_daily_max_gridded) ||
-    (temp_daily_min_gridded && temp_daily_max_gridded))                // (C) Daily min/max temperature data provided
+  else if(temp_daily_min_gridded && temp_daily_max_gridded)            // (C) Daily min/max temperature data provided
   {
     GenerateAveSubdailyTempFromMinMax(Options);                        // --> Generate T_daily_ave, T_ave (downscaled)
   }

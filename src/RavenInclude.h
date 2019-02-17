@@ -1136,6 +1136,16 @@ inline int           s_to_i (const char *s1)            {return (int)atof(s1);  
 inline double        s_to_d (const char *s1)            {return atof(s1);        }
 
 ///////////////////////////////////////////////////////////////////
+/// \brief returns true if character string is long integer
+/// \return true if character string is long integer
+//
+inline bool StringIsLong(const char *s1)
+{
+  char *p;
+  strtol(s1,&p,10);
+  return (*p==NULL);
+}
+///////////////////////////////////////////////////////////////////
 /// \brief Converts string parameter (which represents an integer) to boolean type
 /// \note This function takes string parameters which represent integers
 /// \remark Assumes any non-zero value to be TRUE

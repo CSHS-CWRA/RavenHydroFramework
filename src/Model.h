@@ -198,6 +198,10 @@ private:/*------------------------------------------------------*/
                                       const optStruct &Options);
 
   //Routines for deriving missing data based on gridded data provided
+
+  CForcingGrid *ForcingCopyCreate(const CForcingGrid *pGrid, const forcing_type typ, const double &interval, const int nVals);
+
+
   void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);
   void         GenerateMinMaxAveTempFromSubdaily        (const optStruct &Options);
   void         GenerateMinMaxSubdailyTempFromAve        (const optStruct &Options);
@@ -284,7 +288,7 @@ public:/*-------------------------------------------------------*/
   void    AddHRUGroup               (        CHRUGroup         *pHRUGrp         );
   void    AddSubBasin               (        CSubBasin         *pWS             );
   void    AddGauge                  (        CGauge            *pGage           );
-  void    AddForcingGrid            (        CForcingGrid      *pGrid           );
+  void    AddForcingGrid            (        CForcingGrid      *pGrid           , forcing_type typ);
   void    AddStateVariables         (const sv_type           *aSV,
                                      const int               *aLev,
                                      const int                nSV               );

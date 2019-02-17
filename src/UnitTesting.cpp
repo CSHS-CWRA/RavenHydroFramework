@@ -24,6 +24,12 @@ void RavenUnitTesting(const optStruct &Options)
   //SmartIntervalTest();
   //AddTimeTest( );
   //GammaTest();
+
+  /*cout<<"STRINGISLONG TEST: 1023 "<< StringIsLong("1023")<<endl;
+  cout<<"STRINGISLONG TEST: -1 "<< StringIsLong("-1")<<endl;
+  cout<<"STRINGISLONG TEST: hamburger "<< StringIsLong("hamburger")<<endl;
+  cout<<"STRINGISLONG TEST: 10ham "<< StringIsLong("10ham")<<endl;*/
+
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function

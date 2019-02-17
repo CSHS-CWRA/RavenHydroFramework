@@ -198,7 +198,6 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   string unit_t_str;     // to check format of time unit string
   int    ntime;          // number of time steps
   nc_type type;          // type of a NetCDF variable, e.g., nc_INT, nc_FLOAT, nc_DOUBLE
-  int    itime;          // counter time
 
   // open NetCDF read-only; ncid will be set
   // _filename.c_str() converts filename from 'string' to 'const char *'
@@ -329,9 +328,9 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 
   // find out if time is an integer or double variable
   retval = nc_inq_var( ncid, varid_t,
-		       NULL,     // out: name
-		       &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
-		       NULL,     // out: dims
+		                   NULL,     // out: name
+		                   &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
+		                   NULL,     // out: dims
                        NULL,     // out: dimids
                        NULL );   // out: natts
 
@@ -571,7 +570,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
             string sDate = unit_t_str.substr(14,10);
             string sTime = unit_t_str.substr(25,8);
             time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-            _interval   = (my_time[1] - my_time[0])/SEC_PER_DAY.;
+            _interval   = (my_time[1] - my_time[0])/SEC_PER_DAY;
             ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
             AddTime(tt.julian_day,tt.year,my_time[0]*(1.0/SEC_PER_DAY),calendar,_start_day,_start_year) ;
 
@@ -863,7 +862,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     model_duration  = Options.duration;  // model duration in days --> number of timesteps must be duration/timestep
     model_timestep  = Options.timestep;
 
-    Initialize(model_start_day,model_start_yr,model_duration,model_timestep,Options);
+    Initialize(Options);
 
     // -------------------------------
     // allocate _aVal matrix
@@ -1272,18 +1271,15 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 //           with model duration, resamples to model time step/day
 /// \remark  t=0 corresponds to first day with recorded values at that gauge
 ///
-/// \param   model_start_day  [in] Julian start day of model
-/// \param   model_start_year [in] start year of model
-/// \param   model_duration   [in] Duration of model, in days
-/// \param   timestep         [in] model timestep, in days
+/// \param   Options          [in] options structure
 ///
-void CForcingGrid::Initialize( const double model_start_day,   // fractional day of the year (here called Julian day) [days]
-                               const    int model_start_year,  //         [year]
-                               const double model_duration,    //         [days]
-                               const double model_timestep,    // delta t [days]
-                               const optStruct &Options        // Options
-  )
+void CForcingGrid::Initialize( const optStruct &Options )    
 {
+  double model_start_day =Options.julian_start_day;   // fractional day of the year (here called Julian day) [days]
+  int    model_start_year=Options.julian_start_year; //         [year]
+  double model_duration  =Options.duration;            //         [days]
+  double model_timestep  =Options.timestep;            // delta t [days]
+
   //_t_corr is number of days between model start date and forcing chunk
   // start date (positive if data exists before model start date)
 
@@ -1863,12 +1859,6 @@ int CForcingGrid::GetIdxNonZeroGridCell(int ic) const{return _IdxNonZeroGridCell
 int  CForcingGrid::GetChunkSize() const{return _ChunkSize;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns name of forcing grid data
-/// \return name of forcing data
-//
-forcing_type CForcingGrid::GetName()  const{return _ForcingType;}
-
-///////////////////////////////////////////////////////////////////
 /// \brief Returns number of HRUs of class (_nHydroUnits)
 /// \return number of HRUs of class
 //
@@ -1900,27 +1890,28 @@ double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &
   for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
   {
     wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    sum += wt * GetValue(ic,idx_new,nSteps);
+    sum += wt * GetValue_avg(ic,idx_new,nSteps);
   }
   return sum;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief returns daily weighted value of gridded forcing in HRU k
-/// \param k    [in] HRU index
-/// \param t      [in] model time [days]
+/// \param k     [in] HRU index
+/// \param t     [in] model time [days]
 /// \param tstep [in] model time step [days]
 /// \returns daily weighted value of gridded forcing in HRU k
 //
-double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const double &tstep) const
+double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const double &tstep, const optStruct &Options) const
 {
-  int idx_new_day = GetTimeIndex((double)(int(t)),tstep);//start of day
+  double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+  int it_new_day = GetTimeIndex(t-time_shift,tstep);//start of day
   int nStepsDaily  = (int)(round(1.0/_interval));//# of intervals in day
   double wt;
   double sum=0;
   for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
   {
     wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    sum += wt * GetValue(ic,idx_new_day,nStepsDaily);
+    sum += wt * GetValue_avg(ic,it_new_day,nStepsDaily);
   }
   return sum;
 }
@@ -1941,9 +1932,9 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
   {
     wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    snow = GetValue(ic, t, nSteps);
+    snow = GetValue_avg(ic, t, nSteps);
     if(snow>0.0){
-      rain=pRain->GetValue(ic, t, nSteps);
+      rain=pRain->GetValue_avg(ic, t, nSteps);
       sum+= wt * snow/(snow+rain);
     }
   }
@@ -1956,9 +1947,9 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
 /// \param t      [in] Time index
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int ic, const double &t) const
+double CForcingGrid::GetValue(const int ic, const int it) const
 {
-  return _aVal[(int)t][ic];
+  return _aVal[it][ic];
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1968,15 +1959,15 @@ double CForcingGrid::GetValue(const int ic, const double &t) const
 /// \param n      [in] Number of time steps
 /// \return Magnitude of time series data point for which t is an index
 //
-double CForcingGrid::GetValue(const int ic, const double &t, const int nsteps) const
+double CForcingGrid::GetValue_avg(const int ic, const double &t, const int nsteps) const
 {
 
 
-  int ii_start=(int)(t);
-  int lim=min(nsteps,_ChunkSize-ii_start);
+  int it_start=(int)(t);
+  int lim=min(nsteps,_ChunkSize-it_start);
   double sum = 0.0;
-  for (int ii=ii_start; ii<ii_start+lim;ii++){
-    sum += _aVal[ii][ic];
+  for (int it=it_start; it<it_start+lim;it++){
+    sum += _aVal[it][ic];
   }
   sum /= (double)(lim);
 
@@ -1992,14 +1983,13 @@ double CForcingGrid::GetValue(const int ic, const double &t, const int nsteps) c
 //
 double CForcingGrid::GetValue_min(const int ic, const double &t, const int nsteps) const
 {
-  double mini = ALMOST_INF ;
-  int ii_start=(int)(t);
-  int lim=min(nsteps,_ChunkSize-ii_start);
-  for (int ii=ii_start; ii<ii_start+lim;ii++){
-    if(_aVal[ii][ic] < mini){mini=_aVal[ii][ic];}
+  double min_val = ALMOST_INF ;
+  int it_start=(int)(t);
+  int lim=min(nsteps,_ChunkSize-it_start);
+  for (int it=it_start; it<it_start+lim;it++){
+    if(_aVal[it][ic] < min_val){min_val=_aVal[it][ic];}
   }
-  return mini;
-
+  return min_val;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -2011,13 +2001,13 @@ double CForcingGrid::GetValue_min(const int ic, const double &t, const int nstep
 //
 double CForcingGrid::GetValue_max(const int ic, const double &t, const int nsteps) const
 {
-  double maxi = -ALMOST_INF ;
-  int ii_start=(int)(t);
-  int lim=min(nsteps,_ChunkSize-ii_start);
-  for (int ii=ii_start; ii<ii_start+lim;ii++){
-    if(_aVal[ii][ic] > maxi){maxi=_aVal[ii][ic];}
+  double max_val = -ALMOST_INF ;
+  int it_start=(int)(t);
+  int lim=min(nsteps,_ChunkSize-it_start);
+  for (int it=it_start; it<it_start+lim;it++){
+    if(_aVal[it][ic] > max_val){max_val=_aVal[it][ic];}
   }
-  return maxi;
+  return max_val;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -2165,3 +2155,12 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
 /// \return true if the variable should be deaccumulated
 ///
 bool CForcingGrid::ShouldDeaccumulate()                const{return _deaccumulate;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns forcing type
+/// \return forcing type
+//
+forcing_type CForcingGrid::GetForcingType  () const
+{
+  return _ForcingType;
+}

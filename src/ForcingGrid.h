@@ -119,13 +119,7 @@ public:/*------------------------------------------------------*/
   // Initialize sets the correction time _t_corr
   // (= distance between time series start day and model start day) and
   // QA/QC to check for example that modeling period is completely covered by forcing data
-  void Initialize(
-    const double model_start_day,   // fractional day of the year (here called Julian day) [days]
-    const    int model_start_year,  //         [year]
-    const double model_duration,    //         [days]
-    const double model_timestep,    // delta t [days]
-    const optStruct &Options        // Options
-    );
+  void Initialize(const optStruct &Options);
 
   // Reallocate all arrays in class to (potentially updated) grid dimensions
   // mainly used when sub-daily grids have to be added to model
@@ -136,11 +130,10 @@ public:/*------------------------------------------------------*/
                   const double global_model_time);
 
   // accessors
-  double GetValue                   (const int idx, const double &t) const;
-  double GetValue                   (const int idx, const double &t, const int n) const;
-  /// GetValue_ave               (const int idx, const double &t, const int n) const;  //obsolete - equivalent to GetValue(idx,t,n)
-  double GetValue_min               (const int idx, const double &t, const int n) const;
-  double GetValue_max               (const int idx, const double &t, const int n) const;
+  double GetValue                   (const int ic, const int it) const;
+  double GetValue_avg               (const int ic, const double &t, const int n) const;
+  double GetValue_min               (const int ic, const double &t, const int n) const;
+  double GetValue_max               (const int ic, const double &t, const int n) const;
 
   // Weighting matrix associated routines
   void   AllocateWeightArray(              const int        nHydroUnits,
@@ -203,9 +196,8 @@ public:/*------------------------------------------------------*/
   int          GetNumberNonZeroGridCells()         const;        ///< Number of non-zero weighted grid cells
   int          GetIdxNonZeroGridCell(int i)        const;        ///< ID of i-th grid cell with non-zero weighting
   int          GetChunkSize()                      const;        ///< Current chunk size
-  forcing_type GetName()                           const;        ///< Name of forcing data, e.g. PRECIP, TEMP
   int          GetnHydroUnits()                    const;        ///< get number of HRUs _nHydroUnits
-  int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
+  forcing_type GetForcingType()                    const;        ///< Type of forcing data, e.g. PRECIP, TEMP
   bool         ShouldDeaccumulate()                const;        ///< true if data must be deaccumulated
   double       GetSnowfallCorr()                   const;        ///< snowfall correction factor
   double       GetRainfallCorr()                   const;        ///< rainfall correction factor
@@ -214,12 +206,13 @@ public:/*------------------------------------------------------*/
   double       GetMonthlyAveTemp(const int month)  const;        ///< Representative Average temperature for month
   double       GetMonthlyMinTemp(const int month)  const;        ///< Representative minimum temperature for month
   double       GetMonthlyMaxTemp(const int month)  const;        ///< Representative maximum temperature for month
-  double       GetMonthlyAvePET(const int month)   const;        ///< Average PET over month
+  double       GetMonthlyAvePET (const int month)  const;        ///< Average PET over month
   double       DailyTempCorrection(const double t) const;        ///< Daily temperature correction [C]
+  int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
+  
 
-  double       GetWeightedValue(const int k, const double &t,const double &tstep) const; ///<returns weighted value in HRU k
-  double       GetDailyWeightedValue(const int k, const double &t,const double &tstep) const; ///<returns daily weighted value in HRU k
-
+  double       GetWeightedValue          (const int k, const double &t,const double &tstep) const; ///<returns weighted value in HRU k
+  double       GetDailyWeightedValue     (const int k, const double &t,const double &tstep, const optStruct &Options) const; ///<returns daily weighted value in HRU k
   double       GetWeightedAverageSnowFrac(const int k, const double &t,const double &tstep,const CForcingGrid *pRain) const; ///<returns daily weighted value in HRU k
 };
 

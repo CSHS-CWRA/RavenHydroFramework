@@ -141,6 +141,11 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE")  && (Options.routing!=ROUTE_NONE),error.c_str(),BAD_DATA_WARN);
             ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE),error2.c_str(),BAD_DATA_WARN);
 
+            if(!StringIsLong(s[0])){
+              error="Parse HRU File: Subbasin ID \""+string(s[0])+"\" must be unique integer or long integer";
+              ExitGracefully(error.c_str(),BAD_DATA_WARN);
+            }
+           
             double length;
             length=AutoOrDouble(s[4]);
             if (length!=AUTO_COMPUTE){length*=M_PER_KM;}//convert to m from km
@@ -182,6 +187,15 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
 
           string error;
           SBID =s_to_l(s[5]);//index must exist (in file, from 1 to nSB)
+
+          if(!StringIsLong(s[0])){
+            error="Parse HRU File: HRU ID \""+string(s[0])+"\" in :HRUs table must be unique integer or long integer";
+            ExitGracefully(error.c_str(),BAD_DATA_WARN);
+          }
+          if(!StringIsLong(s[5])){
+            error="Parse HRU File: Subbasin ID \""+string(s[5])+"\" in :HRUs table must be unique integer or long integer ";
+            ExitGracefully(error.c_str(),BAD_DATA_WARN);
+          }
 
           CLandUseClass const *pLULT=NULL;
           pLULT=CLandUseClass::StringToLUClass(string(s[6]));

@@ -478,7 +478,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   int         dimids1[ndims1];                       // array which will contain all dimension ids for a variable
   int         dimids2[ndims2];                       // array which will contain all dimension ids for a variable
   int         time_dimid, varid_time;                // dimension ID (holds number of time steps) and variable ID (holds time values) for time
-  int         ndata_dimid,varid_data,varid_grps;     // dimension ID, variable ID for simulated data and group (HRU/SB) info
+  int         ndata_dimid,varid_data,varid_grps(0);  // dimension ID, variable ID for simulated data and group (HRU/SB) info
 
   int         retval;                                // error value for NetCDF routines
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
@@ -668,7 +668,6 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   bool   reset;
 
   double t=tt.model_time;
-  double time_of_day=tt.julian_day-floor(tt.julian_day);
   double time_shift=Options.julian_start_day-floor(Options.julian_start_day);
 
   time_struct yest;
@@ -908,7 +907,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       {
 #ifdef _RVNETCDF_
         // Collect Data 
-        double out;
+        double out=0.0;
         if     (_aggstat==AGG_AVERAGE){ out=data[k][0]; }
         else if(_aggstat==AGG_MAXIMUM){ out=data[k][0]; }
         else if(_aggstat==AGG_MINIMUM){ out=data[k][0]; }

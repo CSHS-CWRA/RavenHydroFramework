@@ -559,7 +559,7 @@ int  CModel::GetGaugeIndexFromName (const string name) const
 int  CModel::GetForcingGridIndexFromType (const forcing_type &typ) const
 {
   for (int f=0;f<_nForcingGrids;f++){
-    if (typ==_pForcingGrids[f]->GetName()){return f;}
+    if (typ==_pForcingGrids[f]->GetForcingType()){return f;}
   }
   return DOESNT_EXIST;
 }
@@ -976,10 +976,13 @@ void CModel::AddGauge  (CGauge *pGage)
 ///
 /// \param *pGrid [in] (valid) pointer to ForcingGrid to be added to model
 //
-void CModel::AddForcingGrid  (CForcingGrid *pGrid)
+void CModel::AddForcingGrid  (CForcingGrid *pGrid, forcing_type typ)
 {
-  if (!DynArrayAppend((void**&)(_pForcingGrids),(void*)(pGrid),_nForcingGrids)){
-    ExitGracefully("CModel::AddForcingGrid: adding NULL ForcingGrid",BAD_DATA);}
+  if(GetForcingGridIndexFromType(typ) == DOESNT_EXIST) {
+    if(!DynArrayAppend((void**&)(_pForcingGrids),(void*)(pGrid),_nForcingGrids)){
+      ExitGracefully("CModel::AddForcingGrid: adding NULL ForcingGrid",BAD_DATA);
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////

@@ -589,7 +589,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
    
   //Step A.2. Find beginning integration limit
   //=================================================================================
-  double sin_w1,w1,w1x,cos_w1,cos_w1x,cos_ws1,w1_24;
+  double sin_w1,w1,w1x,cos_w1,cos_w1x,cos_ws1,w1_24(0.0);
 
   sin_w1 = (a * c - b * sqrt(quad)) / (b*b + c*c);    //Eqn 13a
   sin_w1 = max(-1.0, sin_w1);                         //Limit sin_w1 to between 1 and -1 as per step A.4.iii.
@@ -611,7 +611,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
 
   //Step A.3. Find end integration limit
   //=================================================================================
-  double sin_w2,w2,w2x,cos_w2,cos_w2x,cos_ws2,w2_24;
+  double sin_w2,w2,w2x,cos_w2,cos_w2x,cos_ws2,w2_24(0.0);
   sin_w2 = (a * c + b * sqrt(quad)) / (b *b + c *c); //Eqn 13b
   sin_w2 = max(-1.0, sin_w2);                        //Limit sin_w2 to between 1 and -1 as per step A.4.iii.
   sin_w2 = min( 1.0, sin_w2);                        //Limit sin_w2 to between 1 and -1 as per step A.4.iii.
@@ -634,7 +634,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
     w1_24 = w2_24;
   }
 
-  double cos_theta; //average cosine of azimuth during interval from w1_24 to w2_24
+  double cos_theta(0.0); //average cosine of azimuth during interval from w1_24 to w2_24
   bool doublesunset(false);
 
   //Check for double sunrise/double sunset 

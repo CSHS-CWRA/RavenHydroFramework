@@ -1415,8 +1415,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
-      
-      pModel->AddForcingGrid(pGrid);
+      pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
       pGrid=NULL;
       break;
     }
@@ -1505,7 +1504,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif      
-      pModel->AddForcingGrid(pGrid);
+      pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
       pGrid=NULL;
       break;
     }
