@@ -64,7 +64,7 @@ private:/*------------------------------------------------------*/
   ///                                        ///< [size _ChunkSize, _nNonZeroWeightedGridCells]
   ///                                        ///< time steps are in model resolution (means original input data are
   ///                                        ///< already aggregated to match model resolution)
-  double     **_GridWeight;                  ///< Array of weights for each grid cell/HRU pair\n
+  double     **_GridWeight;                  ///< Array of weights for each grid cell/HRU pair 
   ///                                        ///< Dimensions: [_nHydroUnits][dim_cols     x dim_rows    ]
   ///                                        ///<            =[_nHydroUnits][_GridDims[0] x _GridDims[1]]
   ///                                        ///< _GridWeight[k][l] is fraction of forcing for HRU k is from grid cell l=(i,j)
@@ -73,6 +73,7 @@ private:/*------------------------------------------------------*/
   ///                                        ///< dim_cols is the total number of columns.
   ///                                        ///< Following contraint must be satisfied:
   ///                                        ///<      sum(_GridWeight[k][l], {l=1,dim_cols}) = 1.0 for all HRUs k=1,...,_nHydroUnits
+  ///                                        ///< \todo - move to sparse storage - a tremendous number of zeros in here for most models
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
   ///                                        ///< piecewise-linear time series
@@ -145,7 +146,7 @@ public:/*------------------------------------------------------*/
                                            const int        nGridCells);     ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   int    NumberNonZeroWeightedGridCells(   const int        nHydroUnits,
                                            const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
-  double GetGridWeight(                    const int        HRUID,
+  double GetGridWeight(                    const int        k,
                                            const int        CellID) const;   ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
                                            const double     global_model_time)  const; ///< returns index in current chunk corresponding to model time step

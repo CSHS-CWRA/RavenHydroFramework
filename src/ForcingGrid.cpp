@@ -79,7 +79,6 @@ CForcingGrid::CForcingGrid(string       ForcingType,
 /// \param ForcingType   [in] an existing grid
 CForcingGrid::CForcingGrid( const CForcingGrid &grid )
 {
-
   _ForcingType                 = grid._ForcingType                     ;
   _filename                    = grid._filename                        ;
   _varname                     = grid._varname                         ;
@@ -112,34 +111,40 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   for (int ii=0; ii<12; ii++) {_aMaxTemp[ii] = grid._aMaxTemp[ii];}
   for (int ii=0; ii<12; ii++) {_aAvePET [ii] = grid._aAvePET [ii];}
 
-  _aVal =  new double *[grid._ChunkSize];
-  for (int it=0; it<grid._ChunkSize; it++) {                       // loop over time points in buffer
+  _aVal =  new double *[_ChunkSize];
+  for (int it=0; it<_ChunkSize; it++) {                       // loop over time points in buffer
     _aVal[it]=NULL;
-    _aVal[it] = new double [grid._nNonZeroWeightedGridCells];
+    _aVal[it] = new double [_nNonZeroWeightedGridCells];
     ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::Constructor",OUT_OF_MEMORY);
-    for (int ic=0; ic<grid._nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
+    for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){       // loop over non-zero weighted cells
       _aVal[it][ic]=grid._aVal[it][ic];                            // copy the value
     }
   }
 
-  _GridWeight =  new double *[grid._nHydroUnits];
-  for (int ik=0; ik<grid._nHydroUnits; ik++) {                           // loop over HRUs
+  int ncells;
+  if (_is_3D) { ncells = _GridDims[0] * _GridDims[1];}
+  else        { ncells = _GridDims[0];}
+
+  _GridWeight=NULL;
+  _GridWeight =  new double *[_nHydroUnits];
+  ExitGracefullyIf(_GridWeight==NULL,"CForcingGrid::Constructor(2a)",OUT_OF_MEMORY);
+  for (int ik=0; ik<_nHydroUnits; ik++) {                           // loop over HRUs
     _GridWeight[ik] =NULL;
-    _GridWeight[ik] = new double [grid._GridDims[0]*grid._GridDims[1]];
+    _GridWeight[ik] = new double [ncells];
     ExitGracefullyIf(_GridWeight[ik]==NULL,"CForcingGrid::Constructor(2)",OUT_OF_MEMORY);
-    for (int ic=0; ic<grid._GridDims[0]*grid._GridDims[1]; ic++) {       // loop over cells = rows*cols
-      _GridWeight[ik][ic]=grid._GridWeight[ik][ic];                      // copy the value
+    for (int c=0; c<ncells; c++) {       // loop over cells = rows*cols
+      _GridWeight[ik][c]=grid._GridWeight[ik][c];                      // copy the value
     }
   }
-
+  
   _IdxNonZeroGridCells = NULL;
-  _IdxNonZeroGridCells = new int [grid._nNonZeroWeightedGridCells];
-  for (int ic=0; ic<grid._nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
+  _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
+  for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
     _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              // copy the value
   }
 
-  _aFirstNonZeroWt=new int [grid._nHydroUnits];
-  _aLastNonZeroWt =new int [grid._nHydroUnits];
+  _aFirstNonZeroWt=new int [_nHydroUnits];
+  _aLastNonZeroWt =new int [_nHydroUnits];
   for(int k=0; k<_nHydroUnits;k++){
     _aFirstNonZeroWt[k]=grid._aFirstNonZeroWt[k];
     _aLastNonZeroWt [k]=grid._aLastNonZeroWt[k];
@@ -154,7 +159,6 @@ CForcingGrid::~CForcingGrid()
   if (DESTRUCTOR_DEBUG){cout<<"    DELETING GRIDDED DATA"<<endl;}
   for(int it=0; it<_ChunkSize; it++) {delete[] _aVal[it];      _aVal[it]=NULL;}      delete[] _aVal;_aVal= NULL;
   for(int k=0; k<_nHydroUnits; k++) { delete[] _GridWeight[k]; _GridWeight[k]=NULL;} delete[] _GridWeight;_GridWeight= NULL;
-  delete [] _GridWeight;            _GridWeight          = NULL;
   delete [] _IdxNonZeroGridCells;   _IdxNonZeroGridCells = NULL;
   delete [] _aFirstNonZeroWt;       _aFirstNonZeroWt     = NULL;
   delete [] _aLastNonZeroWt;        _aLastNonZeroWt      = NULL;
@@ -173,7 +177,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 #ifdef _RVNETCDF_
   int    ncid;                  // file unit
   int    dimid_x;               // id of x dimension (columns)
-  int    dimid_y;               // id of y dimension (rows)
+  int    dimid_y(0);            // id of y dimension (rows)
   int    dimid_t;               // id of t dimension (time)
   int    dimids_var[3];         // ids of dimensions of a NetCDF variable
   int    varid_t;               // id of time variable
@@ -994,15 +998,15 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     //emulate VLA 3D array storage - store 3D array as vector using Row Major Order
     // -------------------------------
-    double *aVec=new double[dim1*dim2*dim3];//stores actual data
+    double *aVec=NULL;
+    aVec=new double[dim1*dim2*dim3];//stores actual data
+    ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
     for(int i=0; i<dim1*dim2*dim3; i++) {
       aVec[i]=NETCDF_BLANK_VALUE;
     }
-    ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
-
+    
     double ***aTmp3D=NULL; //stores pointers to rows/columns of 3D data
     double  **aTmp2D=NULL; //stores pointers to rows/columns of 2D data
-
     if ( _is_3D ) {
       aTmp3D=new double **[dim1];
       ExitGracefullyIf(aTmp3D==NULL,"CForcingGrid::ReadData : aTmp3D(0)",OUT_OF_MEMORY);
@@ -1089,6 +1093,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       }
 
       if (Options.noisy) {
+        cout<<" CForcingGrid::ReadData - is3D"<<endl;
         printf("  Dim of chunk read: dim3 = %i   dim2 = %i   dim1 = %i\n",dim3,dim2,dim1);
         printf("  start  chunk: (%lu, %lu, %lu)\n", nc_start[0], nc_start[1], nc_start[2]);
         printf("  length chunk: (%lu, %lu, %lu)\n",nc_length[0],nc_length[1],nc_length[2]);
@@ -1133,6 +1138,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       }
 
       if (Options.noisy) {
+        cout<<" CForcingGrid::ReadData - !is3D"<<endl;
         printf("  Dim of chunk read: dim2 = %i   dim1 = %i\n",dim2,dim1);
         printf("  start  chunk: (%lu, %lu)\n", nc_start[0], nc_start[1]);
         printf("  length chunk: (%lu, %lu)\n",nc_length[0],nc_length[1]);
@@ -1221,7 +1227,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
           }
         }
       }
-
     }
 
     // -------------------------------
@@ -1245,7 +1250,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       delete [] aTmp3D;
     }
     else {
-      //for (int it=0;it<dim1;it++){delete [] aTmp2D[it];}
       delete [] aTmp2D;
     }
     delete [] aVec;
@@ -1779,10 +1783,10 @@ int CForcingGrid::NumberNonZeroWeightedGridCells(const int nHydroUnits, const in
 ///
 /// return weighting of HRU and CellID pair
 //
-double CForcingGrid::GetGridWeight(const int HRUID,
+double CForcingGrid::GetGridWeight(const int k,
                                    const int CellID) const
 {
-  return _GridWeight[HRUID][CellID];
+  return _GridWeight[k][CellID];
 }
 
 

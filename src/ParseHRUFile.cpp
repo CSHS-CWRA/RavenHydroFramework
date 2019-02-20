@@ -138,7 +138,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             string error,error2;
             error="Parse HRU File: Unrecognized Channel profile code ("+string(s[3])+") in SubBasins command";
             error2="Parse HRU File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE";
-            ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE")  && (Options.routing!=ROUTE_NONE),error.c_str(),BAD_DATA_WARN);
+            ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE") && (Options.routing!=ROUTE_NONE),error.c_str() ,BAD_DATA_WARN);
             ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE),error2.c_str(),BAD_DATA_WARN);
 
             if(!StringIsLong(s[0])){
@@ -196,7 +196,18 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             error="Parse HRU File: Subbasin ID \""+string(s[5])+"\" in :HRUs table must be unique integer or long integer ";
             ExitGracefully(error.c_str(),BAD_DATA_WARN);
           }
-
+          if((fabs(s_to_d(s[3]))>90) || (fabs(s_to_d(s[4]))>90)){
+            error="Parse HRU File: longitude and latitude in :HRUs table (HRU "+to_string(s[0])+") must be valid (-90<lat/long<90)";
+            ExitGracefully(error.c_str(),BAD_DATA_WARN);
+          }
+          if((s_to_d(s[11])>90) || (s_to_d(s[11])<0)){
+            error="Parse HRU File: slope in :HRUs table (HRU "+to_string(s[0])+") must be valid (0<slope<90)";
+            ExitGracefully(error.c_str(),BAD_DATA_WARN);
+          }
+          if((s_to_d(s[12])>360) || (s_to_d(s[12])<0)){
+            error="Parse HRU File: aspect in :HRUs table (HRU "+to_string(s[0])+") must be valid (0<slope<360)";
+            ExitGracefully(error.c_str(),BAD_DATA_WARN);
+          }
           CLandUseClass const *pLULT=NULL;
           pLULT=CLandUseClass::StringToLUClass(string(s[6]));
           if (pLULT==NULL){

@@ -1143,7 +1143,7 @@ inline bool StringIsLong(const char *s1)
 {
   char *p;
   strtol(s1,&p,10);
-  return (*p==NULL);
+  return !(*p);
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Converts string parameter (which represents an integer) to boolean type

@@ -1494,6 +1494,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       break;
     }
     if (Options.noisy) {
+      cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - !none"<<endl;
       printf("  Dim of chunk read: dim1 = %i   dim2 = %i\n",dim1,dim2);
       printf("  start  chunk: (%lu, %lu)\n", nc_start[0], nc_start[1]);
       printf("  length chunk: (%lu, %lu)\n", nc_length[0],nc_length[1]);
@@ -1515,6 +1516,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
         break;
       }
     if (Options.noisy) {
+      cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - none"<<endl;
       printf("  Dim of chunk read: dim1 = %i \n",dim1);
       printf("  start  chunk: (%lu)\n", nc_start[0]);
       printf("  length chunk: (%lu)\n", nc_length[0]);

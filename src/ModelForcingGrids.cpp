@@ -49,12 +49,12 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
 
   //JRC - is below  necessary? - shouldn't this be done in deep copy? [it seems to be necessary]
   int nGridHRUs=pGrid->GetnHydroUnits();
-  int nCells=pGrid->GetRows()*pGrid->GetCols();
+  int nCells=pGrid->GetRows()*pGrid->GetCols(); //handles 3D or 2D
   double wt;
-  for (int ik=0; ik<nGridHRUs; ik++) {                
+  for (int k=0; k<nGridHRUs; k++) {                
     for (int ic=0; ic<nCells; ic++) {    
-      wt = pGrid->GetGridWeight(ik, ic);
-      pTout->SetWeightVal(ik, ic, wt); 
+      wt = pGrid->GetGridWeight(k, ic);
+      pTout->SetWeightVal(k, ic, wt); 
     }
   }
 
