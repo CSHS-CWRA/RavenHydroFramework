@@ -917,12 +917,10 @@ enum calendars
     CALENDAR_STANDARD,
     CALENDAR_GREGORIAN,
     CALENDAR_PROLEPTIC_GREGORIAN,
-    CALENDAR_NOLEAP,
-    CALENDAR_365_DAY,
+    CALENDAR_365_DAY, //=NO_LEAP
     CALENDAR_360_DAY,
     CALENDAR_JULIAN,
-    CALENDAR_ALL_LEAP,
-    CALENDAR_366_DAY
+    CALENDAR_366_DAY //=ALL_LEAP
 };
 
 ///////////////////////////////////////////////////////////////////

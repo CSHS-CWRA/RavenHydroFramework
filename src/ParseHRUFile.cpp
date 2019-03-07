@@ -196,8 +196,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             error="Parse HRU File: Subbasin ID \""+string(s[5])+"\" in :HRUs table must be unique integer or long integer ";
             ExitGracefully(error.c_str(),BAD_DATA_WARN);
           }
-          if((fabs(s_to_d(s[3]))>90) || (fabs(s_to_d(s[4]))>90)){
-            error="Parse HRU File: longitude and latitude in :HRUs table (HRU "+to_string(s[0])+") must be valid (-90<lat/long<90)";
+          if((fabs(s_to_d(s[3]))>90) || (fabs(s_to_d(s[4]))>180)){
+            error="Parse HRU File: longitude and latitude in :HRUs table (HRU "+to_string(s[0])+") must be valid (-90<lat<90; -180<lon<180)";
             ExitGracefully(error.c_str(),BAD_DATA_WARN);
           }
           if((s_to_d(s[11])>90) || (s_to_d(s[11])<0)){

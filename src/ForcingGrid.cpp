@@ -890,7 +890,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     // Print data on screen
     // -------------------------------
-    // for (int it=0; it<4; it++)  // York.nc : loop over time points in buffer: 4 -->
+    // for (int it=0; it<4; it++)  // .nc : loop over time points in buffer: 4 -->
     //   {
     //     printf("t = %i (Init)\n",it);
     //     printf("   %f %f %f %f \n",_aVal[it][0][0],_aVal[it][0][1],_aVal[it][0][2],_aVal[it][0][3]);
@@ -922,11 +922,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   model_timestep  = Options.timestep;
 
   double length_chunk = _interval * _ChunkSize; // [days]
-  iChunk_new = int(floor((_t_corr + global_model_time) / length_chunk ));
-
+  iChunk_new = max(int(floor((_t_corr + global_model_time+TIME_CORRECTION) / length_chunk )),0);
+  
   if(_iChunk != iChunk_new)
   {  // current model time step is not covered by current chunk --> read new chunk
-
     if(Options.noisy){ printf("\n"); }
     if(Options.noisy){ printf("Start reading new chunk... iChunk = %i (var = %s)\n",iChunk_new,_varname.c_str()); }
     _iChunk = iChunk_new;
@@ -1294,7 +1293,7 @@ void CForcingGrid::Initialize( const optStruct &Options )
   double duration = (double)(_nPulses)*_interval;
   double local_simulation_start = (_t_corr);
   double local_simulation_end = (model_duration + _t_corr);
-
+  if((local_simulation_start<0) && (local_simulation_start>-TIME_CORRECTION)){ local_simulation_start=0.0; }
   if (Options.noisy){ cout << endl; }
   if (duration < local_simulation_start)  //out of data before simulation starts!
   {
@@ -1967,7 +1966,7 @@ double CForcingGrid::GetValue_avg(const int ic, const double &t, const int nstep
 {
 
 
-  int it_start=(int)(t);
+  int it_start=max((int)(t),0);
   int lim=min(nsteps,_ChunkSize-it_start);
   double sum = 0.0;
   for (int it=it_start; it<it_start+lim;it++){
@@ -1988,7 +1987,7 @@ double CForcingGrid::GetValue_avg(const int ic, const double &t, const int nstep
 double CForcingGrid::GetValue_min(const int ic, const double &t, const int nsteps) const
 {
   double min_val = ALMOST_INF ;
-  int it_start=(int)(t);
+  int it_start=max((int)(t),0);
   int lim=min(nsteps,_ChunkSize-it_start);
   for (int it=it_start; it<it_start+lim;it++){
     if(_aVal[it][ic] < min_val){min_val=_aVal[it][ic];}
@@ -2006,7 +2005,7 @@ double CForcingGrid::GetValue_min(const int ic, const double &t, const int nstep
 double CForcingGrid::GetValue_max(const int ic, const double &t, const int nsteps) const
 {
   double max_val = -ALMOST_INF ;
-  int it_start=(int)(t);
+  int it_start=max((int)(t),0);
   int lim=min(nsteps,_ChunkSize-it_start);
   for (int it=it_start; it<it_start+lim;it++){
     if(_aVal[it][ic] > max_val){max_val=_aVal[it][ic];}

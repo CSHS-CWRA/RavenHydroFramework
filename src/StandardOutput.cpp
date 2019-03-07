@@ -579,7 +579,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     // Console output
     //----------------------------------------------------------------
-    if ((quiet) && (!Options.silent) && (tt.day_of_month==1) && ((tt.julian_day)-floor(tt.julian_day)<Options.timestep/2))
+    if ((quiet) && (!Options.silent) && (tt.day_of_month==1) && ((tt.julian_day)-floor(tt.julian_day+TIME_CORRECTION)<Options.timestep/2))
     {
       cout<<thisdate <<endl;
     }

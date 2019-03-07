@@ -339,9 +339,19 @@ void CModel::Initialize(const optStruct &Options)
   }
   if((_pTransModel->GetNumConstituents()>0) && (nAgg>0)) {
     WriteWarning("CModel::Initialize: Transport processes will not work properly with aggregation of state variables (:AggregatedVariable command)",Options.noisy);
-    //ExitGracefully("CModel::Initialize: Transport processes will not work properly with aggregation of state variables (:AggregatedVariable command)",BAD_DATA_WARN);
   }
-  
+  //--Check for non-standard calendar with observations
+  if((Options.calendar!=CALENDAR_PROLEPTIC_GREGORIAN) && (_nObservedTS!=0)){
+    WriteWarning("CModelInitialize: if a non-standard calendar is used, all observation data must be converted into the same calendar format",Options.noisy);
+  }
+  if(Options.calendar!=CALENDAR_PROLEPTIC_GREGORIAN){
+    WriteWarning("CModelInitialize: if a non-standard calendar is used, care must be taken with forcing data. All gauge forcing data must use the same calendar convention. Mixed calendars are only supported for NetCDF forcing inputs.",Options.noisy);
+  }  
+  //--Check for non-midnight start time 
+  if((Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION)>REAL_SMALL)){
+    WriteAdvisory("CModelInitialize: if non-midnight start time is used and temperature forcings begin after midnight, average/max/min daily temperature forcings will be incorrect on the first (and often last) day of simulation.",Options.noisy);
+    WriteAdvisory("                  It is suggested to either (a) use forcings which start on or prior to 00:00 of the model start date or (b) avoid algorithms which require these daily temperature inputs",Options.noisy);
+  }
 }
 
 //////////////////////////////////////////////////////////////////

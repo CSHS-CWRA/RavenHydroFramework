@@ -263,7 +263,8 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
                                         const time_struct &tt,
                                         double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers & rock
+
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) && (pHRU->GetHRUType()!=HRU_ROCK)){return;}//Lakes & glaciers 
 
   double runoff;
   double rainthru;
@@ -275,6 +276,8 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   ponded_water=max(state_vars[pModel->GetStateVarIndex(PONDED_WATER)],0.0);
 
   rainthru=(ponded_water/Options.timestep);//potential infiltration rate, mm/d
+
+  if(pHRU->GetHRUType()==HRU_ROCK){ rates[1]=rainthru; return; } //if rock, nothing infiltrates, everything runs off
 
   int iTopSoil  =pModel->GetStateVarIndex(SOIL,0);
 

@@ -140,7 +140,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.julian_start_day    =0;//Jan 1
   Options.julian_start_year   =1666;
   Options.duration            =365;
-  Options.calendar            =StringToCalendar("PROLEPTIC_GREGORIAN"); // Default calendar
+  Options.calendar            =CALENDAR_PROLEPTIC_GREGORIAN; // Default calendar
   Options.timestep            =1;
   Options.output_interval     =1;
   Options.sol_method          =ORDERED_SERIES;
@@ -279,6 +279,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":RechargeMethod"            )){code=42; }
     else if  (!strcmp(s[0],":NetSWRadMethod"            )){code=43; }
     else if  (!strcmp(s[0],":DirectEvaporation"         )){code=44; }
+    else if  (!strcmp(s[0],":Calendar"                  )){code=45; }
     //------------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=51; }
@@ -993,6 +994,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:DirectEvaporation"  */
       if(Options.noisy) { cout <<"Use Direct Evaporation"<<endl; }
       Options.direct_evap=true;
+      break;
+    }
+    case(45)://----------------------------------------------
+    {/*":Calendar" string calendar  */
+      if(Options.noisy) { cout <<"Change model calendar"<<endl; }
+      Options.calendar=StringToCalendar(s[1]);
       break;
     }
     case(50):  //--------------------------------------------

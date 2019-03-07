@@ -344,6 +344,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Gauge latitude"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Latitude specified outside of a :Gauge-:EndGauge statement",BAD_DATA);
+      ExitGracefullyIf(Len<=1,"ParseTimeSeriesFile - no value provided after :Latitude command",BAD_DATA_WARN);
       pGage->SetLatitude(s_to_d(s[1]));
       break;
     }
@@ -352,7 +353,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Gauge longitude"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Longitude specified outside of a :Gauge-:EndGauge statement",BAD_DATA);
-      // \todo [QA/QC] - should check if there is an s[1]! (also in lat/elev/etc in this file
+      ExitGracefullyIf(Len<=1,"ParseTimeSeriesFile - no value provided after :Longitude command",BAD_DATA_WARN);
       pGage->SetLongitude(s_to_d(s[1]));
       break;
     }
@@ -361,6 +362,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Gauge elevation"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Elevation specified outside of a :Gauge-:EndGauge statement",BAD_DATA);
+      ExitGracefullyIf(Len<=1,"ParseTimeSeriesFile - no value provided after :Elevation command",BAD_DATA_WARN);
       pGage->SetElevation(s_to_d(s[1]));
       break;
     }
@@ -1364,13 +1366,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           pGrid->SetnHydroUnits(nHydroUnits);
           if (nHydroUnitsGiven && nGridCellsGiven) {pGrid->AllocateWeightArray(nHydroUnits,nGridCells);}
         }
-        else if (!strcmp(s[0],":NumberGridCells"    ))
+        else if (!strcmp(s[0],":NumberGridCells"    ) || !strcmp(s[0],":NumberStations"    ))
         {
           nGridCells      = atoi(s[1]);
           nGridCellsGiven = true;
 
           if (pGrid->GetCols() * pGrid->GetRows() != nGridCells) {
-            printf(":NumberGridCells   = %i\n",atoi(s[1]));
+            printf(":NumberGridCells/:NumberStations   = %i\n",atoi(s[1]));
             printf("NetCDF cols * rows = %i\n",pGrid->GetCols() * pGrid->GetRows());
             ExitGracefully("ParseTimeSeriesFile: :NumberGridCells given does not agree with NetCDF file content",BAD_DATA);
           }
@@ -1443,7 +1445,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (409)://----------------------------------------------
-    {/*:LinearTransform */
+    {/*:LinearTransform [a] [b] */
       if (Options.noisy){cout <<"   :LinearTransform"<<endl;}
       ExitGracefullyIf(pGrid==NULL,
                        "ParseTimeSeriesFile: :LinearTransform command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
@@ -1462,9 +1464,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :VarNameNC   pre
        :DimNamesNC  nstations ntime
        :GridWeights
-       [#HRUs] [#STATIONS NC]
-       [STATION#] [HRUID] [w_lk]
-       ....
+         :NumberHRUs [#HRUs]
+         :NumberStations [#STATIONS]
+         [HRUID] [STATION#] [w_lk]
+         ....
        :EndGridWeights
        :EndStationForcing
      */

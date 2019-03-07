@@ -454,13 +454,14 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     double SL   =state_var[iFrom[1]];//liquid snow, mm
     double SD   =state_var[iSnowDepth];//snow depth, mm
 
-    melt    =max(pHRU->GetForcingFunctions()->potential_melt,0.0); //positive
+    melt    =min(max(pHRU->GetForcingFunctions()->potential_melt,0.0),S/tstep); //positive, constrained by available snow
     refreeze=Ka*min(Ta-FREEZING_TEMP,0.0);//negatively valued
 
-    liq_cap=CalculateSnowLiquidCapacity(S,SD,Options);
+    liq_cap=CalculateSnowLiquidCapacity(S-melt*tstep,SD,Options);
 
-    rates[0] =max(-SL/tstep,refreeze);
-    rates[0]+=max(melt,(liq_cap-SL)/tstep);     //melt
+    rates[0] =max(-SL/tstep,refreeze);          //snow<-snow_liq 
+    SL+=rates[0]*tstep;
+    rates[0]+=max(melt,max(liq_cap-SL,0.0)/tstep);     //melt
     rates[1] =max(melt-(liq_cap-SL)/tstep,0.0); //overflow to soil
   }
   //------------------------------------------------------------
@@ -1300,7 +1301,7 @@ void  CmvSnowBalance::ApplyConstraints( const double             *state_vars,
     //cant remove more than is there
     rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]/Options.timestep,0.0),0.0);
   }
-  if (type == SNOBAL_UBCWM)
+  else if (type == SNOBAL_UBCWM)
   {
     //snow cover should never be negative
     // subdaily correction sometimes puts it out of this range

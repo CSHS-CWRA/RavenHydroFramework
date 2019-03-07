@@ -207,12 +207,13 @@ void CModel::CorrectPrecip(const optStruct     &Options,
   else if (Options.orocorr_precip==OROCORR_HBV)
   {
     double corr=HBV_PRECIP_CORR;
-    if (elev>HBV_PRECIP_CORR_ELEV){corr=HBV_PRECIP_CORR_UP;}
-
-    //F.precip         *=((1-F.snow_frac)*max(1.0+corr*(elev-ref_elev),0.0)+(F.snow_frac)); //should be this, but isnt...
-    F.precip          *=max(1.0+corr*(elev-ref_elev),0.0);
-    F.precip_5day     *=max(1.0+corr*(elev-ref_elev),0.0);
-    F.precip_daily_ave*=max(1.0+corr*(elev-ref_elev),0.0);
+    double add=0.0;
+    if (elev>HBV_PRECIP_CORR_ELEV){
+      add=(HBV_PRECIP_CORR_UP-HBV_PRECIP_CORR)*(elev-HBV_PRECIP_CORR_ELEV);
+    }
+    F.precip          *=max(1.0+corr*(elev-ref_elev)+add,0.0);
+    F.precip_5day     *=max(1.0+corr*(elev-ref_elev)+add,0.0);
+    F.precip_daily_ave*=max(1.0+corr*(elev-ref_elev)+add,0.0);
   }
   //---------------------------------------------------------------------------
   else if ((Options.orocorr_precip==OROCORR_UBCWM) || (Options.orocorr_precip==OROCORR_UBCWM2))
@@ -221,7 +222,9 @@ void CModel::CorrectPrecip(const optStruct     &Options,
     {
       //Current cheat on temp (assumes first HRU is in band 1)
       double band1_temp=_pHydroUnits[0]->GetForcing("TEMP_DAILY_AVE");
-      //double band1_temp=F.temp_daily_ave; //More desirable
+      //if(!Options.keepUBCWMbugs) {
+      //  double band1_temp=F.temp_daily_ave; //More desirable?
+      // }
       /// \todo [bug] temp should not be the temp at band 1!! (this is really unacceptable, but part of UBCWM)
 
       //orographic corrections
@@ -337,8 +340,16 @@ void CModel::CorrectPET(const optStruct &Options,
     double max_month_temp(0.0),min_month_temp(0.0);
     for (int g=0;g<_nGauges;g++)
     {
-      max_month_temp+=_aGaugeWtTemp[k][g]*_pGauges[g]->GetMonthlyAveTemp (7);//August
-      min_month_temp+=_aGaugeWtTemp[k][g]*_pGauges[g]->GetMonthlyAveTemp (2);//February
+      double max=-ALMOST_INF;
+      double min=ALMOST_INF;
+      double tmp;
+      for(int i=0;i<12;i++) {//get min/max annual temp
+        tmp=_pGauges[g]->GetMonthlyAveTemp(i);
+        upperswap(max,tmp);
+        lowerswap(min,tmp);
+      }
+      max_month_temp+=_aGaugeWtTemp[k][g]*max;
+      min_month_temp+=_aGaugeWtTemp[k][g]*min;
     }
     /// \todo: repair for southern hemisphere
 

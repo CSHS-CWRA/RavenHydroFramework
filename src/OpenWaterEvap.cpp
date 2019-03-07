@@ -199,11 +199,11 @@ void CmvLakeEvaporation::GetRatesOfChange(const double                  *state_v
                                           double      *rates) const
 {
   if ((!pHRU->IsLake()) && (pModel->GetLakeStorageIndex()!=iFrom[0])){return;}
+  
+  if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;          //calls PET rate [mm/d]
-
-  if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 
   if (type==LAKE_EVAP_BASIC)//-------------------------------------
   {
@@ -227,8 +227,8 @@ void  CmvLakeEvaporation::ApplyConstraints( const double                *state_v
                                             const time_struct &t,
                                             double      *rates) const
 {
-  if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}//reality check
-  if (rates[0]<0)             {rates[0]=0.0;}//positivity constraint
+  if (state_vars[iFrom[0]]<=0){rates[0]=0.0; return;}//reality check
+  if (rates[0]<0)             {rates[0]=0.0; return;}//positivity constraint
 
   //can't remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);

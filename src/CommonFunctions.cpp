@@ -286,6 +286,9 @@ bool IsLeapYear(const int year, const int calendar)
       return leap;
     }
     
+    if(calendar==CALENDAR_365_DAY){return false;}
+    if(calendar==CALENDAR_366_DAY){return true; }
+
     // other calendars 
     if ((calendar == CALENDAR_JULIAN ||
          calendar == CALENDAR_STANDARD ||
@@ -340,7 +343,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   }
   //ddate is now decimal julian date from Jan 1 0:00:00 of current dyear
 
-  dmonth=1; days=31;sum=31; mon="Jan";
+  dmonth=1; days=31;sum=31-TIME_CORRECTION; mon="Jan";
   if      (ddate>=sum){dmonth+=1;days=28+leap;sum+=days;mon="Feb";}//Feb
   if      (ddate>=sum){dmonth+=1;days=31;     sum+=days;mon="Mar";}//Mar
   if      (ddate>=sum){dmonth+=1;days=30;     sum+=days;mon="Apr";}//Apr
@@ -591,11 +594,9 @@ int StringToCalendar(char *cal_chars)
     return CALENDAR_PROLEPTIC_GREGORIAN;
   }
   else if ((strcmp("NOLEAP", str.c_str()) == 0) || (strcmp("NO_LEAP", str.c_str()) == 0)) {
-    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support NOLEAP calendars!", BAD_DATA);
-    return CALENDAR_NOLEAP;
+    return CALENDAR_365_DAY;
   }
   else if (strcmp("365_DAY", str.c_str()) == 0) {
-    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 365_DAY calendars!", BAD_DATA);
     return CALENDAR_365_DAY;
   }
   else if (strcmp("360_DAY", str.c_str()) == 0) {
@@ -606,11 +607,9 @@ int StringToCalendar(char *cal_chars)
     return CALENDAR_JULIAN;
   }
   else if (strcmp("ALL_LEAP", str.c_str()) == 0) {
-    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support ALL_LEAP calendars!", BAD_DATA);
-    return CALENDAR_ALL_LEAP;
+    return CALENDAR_366_DAY;
   }
   else if (strcmp("366_DAY", str.c_str()) == 0) {
-    ExitGracefully("CommonFunctions: StringToCalendar: Raven does not support 366_DAY calendars!", BAD_DATA);
     return CALENDAR_366_DAY;
   }
   else {

@@ -256,7 +256,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_rain = GetForcingGrid((F_RAINFALL)); 
         pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
 
-        
         F.precip           = pGrid_pre->GetWeightedValue           (k,tt.model_time,Options.timestep);
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue      (k,tt.model_time,Options.timestep,Options);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
@@ -1196,6 +1195,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   // Minimum requirements of forcing grids: must have precip or rain
   ExitGracefullyIf( !pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
 
+  if(Options.noisy){cout<<"Generating gridded precipitation variables"<<endl;}
   //--------------------------------------------------------------------------
   // Handle snowfall availability
   //--------------------------------------------------------------------------
@@ -1219,7 +1219,6 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
     }
     //pGrid_pre->SetChunkSize(pGrid_pre->GetChunkSize()-1);
   }
-
   if ( snow_gridded && rain_gridded && !pre_gridded ){
     GeneratePrecipFromSnowRain(Options);
   }
@@ -1230,7 +1229,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
     GenerateZeroSnow(Options);
     if ( !pre_gridded ) { GeneratePrecipFromSnowRain(Options); }
   }
-
+  if(Options.noisy){cout<<"...done generating gridded precipitation variables."<<endl;}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Creates all missing gridded temperatur data based on gridded information available,
@@ -1264,6 +1263,8 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
   ExitGracefullyIf((temp_daily_min_gridded && !temp_daily_max_gridded) || (!temp_daily_min_gridded && temp_daily_max_gridded),
     "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature have to be given either both as time series or both as gridded input.",BAD_DATA);
 
+  if(Options.noisy){cout<<"Generating gridded temperature variables..."<<endl;}
+
   //--------------------------------------------------------------------------
   // Populate Temperature forcing grid: by timestep, daily min/max/average
   //--------------------------------------------------------------------------
@@ -1295,6 +1296,8 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
 
   ExitGracefullyIf(GetForcingGrid(F_TEMP_DAILY_MAX)->GetInterval() != GetForcingGrid(F_TEMP_DAILY_MIN)->GetInterval(),
     "CModel::InitializeForcingGrids: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
+
+  if(Options.noisy){cout<<"...done generating gridded temperature variables."<<endl;}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Checks whether a forcing grid (by name) is read actually

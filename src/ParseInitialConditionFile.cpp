@@ -69,14 +69,15 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ALL"                      )){code=3;  }
     else if  (!strcmp(s[0],":UniformInitialConditions" )){code=3;  }
     else if  (!strcmp(s[0],":HRUStateVariableTable"    )){code=4;  }
-    else if  (!strcmp(s[0],":EndHRUStateVariableTable" )){code=-2;  }
+    else if  (!strcmp(s[0],":EndHRUStateVariableTable" )){code=-2; }
     else if  (!strcmp(s[0],":InitialConditions"        )){code=5;  }
     else if  (!strcmp(s[0],":EndInitialConditions"     )){code=-2; }
     else if  (!strcmp(s[0],":BasinStateVariables"      )){code=6;  }
     else if  (!strcmp(s[0],":EndBasinStateVariables"   )){code=-2; }
-    else if  (!strcmp(s[0],":InitialReservoirFlow"     )){code=7; }
-    else if  (!strcmp(s[0],":InitialReservoirStage"    )){code=8; }
+    else if  (!strcmp(s[0],":InitialReservoirFlow"     )){code=7;  }
+    else if  (!strcmp(s[0],":InitialReservoirStage"    )){code=8;  }
     else if  (!strcmp(s[0],":TimeStamp"                )){code=10; }
+    else if  (!strcmp(s[0],":Nudge"                    )){code=11; }
 
     switch(code)
     {
@@ -479,6 +480,45 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
       if ((Options.julian_start_day!=tt.julian_day) || (Options.julian_start_year!=tt.year)){
         WriteWarning(":Timestamp command in initial conditions (.rvc) file is not consistent with :StartDate command in model (.rvi) file",Options.noisy);
+      }
+      break;
+    }
+    case(11): //------------------------------------------------
+    {
+      //:Nudge NUDGE_MULTIPLY [state_var] [mutiplier/add-on] [HRU Group]
+      // e.g., 
+      //:Nudge NUDGE_MULTIPLY SNOW 1.6 Band_1250
+      //
+      if(Len<5) {
+        WriteWarning("Incorrect syntax for :Nudge command",Options.noisy);break;
+      }
+      if(pModel->GetHRUGroup(s[4])==NULL) {
+        WriteWarning("Invalid HRU group in :Nudge command",Options.noisy);break;
+      }
+      int     SVlayer,iSV,nHRUs;
+      sv_type SVtype;
+      double  val;
+      SVtype  =CStateVariable::StringToSVType(s[2],SVlayer,true);
+      iSV     =pModel->GetStateVarIndex(SVtype,SVlayer);
+      nHRUs   =pModel->GetNumHRUs();
+      
+      if(!strcmp(s[1],"NUDGE_MULTIPLY")) {//----------------------------------
+        for(int k=0;k<nHRUs;k++) {
+          if(pModel->IsInHRUGroup(k,s[4])) {
+            val=pModel->GetHydroUnit(k)->GetStateVarValue(iSV);
+            val*=s_to_d(s[3]);
+            pModel->GetHydroUnit(k)->SetStateVarValue(iSV,val);
+          }
+        }
+      }
+      else if(!strcmp(s[1],"NUDGE_ADD")) {//----------------------------------
+        for(int k=0;k<nHRUs;k++) {
+          if(pModel->IsInHRUGroup(k,s[4])) {
+            val=pModel->GetHydroUnit(k)->GetStateVarValue(iSV);
+            val+=s_to_d(s[3]);
+            pModel->GetHydroUnit(k)->SetStateVarValue(iSV,val);
+          }
+        }
       }
       break;
     }

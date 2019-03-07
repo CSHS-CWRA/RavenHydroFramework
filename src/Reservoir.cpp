@@ -185,7 +185,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
   _nDates=my_nDates;
   _aDates = new int[_nDates];
   for (int v = 0; v<_nDates; v++){
-    _aDates[v] = my_aDates[v]-1; //Julian Days in Raven from 0 to 365, not 1 to 365
+    _aDates[v] = my_aDates[v]-1; //Julian Days in Raven from 0 to 365, not 1 to 366
   }
 
   _min_stage =ALMOST_INF;
