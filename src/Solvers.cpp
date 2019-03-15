@@ -405,10 +405,12 @@ void MassEnergyBalance( CModel            *pModel,
       aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
       pBasin->SetInflow(aQinnew[p]);
 
-      down_Q=pBasin->GetDownstreamInflow(t+tstep);
-      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
+      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
       pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,Options,tt);      //Where everything happens!
+
+      down_Q=pBasin->GetDownstreamInflow(t+tstep);
+      aQoutnew[pBasin->GetNumSegments()-1]+=down_Q;
 
       pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,Options,tt,false);//actually updates flow values here
 

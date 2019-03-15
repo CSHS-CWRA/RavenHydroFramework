@@ -144,6 +144,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirMinStageFlow" )){code=56; }
     else if  (!strcmp(s[0],":ReservoirTargetStage"  )){code=57; }
     else if  (!strcmp(s[0],":ReservoirMaxQDelta"    )){code=58; }
+    else if  (!strcmp(s[0],":BasinInflowHydrograph2")){code=59; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -750,7 +751,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }
+    }              
     case (51): //---------------------------------------------
     {/*:ReservoirExtraction {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -935,6 +936,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }  
+    case (59): //---------------------------------------------
+    {/*:BasinInflowHydrograph2 {long Basincode}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qin} x nMeasurements [m3/s]
+       :EndBasinInflowHydrograph2
+     */
+      if (Options.noisy) {cout <<"Basin Inflow Hydrograph(2)"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),to_string(SBID),Options);
+      if (pSB!=NULL){
+        pSB->AddDownstreamInflow(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":BasinInflowHydrograph2 Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
     case (70): //---------------------------------------------
     {/*:MonthlyAveTemperature {temp x 12}*/
       if (Options.noisy) {cout <<"Monthly Average Temperatures"<<endl;}
