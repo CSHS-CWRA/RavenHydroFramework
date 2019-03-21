@@ -370,7 +370,6 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     // convert to double to proceed
     for (int itime=0; itime<ntime;itime++){       // loop over all time steps
       my_time[itime]=(double) ttime[itime];        // convert to double
-      //cout << "my_time[" << itime << "] = " << my_time[itime] << endl;
     }
     delete[] ttime;
   }

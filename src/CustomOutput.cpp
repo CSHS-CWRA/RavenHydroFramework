@@ -5,6 +5,8 @@
 
 #include "CustomOutput.h"
 
+void WriteNetCDFGlobalAttributes(int out_ncid,const optStruct &Options,string descript);//in StandardOutput.cpp
+
 /*****************************************************************
    Constructor/Destructor
 ------------------------------------------------------------------
@@ -493,13 +495,10 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   _CUSTOM.close(); //because netcdf does the opening/closing  
   retval = nc_create(_filename.c_str(), NC_CLOBBER|NC_NETCDF4, &_netcdf_ID);       HandleNetCDFErrors(retval);
 
-    // ----------------------------------------------------------
+  // ----------------------------------------------------------
   // global attributes
   // ---------------------------------------------------------- 
-  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "Conventions", strlen("CF-1.6"),          "CF-1.6");           HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "featureType", strlen("timeSeries"),      "timeSeries");       HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "history",     strlen("Created by Raven"),"Created by Raven"); HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, NC_GLOBAL, "description", strlen("Custom Output"),   "Standard Output");  HandleNetCDFErrors(retval);
+  WriteNetCDFGlobalAttributes(_netcdf_ID,Options,"Custom Output");
 
   // ---------------------------------------------------------- 
   // time                                                       

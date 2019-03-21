@@ -36,7 +36,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 int *ParseSVTypeArray          (char *string,  CModel *&pModel, int size);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
-void AddProcess(CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
+void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
+void AddNetCDFAttribute        (optStruct &Options,const string att,const string &val);
+
 //////////////////////////////////////////////////////////////////
 /// \brief This method is the primary Raven input routine that parses input files, called by main
 ///
@@ -207,6 +209,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.wateryr_mo          =10; //October
   Options.create_rvp_template =false;
   Options.write_constitmass   =false;
+  Options.nNetCDFattribs      =0;
+  Options.aNetCDFattribs      =NULL;
 
   pModel=NULL;
   pMover=NULL;
@@ -318,6 +322,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=86; }
     else if  (!strcmp(s[0],":PeriodStartingFormatOff"   )){code=87; }
     else if  (!strcmp(s[0],":OutputConstituentMass"     )){code=89; }
+    else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }
@@ -1352,6 +1357,13 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_constitmass=true;
       break;
     }
+    case(90):  //--------------------------------------------
+    {/*:NetCDFAttribute [attrib_name] [value]*/
+      if (Options.noisy) {cout <<"Add NetCDF attribute"<<endl;}
+      if (Len<3){ImproperFormatWarning(":NetCDFAttribute",p,Options.noisy); break;}
+      AddNetCDFAttribute(Options,s[1],s[2]);
+      break;
+    }          
     case(98):  //--------------------------------------------
     {/*:Alias */
       if (Options.noisy) {cout <<"Alias"<<endl;}
@@ -2610,4 +2622,20 @@ void AddProcess(CModel *pModel,CHydroProcessABC* pMover,CProcessGroup *pProcGrou
 {
   if(pProcGroup==NULL){ pModel->AddProcess(pMover); }
   else                { pProcGroup->AddProcess(pMover); }
+}
+///////////////////////////////////////////////////////////////////
+/// \brief adds to list of NetCDF attributes in Options structure
+//
+void AddNetCDFAttribute(optStruct &Options,const string att,const string &val)
+{
+  netcdfatt *aTmp=new netcdfatt[Options.nNetCDFattribs+1];
+  for(int i=0;i<Options.nNetCDFattribs;i++){
+    aTmp[i].attribute=Options.aNetCDFattribs[i].attribute;
+    aTmp[i].value    =Options.aNetCDFattribs[i].value;
+  }
+  aTmp[Options.nNetCDFattribs].attribute=att;
+  aTmp[Options.nNetCDFattribs].value=val;
+  delete[]Options.aNetCDFattribs;
+  Options.aNetCDFattribs=&aTmp[0];
+  Options.nNetCDFattribs++;
 }

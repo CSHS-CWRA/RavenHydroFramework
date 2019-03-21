@@ -783,6 +783,10 @@ enum process_type
   Global Structures
 ******************************************************************/
 
+struct netcdfatt{
+  string attribute;
+  string value;
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Stores all global model and solution method options
 ///
@@ -881,6 +885,8 @@ struct optStruct
   //                                          ///< diagnostic options
   double           diag_start_time;           ///< Model time to start diagnostics
   double           diag_end_time;             ///< Model time to start diagnostics
+  netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
+  int              nNetCDFattribs;            ///< size of array of NetCDF attributes
 };
 
 ///////////////////////////////////////////////////////////////////
