@@ -1361,9 +1361,11 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:NetCDFAttribute [attrib_name] [value]*/
       if (Options.noisy) {cout <<"Add NetCDF attribute"<<endl;}
       if (Len<3){ImproperFormatWarning(":NetCDFAttribute",p,Options.noisy); break;}
-      AddNetCDFAttribute(Options,s[1],s[2]);
+      string tmpstring=s[2];
+      for(i=3;i<Len;i++){tmpstring=tmpstring+" "+s[i];}
+      AddNetCDFAttribute(Options,s[1],tmpstring);
       break;
-    }          
+    }      
     case(98):  //--------------------------------------------
     {/*:Alias */
       if (Options.noisy) {cout <<"Alias"<<endl;}
