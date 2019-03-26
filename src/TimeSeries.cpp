@@ -1181,7 +1181,8 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   int    varid_t;               // id of time variable
   int    varid_f;               // id of VarNameNC variable
   char   unit_t[200];           // special type for string of variable's unit     required by nc routine
-  char   calendar_t[200];       // special type for string of variable's calendar required by nc routine
+  char * calendar_t;            // special type for string of variable's calendar required by nc routine
+  size_t att_len;               // length of the attribute's text
   int    calendar;              // enum int of calendar
   string dash;                  // to check format of time unit string
   string colon;                 // to check format of time unit string
@@ -1234,8 +1235,14 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   retval = nc_get_att_text(ncid,varid_t,"units",unit_t);
   HandleNetCDFErrors(retval);
   //     (c) calendar
-  retval = nc_get_att_text(ncid,varid_t,"calendar",calendar_t);
+  calendar_t = (char *) malloc(2);
+  strcpy(calendar_t, "?\0");
+  retval = nc_inq_attlen (ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
   HandleNetCDFErrors(retval);
+  calendar_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+  retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
+  HandleNetCDFErrors(retval);
+  calendar_t[att_len] = '\0';// add string determining character
   calendar = StringToCalendar(calendar_t);
   //     (d) allocate array for time values
   int *time=NULL;
