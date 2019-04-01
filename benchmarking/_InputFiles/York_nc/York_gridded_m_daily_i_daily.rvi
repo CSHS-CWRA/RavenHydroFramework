@@ -15,7 +15,7 @@
 :CatchmentRoute      ROUTE_DUMP
 #:InterpolationMethod INTERP_INVERSE_DISTANCE
 #:InterpolationMethod 	INTERP_FROM_FILE CaPA_point_weight.txt
-:Evaporation         PET_OUDIN
+:Evaporation         PET_HARGREAVES_1985
 :RainSnowFraction    RAINSNOW_DINGMAN
 :PotentialMeltMethod POTMELT_DEGREE_DAY
 :OroTempCorrect      OROCORR_SIMPLELAPSE
