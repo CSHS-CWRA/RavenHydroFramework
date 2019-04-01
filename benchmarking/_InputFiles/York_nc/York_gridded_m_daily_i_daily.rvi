@@ -4,9 +4,9 @@
 #:CreationDate      May 2016
 #------------------------------------------------------------------------
 #
-#:RunName             run5
+:RunName             York_gridded_m_daily_i_daily
 :StartDate           2006-10-01 00:00:00    # calibration until 2012-09-30, first year as warm up
-:Duration            365 #1461 #2192		
+:Duration            1461 #2192		
 :TimeStep            1.0
 :Method              ORDERED_SERIES
 
@@ -15,7 +15,7 @@
 :CatchmentRoute      ROUTE_DUMP
 #:InterpolationMethod INTERP_INVERSE_DISTANCE
 #:InterpolationMethod 	INTERP_FROM_FILE CaPA_point_weight.txt
-:Evaporation         PET_HARGREAVES_1985
+:Evaporation         PET_OUDIN
 :RainSnowFraction    RAINSNOW_DINGMAN
 :PotentialMeltMethod POTMELT_DEGREE_DAY
 :OroTempCorrect      OROCORR_SIMPLELAPSE

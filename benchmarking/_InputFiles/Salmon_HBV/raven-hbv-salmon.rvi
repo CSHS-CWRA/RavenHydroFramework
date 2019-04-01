@@ -74,7 +74,7 @@
 # Output Options
 #
 # manual testing settings
-:PavicsMode
+# :PavicsMode
 :WriteForcingFunctions
 :EvaluationMetrics NASH_SUTCLIFFE RMSE
 
