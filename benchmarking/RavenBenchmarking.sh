@@ -34,7 +34,7 @@ if [ -e ${workingdir}"/out_"${ver_name} ] ; then
 fi
 mkdir ${workingdir}"/out_"${ver_name}
 
-test_cases=(    "Alouette" "Alouette2" "York" "Irondequoit" "LOTW" "LaJoie" "Nith" "Revelstoke" "Salmon_GR4J" "Salmon_HBV" "Salmon_HMETS" "Salmon_MOHYSE" "Williston_Finlay" "York_nc" "York_nc")
+test_cases=(    "Alouette" "Alouette2" "York" "Irondequoit" "LOTW" "LaJoie" "Nith" "Revelstoke" "Salmon_GR4J" "Salmon_HBV" "Salmon_HMETS" "Salmon_MOHYSE" "Williston_Finlay" "York_gridded_m_daily_i_daily" "York_nongridded_m_daily_i_daily")
 test_cases_rvi=("Alouette_ws" "Alouette2" "York_gridded_m_daily_i_daily" "Irondequoit" "LOWRL" "La_Joie_ws" "Nith" "Revelstoke_ws" "raven-gr4j-salmon" "raven-hbv-salmon" "raven-hmets-salmon" "raven-mohyse-salmon" "Williston_Finlay_ws" "York_gridded_m_daily_i_daily" "York_nongridded_m_daily_i_daily")
 
 ntest_cases=$( echo "${#test_cases[@]}" )

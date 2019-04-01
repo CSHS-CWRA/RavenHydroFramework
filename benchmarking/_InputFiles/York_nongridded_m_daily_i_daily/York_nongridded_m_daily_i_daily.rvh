@@ -1,0 +1,43 @@
+#########################################################################														
+:FileType	rvh	ASCII	Raven	2.6										
+:WrittenBy	Robert Chlumsky											
+:CreationDate	August	2016
+# York River model - without Baptiste Lake Dam		
+# inflow from York River WSC at Bancroft to outlet at Boulter Bridge			
+#------------------------------------------------------------------------														
+#														
+:SubBasins														
+	:Attributes	NAME	DOWNSTREAM_ID	PROFILE	REACH_LENGTH	GAUGED								
+	:Units	none	none	none	km	none													
+		1	sub36			3			1.1			6.835975465			0
+		2	sub46			3			1.1			30.50167314			0
+		3	sub49			4			1.1			23.13785063		0
+		4	sub50			-1			1.1			4.541614716		1
+		5	sub61			4			1.1			30.80833837		0
+		6	sub63			5			1.1			16.98942351		0
+		7	sub65			5			1.1			26.43506456			0
+:EndSubBasins																
+														
+:HRUs														
+	:Attributes	AREA	ELEVATION	LATITUDE	LONGITUDE	BASIN_ID	LAND_USE_CLASS	VEG_CLASS	SOIL_ProckOFILE	AQUIFER_PROFILE	TERRAIN_CLASS	SLOPE	ASPECT	
+	:Units	km2	m	deg	deg	none	none	none	none	none	none	ratio	deg	
+		1	152.87	906.16	45.331398	-77.8504	1	Dense_deciduous	Dense_deciduous	R2	[NONE]	[NONE]	12.47	148.17	
+		2	205.21	946.66	45.279427	-77.9515	2	Mixed_coniferous	Mixed_coniferous	ABC2	[NONE]	[NONE]	12.17	152.83
+		30	92.21	867.92	45.261857	-77.7529	3	Mixed_coniferous	Mixed_coniferous	ABC2	[NONE]	[NONE]	11.33	144.74
+		4	15.12	834.81	45.244799	-77.677	4	Mixed_coniferous	Mixed_coniferous	ABC2	[NONE]	[NONE]	11.1	141.06
+		5	214.24	876.38	45.151965	-77.7505	5	Mixed_coniferous	Mixed_coniferous	R2	[NONE]	[NONE]	13.89	159.98
+		6	39.79	876.06	45.056583	-77.8071	6	Mixed_deciduous	Mixed_deciduous	ABC2	[NONE]	[NONE]	15.53	159.75
+		7	315.92	871.44	44.996946	-77.7399	7	Mixed_coniferous	Mixed_coniferous	R2	[NONE]	[NONE]	11.03	158.59
+:EndHRUs
+
+:SubBasinProperties			
+	:Parameters	TIME_CONC	TIME_TO_PEAK
+	:Units	d	d
+	1	5.602604E-01	1.848859E-01
+	2	1.240896E+00	4.094957E-01
+	3	1.944412E-01	6.416559E-02
+	4	1.504120E-01	4.963596E-02
+	5	1.703677E+00	5.622133E-01
+	6	3.157379E-01	1.041935E-01
+	7	1.994767E+00	6.582730E-01
+:EndSubBasinProperties				  
