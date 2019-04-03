@@ -184,7 +184,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   int    varid_f;               // id of forcing variable read
   int    retval;                // error value for NetCDF routines
   size_t GridDim_t;             // special type for GridDims required by nc routine
-  char   unit_t[200];           // special type for string of variable's unit     required by nc routine
+  char * unit_t;                // special type for string of variable's unit     required by nc routine
   char * unit_f;                // special type for string of variable's unit     required by nc routine
   char * calendar_t;            // special type for string of variable's calendar required by nc routine
   int    calendar;              // enum int of calendar used
@@ -303,9 +303,39 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   }
 
   // unit of time
-  retval = nc_get_att_text(ncid,varid_t,"units",unit_t);    // unit of time
+  unit_t = (char *) malloc(2);
+  strcpy(unit_t, "?\0");
+  retval = nc_inq_attlen (ncid, varid_t, "units", &att_len);// inquire length of attribute's text
   HandleNetCDFErrors(retval);
-
+  unit_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+  retval = nc_get_att_text(ncid, varid_t, "units", unit_t);// read attribute text
+  HandleNetCDFErrors(retval);
+  unit_t[att_len] = '\0';// add string determining character
+  // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS"
+  // -> 3rd-last character needs to be a colon
+  colon = unit_t_str.substr(att_len-3, 1);  // first dash in date
+  if ( !strstr(colon.c_str(), ":") ){
+    printf("time unit string: %s\n",unit_t_str.c_str());
+    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
+  }
+  // -> 6th-last character needs to be a colon
+  colon = unit_t_str.substr(att_len-6, 1);  // first dash in date
+  if ( !strstr(colon.c_str(), ":") ){
+    printf("time unit string: %s\n",unit_t_str.c_str());
+    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
+  }
+  // -> 12th-last character needs to be a dash
+  dash = unit_t_str.substr(att_len-12, 1);  // first dash in date
+  if ( !strstr(dash.c_str(), "-") ){
+    printf("time unit string: %s\n",unit_t_str.c_str());
+    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
+  }
+  // -> 15th-last character needs to be a dash
+  dash = unit_t_str.substr(att_len-15, 1);  // first dash in date
+  if ( !strstr(dash.c_str(), "-") ){
+    printf("time unit string: %s\n",unit_t_str.c_str());
+    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
+  }
   // calendar attribute
   // just making sure that the string is read with proper null terminating character
   calendar_t = (char *) malloc(2);
