@@ -934,8 +934,8 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   //add snow throughfall to snowPack and compute its cold content
   //this also initializes the cold content with the first snow fall
   //------------------------------------------------------------------------
-  ccSnowFall = HCP_ICE*MJ_PER_J / MM_PER_METER * newSnow * max(-Ta, 0.0);
-  //[MJ/m2] = [J/m3/K]*[MJ/J]  * [m/mm]      *  [mm]  *  [K]
+  ccSnowFall = HCP_ICE / MM_PER_METER * newSnow * max(-Ta, 0.0);
+  //[MJ/m2] = [MJ/m3/K]  * [m/mm]      *  [mm]  *  [K]
 
   //distribute fresh snowfall
   //------------------------------------------------------------------------
@@ -988,7 +988,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
       if (SweSurf < 50.0) //dont cool below gruTa when Swe is below 10 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
       {
-        CcSurf = min(CcSurf, -Ta * SweSurf * HCP_ICE*MJ_PER_J/MM_PER_METER);
+        CcSurf = min(CcSurf, -Ta * SweSurf * HCP_ICE/MM_PER_METER);
         CcSurf = max(CcSurf, 0.0);
       }
     }
@@ -1052,10 +1052,10 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   }
 
   //Surface snow Temp - assumes an isothermal snow surface layer
-  snowT = -CcSurf / (HCP_ICE*MJ_PER_J* max(1.0, SweSurf)/MM_PER_METER);
+  snowT = -CcSurf / (HCP_ICE* max(1.0, SweSurf)/MM_PER_METER);
   snowT *= 0.2; // NS: There's no physical basis for this, but snowT was always way too low.
   //            //     This correction puts snowT close to the air temperature.
-  //            // JRC: this is effectively a density transformation assuming SnowDensity= 200 kg/m3
+  //            // \todo [bug] - identify source of this issue.
 
   cum_melt += meltSurf;
 

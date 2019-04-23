@@ -37,7 +37,8 @@ enum time_agg
   MONTHLY,     ///< Aggregate by month
   YEARLY,      ///< Aggregate by year
   WATER_YEARLY,///< Aggregate by water year
-  EVERY_TSTEP  ///< Aggregate by time-step
+  EVERY_TSTEP, ///< Aggregate by time-step
+  ENTIRE_SIM   ///< Aggregate over entire simulation (not currently implemented)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -52,7 +53,8 @@ enum agg_stat
   AGG_RANGE,     ///< Range of data set
   AGG_95CI,      ///< 5% and 95% quantiles of data set
   AGG_QUARTILES, ///< Quartiles of data set
-  AGG_HISTOGRAM  ///< Full histogram of data set
+  AGG_HISTOGRAM, ///< Full histogram of data set
+  AGG_INT_AVG_DAY///< Average of julian day values  (not currently implemented)
 };
 
 ///////////////////////////////////////////////////////////////////////

@@ -2037,8 +2037,9 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript)
 {
   ExitGracefullyIf(out_ncid==-9,"WriteNetCDFGlobalAttributes: netCDF file not open",RUNTIME_ERR);
-  int retval;
+  int retval(0);
   string att,val;
+#ifdef _RVNETCDF_
   retval = nc_put_att_text(out_ncid, NC_GLOBAL, "Conventions", strlen("CF-1.6"),          "CF-1.6");           HandleNetCDFErrors(retval);
   retval = nc_put_att_text(out_ncid, NC_GLOBAL, "featureType", strlen("timeSeries"),      "timeSeries");       HandleNetCDFErrors(retval);
   retval = nc_put_att_text(out_ncid, NC_GLOBAL, "history",     strlen("Created by Raven"),"Created by Raven"); HandleNetCDFErrors(retval);
@@ -2050,6 +2051,7 @@ void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,con
     retval = nc_put_att_text(out_ncid,NC_GLOBAL,att.c_str(),strlen(val.c_str()),val.c_str());
     HandleNetCDFErrors(retval);
   }
+#endif
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds single value of attribute 'shortname' linked to time time_index to NetCDF file 
@@ -2063,11 +2065,12 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
   static size_t count1[1]; //static for speed of execution
   static size_t time_ind[1];
   static double val[1];
-  int var_id,retval;
+  int var_id(0),retval(0);
   time_ind[0]=time_index;
   count1[0]=1;
   val[0]=value;
-  
+#ifdef _RVNETCDF_
   retval = nc_inq_varid      (out_ncid,shortname.c_str(),&var_id);      HandleNetCDFErrors(retval);
   retval = nc_put_vara_double(out_ncid,var_id,time_ind,count1,&val[0]); HandleNetCDFErrors(retval);
+#endif
 }

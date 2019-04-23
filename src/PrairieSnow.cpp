@@ -21,9 +21,9 @@ double CalculateSnowEnergyContent(const double &SWE,            //[mm]
                                   const double &snow_liq,       //[mm]
                                   const double &snow_temp)      //[mm]
 {
-  double c_p=HCP_ICE*(SWE/snow_depth)+HCP_WATER*(snow_liq/snow_depth);  //[J/m3/K]
+  double c_p=HCP_ICE*(SWE/snow_depth)+HCP_WATER*(snow_liq/snow_depth);  //[MJ/m3/K]
 
-  return MJ_PER_J*c_p*(snow_temp+FREEZING_TEMP)*(snow_depth/MM_PER_METER); //[MJ/J]*[J/m3/K]*[K]*[m]=MJ/m2
+  return c_p*(snow_temp+FREEZING_TEMP)*(snow_depth/MM_PER_METER); //[MJ/m3/K]*[K]*[m]=MJ/m2
 }
 
 //////////////////////////////////////////////////////////////////
@@ -628,7 +628,7 @@ void  RedistributeSnow(const CHydroUnit **pHRUs,
   int nSubBasins=2;
   const int nHRUs=100;
   const double drift_dens=300.;//[kg/m3]
-  double drift_HCP =HCP_ICE*drift_dens/DENSITY_ICE;
+  double drift_HCP =HCP_ICE/MJ_PER_J*drift_dens/DENSITY_ICE;
 
   double distrib[nHRUs];       //input parameter - sum of distrib must be 1 for each subbasin
 
@@ -696,7 +696,7 @@ void  RedistributeSnow(const CHydroUnit **pHRUs,
       } 
 
       //Redistribute transport and calculate snowpack properties at subarea-level
-      HCPS=HCP_ICE*(SWE[k]/snow_depth[k])+HCP_WATER*(snow_liq[k]/snow_depth[k]);
+      HCPS=HCP_ICE/MJ_PER_J*(SWE[k]/snow_depth[k])+HCP_WATER/MJ_PER_J*(snow_liq[k]/snow_depth[k]);
       snow_temp   [k]=wt_average(snow_temp   [k],drift_tempSB,snow_depth[k]*HCPS,added*drift_HCP);
       snow_density[k]=wt_average(snow_density[k],drift_dens  ,snow_depth[k]     ,added          );
       snow_depth  [k]+=added;

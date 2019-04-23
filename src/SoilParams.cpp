@@ -128,6 +128,6 @@ double CSoilClass::CalcSoilHeatCap(const double                 &sat_liq,
                                    const soil_struct *pS)
 {
   return (1.0-pS->porosity)*pS->heat_capacity+
-    (sat_liq                              )*HCP_WATER+
-    (sat_ice                              )*HCP_ICE;
+    (sat_liq                              )*HCP_WATER/MJ_PER_J+
+    (sat_ice                              )*HCP_ICE/MJ_PER_J;
 }

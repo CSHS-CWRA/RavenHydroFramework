@@ -230,7 +230,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       300 thru 400 : Source/sinks
       ------------------------------------------------------------------
     */
-
+    
     code=0;
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                     {code=-1; }
@@ -284,6 +284,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":NetSWRadMethod"            )){code=43; }
     else if  (!strcmp(s[0],":DirectEvaporation"         )){code=44; }
     else if  (!strcmp(s[0],":Calendar"                  )){code=45; }
+    else if  (!strcmp(s[0],":SnowCoverDepletion"        )){code=46; }
     //------------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=51; }
@@ -1007,6 +1008,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.calendar=StringToCalendar(s[1]);
       break;
     }
+    case(46)://----------------------------------------------
+    {/*:SnowCoverDepletion"  string method */
+      if (Options.noisy) {cout <<"Snow cover depletion curve method"<<endl;}
+      if (Len<2){ImproperFormatWarning(":SnowCoverDepletion",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"SNOWCOV_NONE"       )){Options.snow_depletion=SNOWCOV_NONE;}
+      else if (!strcmp(s[1],"SNOWCOV_LINEAR"     )){Options.snow_depletion=SNOWCOV_LINEAR;}
+      else {ExitGracefully("ParseInput :SnowCoverDepletion: Unrecognized method",BAD_DATA_WARN);}
+      break;
+    }
     case(50):  //--------------------------------------------
     {/*:DebugMode */
       if (Options.noisy){cout <<"Debug Mode ON"<<endl;}
@@ -1358,14 +1368,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(90):  //--------------------------------------------
-    {/*:NetCDFAttribute [attrib_name] [value]*/
+    {/*:NetCDFAttribute [attrib_name] [value (commas not allowed)]*/
       if (Options.noisy) {cout <<"Add NetCDF attribute"<<endl;}
       if (Len<3){ImproperFormatWarning(":NetCDFAttribute",p,Options.noisy); break;}
       string tmpstring=s[2];
       for(i=3;i<Len;i++){tmpstring=tmpstring+" "+s[i];}
       AddNetCDFAttribute(Options,s[1],tmpstring);
       break;
-    }      
+    }          
     case(98):  //--------------------------------------------
     {/*:Alias */
       if (Options.noisy) {cout <<"Alias"<<endl;}
@@ -2563,10 +2573,11 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
   ExitGracefullyIf(Options.timestep<=0,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
- /* ExitGracefullyIf(Options.julian_start_day-(int)(Options.julian_start_day)> REAL_SMALL,
-                   "ParseMainInputFile: the simulation starting time must be at midnight",BAD_DATA);*/
   ExitGracefullyIf((pModel->GetStateVarIndex(CONVOLUTION,0)!=DOESNT_EXIST) && (pModel->GetTransportModel()->GetNumConstituents()>0),
                    "ParseMainInputFile: cannot currently perform transport with convolution processes",BAD_DATA);
+  if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
+    WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);
+  }
 
   delete p; p=NULL;
   delete [] tmpS;

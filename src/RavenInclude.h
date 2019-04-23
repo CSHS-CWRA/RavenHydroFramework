@@ -160,8 +160,8 @@ const double  TC_ORGANIC              =0.25;                                    
 const double  TC_DRYS                 =0.275;                                   ///< [W/m/K] Thermal conductivity of dry soil
 const double  TC_AIR                  =0.023;                                   ///< [W/m/K] Thermal conductivity of air
 
-const double  HCP_WATER               =4.187e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Water
-const double  HCP_ICE                 =1.938e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Ice
+const double  HCP_WATER               =4.187e3;                                 ///< [MJ/m3/K] Volumetric Heat Capacity of Water
+const double  HCP_ICE                 =1.938e3;                                 ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
 const double  HCP_CLAY                =2.380e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Clay
 const double  HCP_SAND                =2.130e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Sand
 const double  HCP_ORGANIC             =2.500e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Organic Matter
@@ -173,7 +173,7 @@ const double  SPH_SAND                =0.835e-3;                                
 const double  SPH_VEGETATION          =2.700e-3;                                ///< [MJ/kg/K] Specific heat capacity of vegetation
 const double  SPH_AIR                 =1.012e-3;                                ///< [MJ/kg/K] Specific heat capacity of air
 
-const double  LH_FUSION               =0.334;                                   ///< [MJ/kg]  Latent heat of fusion
+const double  LH_FUSION               =0.334;                                   /// [MJ/kg]  Latent heat of fusion
 const double  LH_VAPOR                =2.501;                                   ///< [MJ/kg]  Latent heat of vaporization
 const double  LH_SUBLIM               =2.845;                                   ///< [MJ/kg]  Latent heat of sublimation
 
@@ -582,6 +582,16 @@ enum netSWRad_method
    NETSWRAD_CALC      ///< determined via calculations
 };
 ////////////////////////////////////////////////////////////////////
+/// \brief Methods of handling snow cover depletion
+//
+enum snowcov_method
+{
+   SNOWCOV_NONE,       ///< no SDC
+   SNOWCOV_LINEAR      ///< linear SDC characterized by threshold mean snow depth
+};
+
+
+////////////////////////////////////////////////////////////////////
 /// \brief Methods of performing monthly interpolations
 //
 enum monthly_interp
@@ -841,6 +851,7 @@ struct optStruct
   subdaily_method    subdaily;                ///< Subdaily PET/Snowmelt temporal downscaling correction
   recharge_method    recharge;                ///< aquifer/soil recharge method
   bool               direct_evap;             ///< true if PET is used to directly reduce precipitation
+  snowcov_method     snow_depletion;          ///< method for handling snowcover depletion curve
 
   precip_icept_method interception_factor;    ///< method for calculating canopy interception factor
 
@@ -1357,7 +1368,7 @@ double CalcFreshSnowDensity       (const double &air_temp);
 double GetSnowThermCond           (const double &snow_dens);
 double GetSensibleHeatSnow        (const double &air_temp,const double &surf_temp,const double &V, const double &ref_ht, const double &rough);
 double GetLatentHeatSnow          (const double &P,const double &air_temp,const double &surf_temp,const double &rel_humid,const double &V,const double &ref_ht,const double &rough);
-double GetRainHeatInput           (const double &surf_temp, const double &rain_rate,const double &rel_humid);
+double GetRainHeatInput           (const double &surf_temp, const double &air_temp,const double &rain_rate,const double &rel_humid);
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
 double GetSnowDepth               (const double &snowSWE,const double &snow_density);
 double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth,const optStruct &Options);

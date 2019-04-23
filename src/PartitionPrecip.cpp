@@ -247,7 +247,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
           rates[iSnoD] = snowthru*DENSITY_ICE / CalcFreshSnowDensity(Temp);
         }
         if (iCC != DOESNT_EXIST){
-          rates[iCC] = snowthru*threshPositive(FREEZING_TEMP - Temp)*HCP_ICE*MJ_PER_J / DENSITY_WATER;//[mm/d]*[K]*[J/m3/K]*[MJ/J]*[m3/kg]=MJ*mm/kg/d
+          rates[iCC] = snowthru*threshPositive(FREEZING_TEMP - Temp)*HCP_ICE/ DENSITY_WATER;//[mm/d]*[K]*[MJ/m3/K]*[m3/kg]=MJ*mm/kg/d
         }
 
         //move rain through to snowmelt--------------------------------

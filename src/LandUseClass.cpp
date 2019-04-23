@@ -360,6 +360,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.dep_max_flow      =DefaultParameterValue(is_template,false);            //[mm/d]
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.dep_crestratio    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
+  S.dep_threshhold    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.lake_rel_coeff    =DefaultParameterValue(is_template,false);//0.3;      //[1/d]
   S.dep_k             =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
   S.dep_seep_k        =DefaultParameterValue(is_template,false);//0.1;      //[1/d]

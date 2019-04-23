@@ -88,9 +88,7 @@ string GetProcessName(process_type p)
 bool SetCalculableValue(double &val, double set_val, double template_val)
 {
   //  preferred approach if master parameter list is complete
-
-  //JRC: THE FOLLOWING LINE MUST BE COMMENTED OUT UNTIL **ALL** REQUIRED PARAMETERS ARE DETERMINED
-  if ((template_val==NOT_NEEDED) || (template_val==NOT_NEEDED_AUTO)){
+ if ((template_val==NOT_NEEDED) || (template_val==NOT_NEEDED_AUTO)){
     val=template_val; //even if value specified, overriden, because it is not needed
     return false;     //autocalculation not needed
   }
@@ -98,7 +96,6 @@ bool SetCalculableValue(double &val, double set_val, double template_val)
   if (template_val==NOT_NEEDED_AUTO){
     template_val=AUTO_COMPUTE;
   }
-  /// \todo [bug] uncomment/remove- //above must be ignored until all needed parameters are determinable
 
   val =set_val;
   if (val==USE_TEMPLATE_VALUE){val=template_val;} //override with default
@@ -1274,7 +1271,6 @@ double GammaDist(const double &x, const double &alpha, const double &beta)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates cumulative two parameter cumulative gamma distribution \cite Clark2008WRR
-/// \todo [bug] does not handle large values of t!
 ///
 /// \param &t [in] time
 /// \param &alpha [in] shape parameter

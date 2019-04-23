@@ -383,10 +383,11 @@ void CModel::InitializeObservations(const optStruct &Options)
     //Match weights with observations based on Name, tag and numValues
     tmp[i] = NULL;
     for (int n = 0; n < _nObsWeightTS; n++){
+
       if (    _pObsWeightTS[n]!=NULL
            && _pObsWeightTS[n]->GetName()     == _pObservedTS[i]->GetName()
            && _pObsWeightTS[n]->GetTag()      == _pObservedTS[i]->GetTag()
-           && _pObsWeightTS[n]->GetNumValues()== _pObservedTS[n]->GetNumValues()  )
+           && _pObsWeightTS[n]->GetNumValues()== _pObservedTS[i]->GetNumValues()  )
       {
         tmp[i] = _pObsWeightTS[n];
         _pObsWeightTS[n] = NULL;
@@ -398,7 +399,7 @@ void CModel::InitializeObservations(const optStruct &Options)
   //clean up and warn about unmatched weights
   for (int n = 0; n < _nObsWeightTS; n++){
     if (_pObsWeightTS[n] != NULL){
-      WriteWarning("Observation Weight "+_pObsWeightTS[n]->GetName()+" "+_pObsWeightTS[n]->GetTag()+" not matched to observation time series", Options.noisy);
+      WriteWarning("Observation Weight "+_pObsWeightTS[n]->GetName()+" "+_pObsWeightTS[n]->GetTag()+" not matched to observation time series. Please supply corresponding observation series.", Options.noisy);
       delete _pObsWeightTS[n]; _pObsWeightTS[n]=NULL;
     }
   }

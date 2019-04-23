@@ -93,7 +93,7 @@ private:/*------------------------------------------------------*/
   CTimeSeriesABC **_pObservedTS;  ///< array of pointers of observation time series [size: _nObservedTS]
   CTimeSeries     **_pModeledTS;  ///< array of pointers of modeled time series corresponding to observations [size: _nObservedTS]
   int              _nObservedTS;  ///< number of observation time series
-  int               *_aObsIndex;        ///< index of the next unprocessed observation
+  int               *_aObsIndex;  ///< index of the next unprocessed observation
 
   CTimeSeriesABC**_pObsWeightTS;  ///< array of pointers of observation weight time series [size: _nObsWeightTS]
   int             _nObsWeightTS;  ///< number of observation weight time series

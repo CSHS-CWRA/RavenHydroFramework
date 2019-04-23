@@ -1,9 +1,10 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2018 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "GlobalParams.h"
+#include "HydroUnits.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns thermal conductivity of snow [W/m/K]
@@ -282,17 +283,19 @@ double GetLatentHeatSnow(const double &P,
 /// \ref from Dingman pg 199-200 \cite Dingman1994
 ///
 /// \param &surf_temp [in] Surface temperature [C]
+/// \param &air_temp [in] air temperature [C]
 /// \param &rainfall [in] rainfall rate [mm/d]
 /// \param &rel_humid [in] Relative humidity [0..1]
 /// \return Heat input from rain [MJ/m^2/d]
 //
 double GetRainHeatInput(const double &surf_temp,
+                        const double &air_temp,
                         const double &rainfall,
                         const double &rel_humid)
 {
   double R=0,rain_temp,vap_pres;
 
-  vap_pres = GetSaturatedVaporPressure(surf_temp)*rel_humid; //[kPa]
+  vap_pres = GetSaturatedVaporPressure(air_temp)*rel_humid; //[kPa]
   rain_temp = GetDewPointTemp(vap_pres); //[C]
 
   if(surf_temp < FREEZING_TEMP)
@@ -303,8 +306,27 @@ double GetRainHeatInput(const double &surf_temp,
   {
     R = DENSITY_WATER*(rainfall/MM_PER_METER)*(SPH_WATER*(rain_temp - FREEZING_TEMP));
   }
-
   return R; // [MJ/m2/d]
 }
-
-
+//////////////////////////////////////////////////////////////////
+/// \brief returns snow depletion curve correction factor for melt of average snowpack in HRU
+/// equivalent to percentage of snow cover ground
+/// \param SWE [in] SWE [mm]
+/// \param SD [in] snow depth [mm]
+/// \param pHRU [in] pointer to Hydrologic response unit 
+/// \return Options [in] options structure
+//
+double GetSDCCorrection(const double &SWE,const double &SD,const CHydroUnit *pHRU, const optStruct &Options)
+{
+  if(Options.snow_depletion==SNOWCOV_NONE)
+  {
+    return 1.0; //all ground covered in snow
+  }
+  else if(Options.snow_depletion==SNOWCOV_LINEAR)
+  {
+    //double snowthresh=pHRU->GetSurfaceProps()->SDC_threshold;
+    double snowthresh=200;
+    return min(max(SWE,0.0)/snowthresh,1.0);
+  }
+  return 1.0;
+}
