@@ -311,6 +311,8 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   retval = nc_get_att_text(ncid, varid_t, "units", unit_t);// read attribute text
   HandleNetCDFErrors(retval);
   unit_t[att_len] = '\0';// add string determining character
+  unit_t_str = to_string(unit_t);
+
   // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS"
   // -> 3rd-last character needs to be a colon
   colon = unit_t_str.substr(att_len-3, 1);  // first dash in date
