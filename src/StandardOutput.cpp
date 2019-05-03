@@ -605,7 +605,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       double reservoir_stor=GetTotalReservoirStorage();
       double rivulet_stor  =GetTotalRivuletStorage();
 
-      _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour;
+      _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour; //instantaneous, so thishour rather than usehour used.
 
       if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
       else     {_STORAGE<<",---,---";}

@@ -327,6 +327,9 @@
     <ClCompile Include="Assimilate.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
+    <ClCompile Include="ModelParamCheck.cpp">
+      <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

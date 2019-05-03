@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "GlobalParams.h"
@@ -238,7 +238,9 @@ double GetSensibleHeatSnow(const double &air_temp, //[C]
 {
   double temp_var = pow(VON_KARMAN/log(ref_ht/rough),2);
 
-  return DENSITY_AIR*SPH_AIR*temp_var*V*(air_temp-surf_temp); //sensible heat [MJ/m2/d]
+  return DENSITY_AIR*SPH_AIR*temp_var*V*SEC_PER_DAY*(air_temp-surf_temp); //sensible heat [MJ/m2/d]
+
+  //        [kg/m3]  [MJ/kg/K] [-] [m/s] [s/d]  [K] -> [MJ/m2/d]
 }
 
 //////////////////////////////////////////////////////////////////
@@ -271,7 +273,7 @@ double GetLatentHeatSnow(const double &P,
   denom = P * pow(log(ref_ht/rough),2);
 
   temp_var = numer/denom;
-  LE = LH_VAPOR*temp_var*V*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
+  LE = LH_VAPOR*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
 
   return LE;//[MJ/m2/d]
 }

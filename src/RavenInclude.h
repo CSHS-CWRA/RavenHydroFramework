@@ -13,7 +13,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 // #define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
-//#define _RVNETCDF_     // uncomment if netCDF library is available for compilation
 #ifdef netcdf
 #define _RVNETCDF_       // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -160,8 +159,8 @@ const double  TC_ORGANIC              =0.25;                                    
 const double  TC_DRYS                 =0.275;                                   ///< [W/m/K] Thermal conductivity of dry soil
 const double  TC_AIR                  =0.023;                                   ///< [W/m/K] Thermal conductivity of air
 
-const double  HCP_WATER               =4.187e3;                                 ///< [MJ/m3/K] Volumetric Heat Capacity of Water
-const double  HCP_ICE                 =1.938e3;                                 ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
+const double  HCP_WATER               =4.187;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Water
+const double  HCP_ICE                 =1.938;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
 const double  HCP_CLAY                =2.380e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Clay
 const double  HCP_SAND                =2.130e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Sand
 const double  HCP_ORGANIC             =2.500e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Organic Matter
@@ -173,7 +172,7 @@ const double  SPH_SAND                =0.835e-3;                                
 const double  SPH_VEGETATION          =2.700e-3;                                ///< [MJ/kg/K] Specific heat capacity of vegetation
 const double  SPH_AIR                 =1.012e-3;                                ///< [MJ/kg/K] Specific heat capacity of air
 
-const double  LH_FUSION               =0.334;                                   /// [MJ/kg]  Latent heat of fusion
+const double  LH_FUSION               =0.334;                                   ///< [MJ/kg]  Latent heat of fusion
 const double  LH_VAPOR                =2.501;                                   ///< [MJ/kg]  Latent heat of vaporization
 const double  LH_SUBLIM               =2.845;                                   ///< [MJ/kg]  Latent heat of sublimation
 

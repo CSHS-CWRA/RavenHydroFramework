@@ -84,7 +84,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double surf_temp = pHRU->GetSnowTemperature();
 
     double K = F->SW_radia_net;   //net short wave radiation to snowpack [MJ/m2/d]
-    double L = F->LW_radia_net;       //net long wave radiation [MJ/m2/d]
+    double L = F->LW_radia_net;   //net long wave radiation [MJ/m2/d]
     double H = GetSensibleHeatSnow(air_temp,surf_temp,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double LE= GetLatentHeatSnow  (air_pres,air_temp,surf_temp,rel_humid,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double R = GetRainHeatInput   (surf_temp,air_temp,rainfall ,rel_humid); //[MJ/m2/d]

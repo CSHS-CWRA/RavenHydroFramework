@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -982,6 +982,11 @@ void CModel::AddForcingGrid  (CForcingGrid *pGrid, forcing_type typ)
     if(!DynArrayAppend((void**&)(_pForcingGrids),(void*)(pGrid),_nForcingGrids)){
       ExitGracefully("CModel::AddForcingGrid: adding NULL ForcingGrid",BAD_DATA);
     }
+  }
+  else { //overwrite grid
+    int f= GetForcingGridIndexFromType(typ);
+    delete [] _pForcingGrids[f];
+    _pForcingGrids[f]=pGrid;
   }
 }
 

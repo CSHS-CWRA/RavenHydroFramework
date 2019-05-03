@@ -556,7 +556,7 @@ double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
 //
 void CTimeSeries::SetValue(const int n, const double &val)
 {
-#if _STRICTCHECK_
+#ifdef _STRICTCHECK_
   ExitGracefullyIf(n>=_nPulses, "CTimeSeries::SetValue: Overwriting array allocation",RUNTIME_ERR);
 #endif
   _aVal[n]=val;
@@ -571,7 +571,7 @@ void CTimeSeries::SetValue(const int n, const double &val)
 //
 void CTimeSeries::SetSampledValue(const int nn, const double &val)
 {
-#if _STRICTCHECK_
+#ifdef _STRICTCHECK_
   ExitGracefullyIf(nn>=_nSampVal, "CTimeSeries::SetSampledValue: Overwriting array allocation",RUNTIME_ERR);
 #endif
   _aSampVal[nn]=val;
@@ -1535,9 +1535,9 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     if (Options.noisy) {
       cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - !none"<<endl;
       printf("  Dim of chunk read: dim1 = %i   dim2 = %i\n",dim1,dim2);
-      printf("  start  chunk: (%lu, %lu)\n", nc_start[0], nc_start[1]);
-      printf("  length chunk: (%lu, %lu)\n", nc_length[0],nc_length[1]);
-      printf("  stride chunk: (%lu, %lu)\n", nc_stride[0],nc_stride[1]);
+      printf("  start  chunk: (%zu, %zu)\n", nc_start[0], nc_start[1]);
+      printf("  length chunk: (%zu, %zu)\n", nc_length[0],nc_length[1]);
+      printf("  stride chunk: (%zu, %zu)\n", nc_stride[0],nc_stride[1]);
       printf("  Data read: [%.4f, %.4f, %.4f ... %.4f]\n",aTmp2D[0][0], aTmp2D[0][1], aTmp2D[0][2], aTmp2D[0][ntime-1]);
     }
   }
@@ -1557,9 +1557,9 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     if (Options.noisy) {
       cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - none"<<endl;
       printf("  Dim of chunk read: dim1 = %i \n",dim1);
-      printf("  start  chunk: (%lu)\n", nc_start[0]);
-      printf("  length chunk: (%lu)\n", nc_length[0]);
-      printf("  stride chunk: (%lu)\n", nc_stride[0]);
+      printf("  start  chunk: (%zu)\n", nc_start[0]);
+      printf("  length chunk: (%zu)\n", nc_length[0]);
+      printf("  stride chunk: (%zu)\n", nc_stride[0]);
       printf("  Data read: [%.4f, %.4f, %.4f ... %.4f]\n",aTmp1D[0], aTmp1D[1], aTmp1D[2], aTmp1D[ntime-1]);
     }
   }

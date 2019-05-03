@@ -535,7 +535,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if(!strcmp(s[0],":WrittenBy"   )) {if (Options.noisy){cout<<"WrittenBy"<<endl;}}//do nothing
         else if(!strcmp(s[0],":CreationDate")) {if (Options.noisy){cout<<"CreationDate"<<endl;}}//do nothing
         else if(!strcmp(s[0],":SourceFile"  )) {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
-        else if(Options.noisy)
+        else
         {
           string warn ="IGNORING unrecognized command: " + string(s[0])+ " in .rvc file";
           WriteWarning(warn,Options.noisy);

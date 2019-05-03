@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 
 // start of compilation if NetCDF library is available
@@ -110,8 +110,10 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   for (int ii=0; ii<12; ii++) {_aMinTemp[ii] = grid._aMinTemp[ii];}
   for (int ii=0; ii<12; ii++) {_aMaxTemp[ii] = grid._aMaxTemp[ii];}
   for (int ii=0; ii<12; ii++) {_aAvePET [ii] = grid._aAvePET [ii];}
-
+  
+  _aVal=NULL;
   _aVal =  new double *[_ChunkSize];
+  ExitGracefullyIf(_aVal==NULL,"CForcingGrid::Copy Constructor(1)",OUT_OF_MEMORY);
   for (int it=0; it<_ChunkSize; it++) {                       // loop over time points in buffer
     _aVal[it]=NULL;
     _aVal[it] = new double [_nNonZeroWeightedGridCells];
@@ -139,6 +141,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   
   _IdxNonZeroGridCells = NULL;
   _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
+  ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Constructor(3)",OUT_OF_MEMORY);
   for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
     _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              // copy the value
   }
@@ -172,7 +175,7 @@ CForcingGrid::~CForcingGrid()
 /// \note  Needs _ForcingType, _filename, _varname, _DimNames to be set already.
 ///        Use for that either "SetForcingType", "SetFilename", "SetVarname", and "SetDimNames" \n
 ///        or "CForcingGrid()".
-void CForcingGrid::ForcingGridInit( const optStruct   &Options )
+void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 {
 #ifdef _RVNETCDF_
   int    ncid;                  // file unit
@@ -205,84 +208,84 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
 
   // open NetCDF read-only; ncid will be set
   // _filename.c_str() converts filename from 'string' to 'const char *'
-  if (Options.noisy){ cout<<"Initializing grid file "<<_filename<<endl; }
-  retval = nc_open(_filename.c_str(), NC_NOWRITE, &ncid);
+  if(Options.noisy) { cout<<"Initializing grid file "<<_filename<<endl; }
+  retval = nc_open(_filename.c_str(),NC_NOWRITE,&ncid);
   HandleNetCDFErrors(retval);
 
 
   // Get the id of dimensions based on its name; dimid will be set
   // Find length of dimension and store it in GridDim
-  if (_is_3D) {
+  if(_is_3D) {
     // dimension x = number of columns of the grid
-    retval = nc_inq_dimid (ncid, _DimNames[0].c_str(), &dimid_x);  HandleNetCDFErrors(retval);
-    retval = nc_inq_dimlen(ncid, dimid_x, &GridDim_t);             HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid,dimid_x,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[0] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
     // dimension y = number of rows of the grid
-    retval = nc_inq_dimid (ncid, _DimNames[1].c_str(), &dimid_y);  HandleNetCDFErrors(retval);
-    retval = nc_inq_dimlen(ncid, dimid_y, &GridDim_t);             HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_y);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid,dimid_y,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[1] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
     // dimension t = number of time steps in NetCDF file
-    retval = nc_inq_dimid(ncid, _DimNames[2].c_str(), &dimid_t);   HandleNetCDFErrors(retval);
-    retval = nc_inq_dimlen(ncid, dimid_t, &GridDim_t);             HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[2].c_str(),&dimid_t);   HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[2] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
   }
   else {
     // dimension x = number of stations in NetCDF file
-    retval = nc_inq_dimid (ncid, _DimNames[0].c_str(), &dimid_x);  HandleNetCDFErrors(retval);
-    retval = nc_inq_dimlen(ncid, dimid_x, &GridDim_t);             HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid,dimid_x,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[0] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
     // dimension t = number of time steps in NetCDF file
-    retval = nc_inq_dimid (ncid, _DimNames[1].c_str(), &dimid_t);  HandleNetCDFErrors(retval);
-    retval = nc_inq_dimlen(ncid, dimid_t, &GridDim_t);             HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_t);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[1] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
   }
 
   // Get the id of the data variable based on its name; varid will be set
-  retval = nc_inq_varid(ncid, _varname.c_str(), &varid_f);       HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(ncid,_varname.c_str(),&varid_f);       HandleNetCDFErrors(retval);
 
   // determine in which order the dimensions are in variable
-  retval = nc_inq_vardimid(ncid, varid_f, dimids_var);          HandleNetCDFErrors(retval);
+  retval = nc_inq_vardimid(ncid,varid_f,dimids_var);          HandleNetCDFErrors(retval);
 
-  if (_is_3D) {
+  if(_is_3D) {
     //   if  (t,         y=lat=row, x=lon=col)   --> (2,1,0) --> (dimid_t, dimid_y, dimid_x)
     //   if  (t,         x=lon=col, y=lat=row)   --> (2,0,1) --> (dimid_t, dimid_x, dimid_y)
     //   if  (y=lat=row, t,         x=lon=col)   --> (1,2,0) --> (dimid_y, dimid_t, dimid_x)
     //   if  (y=lat=row, x=lon=col, t        )   --> (1,0,2) --> (dimid_y, dimid_x, dimid_t)
     //   if  (x=lon=col, t,         y=lat=row)   --> (0,2,1) --> (dimid_x, dimid_t, dimid_y)
     //   if  (x=lon=col, y=lat=row, t        )   --> (0,1,2) --> (dimid_x, dimid_y, dimid_t)
-    if      ((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_t))  {  // dimensions are (x,y,t)
+    if((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_t)) {  // dimensions are (x,y,t)
       _dim_order = 1;
     }
-    else if ((dimids_var[0] == dimid_y) && (dimids_var[1] == dimid_x) && (dimids_var[2] == dimid_t))  {  // dimensions are (y,x,t)
+    else if((dimids_var[0] == dimid_y) && (dimids_var[1] == dimid_x) && (dimids_var[2] == dimid_t)) {  // dimensions are (y,x,t)
       _dim_order = 2;
     }
-    else if ((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_t) && (dimids_var[2] == dimid_y))  {  // dimensions are (x,t,y)
+    else if((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_t) && (dimids_var[2] == dimid_y)) {  // dimensions are (x,t,y)
       _dim_order = 3;
     }
-    else if ((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_x) && (dimids_var[2] == dimid_y))  {  // dimensions are (t,x,y)
+    else if((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_x) && (dimids_var[2] == dimid_y)) {  // dimensions are (t,x,y)
       _dim_order = 4;
     }
-    else if ((dimids_var[0] == dimid_y) && (dimids_var[1] == dimid_t) && (dimids_var[2] == dimid_x))  {  // dimensions are (y,t,x)
+    else if((dimids_var[0] == dimid_y) && (dimids_var[1] == dimid_t) && (dimids_var[2] == dimid_x)) {  // dimensions are (y,t,x)
       _dim_order = 5;
     }
-    else if ((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_x))  {  // dimensions are (t,y,x)
+    else if((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_x)) {  // dimensions are (t,y,x)
       _dim_order = 6;
     }
   }
   else {
     //   if  (station,t)   --> (1,0) --> (dimid_x, dimid_t)
     //   if  (t,station)   --> (0,1) --> (dimid_t, dimid_x)
-    if      ((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_t))  {  // dimensions are (station,t)
+    if((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_t)) {  // dimensions are (station,t)
       _dim_order = 1;
     }
-    else if ((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_x))  {  // dimensions are (t,station)
+    else if((dimids_var[0] == dimid_t) && (dimids_var[1] == dimid_x)) {  // dimensions are (t,station)
       _dim_order = 2;
     }
   }
-  if(Options.noisy){ printf("  Order of dimensions in NetCDF is Case %i...\n",_dim_order); }
+  if(Options.noisy) { printf("  Order of dimensions in NetCDF is Case %i...\n",_dim_order); }
 
   // -------------------------------
   // Start day and year are extracted from the UNITS attribute of time axis
@@ -293,7 +296,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   // then whole time variable has to be read and first time step needs to be added to get _start_year and _start_day
   // difference between t[0] and t[1] is then used to get _interval
   // -------------------------------
-  if (_is_3D) {
+  if(_is_3D) {
     retval = nc_inq_varid(ncid,_DimNames[2].c_str(),&varid_t);// varid of time
     HandleNetCDFErrors(retval);
   }
@@ -303,41 +306,36 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
   }
 
   // unit of time
-  unit_t = (char *) malloc(2);
-  strcpy(unit_t, "?\0");
-  retval = nc_inq_attlen (ncid, varid_t, "units", &att_len);// inquire length of attribute's text
+  retval = nc_inq_attlen(ncid,varid_t,"units",&att_len);// inquire length of attribute's text
   HandleNetCDFErrors(retval);
-  unit_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
-  retval = nc_get_att_text(ncid, varid_t, "units", unit_t);// read attribute text
-  HandleNetCDFErrors(retval);
-  unit_t[att_len] = '\0';// add string determining character
-  unit_t_str = to_string(unit_t);
 
+  unit_t=new char[att_len+1];
+  retval = nc_get_att_text(ncid,varid_t,"units",unit_t);// read attribute text
+  HandleNetCDFErrors(retval);
+
+  unit_t[att_len] = '\0';// add string determining character
+  unit_t_str=to_string(unit_t);
   // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS"
   // -> 3rd-last character needs to be a colon
-  colon = unit_t_str.substr(att_len-3, 1);  // first dash in date
-  if ( !strstr(colon.c_str(), ":") ){
+  bool badstring(false);
+  if(att_len<15) {
+    badstring=true;
+  }
+  else {
+    colon = unit_t_str.substr(att_len-3,1);  // first dash in date
+    if(!strstr(colon.c_str(),":")) { badstring=true; }
+    colon = unit_t_str.substr(att_len-6,1);  // -> 6th-last character needs to be a colon
+    if(!strstr(colon.c_str(),":")) { badstring=true; } 
+    dash = unit_t_str.substr(att_len-12,1); // -> 12th-last character needs to be a dash
+    if(!strstr(dash.c_str(),"-")) { badstring=true; }
+    dash = unit_t_str.substr(att_len-15,1);  // -> 15th-last character needs to be a dash
+    if(!strstr(dash.c_str(),"-")) {badstring=true;}
+  }
+  if(badstring) {
     printf("time unit string: %s\n",unit_t_str.c_str());
     ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
   }
-  // -> 6th-last character needs to be a colon
-  colon = unit_t_str.substr(att_len-6, 1);  // first dash in date
-  if ( !strstr(colon.c_str(), ":") ){
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
-  // -> 12th-last character needs to be a dash
-  dash = unit_t_str.substr(att_len-12, 1);  // first dash in date
-  if ( !strstr(dash.c_str(), "-") ){
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
-  // -> 15th-last character needs to be a dash
-  dash = unit_t_str.substr(att_len-15, 1);  // first dash in date
-  if ( !strstr(dash.c_str(), "-") ){
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
+
   // calendar attribute
   // just making sure that the string is read with proper null terminating character
   calendar_t = (char *) malloc(2);
@@ -403,7 +401,7 @@ void CForcingGrid::ForcingGridInit( const optStruct   &Options )
     for (int itime=0; itime<ntime;itime++){       // loop over all time steps
       my_time[itime]=(double) ttime[itime];        // convert to double
     }
-    delete[] ttime;
+    delete [] ttime;
   }
   else
   {
@@ -1125,9 +1123,9 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       if (Options.noisy) {
         cout<<" CForcingGrid::ReadData - is3D"<<endl;
         printf("  Dim of chunk read: dim3 = %i   dim2 = %i   dim1 = %i\n",dim3,dim2,dim1);
-        printf("  start  chunk: (%lu, %lu, %lu)\n", nc_start[0], nc_start[1], nc_start[2]);
-        printf("  length chunk: (%lu, %lu, %lu)\n",nc_length[0],nc_length[1],nc_length[2]);
-        printf("  stride chunk: (%lu, %lu, %lu)\n",nc_stride[0],nc_stride[1],nc_stride[2]);
+        printf("  start  chunk: (%zu, %zu, %zu)\n", nc_start[0], nc_start[1], nc_start[2]);
+        printf("  length chunk: (%zu, %zu, %zu)\n",nc_length[0],nc_length[1],nc_length[2]);
+        printf("  stride chunk: (%zu, %zu, %zu)\n",nc_stride[0],nc_stride[1],nc_stride[2]);
       }
 
       /*for (int it=0;it<dim1;it++){
@@ -1170,9 +1168,9 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       if (Options.noisy) {
         cout<<" CForcingGrid::ReadData - !is3D"<<endl;
         printf("  Dim of chunk read: dim2 = %i   dim1 = %i\n",dim2,dim1);
-        printf("  start  chunk: (%lu, %lu)\n", nc_start[0], nc_start[1]);
-        printf("  length chunk: (%lu, %lu)\n",nc_length[0],nc_length[1]);
-        printf("  stride chunk: (%lu, %lu)\n",nc_stride[0],nc_stride[1]);
+        printf("  start  chunk: (%zu, %zu)\n", nc_start[0], nc_start[1]);
+        printf("  length chunk: (%zu, %zu)\n",nc_length[0],nc_length[1]);
+        printf("  stride chunk: (%zu, %zu)\n",nc_stride[0],nc_stride[1]);
       }
 
       // for (int it=0;it<dim1;it++){
@@ -1325,6 +1323,7 @@ void CForcingGrid::Initialize( const optStruct &Options )
   double local_simulation_start = (_t_corr);
   double local_simulation_end = (model_duration + _t_corr);
   if((local_simulation_start<0) && (local_simulation_start>-TIME_CORRECTION)){ local_simulation_start=0.0; }
+
   if (Options.noisy){ cout << endl; }
   if (duration < local_simulation_start)  //out of data before simulation starts!
   {
@@ -1621,10 +1620,16 @@ void CForcingGrid::SetaAvePET(const double aAvePET [12]){
 /// \brief sets the _aVal in class CForcingGrid
 ///
 /// \param ic    [in] Index of grid cell with non-zero weighting (value between 0 and _nNonZeroWeightedGridCells)
-/// \param it      [in] time   index of _aVal[t][idx]
-/// \param aVal   [in] value to be set
+/// \param it    [in] time   index of _aVal[t][idx]
+/// \param aVal  [in] value to be set
 //
 void CForcingGrid::SetValue( const int ic, const int it, const double aVal) {
+#ifdef _STRICTCHECK_
+  if(it>=_ChunkSize) {
+    ExitGracefully("CForcingGrid::SetValue:invalid index",RUNTIME_ERR);}
+  if(ic>=_nNonZeroWeightedGridCells) {
+    ExitGracefully("CForcingGrid::SetValue:invalid index",RUNTIME_ERR);}
+#endif
   _aVal[it][ic] = aVal;
 }
 
@@ -1714,9 +1719,18 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
 #ifdef _STRICTCHECK_
   if (_GridWeight == NULL){
     ExitGracefully(
-      "CForcingGrid: SetWeightVal: _GridWeight is not allocated yet. Call AllocateWeightArray(nHRUs) first.",BAD_DATA);
+      "CForcingGrid: SetWeightVal: _GridWeight is not allocated yet. Call AllocateWeightArray(nHRUs) first.",RUNTIME_ERR);
   }
+  int ncells;
+  if(_is_3D) { ncells = _GridDims[0] * _GridDims[1]; }
+  else       { ncells = _GridDims[0]; }
+
+  if((HRUID<0) || (HRUID>=_nHydroUnits)) {
+    ExitGracefully("CForcingGrid: SetWeightVal: invalid HRU ID",BAD_DATA);}
+  if((CellID<0) || (CellID>=ncells)) {
+    ExitGracefully("CForcingGrid: SetWeightVal: invalid cell ID",BAD_DATA);}
 #endif
+
   _GridWeight[HRUID][CellID] = weight;
 
 }
@@ -1818,7 +1832,6 @@ double CForcingGrid::GetGridWeight(const int k,
 {
   return _GridWeight[k][CellID];
 }
-
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns data interval
@@ -1995,8 +2008,6 @@ double CForcingGrid::GetValue(const int ic, const int it) const
 //
 double CForcingGrid::GetValue_avg(const int ic, const double &t, const int nsteps) const
 {
-
-
   int it_start=max((int)(t),0);
   int lim=min(nsteps,_ChunkSize-it_start);
   double sum = 0.0;
@@ -2188,13 +2199,10 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
 /// \brief  true if the variable should be deaccumulated
 /// \return true if the variable should be deaccumulated
 ///
-bool CForcingGrid::ShouldDeaccumulate()                const{return _deaccumulate;}
+bool CForcingGrid::ShouldDeaccumulate()      const{return _deaccumulate;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns forcing type
 /// \return forcing type
 //
-forcing_type CForcingGrid::GetForcingType  () const
-{
-  return _ForcingType;
-}
+forcing_type CForcingGrid::GetForcingType  () const{return _ForcingType;}

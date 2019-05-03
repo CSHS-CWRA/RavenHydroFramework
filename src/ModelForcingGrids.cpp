@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -25,15 +25,14 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
                                         const double &interval, 
                                         const int nVals)
 {
-  static CForcingGrid *pTout;
+  CForcingGrid *pTout;
   if ( GetForcingGridIndexFromType(typ) == DOESNT_EXIST )
   { // for the first chunk the derived grid does not exist and has to be added to the model
     int    GridDims[3];
     GridDims[0] = pGrid->GetCols(); 
     GridDims[1] = pGrid->GetRows(); 
     GridDims[2] = nVals;
-
-    pTout = new CForcingGrid(* pGrid);  // copy everything from pGrid; matrixes are deep copies
+    pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrixes are deep copies
 
     pTout->SetForcingType(typ);
     pTout->SetInterval(interval);            
@@ -64,6 +63,142 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Creates all missing gridded snow/rain/precip data based on gridded information available,
+///        precip data are assumed to have the same resolution and hence can be initialized together.
+///
+/// \param Options [in]  major options of the model
+//
+void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
+{
+  CForcingGrid * pGrid_pre  = NULL;
+  CForcingGrid * pGrid_rain = NULL;
+  CForcingGrid * pGrid_snow = NULL;
+
+  // see if gridded forcing is read from a NetCDF
+  bool pre_gridded   = ForcingGridIsInput(F_PRECIP);
+  bool rain_gridded  = ForcingGridIsInput(F_RAINFALL);
+  bool snow_gridded  = ForcingGridIsInput(F_SNOWFALL);
+
+  // find the correct grid
+  if(pre_gridded)  { pGrid_pre   = GetForcingGrid((F_PRECIP)); }
+  if(rain_gridded) { pGrid_rain  = GetForcingGrid((F_RAINFALL)); }
+  if(snow_gridded) { pGrid_snow  = GetForcingGrid((F_SNOWFALL)); }
+
+  // Minimum requirements of forcing grids: must have precip or rain
+  ExitGracefullyIf(!pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
+
+  if(Options.noisy) { cout<<"Generating gridded precipitation variables"<<endl; }
+  //--------------------------------------------------------------------------
+  // Handle snowfall availability
+  //--------------------------------------------------------------------------
+  if(snow_gridded && rain_gridded && (Options.rainsnow!=RAINSNOW_DATA))
+  {
+    WriteWarning("CModel::GenerateGriddedPrecipVars: both snowfall and rainfall data are provided at a gauge, but :RainSnowFraction method is something other than RAINSNOW_DATA. Snow fraction will be recalculated.",Options.noisy);
+  }
+  //deaccumulate if necessary
+  double rainfall_rate;
+  if((pre_gridded) && (pGrid_pre->ShouldDeaccumulate()))
+  {
+    for(int it=0; it<pGrid_pre->GetChunkSize()-1; it++) {                   // loop over time points in buffer
+      for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++) {       // loop over non-zero grid cell indexes
+        rainfall_rate=(pGrid_pre->GetValue(ic,it+1)-pGrid_pre->GetValue(ic,it))/pGrid_pre->GetInterval();
+        pGrid_pre->SetValue(ic,it,rainfall_rate);   // copies precipitation values
+      }
+    }
+    for(int ic=0; ic<pGrid_pre->GetNumberNonZeroGridCells(); ic++) {       // loop over non-zero grid cell indexes
+      rainfall_rate=0;
+      pGrid_pre->SetValue(ic,pGrid_pre->GetChunkSize()-1,rainfall_rate);
+    }
+    //pGrid_pre->SetChunkSize(pGrid_pre->GetChunkSize()-1);
+  }
+  if(snow_gridded && rain_gridded && !pre_gridded) {
+    GeneratePrecipFromSnowRain(Options);
+  }
+  if(!rain_gridded && !snow_gridded && pre_gridded) {
+    GenerateRainFromPrecip(Options);
+  }
+  if(!snow_gridded && (pre_gridded || rain_gridded)) {
+    GenerateZeroSnow(Options);
+    if(!pre_gridded) { GeneratePrecipFromSnowRain(Options); }
+  }
+  if(Options.noisy) { cout<<"...done generating gridded precipitation variables."<<endl; }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Creates all missing gridded temperature data based on gridded information available,
+///        e.g when only sub-daily temperature is provided estimate daily average, minimum and maximum temperature.
+///        data are assumed to have the same resolution and hence can be initialized together.
+///
+/// \param Options [in]  major options of the model
+//
+void CModel::GenerateGriddedTempVars(const optStruct &Options)
+{
+  CForcingGrid * pGrid_tave       = NULL;
+  CForcingGrid * pGrid_daily_tmin = NULL;
+  CForcingGrid * pGrid_daily_tmax = NULL;
+  CForcingGrid * pGrid_daily_tave = NULL;
+
+  // see if gridded forcing is read from a NetCDF
+  bool temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE);
+  bool temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN);
+  bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
+  bool temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE);
+
+  // find the correct grid
+  if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); }
+  if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); }
+  if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); }
+  if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); }
+
+  // Temperature min/max grids must be both available
+  ExitGracefullyIf((temp_daily_min_gridded && !temp_daily_max_gridded) || (!temp_daily_min_gridded && temp_daily_max_gridded),
+    "CModel::UpdateHRUForcingFunctions: Input minimum and maximum temperature have to be given either both as time series or both as gridded input.",BAD_DATA);
+
+  if(Options.noisy) { cout<<"Generating gridded temperature variables..."<<endl; }
+
+  //--------------------------------------------------------------------------
+  // Populate Temperature forcing grid: by timestep, daily min/max/average
+  //--------------------------------------------------------------------------
+  string tmp[3];
+  tmp[0] = "NONE";  tmp[1] = "NONE";  tmp[2] = "NONE";
+
+  if((temp_ave_gridded) && (fabs(pGrid_tave->GetInterval()-1.0)<REAL_SMALL)) // (A) daily temperature data provided, labeled as TEMP_AVE - >convert to temp_daily_ave_gridded
+  {
+    pGrid_daily_tave = ForcingCopyCreate(pGrid_tave,F_TEMP_DAILY_AVE,pGrid_tave->GetInterval(),pGrid_tave->GetNumValues());
+    int chunk_size =pGrid_tave->GetChunkSize();
+    int nNonZero   =pGrid_tave->GetNumberNonZeroGridCells();
+    for(int it=0; it<chunk_size; it++) {           // loop over time points in buffer
+      for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
+        pGrid_daily_tave->SetValue(ic,it,pGrid_tave->GetValue(ic,it)); //copy values
+      }
+    }
+    AddForcingGrid(pGrid_daily_tave,F_TEMP_DAILY_AVE);
+    temp_ave_gridded=false;
+    temp_daily_ave_gridded=true;
+  }
+  if(temp_ave_gridded)                                                // (B) Sub-daily temperature data provided
+  {
+    GenerateMinMaxAveTempFromSubdaily(Options);                        // ---> Generate daily min, max, & avg
+  }
+  else if(temp_daily_min_gridded && temp_daily_max_gridded)            // (C) Daily min/max temperature data provided
+  {
+    GenerateAveSubdailyTempFromMinMax(Options);                        // --> Generate T_daily_ave, T_ave (downscaled)
+  }
+  else if(temp_daily_ave_gridded)                                      // (D) only daily average data provided
+  {
+    GenerateMinMaxSubdailyTempFromAve(Options);                        // --> Generate daily T_min, T_max, and subdaily ave (downscaled)
+  }
+  else
+  {
+    ExitGracefully("CModel::GenerateGriddedTempVars: Insufficient data to generate temperature forcing grids",BAD_DATA);
+  }
+
+  ExitGracefullyIf(GetForcingGrid(F_TEMP_DAILY_MAX)->GetInterval() != GetForcingGrid(F_TEMP_DAILY_MIN)->GetInterval(),
+    "CModel::InitializeForcingGrids: Input minimum and maximum temperature must have same time resolution.",BAD_DATA);
+
+  if(Options.noisy) { cout<<"...done generating gridded temperature variables."<<endl; }
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Generates Tave and subhourly time series from daily Tmin & Tmax time series
 /// \note presumes existence of valid F_TEMP_DAILY_MIN and F_TEMP_DAILY_MAX time series
 //
@@ -76,23 +211,32 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   pTmin->Initialize(Options);// needed for correct mapping from time series to model time
   pTmax->Initialize(Options);
 
-  int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());
+  int nValsPerDay= (int)(1.0 / pTmin->GetInterval()); //typically should be 1.0
 
-  pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals);
+  // ----------------------------------------------------
+  // Generate daily average grid, if it doesnt exist
+  // ----------------------------------------------------
+  if(!ForcingGridIsAvailable(F_TEMP_DAILY_AVE)) 
+  {
+    int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());
 
-  double t=0.0;
-  int chunk_size =pTave_daily->GetChunkSize();
-  int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
-  int nValsPerDay= (int)(1.0 / pTmin->GetInterval());
-  for (int it=0; it<chunk_size; it++) {           // loop over time points in buffer
-    for (int ic=0; ic<nNonZero;ic++){             // loop over non-zero grid cell indexes
-      pTave_daily->SetValue(ic, it , 0.5*(pTmin->GetValue_avg(ic, t * nValsPerDay, nValsPerDay) + 
-                                          pTmax->GetValue_avg(ic, t * nValsPerDay, nValsPerDay)));
+    pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals);
+
+    double t=0.0;
+    int chunk_size =pTave_daily->GetChunkSize();
+    int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
+    for(int it=0; it<chunk_size; it++) {           // loop over time points in buffer
+      for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
+        pTave_daily->SetValue(ic,it,0.5*(pTmin->GetValue_avg(ic,t * nValsPerDay,nValsPerDay) +
+                                         pTmax->GetValue_avg(ic,t * nValsPerDay,nValsPerDay)));
+      }
+      t+=1.0;
     }
-    t+=1.0;
+    AddForcingGrid(pTave_daily,F_TEMP_DAILY_AVE);
   }
-
-  AddForcingGrid(pTave_daily,F_TEMP_DAILY_AVE);
+  else {
+    pTave_daily=GetForcingGrid(F_TEMP_DAILY_AVE);
+  }
 
   // ----------------------------------------------------
   // Generate subdaily temperature values
@@ -125,23 +269,23 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       }
       t += Options.timestep;
     }
-
     AddForcingGrid(pTave,F_TEMP_AVE);
   }
   else //tstep ==  1 day
   {
-    int    nVals     = pTave_daily->GetChunkSize();
+    if(!ForcingGridIsAvailable(F_TEMP_AVE))
+    {
+      int    nVals     = pTave_daily->GetChunkSize();
+      pTave = ForcingCopyCreate(pTave_daily,F_TEMP_AVE,1.0,nVals);
 
-    pTave = ForcingCopyCreate(pTave_daily,F_TEMP_AVE,1.0,nVals);
-
-    int nNonZero  =pTave->GetNumberNonZeroGridCells();
-    for (int it=0; it<nVals; it++) {                                 // loop over time points in buffer
-      for (int ic=0; ic<nNonZero; ic++){                                  // loop over non-zero grid cell indexes
-        pTave->SetValue(ic, it , pTave_daily->GetValue(ic, it));  // --> just copy daily average values
+      int nNonZero  =pTave->GetNumberNonZeroGridCells();
+      for(int it=0; it<nVals; it++) {                                 // loop over time points in buffer
+        for(int ic=0; ic<nNonZero; ic++) {                                  // loop over non-zero grid cell indexes
+          pTave->SetValue(ic,it,pTave_daily->GetValue(ic,it));  // --> just copy daily average values
+        }
       }
+      AddForcingGrid(pTave,F_TEMP_AVE);
     }
-
-    AddForcingGrid(pTave,F_TEMP_AVE);
   }
 }
 
@@ -193,23 +337,24 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   CForcingGrid *pTmin_daily,*pTmax_daily,*pTave_daily;
 
   pTave_daily=GetForcingGrid(F_TEMP_DAILY_AVE);
+
   pTave_daily->Initialize(Options);//  needed for correct mapping from time series to model time
 
   double interval = pTave_daily->GetInterval();
-  int       nVals = (int)ceil(pTave_daily->GetChunkSize()); // number of subdaily values (input resolution)
+  int       nVals = (int)ceil(pTave_daily->GetChunkSize()); // number of subdaily values (input resolution) - should be 1
   
   pTmin_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MIN,interval,nVals);
   pTmax_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MAX,interval,nVals);
-
   int chunksize=pTave_daily->GetChunkSize();
-  int nNonZero=pTave_daily->GetNumberNonZeroGridCells();
+  int nNonZero =pTave_daily->GetNumberNonZeroGridCells();
+  double daily_temp;
   for (int it=0; it<nVals; it++) {          // loop over time points in buffer
     for (int ic=0; ic<nNonZero; ic++){      // loop over non-zero grid cell indexes
-      pTmin_daily->SetValue(ic, it, pTave_daily->GetValue(ic, min(chunksize,it))-4.0); // should be it+0.5
-      pTmax_daily->SetValue(ic, it, pTave_daily->GetValue(ic, min(chunksize,it))+4.0); // should be it+0.5
+      daily_temp=pTave_daily->GetValue(ic, min(chunksize,it));// should be it+0.5
+      pTmin_daily->SetValue(ic, it, daily_temp-4.0); 
+      pTmax_daily->SetValue(ic, it, daily_temp+4.0); 
     }
   }
-
   AddForcingGrid(pTmin_daily,F_TEMP_DAILY_MIN);
   AddForcingGrid(pTmax_daily,F_TEMP_DAILY_MAX);
 

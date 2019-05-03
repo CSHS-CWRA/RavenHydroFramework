@@ -1352,7 +1352,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else if(!strcmp(s[0],":WrittenBy"))   {if (Options.noisy){cout<<"WrittenBy"<<endl;}}//do nothing
         else if(!strcmp(s[0],":CreationDate")){if (Options.noisy){cout<<"CreationDate"<<endl;}}//do nothing
         else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
-        else if(Options.noisy)
+        else 
         {
           string warn;
           warn="Ignoring unrecognized command starting with "+string(s[0])+" in .rvp file";
