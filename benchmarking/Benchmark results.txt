@@ -60,6 +60,13 @@ v145->v160->169 [PASSED BENCHMARKING] (Jan 29, 2019)
 
 MODIFIED BENCHMARK - ADDED ALL York_nc NetCDF benchmark tests from Julie (Feb 17, 2019)
 
-v169->v170 (Feb 17, 2019)
-RAVEN v2.9
+v169->v170 [PASSED BENCHMARKING] (Feb 17, 2019) [VERSION 2.9]
 -fixed issues with deaccumulation in York_nc3 causing older version to get memory error.
+
+v170->v174 [PASSED BENCHMARKING] (Mar 7, 2019)
+
+v176->v185 [FAILED BENCHMARKING]
+-v183, v184- incorrect HCP_ICE led to issues with UBCWM models
+-v176-v182 - incorrect NetCDF support (failed York)
+
+v186 [PASSED BENCHMARKING] (May 3, 2019)
