@@ -161,9 +161,9 @@ const double  TC_AIR                  =0.023;                                   
 
 const double  HCP_WATER               =4.187;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Water
 const double  HCP_ICE                 =1.938;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
-const double  HCP_CLAY                =2.380e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Clay
-const double  HCP_SAND                =2.130e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Sand
-const double  HCP_ORGANIC             =2.500e6;                                 ///< [J/m3/K] Volumetric Heat Capacity of Organic Matter
+const double  HCP_CLAY                =2.380;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Clay
+const double  HCP_SAND                =2.130;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Sand
+const double  HCP_ORGANIC             =2.500;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Organic Matter
 const double  HCP_AIR                 =1.240e3;                                 ///< [J/m3/K] Volumetric Heat capacity of air
 
 const double  SPH_ICE                 =2.100e-3;                                ///< [MJ/kg/K] Specific heat capacity of ice
@@ -612,6 +612,15 @@ enum condition_basis
   BASIS_LANDCLASS, ///< condition is based upon land use/ land type class (e.g., if urban...)
   BASIS_VEGETATION ///< condition is based upon vegetation class (e.g., if broadleaf...)
 };
+////////////////////////////////////////////////////////////////////
+/// \brief Ensemble mode type
+//
+enum ensemble_type
+{
+  ENSEMBLE_NONE,       ///< standard single model run
+  ENSEMBLE_MONTECARLO, ///< basic Monte Carlo simulation
+  ENSEMBLE_DDS         ///< DDS optimization run
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Possible comparison results
@@ -816,6 +825,7 @@ struct optStruct
   double           max_iterations;            ///< maximum number of iterations for iterative solver method
   double           timestep;                  ///< numerical method timestep (in days)
   double           output_interval;           ///< write to output file every x number of timesteps
+  ensemble_type    ensemble;                  ///< ensemble type (or ENSEMBLE_NONE if single model)
 
   interp_method    interpolation;             ///< Method for interpolating Met Station/Gauge data to HRUs
   string           interp_file;               ///< name of file (in working directory) which stores interpolation weights
@@ -826,7 +836,9 @@ struct optStruct
   string           rvp_filename;              ///< fully qualified filename of rvp (parameters) file
   string           rvt_filename;              ///< fully qualified filename of rvt (time series) file
   string           rvc_filename;              ///< fully qualified filename of rvc (initial conditions) file
-  string           output_dir;                ///< output directory
+  string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
+  string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)
+  string           output_dir;                ///< output directory (can change during ensemble run)
 
   orographic_corr  orocorr_temp;              ///< method for correcting interpolated temperatures for elevation
   orographic_corr  orocorr_precip;            ///< method for correcting interpolated precipitation for elevation

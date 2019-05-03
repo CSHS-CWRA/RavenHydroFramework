@@ -107,6 +107,8 @@ CModel::CModel(const soil_model SM,
   _aShouldApplyProcess=NULL; //Initialized in Initialize
 
   _pTransModel=new CTransportModel(this);
+
+  _pEnsemble = NULL;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -174,6 +176,7 @@ CModel::~CModel()
   CChannelXSect::   DestroyAllChannelXSections();
 
   delete _pTransModel;
+  delete _pEnsemble;
 }
 /*****************************************************************
    Accessors
@@ -681,6 +684,12 @@ const optStruct  *CModel::GetOptStruct() const{ return _pOptStruct; }
 /// \return pointer to transport model
 //
 CTransportModel  *CModel::GetTransportModel() const{return _pTransModel;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns ensemble setup
+/// \return pointer to ensemble setup
+//
+CEnsemble  *CModel::GetEnsemble() const { return _pEnsemble; }
 
 /*****************************************************************
    Watershed Diagnostic Functions
@@ -1268,6 +1277,15 @@ void CModel::SetOutputGroup(const CHRUGroup *pOut){
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Sets Ensemble mode for model
+///
+/// \param *pEnsemble [in] (assumed valid) pointer to Ensemble instance
+//
+void CModel::SetEnsembleMode(CEnsemble *pEnsemble) {
+  _pEnsemble=pEnsemble;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief sets number of layers used to simulate snowpack
 /// \param nLayers # of snow layers
 //
@@ -1422,6 +1440,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
 void CModel::UpdateTransientParams(const optStruct   &Options,
                                    const time_struct &tt)
 {
+  //--update parameters linked to time series-----------------------------------------------
   int nn=(int)((tt.model_time+REAL_SMALL)/Options.timestep);//current timestep index
   for (int j=0;j<_nTransParams;j++)
   {
@@ -1430,27 +1449,10 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
     string     cname=_pTransParams[j]->GetParameterClass();
     double     value=_pTransParams[j]->GetTimeSeries()->GetSampledValue(nn);
 
-    if      (ctype==CLASS_SOIL)
-    {
-      CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
-    }
-    else if (ctype==CLASS_VEGETATION)
-    {
-      CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
-    }
-    else if (ctype==CLASS_TERRAIN)
-    {
-      CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
-    }
-    else if (ctype==CLASS_LANDUSE)
-    {
-      CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
-    }
-    else if (ctype==CLASS_GLOBAL)
-    {
-      CGlobalParams::SetGlobalProperty(pname,value);
-    }
+    UpdateParameter(ctype,pname,cname,value);
+    
   }
+  //--update land use and HRU types-----------------------------------------------
   int k;
   for (int j = 0; j<_nClassChanges; j++)
   {
@@ -1482,6 +1484,37 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
     }
   }
 
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Updates model parameter during course of simulation
+///
+/// \param &ctype [in] parameter class type 
+/// \param &pname [in] parameter name
+/// \param &cname [in] parameter class name
+/// \param &value [in] updated parametre value
+//
+void CModel::UpdateParameter(const class_type &ctype,const string pname,const string cname,const double &value)
+{
+  if(ctype==CLASS_SOIL)
+  {
+    CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
+  }
+  else if(ctype==CLASS_VEGETATION)
+  {
+    CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
+  }
+  else if(ctype==CLASS_TERRAIN)
+  {
+    CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
+  }
+  else if(ctype==CLASS_LANDUSE)
+  {
+    CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+  }
+  else if(ctype==CLASS_GLOBAL)
+  {
+    CGlobalParams::SetGlobalProperty(pname,value);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Recalculates HRU derived parameters

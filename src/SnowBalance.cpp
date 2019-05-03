@@ -877,12 +877,12 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   double SwePack; // Water equivalent of snow pack layer [mm]
   double newSnow  = state_vars[iFrom[0]]; //NEW SNOW [mm]
   double rainthru = state_vars[iFrom[1]]; //PONDED_WATER [mm]
-  double Swe      = state_vars[iFrom[2]]; // total snow water equivalent [mm]
+  double Swe      = state_vars[iFrom[2]]; //total snow water equivalent [mm]
   double SlwcSurf = state_vars[iFrom[3]]; //liquid snow in snow surface layer [mm]
   double SlwcPack = state_vars[iFrom[4]]; //liquid snow in snow pack layer [mm]
   double CcSurf   = state_vars[iFrom[6]]; //cold content of snow surface layer [MJ/m2]
   double CcPack   = state_vars[iFrom[7]]; //cold content of snow pack layer [MJ/m2]
-  double snowT    = state_vars[iFrom[8]];  //snow surface temperature [C]
+  double snowT    = state_vars[iFrom[8]]; //snow surface temperature [C]
   double cum_melt = state_vars[iFrom[9]]; //cumulative melt [mm]
 
   if (Swe <= REAL_SMALL && newSnow <= REAL_SMALL) { return; } //no snow to balance
@@ -906,7 +906,6 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //INTERNAL
   //------------------------------------------------------------------------
-  double posMf;               //positive meltfactor
   double ccSnowFall;
 
   //reset cumulative melt to zero in October
@@ -920,7 +919,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //reconstruct two layer snowpack
   //------------------------------------------------------------------------
-  if ( (Swe+SlwcSurf) > MAXSWESURF)
+  if ( Swe > (MAXSWESURF-SlwcSurf))
   {
     SweSurf = MAXSWESURF-SlwcSurf;
   }
@@ -928,6 +927,8 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   {
     SweSurf = Swe;
   }
+  //SweSurf=min(MAXSWESURF-SlwcSurf,Swe);
+
   SwePack = Swe - SweSurf;
 
   //add snow throughfall to snowPack and compute its cold content
@@ -939,14 +940,14 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //distribute fresh snowfall
   //------------------------------------------------------------------------
-  if (newSnow < (MAXSWESURF - SweSurf - SlwcSurf))// suface layer is below max
+  if ((newSnow + SweSurf+ SlwcSurf) < MAXSWESURF)// suface layer is below max
   {
     SweSurf += newSnow;
     CcSurf += ccSnowFall;
   }
   else
   {//snow surface layer is at max
-    double deltaswePack = SweSurf + SlwcSurf + newSnow - MAXSWESURF;
+    double deltaswePack = (SweSurf + SlwcSurf + newSnow) - MAXSWESURF; //JRC: If this is delta, shouldn't we subtract SwePack?
     double deltaccPack=0;
     if (SweSurf > 0) {
       deltaccPack = (deltaswePack/SweSurf) * CcSurf;//give pack the proportional coldconent of surface layer
@@ -972,9 +973,9 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   //------------------------------------------------------------------------
   //snowpack cooling or warming
   //------------------------------------------------------------------------
-  if (Mf <= 0.0)
-  {    //   snow cooling
-    posMf = -Mf;
+  if (Mf <= 0.0)  //   snow cooling
+  {    
+    double posMf = -Mf;
     if (posMf < SlwcSurf)//refreeze part of liquid water
     {
       meltSurf += Mf;   // note that Mf is negative
@@ -982,11 +983,11 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     }
     else// refreeze all liquid water and increase cold content
     {
-      posMf -= SlwcSurf;
+      posMf    -= SlwcSurf;
       meltSurf -= SlwcSurf;
       CcSurf = posMf * LH_FUSION  * DENSITY_ICE / MM_PER_METER; // leftover energy is new CC
 
-      if (SweSurf < 50.0) //dont cool below gruTa when Swe is below 10 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
+      if (SweSurf < 50.0) //dont cool below gruTa when Swe is below 50 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
       {
         CcSurf = min(CcSurf, -Ta * SweSurf * HCP_ICE/MM_PER_METER);
         CcSurf = max(CcSurf, 0.0);
@@ -1006,11 +1007,11 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
       meltSurf += Mf;
     }
   }
+  SweSurf -= meltSurf; //new SWE after melt/freeze
+  SlwcSurf+= meltSurf; //new Slwc after melt/freeze
 
   //Calculate how much liquid stays in surface layer, and pass the rest to the pack layer
   //------------------------------------------------------------------------
-  SweSurf -= meltSurf; //new SWE after melt/freeze
-  SlwcSurf+= meltSurf; //new Slwc after melt/freeze
   if (SlwcSurf >= MAXLIQ * SweSurf)
   {
     surfToPack = SlwcSurf - MAXLIQ * SweSurf;

@@ -32,6 +32,7 @@ bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
 bool ParseHRUPropsFile         (CModel *&pModel, const optStruct &Options);
 bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
+bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
 
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 int *ParseSVTypeArray          (char *string,  CModel *&pModel, int size);
@@ -59,18 +60,18 @@ bool ParseInputFiles (CModel      *&pModel,
 {
   string filename;
 
-  //Main input file
+  //Main input file (.rvi)
   if (!ParseMainInputFile        (pModel,Options)){
     if(Options.rvi_filename.compare("nomodel.rvi")==0){
       ExitGracefully("A model input file name must be supplied as an argument to the Raven executable.",BAD_DATA);return false;
     }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;}
 
-  //Class Property file
+  //Class Property file (.rvp)
   if (!ParseClassPropertiesFile  (pModel,Options)){
     ExitGracefully("Cannot find or read .rvp file",BAD_DATA);return false;}
 
-  //HRU Property file
+  //HRU Property file (.rvh)
   if (!ParseHRUPropsFile         (pModel,Options)){
     ExitGracefully("Cannot find or read .rvh file",BAD_DATA);return false;}
 
@@ -78,14 +79,21 @@ bool ParseInputFiles (CModel      *&pModel,
     if (pModel->GetSubBasin(pp)->GetReservoir()!=NULL){Options.write_reservoir=true;}
   }
 
-  //Initial Conditions input file
+  //Initial Conditions input file (.rvc)
   if (!ParseInitialConditionsFile(pModel,Options)){
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;}
 
-  //Time series input file
+  //Time series input file (.rvt)
   if (!ParseTimeSeriesFile       (pModel,Options)){
     ExitGracefully("Cannot find or read .rvt file",BAD_DATA);return false;}
 
+  //Ensemble file (.rve)
+  if(pModel->GetEnsemble()->GetType()!=ENSEMBLE_NONE) {
+    if(!ParseEnsembleFile(pModel,Options)) {
+      ExitGracefully("Cannot find or read .rve file",BAD_DATA);return false;
+    }
+  }
+  
   if (!Options.silent){
     cout <<"...model input successfully parsed"             <<endl;
     cout <<endl;
@@ -113,6 +121,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CProcessGroup    *pProcGroup=NULL;
   bool              transprepared(false);
   bool              runname_overridden(false);
+  int               num_ensemble_members=1;
   ifstream INPUT;
 
   int      tmpN;
@@ -146,8 +155,9 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.timestep            =1;
   Options.output_interval     =1;
   Options.sol_method          =ORDERED_SERIES;
-  Options.convergence_crit    = 0.01;
-  Options.max_iterations      = 30;
+  Options.convergence_crit    =0.01;
+  Options.max_iterations      =30;
+  Options.ensemble            =ENSEMBLE_NONE; 
 
   Options.routing             =ROUTE_STORAGECOEFF;
   Options.catchment_routing   =ROUTE_DUMP;
@@ -285,6 +295,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":DirectEvaporation"         )){code=44; }
     else if  (!strcmp(s[0],":Calendar"                  )){code=45; }
     else if  (!strcmp(s[0],":SnowCoverDepletion"        )){code=46; }
+    else if  (!strcmp(s[0],":EnsembleMode"              )){code=47; }
     //------------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=51; }
@@ -302,6 +313,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=60; }
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=61; }
     else if  (!strcmp(s[0],":rvc_Filename"              )){code=62; }
+    else if  (!strcmp(s[0],":rve_Filename"              )){code=91; }
     else if  (!strcmp(s[0],":OutputDirectory"           )){code=63; }//Ideally, called before everything else
     else if  (!strcmp(s[0],":OutputDump"                )){code=64; }
     else if  (!strcmp(s[0],":MajorOutputInterval"       )){code=65; }
@@ -1017,6 +1029,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {ExitGracefully("ParseInput :SnowCoverDepletion: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
+    case(47): //----------------------------------------------
+    {/*:EnsembleMode" [string method] [double #members] */
+      if(Options.noisy) { cout <<"Ensemble Mode"<<endl; }
+      if(Len<3) { ImproperFormatWarning(":EnsembleMode",p,Options.noisy); break; }
+      if      (!strcmp(s[1],"ENSEMBLE_NONE"      )) { Options.ensemble=ENSEMBLE_NONE; }
+      else if (!strcmp(s[1],"ENSEMBLE_DDS"       )) { Options.ensemble=ENSEMBLE_DDS; }
+      else if (!strcmp(s[1],"ENSEMBLE_MONTECARLO")) { Options.ensemble=ENSEMBLE_MONTECARLO; }
+      else { ExitGracefully("ParseInput:EnsembleMode: Unrecognized ensemble simulation mode",BAD_DATA_WARN); }
+      num_ensemble_members=s_to_i(s[2]);
+      break;
+    }
     case(50):  //--------------------------------------------
     {/*:DebugMode */
       if (Options.noisy){cout <<"Debug Mode ON"<<endl;}
@@ -1094,7 +1117,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:PavicsMode */
       if (Options.noisy) {cout<<endl;}
       Options.pavics=true;
-      ofstream PROGRESS((Options.output_dir+"Raven_progress.txt").c_str());
+      ofstream PROGRESS((Options.main_output_dir+"Raven_progress.txt").c_str());
       if (PROGRESS.fail()){
         ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
       }
@@ -1125,6 +1148,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.rvc_filename=CorrectForRelativePath(s[1] ,Options.rvi_filename);//with .rvc extension!
       break;
     }
+    case(91):  //--------------------------------------------
+    {/*:rve_Filename */
+      if(Options.noisy) { cout <<"rve filename: "<<s[1]<<endl; }
+      Options.rve_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rve extension!
+      break;
+    }
     case(63):  //--------------------------------------------
     {/*:OutputDirectory */
       if (Options.noisy) {cout <<"Output directory: "<<s[1]<<"/"<<endl;}
@@ -1133,9 +1162,10 @@ bool ParseMainInputFile (CModel     *&pModel,
         Options.output_dir+=to_string(s[i])+"/ ";   // append backslash to make sure it's a folder
       }
       Options.output_dir+=to_string(s[Len-1])+"/";  // append backslash to make sure it's a folder
+      Options.main_output_dir=Options.output_dir;
       PrepareOutputdirectory(Options);
 
-      ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
+      ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
       WARNINGS.close();
       break;
     }
@@ -2578,6 +2608,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);
   }
+
+  //Add Ensemble configuration to Model
+  //===============================================================================================
+  CEnsemble *pEnsemble;
+  if     (Options.ensemble==ENSEMBLE_NONE      ) {pEnsemble=new CEnsemble(1,Options);}
+  else if(Options.ensemble==ENSEMBLE_MONTECARLO) {pEnsemble=new CMonteCarloEnsemble(num_ensemble_members,Options);}
+  pModel->SetEnsembleMode(pEnsemble);
 
   delete p; p=NULL;
   delete [] tmpS;

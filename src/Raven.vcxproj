@@ -560,10 +560,12 @@
     <ClCompile Include="LatAdvection.cpp" />
     <ClCompile Include="LateralExchangeABC.cpp" />
     <ClCompile Include="MassRouting.cpp" />
+    <ClCompile Include="ModelEnsemble.cpp" />
     <ClCompile Include="ModelForcingGrids.cpp" />
     <ClCompile Include="ModelInitialize.cpp" />
     <ClCompile Include="ModelParamCheck.cpp" />
     <ClCompile Include="OrographicCorrections.cpp" />
+    <ClCompile Include="ParseEnsembleFile.cpp" />
     <ClCompile Include="ParseInitialConditionFile.cpp" />
     <ClCompile Include="ParseLib.cpp" />
     <ClCompile Include="PotentialMelt.cpp" />
@@ -766,6 +768,7 @@
     <ClInclude Include="IrregularTimeSeries.h" />
     <ClInclude Include="LatAdvection.h" />
     <ClInclude Include="LateralExchangeABC.h" />
+    <ClInclude Include="ModelEnsemble.h" />
     <ClInclude Include="OpenWaterEvap.h" />
     <ClInclude Include="ParseLib.h" />
     <ClInclude Include="PrairieSnow.h" />

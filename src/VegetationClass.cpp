@@ -374,7 +374,7 @@ void CVegetationClass::InitializeVegetationProps(string name, veg_struct &V, boo
 /// \param param_name [in] Identifier of parameter to be set
 /// \param value [in] Value of parameter to be set
 //
-void CVegetationClass::SetVegetationProperty(string &param_name, const double &value)
+void CVegetationClass::SetVegetationProperty(const string &param_name, const double &value)
 {
   SetVegetationProperty(V,param_name,value);
 }
@@ -387,8 +387,8 @@ void CVegetationClass::SetVegetationProperty(string &param_name, const double &v
 /// \param value [in] Value of parameter to be set
 //
 void  CVegetationClass::SetVegetationProperty(veg_struct  &V,
-                                              string       param_name,
-                                              const double value)
+                                              const string param_name,
+                                              const double &value)
 {
   string name;
   name = StringToUppercase(param_name);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -47,7 +47,7 @@ struct soil_struct
   double cap_ratio;         ///< [-]       total water storage cap.=thick*cap_ratio ; cap_ratio=poro*(1-stone_f)
 
   //Thermal properties
-  double heat_capacity;     ///< [J/m3/K]   saturated *volumetric* heat capacity
+  double heat_capacity;     ///< [MJ/m3/K]   saturated *volumetric* heat capacity
   double thermal_cond;      ///< [W/m/K]    saturated soil thermal conductivity
 
   //unsaturated flow parameters

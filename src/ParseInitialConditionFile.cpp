@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -95,7 +95,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
       if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;}
 
-      filename=CorrectForRelativePath(filename,Options.rvt_filename);
+      filename=CorrectForRelativePath(filename,Options.rvc_filename);
 
       INPUT2.open(filename.c_str());
       if (INPUT2.fail()){
@@ -214,15 +214,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         if (typ==UNRECOGNIZED_SVTYPE){
           WriteWarning(":HRUStateVariableTable: unrecognized state variable type "+to_string(s[i+1]),Options.noisy);
           SVinds[i]=DOESNT_EXIST;
-
-          //cout<<"!State Var:"<<s[i+1];
-          //cout<<" State Var Ind:"<<SVinds[i]<<endl<<g_output_directory<<endl;
         }
         else{
           SVinds[i]=pModel->GetStateVarIndex(typ,layer_ind);
-
-          //cout<<"State Var:"<<s[i+1];
-          //cout<<" State Var Ind:"<<SVinds[i]<<endl;
           if (SVinds[i]==DOESNT_EXIST){
             WriteWarning("Initial conditions specified for state variable not in model ("+to_string(s[i+1])+")",Options.noisy);
           }

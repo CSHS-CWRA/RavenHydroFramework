@@ -386,7 +386,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
 /// \param value [in] Value of parameter to be set
 /// \note not really needed, but can support future parse options
 //
-void  CGlobalParams::SetGlobalProperty (string       &param_name,
+void  CGlobalParams::SetGlobalProperty (const string &param_name,
                                         const double &value)
 {
   SetGlobalProperty(G,param_name,value);

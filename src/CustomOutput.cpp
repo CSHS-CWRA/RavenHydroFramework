@@ -268,6 +268,10 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
   if (_CUSTOM.fail()){
     WriteWarning("CCustomOutput::WriteFileHeader: Unable to create file "+_filename,true);
   }
+  // clear data (for ensembles)
+  for(int k=0;k<num_data;k++){
+    for(int a=0;a<num_store;a++) { data[k][a]=0.0; }
+  }
 
   // write the appropriately formatted header
   switch(Options.output_format)

@@ -247,13 +247,11 @@ void CModel::Initialize(const optStruct &Options)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
 
-  //Write Output File Headers
+  //Initialize Custom Output
   //--------------------------------------------------------------
   for (int c=0;c<_nCustomOutputs;c++){
     _pCustomOutputs[c]->InitializeCustomOutput(Options);
   }
-  if (!Options.silent){cout<<"  Writing Output File Headers..."<<endl;}
-  WriteOutputFileHeaders(Options);
 
   quickSort(_aOutputTimes,0,_nOutputTimes-1);
 

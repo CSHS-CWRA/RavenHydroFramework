@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------
   Class CSoilClass
   Class CVegetationClass
@@ -110,7 +110,7 @@ public:/*-------------------------------------------------------*/
   const veg_struct        *GetVegetationStruct() const;
   double                   GetParameter(const string param_name) const;//not currently used
   double                   GetVegetationProperty(string param_name) const;
-  void                     SetVegetationProperty(string &param_name, const double &value);
+  void                     SetVegetationProperty(const string &param_name, const double &value);
 
   //routines
   void AutoCalculateVegetationProps(const veg_struct    &Vtmp,
@@ -122,7 +122,7 @@ public:/*-------------------------------------------------------*/
   static       CVegetationClass *StringToVegClass(const string s);
   static void                    DestroyAllVegClasses();
 
-  static void                    SetVegetationProperty(veg_struct &V, string param_name, const double value);
+  static void                    SetVegetationProperty(veg_struct &V, const string param_name, const double &value);
   static void                    SetVegTransportProperty( int          constit_ind,int          constit_ind2,
                                                           veg_struct  &V,string param_name, const double value);
   static double                  GetVegetationProperty(const veg_struct &V, string param_name);
@@ -188,7 +188,7 @@ public:/*-------------------------------------------------------*/
   string                   GetLanduseName() const;
   const surface_struct    *GetSurfaceStruct() const;
   double                   GetSurfaceProperty(string param_name) const;
-  void                     SetSurfaceProperty(string &param_name, const double &value);
+  void                     SetSurfaceProperty(const string &param_name, const double &value);
 
   //routines
   void AutoCalculateLandUseProps(const surface_struct &Stmp,
@@ -200,7 +200,7 @@ public:/*-------------------------------------------------------*/
   static void                    DestroyAllLUClasses();
 
   static void                    InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
-  static void                    SetSurfaceProperty         (surface_struct &S, string param_name, const double value);
+  static void                    SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
   static double                  GetSurfaceProperty         (const surface_struct &S, string param_name);
 
   static void                    SummarizeToScreen();
@@ -231,7 +231,7 @@ public:/*-------------------------------------------------------*/
   string                   GetTag() const;
   const terrain_struct    *GetTerrainStruct() const;
   double                   GetTerrainProperty(string param_name) const;
-  void                     SetTerrainProperty(string &param_name, const double &value);
+  void                     SetTerrainProperty(const string &param_name, const double &value);
 
   //routines
   void AutoCalculateTerrainProps(const terrain_struct &Ttmp, const terrain_struct &Tdefault);
@@ -242,7 +242,7 @@ public:/*-------------------------------------------------------*/
   static void                    DestroyAllTerrainClasses();
 
   static void                    InitializeTerrainProperties(terrain_struct &T, bool is_template);
-  static void                    SetTerrainProperty(terrain_struct &T, string  param_name, const double value);
+  static void                    SetTerrainProperty(terrain_struct &T, const string  param_name, const double value);
   static double                  GetTerrainProperty(const terrain_struct &T, string param_name);
 
   static void                    SummarizeToScreen();

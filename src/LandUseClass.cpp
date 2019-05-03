@@ -388,7 +388,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CLandUseClass::SetSurfaceProperty(string       &param_name,
+void  CLandUseClass::SetSurfaceProperty(const string &param_name,
                                         const double &value)
 {
   SetSurfaceProperty(S,param_name,value);
@@ -400,7 +400,7 @@ void  CLandUseClass::SetSurfaceProperty(string       &param_name,
 /// \param value [in] Value of parameter to be set
 //
 void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
-                                        string       param_name,
+                                        const string    param_name,
                                         const double value)
 {
   string name;

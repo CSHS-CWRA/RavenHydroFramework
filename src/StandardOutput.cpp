@@ -137,6 +137,8 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   int i,j,p;
   string tmpFilename;
 
+  if(!Options.silent) { cout<<"  Writing Output File Headers..."<<endl; }
+
   if (Options.output_format==OUTPUT_STANDARD)
   {
 
@@ -1151,7 +1153,7 @@ void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time,
 {
   if (Options.pavics)
   {
-    ofstream PROGRESS((Options.output_dir+"Raven_progress.txt").c_str());
+    ofstream PROGRESS((Options.main_output_dir+"Raven_progress.txt").c_str());
     if (PROGRESS.fail()){
       ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
     }
@@ -1190,7 +1192,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
     cout <<"    rvi filename: "<<Options.rvi_filename<<endl;
-    cout <<"Output Directory: "<<Options.output_dir  <<endl;
+    cout <<"Output Directory: "<<Options.main_output_dir  <<endl;
     cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<SBdisablecount<<" disabled)"<<endl;
     cout <<"          # HRUs: "<<GetNumHRUs()        << " ("<<disablecount<<" disabled)"<<endl;
     cout <<"        # Gauges: "<<GetNumGauges()      <<endl;
@@ -1908,7 +1910,7 @@ void PrepareOutputdirectory(const optStruct &Options)
     mkdir(Options.output_dir.c_str(), 0777);
 #endif
   }
-  g_output_directory=Options.output_dir;//necessary evil
+  g_output_directory=Options.main_output_dir;//necessary evil
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1932,7 +1934,7 @@ string GetDirectoryName(const string &fname)
 ///       if filename = something.txt         and relfile= c:/temp/myfile.rvi,  returns c:/temp/something.txt
 ///
 ///       relative path of reference file is adopted
-///       if filename = something.txt         and relfile= ../dir/myfile.rvi,   returns ../dir/myfile.rvi
+///       if filename = something.txt         and relfile= ../dir/myfile.rvi,   returns ../dir/something.txt
 ///       
 ///       if path of reference file is same as file, then nothing changes
 ///       if filename = ../temp/something.txt and relfile= ../temp/myfile.rvi,  returns ../temp/something.txt

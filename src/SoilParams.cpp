@@ -91,7 +91,7 @@ double CSoilClass::CalcSoilThermCond(const double                       &sat_liq
   double p       =S.porosity;
   double rhob=S.bulk_density;
 
-  //dry soil conductivity
+  //dry soil conductivity [W/m/K]
   dry_cond=(0.135*rhob+64.7)/(2700-0.947*rhob); //CLM manual eqn. 6.62
 
   //saturated conductivity of water, ice & soil

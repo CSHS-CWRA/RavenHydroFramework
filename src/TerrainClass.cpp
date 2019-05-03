@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -157,7 +157,7 @@ void CTerrainClass::InitializeTerrainProperties(terrain_struct &T, bool is_templ
 /// \param param_name [in] Parameter identifier
 /// \param value [in] Value of parameter to be set
 //
-void  CTerrainClass::SetTerrainProperty(string       &param_name,
+void  CTerrainClass::SetTerrainProperty(const string &param_name,
                                         const double &value)
 {
   SetTerrainProperty(T,param_name,value);
@@ -169,7 +169,7 @@ void  CTerrainClass::SetTerrainProperty(string       &param_name,
 /// \param value [in] Value of parameter to be set
 //
 void  CTerrainClass::SetTerrainProperty(terrain_struct &T,
-                                        string       param_name,
+                                        const string param_name,
                                         const double value)
 {
   string name;

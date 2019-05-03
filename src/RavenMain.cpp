@@ -1,12 +1,13 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
 #include "Model.h"
 #include "UnitTesting.h"
 
+// Function Declarations------------------------------------------
 //Defined in ParseInput.cpp
 bool ParseInputFiles  (CModel      *&pModel,
                        optStruct    &Options);
@@ -15,7 +16,7 @@ void MassEnergyBalance(CModel            *pModel,
                        const optStruct   &Options,
                        const time_struct &tt);        
 
-//Local functions defined below
+//Local functions defined below main()
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
 void CheckForErrorWarnings     (bool quiet);
 bool CheckForStopfile          (const int step, const time_struct &tt);
@@ -45,14 +46,15 @@ int main(int argc, char* argv[])
 {
   double      t;
   string      filebase;
-  clock_t     t0, t1;          //computational time markers
+  clock_t     t0, t1, t2;          //computational time markers
   time_struct tt;
+  int         nEnsembleMembers;
 
   ProcessExecutableArguments(argc, argv, Options);
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.9";
+  Options.version="2.9.1";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif
@@ -72,7 +74,7 @@ int main(int argc, char* argv[])
     cout <<"============================================================"<<endl;
   }
 
-  ofstream WARNINGS((Options.output_dir+"Raven_errors.txt").c_str());
+  ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
@@ -92,59 +94,75 @@ int main(int argc, char* argv[])
       cout <<"Initializing Model..."<<endl;}
     pModel->Initialize       (Options);
     pModel->SummarizeToScreen(Options);
+    pModel->GetEnsemble()->Initialize(Options);
 
     CheckForErrorWarnings(false);
 
-    if (!Options.silent){
-      cout <<"======================================================"<<endl;
-      cout <<"Simulation Start..."<<endl;}
+    nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
+    t2=clock();
 
-    //Write initial conditions-------------------------------------
-    JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
-    pModel->RecalculateHRUDerivedParams(Options,tt);
-    pModel->UpdateHRUForcingFunctions  (Options,tt);
-    pModel->UpdateDiagnostics          (Options,tt);
-    pModel->WriteMinorOutput           (Options,tt);
-
-    //Solve water/energy balance over time--------------------------------
-    t1=clock();
-    int step=0;
-
-    for (t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
+    for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
     {
-      pModel->UpdateTransientParams      (Options,tt);
-      pModel->RecalculateHRUDerivedParams(Options,tt);
-      pModel->UpdateHRUForcingFunctions  (Options,tt);
-      pModel->UpdateDiagnostics          (Options,tt);
-
-      MassEnergyBalance(pModel,Options,tt); //where the magic happens!
-
-      pModel->IncrementCumulInput        (Options,tt);
-      pModel->IncrementCumOutflow        (Options);
-
-      JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
-      pModel->WriteMinorOutput           (Options,tt);
-      pModel->WriteProgressOutput        (Options,clock()-t1,step,int((Options.duration-TIME_CORRECTION)/Options.timestep));
-
-      if (CheckForStopfile(step,tt)){break;}
-      step++;
-    }
-
-    //Finished Solving----------------------------------------------------
-    pModel->UpdateDiagnostics (Options,tt);
-    pModel->RunDiagnostics    (Options);
-    pModel->WriteMajorOutput  ("solution",Options,tt,true);
-    pModel->CloseOutputStreams();
-
-    if (!Options.silent){
-      cout <<"======================================================"<<endl;
-      cout <<"...Simulation Complete: "   <<Options.run_name<<endl;
-      cout <<"  Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-      cout <<"                Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-      if (Options.output_dir!=""){
-      cout <<"  Output written to "        << Options.output_dir                                       <<endl;
+      pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
+      PrepareOutputdirectory(Options); //adds new output folders, if needed
+      pModel->WriteOutputFileHeaders(Options);
+      //JRC: must re-read initial conditions for ensemble mode
+      
+      if(!Options.silent) {
+        cout <<"======================================================"<<endl;
+        cout <<"Simulation Start..."<<endl;
       }
-      cout <<"======================================================"<<endl;
+      if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; }
+
+      //Write initial conditions-------------------------------------
+      JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+      pModel->RecalculateHRUDerivedParams(Options,tt);
+      pModel->UpdateHRUForcingFunctions(Options,tt);
+      pModel->UpdateDiagnostics(Options,tt);
+      pModel->WriteMinorOutput(Options,tt);
+
+      //Solve water/energy balance over time--------------------------------
+      t1=clock();
+      int step=0;
+      int nsteps=(int)ceil(Options.duration/Options.timestep);
+
+      for(t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
+      {
+        pModel->UpdateTransientParams(Options,tt);
+        pModel->RecalculateHRUDerivedParams(Options,tt);
+        pModel->UpdateHRUForcingFunctions(Options,tt);
+        pModel->UpdateDiagnostics(Options,tt);
+
+        MassEnergyBalance(pModel,Options,tt); //where the magic happens!
+
+        pModel->IncrementCumulInput(Options,tt);
+        pModel->IncrementCumOutflow(Options);
+
+        JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
+        pModel->WriteMinorOutput(Options,tt);
+        pModel->WriteProgressOutput(Options,clock()-t1,step,ceil(Options.duration/Options.timestep));
+        //pModel->WriteProgressOutput(Options,clock()-t0,step+e*nsteps,nEnsembleMembers*nsteps); //TMP DEBUG - for ensemble support
+
+        if(CheckForStopfile(step,tt)) { break; }
+        step++;
+      }
+
+      //Finished Solving----------------------------------------------------
+      pModel->UpdateDiagnostics(Options,tt);
+      pModel->RunDiagnostics(Options);
+      pModel->WriteMajorOutput("solution",Options,tt,true);
+      pModel->CloseOutputStreams();
+
+      if(!Options.silent) {
+        cout <<"======================================================"<<endl;
+        cout <<"...Simulation Complete: "   <<Options.run_name<<endl;
+        cout <<"  Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+        cout <<"                Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+        if(Options.output_dir!="") {
+          cout <<"  Output written to "        << Options.output_dir                                       <<endl;
+        }
+        cout <<"======================================================"<<endl;
+      }
     }
   }
   else
@@ -176,7 +194,9 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.rvp_filename="";
   Options.rvt_filename="";
   Options.rvc_filename="";
+  Options.rve_filename="";
   Options.output_dir  ="";
+  Options.main_output_dir="";
   Options.silent=false;
   Options.noisy =false;
 
@@ -186,7 +206,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     if (i!=argc){
       word=to_string(argv[i]);
     }
-    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (word=="-n") || (i==argc))
+    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (word=="-n") || (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -194,6 +214,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvh_filename=argument+".rvh";
         Options.rvt_filename=argument+".rvt";
         Options.rvc_filename=argument+".rvc";
+        Options.rve_filename=argument+",rve";
         argument="";
         mode=10;
       }
@@ -203,6 +224,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==4){Options.rvc_filename=argument; argument="";}
       else if (mode==5){Options.output_dir  =argument; argument="";}
       else if (mode==6){Options.run_name    =argument; argument="";}
+      else if (mode==7){Options.rve_filename=argument; argument=""; }
       if      (word=="-p"){mode=1;}
       else if (word=="-h"){mode=2;}
       else if (word=="-t"){mode=3;}
@@ -211,6 +233,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-s"){Options.silent=true; mode=10;}
       else if (word=="-n"){Options.noisy=true;  mode=10;}
       else if (word=="-r"){mode=6;}
+      else if (word=="-e"){mode=7; }
     }
     else{
       if (argument==""){argument+=word;}
@@ -224,6 +247,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvh_filename="nomodel.rvh";
     Options.rvt_filename="nomodel.rvt";
     Options.rvc_filename="nomodel.rvc";
+    Options.rve_filename="nomodel.rve";
   }
 
   // make sure that output dir has trailing '/' if not empty
@@ -234,6 +258,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     ExitGracefully("RavenMain: unable to retrieve current directory.", RUNTIME_ERR);
   }
   Options.working_dir = to_string(cCurrentPath);
+  Options.main_output_dir=Options.output_dir;
 
   // identify executable directory
   //char basePath[255] = "";
@@ -264,9 +289,9 @@ void ExitGracefully(const char *statement,exitcode code)
 
   if (code != RAVEN_OPEN_ERR){//avoids recursion problems
     ofstream WARNINGS;
-    WARNINGS.open((Options.output_dir+"Raven_errors.txt").c_str(),ios::app);
+    WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
     if (WARNINGS.fail()){
-      string message="Unable to open errors file ("+Options.output_dir+"Raven_errors.txt)";
+      string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
       ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
     }
     if (code!=SIMULATION_DONE){WARNINGS<<"ERROR : "<<statement<<endl;}
@@ -304,10 +329,10 @@ void CheckForErrorWarnings(bool quiet)
   bool     warnings_found(false);
 
   ifstream WARNINGS;
-  WARNINGS.open((Options.output_dir+"Raven_errors.txt").c_str());
+  WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){WARNINGS.close();return;}
 
-  CParser *p=new CParser(WARNINGS,Options.output_dir+"Raven_errors.txt",0);
+  CParser *p=new CParser(WARNINGS,Options.main_output_dir+"Raven_errors.txt",0);
 
   while (!(p->Tokenize(s,Len)))
   {

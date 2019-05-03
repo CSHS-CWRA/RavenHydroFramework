@@ -27,14 +27,14 @@ public:/*-------------------------------------------------------*/
   //Accessors
   static const global_struct    *GetParams();
   static double GetParameter(const string param_name);
-  static void SetGlobalProperty          (string  &param_name, const double &value);
+  static void SetGlobalProperty          (const string  &param_name, const double &value);
 
   //routines
   static void AutoCalculateGlobalParams(const global_struct &Gtmp, const global_struct &Gdefault);
 
 
   static void InitializeGlobalParameters (global_struct &G, bool is_template);
-  static void SetGlobalProperty          (global_struct &G, string  param_name, const double value);
+  static void SetGlobalProperty          (global_struct &G, const string  param_name, const double value);
   static double GetGlobalProperty        (const global_struct &G, string  param_name);
 
   static void SummarizeToScreen();

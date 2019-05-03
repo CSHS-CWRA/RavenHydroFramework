@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -25,11 +25,13 @@
 #include "Transport.h"
 #include "Diagnostics.h"
 #include "ForcingGrid.h"        ///> CForcingGrid
+#include "ModelEnsemble.h"
 
 class CHydroProcessABC;
 class CGauge;
 class CCustomOutput;
 class CTransportModel;
+class CEnsemble;
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
 /// \details Stores and organizes HRUs and basins, provides access to all
@@ -88,6 +90,7 @@ private:/*------------------------------------------------------*/
   class_change **_pClassChanges;  ///< array of pointers to class_changes
 
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
+  CEnsemble         *_pEnsemble;  ///< pointer to model ensemble
 
   //For Diagnostics Calculation
   CTimeSeriesABC **_pObservedTS;  ///< array of pointers of observation time series [size: _nObservedTS]
@@ -138,7 +141,6 @@ private:/*------------------------------------------------------*/
   void           InitializeBasinFlows (const optStruct 	 &Options);
   void         InitializeObservations (const optStruct 	 &Options);
 
-  void         WriteOutputFileHeaders (const optStruct 	 &Options);
   void      WriteEnsimStandardHeaders (const optStruct 	 &Options);
   void     WriteNetcdfStandardHeaders (const optStruct 	 &Options);
   void          WriteEnsimMinorOutput (const optStruct 	 &Options,
@@ -275,7 +277,8 @@ public:/*-------------------------------------------------------*/
                                                        const string HRUGroupName) const;
 
   const optStruct  *GetOptStruct                      () const;
-  CTransportModel  *GetTransportModel                     () const;
+  CTransportModel  *GetTransportModel                 () const;
+  CEnsemble        *GetEnsemble                       () const;
 
   void              GetParticipatingParamList         (string *aP,
                                                        class_type *aPC,
@@ -313,16 +316,23 @@ public:/*-------------------------------------------------------*/
   void    SetOutputGroup            (const CHRUGroup         *pOut              );
   void    SetNumSnowLayers          (const int                nLayers           );
 
-  void              OverrideStreamflow   (const long SBID);
+  void    OverrideStreamflow        (const long SBID);
+  void    SetEnsembleMode           (CEnsemble *pEnsemble);
 
   /*--Other Functions: mostly called by Solver--*/
   //called only once prior to simulation:
   void        Initialize                 (const optStruct &Options);
+  void        WriteOutputFileHeaders     (const optStruct &Options);
   void        GenerateGriddedPrecipVars  (const optStruct &Options);
   void        GenerateGriddedTempVars    (const optStruct &Options);
 
   //called during simulation:
-  //critical simulation routines (called once during each timestep)
+  void        UpdateParameter            (const class_type  &ctype,
+                                          const string      pname,
+                                          const string      cname,
+                                          const double      &value);
+  //called during simulation:
+  //critical simulation routines (called once during each timestep):
   void        UpdateTransientParams      (const optStruct   &Options,
                                           const time_struct &tt);
   void        UpdateHRUForcingFunctions  (const optStruct   &Options,

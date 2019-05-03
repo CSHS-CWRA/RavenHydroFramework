@@ -330,6 +330,12 @@
     <ClCompile Include="ModelParamCheck.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
+    <ClCompile Include="ModelEnsemble.cpp">
+      <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ParseEnsembleFile.cpp">
+      <Filter>Source Files\_Driver\Input Parsing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -466,6 +472,9 @@
     </ClInclude>
     <ClInclude Include="ProcessGroup.h">
       <Filter>Header Files\Hydrological Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelEnsemble.h">
+      <Filter>Header Files\Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
