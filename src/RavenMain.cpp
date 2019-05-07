@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
 
         JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
         pModel->WriteMinorOutput(Options,tt);
-        pModel->WriteProgressOutput(Options,clock()-t1,step,ceil(Options.duration/Options.timestep));
+        pModel->WriteProgressOutput(Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
         //pModel->WriteProgressOutput(Options,clock()-t0,step+e*nsteps,nEnsembleMembers*nsteps); //TMP DEBUG - for ensemble support
 
         if(CheckForStopfile(step,tt)) { break; }

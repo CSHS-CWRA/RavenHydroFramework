@@ -160,7 +160,8 @@ void CMonteCarloEnsemble::Initialize(const optStruct &Options)
 {
   CEnsemble::Initialize(Options);
   ofstream MCOUT;
-  MCOUT.open(Options.main_output_dir+"MonteCarloOutput.csv");
+  string filename=Options.main_output_dir+"MonteCarloOutput.csv";
+  MCOUT.open(filename.c_str());
   if(MCOUT.fail()) {
     string warn="CMonteCarloEnsemble::Initialize: unable to open file "+Options.main_output_dir+"MonteCarloOutput.csv for writing";
     ExitGracefully(warn.c_str(),BAD_DATA);
@@ -185,7 +186,8 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
 
   //- Update parameter values ----------------------------------
   ofstream MCOUT;
-  MCOUT.open(Options.main_output_dir+"MonteCarloOutput.csv",ios::app);
+  string filename=Options.main_output_dir+"MonteCarloOutput.csv";
+  MCOUT.open(filename.c_str(),ios::app);
   MCOUT<<e+1<<", ";
 
   double val;
@@ -284,6 +286,10 @@ void CDDSEnsemble::Initialize(const optStruct &Options) {
   {
     _BestParams[i]=_TestParams[i]=_pParamDists[i]->default_val;
   }
+  ofstream DDSOUT;
+  string filename=Options.main_output_dir+"DDSOutput.csv";
+  DDSOUT.open(filename.c_str(),ios::app);
+  DDSOUT.close();
 }
 
 void CDDSEnsemble::SetPerturbationValue(const double &perturb) {
@@ -348,7 +354,8 @@ void CDDSEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const int
     
     //write results
     ofstream DDSOUT;
-    DDSOUT.open(Options.main_output_dir+"DDSOutput.csv",ios::app);
+    string filename=Options.main_output_dir+"DDSOutput.csv";
+    DDSOUT.open(filename.c_str(),ios::app);
     DDSOUT<<e+1<<", "<<_Fbest<<",";
     DDSOUT<<endl;
     DDSOUT.close();
