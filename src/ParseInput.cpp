@@ -2107,13 +2107,14 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     case(225):  //----------------------------------------------
     {/*Abstraction of rainfall/snowmelt
-       :Abstraction [string method] PONDED_WATER DEPRESSION*/
+       :Abstraction [string method] PONDED_WATER DEPRESSION/MULTIPLE*/
       if (Options.noisy){cout <<"Rainfall/Snowmelt Abstraction Process"<<endl;}
       abstraction_type abst_type=ABST_FILL;
       if (Len<4){ImproperFormatWarning(":Abstraction",p,Options.noisy); break;}
       if      (!strcmp(s[1],"ABST_SCS"         )){abst_type=ABST_SCS;}
       else if (!strcmp(s[1],"ABST_PERCENTAGE"  )){abst_type=ABST_PERCENTAGE;}
       else if (!strcmp(s[1],"ABST_FILL"        )){abst_type=ABST_FILL;}
+      else if (!strcmp(s[1],"ABST_PDMROF"      )){abst_type=ABST_PDMROF; }
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized abstraction algorithm",BAD_DATA_WARN); break;

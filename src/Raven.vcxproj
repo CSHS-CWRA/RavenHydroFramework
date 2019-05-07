@@ -753,7 +753,6 @@
     <ClCompile Include="ParseTimeSeriesFile.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Abstraction.h" />
     <ClInclude Include="Advection.h" />
     <ClInclude Include="Albedo.h" />
     <ClInclude Include="Convolution.h" />

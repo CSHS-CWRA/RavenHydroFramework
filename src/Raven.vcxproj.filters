@@ -404,9 +404,6 @@
     <ClInclude Include="CropGrowth.h">
       <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>
-    <ClInclude Include="Abstraction.h">
-      <Filter>Header Files\Hydrological Processes</Filter>
-    </ClInclude>
     <ClInclude Include="OpenWaterEvap.h">
       <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>

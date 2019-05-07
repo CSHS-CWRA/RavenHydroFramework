@@ -23,11 +23,21 @@ CmvAbstraction::CmvAbstraction(abstraction_type absttype)
 {
   type=absttype;
 
-  CHydroProcessABC::DynamicSpecifyConnections(1);
-  //abstraction (ponded-->depression)
-  iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
-  iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
-
+  if (absttype!=ABST_PDMROF){
+    CHydroProcessABC::DynamicSpecifyConnections(1);
+    //abstraction (ponded-->depression)
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
+    iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
+  }
+  else {
+    CHydroProcessABC::DynamicSpecifyConnections(2);
+    //abstraction (ponded-->depression)
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
+    iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
+    //runoff (ponded-->surface water)
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);
+    iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -67,6 +77,12 @@ void CmvAbstraction::GetParticipatingParamList(string  *aP , class_type *aPC , i
     aP[0]="SCS_CN";                 aPC[0]=CLASS_LANDUSE;
     aP[1]="SCS_IA_FRACTION";        aPC[1]=CLASS_LANDUSE;
   }
+  else if(type==ABST_PDMROF)
+  {
+    nP=2;
+    aP[0]="PDMROF_B";               aPC[0]=CLASS_LANDUSE;
+    aP[1]="DEP_MAX";                aPC[1]=CLASS_LANDUSE;
+  }
   else
   {
     ExitGracefully("CmvAbstraction::GetParticipatingParamList: undefined abstraction algorithm",BAD_DATA);
@@ -86,6 +102,10 @@ void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_
   nSV=2;
   aSV[0]=PONDED_WATER;  aLev[0]=DOESNT_EXIST;
   aSV[1]=DEPRESSION;    aLev[1]=DOESNT_EXIST;
+  if(absttype==ABST_PDMROF) {
+    nSV=3;
+    aSV[2]=SURFACE_WATER;    aLev[2]=DOESNT_EXIST;
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -150,7 +170,29 @@ void   CmvAbstraction::GetRatesOfChange( const double                   *state_v
 
     rates[0]=max(Ia,ponded)/Options.timestep;
   }
+  //----------------------------------------------------------------------------
+  else if(type==ABST_PDMROF)
+  { //uses PDMROF algorithm from Mekonnen et al., Towards an improved land surface scheme for prairie landscapes, Journal of Hydrology 511, 2014
+    double b;          //[-] pareto front parameter
+    double dep_max;    //[mm] maximum depression storage across HRU
+    double c_max;      //[mm] maximum local storage capacity in HRU
+    double c_star;     //[mm] critical capacity, c*
+    double abstracted; //[mm] total amount abstracted
 
+    dep_max=pHRU->GetSurfaceProps()->dep_max;
+    b      =pHRU->GetSurfaceProps()->PDMROF_b;
+
+    c_max=(b+1)*dep_max;
+
+    c_star=c_max*(1.0-pow(1.0-(depression/dep_max),1.0/(b+1.0)));//addresses typo in eqn 6 of Mekonnen
+
+    //analytical evaluation of P*dt-equation 3 of Mekonnen; min() handles case where entire landscape sheds
+    abstracted=dep_max*(pow(1.0-(c_star/c_max),b+1)-pow(1.0-min(c_star+ponded,c_max)/c_max,b+1.0));
+    abstracted=min(abstracted,ponded);
+    
+    rates[0]=abstracted/Options.timestep;          //abstraction rate [PONDED->DEPRESSION]
+    rates[1]=(ponded-abstracted)/Options.timestep; //runoff rate [PONDED->SURFACE_WATER]
+  }
 }
 
 //////////////////////////////////////////////////////////////////

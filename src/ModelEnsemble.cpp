@@ -360,9 +360,15 @@ void CDDSEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const int
     DDSOUT<<endl;
     DDSOUT.close();
   }
-  if(e==_nMembers-1) {
-    //write best parameter vector?
-
+  if(e==_nMembers-1) 
+  {
+    //write best parameter vector
+    ofstream DDSOUT;
+    string filename=Options.main_output_dir+"DDSOutput.csv";
+    DDSOUT.open(filename.c_str(),ios::app);
+    DDSOUT<<"Best parameter vector"<<endl;
+    for (int k=0;k<_nParamDists;k++) {DDSOUT<<_pParamDists[k]->param_name<<"("<<_pParamDists[k]->class_group <<"), "<<_BestParams[k]<<endl; }
+    DDSOUT.close();
   }
 
 }
@@ -383,7 +389,6 @@ double CDDSEnsemble::PerturbParam(const double &x_best, //current best decision 
 {
 
   double x_new;
-
   double x_max = upperbound;
   double x_min = lowerbound;
 
@@ -393,15 +398,11 @@ double CDDSEnsemble::PerturbParam(const double &x_best, //current best decision 
   if(x_new<x_min)
   {
     x_new=x_min+(x_min-x_new); //reflect
-                               // if reflection goes past x_max then value should be x_min since 
-                               // without reflection the approach goes way past lower bound.  
-                               // This keeps x close to lower bound when x_best is close to lower bound
     if(x_new>x_max) { x_new=x_min; }
   }
   else if(x_new>x_max)
   {
     x_new=x_max-(x_new-x_max);//reflect
-
     if(x_new<x_min) { x_new=x_max; }
   }
 

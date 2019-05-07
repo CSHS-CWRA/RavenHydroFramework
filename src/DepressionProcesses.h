@@ -102,7 +102,8 @@ public:/*-------------------------------------------------------*/
 enum abstraction_type{
   ABST_PERCENTAGE, ///< Abstraction by percentage
   ABST_FILL,       ///< Fill abstraction
-  ABST_SCS         ///< Abstraction using SCS method
+  ABST_SCS,        ///< Abstraction using SCS method
+  ABST_PDMROF      ///< Abstraction using PDMROF Method (Mekkonen et al., 2014)
 };
 
 ///////////////////////////////////////////////////////////////////
