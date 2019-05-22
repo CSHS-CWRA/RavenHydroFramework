@@ -30,9 +30,9 @@ double CalculateSnowEnergyContent(const double &SWE,            //[mm]
 /// \brief Implementation of the prairie blowing snow constructor
 //
 CmvPrairieBlowingSnow::CmvPrairieBlowingSnow(pbsm_type sub_type):
-  //CHydroProcessABC(BLOWING_SNOW):
   CLateralExchangeProcessABC(BLOWING_SNOW){
-  type=sub_type;
+  _type=sub_type;
+  _nDriftConnections=0;
 
   int iSnowAge      =pModel->GetStateVarIndex(SNOW_AGE);
   int iSWE          =pModel->GetStateVarIndex(SNOW);
@@ -59,8 +59,60 @@ CmvPrairieBlowingSnow::~CmvPrairieBlowingSnow(){}
 ///////////////////////////////////////////////////////////////////
 /// \brief Function to initialize CmvPrairieBlowingSnow objects
 //
-void CmvPrairieBlowingSnow::Initialize(){
+void CmvPrairieBlowingSnow::Initialize()
+{
+  int nConn;
+  int nHRUs_sub;
 
+  int iDrift    =pModel->GetStateVarIndex(SNOW_DRIFT);
+  int iSWE      =pModel->GetStateVarIndex(SNOW);
+  int iSnowDepth=pModel->GetStateVarIndex(SNOW_DEPTH);
+  int iSnowTemp =pModel->GetStateVarIndex(SNOW_TEMP);
+
+  //sift through all HRUs, determine total number of connections
+  //--------------------------------------------------
+  nConn=0;
+  for(int p=0;p<_pModel->GetNumSubBasins();p++)
+  {
+    nHRUs_sub=_pModel->GetSubBasin(p)->GetNumHRUs();
+    nConn+=(nHRUs_sub*nHRUs_sub); //all snow can drift from all HRUs to all HRUs
+  }
+  nConn+=2*_pModel->GetNumHRUs();//handles temperature and snow depth (HRU to self)
+  DynamicSpecifyLatConnections(nConn);
+
+  //specify from/to HRU indices (k) and state variable indices (i) for all connections
+  //--------------------------------------------------
+  int kto,kfrom;
+  int q=0; //connections counter
+  for(int p=0;p<_pModel->GetNumSubBasins();p++)
+  {
+    for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+    {
+      kfrom=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
+      for(int kss=0; kss<_pModel->GetSubBasin(p)->GetNumHRUs(); kss++)
+      {
+        kto=_pModel->GetSubBasin(p)->GetHRU(kss)->GetGlobalIndex();
+        _kFrom   [q]=kfrom;
+        _kTo     [q]=kto;
+        _iFromLat[q]=iDrift;
+        _iToLat  [q]=iSWE;
+        q++;
+      }
+    }
+  }
+  _nDriftConnections=q; 
+  for(int k=0;k<_pModel->GetNumHRUs();k++)
+  {
+    _kFrom   [q]=_kTo   [q]=k;
+    _iFromLat[q]=_iToLat[q]=iSnowDepth;
+    q++;
+  }
+  for(int k=0;k<_pModel->GetNumHRUs();k++)
+  {
+    _kFrom[q]=_kTo[q]=k;
+    _iFromLat[q]=_iToLat[q]=iSnowTemp;
+    q++;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
@@ -75,16 +127,15 @@ void CmvPrairieBlowingSnow::GetParticipatingParamList(string *aP, class_type *aP
     aP[0]="VEG_DIAM";   aPC[0]=CLASS_VEGETATION;
     aP[1]="VEG_DENS";   aPC[1]=CLASS_VEGETATION;
     aP[2]="VEG_MBETA";  aPC[2]=CLASS_VEGETATION;
-    aP[3]="FETCH";      aPC[3]=CLASS_LANDUSE;
+    aP[3]="FETCH";      aPC[3]=CLASS_LANDUSE; 
     
     aP[nP]="MAX_HEIGHT";    aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="RELATIVE_HT";   aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; //JRCFLAG
+    aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; 
     aP[nP]="RELATIVE_LAI";  aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="MAX_LEAF_COND"; aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="ROUGHNESS";     aPC[nP]=CLASS_LANDUSE; nP++;
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating state variable list
@@ -112,9 +163,10 @@ void CmvPrairieBlowingSnow::GetParticipatingStateVarList(pbsm_type  stype,sv_typ
 /// \param T           [in] air temperature [C]
 /// \param snowfall    [in] snowfall [mm/d]
 /// \param Uten_Prob   [in] probability of blowing snow at ten meters height being less than Uten_prob
+//
 /// \param wind_thresh [out] threshold wind speed [m/s]
 /// \param snow_age    [out] snow age [d]
-///
+/// \return probability of blowing snow occurence
 //
 double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //snow depth, [mm]
                                                     const double &T,          //air temperature [deg C]
@@ -128,32 +180,27 @@ double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //
   double Probability(0.0);
   bool   snow_is_dry=(snow_age<REAL_SMALL);
 
-  wind_thresh=9.43+0.18*T+0.0033*T*T;    //[m/s] (overriden for wet snow)
+  wind_thresh=9.43+0.180*T+0.00330*T*T;    //[m/s] (overriden for wet snow)
+  Mean       =11.0+0.365*T+0.00706*T*T+0.91*log(snow_age*HR_PER_DAY);
+  Variance   =4.23+0.145*T+0.00196*T*T;
 
   if(snow_depth<=0.0) //no snow available
   {
     snow_age=0.0;
     return 0.0;
   }
-  else if(T<FREEZING_TEMP)
+  
+  if(T<FREEZING_TEMP)
   {
-    if(snowfall>=0.0) //with concurrent snowfall: new dry snow
-    {
-      snow_age=tstep; //[days] 
-    }
-    else if(snow_is_dry)// without concurrent snowfall: old dry snow
-    {
-      snow_age+=tstep;
-    }
-    Mean    =0.365*T+0.00706*T*T+0.91*log(snow_age*24)+11.0; //snow age in hours
-    Variance=0.145*T+0.00196*T*T+4.23;
+    if     (snowfall>=0.0){snow_age= tstep;}// with concurrent snowfall: new dry snow
+    else if(snow_is_dry  ){snow_age+=tstep;}// without concurrent snowfall: old dry snow
   }
   else if((T>=FREEZING_TEMP) || (!snow_is_dry)) //wet snow 
   {
     snow_age=0.0;
+    wind_thresh = 9.9;
     Mean=21.0;
     Variance=7.0;
-    wind_thresh = 9.9;
   }
 
   if(Uten_Prob>3.0)// wind<3 m/s too weak for dry snow transport
@@ -163,10 +210,8 @@ double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //
     while(wind<=Uten_Prob)
     {
       wind+=dw;
-      //Ugly/slow way to do this - should be able to invert probability formula
-      Probability+=(1.0/(Variance*sqrt(2.0*PI)))*(exp(-0.5*pow((wind - Mean)/Variance,2.0)))*dw;
+      Probability+=(1.0/(Variance*sqrt(2.0*PI)))*(exp(-0.5*pow((wind - Mean)/Variance,2.0)))*dw;//Ugly/slow way to do this - should be able to invert probability formula
     }
-      //1/sqrt(2.0*PI)*erf((wind - Mean)/Variance)
   }
   //cout<<"Probability "<<Probability<<" "<<Uten_Prob<<" "<<wind_thresh<<endl;
   return Probability;
@@ -188,12 +233,13 @@ double CmvPrairieBlowingSnow::ProbabilityThreshold( const double &snow_depth, //
 /// \param veg_diam [in] [m] Vegetation diameter  
 /// \param mBeta [in] [-] unitless parameter
 ///
-/// \param DriftH [out] 
-/// \param SublH [out] 
+/// \param DriftH [out] [kg/m/s]
+/// \param SublH [out] [kg/m^2/s] 
 //
 // Li L, Pomeroy JW. 1997. Probability of occurrence of blowing snow. Journal of Geophysical Research 102: 21955-21964.
 // Raupach MR, Gillette DA, Leys JF. 1993. The effect of roughness elements on wind erosion threshold. Journal of Geophysical Research 98: 3023-3029.
 // Pomeroy JW. 1988. Wind transport of snow . Ph.D. Thesis, University of Saskatchewan.
+/// JRC: Verified via comparison to CRHM code- consistent.
 //
 void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [m]
                                       const double Uthr,     // threshold wind speed [m/s]
@@ -210,7 +256,6 @@ void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [
 {
   const double REF_FETCH=300; //XD [m]
   const double ZD=0.3; //[m]
-  const double M2KAARMAN=0.16;
 
   const double C1=2.8;
   const double C2=1.6;
@@ -247,7 +292,6 @@ void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [
     // calculate sublimation & drift rate in the saltation layer
     //-------------------------------------------------------------------------
 
-    //Qsalt=C1*DENSITY_AIR*Usthr/(GRAVITY)*(Un*Un              -Usthr*Usthr);
     Qsalt  =C1*DENSITY_AIR*Usthr/(GRAVITY*C3*Ustar)*(Ustar*Ustar*RaupachTerm-Usthr*Usthr);// (should be [kg/m/s]; is [kg/m2]) Pomeroy1988 Eq. 4.20 (Eqn 2 MacDonaldEtAl2009)
     //UNITS DONT WORK OUT IN MESH CODE - DIVISION BY C3*Ustar not in Pomeroy1988    
 
@@ -283,11 +327,11 @@ void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [
     double Bd=1.0;//initial guess [m]
     double term=162.926/(Ustar*Ustar);
 
-    Bound=ZD+M2KAARMAN*(Fetch-REF_FETCH)*pow(log(Bd*term)*log(ZD*term),-0.5);// Pomeroy1988 Eq. 6.6
+    Bound=ZD+VON_KARMAN*VON_KARMAN*(Fetch-REF_FETCH)*pow(log(Bd*term)*log(ZD*term),-0.5);// Pomeroy1988 Eq. 6.6
     while(fabs(Bound-Bd)>0.001)
     {
       Bd=Bound;
-      Bound=ZD+M2KAARMAN*(Fetch-REF_FETCH)*pow(log(Bd*term)*log(ZD*term),-0.5);// Pomeroy1988 Eq. 6.9
+      Bound=ZD+VON_KARMAN*VON_KARMAN*(Fetch-REF_FETCH)*pow(log(Bd*term)*log(ZD*term),-0.5);// Pomeroy1988 Eq. 6.9
     }
     if(Fetch<REF_FETCH){ Bound=ZD; } 
 
@@ -341,8 +385,8 @@ void CmvPrairieBlowingSnow::PBSMrates(const double E_StubHt, // stubble height [
   }/*end if u>Uthr*/
 
   SublH=-min(SBsum+SBsalt,0.0); // [kg/m^2/s] 
-  DriftH=(Qsum+Qsalt);        // [kg/m/s]
-  DriftH=0.0;//TMP DEBUG
+  DriftH=(Qsum+Qsalt);          // [kg/m/s]
+  //DriftH=0.0;//TMP DEBUG
   return;
 }
 
@@ -458,7 +502,7 @@ void CmvPrairieBlowingSnow::GetRatesOfChange(const double              *state_va
 
     Prob=ProbabilityThreshold(snow_depth,F->temp_ave,snowfall,Uten_Prob,Uthresh,snow_age,Options.timestep);
 
-    Uthresh*=0.8; //JRC: From MESH code - why?
+    //Uthresh*=0.8; //JRC: From MESH code - why?
 
     if(Prob>MIN_PROB)  
     {
@@ -529,7 +573,6 @@ void CmvPrairieBlowingSnow::ApplyConstraints(const double      *state_vars,
                                              double      *rates) const
 {
   //nothing for now - constraints handled in GetRatesOfChange()
-
 }
 
 //////////////////////////////////////////////////////////////////
@@ -541,7 +584,8 @@ void CmvPrairieBlowingSnow::ApplyConstraints(const double      *state_vars,
 /// \param T         [in] [C] air temperature
 //
 /// returns sublimation/saltation rate coefficient, [1/s]
-//
+/// ***JRC: VERIFIED AGAINST CRHM Classpbsm_M::Pbsm() -issue with Lamb calculation***
+// 
 double CmvPrairieBlowingSnow::SublimRateCoefficient(const double &Mpr,   
                                                    const double &alpha, 
                                                    const double &Vsalt, 
@@ -558,6 +602,7 @@ double CmvPrairieBlowingSnow::SublimRateCoefficient(const double &Mpr,
   double sat_vap_dens=(Es*MMM)/(RR*(T+ZERO_CELSIUS));// [g/m3]?
   double Diff        =2.06e-5*pow((T+ZERO_CELSIUS)/ZERO_CELSIUS,1.75);// diffus. of w.vap. atmos. (m^2/s)
   double Lamb        =0.00063*(T+ZERO_CELSIUS+0.0673);                // therm. cond. of atm. (J/(msK))
+  //double Lamb      =0.000076843*(T+ZERO_CELSIUS) + 0.003130762; //from CRHM
 
   double Htran, Reyn,Nuss, A,B,C,DmDt,Mpm;
   Htran=0.9*PI*(Mpr*Mpr)*QSTAR;
@@ -572,8 +617,6 @@ double CmvPrairieBlowingSnow::SublimRateCoefficient(const double &Mpr,
 
   return DmDt/Mpm;
 }
-
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief weighted average of two variables v1 and v2 with weights 
@@ -593,123 +636,104 @@ double wt_average(const double &v1,const double &v2,const double &w1,const doubl
 /// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-m2/day]
 //
 void CmvPrairieBlowingSnow::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
-                                              const CHydroUnit * const *pHRUs,    
-                                              const optStruct          &Options,
-                                              const time_struct        &tt,
-                                                    double             *exchange_rates) const
+                                                const CHydroUnit * const *pHRUs,    
+                                                const optStruct          &Options,
+                                                const time_struct        &tt,
+                                                      double             *exchange_rates) const
 {
-  double stor,Afrom,Ato;
-  double to_stor,max_to_stor;
+  const double DRIFT_DENS=300.;//[kg/m3]
+  const double DRIFT_HCP =HCP_ICE*(DRIFT_DENS/DENSITY_ICE);//[MJ/m3/K]
 
-  for(int q=0; q<_nLatConnections; q++)
-  {
-    /*TMP DEBUG */
-    stor   =state_vars[_kFrom[q]][_iFromLat[q]];
-    to_stor=state_vars[_kTo  [q]][_iToLat[q]];
-    Afrom=pHRUs[_kFrom[q]]->GetArea();
-    Ato  =pHRUs[_kTo  [q]]->GetArea();
-    max_to_stor=pHRUs[_kTo  [q]]->GetStateVarMax(_iToLat[q],state_vars[_kTo[q]],Options);
+  int nHRUs     =_pModel->GetNumHRUs();
+  int nSubBasins=_pModel->GetNumSubBasins();
 
-    exchange_rates[q]=max(stor,0.0)/Options.timestep*Afrom; //[mm-m2/d]
-  }
-}
-
-
-//////////////////////////////////////////////////////////////////
-/// \brief redistributes drifting snow between HRUs in a subbasin
-/// Ported over from MESH code by Matthew MacDonald
-//
-void  RedistributeSnow(const CHydroUnit **pHRUs,
-                       const CSubBasin  **pSubBasins,
-                       const CModel      *pModel,
-                       const double     **state_vars,
-                       const optStruct   &Options)
-{
-  int nSubBasins=2;
-  const int nHRUs=100;
-  const double drift_dens=300.;//[kg/m3]
-  double drift_HCP =HCP_ICE/MJ_PER_J*drift_dens/DENSITY_ICE;
-
-  double distrib[nHRUs];       //input parameter - sum of distrib must be 1 for each subbasin
-
-  //model outputs 
-  double HTCS[nHRUs];    
-   
   //model inputs/outputs
-  double snow_density[nHRUs];//Algorithm modifies these SVs
-  double snow_liq[nHRUs];
-  double snow_depth[nHRUs];
-  double snow_temp[nHRUs];
-  double SWE[nHRUs];
-
-  int iDrift    =pModel->GetStateVarIndex(SNOW_DRIFT);
-  int iDriftTemp=pModel->GetStateVarIndex(SNODRIFT_TEMP);
+  int iDrift     =pModel->GetStateVarIndex(SNOW_DRIFT);
+  int iDriftTemp =pModel->GetStateVarIndex(SNODRIFT_TEMP);
+  int iSnowTemp  =pModel->GetStateVarIndex(SNOW_TEMP);
+  int iSnowDepth =pModel->GetStateVarIndex(SNOW_DEPTH);
+  int iSWE       =pModel->GetStateVarIndex(SNOW);
+  int iSnowLiq   =pModel->GetStateVarIndex(SNOW_LIQ);
 
   int k;
-  double area_frac;//FARE
-
+  const CSubBasin *pBasin;
+  double RemainingDrift;  //[mm SWE] 
+  double TotalDrift;      //[mm SWE]
+  double drift_tempSB;    //drifting snow temperature in basin
+  double deltaDrift;
+  double drift;
+  double area_frac;       //fractional coverage of HRU in subbasin //FARE
+  double SWE,snow_depth,snow_temp,snow_liq;
+  int q=0; //connections counter
   for(int p=0;p<nSubBasins;p++)
   {
+    pBasin=_pModel->GetSubBasin(p);
+   
+    RemainingDrift=0.0;
+    TotalDrift    =0.0;
+    drift_tempSB  =FREEZING_TEMP;
+
     //Determine total drifting snow in each subbasin (RemainingDrift) and its temperature (drift_tempSB)
-    double RemainingDrift=0.0;
-    double TotalDrift=0.0;
-    double drift_tempSB   =FREEZING_TEMP;
-    double deltaDrift;
-    for(int nn=0;nn<pSubBasins[p]->GetNumHRUs();nn++)
+    //-----------------------------------------------------------------------------------------------------
+    for(int nn=0;nn<pBasin->GetNumHRUs();nn++)
     {
-      k=pSubBasins[p]->GetHRU(nn)->GetGlobalIndex();
+      k         =pBasin->GetHRU(nn)->GetGlobalIndex();
+      area_frac =(pHRUs[k]->GetArea()/pBasin->GetBasinArea());//fractional coverage of HRU in subbasin
 
-      area_frac=(pHRUs[k]->GetArea()/pSubBasins[p]->GetBasinArea());//fractional coverage of HRU in subbasin
-
-      deltaDrift=state_vars[k][iDrift]*area_frac;
-
-      drift_tempSB=wt_average(drift_tempSB,state_vars[k][iDriftTemp],TotalDrift,deltaDrift);
-
-      TotalDrift+=deltaDrift; // total snow drift in subbasin
+      drift       =state_vars[k][iDrift];
+      deltaDrift  =drift*area_frac; //[mm SWE] average over basin
+      drift_tempSB=wt_average(drift_tempSB,drift,TotalDrift,deltaDrift); //[deg C] - calculated drifting snow temp
+      TotalDrift  +=deltaDrift; // total snow drift in subbasin
     }
     RemainingDrift=TotalDrift;
 
-    double HCPS,added,dist_k;
-    double new_energy,old_energy;
+
+    double HCPS,added,dist_k,area_k;
     int nnn;
-    for(int nn=0;nn<pSubBasins[p]->GetNumHRUs();nn++)
+    for(int nn=0;nn<pBasin->GetNumHRUs();nn++)
     {
-      //nnn=BlowingSnowSortOrder[p][nn];
-      nnn=nn;//Assumes HRUs are pre-sorted
+      //nnn=_BlowingSnowSortOrder[p][nn];
+      nnn=nn;//Assumes HRUs are pre-sorted (not needed if JRC mods below are used)
 
-      k=pSubBasins[p]->GetHRU(nnn)->GetGlobalIndex();
+      k         =pBasin->GetHRU(nnn)->GetGlobalIndex();
+      area_k    =pHRUs[k]->GetArea();
+      dist_k    =pHRUs[k]->GetSurfaceProps()->bsnow_distrib; //input parameter - sum of distrib must be 1 for each subbasin
+      area_frac =(area_k/pBasin->GetBasinArea());
+      SWE       =state_vars[k][iSWE];
+      snow_depth=state_vars[k][iSnowDepth];
+      snow_liq  =state_vars[k][iSnowLiq];
+      snow_temp =state_vars[k][iSnowDepth];
+
+      //if(nn==0) { added=max((state_vars[k][iDrift]   )*dist_k,0.0); } //First HRU in subbasin //added SWE - all in first basin falls on first basin?
+      //else      { added=max((RemainingDrift/area_frac)*dist_k,0.0); } //Not first HRU
+      added=max((TotalDrift/area_frac)*dist_k,0.0); //JRC: above should be this if all drift is to fall
+
+      //Redistribute subbasin snow drift and calculate modified snowpack properties in HRU
+      //--------------------------------------------------------------------------------------------------
+      HCPS=HCP_ICE*(SWE/snow_depth)+HCP_WATER*(snow_liq/snow_depth);
+
+      double delta_snow_temp =wt_average(snow_temp,drift_tempSB,snow_depth*HCPS,added*(DENSITY_WATER/DRIFT_DENS)*DRIFT_HCP)-snow_temp;
+      double delta_snow_depth=added*(DENSITY_WATER/DRIFT_DENS);
+      double delta_SWE       =added;
+      RemainingDrift-=added*area_frac;   // remove drift used from total available [mm SWE]
       
-      dist_k=distrib[k];//=pHRUs[k]->GetSurfaceProps()->bsnow_distrib;
-
-      area_frac=(pHRUs[k]->GetArea()/pSubBasins[p]->GetBasinArea());//fractional coverage of HRU in subbasin
-
-      old_energy=CalculateSnowEnergyContent(SWE[k],snow_depth[k],snow_liq[k],snow_temp[k]);
-
-      added=0.0;
-      if(nn==0) //First HRU in subbasin 
+      //double new_energy,old_energy;
+      // old_energy=CalculateSnowEnergyContent(SWE          ,snow_depth                 ,snow_liq,snow_temp);
+      // new_energy=CalculateSnowEnergyContent(SWE+delta_SWE,snow_depth+delta_snow_depth,snow_liq,snow_temp);
+      // HTCS[k]=(new_energy-old_energy)/Options.timestep; //Not currently used
+  
+      for(int nn=0;nn<pBasin->GetNumHRUs();nn++)
       {
-        added=max(state_vars[k][iDrift]*dist_k,0.0)/drift_dens;
+        int kk=pBasin->GetHRU(nn)->GetGlobalIndex();
+        exchange_rates[q]=(state_vars[k][iDrift]*area_k/Options.timestep)*dist_k; //rate of loss from kk Drift to k SWE, mm-m2/d - should sub to added
+        q++;
       }
-      else//Not first GRU
-      {
-         added=max(RemainingDrift*dist_k,0.0)/area_frac/drift_dens; 
-      } 
-
-      //Redistribute transport and calculate snowpack properties at subarea-level
-      HCPS=HCP_ICE/MJ_PER_J*(SWE[k]/snow_depth[k])+HCP_WATER/MJ_PER_J*(snow_liq[k]/snow_depth[k]);
-      snow_temp   [k]=wt_average(snow_temp   [k],drift_tempSB,snow_depth[k]*HCPS,added*drift_HCP);
-      snow_density[k]=wt_average(snow_density[k],drift_dens  ,snow_depth[k]     ,added          );
-      snow_depth  [k]+=added;
-      SWE         [k]+=added*(drift_dens/DENSITY_WATER);
-
-      new_energy=CalculateSnowEnergyContent(SWE[k],snow_depth[k],snow_liq[k],snow_temp[k]);
-      HTCS[k]=(new_energy-old_energy)/Options.timestep;
-
-      RemainingDrift-=added*drift_dens*area_frac;   // remove drift used from total available
+      exchange_rates[_nDriftConnections      +k]=delta_snow_temp *area_k/Options.timestep; //self-transfer C-m2/d
+      exchange_rates[_nDriftConnections+nHRUs+k]=delta_snow_depth*area_k/Options.timestep; //self-transfer
     }//end HRU loop 
   }//end subbasin loop
-  return;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief converts specific humidity (kg/kg) to relative humidity 
 // (NOT USED)

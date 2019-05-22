@@ -994,7 +994,7 @@ void CModel::AddForcingGrid  (CForcingGrid *pGrid, forcing_type typ)
   }
   else { //overwrite grid
     int f= GetForcingGridIndexFromType(typ);
-    delete [] _pForcingGrids[f];
+    delete _pForcingGrids[f];
     _pForcingGrids[f]=pGrid;
   }
 }

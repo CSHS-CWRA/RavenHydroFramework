@@ -28,7 +28,8 @@ class CmvPrairieBlowingSnow: public CLateralExchangeProcessABC
 {
 private:/*------------------------------------------------------*/
 
-  pbsm_type         type; ///< sublimation algorithm type
+  pbsm_type        _type;              ///< blowing snow algorithm type
+  int              _nDriftConnections; ///< number of drifting snow corrections (nHRU_p*nHRU_p)*nSubBasins
 
   double SublimRateCoefficient(const double &Mpr,
                                const double &alpha, 

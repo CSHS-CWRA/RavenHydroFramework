@@ -124,7 +124,7 @@ void  CmvLatFlush::GetParticipatingParamList(string *aP,class_type *aPC,int &nP)
 /// \param **pHRUs [in] array of pointers to HRUs
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Specified point at time at which this accessing takes place
-/// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-m2/day]
+/// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-km2/day]
 //
 void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
                                       const CHydroUnit * const *pHRUs,    

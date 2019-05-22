@@ -450,19 +450,19 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     
     double melt,refreeze, liq_cap;
 
-    double S    =state_var[iFrom[0]];//snow, SWE mm
+    double SWE  =state_var[iFrom[0]];//snow, SWE mm
     double SL   =state_var[iFrom[1]];//liquid snow, mm
     double SD   =state_var[iSnowDepth];//snow depth, mm
 
-    melt    =min(max(pHRU->GetForcingFunctions()->potential_melt,0.0),S/tstep); //positive, constrained by available snow
+    melt    =min(max(pHRU->GetForcingFunctions()->potential_melt,0.0),SWE/tstep); //positive, constrained by available snow
     refreeze=Ka*min(Ta-FREEZING_TEMP,0.0);//negatively valued
 
-    liq_cap=CalculateSnowLiquidCapacity(S-melt*tstep,SD,Options);
+    liq_cap=CalculateSnowLiquidCapacity(SWE-melt*tstep,SD,Options);
 
     rates[0] =max(-SL/tstep,refreeze);          //snow<-snow_liq 
     SL+=rates[0]*tstep;
-    rates[0]+=max(melt,max(liq_cap-SL,0.0)/tstep);     //melt
-    rates[1] =max(melt-(liq_cap-SL)/tstep,0.0); //overflow to soil
+    rates[0]+=min(melt,max(liq_cap-SL,0.0)/tstep);     //melt
+    rates[1] =max(melt-max(liq_cap-SL,0.0)/tstep,0.0); //overflow to soil
   }
   //------------------------------------------------------------
   else if(type==SNOBAL_CRHM_EBSM)

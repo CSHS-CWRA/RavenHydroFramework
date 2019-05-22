@@ -681,7 +681,7 @@ enum sv_type
   GROUNDWATER,             ///< [mm] Deep groundwater
   DEPRESSION,              ///< [mm] depression/surface storage
   SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
-  NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance
+  NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance (as SWE)
   SNOW_LIQ,                ///< [mm] liquid snow cover
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
@@ -694,7 +694,7 @@ enum sv_type
   // Memory variables
   CUM_INFIL,               ///< [mm] Cumulative infiltration to topsoil
   GA_MOISTURE_INIT,        ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
-  CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt
+  CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt as SWE
 
   //Temperature/Energy storage [C] or [MJ/m^2]
   FREEZING_LOSS,           ///< [MJ/m2] Energy lost during freezing (for energy balance) // \ todo[clean] - remove- not used
@@ -717,7 +717,7 @@ enum sv_type
   SNOW_DEFICIT,            ///< [mm] remaining holding capacity of snowpack (surrogate for SNOW_LIQ)
   SNOW_AGE,                ///< [d] snow age, in days
   SNODRIFT_TEMP,           ///< [C] temperature of drifting snow 
-  SNOW_DRIFT,              ///< [mm] drifting snow storage
+  SNOW_DRIFT,              ///< [mm as SWE] drifting snow storage
 
   SNOW_ALBEDO,             ///< [-] Snow Surface albedo
 
@@ -1055,6 +1055,10 @@ double      InterpolateMo(         const double      aVal[12],
 time_struct DateStringToTimeStruct(const string      sDate,
                                          string      sTime,
                                    const int         calendar);
+time_struct TimeStructFromNetCDFString(const string unit_t_str,
+                                       const string timestr,
+                                       const int calendar,
+                                             double &tshift);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
@@ -1070,6 +1074,7 @@ int         StringToCalendar(            char *cal_chars);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 bool        IsValidDateString     (const string      sDate);
+bool       IsValidNetCDFTimeString(const string unit_t_str);
 
 //Conversion Functions-------------------------------------------
 double CelsiusToFarenheit       (const double &T);

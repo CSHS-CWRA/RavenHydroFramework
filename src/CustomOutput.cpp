@@ -522,7 +522,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");
   retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);  // TODO
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);  
   retval = nc_put_att_text(_netcdf_ID, varid_time, "standard_name", strlen("time"),      "time");      HandleNetCDFErrors(retval);
   retval = nc_put_att_text(_netcdf_ID, varid_time, "long_name",     strlen("time"),      "time");      HandleNetCDFErrors(retval);
 

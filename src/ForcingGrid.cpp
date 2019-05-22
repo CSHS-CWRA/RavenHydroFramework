@@ -189,7 +189,6 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   size_t GridDim_t;             // special type for GridDims required by nc routine
   char * unit_t;                // special type for string of variable's unit     required by nc routine
   char * unit_f;                // special type for string of variable's unit     required by nc routine
-  char * calendar_t;            // special type for string of variable's calendar required by nc routine
   int    calendar;              // enum int of calendar used
   char * long_name_f;           // special type for string of variable's long name required by nc routine
   int    BytesPerTimestep;      // Memory requirement for one timestep of gridded forcing file [Bytes]
@@ -217,12 +216,12 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // Find length of dimension and store it in GridDim
   if(_is_3D) {
     // dimension x = number of columns of the grid
-    retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_x,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[0] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
     // dimension y = number of rows of the grid
-    retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_y);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_y);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_y,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[1] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
@@ -233,21 +232,21 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   }
   else {
     // dimension x = number of stations in NetCDF file
-    retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[0].c_str(),&dimid_x);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_x,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[0] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
 
     // dimension t = number of time steps in NetCDF file
-    retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_t);  HandleNetCDFErrors(retval);
+    retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_t);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[1] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
   }
 
   // Get the id of the data variable based on its name; varid will be set
-  retval = nc_inq_varid(ncid,_varname.c_str(),&varid_f);       HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(ncid,_varname.c_str(),&varid_f);         HandleNetCDFErrors(retval);
 
   // determine in which order the dimensions are in variable
-  retval = nc_inq_vardimid(ncid,varid_f,dimids_var);          HandleNetCDFErrors(retval);
+  retval = nc_inq_vardimid(ncid,varid_f,dimids_var);             HandleNetCDFErrors(retval);
 
   if(_is_3D) {
     //   if  (t,         y=lat=row, x=lon=col)   --> (2,1,0) --> (dimid_t, dimid_y, dimid_x)
@@ -256,7 +255,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     //   if  (y=lat=row, x=lon=col, t        )   --> (1,0,2) --> (dimid_y, dimid_x, dimid_t)
     //   if  (x=lon=col, t,         y=lat=row)   --> (0,2,1) --> (dimid_x, dimid_t, dimid_y)
     //   if  (x=lon=col, y=lat=row, t        )   --> (0,1,2) --> (dimid_x, dimid_y, dimid_t)
-    if((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_t)) {  // dimensions are (x,y,t)
+    if     ((dimids_var[0] == dimid_x) && (dimids_var[1] == dimid_y) && (dimids_var[2] == dimid_t)) {  // dimensions are (x,y,t)
       _dim_order = 1;
     }
     else if((dimids_var[0] == dimid_y) && (dimids_var[1] == dimid_x) && (dimids_var[2] == dimid_t)) {  // dimensions are (y,x,t)
@@ -314,39 +313,27 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   HandleNetCDFErrors(retval);
 
   unit_t[att_len] = '\0';// add string determining character
+  
+  // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS {+0000}"
   unit_t_str=to_string(unit_t);
-  // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS"
-  // -> 3rd-last character needs to be a colon
-  bool badstring(false);
-  if(att_len<15) {
-    badstring=true;
+  if(!IsValidNetCDFTimeString(unit_t_str)) 
+  {
+    cout<<"time unit string: "<<unit_t_str<<endl;
+    ExitGracefully("CForcingGrid::ForcingGridInit: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
   }
-  else {
-    colon = unit_t_str.substr(att_len-3,1);  // first dash in date
-    if(!strstr(colon.c_str(),":")) { badstring=true; }
-    colon = unit_t_str.substr(att_len-6,1);  // -> 6th-last character needs to be a colon
-    if(!strstr(colon.c_str(),":")) { badstring=true; } 
-    dash = unit_t_str.substr(att_len-12,1); // -> 12th-last character needs to be a dash
-    if(!strstr(dash.c_str(),"-")) { badstring=true; }
-    dash = unit_t_str.substr(att_len-15,1);  // -> 15th-last character needs to be a dash
-    if(!strstr(dash.c_str(),"-")) {badstring=true;}
-  }
-  if(badstring) {
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
-
+  
   // calendar attribute
   // just making sure that the string is read with proper null terminating character
-  calendar_t = (char *) malloc(2);
-  strcpy(calendar_t, "?\0");
+  //calendar_t = (char *) malloc(2);
+  //strcpy(calendar_t, "?\0");
   retval = nc_inq_attlen (ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
   HandleNetCDFErrors(retval);
-  calendar_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+  char *calendar_t = new char [att_len + 1];// allocate memory of char * to hold attribute's text
   retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
   HandleNetCDFErrors(retval);
   calendar_t[att_len] = '\0';// add string determining character
   calendar = StringToCalendar(calendar_t);
+  delete [] calendar_t;
 
   if (_is_3D) {
     ntime = _GridDims[2];
@@ -426,207 +413,61 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     }
   }
 
+  double time_shift=0;
+  time_struct tt;
   // -------------------------------
-  // delta t (in days)
+  // delta t and interval (in days)
   // -------------------------------
-  if (strstr(unit_t, "hours")) {  // if unit of time in hours: hours since 1989-01-01 00:00:00
-
-    // ---------------------------
-    // check if format is YYYY-MM-DD HH:MM:SS
-    // fill with leading zeros if necessary
-    // ---------------------------
-    unit_t_str = to_string(unit_t);
-    dash = unit_t_str.substr(16, 1);  // first dash in date
-    if ( !strstr(dash.c_str(), "-") ){
-      printf("time unit string: %s\n",unit_t_str.c_str());
-      ExitGracefully("CForcingGrid: ForcingGridInit: time unit string has weird format!",BAD_DATA);
-    }
-    dash  = unit_t_str.substr(19, 1);  // second dash in date
-    if ( !strstr(dash.c_str(), "-") ){
-      unit_t_str.insert(17,"0");
-    }
-    colon = unit_t_str.substr(25, 1);  // first colon in time
-    if ( !strstr(colon.c_str(), ":") ){
-      unit_t_str.insert(23,"0");
-    }
-    colon = unit_t_str.substr(28, 1);  // second colon in time
-    if ( !strstr(colon.c_str(), ":") ){
-      unit_t_str.insert(26,"0");
-    }
-
-    // ---------------------------
-    // set class variables
-    // ---------------------------
-    string sDate = unit_t_str.substr(12,10);
-    string sTime = unit_t_str.substr(23,8);
-    time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-    _interval   = (my_time[1] - my_time[0])/24.;
-    ExitGracefullyIf(_interval<=0,
-                     "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-
-    AddTime(tt.julian_day,tt.year,my_time[0]*(1./24.),calendar,_start_day,_start_year) ;
-
+  if (strstr(unit_t, "hours")) 
+  {  
+    tt =TimeStructFromNetCDFString(unit_t_str,"hours",calendar,time_shift);
+    _interval   = (my_time[1] - my_time[0])/HR_PER_DAY;
+    ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+    AddTime(tt.julian_day,tt.year,my_time[0]/HR_PER_DAY,calendar,_start_day,_start_year) ;
+  }
+  else if (strstr(unit_t, "days")) 
+  {  
+    tt =TimeStructFromNetCDFString(unit_t_str,"days",calendar,time_shift);
+    _interval   = (my_time[1] - my_time[0]);
+    ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+    AddTime(tt.julian_day,tt.year,my_time[0],calendar,_start_day,_start_year) ;
+  }
+  else if (strstr(unit_t, "minutes")) 
+  {  
+    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_shift);
+    _interval   = (my_time[1] - my_time[0])/MIN_PER_DAY;
+    ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+    AddTime(tt.julian_day,tt.year,my_time[0]/MIN_PER_DAY,calendar,_start_day,_start_year) ;
+  }
+  else if (strstr(unit_t, "seconds"))
+  {  
+    tt =TimeStructFromNetCDFString(unit_t_str,"seconds",calendar,time_shift);    
+    _interval   = (my_time[1] - my_time[0])/SEC_PER_DAY;
+    ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
+    AddTime(tt.julian_day,tt.year,my_time[0]/SEC_PER_DAY,calendar,_start_day,_start_year) ;
+  }
+  else{
+    ExitGracefully("CForcingGrid: ForcingGridInit: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
+  }
   /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
-     printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
-     printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
-     printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
-     printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
-     printf("ForcingGrid: tt.month:        %i\n",tt.month);
-     printf("ForcingGrid: tt.year:         %i\n",tt.year);
-     printf("ForcingGrid: my_time[0]:      %i\n",my_time[0]);
-     printf("ForcingGrid: _interval:       %f\n",_interval);*/
-
-  }
-  else
-  {
-    if (strstr(unit_t, "days")) {  // if unit of time in days: days since 1989-01-01 00:00:00
-
-      // ---------------------------
-      // check if format is YYYY-MM-DD HH:MM:SS
-      // fill with leading zeros if necessary
-      // ---------------------------
-      unit_t_str = to_string(unit_t);
-      dash = unit_t_str.substr(15, 1);  // first dash in date
-      if ( !strstr(dash.c_str(), "-") ){
-        printf("time unit string: %s\n",unit_t_str.c_str());
-        ExitGracefully("CForcingGrid: ForcingGridInit: time unit string has weird format!",BAD_DATA);
-      }
-      dash  = unit_t_str.substr(18, 1);  // second dash in date
-      if ( !strstr(dash.c_str(), "-") ){
-        unit_t_str.insert(16,"0");
-        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-      }
-      colon = unit_t_str.substr(24, 1);  // first colon in time
-      if ( !strstr(colon.c_str(), ":") ){
-        unit_t_str.insert(22,"0");
-        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-      }
-      colon = unit_t_str.substr(27, 1);  // second colon in time
-      if ( !strstr(colon.c_str(), ":") ){
-        unit_t_str.insert(25,"0");
-        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-      }
-
-      // ---------------------------
-      // set class variables
-      // ---------------------------
-      string sDate = unit_t_str.substr(11,10);
-      string sTime = unit_t_str.substr(22,8);
-      time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-      _interval   = (my_time[1] - my_time[0])/1.;
-      ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-      AddTime(tt.julian_day,tt.year,my_time[0]*(1.),calendar,_start_day,_start_year) ;
-    }
-    else {
-      if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
-
-        // ---------------------------
-        // check if format is YYYY-MM-DD HH:MM:SS
-        // fill with leading zeros if necessary
-        // ---------------------------
-        unit_t_str = to_string(unit_t);
-        dash = unit_t_str.substr(18, 1);  // first dash in date
-        if ( !strstr(dash.c_str(), "-") ){
-          printf("time unit string: %s\n",unit_t_str.c_str());
-          ExitGracefully("CForcingGrid: ForcingGridInit: time unit string has weird format!",BAD_DATA);
-        }
-        dash  = unit_t_str.substr(21, 1);  // second dash in date
-        if ( !strstr(dash.c_str(), "-") ){
-          unit_t_str.insert(19,"0");
-          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-        }
-        colon = unit_t_str.substr(27, 1);  // first colon in time
-        if ( !strstr(colon.c_str(), ":") ){
-          unit_t_str.insert(25,"0");
-          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-        }
-        colon = unit_t_str.substr(30, 1);  // second colon in time
-        if ( !strstr(colon.c_str(), ":") ){
-          unit_t_str.insert(28,"0");
-          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-        }
-
-        // ---------------------------
-        // set class variables
-        // ---------------------------
-        string sDate = unit_t_str.substr(14,10);
-        string sTime = unit_t_str.substr(25,8);
-        time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-        _interval   = (my_time[1] - my_time[0])/MIN_PER_DAY;
-        ExitGracefullyIf(_interval<=0,
-                         "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,my_time[0]/MIN_PER_DAY,calendar,_start_day,_start_year) ;
-
-        /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
-           printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
-           printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
-           printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
-           printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
-           printf("ForcingGrid: tt.month:        %i\n",tt.month);
-           printf("ForcingGrid: tt.year:         %i\n",tt.year);
-           printf("ForcingGrid: my_time[0]:      %i\n",my_time[0]);
-           printf("ForcingGrid: _interval:       %f\n",_interval);
-           printf("ForcingGrid: _start_day:      %f\n",_start_day);
-           printf("ForcingGrid: _start_year:     %d\n",_start_year); */
-
-      }
-      else
-        {
-          if (strstr(unit_t, "seconds")) {  // if unit of time in seconds: seconds since 1989-01-01 00:00:00
-
-            // ---------------------------
-            // check if format is YYYY-MM-DD HH:MM:SS
-            // fill with leading zeros if necessary
-            // ---------------------------
-            unit_t_str = to_string(unit_t);
-            dash = unit_t_str.substr(18, 1);  // first dash in date
-            if ( !strstr(dash.c_str(), "-") ){
-              printf("time unit string: %s\n",unit_t_str.c_str());
-              ExitGracefully("CForcingGrid: ForcingGridInit: time unit string has weird format!",BAD_DATA);
-            }
-            dash  = unit_t_str.substr(21, 1);  // second dash in date
-            if ( !strstr(dash.c_str(), "-") ){
-              unit_t_str.insert(19,"0");
-            }
-            colon = unit_t_str.substr(27, 1);  // first colon in time
-            if ( !strstr(colon.c_str(), ":") ){
-              unit_t_str.insert(25,"0");
-            }
-            colon = unit_t_str.substr(30, 1);  // second colon in time
-            if ( !strstr(colon.c_str(), ":") ){
-              unit_t_str.insert(28,"0");
-            }
-
-            // ---------------------------
-            // set class variables
-            // ---------------------------
-            string sDate = unit_t_str.substr(14,10);
-            string sTime = unit_t_str.substr(25,8);
-            time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-            _interval   = (my_time[1] - my_time[0])/SEC_PER_DAY;
-            ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,my_time[0]*(1.0/SEC_PER_DAY),calendar,_start_day,_start_year) ;
-
-            /* printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
-               printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
-               printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
-               printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
-               printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
-               printf("ForcingGrid: tt.month:        %i\n",tt.month);
-               printf("ForcingGrid: tt.year:         %i\n",tt.year);
-               printf("ForcingGrid: my_time[0]:         %i\n",my_time[0]);
-               printf("ForcingGrid: _interval:       %f\n",_interval);*/
-
-          }
-          ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
-        }
-    }
-  }
+  printf("ForcingGrid: sDate:           %s\n",sDate.c_str());
+  printf("ForcingGrid: sTime:           %s\n",sTime.c_str());
+  printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
+  printf("ForcingGrid: tt.day_of_month: %i\n",tt.day_of_month);
+  printf("ForcingGrid: tt.month:        %i\n",tt.month);
+  printf("ForcingGrid: tt.year:         %i\n",tt.year);
+  printf("ForcingGrid: my_time[0]:      %i\n",my_time[0]);
+  printf("ForcingGrid: _interval:       %f\n",_interval);
+  printf("ForcingGrid: _start_day:      %f\n",_start_day);
+  printf("ForcingGrid: _start_year:     %d\n",_start_year); */
   ExitGracefullyIf(_interval<=0,
                    "CForcingGrid: ForcingGridInit: negative time interval is not allowed",BAD_DATA);
 
-  if ( ForcingToString(_ForcingType) == "TEMP_DAILY_AVE" && _interval != 1.0 )
-    ExitGracefully( "CForcingGrid: ForcingGridInit: Gridded forcing 'TEMP_DAILY_AVE' must have daily timestep. Please use 'TEMP_AVE' instead (see *.rvt file).",BAD_DATA);
+  if(ForcingToString(_ForcingType) == "TEMP_DAILY_AVE" && _interval != 1.0) {
+    ExitGracefully("CForcingGrid: ForcingGridInit: Gridded forcing 'TEMP_DAILY_AVE' must have daily timestep. Please use 'TEMP_AVE' instead (see *.rvt file).",BAD_DATA);
+  }
+
+  _TimeShift+=time_shift; //JRC: must check - could be -= time_shift
 
   // -------------------------------
   // add time shift to data
@@ -686,8 +527,8 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     // inquire attributes name
     retval = nc_inq_attname(ncid, varid_f, iatt, attrib_name);
 
-    // long_name of forcing
-    if (strcmp(attrib_name,"long_name") == 0)
+    
+    if (strcmp(attrib_name,"long_name") == 0)// long_name of forcing
     {
       retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
       HandleNetCDFErrors(retval1);
@@ -696,9 +537,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
       HandleNetCDFErrors(retval1);
       long_name_f[att_len] = '\0';// add string determining character
     }
-
-    // unit of forcing
-    if (strcmp(attrib_name,"units") == 0)
+    else if (strcmp(attrib_name,"units") == 0)// unit of forcing
     {
       retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
       HandleNetCDFErrors(retval1);
@@ -814,8 +653,6 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
     _aFirstNonZeroWt[k]=0;
     _aLastNonZeroWt [k]=_nNonZeroWeightedGridCells-1;
   }
-
-
 }
 
 ///////////////////////////////////////////////////////////////////

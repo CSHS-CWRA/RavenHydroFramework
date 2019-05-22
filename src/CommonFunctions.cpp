@@ -462,6 +462,67 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
 
   return tt;
 }
+////////////////////////////////////////////////////////////////////////////
+/// \brief returns time struct corresponding to string in the following format
+/// \param unit_t_str [in] full time string from NetCDF file (e.g., 'days since YYYY-MM-dd 00:00:00 +0000')
+/// \param timestr    [in] first word of string (e.g., 'days')
+/// \param calendar   [in] enumerated calendar type
+/// \param tshift    [out] time shift from GMT, in days
+/// \return Raven Time structure equivalent of passed date and time, time shift if applicable
+//
+time_struct TimeStructFromNetCDFString(const string unit_t_str,const string timestr,const int calendar, double &tshift)
+{
+  string dash,colon,tmp;
+  tmp=unit_t_str;
+  tshift=0.0;
+  int start=strlen(timestr.c_str());
+  start+=7; //first char of year YYYY (7=length(' since '))
+  // ---------------------------
+  // check if format is hours since YYYY-MM-DD HH:MM:SS, fill with leading zeros if necessary
+  // Y  Y  Y  Y  -  M  M  -  d  d  _  0  0  :  0  0  :  0  0  _  +  0  0  0  0 
+  // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+  // ---------------------------
+  dash = tmp.substr(start+4,1);  // first dash in date
+  if(!strstr(dash.c_str(),"-")) 
+  {
+    printf("time unit string: %s\n",tmp.c_str());
+    ExitGracefully("CommonFunctions:TimeStructFromNetCDFString: time unit string has weird format!",BAD_DATA);
+  }
+  if(!strstr(tmp.substr(start+7 ,1).c_str(),"-")){tmp.insert(start+5 ,"0");} // second dash in date - fixes YYYY-M-dd
+  if(!strstr(tmp.substr(start+10,1).c_str()," ")){tmp.insert(start+8 ,"0");} // second dash in date - fixes YYYY-MM-d
+  if(!strstr(tmp.substr(start+13,1).c_str(),":")){tmp.insert(start+11,"0");} // first colon in time  - fixes 1:00:00
+  if(!strstr(tmp.substr(start+16,1).c_str(),":")){tmp.insert(start+14,"0");} // second colon in time - fixes 11:0:00 (?)
+
+  string sDate = tmp.substr(start   ,10); //YYYY-MM-DD
+  string sTime = tmp.substr(start+11,8);  //HH:MM:SS
+
+  if(strstr(tmp.substr(start+4,1).c_str(),"+")) {
+    tshift=(double)(s_to_i(tmp.substr(start+21,4).c_str()))/HR_PER_DAY; //time shift, in days
+  }
+
+  return DateStringToTimeStruct(sDate,sTime,calendar);
+}
+////////////////////////////////////////////////////////////////////////////
+/// \brief returns time struct corresponding to string in the following format
+/// \param unit_t_str [in] full time string from NetCDF file (e.g., '[days/minutes/hours] since YYYY-MM-dd 00:00:00 [+0000]')
+/// \return true if string is valid
+//
+bool IsValidNetCDFTimeString(const string time_string)
+{
+  int att_len=strlen(time_string.c_str());
+  bool badstring(false);
+  if(att_len<15) {return false;}
+  int subtract=0;
+
+  if(!strstr(time_string.substr(att_len-6,2).c_str()," +")) { subtract=6; } //contains ' +0000' appendage, shift by 6 chars
+
+  if(!strstr(time_string.substr(att_len-3-subtract,1).c_str(),":")) { badstring=true; } // first dash in date
+  if(!strstr(time_string.substr(att_len-6-subtract,1).c_str(),":")) { badstring=true; }// -> 6th-last character needs to be a colon
+  if(!strstr(time_string.substr(att_len-12-subtract,1).c_str(),"-")) { badstring=true; }// -> 12th-last character needs to be a dash
+  if(!strstr(time_string.substr(att_len-15-subtract,1).c_str(),"-")) { badstring=true; } // -> 15th-last character needs to be a dash
+
+  return badstring;
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief calculates time difference, in days, between two specified dates
 /// \details positive if day 2 is after day 1
@@ -615,6 +676,7 @@ int StringToCalendar(char *cal_chars)
   }
   return -1;  // just to avoid compiler warning of void function return
 }
+
 
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Round the timestep to the nearest fractional day

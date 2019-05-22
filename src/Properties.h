@@ -244,6 +244,7 @@ struct surface_struct
   double conv_melt_mult;    ///< [-]       convection melt multiplier
   double cond_melt_mult;    ///< [-]       condensation melt multiplier
   double rain_melt_mult;    ///< [-]       rain melt multiplier
+  double bsnow_distrib;     ///< [-]       blowing snow distribution parameter 
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G

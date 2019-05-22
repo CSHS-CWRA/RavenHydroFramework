@@ -248,10 +248,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     code=0;   
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                  {code=-1; }
-    else if  (!strcmp(s[0],"*"                       )){code=-2; }//comment
-    else if  (!strcmp(s[0],"%"                       )){code=-2; }//comment
-    else if  (!strcmp(s[0],"#"                       )){code=-2; }//comment
-    else if  (s[0][0]=='#')                            {code=-2; }//comment
+    else if  (IsComment(s[0],Len))                     {code=-2; }//comment
     else if  (!strcmp(s[0],":RedirectToFile"         )){code=-3; }//redirect to secondary file
     else if  (!strcmp(s[0],":End"                    )){code=-4; }//stop reading
     //--------------------SOIL PARAMS --------------------------

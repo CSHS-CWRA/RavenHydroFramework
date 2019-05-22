@@ -1048,6 +1048,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_energy    =true;
       Options.write_forcings  =true;
       Options.write_channels  =true;
+      WriteWarning("Debug mode is ON: this will significantly slow down model progress. Note that ':DebugMode no' command is deprecated",Options.noisy);
       break;
     }
     case(51):  //--------------------------------------------

@@ -1181,7 +1181,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   int    varid_t;               // id of time variable
   int    varid_f;               // id of VarNameNC variable
   char * unit_t;                // special type for string of variable's unit     required by nc routine
-  char * calendar_t;            // special type for string of variable's calendar required by nc routine
   size_t att_len;               // length of the attribute's text
   int    calendar;              // enum int of calendar
   string dash;                  // to check format of time unit string
@@ -1236,50 +1235,35 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   strcpy(unit_t, "?\0");
   retval = nc_inq_attlen (ncid, varid_t, "units", &att_len);// inquire length of attribute's text
   HandleNetCDFErrors(retval);
+
   unit_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
   retval = nc_get_att_text(ncid, varid_t, "units", unit_t);// read attribute text
   HandleNetCDFErrors(retval);
   unit_t[att_len] = '\0';// add string determining character
   unit_t_str = to_string(unit_t);
+
   //         check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS"
   //         -> 3rd-last character needs to be a colon
-  colon = unit_t_str.substr(att_len-3, 1);  // first dash in date
-  if ( !strstr(colon.c_str(), ":") ){
+  if(!IsValidNetCDFTimeString(unit_t_str)) {
     printf("time unit string: %s\n",unit_t_str.c_str());
     ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
   }
-  //         -> 6th-last character needs to be a colon
-  colon = unit_t_str.substr(att_len-6, 1);  // first dash in date
-  if ( !strstr(colon.c_str(), ":") ){
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
-  //         -> 12th-last character needs to be a dash
-  dash = unit_t_str.substr(att_len-12, 1);  // first dash in date
-  if ( !strstr(dash.c_str(), "-") ){
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
-  //         -> 15th-last character needs to be a dash
-  dash = unit_t_str.substr(att_len-15, 1);  // first dash in date
-  if ( !strstr(dash.c_str(), "-") ){
-    printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
-  }
+  
   //     (c) calendar
-  calendar_t = (char *) malloc(2);
-  strcpy(calendar_t, "?\0");
   retval = nc_inq_attlen (ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
   HandleNetCDFErrors(retval);
-  calendar_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
+  char * calendar_t = new char[att_len + 1];// allocate memory of char * to hold attribute's text
   retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
   HandleNetCDFErrors(retval);
   calendar_t[att_len] = '\0';// add string determining character
   calendar = StringToCalendar(calendar_t);
+  delete [] calendar_t;
+
   //     (d) allocate array for time values
   int *time=NULL;
   time=new int [ntime];
   ExitGracefullyIf(time==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF",OUT_OF_MEMORY);
+
   //     (e) time values
   retval = nc_get_var_int(ncid,varid_t,&time[0]);
   HandleNetCDFErrors(retval);
@@ -1301,150 +1285,38 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (5) determine tstep, start_day and start_yr depending on time unit
   // -------------------------------
-  if (strstr(unit_t, "hours")) {  // if unit of time in hours: hours since 1989-01-01 00:00:00
-
-    // ---------------------------
-    // check if format is YYYY-MM-DD HH:MM:SS
-    // fill with leading zeros if necessary
-    // ---------------------------
-    unit_t_str = to_string(unit_t);
-    dash = unit_t_str.substr(16, 1);  // first dash in date
-    if ( !strstr(dash.c_str(), "-") ){
-      printf("time unit string: %s\n",unit_t_str.c_str());
-      ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
-    }
-    dash  = unit_t_str.substr(19, 1);  // second dash in date
-    if ( !strstr(dash.c_str(), "-") ){
-      unit_t_str.insert(17,"0");
-    }
-    colon = unit_t_str.substr(25, 1);  // first colon in time
-    if ( !strstr(colon.c_str(), ":") ){
-      unit_t_str.insert(23,"0");
-    }
-    colon = unit_t_str.substr(28, 1);  // second colon in time
-    if ( !strstr(colon.c_str(), ":") ){
-      unit_t_str.insert(26,"0");
-    }
-    string sDate = unit_t_str.substr(12,10);
-    string sTime = unit_t_str.substr(23,8);
-    time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);  // <--- Calendar from NetcdF file
-    tstep   = (time[1] - time[0])/24.;
-    ExitGracefullyIf(tstep<=0,
-                     "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-    AddTime(tt.julian_day,tt.year,time[0]*(1./24.),calendar,start_day,start_yr) ;
-
+  double time_shift;
+  time_struct tt;
+  unit_t_str = to_string(unit_t);
+  if (strstr(unit_t, "hours")) 
+  { 
+    tt =TimeStructFromNetCDFString(unit_t_str,"hours",calendar,time_shift);
+    tstep   = (time[1] - time[0])/HR_PER_DAY;
+    AddTime(tt.julian_day,tt.year,time[0]/HR_PER_DAY+time_shift,calendar,start_day,start_yr);
   }
-  else
+  else if (strstr(unit_t, "days")) 
+  {  
+    tt =TimeStructFromNetCDFString(unit_t_str,"days",calendar,time_shift);
+    tstep   = (time[1] - time[0]);
+    AddTime(tt.julian_day,tt.year,time[0]+time_shift,calendar,start_day,start_yr) ;
+  }
+  else if (strstr(unit_t, "minutes")) 
+  { 
+    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_shift);
+    tstep   = (time[1] - time[0])/MIN_PER_DAY;
+    AddTime(tt.julian_day,tt.year,time[0]/MIN_PER_DAY+time_shift,calendar,start_day,start_yr) ;
+  }
+  else if(strstr(unit_t,"seconds"))
   {
-    if (strstr(unit_t, "days")) {  // if unit of time in days: days since 1989-01-01 00:00:00
-
-      // ---------------------------
-      // check if format is YYYY-MM-DD HH:MM:SS
-      // fill with leading zeros if necessary
-      // ---------------------------
-      unit_t_str = to_string(unit_t);
-      dash = unit_t_str.substr(15, 1);  // first dash in date
-      if ( !strstr(dash.c_str(), "-") ){
-        printf("time unit string: %s\n",unit_t_str.c_str());
-        ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
-      }
-      dash  = unit_t_str.substr(18, 1);  // second dash in date
-      if ( !strstr(dash.c_str(), "-") ){
-        unit_t_str.insert(16,"0");
-        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-      }
-      colon = unit_t_str.substr(24, 1);  // first colon in time
-      if ( !strstr(colon.c_str(), ":") ){
-        unit_t_str.insert(22,"0");
-        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-      }
-      colon = unit_t_str.substr(27, 1);  // second colon in time
-      if ( !strstr(colon.c_str(), ":") ){
-        unit_t_str.insert(25,"0");
-        //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-      }
-      string sDate = unit_t_str.substr(11,10);
-      string sTime = unit_t_str.substr(22,8);
-      time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-      tstep   = (time[1] - time[0])/1.;
-      ExitGracefullyIf(tstep<=0, "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-      AddTime(tt.julian_day,tt.year,time[0]*(1.),calendar,start_day,start_yr) ;
-    }
-    else {
-      if (strstr(unit_t, "minutes")) {  // if unit of time in minutes: minutes since 1989-01-01 00:00:00
-
-        // ---------------------------
-        // check if format is YYYY-MM-DD HH:MM:SS
-        // fill with leading zeros if necessary
-        // ---------------------------
-        unit_t_str = to_string(unit_t);
-        dash = unit_t_str.substr(18, 1);  // first dash in date
-        if ( !strstr(dash.c_str(), "-") ){
-          printf("time unit string: %s\n",unit_t_str.c_str());
-          ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
-        }
-        dash  = unit_t_str.substr(21, 1);  // second dash in date
-        if ( !strstr(dash.c_str(), "-") ){
-          unit_t_str.insert(19,"0");
-          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-        }
-        colon = unit_t_str.substr(27, 1);  // first colon in time
-        if ( !strstr(colon.c_str(), ":") ){
-          unit_t_str.insert(25,"0");
-          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-        }
-        colon = unit_t_str.substr(30, 1);  // second colon in time
-        if ( !strstr(colon.c_str(), ":") ){
-          unit_t_str.insert(28,"0");
-          //if (Options.noisy){ printf("corrected time unit string: %s\n",unit_t_str.c_str()); }
-        }
-        string sDate = unit_t_str.substr(14,10);
-        string sTime = unit_t_str.substr(25,8);
-        time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-        tstep   = (time[1] - time[0])/24./60.;
-        ExitGracefullyIf(tstep<=0,
-                         "CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-        AddTime(tt.julian_day,tt.year,time[0]*(1.0/MIN_PER_DAY),calendar,start_day,start_yr) ;
-
-      }
-      else
-        {
-          if (strstr(unit_t, "seconds")) {  // if unit of time in seconds: seconds since 1989-01-01 00:00:00
-
-            // ---------------------------
-            // check if format is YYYY-MM-DD HH:MM:SS
-            // fill with leading zeros if necessary
-            // ---------------------------
-            unit_t_str = to_string(unit_t);
-            dash = unit_t_str.substr(18, 1);  // first dash in date
-            if ( !strstr(dash.c_str(), "-") ){
-              printf("time unit string: %s\n",unit_t_str.c_str());
-              ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string has weird format!",BAD_DATA);
-            }
-            dash  = unit_t_str.substr(21, 1);  // second dash in date
-            if ( !strstr(dash.c_str(), "-") ){
-              unit_t_str.insert(19,"0");
-            }
-            colon = unit_t_str.substr(27, 1);  // first colon in time
-            if ( !strstr(colon.c_str(), ":") ){
-              unit_t_str.insert(25,"0");
-            }
-            colon = unit_t_str.substr(30, 1);  // second colon in time
-            if ( !strstr(colon.c_str(), ":") ){
-              unit_t_str.insert(28,"0");
-            }
-            string sDate = unit_t_str.substr(14,10);
-            string sTime = unit_t_str.substr(25,8);
-            time_struct tt = DateStringToTimeStruct(sDate, sTime, calendar);
-            tstep   = (time[1] - time[0])/24./60./60.;
-            ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
-            AddTime(tt.julian_day,tt.year,time[0]*(1.0/SEC_PER_DAY),calendar,start_day,start_yr) ;
-
-          }
-          ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
-        }
-    }
+    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_shift);
+    tstep   = (time[1] - time[0])/SEC_PER_DAY;
+    AddTime(tt.julian_day,tt.year,time[0]/SEC_PER_DAY+time_shift,calendar,start_day,start_yr);
   }
+  else{
+     ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
+  }
+  ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
+
 
   // if data are period ending need to shift by timestep
   if (shift_to_per_ending) {

@@ -106,7 +106,6 @@ int main(int argc, char* argv[])
       pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
       PrepareOutputdirectory(Options); //adds new output folders, if needed
       pModel->WriteOutputFileHeaders(Options);
-      //JRC: must re-read initial conditions for ensemble mode
       
       if(!Options.silent) {
         cout <<"======================================================"<<endl;

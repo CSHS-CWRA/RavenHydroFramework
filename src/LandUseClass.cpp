@@ -313,7 +313,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.gamma_shape,Stmp.gamma_shape,Sdefault.gamma_shape,needed,"GAMMA_SHAPE");
   SetSpecifiedValue(S.gamma_shape2,Stmp.gamma_shape2,Sdefault.gamma_shape2,needed,"GAMMA_SHAPE2");
   SetSpecifiedValue(S.HMETS_runoff_coeff,Stmp.HMETS_runoff_coeff,Sdefault.HMETS_runoff_coeff,needed,"HMETS_RUNOFF_COEFF");
-  
+  SetSpecifiedValue(S.bsnow_distrib,Stmp.bsnow_distrib,Sdefault.bsnow_distrib,needed,"BSNOW_DISTRIB");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -383,6 +383,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.gamma_scale2      =DefaultParameterValue(is_template,false);//
   S.gamma_shape2      =DefaultParameterValue(is_template,false);//
   S.HMETS_runoff_coeff=DefaultParameterValue(is_template,false);//0.4
+  S.bsnow_distrib     =DefaultParameterValue(is_template,false);//0.4
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -432,6 +433,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("CONV_MELT_MULT"		      )){S.conv_melt_mult = value; }
   else if (!name.compare("COND_MELT_MULT"		      )){S.cond_melt_mult = value; }
   else if (!name.compare("RAIN_MELT_MULT"		      )){S.rain_melt_mult = value; }
+  else if (!name.compare("BSNOW_DISTRIB"          )){S.bsnow_distrib = value; }
   else if (!name.compare("CC_DECAY_COEFF"         )){S.CC_decay_coeff=value;}
   else if (!name.compare("PARTITION_COEFF"        )){S.partition_coeff=value;}
   else if (!name.compare("SCS_CN"                 )){S.SCS_CN=value;}
@@ -508,6 +510,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("CONV_MELT_MULT"		      )){return S.conv_melt_mult; }
   else if (!name.compare("COND_MELT_MULT"		      )){return S.cond_melt_mult; }
   else if (!name.compare("RAIN_MELT_MULT"		      )){return S.rain_melt_mult; }
+  else if (!name.compare("BSNOW_DISTRIB"          )){return S.bsnow_distrib; }
   else if (!name.compare("GLAC_STORAGE_COEFF"     )){return S.glac_storage_coeff;}
   else if (!name.compare("HBV_GLACIER_AG"         )){return S.HBV_glacier_Ag;}
   else if (!name.compare("CC_DECAY_COEFF"         )){return S.CC_decay_coeff;}
