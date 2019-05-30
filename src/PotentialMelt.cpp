@@ -40,7 +40,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return Ma*(F->temp_daily_ave-melt_temp);
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_HBV)
+  else if ((Options.pot_melt==POTMELT_HBV) || (Options.pot_melt==POTMELT_HBV_ROS))
   {
     const surface_struct *surf=pHRU->GetSurfaceProps();
 
@@ -67,6 +67,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
 
     //aspect corrections
     Ma*=max(1.0-AM*slope_corr*cos(pHRU->GetAspect()),0.0);//north facing slopes (aspect=0) have lower melt rates
+
+    double rain_energy(0.0);
+    if(Options.pot_melt==POTMELT_HBV_ROS) {
+      double ROS_mult= pHRU->GetSurfaceProps()->rain_melt_mult;  //rain melt multiplier
+      rain_energy=ROS_mult*SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*(F->precip*(1.0-F->snow_frac)); //[mm/d]
+    }
 
     return Ma*(F->temp_daily_ave-melt_temp);
   }

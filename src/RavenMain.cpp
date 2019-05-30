@@ -29,7 +29,7 @@ static CModel      *pModel;
 string g_output_directory="";
 bool   g_suppress_warnings=false;
 bool   g_suppress_zeros=false;
-double g_debug_vars[5];
+double g_debug_vars[10];
 
 static string RavenBuildDate(__DATE__);
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.9.1";
+  Options.version="2.9.2";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif

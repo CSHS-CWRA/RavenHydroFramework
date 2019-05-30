@@ -264,7 +264,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     ofstream RES_MB;
     string name;
-    cout<<"RESERVOIR"<<endl;
     tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
     RES_MB.open(tmpFilename.c_str());
     if (RES_MB.fail()){
@@ -511,11 +510,12 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   if (Options.debug_mode)
   {
     ofstream DEBUG;
-    DEBUG.open("raven_debug.csv");
+    tmpFilename=FilenamePrepare("raven_debug.csv",Options);
+    DEBUG.open(tmpFilename.c_str());
     if (DEBUG.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    DEBUG<<"time[d],date,hour,debug1,debug2,debug3,debug4,debug5"<<endl;
+    DEBUG<<"time[d],date,hour,debug1,debug2,debug3,debug4,debug5,debug6,debug7,debug8,debug9,debug10"<<endl;
     DEBUG.close();
   }
 
@@ -1007,10 +1007,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     if (Options.debug_mode)
     {
       ofstream DEBUG;
-      DEBUG.open("raven_debug.csv",ios::app);
-
+      tmpFilename=FilenamePrepare("raven_debug.csv",Options);
+      DEBUG.open(tmpFilename.c_str(),ios::app);
       DEBUG<<t<<","<<thisdate<<","<<thishour;
-      for(int i=0;i<5;i++){DEBUG<<","<<g_debug_vars[i];}
+      for(int i=0;i<10;i++){DEBUG<<","<<g_debug_vars[i];}
       DEBUG<<endl;
       DEBUG.close();
     }

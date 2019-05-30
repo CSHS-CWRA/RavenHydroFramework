@@ -387,6 +387,15 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
   }
+  else if(Options.pot_melt==POTMELT_HBV_ROS)
+  {
+    aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="RAIN_MELT_MULT";    aPC[nP]=CLASS_LANDUSE; nP++;
+  }
   else if(Options.pot_melt==POTMELT_UBCWM)
   {
     aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
@@ -435,7 +444,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   }
   else if(Options.wind_velocity==WINDVEL_UBCWM)
   {
-    aP[nP]="FOREST_COVERAGE"; aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
+    aP[nP]="FOREST_COVERAGE"; aPC[nP]=CLASS_LANDUSE; nP++; 
     aP[nP]="UBC_P0TEDL"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_P0TEDU"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_MAX_RANGE_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;

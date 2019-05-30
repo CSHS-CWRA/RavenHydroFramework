@@ -282,12 +282,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":PrecipIceptFract"          )){code=30; }
     else if  (!strcmp(s[0],":OroTempCorrect"            )){code=31; }
     else if  (!strcmp(s[0],":OroPrecipCorrect"          )){code=32; }
-    else if  (!strcmp(s[0],":AquiferLayers"             )){code=33; }//AFTER SoilModel Commmand
+    else if  (!strcmp(s[0],":AquiferLayers"             )){code=33; }//AFTER :SoilModel Commmand
     else if  (!strcmp(s[0],":PotentialMeltMethod"       )){code=34; }
     else if  (!strcmp(s[0],":SubdailyMethod"            )){code=35; }
     else if  (!strcmp(s[0],":SWCanopyCorrect"           )){code=36; }
     else if  (!strcmp(s[0],":SWCloudCorrect"            )){code=37; }
-    else if  (!strcmp(s[0],":MultilayerSnow"            )){code=39; }//AFTER SoilModel Commmand
+    else if  (!strcmp(s[0],":MultilayerSnow"            )){code=39; }//AFTER :SoilModel Commmand
     else if  (!strcmp(s[0],":RetainUBCWMBugs"           )){code=40; }
     else if  (!strcmp(s[0],":EndDate"                   )){code=41; }
     else if  (!strcmp(s[0],":RechargeMethod"            )){code=42; }
@@ -337,8 +337,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":OutputConstituentMass"     )){code=89; }
     else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
     //-----------------------------------------------------------
-    else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }
-    else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }
+    else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
+    else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
     else if  (!strcmp(s[0],":DisableHRUGroup"           )){code=82; } 
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":Alias"                     )){code=98; }
@@ -913,6 +913,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"POTMELT_DD_RAIN"   )){Options.pot_melt=POTMELT_DD_RAIN;}
       else if (!strcmp(s[1],"POTMELT_UBCWM"     )){Options.pot_melt=POTMELT_UBCWM;}
       else if (!strcmp(s[1],"POTMELT_HBV"       )){Options.pot_melt=POTMELT_HBV;}
+      else if (!strcmp(s[1],"POTMELT_HBV_ROS"   )){Options.pot_melt=POTMELT_HBV_ROS; }
       else if (!strcmp(s[1],"POTMELT_DATA"      )){Options.pot_melt=POTMELT_DATA;}
       else if (!strcmp(s[1],"UBC"               )){Options.pot_melt=POTMELT_UBCWM;}
       else if (!strcmp(s[1],"HBV"               )){Options.pot_melt=POTMELT_HBV;}
@@ -1341,6 +1342,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:DefineHRUGroup */ //AFTER SoilModel Command and HydroProcesses commands
       if (Options.noisy) {cout <<"Defining HRU Group"<<endl;}
       if (Len<2){ImproperFormatWarning(":DefineHRUGroup",p,Options.noisy); break;}
+      if(pModel==NULL) {
+        ExitGracefully(":DefineHRUGroup command must be after :SoilModel command in .rvi file.",BAD_DATA_WARN); break;
+      }
       CHRUGroup *pHRUGrp=NULL;
       pHRUGrp=new CHRUGroup(s[1],pModel->GetNumHRUGroups());
       pModel->AddHRUGroup(pHRUGrp);
@@ -1350,6 +1354,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:DefineHRUGroups */ //AFTER SoilModel Command and HydroProcesses commands
       if (Options.noisy) {cout <<"Defining HRU Groups"<<endl;}
       if (Len<2){ImproperFormatWarning(":DefineHRUGroups",p,Options.noisy); break;}
+      if(pModel==NULL) {
+        ExitGracefully(":DefineHRUGroups command must be after :SoilModel command in .rvi file.",BAD_DATA_WARN); break;
+      }
       CHRUGroup *pHRUGrp=NULL;
       for (int i=1;i<Len;i++){
         pHRUGrp=new CHRUGroup(s[i],pModel->GetNumHRUGroups());

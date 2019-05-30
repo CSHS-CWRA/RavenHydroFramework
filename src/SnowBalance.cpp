@@ -38,9 +38,9 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
 
     CHydroProcessABC::DynamicSpecifyConnections(5);//nConnections=5
 
-    iFrom[0]=iCC;       iTo[0]=iAtmosEn;//rates[0]: COLD_CONTENT->LOST_ENERGY
+    iFrom[0]=iCC;       iTo[0]=iAtmosEn;//rates[0]: COLD_CONTENT->ENERGY_LOSSES
     iFrom[1]=iSnowLiq;  iTo[1]=iSnow;   //rates[1]: SNOW_LIQ->SNOW
-    iFrom[2]=iAtmosEn;  iTo[2]=iCC;     //rates[2]: RADIATIVE_ENERGY->COLD_CONTENT
+    iFrom[2]=iAtmosEn;  iTo[2]=iCC;     //rates[2]: ENERGY_LOSSES->COLD_CONTENT
     iFrom[3]=iSnow;     iTo[3]=iSW;     //rates[3]: SNOW ->SURFACE_WATER
     iFrom[4]=iSnowLiq;  iTo[4]=iSW;     //rates[4]: SNOW_LIQ->SURFACE_WATER
   }
@@ -1213,7 +1213,7 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
 
   double snow_liq    = state_vars[iSnowLiq];
   double SWE         = state_vars[iSWE];
-  double snow_energy =-state_vars[iSnowEn];
+  double snow_energy =-state_vars[iSnowEn]; //cold content [MJ/m2] is positive
   double snow_energy_old=snow_energy;
 
   if(SWE <= 0.0) { return; }
@@ -1221,12 +1221,16 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
   double pot_melt =pHRU->GetForcingFunctions()->potential_melt;
   double T_min    =pHRU->GetForcingFunctions()->temp_daily_min;
 
+  pot_melt*=LH_FUSION*DENSITY_WATER/MM_PER_METER*Options.timestep;//[mm/d]->[MJ/m2]
   double snoliq_max = CalculateSnowLiquidCapacity(SWE,SWE/MAX_SNOW_DENS,Options);
   double t_minus    = min(T_min,0.0);
-  double Umin       = SWE*(2.115+0.00779*t_minus)*t_minus/1000.0; //[MJ/m2] minimum snow energy (negative), documentation??
+  double Umin       = SWE*(2.115+0.00779*t_minus)*t_minus;//1000.0; //[MJ/m2] minimum snow energy (negative), documentation?? JRC- 1000 factor unknown and leading to unreasonably small values of Umin. 
   double refreeze   = 0.0;;
   double snowmelt0(0.0),snowmelt1(0.0),snowmelt2(0.0);
 
+
+  double Tmin=Umin/HCP_WATER/DENSITY_WATER/(SWE/MM_PER_METER); //Min cold content -> min snowpack mean temperature
+  //cout<<Umin<<" "<<Tmin<<" "<<T_min<<endl;;
   snow_energy += pot_melt;
   snow_energy = max(Umin,snow_energy);
   if(snow_energy > 0.0)
@@ -1253,18 +1257,17 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
     }
     snow_energy = 0.0; //all energy used
   }
-  else { // no melt - refreeze - reduce snow_energy accordingly
+  else { // no melt - refreeze - reduce snow_energy6 accordingly
     snowmelt0=snowmelt1=snowmelt2=0;
-    if(snow_energy < 0.0) { 
-      refreeze = -snow_energy/LH_FUSION/DENSITY_WATER*MM_PER_METER;
-      if(snow_liq > refreeze) { //partial refreeze
-        snow_energy   = 0.0;
-        refreeze=refreeze;
-      }
-      else { //total refreeze /cooling
-        snow_energy  +=snow_liq*LH_FUSION/DENSITY_WATER*MM_PER_METER;
-        refreeze=snow_liq;
-      }
+   
+    refreeze = -snow_energy/LH_FUSION/DENSITY_WATER*MM_PER_METER;
+    if(snow_liq > refreeze) { //partial refreeze
+      snow_energy   = 0.0;
+      refreeze=refreeze;
+    }
+    else { //total refreeze /cooling
+      snow_energy  +=snow_liq*LH_FUSION*DENSITY_WATER/MM_PER_METER;
+      refreeze=snow_liq;
     }
   } // no melt
 
@@ -1272,7 +1275,7 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
   rates[1]=snowmelt1; //SNOW->PONDED_WATER [mm]
   rates[2]=snowmelt2; //SNOW_LIQ->PONDED_WATER [mm]
   rates[3]=refreeze;  //LIQ_SNOW->SNOW [mm]
-  rates[4]=-(snow_energy_old-snow_energy)/Options.timestep; // COLD_CONTENT->COLD_CONTENT [MJ/m2]
+  rates[4]=-(snow_energy-snow_energy_old)/Options.timestep; // COLD_CONTENT->COLD_CONTENT [MJ/m2]
 
   return;
 }

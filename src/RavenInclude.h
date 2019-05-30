@@ -84,7 +84,7 @@ Other comments:
 // Global Variables (necessary, but minimized, evils)
 //*****************************************************************
 extern string g_output_directory; ///< Had to be here to avoid passing Options structure around willy-nilly
-extern double g_debug_vars[5];    ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
+extern double g_debug_vars[10];    ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 //*****************************************************************
@@ -557,6 +557,7 @@ enum potmelt_method
   POTMELT_DD_RAIN,          ///< degree day with rain-on-snow
   POTMELT_UBCWM,            ///< UBC watershed model approach
   POTMELT_HBV,              ///< custom degree day model used in HBV-EC
+  POTMELT_HBV_ROS,          ///< HBV-EC degree day model with rain-on-snow
   POTMELT_DATA,             ///< user-specified potential melt forcing
   POTMELT_USACE,            ///< US Army Corps of Engineers Snow Melt
   POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM) (Pomeroy, 2007)

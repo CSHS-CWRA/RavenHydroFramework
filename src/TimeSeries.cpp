@@ -764,7 +764,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     delete[] aVal; aVal =NULL;
     p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
     if(string(s[0]).substr(0,4)!=":End"){
-      ExitGracefully("CTimeSeries: Parse: no :EndData command used with :AnnualCycle command ",BAD_DATA);
+      ExitGracefully("CTimeSeries: Parse: no :EndData command (or similar :End* command) used with :AnnualCycle command ",BAD_DATA);
     }
     return pTimeSeries;
   }

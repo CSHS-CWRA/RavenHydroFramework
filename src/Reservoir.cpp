@@ -673,7 +673,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     res_outflow=0.0;
   }
   //=============================================================================
-  else if (_type==RESROUTE_STANDARD)
+  else if(_type==RESROUTE_STANDARD)
   {
     // Mass balance on reservoir over time step:
     //
@@ -692,23 +692,23 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double f,dfdh,out,out2;
     double ET(0.0);  //m/s
     double ext_old(0.0),ext_new(0.0); //m3/s
-    
 
-    if (_pHRU!=NULL)
+
+    if(_pHRU!=NULL)
     {
       ET=_pHRU->GetForcingFunctions()->OW_PET/SEC_PER_DAY/MM_PER_METER; //average for timestep, in m/s
-      if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0){
+      if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
         ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
       }
     }
-    if (_pExtractTS!=NULL)
+    if(_pExtractTS!=NULL)
     {
       ext_old=_pExtractTS->GetSampledValue(nn);
       ext_new=_pExtractTS->GetSampledValue(nn); //steady rate over time step
     }
 
     double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
-    if (gamma<0)
+    if(gamma<0)
     {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
       string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
       WriteWarning(warn,false);
@@ -719,83 +719,107 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double relax=1.0;
     do //Newton's method with discrete approximation of df/dh
     {
-      out =GetOutflow(h_guess   ,weir_adj)+ET*GetArea(h_guess   );//[m3/s]
+      out =GetOutflow(h_guess,weir_adj)+ET*GetArea(h_guess);//[m3/s]
       out2=GetOutflow(h_guess+dh,weir_adj)+ET*GetArea(h_guess+dh);//[m3/s]
 
-      f   = (GetVolume(h_guess   )+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
+      f   = (GetVolume(h_guess)+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
       dfdh=((GetVolume(h_guess+dh)+out2/2.0*(tstep*SEC_PER_DAY))-f)/dh; //[m3/m]
 
       //hg[iter]=relax*h_guess; ff[iter]=f-gamma;//retain for debugging
 
       change=-(f-gamma)/dfdh;//[m]
-      if (dfdh==0){change=1e-7;}
+      if(dfdh==0) { change=1e-7; }
 
-      if(iter>3){relax *=0.98;}
+      if(iter>3) { relax *=0.98; }
       h_guess+=relax*change;
       lastchange=change;
       iter++;
-    } while ((iter<RES_MAXITER) && (fabs(change/relax)>RES_TOLERANCE));
+    } while((iter<RES_MAXITER) && (fabs(change/relax)>RES_TOLERANCE));
 
     stage_new=h_guess;
 
-    if (iter==RES_MAXITER){
+    if(iter==RES_MAXITER) {
       string warn="CReservoir::RouteWater did not converge after "+to_string(RES_MAXITER)+"  iterations for basin "+to_string(_SBID)+" on "+tt.date_string;;
       WriteWarning(warn,false);
       /*for (int i = 0; i < RES_MAXITER; i++){
         string warn = to_string(hg[i]) + " " + to_string(ff[i])+ " "+to_string(gamma);WriteWarning(warn,false);
         }*/
     }
-
+    int constraint=0;
     //standard case - outflow determined through stage-discharge curve
     res_outflow=GetOutflow(stage_new,weir_adj);
 
     //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
-    if(htarget!=RAV_BLANK_DATA){
-			double V_targ=GetVolume(htarget);
+    double w=0.4;
+    if(htarget!=RAV_BLANK_DATA) {
+      double V_targ=GetVolume(htarget);
       double A_targ=GetArea(htarget);
       Qtarget = -2 * (V_targ - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_targ) - (ext_old + ext_new));//[m3/s]
-      Qtarget=(Qtarget+_Qout)/2.0; //should be over entire timestep
-		  Qtarget=max(Qtarget,Qminstage);
+      Qtarget=max(Qtarget,Qminstage);
+      if(Qtarget>_Qout) {
+        Qtarget = w*Qtarget+(1-w)*_Qout; //softer move towards goal - helps with stage undershoot -you can always remove more...
+      }
+      constraint=1;
     }
 
-    if (Qoverride==RAV_BLANK_DATA)
+    if(Qoverride==RAV_BLANK_DATA)
     {
       if(stage_new<min_stage)
       {
         Qoverride=Qminstage;
+        constraint=2;
       }
       else if(Qtarget!=RAV_BLANK_DATA)
       {
-        if ((Qtarget-_Qout)/tstep>Qdelta){
+        constraint=3;
+        if((Qtarget-_Qout)/tstep>Qdelta) {
           Qtarget=_Qout+Qdelta*tstep; //maximum flow change
+          constraint=4;
         }
-        Qoverride=Qtarget;
+        Qoverride=(Qtarget+_Qout)/2.0;//converts from end of time step to average over timestep
       }
     }
-    
+
+
     //special correction - flow overridden
     if(Qoverride!=RAV_BLANK_DATA)
     {
-      // \todo[funct] may wish to ensure that V_new is not negative
-      res_outflow=2*Qoverride-_Qout;
+      if((constraint!=2) && (constraint!=3) && (constraint!=4)) { constraint=5; }
+      
+      res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
+
       double A_guess=A_old;
       double A_last,V_new;
-      do{
-        V_new= V_old+((Qin_old+Qin_new)-(_Qout+Qoverride)-ET*(A_old+A_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
+      do {
+        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); //JRC: Qoverride should be res_outflow??
+        if(V_new<0) {
+          V_new=0;
+          constraint=7;
+          res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
+        }
         stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
         A_last=A_guess;
         A_guess=GetArea(stage_new);
       } while(fabs(1.0-A_guess/A_last)>0.00001); //0.1% area error - done in one iter for constant area case
     }
-    
+
     //special correction : exceeded limiting stage; fix stage and re-calculate reservoir outflow
-    if(stage_new>stage_limit){
+    if(stage_new>stage_limit) {
+      constraint=6;
       stage_new=stage_limit;
       double V_limit=GetVolume(stage_limit);
-      double A_limit=GetArea  (stage_limit);
-	    res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (ext_old + ext_new));//[m3/s]
+      double A_limit=GetArea(stage_limit);
+      res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (ext_old + ext_new));//[m3/s]
     }
-
+    /*if(GetSubbasinID()==41){
+      g_debug_vars[6]=(_Qout+res_outflow)/2.0;
+      g_debug_vars[5]=_Qout;
+      g_debug_vars[4]=(double)(constraint);
+      g_debug_vars[3]=Qoverride;
+      g_debug_vars[2]=res_outflow;
+      g_debug_vars[1]=htarget;
+      g_debug_vars[0]=stage_new;
+    }*/
   }
   //=============================================================================
   
