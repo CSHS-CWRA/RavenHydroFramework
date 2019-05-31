@@ -1182,6 +1182,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   int    varid_f;               // id of VarNameNC variable
   char * unit_t;                // special type for string of variable's unit     required by nc routine
   size_t att_len;               // length of the attribute's text
+  nc_type att_type;             // type of attribute
   int    calendar;              // enum int of calendar
   string dash;                  // to check format of time unit string
   string colon;                 // to check format of time unit string
@@ -1250,14 +1251,23 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
   
   //     (c) calendar
-  retval = nc_inq_attlen (ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
-  HandleNetCDFErrors(retval);
-  char * calendar_t = new char[att_len + 1];// allocate memory of char * to hold attribute's text
-  retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
-  HandleNetCDFErrors(retval);
-  calendar_t[att_len] = '\0';// add string determining character
-  calendar = StringToCalendar(calendar_t);
-  delete [] calendar_t;
+  retval = nc_inq_att(ncid, varid_t, "calendar", &att_type, &att_len);
+  if (retval == NC_ENOTATT) {
+    //   (c1) if not found, set to proleptic_gregorian
+    calendar = StringToCalendar("PROLEPTIC_GREGORIAN");
+  }
+  else {
+    //   (c2) if found, read and make sure '\0' is terminating character
+    HandleNetCDFErrors(retval);
+    retval = nc_inq_attlen(ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
+    HandleNetCDFErrors(retval);
+    char * calendar_t = new char[att_len + 1];// allocate memory of char * to hold attribute's text
+    retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
+    HandleNetCDFErrors(retval);
+    calendar_t[att_len] = '\0';// add string determining character
+    calendar = StringToCalendar(calendar_t);
+    delete [] calendar_t;
+  }
 
   //     (d) allocate array for time values
   int *time=NULL;
@@ -1514,7 +1524,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (15) delete dynamic memory
   // -------------------------------
-  delete [] aVal;  aVal =NULL;  
+  delete [] aVal;  aVal =NULL;
 #endif   // ends #ifdef _RVNETCDF_
   
   return pTimeSeries;

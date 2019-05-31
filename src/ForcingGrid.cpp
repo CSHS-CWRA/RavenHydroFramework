@@ -198,6 +198,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   int    retval1;
   size_t att_len;        // length of the attribute's text
+  nc_type att_type;      // type of attribute
 
   string dash;           // to check format of time unit string
   string colon;          // to check format of time unit string
@@ -323,17 +324,25 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   }
   
   // calendar attribute
-  // just making sure that the string is read with proper null terminating character
-  //calendar_t = (char *) malloc(2);
-  //strcpy(calendar_t, "?\0");
-  retval = nc_inq_attlen (ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
-  HandleNetCDFErrors(retval);
-  char *calendar_t = new char [att_len + 1];// allocate memory of char * to hold attribute's text
-  retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
-  HandleNetCDFErrors(retval);
-  calendar_t[att_len] = '\0';// add string determining character
-  calendar = StringToCalendar(calendar_t);
-  delete [] calendar_t;
+  // inquire 'calendar' attribute:
+  retval = nc_inq_att(ncid, varid_t, "calendar", &att_type, &att_len);
+  if (retval == NC_ENOTATT) {
+    // (a) if not found, set to proleptic_gregorian
+    calendar = StringToCalendar("PROLEPTIC_GREGORIAN");
+  }
+  else {
+    // (b) if found, read and make sure '\0' is terminating character
+    HandleNetCDFErrors(retval);
+    retval = nc_inq_attlen(ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
+    HandleNetCDFErrors(retval);
+    char *calendar_t = new char [att_len + 1];// allocate memory of char * to hold attribute's text
+    retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
+    HandleNetCDFErrors(retval);
+    calendar_t[att_len] = '\0';// add string determining character
+    calendar = StringToCalendar(calendar_t);
+    delete [] calendar_t;
+  }
+			 
 
   if (_is_3D) {
     ntime = _GridDims[2];
@@ -349,9 +358,9 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   // find out if time is an integer or double variable
   retval = nc_inq_var( ncid, varid_t,
-		                   NULL,     // out: name
-		                   &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
-		                   NULL,     // out: dims
+		       NULL,     // out: name
+		       &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
+		       NULL,     // out: dims
                        NULL,     // out: dimids
                        NULL );   // out: natts
 
@@ -588,6 +597,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     printf("ForcingGrid: duration:        %f\n",(double)(_nPulses)*_interval);
     printf("\n");
   }
+  cout << "JMJMJM calendar = " << calendar << endl;
 #endif   // ends #ifdef _RVNETCDF_
 }
 
