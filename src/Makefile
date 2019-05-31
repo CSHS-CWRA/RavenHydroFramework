@@ -12,7 +12,7 @@
 #            Jan 2019    Alan J. Barton - added OS name to created exe name
 ###
 # appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g')_$(shell uname -o).exe
-appname := raven_rev.exe
+appname := Raven.exe
 
 CXX      := g++
 CXXFLAGS := -Wno-deprecated
@@ -26,7 +26,7 @@ LDLIBS   := -L/usr/local -lnetcdf   # if netcdf is installed give first path "-L
 
 # if you use a UNIX system, uncomment the LDFLAGS line below
 # this is to allow for use a 1Gb, see http://linuxtoosx.blogspot.ca/2010/10/stack-overflow-increasing-stack-limit.html
-LDFLAGS  := -Wl,-stack_size,0x80000000,-stack_addr,0xf0000000
+# LDFLAGS  := -Wl,-stack_size,0x80000000,-stack_addr,0xf0000000
 
 all: $(appname)
 
