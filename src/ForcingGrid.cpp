@@ -597,7 +597,6 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     printf("ForcingGrid: duration:        %f\n",(double)(_nPulses)*_interval);
     printf("\n");
   }
-  cout << "JMJMJM calendar = " << calendar << endl;
 #endif   // ends #ifdef _RVNETCDF_
 }
 
