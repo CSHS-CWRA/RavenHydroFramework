@@ -522,7 +522,7 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
   {
     _aVolume[i]=Interpolate2(_aStage[i],a_ht,a_V,nPoints,false);
     if((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)) {
-      string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
+      string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
