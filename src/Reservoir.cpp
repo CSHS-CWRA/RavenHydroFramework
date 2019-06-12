@@ -1294,7 +1294,7 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
 /// \returns y value corresponding to interpolation point
 /// \note does not assume regular spacing between min and max x value
 //
-double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom)
+double Interpolate2(const double x,const double *xx,const double *y,int N,bool extrapbottom)
 {
   static int ilast=0;
   if      (x<=xx[0])
