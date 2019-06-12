@@ -25,7 +25,7 @@ bool IsContinuousFlowObs2(CTimeSeriesABC *pObs,long SBID)
 void CModel::AssimilateStreamflow(const time_struct &tt, const optStruct &Options)
 {
   //assimilates all data prior to assimilation date 
-  //if(tt.model_time<_AssimilationDate+Options.timestep/2.0)
+  if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0))
   {
     double Qobs,Qmod;
     int p,pdown;
@@ -43,7 +43,8 @@ void CModel::AssimilateStreamflow(const time_struct &tt, const optStruct &Option
       bool found=false;
       for(int i=0; i<_nObservedTS; i++) //determine whether flow observation is available
       {
-        if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID())){//flow observation available
+        if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available
+        {
           Qobs = _pObservedTS[i]->GetAvgValue(tt.model_time-Options.timestep,Options.timestep);
           Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep);
           //Qmod = _pSubBasins[p]->GetOutflowRate(); //UNCLEAR WHICH TO USE!

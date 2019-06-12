@@ -100,8 +100,8 @@ const double  ZERO_CELSIUS            =273.16;                                  
 const double  UNIV_GAS_CONST          =8314.47;                                 ///< Universal gas constant [J/K/kmol]
 const double  DRY_GAS_CONST           =287.042;                                 ///< Specific gas constant for dry air [J/K/kg]
 const double  VAP_GAS_CONST           =461.504;                                 ///< Specific gas constant for water vapour [J/K/kmol]
-const double  STEFAN_BOLTZ            =4.90e-9;                                 ///< Stephan-Boltzmann constant [MJ/m2/d/K4]
-const double  VON_KARMAN              =0.42;                                    ///< Von Karmann constant
+const double  STEFAN_BOLTZ            =4.90e-9;                                 // Stephan-Boltzmann constant [MJ/m2/d/K4]
+const double  VON_KARMAN              =0.42;                                    // Von Karmann constant
 
 //units conversion constants
 const double  MM_PER_INCH             =25.4;                                    ///< [in] to [mm]
@@ -417,9 +417,10 @@ enum cloudcov_method
 //      \a stub that defaults to SW_CLOUD_CORR_UBCWM
 enum SW_cloudcover_corr
 {
-  SW_CLOUD_CORR_NONE,    ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
-  SW_CLOUD_CORR_UBCWM,   ///< Based on UBCWM apporach, which is identical to Dingman (2008) Eq. 5-31
-  SW_CLOUD_CORR_DINGMAN  ///< Dingman (2008) Eq. 5-30     (does not require a parameter)
+  SW_CLOUD_CORR_NONE,     ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
+  SW_CLOUD_CORR_UBCWM,    ///< Based on UBCWM apporach, which is identical to Dingman (2008) Eq. 5-31
+  SW_CLOUD_CORR_DINGMAN,  ///< Dingman (2008) Eq. 5-30     (does not require a parameter)
+  SW_CLOUD_CORR_ANNANDALE ///< Annandale et al., (2002) temperature based estimate of cloud cover influence
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -450,6 +451,15 @@ enum LW_method
   LW_RAD_UBCWM,             ///< UBCWM approach
   LW_RAD_HSPF,              ///< HSPF approach (U.S. Corps of Engineers, 1956)
   LW_RAD_VALIANTZAS         ///< From Valiantzas, 2006 via Doorenbos and Pruit (1977) and Shuttleworth and Wallace (1952)
+};
+////////////////////////////////////////////////////////////////////
+/// \brief Methods used for estimating incoming longwave radiation
+//
+enum LWinc_method
+{
+  LW_INC_DEFAULT,      ///< default implementation - incoming LW ignored, only net calculated
+  LW_INC_DATA,         ///< specified in time series files
+  LW_INC_SICART        ///< From Sicart et al. (2005) as ported over from CRHM
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -850,6 +860,7 @@ struct optStruct
   cloudcov_method    cloud_cover;             ///< cloud cover estimation method
   snalbedo_method    snow_albedo;             ///< method for estimating snow albedo
   LW_method          LW_radiation;            ///< net longwave radiation estimation method
+  LWinc_method       LW_incoming;             ///< incoming longwave radiation estimation method  
   SW_method          SW_radiation;            ///< shortwave radiation estimation method
   SW_cloudcover_corr SW_cloudcovercorr;       ///< method for cloudcover correction of shortwave radiation
   SW_canopy_corr     SW_canopycorr;           ///< method for estimating canopy transmittance of shortwave radiation
@@ -884,7 +895,7 @@ struct optStruct
   bool             debug_mode;                ///< true if debugging mode is on
   bool             noisy;                     ///< true if parsing information written to screen
   bool             silent;                    ///< true if nothing should be written to screen (overrides noisy)
-  bool             pavics;                    ///< true if specific setings for PAVICS system are applied \n
+  bool             pavics;                    ///< true if specific setings for PAVICS system are applied 
   //                                          ///< (such as simulation status JSON file) (default: FALSE)
   out_format       output_format;             ///< output format (default: OUTPUT_STANDARD)
   bool             write_forcings;            ///< true if ForcingFunctions.csv is written
@@ -908,6 +919,8 @@ struct optStruct
   //                                          ///< diagnostic options
   double           diag_start_time;           ///< Model time to start diagnostics
   double           diag_end_time;             ///< Model time to start diagnostics
+  bool             assimilation_on;           ///< turn on assimilation
+  double           assimilation_start;        ///< assimilation start time (in model time [d])
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
 };
@@ -1363,6 +1376,7 @@ double GetSatVapSlope           (const double &T, const double &satvap);
 double GetLatentHeatVaporization(const double &T);
 double GetPsychometricConstant  (const double &P, const double &LH_vapor);
 double GetAirDensity            (const double &T, const double &P);
+double GetSpecificHumidity      (const double &rel_hum,const double &air_press,const double &T);
 double GetVerticalTransportEfficiency     (const double &P,   //[kPa]
                                            const double &meas_ht,        //[m]
                                            const double &zero_pl,       //[m]

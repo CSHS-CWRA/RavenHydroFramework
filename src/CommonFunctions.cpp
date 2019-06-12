@@ -868,6 +868,23 @@ double GetAirDensity(const double &T, const double &P)
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Converts relative humidity to specific humidity 
+///
+/// \param rel_hum [in] relative humidity [0-1]
+/// \param air_press [in] Air pressure [kPa]
+/// \param T [in] Air temperature [Celsius]
+/// \return specific humidity, [kg/kg]
+//
+double GetSpecificHumidity(const double &rel_hum,const double &air_press,const double &T)
+{
+  double e_a=rel_hum*GetSaturatedVaporPressure(T);
+  //simplified:
+  //return AIR_H20_MW_RAT*e_a/air_press;
+
+  return AIR_H20_MW_RAT*e_a/(air_press- e_a*(1-AIR_H20_MW_RAT)); 
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Converts passed temperature from Celsius to Farenheit
 ///
 /// \param &T [in] Temperature in Celsius

@@ -9,7 +9,7 @@
 #include "GlobalParams.h"
 
 //////////////////////////////////////////////////////////////////
-/// \brief Estimates net shortwave radiation [MJ/m2/d]
+/// \brief Estimates incoming clear sky shortwave radiation SW_radia and extraterrestrial radiation ET_rad [MJ/m2/d]
 /// \details Returns the clear sky total solar radiation (total incident shortwave radiation)
 /// \remark Units are Kcs in Dingman text
 ///
@@ -37,7 +37,7 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     break;
   }
   //--------------------------------------------------------
-  case(SW_RAD_DEFAULT)://Dingman
+  case(SW_RAD_DEFAULT):
   {
     double dew_pt    =GetDewPointTemp(F->temp_ave,F->rel_humidity);
     double slope     =pHRU->GetSlope();
@@ -100,7 +100,37 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
                                              const CHydroUnit    *pHRU,
                                                    double        &LW_incoming)
 {
-  LW_incoming=0.0; //not explicitly calculated, by default
+  
+  switch(Options.LW_incoming) 
+  {
+  case(LW_INC_DATA):
+  {
+    LW_incoming=F->LW_incoming;
+  }
+  case(LW_INC_SICART):
+  {
+    //Calculates incoming long-wave terrain emmission radiation using sky view factor
+    //Sicart et al. (2005), Incoming longwave radiation to melting snow: observations, sensitivity and estimation in
+    //northern environments, Hydrological Processes, 20, 3697 – 3708 
+    //Ported over from CRHM (Pomeroy et al., 2007)
+    double Vf       =pHRU->GetSurfaceProps()->sky_view_factor;//0.7
+    //double epsilon_s=pHRU->GetSurfaceProps()->surface_emissivity;
+    double epsilon_s=0.98;//terrain emissivity
+
+    double tau     = 0.8; //atmospheric transmittance
+    if(F->ET_radia >= 0.001) { tau =  (F->SW_radia_unc/F->ET_radia); } //Based upon comments, not code
+
+    double ea=F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);//kPa
+
+    double L_0;
+    L_0 = 1.24*pow((ea*MB_PER_KPA)/(F->temp_ave + ZERO_CELSIUS),1.0/7.0)*(1.0 + 0.44*F->rel_humidity - 0.18*tau)*WATT_TO_MJ_PER_D;//eqn 9 of Sicart et al (2005)
+    LW_incoming = Vf*L_0 + (1.0-Vf)*epsilon_s*STEFAN_BOLTZ*pow(F->temp_ave + ZERO_CELSIUS,4.0); //eqn 6 of Sicart et al (2005)
+  }
+  case(LW_INC_DEFAULT):
+  {
+    LW_incoming=0.0; //not explicitly calculated, by default
+  }
+  }
 
   switch(Options.LW_radiation)
   {
@@ -186,31 +216,26 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   }
   //--------------------------------------------------------
   /*case (LW_RAD_UNFAO):
-    {
+  {
     ///< from Crop evapotranspiration - Guidelines for computing crop water requirements - FAO Irrigation and drainage paper 56 \cite Allen1998FR
     //http://www.fao.org/docrep/X0490E/X0490E00.htm
-    double tmp;
-    double ea;
-    ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); //[kPa]
-    tmp=(0.34-0.14*pow(ea,0.5))*(1.35*(F->SW_radia/F->SW_uncorr)-0.35);
+    double ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); //[kPa]
+    double tmp=(0.34-0.14*pow(ea,0.5))*(1.35*(F->SW_radia/F->SW_uncorr)-0.35);
     return STEFAN_BOLTZ*tmp*(pow(F->temp_daily_min,4)+pow(F->temp_daily_max,4));
-    }*/
+  }*/
   //--------------------------------------------------------
   /*
   case(LW_RAD_BRUTSAERT):
-    {//Brook90-Brutsaert
-    const double C1=0.25;
-    const double C2=0.5;
-    const double C3=0.2;
-    //Brutsaert (1982) equation for effective clear sky emissivity
+  { //Brutsaert (1982) equation for effective clear sky emissivity
     double cloud_corr=0.2+0.8*min(max((F->SW_radia/F->SW_radia_unc - 0.25) / 0.5,1.0),0.0);
     return STEFAN_BOLTZ*emmissivity*cloud_corr*(emiss_eff*pow(Tair,4)-pow(Tair,4));
-    }
+  }
   */  
   //--------------------------------------------------------
    /*
-   case (LW_RAD_CRHM):
-   { //from CRHM netall based upon Brutsaert
+   case (LW_RAD_BRUNT):
+   { //from CRHM (Pomeroy, 2007) netall routine 
+     // based upon Brunt (1944), Physical and dynamical meteorology: Cambridge Univ. Press
      double LW_net = -0.85;
      double emiss=0.97;
      double ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);                    //[kPa]
@@ -245,11 +270,13 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 /// \to Dingman (2008) Eq. 5-31 but uses a different semantic: The UBCWM 'cloud penetration factor POCAST'
 /// \is identical to  'cloud height' in Dingman (2008) Eq. 5-31.
 /// \param Options [in] global options structure
-/// \param *pHRU [in] pointer to HRU for which radiation is calculated
+/// \param F [in] forcings structure
+/// \param elev [in] elevation of HRU [masl]
 /// \return Double Cloud cover correction factor for shortwave radiation
 
 double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
-                                          const force_struct *F)
+                                          const force_struct *F,
+                                          const double &elev)
 {
   switch(Options.SW_cloudcovercorr)
   {
@@ -262,6 +289,17 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
   case(SW_CLOUD_CORR_DINGMAN): // Dingman (2008) Eq. 5-30 (does not require parameters)
   {
     return 0.355 + 0.68 * (1 - F->cloud_cover);
+    break;
+  }
+  case(SW_CLOUD_CORR_ANNANDALE): 
+  // Annandale et al (2002), Software for missing data error analysis of Penman-Monteith 
+  // reference evapotranspiration, Irrigation Science 21(2),pp57–67
+  {
+    double kRs=0.16;   // interior = ~0.16/coastal~=0.19
+    if(F->temp_daily_max>F->temp_daily_min) {
+      return kRs*(1.0 + 2.7E-5*elev)*sqrt(F->temp_daily_max>F->temp_daily_min);
+    }
+    else {return 0.0;}
     break;
   }
   default: // apply no cloud cover correction (default)
@@ -402,7 +440,6 @@ double CRadiation::SolarDeclination(const double day_angle)
     0.001480*sin(3.0*day_angle);*///Dingman eqn E-3
   //return asin(0.39785* sin(4.868961+0.017203*julian_day+
   //                             0.033446*sin(6.224111+0.017202*julian_day)));//Brook90
-  //return 0.4903*sin(day_angle-1.405); //WATFLOOD
   //return 0.409*sin(day_angle-1.39); //Valiantzas, 2006
   return 0.40928*sin(day_angle-1.384);//UBCWM
 }
@@ -564,8 +601,8 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   c = cos(declin) * sin(   slope) * sin(revasp);                                                       //Eqn 11c, constant
 
   double quad;
-  quad = b*b + c*c - a*a;                             //Quadratic function for eqn 13
-  quad = max(0.0001, quad);                           //Limit quadratic function to greater than 0 as per step A.4.i.
+  quad = b*b + c*c - a*a;        //Quadratic function for eqn 13
+  quad = max(0.0001, quad);      //Limit quadratic function to greater than 0 as per step A.4.i.
 
   //Find cos_theta at solar noon (used instead of sin(slope) > solar angle)
   noon_cos_theta = sin(declin) * sin(latrad) * cos(slope) 
@@ -741,10 +778,10 @@ double CRadiation::CalcScatteringTransmissivity(const double dew_pt,//dew point 
 {
   double precip_WV;                     //precipitable water vaport content [cm]
   double a,b;
-  precip_WV=1.12*exp(0.0614*dew_pt);                             //Dingman E-10 (Bolsenga 1964)
-  a=-0.124-0.0207*precip_WV;                                                             /// \ref Dingman E-12
-  b=-0.0682-0.0248*precip_WV;                                                            /// \ref Dingman E-13
-  return exp(a+b*opt_air_mass);              /// \ref Dingman E-11
+  precip_WV=1.12*exp(0.0614*dew_pt);    //Dingman E-10 (Bolsenga 1964)
+  a=-0.124-0.0207*precip_WV;            /// \ref Dingman E-12
+  b=-0.0682-0.0248*precip_WV;           /// \ref Dingman E-13
+  return exp(a+b*opt_air_mass);         /// \ref Dingman E-11
 }
 
 /*****************************************************************
@@ -758,10 +795,10 @@ double CRadiation::CalcDiffScatteringTransmissivity(const double dew_pt,//dew po
 {
   double precip_WV;                     //precipitable water vapor content [cm]
   double a,b;
-  precip_WV=1.12*exp(0.0614*dew_pt);                             //Dingman E-10 (Bolsenga 1964)
-  a=-0.0363-0.0084*precip_WV;                                                            //Dingman E-17
-  b=-0.0572-0.0173*precip_WV;                                                            //Dingman E-18
-  return exp(a+b*opt_air_mass);//Dingman E-16
+  precip_WV=1.12*exp(0.0614*dew_pt);    //Dingman E-10 (Bolsenga 1964)
+  a=-0.0363-0.0084*precip_WV;           //Dingman E-17
+  b=-0.0572-0.0173*precip_WV;           //Dingman E-18
+  return exp(a+b*opt_air_mass);         //Dingman E-16
 }
 
 //////////////////////////////////////////////////////////////////
@@ -928,7 +965,7 @@ double CRadiation::ClearSkySolarRadiation(const double &julian_day,
   tau  =CalcScatteringTransmissivity(dew_pt,Mopt)-gamma_dust;               //Dingman E-9
   tau2 =0.5*(1.0-CalcDiffScatteringTransmissivity(dew_pt,Mopt)+gamma_dust); //Dingman E-15
 
-  //Ketp =CalcETRadiation(latrad,lateq ,declin,ecc,slope,solar_noon,day_length,t_sol,avg_daily);
+  //Ketp =CalcETRadiation(latrad,lateq ,declin,ecc,slope,solar_noon,day_length,t_sol,avg_daily); //old dingman approach
   //Ket  =CalcETRadiation(latrad,latrad,declin,ecc,0.0  ,0.0,       day_length,t_sol,avg_daily);
 
   Ketp =CalcETRadiation2(latrad,aspect,declin,ecc,slope,t_sol,t_sol2,avg_daily);

@@ -91,7 +91,8 @@ public:/*------------------------------------------------------*/
                                            double       &ET_rad);
 
   static double SWCloudCoverCorrection    (const optStruct &Options,
-                                           const force_struct *F);
+                                           const force_struct *F,
+                                           const double &elev);
 
   static double SWCanopyCorrection        (const optStruct &Options,
                                            const CHydroUnit *pHRU);

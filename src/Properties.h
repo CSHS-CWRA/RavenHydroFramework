@@ -287,6 +287,8 @@ struct surface_struct
   double gamma_scale;       ///< [-]       gamma distribution scaling parameter for convolution routing
   double gamma_shape2;      ///< [-]       gamma distribution shape parameter for convolution routing (v2)
   double gamma_scale2;      ///< [-]       gamma distribution scaling parameter for convolution routing (v2)
+
+  double sky_view_factor;   ///< [-]       sky view factor for estimating incoming longwave radiation (should be terrain param?)
 };
 
 //////////////////////////////////////////////////////////////////

@@ -84,7 +84,8 @@ private:/*------------------------------------------------------*/
   int _iFlushTo;   //< global state variable index of target state var
   int _kk_from;    //< HRU group index of source HRUs
   int _kk_to;      //< HRU group index of target HRUs
-
+  
+  bool _constrain_to_SBs; // all transfer is within one sub-basin; otherwise, requires only one recipient HRU in model
 
 
 public:/*-------------------------------------------------------*/
@@ -92,22 +93,13 @@ public:/*-------------------------------------------------------*/
   CmvLatFlush(int   from_sv_ind,
               int     to_sv_ind,
               int   from_HRU_grp,
-              int     to_HRU_grp);
+              int     to_HRU_grp,
+              bool  constrain_to_SBs);
   ~CmvLatFlush();
 
   //inherited functions
   void Initialize();
-  /*void GetRatesOfChange(const double              *state_vars,
-                        const CHydroUnit  *pHRU,
-                        const optStruct   &Options,
-                        const time_struct &tt,
-                        double      *rates) const {return;}//Not used 
-  void ApplyConstraints(const double      *state_vars,
-                        const CHydroUnit  *pHRU,
-                        const optStruct   &Options,
-                        const time_struct &tt,
-                        double      *rates) const {return;}*/
-
+ 
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
 
   void           GetParticipatingParamList(string *aP,class_type *aPC,int &nP) const;

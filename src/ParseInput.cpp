@@ -177,6 +177,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.orocorr_precip      =OROCORR_NONE;
   Options.orocorr_temp        =OROCORR_NONE;
   Options.LW_radiation        =LW_RAD_DEFAULT;
+  Options.LW_incoming         =LW_INC_DEFAULT;
   Options.SW_radiation        =SW_RAD_DEFAULT;
   Options.cloud_cover         =CLOUDCOV_NONE;
   Options.SW_canopycorr       =SW_CANOPY_CORR_NONE;
@@ -221,6 +222,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_constitmass   =false;
   Options.nNetCDFattribs      =0;
   Options.aNetCDFattribs      =NULL;
+  Options.assimilation_on     =false;
+  Options.assimilation_start  =0;
 
   pModel=NULL;
   pMover=NULL;
@@ -336,6 +339,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":PeriodStartingFormatOff"   )){code=87; }
     else if  (!strcmp(s[0],":OutputConstituentMass"     )){code=89; }
     else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
+    else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
+    else if  (!strcmp(s[0],":AssimilateStreamflow"      )){code=93; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
@@ -958,6 +963,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"SW_CLOUD_CORR_NONE"     )){Options.SW_cloudcovercorr=SW_CLOUD_CORR_NONE;}
       else if (!strcmp(s[1],"SW_CLOUD_CORR_UBCWM"    )){Options.SW_cloudcovercorr=SW_CLOUD_CORR_UBCWM;}
       else if (!strcmp(s[1],"SW_CLOUD_CORR_DINGMAN"  )){Options.SW_cloudcovercorr=SW_CLOUD_CORR_DINGMAN;}
+      else if (!strcmp(s[1],"SW_CLOUD_CORR_ANNANDALE")){Options.SW_cloudcovercorr=SW_CLOUD_CORR_ANNANDALE;}
       else {ExitGracefully("ParseInput:SWCloudCorrect: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -1414,6 +1420,22 @@ bool ParseMainInputFile (CModel     *&pModel,
       AddNetCDFAttribute(Options,s[1],tmpstring);
       break;
     }          
+    case(92):  //--------------------------------------------
+    {/*:AssimilationStartTime [yyyy-mm-dd] [00:00:00]*///AFTER StartDate or JulianStartDay and JulianStartYear commands
+      if(Options.noisy) { cout << "Assimilation Start Time" << endl; }
+      if(Len<3) { ImproperFormatWarning(":AssimilationStartTime",p,Options.noisy); break; }
+
+      time_struct tt;
+      tt = DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      Options.assimilation_start=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+      break;
+    }
+    case(93):  //--------------------------------------------
+    {/*:AssimilateStreamflow*/
+      if(Options.noisy) { cout << "Assimilate streamflow on" << endl; }
+      Options.assimilation_on=true;
+      break;
+    }
     case(98):  //--------------------------------------------
     {/*:Alias */
       if (Options.noisy) {cout <<"Alias"<<endl;}
@@ -2249,15 +2271,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(232):  //----------------------------------------------
     {/*Lateral Flush
-       :LateralFlush RAVEN_DEFAULT [FROM_HRUGroup] [FROM SV] To [TO_HRUGROUP] [TO_SV] */
+       :LateralFlush RAVEN_DEFAULT [FROM_HRUGroup] [FROM SV] To [TO_HRUGROUP] [TO_SV] {'INTERBASIN'} */
       if(Options.noisy){ cout <<"Lateral Flush Process"<<endl; }
-
+      bool interbasin=false;
       if(Len<7){ ImproperFormatWarning(":LateralFlush",p,Options.noisy); break; }
 
       tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
       tmpS[1]=CStateVariable::StringToSVType(s[6],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
+      if ((Len>=8) && (!strcmp(s[7],"INTERBASIN"))){interbasin=true;}
+ 
       if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[2])==NULL)){
         ExitGracefully("ParseInput: Lateral Flush - invalid 'to' or 'from' HRU Group used. Must define using :DefineHRUGroups command.",BAD_DATA_WARN);
       }
@@ -2265,7 +2289,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         pMover=new CmvLatFlush( pModel->GetStateVarIndex(tmpS[0],tmpLev[0]),//from SV index
                                 pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
                                 pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
-                                pModel->GetHRUGroup(s[5])->GetGlobalIndex());
+                                pModel->GetHRUGroup(s[5])->GetGlobalIndex(),
+                                interbasin);
         AddProcess(pModel,pMover,pProcGroup);
       }
       break;

@@ -15,12 +15,14 @@
 CmvLatFlush::CmvLatFlush(int   from_sv_ind,
                         int     to_sv_ind,
                         int   from_HRU_grp,
-                        int     to_HRU_grp) : CLateralExchangeProcessABC(LAT_FLUSH)
+                        int     to_HRU_grp,
+                        bool constrain_to_SBs) : CLateralExchangeProcessABC(LAT_FLUSH)
 {
   _iFlushFrom=from_sv_ind;
   _iFlushTo  =to_sv_ind;
   _kk_from   =from_HRU_grp;
   _kk_to     =to_HRU_grp;
+  _constrain_to_SBs=constrain_to_SBs;
 
   DynamicSpecifyConnections(0); //purely lateral flow, no vertical 
 
@@ -54,37 +56,62 @@ void CmvLatFlush::Initialize()
   int k;
   bool fromfound=false;
 
-  //sift through all HRUs 
-  for(int p=0;p<_pModel->GetNumSubBasins();p++)
+  if(_constrain_to_SBs)
   {
-    //find 'to' HRU (only one allowed per SB)
-    int kToSB=DOESNT_EXIST;
-    for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+    //sift through all HRUs 
+    for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
-      k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
+      //find 'to' HRU (only one allowed per SB)
+      int kToSB=DOESNT_EXIST;
+      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+      {
+        k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
 
-      if(_pModel->IsInHRUGroup(k,toHRUGrp)){
+        if(_pModel->IsInHRUGroup(k,toHRUGrp)) {
+          ExitGracefullyIf(kToSB!=DOESNT_EXIST,
+            "LatFlush::Initialize - only one HRU per subbasin can recieve flush output. More than one recipient HRU found in subbasin ",BAD_DATA_WARN);
+          kToSB=k;
+        }
+      }
+
+      //find 'from' HRUs to make connections
+      for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+      {
+        k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
+
+        if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
+          kFrom[q]=k;
+          kTo[q]=kToSB;
+          fromfound=true;
+          q++;
+        }
+      }
+    }
+    nConn=q;
+  }
+  else //!constrain_to_SBs
+  {
+    //toHRUGrp
+    int kToSB=DOESNT_EXIST;
+    for(int k=0;k<_pModel->GetNumHRUs();k++) {
+      if(_pModel->IsInHRUGroup(k,toHRUGrp)) {
         ExitGracefullyIf(kToSB!=DOESNT_EXIST,
-          "LatFlush::Initialize - only one HRU per subbasin can recieve flush output. More than one recipient HRU found in subbasin ",BAD_DATA_WARN);
+          "LatFlush::Initialize - only one HRU in the model can recieve flush output. More than one recipient HRU found.",BAD_DATA_WARN);
         kToSB=k;
       }
     }
-
-    //find 'from' HRUs to make connections
-    for(int ks=0; ks<_pModel->GetSubBasin(p)->GetNumHRUs(); ks++)
+      //find 'from' HRUs to make connections
+    for(int k=0;k<_pModel->GetNumHRUs();k++)
     {
-      k=_pModel->GetSubBasin(p)->GetHRU(ks)->GetGlobalIndex();
-
-      if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)){
+      if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
         kFrom[q]=k;
-        kTo  [q]=kToSB;
+        kTo[q]=kToSB;
         fromfound=true;
         q++;
       }
     }
+    nConn=q;
   }
-  nConn=q;
-  
   DynamicSpecifyLatConnections(nConn);
   for(int q=0;q<_nLatConnections;q++){
     _kFrom   [q]    =kFrom[q];

@@ -401,7 +401,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       F.SW_radia = CRadiation::EstimateShortwaveRadiation(Options,&F,_pHydroUnits[k],tt,F.ET_radia);
       F.SW_radia_unc = F.SW_radia;
-      F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F);
+      F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F,elev);
       F.SW_radia *= CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
 
       if (Options.SW_radia_net == NETSWRAD_CALC) 

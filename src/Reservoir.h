@@ -117,6 +117,7 @@ public:/*-------------------------------------------------------*/
   void              Initialize             (const optStruct &Options);
   void              SetInitialFlow         (const double &Q,const double &t);
   void              SetInitialStage        (const double &ht);
+  void              SetVolumeStageCurve    (const double *a_ht,const double *a_V,const int nPoints);
   void              AddExtractionTimeSeries(CTimeSeries *pOutflow);
   void              AddWeirHeightTS        (CTimeSeries *pWeirHt);
   void              AddMaxStageTimeSeries  (CTimeSeries *pMS);

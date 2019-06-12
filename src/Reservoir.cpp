@@ -4,7 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
-double Interpolate2(double x, double *xx, double *y, int N, bool extrapbottom);
+double Interpolate2(const double x, const double *xx, const double *y, int N, bool extrapbottom);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir called by all other constructors
@@ -510,6 +510,25 @@ void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
   _pHRU=pHRUpointer;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief overrides volume stage curve for Lake-type reservoirs (if known)
+/// \param a_ht[] - array of stage values
+/// \param a_V[] array of volumes 
+/// \param nPoints - number of points in array
+//
+
+void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const int nPoints) 
+{
+  for(int i=0;i<_Np;i++)
+  {
+    _aVolume[i]=Interpolate2(_aStage[i],a_ht,a_V,nPoints,false);
+    if((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)) {
+      string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief sets all discharges in stage-discharge curve to zero (for overriding with observations)
 //
 void  CReservoir::DisableOutflow()
@@ -999,14 +1018,14 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
           type = CURVE_DATA;
           p->Tokenize(s, Len);
           if (Len >= 1){ NV = s_to_i(s[0]); }
-          aV = new double[NV];
+          aV    = new double[NV];
           aV_ht = new double[NV];
           for (int i = 0; i < NV; i++){
             p->Tokenize(s, Len);
             if(IsComment(s[0],Len)){i--;}
             else{
               aV_ht[i] = s_to_d(s[0]);
-              aV[i] = s_to_d(s[1]);
+              aV   [i] = s_to_d(s[1]);
             }
           }
           p->Tokenize(s, Len); //:EndVolumeStageRelation
@@ -1132,82 +1151,82 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
               aQund[i]=s_to_d(s[4]);
             }
           }
-          else{
+          else {
             WriteWarning("Incorrect line length (<4) in :Reservoir :StageRelations command",Options.noisy);
           }
         }
       }
-      p->Tokenize(s, Len); //:EndStageRelations
+      p->Tokenize(s,Len); //:EndStageRelations
     }
     //----------------------------------------------------------------------------------------------
     else if(!strcmp(s[0],":EndStageRelations"))
     {
     }
     //----------------------------------------------------------------------------------------------
-    else if (!strcmp(s[0], ":VaryingStageRelations"))
+    else if(!strcmp(s[0],":VaryingStageRelations"))
     {
       bool hasQund=false;
       int shift=0;
-      if (Options.noisy){ cout << ":VaryingStageRelations" << endl; }
+      if(Options.noisy) { cout << ":VaryingStageRelations" << endl; }
       type = CURVE_VARYING;
-      p->Tokenize(s, Len);
-      if (Len >= 1){ NQ = s_to_i(s[0]); } //# of flows
-      if(Len>=2){hasQund=true;shift=1;} //TMP DEBUG - shoudld have flag for extra column
-      p->Tokenize(s, Len);
+      p->Tokenize(s,Len);
+      if(Len >= 1) { NQ = s_to_i(s[0]); } //# of flows
+      if(Len>=2) { hasQund=true;shift=1; } //TMP DEBUG - shoudld have flag for extra column
+      p->Tokenize(s,Len);
       nDates = Len;
-      
+
       aDates = new int[nDates];
-      for (int v = 0; v < nDates; v++){ aDates[v] = s_to_i(s[v]); }
+      for(int v = 0; v < nDates; v++) { aDates[v] = s_to_i(s[v]); }
 
       aQ_ht = new double[NQ];
       aQQ = new double *[nDates];
-      for (int v = 0; v < nDates; v++){
+      for(int v = 0; v < nDates; v++) {
         aQQ[v] = new double[NQ];
       }
       aV = new double[NQ];
       aA = new double[NQ];
       aQund=new double[NQ];
-      for (int i = 0; i < NQ; i++){
-        p->Tokenize(s, Len);
-        if(IsComment(s[0],Len)){i--;}
-        else{
-          if(Len==1){//presumably :EndVaryingStageRelations
-            ExitGracefully("CReservoir::Parse: improper number of rows in :VaryingStageRelations command", BAD_DATA);
+      for(int i = 0; i < NQ; i++) {
+        p->Tokenize(s,Len);
+        if(IsComment(s[0],Len)) { i--; }
+        else {
+          if(Len==1) {//presumably :EndVaryingStageRelations
+            ExitGracefully("CReservoir::Parse: improper number of rows in :VaryingStageRelations command",BAD_DATA);
           }
-          else if (Len < 2 + nDates){
-            ExitGracefully("CReservoir::Parse: improper number of columns in :VaryingStageRelations command", BAD_DATA);
+          else if(Len < 2 + nDates) {
+            ExitGracefully("CReservoir::Parse: improper number of columns in :VaryingStageRelations command",BAD_DATA);
           }
           aQ_ht[i] = s_to_d(s[0]); //stage
           aV[i] = s_to_d(s[1]); //volume
           aA[i] = s_to_d(s[2]); //area
-          if(hasQund){ aQund[i] = s_to_d(s[3]); } //Qund
-          else       { aQund[i]=0.0; }
-          for (int v = 0; v < nDates; v++){
+          if(hasQund) { aQund[i] = s_to_d(s[3]); } //Qund
+          else { aQund[i]=0.0; }
+          for(int v = 0; v < nDates; v++) {
             aQQ[v][i] = s_to_d(s[3 + v +shift]); //flows for each date
           }
         }
       }
-      p->Tokenize(s, Len); //:EndVaryingStageRelations
+      p->Tokenize(s,Len); //:EndVaryingStageRelations
     }
     //----------------------------------------------------------------------------------------------
-    else if (!strcmp(s[0], ":EndReservoir")){
-      if (Options.noisy){ cout << ":EndReservoir" << endl; }
+    else if(!strcmp(s[0],":EndReservoir")) {
+      if(Options.noisy) { cout << ":EndReservoir" << endl; }
       break;
     }
-    else{
+    else {
       WriteWarning("Reservoir::Parse: unrecognized command (" + to_string(s[0]) + ") in :Reservoir-:EndReservoir Block",Options.noisy);
     }
   }
 
-  if ((type==CURVE_POWERLAW) || (type==CURVE_LINEAR))
+  if((type==CURVE_POWERLAW) || (type==CURVE_LINEAR))
   {
     pRes=new CReservoir(name,SBID,restype,a_V,b_V,a_Q,b_Q,a_A,b_A);
   }
-  else if (type==CURVE_DATA)
+  else if(type==CURVE_DATA)
   {
     pRes=new CReservoir(name,SBID,restype,aQ_ht,aQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
   }
-  else if (type==CURVE_VARYING)
+  else if(type==CURVE_VARYING)
   {
     pRes=new CReservoir(name,SBID,restype,nDates,aDates,aQ_ht,aQQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
   }
@@ -1219,10 +1238,14 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
     ExitGracefullyIf(max_depth==-1,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
     pRes=new CReservoir(name,SBID,restype,weircoeff,cwidth,crestht,lakearea,max_depth);
   }
-  else{
+  else {
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
   }
 
+  if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL)){
+    //allows user to override prismatic reservoir assumption
+    pRes->SetVolumeStageCurve(aV_ht,aV,NV);
+  }
   for (int i = 0; i < nDates; i++){ delete[] aQQ[i]; }delete [] aQQ;
   delete [] aQ;
   delete [] aQ_ht;
