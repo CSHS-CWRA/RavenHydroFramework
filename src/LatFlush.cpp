@@ -88,6 +88,10 @@ void CmvLatFlush::Initialize()
       }
     }
     nConn=q;
+    if(nConn==0) {
+      string warning="CmvLatFlush::Initialize: no connections found between from and to HRU groups in any of the basins. if INTERBASIN flag not used, only transfer within basins is supported. ";
+      WriteWarning(warning,true);
+    }
   }
   else //!constrain_to_SBs
   {
@@ -111,6 +115,10 @@ void CmvLatFlush::Initialize()
       }
     }
     nConn=q;
+    if(nConn==0) {
+      string warning="CmvLatFlush::Initialize: no connections found between from and to HRU groups. HRU Group population of zero?";
+      WriteWarning(warning,true);
+    }
   }
   DynamicSpecifyLatConnections(nConn);
   for(int q=0;q<_nLatConnections;q++){

@@ -315,7 +315,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   unit_t[att_len] = '\0';// add string determining character
   
-  // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS {+0000}"
+  // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS{+0000}"
   unit_t_str=to_string(unit_t);
   if(!IsValidNetCDFTimeString(unit_t_str)) 
   {

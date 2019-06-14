@@ -591,8 +591,13 @@ void CReservoir::UpdateFlowRules(const time_struct &tt, const optStruct &Options
 /// \param initQ [in] initial inflow
 /// \note - ignores extraction and PET ; won't work for initQ=0, which could be non-uniquely linked to stage
 //
-void  CReservoir::SetInitialFlow(const double &initQ,const double &t)
+void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const double &t)
 {
+  if(initQ!=initQlast) {//reading from .rvc file
+    _Qout=initQ;
+    _Qout_last=initQlast;
+    return;
+  }
   const double RES_TOLERANCE=0.001; //[m]
   const int RES_MAXITER=20;
   double dh=0.0001;
@@ -637,9 +642,9 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &t)
 /// \brief sets initial stage
 /// \param ht [in] reservoir stage elevation
 //
-void  CReservoir::SetInitialStage(const double &ht)
+void  CReservoir::SetInitialStage(const double &ht,const double &ht_last)
 {
-  _stage_last=ht;
+  _stage_last=ht_last;
   _stage     =ht;
 }
 //////////////////////////////////////////////////////////////////
@@ -850,6 +855,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 //
 void CReservoir::WriteToSolutionFile (ofstream &OUT) const
 {
+  OUT<<"    :ResFlow, "<<_Qout<<","<<_Qout_last<<endl;
   OUT<<"    :ResStage, "<<_stage<<","<<_stage_last<<endl;
 }
 

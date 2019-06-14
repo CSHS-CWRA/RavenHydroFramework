@@ -115,8 +115,8 @@ public:/*-------------------------------------------------------*/
   //Manipulators
   void              SetMinStage            (const double &min_z);
   void              Initialize             (const optStruct &Options);
-  void              SetInitialFlow         (const double &Q,const double &t);
-  void              SetInitialStage        (const double &ht);
+  void              SetInitialFlow         (const double &Q,const double &Qlast,const double &t);
+  void              SetInitialStage        (const double &ht, const double &ht_last);
   void              SetVolumeStageCurve    (const double *a_ht,const double *a_V,const int nPoints);
   void              AddExtractionTimeSeries(CTimeSeries *pOutflow);
   void              AddWeirHeightTS        (CTimeSeries *pWeirHt);

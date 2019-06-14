@@ -175,8 +175,8 @@ public:/*-------------------------------------------------------*/
   void        AddTargetStageTimeSeries(CTimeSeries *pTS);
   void       AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
   void            ResetReferenceFlow  (const double    &Qreference);
-  void            SetReservoirFlow    (const double &Q,const double &t);
-  void            SetInitialReservoirStage   (const double &h);
+  void            SetReservoirFlow    (const double &Q,const double &Qlast,const double &t);
+  void        SetInitialReservoirStage(const double &h,const double &hlast);
   void            SetChannelStorage   (const double &V);
   void            SetRivuletStorage   (const double &V);
   void            SetQoutArray        (const int N, const double *aQo, const double QoLast);

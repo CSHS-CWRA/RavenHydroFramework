@@ -572,11 +572,14 @@ void CHydroUnit:: ChangeHRUType(const HRU_type typ)
 /// \param i [in] Integer index of state variable type
 /// \param *curr_state_var [in] Current array of state variables in HRU
 /// \param &Options [in] Global model options information
+/// \param ignorevar [in] true if variable values (such as those linked to vegetation) 
+///        should be disregarded (for applying initial conditions where these are not yet initialized)
 /// \return Double representing maximum value of state variable
 //
 double        CHydroUnit::GetStateVarMax(const int      i,
                                          const double  *curr_state_var,
-                                         const optStruct &Options) const
+                                         const optStruct &Options,
+                                         const bool ignorevar) const
 
 {
   double max_var=ALMOST_INF;
@@ -588,11 +591,11 @@ double        CHydroUnit::GetStateVarMax(const int      i,
       break;
     }
     case(CANOPY):       {
-      max_var=_VegVar.capacity;
+      if(!ignorevar) { max_var=_VegVar.capacity; }
       break;
     }
     case(CANOPY_SNOW):  {
-      max_var=_VegVar.snow_capacity;
+      if(!ignorevar) {max_var=_VegVar.snow_capacity;}
       break;
     }
     case(DEPRESSION):   {
@@ -609,7 +612,9 @@ double        CHydroUnit::GetStateVarMax(const int      i,
       double SWE       =curr_state_var[iSNO];
       if (iSD!=DOESNT_EXIST){snow_depth=curr_state_var[iSD];}
       else                  {snow_depth=GetSnowDepth(SWE,FRESH_SNOW_DENS);}
-      max_var=CalculateSnowLiquidCapacity(SWE,snow_depth,Options);
+      if(!ignorevar) {
+        max_var=CalculateSnowLiquidCapacity(SWE,snow_depth,Options);
+      }
       break;
     }
     case(SNOW_COVER):     

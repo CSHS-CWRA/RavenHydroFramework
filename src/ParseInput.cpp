@@ -2280,7 +2280,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[1]=CStateVariable::StringToSVType(s[6],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
-      if ((Len>=8) && (!strcmp(s[7],"INTERBASIN"))){interbasin=true;}
+      if ((Len>=8) && (!strcmp(s[7],"INTERBASIN"))){interbasin=true; }
  
       if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[2])==NULL)){
         ExitGracefully("ParseInput: Lateral Flush - invalid 'to' or 'from' HRU Group used. Must define using :DefineHRUGroups command.",BAD_DATA_WARN);
@@ -2290,7 +2290,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                                 pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
                                 pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
                                 pModel->GetHRUGroup(s[5])->GetGlobalIndex(),
-                                interbasin);
+                                !interbasin);
         AddProcess(pModel,pMover,pProcGroup);
       }
       break;

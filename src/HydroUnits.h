@@ -136,7 +136,8 @@ public:/*-------------------------------------------------------*/
 
   double                 GetStateVarMax     (const int     i,
                                              const double *curr_state_var,
-                                             const optStruct &Options) const;
+                                             const optStruct &Options,
+                                             const bool ignorevar=false) const;
 
   //specialized state variable accessors 
   double                 GetSnowAlbedo        () const;

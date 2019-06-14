@@ -375,13 +375,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
         else if (!strcmp(s[0],":ChannelStorage"))
         {
-          if (Len>2){
+          if (Len>=2){
             pBasin->SetChannelStorage(s_to_d(s[1]));
           }
         }
         else if (!strcmp(s[0],":RivuletStorage"))
         {
-          if (Len>2){
+          if (Len>=2){
             pBasin->SetRivuletStorage(s_to_d(s[1]));
           }
         }
@@ -430,7 +430,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if (!strcmp(s[0],":ResStage"))
         {
           if (Len>=3){
-            pBasin->SetInitialReservoirStage(s_to_d(s[1]));
+            pBasin->SetInitialReservoirStage(s_to_d(s[1]),s_to_d(s[2]));
+          }
+        }
+        else if(!strcmp(s[0],":ResFlow"))
+        {
+          if(Len>=3) {
+            pBasin->SetReservoirFlow(s_to_d(s[1]),s_to_d(s[2]),0.0);
           }
         }
         else if (!strcmp(s[0],":EndBasinStateVariables"))
@@ -450,7 +456,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       time_struct tt;
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pBasin->GetReservoir()->UpdateFlowRules(tt,Options); //ensures correct discharge rating curve is used to calculate flow
-      pBasin->SetReservoirFlow(AutoOrDouble(s[2]),0.0);
+      pBasin->SetReservoirFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),0.0);
       break;
     }
     case(8):  //----------------------------------------------
@@ -460,7 +466,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
       ExitGracefullyIf(pBasin==NULL,
                        "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
-      pBasin->SetInitialReservoirStage(s_to_d(s[2]));
+      pBasin->SetInitialReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
       break;
     }
     case(10):  //----------------------------------------------
@@ -574,7 +580,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     }
     for (int i=0; i<pModel->GetNumStateVars(); i++)
     {
-      double maxv=max(pHRU->GetStateVarMax(i,v,Options),0.0);
+      double maxv=max(pHRU->GetStateVarMax(i,v,Options,true),0.0); //ignores all variable maximum thresholds that are dependent upon model state
       if (v[i]-maxv>REAL_SMALL)// check for capacity
       {
         string name=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i));

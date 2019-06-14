@@ -651,24 +651,24 @@ void CSubBasin::AddOverrideFlowTS(CTimeSeries *pQ)
 /// \param Q [in] flow rate [m3/s]
 /// \param t [in] model time [d]
 //
-void    CSubBasin::SetReservoirFlow(const double &Q,const double &t)
+void    CSubBasin::SetReservoirFlow(const double &Q,const double &Qlast,const double &t)
 {
   if (_pReservoir==NULL){
     WriteWarning("CSubBasin::SetReservoirFlow: trying to set flow for non-existent reservoir.",false);return;
   }
-  _pReservoir->SetInitialFlow(Q,t);
+  _pReservoir->SetInitialFlow(Q,Qlast,t);
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets reservoir stage (and recalculates flow rate)
 /// \param stage [m]
 //
-void    CSubBasin::SetInitialReservoirStage(const double &stage)
+void    CSubBasin::SetInitialReservoirStage(const double &stage, const double &stage_last)
 {
   if (_pReservoir==NULL){
     WriteWarning("CSubBasin::SetInitialReservoirStage: trying to set stage for non-existent reservoir.",false);return;
   }
-  _pReservoir->SetInitialStage(stage);
+  _pReservoir->SetInitialStage(stage,stage_last);
 }
 
 /////////////////////////////////////////////////////////////////
