@@ -1585,19 +1585,17 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
       value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
     }
-		else if (datatype == "RESERVOIR_NETINFLOW")//===================================
-		{
-			pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
-			CReservoir *pRes= pBasin->GetReservoir(); 
-			CHydroUnit *pHRU= GetHRUByID(pRes->GetHRUIndex());
-			double avg_area = pHRU->GetArea();
-
-			if (pHRU == NULL) {avg_area = 0.0;}
-
-			double tem_precip1 = pBasin->GetAvgForcing("PRECIP") / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
-			double losses      = pBasin->GetReservoirEvapLosses      (Options.timestep) / (Options.timestep*SEC_PER_DAY);
-			value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
-		}
+    else if (datatype == "RESERVOIR_NETINFLOW")//===================================
+    {
+      pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      CReservoir *pRes= pBasin->GetReservoir(); 
+      double avg_area=0.0;
+      if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
+      
+      double tem_precip1 = pBasin->GetAvgForcing("PRECIP") / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
+      double losses      = pBasin->GetReservoirEvapLosses      (Options.timestep) / (Options.timestep*SEC_PER_DAY);
+      value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
+    }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     {
       CHydroUnit *pHRU=NULL;

@@ -644,7 +644,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool ishyd      =!strcmp(s[1], "HYDROGRAPH");
       bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
       bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
-      bool isnetinflow=!strcmp(s[1], "RESERVOIR_NET_INFLOW");
+      bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
         
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,(!strcmp(s[1], "HYDROGRAPH")));
@@ -692,7 +692,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool ishyd      =!strcmp(s[1], "HYDROGRAPH");
       bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
       bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
-      bool isnetinflow=!strcmp(s[1], "RESERVOIR_NET_INFLOW");
+      bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
 
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options);
