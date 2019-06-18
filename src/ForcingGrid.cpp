@@ -127,13 +127,14 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   if (_is_3D) { ncells = _GridDims[0] * _GridDims[1];}
   else        { ncells = _GridDims[0];}
 
+  //AllocateWeightArray()
   _GridWeight=NULL;
   _GridWeight =  new double *[_nHydroUnits];
-  ExitGracefullyIf(_GridWeight==NULL,"CForcingGrid::Constructor(2a)",OUT_OF_MEMORY);
+  ExitGracefullyIf(_GridWeight==NULL,"CForcingGrid::Copy Constructor(2a)",OUT_OF_MEMORY);
   for (int ik=0; ik<_nHydroUnits; ik++) {                           // loop over HRUs
     _GridWeight[ik] =NULL;
     _GridWeight[ik] = new double [ncells];
-    ExitGracefullyIf(_GridWeight[ik]==NULL,"CForcingGrid::Constructor(2)",OUT_OF_MEMORY);
+    ExitGracefullyIf(_GridWeight[ik]==NULL,"CForcingGrid::Copy Constructor(2)",OUT_OF_MEMORY);
     for (int c=0; c<ncells; c++) {       // loop over cells = rows*cols
       _GridWeight[ik][c]=grid._GridWeight[ik][c];                      // copy the value
     }
@@ -141,7 +142,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   
   _IdxNonZeroGridCells = NULL;
   _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
-  ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Constructor(3)",OUT_OF_MEMORY);
+  ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Copy Constructor(3)",OUT_OF_MEMORY);
   for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
     _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              // copy the value
   }
@@ -358,9 +359,9 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   // find out if time is an integer or double variable
   retval = nc_inq_var( ncid, varid_t,
-		       NULL,     // out: name
-		       &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
-		       NULL,     // out: dims
+                       NULL,     // out: name
+		               &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
+		               NULL,     // out: dims
                        NULL,     // out: dimids
                        NULL );   // out: natts
 
@@ -601,7 +602,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief  Reallocate all arrays in class to (potentially updated) grid dimensions
+/// \brief  Reallocate all arrays in class to (potentially updated) time grid dimensions
 //          mainly used when sub-daily grids have to be added to model
 //
 void CForcingGrid::ReallocateArraysInForcingGrid( )
@@ -635,7 +636,7 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   // -------------------------------
   // Initialize weight array and set all entries to NODATA value
   // -------------------------------
-  _GridWeight =  NULL;
+  /*_GridWeight =  NULL;
   _GridWeight =  new double *[_nHydroUnits];
   for (int ik=0; ik<_nHydroUnits; ik++) {                      // loop over HRUs
     _GridWeight[ik] =NULL;
@@ -661,7 +662,7 @@ void CForcingGrid::ReallocateArraysInForcingGrid( )
   for(int k=0; k<_nHydroUnits;k++){
     _aFirstNonZeroWt[k]=0;
     _aLastNonZeroWt [k]=_nNonZeroWeightedGridCells-1;
-  }
+  }*/
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1534,10 +1535,10 @@ void   CForcingGrid::AllocateWeightArray(const int nHydroUnits, const int nGridC
   // -------------------------------
   _GridWeight = NULL;
   _GridWeight = new double *[nHydroUnits];
-  for (int ik=0; ik<nHydroUnits; ik++) {  // loop over HRUs
-    _GridWeight[ik] = new double [nGridCells];
+  for (int k=0; k<nHydroUnits; k++) {  // loop over HRUs
+    _GridWeight[k] = new double [nGridCells];
     for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
-      _GridWeight[ik][il] = 0.0;
+      _GridWeight[k][il] = 0.0;
     }
   }
 }
@@ -1676,6 +1677,12 @@ int CForcingGrid::NumberNonZeroWeightedGridCells(const int nHydroUnits, const in
 double CForcingGrid::GetGridWeight(const int k,
                                    const int CellID) const
 {
+#ifdef _STRICTCHECK_
+  int nCells   =GetRows()*GetCols(); //handles 3D or 2D
+  if ((k <0)     || (k >=_nHydroUnits)){ExitGracefully("CForcingGrid::GetGridWeight: invalid k index",RUNTIME_ERR);}
+  if ((CellID<0) || (CellID>=nCells  )){ExitGracefully("CForcingGrid::GetGridWeight: invalid CellID index",RUNTIME_ERR); }
+  if (_GridWeight==NULL){ ExitGracefully("CForcingGrid::GetGridWeight: NULL Grid weight matrix",RUNTIME_ERR); }
+#endif
   return _GridWeight[k][CellID];
 }
 
@@ -1817,6 +1824,10 @@ double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const dou
 //
 double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,const double &tstep,const CForcingGrid *pRain) const
 {
+#ifdef _STRICTCHECK_
+  if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
+  if(_aFirstNonZeroWt==NULL) { ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: NULL weight array",RUNTIME_ERR); }
+#endif _STRICTCHECK_
 
   int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
   double wt;

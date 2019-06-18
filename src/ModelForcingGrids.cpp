@@ -25,15 +25,20 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
                                         const double &interval, 
                                         const int nVals)
 {
-  CForcingGrid *pTout;
-  if ( GetForcingGridIndexFromType(typ) == DOESNT_EXIST )
-  { // for the first chunk the derived grid does not exist and has to be added to the model
-    int    GridDims[3];
-    GridDims[0] = pGrid->GetCols(); 
-    GridDims[1] = pGrid->GetRows(); 
-    GridDims[2] = nVals;
+  bool is_new;
+  static CForcingGrid *pTout;
+  if (GetForcingGridIndexFromType(typ) == DOESNT_EXIST )
+  { // for the first chunk, the derived grid does not exist and has to be added to the model
+    // all weights, etc., are copied from the base grid 
+    is_new=true;
+
     pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrixes are deep copies
 
+    //following values are overwritten:
+    int    GridDims[3];
+    GridDims[0] = pGrid->GetCols();
+    GridDims[1] = pGrid->GetRows();
+    GridDims[2] = nVals;
     pTout->SetForcingType(typ);
     pTout->SetInterval(interval);            
     pTout->SetGridDims(GridDims);
@@ -43,22 +48,14 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
   else
   {
     // for all latter chunks the the grid already exists and values will be just overwritten
+    is_new=false;
     pTout=GetForcingGrid(typ);
   }
 
-  //JRC - is below  necessary? - shouldn't this be done in deep copy? [it seems to be necessary]
-  int nGridHRUs=pGrid->GetnHydroUnits();
-  int nCells=pGrid->GetRows()*pGrid->GetCols(); //handles 3D or 2D
-  double wt;
-  for (int k=0; k<nGridHRUs; k++) {                
-    for (int ic=0; ic<nCells; ic++) {    
-      wt = pGrid->GetGridWeight(k, ic);
-      pTout->SetWeightVal(k, ic, wt); 
-    }
-  }
-
-  pTout->SetIdxNonZeroGridCells(nGridHRUs,nCells);
-
+  //int nGridHRUs=pGrid->GetnHydroUnits();
+  //int nCells   =pGrid->GetRows()*pGrid->GetCols(); //handles 3D or 2D
+  //cout<<"**ForcingGrid Copy Create : "<<ForcingToString(pGrid->GetForcingType())<<"-->"<<ForcingToString(pTout->GetForcingType())<< " is new?:"<<is_new<<"**"<<endl;
+  
   return pTout;
 }
 
@@ -87,7 +84,7 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   // Minimum requirements of forcing grids: must have precip or rain
   ExitGracefullyIf(!pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
 
-  if(Options.noisy) { cout<<"Generating gridded precipitation variables"<<endl; }
+  if(Options.noisy) { cout<<"Generating gridded precipitation variables..."<<endl; }
   //--------------------------------------------------------------------------
   // Handle snowfall availability
   //--------------------------------------------------------------------------
@@ -111,15 +108,21 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
     }
     //pGrid_pre->SetChunkSize(pGrid_pre->GetChunkSize()-1);
   }
+  if(Options.noisy) { cout<<"SNOW="<<snow_gridded<<" RAIN="<<rain_gridded<<" PRECIP="<<pre_gridded<<endl; }
   if(snow_gridded && rain_gridded && !pre_gridded) {
     GeneratePrecipFromSnowRain(Options);
   }
   if(!rain_gridded && !snow_gridded && pre_gridded) {
+    if(Options.noisy) { cout<<"Generating rain grid"<<endl; }
     GenerateRainFromPrecip(Options);
   }
   if(!snow_gridded && (pre_gridded || rain_gridded)) {
+    if(Options.noisy) { cout<<"Generating empty snow grid"<<endl; }
     GenerateZeroSnow(Options);
-    if(!pre_gridded) { GeneratePrecipFromSnowRain(Options); }
+    if(!pre_gridded) { 
+      if(Options.noisy) { cout<<"Generating precip grid"<<endl; }
+      GeneratePrecipFromSnowRain(Options); 
+    }
   }
   if(Options.noisy) { cout<<"...done generating gridded precipitation variables."<<endl; }
 }
@@ -432,8 +435,9 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
 void CModel::GenerateZeroSnow(const optStruct &Options)
 {
   CForcingGrid *pPre(NULL),*pSnow;
-  if (ForcingGridIsAvailable(F_PRECIP))   { pPre=GetForcingGrid((F_PRECIP)); }
-  if (ForcingGridIsAvailable(F_RAINFALL)) { pPre=GetForcingGrid((F_RAINFALL)); }
+  if      (ForcingGridIsAvailable(F_PRECIP))   { pPre=GetForcingGrid((F_PRECIP)); }
+  else if (ForcingGridIsAvailable(F_RAINFALL)) { pPre=GetForcingGrid((F_RAINFALL)); }
+  else {ExitGracefully("CModel:GenerateZeroSnow: missing precip or rainfall grid",RUNTIME_ERR); }
 
   pPre->Initialize(Options);//needed for correct mapping from time series to model time
 

@@ -292,7 +292,9 @@ CForcingGrid *CModel::GetForcingGrid(const forcing_type &ftyp) const
 {
   int f=GetForcingGridIndexFromType(ftyp);
 #ifdef _STRICTCHECK_
-  ExitGracefullyIf((f<0) || (f>=_nForcingGrids),"CModel GetForcingGrid::improper index",BAD_DATA);
+  if((f<0) || (f>=_nForcingGrids)) { cout<<"Invalid forcing type: "<<ForcingToString(ftyp)<<" ("<<f<<")"<<endl; }
+  ExitGracefullyIf((f<0) || (f>=_nForcingGrids),"CModel GetForcingGrid::improper index",RUNTIME_ERR);
+  ExitGracefullyIf(_pForcingGrids[f]==NULL,"CModel GetForcingGrid:: NULL forcing grid",RUNTIME_ERR);
 #endif
   return _pForcingGrids[f];
 }
@@ -994,7 +996,9 @@ void CModel::AddForcingGrid  (CForcingGrid *pGrid, forcing_type typ)
   }
   else { //overwrite grid
     int f= GetForcingGridIndexFromType(typ);
-    delete _pForcingGrids[f];
+    if((_pForcingGrids[f])!=(pGrid)) {
+      delete _pForcingGrids[f]; //JRC: the big offender - usually we are overwriting with the same forcing grid instance
+    }
     _pForcingGrids[f]=pGrid;
   }
 }
