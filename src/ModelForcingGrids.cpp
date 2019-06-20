@@ -181,14 +181,17 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
   }
   if(temp_ave_gridded)                                                // (B) Sub-daily temperature data provided
   {
+    if(Options.noisy) { cout<<"Generating min/max/ave temp"<<endl; }
     GenerateMinMaxAveTempFromSubdaily(Options);                        // ---> Generate daily min, max, & avg
   }
   else if(temp_daily_min_gridded && temp_daily_max_gridded)            // (C) Daily min/max temperature data provided
   {
+    if(Options.noisy) { cout<<"Generating ave/hourly temp from min/max"<<endl; }
     GenerateAveSubdailyTempFromMinMax(Options);                        // --> Generate T_daily_ave, T_ave (downscaled)
   }
   else if(temp_daily_ave_gridded)                                      // (D) only daily average data provided
   {
+    if(Options.noisy) { cout<<"Generating min/max temp from ave"<<endl; }
     GenerateMinMaxSubdailyTempFromAve(Options);                        // --> Generate daily T_min, T_max, and subdaily ave (downscaled)
   }
   else
@@ -219,10 +222,10 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // ----------------------------------------------------
   // Generate daily average grid, if it doesnt exist
   // ----------------------------------------------------
-  if(!ForcingGridIsAvailable(F_TEMP_DAILY_AVE)) 
+  if(!ForcingGridIsInput(F_TEMP_DAILY_AVE)) 
   {
     int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());
-
+    double Tave;
     pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals);
 
     double t=0.0;
@@ -230,8 +233,9 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
     for(int it=0; it<chunk_size; it++) {           // loop over time points in buffer
       for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
-        pTave_daily->SetValue(ic,it,0.5*(pTmin->GetValue_avg(ic,t * nValsPerDay,nValsPerDay) +
-                                         pTmax->GetValue_avg(ic,t * nValsPerDay,nValsPerDay)));
+        Tave=0.5*(pTmin->GetValue_avg(ic,t * nValsPerDay,nValsPerDay) +
+                  pTmax->GetValue_avg(ic,t * nValsPerDay,nValsPerDay));
+        pTave_daily->SetValue(ic,it,Tave);
       }
       t+=1.0;
     }
@@ -276,7 +280,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   }
   else //tstep ==  1 day
   {
-    if(!ForcingGridIsAvailable(F_TEMP_AVE))
+    if(!ForcingGridIsInput(F_TEMP_AVE))
     {
       int    nVals     = pTave_daily->GetChunkSize();
       pTave = ForcingCopyCreate(pTave_daily,F_TEMP_AVE,1.0,nVals);
