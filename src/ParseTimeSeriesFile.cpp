@@ -173,6 +173,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":Deaccumulate"            )){code=407;}
     else if  (!strcmp(s[0],":TimeShift"               )){code=408;}
     else if  (!strcmp(s[0],":LinearTransform"         )){code=409;}
+    else if  (!strcmp(s[0],":PeriodEndingNC"          )){code=410; }
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
@@ -1427,10 +1428,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(!WeightArrayOK,
                        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum per HRUID must be 1.0.",BAD_DATA);
 
-      // determine number of non-zero weighted grid cells and set this class variable
-      int nNonZeroWeightedGridCells = pGrid->NumberNonZeroWeightedGridCells(nHydroUnits,nGridCells);
-      pGrid->SetNumberNonZeroGridCells(nNonZeroWeightedGridCells);
-
       // store (sorted) grid cell ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
       break;
@@ -1454,12 +1451,23 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (408)://----------------------------------------------
-    {/*:TimeShift */
+    {/*:TimeShift [hh:mm:ss] or [days]*/
       if (Options.noisy){cout <<"   :TimeShift"<<endl;}
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :TimeShift command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(Len!=2,          "ParseTimeSeriesFile: :TimeShift expects exactly one argument",BAD_DATA);
+      ExitGracefullyIf(Len<2,          "ParseTimeSeriesFile: :TimeShift expects at least one argument",BAD_DATA);
       ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :TimeShift argument in :GriddedForcing or :StationForcing block needs to be before :GridWeights block",BAD_DATA);
-      double TimeShift=atof(s[1]);
+      
+      string tString=s[1];
+      double TimeShift=0.0;
+      if((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))) {//support for hh:mm:ss.00 format in timestep
+        time_struct tt;
+        tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
+        TimeShift=(tt.julian_day);
+      }
+      else {
+        TimeShift =(s_to_d(s[1]));//in days
+      }
+
       TimeShiftNCGiven = true;
       pGrid->SetTimeShift(TimeShift);
 
@@ -1480,7 +1488,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid->SetLinearTransform(LinTrans_a,LinTrans_b);
       break;
     }
+    case (410)://----------------------------------------------
+    {/*:PeriodEndingNC  */
+      if (Options.noisy){cout <<"   :PeriodEnding"<<endl;}
+      ExitGracefullyIf(pGrid==NULL,
+                       "ParseTimeSeriesFile: :PeriodEnding command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
+      pGrid->SetAsPeriodEnding();
+      break;
+    }
     case (500)://----------------------------------------------
     {/*:StationForcing
        :ForcingType PRECIP

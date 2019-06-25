@@ -244,7 +244,7 @@ void   CmvConvolution::GetRatesOfChange( const double                   *state_v
   //outflow from convolution storage
   double orig_storage;
   double sumrem=1.0;
-  for (int i=0; i<N; i++)
+  for (i=0; i<N; i++)
   {
     if (sumrem<REAL_SMALL){orig_storage=0.0;}
     else                  {orig_storage=S[i]/sumrem;}

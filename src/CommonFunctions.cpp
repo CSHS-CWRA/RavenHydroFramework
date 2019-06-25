@@ -467,20 +467,20 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
 /// \param unit_t_str [in] full time string from NetCDF file (e.g., 'days since YYYY-MM-dd 00:00:00+0000')
 /// \param timestr    [in] first word of string (e.g., 'days')
 /// \param calendar   [in] enumerated calendar type
-/// \param tshift    [out] time shift from GMT, in days
+/// \param timezone   [out] time shift from GMT, in days
 /// \return Raven Time structure equivalent of passed date and time, time shift if applicable
 //
-time_struct TimeStructFromNetCDFString(const string unit_t_str,const string timestr,const int calendar, double &tshift)
+time_struct TimeStructFromNetCDFString(const string unit_t_str,const string timestr,const int calendar, double &timezone)
 {
   string dash,colon,tmp;
   tmp=unit_t_str;
-  tshift=0.0;
+  timezone=0.0;
   int start=(int)strlen(timestr.c_str());
   start+=7; //first char of year YYYY (7=length(' since '))
   // ---------------------------
   // check if format is hours since YYYY-MM-DD HH:MM:SS, fill with leading zeros if necessary
-  // Y  Y  Y  Y  -  M  M  -  d  d  _  0  0  :  0  0  :  0  0  +  0  0  0  0 
-  // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+  // Y  Y  Y  Y  -  M  M  -  d  d  _  0  0  :  0  0  :  0  0  .  0     +  0  0  0  0 
+  // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
   // ---------------------------
   dash = tmp.substr(start+4,1);  // first dash in date
   if(!strstr(dash.c_str(),"-")) 
@@ -495,11 +495,16 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
 
   string sDate = tmp.substr(start   ,10); //YYYY-MM-DD
   string sTime = tmp.substr(start+11,8);  //HH:MM:SS
-
-  if(strstr(tmp.substr(start+4,1).c_str(),"+")) {
-    tshift=(double)(s_to_i(tmp.substr(start+20,4).c_str()))/HR_PER_DAY; //time shift, in days
+  
+  timezone=0;
+  if((strlen(tmp.c_str())-start)==26) {
+    if(!strcmp(tmp.substr(start+22,1).c_str(),"+")) {
+      timezone=(double)(s_to_i(tmp.substr(start+23,4).c_str()))/HR_PER_DAY/100; //time zone, in days
+    }
+    else if(!strcmp(tmp.substr(start+22,1).c_str(),"-")) {
+      timezone=-(double)(s_to_i(tmp.substr(start+23,4).c_str()))/HR_PER_DAY/100; //time zone, in days
+    }
   }
-
   return DateStringToTimeStruct(sDate,sTime,calendar);
 }
 ////////////////////////////////////////////////////////////////////////////

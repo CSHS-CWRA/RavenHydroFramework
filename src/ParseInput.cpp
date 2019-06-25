@@ -136,7 +136,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     cout << "Parsing Input File " << Options.rvi_filename <<"..."<<endl;
     cout <<"======================================================"<<endl;
   }
-
+ 
   int   code;
   bool  ended(false);
   int   Len,line(0);
@@ -194,6 +194,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.recharge            =RECHARGE_NONE;
   Options.direct_evap         =false;
   Options.keepUBCWMbugs       =false;
+  Options.pavics              =false;
+  Options.deltaresFEWS        =false;
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
     Options.noisy               =false;
@@ -233,7 +235,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   {
     if (ended){break;}
     if (Options.noisy){ cout << "reading line " << p->GetLineNumber() << ": ";}
-
+    
     /*assign code for switch statement
       ------------------------------------------------------------------
       <100         : ignored/special
@@ -341,6 +343,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
     else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
     else if  (!strcmp(s[0],":AssimilateStreamflow"      )){code=93; }
+    else if  (!strcmp(s[0],":DeltaresFEWSMode"          )){code=94; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
@@ -1121,17 +1124,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.noisy=false;Options.silent=true;
       break;
     }
-    case(88):  //--------------------------------------------
-    {/*:PavicsMode */
-      if (Options.noisy) {cout<<endl;}
-      Options.pavics=true;
-      ofstream PROGRESS((Options.main_output_dir+"Raven_progress.txt").c_str());
-      if (PROGRESS.fail()){
-        ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
-      }
-      PROGRESS.close();
-      break;
-    }
     case(59):  //--------------------------------------------
     {/*:rvh_Filename */
       if (Options.noisy) {cout <<"rvh filename: "<<s[1]<<endl;}
@@ -1405,6 +1397,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.period_starting=false;
       break;
     }
+    case(88):  //--------------------------------------------
+    {/*:PavicsMode */
+      if(Options.noisy) { cout<<endl; }
+      Options.pavics=true;
+      ofstream PROGRESS((Options.main_output_dir+"Raven_progress.txt").c_str());
+      if(PROGRESS.fail()) {
+        ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
+      }
+      PROGRESS.close();
+      break;
+    }
     case(89):  //--------------------------------------------
     {/*:OutputConstituentMass*/
       if (Options.noisy) {cout <<"Write constituent mass instead of concentrations"<<endl;}
@@ -1434,6 +1437,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:AssimilateStreamflow*/
       if(Options.noisy) { cout << "Assimilate streamflow on" << endl; }
       Options.assimilation_on=true;
+      break;
+    }
+    case(94):  //--------------------------------------------
+    {/*:DeltaresFEWSMode*/
+      if(Options.noisy) { cout << "Deltares FEWS input ingestion mode" << endl; }
+      Options.deltaresFEWS=true;
       break;
     }
     case(98):  //--------------------------------------------
@@ -2645,7 +2654,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   //Add Ensemble configuration to Model
   //===============================================================================================
-  CEnsemble *pEnsemble;
+  CEnsemble *pEnsemble=NULL;
   if     (Options.ensemble==ENSEMBLE_NONE      ) {pEnsemble=new CEnsemble(1,Options);}
   else if(Options.ensemble==ENSEMBLE_MONTECARLO) {pEnsemble=new CMonteCarloEnsemble(num_ensemble_members,Options);}
   pModel->SetEnsembleMode(pEnsemble);

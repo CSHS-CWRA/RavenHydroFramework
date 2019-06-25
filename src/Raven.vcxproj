@@ -168,8 +168,8 @@
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);c:/Program Files/netCDF 4.7.0/bin/;</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug netCDF|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.5.0/include/;</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);c:/Program Files/netCDF 4.5.0/bin/;</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.7.0/include/;</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);c:/Program Files/netCDF 4.7.0/bin/;</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -332,7 +332,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);c:/Program Files/netCDF 4.5.0/lib/netcdf.lib;</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);c:/Program Files/netCDF 4.7.0/lib/netcdf.lib;</AdditionalDependencies>
       <OutputFile>.\DebugNetCDF/Raven.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -341,7 +341,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <AdditionalLibraryDirectories>c:/Program Files/netCDF 4.5.0/bin/;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>c:/Program Files/netCDF 4.7.0/bin/;</AdditionalLibraryDirectories>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>

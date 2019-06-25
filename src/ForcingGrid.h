@@ -83,6 +83,7 @@ private:/*------------------------------------------------------*/
   double       _TimeShift;                   ///< time shift of data (fractional day by which read data should be shifted)
   double       _LinTrans_a;                  ///< linear transformation of read data: new = a*data + b
   double       _LinTrans_b;                  ///< linear transformation of read data: new = a*data + b
+  bool         _period_ending;               ///< true if data is period ending - subtracts additional interval *on top of _TimeShift*
   bool         _is_3D;                       ///< true if forcings are 3D (lat, lon, time); false if 2D (stations, time)
   double       _rainfall_corr;               ///< correction factor for rainfall (stored with gauge, used elsewhere)
   double       _snowfall_corr;               ///< correction factor for snowfall (stored with gauge, used elsewhere)
@@ -144,8 +145,6 @@ public:/*------------------------------------------------------*/
                                            const double     weight);         ///< sets one entry of _GridWeight[HRUID, CellID] = weight
   bool   CheckWeightArray(                 const int        nHydroUnits,
                                            const int        nGridCells);     ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
-  int    NumberNonZeroWeightedGridCells(   const int        nHydroUnits,
-                                           const int        nGridCells);     ///< estimates number of grid cells with non-zero weight
   double GetGridWeight(                    const int        k,
                                            const int        CellID) const;   ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
@@ -162,11 +161,11 @@ public:/*------------------------------------------------------*/
   void         SetVarname(                    const string varname);                   ///< set _varname                   of class
   void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames                  of class
   void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims                  of class
-  void         SetNumberNonZeroGridCells(     const int    nNonZeroWeightedGridCells); ///< set _nNonZeroWeightedGridCells of class
   void         SetToDeaccumulate();                                                    ///< set _deaccumulate              of class
   void         SetLinearTransform(            const double LinTrans_a,                 ///< set _LinTrans_a and _b         of class
                                               const double LinTrans_b);
   void         SetTimeShift(                  const double TimeShift);                 ///< set _TimeShift                 of class
+  void         SetAsPeriodEnding              ();                                      ///< set _period_ending
   void         SetIs3D(                       const bool   is3D);                      ///< set _is3D                      of class
   void         SetIdxNonZeroGridCells(        const int    nHydroUnits,
                                               const int    nGridCells);                ///< set _IdxNonZeroGridCells       of class
