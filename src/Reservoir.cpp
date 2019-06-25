@@ -1021,7 +1021,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
         }
         else if (!strcmp(s[1], "LOOKUP_TABLE"))
         {
-          type = CURVE_DATA;
+          if(type!=CURVE_LAKE) { type = CURVE_DATA; } //enables :VolumeStageRelation to be used with lake-type 
           p->Tokenize(s, Len);
           if (Len >= 1){ NV = s_to_i(s[0]); }
           aV    = new double[NV];
