@@ -424,7 +424,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   bad=SetSpecifiedValue(_Soil.VIC_zmax,Stmp.VIC_zmax,Sdefault.VIC_zmax,needed,"VIC_ZMAX");
   bad=SetSpecifiedValue(_Soil.VIC_alpha,Stmp.VIC_alpha,Sdefault.VIC_alpha,needed,"VIC_ALPHA");
   bad=SetSpecifiedValue(_Soil.VIC_evap_gamma,Stmp.VIC_evap_gamma,Sdefault.VIC_evap_gamma,needed,"VIC_EVAP_GAMMA");
-  bad=SetSpecifiedValue(_Soil.b_exp,Stmp.b_exp,Sdefault.b_exp,needed,"B_EXP");
+  bad=SetSpecifiedValue(_Soil.VIC_b_exp,Stmp.VIC_b_exp,Sdefault.VIC_b_exp,needed,"B_EXP");
   bad=SetSpecifiedValue(_Soil.max_perc_rate,Stmp.max_perc_rate,Sdefault.max_perc_rate,needed,"MAX_PERC_RATE");
   bad=SetSpecifiedValue(_Soil.perc_n,Stmp.perc_n,Sdefault.perc_n,needed,"PERC_N");
   bad=SetSpecifiedValue(_Soil.perc_coeff,Stmp.perc_coeff,Sdefault.perc_coeff,needed,"PERC_COEFF");
@@ -496,7 +496,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.VIC_zmax          =DefaultParameterValue(is_template,false);
   S.VIC_alpha         =DefaultParameterValue(is_template,false);
   S.VIC_evap_gamma    =DefaultParameterValue(is_template,false);//
-  S.b_exp             =DefaultParameterValue(is_template,false);//
+  S.VIC_b_exp         =DefaultParameterValue(is_template,false);//
   S.max_perc_rate     =DefaultParameterValue(is_template,false);//
   S.perc_n            =DefaultParameterValue(is_template,false);//
   S.perc_coeff        =DefaultParameterValue(is_template,false);//
@@ -572,7 +572,8 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
   else if (!name.compare("VIC_ZMAX"            )){S.VIC_zmax=value;}
   else if (!name.compare("VIC_ALPHA"           )){S.VIC_alpha=value;}
   else if (!name.compare("VIC_EVAP_GAMMA"      )){S.VIC_evap_gamma=value;}
-  else if (!name.compare("B_EXP"               )){S.b_exp=value;}
+  else if (!name.compare("B_EXP"               )){S.VIC_b_exp=value;} //backward compat
+  else if (!name.compare("VIC_B_EXP"           )){S.VIC_b_exp=value;}
   else if (!name.compare("MAX_PERC_RATE"       )){S.max_perc_rate=value;}
   else if (!name.compare("PERC_N"              )){S.perc_n=value;}
   else if (!name.compare("PERC_COEFF"          )){S.perc_coeff=value;}
@@ -699,7 +700,8 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
   else if (!name.compare("VIC_ZMAX"            )){return S.VIC_zmax;}
   else if (!name.compare("VIC_ALPHA"           )){return S.VIC_alpha;}
   else if (!name.compare("VIC_EVAP_GAMMA"      )){return S.VIC_evap_gamma;}
-  else if (!name.compare("B_EXP"               )){return S.b_exp;}
+  else if (!name.compare("B_EXP"               )){return S.VIC_b_exp;}//backwards compat
+  else if (!name.compare("VIC_B_EXP"           )){return S.VIC_b_exp;}
   else if (!name.compare("MAX_PERC_RATE"       )){return S.max_perc_rate;}
   else if (!name.compare("PERC_N"              )){return S.perc_n;}
   else if (!name.compare("PERC_COEFF"          )){return S.perc_coeff;}

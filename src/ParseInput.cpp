@@ -213,6 +213,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.ave_hydrograph      =true;
   Options.write_reservoir     =false;
   Options.write_reservoirMB   =false;
+  Options.write_basinfile     =false;
   Options.suppressICs         =false;
   Options.period_ending       =false;
   Options.period_starting     =false;//true;
@@ -344,6 +345,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
     else if  (!strcmp(s[0],":AssimilateStreamflow"      )){code=93; }
     else if  (!strcmp(s[0],":DeltaresFEWSMode"          )){code=94; }
+    else if  (!strcmp(s[0],":WriteSubbasinFile"         )){code=95; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
@@ -777,6 +779,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SW_RAD_UBCWM"     )){Options.SW_radiation=SW_RAD_UBCWM;}
       else if (!strcmp(s[1],"UBC"              )){Options.SW_radiation=SW_RAD_UBCWM;}
       else if (!strcmp(s[1],"SW_RAD_VALIANTZAS")){Options.SW_radiation=SW_RAD_VALIANTZAS;}
+      else if (!strcmp(s[1],"SW_RAD_NONE"      )){Options.SW_radiation=SW_RAD_NONE; }
       else {ExitGracefully("ParseInput:SWRadiationMethod: Unrecognized method",BAD_DATA_WARN);}
 
       if (Options.SW_radiation == SW_RAD_DATA){
@@ -1443,6 +1446,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:DeltaresFEWSMode*/
       if(Options.noisy) { cout << "Deltares FEWS input ingestion mode" << endl; }
       Options.deltaresFEWS=true;
+      break;
+    }
+    case(95):  //--------------------------------------------
+    {/*:WriteSubbasinFile*/
+      if(Options.noisy) { cout << "Write Subbasin file" << endl; }
+      Options.write_basinfile=true;
       break;
     }
     case(98):  //--------------------------------------------

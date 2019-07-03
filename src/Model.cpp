@@ -1399,9 +1399,9 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
 {
   double area;
   _CumulInput+=GetAveragePrecip()*Options.timestep;
+  area = _WatershedArea*M2_PER_KM2;
 
   for (int p=0;p<_nSubBasins;p++){
-    area = _WatershedArea*M2_PER_KM2;
     _CumulInput+=_pSubBasins[p]->GetIntegratedSpecInflow(tt.model_time,Options.timestep)/area*MM_PER_METER;//converted to [mm] over  basin
   }
 
@@ -1421,7 +1421,8 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
   {
     bool outflowdisabled;
     CSubBasin *pSBdown=NULL;
-    pSBdown=GetSubBasinByID(_pSubBasins[p]->GetDownstreamID());
+    if(_aDownstreamInds[p]>=0) { pSBdown=_pSubBasins[_aDownstreamInds[p]]; }
+    
     outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
 
     if(_pSubBasins[p]->IsEnabled()){

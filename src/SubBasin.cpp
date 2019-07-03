@@ -456,13 +456,33 @@ double CSubBasin::GetIntegratedSpecInflow(const double &t, const double &tstep) 
   return sum;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns reference discharge [m^3]
-/// \return  reference discharge [m^3] or AUTO_COMPUTE if not yet calculated
+/// \brief Returns reference discharge [m^3/s]
+/// \return  reference discharge [m^3/s] or AUTO_COMPUTE if not yet calculated
 //
 double CSubBasin::GetReferenceFlow() const
 {
   return _Q_ref;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reference celerity [m/s]
+/// \return  reference celerity [m/s] or AUTO_COMPUTE if not yet calculated
+//
+double CSubBasin::GetReferenceCelerity() const {
+  return _c_ref;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reference diffusivity [m2/s]
+/// \return  reference diffusivity [m2/s] or AUTO_COMPUTE if not yet calculated
+//
+double CSubBasin::GetDiffusivity() const {
+  if(_pChannel!=NULL) {
+    return _pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n);
+  }
+  else {
+    return 0.0;
+  }
+}
+
 /*****************************************************************
    Manipulators
 *****************************************************************/
@@ -1128,11 +1148,16 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
       _aRouteHydro[n  ]=1/(double)(_nQinHist);
     }
   }
-
+ 
   //correct to ensure that sum _aRouteHydro[m]=1.0
   sum=0.0;
   for (n=0;n<_nQinHist;n++){sum+=_aRouteHydro[n];}
-  ExitGracefullyIf(sum<0.2,"CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed",RUNTIME_ERR); //for very diffusive channels - reach length too long
+  if(sum<0.2) {
+    cout<<"diff: "<<_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)<<" cel"<<_c_ref<<endl;
+    cout<<"---";for(n=0;n<_nQinHist;n++) { cout<< _aRouteHydro[n]<<" "; }cout<<" SUM: "<<sum<<endl;
+  }
+  string warning="CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed in subbasin "+to_string(_ID);
+  ExitGracefullyIf(sum<0.2,warning.c_str(),RUNTIME_ERR); //for very diffusive channels - reach length too long
   for (n=0;n<_nQinHist;n++){_aRouteHydro[n]/=sum;}
 }
 

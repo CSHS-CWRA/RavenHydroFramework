@@ -221,6 +221,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   {
     // timeseries at gauge
   }
+  else if(Options.SW_radiation==SW_RAD_NONE)
+  {
+  }
 
   // LW Radiation Method
   //----------------------------------------------------------------------

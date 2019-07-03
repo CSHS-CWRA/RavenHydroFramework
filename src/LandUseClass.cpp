@@ -295,7 +295,6 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
 
   SetSpecifiedValue(S.partition_coeff,Stmp.partition_coeff,Sdefault.partition_coeff,needed,"PARTITION_COEFF");//(needed_params.partition_coeff>0.0)
   SetSpecifiedValue(S.SCS_CN,Stmp.SCS_CN,Sdefault.SCS_CN,needed,"SCS_CN");
-  SetSpecifiedValue(S.b_exp,Stmp.b_exp,Sdefault.b_exp,needed,"B_EXP");
   SetSpecifiedValue(S.dep_max,Stmp.dep_max,Sdefault.dep_max,needed,"DEP_MAX");
   SetSpecifiedValue(S.dep_max_flow,Stmp.dep_max_flow,Sdefault.dep_max_flow,needed,"DEP_MAX_FLOW");
   SetSpecifiedValue(S.dep_n,Stmp.dep_n,Sdefault.dep_n,needed,"DEP_N");
@@ -365,7 +364,6 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   //User-specified parameters
   S.partition_coeff   =DefaultParameterValue(is_template,false);//0.4;//needs reasonable defaults
   S.SCS_CN            =DefaultParameterValue(is_template,false);//50
-  S.b_exp             =DefaultParameterValue(is_template,false);//0.071;    //default [-]
   S.dep_max           =DefaultParameterValue(is_template,false);//6.29;     //[mm]
   S.dep_max_flow      =DefaultParameterValue(is_template,false);            //[mm/d]
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
@@ -448,8 +446,6 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("PARTITION_COEFF"        )){S.partition_coeff=value;}
   else if (!name.compare("SCS_CN"                 )){S.SCS_CN=value;}
   else if (!name.compare("SCS_IA_FRACTION"        )){S.SCS_Ia_fraction=value;}
-  else if (!name.compare("B_EXP"                  )){S.b_exp=value;}
-  else if (!name.compare("VIC_B_EXP"              )){S.b_exp=value;}
   else if (!name.compare("DEP_MAX"                )){S.dep_max =value;}
   else if (!name.compare("DEP_MAX_FLOW"           )){S.dep_max_flow =value;}
   else if (!name.compare("DEP_N"                  )){S.dep_n =value;}
@@ -529,8 +525,6 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("PARTITION_COEFF"        )){return S.partition_coeff;}
   else if (!name.compare("SCS_IA_FRACTION"        )){return S.SCS_Ia_fraction;}
   else if (!name.compare("SCS_CN"                 )){return S.SCS_CN;}
-  else if (!name.compare("B_EXP"                  )){return S.b_exp;}
-  else if (!name.compare("VIC_B_EXP"              )){return S.b_exp;}
   else if (!name.compare("DEP_MAX"                )){return S.dep_max ;}
   else if (!name.compare("DEP_MAX_FLOW"           )){return S.dep_max_flow;}
   else if (!name.compare("DEP_N"                  )){return S.dep_n;}

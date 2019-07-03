@@ -121,6 +121,8 @@ public:/*-------------------------------------------------------*/
   double               GetAvgCumulFlux      (const int i, const bool to) const;
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
+  double               GetReferenceCelerity () const;
+  double               GetDiffusivity       () const;
   long                 GetDownstreamID      () const;
   int                  GetNumHRUs           () const;
   const CHydroUnit    *GetHRU               (const int k) const;

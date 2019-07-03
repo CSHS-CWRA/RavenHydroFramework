@@ -120,8 +120,9 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
   }
   else if(type==INF_HMETS)
   {
-    nP=1;
+    nP=2;
     aP[0]="HMETS_RUNOFF_COEFF"; aPC[0]=CLASS_LANDUSE;
+    aP[1]="IMPERMEABLE_FRAC";   aPC[1]=CLASS_LANDUSE;
   }
   else if (type==INF_VIC)
   {
@@ -135,7 +136,7 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
   else if (type==INF_VIC_ARNO)
   {
     nP=3;
-    aP[0]="B_EXP";            aPC[0]=CLASS_SOIL;
+    aP[0]="VIC_B_EXP";        aPC[0]=CLASS_SOIL;
     aP[1]="POROSITY";         aPC[1]=CLASS_SOIL;
     aP[2]="IMPERMEABLE_FRAC"; aPC[2]=CLASS_LANDUSE;
   }
@@ -172,8 +173,9 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
   }
   else if (type==INF_GR4J)
   {
-    nP=1;
+    nP=2;
     aP[0]="POROSITY";              aPC[0]=CLASS_SOIL;
+    aP[1]="IMPERMEABLE_FRAC";      aPC[1]=CLASS_LANDUSE;
   }
   else
   {
@@ -357,7 +359,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     stor    =state_vars[iTopSoil];
     max_stor=pHRU->GetSoilCapacity(0);        //maximum storage of top soil layer [mm]
-    b       =pHRU->GetSurfaceProps()->b_exp;  //ARNO/VIC b exponent for runoff [-]
+    b       =pHRU->GetSoilProps(0)->VIC_b_exp;//ARNO/VIC b exponent for runoff [-]
     sat     =min(stor/max_stor,1.0);          //soil saturation
     sat_area=1.0 - pow(1.0-sat,b);            //saturated area [-] fraction
 

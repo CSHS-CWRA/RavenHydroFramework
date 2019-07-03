@@ -1435,7 +1435,7 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
   ExitGracefullyIf(D<=0,"ADRCumDist: Invalid diffusivity",RUNTIME_ERR);
   double dt,integ;
   double term=L/2.0*pow(PI*D,-0.5);
-  dt=t/1000.0; //t in [day] (1000.0 is # of integral divisions)
+  dt=t/5000.0; //t in [day] (5000.0 is # of integral divisions)
   integ=0.0;
   double beta=L/sqrt(D);
   double alpha=v/sqrt(D);
@@ -1447,6 +1447,10 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
     // equivalent to (old) version, but more stable since alpha, beta ~1-10 whereas both v^2 and D can be very large
     //integ+=pow(tt,-1.5)*exp(-((v*tt-L)*(v*tt-L))/4.0/D/tt);
   }
+  //analytical (unstable due to exp*erf term):
+  //term=term*pow(PI,0.5)/2.0/beta;
+  //double integ2=erf((beta-alpha*t)/pow(t,0.5))-1.0+exp(4*alpha*beta)*(erf((alpha*t+beta)/pow(t,0.5))-1.0+1.0 )+1.0;
+  //  cout<<integ<<" "<<term*integ2<<endl;
   return integ*term*dt;
 }
 

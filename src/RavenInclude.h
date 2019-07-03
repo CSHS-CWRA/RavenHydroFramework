@@ -467,6 +467,7 @@ enum LWinc_method
 //
 enum SW_method
 {
+  SW_RAD_NONE,
   SW_RAD_DATA,              ///< Shortwave radiation specified in time series files
   SW_RAD_DEFAULT,           ///< from Dingman text
   SW_RAD_UBCWM,             ///< UBCWM approach
@@ -909,6 +910,7 @@ struct optStruct
   int              write_group_mb;            ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written
   bool             write_channels;            ///< true if writing channel rating curve information
   bool             write_constitmass;         ///< true if constituent mass [mg/m2] is written instead of concentration [mg/L] in output files
+  bool             write_basinfile;           ///< true if subbasins params are written to SubbasinParams.csv
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files

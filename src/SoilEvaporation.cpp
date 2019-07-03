@@ -167,7 +167,7 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     ExitGracefully("CmvSoilEvap::GetParticipatingParamList: undefined soil evaporation algorithm",BAD_DATA);
   }
   nP++;
-  aP[nP-1]="PET_CORRECTION"; aPC [nP-1]=CLASS_SOIL;
+  aP[nP-1]="PET_CORRECTION"; aPC [nP-1]=CLASS_SOIL; //All soilevap algorithms use this.
 }
 
 //////////////////////////////////////////////////////////////////

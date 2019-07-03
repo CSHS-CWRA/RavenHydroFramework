@@ -1699,13 +1699,11 @@ double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &
 {
 
   int idx_new = GetTimeIndex(t,tstep);
-  int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
-  double wt;
-  double sum=0;
+  int nSteps = max(1,(int)(round(tstep/_interval)));//# of intervals in time step
+  double sum=0.0;
   for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
   {
-    wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    sum += wt * GetValue_avg(ic,idx_new,nSteps);
+    sum += _GridWeight[k][_IdxNonZeroGridCells[ic]] * GetValue_avg(ic,idx_new,nSteps);
   }
   return sum;
 }

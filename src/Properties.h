@@ -78,7 +78,7 @@ struct soil_struct
   double VIC_alpha;         ///< [-]
   double VIC_evap_gamma;    ///< [-]       power law exponent for VIC soil evaporation
 
-  double b_exp;             ///< [-]       power law exponent for VIC_ARNO infiltration model \ref (Clark et al, 2008)
+  double VIC_b_exp;         ///< [-]       power law exponent for VIC_ARNO infiltration model \ref (Clark et al, 2008)
 
   double max_perc_rate;     ///< [mm/d]    VIC/ARNO/GAWSER percolation rate - user defined between 0.010 - 1000.0
   double perc_coeff;        ///< [1/d]     Linear percolation storage coefficient
@@ -263,7 +263,6 @@ struct surface_struct
 
   //surface storage variables
   double max_sat_area_frac; ///< [-]       PRMS maximum saturated area (pct)- user defined between 0.050 - 0.950
-  double b_exp;             ///< [-]       ARNO/VIC b exponent - user defined between 0.001 - 3.0
 
   double dep_max;           ///< [mm]      maximum amount of water that can be stored in depressions
   double abst_percent;      ///< [0..1]    percentage of rainfall/melt which is abstracted to depression storage

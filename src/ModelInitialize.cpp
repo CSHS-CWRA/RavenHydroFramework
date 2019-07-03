@@ -444,7 +444,7 @@ void CModel::InitializeRoutingNetwork()
   // Iterative identification of subbasin orders
   //----------------------------------------------------------------------
   // here, order goes from 0 (trunk) to _maxSubBasinOrder (leaf). This is NOT Strahler ordering!!!
-  const int MAX_ITER=100;
+  const int MAX_ITER=1000;
   int last_ordersum;
   int iter(0),ordersum(0);
   do

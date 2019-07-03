@@ -31,6 +31,12 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
   switch(Options.SW_radiation)
   {
   //--------------------------------------------------------
+  case(SW_RAD_NONE):
+  {
+    return 0.0;
+    break;
+  }
+  //--------------------------------------------------------
   case(SW_RAD_DATA):
   {
     return F->SW_radia;

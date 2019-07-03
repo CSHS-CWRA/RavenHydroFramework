@@ -1132,6 +1132,21 @@ void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const ti
   if(Options.write_channels){
     CChannelXSect::WriteRatingCurves();
   }
+  
+  if(Options.write_basinfile) {
+    ofstream BASIN;
+    tmpFilename=FilenamePrepare("SubbasinParams.csv",Options);
+    BASIN.open(tmpFilename.c_str());
+    if(BASIN.fail()) {
+      WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
+    }
+    BASIN<<"SBID,Reference Discharge [m3/s],Reach Length [m],Reach Celerity [m/s],Reach Diffusivity [m2/s]"<<endl;
+    for(int p=0;p<_nSubBasins;p++) {
+      BASIN<<_pSubBasins[p]->GetID()<<","<<_pSubBasins[p]->GetReferenceFlow()<<","<<_pSubBasins[p]->GetReachLength()<<",";
+      BASIN<<_pSubBasins[p]->GetReferenceCelerity()<<","<<_pSubBasins[p]->GetDiffusivity()<<endl;
+    }
+    BASIN.close();
+  }
 }
 
 //////////////////////////////////////////////////////////////////

@@ -178,7 +178,7 @@ void  CTerrainClass::SetTerrainProperty(terrain_struct &T,
   if      (!name.compare("HILLSLOPE_LENGTH"  )){T.hillslope_length=value;}
   else if (!name.compare("DRAINAGE_DENSITY"  )){T.drainage_density=value;}
   else if (!name.compare("LAMBDA"            )){T.lambda=value;}
-
+  else if (!name.compare("TOPMODEL_LAMBDA"   )){T.lambda=value; }
   else{
     WriteWarning("CTerrainClass::SetTerrainProperty: Unrecognized/invalid terrain parameter name ("+name+") in .rvp file",false);
   }
@@ -207,7 +207,7 @@ double CTerrainClass::GetTerrainProperty(const terrain_struct &T, string param_n
   if      (!name.compare("HILLSLOPE_LENGTH"       )){return T.hillslope_length;}
   else if (!name.compare("DRAINAGE_DENSITY"       )){return T.drainage_density;}
   else if (!name.compare("LAMBDA"                 )){return T.lambda;}
-
+  else if (!name.compare("TOPMODEL_LAMBDA"        )){return T.lambda; }
   else{
     string msg="CTerrainClass::GetTerrainProperty: Unrecognized/invalid terrain parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);
