@@ -144,23 +144,26 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
     //WatershedStorage.csv
     //--------------------------------------------------------------
-    tmpFilename=FilenamePrepare("WatershedStorage.csv",Options);
-    _STORAGE.open(tmpFilename.c_str());
-    if (_STORAGE.fail()){
-      ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-
-    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
-    _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";
-    for (i=0;i<GetNumStateVars();i++){
-      if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
-        if (i!=iAtmPrecip){
-          _STORAGE<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
-          //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
-        }
+    if (Options.write_watershed_storage)
+    {
+      tmpFilename=FilenamePrepare("WatershedStorage.csv",Options);
+      _STORAGE.open(tmpFilename.c_str());
+      if (_STORAGE.fail()){
+	ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
+      
+      int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+      _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";
+      for (i=0;i<GetNumStateVars();i++){
+	if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
+	  if (i!=iAtmPrecip){
+	    _STORAGE<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+	    //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+	  }
+	}
+      }
+      _STORAGE<<", Total [mm], Cum. Inputs [mm], Cum. Outflow [mm], MB Error [mm]"<<endl;
     }
-    _STORAGE<<", Total [mm], Cum. Inputs [mm], Cum. Outflow [mm], MB Error [mm]"<<endl;
 
     //Hydrographs.csv
     //--------------------------------------------------------------
@@ -597,47 +600,50 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     }
 
 
-    //Write current state of water storage in system to WatershedStorage.csv (ALWAYS DONE)
+    //Write current state of water storage in system to WatershedStorage.csv (ALWAYS DONE if not switched OFF)
     //----------------------------------------------------------------
     if (Options.output_format==OUTPUT_STANDARD)
     {
-      double snowfall      =GetAverageSnowfall();
-      double precip        =GetAveragePrecip();
-      double channel_stor  =GetTotalChannelStorage();
-      double reservoir_stor=GetTotalReservoirStorage();
-      double rivulet_stor  =GetTotalRivuletStorage();
-
-      _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour; //instantaneous, so thishour rather than usehour used.
-
-      if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
-      else     {_STORAGE<<",---,---";}
-      _STORAGE<<","<<channel_stor<<","<<reservoir_stor<<","<<rivulet_stor;
-
-      currentWater=0.0;
-      for (i=0;i<GetNumStateVars();i++)
+      if (Options.write_watershed_storage)
       {
-        if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
-        {
-          S=GetAvgStateVar(i);
-          if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
-          _STORAGE<<","<<FormatDouble(S);
-          currentWater+=S;
-        }
+	double snowfall      =GetAverageSnowfall();
+	double precip        =GetAveragePrecip();
+	double channel_stor  =GetTotalChannelStorage();
+	double reservoir_stor=GetTotalReservoirStorage();
+	double rivulet_stor  =GetTotalRivuletStorage();
+	
+	_STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour; //instantaneous, so thishour rather than usehour used.
+	
+	if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
+	else     {_STORAGE<<",---,---";}
+	_STORAGE<<","<<channel_stor<<","<<reservoir_stor<<","<<rivulet_stor;
+	
+	currentWater=0.0;
+	for (i=0;i<GetNumStateVars();i++)
+	  {
+	    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
+	      {
+		S=GetAvgStateVar(i);
+		if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
+		_STORAGE<<","<<FormatDouble(S);
+		currentWater+=S;
+	      }
+	  }
+	currentWater+=channel_stor+rivulet_stor+reservoir_stor;
+	if(t==0){
+	  // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+	  // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
+	  for(int p=0;p<_nSubBasins;p++){
+	    if(_pSubBasins[p]->GetReservoir()!=NULL){
+	      currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	      currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	    }
+	  }
+	}
+	
+	_STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
+	_STORAGE<<endl;
       }
-      currentWater+=channel_stor+rivulet_stor+reservoir_stor;
-      if(t==0){
-        // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-        // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
-        for(int p=0;p<_nSubBasins;p++){
-          if(_pSubBasins[p]->GetReservoir()!=NULL){
-            currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-            currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-          }
-        }
-      }
-
-      _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
-      _STORAGE<<endl;
 
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
       //----------------------------------------------------------------
@@ -1286,68 +1292,71 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   int iAtmPrecip = GetStateVarIndex(ATMOS_PRECIP);
   string tmpFilename;
 
-  tmpFilename = FilenamePrepare("WatershedStorage.tb0", Options);
-
-  _STORAGE.open(tmpFilename.c_str());
-  if (_STORAGE.fail()){
-    ExitGracefully(("CModel::WriteEnsimStandardHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-  }
-  _STORAGE << "#########################################################################" << endl;
-  _STORAGE << ":FileType tb0 ASCII EnSim 1.0" << endl;
-  _STORAGE << "#" << endl;
-  _STORAGE << ":Application   Raven" << endl;
-  if(!Options.benchmarking){
-    _STORAGE << ":Version       " << Options.version << endl;
-    _STORAGE << ":CreationDate  " << GetCurrentTime() << endl;
-  }
-  _STORAGE << "#" << endl;
-  _STORAGE << "#------------------------------------------------------------------------" << endl;
-  _STORAGE << "#" << endl;
-  _STORAGE << ":RunName       " << Options.run_name << endl;
-  _STORAGE << ":Format         Instantaneous" << endl;
-  _STORAGE << "#" << endl;
-
-  if (Options.suppressICs){
-    _STORAGE << ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
-  }
-  else{
-    _STORAGE << ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
-  }
-  if (Options.timestep != 1.0){ _STORAGE << ":DeltaT " << DecDaysToHours(Options.timestep) << endl; }
-  else                        { _STORAGE << ":DeltaT 24:00:00.00" << endl; }
-  _STORAGE << "#" << endl;
-
-  _STORAGE<<":ColumnMetaData"<<endl;
-  _STORAGE<<"  :ColumnName rainfall snowfall \"Channel storage\" \"Rivulet storage\"";
-  for (i=0;i<GetNumStateVars();i++){
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-      _STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<"\"";}}
-  _STORAGE<<" \"Total storage\" \"Cum. precip\" \"Cum. outflow\" \"MB error\""<<endl;
-
-  _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
-  for (i=0;i<GetNumStateVars();i++){
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-      _STORAGE<<" mm";}}
-  _STORAGE<<" mm mm mm mm"<<endl;
-
-  _STORAGE<<"  :ColumnType float float float float";
-  for (i=0;i<GetNumStateVars();i++){
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-      _STORAGE<<" float";}}
-  _STORAGE<<" float float float float"<<endl;
-
-  _STORAGE << "  :ColumnFormat -1 -1 0 0";
-  for (i = 0; i < GetNumStateVars(); i++){
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i != iAtmPrecip)){
-      _STORAGE << " 0";
+  if (Options.write_watershed_storage)
+  {
+    tmpFilename = FilenamePrepare("WatershedStorage.tb0", Options);
+    
+    _STORAGE.open(tmpFilename.c_str());
+    if (_STORAGE.fail()){
+      ExitGracefully(("CModel::WriteEnsimStandardHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
+    _STORAGE << "#########################################################################" << endl;
+    _STORAGE << ":FileType tb0 ASCII EnSim 1.0" << endl;
+    _STORAGE << "#" << endl;
+    _STORAGE << ":Application   Raven" << endl;
+    if(!Options.benchmarking){
+      _STORAGE << ":Version       " << Options.version << endl;
+      _STORAGE << ":CreationDate  " << GetCurrentTime() << endl;
+    }
+    _STORAGE << "#" << endl;
+    _STORAGE << "#------------------------------------------------------------------------" << endl;
+    _STORAGE << "#" << endl;
+    _STORAGE << ":RunName       " << Options.run_name << endl;
+    _STORAGE << ":Format         Instantaneous" << endl;
+    _STORAGE << "#" << endl;
+    
+    if (Options.suppressICs){
+      _STORAGE << ":StartTime " << tt2.date_string << " " << DecDaysToHours(tt2.julian_day) << endl;
+    }
+    else{
+      _STORAGE << ":StartTime " << tt.date_string << " " << DecDaysToHours(tt.julian_day) << endl;
+    }
+    if (Options.timestep != 1.0){ _STORAGE << ":DeltaT " << DecDaysToHours(Options.timestep) << endl; }
+    else                        { _STORAGE << ":DeltaT 24:00:00.00" << endl; }
+    _STORAGE << "#" << endl;
+    
+    _STORAGE<<":ColumnMetaData"<<endl;
+    _STORAGE<<"  :ColumnName rainfall snowfall \"Channel storage\" \"Rivulet storage\"";
+    for (i=0;i<GetNumStateVars();i++){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+	_STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<"\"";}}
+    _STORAGE<<" \"Total storage\" \"Cum. precip\" \"Cum. outflow\" \"MB error\""<<endl;
+    
+    _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
+    for (i=0;i<GetNumStateVars();i++){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+	_STORAGE<<" mm";}}
+    _STORAGE<<" mm mm mm mm"<<endl;
+    
+    _STORAGE<<"  :ColumnType float float float float";
+    for (i=0;i<GetNumStateVars();i++){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+	_STORAGE<<" float";}}
+    _STORAGE<<" float float float float"<<endl;
+    
+    _STORAGE << "  :ColumnFormat -1 -1 0 0";
+    for (i = 0; i < GetNumStateVars(); i++){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i != iAtmPrecip)){
+	_STORAGE << " 0";
+      }
+    }
+    _STORAGE << " 0 0 0 0" << endl;
+    
+    _STORAGE << ":EndColumnMetaData" << endl;
+    
+    _STORAGE << ":EndHeader" << endl;
   }
-  _STORAGE << " 0 0 0 0" << endl;
-
-  _STORAGE << ":EndColumnMetaData" << endl;
-
-  _STORAGE << ":EndHeader" << endl;
-
+    
   //Hydrographs.tb0
   //--------------------------------------------------------------
   tmpFilename = FilenamePrepare("Hydrographs.tb0", Options);
@@ -1527,52 +1536,55 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   //====================================================================
   //  WatershedStorage.nc
   //====================================================================
-  tmpFilename = FilenamePrepare("WatershedStorage.nc", Options);
-  retval = nc_create(tmpFilename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid);  HandleNetCDFErrors(retval);
-  _STORAGE_ncid = ncid;
-
-  // ----------------------------------------------------------
-  // global attributes
-  // ---------------------------------------------------------- 
-  WriteNetCDFGlobalAttributes(_STORAGE_ncid,Options,"Standard Output");
-
-  // ---------------------------------------------------------- 
-  // time vector                                                       
-  // ---------------------------------------------------------- 
-  // Define the DIMENSIONS. NetCDF will hand back an ID
-  retval = nc_def_dim(_STORAGE_ncid, "time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
-
-  /// Define the time variable. 
-  dimids1[0] = time_dimid;
-  retval = nc_def_var(_STORAGE_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_STORAGE_ncid, varid_time, "units"   , strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_STORAGE_ncid, varid_time, "calendar", strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
-
-  // ---------------------------------------------------------- 
-  // precipitation / channel storage / state vars / MB diagnostics                                             
-  // ---------------------------------------------------------- 
-  int varid;
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"rainfall","rainfall","mm d**-1");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"snowfall","snowfall","mm d**-1");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Channel Storage","Channel Storage","mm");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Reservoir Storage","Reservoir Storage","mm");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Rivulet Storage","Rivulet Storage","mm");
-
-  int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
-  for(int i=0;i<_nStateVars;i++){
-    if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-      string name =CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
-      varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,name,name,"mm");
+  if (Options.write_watershed_storage)
+  {
+    tmpFilename = FilenamePrepare("WatershedStorage.nc", Options);
+    retval = nc_create(tmpFilename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid);  HandleNetCDFErrors(retval);
+    _STORAGE_ncid = ncid;
+    
+    // ----------------------------------------------------------
+    // global attributes
+    // ---------------------------------------------------------- 
+    WriteNetCDFGlobalAttributes(_STORAGE_ncid,Options,"Standard Output");
+    
+    // ---------------------------------------------------------- 
+    // time vector                                                       
+    // ---------------------------------------------------------- 
+    // Define the DIMENSIONS. NetCDF will hand back an ID
+    retval = nc_def_dim(_STORAGE_ncid, "time", NC_UNLIMITED, &time_dimid);  HandleNetCDFErrors(retval);
+    
+    /// Define the time variable. 
+    dimids1[0] = time_dimid;
+    retval = nc_def_var(_STORAGE_ncid, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_STORAGE_ncid, varid_time, "units"   , strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_STORAGE_ncid, varid_time, "calendar", strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
+    
+    // ---------------------------------------------------------- 
+    // precipitation / channel storage / state vars / MB diagnostics                                             
+    // ---------------------------------------------------------- 
+    int varid;
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"rainfall","rainfall","mm d**-1");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"snowfall","snowfall","mm d**-1");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Channel Storage","Channel Storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Reservoir Storage","Reservoir Storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Rivulet Storage","Rivulet Storage","mm");
+    
+    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+    for(int i=0;i<_nStateVars;i++){
+      if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
+	string name =CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+	varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,name,name,"mm");
+      }
     }
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Total","total water storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Input","cumulative water input","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Outflow","cumulative water output","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"MB Error","mass balance error","mm");
+    
+    // End define mode. This tells netCDF we are done defining metadata. 
+    retval = nc_enddef(_STORAGE_ncid);  HandleNetCDFErrors(retval);
   }
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Total","total water storage","mm");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Input","cumulative water input","mm");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Outflow","cumulative water output","mm");
-  varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"MB Error","mass balance error","mm");
-
-  // End define mode. This tells netCDF we are done defining metadata. 
-  retval = nc_enddef(_STORAGE_ncid);  HandleNetCDFErrors(retval);
-
+    
   //====================================================================
   //  ForcingFunctions.nc
   //====================================================================
@@ -1646,30 +1658,33 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
 
   //----------------------------------------------------------------
   // write watershed state variables  (WatershedStorage.tb0)
-  if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
-  else                 {_STORAGE<<" 0.0 0.0";}
-  _STORAGE<<" "<<channel_stor+reservoir_stor<<" "<<rivulet_stor;
-
-  currentWater=0.0;
-  for (i=0;i<GetNumStateVars();i++){
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) &&  (i!=iCumPrecip)){
-      S=GetAvgStateVar(i);_STORAGE<<" "<<FormatDouble(S);currentWater+=S;
-    }
-  }
-  currentWater+=channel_stor+rivulet_stor;
-  if(tt.model_time==0){
-    // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-    // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
-    for(int p=0;p<_nSubBasins;p++){
-      if(_pSubBasins[p]->GetReservoir()!=NULL){
-        currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-        currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+  if (Options.write_watershed_storage)
+  {
+    if (tt.model_time!=0){_STORAGE<<" "<<precip-snowfall<<" "<<snowfall;}//precip
+    else                 {_STORAGE<<" 0.0 0.0";}
+    _STORAGE<<" "<<channel_stor+reservoir_stor<<" "<<rivulet_stor;
+    
+    currentWater=0.0;
+    for (i=0;i<GetNumStateVars();i++){
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) &&  (i!=iCumPrecip)){
+	S=GetAvgStateVar(i);_STORAGE<<" "<<FormatDouble(S);currentWater+=S;
       }
     }
+    currentWater+=channel_stor+rivulet_stor;
+    if(tt.model_time==0){
+      // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+      // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
+      for(int p=0;p<_nSubBasins;p++){
+	if(_pSubBasins[p]->GetReservoir()!=NULL){
+	  currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	  currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	}
+      }
+    }
+    _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
+    _STORAGE<<endl;
   }
-  _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
-  _STORAGE<<endl;
-
+  
   //----------------------------------------------------------------
   //Write hydrographs for gauged watersheds (ALWAYS DONE) (Hydrographs.tb0)
   if ((Options.ave_hydrograph) && (tt.model_time!=0))
@@ -1825,54 +1840,57 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   //====================================================================
   //  WatershedStorage.nc
   //====================================================================
-  double snowfall      =GetAverageSnowfall();
-  double precip        =GetAveragePrecip();
-  double channel_stor  =GetTotalChannelStorage();
-  double reservoir_stor=GetTotalReservoirStorage();
-  double rivulet_stor  =GetTotalRivuletStorage();
-
-  // write new time step 
-  retval = nc_inq_varid (_STORAGE_ncid, "time",   &time_id);                                 HandleNetCDFErrors(retval);
-  retval = nc_put_vara_double(_STORAGE_ncid, time_id, time_index, count1, &current_time[0]); HandleNetCDFErrors(retval);
-  
-  if(tt.model_time!=0){
-    AddSingleValueToNetCDF(_STORAGE_ncid,"rainfall"       ,time_ind2,precip-snowfall);
-    AddSingleValueToNetCDF(_STORAGE_ncid,"snowfall"       ,time_ind2,snowfall);
-  }
-  AddSingleValueToNetCDF(_STORAGE_ncid,"Channel Storage"  ,time_ind2,channel_stor);
-  AddSingleValueToNetCDF(_STORAGE_ncid,"Reservoir Storage",time_ind2,reservoir_stor);
-  AddSingleValueToNetCDF(_STORAGE_ncid,"Rivulet Storage"  ,time_ind2,rivulet_stor);
-
-  double currentWater=0.0;
-  double S;string short_name;
-  int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
-  for (int i=0;i<GetNumStateVars();i++)
+  if (Options.write_watershed_storage)
   {
-    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
-    {
-      S=FormatDouble(GetAvgStateVar(i));
-      short_name=CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
-      AddSingleValueToNetCDF(_STORAGE_ncid, short_name.c_str(),time_ind2,S);
-      currentWater+=S;
+    double snowfall      =GetAverageSnowfall();
+    double precip        =GetAveragePrecip();
+    double channel_stor  =GetTotalChannelStorage();
+    double reservoir_stor=GetTotalReservoirStorage();
+    double rivulet_stor  =GetTotalRivuletStorage();
+    
+    // write new time step 
+    retval = nc_inq_varid (_STORAGE_ncid, "time",   &time_id);                                 HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_STORAGE_ncid, time_id, time_index, count1, &current_time[0]); HandleNetCDFErrors(retval);
+    
+    if(tt.model_time!=0){
+      AddSingleValueToNetCDF(_STORAGE_ncid,"rainfall"       ,time_ind2,precip-snowfall);
+      AddSingleValueToNetCDF(_STORAGE_ncid,"snowfall"       ,time_ind2,snowfall);
     }
-  }
-
-  currentWater+=channel_stor+rivulet_stor+reservoir_stor;
-  if(tt.model_time==0){
-    // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-    // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
-    for(int p=0;p<_nSubBasins;p++){
-      if(_pSubBasins[p]->GetReservoir()!=NULL){
-        currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-        currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+    AddSingleValueToNetCDF(_STORAGE_ncid,"Channel Storage"  ,time_ind2,channel_stor);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"Reservoir Storage",time_ind2,reservoir_stor);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"Rivulet Storage"  ,time_ind2,rivulet_stor);
+    
+    double currentWater=0.0;
+    double S;string short_name;
+    int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
+    for (int i=0;i<GetNumStateVars();i++)
+      {
+	if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
+	  {
+	    S=FormatDouble(GetAvgStateVar(i));
+	    short_name=CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+	    AddSingleValueToNetCDF(_STORAGE_ncid, short_name.c_str(),time_ind2,S);
+	    currentWater+=S;
+	  }
+      }
+    
+    currentWater+=channel_stor+rivulet_stor+reservoir_stor;
+    if(tt.model_time==0){
+      // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+      // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
+      for(int p=0;p<_nSubBasins;p++){
+	if(_pSubBasins[p]->GetReservoir()!=NULL){
+	  currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	  currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	}
       }
     }
+    AddSingleValueToNetCDF(_STORAGE_ncid,"Total"        ,time_ind2,currentWater);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"Cum. Input"   ,time_ind2,_CumulInput);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"Cum. Outflow" ,time_ind2,_CumulOutput);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"MB Error"     ,time_ind2,FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput)));
   }
-  AddSingleValueToNetCDF(_STORAGE_ncid,"Total"        ,time_ind2,currentWater);
-  AddSingleValueToNetCDF(_STORAGE_ncid,"Cum. Input"   ,time_ind2,_CumulInput);
-  AddSingleValueToNetCDF(_STORAGE_ncid,"Cum. Outflow" ,time_ind2,_CumulOutput);
-  AddSingleValueToNetCDF(_STORAGE_ncid,"MB Error"     ,time_ind2,FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput)));
-
+  
   //====================================================================
   //  ForcingFunctions.nc
   //====================================================================

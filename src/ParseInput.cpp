@@ -148,85 +148,86 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   //Default Values---------------------------------------------------
   if(Options.run_name!=""){runname_overridden=true;}
-  Options.julian_start_day    =0;//Jan 1
-  Options.julian_start_year   =1666;
-  Options.duration            =365;
-  Options.calendar            =CALENDAR_PROLEPTIC_GREGORIAN; // Default calendar
-  Options.timestep            =1;
-  Options.output_interval     =1;
-  Options.sol_method          =ORDERED_SERIES;
-  Options.convergence_crit    =0.01;
-  Options.max_iterations      =30;
-  Options.ensemble            =ENSEMBLE_NONE; 
+  Options.julian_start_day        =0;//Jan 1
+  Options.julian_start_year       =1666;
+  Options.duration                =365;
+  Options.calendar                =CALENDAR_PROLEPTIC_GREGORIAN; // Default calendar
+  Options.timestep                =1;
+  Options.output_interval         =1;
+  Options.sol_method              =ORDERED_SERIES;
+  Options.convergence_crit        =0.01;
+  Options.max_iterations          =30;
+  Options.ensemble                =ENSEMBLE_NONE; 
 
-  Options.routing             =ROUTE_STORAGECOEFF;
-  Options.catchment_routing   =ROUTE_DUMP;
-  Options.distrib_lat_inflow  =false;
+  Options.routing                 =ROUTE_STORAGECOEFF;
+  Options.catchment_routing       =ROUTE_DUMP;
+  Options.distrib_lat_inflow      =false;
 
-  Options.interpolation       =INTERP_NEAREST_NEIGHBOR;
-  Options.interp_file         ="";
+  Options.interpolation           =INTERP_NEAREST_NEIGHBOR;
+  Options.interp_file             ="";
 
-  Options.soil_modeltype      =SOIL_ONE_LAYER;
-  Options.num_soillayers      =-1;//used to check if SoilModel command is used
-  Options.soil_representation =BROOKS_COREY;
+  Options.soil_modeltype          =SOIL_ONE_LAYER;
+  Options.num_soillayers          =-1;//used to check if SoilModel command is used
+  Options.soil_representation     =BROOKS_COREY;
 
   //Forcing function estimation options:
-  Options.evaporation         =PET_HARGREAVES_1985;
-  Options.ow_evaporation      =PET_HARGREAVES_1985;
-  Options.orocorr_PET         =OROCORR_NONE;
-  Options.orocorr_precip      =OROCORR_NONE;
-  Options.orocorr_temp        =OROCORR_NONE;
-  Options.LW_radiation        =LW_RAD_DEFAULT;
-  Options.LW_incoming         =LW_INC_DEFAULT;
-  Options.SW_radiation        =SW_RAD_DEFAULT;
-  Options.cloud_cover         =CLOUDCOV_NONE;
-  Options.SW_canopycorr       =SW_CANOPY_CORR_NONE;
-  Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
-  Options.SW_radia_net        =NETSWRAD_CALC;
-  Options.wind_velocity       =WINDVEL_CONSTANT;
-  Options.rel_humidity        =RELHUM_CONSTANT;
-  Options.air_pressure        =AIRPRESS_BASIC;
-  Options.rainsnow            =RAINSNOW_DINGMAN;
-  Options.month_interp        =MONTHINT_LINEAR_MID;
-  Options.pot_melt            =POTMELT_DEGREE_DAY;
-  Options.subdaily            =SUBDAILY_NONE;
-  Options.interception_factor =PRECIP_ICEPT_USER;
-  Options.recharge            =RECHARGE_NONE;
-  Options.direct_evap         =false;
-  Options.keepUBCWMbugs       =false;
-  Options.pavics              =false;
-  Options.deltaresFEWS        =false;
+  Options.evaporation             =PET_HARGREAVES_1985;
+  Options.ow_evaporation          =PET_HARGREAVES_1985;
+  Options.orocorr_PET             =OROCORR_NONE;
+  Options.orocorr_precip          =OROCORR_NONE;
+  Options.orocorr_temp            =OROCORR_NONE;
+  Options.LW_radiation            =LW_RAD_DEFAULT;
+  Options.LW_incoming             =LW_INC_DEFAULT;
+  Options.SW_radiation            =SW_RAD_DEFAULT;
+  Options.cloud_cover             =CLOUDCOV_NONE;
+  Options.SW_canopycorr           =SW_CANOPY_CORR_NONE;
+  Options.SW_cloudcovercorr       =SW_CLOUD_CORR_NONE;
+  Options.SW_radia_net            =NETSWRAD_CALC;
+  Options.wind_velocity           =WINDVEL_CONSTANT;
+  Options.rel_humidity            =RELHUM_CONSTANT;
+  Options.air_pressure            =AIRPRESS_BASIC;
+  Options.rainsnow                =RAINSNOW_DINGMAN;
+  Options.month_interp            =MONTHINT_LINEAR_MID;
+  Options.pot_melt                =POTMELT_DEGREE_DAY;
+  Options.subdaily                =SUBDAILY_NONE;
+  Options.interception_factor     =PRECIP_ICEPT_USER;
+  Options.recharge                =RECHARGE_NONE;
+  Options.direct_evap             =false;
+  Options.keepUBCWMbugs           =false;
+  Options.pavics                  =false;
+  Options.deltaresFEWS            =false;
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
-    Options.noisy               =false;
-    Options.silent              =false;
+    Options.noisy                 =false;
+    Options.silent                =false;
   }
-  Options.output_format       =OUTPUT_STANDARD;
-  Options.write_energy        =false;
-  Options.write_forcings      =false;
-  Options.write_mass_bal      =false;
-  Options.write_exhaustiveMB  =false;
-  Options.write_channels      =false;
-  Options.benchmarking        =false;
-  Options.pause               =false;
-  Options.debug_mode          =false;
-  Options.ave_hydrograph      =true;
-  Options.write_reservoir     =false;
-  Options.write_reservoirMB   =false;
-  Options.write_basinfile     =false;
-  Options.suppressICs         =false;
-  Options.period_ending       =false;
-  Options.period_starting     =false;//true;
-  Options.write_group_mb      =DOESNT_EXIST;
-  Options.diag_start_time     =-ALMOST_INF;
-  Options.diag_end_time       = ALMOST_INF;
-  Options.wateryr_mo          =10; //October
-  Options.create_rvp_template =false;
-  Options.write_constitmass   =false;
-  Options.nNetCDFattribs      =0;
-  Options.aNetCDFattribs      =NULL;
-  Options.assimilation_on     =false;
-  Options.assimilation_start  =0;
+  Options.output_format           =OUTPUT_STANDARD;
+  Options.write_energy            =false;
+  Options.write_forcings          =false;
+  Options.write_mass_bal          =false;
+  Options.write_exhaustiveMB      =false;
+  Options.write_channels          =false;
+  Options.write_watershed_storage =true;
+  Options.benchmarking            =false;
+  Options.pause                   =false;
+  Options.debug_mode              =false;
+  Options.ave_hydrograph          =true;
+  Options.write_reservoir         =false;
+  Options.write_reservoirMB       =false;
+  Options.write_basinfile         =false;
+  Options.suppressICs             =false;
+  Options.period_ending           =false;
+  Options.period_starting         =false;//true;
+  Options.write_group_mb          =DOESNT_EXIST;
+  Options.diag_start_time         =-ALMOST_INF;
+  Options.diag_end_time           = ALMOST_INF;
+  Options.wateryr_mo              =10; //October
+  Options.create_rvp_template     =false;
+  Options.write_constitmass       =false;
+  Options.nNetCDFattribs          =0;
+  Options.aNetCDFattribs          =NULL;
+  Options.assimilation_on         =false;
+  Options.assimilation_start      =0;
 
   pModel=NULL;
   pMover=NULL;
@@ -311,6 +312,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteEnsimFormat"          )){code=55; }
     else if  (!strcmp(s[0],":WriteNetcdfFormat"         )){code=78; }
     else if  (!strcmp(s[0],":WriteNetCDFFormat"         )){code=78; }
+    else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=96; }//avoid writing WatershedStorage.csv
     else if  (!strcmp(s[0],":RunName"                   )){code=56; }
     else if  (!strcmp(s[0],":NoisyMode"                 )){code=57; }
     else if  (!strcmp(s[0],":SilentMode"                )){code=58; }
@@ -1244,8 +1246,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       for (int i=1; i<Len; i++)
       {
         invalid=false;pDiag=NULL;
-		    int width = DOESNT_EXIST;
-		    string tmp = CStateVariable::SVStringBreak(s[i], width);
+                    int width = DOESNT_EXIST;
+                    string tmp = CStateVariable::SVStringBreak(s[i], width);
         if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
         else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
         else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
@@ -1263,7 +1265,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-		    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
+                    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
           pModel->AddDiagnostic(pDiag);
@@ -1331,6 +1333,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:WriteNetCDFFormat */
       if (Options.noisy){cout <<"Write NetCDF Format ON"<<endl;}
       Options.output_format=OUTPUT_NETCDF;
+      break;
+    }
+    case(96):  //--------------------------------------------
+    {/*:DontWriteWatershedStorage */
+      if (Options.noisy){cout <<"Write WatershedStorage OFF"<<endl;}
+      Options.write_watershed_storage=false;
       break;
     }
     case(79):  //--------------------------------------------
