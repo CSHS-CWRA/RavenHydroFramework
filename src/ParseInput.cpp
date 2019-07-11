@@ -201,33 +201,33 @@ bool ParseMainInputFile (CModel     *&pModel,
     Options.noisy                 =false;
     Options.silent                =false;
   }
-  Options.output_format           =OUTPUT_STANDARD;
-  Options.write_energy            =false;
-  Options.write_forcings          =false;
-  Options.write_mass_bal          =false;
-  Options.write_exhaustiveMB      =false;
-  Options.write_channels          =false;
+  Options.output_format       =OUTPUT_STANDARD;
+  Options.write_energy        =false;
+  Options.write_forcings      =false;
+  Options.write_mass_bal      =false;
+  Options.write_exhaustiveMB  =false;
+  Options.write_channels      =false;
   Options.write_watershed_storage =true;
-  Options.benchmarking            =false;
-  Options.pause                   =false;
-  Options.debug_mode              =false;
-  Options.ave_hydrograph          =true;
-  Options.write_reservoir         =false;
-  Options.write_reservoirMB       =false;
-  Options.write_basinfile         =false;
-  Options.suppressICs             =false;
-  Options.period_ending           =false;
-  Options.period_starting         =false;//true;
-  Options.write_group_mb          =DOESNT_EXIST;
-  Options.diag_start_time         =-ALMOST_INF;
-  Options.diag_end_time           = ALMOST_INF;
-  Options.wateryr_mo              =10; //October
-  Options.create_rvp_template     =false;
-  Options.write_constitmass       =false;
-  Options.nNetCDFattribs          =0;
-  Options.aNetCDFattribs          =NULL;
-  Options.assimilation_on         =false;
-  Options.assimilation_start      =0;
+  Options.benchmarking        =false;
+  Options.pause               =false;
+  Options.debug_mode          =false;
+  Options.ave_hydrograph      =true;
+  Options.write_reservoir     =false;
+  Options.write_reservoirMB   =false;
+  Options.write_basinfile     =false;
+  Options.suppressICs         =false;
+  Options.period_ending       =false;
+  Options.period_starting     =false;//true;
+  Options.write_group_mb      =DOESNT_EXIST;
+  Options.diag_start_time     =-ALMOST_INF;
+  Options.diag_end_time       = ALMOST_INF;
+  Options.wateryr_mo          =10; //October
+  Options.create_rvp_template =false;
+  Options.write_constitmass   =false;
+  Options.nNetCDFattribs      =0;
+  Options.aNetCDFattribs      =NULL;
+  Options.assimilation_on     =false;
+  Options.assimilation_start  =0;
 
   pModel=NULL;
   pMover=NULL;
@@ -1246,8 +1246,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       for (int i=1; i<Len; i++)
       {
         invalid=false;pDiag=NULL;
-                    int width = DOESNT_EXIST;
-                    string tmp = CStateVariable::SVStringBreak(s[i], width);
+        int width = DOESNT_EXIST;
+        string tmp = CStateVariable::SVStringBreak(s[i], width);
         if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
         else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
         else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
@@ -1265,7 +1265,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-                    else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
+        else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
           pModel->AddDiagnostic(pDiag);
@@ -1673,7 +1673,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvBaseflow(btype,ParseSVTypeIndex(s[2],pModel));
       AddProcess(pModel,pMover,pProcGroup);
 
-
       break;
     }
     case(202):  //----------------------------------------------
@@ -1735,6 +1734,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_SCS"         )){itype=INF_SCS;       }
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
       else if (!strcmp(s[1],"INF_HMETS"       )){itype=INF_HMETS;     }
+      else if (!strcmp(s[1],"INF_ALL_INFILTRATES")) { itype=INF_ALL_INFILTRATES; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
       }
@@ -1780,7 +1780,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(206):  //----------------------------------------------
-    {/*SnowMelt
+    {/*SnowMelt [NOW OBSOLETE]
        :SnowMelt [string method] [SNOW] [int to_index]*/
       if (Options.noisy){cout <<"Snow Melt Process"<<endl;}
       snowmelt_type stype=MELT_POTMELT;
@@ -2290,8 +2290,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[1]=CStateVariable::StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
-      pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
-                          ParseSVTypeIndex(s[3],pModel));
+      pMover=new CmvExchangeFlow(ParseSVTypeIndex(s[2],pModel),
+                                 ParseSVTypeIndex(s[3],pModel));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }

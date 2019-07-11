@@ -30,7 +30,7 @@ CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
     int iSnowAge=pModel->GetStateVarIndex(SNOW_AGE);
     CHydroProcessABC::DynamicSpecifyConnections(2);
     iFrom[0]=iSnowAlbedo;       iTo[0]=iSnowAlbedo;//rates[0]: SNOW_ALBEDO->SNOW_ALBEDO
-    iFrom[1]=iSnowAge;          iTo[2]=iSnowAge;   //rates[1]: SNOW_AGE->SNOW_AGE
+    iFrom[1]=iSnowAge;          iTo[1]=iSnowAge;   //rates[1]: SNOW_AGE->SNOW_AGE
   }
   else{
     ExitGracefully("CmvSnowAlbedoEvolve::Constructor: undefined snow albedo algorithm",BAD_DATA);

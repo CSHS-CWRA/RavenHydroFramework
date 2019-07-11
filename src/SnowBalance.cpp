@@ -51,10 +51,11 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
     iSnowDepth=pModel->GetStateVarIndex(SNOW_DEPTH);
     iSoil     =pModel->GetStateVarIndex(SOIL,0);
 
-    CHydroProcessABC::DynamicSpecifyConnections(2); //nConnections=2
+    CHydroProcessABC::DynamicSpecifyConnections(3); //nConnections=2
 
     iFrom[0]=iSnow;       iTo[0]=iSnowLiq;       //rates[0]: SNOW->SNOW_LIQ
-    iFrom[1]=iSnowLiq;    iTo[1]=iSoil;          //rates[1]: SNOW_LIQ->SOIL
+    iFrom[1]=iSnow;       iTo[1]=iSoil;          //rates[1]: SNOW->SOIL
+    iFrom[2]=iSnowLiq;    iTo[2]=iSoil;          //rates[1]: SNOW->SOIL
   }
   else if (type==SNOBAL_UBCWM)
   {
@@ -446,23 +447,31 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
     double Ka    =pHRU->GetSurfaceProps()->refreeze_factor;//[mm/d/K]
     double Ta    =pHRU->GetForcingFunctions()->temp_daily_ave;
     double tstep =Options.timestep;
-    int    iSnowDepth = pModel->GetStateVarIndex(SNOW_DEPTH);
-    
-    double melt,refreeze, liq_cap;
+
+    double melt,refreeze, liq_cap,to_liq,overflow;
 
     double SWE  =state_var[iFrom[0]];//snow, SWE mm
-    double SL   =state_var[iFrom[1]];//liquid snow, mm
-    double SD   =state_var[iSnowDepth];//snow depth, mm
+    double SL   =state_var[iTo  [0]];//liquid snow, mm
+    double SD   =state_var[pModel->GetStateVarIndex(SNOW_DEPTH)];//snow depth, mm
 
-    melt    =min(max(pHRU->GetForcingFunctions()->potential_melt,0.0),SWE/tstep); //positive, constrained by available snow
-    refreeze=Ka*min(Ta-FREEZING_TEMP,0.0);//negatively valued
+    melt=max(pHRU->GetForcingFunctions()->potential_melt,0.0);
+    melt=min(melt,SWE/tstep); //positive, constrained by available snow
+    SWE-=melt*tstep;
 
-    liq_cap=CalculateSnowLiquidCapacity(SWE-melt*tstep,SD,Options);
+    refreeze=Ka*max(FREEZING_TEMP-Ta,0.0);//positively valued
+    refreeze=max(min(SL/tstep,refreeze),0.0);
+    SL-=refreeze*tstep;
 
-    rates[0] =max(-SL/tstep,refreeze);          //snow<-snow_liq 
-    SL+=rates[0]*tstep;
-    rates[0]+=min(melt,max(liq_cap-SL,0.0)/tstep);     //melt
-    rates[1] =max(melt-max(liq_cap-SL,0.0)/tstep,0.0); //overflow to soil
+    liq_cap=CalculateSnowLiquidCapacity(SWE,SD,Options);
+    to_liq=min(melt,max(liq_cap-SL,0.0)/tstep);
+    SL+=to_liq*tstep;
+    
+    overflow=max((SL-liq_cap)/tstep,0.0);
+
+    rates[0] =-refreeze;            //SNOW_LIQ-->SNOW
+    rates[0]+=to_liq;               //SNOW->SNOW_LIQ
+    rates[1] =max(melt-to_liq,0.0); //SNOW->SOIL[0]
+    rates[2] =overflow;             //SNOW_LIQ->SOIL[0]
   }
   //------------------------------------------------------------
   else if(type==SNOBAL_CRHM_EBSM)
@@ -1168,8 +1177,8 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
 
   double SUBLIM = 0;                                                         // Sublimation [mm]
 
-  if(TEMPs < 0){SUBLIM = 2.4 * tstep;}
-  if (SWC2 - MELT_1 - MELT_2 < SUBLIM) { SUBLIM = min(SUBLIM, SWC2 - MELT_1 - MELT_2); }
+  if(TEMPs < 0){SUBLIM = 2.4 * tstep;} //2.4 mm/d
+  if (SWC2 - MELT_1 - MELT_2 < SUBLIM) { SUBLIM = max(min(SUBLIM, SWC2 - MELT_1 - MELT_2),0.0); }
 
   double SUBLIM_SDEP = 0;                                                    // Decrease in SDEP from Sublimation [mm]
   if (SWC2 > 0) { SUBLIM_SDEP = SUBLIM / TRHO; }
@@ -1182,7 +1191,7 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
   rates[4] = -(snowmelt + SUBLIM_SDEP) / tstep;   // change in snowdepth from snowmelt and sublimation
   rates[5] = newSnow / NEWDEN / tstep;            // change in snowdepth from snowfall
   rates[6] = newSnow / tstep;                     // SNOWFALL -> SNOW
-  rates[7] = -SUBLIM / tstep;                     // change in SNOW due to sublimation (physically makes no sense in GAWSER)
+  rates[7] = SUBLIM / tstep;                      // change in SNOW due to sublimation (physically makes no sense in GAWSER)
   rates[8] = EXCESS_LWC / tstep;                  // LWC overflow to ponded
   rates[9] = MELT_2 / tstep;                      // Snowmelt going to ponded as LWC > LWCAP
 

@@ -149,18 +149,18 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       tmpFilename=FilenamePrepare("WatershedStorage.csv",Options);
       _STORAGE.open(tmpFilename.c_str());
       if (_STORAGE.fail()){
-	ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+        ExitGracefully(("CModel::WriteOutputFileHeaders: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
       }
-      
+
       int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
       _STORAGE<<"time [d],date,hour,rainfall [mm/day],snowfall [mm/d SWE],Channel Storage [mm],Reservoir Storage [mm],Rivulet Storage [mm]";
       for (i=0;i<GetNumStateVars();i++){
-	if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
-	  if (i!=iAtmPrecip){
-	    _STORAGE<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
-	    //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
-	  }
-	}
+        if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
+          if (i!=iAtmPrecip){
+            _STORAGE<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+            //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+          }
+        }
       }
       _STORAGE<<", Total [mm], Cum. Inputs [mm], Cum. Outflow [mm], MB Error [mm]"<<endl;
     }
@@ -606,43 +606,43 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     {
       if (Options.write_watershed_storage)
       {
-	double snowfall      =GetAverageSnowfall();
-	double precip        =GetAveragePrecip();
-	double channel_stor  =GetTotalChannelStorage();
-	double reservoir_stor=GetTotalReservoirStorage();
-	double rivulet_stor  =GetTotalRivuletStorage();
-	
-	_STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour; //instantaneous, so thishour rather than usehour used.
-	
-	if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
-	else     {_STORAGE<<",---,---";}
-	_STORAGE<<","<<channel_stor<<","<<reservoir_stor<<","<<rivulet_stor;
-	
-	currentWater=0.0;
-	for (i=0;i<GetNumStateVars();i++)
-	  {
-	    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
-	      {
-		S=GetAvgStateVar(i);
-		if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
-		_STORAGE<<","<<FormatDouble(S);
-		currentWater+=S;
-	      }
-	  }
-	currentWater+=channel_stor+rivulet_stor+reservoir_stor;
-	if(t==0){
-	  // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-	  // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
-	  for(int p=0;p<_nSubBasins;p++){
-	    if(_pSubBasins[p]->GetReservoir()!=NULL){
-	      currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-	      currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-	    }
-	  }
-	}
-	
-	_STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
-	_STORAGE<<endl;
+        double snowfall      =GetAverageSnowfall();
+        double precip        =GetAveragePrecip();
+        double channel_stor  =GetTotalChannelStorage();
+        double reservoir_stor=GetTotalReservoirStorage();
+        double rivulet_stor  =GetTotalRivuletStorage();
+
+        _STORAGE<<tt.model_time <<","<<thisdate<<","<<thishour; //instantaneous, so thishour rather than usehour used.
+
+        if (t!=0){_STORAGE<<","<<precip-snowfall<<","<<snowfall;}//precip
+        else     {_STORAGE<<",---,---";}
+        _STORAGE<<","<<channel_stor<<","<<reservoir_stor<<","<<rivulet_stor;
+
+        currentWater=0.0;
+        for (i=0;i<GetNumStateVars();i++)
+        {
+          if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
+          {
+            S=GetAvgStateVar(i);
+            if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
+            _STORAGE<<","<<FormatDouble(S);
+            currentWater+=S;
+          }
+        }
+        currentWater+=channel_stor+rivulet_stor+reservoir_stor;
+        if(t==0){
+          // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+          // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
+          for(int p=0;p<_nSubBasins;p++){
+            if(_pSubBasins[p]->GetReservoir()!=NULL){
+              currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+              currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+            }
+          }
+        }
+
+        _STORAGE<<","<<currentWater<<","<<_CumulInput<<","<<_CumulOutput<<","<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
+        _STORAGE<<endl;
       }
 
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
@@ -1334,20 +1334,18 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
     
     _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
     for (i=0;i<GetNumStateVars();i++){
-      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-	_STORAGE<<" mm";}}
+    if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){_STORAGE<<" mm";}}
     _STORAGE<<" mm mm mm mm"<<endl;
     
     _STORAGE<<"  :ColumnType float float float float";
     for (i=0;i<GetNumStateVars();i++){
-      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-	_STORAGE<<" float";}}
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){_STORAGE<<" float";}}
     _STORAGE<<" float float float float"<<endl;
     
     _STORAGE << "  :ColumnFormat -1 -1 0 0";
     for (i = 0; i < GetNumStateVars(); i++){
       if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i != iAtmPrecip)){
-	_STORAGE << " 0";
+	    _STORAGE << " 0";
       }
     }
     _STORAGE << " 0 0 0 0" << endl;
