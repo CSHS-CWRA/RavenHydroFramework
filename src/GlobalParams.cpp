@@ -261,6 +261,11 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
     if (chatty){WriteAdvisory(warn,false);}
   }
 
+  autocalc=SetCalculableValue(G.reservoir_relax,Gtmp.reservoir_relax,Gtemplate.reservoir_relax);
+  if(autocalc)
+  {
+    G.reservoir_relax=0.4;  
+  }
 
   //Model-specific global parameters - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
@@ -293,6 +298,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   SetSpecifiedValue(G.MOHYSE_PET_coeff,Gtmp.MOHYSE_PET_coeff,Gtemplate.MOHYSE_PET_coeff,false,"MOHYSE_PET_COEFF");
   SetSpecifiedValue(G.SWI_reduct_coeff,Gtmp.SWI_reduct_coeff,Gtemplate.SWI_reduct_coeff,false,"SWI_REDUCT_COEFF");
 
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -315,6 +321,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   */
 
   g.max_reach_seglength =DEFAULT_MAX_REACHLENGTH;//defaults to one segment per reach 
+  g.reservoir_relax     =0.4;
 
   //calculable /estimable parameters
   g.snow_SWI            =DefaultParameterValue(is_template,true);
@@ -338,7 +345,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
 
   g.max_SWE_surface     =DefaultParameterValue(is_template,true);
   g.TOC_multiplier      =DefaultParameterValue(is_template,true);
-
+  
   //model-specific parameters
   g.avg_annual_snow     =DefaultParameterValue(is_template,false);
   g.avg_annual_runoff   =DefaultParameterValue(is_template,false);
@@ -467,6 +474,8 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("MAX_SWE_SURFACE"     )){G.max_SWE_surface=value;}
   else if (!name.compare("MOHYSE_PET_COEFF"    )){G.MOHYSE_PET_coeff=value;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){G.max_reach_seglength=value;}
+  else if (!name.compare("RESERVOIR_RELAX"     )){G.reservoir_relax=value; }
+
 
   else{
     WriteWarning("CGlobalParams::SetGlobalProperty: Unrecognized/invalid global parameter name ("+name+") in .rvp file",false);
@@ -556,6 +565,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("MAX_SWE_SURFACE"     )){return G.max_SWE_surface;}
   else if (!name.compare("MOHYSE_PET_COEFF"    )){return G.MOHYSE_PET_coeff;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){return G.max_reach_seglength;}
+  else if (!name.compare("RESERVOIR_RELAX"     )){return G.reservoir_relax; }
 
   else{
     string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;

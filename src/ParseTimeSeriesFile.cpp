@@ -648,7 +648,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
         
-      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,(!strcmp(s[1], "HYDROGRAPH")));
+      bool period_ending =(!strcmp(s[1],"HYDROGRAPH")); 
+      //Hydrographs are internally stored as period-ending!
+
+      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,period_ending);
 
       if (ishyd && invalidSB){
         string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";

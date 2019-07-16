@@ -1826,9 +1826,9 @@ void CSubBasin::WriteToSolutionFile (ofstream &OUT) const
   OUT<<_name<<endl;
   OUT<<"    :ChannelStorage, "<<_channel_storage<<endl;
   OUT<<"    :RivuletStorage, "<<_rivulet_storage<<endl;
-  OUT<<"    :Qout,"<<_nSegments  <<",";for (int i=0;i<_nSegments;i++){OUT<<_aQout    [i]<<",";}OUT<<_QoutLast<<endl;
-  OUT<<"    :Qlat,"<<_nQlatHist  <<",";for (int i=0;i<_nQlatHist;i++){OUT<<_aQlatHist[i]<<",";}OUT<<_QlatLast<<endl;
-  OUT<<"    :Qin ,"<<_nQinHist   <<",";for (int i=0;i<_nQinHist; i++){OUT<<_aQinHist [i]<<",";}OUT<<endl;
+  OUT<<"    :Qout,"<<_nSegments  ;for (int i=0;i<_nSegments;i++){OUT<<","<<_aQout    [i];}OUT<<","<<_QoutLast<<endl;
+  OUT<<"    :Qlat,"<<_nQlatHist  ;for (int i=0;i<_nQlatHist;i++){OUT<<","<<_aQlatHist[i];}OUT<<","<<_QlatLast<<endl;
+  OUT<<"    :Qin ,"<<_nQinHist   ;for (int i=0;i<_nQinHist; i++){OUT<<","<<_aQinHist [i];}OUT<<endl;
   if (_pReservoir!=NULL){
     _pReservoir->WriteToSolutionFile(OUT);
   }

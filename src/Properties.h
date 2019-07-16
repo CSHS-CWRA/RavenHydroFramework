@@ -384,6 +384,7 @@ struct global_struct
 
   double           MOHYSE_PET_coeff;    ///< [mm/d] MOHYSE PET constant (PET @ equinox when temperature is 10 degC)
 
+  double           reservoir_relax;     ///< [0..1] numerical relaxation parameter for overridden reservoir outflows/target stage [~0.4]
   double           TOC_multiplier;      ///< [mm] time of concentration multiplier
 };
 #endif

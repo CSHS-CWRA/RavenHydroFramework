@@ -624,6 +624,16 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 // where N=nMeasurements
 // OR 
 // :AnnualCycle J F M A M J J A S O N D 
+// OR
+// :ReadFromNetCDF
+//    :FileNameNC ./input/input.nc
+//    :VarNameNC Qobs
+//    :DimNamesNC stations time
+//    :StationIdx 11
+//    :TimeShift 0.0
+//    :PeriodEndingNC
+//    :LinearTransform 1.0 0.0
+// :EndReadFromNetCDF
 //
 CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
 {
@@ -657,6 +667,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   {
 
     // initialize
+    bool shift_from_per_ending=false;
     FileNameNC = "None";
     VarNameNC  = "None";
     StationIdx = 0;   // numbering starts with 1
@@ -666,21 +677,20 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     
     while (strcmp(s[0],":EndReadFromNetCDF")) {
       p->Tokenize(s,Len);
-      if(!strcmp(s[0],":FileNameNC")) { FileNameNC = s[1]; FileNameNC = CorrectForRelativePath(FileNameNC ,Options.rvt_filename); }
-      if(!strcmp(s[0],":VarNameNC"))  { VarNameNC  = s[1]; }
+      if(!strcmp(s[0],":FileNameNC"    )){ FileNameNC = s[1]; FileNameNC = CorrectForRelativePath(FileNameNC ,Options.rvt_filename); }
+      if(!strcmp(s[0],":VarNameNC"     )){ VarNameNC  = s[1]; }
+      if(!strcmp(s[0],":PeriodEndingNC")){ shift_from_per_ending=true;}
       if(!strcmp(s[0],":DimNamesNC")) {
-        if (Len == 2) {
+        if(Len == 2) {
           DimNamesNC_stations = "None";
           DimNamesNC_time     = s[1];
         }
+        else if(Len >= 3) {
+          DimNamesNC_stations = s[1];
+          DimNamesNC_time     = s[2];
+        }
         else {
-          if (Len == 3) {
-            DimNamesNC_stations = s[1];
-            DimNamesNC_time     = s[2];
-          }
-          else {
-            ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF requires 1 or 2 arguments for :DimNamesNC",BAD_DATA); return NULL;
-          }
+          ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF requires 1 or 2 arguments for :DimNamesNC",BAD_DATA); return NULL;
         }
       }
       if(!strcmp(s[0],":StationIdx"))      { StationIdx = s_to_i(s[1]); }
@@ -724,6 +734,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
                                            name,                 // ForcingType
                                            tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
                                            shift_to_per_ending,  // true if data are period ending rtaher than period ending
+                                           shift_from_per_ending,
                                            FileNameNC,           // file name of NetCDF
                                            VarNameNC,            // name of variable in NetCDF
                                            DimNamesNC_stations,  // name of station dimension (optional; default=None)
@@ -1164,7 +1175,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-                                                   string tag, bool shift_to_per_ending, string FileNameNC, string VarNameNC,
+                                                   string tag, bool shift_to_per_ending, bool shift_from_per_ending, string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
 {
@@ -1295,32 +1306,32 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (5) determine tstep, start_day and start_yr depending on time unit
   // -------------------------------
-  double time_shift;
+  double time_zone;
   time_struct tt;
   unit_t_str = to_string(unit_t);
   if (strstr(unit_t, "hours")) 
   { 
-    tt =TimeStructFromNetCDFString(unit_t_str,"hours",calendar,time_shift);
+    tt =TimeStructFromNetCDFString(unit_t_str,"hours",calendar,time_zone);
     tstep   = (time[1] - time[0])/HR_PER_DAY;
-    AddTime(tt.julian_day,tt.year,time[0]/HR_PER_DAY+time_shift,calendar,start_day,start_yr);
+    AddTime(tt.julian_day,tt.year,time[0]/HR_PER_DAY,calendar,start_day,start_yr);
   }
   else if (strstr(unit_t, "days")) 
   {  
-    tt =TimeStructFromNetCDFString(unit_t_str,"days",calendar,time_shift);
+    tt =TimeStructFromNetCDFString(unit_t_str,"days",calendar,time_zone);
     tstep   = (time[1] - time[0]);
-    AddTime(tt.julian_day,tt.year,time[0]+time_shift,calendar,start_day,start_yr) ;
+    AddTime(tt.julian_day,tt.year,time[0],calendar,start_day,start_yr) ;
   }
   else if (strstr(unit_t, "minutes")) 
   { 
-    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_shift);
+    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_zone);
     tstep   = (time[1] - time[0])/MIN_PER_DAY;
-    AddTime(tt.julian_day,tt.year,time[0]/MIN_PER_DAY+time_shift,calendar,start_day,start_yr) ;
+    AddTime(tt.julian_day,tt.year,time[0]/MIN_PER_DAY,calendar,start_day,start_yr) ;
   }
   else if(strstr(unit_t,"seconds"))
   {
-    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_shift);
+    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_zone);
     tstep   = (time[1] - time[0])/SEC_PER_DAY;
-    AddTime(tt.julian_day,tt.year,time[0]/SEC_PER_DAY+time_shift,calendar,start_day,start_yr);
+    AddTime(tt.julian_day,tt.year,time[0]/SEC_PER_DAY,calendar,start_day,start_yr);
   }
   else{
      ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
@@ -1328,12 +1339,19 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
 
 
-  // if data are period ending need to shift by timestep
+  // if data are period ending need to shift by data interval
   if (shift_to_per_ending) {
-    start_day += Options.timestep;
+    start_day += tstep;
     int leap   = 0;
     if (IsLeapYear(start_yr,calendar)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
+  }
+  if(shift_from_per_ending) {
+    cout<<" SHIFTING FROM PERIOD ENDING"<<endl;
+    start_day -= tstep;
+    int leap   = 0;
+    if(IsLeapYear(start_yr-1,calendar)) { leap = 1; }
+    if(start_day<0) { start_day+=365+leap; start_yr--; }
   }
 
   // -------------------------------

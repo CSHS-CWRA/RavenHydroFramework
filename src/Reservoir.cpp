@@ -774,7 +774,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     res_outflow=GetOutflow(stage_new,weir_adj);
 
     //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
-    double w=0.4;
+    double w=CGlobalParams::GetParams()->reservoir_relax;
     if(htarget!=RAV_BLANK_DATA) {
       double V_targ=GetVolume(htarget);
       double A_targ=GetArea(htarget);

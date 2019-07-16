@@ -1076,7 +1076,7 @@ time_struct DateStringToTimeStruct(const string      sDate,
 time_struct TimeStructFromNetCDFString(const string unit_t_str,
                                        const string timestr,
                                        const int calendar,
-                                             double &tshift);
+                                       double &time_zone);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
