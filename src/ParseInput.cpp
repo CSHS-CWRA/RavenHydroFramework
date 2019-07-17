@@ -1442,6 +1442,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       time_struct tt;
       tt = DateStringToTimeStruct(s[1],s[2],Options.calendar);
       Options.assimilation_start=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+
+      if(Options.assimilation_start>Options.duration) {
+        string warn="Data assimilation start date is after model simulation end. No data assimilation will be applied.";
+        WriteWarning(warn,Options.noisy);
+      }
       break;
     }
     case(93):  //--------------------------------------------

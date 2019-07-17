@@ -111,6 +111,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":Longitude"             )){code=10; }
     else if  (!strcmp(s[0],":Elevation"             )){code=11; }
     else if  (!strcmp(s[0],":GaugeList"             )){code=14; }
+    else if  (!strcmp(s[0],":MeasurementHeight"     )){code=16; }
     //--------------------FORCING FUNCTIONS --------------------
     else if  (!strcmp(s[0],":Rain"                  )){code=3;  } //should make obsolete
     else if  (!strcmp(s[0],":Snow"                  )){code=4;  } //should make obsolete
@@ -119,7 +120,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":TotalPrecip"           )){code=7;  } //should make obsolete
     else if  (!strcmp(s[0],":Precipitation"         )){code=7;  } //should make obsolete
     else if  (!strcmp(s[0],":AveTemperature"        )){code=12; } //should make obsolete
-    else if  (!strcmp(s[0],":MeasurementHeight"     )){code=16; }
 
     else if  (!strcmp(s[0],":Data"                  )){code=8;  }
     else if  (!strcmp(s[0],":MultiData"             )){code=13; }

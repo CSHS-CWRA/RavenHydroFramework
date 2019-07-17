@@ -104,6 +104,11 @@ private:/*------------------------------------------------------*/
   CDiagnostic   **_pDiagnostics;  ///< array of pointers to diagnostics to be calculated [size: _nDiagnostics]
   int             _nDiagnostics;  ///< number of diagnostics to be calculated comparing obs. vs modeled
 
+  //Data Assimilation 
+  double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
+  double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
+  double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
+  
   //Water/Energy Balance information
   double      **_aCumulativeBal;  ///< cumulative amount of flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
   double            **_aFlowBal;  ///< current time step flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
@@ -140,6 +145,7 @@ private:/*------------------------------------------------------*/
   void       InitializeRoutingNetwork ();
   void           InitializeBasinFlows (const optStruct 	 &Options);
   void         InitializeObservations (const optStruct 	 &Options);
+  void     InitializeDataAssimilation (const optStruct   &Options);
 
   void      WriteEnsimStandardHeaders (const optStruct 	 &Options);
   void     WriteNetcdfStandardHeaders (const optStruct 	 &Options);
@@ -196,8 +202,6 @@ private:/*------------------------------------------------------*/
                                       const CHydroUnit *pHRU,
                                       const time_struct &tt);
 
-  void         AssimilateStreamflow  (const time_struct &tt, 
-                                      const optStruct &Options);
 
   //Routines for deriving missing data based on gridded data provided
 
@@ -360,7 +364,10 @@ public:/*-------------------------------------------------------*/
                                                 int         *iTo,
                                                 int         &nLatConnections,
                                                 double      *exchange_rates) const;
-                                         
+
+  void         AssimilateStreamflow      (const optStruct &Options,
+                                          const time_struct &tt);
+
   //water/energy/mass balance routines
   void        IncrementBalance        (const int q_star,
                                        const int k,

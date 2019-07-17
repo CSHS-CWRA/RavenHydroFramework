@@ -800,19 +800,18 @@ void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
 /// \remark Messes with mass balance something fierce!
 ///
 /// \param &Qlat [in] New lateral inflow [m^3/s]
+/// \return mass added to system [m3]
 //
 double CSubBasin::ScaleAllFlows(const double &scale, const double &tstep)
 {
   double ma=0.0; //mass added
   double sf=(scale-1.0)/scale;
   for (int n=0;n<_nQlatHist;n++){_aQlatHist[n]*=scale; ma+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;}
-  for (int n=0;n<_nQinHist; n++){ _aQinHist[n]*=scale; }
   for (int i=0;i<_nSegments;i++){    _aQout[i]*=scale; } _QoutLast*=scale;
+  //note that _aQin not scaled - leads to serious side effects
 
-  for (int n=0;n<_nQinHist-1; n++){ma+=0.5*(_aQinHist[n]+_aQinHist[n+1])*sf*tstep*SEC_PER_DAY;}
-  //for (int n=0;n<_nSegments; n++){ma+=0.5*(_aQout   [n]+aQoutLast[n+1]   )*sf*tstep*SEC_PER_DAY;}
-  
-  //ma calcs for _aQin/_aQout likely at issue - need to use 1/2 (Qin^n+Qin^n+1)
+  //Estimate mass added through scaling 
+  for (int n=0;n<_nSegments; n++){ma+=0.5*(_aQout   [n]+_aQout[n+1]   )*sf*tstep*SEC_PER_DAY;}  
   _channel_storage*=scale; ma+=_channel_storage*sf;
   _rivulet_storage*=scale; ma+=_rivulet_storage*sf;
   return ma;

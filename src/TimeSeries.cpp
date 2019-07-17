@@ -812,7 +812,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
   }
   if (shift_to_per_ending)
   {
-    start_day+=Options.timestep;
+    start_day+=tstep;
     int leap=0;
     if (IsLeapYear(start_yr,Options.calendar)){ leap = 1; }
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}

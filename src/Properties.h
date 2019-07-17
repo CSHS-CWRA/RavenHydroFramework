@@ -386,5 +386,8 @@ struct global_struct
 
   double           reservoir_relax;     ///< [0..1] numerical relaxation parameter for overridden reservoir outflows/target stage [~0.4]
   double           TOC_multiplier;      ///< [mm] time of concentration multiplier
+  double           assimilation_fact;   ///< [0..1] assimilation factor (0=no assimilation to 1= full replacement)
+  double           assim_upstream_decay;///< [1/km] assimilation upstream decay factor (0= overrides everything upstream, large- observation influence decays quickly with distance from gauge) [~0.01]
+  double           assim_time_decay;    ///< [1/d] assimilation temporal decay factor (0=diminishes in future, 0.1 - diminshes in  3 days) [0.2]
 };
 #endif

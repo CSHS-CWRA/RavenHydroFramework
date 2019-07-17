@@ -127,20 +127,23 @@ int main(int argc, char* argv[])
 
       for(t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
       {
-        pModel->UpdateTransientParams(Options,tt);
+        pModel->UpdateTransientParams      (Options,tt);
         pModel->RecalculateHRUDerivedParams(Options,tt);
-        pModel->UpdateHRUForcingFunctions(Options,tt);
-        pModel->UpdateDiagnostics(Options,tt);
+        pModel->UpdateHRUForcingFunctions  (Options,tt);
+        pModel->UpdateDiagnostics          (Options,tt);
 
         MassEnergyBalance(pModel,Options,tt); //where the magic happens!
 
-        pModel->IncrementCumulInput(Options,tt);
-        pModel->IncrementCumOutflow(Options);
+        pModel->IncrementCumulInput        (Options,tt);
+        pModel->IncrementCumOutflow        (Options);
+
+        pModel->AssimilateStreamflow       (Options,tt);
 
         JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
-        pModel->WriteMinorOutput(Options,tt);
-        pModel->WriteProgressOutput(Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
-        //pModel->WriteProgressOutput(Options,clock()-t0,step+e*nsteps,nEnsembleMembers*nsteps); //TMP DEBUG - for ensemble support
+
+        pModel->WriteMinorOutput           (Options,tt);
+        pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
+        //pModel->WriteProgressOutput      (Options,clock()-t0,step+e*nsteps,nEnsembleMembers*nsteps); //TMP DEBUG - for ensemble support
 
         if(CheckForStopfile(step,tt)) { break; }
         step++;

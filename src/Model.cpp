@@ -41,6 +41,10 @@ CModel::CModel(const soil_model SM,
   _aOrderedSBind  =NULL;
   _aDownstreamInds=NULL;
 
+  _aDAscale       =NULL; //Initialized in InitializeDataAssimilation
+  _aDAlength      =NULL; 
+  _aDAtimesince   =NULL;
+
   _pOptStruct = &Options;
 
   _HYDRO_ncid=-9; 
@@ -166,6 +170,9 @@ CModel::~CModel()
   delete [] _aOutputTimes;   _aOutputTimes=NULL;
   delete [] _aObsIndex;      _aObsIndex=NULL;
 
+  delete [] _aDAscale;       _aDAscale=NULL;
+  delete [] _aDAlength;      _aDAlength=NULL;
+  delete [] _aDAtimesince;   _aDAtimesince=NULL;
 
   CSoilClass::      DestroyAllSoilClasses();
   CVegetationClass::DestroyAllVegClasses();

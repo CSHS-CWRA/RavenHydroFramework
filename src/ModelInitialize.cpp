@@ -221,6 +221,10 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
 
+  // Initialize Data Assimilation
+  //--------------------------------------------------------------
+  InitializeDataAssimilation(Options);
+
   // Initialize Transport
   //--------------------------------------------------------------
   if (_pTransModel->GetNumConstituents()>0){

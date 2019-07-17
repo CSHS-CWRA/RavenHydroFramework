@@ -264,7 +264,24 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   autocalc=SetCalculableValue(G.reservoir_relax,Gtmp.reservoir_relax,Gtemplate.reservoir_relax);
   if(autocalc)
   {
-    G.reservoir_relax=0.4;  
+    G.reservoir_relax=0.4;
+  }
+
+  autocalc=SetCalculableValue(G.assimilation_fact,Gtmp.assimilation_fact,Gtemplate.assimilation_fact);
+  if(autocalc)
+  {
+    G.assimilation_fact=1.0;  
+  }
+
+  autocalc=SetCalculableValue(G.assim_upstream_decay,Gtmp.assim_upstream_decay,Gtemplate.assim_upstream_decay);
+  if(autocalc)
+  {
+    G.assim_upstream_decay=0.01; //[1/km]
+  }
+  autocalc=SetCalculableValue(G.assim_time_decay,Gtmp.assim_time_decay,Gtemplate.assim_time_decay);
+  if(autocalc)
+  {
+    G.assim_time_decay=0.2; //[1/d]
   }
 
   //Model-specific global parameters - cannot be autocomputed, must be specified by user
@@ -322,6 +339,9 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
 
   g.max_reach_seglength =DEFAULT_MAX_REACHLENGTH;//defaults to one segment per reach 
   g.reservoir_relax     =0.4;
+  g.assim_upstream_decay=0.01;
+  g.assim_time_decay    =0.2;
+  g.assimilation_fact   =1.0;
 
   //calculable /estimable parameters
   g.snow_SWI            =DefaultParameterValue(is_template,true);
@@ -475,8 +495,9 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("MOHYSE_PET_COEFF"    )){G.MOHYSE_PET_coeff=value;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){G.max_reach_seglength=value;}
   else if (!name.compare("RESERVOIR_RELAX"     )){G.reservoir_relax=value; }
-
-
+  else if (!name.compare("ASSIMILATION_FACT"   )){G.assimilation_fact=value; }
+  else if (!name.compare("ASSIM_UPSTREAM_DECAY")){G.assim_upstream_decay=value; }
+  else if (!name.compare("ASSIM_TIME_DECAY"    )){G.assim_time_decay=value; }
   else{
     WriteWarning("CGlobalParams::SetGlobalProperty: Unrecognized/invalid global parameter name ("+name+") in .rvp file",false);
 
@@ -566,7 +587,9 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("MOHYSE_PET_COEFF"    )){return G.MOHYSE_PET_coeff;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){return G.max_reach_seglength;}
   else if (!name.compare("RESERVOIR_RELAX"     )){return G.reservoir_relax; }
-
+  else if (!name.compare("ASSIMILATION_FACT"   )){return G.assimilation_fact; }
+  else if (!name.compare("ASSIM_UPSTREAM_DECAY")){return G.assim_upstream_decay; }
+  else if (!name.compare("ASSIM_TIME_DECAY"    )){return G.assim_time_decay; }
   else{
     string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);
