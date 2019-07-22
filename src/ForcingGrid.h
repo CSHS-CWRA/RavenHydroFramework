@@ -139,21 +139,32 @@ public:/*------------------------------------------------------*/
 
   // Weighting matrix associated routines
   void   AllocateWeightArray(              const int        nHydroUnits,
-                                           const int        nGridCells);     ///< allocates _GridWeight [nHydroUnits, nGridCells]
+                                           const int        nGridCells);                ///< allocates _GridWeight [nHydroUnits, nGridCells]
   void   SetWeightVal(                     const int        HRUID,
                                            const int        CellID,
-                                           const double     weight);         ///< sets one entry of _GridWeight[HRUID, CellID] = weight
+                                           const double     weight);                    ///< sets one entry of _GridWeight[HRUID, CellID] = weight
   bool   CheckWeightArray(                 const int        nHydroUnits,
-                                           const int        nGridCells);     ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
+                                           const int        nGridCells);                ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   double GetGridWeight(                    const int        k,
-                                           const int        CellID) const;   ///< returns weighting of HRU and CellID pair
+                                           const int        CellID) const;              ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
-                                           const double     global_model_time)  const; ///< returns index in current chunk corresponding to model time step
+                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to model time step
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
-                                           const double     global_model_time)  const; ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
+                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
   void   CellIdxToRowCol(                  const int        cellid,
                                            int              &row,
-                                           int              &column);         ///< returns row and column index of cell ID
+                                           int              &column);                   ///< returns row and column index of cell ID
+
+  // Routines for checking content
+  void   CheckValue3D(                     const double value,
+                                           const double checkval,
+                                           const int dim1_idx,
+                                           const int dim2_idx,
+                                           const int dim3_idx);                         ///< checks for missing and fill values in 3D array and exists Raven if found
+  void   CheckValue2D(                     const double value,
+                                           const double checkval,
+                                           const int dim1_idx,
+                                           const int dim2_idx);                         ///< checks for missing and fill values in 2D array and exists Raven if found
 
   // set class variables
   void         SetForcingType(         const forcing_type &ForcingType);               ///< set _ForcingType               of class
