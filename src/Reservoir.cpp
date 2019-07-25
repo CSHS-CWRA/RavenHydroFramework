@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
@@ -38,6 +38,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _pTargetStageTS=NULL;
   _pMaxQIncreaseTS=NULL; 
   _pDroughtLineTS=NULL;
+  _pQminTS=NULL;
 
   _crest_ht=0.0;
 
@@ -308,6 +309,7 @@ CReservoir::~CReservoir()
   delete _pTargetStageTS;_pTargetStageTS=NULL;
   delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL; 
   delete _pDroughtLineTS; _pDroughtLineTS=NULL;
+  delete _pQminTS; _pQminTS=NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -415,6 +417,10 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pDroughtLineTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
+  if(_pQminTS!=NULL)
+  {
+    _pQminTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -500,6 +506,15 @@ void    CReservoir::AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta){
   ExitGracefullyIf(_pMaxQIncreaseTS!=NULL,
                    "CReservoir::AddMaxQIncreaseTimeSeries: only one maximum flow increase time series may be specified per reservoir",BAD_DATA_WARN);
   _pMaxQIncreaseTS=pQdelta;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum flow  time series 
+/// \param *pQmin minimum flow  time series [m3/s]
+//
+void    CReservoir::AddMinQTimeSeries(CTimeSeries *pQmin) {
+  ExitGracefullyIf(_pQminTS!=NULL,
+    "CReservoir::AddMinQTimeSeries: only one minimum flow time series may be specified per reservoir",BAD_DATA_WARN);
+  _pQminTS=pQmin;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief links reservoir to HRU
@@ -673,6 +688,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double Qoverride=RAV_BLANK_DATA;
   double min_stage=-ALMOST_INF;
   double Qminstage=0.0;
+  double Qmin=0.0;
   double Qtarget=RAV_BLANK_DATA;
   double htarget=RAV_BLANK_DATA;
   double Qdelta=ALMOST_INF;
@@ -686,6 +702,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pMinStageFlowTS!=NULL){ Qminstage  =_pMinStageFlowTS->GetSampledValue(nn);}  
   if(_pTargetStageTS!=NULL) { htarget    =_pTargetStageTS-> GetSampledValue(nn);}
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
+  if(_pQminTS!=NULL)        { Qmin       =_pQminTS->        GetSampledValue(nn);}
 
   //=============================================================================
   if (_type==RESROUTE_NONE)
@@ -783,7 +800,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       if(Qtarget>_Qout) {
         Qtarget = w*Qtarget+(1-w)*_Qout; //softer move towards goal - helps with stage undershoot -you can always remove more...
       }
-      constraint=1;
+      constraint=1; //target stage
     }
 
     if(Qoverride==RAV_BLANK_DATA)
@@ -791,34 +808,38 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       if(stage_new<min_stage)
       {
         Qoverride=Qminstage;
-        constraint=2;
+        constraint=2; //min stage
       }
       else if(Qtarget!=RAV_BLANK_DATA)
       {
-        constraint=3;
         if((Qtarget-_Qout)/tstep>Qdelta) {
           Qtarget=_Qout+Qdelta*tstep; //maximum flow change
-          constraint=4;
+          constraint=4; //max flow change
         }
         Qoverride=(Qtarget+_Qout)/2.0;//converts from end of time step to average over timestep
       }
     }
-
-
-    //special correction - flow overridden
-    if(Qoverride!=RAV_BLANK_DATA)
-    {
-      if((constraint!=2) && (constraint!=3) && (constraint!=4)) { constraint=5; }
+        
+    //special correction - flow overridden or minimum flow violated - minimum flow takes priority
+    if ((Qoverride!=RAV_BLANK_DATA) || (res_outflow<Qmin))
+    {         
+      if(Qoverride!=RAV_BLANK_DATA) {
+        if((constraint!=2) && (constraint!=1) && (constraint!=4)) { constraint=5; } //Specified override flow
+        res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
+      }
       
-      res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
+      if (res_outflow<Qmin){ //overwrites any other specified or target flow
+        res_outflow=Qmin;
+        constraint=8; //minimum flow
+      }
 
       double A_guess=A_old;
       double A_last,V_new;
       do {
-        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); //JRC: Qoverride should be res_outflow??
+        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
         if(V_new<0) {
           V_new=0;
-          constraint=7;
+          constraint=7; //drying out reservoir
           res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
         }
         stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
@@ -827,9 +848,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       } while(fabs(1.0-A_guess/A_last)>0.00001); //0.1% area error - done in one iter for constant area case
     }
 
+
     //special correction : exceeded limiting stage; fix stage and re-calculate reservoir outflow
     if(stage_new>stage_limit) {
-      constraint=6;
+      constraint=6; //max stage exceedance
       stage_new=stage_limit;
       double V_limit=GetVolume(stage_limit);
       double A_limit=GetArea(stage_limit);

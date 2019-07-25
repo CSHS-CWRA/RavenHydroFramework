@@ -585,7 +585,7 @@ double CRadiation::CalcETRadiation( const double latrad,     //latitude in radia
 
 /// \param avg_daily [in] True if average daily total incoming solar radiation is to be computed instead
 
-/// \return Double total extraterrestrial radiation
+/// \return Double total extraterrestrial radiation [MJ/m2/d]
 //
 double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radians
                                     const double &aspect,     //aspect in radians clockwise from south

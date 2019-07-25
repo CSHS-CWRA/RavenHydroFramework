@@ -201,7 +201,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
             F.recharge       += wt * Fg[g].recharge;
           }
           ref_measurement_ht+=wt*_pGauges[g]->GetMeasurementHt();
-          //ref_elev         += wt * _pGauges[g]->GetElevation();
         }
       }
 

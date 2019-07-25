@@ -1134,9 +1134,11 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
       sum+=_aRouteHydro[n];
     }
     _aRouteHydro[_nQinHist-1]=0.0;//must truncate infinite distrib.
-    if(_reach_length==0.0){
-      _aRouteHydro[0]=1.0;
-      for (n=1;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
+
+    if (travel_time<tstep){ //very sharp ADR CDF or reach length==0 -override
+      _aRouteHydro[0]=1.0-travel_time/tstep;
+      _aRouteHydro[1]=travel_time/tstep;
+      for (n=2;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
     }
   }
   //---------------------------------------------------------------

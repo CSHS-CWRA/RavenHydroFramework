@@ -452,13 +452,15 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     double max_stor   =pHRU->GetSoilCapacity(0);
     double coef_runoff=pHRU->GetSurfaceProps()->HMETS_runoff_coeff; //[-]
 
+    double sat = min(max(stor/max_stor,0.0),1.0);
+
     direct=Fimp*rainthru;
 
-    runoff=coef_runoff*(stor/max_stor)*(1.0-Fimp)*rainthru; //[mm/d] 'horizontal transfer'
+    runoff=coef_runoff*(sat)*(1.0-Fimp)*rainthru; //[mm/d] 'horizontal transfer'
 
     infil=(1.0-Fimp)*rainthru-runoff;
 
-    delayed=coef_runoff*pow(stor/max_stor,2.0)*infil; //[mm/d]
+    delayed=coef_runoff*pow(sat,2.0)*infil; //[mm/d]
     infil-=delayed;
 
     rates[0]=infil;     //PONDED->SOIL[0]

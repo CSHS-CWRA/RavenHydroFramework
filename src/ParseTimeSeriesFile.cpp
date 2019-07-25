@@ -1167,9 +1167,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :MassFluxTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
        {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
        {double flux values, in mg/m2/d} x nMeasurements
-       :EndConcentrationTimeSeries
+       :EndMassFluxTimeSeries
      */
-      if (Options.noisy){cout <<"Fixed concentration time series"<<endl;}
+      if (Options.noisy){cout <<"Mass flux time series"<<endl;}
 
       int layer_ind;
       int i_stor;
@@ -1199,7 +1199,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         pModel->GetTransportModel()->AddInfluxTimeSeries(const_name, i_stor, kk,pTS);
       }
       else{
-        ExitGracefully(":ConcentrationTimeSeries command: invalid state variable name",BAD_DATA_WARN);
+        ExitGracefully(":MassFluxTimeSeries command: invalid state variable name",BAD_DATA_WARN);
       }
       break;
     }
@@ -1457,7 +1457,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     {/*:TimeShift [hh:mm:ss] or [days]*/
       if (Options.noisy){cout <<"   :TimeShift"<<endl;}
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :TimeShift command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(Len<2,          "ParseTimeSeriesFile: :TimeShift expects at least one argument",BAD_DATA);
+      ExitGracefullyIf(Len<2,           "ParseTimeSeriesFile: :TimeShift expects at least one argument",BAD_DATA);
       ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :TimeShift argument in :GriddedForcing or :StationForcing block needs to be before :GridWeights block",BAD_DATA);
       
       string tString=s[1];
@@ -1475,7 +1475,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid->SetTimeShift(TimeShift);
 
       // Grid can be initialized as soon as all basic information are known
-      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven) {grid_initialized = true; pGrid->ForcingGridInit(Options);}
+      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven) {
+        grid_initialized = true; 
+        pGrid->ForcingGridInit(Options);
+      }
       
       break;
     }

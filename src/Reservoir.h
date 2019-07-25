@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -49,6 +49,7 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pTargetStageTS;      ///< Time series of target stage [m] (or NULL for no target)
   CTimeSeries *_pMaxQIncreaseTS;     ///< Time series maximum rate of flow increase [m3/s/d] (or NULL for no maximum)
   CTimeSeries *_pDroughtLineTS;      ///< Time series of drought line stage [m] (or NULL if none exists)
+  CTimeSeries *_pQminTS;             ///< Time series of minimum flow constraint [m3/s] (or NULL for no minimum)
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -101,46 +102,51 @@ public:/*-------------------------------------------------------*/
   ~CReservoir();
 
   //Accessors
-  long              GetSubbasinID        () const;
-  double            GetStorage           () const;//[m3]
-  double            GetOutflowRate       () const;//[m3/d]
-  double            GetReservoirLosses   (const double &tstep) const;//[m3]
-  double            GetReservoirEvapLosses (const double &tstep) const;//[m3]
-  double            GetIntegratedOutflow (const double &tstep) const;//[m3]
-  double            GetResStage          () const;//[m]
-  double            GetOldOutflowRate    () const; //[m3/d]
-  double            GetOldStorage        () const; //[m3]
-  int               GetHRUIndex          () const;
+  long              GetSubbasinID            () const;
+  double            GetStorage               () const;//[m3]
+  double            GetOutflowRate           () const;//[m3/d]
+  double            GetReservoirLosses       (const double &tstep) const;//[m3]
+  double            GetReservoirEvapLosses   (const double &tstep) const;//[m3]
+  double            GetIntegratedOutflow     (const double &tstep) const;//[m3]
+  double            GetResStage              () const;//[m]
+  double            GetOldOutflowRate        () const; //[m3/d]
+  double            GetOldStorage            () const; //[m3]
+  int               GetHRUIndex              () const;
 
   //Manipulators
-  void              SetMinStage            (const double &min_z);
-  void              Initialize             (const optStruct &Options);
-  void              SetInitialFlow         (const double &Q,const double &Qlast,const double &t);
-  void              SetInitialStage        (const double &ht, const double &ht_last);
-  void              SetVolumeStageCurve    (const double *a_ht,const double *a_V,const int nPoints);
-  void              AddExtractionTimeSeries(CTimeSeries *pOutflow);
-  void              AddWeirHeightTS        (CTimeSeries *pWeirHt);
-  void              AddMaxStageTimeSeries  (CTimeSeries *pMS);
-  void              AddOverrideQTimeSeries (CTimeSeries *pQ);
-  void              AddMinStageTimeSeries  (CTimeSeries *pMS);
-  void            AddMinStageFlowTimeSeries(CTimeSeries *pQ);
-  void             AddTargetStageTimeSeries(CTimeSeries *pTS);
-  void            AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
-  void             AddDroughtLineTimeSeries(CTimeSeries *pTS);
+  void              SetMinStage              (const double &min_z);
+  void              Initialize               (const optStruct &Options);
+  void              SetInitialFlow           (const double &Q,const double &Qlast,const double &t);
+  void              SetInitialStage          (const double &ht, const double &ht_last);
+  void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
 
-  void              SetHRU                 (const CHydroUnit *pHRU);
-  void              DisableOutflow         ();
+  void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
+  void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
+  void              AddMaxStageTimeSeries    (CTimeSeries *pMS);
+  void              AddOverrideQTimeSeries   (CTimeSeries *pQ);
+  void              AddMinStageTimeSeries    (CTimeSeries *pMS);
+  void              AddMinStageFlowTimeSeries(CTimeSeries *pQ);
+  void              AddTargetStageTimeSeries (CTimeSeries *pTS);
+  void              AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+  void              AddDroughtLineTimeSeries (CTimeSeries *pTS);
+  void              AddMinQTimeSeries        (CTimeSeries *pQmin);
+
+  void              SetHRU                   (const CHydroUnit *pHRU);
+  void              DisableOutflow           ();
 
   //Called during simulation:
-  double            RouteWater             (const double      &Qin_old,
-                                            const double      &Qin_new,
-                                            const double      &tstep,
-                                            const time_struct &tt,
-                                                  double &res_outflow) const;
-  void              UpdateStage            (const double &new_stage,const double &new_ouflow, const optStruct &Options,const time_struct &tt);
-  void              WriteToSolutionFile    (ofstream &OUT) const;
-  void              UpdateFlowRules        (const time_struct &tt, const optStruct &Options);
-  void              UpdateMassBalance      (const time_struct &tt, const double &tstep);
+  double            RouteWater               (const double      &Qin_old,
+                                              const double      &Qin_new,
+                                              const double      &tstep,
+                                              const time_struct &tt,
+                                                    double      &res_outflow) const;
+  void              UpdateStage              (const double      &new_stage,
+                                              const double      &new_ouflow, 
+                                              const optStruct   &Options,
+                                              const time_struct &tt);
+  void              WriteToSolutionFile      (ofstream &OUT) const;
+  void              UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
+  void              UpdateMassBalance        (const time_struct &tt, const double &tstep);
 
   static CReservoir  *Parse(CParser *p, string name, int &HRUID, const optStruct &Options);
 };

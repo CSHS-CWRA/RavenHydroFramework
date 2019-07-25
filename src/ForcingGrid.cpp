@@ -1025,8 +1025,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-	    CheckValue3D(aTmp3D[icol][irow][it], missval, icol, irow, it);   // check if value to read in equals "missing_value"
-	    CheckValue3D(aTmp3D[icol][irow][it], fillval, icol, irow, it);   // check if value to read in equals "_FillValue"
+            CheckValue3D(aTmp3D[icol][irow][it], missval, icol, irow, it);   // check if value to read in equals "missing_value"
+            CheckValue3D(aTmp3D[icol][irow][it], fillval, icol, irow, it);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[icol][irow][it]+_LinTrans_b;
           }
         }
@@ -1034,19 +1034,19 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       else if (_dim_order == 2) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
-	    CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-	    CheckValue3D(aTmp3D[irow][icol][it], missval, irow, icol, it);   // check if value to read in equals "missing_value"
-	    CheckValue3D(aTmp3D[irow][icol][it], fillval, irow, icol, it);   // check if value to read in equals "_FillValue"
-	    _aVal[it][ic]=_LinTrans_a*aTmp3D[irow][icol][it]+_LinTrans_b;
-	  }
-	}
+		    CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
+		    CheckValue3D(aTmp3D[irow][icol][it], missval, irow, icol, it);   // check if value to read in equals "missing_value"
+		    CheckValue3D(aTmp3D[irow][icol][it], fillval, irow, icol, it);   // check if value to read in equals "_FillValue"
+		    _aVal[it][ic]=_LinTrans_a*aTmp3D[irow][icol][it]+_LinTrans_b;
+		  }
+		}
       }
       else if (_dim_order == 3) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-	    CheckValue3D(aTmp3D[icol][it][irow], missval, icol, it, irow);   // check if value to read in equals "missing_value"
-	    CheckValue3D(aTmp3D[icol][it][irow], fillval, icol, it, irow);   // check if value to read in equals "_FillValue"
+            CheckValue3D(aTmp3D[icol][it][irow], missval, icol, it, irow);   // check if value to read in equals "missing_value"
+	        CheckValue3D(aTmp3D[icol][it][irow], fillval, icol, it, irow);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[icol][it][irow]+_LinTrans_b;
           }
         }
@@ -1055,8 +1055,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-	    CheckValue3D(aTmp3D[it][icol][irow], missval, it, icol, irow);   // check if value to read in equals "missing_value"
-	    CheckValue3D(aTmp3D[it][icol][irow], fillval, it, icol, irow);   // check if value to read in equals "_FillValue"
+		    CheckValue3D(aTmp3D[it][icol][irow], missval, it, icol, irow);   // check if value to read in equals "missing_value"
+		    CheckValue3D(aTmp3D[it][icol][irow], fillval, it, icol, irow);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[it][icol][irow]+_LinTrans_b;
           }
         }
@@ -1065,8 +1065,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-	    CheckValue3D(aTmp3D[irow][it][icol], missval, irow, it, icol);   // check if value to read in equals "missing_value"
-	    CheckValue3D(aTmp3D[irow][it][icol], fillval, irow, it, icol);   // check if value to read in equals "_FillValue"
+		    CheckValue3D(aTmp3D[irow][it][icol], missval, irow, it, icol);   // check if value to read in equals "missing_value"
+		    CheckValue3D(aTmp3D[irow][it][icol], fillval, irow, it, icol);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[irow][it][icol]+_LinTrans_b;
           }
         }
@@ -1075,8 +1075,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                      // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){    // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-	    CheckValue3D(aTmp3D[it][irow][icol], missval, it, irow, icol);   // check if value to read in equals "missing_value"
-	    CheckValue3D(aTmp3D[it][irow][icol], fillval, it, irow, icol);   // check if value to read in equals "_FillValue"
+		    CheckValue3D(aTmp3D[it][irow][icol], missval, it, irow, icol);   // check if value to read in equals "missing_value"
+		    CheckValue3D(aTmp3D[it][irow][icol], fillval, it, irow, icol);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[it][irow][icol]+_LinTrans_b;
           }
         }
@@ -1087,8 +1087,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       if (_dim_order == 1) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
-	    CheckValue2D(aTmp2D[_IdxNonZeroGridCells[ic]][it], missval, _IdxNonZeroGridCells[ic], it);   // check if value to read in equals "missing_value"
-	    CheckValue2D(aTmp2D[_IdxNonZeroGridCells[ic]][it], fillval, _IdxNonZeroGridCells[ic], it);   // check if value to read in equals "_FillValue"
+		    CheckValue2D(aTmp2D[_IdxNonZeroGridCells[ic]][it], missval, _IdxNonZeroGridCells[ic], it);   // check if value to read in equals "missing_value"
+		    CheckValue2D(aTmp2D[_IdxNonZeroGridCells[ic]][it], fillval, _IdxNonZeroGridCells[ic], it);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp2D[_IdxNonZeroGridCells[ic]][it]+_LinTrans_b;
           }
         }
@@ -1096,8 +1096,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       else if (_dim_order == 2) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
-	    CheckValue2D(aTmp2D[it][_IdxNonZeroGridCells[ic]], missval, it, _IdxNonZeroGridCells[ic]);   // check if value to read in equals "missing_value"
-	    CheckValue2D(aTmp2D[it][_IdxNonZeroGridCells[ic]], fillval, it, _IdxNonZeroGridCells[ic]);   // check if value to read in equals "_FillValue"
+		    CheckValue2D(aTmp2D[it][_IdxNonZeroGridCells[ic]], missval, it, _IdxNonZeroGridCells[ic]);   // check if value to read in equals "missing_value"
+		    CheckValue2D(aTmp2D[it][_IdxNonZeroGridCells[ic]], fillval, it, _IdxNonZeroGridCells[ic]);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp2D[it][_IdxNonZeroGridCells[ic]]+_LinTrans_b;
           }
         }
@@ -1830,7 +1830,7 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
 #ifdef _STRICTCHECK_
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
   if(_aFirstNonZeroWt==NULL) { ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: NULL weight array",RUNTIME_ERR); }
-#endif // _STRICTCHECK_
+#endif 
 
   int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
   double wt;
