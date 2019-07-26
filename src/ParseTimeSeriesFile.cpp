@@ -57,12 +57,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
   // some tmp variables for gridded forcing input
   bool grid_initialized = false;
-  bool ForcingTypeGiven = false;  //
-  bool FileNameNCGiven  = false;  //
-  bool VarNameNCGiven   = false;  //
-  bool DimNamesNCGiven  = false;  //
   bool is_3D            = false;  //
-  bool TimeShiftNCGiven = false;
 
   ifstream RVT;
   RVT.open(Options.rvt_filename.c_str());
@@ -173,7 +168,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":Deaccumulate"            )){code=407;}
     else if  (!strcmp(s[0],":TimeShift"               )){code=408;}
     else if  (!strcmp(s[0],":LinearTransform"         )){code=409;}
-    else if  (!strcmp(s[0],":PeriodEndingNC"          )){code=410; }
+    else if  (!strcmp(s[0],":PeriodEndingNC"          )){code=410;}
+    else if  (!strcmp(s[0],":LatitudeVarNameNC"         )){code=411;}
+    else if  (!strcmp(s[0],":LongitudeVarNameNC"        )){code=412;}
+    else if  (!strcmp(s[0],":ElevationVarNameNC"        )){code=413;}
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
@@ -1206,15 +1204,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
     case (400)://----------------------------------------------
     {/*:GriddedForcing
-       :ForcingType PRECIP
-       :FileNameNC  /Users/mai/Desktop/Tolson_SVN/btolson/trunk/basins/york_lumped/York_daily.nc
-       :VarNameNC   pre
-       :DimNamesNC  nlon nlat ntime
-       :GrdiWeights
-       [#HRUs] [#GRID CELLS NC]
-       [CELL#] [HRUID] [w_lk]
-       ....
-       :EndGridWeights
+         :ForcingType PRECIP
+         :FileNameNC  /Users/mai/Desktop/Tolson_SVN/btolson/trunk/basins/york_lumped/York_daily.nc
+         :VarNameNC   pre
+         :DimNamesNC  nlon nlat ntime
+         :GridWeights # GRIDWEIGHTS COMMAND ALWAYS LAST!
+           [#HRUs] [#GRID CELLS NC]
+           [CELL#] [HRUID] [w_lk]
+           ....
+         :EndGridWeights
        :EndGriddedForcing
      */
       if (Options.noisy){cout <<":GriddedForcing"<<endl;}
@@ -1222,7 +1220,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
-
       string tmp[3];
       tmp[0] = "NONE";
       tmp[1] = "NONE";
@@ -1232,19 +1229,21 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
                              "NONE",     // FileNameNC
                              "NONE",     // VarNameNC,
                              tmp,        // DimNames[3]
-                             is_3D,      // is_3D
-                             0.0,        // TimeShift
-                             1.0,        // LinTrans_a
-                             0.0         // LinTrans_b
-        );
+                             is_3D);     // is_3D
 
       grid_initialized = false;
-      ForcingTypeGiven = false;
-      FileNameNCGiven  = false;
-      VarNameNCGiven   = false;
-      DimNamesNCGiven  = false;
-      TimeShiftNCGiven = false;
 
+      break;
+    }
+    case (406)://----------------------------------------------
+    {/*:EndGriddedForcing*/
+      if(Options.noisy) { cout <<":EndGriddedForcing "<<endl; }
+#ifndef _RVNETCDF_
+      ExitGracefully("ParseTimeSeriesFile: :GriddedForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
+#endif
+      if(!grid_initialized) { pGrid->ForcingGridInit(Options);grid_initialized = true; }
+      pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
+      pGrid=NULL;
       break;
     }
     case (401)://----------------------------------------------
@@ -1253,15 +1252,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
+      ExitGracefullyIf(pGrid==NULL, "ParseTimeSeriesFile: :ForcingType command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :ForcingType command must be before :GaugeWeights command",BAD_DATA);
 
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :ForcingType command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-
-      ForcingTypeGiven = true;
       pGrid->SetForcingType(GetForcingTypeFromString(s[1]));
-
-      // Grid can be initialized as soon as all basic information are known
-      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven) {grid_initialized = true; pGrid->ForcingGridInit(Options);}
 
       break;
     }
@@ -1271,13 +1265,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #else
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :FileNameNC command must be within a :GriddedForcings or :StationForcing block",BAD_DATA);
-
-      FileNameNCGiven = true;
+      ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :FileNameNC command must be within a :GriddedForcings or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :FileNameNC command must be before :GaugeWeights command",BAD_DATA);
 
       string filename=s[1];
-
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
       
       //check for file existence
@@ -1292,8 +1283,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       pGrid->SetFilename(filename);
 
-      // Grid can be initialized as soon as all basic information are known
-      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven) {grid_initialized = true; pGrid->ForcingGridInit(Options);}
 #endif
       break;
     }
@@ -1303,16 +1292,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
-
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :VarNameNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-
-      VarNameNCGiven = true;
+      ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :VarNameNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :VarNameNC command must be before :GaugeWeights command",BAD_DATA);
       pGrid->SetVarname(s[1]);
-
-      // Grid can be initialized as soon as all basic information are known
-      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven ) {grid_initialized = true; pGrid->ForcingGridInit(Options);}
-
       break;
     }
     case (404)://----------------------------------------------
@@ -1320,21 +1302,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy){cout <<"   :DimNamesNC"<<endl;}
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
-#endif
-
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :DimNamesNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-
+#endif 
+      ExitGracefullyIf(pGrid==NULL,      "ParseTimeSeriesFile: :DimNamesNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(grid_initialized, "ParseTimeSeriesFile: :DimNamesNC command must be before :GaugeWeights command",BAD_DATA);
       string tmp[3];
       tmp[0] = s[1];
       tmp[1] = s[2];
       if (is_3D){ tmp[2] = s[3]; }
 
-      DimNamesNCGiven = true;
       pGrid->SetDimNames(tmp);
-
-      // Grid can be initialized as soon as all basic information are known
-      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven ) {grid_initialized = true; pGrid->ForcingGridInit(Options);}
 
       break;
     }
@@ -1364,11 +1340,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGrid==NULL,
                        "ParseTimeSeriesFile: :GridWeights command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
-      if (!grid_initialized) {  // if grid not initialized yet -> try without TimeShift
-        if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven ) {grid_initialized = true; pGrid->ForcingGridInit(Options);}
-      }
-      if (!grid_initialized) {  // if grid not initialized yet -> try without TimeShift
-        ExitGracefully("ParseTimeSeriesFile: :GriddedForcing blocks needs at least :ForcingType, :FileNameNC, :VarNameNC, and :DimNamesNC!",BAD_DATA);
+      if (!grid_initialized) { //must initialize grid prior to adding grid weights
+        grid_initialized = true; 
+        pGrid->ForcingGridInit(Options);
       }
 
       bool nHydroUnitsGiven = false;
@@ -1435,21 +1409,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
       break;
     }
-    case (406)://----------------------------------------------
-    {/*:EndGriddedForcing*/
-      if (Options.noisy){cout <<":EndGriddedForcing "<<endl;}
-#ifndef _RVNETCDF_
-      ExitGracefully("ParseTimeSeriesFile: :GriddedForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
-#endif
-      pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
-      pGrid=NULL;
-      break;
-    }
+
     case (407)://----------------------------------------------
     {/*:Deaccumulate */
       if (Options.noisy){cout <<"   :Deaccumulate"<<endl;}
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :Deaccumulate command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(pGrid==NULL, "ParseTimeSeriesFile: :Deaccumulate command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
       pGrid->SetToDeaccumulate();
       break;
     }
@@ -1471,24 +1435,17 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         TimeShift =(s_to_d(s[1]));//in days
       }
 
-      TimeShiftNCGiven = true;
       pGrid->SetTimeShift(TimeShift);
-
-      // Grid can be initialized as soon as all basic information are known
-      if ( ForcingTypeGiven && FileNameNCGiven && VarNameNCGiven && DimNamesNCGiven && TimeShiftNCGiven) {
-        grid_initialized = true; 
-        pGrid->ForcingGridInit(Options);
-      }
-      
+     
       break;
     }
     case (409)://----------------------------------------------
     {/*:LinearTransform [a] [b] */
       if (Options.noisy){cout <<"   :LinearTransform"<<endl;}
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :LinearTransform command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-      ExitGracefullyIf(Len!=3,
-                       "ParseTimeSeriesFile: :LinearTransform expects exactly two arguments",BAD_DATA);
+      ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :LinearTransform command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(Len!=3,          "ParseTimeSeriesFile: :LinearTransform expects exactly two arguments",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :LinearTransform command must be before :GaugeWeights command",BAD_DATA);
+            
       double LinTrans_a=atof(s[1]);
       double LinTrans_b=atof(s[2]);
       pGrid->SetLinearTransform(LinTrans_a,LinTrans_b);
@@ -1497,24 +1454,44 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (410)://----------------------------------------------
     {/*:PeriodEndingNC  */
       if (Options.noisy){cout <<"   :PeriodEnding"<<endl;}
-      ExitGracefullyIf(pGrid==NULL,
-                       "ParseTimeSeriesFile: :PeriodEnding command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
-
+      ExitGracefullyIf(pGrid==NULL     ,"ParseTimeSeriesFile: :PeriodEnding command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :PeriodEndingNC command must be before :GaugeWeights command",BAD_DATA);
       pGrid->SetAsPeriodEnding();
+      break;
+    }
+    case (411)://----------------------------------------------
+    {/*:LatitudeVarNameNC  [variablename]*/
+      if(Options.noisy) { cout <<"   :LatitudeVarNameNC"<<endl; }
+      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :LatitudeVarNameNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      pGrid->SetAttributeVarName("Latitude",s[1]);
+      break;
+    }
+    case (412)://----------------------------------------------
+    {/*:LongitudeVarNameNC  [variablename]*/
+      if(Options.noisy) { cout <<"   :LongitudeVarNameNC"<<endl; }
+      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :LongitudeVarNameNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      pGrid->SetAttributeVarName("Longitude",s[1]);
+      break;
+    }
+    case (413)://----------------------------------------------
+    {/*:ElevationVarNameNC  [variablename]*/
+      if(Options.noisy) { cout <<"   :ElevationVarNameNC"<<endl; }
+      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :ElevationVarNameNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+      pGrid->SetAttributeVarName("Elevation",s[1]);
       break;
     }
     case (500)://----------------------------------------------
     {/*:StationForcing
-       :ForcingType PRECIP
-       :FileNameNC  [filename.nc]
-       :VarNameNC   pre
-       :DimNamesNC  nstations ntime
-       :GridWeights
-         :NumberHRUs [#HRUs]
-         :NumberStations [#STATIONS]
-         [HRUID] [STATION#] [w_lk]
-         ....
-       :EndGridWeights
+         :ForcingType PRECIP
+         :FileNameNC  [filename.nc]
+         :VarNameNC   pre
+         :DimNamesNC  nstations ntime
+         :GridWeights
+           :NumberHRUs [#HRUs]
+           :NumberStations [#STATIONS]
+           [HRUID] [STATION#] [w_lk]
+           ....
+         :EndGridWeights
        :EndStationForcing
      */
       if (Options.noisy){cout <<":StationForcing"<<endl;}
@@ -1532,18 +1509,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
                              "NONE",     // FileNameNC
                              "NONE",     // VarNameNC,
                              tmp,        // DimNames[3],
-                             is_3D,      // is_3D
-                             0.0,        // TimeShift
-                             1.0,        // LinTrans_a
-                             0.0         // LinTrans_b
-        );
-
+                             is_3D);     // is_3D
       grid_initialized = false;
-      ForcingTypeGiven = false;
-      FileNameNCGiven  = false;
-      VarNameNCGiven   = false;
-      DimNamesNCGiven  = false;
-      TimeShiftNCGiven = false;
 
       break;
     }
@@ -1553,6 +1520,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif      
+      if(!grid_initialized) { pGrid->ForcingGridInit(Options);grid_initialized = true; }
       pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
       pGrid=NULL;
       break;

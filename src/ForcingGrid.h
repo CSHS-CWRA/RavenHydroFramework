@@ -73,7 +73,6 @@ private:/*------------------------------------------------------*/
   ///                                        ///< dim_cols is the total number of columns.
   ///                                        ///< Following contraint must be satisfied:
   ///                                        ///<      sum(_GridWeight[k][l], {l=1,dim_cols}) = 1.0 for all HRUs k=1,...,_nHydroUnits
-  ///                                        ///< \todo - move to sparse storage - a tremendous number of zeros in here for most models
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
   ///                                        ///< piecewise-linear time series
@@ -94,7 +93,17 @@ private:/*------------------------------------------------------*/
   double       _aMaxTemp[12];                ///< representative maximum monthly temperatures [C]
   double       _aAvePET [12];                ///< representative average monthly PET [mm/d] (or monthly PET factor [mm/d/K], if MONTHLY_FACTOR is used)
 
+  string       _AttVarNames[3];              ///< variable attribute names for [0]: lat [1]: long [2]:elev
+  double*      _aLatitude;                   ///< fixed array of cell centroid latitudes, if provided (size: _IdxNonZeroGridCells)
+  double*      _aLongitude;                  ///< fixed array of cell centroid longitudes, if provided (size: _IdxNonZeroGridCells)
+  double*      _aElevation;                  ///< fixed array of cell representative elevations, if provided (size: _IdxNonZeroGridCells)
 
+  void   CellIdxToRowCol(const int        cellid,
+                         int              &row,
+                         int              &column) const;             ///< returns row and column index of cell ID
+
+  void   ReadAttGridFromNetCDF(const int ncid,const string varname,const int nrows,const int ncols,double *values);
+  
 public:/*------------------------------------------------------*/
   //Constructors:
 
@@ -104,10 +113,7 @@ public:/*------------------------------------------------------*/
     string       filename,
     string       varname,
     string       DimNames[3],
-    bool         is_3D,
-    double       TimeShift,
-    double       LinTrans_a,
-    double       LinTrans_b
+    bool         is_3D
     );
 
   // copy constructor
@@ -151,9 +157,6 @@ public:/*------------------------------------------------------*/
                                            const double     global_model_time)  const;  ///< returns index in current chunk corresponding to model time step
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
                                            const double     global_model_time)  const;  ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
-  void   CellIdxToRowCol(                  const int        cellid,
-                                           int              &row,
-                                           int              &column);                   ///< returns row and column index of cell ID
 
   // Routines for checking content
   void   CheckValue3D(                     const double value,
@@ -194,6 +197,7 @@ public:/*------------------------------------------------------*/
   void         SetValue(                      const int idx,
                                               const int t,
                                               const double aVal);                      ///< set _aVal              of class
+  void         SetAttributeVarName(           const string var, const string varname); ///< set elevation, lat, or long var name
 
   // get class variables
   double       GetInterval()                       const;        ///< data interval (in days)
@@ -221,6 +225,9 @@ public:/*------------------------------------------------------*/
   double       DailyTempCorrection(const double t) const;        ///< Daily temperature correction [C]
   int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
   
+  double       GetCellLatitude       (const int l) const;        ///< returns Latitude of cell l (or 0, if not available)
+  double       GetCellLongitude      (const int l) const;        ///< returns Longitude of cell l (or 0, if not available)
+  double       GetRefElevation       (const int k) const;        ///< returns representative elevation of forcing data in HRU k (or 0, if not available)
 
   double       GetWeightedValue          (const int k, const double &t,const double &tstep) const; ///<returns weighted value in HRU k
   double       GetDailyWeightedValue     (const int k, const double &t,const double &tstep, const optStruct &Options) const; ///<returns daily weighted value in HRU k

@@ -788,7 +788,9 @@ bool ParseMainInputFile (CModel     *&pModel,
         Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
         WriteWarning("Cloud cover corrections have been set to 'NONE', since the shortwave radiation method is SW_RAD_DATA",Options.noisy);
       } //if data provided, then cloudcover corrections not needed
-
+      if(Options.SW_radiation==SW_RAD_NONE) {
+        WriteAdvisory("The shortwave radiation calculation method is SW_RAD_NONE. This may impact some snowmelt and PET algorithms which require radiation.",Options.noisy);
+      }
       break;
     }
     case(25):  //--------------------------------------------

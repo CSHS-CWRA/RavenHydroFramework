@@ -259,6 +259,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue      (k,tt.model_time,Options.timestep,Options);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      = NETCDF_BLANK_VALUE;
+
+        ref_elev_precip    = pGrid_pre->GetRefElevation(k);
+        if (ref_elev_precip==RAV_BLANK_DATA){ ref_elev_precip = _pHydroUnits[k]->GetElevation();} //disabling orographic effects if no elevation given (warning in Forcing grid init)
       }
 
       // ---------------------
@@ -294,6 +297,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 				F.temp_month_ave   = NOT_SPECIFIED;
 				F.temp_month_min   = NOT_SPECIFIED;
 				F.temp_month_max   = NOT_SPECIFIED;
+
+        ref_elev_temp      = pGrid_pre->GetRefElevation(k);
+        if(ref_elev_temp==RAV_BLANK_DATA) { ref_elev_temp = _pHydroUnits[k]->GetElevation(); } //disabling orographic effects if no elevation given (warning in Forcing grid init)
       }
 
       // ---------------------
