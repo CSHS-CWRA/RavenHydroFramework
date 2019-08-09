@@ -707,6 +707,7 @@ enum sv_type
   CUM_INFIL,               ///< [mm] Cumulative infiltration to topsoil
   GA_MOISTURE_INIT,        ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
   CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt as SWE
+  AET,                     ///< [mm] PET used up in given time step (diagnostic variable)
 
   //Temperature/Energy storage [C] or [MJ/m^2]
   FREEZING_LOSS,           ///< [MJ/m2] Energy lost during freezing (for energy balance) // \ todo[clean] - remove- not used
@@ -886,6 +887,7 @@ struct optStruct
   monthly_interp   month_interp;              ///< means of interpolating monthly data
 
   bool             keepUBCWMbugs;             ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
+  bool             suppressCompetitiveET;     ///< true if competitive ET should be suppressed (for backward compatibility)
 
   //Soil model information
   soil_model       soil_modeltype;            ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
@@ -1313,8 +1315,14 @@ inline void        lowerswap(int    &u,const int    v){if (v<u){u=v;}}
 /// \param v [in] Integer value for comparison
 //
 inline void        upperswap(int    &u,const int    v){if (v>u){u=v;}}
-
-
+///////////////////////////////////////////////////////////////////
+/// \brief rounds v to 3 digits after decimal point
+/// \param &u [in & out] Integer value to (potentially) be changed
+/// \param v [in] Integer value for comparison
+//
+inline double roundTo3dig(const double &v) {
+  return (double)((int)(v*1000.0+0.5)/1000.0);
+}
 
 //Parsing Functions-------------------------------------------
 //defined in CommonFunctions.cpp
@@ -1331,7 +1339,7 @@ double FormatDouble            (const double &d);
 //defined in StandardOutput.cpp
 void   PrepareOutputdirectory    (const optStruct &Options);
 string GetDirectoryName          (const string &fname);
-void   HandleNetCDFErrors             (int error_code);        ///< NetCDF error handling
+void   HandleNetCDFErrors        (int error_code);        ///< NetCDF error handling
 string CorrectForRelativePath    (const string filename, const string relfile);
 #ifdef _WIN32
 #include <direct.h>
@@ -1407,8 +1415,6 @@ double GetRainHeatInput           (const double &surf_temp, const double &air_te
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
 double GetSnowDepth               (const double &snowSWE,const double &snow_density);
 double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth,const optStruct &Options);
-
-double CalculateSubDailyCorrection(const force_struct *F, const optStruct &Options);
 
 //Crop Functions---------------------------------------------------
 bool   IsGrowingSeason       (const time_struct &tt, const double &CHU);

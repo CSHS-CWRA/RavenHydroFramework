@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------
   Soil Evaporation
   ----------------------------------------------------------------*/
@@ -24,44 +24,52 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
   iAtmos  =pModel->GetStateVarIndex(ATMOSPHERE);
   soil_ind=NULL;
   type = se_type;
-  if (type==SOILEVAP_GAWSER)
+
+  if(type==SOILEVAP_GAWSER)
   {
-    CHydroProcessABC::DynamicSpecifyConnections(3);
+    CHydroProcessABC::DynamicSpecifyConnections(4);
     ExitGracefullyIf(pModel->GetNumSoilLayers()<2,
-                     "SOILEVAP_GAWSER algorithm requires at least 2 soil layers to operate. Please use a different :SoilModel or replace this evaporation algorithm.",BAD_DATA);
+      "SOILEVAP_GAWSER algorithm requires at least 2 soil layers to operate. Please use a different :SoilModel or replace this evaporation algorithm.",BAD_DATA);
 
     iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
     iFrom[1]=pModel->GetStateVarIndex(SOIL,1);     iTo[1]=iAtmos;
     iFrom[2]=pModel->GetStateVarIndex(DEPRESSION); iTo[2]=iAtmos;
+    iFrom[3]=pModel->GetStateVarIndex(AET);        iTo[3]=iFrom[3];
   }
-  else if ((type==SOILEVAP_TOPMODEL) ||
-           (type==SOILEVAP_VIC) ||
-           (type==SOILEVAP_HBV) ||
-           (type==SOILEVAP_UBC) ||
-           (type==SOILEVAP_CHU) ||
-           (type==SOILEVAP_GR4J) ||
-           (type==SOILEVAP_LINEAR) ||
-           (type==SOILEVAP_ALL))
-  {
-    CHydroProcessABC::DynamicSpecifyConnections(1);
-
-    iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
-  }
-  else if ((type==SOILEVAP_SEQUEN) ||
-           (type == SOILEVAP_ROOT) || (type == SOILEVAP_ROOT_CONSTRAIN))
+  else if((type==SOILEVAP_TOPMODEL) ||
+    (type==SOILEVAP_VIC) ||
+    (type==SOILEVAP_HBV) ||
+    (type==SOILEVAP_UBC) ||
+    (type==SOILEVAP_CHU) ||
+    (type==SOILEVAP_GR4J) ||
+    (type==SOILEVAP_LINEAR) ||
+    (type==SOILEVAP_ALL))
   {
     CHydroProcessABC::DynamicSpecifyConnections(2);
+
+    iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
+    iFrom[1]=pModel->GetStateVarIndex(AET);        iTo[1]=iFrom[1];
+  }
+  else if((type==SOILEVAP_SEQUEN) ||
+    (type == SOILEVAP_ROOT) || (type == SOILEVAP_ROOT_CONSTRAIN))
+  {
+    CHydroProcessABC::DynamicSpecifyConnections(3);
     ExitGracefullyIf(pModel->GetNumSoilLayers()<2,
-                     "This soil infiltration algorithm requires at least 2 soil layers to operate. Please use a different :SoilModel or replace this evaporation algorithm.",BAD_DATA);
+      "This soil infiltration algorithm requires at least 2 soil layers to operate. Please use a different :SoilModel or replace this evaporation algorithm.",BAD_DATA);
 
     iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
     iFrom[1]=pModel->GetStateVarIndex(SOIL,1);     iTo[1]=iAtmos;
+    iFrom[2]=pModel->GetStateVarIndex(AET);        iTo[2]=iFrom[2];
   }
-  else if ((type==SOILEVAP_ROOTFRAC) ||
-           (type==SOILEVAP_FEDERER))
+  else if((type==SOILEVAP_ROOTFRAC) ||
+          (type==SOILEVAP_FEDERER))
   {
-    CHydroProcessABC::DynamicSpecifyConnections(nSoilLayers);
+    CHydroProcessABC::DynamicSpecifyConnections(nSoilLayers+1);
     ExitGracefully("CmvSoilEvap::Constructor:SOILEVAP_FEDERER",STUB);
+    for(int m=0;m<nSoilLayers;m++) {
+      iFrom[m]=pModel->GetStateVarIndex(SOIL,m);     iTo[m]=iAtmos;
+    }
+    iFrom[nSoilLayers]=pModel->GetStateVarIndex(AET);   iTo[nSoilLayers]=iFrom[nSoilLayers];
   }
 }
 
@@ -221,6 +229,9 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
     aLev[0]=0;     aLev[1]=DOESNT_EXIST;
   }
+  nSV++;
+  aSV[nSV-1]=AET;
+  aLev[nSV-1]=DOESNT_EXIST;
 
 }
 
@@ -271,13 +282,16 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
 
-  //should consume ponded water with PET first?
-
-  double PET;
+  double PET,PETused(0.0);
   const soil_struct *pSoil;
 
   PET=pHRU->GetForcingFunctions()->PET;
   PET=pHRU->GetSoilProps(0)->PET_correction*PET; //corrected PET
+
+  if (!Options.suppressCompetitiveET){
+    PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
+    PET=max(PET,0.0);
+  }
 
   //------------------------------------------------------------
   if (type==SOILEVAP_ROOTFRAC)
@@ -295,10 +309,11 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
       rootsum+=root_frac[m];
     }
-    for (q=0;q<_nConnections;q++)
+    for (q=0;q<_nConnections-1;q++)
     {
       m=soil_ind[q];
       rates[q]=PET*(root_frac[m]/rootsum)*threshMin(1.0,state_vars[iFrom[q]]/cap[m],0.0);
+      PETused+=rates[q];
     }
   }
   //------------------------------------------------------------
@@ -308,11 +323,13 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     double alpha   =pHRU->GetSurfaceProps()->AET_coeff;
 
     rates[0]  = min(alpha*stor,PET);  //evaporation rate [mm/d]
+    PETused=rates[0];
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_ALL) 
   {
     rates[0]  = PET;  //evaporation rate [mm/d]
+    PETused=rates[0];
   }
   //------------------------------------------------------------
   else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV))
@@ -331,6 +348,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       double Fc=pHRU->GetSurfaceProps()->forest_coverage;
       if ((iSnow!=DOESNT_EXIST) && (state_vars[iSnow]>REAL_SMALL)) {rates[0]=(Fc)*rates[0];}//+(1.0-Fc)*0.0; (implied)
     }
+    PETused=rates[0];
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_CHU)
@@ -342,6 +360,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     CHU       = max(state_vars[pModel->GetStateVarIndex(CROP_HEAT_UNITS)],0.0);
 
     rates[0]  = PET*min(CHU/pHRU->GetVegetationProps()->CHU_maturity,1.0);  //evaporation rate [mm/d]
+    PETused=rates[0];
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_UBC)
@@ -365,7 +384,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     }
     //rates[0]=PET*pow(10.0,-soil_deficit/P0EGEN)*(1.0-b1); //actual ET
     rates[0]=(PET)*pow(10.0,-soil_deficit_est/P0EGEN)*(1.0-b1); //actual ET (RFS EMulation)
-
+    PETused=rates[0];
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_VIC)
@@ -386,6 +405,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     Sat   =stor/stor_max;
 
     rates[0]=PET*(1.0-pow(1.0-Sat/Smax,gamma2));
+    PETused=rates[0];
   }
   //------------------------------------------------------------------
   else if (type==SOILEVAP_GAWSER)
@@ -415,6 +435,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     //then just from bottom storage
     rates[2]=min(PETremain,stor2/Options.timestep);
+    PETused=rates[0]+rates[1]+rates[2];
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_FEDERER)
@@ -436,6 +457,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     rates[0]   = (PET           )*min(stor_u/tens_stor_u,1.0);  //upper layer evaporation rate [mm/d]
     rates[1]   = (PET - rates[0])*min(stor_l/tens_stor_l,1.0);  //lower layer evaporation rate [mm/d]
     //   if (rates[0]<-REAL_SMALL){ cout << stor_u << " " << tens_stor_u << " "<<PET<<endl; }
+    PETused=rates[0]+rates[1];
   }
   //------------------------------------------------------------------
   else if (type==SOILEVAP_ROOT)
@@ -458,7 +480,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     tens_stor_l = pHRU->GetSoilTensionStorageCapacity(1);
 
     rates[1] = PET * rootfrac_l * min(stor_l/tens_stor_l,1.0);  //upper layer evaporation rate [mm/d]
-
+    PETused=rates[0]+rates[1];
     //fix calculation of lower and upper - ITS WRONG SOMEWHERE (either ridiculously high or ridiculously low)!!!!
     //cout<<"PET: "<<PET<<"  root_frac: "<<rel_rootfrac_upper<<"  tension_stor: "<<tension_stor_upper<<"  max_ten: "<<max_tension_stor_upper<<endl;
     //cout<<" s_evap rate 0: "<<rates[0]<<"  s_evap rate 1: "<<rates[1]<<endl;
@@ -489,6 +511,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     tens_stor_l = pHRU->GetSoilTensionStorageCapacity(1);
 
     rates[1] = PET * rootfrac_l * 1;// min(stor_l / tens_stor_l, 1.0);  //upper layer evaporation rate [mm/d]
+    PETused=rates[0]+rates[1];
   }
   //------------------------------------------------------------------
   /*else if (type==SOILEVAP_POWERLAW)
@@ -504,6 +527,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     factor=max(min((stor-wilting_pt)/(max_stor-wilting_pt),1.0),0.0);
     rates[0]=PET*pow(factor,n);
+    PETused=rates[0];
     }*/
   //------------------------------------------------------------------
   else if (type==SOILEVAP_GR4J)
@@ -521,11 +545,16 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     double tmp=tanh(E_net/x1);
 
     rates[0]=stor*(2.0-sat)*tmp/(1.0+(1.0-sat)*tmp);
+    PETused=rates[0];
   }
   else
   {
     ExitGracefully("CmvSoilEvaporation::GetRatesOfChange: undefined soil evaporation type",BAD_DATA);
   }//end soil_evap type select
+
+  //updated used PET
+  rates[_nConnections-1]=PETused;
+ 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -547,8 +576,12 @@ void   CmvSoilEvap::ApplyConstraints( const double               *state_vars,
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
 
-  for (int q=0;q<_nConnections;q++){
+  double corr=0,oldrate=0.0;
+  for (int q=0;q<_nConnections-1;q++){
+    oldrate=rates[q];
     //cant remove more than is there
     rates[q]=threshMin(rates[q],state_vars[iFrom[q]]/Options.timestep,0.0); //presumes these are all water storage
+    corr+=oldrate-rates[q];
   }
+  rates[_nConnections-1]-=corr;
 }

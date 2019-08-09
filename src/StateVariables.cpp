@@ -153,6 +153,8 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(CONVOLUTION):        {name="Convolution Storage";        break;}
   case(CONV_STOR):          {name="Convolution Substorage";     break;}
 
+  case(AET):                {name="Actual Evapotranspiration";  break;}
+
     //Transport variables
   case(CONSTITUENT):        {name="Constituent";                break;}  //overwritten below
   case(CONSTITUENT_SRC):    {name="Constituent Source";         break;}  //overwritten below
@@ -258,6 +260,8 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(CONVOLUTION):      {units="mm";   break;}
   case(CONV_STOR):        {units="mm";   break;}
 
+  case(AET):              {units="mm";   break;}
+
   case(CONSTITUENT):      {units="mg/m2"; break;}
   case(CONSTITUENT_SRC):  {units="mg/m2"; break;}
   case(CONSTITUENT_SINK): {units="mg/m2"; break;}
@@ -337,6 +341,8 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("CONV_STOR"       )){typ=CONV_STOR;}
   else if (!tmp.compare("GA_MOISTURE_INIT")){typ=GA_MOISTURE_INIT;}
   else if (!tmp.compare("LATERAL_EXCHANGE")){typ=LATERAL_EXCHANGE;}
+
+  else if (!tmp.compare("AET"             )){typ=AET; }
 
   else if (!tmp.compare("CONSTITUENT"     )){typ=CONSTITUENT;}
   else if (!tmp.compare("CONSTITUENT_SRC" )){typ=CONSTITUENT_SRC;}
@@ -430,6 +436,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     //Lateral exchange
     case(LATERAL_EXCHANGE):   {name="LATERAL_EXCHANGE";         break;}
 
+    case(AET):                {name="AET";                      break;}
 
     //Transport variables
     case(CONSTITUENT):    {

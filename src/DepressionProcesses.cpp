@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ------------------------------------------------------------------
   DepressionOverflow
   ----------------------------------------------------------------*/
@@ -321,7 +321,7 @@ CmvLakeRelease::CmvLakeRelease(lakerel_type lktype)
 CmvLakeRelease::~CmvLakeRelease(){}
 
 //////////////////////////////////////////////////////////////////
-/// \brief Verify that process moves water to atmosphere
+/// \brief Verify that process moves water to surface water from lake
 //
 void CmvLakeRelease::Initialize()
 {
@@ -329,7 +329,7 @@ void CmvLakeRelease::Initialize()
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
 ///
-/// \param *aP [out] array of parameter names needed for baseflow algorithm
+/// \param *aP [out] array of parameter names needed for algorithm
 /// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
 /// \param &nP [out] Number of parameters required by baseflow algorithm (size of aP[] and aPC[])
 //
@@ -345,10 +345,10 @@ void CmvLakeRelease::GetParticipatingParamList(string *aP, class_type *aPC, int 
 /// \brief Sets reference to state variable types needed by evaporation algorithm
 /// \note "From" compartment specified by :LakeStorage command
 ///
-/// \param lktype [in] Model of open water evaporation used
-/// \param *aSV [out] Array of state variable types needed by ow evaporation algorithm
+/// \param lktype [in] Model of lake release used
+/// \param *aSV [out] Array of state variable types needed 
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
-/// \param &nSV [out] Number of state variables required by lake evaporation algorithm (size of aSV[] and aLev[] arrays)
+/// \param &nSV [out] Number of state variables required by algorithm (size of aSV[] and aLev[] arrays)
 //
 void CmvLakeRelease::GetParticipatingStateVarList(lakerel_type  lr_type,sv_type *aSV, int *aLev, int &nSV)
 {
@@ -358,14 +358,13 @@ void CmvLakeRelease::GetParticipatingStateVarList(lakerel_type  lr_type,sv_type 
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns rate of loss of water from lake to atmosphere [mm/d]
-/// \details  if type==LAKE_EVAP_BASIC, evaporation is calculated using fraction of PET method
+/// \brief Returns rate of loss of water from lake to surface water [mm/d]
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Current model time structure
-/// \param *rates [out] rates[0] is rate of loss from lake to atmosphere [mm/d]
+/// \param *rates [out] rates[0] is rate of loss from lake to surface water [mm/d]
 //
 void CmvLakeRelease::GetRatesOfChange(const double      *state_vars,
                                       const CHydroUnit  *pHRU,
@@ -395,11 +394,11 @@ void CmvLakeRelease::GetRatesOfChange(const double      *state_vars,
 /// \param &tt [in] Current model time structure
 /// \param *rates [out] rates[0] is rate of loss from lake to atmosphere [mm/d]
 //
-void  CmvLakeRelease::ApplyConstraints( const double                *state_vars,
-                                            const CHydroUnit  *pHRU,
-                                            const optStruct   &Options,
-                                            const time_struct &t,
-                                            double      *rates) const
+void  CmvLakeRelease::ApplyConstraints( const double      *state_vars,
+                                        const CHydroUnit  *pHRU,
+                                        const optStruct   &Options,
+                                        const time_struct &t,
+                                              double      *rates) const
 {
   //can't create negative surface water storage
   rates[0]=threshMax(rates[0],-state_vars[iTo[0]]/Options.timestep,0.0);

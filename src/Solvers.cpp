@@ -21,7 +21,7 @@ void MassEnergyBalance( CModel            *pModel,
   int         i,j,k,p,pp,pTo,q,qs,c;                 //counters
   int         NS,NB,nHRUs,nConnections=0,nProcesses; //array sizes (local copies)
   int         nConstituents;                         //
-  int         iSW, iAtm;                             //Surface water, atmospheric precip indices
+  int         iSW, iAtm, iAET;                      //Surface water, atmospheric precip, used PET indices
 
   int         iFrom[MAX_CONNECTIONS];                 //arrays used to pass values through GetRatesOfChange routines
   int         iTo  [MAX_CONNECTIONS];
@@ -118,8 +118,8 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
-  //Initialize variables=============================================
-  for (i=0;i<MAX_STATE_VARS;i++)
+  // Initialize variables============================================
+  for (i=0;i<MAX_CONNECTIONS;i++)
   {
     iFrom          [i]=DOESNT_EXIST;
     iTo            [i]=DOESNT_EXIST;
@@ -136,8 +136,19 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
-  iSW =pModel->GetStateVarIndex(SURFACE_WATER);
-  iAtm=pModel->GetStateVarIndex(ATMOS_PRECIP);
+  iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
+  iAtm =pModel->GetStateVarIndex(ATMOS_PRECIP);
+
+  // Used PET reboots to zero every timestep=========================
+  iAET=pModel->GetStateVarIndex(AET);
+  if(iAET!=DOESNT_EXIST) {
+    for(k=0;k<nHRUs;k++)
+    {
+      aPhi        [k][iAET]=0.0;
+      aPhinew     [k][iAET]=0.0;
+      aPhiPrevIter[k][iAET]=0.0;
+    }
+  }
 
   //=================================================================
   //==Standard (in series) approach==================================
@@ -201,6 +212,11 @@ void MassEnergyBalance( CModel            *pModel,
 
         if (pModel->ApplyProcess(j,aPhi   [k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change))//note aPhi is info from start of timestep
         {
+          if(nConnections>MAX_CONNECTIONS) {
+            cout<<nConnections<<endl;
+            ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);
+          }
+
           for (q=0;q<nConnections;q++)//each process may have multiple connections
           {
             if (iTo[q]!=iFrom[q]){
@@ -259,6 +275,11 @@ void MassEnergyBalance( CModel            *pModel,
           if (pModel->ApplyProcess(j,aPhi[k]        ,pHRU,Options,tt     ,iFrom,iTo,nConnections,rate1))
           {
             pModel->ApplyProcess(j,aPhiPrevIter[k],pHRU,Options,tt_end ,iFrom,iTo,nConnections,rate2);
+
+            if(nConnections>MAX_CONNECTIONS) {
+              cout<<nConnections<<endl;
+              ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);
+            }
 
             for (q=0;q<nConnections;q++)//each process may have multiple connections
             {
@@ -343,6 +364,11 @@ void MassEnergyBalance( CModel            *pModel,
   {
     if (pModel->ApplyLateralProcess(j,aPhinew,Options,tt,kFrom,kTo,iFrom,iTo,nLatConnections,exchange_rates))
     {       
+      if(nLatConnections>MAX_LAT_CONNECTIONS) {
+        cout<<nLatConnections<<endl;
+        ExitGracefully("MassEnergyBalance:: Maximum number of lateral connections exceeded. Please contact author.",RUNTIME_ERR);
+      }
+
       for (int q=0;q<nLatConnections;q++)
       {
 #ifdef _STRICTCHECK_
@@ -479,6 +505,7 @@ void MassEnergyBalance( CModel            *pModel,
 
   //-----------------------------------------------------------------
   //          AGGREGATION ACROSS HRU GROUPS
+  // \todo[funct]  Should replace with special lateral exchange process
   //-----------------------------------------------------------------
   double agg_phi;
   double agg_area,area;

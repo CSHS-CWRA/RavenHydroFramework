@@ -194,6 +194,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.recharge                =RECHARGE_NONE;
   Options.direct_evap             =false;
   Options.keepUBCWMbugs           =false;
+  Options.suppressCompetitiveET   =false;
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
   //Output options:
@@ -303,7 +304,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Calendar"                  )){code=45; }
     else if  (!strcmp(s[0],":SnowCoverDepletion"        )){code=46; }
     else if  (!strcmp(s[0],":EnsembleMode"              )){code=47; }
-    //------------------------------------------------------------
+    else if  (!strcmp(s[0],":SuppressCompetitiveET"     )){code=48; }
+	//---I/O------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=51; }
     else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=52; }
@@ -1057,6 +1059,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       num_ensemble_members=s_to_i(s[2]);
       break;
     }
+    case(48): //---------------------------------------------
+    {/*:SuppressCompetitiveET */
+      if(Options.noisy) { cout <<"Suppressing competitive ET"<<endl; }
+      Options.suppressCompetitiveET =true;
+      break;
+    }
     case(50):  //--------------------------------------------
     {/*:DebugMode */
       if (Options.noisy){cout <<"Debug Mode ON"<<endl;}
@@ -1069,7 +1077,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(51):  //--------------------------------------------
-    {/*WriteMassBalanceFile */
+    {/*:WriteMassBalanceFile */
       if (Options.noisy) {cout <<"Write Mass Balance File ON"<<endl;}
       Options.write_mass_bal =true;
       break;

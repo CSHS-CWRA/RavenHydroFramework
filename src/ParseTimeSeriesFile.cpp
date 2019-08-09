@@ -169,9 +169,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":TimeShift"               )){code=408;}
     else if  (!strcmp(s[0],":LinearTransform"         )){code=409;}
     else if  (!strcmp(s[0],":PeriodEndingNC"          )){code=410;}
-    else if  (!strcmp(s[0],":LatitudeVarNameNC"         )){code=411;}
-    else if  (!strcmp(s[0],":LongitudeVarNameNC"        )){code=412;}
-    else if  (!strcmp(s[0],":ElevationVarNameNC"        )){code=413;}
+    else if  (!strcmp(s[0],":LatitudeVarNameNC"       )){code=411;}
+    else if  (!strcmp(s[0],":LongitudeVarNameNC"      )){code=412;}
+    else if  (!strcmp(s[0],":ElevationVarNameNC"      )){code=413;}
+    else if  (!strcmp(s[0],":GridWeightsByAttribute"  )){code=414; }
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
@@ -1480,6 +1481,98 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid->SetAttributeVarName("Elevation",s[1]);
       break;
     }
+    case(414):
+    {/*:StationWeightsByAttribute
+       :NumberHRUs 3
+       :NumberStations  22
+       :AttributeNC SBID
+       # [HRU ID] [station ID] [w_kl]
+       #     Following contraint must be satisfied:
+       #         sum(w_kl, {l=1,NS}) = 1.0 for all HRUs k where NS=number of stations
+       1       A2       0.3
+       1       A3       0.5
+       1       A23      0.2
+       2       A2       0.4
+       2       B3       0.6
+       3       B5       1.0
+       :EndStationWeightsByAttribute*/
+#ifndef _RVNETCDF_
+      ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
+#endif
+
+      ExitGracefullyIf(pGrid==NULL,
+        "ParseTimeSeriesFile: :StationWeightsByAttribute command must be within a :StationForcing block",BAD_DATA);
+
+      if(!grid_initialized) { //must initialize grid prior to adding grid weights
+        grid_initialized = true;
+        pGrid->ForcingGridInit(Options);
+      }
+
+      bool nHydroUnitsGiven = false;
+      bool nGridCellsGiven  = false;
+      bool attributeGiven=false;
+      int  nHydroUnits=0;
+      int  nGridCells=0;
+
+      if(Options.noisy) { cout <<"StationWeightsByAttribute..."<<endl; }
+      while(((Len==0) || (strcmp(s[0],":EndStationWeightsByAttribute"))) && (!(p->Tokenize(s,Len))))
+      {
+
+        if(IsComment(s[0],Len)) {}//comment line
+        else if(!strcmp(s[0],":NumberHRUs"))
+        {
+          nHydroUnits      = atoi(s[1]);
+          nHydroUnitsGiven = true;
+
+          ExitGracefullyIf(pModel->GetNumHRUs() != nHydroUnits,
+            "ParseTimeSeriesFile: :NumberHRUs given does not agree with HRUs given in *.rvh file",BAD_DATA);
+
+          pGrid->SetnHydroUnits(nHydroUnits);
+          if(nHydroUnitsGiven && nGridCellsGiven) { pGrid->AllocateWeightArray(nHydroUnits,nGridCells); }
+        }
+        else if( !strcmp(s[0],":NumberStations"))
+        {
+          nGridCells      = atoi(s[1]);
+          nGridCellsGiven = true;
+
+          if(pGrid->GetCols() * pGrid->GetRows() != nGridCells) {
+            printf(":NumberStations   = %i\n",atoi(s[1]));
+            printf("NetCDF cols * rows = %i\n",pGrid->GetCols() * pGrid->GetRows());
+            ExitGracefully("ParseTimeSeriesFile: :NumberStations given does not agree with NetCDF file content",BAD_DATA);
+          }
+
+          if(nHydroUnitsGiven && nGridCellsGiven) { pGrid->AllocateWeightArray(nHydroUnits,nGridCells); }
+        }
+        else if(!strcmp(s[0],":EndGridWeights")) {}//done
+        else
+        {
+          if(nHydroUnitsGiven && nGridCellsGiven && attributeGiven) {
+            CHydroUnit *pHRU=NULL;
+            pHRU = pModel->GetHRUByID(atoi(s[0]));
+            if(pHRU == NULL) {
+              printf("\n\n");
+              printf("Wrong HRU ID in :StationWeightsByAttribute: HRU_ID = %s\n",s[0]);
+              ExitGracefully("ParseTimeSeriesFile: HRU ID found in :StationWeightsByAttribute which does not exist in :HRUs!",BAD_DATA);
+            }
+            pGrid->SetWeightVal(pHRU->GetGlobalIndex(),atoi(s[1]),atof(s[2]));
+          }
+          else {
+            ExitGracefully("ParseTimeSeriesFile: :NumberHRUs must be given in :StationWeightsByAttribute block",BAD_DATA);
+          }
+        } // end else
+      } // end while
+
+        // check that weightings sum up to one per HRU
+      bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells);
+      ExitGracefullyIf(!WeightArrayOK,
+        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum per HRUID must be 1.0.",BAD_DATA);
+
+      // store (sorted) grid cell ids with non-zero weight in array
+      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
+      break;
+
+    }
+
     case (500)://----------------------------------------------
     {/*:StationForcing
          :ForcingType PRECIP
