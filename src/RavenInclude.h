@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -288,7 +288,7 @@ const int     MAX_AQUIFER_LAYERS  =10;          ///< Max number aquifer layers
 const int     MAX_AQUIFER_STACKS  =50;          ///< Max number aquifer stacks
 const int     MAX_TERRAIN_CLASSES =50;          ///< Max number of terrain classes
 const int     MAX_SURVEY_PTS      =50;          ///< Max number of survey points
-const int     MAX_GAUGES          =250;         ///< Max number of gauges
+const int     MAX_GAUGES_IN_LIST  =250;         ///< Max number of gauges in :GaugeList command
 const int     MAX_CONSTITUENTS    =10;          ///< Max number of transport constituents
 const int     MAX_RIVER_SEGS      =50;          ///< Max number of river segments
 const int     MAX_FILENAME_LENGTH =256;         ///< Max filename length
@@ -832,6 +832,7 @@ struct optStruct
   double           duration;                  ///< simulation duration
   int              calendar;                  ///< enum int that specifies calendar of all dates used,
   //                                          ///< e.g., 2 = "CALENDAR_PROLEPTIC_GREGORIAN"
+  int              time_zone;                 ///< int that specifies time zone relative to GMT for writing to NetCDF output
 
   numerical_method sol_method;                ///< numerical solution method
   double           convergence_crit;          ///< convergence criteria
@@ -869,6 +870,8 @@ struct optStruct
   netSWRad_method    SW_radia_net;            ///< method for calculating net shortwave radiation (calculated or data)
   evap_method        evaporation;             ///< PET estimation method
   evap_method        ow_evaporation;          ///< Open Water PET estimation method
+  evap_method        evap_infill;             ///< PET estimation method when infilling blank PET_DATA
+  evap_method        ow_evap_infill;          ///< Open Water PET estimation method when infilling blank PET_DATA
   relhum_method      rel_humidity;            ///< Relative humidity estimation method
   airpress_method    air_pressure;            ///< Air pressure estimation method
   windvel_method     wind_velocity;           ///< Wind velocity estimation mehtod
@@ -975,10 +978,8 @@ enum calendars
 /// \brief Stores external forcing functions for single HRU over current time step
 /// \note if an additional forcing function is added, the following routines must be revised: \n
 /// - CModel::UpdateHRUForcingFunctions \n
-/// - CHydroUnit::UpdateForcingFunctions \n
-/// - ZeroOutForcings \n
 /// - CModel::GetAverageForcings() \n
-/// - GetForcingTypeFromString, GetForcingTypeUnits,GetForcingFromString, ForcingToString in CommonFunctions.cpp\n
+/// - GetForcingTypeFromString, GetForcingTypeUnits,ZeroOutForcings,GetForcingFromString, ForcingToString in Forcings.cpp\n
 //
 const int MAX_FORCING_TYPES=50;
 enum forcing_type
@@ -1079,6 +1080,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,
                                        const string timestr,
                                        const int calendar,
                                        double &time_zone);
+string      TimeZoneToString      (const int tz);
 double      TimeDifference(        const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,

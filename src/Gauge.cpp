@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Gauge.h"
 
@@ -177,26 +177,32 @@ void CGauge::Initialize(const optStruct   &Options,
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
         if(val==RAV_BLANK_DATA){
-          ExitGracefully("CGauge::Initialize: Raven cannot have blank data in temperature time series",BAD_DATA);
+          string warning;
+          warning ="CGauge::Initialize: Raven cannot have blank data in daily temperature time series (Gauge: "+_name+", n="+to_string(nn)+")";
+          ExitGracefully(warning.c_str(),BAD_DATA);
         }
-        if((val<-60) || (val>60)){
+        else if((val<-60) || (val>60)){
           ExitGracefully("CGauge::Initialize: excessively small or large average temperature (<-60C or >60C) reported at gauge",BAD_DATA);
         }
       }
     }
   }
   //PET unreasonable
+  bool blank_in_PET=false;
   index=_aTSindex[(int)(F_PET)];
   if (index!=DOESNT_EXIST){
     for (int nn=0;nn<nSamples; nn++)
     {
       val=_pTimeSeries[index]->GetSampledValue (nn);
-      if(val==RAV_BLANK_DATA){
-        ExitGracefully("CGauge::Initialize: Raven cannot have blank data in PET time series",BAD_DATA);
+      if(val==RAV_BLANK_DATA) {
+        blank_in_PET=true;
       }
-      if (val<-REAL_SMALL){
+      else if (val<-REAL_SMALL){
         ExitGracefully("CGauge::Initialize: negative PET reported at gauge",BAD_DATA);
       }
+    }
+    if(blank_in_PET) {
+      WriteWarning("CGauge::Initialize: blank PET data in PET time series; will infill via infill ET estimation method",Options.noisy);
     }
   }
 
@@ -524,31 +530,36 @@ double   CGauge::GetMonthlyAvePET   (const int month) const
 //////////////////////////////////////////////////////////////////
 /// \brief Generates daily Tmin,Tmax,Tave time series from T (subdaily) time series
 /// \note presumes existence of valid F_TEMP_AVE time series with subdaily timestep
+///    for incomplete days of TEMP_AVE data, min/max/average is estimated from available data
 //
-
 void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
 {
   CTimeSeries *pT;
   pT=GetTimeSeries(F_TEMP_AVE);
 
-  double start_day=Options.julian_start_day; //floor(pT->GetStartDay());
-  int    start_yr =Options.julian_start_year;//pT->GetStartYear();
-  double duration =Options.duration;         //(interval*pTave->GetNumValues());
+  bool incomp=false;
+  double start_day=Options.julian_start_day; 
+  int    start_yr =Options.julian_start_year;
+  double duration =Options.duration;
   double timestep =Options.timestep;
 
   //below needed for correct mapping from time series to model time
   pT->Initialize(start_day,start_yr,duration,timestep,false,Options.calendar);
 
-  int nVals=(int)ceil(duration);
+  double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+  int nVals=(int)ceil(duration+time_shift);//must provide full days overlapping model duration
   double *aMin=new double [nVals];
   double *aMax=new double [nVals];
   double *aAvg=new double [nVals];
-  double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+  
   double t=0.0;//model time
   for (int n=0;n<nVals;n++){
     aMin[n]=pT->GetMinValue(t-time_shift,1.0); //t-time_shift corresponds to 00:00 on day of model time t
     aMax[n]=pT->GetMaxValue(t-time_shift,1.0);
     aAvg[n]=pT->GetAvgValue(t-time_shift,1.0);
+    if     ((aAvg[n]==RAV_BLANK_DATA) && ((t-time_shift    )<0       )) { aAvg[n]= pT->GetAvgValue(t,1.0-time_shift); incomp=true;}//incomplete start day
+    else if((aAvg[n]==RAV_BLANK_DATA) && ((t-time_shift+1.0)>duration)) { aAvg[n]= pT->GetAvgValue(t-time_shift,duration); incomp=true;}//incomplete end day
+    //
     t+=1.0;
   }
   this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day-time_shift,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
@@ -557,6 +568,11 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   delete [] aMin;
   delete [] aMax;
   delete [] aAvg;
+  if (incomp){
+    string warning;
+	  warning="CGauge:GenerateMinMaxAveTempFromSubdaily: incomplete subdaily temperature data was used to estimate daily average temperature on first or last day of simulation at gauge "+_name;
+    WriteWarning(warning,Options.noisy);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Generates Tave and subhourly time series from daily Tmin & Tmax time series

@@ -173,6 +173,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   //Forcing function estimation options:
   Options.evaporation             =PET_HARGREAVES_1985;
   Options.ow_evaporation          =PET_HARGREAVES_1985;
+  Options.evap_infill             =PET_HARGREAVES_1985;
+  Options.ow_evap_infill          =PET_HARGREAVES_1985;
   Options.orocorr_PET             =OROCORR_NONE;
   Options.orocorr_precip          =OROCORR_NONE;
   Options.orocorr_temp            =OROCORR_NONE;
@@ -229,6 +231,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.aNetCDFattribs      =NULL;
   Options.assimilation_on     =false;
   Options.assimilation_start  =0;
+  Options.time_zone           =0;
 
   pModel=NULL;
   pMover=NULL;
@@ -314,7 +317,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteEnsimFormat"          )){code=55; }
     else if  (!strcmp(s[0],":WriteNetcdfFormat"         )){code=78; }
     else if  (!strcmp(s[0],":WriteNetCDFFormat"         )){code=78; }
-    else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=96; }//avoid writing WatershedStorage.csv
     else if  (!strcmp(s[0],":RunName"                   )){code=56; }
     else if  (!strcmp(s[0],":NoisyMode"                 )){code=57; }
     else if  (!strcmp(s[0],":SilentMode"                )){code=58; }
@@ -350,6 +352,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":AssimilateStreamflow"      )){code=93; }
     else if  (!strcmp(s[0],":DeltaresFEWSMode"          )){code=94; }
     else if  (!strcmp(s[0],":WriteSubbasinFile"         )){code=95; }
+    else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=96; }//avoid writing WatershedStorage.csv
+    else if  (!strcmp(s[0],":TimeZone"                  )){code=97; }
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
@@ -572,6 +576,32 @@ bool ParseMainInputFile (CModel     *&pModel,
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
       }
+      bool notspecified=true;
+      if((Len>=3) && (Options.evaporation==PET_DATA))
+      {
+        notspecified=false;
+        if      (!strcmp(s[2],"PET_CONSTANT"          )) { Options.evap_infill =PET_CONSTANT; }
+        else if (!strcmp(s[2],"PET_FROMMONTHLY"       )) { Options.evap_infill =PET_FROMMONTHLY; }
+        else if (!strcmp(s[2],"PET_PENMAN_MONTEITH"   )) { Options.evap_infill =PET_PENMAN_MONTEITH; }
+        else if (!strcmp(s[2],"PET_PENMAN_COMBINATION")) { Options.evap_infill =PET_PENMAN_COMBINATION; }
+        else if (!strcmp(s[2],"PET_HAMON"             )) { Options.evap_infill =PET_HAMON; }
+        else if (!strcmp(s[2],"PET_HARGREAVES"        )) { Options.evap_infill =PET_HARGREAVES; }
+        else if (!strcmp(s[2],"PET_HARGREAVES_1985"   )) { Options.evap_infill =PET_HARGREAVES_1985; }
+        else if (!strcmp(s[2],"PET_TURC_1961"         )) { Options.evap_infill =PET_TURC_1961; }
+        else if (!strcmp(s[2],"PET_MAKKINK_1957"      )) { Options.evap_infill =PET_MAKKINK_1957; }
+        else if (!strcmp(s[2],"PET_PRIESTLEY_TAYLOR"  )) { Options.evap_infill =PET_PRIESTLEY_TAYLOR; }
+        else if (!strcmp(s[2],"PET_MONTHLY_FACTOR"    )) { Options.evap_infill =PET_MONTHLY_FACTOR; }
+        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )) { Options.evap_infill =PET_PENMAN_SIMPLE33;}
+        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )) { Options.evap_infill =PET_PENMAN_SIMPLE39;}
+        else if (!strcmp(s[1],"PET_GRANGERGRAY"       )) { Options.evap_infill =PET_GRANGERGRAY;}
+        else if (!strcmp(s[1],"PET_MOHYSE"            )) { Options.evap_infill =PET_MOHYSE;}
+        else if (!strcmp(s[1],"PET_OUDIN"             )) { Options.evap_infill =PET_OUDIN;}
+        else { notspecified=true; }
+      }
+      if((Options.evaporation==PET_DATA) && (notspecified)) {
+        string warning="PET_DATA was chosen, but no infilling method was specified. Blank PET data will be infilled using PET_HARGREAVES_1985";
+        WriteAdvisory(warning,Options.noisy);
+      }
       break;
     }
     case(10):  //----------------------------------------------
@@ -606,7 +636,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(12): //----------------------------------------------
     {/*Open Water Potential Evapotranspiration Method
-       string ":OW_Evaporation", string method */
+       string ":OW_Evaporation", string method  {optional infill method}*/
       if (Options.noisy) {cout <<"Open Water Potential Evapotranspiration Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":OW_Evaporation",p,Options.noisy); break;}
       if      (!strcmp(s[1],"CONSTANT"              )){Options.ow_evaporation =PET_CONSTANT;}
@@ -630,8 +660,39 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_MAKKINK_1957"      )){Options.ow_evaporation =PET_MAKKINK_1957;}
       else if (!strcmp(s[1],"PET_PRIESTLEY_TAYLOR"  )){Options.ow_evaporation =PET_PRIESTLEY_TAYLOR;}
       else if (!strcmp(s[1],"PET_MONTHLY_FACTOR"    )){Options.ow_evaporation =PET_MONTHLY_FACTOR;}
+      else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.ow_evaporation =PET_PENMAN_SIMPLE33;}
+      else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.ow_evaporation =PET_PENMAN_SIMPLE39;}
+      else if (!strcmp(s[1],"PET_GRANGERGRAY"       )){Options.ow_evaporation =PET_GRANGERGRAY;}
+      else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.ow_evaporation =PET_MOHYSE;}
+      else if (!strcmp(s[1],"PET_OUDIN"             )){Options.ow_evaporation =PET_OUDIN;}
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
+      }
+      bool notspecified=true;
+      if((Len>=3) && (Options.ow_evaporation==PET_DATA))
+      {
+        notspecified=false;
+        if      (!strcmp(s[2],"PET_CONSTANT"          )) { Options.ow_evap_infill =PET_CONSTANT; }
+        else if (!strcmp(s[2],"PET_FROMMONTHLY"       )) { Options.ow_evap_infill =PET_FROMMONTHLY; }
+        else if (!strcmp(s[2],"PET_PENMAN_MONTEITH"   )) { Options.ow_evap_infill =PET_PENMAN_MONTEITH; }
+        else if (!strcmp(s[2],"PET_PENMAN_COMBINATION")) { Options.ow_evap_infill =PET_PENMAN_COMBINATION; }
+        else if (!strcmp(s[2],"PET_HAMON"             )) { Options.ow_evap_infill =PET_HAMON; }
+        else if (!strcmp(s[2],"PET_HARGREAVES"        )) { Options.ow_evap_infill =PET_HARGREAVES; }
+        else if (!strcmp(s[2],"PET_HARGREAVES_1985"   )) { Options.ow_evap_infill =PET_HARGREAVES_1985; }
+        else if (!strcmp(s[2],"PET_TURC_1961"         )) { Options.ow_evap_infill =PET_TURC_1961; }
+        else if (!strcmp(s[2],"PET_MAKKINK_1957"      )) { Options.ow_evap_infill =PET_MAKKINK_1957; }
+        else if (!strcmp(s[2],"PET_PRIESTLEY_TAYLOR"  )) { Options.ow_evap_infill =PET_PRIESTLEY_TAYLOR; }
+        else if (!strcmp(s[2],"PET_MONTHLY_FACTOR"    )) { Options.ow_evap_infill =PET_MONTHLY_FACTOR; }
+        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE33;}
+        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE39;}
+        else if (!strcmp(s[1],"PET_GRANGERGRAY"       )) { Options.ow_evap_infill =PET_GRANGERGRAY;}
+        else if (!strcmp(s[1],"PET_MOHYSE"            )) { Options.ow_evap_infill =PET_MOHYSE;}
+        else if (!strcmp(s[1],"PET_OUDIN"             )) { Options.ow_evap_infill =PET_OUDIN;}
+        else{notspecified=true;}
+      }
+      if ((Options.ow_evaporation==PET_DATA) && (notspecified)) {
+        string warning="PET_DATA was chosen, but no infilling method was specified. Blank OW PET data will be infilled using PET_HARGREAVES_1985";
+        WriteAdvisory(warning,Options.noisy);
       }
       break;
     }
@@ -1345,12 +1406,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.output_format=OUTPUT_NETCDF;
       break;
     }
-    case(96):  //--------------------------------------------
-    {/*:DontWriteWatershedStorage */
-      if (Options.noisy){cout <<"Write WatershedStorage OFF"<<endl;}
-      Options.write_watershed_storage=false;
-      break;
-    }
     case(79):  //--------------------------------------------
     {/*:WriteChannelInfo */
       if (Options.noisy) {cout <<"Write Channel Info file ON"<<endl;}
@@ -1475,6 +1530,18 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:WriteSubbasinFile*/
       if(Options.noisy) { cout << "Write Subbasin file" << endl; }
       Options.write_basinfile=true;
+      break;
+    }
+    case(96):  //--------------------------------------------
+    {/*:DontWriteWatershedStorage */
+      if(Options.noisy) { cout <<"Write WatershedStorage OFF"<<endl; }
+      Options.write_watershed_storage=false;
+      break;
+    }
+    case(97):  //--------------------------------------------
+    {/*:TimeZone*/
+      if(Options.noisy) { cout << "Set Time Zone" << endl; }
+      Options.time_zone=s_to_i(s[1]);
       break;
     }
     case(98):  //--------------------------------------------

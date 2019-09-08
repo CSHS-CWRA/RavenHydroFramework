@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team, Ayman Khedr
+  Copyright (c) 2008-2019 the Raven Development Team, Ayman Khedr
   ----------------------------------------------------------------*/
 
 #include "CustomOutput.h"
@@ -521,6 +521,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");
+  if(Options.time_zone!=0) { strcat(starttime,TimeZoneToString(Options.time_zone).c_str()); }
+
   retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
   retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);  
   retval = nc_put_att_text(_netcdf_ID, varid_time, "standard_name", strlen("time"),      "time");      HandleNetCDFErrors(retval);

@@ -183,7 +183,8 @@ private:/*------------------------------------------------------*/
                                       const double       &ref_elevation,
                                       const evap_method   evap_type,
                                       const optStruct    &Options,
-                                      const time_struct  &tt);
+                                      const time_struct  &tt,
+                                      const bool          open_water);
   double         EstimateWindVelocity(const optStruct &Options,
                                       const force_struct &F,
                                       const double &wind_measurement_ht,

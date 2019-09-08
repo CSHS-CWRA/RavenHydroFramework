@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
 
   Routines for calculating PET:
   -Penman Monteith Equation
@@ -284,7 +284,8 @@ double CModel::EstimatePET(const force_struct &F,
                            const double       &ref_elevation,
                            const evap_method   evap_type ,
                            const optStruct    &Options,
-                           const time_struct  &tt)
+                           const time_struct  &tt,
+                           const bool          open_water)
 {
   double PET=0.0;
 
@@ -296,7 +297,19 @@ double CModel::EstimatePET(const force_struct &F,
   }
   case(PET_DATA):
   {
-    PET=F.PET; break;//calculated direct from Gauge
+    PET=F.PET; 
+
+    //Handle blank data
+    if (PET==RAV_BLANK_DATA) {
+      if(open_water) {
+        PET=EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,Options.ow_evap_infill,Options,tt,true);
+      }
+      else {
+        PET=EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,Options.evap_infill,Options,tt,false);
+      }
+    } 
+    
+    break;//calculated direct from Gauge
   }
   case(PET_FROMMONTHLY):
   {

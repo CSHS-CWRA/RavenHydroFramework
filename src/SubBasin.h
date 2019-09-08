@@ -11,7 +11,7 @@
 #include "ChannelXSect.h"
 #include "TimeSeries.h"
 #include "Reservoir.h"
-
+class CReservoir;
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction class for contiguous watershed section with a primary channel, contains a collection of HRUs
 /// \details Used primarily to route water
@@ -176,6 +176,8 @@ public:/*-------------------------------------------------------*/
   void       AddMinStageFlowTimeSeries(CTimeSeries *pQ);
   void        AddTargetStageTimeSeries(CTimeSeries *pTS);
   void       AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+  void            AddMinQTimeSeries   (CTimeSeries *pQmin);
+  void            AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB,const double &range);
   void            ResetReferenceFlow  (const double    &Qreference);
   void            SetReservoirFlow    (const double &Q,const double &Qlast,const double &t);
   void        SetInitialReservoirStage(const double &h,const double &hlast);

@@ -140,6 +140,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirTargetStage"  )){code=57; }
     else if  (!strcmp(s[0],":ReservoirMaxQDelta"    )){code=58; }
     else if  (!strcmp(s[0],":BasinInflowHydrograph2")){code=59; }
+    else if  (!strcmp(s[0],":ReservoirMinFlow"      )){code=60; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamFlow")){code=61; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -172,7 +174,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":LatitudeVarNameNC"       )){code=411;}
     else if  (!strcmp(s[0],":LongitudeVarNameNC"      )){code=412;}
     else if  (!strcmp(s[0],":ElevationVarNameNC"      )){code=413;}
-    else if  (!strcmp(s[0],":GridWeightsByAttribute"  )){code=414; }
+    else if  (!strcmp(s[0],":GridWeightsByAttribute"  )){code=414;}
+    else if  (!strcmp(s[0],":StationElevations"       )){code=415;}
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
@@ -224,9 +227,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           gName = s[1];             // Valid gauge name, so we use it
         }
       }
-      //if (Options.noisy) {cout <<"  Creating Gauge: "<< gName <<endl;}
       pGage=new CGauge(gName,NOT_SPECIFIED,NOT_SPECIFIED,0.0);
-      ExitGracefullyIf(pModel->GetNumGauges()+1>MAX_GAUGES,"ParseTimeSeriesFile: exceeded maximum number of gauges",BAD_DATA);
       pModel->AddGauge(pGage);
 
       break;
@@ -437,9 +438,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else {WriteWarning("Improper format of :GaugeList command",Options.noisy); break;}
       }
 
-      double *values[MAX_GAUGES];
-      string gaugenames[MAX_GAUGES];
-      for (int g=0;g<MAX_GAUGES;g++){values[g]=new double [nAttStrings];}
+      double *values[MAX_GAUGES_IN_LIST];
+      string gaugenames[MAX_GAUGES_IN_LIST];
+      for (int g=0;g<MAX_GAUGES_IN_LIST;g++){values[g]=new double [nAttStrings];}
       p->Tokenize(s,Len);
       done=false;
       int nGauges=0;
@@ -469,7 +470,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
         pModel->AddGauge(pGage);
       }
-      for (int g=0;g<MAX_GAUGES;g++){delete [] values[g];}
+      for (int g=0;g<MAX_GAUGES_IN_LIST;g++){delete [] values[g];}
       break;
     }
     case(15):  //----------------------------------------------
@@ -958,6 +959,62 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       {
         string warn;
         warn=":BasinInflowHydrograph2 Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (60): //---------------------------------------------
+    {/*:ReservoirMinFlow {long Basincode}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qmin} x nMeasurements [m3/s]
+     :EndReservoirMinFlow
+     */
+      if(Options.noisy) { cout <<"Reservoir Minimum Flow time series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
+      if(pSB!=NULL) {
+        pSB->AddMinQTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirMinFlow Subbasin "+to_string(SBID)+" not in model, cannot set minimum flow";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (61): //---------------------------------------------
+    {/*:ReservoirDownstreamFlow {long Basincode} {long downstreamSBID} {double range}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qtarget} x nMeasurements [m3/s]
+     :EndReservoirDownstreamFlow
+     */
+      if(Options.noisy) { cout <<"Reservoir Dowstream Flow  target time series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      long SBID_down=DOESNT_EXIST;
+      CSubBasin *pSB,*pSBdown;
+      double range=0;
+      if(Len>=4) { 
+        SBID=s_to_l(s[1]); 
+        SBID_down=s_to_l(s[2]);
+        range=s_to_d(s[3]);
+      }
+      else {
+        ExitGracefully(":ReservoirDownstreamFlow: incorrect number of terms in command",BAD_DATA);
+      }
+      pSB    =pModel->GetSubBasinByID(SBID);
+      pSBdown=pModel->GetSubBasinByID(SBID_down);
+      pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
+      if((pSB!=NULL) && (pSBdown!=NULL)){
+        pSB->AddDownstreamTargetQ(pTimeSer,pSBdown,range);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model, cannot set downstream flow target";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -1571,6 +1628,36 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
       break;
 
+    }
+    case (415)://----------------------------------------------
+    {/*:StationElevations
+     321
+     333
+     ...
+     384
+     :EndStationElevations*/
+      ExitGracefullyIf(pGrid==NULL,
+        "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
+
+      if(!grid_initialized) { //must initialize grid prior to adding grid cell/station elevations
+        grid_initialized = true;
+        pGrid->ForcingGridInit(Options);
+      }
+
+      int count=0;
+
+      if(Options.noisy) { cout <<"Station Elevations..."<<endl; }
+      while(((Len==0) || (strcmp(s[0],":EndStationElevations"))) && (!(p->Tokenize(s,Len))))
+      {
+        if(IsComment(s[0],Len)) {}//comment line
+        else if(!strcmp(s[0],":EndStationElevations")) {}//done
+        else
+        {
+            //pGrid->SetStationElevation(count,s_to_d(s[1]));
+            count++;
+        } // end else
+      } // end while
+      break;
     }
 
     case (500)://----------------------------------------------

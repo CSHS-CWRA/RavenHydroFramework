@@ -381,8 +381,7 @@ double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, co
   double slope_mult=1.0;
   double Q_mult=1.0;
   GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);
-  
-  //return 0.5*(Q)/GetDepth(Q,SB_slope,SB_n)/(slope_mult*_bedslope);
+ 
   return 0.5*(Q)/GetTopWidth(Q,SB_slope,SB_n)/(slope_mult*_bedslope);
 }
 

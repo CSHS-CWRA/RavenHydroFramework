@@ -173,12 +173,13 @@ void CModel::Initialize(const optStruct &Options)
   if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
   forcing_type f_gauge=F_PRECIP;
   //search for the 'other' forcing
-  if      (Options.air_pressure==AIRPRESS_DATA){f_gauge=F_AIR_PRES;}
-  else if (Options.SW_radiation==SW_RAD_DATA  ){f_gauge=F_SW_RADIA;}
-  else if (Options.evaporation ==PET_DATA     ){f_gauge=F_PET; }
-  else if (Options.rel_humidity==RELHUM_DATA  ){f_gauge=F_REL_HUMIDITY;}
-  else if (Options.SW_radia_net==NETSWRAD_DATA){f_gauge=F_SW_RADIA_NET;}
-  else if (Options.LW_radiation==LW_RAD_DATA  ){f_gauge=F_LW_RADIA_NET;}
+  if      (Options.air_pressure  ==AIRPRESS_DATA){f_gauge=F_AIR_PRES;}
+  else if (Options.SW_radiation  ==SW_RAD_DATA  ){f_gauge=F_SW_RADIA;}
+  else if (Options.evaporation   ==PET_DATA     ){f_gauge=F_PET; }
+  else if (Options.rel_humidity  ==RELHUM_DATA  ){f_gauge=F_REL_HUMIDITY;}
+  else if (Options.SW_radia_net  ==NETSWRAD_DATA){f_gauge=F_SW_RADIA_NET;}
+  else if (Options.LW_radiation  ==LW_RAD_DATA  ){f_gauge=F_LW_RADIA_NET;}
+  else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
   if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
   
   GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings

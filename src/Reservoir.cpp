@@ -39,6 +39,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _pMaxQIncreaseTS=NULL; 
   _pDroughtLineTS=NULL;
   _pQminTS=NULL;
+  _pQdownTS=NULL;
+  _QdownRange=0.0;
+  _pQdownSB=NULL;
 
   _crest_ht=0.0;
 
@@ -310,6 +313,7 @@ CReservoir::~CReservoir()
   delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL; 
   delete _pDroughtLineTS; _pDroughtLineTS=NULL;
   delete _pQminTS; _pQminTS=NULL;
+  delete _pQdownTS; _pQdownTS=NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -421,6 +425,10 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pQminTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
+  if(_pQdownTS!=NULL)
+  {
+    _pQdownTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -517,6 +525,19 @@ void    CReservoir::AddMinQTimeSeries(CTimeSeries *pQmin) {
   _pQminTS=pQmin;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Adds downstream target flow  time series 
+/// \param *pQ downstream target flow  time series [m3/s]
+/// \param SBIDdown downstream target flow basin ID
+/// \param Qrange downstream target flow range [m3/s]
+//
+void    CReservoir::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB, const double &Qrange) {
+  ExitGracefullyIf(_pQdownTS!=NULL,
+    "CReservoir::AddDownstreamTargetQ: only one downstream flow time series may be specified per reservoir",BAD_DATA_WARN);
+  _pQdownTS=pQ;
+  _pQdownSB=pSB;
+  _QdownRange=Qrange;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief links reservoir to HRU
 /// \param *pHRUpointer HRU to link to
 //
@@ -572,7 +593,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0;
   if(_pHRU!=NULL){
-    _AET      =_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
+    _AET      =_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->OW_PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
     _MB_losses+=_AET;
   }
 
@@ -692,6 +713,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double Qtarget=RAV_BLANK_DATA;
   double htarget=RAV_BLANK_DATA;
   double Qdelta=ALMOST_INF;
+  double Qshift=RAV_BLANK_DATA;
 
   int nn=(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
 
@@ -703,6 +725,18 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pTargetStageTS!=NULL) { htarget    =_pTargetStageTS-> GetSampledValue(nn);}
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
   if(_pQminTS!=NULL)        { Qmin       =_pQminTS->        GetSampledValue(nn);}
+  if(_pQdownTS!=NULL)       { 
+    double Qdown_targ      =_pQminTS->GetSampledValue(nn); 
+    double Qdown_act       =_pQdownSB->GetOutflowRate();
+    //Qshift=max(min((Qdown_targ-Qdown_act)/(_QdownRange*0.5),1.0),-1.0)*(Qdown_targ-Qdown_act);
+
+    //smoothly shift towards target - far away moves towards range edge, in zone moves towards target 
+    double alpha=exp(-fabs(Qdown_targ-Qdown_act)/(_QdownRange*0.5));
+    if (_QdownRange==0){alpha=0.0;}
+    if(Qdown_act<Qdown_targ) {Qshift=0.8*((Qdown_targ-(1.0-alpha)*(_QdownRange*0.5))-Qdown_act);}
+    else                     {Qshift=0.8*((Qdown_targ+(1.0-alpha)*(_QdownRange*0.5))-Qdown_act);}
+  }
+
 
   //=============================================================================
   if (_type==RESROUTE_NONE)
@@ -760,10 +794,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double relax=1.0;
     do //Newton's method with discrete approximation of df/dh
     {
-      out =GetOutflow(h_guess,weir_adj)+ET*GetArea(h_guess);//[m3/s]
+      out =GetOutflow(h_guess,   weir_adj)+ET*GetArea(h_guess   );//[m3/s]
       out2=GetOutflow(h_guess+dh,weir_adj)+ET*GetArea(h_guess+dh);//[m3/s]
 
-      f   = (GetVolume(h_guess)+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
+      f   = (GetVolume(h_guess   )+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
       dfdh=((GetVolume(h_guess+dh)+out2/2.0*(tstep*SEC_PER_DAY))-f)/dh; //[m3/m]
 
       //hg[iter]=relax*h_guess; ff[iter]=f-gamma;//retain for debugging
@@ -801,6 +835,12 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
         Qtarget = w*Qtarget+(1-w)*_Qout; //softer move towards goal - helps with stage undershoot -you can always remove more...
       }
       constraint=1; //target stage
+    }
+
+    if((Qshift!=RAV_BLANK_DATA) && (Qoverride==RAV_BLANK_DATA)) {
+      //or (maybe) Qtarget+=Qshift if Qtarget!=RAV_BLANK_DATA)
+      Qtarget=res_outflow+Qshift;
+      constraint=8; //Downstream flow correction
     }
 
     if(Qoverride==RAV_BLANK_DATA)

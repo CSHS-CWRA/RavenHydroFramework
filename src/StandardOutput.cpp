@@ -1455,6 +1455,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " 00:00:00");
+  if(Options.time_zone!=0) { strcat(starttime,TimeZoneToString(Options.time_zone).c_str()); }
 
   //====================================================================
   //  Hydrographs.nc

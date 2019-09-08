@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -663,7 +663,33 @@ void CSubBasin::AddOverrideFlowTS(CTimeSeries *pQ)
     _pReservoir->AddOverrideQTimeSeries(pQ);
   }
   else{
-    WriteWarning("Override flow time series specified for basin without reservoir",false);
+    WriteWarning("CSubBasin::AddOverrideFlowTS: Override flow time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum flow time series
+/// \param *pQ overridden flow time series [m3/s] to be added
+//
+void CSubBasin::AddMinQTimeSeries(CTimeSeries *pQ)
+{
+  if(_pReservoir!=NULL) {
+    _pReservoir->AddMinQTimeSeries(pQ);
+  }
+  else {
+    WriteWarning("CSubBasin::AddMinQTimeSeries: minimum flow time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds downstream flow time series
+/// \param *pQ overridden flow time series [m3/s] to be added
+//
+void CSubBasin::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB,const double &range)
+{
+  if(_pReservoir!=NULL) {
+    _pReservoir->AddDownstreamTargetQ(pQ,pSB,range);
+  }
+  else {
+    WriteWarning(" CSubBasin::AddDownstreamTargetQ: downstream flow time series specified for basin without reservoir",false);
   }
 }
 //////////////////////////////////////////////////////////////////

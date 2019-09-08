@@ -31,12 +31,17 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 {
 
   force_struct        F;
-  static force_struct Fg[MAX_GAUGES];
+  static force_struct *Fg=NULL; 
   double              elev,slope;
   int                 mo,yr;
   int                 k,g,nn;
   double              mid_day,model_day, time_shift;
   double              wt;
+
+  //Reserve static memory (only gets called once in course of simulation)
+  if (Fg==NULL){
+    Fg=new force_struct [_nGauges];
+  }
 
   double t  = tt.model_time;
   mo        = tt.month;
@@ -426,8 +431,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  PET Calculations
       //-------------------------------------------------------------------
       // last but not least - needs all of the forcing params calculated above
-      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation,Options,tt);
-      F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.ow_evaporation,Options,tt);
+      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation,Options,tt,false);
+      F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.ow_evaporation,Options,tt,true);
 
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
 
@@ -448,6 +453,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
     }//end if (!_pHydroUnits[k]->IsDisabled())
   }//end for k=0; k<nHRUs...
+
+   //delete static arrays (only called once)=========================
+  if(t>=Options.duration-Options.timestep)
+  {
+    if(DESTRUCTOR_DEBUG) { cout<<"DELETING STATIC ARRAY IN UPDATEHRUFORCINGFUNCTIONS"<<endl; }
+    delete [] Fg; Fg=NULL;
+  }
 }
 
 //////////////////////////////////////////////////////////////////

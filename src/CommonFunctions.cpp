@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  Copyright (c) 2008-2017 the Raven Development Team
+///  Copyright (c) 2008-2019 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -507,6 +507,24 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   }
   return DateStringToTimeStruct(sDate,sTime,calendar);
 }
+////////////////////////////////////////////////////////////////////////////
+/// \brief returns time zone string in format " +0700" or " -1200"
+/// \param tz [in] time zone as integer - hours from GMT
+/// \return time zone as string in format " +0600" or "" if tz is zero
+//
+string TimeZoneToString(const int tz) {
+  string ends="";
+  if(tz<0) {
+    if(tz<-9) { ends=" -"+to_string(-tz)+"00"; }
+    else { ends=" -0"+to_string(-tz)+"00"; }
+  }
+  else if(tz>0) {
+    if(tz>9) { ends=" +"+to_string(tz)+"00"; }
+    else { ends=" +0"+to_string(tz)+"00"; }
+  }
+  return ends;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 /// \brief returns time struct corresponding to string in the following format
 /// \param unit_t_str [in] full time string from NetCDF file (e.g., '[days/minutes/hours] since YYYY-MM-dd 00:00:00{+0000}')

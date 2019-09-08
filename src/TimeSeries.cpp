@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -1347,7 +1347,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
   }
   if(shift_from_per_ending) {
-    cout<<" SHIFTING FROM PERIOD ENDING"<<endl;
     start_day -= tstep;
     int leap   = 0;
     if(IsLeapYear(start_yr-1,calendar)) { leap = 1; }

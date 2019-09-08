@@ -13,6 +13,7 @@
 #include "ParseLib.h"
 #include "HydroUnits.h"
 #include "TimeSeries.h"
+#include "SubBasin.h"
 
 enum curve_function{
   CURVE_LINEAR,      ///< y =a*x
@@ -25,6 +26,7 @@ enum res_type{
   RESROUTE_STANDARD,
   RESROUTE_NONE
 };
+class CSubBasin;
 /*****************************************************************
    Class CReservoir
 ------------------------------------------------------------------
@@ -50,6 +52,10 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pMaxQIncreaseTS;     ///< Time series maximum rate of flow increase [m3/s/d] (or NULL for no maximum)
   CTimeSeries *_pDroughtLineTS;      ///< Time series of drought line stage [m] (or NULL if none exists)
   CTimeSeries *_pQminTS;             ///< Time series of minimum flow constraint [m3/s] (or NULL for no minimum)
+  CTimeSeries *_pQdownTS;            ///< Time series of downstream flow soft target [m3/s] (or NULL for none)
+  double       _QdownRange;          ///< range of acceptable target flows from Qdown [m3/s] (or zero for hard target)
+  
+  const CSubBasin *_pQdownSB;            ///< pointer to downstream SubBasin (or NULL for none)
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -130,6 +136,7 @@ public:/*-------------------------------------------------------*/
   void              AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
   void              AddDroughtLineTimeSeries (CTimeSeries *pTS);
   void              AddMinQTimeSeries        (CTimeSeries *pQmin);
+  void              AddDownstreamTargetQ     (CTimeSeries *pQ, const CSubBasin *pSB, const double &range);
 
   void              SetHRU                   (const CHydroUnit *pHRU);
   void              DisableOutflow           ();

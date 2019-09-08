@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------
   Fully coupled snow balance routines
   ----------------------------------------------------------------*/
@@ -230,10 +230,9 @@ void CmvSnowBalance::GetParticipatingParamList(string *aP, class_type *aPC, int 
   }
   else if (type==SNOBAL_HBV)
   {
-    nP=3;
+    nP=2;
     aP[0]="REFREEZE_FACTOR"; aPC[0]=CLASS_LANDUSE;
-    aP[1]="MELT_FACTOR";     aPC[1]=CLASS_LANDUSE;
-    aP[2]="SNOW_SWI";        aPC[2]=CLASS_GLOBAL;
+    aP[1]="SNOW_SWI";        aPC[1]=CLASS_GLOBAL;
   }
   else if (type==SNOBAL_UBCWM)
   {
@@ -1102,21 +1101,22 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
 
   //initialize storage varaibles
   //------------------------------------------------------------------------
-  double SWC = state_vars[iFrom[0]];       // Solid Water Content
-  double rainthru = state_vars[iFrom[1]];  // PONDEDWATER [mm]
-  double LWC = state_vars[iFrom[2]];       // Liquid Water Content
-  double SDEP =  state_vars[iFrom[3]];     // Snow Depth [mm]
-  double newSnow = state_vars[iFrom[6]];   // New Snow [mm]
+  double SWC        = state_vars[iFrom[0]];  // Solid Water Content
+  double rainthru   = state_vars[iFrom[1]];  // PONDEDWATER [mm]
+  double snow_liq   = state_vars[iFrom[2]];  // Liquid Water Content
+  double snow_depth = state_vars[iFrom[3]];  // Snow Depth [mm]
+  double newSnow    = state_vars[iFrom[6]];  // New Snow [mm]
 
   // Constants
   double KF =  pHRU->GetSurfaceProps()->refreeze_factor;  // refreeze factor [mm/d-degC]
   double KM =  pHRU->GetSurfaceProps()->melt_factor; // melt factor [mm/d-degC] //~5.04
   double SWI = CGlobalParams::GetParams()->snow_SWI; // Maximum fraction of pore space in snowpack for liquid snow
-  double RHOICE = DENSITY_ICE*1000;        // Relative density of ice
-  double MRHO = 0.35;                      // Maximum dry density for snowpack /// \todo [funct] - enable support of user-specified MRHO,
-  double a = 0.1;                          // coefficient [1/degC]
-  double b = 96;                           // coefficient [h]
-  double NEWDEN = 0.1;                     // New snow density
+  
+  double RHOICE = DENSITY_ICE/DENSITY_WATER;  // Relative density of ice
+  double MRHO   = 0.35;                       // Maximum dry density for snowpack /// \todo [funct] - enable support of user-specified MRHO,
+  double a = 0.1;                             // coefficient [1/degC]
+  double b = 96;                              // coefficient [h]
+  double NEWDEN = 0.1;                        // New snow density
 
   double TEMPs = pHRU->GetForcingFunctions()->temp_ave;
   double TBAS = 0;                         // Temperature of snowpack
@@ -1132,31 +1132,31 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
 
   // Density Calculations
   double RHO = 0;                            // Dry density of snowpack
-  if (SWC > 0) { RHO = min(MRHO, SWC / SDEP); }
+  if (SWC > 0) { RHO = min(MRHO, SWC / snow_depth); }
 
   double POR = 1- RHO / RHOICE;              // porosity of snowpack
 
-  double LWCAP = POR * SDEP * SWI;           // liquid water holding capactiy of snowpack [mm]
+  double snow_liqAP = POR * snow_depth * SWI;           // liquid water holding capactiy of snowpack [mm]
 
-  double RAIN_IN_1 = 0;                      // Rain to LWC
+  double RAIN_IN_1 = 0;                      // Rain to snow_liq
   double RAIN_IN_2 = 0;                      // Rain to Runoff
-  double MELT_1 = 0;                         // Melt to LWC
+  double MELT_1 = 0;                         // Melt to snow_liq
   double MELT_2 = 0;                         // Melt to Runoff
-  double EXCESS_LWC = 0;                     // Excess LWC to runoff
+  double EXCESS_snow_liq = 0;                     // Excess snow_liq to runoff
 
   // Perform refreeze
   double REFRZ = 0;
-  if (TBAS > TEMPs) { REFRZ = min(REFRZP, LWC); }
+  if (TBAS > TEMPs) { REFRZ = min(REFRZP, snow_liq); }
 
   // Update state variables after refreeze
   double SWC2 = SWC + REFRZ;
-  double RHO2 = min(MRHO, SWC2 / SDEP);
-  double LWC2 = LWC - REFRZ;
+  double RHO2 = min(MRHO, SWC2 / snow_depth);
+  double snow_liq2 = snow_liq - REFRZ;
 
-  // Calculate Rainfall, Melt, and EXCESS LWC based on LWCAP
-  if (LWC2 >= LWCAP)
+  // Calculate Rainfall, Melt, and EXCESS snow_liq based on snow_liqAP
+  if (snow_liq2 >= snow_liqAP)
   {
-    EXCESS_LWC = LWC2 - LWCAP;
+    EXCESS_snow_liq = snow_liq2 - snow_liqAP;
     MELT_2 = min(MELTP, SWC);
     RAIN_IN_2 = rainthru;
   }
@@ -1165,14 +1165,14 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
     RAIN_IN_1 = rainthru;
   }
 
-  // GAWSER's density based compaction calculation and SDEP calculations
+  // GAWSER's density based compaction calculation and snow_depth calculations
   double KC = b * exp(-1*a*TEMPs);                                           // Compaction time constant (h)
   double TRHO = (RHO2 * MRHO) / (RHO2 + (MRHO - RHO2)*exp(-1*tstep*24/KC));  // Delayed density
 
   double compaction = 0;                                                     // Compaction [mm]
-  if (SWC2 > 0) { compaction = SDEP - SWC2 / TRHO; }
+  if (SWC2 > 0) { compaction = snow_depth - SWC2 / TRHO; }
 
-  double snowmelt = 0;                                                       // Decrease in SDEP from MELT [mm]
+  double snowmelt = 0;                                                       // Decrease in snow_depth from MELT [mm]
   if (SWC2 > 0) { snowmelt = (MELT_1 + MELT_2) / TRHO; }
 
   double SUBLIM = 0;                                                         // Sublimation [mm]
@@ -1180,20 +1180,20 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
   if(TEMPs < 0){SUBLIM = 2.4 * tstep;} //2.4 mm/d
   if (SWC2 - MELT_1 - MELT_2 < SUBLIM) { SUBLIM = max(min(SUBLIM, SWC2 - MELT_1 - MELT_2),0.0); }
 
-  double SUBLIM_SDEP = 0;                                                    // Decrease in SDEP from Sublimation [mm]
-  if (SWC2 > 0) { SUBLIM_SDEP = SUBLIM / TRHO; }
+  double SUBLIM_snow_depth = 0;                                              // Decrease in snow_depth from Sublimation [mm]
+  if (SWC2 > 0) { SUBLIM_snow_depth = SUBLIM / TRHO; }
 
 
-  rates[0] = MELT_1 / tstep;                      // SNOW -> LWC
-  rates[1] = RAIN_IN_1 / tstep;                   // RAIN -> LWC (IF LWC > LWCAP, RAIN_2 will remain in Ponded)
-  rates[2] = REFRZ / tstep;                       // LWC  -> SNOW
+  rates[0] = MELT_1 / tstep;                      // SNOW -> snow_liq
+  rates[1] = RAIN_IN_1 / tstep;                   // RAIN -> snow_liq (IF snow_liq > snow_liqAP, RAIN_2 will remain in Ponded)
+  rates[2] = REFRZ / tstep;                       // snow_liq  -> SNOW
   rates[3] = -compaction / tstep;                 // change in snowdepth from compaction
-  rates[4] = -(snowmelt + SUBLIM_SDEP) / tstep;   // change in snowdepth from snowmelt and sublimation
+  rates[4] = -(snowmelt + SUBLIM_snow_depth) / tstep;   // change in snowdepth from snowmelt and sublimation
   rates[5] = newSnow / NEWDEN / tstep;            // change in snowdepth from snowfall
   rates[6] = newSnow / tstep;                     // SNOWFALL -> SNOW
   rates[7] = SUBLIM / tstep;                      // change in SNOW due to sublimation (physically makes no sense in GAWSER)
-  rates[8] = EXCESS_LWC / tstep;                  // LWC overflow to ponded
-  rates[9] = MELT_2 / tstep;                      // Snowmelt going to ponded as LWC > LWCAP
+  rates[8] = EXCESS_snow_liq / tstep;             // snow_liq overflow to ponded
+  rates[9] = MELT_2 / tstep;                      // Snowmelt going to ponded as snow_liq > snow_liqAP
 
 }
 //////////////////////////////////////////////////////////////////

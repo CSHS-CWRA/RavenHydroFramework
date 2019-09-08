@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------
   Canopy Evaporation
   Canopy Snow Evaporation
@@ -22,8 +22,6 @@ CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype)
   :CHydroProcessABC(CANOPY_EVAPORATION)
 {
   type =cetype;
-
-  int nConn;
 
   CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
   iFrom[0]=pModel->GetStateVarIndex(CANOPY);
