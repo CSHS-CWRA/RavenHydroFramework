@@ -406,6 +406,12 @@ int CTransportModel::GetLatqsIndex(const int qq) const
   return _latqss_indices[qq];
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns true if constituent c is passive 
+//
+bool  CTransportModel::ConstituentIsPassive(const int c) const {
+  return _pConstituents[c]->is_passive;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief returns effective retardation factor for constituent c
 /// being transported from storage compartment _iFromWater to storage compartment _iToWater
 /// \param c [in] constituent index
@@ -418,6 +424,7 @@ double CTransportModel::GetRetardationFactor(const int c,const CHydroUnit *pHRU,
   fromType=pModel->GetStateVarType(_iFromWater);
   toType  =pModel->GetStateVarType(_iToWater);
 
+  if (ConstituentIsPassive(c)){return ALMOST_INF;}
   if (fromType==SOIL)
   {
     int    m=pModel->GetStateVarLayer(_iFromWater);
@@ -455,6 +462,7 @@ double CTransportModel::GetDecayCoefficient(const int c, const CHydroUnit *pHRU,
   }
   return decay_coeff;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns transformation coefficient for constituent c
 /// \param c [in] constituent index
@@ -503,16 +511,18 @@ double CTransportModel::GetStoichioCoefficient(const int c, const int c2, const 
 /// \param name [in] name of constituent
 /// \param is_tracer [in] boolean - true if this is a tracer
 //
-void   CTransportModel::AddConstituent(string name, bool is_tracer)
+void   CTransportModel::AddConstituent(string name, bool is_tracer,bool is_passive)
 {
   constituent *pConstit=new constituent;
 
   //Initialize constituent members
   pConstit->name=name;
   pConstit->is_tracer=is_tracer;
+  pConstit->can_evaporate=false; //default behaviour - evaporation impossible for most contaminants
   if (is_tracer){
     pConstit->can_evaporate=true;
   }
+  pConstit->is_passive=false;
   pConstit->initial_mass=0;
   pConstit->cumul_input =0;
   pConstit->cumul_output=0;

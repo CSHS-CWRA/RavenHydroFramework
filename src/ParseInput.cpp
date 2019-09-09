@@ -2563,13 +2563,21 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     case (300)://----------------------------------------------
     {/*:Transport
-       :Transport [string constituent_name] [string units]*/
+       :Transport [string constituent_name] {PASSIVE} {TRACER}*/
       if (Options.noisy){cout <<"Transport constituent"<<endl;}
 
       ExitGracefullyIf(!transprepared,
                        ":Transport command must be after :EndHydrologicProcesses command in .rvi file", BAD_DATA);
-
-      pModel->GetTransportModel()->AddConstituent(s[1],false);
+      bool is_passive(false),is_tracer(false);
+      if(Len>=3) {
+        if(!strcmp(s[2],"PASSIVE")) { is_passive=true; }
+        if(!strcmp(s[2],"TRACER" )) { is_tracer =true; }
+      }
+      if(Len>=4) {
+        if(!strcmp(s[3],"PASSIVE")) { is_passive=true; }
+        if(!strcmp(s[3],"TRACER" )) { is_tracer =true; }
+      }
+      pModel->GetTransportModel()->AddConstituent(s[1],is_tracer,is_passive);
 
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);

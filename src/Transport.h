@@ -14,6 +14,7 @@ struct constituent
 
   bool     is_tracer;     ///< true if tracer (actually unitless)
   bool     can_evaporate; ///< true if constituent can be trasported through evaporation
+  bool     is_passive;    ///< doesn't transport via advection
 
   double   decay_rate;    ///< independent linear decay rate of constituent (happens everywhere; not environmentally mediated) [1/d]
 
@@ -141,6 +142,7 @@ public:/*-------------------------------------------------------*/
   double GetOutflowConcentration (const int p, const int c) const;
   double GetIntegratedMassOutflow(const int p, const int c,const double &tstep) const;
 
+  bool   ConstituentIsPassive   (const int c) const;
   double GetDecayCoefficient    (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
   double GetRetardationFactor   (const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
   double GetTransformCoefficient(const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
@@ -150,7 +152,7 @@ public:/*-------------------------------------------------------*/
   double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const;
 
   //Manipulators
-  void   AddConstituent(string name, bool is_tracer);
+  void   AddConstituent         (string name, bool is_tracer, bool is_passive);
   void   AddDirichletCompartment(const string const_name, const int i_stor, const int kk, const double Cs);
   void   AddDirichletTimeSeries (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
   void   AddInfluxSource        (const string const_name, const int i_stor, const int kk, const double flux);

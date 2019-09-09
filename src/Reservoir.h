@@ -50,6 +50,7 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pMinStageFlowTS;     ///< Time series of flows when below minimum stage [m3/s] (or NULL for no minimum)
   CTimeSeries *_pTargetStageTS;      ///< Time series of target stage [m] (or NULL for no target)
   CTimeSeries *_pMaxQIncreaseTS;     ///< Time series maximum rate of flow increase [m3/s/d] (or NULL for no maximum)
+  CTimeSeries *_pMaxQDecreaseTS;     ///< Time series maximum rate of flow decrease [m3/s/d] (or NULL for no maximum)
   CTimeSeries *_pDroughtLineTS;      ///< Time series of drought line stage [m] (or NULL if none exists)
   CTimeSeries *_pQminTS;             ///< Time series of minimum flow constraint [m3/s] (or NULL for no minimum)
   CTimeSeries *_pQdownTS;            ///< Time series of downstream flow soft target [m3/s] (or NULL for none)
@@ -134,6 +135,7 @@ public:/*-------------------------------------------------------*/
   void              AddMinStageFlowTimeSeries(CTimeSeries *pQ);
   void              AddTargetStageTimeSeries (CTimeSeries *pTS);
   void              AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+  void              AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta);
   void              AddDroughtLineTimeSeries (CTimeSeries *pTS);
   void              AddMinQTimeSeries        (CTimeSeries *pQmin);
   void              AddDownstreamTargetQ     (CTimeSeries *pQ, const CSubBasin *pSB, const double &range);

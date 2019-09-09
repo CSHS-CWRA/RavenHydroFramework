@@ -141,24 +141,24 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirMaxQDelta"    )){code=58; }
     else if  (!strcmp(s[0],":BasinInflowHydrograph2")){code=59; }
     else if  (!strcmp(s[0],":ReservoirMinFlow"      )){code=60; }
-    else if  (!strcmp(s[0],":ReservoirDownstreamFlow")){code=61; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamFlow")){code=61;}
+    else if  (!strcmp(s[0],":ReservoirMaxQDecrease" )){code=62; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
     else if  (!strcmp(s[0],":MonthlyEvapFactor"     )){code=71; }
     else if  (!strcmp(s[0],":MonthlyMinTemperature" )){code=72; }
     else if  (!strcmp(s[0],":MonthlyMaxTemperature" )){code=73; }
-
     else if  (!strcmp(s[0],":MonthlyEvapFactors"    )){code=74; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporations")){code=74; }
-    else if  (!strcmp(s[0],":MonthlyMaxTemperatures" )){code=75; }
-    else if  (!strcmp(s[0],":MonthlyMinTemperatures" )){code=76; }
-    else if  (!strcmp(s[0],":MonthlyAveTemperatures" )){code=77; }
+    else if  (!strcmp(s[0],":MonthlyMaxTemperatures")){code=75; }
+    else if  (!strcmp(s[0],":MonthlyMinTemperatures")){code=76; }
+    else if  (!strcmp(s[0],":MonthlyAveTemperatures")){code=77; }
     //-----------------CONTROLS ---------------------------------
-    else if  (!strcmp(s[0],":OverrideStreamflow"      )){code=100; }
+    else if  (!strcmp(s[0],":OverrideStreamflow"    )){code=100; }
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":ConcentrationTimeSeries")){code=300; }
-    else if  (!strcmp(s[0],":MassFluxTimeSeries     ")){code=300; }
+    else if  (!strcmp(s[0],":MassFluxTimeSeries"    )){code=300; }
     //---------GRIDDED INPUT (lat,lon,time)---------------------
     else if  (!strcmp(s[0],":GriddedForcing"          )){code=400;}
     else if  (!strcmp(s[0],":ForcingType"             )){code=401;}
@@ -1015,6 +1015,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       {
         string warn;
         warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model, cannot set downstream flow target";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (62): //---------------------------------------------
+    {/*:ReservoirMaxQDecrease {long SBID}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qdelta} x nMeasurements [m3/s/d]
+     :EndReservoirMaxQDecrease
+     */
+      if(Options.noisy) { cout <<"Reservoir Maximum Discharge Decrease Time Series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"QDeltaDec_"+to_string(SBID),to_string(SBID),Options);
+      if(pSB!=NULL) {
+        pSB->AddMaxQDecreaseTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirMaxQDecrease Subbasin "+to_string(SBID)+" not in model, cannot set maximum Qdelta";
         WriteWarning(warn,Options.noisy);
       }
       break;

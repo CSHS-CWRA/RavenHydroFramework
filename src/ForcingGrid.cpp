@@ -1129,7 +1129,6 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     if ( _is_3D ) {
       int irow,icol;
-      
       if (_dim_order == 1) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
@@ -1164,8 +1163,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-		        CheckValue3D(aTmp3D[it][icol][irow], missval, it, icol, irow);   // check if value to read in equals "missing_value"
-		        CheckValue3D(aTmp3D[it][icol][irow], fillval, it, icol, irow);   // check if value to read in equals "_FillValue"
+            if (!((Options.deltaresFEWS) && (it==0))) {
+              CheckValue3D(aTmp3D[it][icol][irow], missval, it, icol, irow);   // check if value to read in equals "missing_value"
+              CheckValue3D(aTmp3D[it][icol][irow], fillval, it, icol, irow);   // check if value to read in equals "_FillValue"
+              //cout<<aTmp3D[it][icol][irow]<<endl;
+            }
             _aVal[it][ic]=_LinTrans_a*aTmp3D[it][icol][irow]+_LinTrans_b;
           }
         }

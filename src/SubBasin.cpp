@@ -654,6 +654,19 @@ void CSubBasin::AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta)
   }
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Adds maximum flow decrease time series 
+/// \param *pQ maximum flow decrease time series [m3/s/d]
+//
+void CSubBasin::AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta)
+{
+  if(_pReservoir!=NULL) {
+    _pReservoir->AddMaxQDecreaseTimeSeries(pQdelta);
+  }
+  else {
+    WriteWarning("Reservoir maximum flow decrease time series specified for basin without reservoir",false);
+  }
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Adds overridden flow time series
 /// \param *pQ overridden flow time series [m3/s] to be added
 //

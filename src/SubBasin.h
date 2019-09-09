@@ -176,6 +176,7 @@ public:/*-------------------------------------------------------*/
   void       AddMinStageFlowTimeSeries(CTimeSeries *pQ);
   void        AddTargetStageTimeSeries(CTimeSeries *pTS);
   void       AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+  void       AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta);
   void            AddMinQTimeSeries   (CTimeSeries *pQmin);
   void            AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB,const double &range);
   void            ResetReferenceFlow  (const double    &Qreference);

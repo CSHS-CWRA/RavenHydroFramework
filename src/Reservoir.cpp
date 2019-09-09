@@ -36,7 +36,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _pMinStageTS=NULL;     
   _pMinStageFlowTS=NULL;  
   _pTargetStageTS=NULL;
-  _pMaxQIncreaseTS=NULL; 
+  _pMaxQIncreaseTS=NULL;
+  _pMaxQDecreaseTS=NULL;
   _pDroughtLineTS=NULL;
   _pQminTS=NULL;
   _pQdownTS=NULL;
@@ -311,6 +312,7 @@ CReservoir::~CReservoir()
   delete _pMinStageFlowTS;_pMinStageFlowTS=NULL;  
   delete _pTargetStageTS;_pTargetStageTS=NULL;
   delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL; 
+  delete _pMaxQDecreaseTS;_pMaxQDecreaseTS=NULL; 
   delete _pDroughtLineTS; _pDroughtLineTS=NULL;
   delete _pQminTS; _pQminTS=NULL;
   delete _pQdownTS; _pQdownTS=NULL;
@@ -417,6 +419,10 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pMaxQIncreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
+  if(_pMaxQDecreaseTS!=NULL)
+  {
+    _pMaxQDecreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
+  }
   if(_pDroughtLineTS!=NULL)
   {
     _pDroughtLineTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
@@ -514,6 +520,15 @@ void    CReservoir::AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta){
   ExitGracefullyIf(_pMaxQIncreaseTS!=NULL,
                    "CReservoir::AddMaxQIncreaseTimeSeries: only one maximum flow increase time series may be specified per reservoir",BAD_DATA_WARN);
   _pMaxQIncreaseTS=pQdelta;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds maximum flow decrease time series 
+/// \param *pQ maximum flow decrease time series [m3/s/d]
+//
+void    CReservoir::AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta) {
+  ExitGracefullyIf(_pMaxQDecreaseTS!=NULL,
+    "CReservoir::AddMaxQDecreaseTimeSeries: only one maximum flow decrease time series may be specified per reservoir",BAD_DATA_WARN);
+  _pMaxQDecreaseTS=pQdelta;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds minimum flow  time series 
@@ -701,19 +716,22 @@ void  CReservoir::SetMinStage(const double &min_z)
 //
 double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const double &tstep, const time_struct &tt, double &res_outflow) const
 {
-  double stage_new=0;
   const double RES_TOLERANCE=0.0001; //[m]
-  const int RES_MAXITER=100;
+  const int    RES_MAXITER  =100;
+  
+  double stage_new  =0.0;
+
   double stage_limit=ALMOST_INF;
-  double weir_adj=0.0;
-  double Qoverride=RAV_BLANK_DATA;
-  double min_stage=-ALMOST_INF;
-  double Qminstage=0.0;
-  double Qmin=0.0;
-  double Qtarget=RAV_BLANK_DATA;
-  double htarget=RAV_BLANK_DATA;
-  double Qdelta=ALMOST_INF;
-  double Qshift=RAV_BLANK_DATA;
+  double weir_adj   =0.0;
+  double Qoverride  =RAV_BLANK_DATA;
+  double min_stage  =-ALMOST_INF;
+  double Qminstage  =0.0;
+  double Qmin       =0.0;
+  double Qtarget    =RAV_BLANK_DATA;
+  double htarget    =RAV_BLANK_DATA;
+  double Qdelta     =ALMOST_INF;
+  double Qdelta_dec =ALMOST_INF;
+  double Qshift     =RAV_BLANK_DATA;
 
   int nn=(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
 
@@ -724,6 +742,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pMinStageFlowTS!=NULL){ Qminstage  =_pMinStageFlowTS->GetSampledValue(nn);}  
   if(_pTargetStageTS!=NULL) { htarget    =_pTargetStageTS-> GetSampledValue(nn);}
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
+  if(_pMaxQDecreaseTS!=NULL){ Qdelta_dec =_pMaxQDecreaseTS->GetSampledValue(nn);}
   if(_pQminTS!=NULL)        { Qmin       =_pQminTS->        GetSampledValue(nn);}
   if(_pQdownTS!=NULL)       { 
     double Qdown_targ      =_pQminTS->GetSampledValue(nn); 
@@ -825,6 +844,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     res_outflow=GetOutflow(stage_new,weir_adj);
 
     //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
+    //---------------------------------------------------------------------------------------------
     double w=CGlobalParams::GetParams()->reservoir_relax;
     if(htarget!=RAV_BLANK_DATA) {
       double V_targ=GetVolume(htarget);
@@ -853,14 +873,19 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       else if(Qtarget!=RAV_BLANK_DATA)
       {
         if((Qtarget-_Qout)/tstep>Qdelta) {
-          Qtarget=_Qout+Qdelta*tstep; //maximum flow change
-          constraint=4; //max flow change
+          Qtarget=_Qout+Qdelta*tstep; //maximum flow increase
+          constraint=4; //max flow increase
+        }
+        else if((Qtarget-_Qout)/tstep<-Qdelta_dec) {
+          Qtarget=_Qout-Qdelta_dec*tstep; //maximum flow decrease
+          constraint=9; //max flow decrease
         }
         Qoverride=(Qtarget+_Qout)/2.0;//converts from end of time step to average over timestep
       }
     }
         
     //special correction - flow overridden or minimum flow violated - minimum flow takes priority
+    //---------------------------------------------------------------------------------------------
     if ((Qoverride!=RAV_BLANK_DATA) || (res_outflow<Qmin))
     {         
       if(Qoverride!=RAV_BLANK_DATA) {
@@ -890,6 +915,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 
 
     //special correction : exceeded limiting stage; fix stage and re-calculate reservoir outflow
+    //---------------------------------------------------------------------------------------------
     if(stage_new>stage_limit) {
       constraint=6; //max stage exceedance
       stage_new=stage_limit;
