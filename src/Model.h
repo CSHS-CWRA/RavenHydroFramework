@@ -276,6 +276,7 @@ public:/*-------------------------------------------------------*/
   int               GetSubBasinIndex                  (const long ID) const;
   int               GetGaugeIndexFromName             (const string name) const;
   int               GetForcingGridIndexFromType       (const forcing_type &ty) const;
+  const CSubBasin **GetUpstreamSubbasins              (const int SBID, int &nUpstream) const;
 
   double            GetWatershedArea                  () const;
   bool              IsInHRUGroup                      (const int k,

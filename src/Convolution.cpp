@@ -257,7 +257,7 @@ void   CmvConvolution::GetRatesOfChange( const double                   *state_v
 
   //time shift convolution history
   double move;
-  for (int i=N-2; i>=0; i--)
+  for (i=N-2; i>=0; i--)
   {
     move=S[i];
     rates[MAX_CONVOL_STORES+i]=move/tstep;
@@ -268,7 +268,7 @@ void   CmvConvolution::GetRatesOfChange( const double                   *state_v
 
   //update total convolution storage:
   double TS_new=0;
-  for (int i=1; i<N; i++){TS_new+=S[i];}
+  for (i=1; i<N; i++){TS_new+=S[i];}
   rates[2*MAX_CONVOL_STORES-1]=(TS_new-TS_old)/tstep;
   //cout<<TS_old<<" "<<TS_new<<endl;
   //cout<<"* ----------------------"<<endl;

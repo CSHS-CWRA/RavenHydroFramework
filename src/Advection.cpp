@@ -143,8 +143,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   for (q=0;q<nAdvConnections;q++)
   {
     rates[q]=0.0;
-    int iFromWater=pTransModel->GetFromWaterIndex(q);
-    int iToWater  =pTransModel->GetToWaterIndex  (q);
+    iFromWater=pTransModel->GetFromWaterIndex(q);
+    iToWater  =pTransModel->GetToWaterIndex  (q);
 
     Rf=1.0;
     //Rf=pTransModel->GetRetardationFactor(constit_ind,pHRU,iFromWater,iToWater);

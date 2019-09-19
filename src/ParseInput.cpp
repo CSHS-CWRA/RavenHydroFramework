@@ -265,9 +265,11 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":JulianStartDay"            )){code=2;  }
     else if  (!strcmp(s[0],":JulianStartYear"           )){code=3;  }
     else if  (!strcmp(s[0],":Duration"                  )){code=4;  }
+
     else if  (!strcmp(s[0],":Method"                    )){code=5;  }
     else if  (!strcmp(s[0],":NumericalMethod"           )){code=5;  }
     else if  (!strcmp(s[0],":TimeStep"                  )){code=6;  }
+
     else if  (!strcmp(s[0],":Routing"                   )){code=8;  }
     else if  (!strcmp(s[0],":Evaporation"               )){code=9;  }
     else if  (!strcmp(s[0],":InterpolationMethod"       )){code=10; }
@@ -591,11 +593,11 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[2],"PET_MAKKINK_1957"      )) { Options.evap_infill =PET_MAKKINK_1957; }
         else if (!strcmp(s[2],"PET_PRIESTLEY_TAYLOR"  )) { Options.evap_infill =PET_PRIESTLEY_TAYLOR; }
         else if (!strcmp(s[2],"PET_MONTHLY_FACTOR"    )) { Options.evap_infill =PET_MONTHLY_FACTOR; }
-        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )) { Options.evap_infill =PET_PENMAN_SIMPLE33;}
-        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )) { Options.evap_infill =PET_PENMAN_SIMPLE39;}
-        else if (!strcmp(s[1],"PET_GRANGERGRAY"       )) { Options.evap_infill =PET_GRANGERGRAY;}
-        else if (!strcmp(s[1],"PET_MOHYSE"            )) { Options.evap_infill =PET_MOHYSE;}
-        else if (!strcmp(s[1],"PET_OUDIN"             )) { Options.evap_infill =PET_OUDIN;}
+        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE33"   )) { Options.evap_infill =PET_PENMAN_SIMPLE33;}
+        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE39"   )) { Options.evap_infill =PET_PENMAN_SIMPLE39;}
+        else if (!strcmp(s[2],"PET_GRANGERGRAY"       )) { Options.evap_infill =PET_GRANGERGRAY;}
+        else if (!strcmp(s[2],"PET_MOHYSE"            )) { Options.evap_infill =PET_MOHYSE;}
+        else if (!strcmp(s[2],"PET_OUDIN"             )) { Options.evap_infill =PET_OUDIN;}
         else { notspecified=true; }
       }
       if((Options.evaporation==PET_DATA) && (notspecified)) {
@@ -683,11 +685,11 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[2],"PET_MAKKINK_1957"      )) { Options.ow_evap_infill =PET_MAKKINK_1957; }
         else if (!strcmp(s[2],"PET_PRIESTLEY_TAYLOR"  )) { Options.ow_evap_infill =PET_PRIESTLEY_TAYLOR; }
         else if (!strcmp(s[2],"PET_MONTHLY_FACTOR"    )) { Options.ow_evap_infill =PET_MONTHLY_FACTOR; }
-        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE33;}
-        else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE39;}
-        else if (!strcmp(s[1],"PET_GRANGERGRAY"       )) { Options.ow_evap_infill =PET_GRANGERGRAY;}
-        else if (!strcmp(s[1],"PET_MOHYSE"            )) { Options.ow_evap_infill =PET_MOHYSE;}
-        else if (!strcmp(s[1],"PET_OUDIN"             )) { Options.ow_evap_infill =PET_OUDIN;}
+        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE33"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE33;}
+        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE39"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE39;}
+        else if (!strcmp(s[2],"PET_GRANGERGRAY"       )) { Options.ow_evap_infill =PET_GRANGERGRAY;}
+        else if (!strcmp(s[2],"PET_MOHYSE"            )) { Options.ow_evap_infill =PET_MOHYSE;}
+        else if (!strcmp(s[2],"PET_OUDIN"             )) { Options.ow_evap_infill =PET_OUDIN;}
         else{notspecified=true;}
       }
       if ((Options.ow_evaporation==PET_DATA) && (notspecified)) {

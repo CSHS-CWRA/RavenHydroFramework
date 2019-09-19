@@ -51,7 +51,7 @@ CChannelXSect::CChannelXSect(const string  name,
     }
   }
   _min_stage_elev = aElev[0];
-  for (int i=1;i<nSurveyPts;i++){
+  for (i=1;i<nSurveyPts;i++){
     _min_stage_elev=min(_min_stage_elev,aElev[i]);
   }
   N=20; //Default

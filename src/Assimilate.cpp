@@ -90,7 +90,7 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   double mass_added=0;
   double scalefact=1.0;
   double distfact=CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] //TMP DEBUG
-  for(int p=0; p<_nSubBasins; p++)
+  for(p=0; p<_nSubBasins; p++)
   {
     scalefact =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p]);
     //if(tt.model_time>(t_observationsOFF-1.0)) { cout<<tt.model_time<<" p:"<<p<<" "<<scalefact<<" "<<_aDAlength[p]<<" "<<_aDAtimesince[p]<<endl; }

@@ -1403,7 +1403,7 @@ double TriCumDist(const double &t, const double &tc, const double &tp)
     return 0.5*m*t*t;
   }
   else if (t<=tc){
-    double m=-b/(tc-tp);
+    m=-b/(tc-tp);
     return tp/tc+b*(t-tp)+0.5*m*(t-tp)*(t-tp);
   }
   else{

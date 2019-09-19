@@ -441,6 +441,44 @@ int         CModel::GetSubBasinIndex(const long SBID) const
   }
   return INDEX_NOT_FOUND;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns array of pointers to subbasins upstream of subbasin SBID, including that subbasin
+///
+/// \param SBID [in] Integer subbasin ID
+/// \param nUpstream [out] size of array of pointers of subbasins
+/// \return array of pointers to subbasins upstream of subbasin SBID, including that subbasin
+//
+const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) const
+{
+  static const CSubBasin **pSBs=new const CSubBasin *[_nSubBasins];
+  bool *isUpstr=new bool [_nSubBasins];
+  for(int p=0;p<_nSubBasins;p++) { isUpstr[p]=false; }
+  isUpstr[GetSubBasinIndex(SBID)]=true;
+
+  const int MAX_ITER=1000;
+  int numUpstr=0;
+  int numUpstrOld=1;
+  int iter=0;
+  do
+  {
+    numUpstrOld=numUpstr;
+    for(int p=0;p<_nSubBasins;p++) {
+      if(isUpstr[_aDownstreamInds[p]]==true) { isUpstr[p]=true; }
+    }
+    numUpstr=0;
+    for(int p=0;p<_nSubBasins;p++) {
+      if(isUpstr[p]==true) { numUpstr++; }
+    }
+    iter++;
+  } while ((iter<MAX_ITER) && (numUpstr!=numUpstrOld));
+  //cout<<"upstream basin calculations iterations = "<<iter<<" "<<numUpstr<<" basins found upstream of basin "<<SBID<<endl;
+  nUpstream=numUpstr;
+  int count=0;
+  for(int p=0;p<_nSubBasins;p++) {
+    if (isUpstr[p]==true){pSBs[count]=_pSubBasins[p];count++; }
+  }
+  return pSBs;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns hydrologic process type corresponding to passed index

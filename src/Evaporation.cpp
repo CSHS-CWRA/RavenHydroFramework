@@ -443,8 +443,10 @@ double CModel::EstimatePET(const force_struct &F,
     break;
   }
   case (PET_GRANGERGRAY):
+  {
     PET=EvapGrangerGray(&F,pHRU);
     break;
+  }
   default:
   {
     ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;
