@@ -297,8 +297,9 @@ double CModel::EstimatePET(const force_struct &F,
   }
   case(PET_DATA):
   {
-    PET=F.PET; 
-
+    if(open_water) {PET=F.OW_PET;}
+    else           {PET=F.PET;   }
+    
     //Handle blank data
     if (PET==RAV_BLANK_DATA) {
       if(open_water) {

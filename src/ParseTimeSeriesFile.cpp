@@ -143,6 +143,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirMinFlow"      )){code=60; }
     else if  (!strcmp(s[0],":ReservoirDownstreamFlow")){code=61;}
     else if  (!strcmp(s[0],":ReservoirMaxQDecrease" )){code=62; }
+    else if  (!strcmp(s[0],":IrrigationDemand"      )){code=63; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -1039,6 +1041,115 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         string warn;
         warn=":ReservoirMaxQDecrease Subbasin "+to_string(SBID)+" not in model, cannot set maximum Qdelta";
         WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (63): //---------------------------------------------
+    {/*:IrrigationDemand {long Basincode}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qin} x nMeasurements [m3/s]
+     :EndBasinInflowHydrograph2
+     */
+      if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,false,"IrrigationDemand_"+to_string(SBID),to_string(SBID),Options);
+      if(pSB!=NULL) {
+        pSB->AddIrrigationDemand(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation demand time series";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (64): //---------------------------------------------
+    {/*:ReservoirDownstreamDemand {long downstream SBID} {long reservoir SBID} {double percent_met}*/
+      if(Options.noisy) { cout <<"Reservoir downstream demand"<<endl; }
+      long SBID=DOESNT_EXIST;
+      long SBIDres=DOESNT_EXIST;
+      CSubBasin *pSB,*pSBres;
+      double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
+      if(Len>=4) { 
+        SBID=s_to_l(s[1]); 
+        double tmp=AutoOrDouble(s[2]);
+        if(tmp==AUTO_COMPUTE) { SBIDres=AUTO_COMPUTE_LONG; }
+        else                  { SBIDres=s_to_l(s[2]); }
+      }
+      pSB=pModel->GetSubBasinByID(SBID);
+      if(pSB==NULL) {
+        string warn;
+        warn=":ReservoirDownstreamDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
+        WriteWarning(warn,Options.noisy);
+      }
+      else 
+      {
+        if(SBIDres==AUTO_COMPUTE_LONG)
+        {
+          if (Options.res_demand_alloc==DEMANDBY_CONTRIB_AREA)
+          {
+            int nUpstr=0;
+            const CSubBasin **pUpstr = pModel->GetUpstreamSubbasins(SBID,nUpstr);
+            double Atot=0;
+            for(int p=0;p<nUpstr;p++) {
+              if(pUpstr[p]->GetReservoir()!=NULL) {
+                Atot+=pUpstr[p]->GetDrainageArea();
+              }
+            }
+            double area;
+
+            if(Atot>0.0) { //reservoirs exist upstream
+              for(int p=0;p<nUpstr;p++) {
+                if(pUpstr[p]->GetReservoir()!=NULL) {
+                  area=pUpstr[p]->GetDrainageArea();
+                  pSBres=pModel->GetSubBasinByID(pUpstr[p]->GetID());
+                  pSBres->AddReservoirDownstrDemand(pSB,area/Atot*mult);
+                }
+              }
+            }
+          }
+          //else if(Options.res_demand_alloc==DEMANDBY_SURFACE_AREA) {
+
+          //}
+          else if(Options.res_demand_alloc==DEMANDBY_MAX_CAPACITY) {
+            int nUpstr=0;
+            const CSubBasin **pUpstr = pModel->GetUpstreamSubbasins(SBID,nUpstr);
+            double Vtot=0;
+            for(int p=0;p<nUpstr;p++) {
+              if(pUpstr[p]->GetReservoir()!=NULL) {
+                Vtot+=pUpstr[p]->GetReservoir()->GetMaxCapacity();
+              }
+            }
+            double volume;
+
+            if(Vtot>0.0) { //reservoirs exist upstream
+              for(int p=0;p<nUpstr;p++) {
+                if(pUpstr[p]->GetReservoir()!=NULL) {
+                  volume=pUpstr[p]->GetReservoir()->GetMaxCapacity();
+                  pSBres=pModel->GetSubBasinByID(pUpstr[p]->GetID());
+                  pSBres->AddReservoirDownstrDemand(pSB,volume/Vtot*mult);
+                }
+              }
+            }
+          }
+        }
+        else 
+        { //single connection
+          pSBres=pModel->GetSubBasinByID(SBIDres);
+          if(pSBres!=NULL) {
+            pSBres->AddReservoirDownstrDemand(pSB,s_to_d(s[3])*mult);
+          }
+          else
+          {
+            string warn;
+            warn=":ReservoirDownstreamDemand: Reservoir subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
+            WriteWarning(warn,Options.noisy);
+          }
+        }
       }
       break;
     }

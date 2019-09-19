@@ -162,6 +162,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.routing                 =ROUTE_STORAGECOEFF;
   Options.catchment_routing       =ROUTE_DUMP;
   Options.distrib_lat_inflow      =false;
+  Options.res_demand_alloc        =DEMANDBY_CONTRIB_AREA;
 
   Options.interpolation           =INTERP_NEAREST_NEIGHBOR;
   Options.interp_file             ="";
@@ -427,6 +428,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Decay"                     )){code=305;}
     else if  (!strcmp(s[0],":Advection"                 )){code=306;}
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
+    //...
+    //-------------------WATER MANAGEMENT---------------------
+    else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
 
     ExitGracefullyIf((code>200) && (code<300) && (pModel==NULL),
                      "ParseMainInputFile: :HydrologicProcesses AND :SoilModel commands must be called before hydrologic processes are specified",BAD_DATA);
@@ -2720,6 +2724,20 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       pMover=new CmvTransformation(s[2],s[3],t_type,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case(400):  //----------------------------------------------
+    {/*Reservoir demand allocation method
+     :ReservoirDemandAllocation [string method]*/
+      if(Options.noisy) { cout <<"Reservoir Demand Allocation Method"<<endl; }
+      if(Len<2) { ImproperFormatWarning(":ReservoirDemandAllocation",p,Options.noisy); break; }
+      if     (!strcmp(s[1],"DEMANDBY_CONTRIB_AREA"    )) { Options.res_demand_alloc =DEMANDBY_CONTRIB_AREA; }
+      else if(!strcmp(s[1],"DEMANDBY_MAX_CAPACITY"    )) { Options.res_demand_alloc =DEMANDBY_MAX_CAPACITY; }
+      //else if(!strcmp(s[1],"DEMANDBY_STOR_DEFICIT"    )) { Options.res_demand_alloc =DEMANDBY_STOR_DEFICIT; }
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized Reservoir Demand Allocation Method",BAD_DATA_WARN); break;
+      }
       break;
     }
     default://----------------------------------------------

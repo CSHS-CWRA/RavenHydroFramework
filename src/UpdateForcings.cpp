@@ -109,24 +109,24 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].PET_month_ave   =_pGauges[g]->GetMonthlyAvePET   (mo);
 
     //if (Options.uses_full_data)
-    {
-      // \todo [optimize] should add Options.uses_full_data to be calculated if LW,SW,etc. methods=USE_DATA or otherwise need data streams
-      Fg[g].LW_radia_net    =_pGauges[g]->GetForcingValue    (F_LW_RADIA_NET,nn);
-      Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
-      Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
-      Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
-      Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
-      Fg[g].SW_radia_unc    =Fg[g].SW_radia;
+    //{ // \todo [optimize] should add Options.uses_full_data to be calculated if LW,SW,etc. methods=USE_DATA or otherwise need data streams
+    Fg[g].LW_radia_net    =_pGauges[g]->GetForcingValue    (F_LW_RADIA_NET,nn);
+    Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
+    Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
+    Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
+    Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
+    Fg[g].SW_radia_unc    =Fg[g].SW_radia;
 
-      Fg[g].PET             =_pGauges[g]->GetForcingValue    (F_PET,nn);
-      Fg[g].potential_melt  =_pGauges[g]->GetForcingValue    (F_POTENTIAL_MELT,nn);
+    Fg[g].PET             =_pGauges[g]->GetForcingValue    (F_PET,nn);
+    Fg[g].OW_PET          =_pGauges[g]->GetForcingValue    (F_OW_PET,nn);
+    Fg[g].potential_melt  =_pGauges[g]->GetForcingValue    (F_POTENTIAL_MELT,nn);
 
-      Fg[g].air_pres        =_pGauges[g]->GetForcingValue    (F_AIR_PRES,nn);
-      Fg[g].air_dens        =_pGauges[g]->GetForcingValue    (F_AIR_DENS,nn);
-      Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
-      Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
-      Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
-    }
+    Fg[g].air_pres        =_pGauges[g]->GetForcingValue    (F_AIR_PRES,nn);
+    Fg[g].air_dens        =_pGauges[g]->GetForcingValue    (F_AIR_DENS,nn);
+    Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
+    Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
+    Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
+    //}
 
     if(!(recharge_gridded)){
       Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
@@ -431,7 +431,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  PET Calculations
       //-------------------------------------------------------------------
       // last but not least - needs all of the forcing params calculated above
-      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation,Options,tt,false);
+
+      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation   ,Options,tt,false);
       F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.ow_evaporation,Options,tt,true);
 
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);

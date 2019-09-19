@@ -283,6 +283,12 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   {
     G.assim_time_decay=0.2; //[1/d]
   }
+  autocalc=SetCalculableValue(G.reservoir_demand_mult,Gtmp.reservoir_demand_mult,Gtemplate.reservoir_demand_mult);
+  if(autocalc)
+  {
+    G.reservoir_demand_mult=1.0; //default
+  }
+  
 
   //Model-specific global parameters - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
@@ -337,11 +343,12 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   }
   */
 
-  g.max_reach_seglength =DEFAULT_MAX_REACHLENGTH;//defaults to one segment per reach 
-  g.reservoir_relax     =0.4;
-  g.assim_upstream_decay=0.01;
-  g.assim_time_decay    =0.2;
-  g.assimilation_fact   =1.0;
+  g.max_reach_seglength  =DEFAULT_MAX_REACHLENGTH;//defaults to one segment per reach 
+  g.reservoir_relax      =0.4;
+  g.assim_upstream_decay =0.01;
+  g.assim_time_decay     =0.2;
+  g.assimilation_fact    =1.0;
+  g.reservoir_demand_mult=1.0;
 
   //calculable /estimable parameters
   g.snow_SWI            =DefaultParameterValue(is_template,true);
@@ -498,6 +505,7 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("ASSIMILATION_FACT"   )){G.assimilation_fact=value; }
   else if (!name.compare("ASSIM_UPSTREAM_DECAY")){G.assim_upstream_decay=value; }
   else if (!name.compare("ASSIM_TIME_DECAY"    )){G.assim_time_decay=value; }
+  else if (!name.compare("RESERVOIR_DEMAND_MULT")){G.reservoir_demand_mult=value; }
   else{
     WriteWarning("CGlobalParams::SetGlobalProperty: Unrecognized/invalid global parameter name ("+name+") in .rvp file",false);
 
@@ -590,6 +598,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("ASSIMILATION_FACT"   )){return G.assimilation_fact; }
   else if (!name.compare("ASSIM_UPSTREAM_DECAY")){return G.assim_upstream_decay; }
   else if (!name.compare("ASSIM_TIME_DECAY"    )){return G.assim_time_decay; }
+  else if (!name.compare("RESERVOIR_DEMAND_MULT")) {return G.reservoir_demand_mult; }
   else{
     string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);

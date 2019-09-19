@@ -418,10 +418,12 @@ void MassEnergyBalance( CModel            *pModel,
   }
   //Route water over timestep
   //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
+
   double down_Q;
+  double irr_Q;
   for (pp=0;pp<NB;pp++)
   {
-    p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index
+    p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index upstream to down
 
     pBasin=pModel->GetSubBasin(p);
     if(pBasin->IsEnabled())
@@ -438,6 +440,9 @@ void MassEnergyBalance( CModel            *pModel,
       down_Q=pBasin->GetDownstreamInflow(t+tstep);
       aQoutnew[pBasin->GetNumSegments()-1]+=down_Q;
 
+      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1]); 
+      aQoutnew[pBasin->GetNumSegments()-1]-=irr_Q;
+      
       pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,Options,tt,false);//actually updates flow values here
 
       pTo   =pModel->GetDownstreamBasin(p);

@@ -14,7 +14,7 @@
 #include "HydroUnits.h"
 #include "TimeSeries.h"
 #include "SubBasin.h"
-
+class CSubBasin;
 enum curve_function{
   CURVE_LINEAR,      ///< y =a*x
   CURVE_POWERLAW,    ///< y=a*x^b
@@ -25,6 +25,10 @@ enum curve_function{
 enum res_type{
   RESROUTE_STANDARD,
   RESROUTE_NONE
+};
+struct down_demand {
+  const CSubBasin *pDownSB;   ///< pointer to subbasin of downstream demand location
+  double percent;             ///< percentage of demand met by reservoir
 };
 class CSubBasin;
 /*****************************************************************
@@ -38,6 +42,7 @@ private:/*-------------------------------------------------------*/
   string       _name;                ///< reservoir name
   long         _SBID;                ///< subbasin ID
   res_type     _type;                ///< reservoir type (default: RESROUTE_STANDARD)
+  double       _max_capacity;        ///< maximum reservoir capacity [m3]
 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
@@ -56,7 +61,10 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pQdownTS;            ///< Time series of downstream flow soft target [m3/s] (or NULL for none)
   double       _QdownRange;          ///< range of acceptable target flows from Qdown [m3/s] (or zero for hard target)
   
-  const CSubBasin *_pQdownSB;            ///< pointer to downstream SubBasin (or NULL for none)
+  const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin (or NULL for none)
+
+  down_demand**_aDemands;            ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
+  int          _nDemands;            ///< size of downstream demand location array  
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -110,18 +118,20 @@ public:/*-------------------------------------------------------*/
 
   //Accessors
   long              GetSubbasinID            () const;
-  double            GetStorage               () const;//[m3]
-  double            GetOutflowRate           () const;//[m3/d]
-  double            GetReservoirLosses       (const double &tstep) const;//[m3]
-  double            GetReservoirEvapLosses   (const double &tstep) const;//[m3]
-  double            GetIntegratedOutflow     (const double &tstep) const;//[m3]
-  double            GetResStage              () const;//[m]
+  double            GetStorage               () const; //[m3]
+  double            GetOutflowRate           () const; //[m3/d]
+  double            GetReservoirLosses       (const double &tstep) const; //[m3]
+  double            GetReservoirEvapLosses   (const double &tstep) const; //[m3]
+  double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
+  double            GetResStage              () const; //[m]
   double            GetOldOutflowRate        () const; //[m3/d]
   double            GetOldStorage            () const; //[m3]
   int               GetHRUIndex              () const;
+  double            GetMaxCapacity           () const; //[m3]
 
   //Manipulators
   void              SetMinStage              (const double &min_z);
+  void              SetMaxCapacity           (const double &max_cap);
   void              Initialize               (const optStruct &Options);
   void              SetInitialFlow           (const double &Q,const double &Qlast,const double &t);
   void              SetInitialStage          (const double &ht, const double &ht_last);
@@ -139,6 +149,8 @@ public:/*-------------------------------------------------------*/
   void              AddDroughtLineTimeSeries (CTimeSeries *pTS);
   void              AddMinQTimeSeries        (CTimeSeries *pQmin);
   void              AddDownstreamTargetQ     (CTimeSeries *pQ, const CSubBasin *pSB, const double &range);
+
+  void              AddDownstreamDemand      (const CSubBasin *pSB,const double pct);
 
   void              SetHRU                   (const CHydroUnit *pHRU);
   void              DisableOutflow           ();

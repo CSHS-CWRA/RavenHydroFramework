@@ -226,6 +226,7 @@ const int     DOESNT_EXIST            =-1;                                      
 const int     INDEX_NOT_FOUND         =-2;                                      ///< return value for index not found
 
 const double  AUTO_COMPUTE            =-11111.1;                                ///< arbitrary value indicating that a parameter is to be autocalculated
+const long    AUTO_COMPUTE_LONG       =-11111;                                  ///< arbitrary value indicating that a parameter is to be autocalculated
 const double  NOT_SPECIFIED           =-33333.3;                                ///< arbitrary value indicating that a parameter has not been specified
 const double  USE_TEMPLATE_VALUE      =-55555.5;                                ///< arbitrary value indicating that a parameter should be set to the template value
 const double  NOT_NEEDED              =-66666.6;                                ///< arbitrary value indicating that a non-auto parameter is not needed for the current model configuration
@@ -600,7 +601,15 @@ enum snowcov_method
    SNOWCOV_NONE,       ///< no SDC
    SNOWCOV_LINEAR      ///< linear SDC characterized by threshold mean snow depth
 };
-
+////////////////////////////////////////////////////////////////////
+/// \brief Methods of handling upstream allocation of downstream irrigation demand
+//
+enum demand_alloc
+{
+  DEMANDBY_MAX_CAPACITY,     ///< downstream demand support weighted by maximum storage capacity of reservoir
+  DEMANDBY_CONTRIB_AREA,     ///< downstream demand support weighted by contributing area to reservoir
+  DEMANDBY_STOR_DEFICIT      ///< downstream demand support weighted inversely to storage deficit
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of performing monthly interpolations
@@ -883,9 +892,10 @@ struct optStruct
 
   precip_icept_method interception_factor;    ///< method for calculating canopy interception factor
 
-  routing_method   routing;                   ///< channel routing method
-  catchment_route  catchment_routing;         ///< catchment routing method
-  bool             distrib_lat_inflow;        ///< true if lateral inflow to a reach is distributed at all subsegment nodes; if false, deposited at downstream only
+  routing_method     routing;                 ///< channel routing method
+  catchment_route    catchment_routing;       ///< catchment routing method
+  bool               distrib_lat_inflow;      ///< true if lateral inflow to a reach is distributed at all subsegment nodes; if false, deposited at downstream only
+  demand_alloc       res_demand_alloc;        ///< method used for allocating upstream reservoir support to meet downstream irrigation demand
 
   monthly_interp   month_interp;              ///< means of interpolating monthly data
 

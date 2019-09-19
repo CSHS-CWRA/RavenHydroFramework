@@ -106,6 +106,8 @@ CSubBasin::CSubBasin(const long           Identifier,
   //initialized in SetInflowHydrograph
   _pInflowHydro  =NULL;
   _pInflowHydro2 =NULL;
+  _pIrrigDemand  =NULL;
+  _pEnviroMinFlow=NULL;
 
   _Q_ref     =Qreference;
   _c_ref     =AUTO_COMPUTE;
@@ -127,6 +129,10 @@ CSubBasin::~CSubBasin()
   delete [] _aQinHist;   _aQinHist   =NULL;
   delete [] _aUnitHydro; _aUnitHydro =NULL;
   delete [] _aRouteHydro;_aRouteHydro=NULL;
+  delete _pInflowHydro;  _pInflowHydro=NULL;
+  delete _pInflowHydro2; _pInflowHydro2=NULL;
+  delete _pIrrigDemand;  _pIrrigDemand=NULL;
+  delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
   delete _pReservoir;
 }
 /*****************************************************************
@@ -353,6 +359,55 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
   return _pInflowHydro2->GetValue(t);
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns specified irrigation/water use demand from subbasin at time t
+/// \param &t [in] Model time at which the demand from SB is to be determined
+/// \return specified demand from subbasin at time t
+//
+double CSubBasin::GetIrrigationDemand(const double &t) const
+{
+  if(_pIrrigDemand==NULL) { return 0.0; }
+  return _pIrrigDemand->GetValue(t);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns cumulative downstream specified irrigation demand, including from this subbasin
+/// \param &t [in] Model time at which the demand from SB is to be determined
+/// \return specified cumulative downstream demand (in [m3/s])from subbasin at time t
+//
+double CSubBasin::GetDownstreamIrrDemand(const double &t) const 
+{
+  double Qirr;
+  if(_pIrrigDemand==NULL) { Qirr=0.0; }
+  else                    { Qirr= _pIrrigDemand->GetValue(t);}
+  ExitGracefully("CSubBasin::GetDownstreamIrrDemand",STUB); return 0;
+  //if (_downstream_ID==DOESNT_EXIST)){ return Qirr; }
+  //else                              { return _pDownstreamSB->GetDownstreamIrrDemand(t)+Qirr; }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
+/// \param &t [in] Model time at which the outflow from SB is to be determined
+/// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
+/// \return irrigation demand outflow from subbasin at time t [m3/s]
+//
+double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
+{
+  if (_pIrrigDemand==NULL){return 0.0;}
+  double Qirr,unmet_demand;
+  double Qdemand=_pIrrigDemand->GetValue(t);
+
+  if (Qdemand==RAV_BLANK_DATA){Qdemand=0.0;}
+
+  double Qmin=0.0; 
+  if(_pEnviroMinFlow!=NULL) { Qmin=_pEnviroMinFlow->GetValue(t); if(Qmin==RAV_BLANK_DATA) { Qmin=0; } }
+  // could be fixed quantity, e.g., Q=20 m3/s 
+  //or (1.0-use_percentage)*Q (e.g.., if only 20% of flow can be used for demand
+
+  Qirr=min(max(Q-Qmin,0.0),Qdemand);
+
+  unmet_demand=(Qdemand-Qirr);
+  return Qirr;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns channel storage [m^3]
 /// \note Should only be called after _aQinHist has been updated by calling SetInflow
 /// \return Channel storage [m^3]
@@ -544,7 +599,7 @@ void CSubBasin::SetAsNonHeadwater()
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds inflow hydrograph
-/// \param *pInflow Inflow time series to be added
+/// \param *pInflow pointer to Inflow time series to be added
 //
 void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 {
@@ -554,13 +609,33 @@ void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds inflow hydrograph
-/// \param *pInflow Inflow time series to be added
+/// \param *pInflow pointer to Inflow time series to be added
 //
 void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
 {
   ExitGracefullyIf(_pInflowHydro2!=NULL,
                    "CSubBasin::AddDownstreamInflow: only one inflow hydrograph may be specified per basin",BAD_DATA);
   _pInflowHydro2=pInflow;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds inflow hydrograph
+/// \param *pInflow pointer to Inflow time series to be added
+//
+void    CSubBasin::AddIrrigationDemand(CTimeSeries *pOutflow)
+{
+  ExitGracefullyIf(_pIrrigDemand!=NULL,
+    "CSubBasin::AddIrrigationDemand: only one irrigation demand time series may be specified per basin",BAD_DATA);
+  _pIrrigDemand=pOutflow;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds minimum enviro flow time series
+/// \param *pInflow pointer to Inflow time series to be added
+//
+void    CSubBasin::AddEnviroMinFlow(CTimeSeries *pMinFlow)
+{
+  ExitGracefullyIf(_pEnviroMinFlow!=NULL,
+    "CSubBasin::AddEnviroMinFlow: only one irrigation demand time series may be specified per basin",BAD_DATA);
+  _pEnviroMinFlow=pMinFlow;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds reservoir extraction
@@ -702,9 +777,23 @@ void CSubBasin::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB,const 
     _pReservoir->AddDownstreamTargetQ(pQ,pSB,range);
   }
   else {
-    WriteWarning(" CSubBasin::AddDownstreamTargetQ: downstream flow time series specified for basin without reservoir",false);
+    WriteWarning(" CSubBasin::AddDownstreamTargetQ: downstream flow time series specified for basin without reservoir. Command ignored.",false);
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Adds reservoir downstream demand
+/// \param SBID subbasin ID of demand location or AUTO_COMPUTE_LONG
+/// \param pct percentage of flow demand to be satisfied by reservoir as fraction [0..1] or AUTO_COMPUTE
+//
+void  CSubBasin::AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct) {
+  if(_pReservoir!=NULL) {
+    _pReservoir->AddDownstreamDemand(pSB,pct);
+  }
+  else {
+    WriteWarning(" CSubBasin::AddReservoirDownstrDemand: downstream demand specified for basin without reservoir. Command ignored.",false);
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief sets (usually initial) reservoir flow rate & stage
 /// \param Q [in] flow rate [m3/s]
@@ -1026,7 +1115,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
   } //end if disabled
 
-  //initialize reservoir
+  //initialize reservoir & time series members
   //------------------------------------------------------------------------
   if (_pReservoir!=NULL){
     _pReservoir->Initialize(Options);
@@ -1037,8 +1126,14 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   if (_pInflowHydro2 != NULL){
     _pInflowHydro2->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
+  if(_pIrrigDemand != NULL) {
+    _pIrrigDemand->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
+  }
+  if(_pEnviroMinFlow != NULL) {
+    _pEnviroMinFlow->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
+  }
 
-  //Check Muskingum parameters, if necessary
+  //QA/QC check of Muskingum parameters, if necessary
   //------------------------------------------------------------------------
   if ((Options.routing==ROUTE_MUSKINGUM) || (Options.routing==ROUTE_MUSKINGUM_CUNGE))
   {

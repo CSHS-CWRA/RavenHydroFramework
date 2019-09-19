@@ -139,4 +139,53 @@ public:/*-------------------------------------------------------*/
                                                );
 };
 
+class CConstTimeSeries : public CTimeSeries 
+{
+private:/*------------------------------------------------------*/
+
+  double _value;
+
+  
+public:/*-------------------------------------------------------*/
+       //Constructors:
+  CConstTimeSeries(string name,string tag,double one_value):CTimeSeries(name,tag,one_value){}
+  ~CConstTimeSeries() {}
+
+  void Initialize(const double model_start_day, //jul day
+                  const    int model_start_year,//year
+                  const double model_duration,  //days
+                  const double timestep,        //days
+                  const   bool is_observation,
+                  const    int calendar) {}
+  bool   IsDaily() const{return false;}
+  int    GetStartYear() const { return 1673; }
+  double GetStartDay() const {return 0.0;}
+  double GetInterval() const {return 1.0;}
+
+  double GetValue(const double &t) const{return _value;}
+  double GetAvgValue(const double &t,const double &tstep) const{return _value;}
+  double GetMinValue(const double &t,const double &tstep) const { return _value; }
+  double GetMaxValue(const double &t,const double &tstep) const {return _value; }
+  int    GetNumValues() const {return 1;}
+  double GetTime(const int n) const{return 0;}
+  double GetValue(const int n) const{return _value;}
+
+  double GetSampledValue(const int nn) const { return _value; }
+  double GetSampledTime(const int nn) const {return _value;}
+  double GetSampledInterval() const{ return 1.0;}
+  int    GetNumSampledValues() const{return 1;}
+
+  double GetDailyAvg(const int model_day) const { return _value; }
+  double GetDailyMin(const int model_day) const { return _value; }
+  double GetDailyMax(const int model_day) const { return _value; }
+
+  bool   IsPulseType()  const{return true;}
+
+  void   Multiply(const double &factor) {  _value*=factor; }
+
+  double GetModelledValue(const double &t,const ts_type type) const{return _value;}
+
+
+};
+
 #endif

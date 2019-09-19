@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -86,7 +86,9 @@ private:/*------------------------------------------------------*/
 
   //Treatment Plant/Other incoming hydrograph
   CTimeSeries   *_pInflowHydro;   ///< pointer to time series of inflows; NULL if no specified input - Inflow at upstream entrance of basin
-  CTimeSeries   *_pInflowHydro2;  ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
+  CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
+  CTimeSeries   *_pIrrigDemand;   ///< pointer to time series of demand (which can be unmet) applied at downstream end of basin reach
+  CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
 
   //Methods implemented in SubBasin.cpp
   double               GetMuskingumK(const double &dx) const;
@@ -133,87 +135,98 @@ public:/*-------------------------------------------------------*/
   double               GetRainCorrection    () const;
   double               GetSnowCorrection    () const;
 
-  const double        *GetUnitHydrograph    () const;
-  const double        *GetRoutingHydrograph () const;
-  int                  GetLatHistorySize    () const;
-  int                  GetInflowHistorySize () const;
+  const double   *GetUnitHydrograph        () const;
+  const double   *GetRoutingHydrograph     () const;
+  int             GetLatHistorySize        () const;
+  int             GetInflowHistorySize     () const;
 
-  double               GetOutflowRate       () const;                   //[m3/s] from final segment, point in time
-  double               GetIntegratedOutflow (const double &tstep) const;//[m3] from final segment integrated over timestep
-  double             GetIntegratedSpecInflow(const double &t,
-                                             const double &tstep) const;//[m3] from specified inflows integrated over timestep
-  double               GetReservoirInflow   () const;                   //[m3/s] from final segment upstream of reservoir, point in time
-  double               GetReservoirLosses   (const double &tstep) const;//[m3] from reservoir integrated over timestep
-  double             GetReservoirEvapLosses (const double &tstep) const;//[m3] from reservoir integrated over timestep AET only
-  double        GetIntegratedReservoirInflow(const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
-  double               GetRivuletStorage    () const;                   //[m3] volume en route to outflow
-  double               GetChannelStorage    () const;                   //[m3] volume in channel
-  double               GetReservoirStorage  () const;                   //[m3] volume in reservoir
-  double               GetSpecifiedInflow   (const double &t) const;    //[m3/s] to upstream end of channel at point in time
-  double               GetDownstreamInflow  (const double &t) const;    //[m3/s] to downstream end of channel at point in time
+  double          GetOutflowRate           () const;                   //[m3/s] from final segment, point in time
+  double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
+  double          GetIntegratedSpecInflow  (const double &t,
+                                            const double &tstep) const;//[m3] from specified inflows integrated over timestep
+  double          GetReservoirInflow       () const;                   //[m3/s] from final segment upstream of reservoir, point in time
+  double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
+  double          GetReservoirEvapLosses   (const double &tstep) const;//[m3] from reservoir integrated over timestep AET only
+  double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
 
-  CReservoir          *GetReservoir         () const;
+  double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
+  double          GetChannelStorage        () const;                   //[m3] volume in channel
+  double          GetReservoirStorage      () const;                   //[m3] volume in reservoir
+  double          GetSpecifiedInflow       (const double &t) const;    //[m3/s] to upstream end of channel at point in time
+  double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
+  double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
+  double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
+  double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
+
+  CReservoir         *GetReservoir         () const;
 
   //Manipulator functions
   //called during model construction/assembly:
-  void            AddHRU              (CHydroUnit *pHRU);
-  void            AddReservoir        (CReservoir *pReservoir);
-  bool            SetBasinProperties  (const string label,
-                                       const double &value);
-  void            SetAsNonHeadwater   ();
-  double          CalculateBasinArea  ();
-  void            Initialize          (const double    &Qin_avg,          //[m3/s]
-                                       const double    &Qlat_avg,         //[m3/s]
-                                       const double    &total_drain_area, //[km2]
-                                       const optStruct &Options);
-  void            AddInflowHydrograph (CTimeSeries *pInflow);
-  void            AddDownstreamInflow (CTimeSeries *pInflow);
-  void            AddReservoirExtract (CTimeSeries *pOutflow);
-  void            AddWeirHeightTS     (CTimeSeries *pWeirHt);
-  void            AddMaxStageTS       (CTimeSeries *pMaxStage);
-  void            AddOverrideFlowTS   (CTimeSeries *pQoverride);
-  void           AddMinStageTimeSeries(CTimeSeries *pMS);
-  void       AddMinStageFlowTimeSeries(CTimeSeries *pQ);
-  void        AddTargetStageTimeSeries(CTimeSeries *pTS);
-  void       AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
-  void       AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta);
-  void            AddMinQTimeSeries   (CTimeSeries *pQmin);
-  void            AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB,const double &range);
-  void            ResetReferenceFlow  (const double    &Qreference);
-  void            SetReservoirFlow    (const double &Q,const double &Qlast,const double &t);
-  void        SetInitialReservoirStage(const double &h,const double &hlast);
-  void            SetChannelStorage   (const double &V);
-  void            SetRivuletStorage   (const double &V);
-  void            SetQoutArray        (const int N, const double *aQo, const double QoLast);
-  void            SetQlatHist         (const int N, const double *aQl, const double QlLast);
-  void            SetQinHist          (const int N, const double *aQi);
-  void            SetDownstreamID     (const long down_SBID);
-  void            Disable             ();
-  void            Enable              ();
-  double          ScaleAllFlows       (const double &scale_factor, const double &tstep);
+  void            AddHRU                   (CHydroUnit *pHRU);
+  void            AddReservoir             (CReservoir *pReservoir);
+  bool            SetBasinProperties       (const string label,
+                                            const double &value);
+  void            SetAsNonHeadwater        ();
+  double          CalculateBasinArea       ();
+  void            Initialize               (const double    &Qin_avg,          //[m3/s]
+                                            const double    &Qlat_avg,         //[m3/s]
+                                            const double    &total_drain_area, //[km2]
+                                            const optStruct &Options);
+  void            AddInflowHydrograph      (CTimeSeries *pInflow);
+  void            AddDownstreamInflow      (CTimeSeries *pInflow);
+  void            AddIrrigationDemand      (CTimeSeries *pOutflow);
+  void            AddEnviroMinFlow         (CTimeSeries *pMinFlow);
+
+  // reservoir manipulators
+  void            AddReservoirExtract      (CTimeSeries *pOutflow);
+  void            AddWeirHeightTS          (CTimeSeries *pWeirHt);
+  void            AddMaxStageTS            (CTimeSeries *pMaxStage);
+  void            AddOverrideFlowTS        (CTimeSeries *pQoverride);
+  void            AddMinStageTimeSeries    (CTimeSeries *pMS);
+  void            AddMinStageFlowTimeSeries(CTimeSeries *pQ);
+  void            AddTargetStageTimeSeries (CTimeSeries *pTS);
+  void            AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
+  void            AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta);
+  void            AddMinQTimeSeries        (CTimeSeries *pQmin);
+  void            AddDownstreamTargetQ     (CTimeSeries *pQ,const CSubBasin *pSB,const double &range);
+  void            AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct);
+  void            ResetReferenceFlow       (const double &Qreference);
+  void            SetReservoirFlow         (const double &Q,const double &Qlast,const double &t);
+  void            SetInitialReservoirStage (const double &h,const double &hlast);
+
+  void            SetChannelStorage        (const double &V);
+  void            SetRivuletStorage        (const double &V);
+  void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
+  void            SetQlatHist              (const int N, const double *aQl, const double QlLast);
+  void            SetQinHist               (const int N, const double *aQi);
+  void            SetDownstreamID          (const long down_SBID);
+  void            Disable                  ();
+  void            Enable                   ();
+  double          ScaleAllFlows            (const double &scale_factor, const double &tstep);
 
   //called during model operation:
-  void            SetInflow           (const double &Qin );//[m3/s]
-  void            UpdateFlowRules     (const time_struct &tt, const optStruct &Options);
-  void            UpdateOutflows      (const double *Qout_new,
-                                       const double &res_ht,
-                                       const double &res_outflow,
-                                       const optStruct &Options,
-                                       const time_struct &tt,
-                                       bool initialize);//[m3/s]
-  void            SetLateralInflow    (const double &Qlat);//[m3/s]
+  void            SetInflow                (const double &Qin );//[m3/s]
+  void            UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
+  void            UpdateOutflows           (const double *Qout_new,
+                                            const double &res_ht,
+                                            const double &res_outflow,
+                                            const optStruct &Options,
+                                            const time_struct &tt,
+                                            bool initialize);//[m3/s]
+  void            SetLateralInflow         (const double &Qlat);//[m3/s]
+  double          ApplyIrrigationDemand    (const double &t,const double &Q); //[m3/s] 
 
-  void            RouteWater          (      double      *Qout_new,
-                                             double      &res_ht,
-                                             double      &res_outflow,
-                                             const optStruct   &Options,
-                                             const time_struct &tt) const;
-  double          ChannelLosses       (const double      &reach_volume,
-                                       const double      &PET,
-                                       const optStruct   &Options) const;
+  void            RouteWater               (      double      *Qout_new,
+                                                  double      &res_ht,
+                                                  double      &res_outflow,
+                                            const optStruct   &Options,
+                                            const time_struct &tt) const;
+  double          ChannelLosses            (const double      &reach_volume,
+                                            const double      &PET,
+                                            const optStruct   &Options) const;
 
-  void            WriteMinorOutput    (const time_struct &tt) const;
-  void            WriteToSolutionFile (ofstream &OUT) const;
+  void            WriteMinorOutput         (const time_struct &tt) const;
+  void            WriteToSolutionFile      (ofstream &OUT) const;
 };
 
 #endif

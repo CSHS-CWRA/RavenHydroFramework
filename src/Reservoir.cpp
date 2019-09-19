@@ -43,8 +43,11 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _pQdownTS=NULL;
   _QdownRange=0.0;
   _pQdownSB=NULL;
+  _nDemands=0;
+  _aDemands=NULL;
 
   _crest_ht=0.0;
+  _max_capacity=0.0;
 
   _aQ_back=NULL;
   _nDates=0;
@@ -104,6 +107,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
     _aVolume[i]=a_V*pow(ht,b_Q);
     _aQunder[i]=0.0;
   }
+  _max_capacity=_aVolume[_Np-1];
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Constructor for reservoir using lookup table rating curves
@@ -162,7 +166,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
-
+  _max_capacity=_aVolume[_Np-1];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -238,6 +242,7 @@ CReservoir::CReservoir(const string Name, const long SubID, const res_type typ,
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
+  _max_capacity=_aVolume[_Np-1];
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Constructor for Prismatic lake reservoir controlled by weir coefficient
@@ -290,6 +295,7 @@ CReservoir::CReservoir(const string Name,
     _aArea  [i]=A;
     _aVolume[i]=A*(_aStage[i]-_min_stage);
   }
+  _max_capacity=_aVolume[_Np-1];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -387,7 +393,7 @@ void CReservoir::Initialize(const optStruct &Options)
   int    model_start_yr =Options.julian_start_year;
   double model_duration =Options.duration;
   double timestep       =Options.timestep;
-  if (_pExtractTS!=NULL)
+  if(_pExtractTS!=NULL)
   {
     _pExtractTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
@@ -415,7 +421,7 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pTargetStageTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
-  if(_pMaxQIncreaseTS!=NULL) 
+  if(_pMaxQIncreaseTS!=NULL)
   {
     _pMaxQIncreaseTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
@@ -553,12 +559,41 @@ void    CReservoir::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB, c
   _QdownRange=Qrange;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Adds reservoir downstream demand
+/// \param SBID subbasin ID of demand location or AUTO_COMPUTE_LONG
+/// \param pct percentage of flow demand to be satisfied by reservoir as fraction [0..1] or AUTO_COMPUTE
+//
+void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct) {
+  down_demand *pDemand;
+  pDemand=new down_demand{pSB,pct};
+  if(!DynArrayAppend((void**&)(_aDemands),(void*)(pDemand),_nDemands)) {
+    ExitGracefully("CReservoir::AddDownstreamDemand: adding NULL source",RUNTIME_ERR);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief links reservoir to HRU
 /// \param *pHRUpointer HRU to link to
 //
 void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
 {
   _pHRU=pHRUpointer;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief sets max capacity
+/// \param capacity, in m3
+//
+void  CReservoir::SetMaxCapacity(const double &max_cap)
+{
+  _max_capacity=max_cap;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief gets max capacity
+/// \returns capacity, in m3
+//
+double  CReservoir::GetMaxCapacity() const
+{
+  return _max_capacity;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief overrides volume stage curve for Lake-type reservoirs (if known)
@@ -744,6 +779,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
   if(_pMaxQDecreaseTS!=NULL){ Qdelta_dec =_pMaxQDecreaseTS->GetSampledValue(nn);}
   if(_pQminTS!=NULL)        { Qmin       =_pQminTS->        GetSampledValue(nn);}
+
+  // Downstream flow targets 
   if(_pQdownTS!=NULL)       { 
     double Qdown_targ      =_pQminTS->GetSampledValue(nn); 
     double Qdown_act       =_pQdownSB->GetOutflowRate();
@@ -754,6 +791,11 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if (_QdownRange==0){alpha=0.0;}
     if(Qdown_act<Qdown_targ) {Qshift=0.8*((Qdown_targ-(1.0-alpha)*(_QdownRange*0.5))-Qdown_act);}
     else                     {Qshift=0.8*((Qdown_targ+(1.0-alpha)*(_QdownRange*0.5))-Qdown_act);}
+  }
+
+  // Downstream irrigation demand 
+  for(int i=0;i<_nDemands;i++) {
+    Qmin+=(_aDemands[i]->pDownSB->GetIrrigationDemand(tt.model_time)*_aDemands[i]->percent);
   }
 
 
@@ -997,8 +1039,9 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
         0.09 0 0 0.0 0.0 (h [m], Q [m3/s], A [m2], V [m3])
         0.1 2 43 0.2 0.3
         ...
-        3.0 20000 3500 200 250
+        3.0 20000 3500 200 25000
       :EndVaryingStageRelations
+      :MaxCapacity 25000
     :EndReservoir
 
     :Reservoir ExampleReservoir # 'lake type format'
@@ -1009,7 +1052,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       :CrestWidth 10
       :MaxDepth 5.5 # relative to minimum weir crest elevation
       :LakeArea 10.5 
-      :AbsoluteCrestHeight 365 # absolute minimum weir crest height m.a.s.l. (optional) 
+      :AbsoluteCrestHeight 365 # absolute minimum weir crest height m.a.s.l. (optional)    
     :EndReservoir
 
 
@@ -1030,6 +1073,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   double **aQQ=NULL;
   int *aDates(NULL);
   double cwidth(-1),max_depth(-1),weircoeff(-1),lakearea(-1), crestht(0.0);
+  double max_capacity=0;
 
   curve_function type;
   type=CURVE_POWERLAW;
@@ -1064,6 +1108,11 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       if (Options.noisy){ cout << ":CrestWidth" << endl; }
       cwidth=s_to_d(s[1]);
       type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":MaxCapacity"))
+    {
+      if(Options.noisy) { cout << ":MaxCapacity" << endl; }
+      max_capacity=s_to_d(s[1]);
     }
     else if(!strcmp(s[0],":WeirCoefficient"))
     {
@@ -1335,7 +1384,9 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   else {
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
   }
-
+  if(max_capacity!=0) {
+    pRes->SetMaxCapacity(max_capacity); //overrides estimates (which will typically be too large)
+  }
   if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL)){
     //allows user to override prismatic reservoir assumption
     pRes->SetVolumeStageCurve(aV_ht,aV,NV);
