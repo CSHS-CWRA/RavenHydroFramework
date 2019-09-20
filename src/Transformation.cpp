@@ -38,8 +38,8 @@ CmvTransformation::CmvTransformation(string           constit_name,
   //transformation occurs in all water storage compartments
   for (int ii=0;ii<nWaterCompartments;ii++)
   {
-    iFrom[ii]=_pTransModel->GetStorIndex(_constit_ind1,ii); //mass in water compartment
-    iTo  [ii]=_pTransModel->GetStorIndex(_constit_ind2,ii); //mass in water compartment
+    iFrom[ii                   ]=_pTransModel->GetStorIndex(_constit_ind1,ii); //mass in water compartment
+    iTo  [ii                   ]=_pTransModel->GetStorIndex(_constit_ind2,ii); //mass in water compartment
     iFrom[ii+nWaterCompartments]=_pTransModel->GetStorIndex(_constit_ind1,ii); //mass in water compartment
     iTo  [ii+nWaterCompartments]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind1); //'loss/sink' storage (for MB accounting)
   }
@@ -133,6 +133,24 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
         rates[ii] = stoich_coeff *(C0- pow(pow(C0,1.0-n)+(n-1)*transf_coeff*Options.timestep,1.0/(1.0-n)))/Options.timestep*vol1; 
         rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
         ExitGracefully("TRANSFORM_NONLINEAR - need way of storing n",STUB);
+      }
+      else if(_ttype==TRANSFORM_MINERALIZATION)
+      {
+        double temp=pHRU->GetForcingFunctions()->temp_ave;
+        double c1=1.0;
+        double sat=1.0;
+        double k;
+        if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
+        else if ((temp>=10) && (temp<=30)) { c1=1.0; }
+        else if (temp< 10)                 { c1=(temp-5.0)/(10.0-5.0);}
+        else if (temp> 30)                 { c1=(30-temp)/(30-50); }
+        double vol_max=pHRU->GetStateVarMax(ii,state_vars,Options);
+
+        sat=min(vol1/vol_max,1.0);
+        double rn_min =10;// = _pTransModel->GetMineralizationCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
+        k = rn_min * c1 * sat;
+        ExitGracefully("TRANSFORM_MINERALIZATION - need way of storing mineralization coeff",STUB);
+        rates[ii] = mass1*(1 - exp(-k*Options.timestep))/Options.timestep;
       }
     }
   }

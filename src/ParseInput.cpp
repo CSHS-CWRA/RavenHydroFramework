@@ -428,6 +428,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Decay"                     )){code=305;}
     else if  (!strcmp(s[0],":Advection"                 )){code=306;}
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
+    else if  (!strcmp(s[0],":Mineralization"            )){code=308;}
     //...
     //-------------------WATER MANAGEMENT---------------------
     else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
@@ -2716,8 +2717,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       
       transformation_type t_type=TRANSFORM_LINEAR_ANALYTIC;
       if (Len<3){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"TRANSFORM_LINEAR"    )){t_type=TRANSFORM_LINEAR;}
+      if      (!strcmp(s[1],"TRANSFORM_LINEAR"          )){t_type=TRANSFORM_LINEAR;}
       else if (!strcmp(s[1],"TRANSFORM_LINEAR_ANALYTIC" )){t_type=TRANSFORM_LINEAR_ANALYTIC;}
+      else if (!strcmp(s[1],"TRANSFORM_MINERALIZATION"  )){t_type=TRANSFORM_MINERALIZATION; }
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized transformation process representation",BAD_DATA_WARN); break;

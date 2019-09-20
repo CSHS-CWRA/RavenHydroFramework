@@ -57,7 +57,8 @@ enum transformation_type
   TRANSFORM_LINEAR,            /// < basic linear transformation, calculated as dC/dt=-k*C; dA/dt=+k*C
   TRANSFORM_LINEAR_ANALYTIC,   /// < analytic treatment of decay over finite time step
   TRANSFORM_NONLINEAR,         /// < basic power law transformation, calculated as dC/dt=-k*C^n; dA/dt=+k*C^n
-  TRANSFORM_NONLIN_ANALYTIC    /// < analytic treatment of nonlinear transformation over finite time step
+  TRANSFORM_NONLIN_ANALYTIC,   /// < analytic treatment of nonlinear transformation over finite time step
+  TRANSFORM_MINERALIZATION     /// < Nitrate mineralization 
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Calculates the decay of a substance
