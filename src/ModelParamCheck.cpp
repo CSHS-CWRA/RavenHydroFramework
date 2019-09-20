@@ -130,7 +130,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   {
     aP[nP]="MOHYSE_PET_COEFF"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
-  else if((Options.evaporation==PET_CONSTANT) || (Options.evaporation==PET_HAMON) || (Options.evaporation==PET_HARGREAVES_1985)
+  else if((Options.evaporation==PET_CONSTANT) || (Options.evaporation==PET_HAMON) || (Options.evaporation==PET_HARGREAVES_1985) || (Options.evaporation==PET_LINACRE)
     || (Options.evaporation==PET_TURC_1961) || (Options.evaporation==PET_MAKKINK_1957) || (Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE))
   {
     // no parameter required
@@ -183,7 +183,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     aP[nP]="RELATIVE_HT"; aPC[nP]=CLASS_VEGETATION; nP++;
   }
   else if((Options.ow_evaporation==PET_CONSTANT) || (Options.ow_evaporation==PET_HAMON) ||
-    (Options.ow_evaporation==PET_HARGREAVES) || (Options.ow_evaporation==PET_HARGREAVES_1985) ||
+    (Options.ow_evaporation==PET_HARGREAVES) || (Options.ow_evaporation==PET_HARGREAVES_1985) || (Options.ow_evaporation==PET_LINACRE) ||
     (Options.ow_evaporation==PET_TURC_1961) || (Options.ow_evaporation==PET_MAKKINK_1957) ||
     (Options.ow_evaporation==PET_PRIESTLEY_TAYLOR) || (Options.ow_evaporation==PET_GRANGERGRAY))
   {

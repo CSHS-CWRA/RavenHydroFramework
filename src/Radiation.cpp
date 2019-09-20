@@ -561,7 +561,7 @@ double CRadiation::CalcETRadiation( const double latrad,     //latitude in radia
   else if (t_set2 >t_rise){t_rise2=t_rise;fnoon=solar_noon-1.0; TwoDawns=true;}
   
   if (TwoDawns){
-    //cout<<"TwoDawns: "<<t_set1-t_rise1<<" "<<t_set2-t_rise2<<" slope, lat"<< slope*180.0/PI<<" "<<latrad*180.0/PI<<endl;
+    //cout<<"TwoDawns: "<<t_set1-t_rise1<<" "<<t_set2-t_rise2<<" slope, lat"<< slope*RADIANS_TO_DEGREES<<" "<<latrad*RADIANS_TO_DEGREES<<endl;
     if (t_rise2>t_set2) {t_rise2=t_set2=0.0;}//Correct for those endless nights...
     ExTerCorr+=RadCorr(declin, fnoon, lat_eq, t_rise2,t_set2,t_sol,avg_daily);
   }

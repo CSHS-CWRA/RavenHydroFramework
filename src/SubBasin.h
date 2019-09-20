@@ -178,19 +178,8 @@ public:/*-------------------------------------------------------*/
   void            AddEnviroMinFlow         (CTimeSeries *pMinFlow);
 
   // reservoir manipulators
-  void            AddReservoirExtract      (CTimeSeries *pOutflow);
-  void            AddWeirHeightTS          (CTimeSeries *pWeirHt);
-  void            AddMaxStageTS            (CTimeSeries *pMaxStage);
-  void            AddOverrideFlowTS        (CTimeSeries *pQoverride);
-  void            AddMinStageTimeSeries    (CTimeSeries *pMS);
-  void            AddMinStageFlowTimeSeries(CTimeSeries *pQ);
-  void            AddTargetStageTimeSeries (CTimeSeries *pTS);
-  void            AddMaxQIncreaseTimeSeries(CTimeSeries *pQdelta);
-  void            AddMaxQDecreaseTimeSeries(CTimeSeries *pQdelta);
-  void            AddMinQTimeSeries        (CTimeSeries *pQmin);
-  void            AddDownstreamTargetQ     (CTimeSeries *pQ,const CSubBasin *pSB,const double &range);
   void            AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct);
-  void            ResetReferenceFlow       (const double &Qreference);
+  void            ResetReferenceFlow       (const double    &Qreference);
   void            SetReservoirFlow         (const double &Q,const double &Qlast,const double &t);
   void            SetInitialReservoirStage (const double &h,const double &hlast);
 

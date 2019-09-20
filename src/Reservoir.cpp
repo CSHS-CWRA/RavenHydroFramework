@@ -59,6 +59,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _aQunder =NULL;
   _aArea   =NULL;
   _aVolume =NULL;
+
+  _seepage_const=0;
+  _local_GW_head=0.0;
 }
 
 //////////////////////////////////////////////////////////////////

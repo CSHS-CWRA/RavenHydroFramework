@@ -133,6 +133,8 @@ const double  INCH_PER_METER          =39.37;                                   
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
+const double  RADIANS_TO_DEGREES      =57.29578;                                ///< [rad] to [deg]
+const double  DEGREES_TO_RADIANS      =0.17453;                                 ///< [deg] to [rad]
 
 /// \details 0.278*(24hr/d)*(1000^2m^2/km)*(0.001m/mm)*(1/86400s/day) \n
 /// runoff=RATIONAL_CONV*C_R*rainfall intensity \n
@@ -374,7 +376,8 @@ enum evap_method
   PET_PENMAN_SIMPLE39,          ///< Simplified Penman equation from eqn 39 of Valiantzas (2006)
   PET_GRANGERGRAY,              ///< Granger  Gray PET from CRHM (Granger and Gray, 1989)
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
-  PET_OUDIN                     ///< Simple PET from Oudin et. al., 2005
+  PET_OUDIN,                    ///< Simple PET from Oudin et. al., 2005
+  PET_LINACRE                   ///< From Linacre, Agricultural Meteorology, 1977
 };
 
 ////////////////////////////////////////////////////////////////////

@@ -91,6 +91,10 @@ private:/*-------------------------------------------------------*/
   int         *_aDates;              ///< Array of Julian days at which aQ changes [days after Jan 1]
   int          _nDates;              ///< size of aDates
 
+  //GW information :
+  double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)  
+  double       _local_GW_head;       ///< local head [masl] for groundwater losses Q=k*(h-h_loc)
+
   void       BaseConstructor(const string Name,const long SubID,const res_type typ); //because some versions of c++ don't like delegating constructors
 
   double     GetVolume (const double &ht) const;

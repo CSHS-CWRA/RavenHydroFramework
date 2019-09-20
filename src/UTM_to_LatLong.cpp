@@ -45,7 +45,7 @@ double ArcLengthOfMeridian (const double &phi)
 //
 double UTMCentralMeridian (const int zone)
 {
-  return (-183.0 + (zone * 6.0))*PI/180.0;
+  return (-183.0 + (zone * 6.0))*DEGREES_TO_RADIANS;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -219,7 +219,7 @@ void LatLonToUTMXY (const double lat, //latitude, in decimal degrees
                     double &x,
                     double &y)
 {
-  MapLatLonToXY (lat/180*PI, lon/180*PI, UTMCentralMeridian (zone), x,y);
+  MapLatLonToXY (lat*DEGREES_TO_RADIANS, lon*DEGREES_TO_RADIANS, UTMCentralMeridian (zone), x,y);
   /* Adjust easting and northing for UTM system. */
   x = x * UTMScaleFactor + 500000.0;
   y = y * UTMScaleFactor;
@@ -256,6 +256,6 @@ void UTMXYToLatLon (const double &x,
   tmpy /= UTMScaleFactor;
 
   MapXYToLatLon (tmpx, tmpy, UTMCentralMeridian(zone), lat,lon);
-  lat*=180/PI;
-  lon*=180/PI;
+  lat*=RADIANS_TO_DEGREES;
+  lon*=RADIANS_TO_DEGREES;
 }

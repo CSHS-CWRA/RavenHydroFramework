@@ -770,13 +770,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"Extraction_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddReservoirExtract(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddExtractionTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirExtraction Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir Extraction";
+        warn=":ReservoirExtraction Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir Extraction";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -793,13 +793,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"WeirHeight_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddWeirHeightTS(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddWeirHeightTS(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":VariableWeirHeight Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir weir height";
+        warn=":VariableWeirHeight Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir weir height";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -816,13 +816,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"MaxStage_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddMaxStageTS(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirMaxStage Subbasin "+to_string(SBID)+" not in model, cannot set Reservoir maximum stage";
+        warn=":ReservoirMaxStage Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir maximum stage";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -839,13 +839,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"ResFlow_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddOverrideFlowTS(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddOverrideQTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":OverrideReservoirFlow Subbasin "+to_string(SBID)+" not in model, cannot set overriden discharge";
+        warn=":OverrideReservoirFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set overriden discharge";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -862,13 +862,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"MinStage_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddMinStageTimeSeries(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirMinStage Subbasin "+to_string(SBID)+" not in model, cannot set minimum stage";
+        warn=":ReservoirMinStage Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum stage";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -885,13 +885,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"MinStageFlow_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddMinStageFlowTimeSeries(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddMinStageFlowTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirMinStageFlow Subbasin "+to_string(SBID)+" not in model, cannot set minimum stage discharge";
+        warn=":ReservoirMinStageFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum stage discharge";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -908,13 +908,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"TargetStage_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddTargetStageTimeSeries(pTimeSer);
+      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
+        pSB->GetReservoir()->AddTargetStageTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirTargetStage Subbasin "+to_string(SBID)+" not in model, cannot set target stage";
+        warn=":ReservoirTargetStage Subbasin "+to_string(SBID)+" not in model or doesnt have reservoir, cannot set target stage";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -931,13 +931,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,true,"QDelta_"+to_string(SBID),to_string(SBID),Options);
-      if (pSB!=NULL){
-        pSB->AddMaxQIncreaseTimeSeries(pTimeSer);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirMaxQDelta Subbasin "+to_string(SBID)+" not in model, cannot set maximum Qdelta";
+        warn=":ReservoirMaxQDelta Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum Qdelta";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -976,14 +976,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
-      if(pSB!=NULL) {
-        pSB->AddMinQTimeSeries(pTimeSer);
+      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
+        pSB->GetReservoir()->AddMinQTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirMinFlow Subbasin "+to_string(SBID)+" not in model, cannot set minimum flow";
+        warn=":ReservoirMinFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum flow";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -1010,13 +1010,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB    =pModel->GetSubBasinByID(SBID);
       pSBdown=pModel->GetSubBasinByID(SBID_down);
       pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
-      if((pSB!=NULL) && (pSBdown!=NULL)){
-        pSB->AddDownstreamTargetQ(pTimeSer,pSBdown,range);
+      if((pSB!=NULL) && (pSBdown!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddDownstreamTargetQ(pTimeSer,pSBdown,range);
       }
       else
       {
         string warn;
-        warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model, cannot set downstream flow target";
+        warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model or doesn't have reservoir, cannot set downstream flow target";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -1032,14 +1032,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"QDeltaDec_"+to_string(SBID),to_string(SBID),Options);
-      if(pSB!=NULL) {
-        pSB->AddMaxQDecreaseTimeSeries(pTimeSer);
+      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
+        pTimeSer=CTimeSeries::Parse(p,true,"QDeltaDec_"+to_string(SBID),to_string(SBID),Options);
+        pSB->GetReservoir()->AddMaxQDecreaseTimeSeries(pTimeSer);
       }
       else
       {
         string warn;
-        warn=":ReservoirMaxQDecrease Subbasin "+to_string(SBID)+" not in model, cannot set maximum Qdelta";
+        warn=":ReservoirMaxQDecrease Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum Qdelta decrease";
         WriteWarning(warn,Options.noisy);
       }
       break;

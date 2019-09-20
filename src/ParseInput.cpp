@@ -580,6 +580,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_GRANGERGRAY"       )){Options.evaporation =PET_GRANGERGRAY;}
       else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.evaporation =PET_MOHYSE;}
       else if (!strcmp(s[1],"PET_OUDIN"             )){Options.evaporation =PET_OUDIN;}
+      else if (!strcmp(s[1],"PET_LINACRE"           )){Options.evaporation =PET_LINACRE; }
+
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
       }
@@ -603,6 +605,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[2],"PET_GRANGERGRAY"       )) { Options.evap_infill =PET_GRANGERGRAY;}
         else if (!strcmp(s[2],"PET_MOHYSE"            )) { Options.evap_infill =PET_MOHYSE;}
         else if (!strcmp(s[2],"PET_OUDIN"             )) { Options.evap_infill =PET_OUDIN;}
+        else if (!strcmp(s[2],"PET_LINACRE"           )) { Options.evap_infill =PET_LINACRE; }
         else { notspecified=true; }
       }
       if((Options.evaporation==PET_DATA) && (notspecified)) {
@@ -672,6 +675,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PET_GRANGERGRAY"       )){Options.ow_evaporation =PET_GRANGERGRAY;}
       else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.ow_evaporation =PET_MOHYSE;}
       else if (!strcmp(s[1],"PET_OUDIN"             )){Options.ow_evaporation =PET_OUDIN;}
+      else if (!strcmp(s[1],"PET_LINACRE"           )){Options.ow_evaporation =PET_LINACRE; }
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
       }
@@ -695,6 +699,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[2],"PET_GRANGERGRAY"       )) { Options.ow_evap_infill =PET_GRANGERGRAY;}
         else if (!strcmp(s[2],"PET_MOHYSE"            )) { Options.ow_evap_infill =PET_MOHYSE;}
         else if (!strcmp(s[2],"PET_OUDIN"             )) { Options.ow_evap_infill =PET_OUDIN;}
+        else if (!strcmp(s[1],"PET_LINACRE"           )) { Options.ow_evap_infill =PET_LINACRE; }
         else{notspecified=true;}
       }
       if ((Options.ow_evaporation==PET_DATA) && (notspecified)) {

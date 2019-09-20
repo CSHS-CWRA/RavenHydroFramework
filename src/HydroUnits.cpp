@@ -94,7 +94,7 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _AvgAspect    =aspect; //counterclockwise from north
   _AvgSlope     =slope;
 
-  _LatRad       = latit/180.0*PI;
+  _LatRad       = latit*DEGREES_TO_RADIANS;
   _LatEq        = CRadiation::CalculateEquivLatitude(_LatRad,slope,aspect);
 
   //calculate corrected solar noon for given slope/aspect

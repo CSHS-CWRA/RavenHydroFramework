@@ -443,6 +443,19 @@ double CModel::EstimatePET(const force_struct &F,
     PET=max(F.ET_radia/DENSITY_WATER/LH_VAPOR*(F.temp_daily_ave+5.0)/100.0,0.0);
     break;
   }
+  case(PET_LINACRE):
+  {
+    //eqns 8 and 9  of Linacre, E., A simple formula for estimating evaporation rates in various climates, using temperature data alone, Agricultural Meteorology 18, p409-424, 1977
+    double Tdewpoint=GetDewPointTemp(F.temp_daily_ave,F.rel_humidity);
+    double latit=pHRU->GetLatRad()*RADIANS_TO_DEGREES;
+    if (open_water){
+      PET= (700* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
+    }
+    else {
+      PET= (500* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
+    }
+    break;
+  }
   case (PET_GRANGERGRAY):
   {
     PET=EvapGrangerGray(&F,pHRU);

@@ -263,8 +263,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
                                s_to_d(s[2]),//elev
                                s_to_d(s[3]),//lat
                                s_to_d(s[4]),//long
-                               s_to_d(s[11])*PI/180.0,//slope (deg->radians)
-                               s_to_d(s[12])*PI/180.0,//aspect (deg->radians)
+                               s_to_d(s[11])*DEGREES_TO_RADIANS,//slope (deg->radians)
+                               s_to_d(s[12])*DEGREES_TO_RADIANS,//aspect (deg->radians)
                                HRUtype,
                                pSoilProfile,
                                pVegetation,
