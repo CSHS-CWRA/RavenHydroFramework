@@ -111,6 +111,7 @@ CModel::CModel(const soil_model SM,
   _aShouldApplyProcess=NULL; //Initialized in Initialize
 
   _pTransModel=new CTransportModel(this);
+  _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
 
   _pEnsemble = NULL;
 }
@@ -184,6 +185,7 @@ CModel::~CModel()
 
   delete _pTransModel;
   delete _pEnsemble;
+  delete _pGWModel;
 }
 /*****************************************************************
    Accessors
@@ -731,6 +733,12 @@ const optStruct  *CModel::GetOptStruct() const{ return _pOptStruct; }
 /// \return pointer to transport model
 //
 CTransportModel  *CModel::GetTransportModel() const{return _pTransModel;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns groundwater model
+/// \return pointer to groundwater model
+//
+CGroundwaterModel*CModel::GetGroundwaterModel() const{return _pGWModel;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns ensemble setup

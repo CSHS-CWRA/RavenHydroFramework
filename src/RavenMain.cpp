@@ -196,6 +196,10 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.rvp_filename="";
   Options.rvt_filename="";
   Options.rvc_filename="";
+  Options.rvg_filename="";
+  Options.rvd_filename=""; //GWMIGRATE - TO REMOVE
+  Options.rvv_filename=""; //GWMIGRATE - TO REMOVE
+  Options.rvs_filename=""; //GWMIGRATE - TO REMOVE
   Options.rve_filename="";
   Options.output_dir  ="";
   Options.main_output_dir="";
@@ -216,7 +220,11 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvh_filename=argument+".rvh";
         Options.rvt_filename=argument+".rvt";
         Options.rvc_filename=argument+".rvc";
-        Options.rve_filename=argument+",rve";
+		Options.rvg_filename=argument+".rvg";
+		Options.rvd_filename=argument+".rvd"; //GWMIGRATE - TO REMOVE
+		Options.rvv_filename=argument+".rvv"; //GWMIGRATE - TO REMOVE
+        Options.rvs_filename=argument+".rvs"; //GWMIGRATE - TO REMOVE
+	    Options.rve_filename=argument+",rve";
         argument="";
         mode=10;
       }
@@ -227,6 +235,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==5){Options.output_dir  =argument; argument="";}
       else if (mode==6){Options.run_name    =argument; argument="";}
       else if (mode==7){Options.rve_filename=argument; argument=""; }
+	  else if (mode==8){Options.rvg_filename=argument; argument="";}
+
       if      (word=="-p"){mode=1;}
       else if (word=="-h"){mode=2;}
       else if (word=="-t"){mode=3;}
@@ -236,6 +246,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-n"){Options.noisy=true;  mode=10;}
       else if (word=="-r"){mode=6;}
       else if (word=="-e"){mode=7; }
+      else if (word=="-g"){mode=8; }	  
     }
     else{
       if (argument==""){argument+=word;}
@@ -249,7 +260,11 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvh_filename="nomodel.rvh";
     Options.rvt_filename="nomodel.rvt";
     Options.rvc_filename="nomodel.rvc";
-    Options.rve_filename="nomodel.rve";
+	Options.rvg_filename="nomodel.rvg";
+	Options.rvd_filename="nomodel.rvd"; //GWMIGRATE - TO REMOVE
+	Options.rvv_filename="nomodel.rvv"; //GWMIGRATE - TO REMOVE
+    Options.rve_filename="nomodel.rvs"; //GWMIGRATE - TO REMOVE
+	Options.rve_filename="nomodel.rve";
   }
 
   // make sure that output dir has trailing '/' if not empty

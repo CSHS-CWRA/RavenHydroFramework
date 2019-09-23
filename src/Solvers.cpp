@@ -6,6 +6,13 @@
 #include "RavenInclude.h"
 #include "Model.h"
 
+//Defined in GWSolvers.cpp
+void SolveGWSystem    (      CModel      *pModel, 
+                       const optStruct   &Options,
+					             const time_struct &tt,             //time
+                             double      *GW_head_prev,
+                             double      *GW_head_new);         
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Solves system of energy and mass balance ODEs/PDEs for one timestep
 /// \remark This is the heart of Raven
@@ -21,16 +28,18 @@ void MassEnergyBalance( CModel            *pModel,
   int         i,j,k,p,pp,pTo,q,qs,c;                 //counters
   int         NS,NB,nHRUs,nConnections=0,nProcesses; //array sizes (local copies)
   int         nConstituents;                         //
-  int         iSW, iAtm, iAET;                      //Surface water, atmospheric precip, used PET indices
+  int         iSW, iAtm, iAET, iGW;                  //Surface water, atmospheric precip, used PET indices
 
-  int         iFrom[MAX_CONNECTIONS];                 //arrays used to pass values through GetRatesOfChange routines
+  int         iFrom[MAX_CONNECTIONS];                //arrays used to pass values through GetRatesOfChange routines
   int         iTo  [MAX_CONNECTIONS];
   double      rates_of_change[MAX_CONNECTIONS];
 
   double      tstep;              //[day] timestep
   double      t;                  //model time
   time_struct tt_end;             //time at end of timestep
-
+  
+  double      stor_diff;
+  double      poro;               //aquifer porosity
   CHydroUnit *pHRU;               //pointer to current HRU
   CSubBasin  *pBasin;             //pointer to current SubBasin
 
@@ -50,6 +59,14 @@ void MassEnergyBalance( CModel            *pModel,
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
+  double             *GW_stor     =NULL; //[mm] groundwater storage at start of timestep
+  double             *GW_stor_new =NULL; //[mm] groundwater storage after processes have moved water
+  double             *GW_stor_old =NULL;
+  double             *GW_heads    =NULL; //[m] groundwater heads at start of timestep
+  double             *GW_heads_new=NULL; //[m] groundwater heads after processes have moved water
+  double             *head_change =NULL;
+
+  
   //local shorthand for often-used variables
   NS           =pModel->GetNumStateVars();
   NB           =pModel->GetNumSubBasins();
@@ -118,6 +135,17 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 
+  if((Options.modeltype == MODELTYPE_COUPLED) || (Options.modeltype == MODELTYPE_GROUNDWATER))
+  {
+    //GW storage pre-process
+    int nNodes=(int)(pModel->GetGroundwaterModel()->GetGWGeom()->GetGWGeoProperty("NUM_NODES"));
+    GW_stor         = new double [nNodes];
+    GW_stor_new     = new double [nNodes];
+    GW_stor_old     = new double [nNodes];
+    GW_heads        = new double [nNodes];
+    GW_heads_new    = new double [nNodes];
+    head_change     = new double [nNodes];
+  }
   // Initialize variables============================================
   for (i=0;i<MAX_CONNECTIONS;i++)
   {
@@ -394,6 +422,100 @@ void MassEnergyBalance( CModel            *pModel,
   delete [] exchange_rates;
 
   //-----------------------------------------------------------------
+  //      GROUNDWATER SOLVER
+  //-----------------------------------------------------------------
+  //GW MIGRATE - FULL REVIEW NEEDED
+  //Following solution to SW system at end of timestep, solve GW system for lateral flow
+  if (Options.modeltype == MODELTYPE_GROUNDWATER || Options.modeltype == MODELTYPE_COUPLED)
+	{
+    CGroundwaterModel *pGWmod=pModel->GetGroundwaterModel();
+    COverlapExchangeClass *pOE;
+    string param;
+    double bot;
+    double stor_sum = 0;
+    double stor_sum2 = 0;
+    double weight;
+
+    for(k = 0; k < nHRUs; k++)
+    {
+      head_change[k] = 0;
+    }
+
+    //convert storage to Heads
+    for (k=0;k<nHRUs;k++)
+    {  
+      pHRU            = pModel->GetHydroUnit(k);                           
+      poro            = pHRU->GetAquiferProps(0)->porosity;
+      bot             = pGWmod->GetGWGeom()->GetGWGeoProperty("BOT_ELEV",k,0);
+      iGW             = pModel->GetStateVarIndex(GROUNDWATER,0);                 //*****FIX - needs to work with multiple layers
+      
+      GW_stor[k]      = aPhinew[k][iGW];                                         //post process application storage value [mm]
+      GW_stor_old[k]  = aPhi   [k][iGW];
+      stor_diff       = GW_stor[k] - GW_stor_old[k];
+      //cout<<"stor: "<<GW_stor[k]<<"   stor_old: "<<GW_stor_old[k]<<endl;
+      if(Options.overlap_type == AREA_WEIGHTED)
+      {
+        pOE         = pModel->GetGroundwaterModel()->GetOEs(0);
+        GW_heads[k] = pGWmod->GetGWGeom()->GetGWGeoProperty("GW_HEAD",k,0);       //*****FIX - needs to work with multiple layers
+
+        //get OE table
+        for(i = 0; i < pOE->GetOEProperty("NGWCELLS"); i++)
+        {
+          weight = pOE->GetOEStruct()->overlap[k][i];
+          head_change[i] += (weight * stor_diff);
+          //cout<<"w: "<<weight<<"   sd: "<<stor_diff<<endl;
+        }
+      }
+      else
+      {
+        GW_heads[k] = pGWmod->GetGWGeom()->GetGWGeoProperty("GW_HEAD",k,0);
+        GW_heads_new[k] = ((GW_stor[k] / poro) / MM_PER_METER) + bot;         //convert to head [m]
+      }
+      stor_sum += GW_stor[k];
+    }
+    if(Options.overlap_type == AREA_WEIGHTED)
+    {
+      for(i = 0; i<nHRUs; i++)
+      {
+        GW_heads_new[i] = GW_heads[i] + ((head_change[i] / poro) / MM_PER_METER);
+        //cout<<"i: "<<i<<"   ho: "<<GW_heads[i]<<"   hc: "<<((head_change[i] / poro) / MM_PER_METER)<<"   hn: "<<GW_heads_new[i]<<endl;
+      }
+    }
+
+    //Solve for lateral flow
+    SolveGWSystem(pModel,Options, tt, GW_heads, GW_heads_new);
+
+    //convert heads back to storage & update statevars with storag and head values
+    for (k=0;k<nHRUs;k++)
+    {
+      param = "GW_HEAD";
+      pHRU = pModel->GetHydroUnit(k);                          
+      poro = pHRU->GetAquiferProps(0)->porosity;
+      bot  = pGWmod->GetGWGeom()->GetGWGeoProperty("BOT_ELEV",k,0);
+
+      GW_stor_new[k]     = (((GW_heads_new[k] - bot) * MM_PER_METER) * poro);      //convert solved heads into change in storage [mm]
+      //cout<<"stor: "<<GW_stor_new[k]<<"   head: "<<GW_heads_new[k]<<endl;                      
+      iGW  = pModel->GetStateVarIndex(GROUNDWATER,0);                 //*****FIX - needs to work with multiple layers
+      //pHRU->SetStateVarValue(iGW, GW_stor_new[k]);
+      aPhinew[k][iGW] = GW_stor_new[k];                               //sets aPhinew to redistributed storage value for later updating after routing [mm]
+      pGWmod->GetGWGeom()->SetGWGeoProperty(param,GW_heads_new[k],k,0);         //*****FIX - needs to work with multiple layers
+
+      stor_sum2 += GW_stor_new[k];
+      /*for(j = 0; j < inc_bal_cnt[k]; j++)
+      {
+        pModel->IncrementBalance(inc_bal[k][j],k,(GW_stor_new[k] - pHRU->GetStateVarValue(iGW))*tstep);
+      }*/
+    }
+    //for (k=0;k<nHRUs;k++)
+    {
+      //cout<<setprecision(12)<<"s_preGW: "<<GW_stor[k]<<"   s_postGW: "<<GW_stor_new[k]<<endl;
+    }
+    //cout<<setprecision(12)<<"s_preGW: "<<stor_sum<<"   s_postGW: "<<stor_sum2<<"  diff: "<<stor_sum2-stor_sum<<endl;
+    //cout<<endl;
+  }
+
+
+  //-----------------------------------------------------------------
   //      ROUTING
   //-----------------------------------------------------------------
   double res_ht,res_outflow;
@@ -572,7 +694,10 @@ void MassEnergyBalance( CModel            *pModel,
     delete [] aQinnew;      aQinnew     =NULL;
     delete [] aQoutnew;     aQoutnew    =NULL;
     delete [] aRouted;      aRouted     =NULL;
-
+	delete [] GW_stor;      GW_stor     = NULL; //GWMIGRATE - should name aGW_stor,...
+    delete [] GW_stor_new;  GW_stor_new = NULL;
+    delete [] GW_heads;     GW_heads    = NULL;
+    delete [] GW_heads_new; GW_heads_new= NULL;
     //delete transport static arrays.
     if (nConstituents>0){
       for (p=0;p<NB;p++){

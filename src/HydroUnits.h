@@ -83,9 +83,9 @@ public:/*-------------------------------------------------------*/
              const double            aspect,           //[rad counterclockwise from north]
              const HRU_type          type,
              const CSoilProfile     *soil_profile,     //soil profile
+             //const CAquiferStack    *aquifer_system,   //aquifer system profile //GWMIGRATE
              const CVegetationClass *veg_class,        //vegetation class
              const void             *PLACEHOLDER,      //old aquifer class
-             //const CAquiferStack    *aquifer_system,   //aquifer system profile
              const CTerrainClass    *terrain_class,    //terrain class
              const CLandUseClass    *lult_class);      //land use
 
@@ -122,6 +122,7 @@ public:/*-------------------------------------------------------*/
   soil_struct     const *GetAquiferProps    (const int m) const;
   double                 GetAquiferThickness(const int m) const;//[mm]
   double                 GetAquiferCapacity (const int m) const;//[mm]
+  double                 GetAquiferHeadCapacity(const int m, const int HRU) const;
 
   veg_struct      const *GetVegetationProps () const;
   veg_var_struct  const *GetVegVarProps     () const;

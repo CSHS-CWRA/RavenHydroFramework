@@ -26,7 +26,10 @@ enum class_type{
   CLASS_TERRAIN,    ///< Terrain class
   CLASS_TRANSPORT,  ///< Transport class
   CLASS_GLOBAL,     ///< Global parameter class
-  CLASS_HRUTYPE     ///< special flag to handle HRU type changes; not assoc. with parameters
+  CLASS_HRUTYPE,     ///< special flag to handle HRU type changes; not assoc. with parameters
+  CLASS_GWSTRESSPERIOD, ///< GW Stress Period Class //GWMIGRATE - NECESSARY?
+  CLASS_GWGEOMETRY,     ///< GW Geometry Class //GWMIGRATE - NECESSARY?
+  CLASS_OVERLAPEXCHANGE ///< GW-SW Overlap and Exchange Flux Class //GWMIGRATE - NECESSARY?
 };
 
 ///////////////////////////////////////////////////////////////////

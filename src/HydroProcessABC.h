@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #ifndef HYDROPROCESS_H
@@ -65,6 +65,8 @@ protected:/*----------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors:
   CHydroProcessABC(const process_type ptype);     //multiple connection dynamic constructor
+  CHydroProcessABC(const process_type ptype,
+                   const int          nConns);     //multiple connection dynamic constructor
   CHydroProcessABC(const process_type ptype,      //single connection constructor
                    const int          In_index,
                    const int          Out_index);

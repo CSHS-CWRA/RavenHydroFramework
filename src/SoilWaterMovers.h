@@ -8,6 +8,8 @@
   CmvInterflow
   CmvPercolation
   CmvCappilaryRise
+  CmvDrain
+  CmvRecharge
   ----------------------------------------------------------------*/
 
 #ifndef SOILWATERMOVERS_H
@@ -277,6 +279,55 @@ public:/*-------------------------------------------------------*/
                                            sv_type *aSV, int *aLev, int &nSV);
 };
 
+///////////////////////////////////////////////////////////////////
+/// \brief Method of modeling drainage soil layers
+//
+enum drain_type
+{
+  DRAIN_CONDUCTANCE,    ///< drain method based upon MODFLOW approach using a river bed conductance layer
+  DRAIN_UFR             ///< drain method using upscaled flux relationships
+};
+
+////////////////////////////////////////////////////////////////////
+/// \brief Data abstration of loss of water from one soil layer to a lower soil layer
+//
+class CmvDrain: public CHydroProcessABC
+{  
+  private:/*------------------------------------------------------*/
+		drain_type					type; ///< Model of drainage selected
+		int						 *soil_ind;	///< array of soil indices
+		int					 nSoilLayers; ///< number of soil layers subject to drainage
+
+  public:/*-------------------------------------------------------*/
+		//Constructors/destructors:
+		CmvDrain(drain_type	d_type);			
+		~CmvDrain();
+
+		//inherited functions
+    void Initialize();
+    void GetRatesOfChange(const double		  *state_vars, 
+								          const CHydroUnit  *pHRU, 
+								          const optStruct	  &Options,
+								          const time_struct &tt,
+                                double      *rates) const;
+    void ApplyConstraints(const double      *state_vars,
+											    const CHydroUnit  *pHRU, 
+								          const optStruct	  &Options,
+								          const time_struct &tt,
+                                double      *rates) const;
+
+    void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
+    static void GetParticipatingStateVarList(drain_type	d_type, sv_type *aSV, int *aLev, int &nSV);
+};
+///////////////////////////////////////////////////////////////////
+/// \brief Method of modeling recharge to aquifers
+//
+enum recharge_type
+{
+  RECHARGE_FROMFILE,             ///< uses recharge from data 
+  RECHARGE_CONSTANT,         ///< constant recharge method applied to aquifers
+  RECHARGE_CONSTANT_OVERLAP, ///<constant recharge method applied to aquifers with area weighted separation to connected gw cells 
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction of capillary rise
 /// \details Calculates loss of water from soil layers to upper soil layers
@@ -284,10 +335,14 @@ public:/*-------------------------------------------------------*/
 class CmvRecharge: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
+  recharge_type	      _type;        ///< Model of recharge 
+  int				  *soil_ind;	///< array of soil indices
+  int				  nSoilLayers; ///< number of soil layers subject to drainage
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvRecharge(int to_index);
+  CmvRecharge(recharge_type	rech_type, int nConns);			
   ~CmvRecharge();
 
   //inherited functions
@@ -304,6 +359,6 @@ public:/*-------------------------------------------------------*/
                         double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
-  static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
+  static void GetParticipatingStateVarList(recharge_type	r_type,sv_type *aSV, int *aLev, int &nSV);
 };
 #endif

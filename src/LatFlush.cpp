@@ -97,7 +97,7 @@ void CmvLatFlush::Initialize()
   {
     //toHRUGrp
     int kToSB=DOESNT_EXIST;
-    for(int k=0;k<_pModel->GetNumHRUs();k++) {
+    for(k=0;k<_pModel->GetNumHRUs();k++) {
       if(_pModel->IsInHRUGroup(k,toHRUGrp)) {
         ExitGracefullyIf(kToSB!=DOESNT_EXIST,
           "LatFlush::Initialize - only one HRU in the model can recieve flush output. More than one recipient HRU found.",BAD_DATA_WARN);
@@ -105,7 +105,7 @@ void CmvLatFlush::Initialize()
       }
     }
       //find 'from' HRUs to make connections
-    for(int k=0;k<_pModel->GetNumHRUs();k++)
+    for(k=0;k<_pModel->GetNumHRUs();k++)
     {
       if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
         kFrom[q]=k;
@@ -121,7 +121,7 @@ void CmvLatFlush::Initialize()
     }
   }
   DynamicSpecifyLatConnections(nConn);
-  for(int q=0;q<_nLatConnections;q++){
+  for(q=0;q<_nLatConnections;q++){
     _kFrom   [q]    =kFrom[q];
     _kTo     [q]    =kTo[q];
     _iFromLat[q]    =_iFlushFrom;

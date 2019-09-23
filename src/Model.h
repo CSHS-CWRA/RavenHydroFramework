@@ -26,10 +26,12 @@
 #include "Diagnostics.h"
 #include "ForcingGrid.h"        ///> CForcingGrid
 #include "ModelEnsemble.h"
+#include "GroundwaterClass.h"
 
 class CHydroProcessABC;
 class CGauge;
 class CCustomOutput;
+class CGroundwaterModel;
 class CTransportModel;
 class CEnsemble;
 ////////////////////////////////////////////////////////////////////
@@ -89,6 +91,7 @@ private:/*------------------------------------------------------*/
   int            _nClassChanges;  ///< number of HRU Group class changes
   class_change **_pClassChanges;  ///< array of pointers to class_changes
 
+  CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
   CEnsemble         *_pEnsemble;  ///< pointer to model ensemble
 
@@ -284,6 +287,7 @@ public:/*-------------------------------------------------------*/
 
   const optStruct  *GetOptStruct                      () const;
   CTransportModel  *GetTransportModel                 () const;
+  CGroundwaterModel*GetGroundwaterModel               () const;
   CEnsemble        *GetEnsemble                       () const;
 
   void              GetParticipatingParamList         (string *aP,

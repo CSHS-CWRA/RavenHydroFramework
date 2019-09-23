@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "StateVariables.h"
@@ -25,6 +25,28 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype)
 
   ExitGracefullyIf(pModel==NULL,
                    "CHydroProcessABC::Constructor:no model associated with hydrologic process",BAD_DATA);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the constructor for an abstract hydrological process
+/// \param ptype [in] Type of hydrological process
+//
+CHydroProcessABC::CHydroProcessABC(const process_type ptype, const int nConns)
+{
+  _process  	  =ptype;
+  _nConnections=nConns;
+  iFrom=NULL;
+  iTo  =NULL;
+
+  _cascading  =false;
+  _nCascades  =0;
+  _iCascade   =NULL;
+ 
+  _pConditions=NULL;
+  _nConditions=0;
+
+  ExitGracefullyIf(pModel==NULL,
+    "CHydroProcessABC::Constructor:no model associated with hydrologic process",BAD_DATA);
 }
 
 

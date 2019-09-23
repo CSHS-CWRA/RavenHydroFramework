@@ -21,6 +21,8 @@
 #include <netcdf.h>
 #endif
 
+//#define _ARMADILLO_      //comment out to compile without armadillo library
+
 #include <stdlib.h>
 #include <cstring>
 #include <algorithm>
@@ -111,6 +113,7 @@ const double  CM_PER_METER            =100;                                     
 const double  CM3_PER_METER3          =1e6;                                     ///< [m3] to [ccm]
 const double  METER_PER_CM            =0.01;                                    ///< [cm] to [m]
 const double  M2_PER_KM2              =1e6;                                     ///< [km2] to [m2]
+const double  MM2_PER_M2              =1e6;                                     ///< [m2] to [mm2]
 const double  M_PER_KM                =1000;                                    ///< [km] to [m]
 const double  GRAMS_PER_KG            =1000;                                    ///< [kg] to [g]
 const double  MG_PER_KG               =1000000;                                 ///< [kg] to [mg]
@@ -133,8 +136,8 @@ const double  INCH_PER_METER          =39.37;                                   
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
-const double  RADIANS_TO_DEGREES      =57.29578;                                ///< [rad] to [deg]
-const double  DEGREES_TO_RADIANS      =0.17453;                                 ///< [deg] to [rad]
+const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
+const double  DEGREES_TO_RADIANS      =0.017453293;                             ///< [deg] to [rad]
 
 /// \details 0.278*(24hr/d)*(1000^2m^2/km)*(0.001m/mm)*(1/86400s/day) \n
 /// runoff=RATIONAL_CONV*C_R*rainfall intensity \n
@@ -283,12 +286,13 @@ const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is g
 const int     MAX_SV_LAYERS       =100;         ///< maximum number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< maximum number of soil layers in profile
 const int     MAX_STATE_VARS      =200;         ///< maximum number of state variables in model
+const int     MAX_GW_CLASSES      =50;          ///< Max number of gw classes
 const int     MAX_CONNECTIONS     =200;         ///< maximum number of to/from connections in any single process (CAdvection worst offender)
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
 const int     MAX_LULT_CLASSES    =200;         ///< Max number of lult classes
 const int     MAX_AQUIFER_LAYERS  =10;          ///< Max number aquifer layers
-const int     MAX_AQUIFER_STACKS  =50;          ///< Max number aquifer stacks
+const int     MAX_AQUIFER_STACKS  =50;          ///< Max number aquifer stacks GWMIGRATE - Set at 10000!?
 const int     MAX_TERRAIN_CLASSES =50;          ///< Max number of terrain classes
 const int     MAX_SURVEY_PTS      =50;          ///< Max number of survey points
 const int     MAX_GAUGES_IN_LIST  =250;         ///< Max number of gauges in :GaugeList command
@@ -297,6 +301,9 @@ const int     MAX_RIVER_SEGS      =50;          ///< Max number of river segment
 const int     MAX_FILENAME_LENGTH =256;         ///< Max filename length
 const int     MAX_MULTIDATA       =10;          ///< Max multidata length
 const int     MAX_LAT_CONNECTIONS =4000;        ///< Maximum number of lateral HRU flow connections
+const int     MAX_GW_CELLS        =10000;       ///< Max number of cells in gw model grid
+const int     MAX_SP_CLASSES      =100;         ///< Max number of stress periods
+const int     MAX_OE_CLASSES      =1;           ///< Max number of overlap/exchange classes
 /******************************************************************
 Enumerated Types
    found in optStruct - the structure of global model options
@@ -311,6 +318,79 @@ enum numerical_method
   EULER,              ///< Euler's method
   ORDERED_SERIES,     ///< Conventional WB model method - processes in series
   ITERATED_HEUN       ///< 2nd Order Convergence Method
+  //RUNGE_KUTTA_4,    ///< 4th order Runge-Kutta 
+  //CONVERG_1ST_ORDER ///< 1st Order Convergence Method
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The type of model that is being simulated
+//
+
+enum model_type
+{
+  MODELTYPE_SURFACE,          ///< Surface water simulation ONLY
+  MODELTYPE_GROUNDWATER,      ///< Groundwater simulation ONLY
+  MODELTYPE_COUPLED,          ///< Coupled groundwater-surface water simulation
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The nonlinear solver to be used for the groundwater component
+//
+
+enum gw_nonlinear_num_method
+{
+  GWSOL_NEWTONRAPHSON,       ///< newton-raphson method
+  GWSOL_PICARD,              ///< picard iteration method
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The linear solver to be used for the groundwater component
+//
+
+enum gw_linear_num_method
+{
+  GWSOL_PCGU,                 ///< MODFLOW unstructured PCG solver
+  GWSOL_BICGSTAB,             ///< BiConjugate Gradient solver
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The type of grid being used to discretize the model space
+//
+
+enum gw_discretization
+{
+  GRID_UNSTRUCTURED,          ///< Unstructured grid
+  //GRID_STRUCTURED,            ///< Structured grid
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The method of HRU and aquifer connection
+//
+
+enum sw_gw_connection
+{
+  DIRECT,               ///< 1:1 connection
+  AREA_WEIGHTED,        ///< area weighted connection
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The frequency of the exchange fluxes between SW and GW
+//
+
+enum flux_frequency
+{
+  EXFREQ_EVERY_TIMESTEP,      ///< Feedback between SW and GW occurs once every timestep
+  NONE,                       ///< No feedback between SW and GW
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief The method of determining the amount of flux exchange crossing between SW and GW
+//
+
+enum flux_method
+{
+  FLUX_EX_STANDARD,           ///< Regular process calculations
+  FLUX_EX_UFR,      ///< All fluxes are determined using rating curves
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -779,7 +859,7 @@ enum process_type
   INFILTRATION,
 
   //in SoilWaterMovers.h:
-  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,RECHARGE,
+  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,RECHARGE,DRAIN,
 
   //in VegetationMovers.h:
   CANOPY_EVAPORATION, CANOPY_SNOW_EVAPORATION, CANOPY_DRIP,
@@ -852,6 +932,14 @@ struct optStruct
   double           timestep;                  ///< numerical method timestep (in days)
   double           output_interval;           ///< write to output file every x number of timesteps
   ensemble_type    ensemble;                  ///< ensemble type (or ENSEMBLE_NONE if single model)
+  
+  model_type       modeltype;                 ///< type of model being simulated
+  gw_nonlinear_num_method gw_solver_outer;    ///< nonlinear numerical solution method for groundwater GWMIGRATe - rename shorter
+  gw_linear_num_method    gw_solver_inner;    ///< linear numerical solution method for groundwater
+  gw_discretization       gw_grid;            ///< grid storage type
+  flux_frequency          exchange_freq;      ///< frequency of exchange fluxes
+  flux_method             flux_exchange;      ///< method of calculating exchange fluxes
+  sw_gw_connection        overlap_type;       ///< method to determine how HRU/Aquifer connections occur
 
   interp_method    interpolation;             ///< Method for interpolating Met Station/Gauge data to HRUs
   string           interp_file;               ///< name of file (in working directory) which stores interpolation weights
@@ -863,6 +951,11 @@ struct optStruct
   string           rvt_filename;              ///< fully qualified filename of rvt (time series) file
   string           rvc_filename;              ///< fully qualified filename of rvc (initial conditions) file
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
+  string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
+  string           rvd_filename;              ///< fully qualified filename of rvd (groundwater discretization) file GWMIGRATE - TO REMOVE!!
+  string           rvv_filename;              ///< fully qualified filename of rvv (groundwater-surface water overlap) file GWMIGRATE - TO REMOVE!!
+  string           rvs_filename;              ///< fully qualified filename of rvs (groundwater-surface water exchange) file GWMIGRATE - TO REMOVE!!
+ 
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)
   string           output_dir;                ///< output directory (can change during ensemble run)
 
@@ -921,6 +1014,8 @@ struct optStruct
   bool             write_forcings;            ///< true if ForcingFunctions.csv is written
   bool             write_mass_bal;            ///< true if WatershedMassEnergyBalance.csv is written
   bool             write_energy;              ///< true if WatershedEneryStorage.csv is written
+  bool             write_gwhead;      		  ///< true if GWHead.csv is written
+  bool             write_gwflow;      		  ///< true if GWFlow.csv is written
   bool             write_reservoir;           ///< true if ReservoirStages.csv is written
   bool             write_reservoirMB;         ///< true if ReservoirMassBalance.csv is written
   bool             ave_hydrograph;            ///< true if average flows over timestep are reported in hydrograph output

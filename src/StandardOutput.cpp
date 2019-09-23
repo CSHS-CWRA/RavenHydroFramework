@@ -107,6 +107,9 @@ void CModel::CloseOutputStreams()
     _pCustomOutputs[c]->CloseFiles();
   }
   _pTransModel->CloseOutputFiles();
+  if(_pGWModel!=NULL) {
+    _pGWModel->CloseOutputFiles();
+  }
   if ( _STORAGE.is_open()){ _STORAGE.close();}
   if (   _HYDRO.is_open()){   _HYDRO.close();}
   if (_FORCINGS.is_open()){_FORCINGS.close();}
@@ -182,7 +185,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" [m3/s]";}
         //if (Options.print_obs_hydro)
         {
-          for (int i = 0; i < _nObservedTS; i++){
+          for (i = 0; i < _nObservedTS; i++){
             if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
             {
               if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
@@ -249,7 +252,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
       //if (Options.print_obs_hydro)
       {
-        for(int i = 0; i < _nObservedTS; i++){
+        for(i = 0; i < _nObservedTS; i++){
           if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
             if(_pSubBasins[p]->GetName()==""){ _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]"; }
@@ -383,7 +386,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
     MB<<"time[d],date,hour";
     bool first;
-    for (int i=0;i<_nStateVars;i++){
+    for (i=0;i<_nStateVars;i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
       {
         MB<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
@@ -418,7 +421,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
     MB<<endl;
     MB<<",,";//time,date,hour
-    for (int i=0;i<_nStateVars;i++){
+    for (i=0;i<_nStateVars;i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
       {
         for (j=0;j<_nProcesses;j++){
@@ -508,6 +511,12 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     _pTransModel->WriteEnsimOutputFileHeaders(Options);
   }
 
+  // Groundwater output files
+  //-------------------------------------------------------------
+
+  _pGWModel->WriteOutputFileHeaders(Options);
+
+
   //raven_debug.csv
   //--------------------------------------------------------------
   if (Options.debug_mode)
@@ -527,7 +536,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   if ((_nObservedTS>0) && (_nDiagnostics>0))
   {
     ofstream DIAG;
-    string tmpFilename;
     tmpFilename=FilenamePrepare("Diagnostics.csv",Options);
     DIAG.open(tmpFilename.c_str());
     if(DIAG.fail()){
@@ -658,7 +666,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
             //if (Options.print_obs_hydro)
             {
-              for (int i = 0; i < _nObservedTS; i++)
+              for (i = 0; i < _nObservedTS; i++)
               {
                 if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
                 {
@@ -689,7 +697,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
               //if (Options.print_obs_hydro)
               {
-                for(int i = 0; i < _nObservedTS; i++){
+                for(i = 0; i < _nObservedTS; i++){
                   if(IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
                   {
                     double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
@@ -790,7 +798,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	        }
 	        //if (Options.print_obs_hydro)
 	        {
-	          for (int i = 0; i < _nObservedTS; i++){
+	          for (i = 0; i < _nObservedTS; i++){
 	            if (IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
 	            {
 	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
@@ -888,7 +896,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         MB.open(tmpFilename.c_str(),ios::app);
 
         MB<<usetime<<","<<usedate<<","<<usehour;
-        for(int i=0;i<_nStateVars;i++)
+        for(i=0;i<_nStateVars;i++)
         {
           if(CStateVariable::IsWaterStorage(_aStateVarType[i]))
           {
@@ -934,7 +942,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             for(j=0;j<_nProcesses;j++){
               sum=0;
               found=false;
-              for(int q=0;q<_pProcesses[j]->GetNumLatConnections();q++){
+              for(q=0;q<_pProcesses[j]->GetNumLatConnections();q++){
                 CLateralExchangeProcessABC *pProc=static_cast<CLateralExchangeProcessABC *>(_pProcesses[j]);
                 if (pProc->GetLateralToIndices()[q]==i){
                   sum+=_aCumulativeLatBal[js];found=true;
@@ -1008,6 +1016,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       _pTransModel->WriteEnsimMinorOutput(Options,tt);
     }
 
+    // Groundwater output files
+    //--------------------------------------------------------------
+    _pGWModel->WriteMinorOutput(Options,tt);
+
     // raven_debug.csv
     //--------------------------------------------------------------
     if (Options.debug_mode)
@@ -1016,12 +1028,12 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       tmpFilename=FilenamePrepare("raven_debug.csv",Options);
       DEBUG.open(tmpFilename.c_str(),ios::app);
       DEBUG<<t<<","<<thisdate<<","<<thishour;
-      for(int i=0;i<10;i++){DEBUG<<","<<g_debug_vars[i];}
+      for(i=0;i<10;i++){DEBUG<<","<<g_debug_vars[i];}
       DEBUG<<endl;
       DEBUG.close();
     }
 
-    // HRU storage output (HRUStorage_HRUID.csv)
+    // HRU storage output
     //--------------------------------------------------------------
     if (_pOutputGroup!=NULL)
     {
@@ -1237,6 +1249,15 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"  Watershed Area: "<<_WatershedArea              <<" km2 (simulated) of "<<allarea<<" km2"<<endl;
     cout <<"======================================================"<<endl;
     cout <<endl;
+	if((Options.modeltype == MODELTYPE_COUPLED) || (Options.modeltype == MODELTYPE_GROUNDWATER))
+  	{
+    	cout <<"==GROUNDWATER SUMMARY================================"<<endl;
+    	//CAquiferStack::SummarizeToScreen();
+    	CGWGeometryClass::SummarizeToScreen();
+    	CGWStressPeriodClass::SummarizeToScreen();
+    	COverlapExchangeClass::SummarizeToScreen();
+    	cout <<"====================================================="<<endl;
+  	}
   }
 }
 

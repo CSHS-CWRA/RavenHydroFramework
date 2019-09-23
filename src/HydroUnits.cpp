@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2019 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -37,7 +37,7 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
                        const double            aspect,//[rad counterclock from N]
                        const HRU_type          typ,
                        const CSoilProfile     *soil_profile,
-                       //const CAquiferStack  *aquifer_system,
+                       //const CAquiferStack  *aquifer_system, //GWMIGRATE - aquifer stacks should likely become obsolete
                        const CVegetationClass *veg_class,
                        const void             *PLACEHOLDER,
                        const CTerrainClass    *terrain_class,
@@ -106,7 +106,7 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _pTerrain  =terrain_class->GetTerrainStruct();
 
   soil_profile->AllocateSoilLayers(_pModel->GetNumSoilLayers(),_pSoil,aThickness);
-
+  //aquifer_system ->AllocateAqLayers(_pModel->GetNumAquiferLayers(),pAquifers,aAqThickness); //GWMIGRATE - uncomment
   //aq_system ->AllocateAquiferLayers(_pModel->GetNumAquiferLayers(),pAquifers,aquifer_thick,aquitard_thick);
 }
 
@@ -378,13 +378,29 @@ double  CHydroUnit::GetAquiferThickness   (const int m) const
 /// \param m [in] Integer index specifying aquifer layer
 /// \return Double indicating maximum water storage capacity of aquifer layer in [mm]
 //
-double CHydroUnit::GetAquiferCapacity   (const int m) const
+double CHydroUnit::GetAquiferCapacity(const int m) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((m<0) || (m>=_pModel->GetNumAquiferLayers()),
-                   "CHydroUnit GetSoilCapacity::improper index",BAD_DATA);
+    "CHydroUnit GetAquiferCapacity::improper index",BAD_DATA);
 #endif
   return aAqThickness[m]*MM_PER_METER*pAquifers[m]->cap_ratio;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns aquifer head capacity of a layer of aquifer in HRU
+///
+/// \param m [in] Integer index specifying aquifer layer
+/// \param HRU [in] index of HRU
+/// \return Double indicating maximum water storage capacity of aquifer layer in [mm]
+//
+double CHydroUnit::GetAquiferHeadCapacity   (const int m, const int HRU) const
+{
+  ExitGracefullyIf((m<0) || (m>=_pModel->GetNumAquiferLayers()),
+    "CHydroUnit GetAquiferHeadCapacity::improper index",BAD_DATA);
+  //CGWGeometryClass *pGWDis;
+  //pGWDis = _pModel->GetGWGeos(0);
+  return ALMOST_INF;//pGWDis->GetGWGeoProperty("TOP_ELEV",HRU,0);
+  //GWMIGRATE - this has to be handled by some other means
 }
 
 //////////////////////////////////////////////////////////////////
@@ -596,6 +612,11 @@ double        CHydroUnit::GetStateVarMax(const int      i,
     }
     case(CANOPY_SNOW):  {
       if(!ignorevar) {max_var=_VegVar.snow_capacity;}
+      break;
+    }
+    case(GROUNDWATER):  {
+      if(Options.modeltype == MODELTYPE_SURFACE){max_var=ALMOST_INF;}
+      else                                      {max_var=ALMOST_INF;}//GetAquiferHeadCapacity(0,HRUid);}        //GWMIGRATE - HRUid k not accesible from here yet
       break;
     }
     case(DEPRESSION):   {

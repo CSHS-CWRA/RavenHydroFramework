@@ -40,6 +40,14 @@ void CModel::Initialize(const optStruct &Options)
   ExitGracefullyIf(_nProcesses==0,
                    "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
 
+  if (_pGWModel!=NULL)
+  {
+    ExitGracefullyIf(_pGWModel->GetGWGeom()==NULL,
+      "CModel::Initialize: Must have Groundwater Geometry",BAD_DATA);
+    ExitGracefullyIf(GetStateVarIndex(GROUNDWATER)==DOESNT_EXIST,
+      "CModel::Initialize: Must have aquifer storage included in model",BAD_DATA);
+  }
+
   //Ensure Basins & HRU IDs are unique
   for (p=0;p<_nSubBasins;p++){
     for (int pp=0;pp<p;pp++){

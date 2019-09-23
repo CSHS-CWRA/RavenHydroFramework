@@ -752,6 +752,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           pAqStacks[num_parsed_aqstacks]=new CAquiferStack(s[0]);
 
           int nlayers=s_to_i(s[1]);
+		      pModel->GetGroundwaterModel()->SetNumAquiferStack(nlayers);   //GWMIGRATE necessary???
           ExitGracefullyIf(nlayers<0,
                            "ParseClassPropertiesFile: invalid number of aquifer layers in stack",BAD_DATA);
           //zero is a valid entry for lakes & glaciers (zero horizons)
@@ -768,6 +769,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
                              "ParseClassPropertiesFile: bad soiltype code in aquifer stack",BAD_DATA);
             pAqStacks[num_parsed_aqstacks]->AddLayer(thisthick,pLayerSoil);
           }
+		  //add layer to Model definition
+          pModel->GetGroundwaterModel()->AddAquiferStack(pAqStacks[num_parsed_aqstacks]); //GWMIGRATE - move to end of file parse
           num_parsed_aqstacks++;
         }
         else{
