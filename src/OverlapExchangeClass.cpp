@@ -220,7 +220,7 @@ void COverlapExchangeClass::InitializeOEProperties(oe_struct &E, bool is_templat
 /// \brief Sets the value of the overlap/exchange property corresponding to param_name
 /// \param param_name [in] Parameter identifier
 //
-void  COverlapExchangeClass::SetOEProperty(string &param_name, 
+void  COverlapExchangeClass::SetOEProperty(string param_name, 
                                           const double value, int i, int j)
 {
   SetOEProperty(E,param_name,value,i,j);
@@ -229,7 +229,7 @@ void  COverlapExchangeClass::SetOEProperty(string &param_name,
 /// \brief Sets the value of the overlap/exchange property corresponding to param_name
 /// \param param_name [in] Parameter identifier
 //
-void  COverlapExchangeClass::SetOEProperty(string &param_name, 
+void  COverlapExchangeClass::SetOEProperty(string param_name, 
                                           const double value)
 {
   SetOEProperty(E,param_name,value);
@@ -238,7 +238,7 @@ void  COverlapExchangeClass::SetOEProperty(string &param_name,
 /// \brief Sets the value of the overlap/exchange property corresponding to param_name
 /// \param param_name [in] Parameter identifier
 //
-void  COverlapExchangeClass::SetOEProperty(string &param_name, 
+void  COverlapExchangeClass::SetOEProperty(string param_name, 
                                           const double value,
                                           int i)
 {
@@ -248,7 +248,7 @@ void  COverlapExchangeClass::SetOEProperty(string &param_name,
 /// \brief Sets the value of the overlap/exchange property corresponding to param_name
 /// \param param_name [in] Parameter identifier
 //
-void  COverlapExchangeClass::SetOEProperty(string &param_name, 
+void  COverlapExchangeClass::SetOEProperty(string param_name, 
                                           const int value)
 {
   SetOEProperty(E,param_name,value);
@@ -257,7 +257,7 @@ void  COverlapExchangeClass::SetOEProperty(string &param_name,
 /// \brief Sets the value of the overlap/exchange property corresponding to param_name
 /// \param param_name [in] Parameter identifier
 //
-void  COverlapExchangeClass::SetOEProperty(string &param_name, 
+void  COverlapExchangeClass::SetOEProperty(string param_name, 
                                           string value)
 {
   SetOEProperty(E,param_name,value);

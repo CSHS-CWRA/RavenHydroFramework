@@ -197,11 +197,6 @@ bool ParseGWSWExchangeFile(CModel *&pModel,
       case(2):  //----------------------------------------------
       {/*:EndCell*/
         if (Options.noisy) {cout <<"End Cell"<<endl;}
-        if(pOEClasses == NULL)
-        {
-          ExitGracefully("ParseSWGWExchangeFile:: :EndCell encountered",BAD_DATA);
-        }
-
         break;
       }
       case(3):  //----------------------------------------------

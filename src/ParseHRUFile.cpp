@@ -229,7 +229,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             ExitGracefully(error.c_str(),BAD_DATA);
           }
 
-          void *pAqStack=NULL;
+          void *pAqStack=NULL; //GWMIGRATE
           /*CAquiferStack const *pAqStack=NULL;
             if (string(s[9])!="[NONE]") //Aquifer profile can be NULL
             {
@@ -238,7 +238,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             error="Parse HRU File: Unrecognized Soil Profile Code/index: \""+string(s[9])+"\"";
             ExitGracefully(error.c_str(),BAD_DATA_WARN);
             }
-            }*/
+          }*/
 
           CTerrainClass const *pTerrain=NULL;
           if (string(s[10])!="[NONE]") //Terrain class can be NULL
@@ -267,6 +267,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
                                s_to_d(s[12])*DEGREES_TO_RADIANS,//aspect (deg->radians)
                                HRUtype,
                                pSoilProfile,
+							   //pAqStack, GWMIGRATE
                                pVegetation,
                                pAqStack,
                                pTerrain,

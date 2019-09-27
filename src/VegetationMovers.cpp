@@ -204,9 +204,10 @@ CmvCanopySnowEvap::CmvCanopySnowEvap(canevap_type cetype)
 {
   type =cetype;
 
-  CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
+  CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=1
   iFrom[0]=pModel->GetStateVarIndex(CANOPY_SNOW);
   iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);
+  iFrom[1]=iTo[1]=pModel->GetStateVarIndex(AET);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -263,9 +264,10 @@ void CmvCanopySnowEvap::GetParticipatingParamList(string  *aP , class_type *aPC 
 //
 void CmvCanopySnowEvap::GetParticipatingStateVarList(canevap_type cetype,sv_type *aSV, int *aLev, int &nSV)
 {
-  nSV=2;
+  nSV=3;
   aSV[0]=CANOPY_SNOW; aLev[0]=DOESNT_EXIST;
   aSV[1]=ATMOSPHERE;  aLev[1]=DOESNT_EXIST;
+  aSV[2]=AET;         aLev[2]=DOESNT_EXIST;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -292,23 +294,32 @@ void CmvCanopySnowEvap::GetRatesOfChange( const double      *state_vars,
   rates[0]=0.0;//default
   if (Fc==0){return;}
 
-  double PET=pHRU->GetForcingFunctions()->PET;
+  double PET=max(pHRU->GetForcingFunctions()->PET,0.0);
   //double stor=min(max(state_vars[iFrom[0]],0.0),cap*Fc); //correct for potentially invalid storage
 
+  double PETused=0.0;//[mm/d]
+  if(!Options.suppressCompetitiveET) {
+    PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
+    PET=max(PET,0.0);
+  }
+  
   if (type==CANEVP_MAXIMUM)//----------------------------------
   {
     //all canopy mass evaporates 'instantaneously' (up to threshold)
     rates[0]=Fc*PET;
+    PETused=rates[0];
   }
   else if (type==CANEVP_ALL)//----------------------------------
   {
     //all canopy mass evaporates 'instantaneously'
     rates[0]=state_vars[iFrom[0]]/Options.timestep;
+    PETused=rates[0];
   }
   else//--------------------------------------------------------
   {
     ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
   }
+  rates[1]=PETused;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -330,8 +341,17 @@ void CmvCanopySnowEvap::ApplyConstraints( const double      *state_vars,
   if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
       (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
+  double oldRates=rates[0];
+
+  //must be positive
+  rates[0]=max(rates[0],0.0);
+
   //cant remove more than is there
-  rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
+  rates[0]=min(rates[0],state_vars[iFrom[0]]/Options.timestep);
+
+  //update AET 
+  rates[1]-=(oldRates-rates[0]);
+
 }
 
 //////////////////////////////////////////////////////////////////

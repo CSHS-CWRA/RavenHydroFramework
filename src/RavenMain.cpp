@@ -220,11 +220,11 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvh_filename=argument+".rvh";
         Options.rvt_filename=argument+".rvt";
         Options.rvc_filename=argument+".rvc";
-		Options.rvg_filename=argument+".rvg";
-		Options.rvd_filename=argument+".rvd"; //GWMIGRATE - TO REMOVE
-		Options.rvv_filename=argument+".rvv"; //GWMIGRATE - TO REMOVE
+        Options.rvg_filename=argument+".rvg";
+        Options.rvd_filename=argument+".rvd"; //GWMIGRATE - TO REMOVE
+        Options.rvv_filename=argument+".rvv"; //GWMIGRATE - TO REMOVE
         Options.rvs_filename=argument+".rvs"; //GWMIGRATE - TO REMOVE
-	    Options.rve_filename=argument+",rve";
+        Options.rve_filename=argument+",rve";
         argument="";
         mode=10;
       }
@@ -235,7 +235,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==5){Options.output_dir  =argument; argument="";}
       else if (mode==6){Options.run_name    =argument; argument="";}
       else if (mode==7){Options.rve_filename=argument; argument=""; }
-	  else if (mode==8){Options.rvg_filename=argument; argument="";}
+      else if (mode==8){Options.rvg_filename=argument; argument="";}
 
       if      (word=="-p"){mode=1;}
       else if (word=="-h"){mode=2;}
@@ -260,11 +260,11 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvh_filename="nomodel.rvh";
     Options.rvt_filename="nomodel.rvt";
     Options.rvc_filename="nomodel.rvc";
-	Options.rvg_filename="nomodel.rvg";
-	Options.rvd_filename="nomodel.rvd"; //GWMIGRATE - TO REMOVE
-	Options.rvv_filename="nomodel.rvv"; //GWMIGRATE - TO REMOVE
+    Options.rvg_filename="nomodel.rvg";
+    Options.rvd_filename="nomodel.rvd"; //GWMIGRATE - TO REMOVE
+    Options.rvv_filename="nomodel.rvv"; //GWMIGRATE - TO REMOVE
     Options.rve_filename="nomodel.rvs"; //GWMIGRATE - TO REMOVE
-	Options.rve_filename="nomodel.rve";
+    Options.rve_filename="nomodel.rve";
   }
 
   // make sure that output dir has trailing '/' if not empty

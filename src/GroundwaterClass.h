@@ -238,11 +238,11 @@ class COverlapExchangeClass
     string                          GetOEProperty(string param_name, string param_name1, int i);
     double                          GetOEProperty(string param_name, int i, int j);
     double                          GetOEProperty(string param_name, int i);
-    void                            SetOEProperty(string &param_name, const double value,int i, int j); 
-    void                            SetOEProperty(string &param_name, const double value);
-    void                            SetOEProperty(string &param_name, const double value, int i);
-    void                            SetOEProperty(string &param_name, const int value);
-    void                            SetOEProperty(string &param_name, string value);
+    void                            SetOEProperty(string param_name, const double value,int i, int j); 
+    void                            SetOEProperty(string param_name, const double value);
+    void                            SetOEProperty(string param_name, const double value, int i);
+    void                            SetOEProperty(string param_name, const int value);
+    void                            SetOEProperty(string param_name, string value);
        
     static int                          GetNumOEClasses();
     static const COverlapExchangeClass  *GetOEClass(int c);

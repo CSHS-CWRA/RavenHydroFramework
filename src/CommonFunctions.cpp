@@ -663,7 +663,7 @@ void AddTime(const double &jul_day1,const int &year1,const double &daysadded,con
 /// \param cal_chars        [in]  String conatining calendar name, e.g., "PROLEPTIC_GREGORIAN"
 /// \param StringToCalendar [out] enum integer representing calendar
 //
-int StringToCalendar(char *cal_chars)
+int StringToCalendar(string cal_chars)
 {
   string str=StringToUppercase(cal_chars);
   if (strcmp("STANDARD", str.c_str()) == 0) {

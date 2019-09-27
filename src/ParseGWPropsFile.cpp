@@ -228,9 +228,9 @@ bool ParseGWPropsFile(CModel         *&pModel,
       case(2):  //----------------------------------------------
       {/*":EndGWSPProperties"*/
         if (Options.noisy) {cout <<"End Groundwater Properties"<<endl;}
-        if(pGWClasses == NULL)
+        if(num_parsed_gw==0)
         {
-          ExitGracefully("ParseGWPropsFile:: :EndGroundwater encountered before :Groundwater",BAD_DATA);
+          ExitGracefully("ParseGWPropsFile:: :EndGWSPProperties encountered before :GWSPPRoperties",BAD_DATA);
         }
         ended=true;
         break;
@@ -255,11 +255,6 @@ bool ParseGWPropsFile(CModel         *&pModel,
       case(4):  //----------------------------------------------
       {/*:EndStressPeriod*/
         if (Options.noisy) {cout <<"End Stress Period"<<endl;}
-        if(pGWClasses == NULL)
-        {
-          ExitGracefully("ParseGWPropsFile:: :EndStressPeriod encountered outside of a :Groundwater-:EndGroundwater statement",BAD_DATA);
-        }
-
         break;
       }
       //===========================================================================================

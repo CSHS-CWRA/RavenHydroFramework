@@ -1200,7 +1200,7 @@ void        AddTime(               const double      &jul_day1,
                                    const int         calendar,
                                          double      &jul_day_out,
                                          int         &year_out);
-int         StringToCalendar(            char *cal_chars);
+int         StringToCalendar(            string      cal_chars);
 string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 bool        IsValidDateString     (const string      sDate);
