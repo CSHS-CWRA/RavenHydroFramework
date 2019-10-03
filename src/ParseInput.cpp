@@ -256,6 +256,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_reservoir     =false;
   Options.write_reservoirMB   =false;
   Options.write_basinfile     =false;
+  Options.write_interp_wts    =false;
   Options.suppressICs         =false;
   Options.period_ending       =false;
   Options.period_starting     =false;//true;
@@ -394,6 +395,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteSubbasinFile"         )){code=95; }
     else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=96; }//avoid writing WatershedStorage.csv
     else if  (!strcmp(s[0],":TimeZone"                  )){code=97; }
+    else if  (!strcmp(s[0],":WriteInterpolationWeights" )){code=101;}
   
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510; }
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511; }
@@ -408,7 +410,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //--------------------SYSTEM OPTIONS -----------------------
     else if  (!strcmp(s[0],":StorageVars"               )){code=100;}//OBSOLETE
     else if  (!strcmp(s[0],":StateVariables"            )){code=100;}//OBSOLETE
-    else if  (!strcmp(s[0],":AggregatedVariable"        )){code=101;}//After corresponding DefineHRUGroup(s) command
+    else if  (!strcmp(s[0],":AggregatedVariable"        )){code=150;}//After corresponding DefineHRUGroup(s) command
     //--------------------HYDROLOGICAL PROCESSES ---------------
     if       (!strcmp(s[0],":ProcessBegin"              )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
@@ -1778,6 +1780,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(101):  //--------------------------------------------
+    {/*:WriteInterpolationWeights*/
+      if(Options.noisy) { cout << "Write Interpolation Weights file" << endl; }
+      Options.write_interp_wts=true;
+      break;
+    }
+    case(150):  //--------------------------------------------
     {/*:AggregatedVariable
        ":AggregatedVariable" [SV_TAG] {optional HRU_Group}
      */

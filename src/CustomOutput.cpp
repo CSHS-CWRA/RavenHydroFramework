@@ -520,7 +520,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
-  strcat(starttime, " 00:00:00");
+  strcat(starttime," ");
+  strcat(starttime,DecDaysToHours(tt.julian_day,true).c_str());
   if(Options.time_zone!=0) { strcat(starttime,TimeZoneToString(Options.time_zone).c_str()); }
 
   retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);

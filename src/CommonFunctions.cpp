@@ -380,7 +380,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
 /// \param dec_date [in] Decimal date
 /// \return String hours of day in 00:00:00.00 format
 //
-string DecDaysToHours(const double dec_date)
+string DecDaysToHours(const double dec_date, const bool truncate)
 {
   double hours=(dec_date-floor(dec_date))*24.0;
   double mind =(hours   -floor(hours   ))*60.0;
@@ -394,7 +394,8 @@ string DecDaysToHours(const double dec_date)
   if (hr==24)     {hr=0;}
 
   static char out[12];
-  sprintf(out,"%2.2d:%2.2d:%05.2f",hr,min,sec);
+  if (truncate){sprintf(out,"%2.2d:%2.2d:%2.2d",hr,min,(int)(sec));}
+  else         {sprintf(out,"%2.2d:%2.2d:%05.2f",hr,min,sec);}
   return string(out);
 }
 

@@ -1025,6 +1025,7 @@ struct optStruct
   bool             write_watershed_storage;   ///< true if WatershedStorage.csv/tb0/nc is written (default: true)
   bool             write_constitmass;         ///< true if constituent mass [mg/m2] is written instead of concentration [mg/L] in output files
   bool             write_basinfile;           ///< true if subbasins params are written to SubbasinParams.csv
+  bool             write_interp_wts;          ///< true if interpolation weights are written to InterpolationWeights.csv
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files
@@ -1177,7 +1178,8 @@ void        JulianConvert(               double      model_time,
                                    const int         start_year,
                                    const int         calendar,	 
                                                      time_struct &tt);
-string      DecDaysToHours(        const double      dec_date);
+string      DecDaysToHours(        const double      dec_date, 
+                                   const bool        truncate=false);
 double      InterpolateMo(         const double      aVal[12],
                                    const time_struct &tt,
                                    const optStruct   &Options);

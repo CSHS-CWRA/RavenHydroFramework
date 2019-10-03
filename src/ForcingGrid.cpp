@@ -70,9 +70,11 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _aLatitude           = NULL;
   _aLongitude          = NULL;
   _aElevation          = NULL;
+  _aStationIDs         = NULL;
   _AttVarNames[0]="NONE";
   _AttVarNames[1]="NONE";
   _AttVarNames[2]="NONE";
+  _AttVarNames[3]="NONE";
 
   //initialized in SetIdxNonZeroGridCells()
   _IdxNonZeroGridCells = NULL;
@@ -148,6 +150,74 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,co
 #endif
 
 }
+// same as above but for string information
+/*void CForcingGrid::ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values)
+{
+  // -------------------------------
+  // Open NetCDF file, Get the lat long elev information
+  // -------------------------------
+#ifdef _RVNETCDF_
+
+  if(varname!="NONE")
+  {
+    int       retval,varid;
+    int       nCells,irow,icol;
+    size_t    nc_start[2];
+    size_t    nc_length[2];
+    ptrdiff_t nc_stride[2];
+    nc_start[0]  = 0; nc_stride[0]=1;
+    nc_start[1]  = 0; nc_stride[1]=1;
+
+    if(_is_3D) { nCells = nrows*ncols; }
+    else { nCells = nrows; }
+
+    delete[] values; //re-read if buffered
+    values=new string[_nNonZeroWeightedGridCells]; //allocate memory
+
+    double *aVec=NULL;
+    aVec=new double[nCells];//stores actual data
+    for(int i=0; i<nCells; i++) { aVec[i]=NETCDF_BLANK_VALUE; }
+
+    //get the varid for this attribute
+    retval = nc_inq_varid(ncid,varname.c_str(),&varid);
+    if(retval==NC_ENOTVAR) {
+      string warning="Variable "+varname+" not found in NetCDF file "+_filename;
+      ExitGracefully(warning.c_str(),BAD_DATA); retval=0;
+    }
+    HandleNetCDFErrors(retval);
+
+    //get the data
+    if(_is_3D)
+    {
+      char  **aTmp2D=NULL; //stores pointers to rows/columns of 2D data
+      aTmp2D=new char *[nrows];
+      for(int row=0;row<nrows;row++) {
+        aTmp2D[row]=&aVec[row*ncols]; //points to correct location in aVec data storage
+      }
+
+      retval=nc_get_vars_double(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
+      //copy matrix
+      for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
+        CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
+        values[ic]=aTmp2D[irow][icol];
+      }
+
+      for(int i=0;i<nrows;i++) { delete[] aTmp2D[i]; } delete[] aTmp2D;
+    }
+    else
+    {
+      retval=nc_get_vars_text(ncid,varid,nc_start,nc_length,nc_stride,&aVec[0]);   HandleNetCDFErrors(retval);
+      //copy matrix
+      for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
+        CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
+        values[ic]=aVec[irow];
+      }
+    }
+    delete[] aVec;
+  }
+#endif
+
+}*/
 ///////////////////////////////////////////////////////////////////
 /// \brief Copy constructor.
 ///
@@ -230,7 +300,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
     _aLastNonZeroWt [k]=grid._aLastNonZeroWt[k];
   }
 
-  _aLatitude=NULL;_aLongitude=NULL;_aElevation=NULL;
+  _aLatitude=NULL;_aLongitude=NULL;_aElevation=NULL;_aStationIDs=NULL;
   if(grid._aLatitude!=NULL) {
     _aLatitude=new double [_nNonZeroWeightedGridCells];
     ExitGracefullyIf(_aLatitude==NULL,"CForcingGrid::Copy Constructor(4)",OUT_OF_MEMORY);
@@ -246,6 +316,12 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
     ExitGracefullyIf(_aElevation==NULL,"CForcingGrid::Copy Constructor(6)",OUT_OF_MEMORY);
     for(int c=0; c<_nNonZeroWeightedGridCells; c++) { _aElevation[c]=grid._aElevation[c]; }
   }
+  if(grid._aStationIDs!=NULL) {
+    _aStationIDs=new string[_nNonZeroWeightedGridCells];
+    ExitGracefullyIf(_aStationIDs==NULL,"CForcingGrid::Copy Constructor(7)",OUT_OF_MEMORY);
+    for(int c=0; c<_nNonZeroWeightedGridCells; c++) { _aStationIDs[c]=grid._aStationIDs[c]; }
+  }
+  
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -264,6 +340,7 @@ CForcingGrid::~CForcingGrid()
   delete [] _aLatitude;             _aLatitude           = NULL;
   delete [] _aLongitude;            _aLongitude          = NULL;
   delete [] _aElevation;            _aElevation          = NULL;
+  delete [] _aStationIDs;           _aStationIDs         = NULL;
 }
 
 
@@ -486,7 +563,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     }
     delete[] ttime;
   }
-  else if (type == NC_INT)    // time is given as integer --> convert to double
+  else if ((type == NC_INT) || (type == NC_INT64))   // time is given as integer --> convert to double
   {
     int *ttime=NULL;
     ttime=new int [ntime];
@@ -1257,6 +1334,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     ReadAttGridFromNetCDF(ncid,_AttVarNames[0],dim1,dim2,_aLatitude);
     ReadAttGridFromNetCDF(ncid,_AttVarNames[1],dim1,dim2,_aLongitude);
     ReadAttGridFromNetCDF(ncid,_AttVarNames[2],dim1,dim2,_aElevation);
+    //ReadAttGridFromNetCDF2(ncid,_AttVarNames[3],dim1,dim2,_aStationIDs);
 
     // -------------------------------
     // Close NetCDF file
@@ -1695,6 +1773,7 @@ void  CForcingGrid::SetAttributeVarName(const string var,const string varname)
   if      (var=="Latitude" ) { _AttVarNames[0]=varname;}
   else if (var=="Longitude") { _AttVarNames[1]=varname; }
   else if (var=="Elevation") { _AttVarNames[2]=varname; }
+  else if (var=="StationIDs"){ _AttVarNames[3]=varname; }
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief sets linear transform parameters a and b in class CForcingGrid
@@ -1770,6 +1849,24 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
 
   _GridWeight[HRUID][CellID] = weight;
 
+}
+///////////////////////////////////////////////////////////////////
+/// \brief sets one entry of _aElevation[CellID] 
+///
+/// \param stat_ID [in] cell ID/stationID in NetCDF (from 0 to _nNonZeroWeightedGridCells-1)
+/// \param weight [in] elevation of cell in NetCDF
+
+void   CForcingGrid::SetStationElevation(const int CellID,const double &elev) 
+{
+  int ncells;
+  if(_is_3D) { ncells = _GridDims[0] * _GridDims[1]; }
+  else { ncells = _GridDims[0]; }
+
+  if((CellID<0) || (CellID>=ncells)) {
+    ExitGracefully("CForcingGrid: SetStationElevation: invalid cell/station identifier (likely in :StationElevationsByAttribute command)",BAD_DATA);
+  }
+
+  _aElevation[CellID]=elev;
 }
 
 ///////////////////////////////////////////////////////////////////

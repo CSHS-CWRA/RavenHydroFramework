@@ -39,6 +39,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _pMaxQIncreaseTS=NULL;
   _pMaxQDecreaseTS=NULL;
   _pDroughtLineTS=NULL;
+  _pQmaxTS=NULL;
   _pQminTS=NULL;
   _pQdownTS=NULL;
   _QdownRange=0.0;
@@ -324,6 +325,7 @@ CReservoir::~CReservoir()
   delete _pMaxQDecreaseTS;_pMaxQDecreaseTS=NULL; 
   delete _pDroughtLineTS; _pDroughtLineTS=NULL;
   delete _pQminTS; _pQminTS=NULL;
+  delete _pQmaxTS; _pQmaxTS=NULL;
   delete _pQdownTS; _pQdownTS=NULL;
 }
 
@@ -440,6 +442,10 @@ void CReservoir::Initialize(const optStruct &Options)
   {
     _pQminTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
   }
+  if(_pQmaxTS!=NULL)
+  {
+    _pQmaxTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
+  }
   if(_pQdownTS!=NULL)
   {
     _pQdownTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
@@ -549,6 +555,15 @@ void    CReservoir::AddMinQTimeSeries(CTimeSeries *pQmin) {
   _pQminTS=pQmin;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Adds maximum flow  time series 
+/// \param *pQmax maximum flow  time series [m3/s]
+//
+void    CReservoir::AddMaxQTimeSeries(CTimeSeries *pQmax) {
+  ExitGracefullyIf(_pQmaxTS!=NULL,
+    "CReservoir::AddMinQTimeSeries: only one minimum flow time series may be specified per reservoir",BAD_DATA_WARN);
+  _pQmaxTS=pQmax;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Adds downstream target flow  time series 
 /// \param *pQ downstream target flow  time series [m3/s]
 /// \param SBIDdown downstream target flow basin ID
@@ -568,7 +583,9 @@ void    CReservoir::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB, c
 //
 void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct) {
   down_demand *pDemand;
-  pDemand=new down_demand{pSB,pct};
+  pDemand=new down_demand;
+  pDemand->pDownSB=pSB;
+  pDemand->percent=pct;
   if(!DynArrayAppend((void**&)(_aDemands),(void*)(pDemand),_nDemands)) {
     ExitGracefully("CReservoir::AddDownstreamDemand: adding NULL source",RUNTIME_ERR);
   }
@@ -765,6 +782,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double min_stage  =-ALMOST_INF;
   double Qminstage  =0.0;
   double Qmin       =0.0;
+  double Qmax       =ALMOST_INF;
   double Qtarget    =RAV_BLANK_DATA;
   double htarget    =RAV_BLANK_DATA;
   double Qdelta     =ALMOST_INF;
@@ -782,10 +800,11 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
   if(_pMaxQDecreaseTS!=NULL){ Qdelta_dec =_pMaxQDecreaseTS->GetSampledValue(nn);}
   if(_pQminTS!=NULL)        { Qmin       =_pQminTS->        GetSampledValue(nn);}
+  if(_pQmaxTS!=NULL)        { Qmax       =_pQmaxTS->        GetSampledValue(nn);}
 
   // Downstream flow targets 
   if(_pQdownTS!=NULL)       { 
-    double Qdown_targ      =_pQminTS->GetSampledValue(nn); 
+    double Qdown_targ      =_pQdownTS->GetSampledValue(nn);
     double Qdown_act       =_pQdownSB->GetOutflowRate();
     //Qshift=max(min((Qdown_targ-Qdown_act)/(_QdownRange*0.5),1.0),-1.0)*(Qdown_targ-Qdown_act);
 
@@ -929,9 +948,9 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       }
     }
         
-    //special correction - flow overridden or minimum flow violated - minimum flow takes priority
+    //special correction - flow overridden or minimum/maximum flow violated - minimum/maximum flow takes priority
     //---------------------------------------------------------------------------------------------
-    if ((Qoverride!=RAV_BLANK_DATA) || (res_outflow<Qmin))
+    if ((Qoverride!=RAV_BLANK_DATA) || (res_outflow<Qmin) || (res_outflow>Qmax))
     {         
       if(Qoverride!=RAV_BLANK_DATA) {
         if((constraint!=2) && (constraint!=1) && (constraint!=4)) { constraint=5; } //Specified override flow
@@ -941,6 +960,11 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       if (res_outflow<Qmin){ //overwrites any other specified or target flow
         res_outflow=Qmin;
         constraint=8; //minimum flow
+      }
+      
+      if(res_outflow>Qmax) { //overwrites any other specified or target flow
+        res_outflow=Qmax;
+        constraint=10; //maximum flow
       }
 
       double A_guess=A_old;

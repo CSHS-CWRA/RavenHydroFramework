@@ -55,7 +55,7 @@ CModel::CModel(const soil_model SM,
                    "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);
 
   //Initialize Lookup table for state variable indices
-  for (int i=0;i<MAX_STATE_VARS;i++){
+  for (i=0;i<MAX_STATE_VARS;i++){
     for (int m=0;m<MAX_SV_LAYERS;m++){
       _aStateVarIndices[i][m]=DOESNT_EXIST;
     }

@@ -93,17 +93,19 @@ private:/*------------------------------------------------------*/
   double       _aMaxTemp[12];                ///< representative maximum monthly temperatures [C]
   double       _aAvePET [12];                ///< representative average monthly PET [mm/d] (or monthly PET factor [mm/d/K], if MONTHLY_FACTOR is used)
 
-  string       _AttVarNames[3];              ///< variable attribute names for [0]: lat [1]: long [2]:elev
+  string       _AttVarNames[4];              ///< variable attribute names for [0]: lat [1]: long [2]:elev [3]: station identifier
   double*      _aLatitude;                   ///< fixed array of cell centroid latitudes, if provided (size: _IdxNonZeroGridCells)
   double*      _aLongitude;                  ///< fixed array of cell centroid longitudes, if provided (size: _IdxNonZeroGridCells)
   double*      _aElevation;                  ///< fixed array of cell representative elevations, if provided (size: _IdxNonZeroGridCells)
+  string*      _aStationIDs;                 ///< fixed array of cell station/cell IDS (size:_IdxNonZeroGridCells)
 
   void   CellIdxToRowCol(const int        cellid,
                          int              &row,
                          int              &column) const;             ///< returns row and column index of cell ID
 
-  void   ReadAttGridFromNetCDF(const int ncid,const string varname,const int nrows,const int ncols,double *values);
-  
+  void   ReadAttGridFromNetCDF (const int ncid,const string varname,const int nrows,const int ncols,double *values);
+ // void   ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values);
+
 public:/*------------------------------------------------------*/
   //Constructors:
 
@@ -198,6 +200,7 @@ public:/*------------------------------------------------------*/
                                               const int t,
                                               const double aVal);                      ///< set _aVal              of class
   void         SetAttributeVarName(           const string var, const string varname); ///< set elevation, lat, or long var name
+  void         SetStationElevation           (const int idx, const double &elev);      ///< set elevation of station idx
 
   // get class variables
   double       GetInterval()                       const;        ///< data interval (in days)

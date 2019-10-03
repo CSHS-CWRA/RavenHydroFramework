@@ -5,6 +5,8 @@
 #include "Model.h"
 #include "IrregularTimeSeries.h"
 
+string FilenamePrepare(string filebase,const optStruct &Options); //defined in StandardOutput.cpp
+
 /*****************************************************************
    Model Initialization Routines
 ------------------------------------------------------------------
@@ -190,6 +192,17 @@ void CModel::Initialize(const optStruct &Options)
   else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
   if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
   
+  if(Options.write_interp_wts)
+  { //creates and/or deletes existing InterpolationWeights.csv file
+    ofstream WTS;
+    string tmpFilename=FilenamePrepare("InterpolationWeights.csv",Options);
+    WTS.open(tmpFilename.c_str());
+    if(WTS.fail()) {
+      ExitGracefully(("CModel::GenerateGaugeWeights: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+    WTS.close();
+  }
+
   GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
   GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
   GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
@@ -834,8 +847,23 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
                      "GenerateGaugeWeights: Bad weighting scheme- weights for each HRU must sum to 1",RUNTIME_ERR);
   }
 
-  /*cout<<"GAUGE WEIGHTS TABLE:"<<endl;
-  for(k=0;k<_nHydroUnits;k++){for(g=0;g<_nGauges;g++){cout<<aWts[k][g]<<" ";}cout<<endl;}*/
+  if(Options.write_interp_wts)
+  {
+    ofstream WTS;
+    string tmpFilename=FilenamePrepare("InterpolationWeights.csv",Options);
+    WTS.open(tmpFilename.c_str(),ios::app);
+    WTS<<"Weights for "<<ForcingToString(forcing)<<"--------------------------------------"<<endl;
+    WTS<<"HRU index (k), HRU ID";
+    for(g=0; g<_nGauges;g++) { WTS<<","<<_pGauges[g]->GetName(); }
+    WTS<<endl;
+    for(k=0;k<_nHydroUnits;k++) {
+      WTS<<k<<","<<_pHydroUnits[k]->GetID();
+
+      for(g=0;g<_nGauges;g++) {WTS<<","<<aWts[k][g]; }
+      WTS<<endl;
+    }
+    WTS.close();
+  }
 
   delete[] has_data;
 }

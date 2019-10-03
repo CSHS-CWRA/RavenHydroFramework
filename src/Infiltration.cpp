@@ -446,7 +446,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   //-----------------------------------------------------------------
   else if(type==INF_HMETS)
   {
-    double infil,runoff,delayed,direct;
+    double infil,delayed,direct;
 
     double stor       =state_vars[iTopSoil];
     double max_stor   =pHRU->GetSoilCapacity(0);

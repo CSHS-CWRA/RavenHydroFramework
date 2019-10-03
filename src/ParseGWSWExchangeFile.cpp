@@ -34,7 +34,7 @@ bool ParseGWSWExchangeFile(CModel *&pModel,
   COverlapExchangeClass  *pOE=pModel->GetGroundwaterModel()->GetOEs(0);
 
   int                   num_parsed_oe=0;
-  COverlapExchangeClass *pOEClasses  [MAX_OE_CLASSES];
+//  COverlapExchangeClass *pOEClasses  [MAX_OE_CLASSES];
   oe_struct             parsed_oe   [MAX_OE_CLASSES];
   string                oetags      [MAX_OE_CLASSES];
 

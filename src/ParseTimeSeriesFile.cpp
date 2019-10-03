@@ -145,6 +145,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirMaxQDecrease" )){code=62; }
     else if  (!strcmp(s[0],":IrrigationDemand"      )){code=63; }
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
+    else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -177,7 +178,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":LongitudeVarNameNC"      )){code=412;}
     else if  (!strcmp(s[0],":ElevationVarNameNC"      )){code=413;}
     else if  (!strcmp(s[0],":GridWeightsByAttribute"  )){code=414;}
-    else if  (!strcmp(s[0],":StationElevations"       )){code=415;}
+    else if  (!strcmp(s[0],":StationElevationsByAttribute")){code=415;}
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
@@ -1153,6 +1154,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case (65): //---------------------------------------------
+    {/*:ReservoirMaxFlow {long Basincode}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qmin} x nMeasurements [m3/s]
+     :EndReservoirMinFlow
+     */
+      if(Options.noisy) { cout <<"Reservoir Maximum Flow time series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
+        pTimeSer=CTimeSeries::Parse(p,true,"Qmax_"+to_string(SBID),to_string(SBID),Options);
+        pSB->GetReservoir()->AddMaxQTimeSeries(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":ReservoirMaxFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum flow";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
     case (70): //---------------------------------------------
     {/*:MonthlyAveTemperature {temp x 12}*/
       if (Options.noisy) {cout <<"Monthly Average Temperatures"<<endl;}
@@ -1672,25 +1696,30 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGrid->SetAttributeVarName("Elevation",s[1]);
       break;
     }
-    case(414):
+    case (416)://----------------------------------------------
+    {/*:StationIDNameNC  [variablename]*/
+      if(Options.noisy) { cout <<"   :StationIDNameNC"<<endl; }
+      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :StationIDNameNC command must be within a StationForcing block",BAD_DATA);
+      pGrid->SetAttributeVarName("StationIDs",s[1]);
+      break;
+    }
+    case(414)://----------------------------------------------
     {/*:StationWeightsByAttribute
        :NumberHRUs 3
        :NumberStations  22
-       :AttributeNC SBID
-       # [HRU ID] [station ID] [w_kl]
+       # [HRU ID] [station Identifier] [w_kl]
        #     Following contraint must be satisfied:
        #         sum(w_kl, {l=1,NS}) = 1.0 for all HRUs k where NS=number of stations
-       1       A2       0.3
-       1       A3       0.5
-       1       A23      0.2
-       2       A2       0.4
-       2       B3       0.6
-       3       B5       1.0
+       1       A3       0.3
+       1       A34       0.5
+       1       B2      0.2
+       2       B0       0.4
+       2       C2       0.6
+       3       D15      1.0 # station identifier consistent with array in NetCDF consistent with StationIDNameNC
        :EndStationWeightsByAttribute*/
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
-
       ExitGracefullyIf(pGrid==NULL,
         "ParseTimeSeriesFile: :StationWeightsByAttribute command must be within a :StationForcing block",BAD_DATA);
 
@@ -1745,7 +1774,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
               printf("Wrong HRU ID in :StationWeightsByAttribute: HRU_ID = %s\n",s[0]);
               ExitGracefully("ParseTimeSeriesFile: HRU ID found in :StationWeightsByAttribute which does not exist in :HRUs!",BAD_DATA);
             }
-            pGrid->SetWeightVal(pHRU->GetGlobalIndex(),atoi(s[1]),atof(s[2]));
+            
+            ExitGracefully("StationWeightsByAttribute",STUB);  
+           
+            int ind=DOESNT_EXIST;//pGrid->GetStationIndex(s[1]); 
+            pGrid->SetWeightVal(pHRU->GetGlobalIndex(),ind,atof(s[2]));
           }
           else {
             ExitGracefully("ParseTimeSeriesFile: :NumberHRUs must be given in :StationWeightsByAttribute block",BAD_DATA);
@@ -1764,12 +1797,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
     }
     case (415)://----------------------------------------------
-    {/*:StationElevations
-     321
-     333
+    {/*:StationElevationsByAttribute
+     [int station ID1] [elev1]
+     [station ID2] [elev1]
      ...
-     384
-     :EndStationElevations*/
+     [station IDN] [elevN]
+     :EndStationElevations
+     # where station IDs consistent with StationIDNameNC
+     */
       ExitGracefullyIf(pGrid==NULL,
         "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
@@ -1778,7 +1813,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         pGrid->ForcingGridInit(Options);
       }
 
-      int count=0;
 
       if(Options.noisy) { cout <<"Station Elevations..."<<endl; }
       while(((Len==0) || (strcmp(s[0],":EndStationElevations"))) && (!(p->Tokenize(s,Len))))
@@ -1787,8 +1821,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else if(!strcmp(s[0],":EndStationElevations")) {}//done
         else
         {
-            //pGrid->SetStationElevation(count,s_to_d(s[1]));
-            count++;
+          int ind=DOESNT_EXIST;//pGrid->GetStationIndex(s[1]);
+          ExitGracefully(":EndStationElevations",STUB);
+          pGrid->SetStationElevation(ind,s_to_d(s[1]));
         } // end else
       } // end while
       break;
