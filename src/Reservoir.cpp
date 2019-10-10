@@ -27,6 +27,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID,const res_ty
   _Qout_last =0.0;
   _MB_losses =0.0;
   _AET		   =0.0;
+  _GW_seepage=0.0;
 
   _pHRU=NULL;
   _pExtractTS=NULL;
@@ -374,6 +375,13 @@ double  CReservoir::GetReservoirEvapLosses(const double &tstep) const
 	return _AET;
 }
 //////////////////////////////////////////////////////////////////
+/// \returns seepage losses only integrated over previous timestep [m3]
+//
+double  CReservoir::GetReservoirGWLosses(const double &tstep) const
+{
+  return _GW_seepage;
+}
+//////////////////////////////////////////////////////////////////
 /// \returns outflow integrated over timestep [m3/d]
 //
 double  CReservoir::GetIntegratedOutflow        (const double &tstep) const
@@ -616,6 +624,26 @@ double  CReservoir::GetMaxCapacity() const
   return _max_capacity;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief gets current constraint name
+/// \returns current constraint applied to estimate stage/flow
+//
+string CReservoir::GetCurrentConstraint() const {
+  switch(_constraint)
+  {
+  case(RC_MAX_STAGE):         {return "MAX_STAGE"; break;}
+  case(RC_MIN_STAGE):         {return "RC_MIN_STAGE"; break;}
+  case(RC_NATURAL):           {return "RC_NATURAL"; break;}
+  case(RC_TARGET):            {return "RC_TARGET"; break;}
+  case(RC_DOWNSTREAM_FLOW):   {return "RC_DOWNSTREAM_FLOW"; break;}
+  case(RC_MAX_FLOW_INCREASE): {return "RC_MAX_FLOW_INCREASE"; break;}
+  case(RC_MIN_FLOW):          {return "RC_MIN_FLOW"; break;}
+  case(RC_MAX_FLOW):          {return "RC_MAX_FLOW"; break;}
+  case(RC_OVERRIDE_FLOW):     {return "RC_OVERRIDE_FLOW"; break;}
+  case(RC_DRY_RESERVOIR):     {return "RC_DRY_RESERVOIR"; break;}
+  default:                    {return ""; break;}
+  };
+}
+//////////////////////////////////////////////////////////////////
 /// \brief overrides volume stage curve for Lake-type reservoirs (if known)
 /// \param a_ht[] - array of stage values
 /// \param a_V[] array of volumes 
@@ -633,7 +661,16 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
     }
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief sets reservoir groundwater parameters
+/// \param coeff - groundwater exchange coefficient [m3/s/m]
+/// \param h_ref - regional groundwater head [same vertical coordinate system as stage, m] 
+//
+void CReservoir::SetGWParameters(const double &coeff,const double &h_ref)
+{
+  _local_GW_head=h_ref;
+  _seepage_const=coeff;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief sets all discharges in stage-discharge curve to zero (for overriding with observations)
 //
@@ -646,11 +683,11 @@ void  CReservoir::DisableOutflow()
 /// \brief updates state variable "stage" at end of computational time step
 /// \param new_stage [in] calculated stage at end of time step
 //
-void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,const optStruct &Options,const time_struct &tt)
+void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,const res_constraint &constr,const optStruct &Options,const time_struct &tt)
 {
   _stage_last=_stage;
   _stage     =new_stage;
-
+  _constraint=constr;
   _Qout_last =_Qout;
   _Qout      =res_outflow;
 }
@@ -662,11 +699,15 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
 void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0;
-  if(_pHRU!=NULL){
-    _AET      =_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->OW_PET * 0.5*( GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep;
+  if(_pHRU!=NULL) {
+    double Evap=_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->OW_PET;//mm/d
+    _AET      = Evap* 0.5*(GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep; //m3
     _MB_losses+=_AET;
   }
-
+  if(_seepage_const>0) {
+    _GW_seepage=_seepage_const*(0.5*(_stage+_stage_last)-_local_GW_head)*SEC_PER_DAY*tstep;
+    _MB_losses+=_GW_seepage;
+  }
   if(_pExtractTS!=NULL){
     int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
     _MB_losses+=_pExtractTS->GetSampledValue(nn)*SEC_PER_DAY*tstep;
@@ -769,7 +810,7 @@ void  CReservoir::SetMinStage(const double &min_z)
 /// \param res_ouflow [out] outflow at end of timestep
 /// \returns estimate of new stage at end of timestep
 //
-double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const double &tstep, const time_struct &tt, double &res_outflow) const
+double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const double &tstep, const time_struct &tt, double &res_outflow,res_constraint &constraint) const
 {
   const double RES_TOLERANCE=0.0001; //[m]
   const int    RES_MAXITER  =100;
@@ -850,6 +891,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double f,dfdh,out,out2;
     double ET(0.0);  //m/s
     double ext_old(0.0),ext_new(0.0); //m3/s
+    double seep_old(0.0),seep_new(0.0);
 
 
     if(_pHRU!=NULL)
@@ -859,13 +901,16 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
         ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
       }
     }
+    if(_seepage_const>0) {
+      seep_old=_seepage_const*(_stage-_local_GW_head); //m3/s
+    }
     if(_pExtractTS!=NULL)
     {
       ext_old=_pExtractTS->GetSampledValue(nn);
       ext_new=_pExtractTS->GetSampledValue(nn); //steady rate over time step
     }
 
-    double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
+    double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-seep_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
     if(gamma<0)
     {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
       string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
@@ -877,8 +922,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double relax=1.0;
     do //Newton's method with discrete approximation of df/dh
     {
-      out =GetOutflow(h_guess,   weir_adj)+ET*GetArea(h_guess   );//[m3/s]
-      out2=GetOutflow(h_guess+dh,weir_adj)+ET*GetArea(h_guess+dh);//[m3/s]
+      out =GetOutflow(h_guess,   weir_adj)+ET*GetArea(h_guess   )+_seepage_const*(h_guess   -_local_GW_head);//[m3/s]
+      out2=GetOutflow(h_guess+dh,weir_adj)+ET*GetArea(h_guess+dh)+_seepage_const*(h_guess+dh-_local_GW_head);//[m3/s]
 
       f   = (GetVolume(h_guess   )+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
       dfdh=((GetVolume(h_guess+dh)+out2/2.0*(tstep*SEC_PER_DAY))-f)/dh; //[m3/m]
@@ -903,9 +948,11 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
         string warn = to_string(hg[i]) + " " + to_string(ff[i])+ " "+to_string(gamma);WriteWarning(warn,false);
         }*/
     }
-    int constraint=0;
+
+
     //standard case - outflow determined through stage-discharge curve
     res_outflow=GetOutflow(stage_new,weir_adj);
+    constraint =RC_NATURAL;
 
     //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
     //---------------------------------------------------------------------------------------------
@@ -913,18 +960,19 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if(htarget!=RAV_BLANK_DATA) {
       double V_targ=GetVolume(htarget);
       double A_targ=GetArea(htarget);
-      Qtarget = -2 * (V_targ - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_targ) - (ext_old + ext_new));//[m3/s]
+      double seep_targ = _seepage_const*(htarget-_local_GW_head);
+      Qtarget = -2 * (V_targ - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_targ) - (seep_old+seep_targ) - (ext_old + ext_new));//[m3/s]
       Qtarget=max(Qtarget,Qminstage);
       if(Qtarget>_Qout) {
         Qtarget = w*Qtarget+(1-w)*_Qout; //softer move towards goal - helps with stage undershoot -you can always remove more...
       }
-      constraint=1; //target stage
+      constraint=RC_TARGET; //target stage
     }
 
     if((Qshift!=RAV_BLANK_DATA) && (Qoverride==RAV_BLANK_DATA)) {
       //or (maybe) Qtarget+=Qshift if Qtarget!=RAV_BLANK_DATA)
       Qtarget=res_outflow+Qshift;
-      constraint=8; //Downstream flow correction
+      constraint=RC_DOWNSTREAM_FLOW; //Downstream flow correction
     }
 
     if(Qoverride==RAV_BLANK_DATA)
@@ -932,17 +980,17 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       if(stage_new<min_stage)
       {
         Qoverride=Qminstage;
-        constraint=2; //min stage
+        constraint=RC_MIN_STAGE;
       }
       else if(Qtarget!=RAV_BLANK_DATA)
       {
         if((Qtarget-_Qout)/tstep>Qdelta) {
           Qtarget=_Qout+Qdelta*tstep; //maximum flow increase
-          constraint=4; //max flow increase
+          constraint=RC_MAX_FLOW_INCREASE; 
         }
         else if((Qtarget-_Qout)/tstep<-Qdelta_dec) {
           Qtarget=_Qout-Qdelta_dec*tstep; //maximum flow decrease
-          constraint=9; //max flow decrease
+          constraint=RC_MAX_FLOW_DECREASE; //max flow decrease
         }
         Qoverride=(Qtarget+_Qout)/2.0;//converts from end of time step to average over timestep
       }
@@ -953,32 +1001,36 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if ((Qoverride!=RAV_BLANK_DATA) || (res_outflow<Qmin) || (res_outflow>Qmax))
     {         
       if(Qoverride!=RAV_BLANK_DATA) {
-        if((constraint!=2) && (constraint!=1) && (constraint!=4)) { constraint=5; } //Specified override flow
+        if((constraint!=RC_MAX_FLOW_INCREASE) && 
+           (constraint!=RC_MAX_FLOW_DECREASE) && 
+           (constraint!=RC_MIN_STAGE)) { constraint=RC_OVERRIDE_FLOW; } //Specified override flow
         res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
       }
       
       if (res_outflow<Qmin){ //overwrites any other specified or target flow
         res_outflow=Qmin;
-        constraint=8; //minimum flow
+        constraint=RC_MIN_FLOW; //minimum flow
       }
       
       if(res_outflow>Qmax) { //overwrites any other specified or target flow
         res_outflow=Qmax;
-        constraint=10; //maximum flow
+        constraint=RC_MAX_FLOW; //maximum flow
       }
 
       double A_guess=A_old;
       double A_last,V_new;
+      double seep_guess = seep_old;
       do {
-        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
+        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(seep_old+seep_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
         if(V_new<0) {
           V_new=0;
-          constraint=7; //drying out reservoir
+          constraint=RC_DRY_RESERVOIR; //drying out reservoir
           res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
         }
         stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
-        A_last=A_guess;
-        A_guess=GetArea(stage_new);
+        A_last     = A_guess;
+        A_guess    = GetArea(stage_new);
+        seep_guess = _seepage_const*(stage_new-_local_GW_head);
       } while(fabs(1.0-A_guess/A_last)>0.00001); //0.1% area error - done in one iter for constant area case
     }
 
@@ -986,11 +1038,12 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     //special correction : exceeded limiting stage; fix stage and re-calculate reservoir outflow
     //---------------------------------------------------------------------------------------------
     if(stage_new>stage_limit) {
-      constraint=6; //max stage exceedance
+      constraint=RC_MAX_STAGE; //max stage exceedance
       stage_new=stage_limit;
-      double V_limit=GetVolume(stage_limit);
-      double A_limit=GetArea(stage_limit);
-      res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (ext_old + ext_new));//[m3/s]
+      double V_limit =GetVolume(stage_limit);
+      double A_limit =GetArea(stage_limit);
+      double seep_lim=_seepage_const*(stage_limit-_local_GW_head);
+      res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (seep_old+seep_lim) - (ext_old + ext_new));//[m3/s]
     }
     /*if(GetSubbasinID()==41){
       g_debug_vars[6]=(_Qout+res_outflow)/2.0;
@@ -1054,6 +1107,7 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
         ...
         3.0 20000 3500 200
       :EndStageRelations
+      :SeepageParameters coeff[m3/s/d] GW_stage [m]
     :EndReservoir
 
     :Reservoir ExampleReservoir
@@ -1096,11 +1150,14 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   double *aV(NULL),*aV_ht(NULL); int NV(0);
   double *aA(NULL),*aA_ht(NULL); int NA(0);
   double *aQund(NULL);
-  int nDates(0);
   double **aQQ=NULL;
-  int *aDates(NULL);
-  double cwidth(-1),max_depth(-1),weircoeff(-1),lakearea(-1), crestht(0.0);
+  int     nDates(0);
+  int    *aDates(NULL);
+  double cwidth(DOESNT_EXIST),max_depth(DOESNT_EXIST);
+  double weircoeff(DOESNT_EXIST),lakearea(DOESNT_EXIST), crestht(0.0);
   double max_capacity=0;
+  double seep_coeff  =RAV_BLANK_DATA;
+  double GW_stage    =0;
 
   curve_function type;
   type=CURVE_POWERLAW;
@@ -1164,6 +1221,12 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
       if (Options.noisy){ cout << ":AbsoluteCrestHeight" << endl; }
       crestht=s_to_d(s[1]);
       type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":SeepageParameters"))
+    {
+      if(Options.noisy) { cout << ":SeepageParameters" << endl; }
+      seep_coeff=s_to_d(s[1]);
+      GW_stage  =s_to_d(s[2]);
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":VolumeStageRelation"))
@@ -1402,22 +1465,21 @@ CReservoir *CReservoir::Parse(CParser *p, string name, int &HRUID,  const optStr
   }
   else if(type==CURVE_LAKE)
   {
-    ExitGracefullyIf(weircoeff==-1,"CReservoir::Parse: :WeirCoefficient must be specified for lake-type reservoirs",BAD_DATA_WARN);
-    ExitGracefullyIf(cwidth==-1,"CReservoir::Parse: :CrestWidth must be specified for lake-type reservoirs",BAD_DATA_WARN);
-    ExitGracefullyIf(lakearea==-1,"CReservoir::Parse: :LakeArea  must be specified for lake-type reservoirs",BAD_DATA_WARN);
-    ExitGracefullyIf(max_depth==-1,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(weircoeff==DOESNT_EXIST,"CReservoir::Parse: :WeirCoefficient must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(cwidth   ==DOESNT_EXIST,"CReservoir::Parse: :CrestWidth must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(lakearea ==DOESNT_EXIST,"CReservoir::Parse: :LakeArea  must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
     pRes=new CReservoir(name,SBID,restype,weircoeff,cwidth,crestht,lakearea,max_depth);
   }
   else {
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
   }
-  if(max_capacity!=0) {
-    pRes->SetMaxCapacity(max_capacity); //overrides estimates (which will typically be too large)
-  }
-  if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL)){
-    //allows user to override prismatic reservoir assumption
-    pRes->SetVolumeStageCurve(aV_ht,aV,NV);
-  }
+
+  if(max_capacity!=0             ) { pRes->SetMaxCapacity (max_capacity);        }//overrides estimates (which will typically be too large)
+  if(seep_coeff  !=RAV_BLANK_DATA) { pRes->SetGWParameters(seep_coeff,GW_stage); }
+  if((type==CURVE_LAKE) && (aV!=NULL) && 
+                    (aV_ht!=NULL)) { pRes->SetVolumeStageCurve(aV_ht,aV,NV);     }//allows user to override prismatic reservoir assumption
+
   for (int i = 0; i < nDates; i++){ delete[] aQQ[i]; }delete [] aQQ;
   delete [] aQ;
   delete [] aQ_ht;

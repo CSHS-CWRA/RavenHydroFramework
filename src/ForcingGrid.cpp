@@ -692,7 +692,9 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   if ( _is_3D ) {BytesPerTimestep = 8 * _GridDims[0] * _GridDims[1];}
   else          {BytesPerTimestep = 8 * _GridDims[0];               }
 
-  _ChunkSize = int(max(min( (10 *1024 * 1024) / BytesPerTimestep, ntime),1));           // number of timesteps per chunk
+  const int CHUNK_MEMORY=10; //MB
+
+  _ChunkSize = int(max(min( (CHUNK_MEMORY *1024 * 1024) / BytesPerTimestep, ntime),1));  // number of timesteps per chunk - 10MB chunks
 // _ChunkSize = max(int(round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read
   if(!Options.deltaresFEWS) { 
     _ChunkSize = int(int(_ChunkSize*_interval)/_interval); 
@@ -701,7 +703,8 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   _ChunkSize = max(int(round(1./_interval)),_ChunkSize);                                // make sure  at least one day is read
   //support larger chunk if model duration is small
 
-  _nChunk    = int(ceil(1.0*ntime / _ChunkSize));                                        // total number of chunks
+  //_nChunk    = int(ceil(1.0*ntime / _ChunkSize));                                        // total number of chunks
+  _nChunk    = int(ceil((Options.duration/_interval)/_ChunkSize)); //JRC_TIME_FIX
   _iChunk    = -1;                                                                      // current chunk read (-1 = no chunk read, 0 = first chunk...)
    
   // -------------------------------
@@ -944,9 +947,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   model_duration  = Options.duration;
   model_timestep  = Options.timestep;
 
-  double length_chunk = _interval * _ChunkSize; // [days]
-  iChunk_new = max(int(floor((_t_corr + global_model_time+TIME_CORRECTION) / length_chunk )),0);
-  
+  //iChunk_new = max(int(floor((_t_corr + global_model_time+TIME_CORRECTION) / (_interval * _ChunkSize))),0); //chunk index correspond to current model time
+  //JRC_TIME_FIX: 
+  iChunk_new = max(int(floor((global_model_time+TIME_CORRECTION) / (_interval * _ChunkSize))),0);
+
   if(_iChunk != iChunk_new)
   {  // current model time step is not covered by current chunk --> read new chunk
     if(Options.noisy){ printf("\n Start reading new chunk... iChunk = %i (var = %s)\n",iChunk_new,_varname.c_str()); }
@@ -971,7 +975,9 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       // t2 = t1 / _interval                                       --> number of timesteps need to be read from forcing
       if(Options.noisy){ printf("   >>> t1 = %f\n",Options.duration - global_model_time); }
       if(Options.noisy){ printf("   >>> t2 = %i\n",int((Options.duration - global_model_time) / _interval)); }
-      iChunkSize = int((_t_corr + Options.duration - global_model_time) / _interval);
+      //iChunkSize = int((_t_corr + Options.duration - global_model_time) / _interval);
+      //JRC_TIME_FIX: 
+      iChunkSize = int((Options.duration - global_model_time) / _interval);
     }
     if(Options.noisy){ printf("  iChunksize: %i\n",iChunkSize); }
 
@@ -1078,7 +1084,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     if ( _is_3D ) {
 
-      int       start_point = _ChunkSize * _iChunk;
+      //int       start_point = _ChunkSize * _iChunk;
+      int       start_point = _ChunkSize * _iChunk+(int)(_t_corr/_interval);;//JRC_TIME_FIX:
       size_t    nc_start [3];
       size_t    nc_length[3];
       ptrdiff_t nc_stride[3];
@@ -1158,7 +1165,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     }
     else {
 
-      int       start_point = _ChunkSize * _iChunk;
+      //int       start_point = _ChunkSize * _iChunk;
+      int       start_point = _ChunkSize * _iChunk+(int)(_t_corr/_interval);;//JRC_TIME_FIX:
       size_t    nc_start [2];
       size_t    nc_length[2];
       ptrdiff_t nc_stride[2];
@@ -1364,7 +1372,7 @@ void CForcingGrid::Initialize( const optStruct &Options )
   double model_duration  =Options.duration;            //         [days]
   double model_timestep  =Options.timestep;            // delta t [days]
 
-  //_t_corr is number of days between model start date and forcing chunk
+  //_t_corr is number of days between model start date and forcing 
   // start date (positive if data exists before model start date)
 
   _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year,Options.calendar);
@@ -2011,7 +2019,9 @@ int CForcingGrid::GetnHydroUnits() const{return _nHydroUnits;}
 //
 int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 {
-  return int((_t_corr + t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
+  //JRC_TIME_FIX
+  return int(( t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
+  //return int((_t_corr + t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
 }
 
 ///////////////////////////////////////////////////////////////////

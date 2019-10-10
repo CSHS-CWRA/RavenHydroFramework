@@ -543,6 +543,7 @@ void MassEnergyBalance( CModel            *pModel,
 
   double down_Q;
   double irr_Q;
+  res_constraint res_const;
   for (pp=0;pp<NB;pp++)
   {
     p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index upstream to down
@@ -557,7 +558,7 @@ void MassEnergyBalance( CModel            *pModel,
 
       pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
-      pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,Options,tt);      //Where everything happens!
+      pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,Options,tt);      //Where everything happens!
 
       down_Q=pBasin->GetDownstreamInflow(t+tstep);
       aQoutnew[pBasin->GetNumSegments()-1]+=down_Q;
@@ -565,7 +566,7 @@ void MassEnergyBalance( CModel            *pModel,
       irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1]); 
       aQoutnew[pBasin->GetNumSegments()-1]-=irr_Q;
       
-      pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,Options,tt,false);//actually updates flow values here
+      pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,res_const,Options,tt,false);//actually updates flow values here
 
       pTo   =pModel->GetDownstreamBasin(p);
       if(pTo!=DOESNT_EXIST)//correct downstream inflows

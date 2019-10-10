@@ -156,9 +156,9 @@ public:/*------------------------------------------------------*/
   double GetGridWeight(                    const int        k,
                                            const int        CellID) const;              ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
-                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to model time step
+                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to model time step \todo[clean]: function not used
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
-                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to beginning of day of currentmodel time step
+                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to beginning of day of currentmodel time step \todo[clean]: function not used
 
   // Routines for checking content
   void   CheckValue3D(                     const double value,

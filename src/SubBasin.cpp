@@ -466,15 +466,6 @@ double CSubBasin::GetReservoirLosses(const double &tstep) const
   if(_pReservoir==NULL){ return 0.0; }
   return _pReservoir->GetReservoirLosses(tstep);
 }
-//////////////////////////////////////////////////////////////////
-/// \brief Returns Reservoir losses from AET only integrated over specified timestep [m^3]
-/// \return Reservoir losses from AET over specified timestep  [m^3]
-//
-double CSubBasin::GetReservoirEvapLosses(const double &tstep) const
-{
-	if (_pReservoir == NULL) { return 0.0; }
-	return _pReservoir->GetReservoirEvapLosses(tstep);
-}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total volume lost from main reach over timestep [m^3]
@@ -1295,6 +1286,7 @@ void  CSubBasin::UpdateFlowRules(const time_struct &tt, const optStruct &Options
 void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double &res_ht, //[m]
                                   const double &res_outflow, //[m3/s]
+                                  const res_constraint &constraint,
                                   const optStruct &Options,
                                   const time_struct &tt,
                                   bool initialize)
@@ -1310,7 +1302,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   //_aQout[num_segments-1] is now the new outflow from the channel
 
   if (_pReservoir!=NULL){
-    _pReservoir->UpdateStage(res_ht,res_outflow,Options,tt);
+    _pReservoir->UpdateStage(res_ht,res_outflow,constraint,Options,tt);
     _pReservoir->UpdateMassBalance(tt,Options.timestep);
   }
 
@@ -1461,6 +1453,7 @@ double CSubBasin::TVDTheta(double In_old,double In_new,double Out_old,double Out
 void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            double &res_ht, //[m]
                            double &res_outflow, //[m3/s]
+                           res_constraint &res_const,
                            const optStruct &Options,
                            const time_struct &tt) const
 {
@@ -1748,12 +1741,13 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],tstep,tt,res_outflow);
+    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],tstep,tt,res_outflow,res_const);
   }
   else
   {
     res_ht=0.0;
     res_outflow=0.0;
+    res_const=RC_NATURAL;
   }
 
   /*if (aQout_new[_nSegments-1]<-REAL_SMALL){

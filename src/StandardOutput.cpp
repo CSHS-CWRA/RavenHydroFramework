@@ -281,12 +281,13 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       if((_pSubBasins[p]->IsGauged())  && (_pSubBasins[p]->IsEnabled())  && (_pSubBasins[p]->GetReservoir()!=NULL)) {
 
         if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
-        else                              { name=_pSubBasins[p]->GetName(); }
+        else                             { name=_pSubBasins[p]->GetName(); }
         RES_MB<<","   <<name<<" inflow [m3]";
         RES_MB<<","   <<name<<" outflow [m3]";
         RES_MB<<","   <<name<<" volume [m3]";
         RES_MB<<","   <<name<<" losses [m3]";
         RES_MB<<","   <<name<<" MB error [m3]";
+        RES_MB<<","   <<name<<" constraint";
       }
     }
     RES_MB<<endl;
@@ -831,7 +832,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         for(int p=0;p<_nSubBasins;p++){
           if((_pSubBasins[p]->IsGauged()) &&  (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
 
-            string name;
+            string name,constraint_str;
             if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
             else                             { name=_pSubBasins[p]->GetName(); }
 
@@ -840,8 +841,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             stor   =_pSubBasins[p]->GetReservoir()->GetStorage();//m3
             oldstor=_pSubBasins[p]->GetReservoir()->GetOldStorage();//m3
             loss   =_pSubBasins[p]->GetReservoir()->GetReservoirLosses(Options.timestep);//m3
+            constraint_str=_pSubBasins[p]->GetReservoir()->GetCurrentConstraint();
             if(tt.model_time==0.0){ in=0.0; }
-            RES_MB<<","<<in<<","<<out<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor);
+
+            RES_MB<<","<<in<<","<<out<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor)<<","<<constraint_str;
           }
         }
         RES_MB<<endl;
@@ -1900,10 +1903,10 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
       // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
       for(int p=0;p<_nSubBasins;p++){
-	if(_pSubBasins[p]->GetReservoir()!=NULL){
-	  currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-	  currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-	}
+	      if(_pSubBasins[p]->GetReservoir()!=NULL){
+	        currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	        currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	      }
       }
     }
     AddSingleValueToNetCDF(_STORAGE_ncid,"Total"        ,time_ind2,currentWater);

@@ -26,6 +26,19 @@ enum res_type{
   RESROUTE_STANDARD,
   RESROUTE_NONE
 };
+enum res_constraint {
+  RC_MAX_STAGE,
+  RC_MIN_STAGE,
+  RC_NATURAL, 
+  RC_TARGET, 
+  RC_DOWNSTREAM_FLOW,
+  RC_MAX_FLOW_INCREASE,
+  RC_MAX_FLOW_DECREASE,
+  RC_MIN_FLOW,
+  RC_MAX_FLOW,
+  RC_OVERRIDE_FLOW,
+  RC_DRY_RESERVOIR
+};
 struct down_demand {
   const CSubBasin *pDownSB;   ///< pointer to subbasin of downstream demand location
   double percent;             ///< percentage of demand met by reservoir
@@ -74,6 +87,10 @@ private:/*-------------------------------------------------------*/
   double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
   double       _MB_losses;           ///< losses over current time step [m3]
   double       _AET;                 ///< losses through AET only [m3]
+  double       _GW_seepage;          ///< losses to GW only [m3] (negative for GW gains)
+
+  res_constraint _constraint;          ///< current constraint type
+
 
   //rating curve characteristics :
   double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
@@ -94,7 +111,7 @@ private:/*-------------------------------------------------------*/
 
   //GW information :
   double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)  
-  double       _local_GW_head;       ///< local head [masl] for groundwater losses Q=k*(h-h_loc)
+  double       _local_GW_head;       ///< local head [m] (same  for groundwater losses Q=k*(h-h_loc)
 
   void       BaseConstructor(const string Name,const long SubID,const res_type typ); //because some versions of c++ don't like delegating constructors
 
@@ -127,12 +144,14 @@ public:/*-------------------------------------------------------*/
   double            GetOutflowRate           () const; //[m3/d]
   double            GetReservoirLosses       (const double &tstep) const; //[m3]
   double            GetReservoirEvapLosses   (const double &tstep) const; //[m3]
+  double            GetReservoirGWLosses     (const double &tstep) const; //[m3]
   double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
   double            GetResStage              () const; //[m]
   double            GetOldOutflowRate        () const; //[m3/d]
   double            GetOldStorage            () const; //[m3]
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
+  string            GetCurrentConstraint     () const;
 
   //Manipulators
   void              SetMinStage              (const double &min_z);
@@ -141,6 +160,7 @@ public:/*-------------------------------------------------------*/
   void              SetInitialFlow           (const double &Q,const double &Qlast,const double &t);
   void              SetInitialStage          (const double &ht, const double &ht_last);
   void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
+  void              SetGWParameters          (const double &coeff, const double &h_ref);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
@@ -166,9 +186,11 @@ public:/*-------------------------------------------------------*/
                                               const double      &Qin_new,
                                               const double      &tstep,
                                               const time_struct &tt,
-                                                    double      &res_outflow) const;
+                                                    double      &res_outflow,
+                                                 res_constraint &constraint) const;
   void              UpdateStage              (const double      &new_stage,
                                               const double      &new_ouflow, 
+                                              const res_constraint &constraint,
                                               const optStruct   &Options,
                                               const time_struct &tt);
   void              WriteToSolutionFile      (ofstream &OUT) const;

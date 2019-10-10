@@ -323,6 +323,32 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns index of array for near searching (ordered search around a guessed array index)
+///
+/// \param i [in] near search index, ranges from 0 to size-1
+/// \param guess_p [in] best guess of appropriate array index p in search
+/// \param size [in] size of array being searched
+/// \return Returns index of array for near searching (ordered search around a guessed array index)
+/// \details: NearSearch should proceed as
+/// a[size];     //some kind of array of items where we are looking for the 'correct' item
+/// int guess=4; //a best guess of the index of a[] which we believe is close to the 'correct' one
+/// for (int i=0; i<size;i++){
+///   p=NearSearchIndex(i,guess_p,size);
+///   if (comparison_operator using a[p] that needs to go through minimal a[p] entries){break;}
+/// }
+//
+int NearSearchIndex(const int i,int guess_p,const int size) {
+  int p;
+  if((guess_p>=size) || (guess_p<0)) { guess_p=0; }//fix bad guess
+  if((i<0) || (i>=size)) {
+    ExitGracefully("NearSearchIndex: bad index",RUNTIME_ERR);}
+  if(i%2==0) { p=guess_p+(i/2-1); }
+  else       { p=guess_p-(i/2-1); }
+  if(p<0    ){ p+=size; } //valid
+  if(p>=size){ p-=size; }
+  return p;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns specific HRU with HRU identifier HRUID
 ///
 /// \param HRUID [in] HRU identifier
@@ -330,8 +356,12 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 //
 CHydroUnit *CModel::GetHRUByID(const int HRUID) const
 {
-  for (int k=0;k<_nHydroUnits;k++){ //could be very slow
-    if (HRUID==_pHydroUnits[k]->GetID()){return _pHydroUnits[k];}
+  static int last_k=0;
+  //smart find
+  int k;
+  for (int i=0;i<_nHydroUnits;i++){ //could be very slow
+    k=NearSearchIndex(i,last_k,_nHydroUnits);
+    if (HRUID==_pHydroUnits[k]->GetID()){ last_k=k; return _pHydroUnits[k];}
   }
   return NULL;
 }
@@ -723,6 +753,46 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
   return sum;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of specified cumulative flux over watershed
+///
+/// \param i [in] index of storage compartment
+/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
+/// \return Area-weighted average of cumulative flux to storage compartment i
+//
+double CModel::GetAvgCumulFlux(const int i,const bool to) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  for(int k=0;k<_nHydroUnits;k++)
+  {
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum +=GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
+    }
+  }
+  return sum/_WatershedArea;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average of  cumulative flux between two compartments over watershed
+///
+/// \param iFrom [in] index of 'from' storage compartment
+/// \param iTo [in] index of 'to' storage compartment
+/// \return Area-weighted average of cumulative flux between two compartments over watershed
+//
+double CModel::GetAvgCumulFluxBet(const int iFrom,const int iTo) const
+{
+  //Area-weighted average
+  double sum=0.0;
+  for(int k=0;k<_nHydroUnits;k++)
+  {
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum +=GetCumulFluxBetween(k,iFrom,iTo)*_pHydroUnits[k]->GetArea();
+    }
+  }
+  return sum/_WatershedArea;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns options structure model
 /// \return pointer to transport model
 //
@@ -897,46 +967,7 @@ double CModel::GetAvgForcing (const string &forcing_string) const
   }
   return sum/_WatershedArea;
 }
-//////////////////////////////////////////////////////////////////
-/// \brief Returns area-weighted average of specified cumulative flux over watershed
-///
-/// \param i [in] index of storage compartment
-/// \param to [in] true if evaluating cumulative flux to storage compartment, false for 'from'
-/// \return Area-weighted average of cumulative flux to storage compartment i
-//
-double CModel::GetAvgCumulFlux (const int i, const bool to) const
-{
-  //Area-weighted average
-  double sum=0.0;
-  for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
-    {
-      sum +=GetCumulativeFlux(k,i,to)*_pHydroUnits[k]->GetArea();
-    }
-  }
-  return sum/_WatershedArea;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns area-weighted average of  cumulative flux between two compartments over watershed
-///
-/// \param iFrom [in] index of 'from' storage compartment
-/// \param iTo [in] index of 'to' storage compartment
-/// \return Area-weighted average of cumulative flux between two compartments over watershed
-//
-double CModel::GetAvgCumulFluxBet (const int iFrom, const int iTo) const
-{
-  //Area-weighted average
-  double sum=0.0;
-  for (int k=0;k<_nHydroUnits;k++)
-  {
-    if(_pHydroUnits[k]->IsEnabled())
-    {
-      sum +=GetCumulFluxBetween(k,iFrom,iTo)*_pHydroUnits[k]->GetArea();
-    }
-  }
-  return sum/_WatershedArea;
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total channel storage [mm]
 /// \return Total channel storage in all of watershed [mm]
@@ -1647,7 +1678,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
       
       double tem_precip1 = pBasin->GetAvgForcing("PRECIP") / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
-      double losses      = pBasin->GetReservoirEvapLosses      (Options.timestep) / (Options.timestep*SEC_PER_DAY);
+      double losses      = pRes->GetReservoirEvapLosses        (Options.timestep) / (Options.timestep*SEC_PER_DAY);
+      losses            += pRes->GetReservoirGWLosses          (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
@@ -1696,13 +1728,13 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 // from storage unit iFrom[0] to storage unit iTo[0]) in the given HRU using state_var[] as the expected
 /// value of all state variables over the timestep.
 ///
-/// \param j [in] Integer process indentifier
+/// \param j        [in] Integer process indentifier
 /// \param *state_var [in] Array of state variables for HRU
-/// \param *pHRU [in] Pointer to HRU
+/// \param *pHRU    [in] Pointer to HRU
 /// \param &Options [in] Global model options information
-/// \param &tt [in] Time structure
-/// \param *iFrom [in] Array (size: nConnections)  of Indices of state variable losing mass or energy
-/// \param *iTo [in] Array (size: nConnections)  of indices of state variable gaining mass or energy
+/// \param &tt      [in] Time structure
+/// \param *iFrom   [in] Array (size: nConnections)  of Indices of state variable losing mass or energy
+/// \param *iTo     [in] Array (size: nConnections)  of indices of state variable gaining mass or energy
 /// \param &nConnections [out] Number of connections between storage units/state vars
 /// \param *rates_of_change [out] Double array (size: nConnections) of loss/gain rates of water [mm/d], mass [mg/m2/d], and/or energy [MJ/m2/d]
 /// \return returns false if this process doesn't apply to this HRU, true otherwise
@@ -1763,15 +1795,15 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 // from storage unit iFrom[0] in HRU kFrom[0] to storage unit iTo[0] in HRU kFrom[0]) in the given HRU using state_vars[][] as the expected
 /// value of all state variables over the timestep.
 ///
-/// \param j [in] Integer process indentifier
+/// \param j        [in] Integer process indentifier
 /// \param **state_vars [in] Array of state variables for all HRUs (size: [nHRUs][nStateVars])
-/// \param *pHRU [in] Pointer to HRU
+/// \param *pHRU    [in] Pointer to HRU
 /// \param &Options [in] Global model options information
-/// \param &tt [in] Time structure
-/// \param *kFrom [in] Array (size: nLatConnections)  of Indices of HRU losing mass or energy
-/// \param *kTo [in] Array (size: nLatConnections)  of indices of HRU gaining mass or energy
-/// \param *iFrom [in] Array (size: nLatConnections)  of Indices of state variable losing mass or energy
-/// \param *iTo [in] Array (size: nLatConnections)  of indices of state variable gaining mass or energy
+/// \param &tt      [in] Time structure
+/// \param *kFrom   [in] Array (size: nLatConnections)  of Indices of HRU losing mass or energy
+/// \param *kTo     [in] Array (size: nLatConnections)  of indices of HRU gaining mass or energy
+/// \param *iFrom   [in] Array (size: nLatConnections)  of Indices of state variable losing mass or energy
+/// \param *iTo     [in] Array (size: nLatConnections)  of indices of state variable gaining mass or energy
 /// \param &nConnections [out] Number of connections between storage units/state vars
 /// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm-m2/d], mass [mg/d], and/or energy [MJ/d] 
 /// \return returns false if this process doesn't apply to this HRU, true otherwise

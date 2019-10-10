@@ -1565,6 +1565,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool nGridCellsGiven  = false;
       int  nHydroUnits=0;
       int  nGridCells=0;
+      CHydroUnit *pHRU=NULL;
 
       if (Options.noisy) {cout <<"GridWeights..."<<endl;}
       while (((Len==0) || (strcmp(s[0],":EndGridWeights"))) && (!(p->Tokenize(s,Len))))
@@ -1601,7 +1602,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else
         {
           if (nHydroUnitsGiven && nGridCellsGiven) {
-            CHydroUnit *pHRU=NULL;
+            pHRU=NULL; 
             pHRU = pModel->GetHRUByID(atoi(s[0]));
             if (pHRU == NULL) {
               printf("\n\n");

@@ -214,7 +214,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.SW_cloudcovercorr       =SW_CLOUD_CORR_NONE;
   Options.SW_radia_net            =NETSWRAD_CALC;
   Options.wind_velocity           =WINDVEL_CONSTANT;
-  Options.rel_humidity            =RELHUM_CONSTANT;
+  Options.rel_humidity            =RELHUM_CONSTANT;//RELHUM_MINDEWPT; [preferred]
   Options.air_pressure            =AIRPRESS_BASIC;
   Options.rainsnow                =RAINSNOW_DINGMAN;
   Options.month_interp            =MONTHINT_LINEAR_MID;

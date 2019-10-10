@@ -12,6 +12,7 @@
 #include "TimeSeries.h"
 #include "Reservoir.h"
 class CReservoir;
+enum res_constraint;
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction class for contiguous watershed section with a primary channel, contains a collection of HRUs
 /// \details Used primarily to route water
@@ -146,7 +147,6 @@ public:/*-------------------------------------------------------*/
                                             const double &tstep) const;//[m3] from specified inflows integrated over timestep
   double          GetReservoirInflow       () const;                   //[m3/s] from final segment upstream of reservoir, point in time
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
-  double          GetReservoirEvapLosses   (const double &tstep) const;//[m3] from reservoir integrated over timestep AET only
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
 
   double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
@@ -199,6 +199,7 @@ public:/*-------------------------------------------------------*/
   void            UpdateOutflows           (const double *Qout_new,
                                             const double &res_ht,
                                             const double &res_outflow,
+                                            const res_constraint &constraint,
                                             const optStruct &Options,
                                             const time_struct &tt,
                                             bool initialize);//[m3/s]
@@ -208,6 +209,7 @@ public:/*-------------------------------------------------------*/
   void            RouteWater               (      double      *Qout_new,
                                                   double      &res_ht,
                                                   double      &res_outflow,
+                                               res_constraint &constraint,
                                             const optStruct   &Options,
                                             const time_struct &tt) const;
   double          ChannelLosses            (const double      &reach_volume,
