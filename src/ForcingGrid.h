@@ -39,11 +39,9 @@ private:/*------------------------------------------------------*/
   int          _GridDims[3];                 ///< Length of dimensions of grid [ size = (x,y,t) = (NC, NR, _ChunkSize) ]
 
   int          _nHydroUnits;                 ///< number of HRUs (important for weights)
-  int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
-  ///                                        ///< This is effectively the number of data points which is stored from the original data.
-  int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
-  int         *_aFirstNonZeroWt;             ///< array of first index in array _IdxNonZeroGridCells that is nonzero for HRU k [size:_nHydroUnits] 
-  int         *_aLastNonZeroWt;              ///< array of last index in array _IdxNonZeroGridCells that is nonzero for HRU k [size:_nHydroUnits] 
+
+
+
 
   int          _dim_order;                   ///< code (1-6) for different dimension orders  
   //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
@@ -60,19 +58,26 @@ private:/*------------------------------------------------------*/
   double       _interval;                    ///< uniform interval between data points (in days); delta t
   bool         _is_derived;                  ///< true if forcing grid is derived from input forcings (e.g. t_ave from t_min and t_max)
   ///                                        ///< false if forcing grid is truely read from NetCDF file (e.g. t_min or t_max)
+  
   double     **_aVal;                        ///< Array of magnitudes of pulses (variable units)
   ///                                        ///< [size _ChunkSize, _nNonZeroWeightedGridCells]
   ///                                        ///< time steps are in model resolution (means original input data are
   ///                                        ///< already aggregated to match model resolution)
-  double     **_GridWeight;                  ///< Array of weights for each grid cell/HRU pair 
-  ///                                        ///< Dimensions: [_nHydroUnits][dim_cols     x dim_rows    ]
-  ///                                        ///<            =[_nHydroUnits][_GridDims[0] x _GridDims[1]]
-  ///                                        ///< _GridWeight[k][l] is fraction of forcing for HRU k is from grid cell l=(i,j)
-  ///                                        ///< and grid cell index l is derived by l = (j-1) * dim_cols + i
+
+  double     **_GridWeight;                  ///< Sparse array of weights for each HRU for a list of cells    
+  //                                         ///< Dimensions : [_nHydroUnits][_nWeights[k]] (variable)
+  //                                         ///< _GridWeight[k][i] is fraction of forcing for HRU k is from grid cell _GridWtCellIDs[k][i]
+  //                                         ///< where grid cell index l=_GridWtCellIDs[k][i] is derived by l = (j-1) * dim_cols + i
   ///                                        ///< where i and j are the row and column of cell l respectively and
   ///                                        ///< dim_cols is the total number of columns.
   ///                                        ///< Following contraint must be satisfied:
-  ///                                        ///<      sum(_GridWeight[k][l], {l=1,dim_cols}) = 1.0 for all HRUs k=1,...,_nHydroUnits
+  ///                                        ///<      sum(_GridWeight[k][i], {i=0,_nWeights[k]-1}) = 1.0 for all HRUs k=1,...,_nHydroUnits
+  int        **_GridWtCellIDs;               ///< cell IDs for all non-zero grid weights for HRU k size=[_nHydroUnits][_nWeights[k]] (variable)
+  int         *_nWeights;                    ///< number of weights for each HRU k (size=_nHydroUnits) (each entry greater or equal to 1)
+  int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
+  //                                         ///< This is effectively the number of data points which is stored from the original data. 
+  int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells] 
+
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
   ///                                        ///< piecewise-linear time series
@@ -211,8 +216,7 @@ public:/*------------------------------------------------------*/
   int          GetCols()                           const;        ///< Number of columns (= 1st dimension of gridded data)
   int          GetRows()                           const;        ///< Number of rows    (= 2nd dimension of gridded data)
   int          GetNumValues()                      const;        ///< Number of pulses  (= 3rd dimension of gridded data)
-  int          GetNumberNonZeroGridCells()         const;        ///< Number of non-zero weighted grid cells
-  int          GetIdxNonZeroGridCell(int i)        const;        ///< ID of i-th grid cell with non-zero weighting
+  int          GetNumberNonZeroGridCells()         const;        ///< Number of non-zero weighted grid cells 
   int          GetChunkSize()                      const;        ///< Current chunk size
   int          GetnHydroUnits()                    const;        ///< get number of HRUs _nHydroUnits
   forcing_type GetForcingType()                    const;        ///< Type of forcing data, e.g. PRECIP, TEMP

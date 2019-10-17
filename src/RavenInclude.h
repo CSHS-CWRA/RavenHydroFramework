@@ -756,6 +756,22 @@ enum out_format
   OUTPUT_NETCDF,   ///< Output in NetCDF format (.nc files)
   OUTPUT_NONE
 };
+////////////////////////////////////////////////////////////////////
+/// \brief reservoir constraint conditions
+//
+enum res_constraint {
+  RC_MAX_STAGE,
+  RC_MIN_STAGE,
+  RC_NATURAL,
+  RC_TARGET,
+  RC_DOWNSTREAM_FLOW,
+  RC_MAX_FLOW_INCREASE,
+  RC_MAX_FLOW_DECREASE,
+  RC_MIN_FLOW,
+  RC_MAX_FLOW,
+  RC_OVERRIDE_FLOW,
+  RC_DRY_RESERVOIR
+};
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of state variables

@@ -26,19 +26,7 @@ enum res_type{
   RESROUTE_STANDARD,
   RESROUTE_NONE
 };
-enum res_constraint {
-  RC_MAX_STAGE,
-  RC_MIN_STAGE,
-  RC_NATURAL, 
-  RC_TARGET, 
-  RC_DOWNSTREAM_FLOW,
-  RC_MAX_FLOW_INCREASE,
-  RC_MAX_FLOW_DECREASE,
-  RC_MIN_FLOW,
-  RC_MAX_FLOW,
-  RC_OVERRIDE_FLOW,
-  RC_DRY_RESERVOIR
-};
+
 struct down_demand {
   const CSubBasin *pDownSB;   ///< pointer to subbasin of downstream demand location
   double percent;             ///< percentage of demand met by reservoir

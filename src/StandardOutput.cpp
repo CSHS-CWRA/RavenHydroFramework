@@ -1195,6 +1195,7 @@ void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time,
     }
     
     float total_time = (float(total_steps) * float(elapsed_time) / float(elapsed_steps)) / CLOCKS_PER_SEC;
+    if (Options.benchmarking){ total_time =float(elapsed_time);}
     PROGRESS<<"{"<<endl;
     PROGRESS<<"       \"% progress\": "       << int( float(elapsed_steps) * 100.0 / float(total_steps) ) <<","<< endl;
     PROGRESS<<"       \"seconds remaining\": "<< total_time - float(elapsed_time) / CLOCKS_PER_SEC <<endl;

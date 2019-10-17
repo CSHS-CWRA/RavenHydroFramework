@@ -263,6 +263,7 @@ void CModel::Initialize(const optStruct &Options)
     ExitGracefullyIf(_aShouldApplyProcess[j]==NULL,"CModel::Initialize (_aShouldApplyProcess)",OUT_OF_MEMORY);
     for (k=0; k<_nHydroUnits;k++){
       _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
+      if (!_pHydroUnits[k]->IsEnabled()){ _aShouldApplyProcess[j][k] =false;}
     }
   }
 

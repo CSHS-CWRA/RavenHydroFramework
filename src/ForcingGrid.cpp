@@ -64,7 +64,12 @@ CForcingGrid::CForcingGrid(string       ForcingType,
 
   //initialized in ReallocateArraysInForcingGrid
   _aVal                = NULL;
+
+  // initialized in AllocateWeightArray,SetIdxNonZeroGridCells()
   _GridWeight          = NULL;
+  _GridWtCellIDs       = NULL;
+  _nWeights            = NULL;
+  _IdxNonZeroGridCells = NULL;
 
   //initialized in SetAttributeVarName
   _aLatitude           = NULL;
@@ -75,12 +80,6 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _AttVarNames[1]="NONE";
   _AttVarNames[2]="NONE";
   _AttVarNames[3]="NONE";
-
-  //initialized in SetIdxNonZeroGridCells()
-  _IdxNonZeroGridCells = NULL;
-  _aFirstNonZeroWt     = NULL;
-  _aLastNonZeroWt      = NULL;
-
 }
 
 void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,const int nrows, const int ncols,double *values) 
@@ -273,16 +272,13 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   if (_is_3D) { ncells = _GridDims[0] * _GridDims[1];}
   else        { ncells = _GridDims[0];}
 
-  //AllocateWeightArray()
-  _GridWeight=NULL;
-  _GridWeight =  new double *[_nHydroUnits];
-  ExitGracefullyIf(_GridWeight==NULL,"CForcingGrid::Copy Constructor(2a)",OUT_OF_MEMORY);
-  for (int k=0; k<_nHydroUnits; k++) {                           // loop over HRUs
-    _GridWeight[k] =NULL;
-    _GridWeight[k] = new double [ncells];
-    ExitGracefullyIf(_GridWeight[k]==NULL,"CForcingGrid::Copy Constructor(2)",OUT_OF_MEMORY);
-    for (int c=0; c<ncells; c++) {       // loop over cells = rows*cols
-      _GridWeight[k][c]=grid._GridWeight[k][c];                      // copy the value
+ 
+  //cout<<"Creating new GridWeights array (Copy Constructor): "<<ForcingToString(_ForcingType)<<endl;
+
+  AllocateWeightArray(_nHydroUnits,ncells);
+  for (int k=0; k<_nHydroUnits; k++) {                       
+    for(int i=0;i<grid._nWeights[k];i++) {
+      SetWeightVal(k,grid._GridWtCellIDs[k][i],grid._GridWeight[k][i]); //dynamically grows sparce matrix
     }
   }
   
@@ -291,13 +287,6 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Copy Constructor(3)",OUT_OF_MEMORY);
   for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
     _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              // copy the value
-  }
-
-  _aFirstNonZeroWt=new int [_nHydroUnits];
-  _aLastNonZeroWt =new int [_nHydroUnits];
-  for(int k=0; k<_nHydroUnits;k++){
-    _aFirstNonZeroWt[k]=grid._aFirstNonZeroWt[k];
-    _aLastNonZeroWt [k]=grid._aLastNonZeroWt[k];
   }
 
   _aLatitude=NULL;_aLongitude=NULL;_aElevation=NULL;_aStationIDs=NULL;
@@ -333,10 +322,15 @@ CForcingGrid::~CForcingGrid()
   if(_aVal!=NULL) {
     for(int it=0; it<_ChunkSize; it++) { delete[] _aVal[it];      _aVal[it]=NULL; }      delete[] _aVal;_aVal= NULL;
   }
-  for(int k=0; k<_nHydroUnits; k++) { delete[] _GridWeight[k]; _GridWeight[k]=NULL;} delete[] _GridWeight;_GridWeight= NULL;
+  
+  for(int k=0; k<_nHydroUnits; k++) {
+    delete[] _GridWeight[k];    _GridWeight   [k]=NULL;
+    delete[] _GridWtCellIDs[k]; _GridWtCellIDs[k]=NULL;
+  }
+  delete [] _GridWeight;            _GridWeight          = NULL;
+  delete [] _GridWtCellIDs;         _GridWtCellIDs       = NULL;
+  delete [] _nWeights;              _nWeights            = NULL;
   delete [] _IdxNonZeroGridCells;   _IdxNonZeroGridCells = NULL;
-  delete [] _aFirstNonZeroWt;       _aFirstNonZeroWt     = NULL;
-  delete [] _aLastNonZeroWt;        _aLastNonZeroWt      = NULL;
   delete [] _aLatitude;             _aLatitude           = NULL;
   delete [] _aLongitude;            _aLongitude          = NULL;
   delete [] _aElevation;            _aElevation          = NULL;
@@ -383,16 +377,16 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   nc_type type;          // type of a NetCDF variable, e.g., nc_INT, nc_FLOAT, nc_DOUBLE
 
   if(_ForcingType==F_UNRECOGNIZED) {
-    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires :ForcingType command",BAD_DATA);
+    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :ForcingType command",BAD_DATA);
   }
   if(_filename=="NONE") {
-    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires :FileNameNC command",BAD_DATA);
+    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :FileNameNC command",BAD_DATA);
   }
   if(_varname=="NONE") {
-    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires :VarNameNC command",BAD_DATA);
+    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :VarNameNC command",BAD_DATA);
   }
   if(_DimNames[0]=="NONE") {
-    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires :DimNamesNC command",BAD_DATA);
+    ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :DimNamesNC command",BAD_DATA);
   }
   if(_aElevation==NULL) {
     string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled.";
@@ -1546,10 +1540,10 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   }
 
   if (_GridWeight != NULL){
-    for (int ik=0; ik<nHydroUnits; ik++) {  // loop over HRUs
-      for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
-        if ( _GridWeight[ik][il] > 0.00001 ) {
-          nonzero[il] = true;
+    for(int k=0; k<nHydroUnits; k++) {  // loop over HRUs
+      for(int i=0; i<_nWeights[k]; i++) { // loop over all cells of NetCDF
+        if(_GridWeight[k][i] > 0.00001) {
+          nonzero[_GridWtCellIDs[k][i]] = true;
         }
       }
     }
@@ -1576,25 +1570,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     if ( nonzero[il] ) {
       _IdxNonZeroGridCells[ic] = il;
-      // printf("ForcingGrid: _IdxNonZeroGridCells[%i] = %i\n",ic,il);
       ic++;
-    }
-  }
-  //determine _aFirstNonZeroWt and _aLastNonZeroWt
-  _aFirstNonZeroWt=new int [_nHydroUnits];
-  _aLastNonZeroWt =new int [_nHydroUnits];
-  bool firstfound=false;
-  int cell_idx;
-  for(int k=0; k<_nHydroUnits;k++){
-    firstfound=false;
-    for( ic = 0; ic < _nNonZeroWeightedGridCells; ic++)
-    {
-      cell_idx = _IdxNonZeroGridCells[ic];
-      if (_GridWeight[k][cell_idx]>REAL_SMALL)
-      {
-        if(!firstfound){ _aFirstNonZeroWt[k]=ic; firstfound=true; }
-        _aLastNonZeroWt[k]=ic;
-      }
     }
   }
 
@@ -1810,18 +1786,28 @@ void   CForcingGrid::AllocateWeightArray(const int nHydroUnits, const int nGridC
   // Initialize weighting array and set all entries to zero (default value)
   // since only non-zero entries need to be specified in :GridWeight block in *.rvi file
   // -------------------------------
+  //cout<<"Creating new GridWeights array (Base Constructor): "<<ForcingToString(_ForcingType)<<endl;
+  
   _GridWeight = NULL;
   _GridWeight = new double *[nHydroUnits];
-  for (int k=0; k<nHydroUnits; k++) {  // loop over HRUs
-    _GridWeight[k] = new double [nGridCells];
-    for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
-      _GridWeight[k][il] = 0.0;
-    }
+  ExitGracefullyIf(_GridWeight==NULL   ,"AllocateWeightArray(1)",OUT_OF_MEMORY);
+  _GridWtCellIDs=NULL;
+  _GridWtCellIDs = new int *[nHydroUnits];
+  ExitGracefullyIf(_GridWtCellIDs==NULL,"AllocateWeightArray(2)",OUT_OF_MEMORY);
+  _nWeights=NULL;
+  _nWeights = new int [nHydroUnits];
+  ExitGracefullyIf(_nWeights==NULL     ,"AllocateWeightArray(3)",OUT_OF_MEMORY);
+  for(int k=0; k<nHydroUnits; k++) {  
+    _GridWeight   [k] =NULL;
+    _GridWtCellIDs[k] =NULL;
+    _nWeights     [k] =0;
   }
+
+
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief sets one entry of _GridWeight[HRUID, CellID] = weight in class CForcingGrid
+/// \brief sets one entry of _GridWeight[HRUID][i] = weight in class CForcingGrid; dynamically grows gridweight
 ///
 /// \param HRUID  [in] HRU id (numbered: 0,1,2,...,nHydroUnits-1)
 /// \param CellID [in] cell ID in NetCDF; cells are numbered linewise from left to right starting with 0:
@@ -1854,9 +1840,28 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
   if((CellID<0) || (CellID>=ncells)) {
     ExitGracefully("CForcingGrid: SetWeightVal: invalid cell ID",BAD_DATA);}
 #endif
+  int k=HRUID;
 
-  _GridWeight[HRUID][CellID] = weight;
+  //entry already exists in sparse weights matrix, replace
+  for(int i=0;i<_nWeights[k]-1;i++) {
+    if (_GridWtCellIDs[k][i]==CellID){
+      _GridWeight[k][i]=weight; return;
+    }
+  }
 
+  //dynamically grow weights matrix
+  _nWeights[k]++;
+  int    *tmpid=new int   [_nWeights[k]];
+  double *tmpwt=new double[_nWeights[k]];
+  for(int i=0;i<_nWeights[k]-1;i++) { 
+    tmpwt[i]=_GridWeight   [k][i]; 
+    tmpid[i]=_GridWtCellIDs[k][i];
+  } 
+  tmpwt[_nWeights[k]-1]=weight; //append to end
+  tmpid[_nWeights[k]-1]=CellID;
+
+  delete [] _GridWeight   [k]; _GridWeight   [k]=tmpwt;
+  delete [] _GridWtCellIDs[k]; _GridWtCellIDs[k]=tmpid;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief sets one entry of _aElevation[CellID] 
@@ -1893,19 +1898,19 @@ bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCell
   bool   check = true;
 
   if (_GridWeight != NULL){
-    for (int ik=0; ik<nHydroUnits; ik++) {  // loop over HRUs
+     for(int k=0; k<_nHydroUnits; k++) {  // loop over HRUs
       sum_HRU = 0.0;
-      for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
-        sum_HRU = sum_HRU + _GridWeight[ik][il];
+      for(int i=0; i<_nWeights[k]; i++) { // loop over all cells
+        sum_HRU += _GridWeight[k][i];
       }
-      if(abs(sum_HRU - 1.0) < 0.05) {//repair if less than 5%
-        for(int il=0; il<nGridCells; il++) {
-          _GridWeight[ik][il]/=sum_HRU;
+      if(fabs(sum_HRU - 1.0) < 0.05) {//repair if less than 5%
+        for(int i=0; i<_nWeights[k];i++) {
+          _GridWeight[k][i]/=sum_HRU;
         }
         sum_HRU = 1.0;
       }
-      if ( abs(sum_HRU - 1.0) > 0.0001 ) {
-        printf("HRU ID = %i    Sum Forcing Weights = %f\n", ik,sum_HRU);
+      if(fabs(sum_HRU - 1.0) > 0.0001) {
+        cout<<"HRU ID = "<<k<<" Sum Forcing Weights = "<<sum_HRU<<endl;
         check = false;
       }
     }
@@ -1920,8 +1925,7 @@ bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCell
 
 ///////////////////////////////////////////////////////////////////
 /// \brief weighting of HRU and CellID pair
-///
-/// return weighting of HRU and CellID pair
+/// return weighting of HRU and CellID pair (FUNCTION UNUSED)
 //
 double CForcingGrid::GetGridWeight(const int k,
                                    const int CellID) const
@@ -1932,7 +1936,12 @@ double CForcingGrid::GetGridWeight(const int k,
   if ((CellID<0) || (CellID>=nCells  )){ExitGracefully("CForcingGrid::GetGridWeight: invalid CellID index",RUNTIME_ERR); }
   if (_GridWeight==NULL){ ExitGracefully("CForcingGrid::GetGridWeight: NULL Grid weight matrix",RUNTIME_ERR); }
 #endif
-  return _GridWeight[k][CellID];
+  //  \todo[optimize] - could we send in i instead?
+  for(int i=0; i<_nWeights[k];i++) 
+  {
+    if(_GridWtCellIDs[k][i]==CellID) { return _GridWeight[k][i]; }
+  } 
+  return 0.0;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1996,12 +2005,6 @@ int CForcingGrid::GetNumValues() const{return _nPulses;}
 int CForcingGrid::GetNumberNonZeroGridCells() const{return _nNonZeroWeightedGridCells;}
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Returns ID of i-th grid cell with non-zero weighting
-/// \return ID of i-th grid cell with non-zero weighting
-//
-int CForcingGrid::GetIdxNonZeroGridCell(int ic) const{return _IdxNonZeroGridCells[ic];}
-
-///////////////////////////////////////////////////////////////////
 /// \brief Returns current chunk size
 /// \return Current chunk size
 //
@@ -2033,13 +2036,13 @@ int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 //
 double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &tstep) const
 {
-
   int idx_new = GetTimeIndex(t,tstep);
   int nSteps = max(1,(int)(round(tstep/_interval)));//# of intervals in time step
-  double sum=0.0;
-  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  double wt,sum=0.0;
+  for(int i = 0;i <_nWeights[k]; i++)
   {
-    sum += _GridWeight[k][_IdxNonZeroGridCells[ic]] * GetValue_avg(ic,idx_new,nSteps);
+    wt   = _GridWeight[k][i];
+    sum += wt * GetValue_avg(_GridWtCellIDs[k][i],idx_new,nSteps); 
   }
   return sum;
 }
@@ -2055,12 +2058,11 @@ double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const dou
   double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
   int it_new_day = GetTimeIndex(t-time_shift,tstep);//start of day
   int nStepsDaily  = (int)(round(1.0/_interval));//# of intervals in day
-  double wt;
-  double sum=0;
-  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  double wt,sum=0;
+  for(int i = 0;i <_nWeights[k]; i++)
   {
-    wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    sum += wt * GetValue_avg(ic,it_new_day,nStepsDaily);
+    wt   = _GridWeight[k][i];
+    sum += wt * GetValue_avg(_GridWtCellIDs[k][i],it_new_day,nStepsDaily);
   }
   return sum;
 }
@@ -2075,19 +2077,17 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
 {
 #ifdef _STRICTCHECK_
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
-  if(_aFirstNonZeroWt==NULL) { ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: NULL weight array",RUNTIME_ERR); }
 #endif 
 
   int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
-  double wt;
-  double sum=0.0;
+  double wt,sum=0.0;
   double snow; double rain;
-  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  for (int i=0;i<_nWeights[k];i++)
   {
-    wt       = _GridWeight[k][_IdxNonZeroGridCells[ic]];
-    snow = GetValue_avg(ic, t, nSteps);
+    wt   = _GridWeight[k][i];
+    snow = GetValue_avg(_GridWtCellIDs[k][i], t, nSteps);
     if(snow>0.0){
-      rain=pRain->GetValue_avg(ic, t, nSteps);
+      rain=pRain->GetValue_avg(_GridWtCellIDs[k][i], t, nSteps);
       sum+= wt * snow/(snow+rain);
     }
   }
@@ -2102,12 +2102,11 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
 double CForcingGrid::GetRefElevation(const int k) const
 {
   if(_aElevation==NULL) { return RAV_BLANK_DATA; }
-  int l;
-  double sum=0.0;
-  for(int ic = _aFirstNonZeroWt[k]; ic <= _aLastNonZeroWt[k]; ic++)
+  double wt,sum=0.0;
+  for(int i = 0;i <_nWeights[k]; i++)
   {
-    l=_IdxNonZeroGridCells[ic];
-    sum += _GridWeight[k][l] * _aElevation[l];
+    wt   = _GridWeight[k][i];
+    sum += wt * _aElevation[_GridWtCellIDs[k][i]];
   }
   return sum;
 }

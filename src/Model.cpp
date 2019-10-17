@@ -483,19 +483,30 @@ int         CModel::GetSubBasinIndex(const long SBID) const
 const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) const
 {
   static const CSubBasin **pSBs=new const CSubBasin *[_nSubBasins];
+  
   bool *isUpstr=new bool [_nSubBasins];
   for(int p=0;p<_nSubBasins;p++) { isUpstr[p]=false; }
-  isUpstr[GetSubBasinIndex(SBID)]=true;
+
+  int p=GetSubBasinIndex(SBID);
+  if((p==DOESNT_EXIST) || (p==INDEX_NOT_FOUND)) {
+    string warn="CModel::GetUpstreamSubbasins: invalid subbasin ID "+to_string(SBID)+" (:ReservoirDownstreamDemand command??)";
+    ExitGracefully(warn.c_str(),BAD_DATA);return NULL;
+  }
+  isUpstr[p]=true;
 
   const int MAX_ITER=1000;
   int numUpstr=0;
   int numUpstrOld=1;
   int iter=0;
+  int down_p;
   do
   {
     numUpstrOld=numUpstr;
     for(int p=0;p<_nSubBasins;p++) {
-      if(isUpstr[_aDownstreamInds[p]]==true) { isUpstr[p]=true; }
+      down_p=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
+      if(down_p!=DOESNT_EXIST) {
+        if(isUpstr[down_p]==true) { isUpstr[p]=true;}
+      }
     }
     numUpstr=0;
     for(int p=0;p<_nSubBasins;p++) {
@@ -509,6 +520,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   for(int p=0;p<_nSubBasins;p++) {
     if (isUpstr[p]==true){pSBs[count]=_pSubBasins[p];count++; }
   }
+  delete [] isUpstr;
   return pSBs;
 }
 
@@ -1755,8 +1767,9 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
   CHydroProcessABC *pProc=_pProcesses[j];
 
   nConnections=pProc->GetNumConnections();//total connections: nConnections+nCascades
-  if (!_aShouldApplyProcess[j][pHRU->GetGlobalIndex()]){return false;}
-  if (!pHRU->IsEnabled()){return false;}
+  int k=pHRU->GetGlobalIndex();
+  if (!_aShouldApplyProcess[j][k]){return false;}
+  //if (!pHRU->IsEnabled()){return false;} //now in _aShouldApplyProcess
 
   for (int q=0;q<nConnections;q++)
   {
