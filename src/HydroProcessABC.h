@@ -76,26 +76,27 @@ public:/*-------------------------------------------------------*/
                    const int          nConnect);
   virtual ~CHydroProcessABC();
 
-  //accessors
-  const int*    GetFromIndices()    const;
-  const int*    GetToIndices()      const;
-  int           GetNumConnections() const;
-  process_type  GetProcessType()    const;
+  //accessors (some inlined for speed)
+  inline const int*    GetFromIndices()       const { return &iFrom[0]; } ///< Returns pointer to array of 'from' indices
+  inline const int*    GetToIndices()         const { return &iTo[0];   } ///< Returns pointer to array of 'to' indices
+  inline int           GetNumConnections()    const { return _nConnections+_nCascades; } ///< Returns total number of connections between state variables manipulated by process
+  process_type         GetProcessType()       const;
 
-  bool          HasCascade()        const;
-  int           GetNumCascades()    const;
-  int           GetCascadeFromIndex() const;
-  const int*    GetCascadeToIndices() const;
-  virtual int   GetNumLatConnections() const { return 0; }
+  bool                 HasCascade()           const { return _cascading; }
+  int                  GetNumCascades()       const;
+  int                  GetCascadeFromIndex()  const;
+  const int*           GetCascadeToIndices()  const;
+  virtual int          GetNumLatConnections() const { return 0; }
 
+  bool                 ShouldApply(const CHydroUnit*pHRU) const;
   //functions
-  static void   SetModel    (CModelABC *pM);/// \todo [reorg]: should really not be accessible
+  static void          SetModel    (CModelABC *pM);/// \todo [reorg]: should really not be accessible
 
-  void          AddCascade  (const int *indices, const int nIndices);
-  void          AddCondition(condition_basis basis,
-                             comparison      compare_method,
-                             string          data);
-  bool           ShouldApply(const CHydroUnit *pHRU) const;
+  void                 AddCascade  (const int      *indices, 
+                                    const int       nIndices);
+  void                 AddCondition(condition_basis basis,
+                                    comparison      compare_method,
+                                    string          data);
 
   virtual void Initialize();
   virtual void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const=0;

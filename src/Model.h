@@ -24,7 +24,7 @@
 #include "Reservoir.h"
 #include "Transport.h"
 #include "Diagnostics.h"
-#include "ForcingGrid.h"        ///> CForcingGrid
+#include "ForcingGrid.h"        
 #include "ModelEnsemble.h"
 #include "GroundwaterClass.h"
 
@@ -388,7 +388,6 @@ public:/*-------------------------------------------------------*/
   void        WriteMajorOutput        (string solfile, const optStruct &Options, const time_struct &tt, bool final) const;
   void        WriteProgressOutput     (const optStruct &Options, clock_t elapsed_time, int elapsed_steps, int total_steps);
   void        CloseOutputStreams      ();
-  void        WriteSolutionFile       () const;
   void        SummarizeToScreen       (const optStruct &Options) const;
   void        RunDiagnostics          (const optStruct &Options);
 };

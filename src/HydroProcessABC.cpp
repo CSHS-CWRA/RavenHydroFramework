@@ -194,30 +194,6 @@ void CHydroProcessABC::GetParticipatingParamList(string *aP, class_type *aPC, in
 process_type CHydroProcessABC::GetProcessType()     const{return _process;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns reference to array of 'from' indices
-/// \return Reference to array of 'from' indices
-//
-const int*   CHydroProcessABC::GetFromIndices()     const{return &iFrom[0];}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns reference to array of 'to' indices
-/// \return Reference to array of 'to' indices
-//
-const int*   CHydroProcessABC::GetToIndices()       const{return &iTo[0];}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns total number of connections between state variables manipulated by process
-/// \return total number of connections between state variables manipulated by process
-//
-int          CHydroProcessABC::GetNumConnections()  const{return _nConnections+_nCascades;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns true if outflow cascades
-/// \return True if outflow cascades
-//
-bool         CHydroProcessABC::HasCascade()         const{return _cascading;}
-
-//////////////////////////////////////////////////////////////////
 /// \brief Returns number of cascade connections
 /// \return Number of cascade connections
 //

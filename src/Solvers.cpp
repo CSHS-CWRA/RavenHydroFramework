@@ -187,37 +187,40 @@ void MassEnergyBalance( CModel            *pModel,
     {
       pHRU=pModel->GetHydroUnit(k);
 
-      //model all hydrologic processes occuring at HRU scale
-      //-----------------------------------------------------------------
-      qs=0;
-      for (j=0;j<nProcesses;j++)
-      {
-        nConnections=0;
-
-        if (pModel->ApplyProcess(j,aPhinew[k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change)) //note aPhinew is newest version
+      if(pHRU->IsEnabled()) {
+        //model all hydrologic processes occuring at HRU scale
+        //-----------------------------------------------------------------
+        qs=0;
+        for(j=0;j<nProcesses;j++)
         {
-          if (nConnections>MAX_CONNECTIONS){
-            cout<<nConnections<<endl;
-            ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);}
+          nConnections=0;
 
-          for (q=0;q<nConnections;q++)//each process may have multiple connections
+          if(pModel->ApplyProcess(j,aPhinew[k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change)) //note aPhinew is newest version
           {
-            if (iTo[q]!=iFrom[q]){
-              aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
-              aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+            if(nConnections>MAX_CONNECTIONS) {
+              cout<<nConnections<<endl;
+              ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);
             }
-            else{
-              aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
-            }
-            pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
-            qs++;
-          }//end for q=0 to nConnections
-        }// end if (pModel->ApplyProcess
-        else
-        {
-          qs+=nConnections;
-        }
-      }//end for j=0 to nProcesses
+
+            for(q=0;q<nConnections;q++)//each process may have multiple connections
+            {
+              if(iTo[q]!=iFrom[q]) {
+                aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
+                aPhinew[k][iTo[q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+              }
+              else {
+                aPhinew[k][iTo[q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
+              }
+              pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+              qs++;
+            }//end for q=0 to nConnections
+          }// end if (pModel->ApplyProcess
+          else
+          {
+            qs+=nConnections;
+          }
+        }//end for j=0 to nProcesses
+      }
     }//end for k=0 to nHRUs
 
   }//end if Options.sol_method==ORDERED_SERIES

@@ -56,6 +56,7 @@ private:/*------------------------------------------------------*/
   int          _start_year;                  ///< Year corresponding to local TS time 0.0 (beginning of time series)
   string       _tag;                         ///< data tag (additional information for data)
   double       _interval;                    ///< uniform interval between data points (in days); delta t
+  int          _steps_per_day;               ///< number of data intervals per day (pre-calculated for speed) =1.0/_interval
   bool         _is_derived;                  ///< true if forcing grid is derived from input forcings (e.g. t_ave from t_min and t_max)
   ///                                        ///< false if forcing grid is truely read from NetCDF file (e.g. t_min or t_max)
   
@@ -73,6 +74,7 @@ private:/*------------------------------------------------------*/
   ///                                        ///< Following contraint must be satisfied:
   ///                                        ///<      sum(_GridWeight[k][i], {i=0,_nWeights[k]-1}) = 1.0 for all HRUs k=1,...,_nHydroUnits
   int        **_GridWtCellIDs;               ///< cell IDs for all non-zero grid weights for HRU k size=[_nHydroUnits][_nWeights[k]] (variable)
+  int         *_CellIDToIdx;                 ///< local cell index ic (ranging from 0 to _nNonZeroWeightedGridCells-1)) corresponding to cell ID [size: ncells]
   int         *_nWeights;                    ///< number of weights for each HRU k (size=_nHydroUnits) (each entry greater or equal to 1)
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   //                                         ///< This is effectively the number of data points which is stored from the original data. 

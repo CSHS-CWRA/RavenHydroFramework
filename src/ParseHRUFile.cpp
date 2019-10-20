@@ -8,6 +8,8 @@
 #include "HydroUnits.h"
 #include "ParseLib.h"
 
+CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Options);
+
 //////////////////////////////////////////////////////////////////
 /// \brief Parses HRU properties file
 /// \details model.rvh: input file that defines HRU, subbasin properties, number of HRUs \n
@@ -267,7 +269,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
                                s_to_d(s[12])*DEGREES_TO_RADIANS,//aspect (deg->radians)
                                HRUtype,
                                pSoilProfile,
-							   //pAqStack, GWMIGRATE
+							                 //pAqStack, GWMIGRATE
                                pVegetation,
                                pAqStack,
                                pTerrain,
@@ -296,11 +298,12 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
           :EndOutflowHeightRelation
           ...
         :EndReservoir
+        (and other formats - see ParseReservoir code)
       */
       if (Options.noisy) {cout <<":Reservoir"<<endl;}
       CReservoir *pRes;
       int HRUID;
-      pRes=CReservoir::Parse(pp,s[1],HRUID,Options);
+      pRes=ReservoirParse(pp,s[1],HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
       pRes->SetHRU(pModel->GetHRUByID(HRUID));
       if (pSB!=NULL){pSB->AddReservoir(pRes);}
@@ -404,6 +407,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
         else
         {
           int k;
+          int nHRUs=pModel->GetNumHRUs();
           for (i=0;i<Len;i++)
           {
             int ind1,ind2;
@@ -414,11 +418,11 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
             for (int ii=ind1;ii<=ind2;ii++)
             {
               found=false;
-              for (k=0;k<pModel->GetNumHRUs();k++)
+              for (k=0;k<nHRUs;k++)
               {
                 if (pModel->GetHydroUnit(k)->GetID()==ii)
                 {
-                  pHRUGrp->AddHRU(pModel->GetHydroUnit(k));found=true;
+                  pHRUGrp->AddHRU(pModel->GetHydroUnit(k));found=true; break;
                 }
               }
               if (!found){gaps=true;}
@@ -596,4 +600,427 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
   delete pp;
   pp=NULL;
   return true;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief parses the :Reservoir Command
+/// \note the first line (:Reservoir [name]) has already been read in
+/// \param p [in] parser (likely points to .rvh file)
+/// \param name [in] name of reservoir
+/// \param Options [in] model options structure
+//
+CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Options)
+{
+
+  /*Examples:
+
+  :Reservoir ExampleReservoir
+  :SubBasinID 23
+  :HRUID 234
+  :Type RESROUTE_STANDARD
+  :VolumeStageRelation POWER_LAW
+  0.1 2.3
+  :EndVolumeStageRelation
+  :OutflowStageRelation POWER_LAW
+  0.1 2.3
+  :EndOutflowStageRelation
+  :AreaStageRelation LINEAR
+  0.33
+  :EndAreaStageRelation
+  :EndReservoir
+
+  :Reservoir ExampleReservoir
+  :SubBasinID 23
+  :HRUID 234
+  :Type RESROUTE_STANDARD
+  :StageRelations
+  21 # number of points
+  0.09 0 0 0.0  (h [m], Q [m3/s], V [m3], A [m2])
+  0.1 2 43 0.2
+  ...
+  3.0 20000 3500 200
+  :EndStageRelations
+  :SeepageParameters coeff[m3/s/d] GW_stage [m]
+  :EndReservoir
+
+  :Reservoir ExampleReservoir
+  :SubBasinID 23
+  :HRUID 234
+  :Type RESROUTE_TIMEVARYING
+  :VaryingStageRelations
+  21 # number of points
+  [jul day1] [jul day2] [jul day3] ...
+  0.09 0 0 0.0 0.0 (h [m], Q [m3/s], A [m2], V [m3])
+  0.1 2 43 0.2 0.3
+  ...
+  3.0 20000 3500 200 25000
+  :EndVaryingStageRelations
+  :MaxCapacity 25000
+  :EndReservoir
+
+  :Reservoir ExampleReservoir # 'lake type format'
+  :SubBasinID 23
+  :HRUID 234
+  :Type RESROUTE_STANDARD
+  :WeirCoefficient 0.6
+  :CrestWidth 10
+  :MaxDepth 5.5 # relative to minimum weir crest elevation
+  :LakeArea 10.5
+  :AbsoluteCrestHeight 365 # absolute minimum weir crest height m.a.s.l. (optional)
+  :EndReservoir
+
+
+  */
+  char *s[MAXINPUTITEMS];
+  int    Len;
+
+  long SBID=DOESNT_EXIST;
+
+  double a_V(1000.0),b_V(1.0);
+  double a_Q(10.0),b_Q(1.0);
+  double a_A(1000.0),b_A(0.0);
+  double *aQ(NULL),*aQ_ht(NULL); int NQ(0);
+  double *aV(NULL),*aV_ht(NULL); int NV(0);
+  double *aA(NULL),*aA_ht(NULL); int NA(0);
+  double *aQund(NULL);
+  double **aQQ=NULL;
+  int     nDates(0);
+  int    *aDates(NULL);
+  double cwidth(DOESNT_EXIST),max_depth(DOESNT_EXIST);
+  double weircoeff(DOESNT_EXIST),lakearea(DOESNT_EXIST),crestht(0.0);
+  double max_capacity=0;
+  double seep_coeff  =RAV_BLANK_DATA;
+  double GW_stage    =0;
+
+  curve_function type;
+  type=CURVE_POWERLAW;
+  res_type restype=RESROUTE_STANDARD;
+
+  CReservoir *pRes=NULL;
+  HRUID=DOESNT_EXIST;
+
+  while(!p->Tokenize(s,Len))
+  {
+    if(Options.noisy) { cout << "-->reading line " << p->GetLineNumber() << ": "; }
+    if(Len == 0) {}//Do nothing
+    else if(IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
+    else if(!strcmp(s[0],":SubBasinID"))
+    {
+      if(Options.noisy) { cout << ":SubBasinID" << endl; }
+      SBID = s_to_l(s[1]);
+    }
+    else if(!strcmp(s[0],":HRUID"))
+    {
+      if(Options.noisy) { cout << ":HRUID" << endl; }
+      HRUID = s_to_i(s[1]);
+    }
+    else if(!strcmp(s[0],":Type"))
+    {
+      if(Options.noisy) { cout << ":Type" << endl; }
+      if(!strcmp(s[1],"RESROUTE_STANDARD")) { restype = RESROUTE_STANDARD; }
+      else if(!strcmp(s[1],"RESROUTE_NONE")) { restype = RESROUTE_NONE; }
+    }
+    else if(!strcmp(s[0],":CrestWidth"))
+    {
+      if(Options.noisy) { cout << ":CrestWidth" << endl; }
+      cwidth=s_to_d(s[1]);
+      type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":MaxCapacity"))
+    {
+      if(Options.noisy) { cout << ":MaxCapacity" << endl; }
+      max_capacity=s_to_d(s[1]);
+    }
+    else if(!strcmp(s[0],":WeirCoefficient"))
+    {
+      if(Options.noisy) { cout << ":WeirCoefficient" << endl; }
+      weircoeff=s_to_d(s[1]);
+      type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":MaxDepth"))
+    {
+      if(Options.noisy) { cout << ":MaxDepth" << endl; }
+      max_depth=s_to_d(s[1]);
+      type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":LakeArea"))
+    {
+      if(Options.noisy) { cout << ":LakeArea" << endl; }
+      lakearea=s_to_d(s[1]);
+      type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":AbsoluteCrestHeight"))
+    {
+      if(Options.noisy) { cout << ":AbsoluteCrestHeight" << endl; }
+      crestht=s_to_d(s[1]);
+      type=CURVE_LAKE;
+    }
+    else if(!strcmp(s[0],":SeepageParameters"))
+    {
+      if(Options.noisy) { cout << ":SeepageParameters" << endl; }
+      seep_coeff=s_to_d(s[1]);
+      GW_stage  =s_to_d(s[2]);
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":VolumeStageRelation"))
+    {
+      if(Options.noisy) { cout << ":VolumeStageRelation" << endl; }
+      if(Len >= 2) {
+        if(!strcmp(s[1],"POWER_LAW"))
+        {
+          type = CURVE_POWERLAW;
+          p->Tokenize(s,Len);
+          if(Len >= 2) { a_V = s_to_d(s[0]); b_V = s_to_d(s[1]); }
+          p->Tokenize(s,Len); //:EndVolumeStageRelation
+        }
+        else if(!strcmp(s[1],"LINEAR"))
+        {
+          p->Tokenize(s,Len);
+          if(Len >= 1) { a_V = s_to_d(s[0]); b_V = 1.0; }
+          p->Tokenize(s,Len); //:EndVolumeStageRelation
+        }
+        else if(!strcmp(s[1],"LOOKUP_TABLE"))
+        {
+          if(type!=CURVE_LAKE) { type = CURVE_DATA; } //enables :VolumeStageRelation to be used with lake-type 
+          p->Tokenize(s,Len);
+          if(Len >= 1) { NV = s_to_i(s[0]); }
+          aV    = new double[NV];
+          aV_ht = new double[NV];
+          for(int i = 0; i < NV; i++) {
+            p->Tokenize(s,Len);
+            if(IsComment(s[0],Len)) { i--; }
+            else {
+              aV_ht[i] = s_to_d(s[0]);
+              aV[i] = s_to_d(s[1]);
+            }
+          }
+          p->Tokenize(s,Len); //:EndVolumeStageRelation
+        }
+      }
+      else {
+        //write warning
+      }
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":AreaStageRelation"))
+    {
+      if(Options.noisy) { cout << ":AreaStageRelation" << endl; }
+      if(Len >= 2) {
+        if(!strcmp(s[1],"POWER_LAW"))
+        {
+          type = CURVE_POWERLAW;
+          p->Tokenize(s,Len);
+          if(Len >= 2) { a_A = s_to_d(s[0]); b_A = s_to_d(s[1]); }
+          p->Tokenize(s,Len); //:EndAreaStageRelation
+        }
+        else if(!strcmp(s[1],"CONSTANT"))
+        {
+          type = CURVE_LINEAR;
+          p->Tokenize(s,Len);
+          if(Len >= 1) { a_A = s_to_d(s[0]); b_A = 0.0; }
+          p->Tokenize(s,Len); //:EndAreaStageRelation
+        }
+        else if(!strcmp(s[1],"LINEAR"))
+        {
+          type = CURVE_LINEAR;
+          p->Tokenize(s,Len);
+          if(Len >= 1) { a_A = s_to_d(s[0]); b_A = 1.0; }
+          p->Tokenize(s,Len); //:EndAreaStageRelation
+        }
+        else if(!strcmp(s[1],"LOOKUP_TABLE"))
+        {
+          type = CURVE_DATA;
+          p->Tokenize(s,Len);
+          if(Len >= 1) { NA = s_to_i(s[0]); }
+          aA = new double[NA];
+          aA_ht = new double[NA];
+          for(int i = 0; i < NA; i++) {
+            p->Tokenize(s,Len);
+            if(IsComment(s[0],Len)) { i--; }
+            else {
+              aA_ht[i] = s_to_d(s[0]);
+              aA[i] = s_to_d(s[1]);
+            }
+          }
+          p->Tokenize(s,Len); //:EndAreaStageRelation
+        }
+      }
+      else {
+        //write warning
+      }
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":OutflowStageRelation"))
+    {
+      if(Options.noisy) { cout << ":OutflowStageRelation" << endl; }
+      if(Len >= 2) {
+        if(!strcmp(s[1],"POWER_LAW"))
+        {
+          type = CURVE_POWERLAW;
+          p->Tokenize(s,Len);
+          if(Len >= 2) { a_Q = s_to_d(s[0]); b_Q = s_to_d(s[1]); }
+          p->Tokenize(s,Len); //:EndOutflowStageRelation
+        }
+        else if(!strcmp(s[1],"LINEAR"))
+        {
+          type = CURVE_LINEAR;
+          p->Tokenize(s,Len);
+          if(Len >= 1) { a_Q = s_to_d(s[0]); b_Q = 1.0; }
+          p->Tokenize(s,Len); //:EndOutflowStageRelation
+        }
+        else if(!strcmp(s[0],"LOOKUP_TABLE"))
+        {
+          type = CURVE_DATA;
+          p->Tokenize(s,Len);
+          if(Len >= 1) { NQ = s_to_i(s[0]); }
+          aQ = new double[NQ];
+          aQ_ht = new double[NQ];
+          for(int i = 0; i < NQ; i++) {
+            p->Tokenize(s,Len);
+            if(IsComment(s[0],Len)) { i--; }
+            else {
+              aQ_ht[i] = s_to_d(s[0]);
+              aQ[i] = s_to_d(s[1]);
+            }
+          }
+          p->Tokenize(s,Len); //:EndOutflowStageRelation
+        }
+      }
+      else {
+        //write warning
+      }
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":StageRelations"))
+    {
+      if(Options.noisy) { cout << ":StageRelations" << endl; }
+      type = CURVE_DATA;
+      p->Tokenize(s,Len);
+      if(Len >= 1) { NQ = s_to_i(s[0]); }
+
+      aQ_ht = new double[NQ];
+      aQ = new double[NQ];
+      aV = new double[NQ];
+      aA = new double[NQ];
+      aQund=new double[NQ];
+      for(int i = 0; i < NQ; i++) {
+        p->Tokenize(s,Len);
+        if(IsComment(s[0],Len)) { i--; }
+        else {
+          if(Len>=4) {
+            aQ_ht[i] = s_to_d(s[0]);
+            aQ[i] = s_to_d(s[1]);
+            aV[i] = s_to_d(s[2]);
+            aA[i] = s_to_d(s[3]);
+            aQund[i]=0.0;
+            if(Len>=5) {
+              aQund[i]=s_to_d(s[4]);
+            }
+          }
+          else {
+            WriteWarning("Incorrect line length (<4) in :Reservoir :StageRelations command",Options.noisy);
+          }
+        }
+      }
+      p->Tokenize(s,Len); //:EndStageRelations
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":EndStageRelations"))
+    {
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":VaryingStageRelations"))
+    {
+      bool hasQund=false;
+      int shift=0;
+      if(Options.noisy) { cout << ":VaryingStageRelations" << endl; }
+      type = CURVE_VARYING;
+      p->Tokenize(s,Len);
+      if(Len >= 1) { NQ = s_to_i(s[0]); } //# of flows
+      if(Len>=2) { hasQund=true;shift=1; } //TMP DEBUG - shoudld have flag for extra column
+      p->Tokenize(s,Len);
+      nDates = Len;
+
+      aDates = new int[nDates];
+      for(int v = 0; v < nDates; v++) { aDates[v] = s_to_i(s[v]); }
+
+      aQ_ht = new double[NQ];
+      aQQ = new double *[nDates];
+      for(int v = 0; v < nDates; v++) {
+        aQQ[v] = new double[NQ];
+      }
+      aV = new double[NQ];
+      aA = new double[NQ];
+      aQund=new double[NQ];
+      for(int i = 0; i < NQ; i++) {
+        p->Tokenize(s,Len);
+        if(IsComment(s[0],Len)) { i--; }
+        else {
+          if(Len==1) {//presumably :EndVaryingStageRelations
+            ExitGracefully("CReservoir::Parse: improper number of rows in :VaryingStageRelations command",BAD_DATA);
+          }
+          else if(Len < 2 + nDates) {
+            ExitGracefully("CReservoir::Parse: improper number of columns in :VaryingStageRelations command",BAD_DATA);
+          }
+          aQ_ht[i] = s_to_d(s[0]); //stage
+          aV[i] = s_to_d(s[1]); //volume
+          aA[i] = s_to_d(s[2]); //area
+          if(hasQund) { aQund[i] = s_to_d(s[3]); } //Qund
+          else { aQund[i]=0.0; }
+          for(int v = 0; v < nDates; v++) {
+            aQQ[v][i] = s_to_d(s[3 + v +shift]); //flows for each date
+          }
+        }
+      }
+      p->Tokenize(s,Len); //:EndVaryingStageRelations
+    }
+    //----------------------------------------------------------------------------------------------
+    else if(!strcmp(s[0],":EndReservoir")) {
+      if(Options.noisy) { cout << ":EndReservoir" << endl; }
+      break;
+    }
+    else {
+      WriteWarning("Reservoir::Parse: unrecognized command (" + to_string(s[0]) + ") in :Reservoir-:EndReservoir Block",Options.noisy);
+    }
+  }
+
+  if((type==CURVE_POWERLAW) || (type==CURVE_LINEAR))
+  {
+    pRes=new CReservoir(name,SBID,restype,a_V,b_V,a_Q,b_Q,a_A,b_A);
+  }
+  else if(type==CURVE_DATA)
+  {
+    pRes=new CReservoir(name,SBID,restype,aQ_ht,aQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
+  }
+  else if(type==CURVE_VARYING)
+  {
+    pRes=new CReservoir(name,SBID,restype,nDates,aDates,aQ_ht,aQQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
+  }
+  else if(type==CURVE_LAKE)
+  {
+    ExitGracefullyIf(weircoeff==DOESNT_EXIST,"CReservoir::Parse: :WeirCoefficient must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(cwidth   ==DOESNT_EXIST,"CReservoir::Parse: :CrestWidth must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(lakearea ==DOESNT_EXIST,"CReservoir::Parse: :LakeArea  must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
+    pRes=new CReservoir(name,SBID,restype,weircoeff,cwidth,crestht,lakearea,max_depth);
+  }
+  else {
+    ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
+  }
+
+  if(max_capacity!=0) { pRes->SetMaxCapacity(max_capacity); }//overrides estimates (which will typically be too large)
+  if(seep_coeff  !=RAV_BLANK_DATA) { pRes->SetGWParameters(seep_coeff,GW_stage); }
+  if((type==CURVE_LAKE) && (aV!=NULL) &&
+    (aV_ht!=NULL)) {
+    pRes->SetVolumeStageCurve(aV_ht,aV,NV);
+  }//allows user to override prismatic reservoir assumption
+
+  for(int i = 0; i < nDates; i++) { delete[] aQQ[i]; }delete[] aQQ;
+  delete[] aQ;
+  delete[] aQ_ht;
+  delete[] aQund;
+  delete[] aV;
+  delete[] aV_ht;
+  delete[] aA;
+  delete[] aA_ht;
+  return pRes;
 }

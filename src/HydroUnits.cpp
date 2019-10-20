@@ -121,47 +121,6 @@ CHydroUnit::~CHydroUnit()
 /*****************************************************************
    Accessors
 *****************************************************************/
-
-//////////////////////////////////////////////////////////////////
-/// \brief Checks if HRU is enabled
-/// \return true if HRU is enabled
-//
-bool      CHydroUnit::IsEnabled         () const {return !_Disabled;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns location of centroid of HRU
-/// \return Location of centroid of HRU
-//
-location  CHydroUnit::GetCentroid       () const {return _Centroid;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns physical area of HRU [km^2]
-///
-/// \return Area of HRU [km^2]
-//
-double    CHydroUnit::GetArea           () const {return _Area;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns index of subbasin the HRU lies in
-///
-/// \return Integer sub basin index     (not ID)
-//
-int       CHydroUnit::GetSubBasinIndex  () const {return _SubbasinInd;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns value of state variable corresponding to passed index
-///
-/// \param i [in] Integer index of state variable
-/// \return Double value of state variable corresponding to index i
-//
-double    CHydroUnit::GetStateVarValue     (const int i) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((i<0) || (i>=_pModel->GetNumStateVars()),"CHydroUnit GetStateVarValue::invalid index",RUNTIME_ERR);
-#endif
-  return _aStateVar[i];
-}
-
 //////////////////////////////////////////////////////////////////
 /// \brief Returns a pointer to the state variable array
 ///
@@ -171,20 +130,6 @@ double*    CHydroUnit::GetStateVarArray                 () const
 {
   return _aStateVar;
 }
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns unique HRU identifier
-///
-/// \return Integer identifier of HRU
-//
-int       CHydroUnit::GetID                             () const {return _ID;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns unique HRU global model index        (k)
-///
-/// \return Integer index of HRU in global model array
-//
-int       CHydroUnit::GetGlobalIndex                    () const {return _global_k;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average elevation of HRU above sea level [m]
@@ -234,20 +179,6 @@ double    CHydroUnit::GetSolarNoon                      () const {return _SolarN
 /// \return double precipitation correction factor
 //
 double    CHydroUnit::GetPrecipMultiplier               () const {return _PrecipMult;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns type of HRU                          (standard, lake, or glacier)
-///
-/// \return Type of HRU                                 (standard, lake, or glacier)
-//
-HRU_type  CHydroUnit::GetHRUType                        () const {return _HRUType;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Checks if HRU is of type lake
-///
-/// \return Boolean showing if HRU is of type lake or not
-//
-bool      CHydroUnit::IsLake                            () const {return (_HRUType==HRU_LAKE);}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Checks if HRU is linked to reservoir

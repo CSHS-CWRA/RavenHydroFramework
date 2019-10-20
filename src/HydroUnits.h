@@ -91,18 +91,18 @@ public:/*-------------------------------------------------------*/
 
   ~CHydroUnit();
 
-  //Accessor functions
-  int                    GetID           () const;
-  int                    GetGlobalIndex  () const;
-  bool                   IsEnabled       () const;
-  location               GetCentroid     () const;
-  double                 GetArea         () const;
-  int                    GetSubBasinIndex() const;
-  HRU_type               GetHRUType      () const;
-  bool                   IsLake          () const;
+  //Accessor functions (some inlined for speed)
+  inline int             GetID           () const { return _ID;          }
+  inline int             GetGlobalIndex  () const { return _global_k;    }
+  inline bool            IsEnabled       () const { return !_Disabled;   }
+  inline location        GetCentroid     () const { return _Centroid;    }
+  inline double          GetArea         () const { return _Area;        }
+  inline int             GetSubBasinIndex() const { return _SubbasinInd; }
+  inline HRU_type        GetHRUType      () const { return _HRUType;     } //(standard, lake, rock, or glacier)
+  inline bool            IsLake          () const { return (_HRUType==HRU_LAKE);}
   bool                   IsLinkedToReservoir() const;
 
-  double                 GetStateVarValue(const int i) const;
+  inline double          GetStateVarValue(const int i) const { return _aStateVar[i]; }
   double*                GetStateVarArray() const;
 
   double                 GetElevation    () const;//[masl]

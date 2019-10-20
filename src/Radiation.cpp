@@ -602,24 +602,27 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   
   double revasp=-(aspect+PI);  if(revasp>2*PI){revasp-=2*PI;}//revised aspect 
 
-  a = sin(declin) * cos(latrad) * sin(slope) * cos(revasp) - sin(declin) * sin(latrad) * cos(slope);   //Eqn 11a, constant
-  b = cos(declin) * cos(latrad) * cos(slope) + cos(declin) * sin(latrad) * sin(slope) * cos(revasp);   //Eqn 11b, constant
-  c = cos(declin) * sin(   slope) * sin(revasp);                                                       //Eqn 11c, constant
+  double cosslope =cos(slope),   sinslope=sin(slope);
+  double cosdeclin=cos(declin), sindeclin=sin(declin);
+  double coslatrad=cos(latrad), sinlatrad=sin(latrad);
+  double cosrevasp=cos(revasp), sinrevasp=sin(revasp);
+
+  a = sindeclin * (coslatrad*sinslope*cosrevasp - sinlatrad*cosslope);//Eqn 11a, constant
+  b = cosdeclin * (coslatrad*cosslope + sinlatrad*sinslope*cosrevasp);//Eqn 11b, constant
+  c = cosdeclin * sinslope * sinrevasp;                               //Eqn 11c, constant
 
   double quad;
   quad = b*b + c*c - a*a;        //Quadratic function for eqn 13
   quad = max(0.0001, quad);      //Limit quadratic function to greater than 0 as per step A.4.i.
 
   //Find cos_theta at solar noon (used instead of sin(slope) > solar angle)
-  noon_cos_theta = sin(declin) * sin(latrad) * cos(slope) 
-                  - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) 
-                  + cos(declin) * cos(latrad) * cos(slope) 
-                  + cos(declin) * sin(latrad) * sin(slope) * cos(revasp);
+  noon_cos_theta =  (sindeclin * sinlatrad + cosdeclin * coslatrad)* cosslope
+                  + (cosdeclin * sinlatrad - sindeclin * coslatrad)* sinslope * cosrevasp;
 
   // Find sunrise, sunset on flat surface
   //=================================================================================
-  ws2 = acos(-tan(declin) * tan(latrad)) ;     //Eqn 8, Sunset [rad]
-  ws1 = -ws2;                                  //Sunrise [rad]
+  ws2 = acos(-sindeclin/cosdeclin*sinlatrad/coslatrad); //Eqn 8, Sunset [rad]
+  ws1 = -ws2;                                           //Sunrise [rad]
 
   if(latrad>0){// (N. hemisphere)
     if      (declin + latrad > PI / 2.0)       { ws1 = -PI;  ws2 = PI; }//sun never setting
@@ -761,11 +764,11 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
       w2_24=min(w2_24,t2*2.0*PI);
       if(w2_24<=w1_24){ w2_24=w1_24; } //nighttime
     }
-    cos_theta = sin(declin) * sin(latrad) * cos(slope) * (w2_24 - w1_24)
-              - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w2_24 - w1_24)
-              + cos(declin) * cos(latrad) * cos(slope) * (sin(w2_24) - sin(w1_24))
-              + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w2_24) - sin(w1_24))
-              - cos(declin) * sin(slope)  * sin(revasp) * (cos(w2_24) - cos(w1_24));  //Eqn 5
+
+    cos_theta = (sindeclin * sinlatrad * cosslope - sindeclin * coslatrad * sinslope * cosrevasp) * (w2_24 - w1_24)
+              +( cosdeclin * coslatrad * cosslope + cosdeclin * sinlatrad * sinslope * cosrevasp) * (sin(w2_24) - sin(w1_24))
+              -( cosdeclin * sinslope  * sinrevasp                                              ) * (cos(w2_24) - cos(w1_24));  //Eqn 5
+
     //day_length=w2_24-w1_24;
   }
 

@@ -38,6 +38,9 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _varname      = varname;
   _DimNames[0]  = DimNames[0]; _DimNames[1]  = DimNames[1]; _DimNames[2]  = DimNames[2];
   _is_3D        = is_3D;
+
+  _interval     = 1.0;
+  _steps_per_day= 1;
   
   _TimeShift    = 0.0;
   _LinTrans_a   = 1.0;
@@ -68,6 +71,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   // initialized in AllocateWeightArray,SetIdxNonZeroGridCells()
   _GridWeight          = NULL;
   _GridWtCellIDs       = NULL;
+  _CellIDToIdx         = NULL;
   _nWeights            = NULL;
   _IdxNonZeroGridCells = NULL;
 
@@ -278,10 +282,17 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   AllocateWeightArray(_nHydroUnits,ncells);
   for (int k=0; k<_nHydroUnits; k++) {                       
     for(int i=0;i<grid._nWeights[k];i++) {
-      SetWeightVal(k,grid._GridWtCellIDs[k][i],grid._GridWeight[k][i]); //dynamically grows sparce matrix
+      SetWeightVal(k,grid._GridWtCellIDs[k][i],grid._GridWeight[k][i]); //dynamically grows sparse matrix
     }
   }
   
+  _CellIDToIdx =NULL;
+  _CellIDToIdx = new int [ncells];
+  ExitGracefullyIf(_CellIDToIdx==NULL,"CForcingGrid::Copy Constructor(8)",OUT_OF_MEMORY);
+  for(int c=0; c<ncells; c++) {             // loop over non-zero weighted cells
+    _CellIDToIdx[c]=grid._CellIDToIdx[c];              // copy the value
+  }
+
   _IdxNonZeroGridCells = NULL;
   _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
   ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Copy Constructor(3)",OUT_OF_MEMORY);
@@ -329,6 +340,7 @@ CForcingGrid::~CForcingGrid()
   }
   delete [] _GridWeight;            _GridWeight          = NULL;
   delete [] _GridWtCellIDs;         _GridWtCellIDs       = NULL;
+  delete [] _CellIDToIdx;           _CellIDToIdx         = NULL;
   delete [] _nWeights;              _nWeights            = NULL;
   delete [] _IdxNonZeroGridCells;   _IdxNonZeroGridCells = NULL;
   delete [] _aLatitude;             _aLatitude           = NULL;
@@ -595,7 +607,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   }
   
   // -------------------------------
-  // delta t and interval (in days)
+  // delta t and interval (in days) / steps per day
   // -------------------------------
   double time_zone=0;
   time_struct tt;
@@ -630,6 +642,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   else{
     ExitGracefully("CForcingGrid: ForcingGridInit: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
   }
+  _steps_per_day=(int)(round(1.0/_interval)); //pre-calculate for speed.
   /*
   printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
   printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
@@ -653,7 +666,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   ExitGracefullyIf(_interval<=0,
                    "CForcingGrid: ForcingGridInit: negative time interval is not allowed",BAD_DATA);
 
-  if(ForcingToString(_ForcingType) == "TEMP_DAILY_AVE" && _interval != 1.0) {
+  if((ForcingToString(_ForcingType) == "TEMP_DAILY_AVE") && (_interval != 1.0)) {
     ExitGracefully("CForcingGrid: ForcingGridInit: Gridded forcing 'TEMP_DAILY_AVE' must have daily timestep. Please use 'TEMP_AVE' instead (see *.rvt file).",BAD_DATA);
   }
 
@@ -1203,9 +1216,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       // cout<<"NCGETVARS"<<endl;
     }
 
+    double val;
     // -------------------------------
     // Copy all data from aTmp array to member array _aVal.
     // -------------------------------
+    // \todo [optimize] - check values in 3D as done below for 2D (avoiding function call overhead)
     if ( _is_3D ) {
       int irow,icol;
       if (_dim_order == 1) {
@@ -1277,18 +1292,21 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       if (_dim_order == 1) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
-		        CheckValue2D(aTmp2D[_IdxNonZeroGridCells[ic]][it], missval, _IdxNonZeroGridCells[ic], it);   // check if value to read in equals "missing_value"
-		        CheckValue2D(aTmp2D[_IdxNonZeroGridCells[ic]][it], fillval, _IdxNonZeroGridCells[ic], it);   // check if value to read in equals "_FillValue"
-            _aVal[it][ic]=_LinTrans_a*aTmp2D[_IdxNonZeroGridCells[ic]][it]+_LinTrans_b;
+            val=aTmp2D[_IdxNonZeroGridCells[ic]][it];
+            if(val==missval) { CheckValue2D(val,missval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "missing_value"
+            if(val==fillval) { CheckValue2D(val,fillval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "_FillValue"
+            _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
       }
       else if (_dim_order == 2) {
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
-		        CheckValue2D(aTmp2D[it][_IdxNonZeroGridCells[ic]], missval, it, _IdxNonZeroGridCells[ic]);   // check if value to read in equals "missing_value"
-		        CheckValue2D(aTmp2D[it][_IdxNonZeroGridCells[ic]], fillval, it, _IdxNonZeroGridCells[ic]);   // check if value to read in equals "_FillValue"
-            _aVal[it][ic]=_LinTrans_a*aTmp2D[it][_IdxNonZeroGridCells[ic]]+_LinTrans_b;
+            val=aTmp2D[it][_IdxNonZeroGridCells[ic]];
+
+            if(val==missval) { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
+            if(val==fillval) { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
+            _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
       }
@@ -1565,11 +1583,17 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   for (int il=0; il<_nNonZeroWeightedGridCells; il++) { // loop over all cells non-zero weighted grid cells
     _IdxNonZeroGridCells[il] = -1;
   }
+  _CellIDToIdx = NULL;
+  _CellIDToIdx = new int[nGridCells];
+  for(int c=0; c<nGridCells; c++) { // loop over all cells non-zero weighted grid cells
+    _CellIDToIdx[c] = DOESNT_EXIST;
+  }
 
   int ic = 0;
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     if ( nonzero[il] ) {
       _IdxNonZeroGridCells[ic] = il;
+      _CellIDToIdx[il]=ic;
       ic++;
     }
   }
@@ -1605,6 +1629,7 @@ void CForcingGrid::SetChunkSize(const int    ChunkSize)
 void CForcingGrid::SetInterval(const double interval)
 {
   _interval=interval;
+  _steps_per_day=(int)(round(1.0/_interval));
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -2024,11 +2049,13 @@ int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 {
   //JRC_TIME_FIX
   return int(( t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
+  //return int((t+0.25*tstep)*_steps_per_day)  % _ChunkSize; //JRC \todo[fix] - I believe this is the correct approach
+
   //return int((_t_corr + t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief returns weighted value of gridded forcing in HRU k over timestep
+/// \brief returns weighted value of gridded forcing in HRU k over timestep starting at time t
 /// \param k    [in] HRU index
 /// \param t      [in] model time [days]
 /// \return tstep [in] model time step [days]
@@ -2042,7 +2069,7 @@ double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &
   for(int i = 0;i <_nWeights[k]; i++)
   {
     wt   = _GridWeight[k][i];
-    sum += wt * GetValue_avg(_GridWtCellIDs[k][i],idx_new,nSteps); 
+    sum += wt * GetValue_avg(_CellIDToIdx[_GridWtCellIDs[k][i]],idx_new,nSteps);
   }
   return sum;
 }
@@ -2056,20 +2083,19 @@ double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &
 double CForcingGrid::GetDailyWeightedValue(const int k,const double &t,const double &tstep, const optStruct &Options) const
 {
   double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-  int it_new_day = GetTimeIndex(t-time_shift,tstep);//start of day
-  int nStepsDaily  = (int)(round(1.0/_interval));//# of intervals in day
+  int it_new_day = GetTimeIndex(t-time_shift,tstep);//index corresponding to start of day
   double wt,sum=0;
   for(int i = 0;i <_nWeights[k]; i++)
   {
     wt   = _GridWeight[k][i];
-    sum += wt * GetValue_avg(_GridWtCellIDs[k][i],it_new_day,nStepsDaily);
+    sum += wt * GetValue_avg(_CellIDToIdx[_GridWtCellIDs[k][i]],it_new_day,_steps_per_day);
   }
   return sum;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief returns daily weighted snowfrac value if this is a gridded snow dataset and pRain is provided
-/// \param k    [in] HRU index
-/// \param t      [in] model time [days]
+/// \param k     [in] HRU index
+/// \param t     [in] model time [days]
 /// \param pRain [in] pointer to gridded rain dataset
 /// \param tstep [in] model time step [days]
 //
@@ -2084,10 +2110,11 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   double snow; double rain;
   for (int i=0;i<_nWeights[k];i++)
   {
+    int ic=_CellIDToIdx[_GridWtCellIDs[k][i]];
     wt   = _GridWeight[k][i];
-    snow = GetValue_avg(_GridWtCellIDs[k][i], t, nSteps);
+    snow = GetValue_avg(ic, t, nSteps);
     if(snow>0.0){
-      rain=pRain->GetValue_avg(_GridWtCellIDs[k][i], t, nSteps);
+      rain=pRain->GetValue_avg(ic, t, nSteps);
       sum+= wt * snow/(snow+rain);
     }
   }
@@ -2106,7 +2133,7 @@ double CForcingGrid::GetRefElevation(const int k) const
   for(int i = 0;i <_nWeights[k]; i++)
   {
     wt   = _GridWeight[k][i];
-    sum += wt * _aElevation[_GridWtCellIDs[k][i]];
+    sum += wt * _aElevation[_CellIDToIdx[_GridWtCellIDs[k][i]]];
   }
   return sum;
 }

@@ -184,7 +184,5 @@ public:/*-------------------------------------------------------*/
   void              WriteToSolutionFile      (ofstream &OUT) const;
   void              UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep);
-
-  static CReservoir  *Parse(CParser *p, string name, int &HRUID, const optStruct &Options);
 };
 #endif
