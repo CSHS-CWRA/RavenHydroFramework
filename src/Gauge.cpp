@@ -169,14 +169,16 @@ void CGauge::Initialize(const optStruct   &Options,
     }
   }
   //temp greater than -60C less than 60C
-  bool hasAveTemp  =(GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL);
+  bool hasAveTemp      =(GetTimeSeries(F_TEMP_DAILY_AVE)!=NULL);
+  bool derivedAveTemp  =((GetTimeSeries(F_TEMP_DAILY_MIN)!=NULL) && (GetTimeSeries(F_TEMP_DAILY_MAX)!=NULL));    // NEW
   if(hasAveTemp){
     index=_aTSindex[(int)(F_TEMP_DAILY_AVE)];
     if(index!=DOESNT_EXIST){
       for(int nn=0;nn<nSamples; nn++)
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
-        if(val==RAV_BLANK_DATA){
+        //if(val==RAV_BLANK_DATA){                           // OLD
+	if (val==RAV_BLANK_DATA && !(derivedAveTemp)){       // NEW
           string warning;
           warning ="CGauge::Initialize: Raven cannot have blank data in daily temperature time series (Gauge: "+_name+", n="+to_string(nn)+")";
           ExitGracefully(warning.c_str(),BAD_DATA);
