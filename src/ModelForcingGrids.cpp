@@ -172,7 +172,7 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
     int nNonZero   =pGrid_tave->GetNumberNonZeroGridCells();
     for(int it=0; it<chunk_size; it++) {           // loop over time points in buffer
       for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
-        pGrid_daily_tave->SetValue(ic,it,pGrid_tave->GetValue(ic,it)); //copy values
+        pGrid_daily_tave->SetValue(ic,it,pGrid_tave->GetValue(ic,it)); //copy values //\todo[optimize] - is this necessary - should copy in ForcingCopyCreate
       }
     }
     AddForcingGrid(pGrid_daily_tave,F_TEMP_DAILY_AVE);

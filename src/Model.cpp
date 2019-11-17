@@ -337,14 +337,15 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 ///   if (comparison_operator using a[p] that needs to go through minimal a[p] entries){break;}
 /// }
 //
-int NearSearchIndex(const int i,int guess_p,const int size) {
+int NearSearchIndex(const int i,int guess_p,const int size) 
+{
   int p;
   if((guess_p>=size) || (guess_p<0)) { guess_p=0; }//fix bad guess
   if((i<0) || (i>=size)) {
     ExitGracefully("NearSearchIndex: bad index",RUNTIME_ERR);}
-  if(i%2==0) { p=guess_p+(i/2-1); }
-  else       { p=guess_p-(i/2-1); }
-  if(p<0    ){ p+=size; } //valid
+  if(i%2==0) { p=guess_p-((i+0)/2); }
+  else       { p=guess_p+((i+1)/2); }
+  if(p<0    ){ p+=size; } //valid wraparound
   if(p>=size){ p-=size; }
   return p;
 }

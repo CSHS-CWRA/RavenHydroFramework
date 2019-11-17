@@ -48,10 +48,11 @@ private:/*------------------------------------------------------*/
 
   double         _reach_length;   ///< length of subbasin reach [m]
   double                _Q_ref;   ///< reference flow rate [m3/s]
-  double                _c_ref;   ///< celerity at reference flow rate [m/s]
+  double                _c_ref;   ///< celerity at reference flow rate (if ==AUTO_COMPUTE, or user-specified otherwiae)[m/s]
   double                _w_ref;   ///< channel top width at reference flow rate [m]
   double           _mannings_n;   ///< manning's n for channel (or uses channel one, if =AUTO_COMPUTE)
   double                _slope;   ///< channel slope (rise over run) (or uses channel one, if =AUTO_COMPUTE)
+  double          _diffusivity;   ///< channel diffusivity (specified or calculated, if =AUTO_COMPUTE) [m2/s]
 
   //Other params
   double            _rain_corr;   ///< correction factor for rainfall [-]

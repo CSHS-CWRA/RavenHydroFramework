@@ -517,7 +517,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // (c) Assign units attributes to the netCDF VARIABLES. 
   //     --> converts start day into "days since YYYY-MM-DD HH:MM:SS" 
   char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
-  JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
+  JulianConvert( 0.0+Options.timestep,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt); //File is referenced to end of first time step
   strcpy(starttime, "days since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime," ");

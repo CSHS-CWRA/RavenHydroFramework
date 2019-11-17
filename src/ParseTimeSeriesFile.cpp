@@ -179,6 +179,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ElevationVarNameNC"      )){code=413;}
     else if  (!strcmp(s[0],":GridWeightsByAttribute"  )){code=414;}
     else if  (!strcmp(s[0],":StationElevationsByAttribute")){code=415;}
+    else if  (!strcmp(s[0],":StationIDNameNC"         )){code=416;}
+    else if  (!strcmp(s[0],":StationElevationsByIdx"  )){code=417;}
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
@@ -1829,7 +1831,37 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       } // end while
       break;
     }
+    case (417)://----------------------------------------------
+    {/*:StationElevationsByIdx
+       [station index1] [elev1]
+       [station index2] [elev1]
+       ...
+       [station indexN] [elevN]
+     :EndStationElevationsByIdx
+     # where station indices are same as nc file order
+     */
+      ExitGracefullyIf(pGrid==NULL,
+        "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
+      if(!grid_initialized) { //must initialize grid prior to adding grid cell/station elevations
+        grid_initialized = true;
+        pGrid->ForcingGridInit(Options);
+      }
+
+
+      if(Options.noisy) { cout <<"Station Elevations..."<<endl; }
+      while(((Len==0) || (strcmp(s[0],":EndStationElevations"))) && (!(p->Tokenize(s,Len))))
+      {
+        if(IsComment(s[0],Len)) {}//comment line
+        else if(!strcmp(s[0],":EndStationElevations")) {}//done
+        else
+        {
+          int idx=s_to_i(s[0]);
+          pGrid->SetStationElevation(idx,s_to_d(s[1]));
+        } // end else
+      } // end while
+      break;
+    }
     case (500)://----------------------------------------------
     {/*:StationForcing
          :ForcingType PRECIP

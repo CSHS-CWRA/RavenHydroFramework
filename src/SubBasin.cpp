@@ -109,11 +109,12 @@ CSubBasin::CSubBasin(const long           Identifier,
   _pIrrigDemand  =NULL;
   _pEnviroMinFlow=NULL;
 
-  _Q_ref     =Qreference;
-  _c_ref     =AUTO_COMPUTE;
-  _w_ref     =AUTO_COMPUTE;
-  _mannings_n=AUTO_COMPUTE;
-  _slope     =AUTO_COMPUTE;
+  _Q_ref      =Qreference;
+  _c_ref      =AUTO_COMPUTE;
+  _w_ref      =AUTO_COMPUTE;
+  _mannings_n =AUTO_COMPUTE;
+  _slope      =AUTO_COMPUTE;
+  _diffusivity=AUTO_COMPUTE;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -521,11 +522,11 @@ double CSubBasin::GetReferenceCelerity() const {
 /// \return  reference diffusivity [m2/s] or AUTO_COMPUTE if not yet calculated
 //
 double CSubBasin::GetDiffusivity() const {
-  if(_pChannel!=NULL) {
+  if((_pChannel!=NULL) && (_diffusivity==AUTO_COMPUTE)){
     return _pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n);
   }
   else {
-    return 0.0;
+    return _diffusivity;
   }
 }
 
@@ -576,6 +577,8 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
   else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
   else if (!label_n.compare("GAMMA_SCALE"   ))  {_gamma_scale=value;}
+  else if (!label_n.compare("DIFFUSIVITY"   ))  {_diffusivity=value; }
+  else if (!label_n.compare("CELERITY"      ))  {_c_ref=value; }
   else{
     return false;//bad string
   }
@@ -1022,7 +1025,9 @@ void CSubBasin::ResetReferenceFlow(const double &Qreference)
       cout << "_Q_ref=" << _Q_ref << endl;
       ExitGracefully("CSubBasin::ResetReferenceFlow: invalid (negative or zero) reference flow rate in non-headwater basin", BAD_DATA);
     }
-    _c_ref=_pChannel->GetCelerity(_Q_ref,_slope,_mannings_n);
+    if(_c_ref==AUTO_COMPUTE) {
+      _c_ref=_pChannel->GetCelerity(_Q_ref,_slope,_mannings_n);
+    }
     _w_ref=_pChannel->GetTopWidth(_Q_ref,_slope,_mannings_n);
   }
   else
@@ -1377,6 +1382,8 @@ double  CSubBasin::GetMuskingumX(const double &dx) const
   
   return max(0.0,0.5*(1.0-_Q_ref/bedslope/_w_ref/_c_ref/dx));//[m3/s]/([m]*[m/s]*[m])
 }
+
+//This routine only used in TVD scheme
 double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
                                     const double &Qout, //[m3/s]
                                     const double &dx) const  //[m]
@@ -1395,8 +1402,8 @@ double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
   return (K*X*Qin+K*(1-X)*Qout)*SEC_PER_DAY; //[m3]
   */
 	
-	double c_in=_pChannel->GetCelerity(Qin,_slope,_mannings_n);//[m/s]
-  double w_in=_pChannel->GetTopWidth(Qin,_slope,_mannings_n);//[m]
+	double c_in =_pChannel->GetCelerity(Qin, _slope,_mannings_n);//[m/s]
+  double w_in =_pChannel->GetTopWidth(Qin, _slope,_mannings_n);//[m]
   double c_out=_pChannel->GetCelerity(Qout,_slope,_mannings_n);//[m/s]
   double w_out=_pChannel->GetTopWidth(Qout,_slope,_mannings_n);//[m]
 
