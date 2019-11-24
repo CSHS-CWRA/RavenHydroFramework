@@ -401,7 +401,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :DimNamesNC command",BAD_DATA);
   }
   if(_aElevation==NULL) {
-    string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled.";
+    string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations command is present.";
     WriteAdvisory(warning,Options.noisy);
   }
 
@@ -1597,7 +1597,6 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
       ic++;
     }
   }
-
   delete[] nonzero;
 }
 
@@ -1898,13 +1897,17 @@ void   CForcingGrid::SetStationElevation(const int CellID,const double &elev)
 {
   int ncells;
   if(_is_3D) { ncells = _GridDims[0] * _GridDims[1]; }
-  else { ncells = _GridDims[0]; }
+  else       { ncells = _GridDims[0]; }
 
   if((CellID<0) || (CellID>=ncells)) {
     ExitGracefully("CForcingGrid: SetStationElevation: invalid cell/station identifier (likely in :StationElevationsByAttribute command)",BAD_DATA);
   }
-
-  _aElevation[CellID]=elev;
+  if(_aElevation==NULL) {
+    _aElevation=new double[_nNonZeroWeightedGridCells];
+    for(int i=0;i<_nNonZeroWeightedGridCells;i++) { _aElevation[i]=0.0; }
+  }
+  
+  _aElevation[_CellIDToIdx[CellID]]=elev;
 }
 
 ///////////////////////////////////////////////////////////////////

@@ -22,11 +22,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
                                      const CHydroUnit *pHRU,
                                      const time_struct &tt)
 {
-  double albedo;
-  albedo=pHRU->GetSnowAlbedo();
 
-
-  
   //----------------------------------------------------------
   if (Options.pot_melt==POTMELT_DATA)
   {
@@ -107,7 +103,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double tmp_rate=threshPositive(Ma*(F->temp_daily_ave-melt_temp));
 
-    rad     = ((1-albedo)*F->SW_radia+F->LW_radia_net);//[MJ/m2/d]
+    rad     = (F->SW_radia_net+F->LW_radia_net);//[MJ/m2/d]
     convert = MM_PER_METER/DENSITY_WATER/LH_FUSION;//for converting radiation to mm/d [mm/m]/[kg/m3]/[MJ/kg] = [mm-m2/MJ]
 
     return tmp_rate+ threshPositive(rad*convert);

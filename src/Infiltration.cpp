@@ -47,6 +47,14 @@ CmvInfiltration::CmvInfiltration(infil_type  itype)
     iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[2]=pModel->GetStateVarIndex(CONVOLUTION,0);
     iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[3]=pModel->GetStateVarIndex(CONVOLUTION,1);
   }
+  else if(type==INF_XINANXIANG) {
+    CHydroProcessABC::DynamicSpecifyConnections(5);
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[0]=pModel->GetStateVarIndex(SOIL,0);
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[1]=pModel->GetStateVarIndex(SURFACE_WATER);
+    iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[2]=pModel->GetStateVarIndex(SOIL,1);
+    iFrom[3]=pModel->GetStateVarIndex(SOIL,0);          iTo[3]=pModel->GetStateVarIndex(SOIL,1);
+    iFrom[4]=pModel->GetStateVarIndex(SOIL,1);          iTo[4]=pModel->GetStateVarIndex(SURFACE_WATER);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -176,6 +184,17 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
     nP=2;
     aP[0]="POROSITY";              aPC[0]=CLASS_SOIL;
     aP[1]="IMPERMEABLE_FRAC";      aPC[1]=CLASS_LANDUSE;
+  }
+  else if(type==INF_XINANXIANG)
+  {
+    nP=6;
+    aP[0]="IMPERMEABLE_FRAC";      aPC[0]=CLASS_LANDUSE;
+    aP[1]="XINANXIANG_A";          aPC[1]=CLASS_SOIL;
+    aP[2]="XINANXIANG_B";          aPC[2]=CLASS_SOIL;
+    aP[3]="SAT_WILT";              aPC[3]=CLASS_SOIL;
+    aP[4]="POROSITY";              aPC[4]=CLASS_SOIL;
+    aP[5]="FIELD_CAPACITY";        aPC[5]=CLASS_SOIL;
+    aP[6]="XINANXIANG_SHP";        aPC[6]=CLASS_SOIL;
   }
   else
   {
@@ -469,7 +488,27 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
   //-----------------------------------------------------------------
+  else if(type==INF_XINANXIANG) {
+    double a=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_a;
+    double b=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_b;
+    double c=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_shp;
+    double stor       =state_vars[iTopSoil];
+    double tens_stor  =pHRU->GetSoilTensionStorageCapacity(0);
+    double max_stor   =pHRU->GetSoilCapacity(0);
+    double infil,sat_excess;
 
+//    direct=(1.0-Fimp)*rainthru;
+
+    double sat =max(0.0,stor/tens_stor);
+    double sat1=max(0.0,stor/(max_stor-tens_stor));
+    if(sat<=0.5-a) { infil=(    pow(0.5-a,1-b)*pow(  sat,b))*(1.0-Fimp)*rainthru; }
+    else           { infil=(1.0-pow(0.5+a,1-b)*pow(1-sat,b))*(1.0-Fimp)*rainthru; }
+    
+    sat_excess=1.0;//(1.0-pow(1-sat1,n))*(1.0-Fimp)*rainthru;
+
+    ExitGracefully("INF_XINANXIANG",STUB);
+    rates[0]=infil;        //PONDED->SOIL
+  }
 }
 
 //////////////////////////////////////////////////////////////////

@@ -13,6 +13,14 @@
 #include "Reservoir.h"
 class CReservoir;
 enum res_constraint;
+struct diversion 
+{
+  int    julian_start;  //Julian start date of flow diversion (e.g., 90 for Apr 1)
+  int    julian_end;    //Julian end date of flow diversion (e.g., 242 for Aug 31)
+  int    target_p;      //INDEX (not subbasin ID) of target basin (or -1 if diverted from system)
+  double min_flow;      //minimum flow above which flow is diverted [m3/s] (Q>0)
+  double percentage;    //percentage of flow above minimum which is diverted
+};
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction class for contiguous watershed section with a primary channel, contains a collection of HRUs
 /// \details Used primarily to route water
@@ -91,6 +99,9 @@ private:/*------------------------------------------------------*/
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
   CTimeSeries   *_pIrrigDemand;   ///< pointer to time series of demand (which can be unmet) applied at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
+ 
+  int             _nDiversions;   ///< number of flow diversions from basin
+  diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
 
   //Methods implemented in SubBasin.cpp
   double               GetMuskingumK(const double &dx) const;
@@ -141,6 +152,7 @@ public:/*-------------------------------------------------------*/
   const double   *GetRoutingHydrograph     () const;
   int             GetLatHistorySize        () const;
   int             GetInflowHistorySize     () const;
+  int             GetNumDiversions         () const;
 
   double          GetOutflowRate           () const;                   //[m3/s] from final segment, point in time
   double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
@@ -177,6 +189,7 @@ public:/*-------------------------------------------------------*/
   void            AddDownstreamInflow      (CTimeSeries *pInflow);
   void            AddIrrigationDemand      (CTimeSeries *pOutflow);
   void            AddEnviroMinFlow         (CTimeSeries *pMinFlow);
+  void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double min_flow, const double pct);
 
   // reservoir manipulators
   void            AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct);
@@ -206,6 +219,7 @@ public:/*-------------------------------------------------------*/
                                             bool initialize);//[m3/s]
   void            SetLateralInflow         (const double &Qlat);//[m3/s]
   double          ApplyIrrigationDemand    (const double &t,const double &Q); //[m3/s] 
+  double          GetDiversionFlow         (const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const;
 
   void            RouteWater               (      double      *Qout_new,
                                                   double      &res_ht,

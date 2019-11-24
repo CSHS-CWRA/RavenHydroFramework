@@ -146,6 +146,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":IrrigationDemand"      )){code=63; }
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
     else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
+    else if  (!strcmp(s[0],":FlowDiversion"         )){code=66;}
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -1179,6 +1180,36 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case (66): //---------------------------------------------
+    {/*:FlowDiversion [fromSBID] [toSBID] [fract. diverted] [Qmin] {start_day} {end_day}*/
+      if(Options.noisy) { cout <<"Flow diversion"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+
+      if(pSB!=NULL) {
+        int start=0; //default - all year
+        int end  =366; //default - all year
+        if(Len>=7) { start=s_to_i(s[5]); end=s_to_i(s[6]); }
+        int target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
+        if(target_p!=DOESNT_EXIST) {
+          pSB->AddFlowDiversion(start,end,target_p,s_to_d(s[4]),s_to_d(s[3]));
+        }
+        else {
+          string warn;
+          warn=":FlowDiversion command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
+          WriteWarning(warn,Options.noisy);
+        }
+      }
+      else
+      {
+        string warn;
+        warn=":FlowDiversion command: Subbasin "+to_string(SBID)+" not in model, cannot add diversion";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
     case (70): //---------------------------------------------
     {/*:MonthlyAveTemperature {temp x 12}*/
       if (Options.noisy) {cout <<"Monthly Average Temperatures"<<endl;}
@@ -1800,7 +1831,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
     }
     case (415)://----------------------------------------------
-    {/*:StationElevationsByAttribute
+    {/*:StationElevations
      [int station ID1] [elev1]
      [station ID2] [elev1]
      ...
@@ -1808,6 +1839,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      :EndStationElevations
      # where station IDs consistent with StationIDNameNC
      */
+      ExitGracefullyIf(!grid_initialized,"ParseTimeSeriesFile: :StationElevations command must be after :GaugeWeights command",BAD_DATA);
       ExitGracefullyIf(pGrid==NULL,
         "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
@@ -1840,6 +1872,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      :EndStationElevationsByIdx
      # where station indices are same as nc file order
      */
+      ExitGracefullyIf(!grid_initialized,"ParseTimeSeriesFile: :StationElevationsByIdx command must be after :GaugeWeights command",BAD_DATA);
       ExitGracefullyIf(pGrid==NULL,
         "ParseTimeSeriesFile: :StationElevations command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
@@ -1847,13 +1880,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         grid_initialized = true;
         pGrid->ForcingGridInit(Options);
       }
-
-
+      
       if(Options.noisy) { cout <<"Station Elevations..."<<endl; }
-      while(((Len==0) || (strcmp(s[0],":EndStationElevations"))) && (!(p->Tokenize(s,Len))))
+      while(((Len==0) || (strcmp(s[0],":EndStationElevationsByIdx"))) && (!(p->Tokenize(s,Len))))
       {
         if(IsComment(s[0],Len)) {}//comment line
-        else if(!strcmp(s[0],":EndStationElevations")) {}//done
+        else if(!strcmp(s[0],":EndStationElevationsByIdx")) {}//done
         else
         {
           int idx=s_to_i(s[0]);

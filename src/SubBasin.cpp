@@ -103,6 +103,10 @@ CSubBasin::CSubBasin(const long           Identifier,
   _aUnitHydro    =NULL;
   _aRouteHydro   =NULL;
 
+  //Below are modified using AddDiversion()
+  _nDiversions   =0;
+  _pDiversions   =NULL;
+
   //initialized in SetInflowHydrograph
   _pInflowHydro  =NULL;
   _pInflowHydro2 =NULL;
@@ -130,6 +134,7 @@ CSubBasin::~CSubBasin()
   delete [] _aQinHist;   _aQinHist   =NULL;
   delete [] _aUnitHydro; _aUnitHydro =NULL;
   delete [] _aRouteHydro;_aRouteHydro=NULL;
+  delete [] _pDiversions;_pDiversions=NULL; _nDiversions=0;
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
   delete _pIrrigDemand;  _pIrrigDemand=NULL;
@@ -406,6 +411,75 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
 
   unmet_demand=(Qdemand-Qirr);
   return Qirr;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of flow diversions
+/// \return Returns number of flow diversions
+//
+int CSubBasin::GetNumDiversions() const {
+  return _nDiversions;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
+/// \param &t [in] Model time at which the outflow from SB is to be determined
+/// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
+/// \return irrigation demand outflow from subbasin at time t [m3/s]
+//
+double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const
+{
+
+  if (_pDiversions[i]==NULL) { pDivert=DOESNT_EXIST; return 0.0; } //no diversion
+  if ((i<0) || (i>=_nDiversions)){ExitGracefully("CSubBasin::GetDiversionFlow",RUNTIME_ERR); }
+
+  pDivert=_pDiversions[i]->target_p;
+
+  if((tt.julian_day>=_pDiversions[i]->julian_start) &&
+     (tt.julian_day<=_pDiversions[i]->julian_end) && 
+     (Q>_pDiversions[i]->min_flow)) 
+  {
+    return (Q-_pDiversions[i]->min_flow)*_pDiversions[i]->percentage;
+  }
+  else 
+  {
+    return 0.0; 
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief add diversion
+/// \param jul_start [in] julian start date of diversion (must be 0-365)
+/// \param jul_end [in] julian end date of diversion (must be 0-365, >start date)
+/// \param target_p [in] index (NOT SBID) of target subbasin
+/// \param min_flow [in] minimum flow for demand to be applied
+/// \param pct [in] percent of flow diverted to other subbasin (0-1.0)
+/// \return irrigation demand outflow from subbasin at time t [m3/s]
+//
+void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const int target_p,const double min_flow,const double pct) {
+
+  if((jul_start<0) || (jul_start>366)) {
+    ExitGracefully("CSubBasin::AddFlowDiversion: invalid julian start date. must be between 0 and 366",BAD_DATA_WARN);
+  }
+  if((jul_end<0) || (jul_end>366)) {
+    ExitGracefully("CSubBasin::AddFlowDiversion: invalid julian start date. must be between 0 and 366",BAD_DATA_WARN);
+  }
+  if(min_flow<0) {
+    WriteWarning("CSubBasin::AddFlowDiversion: negative minimum flow. will be corrected to 0.0",true);
+  }
+  if((pct<0) || (pct>100)){
+    WriteWarning("CSubBasin::AddFlowDiversion: invalid diversion fraction. Must be between 0.0 (0%) and 1.0 (100%)",true);
+  }
+  if(jul_start>jul_end) {
+    WriteWarning("CSubBasin::AddFlowDiversion: julian start date after julian end date. No diversion will occur",true);
+  }
+  diversion *div=new diversion();
+  div->julian_end=jul_end;
+  div->julian_start=jul_start;
+  div->min_flow=max(min_flow,0.0);
+  div->percentage=min(max(pct,0.0),1.0);
+  div->target_p=target_p;
+
+  if(!DynArrayAppend((void**&)(_pDiversions),(void*)(div),_nDiversions)) {
+    ExitGracefully("CSubBasin::AddFlowDiversion: adding NULL diversion",BAD_DATA);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1297,6 +1371,10 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   bool initialize)
 {
   double tstep=Options.timestep;
+
+  /*if(aQo[_nSegments-1]<0.0) {
+    WriteWarning("CSubBasin::UpdateOutflows: negative flow calculated. Excess diversion from subbasin "+to_string(GetID())+" on "+tt.date_string,Options.noisy+"?");
+  }*/
 
   //Update flows
   //------------------------------------------------------

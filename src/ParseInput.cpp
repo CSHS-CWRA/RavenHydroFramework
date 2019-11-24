@@ -1892,6 +1892,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
       else if (!strcmp(s[1],"INF_HMETS"       )){itype=INF_HMETS;     }
       else if (!strcmp(s[1],"INF_ALL_INFILTRATES")) { itype=INF_ALL_INFILTRATES; }
+      else if (!strcmp(s[1],"INF_XINANXIANG"  )) { itype=INF_XINANXIANG; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
       }

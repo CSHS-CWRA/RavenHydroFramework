@@ -522,6 +522,10 @@ void MassEnergyBalance( CModel            *pModel,
   //      ROUTING
   //-----------------------------------------------------------------
   double res_ht,res_outflow;
+  double down_Q,irr_Q,div_Q, Qout;
+  int    pDivert;
+  res_constraint res_const;
+
   //determine total outflow from HRUs into respective basins (aRouted[p])
   for (p=0;p<NB;p++)
   {
@@ -541,12 +545,21 @@ void MassEnergyBalance( CModel            *pModel,
       aPhinew[k][iSW]=0.0;//zero out surface water storage
     }
   }
-  //Route water over timestep
-  //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
-
-  double down_Q;
-  double irr_Q;
-  res_constraint res_const;
+  // Identify magnitude of flow diversions, calculate inflows  
+  for(p=0;p<NB;p++)
+  {
+    pBasin=pModel->GetSubBasin(p);
+    for(int i=0; i<pBasin->GetNumDiversions();i++) {
+      div_Q=pBasin->GetDiversionFlow(i,pBasin->GetOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
+      if(pDivert!=DOESNT_EXIST)
+      {
+        aQinnew[pDivert]+=div_Q;
+      }
+    }
+    aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
+  }
+  // Route water over timestep
+  // calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
   for (pp=0;pp<NB;pp++)
   {
     p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list index upstream to down
@@ -555,27 +568,36 @@ void MassEnergyBalance( CModel            *pModel,
     if(pBasin->IsEnabled())
     {
       pBasin->UpdateFlowRules(tt,Options);
-
-      aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
-      pBasin->SetInflow(aQinnew[p]);
+      
+      pBasin->SetInflow(aQinnew[p]);                 // from upstream, diversions, and specified flows
 
       pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
 
       pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,Options,tt);      //Where everything happens!
 
-      down_Q=pBasin->GetDownstreamInflow(t+tstep);
-      aQoutnew[pBasin->GetNumSegments()-1]+=down_Q;
+      Qout=aQoutnew[pBasin->GetNumSegments()-1];    //Qout is used as temporary shorthand for diversion calcs
 
-      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1]); 
-      aQoutnew[pBasin->GetNumSegments()-1]-=irr_Q;
-      
+      down_Q=pBasin->GetDownstreamInflow(t+tstep);
+      Qout+=down_Q;
+
+      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,Qout);
+      Qout-=irr_Q;
+
+      for(int i=0; i<pBasin->GetNumDiversions();i++) {
+        div_Q=pBasin->GetDiversionFlow(i,pBasin->GetOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
+        Qout-=div_Q;
+      }
+
+      aQoutnew[pBasin->GetNumSegments()-1]=Qout;
+
       pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,res_const,Options,tt,false);//actually updates flow values here
 
       pTo   =pModel->GetDownstreamBasin(p);
-      if(pTo!=DOESNT_EXIST)//correct downstream inflows
+      if(pTo!=DOESNT_EXIST)//update downstream inflows
       {
         aQinnew[pTo]+=pBasin->GetOutflowRate();
       }
+
     }
   }//end for pp...
 

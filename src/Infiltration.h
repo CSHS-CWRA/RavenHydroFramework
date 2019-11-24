@@ -33,7 +33,8 @@ enum infil_type{
   INF_HBV,                      ///< HBV Infiltration model
   INF_UBC,                      ///< UBC Watershed model infiltration algorithm
   INF_GR4J,                     ///< GR4J Watershed model infiltration algorithm
-  INF_HMETS                     ///< HMETS model infiltration algorithm
+  INF_HMETS,                    ///< HMETS model infiltration algorithm
+  INF_XINANXIANG                ///< Xinanxiang model infiltration algorithm
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -62,20 +63,20 @@ private:/*------------------------------------------------------*/
                             double      *rates,
                             const double      &rainthru) const;
 
-  void GetGreenAmptRunoff(const double            *state_vars,
+  void GetGreenAmptRunoff(const double      *state_vars,
                           const CHydroUnit  *pHRU,
-                          const optStruct         &Options,
+                          const optStruct   &Options,
                           const time_struct &tt,
-                          double      *rates,
+                          double            *rates,
                           const double      &rainthru) const;
 
   double GetHeterogeneousGreenAmptRunoff(
-    const double                  &rainthru,//[mm/d]
-    const soil_struct *S,
-    const double      soil_thickness,//[m]
-    const double      &soil_water_content,//[mm]
-    const time_struct   &tt,//[d]
-    const optStruct       &Options) const;
+                          const double      &rainthru,//[mm/d]
+                          const soil_struct *S,
+                          const double       soil_thickness,//[m]
+                          const double      &soil_water_content,//[mm]
+                          const time_struct &tt,//[d]
+                          const optStruct   &Options) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
