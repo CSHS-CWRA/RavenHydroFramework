@@ -555,6 +555,10 @@ void MassEnergyBalance( CModel            *pModel,
       {
         aQinnew[pDivert]+=div_Q;
       }
+      else {
+        // \todo[funct] - must handle this in mass balance - should go to cumulative output
+		//Qdiverted+=div_Q;
+      }
     }
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
   }

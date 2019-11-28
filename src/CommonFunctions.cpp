@@ -184,34 +184,6 @@ bool DynArrayAppend(void **& pArr, void *xptr,int &size)
   pArr=tmp;                                                   //redirect pointer
   return true;
 }
-///////////////////////////////////////////////////////////////////////////
-/// \brief identifies index location of value in uneven continuous list of value ranges
-///
-/// \param &x [in] value for which the interval index is to be found
-/// \param *ax [in] array of consecutive values from ax[0] to ax[N-1] indicating interval boundaries
-/// \param N [in] size of array ax
-/// \param iguess [in] best guess as to which interval x is in
-/// \return interval index value (index refers to lower bound of interval, i.e., i indicates x is between ax[i] and ax[i+1]
-/// \note returns -1 if outside of range
-//
-int SmartIntervalSearch(const double &x,const double *ax,const int N,const int iguess)
-{
-  int i=iguess;
-  if((iguess>N-1) || (iguess<0)){i=0;}
-  if ((x>=ax[i]) && (x<ax[i+1])){return i;}
-
-  int plus,plus2;
-  for(int d=1;d<(int)(trunc(N/2)+1);d++)
-  {
-    plus =i+d;    if(plus >N-1){plus -=N;} //wrap
-    plus2=i+d+1;  if(plus2>N-1){plus2-=N;} //wrap
-    if ((x>=ax[plus]) && (x<ax[plus2])){ return plus;}
-    plus =i-d;    if(plus <0  ){plus +=N;} //wrap
-    plus2=i-d+1;  if(plus2<0  ){plus2+=N;}   //wrap
-    if ((x>=ax[plus]) && (x<ax[plus2])){ return plus;}
-  }
-  return DOESNT_EXIST;
-}
 
 /**************************************************************************
       Threshold Smoothing functions
@@ -1508,6 +1480,35 @@ void quickSort(double arr[], int left, int right)
   if (left <  j){quickSort(arr, left,  j);}
   if (i < right){quickSort(arr, i, right);}
 }
+///////////////////////////////////////////////////////////////////////////
+/// \brief identifies index location of value in uneven continuous list of value ranges
+///
+/// \param &x [in] value for which the interval index is to be found
+/// \param *ax [in] array of consecutive values from ax[0] to ax[N-1] indicating interval boundaries
+/// \param N [in] size of array ax
+/// \param iguess [in] best guess as to which interval x is in
+/// \return interval index value (index refers to lower bound of interval, i.e., i indicates x is between ax[i] and ax[i+1]
+/// \note returns -1 if outside of range
+//
+int SmartIntervalSearch(const double &x,const double *ax,const int N,const int iguess)
+{
+  int i=iguess;
+  if((iguess>N-1) || (iguess<0)) { i=0; }
+  if((x>=ax[i]) && (x<ax[i+1])) { return i; }
+
+  int plus,plus2;
+  for(int d=1;d<(int)(trunc(N/2)+1);d++)
+  {
+    plus =i+d;    if(plus >N-1) { plus -=N; } //wrap
+    plus2=i+d+1;  if(plus2>N-1) { plus2-=N; } //wrap
+    if((x>=ax[plus]) && (x<ax[plus2])) { return plus; }
+    plus =i-d;    if(plus <0) { plus +=N; } //wrap
+    plus2=i-d+1;  if(plus2<0) { plus2+=N; }   //wrap
+    if((x>=ax[plus]) && (x<ax[plus2])) { return plus; }
+  }
+  return DOESNT_EXIST;
+}
+
 ///////////////////////////////////////////////////////////////////
 /// \brief returns index of bin that lookup_val is contained in, where array aVals of size 'size'
 /// \param lookup_val [in] value to be looked up
@@ -1540,4 +1541,38 @@ int SmartLookup(const double lookup_val, const int nguess, const double *aVals, 
   }
   cout<<i<<" tries NOT FOUND"<<endl;
   return DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief interpolates value from rating curve
+/// \param x [in] interpolation location
+/// \param xx [in] array (size:N) of vertices ordinates of interpolant
+/// \param y [in] array (size:N)  of values corresponding to array points xx
+/// \param N size of arrays x and y
+/// \returns y value corresponding to interpolation point
+/// \note does not assume regular spacing between min and max x value
+/// \note if below minimum xx, either extrapolates (if extrapbottom=true), or uses minimum value
+/// \note if above maximum xx, always extrapolates
+//
+double Interpolate2(const double x,const double *xx,const double *y,int N,bool extrapbottom)
+{
+  static int ilast=0;
+  if(x<=xx[0])
+  {
+    if(extrapbottom) { return y[0]+(y[1]-y[0])/(xx[1]-xx[0])*(x-xx[0]); }
+    return y[0];
+  }
+  else if(x>=xx[N-1])
+  {
+    return y[N-1]+(y[N-1]-y[N-2])/(xx[N-1]-xx[N-2])*(x-xx[N-1]);//extrapolation-may wish to revisit
+                                                                //return y[N-1];
+  }
+  else
+  {
+    //int i=0; while ((x>xx[i+1]) && (i<(N-2))){i++;}//Dumb Search
+    int i=SmartIntervalSearch(x,xx,N,ilast);
+    if(i==DOESNT_EXIST) { return 0.0; }
+    ExitGracefullyIf(i==DOESNT_EXIST,"Interpolate2::mis-ordered list or infinite x",RUNTIME_ERR);
+    ilast=i;
+    return y[i]+(y[i+1]-y[i])/(xx[i+1]-xx[i])*(x-xx[i]);
+  }
 }

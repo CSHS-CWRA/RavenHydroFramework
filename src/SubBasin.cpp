@@ -434,15 +434,19 @@ double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct
   pDivert=_pDiversions[i]->target_p;
 
   if((tt.julian_day>=_pDiversions[i]->julian_start) &&
-     (tt.julian_day<=_pDiversions[i]->julian_end) && 
-     (Q>_pDiversions[i]->min_flow)) 
-  {
-    return (Q-_pDiversions[i]->min_flow)*_pDiversions[i]->percentage;
+    (tt.julian_day<=_pDiversions[i]->julian_end)) {
+    if(_pDiversions[i]->aQdivert==NULL) {
+      if(Q>_pDiversions[i]->min_flow)
+      {
+        return (Q-_pDiversions[i]->min_flow)*_pDiversions[i]->percentage;
+      }
+    }
+    else { //uses lookup table
+      return Interpolate2(Q,_pDiversions[i]->aQsource,_pDiversions[i]->aQdivert,_pDiversions[i]->nPoints,false);
+    }
   }
-  else 
-  {
-    return 0.0; 
-  }
+
+  return 0.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief add diversion
@@ -470,6 +474,9 @@ void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const in
   if(jul_start>jul_end) {
     WriteWarning("CSubBasin::AddFlowDiversion: julian start date after julian end date. No diversion will occur",true);
   }
+  if(target_p==DOESNT_EXIST) {
+    WriteWarning("CSubBasin::AddFlowDiversion: target diversion subbasin is -1. Watershed mass balance reporting does not yet incorporate this loss, and will incorrectly indicate a mass balance error.",true);
+  }
   diversion *div=new diversion();
   div->julian_end=jul_end;
   div->julian_start=jul_start;
@@ -480,6 +487,41 @@ void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const in
   if(!DynArrayAppend((void**&)(_pDiversions),(void*)(div),_nDiversions)) {
     ExitGracefully("CSubBasin::AddFlowDiversion: adding NULL diversion",BAD_DATA);
   }
+}
+void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const int target_p,const double *aQ1,const double *aQ2,const int NQ) {
+  if((jul_start<0) || (jul_start>366)) {
+    ExitGracefully("CSubBasin::AddFlowDiversion: invalid julian start date. must be between 0 and 366",BAD_DATA_WARN);
+  }
+  if((jul_end<0) || (jul_end>366)) {
+    ExitGracefully("CSubBasin::AddFlowDiversion: invalid julian start date. must be between 0 and 366",BAD_DATA_WARN);
+  }
+  if(jul_start>jul_end) {
+    WriteWarning("CSubBasin::AddFlowDiversion: julian start date after julian end date. No diversion will occur",true);
+  }
+  if(target_p==DOESNT_EXIST) {
+    WriteWarning("CSubBasin::AddFlowDiversion: target diversion subbasin is -1. Watershed mass balance reporting does not yet incorporate this loss, and will incorrectly indicate a mass balance error.",true);
+  }
+  diversion *div=new diversion();
+  div->julian_end=jul_end;
+  div->julian_start=jul_start;
+  div->target_p=target_p;
+
+  div->min_flow=RAV_BLANK_DATA;
+  div->percentage=RAV_BLANK_DATA;
+  div->nPoints=NQ;
+  div->aQsource=new double [NQ];
+  div->aQdivert=new double [NQ];
+  ExitGracefullyIf(div->aQdivert==NULL,"CSubBasin::AddFlowDiversion",OUT_OF_MEMORY);
+  for(int i=0;i<NQ;i++) {
+    div->aQsource[i]=aQ1[i];
+    div->aQdivert[i]=aQ2[i];
+    cout<<"FD!: "<<aQ1[i]<<" "<<aQ2[i]<<endl;
+  }
+
+  if(!DynArrayAppend((void**&)(_pDiversions),(void*)(div),_nDiversions)) {
+    ExitGracefully("CSubBasin::AddFlowDiversion: adding NULL diversion",BAD_DATA);
+  }
+  cout<<" ADDED FLOW DIVERSION"<<endl;
 }
 
 //////////////////////////////////////////////////////////////////

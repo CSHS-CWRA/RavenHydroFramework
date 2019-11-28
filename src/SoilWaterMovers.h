@@ -89,6 +89,7 @@ enum soilevap_type
   SOILEVAP_ROOT,          ///< Root weighting soil evaporation method for FUSE emulation - VIC ONLY
   SOILEVAP_ROOT_CONSTRAIN,///< same as ROOT, but top layer constrained to be above sat_wilt
   SOILEVAP_HBV,           ///< Simple HBV model -linear relation between ET and tension storage, with snow correction
+  SOILEVAP_HBVPDM,        ///< HBV model with ponded area correction
   SOILEVAP_UBC,           ///< UBCWM Model
   SOILEVAP_CHU,           ///< Crop Heat Unit method
   SOILEVAP_GR4J,          ///< GR4J model approach

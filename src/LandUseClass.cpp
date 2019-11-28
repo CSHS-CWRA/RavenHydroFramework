@@ -93,7 +93,7 @@ CLandUseClass *CLandUseClass::StringToLUClass(const string s)
   for (int c=0;c<NumLUClasses;c++)
   {
     if (!sup.compare(StringToUppercase(pAllLUClasses[c]->GetLanduseName()))){return pAllLUClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))         {return pAllLUClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                      {return pAllLUClasses[c];}
   }
   return NULL;
 }
@@ -289,10 +289,16 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
     if(chatty) { WriteAdvisory(warn,false); }
   }
 
+  /*for(i=0;i<N_LU_PARAMETERS;i++) {
+  if (!S.params[i].iscomputable){
+    SetSpecifiedValue(S.params[i].value,Stmp.params[i].value,Sdefault.params[i].value,params[i].name);//(needed_params.partition_coeff>0.0)
+  }
+  }*/ // \todo[funct] - PARAMETEROVERHAUL (replaces below)
+
   //Model-specific LULT properties - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
   bool needed=false;//TMP DEBUG (to be removed- this handled elsewhere in code)
-
+  
   SetSpecifiedValue(S.partition_coeff,Stmp.partition_coeff,Sdefault.partition_coeff,needed,"PARTITION_COEFF");//(needed_params.partition_coeff>0.0)
   SetSpecifiedValue(S.SCS_CN,Stmp.SCS_CN,Sdefault.SCS_CN,needed,"SCS_CN");
   SetSpecifiedValue(S.dep_max,Stmp.dep_max,Sdefault.dep_max,needed,"DEP_MAX");
@@ -303,6 +309,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.dep_seep_k,Stmp.dep_seep_k,Sdefault.dep_seep_k,needed,"DEP_SEEP_K");
   SetSpecifiedValue(S.dep_crestratio,Stmp.dep_crestratio,Sdefault.dep_crestratio,needed,"DEP_CRESTRATIO");
   SetSpecifiedValue(S.PDMROF_b,Stmp.PDMROF_b,Sdefault.PDMROF_b,needed,"PDMROF_B");
+  SetSpecifiedValue(S.max_dep_area_frac,Stmp.max_dep_area_frac,Sdefault.max_dep_area_frac,needed,"MAX_DEP_AREA_FRAC");
+  SetSpecifiedValue(S.ponded_exp,Stmp.ponded_exp,Sdefault.ponded_exp,needed,"PONDED_EXP");
   SetSpecifiedValue(S.lake_rel_coeff,Stmp.lake_rel_coeff,Sdefault.lake_rel_coeff,needed,"LAKE_REL_COEFF");
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
   SetSpecifiedValue(S.HBV_glacier_Kmin,Stmp.HBV_glacier_Kmin,Sdefault.HBV_glacier_Kmin,needed,"HBV_GLACIER_KMIN");
@@ -332,7 +340,12 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
 //
 void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, bool is_template)
 {
+  
   S.landuse_name     =name;
+
+  /*for(i=0;i<N_LU_PARAMETERS;i++) {
+    S.params[i].value=DefaultParameterValue(is_template,S.params[i].iscomputable);
+  }*/ // \todo[funct] - PARAMETEROVERHAUL (replaces below)
 
   //required parameters
   S.impermeable_frac =0.0;
@@ -369,6 +382,8 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.dep_crestratio    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.PDMROF_b          =DefaultParameterValue(is_template,false);//4;        //[-]
+  S.max_dep_area_frac =DefaultParameterValue(is_template,false);//0;        //[0..1]
+  S.ponded_exp        =DefaultParameterValue(is_template,false);//2        //[-]
   S.dep_threshhold    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.lake_rel_coeff    =DefaultParameterValue(is_template,false);//0.3;      //[1/d]
   S.dep_k             =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
@@ -417,6 +432,10 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   string name;
   name = StringToUppercase(param_name);
 
+  /*for(i=0;i<N_LU_PARAMETERS;i++) {
+     if (!name.compare(S.params[i].name)){S.params[i].value=value;}
+  }*/ // \todo[funct] - PARAMETEROVERHAUL (replaces below)
+
   if      (!name.compare("IMPERMEABLE_FRAC"       )){S.impermeable_frac=value;}
   else if (!name.compare("FOREST_COVERAGE"        )){S.forest_coverage=value;}
   else if (!name.compare("ROUGHNESS"              )){S.roughness=value;}
@@ -452,6 +471,8 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshhold =value;}
   else if (!name.compare("DEP_CRESTRATIO"         )){S.dep_crestratio =value;}
   else if (!name.compare("PDMROF_B"               )){S.PDMROF_b =value; }
+  else if (!name.compare("MAX_DEP_AREA_FRAC"      )){S.max_dep_area_frac =value; }
+  else if (!name.compare("PONDED_EXP"             )){S.ponded_exp =value; }
   else if (!name.compare("LAKE_REL_COEFF"         )){S.lake_rel_coeff =value;}
   else if (!name.compare("DEP_K"                  )){S.dep_k =value;}
   else if (!name.compare("DEP_SEEP_K"             )){S.dep_seep_k =value;}
@@ -496,6 +517,10 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   string name;
   name = StringToUppercase(param_name);
 
+  /*for(i=0;i<N_LU_PARAMETERS;i++) {
+  if (!name.compare(S.params[i].name)){return S.params[i].value;}
+  }*/ // \todo[funct] - PARAMETEROVERHAUL (replaces below)
+
   if      (!name.compare("IMPERMEABLE_FRAC"       )){return S.impermeable_frac;}
   else if (!name.compare("FOREST_COVERAGE"        )){return S.forest_coverage;}
   else if (!name.compare("ROUGHNESS"              )){return S.roughness;}
@@ -533,6 +558,8 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("DEP_SEEP_K"             )){return S.dep_seep_k;}
   else if (!name.compare("DEP_CRESTRATIO"         )){return S.dep_crestratio;}
   else if (!name.compare("PDMROF_B"               )){return S.PDMROF_b; }
+  else if (!name.compare("MAX_DEP_AREA_FRAC"      )){return S.max_dep_area_frac; }
+  else if (!name.compare("PONDED_EXP"             )){return S.ponded_exp; }
   else if (!name.compare("LAKE_REL_COEFF"         )){return S.lake_rel_coeff;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}

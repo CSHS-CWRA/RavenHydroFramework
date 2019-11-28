@@ -4,8 +4,6 @@
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
-double Interpolate2(const double x, const double *xx, const double *y, int N, bool extrapbottom);
-
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir called by all other constructors
 /// \param Name [in] Nickname for reservoir
@@ -1095,38 +1093,6 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
     double val=(x-xmin)/dx;
     int i=(int)(floor(val));
     return y[i]+(y[i+1]-y[i])*(val-floor(val));
-  }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief interpolates value from rating curve
-/// \param x [in] interpolation location
-/// \param xx [in] array of vertices ordinates of interpolant
-/// \param y [in] array (size:N)  of values corresponding to N evenly spaced points in x
-/// \param N size of array y
-/// \returns y value corresponding to interpolation point
-/// \note does not assume regular spacing between min and max x value
-//
-double Interpolate2(const double x,const double *xx,const double *y,int N,bool extrapbottom)
-{
-  static int ilast=0;
-  if      (x<=xx[0])
-  {
-    if (extrapbottom){return y[0]+(y[1]-y[0])/(xx[1]-xx[0])*(x-xx[0]);}
-    return y[0];
-  }
-  else if (x>=xx[N-1])
-  {
-    return y[N-1]+(y[N-1]-y[N-2])/(xx[N-1]-xx[N-2])*(x-xx[N-1]);//extrapolation-may wish to revisit
-    //return y[N-1];
-  }
-  else
-  {
-    //int i=0; while ((x>xx[i+1]) && (i<(N-2))){i++;}//Dumb Search
-    int i=SmartIntervalSearch(x,xx,N,ilast);
-    if(i==DOESNT_EXIST){return 0.0;}
-    ExitGracefullyIf(i==DOESNT_EXIST,"Interpolate2::mis-ordered list or infinite x",RUNTIME_ERR);
-    ilast=i;
-    return y[i]+(y[i+1]-y[i])/(xx[i+1]-xx[i])*(x-xx[i]);
   }
 }
 

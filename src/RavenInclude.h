@@ -1498,8 +1498,9 @@ double ADRCumDist       (const double &t, const double &L, const double &v, cons
 
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
-void    quickSort(double arr[], int left, int right) ;
-int   SmartLookup(const double lookup_val, const int nguess, const double *aVals, const int nBins);
+void      quickSort(double arr[], int left, int right) ;
+int     SmartLookup(const double lookup_val, const int nguess, const double *aVals, const int nBins);
+double Interpolate2(const double x,const double *xx,const double *y,int N,bool extrapbottom);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp

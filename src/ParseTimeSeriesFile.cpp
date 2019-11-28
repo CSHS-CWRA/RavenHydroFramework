@@ -147,6 +147,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
     else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
     else if  (!strcmp(s[0],":FlowDiversion"         )){code=66;}
+    else if  (!strcmp(s[0],":FlowDiversionRatingCurve")){code=67;}    
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -1193,12 +1194,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         int end  =366; //default - all year
         if(Len>=7) { start=s_to_i(s[5]); end=s_to_i(s[6]); }
         int target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
-        if(target_p!=DOESNT_EXIST) {
+        if ((s_to_l(s[2])==-1) || (target_p!=DOESNT_EXIST)) {
           pSB->AddFlowDiversion(start,end,target_p,s_to_d(s[4]),s_to_d(s[3]));
         }
         else {
           string warn;
-          warn=":FlowDiversion command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
+          warn=":FlowDiversion command: Target subbasin "+to_string(s_to_l(s[2]))+" not found in model, cannot add diversion";
           WriteWarning(warn,Options.noisy);
         }
       }
@@ -1208,6 +1209,64 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn=":FlowDiversion command: Subbasin "+to_string(SBID)+" not in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
+      break;
+    }
+    case (67): //---------------------------------------------
+    {/* :FlowDiversionRatingCurve [fromSBID] [toSBID] {start_day} {end_day}
+     nPoints
+     {Qsource_i Qdivert_i} x nPoints
+     :EndFlowDiversionRatingCurve
+     */
+      if(Options.noisy) { cout << ":FlowDiversionRatingCurve" << endl; }
+      long SBID=DOESNT_EXIST;
+      int target_p,start, end;
+      int NQ;
+      CSubBasin *pSB;
+      start=0;   //default - all year
+      end  =366; //default - all year
+
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+
+      if(pSB!=NULL) {
+        if(Len>=5) { start=s_to_i(s[3]); end=s_to_i(s[4]); }
+        target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
+      }
+      else
+      {
+        string warn;
+        warn=":FlowDiversionRatingCurve command: Subbasin "+to_string(SBID)+" not found in model, cannot add diversion";
+        WriteWarning(warn,Options.noisy);
+      }
+
+      p->Tokenize(s,Len);
+      if(Len >= 1) { NQ = s_to_i(s[0]); }
+
+      double *aQ1 = new double[NQ];
+      double *aQ2 = new double[NQ];
+      for(int i = 0; i < NQ; i++) {
+        p->Tokenize(s,Len);
+        if(IsComment(s[0],Len)) { i--; }
+        else {
+          if(Len>=2) {
+            aQ1[i] = s_to_d(s[0]);  aQ2[i] = s_to_d(s[1]);
+          }
+          else {
+            WriteWarning("Incorrect line length (<2) in :FlowDiversionRatingCurve command",Options.noisy);
+          }
+        }
+      }
+      p->Tokenize(s,Len); //:EndFlowDiversionRatingCurve
+
+      if((s_to_l(s[2])==-1) || (target_p!=DOESNT_EXIST)) {
+        pSB->AddFlowDiversion(start,end,target_p,aQ1,aQ2,NQ);
+      }
+      else {
+        string warn;
+        warn=":FlowDiversionRatingCurve command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
+        WriteWarning(warn,Options.noisy);
+      }
+      delete [] aQ1; delete [] aQ2;
       break;
     }
     case (70): //---------------------------------------------

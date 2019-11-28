@@ -13,13 +13,23 @@
 #include "Reservoir.h"
 class CReservoir;
 enum res_constraint;
+///////////////////////////////////////////////////////////////////
+/// \brief flow diversion data strucure
+/// \details relates diversion quantity to flow rate in subbasin
 struct diversion 
 {
-  int    julian_start;  //Julian start date of flow diversion (e.g., 90 for Apr 1)
-  int    julian_end;    //Julian end date of flow diversion (e.g., 242 for Aug 31)
-  int    target_p;      //INDEX (not subbasin ID) of target basin (or -1 if diverted from system)
-  double min_flow;      //minimum flow above which flow is diverted [m3/s] (Q>0)
-  double percentage;    //percentage of flow above minimum which is diverted
+  int     julian_start;   //Julian start date of flow diversion (e.g., 90 for Apr 1)
+  int     julian_end;     //Julian end date of flow diversion (e.g., 242 for Aug 31)
+  int     target_p;       //INDEX (not subbasin ID) of target basin (or -1 if diverted from system)
+
+  double  min_flow;       //minimum flow above which flow is diverted [m3/s] (Q>0)
+  double  percentage;     //percentage of flow above minimum which is diverted
+
+  int     nPoints;        //number of points in flow-diversion lookup table
+  double *aQsource=NULL;  //array of discharges [m3/s] in flow diversion lookup table
+  double *aQdivert=NULL;  //array of diversion flow rates [m3/s] correspionding to discharges in flow diversion lookup table
+  
+  ~diversion() {delete [] aQsource; delete [] aQdivert;}
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction class for contiguous watershed section with a primary channel, contains a collection of HRUs
@@ -190,6 +200,7 @@ public:/*-------------------------------------------------------*/
   void            AddIrrigationDemand      (CTimeSeries *pOutflow);
   void            AddEnviroMinFlow         (CTimeSeries *pMinFlow);
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double min_flow, const double pct);
+  void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double *aQ1, const double *aQ2, const int NQ);
 
   // reservoir manipulators
   void            AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct);

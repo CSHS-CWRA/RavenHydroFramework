@@ -160,7 +160,7 @@ double PriestleyTaylorEvap(const force_struct *F)
   double sat_vap;   //Saturation vapor pressure
 
   sat_vap =GetSaturatedVaporPressure(F->temp_ave);
-  de_dT   =GetSatVapSlope                                               (F->temp_ave,sat_vap);
+  de_dT   =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor=GetLatentHeatVaporization(F->temp_ave);
   gamma   =GetPsychometricConstant  (F->air_pres,LH_vapor);
 

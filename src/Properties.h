@@ -273,6 +273,8 @@ struct surface_struct
   double dep_seep_k;        ///< [1/d]     linear seepage coefficient Q=k*h
   double dep_crestratio;    ///<-[m/m]     ratio of crest width to square root of HRU area (0-5) ~1.5
   double PDMROF_b;          ///< [-]       PDFROF Pareto distribution function exponent 
+  double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area 
+  double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

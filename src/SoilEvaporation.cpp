@@ -37,18 +37,26 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
     iFrom[3]=pModel->GetStateVarIndex(AET);        iTo[3]=iFrom[3];
   }
   else if((type==SOILEVAP_TOPMODEL) ||
-    (type==SOILEVAP_VIC) ||
-    (type==SOILEVAP_HBV) ||
-    (type==SOILEVAP_UBC) ||
-    (type==SOILEVAP_CHU) ||
-    (type==SOILEVAP_GR4J) ||
-    (type==SOILEVAP_LINEAR) ||
-    (type==SOILEVAP_ALL))
+          (type==SOILEVAP_VIC)    ||
+          (type==SOILEVAP_HBV)    ||
+          (type==SOILEVAP_UBC)    ||
+          (type==SOILEVAP_CHU)    ||
+          (type==SOILEVAP_GR4J)   ||
+          (type==SOILEVAP_LINEAR) ||
+          (type==SOILEVAP_ALL))
   {
     CHydroProcessABC::DynamicSpecifyConnections(2);
 
     iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
     iFrom[1]=pModel->GetStateVarIndex(AET);        iTo[1]=iFrom[1];
+  }
+  else if (type==SOILEVAP_HBVPDM)
+  {
+    CHydroProcessABC::DynamicSpecifyConnections(3);
+
+    iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
+    iFrom[1]=pModel->GetStateVarIndex(DEPRESSION); iTo[1]=iAtmos;
+    iFrom[2]=pModel->GetStateVarIndex(AET);        iTo[2]=iFrom[2];
   }
   else if((type==SOILEVAP_SEQUEN) ||
     (type == SOILEVAP_ROOT) || (type == SOILEVAP_ROOT_CONSTRAIN))
@@ -147,6 +155,19 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
     aP[4]="FOREST_COVERAGE";   aPC[4]=CLASS_LANDUSE; //JRCFLAG
   }
+  else if(type==SOILEVAP_HBVPDM)
+  {
+    nP=9;
+    aP[0]="PET_CORRECTION";       aPC[0]=CLASS_SOIL;
+    aP[1]="POROSITY";             aPC[1]=CLASS_SOIL;
+    aP[2]="FIELD_CAPACITY";       aPC[2]=CLASS_SOIL;
+    aP[3]="SAT_WILT";             aPC[3]=CLASS_SOIL;
+    aP[4]="FOREST_COVERAGE";      aPC[4]=CLASS_LANDUSE;
+    aP[5]="MAX_PONDED_AREA_FRAC"; aPC[5]=CLASS_LANDUSE;
+    aP[6]="PONDED_EXP";           aPC[6]=CLASS_LANDUSE;
+    aP[7]="DEP_MAX";              aPC[7]=CLASS_LANDUSE;
+    aP[8]="PDMROF_B";             aPC[8]=CLASS_LANDUSE;
+  }
   else if (type==SOILEVAP_UBC)
   {
     nP=5;
@@ -199,6 +220,12 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     nSV=2;
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
     aLev[0]=0;     aLev[1]=DOESNT_EXIST;
+  }
+  else if(se_type==SOILEVAP_HBVPDM) 
+  {
+    nSV=3;
+    aSV[0]=SOIL;  aSV[1]=ATMOSPHERE;      aSV[2]=DEPRESSION;
+    aLev[0]=0;    aLev[1]=DOESNT_EXIST;  aLev[2]=DOESNT_EXIST;
   }
   else if (se_type==SOILEVAP_UBC)
   {
@@ -332,7 +359,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     PETused=rates[0];
   }
   //------------------------------------------------------------
-  else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV))
+  else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV)  || (type==SOILEVAP_HBVPDM))
   {
     double stor,tens_stor; //[mm]
 
@@ -342,13 +369,32 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     rates[0]  = PET * min(stor/tens_stor,1.0);  //evaporation rate [mm/d]
 
     //correction for snow in non-forested areas
-    if (type==SOILEVAP_HBV)
+    if ((type==SOILEVAP_HBV) || (type==SOILEVAP_HBVPDM))
     {
       int iSnow=pModel->GetStateVarIndex(SNOW);
       double Fc=pHRU->GetSurfaceProps()->forest_coverage;
       if ((iSnow!=DOESNT_EXIST) && (state_vars[iSnow]>REAL_SMALL)) {rates[0]=(Fc)*rates[0];}//+(1.0-Fc)*0.0; (implied)
     }
     PETused=rates[0];
+
+    //SOILEVAP_HBV developed by Mohamed Ahmed and Amin Elshorbaghy at Univ. Saskatchewan for HBV-PDMROF model
+    if (type==SOILEVAP_HBVPDM) 
+    {
+      int iDep=pModel->GetStateVarIndex(DEPRESSION);
+      double maxPondedAreaFrac=pHRU->GetSurfaceProps()->max_dep_area_frac;
+      double n                =pHRU->GetSurfaceProps()->ponded_exp;
+      double dep_max          =pHRU->GetSurfaceProps()->dep_max;
+      double b                =pHRU->GetSurfaceProps()->PDMROF_b;
+
+      double maxPDMstor       =(b+1)*dep_max; //JRC: as calculated in PDM equations
+
+      double area_frac=maxPondedAreaFrac*pow(max(state_vars[iDep]/maxPDMstor,1.0),n);
+
+      rates[0]*=(1.0-area_frac);
+      rates[1] = PET=pHRU->GetForcingFunctions()->OW_PET*area_frac;
+      PETused=(rates[0]+rates[1]);
+    }
+    
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_CHU)
