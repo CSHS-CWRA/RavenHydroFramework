@@ -147,7 +147,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
     else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
     else if  (!strcmp(s[0],":FlowDiversion"         )){code=66;}
-    else if  (!strcmp(s[0],":FlowDiversionRatingCurve")){code=67;}    
+    else if  (!strcmp(s[0],":FlowDiversionLookupTable")){code=67;}    
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -1212,10 +1212,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (67): //---------------------------------------------
-    {/* :FlowDiversionRatingCurve [fromSBID] [toSBID] {start_day} {end_day}
+    {/* :FlowDiversionLookupTable [fromSBID] [toSBID] {start_day} {end_day}
      nPoints
      {Qsource_i Qdivert_i} x nPoints
-     :EndFlowDiversionRatingCurve
+     :EndFlowDiversionLookupTable
      */
       if(Options.noisy) { cout << ":FlowDiversionRatingCurve" << endl; }
       long SBID=DOESNT_EXIST;
@@ -1235,7 +1235,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         string warn;
-        warn=":FlowDiversionRatingCurve command: Subbasin "+to_string(SBID)+" not found in model, cannot add diversion";
+        warn=":FlowDiversionLookupTable command: Subbasin "+to_string(SBID)+" not found in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
 
@@ -1252,7 +1252,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
             aQ1[i] = s_to_d(s[0]);  aQ2[i] = s_to_d(s[1]);
           }
           else {
-            WriteWarning("Incorrect line length (<2) in :FlowDiversionRatingCurve command",Options.noisy);
+            WriteWarning("Incorrect line length (<2) in :FlowDiversionLookupTable command",Options.noisy);
           }
         }
       }
@@ -1263,7 +1263,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else {
         string warn;
-        warn=":FlowDiversionRatingCurve command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
+        warn=":FlowDiversionLookupTable command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
       delete [] aQ1; delete [] aQ2;

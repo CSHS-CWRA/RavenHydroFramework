@@ -184,13 +184,13 @@ void   CmvAbstraction::GetRatesOfChange( const double                   *state_v
 
     c_max=(b+1)*dep_max;
 
-    c_star=c_max*(1.0-pow(1.0-(depression/dep_max),1.0/(b+1.0)));//addresses typo in eqn 6 of Mekonnen
+    c_star=c_max*(1.0-pow(1.0-(depression/dep_max),1.0/(b+1.0)));
 
     //analytical evaluation of P*dt-equation 3 of Mekonnen; min() handles case where entire landscape sheds
-    abstracted=dep_max*(pow(1.0-(c_star/c_max),b+1)-pow(1.0-min(c_star+ponded,c_max)/c_max,b+1.0));
+    abstracted=dep_max*(pow(1.0-(c_star/c_max),b+1.0)-pow(1.0-min(c_star+ponded,c_max)/c_max,b+1.0));
     abstracted=min(abstracted,ponded);
     
-    rates[0]=abstracted/Options.timestep;          //abstraction rate [PONDED->DEPRESSION]
+    rates[0]=(       abstracted)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]
     rates[1]=(ponded-abstracted)/Options.timestep; //runoff rate [PONDED->SURFACE_WATER]
   }
 }
