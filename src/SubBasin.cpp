@@ -1868,7 +1868,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],tstep,tt,res_outflow,res_const);
+    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],Options,tt,res_outflow,res_const);
   }
   else
   {

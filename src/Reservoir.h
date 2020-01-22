@@ -22,10 +22,6 @@ enum curve_function{
   CURVE_VARYING,     ///< y=interp(xi,yi,t)
   CURVE_LAKE         ///< y=interp(xi,yi) (curve from weir)
 };
-enum res_type{
-  RESROUTE_STANDARD,
-  RESROUTE_NONE
-};
 
 struct down_demand {
   const CSubBasin *pDownSB;   ///< pointer to subbasin of downstream demand location
@@ -42,7 +38,6 @@ class CReservoir
 private:/*-------------------------------------------------------*/
   string       _name;                ///< reservoir name
   long         _SBID;                ///< subbasin ID
-  res_type     _type;                ///< reservoir type (default: RESROUTE_STANDARD)
   double       _max_capacity;        ///< maximum reservoir capacity [m3]
 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
@@ -101,7 +96,7 @@ private:/*-------------------------------------------------------*/
   double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)  
   double       _local_GW_head;       ///< local head [m] (same  for groundwater losses Q=k*(h-h_loc)
 
-  void       BaseConstructor(const string Name,const long SubID,const res_type typ); //because some versions of c++ don't like delegating constructors
+  void       BaseConstructor(const string Name,const long SubID); //because some versions of c++ don't like delegating constructors
 
   double     GetVolume (const double &ht) const;
   double     GetArea   (const double &ht) const;
@@ -109,20 +104,20 @@ private:/*-------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CReservoir(const string Name,const long SubID,const res_type typ);
-  CReservoir(const string name, const long SubID, const res_type typ,
+  CReservoir(const string Name,const long SubID);
+  CReservoir(const string name, const long SubID,
              const double a_v, const double b_v,
              const double a_Q, const double b_Q,
              const double a_A, const double b_A);
-  CReservoir(const string name, const long SubID, const res_type typ,
+  CReservoir(const string name, const long SubID, 
              const double *a_ht,
              const double *a_Q, const double *aQ_und,const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID, const res_type typ,
+  CReservoir(const string Name, const long SubID, 
              const int nDates, const int *aDates, const double *a_ht,
              double **a_QQ, const double *aQ_und, const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID, const res_type typ, const double weircoeff, //Lake constructor
+  CReservoir(const string Name, const long SubID, const double weircoeff, //Lake constructor
              const double crestw, const double crestht, const double A, const double depth);
   ~CReservoir();
 
@@ -172,7 +167,7 @@ public:/*-------------------------------------------------------*/
   //Called during simulation:
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
-                                              const double      &tstep,
+                                              const optStruct   &Options,
                                               const time_struct &tt,
                                                     double      &res_outflow,
                                                  res_constraint &constraint) const;

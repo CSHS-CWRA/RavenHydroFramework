@@ -772,17 +772,23 @@ enum res_constraint {
   RC_OVERRIDE_FLOW,
   RC_DRY_RESERVOIR
 };
-
 ////////////////////////////////////////////////////////////////////
-/// \brief Types of state variables
-/// \note If an additional state variable type is added, the following routines must be revised: \n
-/// - CStateVariables::GetStateVarLongName (defined in StateVariables.cpp)\n
-/// - CStateVariables::SVTypeToString  (defined in StateVariables.cpp)\n
-/// - CStateVariables::StringToSVType  (defined in StateVariables.cpp)\n
-/// - CStateVariables::IsWaterStorage  (defined in StateVariables.cpp)\n
-/// - CStateVariables::IsEnergyStorage (defined in StateVariables.cpp)\n
-/// - CHydroUnit::GetStateVarMax\n
-/// - CModel::PartitionPrecip (if it is a water storage unit recieving precipitation)\n
+/// \brief reservoir overflow handling options - how discharge is estimated once max reservoir stage is met
+//
+enum overflowmode {
+  OVERFLOW_ALL,     ///< calculates Q required to fix stage at max value
+  OVERFLOW_NATURAL  ///< uses stage discharge curve to calculate Q 
+};
+////////////////////////////////////////////////////////////////////
+/// \brief Types of state variable
+/// \note If an additional state variable type is added, the following routines must be revised: 
+/// - CStateVariables::GetStateVarLongName (defined in StateVariables.cpp)
+/// - CStateVariables::SVTypeToString  (defined in StateVariables.cpp)
+/// - CStateVariables::StringToSVType  (defined in StateVariables.cpp)
+/// - CStateVariables::IsWaterStorage  (defined in StateVariables.cpp)
+/// - CStateVariables::IsEnergyStorage (defined in StateVariables.cpp)
+/// - CHydroUnit::GetStateVarMax
+/// - CModel::PartitionPrecip (if it is a water storage unit recieving precipitation)
 ///
 //
 enum sv_type
@@ -1008,16 +1014,16 @@ struct optStruct
   catchment_route    catchment_routing;       ///< catchment routing method
   bool               distrib_lat_inflow;      ///< true if lateral inflow to a reach is distributed at all subsegment nodes; if false, deposited at downstream only
   demand_alloc       res_demand_alloc;        ///< method used for allocating upstream reservoir support to meet downstream irrigation demand
+  overflowmode       res_overflowmode;        ///< method used for handling outflow estimates when max stage exceeded in reservoir
+  monthly_interp     month_interp;            ///< means of interpolating monthly data
 
-  monthly_interp   month_interp;              ///< means of interpolating monthly data
-
-  bool             keepUBCWMbugs;             ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
-  bool             suppressCompetitiveET;     ///< true if competitive ET should be suppressed (for backward compatibility)
+  bool               keepUBCWMbugs;           ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
+  bool               suppressCompetitiveET;   ///< true if competitive ET should be suppressed (for backward compatibility)
 
   //Soil model information
-  soil_model       soil_modeltype;            ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
-  int              num_soillayers;            ///< number of soil layers
-  soil_charact     soil_representation;       ///< characteristic curves for unsaturated flow
+  soil_model         soil_modeltype;          ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
+  int                num_soillayers;          ///< number of soil layers
+  soil_charact       soil_representation;     ///< characteristic curves for unsaturated flow
 
   //Output Options
   bool             debug_mode;                ///< true if debugging mode is on

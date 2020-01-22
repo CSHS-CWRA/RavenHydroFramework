@@ -57,6 +57,7 @@ public:/*-------------------------------------------------------*/
   //manipulator functions
   void AddProcess(CHydroProcessABC *pProc);
   void SetWeights(const double *aWts, const int nVal);
+  void CalcWeightsFromUniformNums(const double *aVals,const int nVal);
 };
 
 #endif

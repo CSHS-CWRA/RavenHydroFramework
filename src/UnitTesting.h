@@ -17,6 +17,6 @@ void SmartLookupUnitTest();
 void SmartIntervalTest();
 void GammaTest();
 void AddTimeTest( );
-
+void BarycentricWeights();
 void RavenUnitTesting(const optStruct &Options);
 #endif

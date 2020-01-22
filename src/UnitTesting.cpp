@@ -11,7 +11,7 @@
 
 void RavenUnitTesting(const optStruct &Options)
 {
-  //cout<<"RAVEN UNIT TESTING MODE"<<endl;
+  cout<<"RAVEN UNIT TESTING MODE"<<endl;
 
   //uncomment one for use:
   //DateTest();
@@ -24,7 +24,7 @@ void RavenUnitTesting(const optStruct &Options)
   //SmartIntervalTest();
   //AddTimeTest( );
   //GammaTest();
-
+  //BarycentricWeights();
   /*cout<<"STRINGISLONG TEST: 1023 "<< StringIsLong("1023")<<endl;
   cout<<"STRINGISLONG TEST: -1 "<< StringIsLong("-1")<<endl;
   cout<<"STRINGISLONG TEST: hamburger "<< StringIsLong("hamburger")<<endl;
@@ -533,5 +533,29 @@ void ShortwaveGenerator()
   IN.close();
   SHORT.close();
   ExitGracefully("ShortwaveGenerator",SIMULATION_DONE);
+}
+
+void BarycentricWeights() {
+  double sum=0.0;
+  int    N=5;
+  double _aWeights[5];
+  double aVals[4];
+  ofstream OUT;
+  OUT.open("BarycentricWeights.csv");
+  rand();
+  for(int m=0; m<10000;m++) {
+    sum=0;
+    for(int i=0;i<4;i++) { aVals[i]=rand()/(double)(RAND_MAX+1); }
+    for(int q=0; q<N-1;q++) {
+      _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q)));
+      sum+=_aWeights[q];
+    }
+    _aWeights[N-1]=1.0-sum;
+    for(int q=0; q<N;q++) {
+      OUT<<_aWeights[q]<<",";
+    }OUT<<endl;
+  }
+  OUT.close();
+  ExitGracefully("BarycentricWeights",SIMULATION_DONE);
 }
 

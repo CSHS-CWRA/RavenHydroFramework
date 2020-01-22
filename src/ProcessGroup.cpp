@@ -171,7 +171,8 @@ void CProcessGroup::AddProcess(CHydroProcessABC *pProc)
 //////////////////////////////////////////////////////////////////
 /// \brief sets process weights for averaging of processes
 ///
-/// \param *pProc [in] pointer to hydrologic process to be added
+/// \param *aWts [in] array of process group weights
+/// \param nVal [in] number of weights
 //
 void CProcessGroup::SetWeights(const double *aWts, const int nVal)
 {
@@ -184,5 +185,29 @@ void CProcessGroup::SetWeights(const double *aWts, const int nVal)
     _aWeights[q]=aWts[q];
     sum+=_aWeights[q];
   }
+  if(fabs(sum-1.0)>0.01) {
+    for(int q=0; q<_nSubProcesses;q++) {_aWeights[q]/=sum; } //clean up weights that almost add to 1 (roundoff error)
+  }
   if(fabs(sum-1.0)>REAL_SMALL){ WriteWarning("CProcessGroup::SetWeights: Process group weights do not sum to 1.0",false); }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief calculates N process weights from N-1 numbers ranging from 0 to 1
+///
+/// \param *aVals [in] array of weight seeds between 0 and 1
+/// \param nVal [in] number of weight seeds
+//
+void CProcessGroup::CalcWeightsFromUniformNums(const double *aVals,const int nVal)
+{
+  if(nVal!=_nSubProcesses-1) {
+    WriteWarning("CProcessGroup::SetWeights: Incorrect number of numbers for process group. Weights will be ignored",false);
+    return;
+  }
+  double sum=0.0;
+  int    N=_nSubProcesses;
+  for(int q=0; q<N-1;q++) {
+    _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q)));
+    sum+=_aWeights[q];
+  }
+  _aWeights[N-1]=1.0-sum;
+}
+

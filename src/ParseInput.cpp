@@ -227,6 +227,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.suppressCompetitiveET   =false;
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
+  Options.res_overflowmode        =OVERFLOW_ALL;
   
   //Groundwater model options
   Options.modeltype           =MODELTYPE_SURFACE;
@@ -477,6 +478,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //...
     //-------------------WATER MANAGEMENT---------------------
     else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
+    else if  (!strcmp(s[0],":ReservoirOverflowMode"     )){code=401; }
     //
     //-------------------GROUNDWATER -------------------------
     else if  (!strcmp(s[0],":ModelType"             )){code=500; }//AFTER SoilModel Commmand
@@ -2522,7 +2524,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         pMover=new CmvRecharge(ParseSVTypeIndex(s[3],pModel));
       }
       else {
-        int Conns;
+        int Conns=1;
         if     (Len == 2) { Conns = 1; }
         else if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
         pMover=new CmvRecharge(rech_type,Conns);
@@ -2596,10 +2598,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Process Group End"<<endl;}
       
       int N=pProcGroup->GetGroupSize();
+      double *aWts=new double[N];
       if(Len==N+1) {
-        double *aWts=new double [N];
-        for (i=0;i<N;i++){aWts[i]=s_to_d(s[i+1]); }
-        pProcGroup->SetWeights(aWts,N);
+        if(!strcmp(s[1],"CALCULATE_WTS")) { 
+          for(i=0;i<N-1;i++) { aWts[i]=s_to_d(s[i+2]); }
+          pProcGroup->CalcWeightsFromUniformNums(aWts,N-1);
+        }
+        else {    
+          for(i=0;i<N;i++) { aWts[i]=s_to_d(s[i+1]); }
+          pProcGroup->SetWeights(aWts,N);
+        }
+        delete aWts;
       }
       else if(Len>1) {
         WriteWarning("ParseMainInputFile: incorrect number of weights in :EndProcessGroup command. Contents ignored.",Options.noisy);
@@ -2843,10 +2852,24 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Len<2) { ImproperFormatWarning(":ReservoirDemandAllocation",p,Options.noisy); break; }
       if     (!strcmp(s[1],"DEMANDBY_CONTRIB_AREA"    )) { Options.res_demand_alloc =DEMANDBY_CONTRIB_AREA; }
       else if(!strcmp(s[1],"DEMANDBY_MAX_CAPACITY"    )) { Options.res_demand_alloc =DEMANDBY_MAX_CAPACITY; }
-      //else if(!strcmp(s[1],"DEMANDBY_STOR_DEFICIT"    )) { Options.res_demand_alloc =DEMANDBY_STOR_DEFICIT; }
+      //else if(!strcmp(s[1],"DEMANDBY_STOR_DEFICIT"  )) { Options.res_demand_alloc =DEMANDBY_STOR_DEFICIT; }
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized Reservoir Demand Allocation Method",BAD_DATA_WARN); break;
+      }
+      break;
+    }
+    case(401):  //----------------------------------------------
+    {/*Reservoir overflow handling method
+     :ReservoirOverflowMode [string method]*/
+      if(Options.noisy) { cout <<"Reservoir Overflow handling Method"<<endl; }
+      if(Len<2) { ImproperFormatWarning(":ReservoirOverflowMode",p,Options.noisy); break; }
+      if     (!strcmp(s[1],"OVERFLOW_NATURAL"       )) { Options.res_overflowmode =OVERFLOW_NATURAL; }
+      else if(!strcmp(s[1],"OVERFLOW_STAGEDISCHARGE")) { Options.res_overflowmode =OVERFLOW_NATURAL; }
+      else if(!strcmp(s[1],"OVERFLOW_ALL"           )) { Options.res_overflowmode =OVERFLOW_ALL;     }
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized Reservoir Overflow handling Method",BAD_DATA_WARN); break;
       }
       break;
     }
@@ -2972,6 +2995,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);
   }
+  for(int i=0; i<pModel->GetNumStateVars();i++) {
+    if((pModel->GetStateVarType(i)==SOIL) && ((pModel->GetStateVarLayer(i))>(Options.num_soillayers-1))) {
+      string warn="A soil variable with an index ("+to_string(pModel->GetStateVarLayer(i))+") greater than that allowed by the limiting number of layers indicated in the :SoilModel command ("+to_string(Options.num_soillayers)+") was included in the .rvi file";
+      ExitGracefully(warn.c_str(),BAD_DATA);
+    }
+  }
+
 
   //Add Ensemble configuration to Model
   //===============================================================================================

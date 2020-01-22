@@ -693,7 +693,6 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
 
   curve_function type;
   type=CURVE_POWERLAW;
-  res_type restype=RESROUTE_STANDARD;
 
   CReservoir *pRes=NULL;
   HRUID=DOESNT_EXIST;
@@ -716,8 +715,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     else if(!strcmp(s[0],":Type"))
     {
       if(Options.noisy) { cout << ":Type" << endl; }
-      if(!strcmp(s[1],"RESROUTE_STANDARD")) { restype = RESROUTE_STANDARD; }
-      else if(!strcmp(s[1],"RESROUTE_NONE")) { restype = RESROUTE_NONE; }
+      //Obsolete - now ignored
     }
     else if(!strcmp(s[0],":CrestWidth"))
     {
@@ -985,15 +983,15 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
 
   if((type==CURVE_POWERLAW) || (type==CURVE_LINEAR))
   {
-    pRes=new CReservoir(name,SBID,restype,a_V,b_V,a_Q,b_Q,a_A,b_A);
+    pRes=new CReservoir(name,SBID,a_V,b_V,a_Q,b_Q,a_A,b_A);
   }
   else if(type==CURVE_DATA)
   {
-    pRes=new CReservoir(name,SBID,restype,aQ_ht,aQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
+    pRes=new CReservoir(name,SBID,aQ_ht,aQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
   }
   else if(type==CURVE_VARYING)
   {
-    pRes=new CReservoir(name,SBID,restype,nDates,aDates,aQ_ht,aQQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
+    pRes=new CReservoir(name,SBID,nDates,aDates,aQ_ht,aQQ,aQund,aA,aV,NQ);//presumes aQ_ht=aV_ht=aA_ht; NA=NV=NQ
   }
   else if(type==CURVE_LAKE)
   {
@@ -1001,7 +999,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     ExitGracefullyIf(cwidth   ==DOESNT_EXIST,"CReservoir::Parse: :CrestWidth must be specified for lake-type reservoirs",BAD_DATA_WARN);
     ExitGracefullyIf(lakearea ==DOESNT_EXIST,"CReservoir::Parse: :LakeArea  must be specified for lake-type reservoirs",BAD_DATA_WARN);
     ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
-    pRes=new CReservoir(name,SBID,restype,weircoeff,cwidth,crestht,lakearea,max_depth);
+    pRes=new CReservoir(name,SBID,weircoeff,cwidth,crestht,lakearea,max_depth);
   }
   else {
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
