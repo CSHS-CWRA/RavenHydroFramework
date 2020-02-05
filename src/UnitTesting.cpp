@@ -11,7 +11,7 @@
 
 void RavenUnitTesting(const optStruct &Options)
 {
-  cout<<"RAVEN UNIT TESTING MODE"<<endl;
+  //cout<<"RAVEN UNIT TESTING MODE"<<endl;
 
   //uncomment one for use:
   //DateTest();

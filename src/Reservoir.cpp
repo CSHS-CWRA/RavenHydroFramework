@@ -693,7 +693,10 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0;
   if(_pHRU!=NULL) {
-    double Evap=_pHRU->GetSurfaceProps()->lake_PET_corr*_pHRU->GetForcingFunctions()->OW_PET;//mm/d
+    double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
+    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
+      Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
+    }
     _AET      = Evap* 0.5*(GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep; //m3
     _MB_losses+=_AET;
   }
