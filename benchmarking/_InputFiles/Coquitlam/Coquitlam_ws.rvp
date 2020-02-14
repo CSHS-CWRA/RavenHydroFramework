@@ -1,0 +1,210 @@
+#########################################################################
+:FileType rvp ASCII Raven 1.0
+# DataType         Raven Parameters file
+#
+:Application       (null)
+:Version           No version information..
+:WrittenBy         gjost
+:CreationDate      Mon, Aug 22, 2016 11:19 AM
+#
+#------------------------------------------------------------------------
+# Converted from UBCWM WAT file
+:SourceFile  C:\projects\ForecastingSystem\RavenInputFiles\Temp\CQD2010_100.wat
+#
+#------------------------------------------------------------------------
+# Orographic Corrections
+#
+:AdiabaticLapseRate   6.4    # A0TLZZ
+:WetAdiabaticLapse    6.66644 5    # A0TLZP A0PPTP
+:ReferenceMaxTemperatureRange    20    # A0TERM(1)
+:UBCTempLapseRates    9.07216 0.199597 6.4 2 10.0371 0.0608275    # A0TLXM A0TLNM A0TLXH A0TLNH P0TEDL P0TEDU
+:UBCPrecipLapseRates  200.1 702.853 1188.68 3.37543 6.14938 3.79919 0    # C0ELEM(1) E0LMID  E0LHI P0GRADL P0GRADM P0GRADU A0STAB
+:UBCEvapLapseRates    0.9    # A0PELA
+#
+:UBCExposureFactor    0.15    # F0ERGY
+:UBCCloudPenetration  0.25    # P0CAST
+:UBCLWForestFactor    0.76    # P0BLUE*P0LWVF
+:UBCFlashPonding      5.731452E+01   # V0FLAS
+:UBCNorthSWCorr       0.4 0.4 0.4 0.7 0.9 1 0.9 0.7 0.4 0.4 0.4 0.4    # V0NOTH
+:UBCSouthSWCorr       1 1 1 1 1 1 1 1 1 1 1 1    # V0SOTH
+
+#------------------------------------------------------------------------
+# Global snow parameterss
+#
+:RainSnowTransition -0.7 2    # (A0FORM/2)-P0TASR   A0FORM
+:UBCSnowParams        0.200739 0.95 0.9 0.65 15 3500    # P0ALBMIN P0ALBMAX P0ALBREC P0ALBASE P0ALBSNW P0ALBMLX
+:IrreducibleSnowSaturation    0.05    # A0WEHO (= A0WEHF)
+:UBCGroundwaterSplit    2.445896E-01    # P0DZSH
+
+#---------------------------------------------------------
+# Soil classes
+#    WATfile mapping: 
+#       (hardcoded)
+#
+:SoilClasses
+ :Attributes, SAND, CLAY, SILT, ORGANIC
+ :Units,       frac,  frac,  frac,  frac
+   TOPSOIL,    1, 0, 0, 0
+   INT_SOIL,   1, 0, 0, 0
+   INT_SOIL2,  1, 0, 0, 0
+   INT_SOIL3,  1, 0, 0, 0
+   GWU_SOIL,   1, 0, 0, 0
+   GWL_SOIL,   1, 0, 0, 0
+:EndSoilClasses
+
+#---------------------------------------------------------
+# Soil parameters
+#    WATfile mapping: 
+#       0.5   P0PERC   P0EGEN   P0AGEN
+#
+:SoilParameterList
+ :Parameters, POROSITY, MAX_PERC_RATE, UBC_EVAP_SOIL_DEF, UBC_INFIL_SOIL_DEF
+ :Units,      none,     mm_per_d,      mm,                mm
+   [DEFAULT], 0.5, 2.991089E+01, 100, 100
+:EndSoilParameterList
+
+#---------------------------------------------------------
+# Soil parameters
+#    WATfile mapping: 
+#       0.0                     0.0
+#       0.0                     -ln(P0IRTK/(1+P0IRTK))
+#       0.0                     -ln(P0FRTK/(1+P0FRTK))
+#       -ln(P0FRTK/(1+P0FRTK))  0.0
+#       -ln(P0UGTK/(1+P0UGTK))  0.0
+#       -ln(P0DZTK/(1+P0DZTK))  0.0
+#
+:SoilParameterList
+ :Parameters, BASEFLOW_COEFF, PERC_COEFF
+ :Units,      1/d,            1/d
+   [DEFAULT],   0,            0
+   INT_SOIL,    0,            1.610000E+00
+   INT_SOIL2,   0,            4.925627E+00
+   INT_SOIL3,   1.116898E+02,      0
+   GWU_SOIL,    4.578116E-01,    0
+   GWL_SOIL,    2.734929E-03,    0
+:EndSoilParameterList
+
+#---------------------------------------------------------
+# Soil profiles
+#    WATfile mapping: 
+#       (hardcoded)
+# name, layers, {soilClass, thickness} x layers
+#
+:SoilProfiles
+   LAKE, 0
+   GLACIER, 6, TOPSOIL, 0.0, INT_SOIL,10.0, GWU_SOIL,10.0, GWL_SOIL,10.0, INT_SOIL2,10.0, INT_SOIL3,10.0 
+   DEFAULT_P, 6, TOPSOIL,10.0, INT_SOIL,10.0, GWU_SOIL,10.0, GWL_SOIL,10.0, INT_SOIL2,10.0, INT_SOIL3,10.0
+:EndSoilProfiles
+
+#---------------------------------------------------------
+# Vegetation classes
+#    WATfile mapping: 
+#       (hardcoded)
+# - these parameters are required but have no affect in UBCWM emulation mode
+#
+:VegetationClasses
+ :Attributes,   MAX_HT, MAX_LAI, MAX_LEAF_COND
+ :Units,        m,      none,    mm_per_s
+   FOREST,      25,     6.0,     5.3
+:EndVegetationClasses
+
+#---------------------------------------------------------
+# Vegetation parameters
+#    WATfile mapping: 
+#       (1-POPINT)   (1-POPINT)   P0PINX
+#
+:VegetationParameterList
+ :Parameters,  TFRAIN, TFSNOW, MAX_INTERCEPT_RATE
+ :Units,       frac,   frac,   mm/d
+   FOREST,     0.88,   0.88,   10
+:EndVegetationParameterList
+
+#---------------------------------------------------------
+# LandUse classes
+#    WATfile mapping: 
+#       {OpenN,OpenS,Forest,GlacierN,GlacierS}Band#   C0IMPA   (C0CANY if forest, otherwise 0)
+#
+:LandUseClasses
+ :Attributes, IMPERM, FOREST_COV
+ :Units,      frac,   frac
+               OPEN_1, 0.0630552,   0
+             FOREST_1, 0.0630552,   1
+               OPEN_2, 0.181033,   0
+             FOREST_2, 0.181033,   1
+               OPEN_3, 0.268294,   0
+             FOREST_3, 0.268294,   1
+               OPEN_4, 0.00259175,   0
+             FOREST_4, 0.00259175,   1
+               OPEN_5, 0.416355,   0
+             FOREST_5, 0.416355,   1
+               OPEN_6, 0.116393,   0
+             FOREST_6, 0.116393,   1
+               OPEN_7, 0.806321,   0
+             FOREST_7, 0.806321,   1
+               OPEN_8, 0.804959,   0
+             FOREST_8, 0.804959,   1
+               OPEN_9, 0.833086,   0
+             FOREST_9, 0.833086,   1
+              GLACIER, 0.833086,   0
+              OPEN_10, 0.507084,   0
+            FOREST_10, 0.507084,   1
+              OPEN_11, 0.713358,   0
+            FOREST_11, 0.713358,   1
+:EndLandUseClasses
+
+#---------------------------------------------------------
+# LandUse parameters
+#    WATfile mapping: 
+#       [DEFAULT]  -ln(P0CLDG/(1+P0CLDG)   A0PEFO   -ln(P0GLTK/(1+P0GLTK)  S0PATS 
+#                 (or 10000 if P0CLDG <= 0)
+#
+:LandUseParameterList
+ :Parameters, CC_DECAY_COEFF, FOREST_PET_CORR, GLAC_STORAGE_COEFF, SNOW_PATCH_LIMIT, WIND_EXPOSURE, RAIN_MELT_MULT, CONV_MELT_MULT, COND_MELT_MULT
+ :Units,      1/d,            none,            1/d,                mm, 	frac, none, none, none
+   [DEFAULT], 10000,             1,              1.31545,              400, 1, 1.838466E+01, 			6.393139E-01,		0.000000E+00
+:EndLandUseParameterList
+
+#---------------------------------------------------------
+# LandUse parameters
+#    WATfile mapping: Landuse for closest midpoint of elevation band to an HRU
+#       UBC_ICEPT_FACTOR = C0TREE * C0CANY for the corresponding band
+#
+:LandUseParameterList
+ :Parameters, UBC_ICEPT_FACTOR
+ :Units,      0..1
+               OPEN_1, 0.342
+             FOREST_1, 0.342
+               OPEN_2, 0.576
+             FOREST_2, 0.576
+               OPEN_3, 0.5605
+             FOREST_3, 0.5605
+               OPEN_4, 0.522
+             FOREST_4, 0.522
+               OPEN_5, 0.495
+             FOREST_5, 0.495
+               OPEN_6, 0.425
+             FOREST_6, 0.425
+               OPEN_7, 0.3362
+             FOREST_7, 0.3362
+               OPEN_8, 0.1632
+             FOREST_8, 0.1632
+               OPEN_9, 0.0756
+             FOREST_9, 0.0756
+              GLACIER, 0.0756
+              OPEN_10, 0.0312
+            FOREST_10, 0.0312
+              OPEN_11, 0.025
+            FOREST_11, 0.025
+:EndLandUseParameterList
+
+#---------------------------------------------------------
+# Terrain classes
+#    WATfile mapping: 
+#       (hardcoded)
+# - these parameters required but have no affect in UBCWM emulation mode
+#
+:TerrainClasses
+ :Attributes, NAME, HILLSLOPE_LEN, DRAINAGE_DENS
+ :Units,      none, none,          m/m
+         DEFAULT_T, 100,           1.0
+:EndTerrainClasses

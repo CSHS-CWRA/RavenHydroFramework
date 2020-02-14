@@ -1,0 +1,70 @@
+#########################################################################
+:FileType rvh ASCII Raven 1.0
+# DataType         Raven HRU file
+#
+:Application       (null)
+:Version           No version information..
+:WrittenBy         gjost
+:CreationDate      Mon, Aug 22, 2016 11:19 AM
+#
+#------------------------------------------------------------------------
+# Converted from UBCWM WAT file
+:SourceFile  C:\projects\ForecastingSystem\RavenInputFiles\Temp\CQD2010_100.wat
+
+#---------------------------------------------------------
+# Sub basins
+#    WATfile mapping: 
+#       (hardcoded except for NAME)
+#
+:SubBasins
+ :Attributes, ID,   NAME, DOWNSTREAM_ID, PROFILE, REACH_LENGTH, GAUGED
+ :Units,      none, none, none,          none,    km,           none
+  1,	 CQD2010_100, 	-1, 	NONE, 	_AUTO, 	1
+:EndSubBasins
+
+#---------------------------------------------------------
+# Hydrologic Response Units
+#    WATfile mapping: 
+#       
+#
+:HRUs
+ :Attributes, ID,   AREA, ELEVATION, LATITUDE, LONGITUDE, BASIN_ID, LAND_USE_CLASS, VEG_CLASS, SOIL_PROFILE, AQUIFER_PROFILE, TERRAIN_CLASS, SLOPE, ASPECT
+ :Units,      none, km2,  m,         deg,      deg,       none,     none,           none,      none,         none,            none,          ratio, deg
+   	 1,	 4.37465,	 200.1,	 49.5,	 -100,	 1,	 OPEN_1,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 2,	 15.5101,	 200.1,	 49.5,	 -100,	 1,	 OPEN_1,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 3,	 10.3352,	 200.1,	 49.5,	 -100,	 1,	 FOREST_1,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 140.4
+   	 6,	 2.0854,	 383.8,	 49.5,	 -100,	 1,	 OPEN_2,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 7,	 5.10564,	 383.8,	 49.5,	 -100,	 1,	 OPEN_2,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 8,	 9.76896,	 383.8,	 49.5,	 -100,	 1,	 FOREST_2,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 127.8
+   	 11,	 2.29573,	 529.9,	 49.5,	 -100,	 1,	 OPEN_3,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 12,	 5.10985,	 529.9,	 49.5,	 -100,	 1,	 OPEN_3,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 13,	 9.44442,	 529.9,	 49.5,	 -100,	 1,	 FOREST_3,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 124.2
+   	 16,	 3.52726,	 684.6,	 49.5,	 -100,	 1,	 OPEN_4,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 17,	 7.49542,	 684.6,	 49.5,	 -100,	 1,	 OPEN_4,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 18,	 12.0373,	 684.6,	 49.5,	 -100,	 1,	 FOREST_4,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 122.4
+   	 21,	 4.36461,	 839.6,	 49.5,	 -100,	 1,	 OPEN_5,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 22,	 8.47249,	 839.6,	 49.5,	 -100,	 1,	 OPEN_5,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 23,	 12.5829,	 839.6,	 49.5,	 -100,	 1,	 FOREST_5,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 118.8
+   	 26,	 4.44394,	 993.2,	 49.5,	 -100,	 1,	 OPEN_6,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 27,	 9.02256,	 993.2,	 49.5,	 -100,	 1,	 OPEN_6,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 28,	 9.9535,	 993.2,	 49.5,	 -100,	 1,	 FOREST_6,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 120.6
+   	 31,	 5.79258,	 1135.6,	 49.5,	 -100,	 1,	 OPEN_7,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 32,	 10.2979,	 1135.6,	 49.5,	 -100,	 1,	 OPEN_7,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 33,	 8.14949,	 1135.6,	 49.5,	 -100,	 1,	 FOREST_7,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 115.2
+   	 36,	 4.47228,	 1288.1,	 49.5,	 -100,	 1,	 OPEN_8,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 37,	 8.30566,	 1288.1,	 49.5,	 -100,	 1,	 OPEN_8,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 38,	 2.49206,	 1288.1,	 49.5,	 -100,	 1,	 FOREST_8,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 117
+   	 41,	 2.3367,	 1440.1,	 49.5,	 -100,	 1,	 OPEN_9,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 42,	 4.74421,	 1440.1,	 49.5,	 -100,	 1,	 OPEN_9,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 43,	 0.579096,	 1440.1,	 49.5,	 -100,	 1,	 FOREST_9,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 120.6
+   	 44,	 0.1245,	 1440.1,	 49.5,	 -100,	 1,	 GLACIER,	 FOREST,	 GLACIER,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 45,	 0.0255,	 1440.1,	 49.5,	 -100,	 1,	 GLACIER,	 FOREST,	 GLACIER,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 46,	 1.10676,	 1594.3,	 49.5,	 -100,	 1,	 OPEN_10,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 47,	 2.35186,	 1594.3,	 49.5,	 -100,	 1,	 OPEN_10,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 48,	 0.111384,	 1594.3,	 49.5,	 -100,	 1,	 FOREST_10,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 122.4
+   	 49,	 0.0063,	 1594.3,	 49.5,	 -100,	 1,	 GLACIER,	 FOREST,	 GLACIER,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 50,	 0.0037,	 1594.3,	 49.5,	 -100,	 1,	 GLACIER,	 FOREST,	 GLACIER,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 51,	 0.235365,	 1702.1,	 49.5,	 -100,	 1,	 OPEN_11,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 0
+   	 52,	 0.456885,	 1702.1,	 49.5,	 -100,	 1,	 OPEN_11,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 180
+   	 53,	 0.01775,	 1702.1,	 49.5,	 -100,	 1,	 FOREST_11,	 FOREST,	 DEFAULT_P,	 DEFAULT_AQ,	 DEFAULT_T,	 0,	 118.8
+:EndHRUs

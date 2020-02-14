@@ -1,0 +1,23 @@
+#########################################################################
+:FileType rvt ASCII Raven 1.0
+# DataType         Raven Met Station File
+#
+:Application       (null)
+:Version           No version information..
+:WrittenBy         gjost
+:CreationDate      Mon, Aug 22, 2016 11:19 AM
+#
+#------------------------------------------------------------------------
+# Converted from UBCWM WAT file
+:SourceFile  C:\projects\ForecastingSystem\RavenInputFiles\Temp\CQD2010_100.wat
+
+:Gauge (NULL)
+  :Latitude 49.5  # 
+  :Longitude -100  # 
+  :Elevation 4.935000E+02  # C0ELPT
+  :RainCorrection 9.539044E-01  # 1+P0RREP
+  :SnowCorrection 1.215798E+00 # 1+P0SREP
+  :CloudTempRanges 9 15  # A0FOGY A0SUNY
+  :MonthlyEvapFactor 0.2, 0.2, 0.2, 0.2, 0.246, 0.258, 0.232, 0.218, 0.2, 0.2, 0.2, 0.2,  # V0EMOF(12) * A0EDDF
+:EnsimTimeSeries  CQD_h.tb0
+:EndGauge
