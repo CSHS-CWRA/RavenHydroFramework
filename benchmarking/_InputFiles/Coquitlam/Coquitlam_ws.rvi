@@ -75,3 +75,34 @@
  :Baseflow            BASE_LINEAR_ANALYTIC  DEEP_GW        SURFACE_WATER
  :GlacierRelease      GRELEASE_LINEAR       GLACIER        SURFACE_WATER
 :EndHydrologicProcesses
+# Transport calculations for estimation of snowmelt and glacier
+# contributions to runoff
+#
+:Transport SNOWMELT
+:FixedConcentration  SNOWMELT SNOW 1.0
+:FixedConcentration  SNOWMELT SHALLOW_GW 0.0
+:FixedConcentration  SNOWMELT DEEP_GW 0.0
+      
+:Transport GLACIER
+:FixedConcentration  GLACIER GLACIER 1.0
+:FixedConcentration  GLACIER SHALLOW_GW 0.0
+:FixedConcentration  GLACIER DEEP_GW 0.0
+
+:Transport SHALLOW_GW 
+:FixedConcentration  SHALLOW_GW  SHALLOW_GW 1.0
+:FixedConcentration  SHALLOW_GW  DEEP_GW 0.0
+
+:Transport DEEP_GW 
+:FixedConcentration  DEEP_GW  SHALLOW_GW 0.0
+:FixedConcentration  DEEP_GW DEEP_GW 1.0
+      
+#---------------------------------------------------------
+:CustomOutput CONTINUOUS  AVERAGE RAINFALL BY_HRU
+:CustomOutput CONTINUOUS  AVERAGE SNOWFALL BY_HRU
+:CustomOutput CONTINUOUS  AVERAGE TEMP_AVE BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SNOW BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[0] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[1] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[2] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[3] BY_HRU
+:CustomOutput CONTINUOUS AVERAGE SOIL[4] BY_HRU
