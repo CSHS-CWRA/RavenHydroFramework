@@ -1500,7 +1500,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     // correct location in aVec data storage (see step 9)
 
     for (int it=0; it<ntime; it++){                     // loop over time points read
-      aVal[it]=aTmp1D[it];
+      aVal[it] = LinTrans_a * aTmp1D[it] + LinTrans_b;
     };
   }
 
