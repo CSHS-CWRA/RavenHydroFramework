@@ -146,6 +146,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CHydroProcessABC *pMover;
   CmvPrecipitation *pPrecip=NULL;
   CProcessGroup    *pProcGroup=NULL;
+  CProcessGroup    *pProcGroupOuter=NULL; //for nested processgroups
   bool              transprepared(false);
   bool              runname_overridden(false);
   int               num_ensemble_members=1;
@@ -2588,13 +2589,16 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout <<"Process Group Start"<<endl; }
       if(Len<1) { ImproperFormatWarning(":ProcessGroup",p,Options.noisy); break; }
       else {
+        pProcGroupOuter=pProcGroup;
         pProcGroup=new CProcessGroup(s[1]);
       }
       break;
     }
     case (296)://----------------------------------------------
     {/*End ProcessGroup
-       string ":EndProcessGroup {wt1 wt2 wt3 ... wtN}" */
+       string ":EndProcessGroup {wt1 wt2 wt3 ... wtN}"
+       or
+       string ":EndProcessGroup CALCULATE_WTS {r1 r2 r3 ... rN-1}"*/
       if (Options.noisy){cout <<"Process Group End"<<endl;}
       
       int N=pProcGroup->GetGroupSize();
@@ -2615,6 +2619,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       pModel->AddProcess(pProcGroup);
       pProcGroup=NULL;
+      if(pProcGroupOuter!=NULL) {
+        pProcGroup=pProcGroupOuter;
+        pProcGroupOuter=NULL;
+      }
       break;
     }
     case (297)://----------------------------------------------

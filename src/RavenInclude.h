@@ -770,7 +770,8 @@ enum res_constraint {
   RC_MIN_FLOW,
   RC_MAX_FLOW,
   RC_OVERRIDE_FLOW,
-  RC_DRY_RESERVOIR
+  RC_DRY_RESERVOIR,
+  RC_DZTR
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief reservoir overflow handling options - how discharge is estimated once max reservoir stage is met

@@ -45,6 +45,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _nDemands=0;
   _aDemands=NULL;
 
+  _pDZTR=NULL;
+
   _crest_ht=0.0;
   _max_capacity=0.0;
 
@@ -655,6 +657,51 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
   }
 }
 //////////////////////////////////////////////////////////////////
+/// \brief sets parameters for Dynamically zoned target release model  
+//
+void CReservoir::SetDZTRModel(const double Qmc,const double Smax,
+                              const double Sci[12],const double Sni[12],const double Smi[12],
+                              const double Qci[12],const double Qni[12],const double Qmi[12])
+{
+  _pDZTR=new DZTRmodel();
+  _pDZTR->Qmc=Qmc;
+  _pDZTR->Vmax=Smax;
+  
+  for(int i=0;i<12;i++)
+  {
+    _pDZTR->Vci[i]=Sci[i];     _pDZTR->Vni[i]=Sni[i];     _pDZTR->Vmi[i]=Smi[i];
+    _pDZTR->Qci[i]=Qci[i];     _pDZTR->Qni[i]=Qni[i];     _pDZTR->Qmi[i]=Qmi[i];
+
+    if((Sci[i]>Sni[i]) || (Sni[i]>Smi[i]) || (Smi[i]>Smax)) {
+      WriteWarning("CReservoir::SetDZTRModel: storage ordering is off. Vci<Vni<Vmi<Vmax",false);
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief gets flows from DZTR model of Yassin et al., 2019
+/// Yassin et al., Representation and improved parameterization of reservoir operation in hydrological and land-surface models
+/// Hydrol. Earth Syst. Sci., 23, 3735–3764, 2019 https://doi.org/10.5194/hess-23-3735-2019
+//
+double CReservoir::GetDZTROutflow(const double &V, const double &Qin, const time_struct &tt, const optStruct &Options) const
+{
+  double Vci=InterpolateMo(_pDZTR->Vci,tt,Options);
+  double Vni=InterpolateMo(_pDZTR->Vni,tt,Options);
+  double Vmi=InterpolateMo(_pDZTR->Vmi,tt,Options);
+  double Qci=InterpolateMo(_pDZTR->Qci,tt,Options);
+  double Qni=InterpolateMo(_pDZTR->Qni,tt,Options);
+  double Qmi=InterpolateMo(_pDZTR->Qmi,tt,Options);
+  double Vmin=0.1*_pDZTR->Vmax;
+  double Qmc=_pDZTR->Qmc;
+  double tstep=Options.timestep*SEC_PER_DAY;
+  
+  if      (V<Vmin){return 0.0;}
+  else if (V<Vci ){return min(Qci,(V-Vmin)/tstep); }
+  else if (V<Vni ){return Qci+(Qni-Qci)*(V-Vci)/(Vni-Vci);}
+  else if (V<Vmi ){return Qni+max((Qin-Qni),(Qmi-Qni))*(V-Vni)/(Vmi-Vni); }
+  else            {return min(Qmc,max(Qmi,(V-Vmi)/tstep));}
+
+}
+//////////////////////////////////////////////////////////////////
 /// \brief sets reservoir groundwater parameters
 /// \param coeff - groundwater exchange coefficient [m3/s/m]
 /// \param h_ref - regional groundwater head [same vertical coordinate system as stage, m] 
@@ -760,8 +807,15 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
   double Q,dQdh;
   do //Newton's method with discrete approximation of dQ/dh
   {
-    Q   = GetOutflow(h_guess   ,weir_adj);
-    dQdh=(GetOutflow(h_guess+dh,weir_adj)-Q)/dh;
+    //if(_pDZTR==NULL) {
+      Q    =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
+      dQdh=(GetWeirOutflow(h_guess+dh,weir_adj)-Q)/dh;
+    //}
+    //else if(_pDZTR!=NULL) {
+    //  Q =GetDZTROutflow(GetVolume(h_guess),initQ,tt,Options);
+    //  dQdh=(GetDZTROutflow(GetVolume(h_guess+dh),initQ,tt,Options)-Q)/dh;
+    //}
+
     change=-(Q-initQ)/dQdh;//[m]
     if (dh==0.0){change=1e-7;}
     h_guess+=change;
@@ -776,7 +830,14 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
   }
 
   _stage=h_guess;
-  _Qout=GetOutflow(_stage,weir_adj);
+  _Qout=GetWeirOutflow(_stage,weir_adj);
+
+  //if(_pDZTR==NULL) {
+  //  _Qout=GetWeirOutflow(_stage,weir_adj);
+  //}
+  //else if(_pDZTR!=NULL) {
+  //  _Qout=GetDZTROutflow(GetVolume(_stage),initQ,tt,Options);
+  //}
 
   _stage_last=_stage;
   _Qout_last =_Qout;
@@ -907,8 +968,16 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double relax=1.0;
   do //Newton's method with discrete approximation of df/dh
   {
-    out =GetOutflow(h_guess,   weir_adj)+ET*GetArea(h_guess   )+_seepage_const*(h_guess   -_local_GW_head);//[m3/s]
-    out2=GetOutflow(h_guess+dh,weir_adj)+ET*GetArea(h_guess+dh)+_seepage_const*(h_guess+dh-_local_GW_head);//[m3/s]
+    if     (_pDZTR==NULL) {
+      out =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
+      out2=GetWeirOutflow(h_guess+dh,weir_adj);//[m3/s]
+    }
+    else if(_pDZTR!=NULL) {
+      out =GetDZTROutflow(GetVolume(h_guess   ),Qin_old,tt,Options);
+      out2=GetDZTROutflow(GetVolume(h_guess+dh),Qin_old,tt,Options);
+    }
+    out +=ET*GetArea(h_guess   )+_seepage_const*(h_guess   -_local_GW_head);//[m3/s]
+    out2+=ET*GetArea(h_guess+dh)+_seepage_const*(h_guess+dh-_local_GW_head);//[m3/s]
 
     f   = (GetVolume(h_guess   )+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
     dfdh=((GetVolume(h_guess+dh)+out2/2.0*(tstep*SEC_PER_DAY))-f)/dh; //[m3/m]
@@ -936,8 +1005,15 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 
   //standard case - outflow determined through stage-discharge curve
   //---------------------------------------------------------------------------------------------
-  res_outflow=GetOutflow(stage_new,weir_adj);
-  constraint =RC_NATURAL;
+  if(_pDZTR==NULL) {
+    res_outflow=GetWeirOutflow(stage_new,weir_adj);
+    constraint =RC_NATURAL;
+  }
+  else if(_pDZTR!=NULL) {
+    res_outflow=GetDZTROutflow(GetVolume(stage_new),Qin_old,tt,Options);
+    constraint =RC_DZTR;
+  }
+
   outflow_nat=res_outflow; //saved for special max stage constraint
   stage_nat  =stage_new;
 
@@ -1108,7 +1184,7 @@ double     CReservoir::GetArea  (const double &ht) const
 /// \returns reservoir outflow [m3/s] corresponding to stage ht
 /// \note assumes regular spacing between min and max stage
 //
-double     CReservoir::GetOutflow(const double &ht, const double &adj) const
+double     CReservoir::GetWeirOutflow(const double &ht, const double &adj) const
 {
   double underflow=Interpolate2(ht,_aStage,_aQunder,_Np,false); //no adjustments
   return Interpolate2(ht-adj,_aStage,_aQ,_Np,false)+underflow;

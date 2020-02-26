@@ -22,7 +22,17 @@ enum curve_function{
   CURVE_VARYING,     ///< y=interp(xi,yi,t)
   CURVE_LAKE         ///< y=interp(xi,yi) (curve from weir)
 };
-
+struct DZTRmodel //Dynamically zoned target release model structure
+{
+  double Qmc;        ///< maximum channel capacity [m3/s]
+  double Vmax;       ///< maximum reservoir storage [m3] 
+  double Qci[12];    ///< critical release target [m3/s]
+  double Qni[12];    ///< normal release target [m3/s]
+  double Qmi[12];    ///< maximum release target [m3/s]
+  double Vci[12];    ///< critical release storage [m3]    
+  double Vni[12];    ///< normal release storage [m3]
+  double Vmi[12];    ///< critical release storage [m3]  
+};
 struct down_demand {
   const CSubBasin *pDownSB;   ///< pointer to subbasin of downstream demand location
   double percent;             ///< percentage of demand met by reservoir
@@ -63,6 +73,8 @@ private:/*-------------------------------------------------------*/
   down_demand**_aDemands;            ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
   int          _nDemands;            ///< size of downstream demand location array  
 
+  DZTRmodel    *_pDZTR;              ///< pointer to DZTR model, if used (default=NULL)
+
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
   double       _stage_last;          ///< stage at beginning of current time step [m]
@@ -100,7 +112,9 @@ private:/*-------------------------------------------------------*/
 
   double     GetVolume (const double &ht) const;
   double     GetArea   (const double &ht) const;
-  double     GetOutflow(const double &ht, const double &adj) const;
+  double     GetWeirOutflow(const double &ht, const double &adj) const;
+
+  double     GetDZTROutflow(const double &V,const double &Qin,const time_struct &tt,const optStruct &Options) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -160,6 +174,10 @@ public:/*-------------------------------------------------------*/
   void              AddDownstreamTargetQ     (CTimeSeries *pQ, const CSubBasin *pSB, const double &range);
 
   void              AddDownstreamDemand      (const CSubBasin *pSB,const double pct);
+
+  void              SetDZTRModel             (const double Qmc, const double Smax, 
+                                              const double Sci[12], const double Sni[12],const double Smi[12],
+                                              const double Qci[12], const double Qni[12],const double Qmi[12]);
 
   void              SetHRU                   (const CHydroUnit *pHRU);
   void              DisableOutflow           ();

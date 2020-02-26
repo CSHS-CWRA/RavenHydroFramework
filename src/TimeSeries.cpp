@@ -229,14 +229,18 @@ void CTimeSeries::Initialize( const double model_start_day,   //julian day
 {
   //_t_corr is number of days between model start date and gauge
   //start date (positive if data exists before model start date)
-
+  double tshift=0;
   _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year,calendar);
+  if((is_observation) && (!strcmp(GetName().c_str(),"HYDROGRAPH"))) {
+    //hydrographs stored as period-ending - check must shift by one timestep
+    tshift=-timestep;
+  }
 
   //QA/QC: Check for overlap issues between time series duration and model duration
   //------------------------------------------------------------------------------
   double duration = (double)(_nPulses)*_interval;
-  double local_simulation_start = (_t_corr);
-  double local_simulation_end = (model_duration + _t_corr);
+  double local_simulation_start = (_t_corr+tshift);
+  double local_simulation_end = (model_duration + _t_corr+tshift);
 
   if (!is_observation) //time series overlap is only necessary for forcing data
   {
