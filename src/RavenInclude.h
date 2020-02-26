@@ -93,6 +93,7 @@ extern bool   g_suppress_zeros;   ///< converts all output numbers less than REA
 // Global Constants
 //*****************************************************************
 const double  ALMOST_INF              =1e99;                                    ///< Largest possible double value to be used
+const double  PRETTY_SMALL            =1e-8;                                    ///< useful small tolerance
 const double  REAL_SMALL              =1e-12;                                   ///< Smallest possible double value to be used
 const double  PI                      =3.1415926535898;                         ///< Double approximation of pi
 

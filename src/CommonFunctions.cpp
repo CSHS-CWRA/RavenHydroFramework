@@ -339,7 +339,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   tt.year=dyear;
 
   tt.day_changed = false;
-  if((model_time <= REAL_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<REAL_SMALL)) { tt.day_changed = true; }
+  if((model_time <= PRETTY_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<PRETTY_SMALL)) { tt.day_changed = true; }
 
   static char out[50];
   sprintf(out,"%4.4d-%2.2i-%2.2d",dyear,tt.month,tt.day_of_month); //2006-02-28 (ISO Standard)
