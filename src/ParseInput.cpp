@@ -186,6 +186,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.convergence_crit        =0.01;
   Options.max_iterations          =30;
   Options.ensemble                =ENSEMBLE_NONE; 
+  Options.external_script         ="";
 
   Options.routing                 =ROUTE_STORAGECOEFF;
   Options.catchment_routing       =ROUTE_DUMP;
@@ -398,6 +399,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=96; }//avoid writing WatershedStorage.csv
     else if  (!strcmp(s[0],":TimeZone"                  )){code=97; }
     else if  (!strcmp(s[0],":WriteInterpolationWeights" )){code=101;}
+    else if  (!strcmp(s[0],":CallExternalScript"        )){code=102;}
   
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510; }
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511; }
@@ -1408,6 +1410,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
+        else if (!strcmp(s[i],"MBF"                )){pDiag=new CDiagnostic(DIAG_MBF); }
         else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){
@@ -1786,6 +1789,19 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:WriteInterpolationWeights*/
       if(Options.noisy) { cout << "Write Interpolation Weights file" << endl; }
       Options.write_interp_wts=true;
+      break;
+    }
+    case(102):  //--------------------------------------------
+    {/*:CallExternalScript*/
+      if(Options.noisy) { cout << "Call External Script" << endl; }
+      for(int i=1;i<Len;i++) {
+        Options.external_script+=s[i];
+        if(i!=Len-1) { Options.external_script+=" "; } //assumes space delimiter - commas will cause issues
+      }
+      if(!system(NULL)) {
+        WriteWarning("Unable to call external script on this machine - :CallExternalScript command will be ignored.",Options.noisy);
+        Options.external_script="";
+      }
       break;
     }
     case(150):  //--------------------------------------------

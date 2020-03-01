@@ -1582,6 +1582,11 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           HRU_type typ=StringToHRUType(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeHRUType(typ);
         }
+
+        for(int j=0; j<_nProcesses;j++)// kt
+        {
+          _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
+        }
       }
     }
   }

@@ -93,7 +93,7 @@ extern bool   g_suppress_zeros;   ///< converts all output numbers less than REA
 // Global Constants
 //*****************************************************************
 const double  ALMOST_INF              =1e99;                                    ///< Largest possible double value to be used
-const double  PRETTY_SMALL            =1e-8;                                    ///< useful small tolerance
+const double  PRETTY_SMALL            =1e-8;                                    ///< useful small tolerance for zero tests
 const double  REAL_SMALL              =1e-12;                                   ///< Smallest possible double value to be used
 const double  PI                      =3.1415926535898;                         ///< Double approximation of pi
 
@@ -956,6 +956,7 @@ struct optStruct
   double           timestep;                  ///< numerical method timestep (in days)
   double           output_interval;           ///< write to output file every x number of timesteps
   ensemble_type    ensemble;                  ///< ensemble type (or ENSEMBLE_NONE if single model)
+  string           external_script;           ///< call to external script/.exe once per timestep (or "" if none)
   
   model_type       modeltype;                 ///< type of model being simulated
   gw_nonlinear_num_method gw_solver_outer;    ///< nonlinear numerical solution method for groundwater GWMIGRATe - rename shorter
@@ -1470,6 +1471,7 @@ void   WriteAdvisory           (const string warn, bool noisy);
 HRU_type StringToHRUType       (const string s);
 double fast_s_to_d             (const char *s);
 double FormatDouble            (const double &d);
+void SubstringReplace          (string& str,const string& from,const string& to);
 
 //I/O Functions-----------------------------------------------
 //defined in StandardOutput.cpp

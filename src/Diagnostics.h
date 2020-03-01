@@ -27,6 +27,7 @@ enum diag_type {
   DIAG_RMSE_DER,
   DIAG_KLING_GUPTA_DER,
   DIAG_NASH_SUTCLIFFE_RUN,
+  DIAG_MBF
 };
 
 ///////////////////////////////////////////////////////////////////

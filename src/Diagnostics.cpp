@@ -56,7 +56,8 @@ string CDiagnostic::GetName() const
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; break;}
   case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; break;}
   case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; break;}
-  case(DIAG_NASH_SUTCLIFFE_RUN):{return"DIAG_NASH_SUTCLIFFE_RUN"; break;}
+  case(DIAG_NASH_SUTCLIFFE_RUN):{return "DIAG_NASH_SUTCLIFFE_RUN"; break;}
+  case(DIAG_MBF):               {return "DIAG_MBF"; break;}
   default:                      {return "";break;}
   }
 }
@@ -1191,6 +1192,52 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       return -ALMOST_INF;
     }
     break;
+  }
+  case(DIAG_MBF)://----------------------------------------------------
+  {
+     bool ValidObs = false;
+     bool ValidMod = false;
+     bool ValidWeight = false;
+
+     double sum;
+     N = 0;
+     sum = 0.0;
+
+     for(nn = skip; nn < nVals; nn++)
+     {
+       obsval = pTSObs->GetSampledValue(nn);
+       modval = pTSMod->GetSampledValue(nn);
+       weight=1.0;
+       if(pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+
+       if(obsval != RAV_BLANK_DATA) { ValidObs = true; }
+       if(modval != RAV_BLANK_DATA) { ValidMod = true; }
+       if(weight != 0) { ValidWeight = true; }
+
+       if((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && (weight != 0)) {
+         sum += weight / (1 + pow(((modval-obsval) / static_cast<double>(2.0*obsval)),2));
+         N+=weight;
+       }
+     }
+
+     if(ValidObs && ValidMod && ValidWeight)
+     {
+       return sum;
+     }
+     else
+     {
+       string p1 = "OBSERVED_DATA  "+filename;
+       string p2 = "MODELED_DATA  ";
+       string p3 = "WEIGHTS ";
+       if(ValidObs) { p1 = ""; }
+       if(ValidMod) { p2 = ""; }
+       if(ValidWeight) { p3 = ""; }
+
+       string warn = "DIAG_ABSERR not performed correctly. Check " + p1 + p2 + p3;
+       WriteWarning(warn,Options.noisy);
+       return -ALMOST_INF;
+     }
+     break;
   }
   default:
   {

@@ -1117,6 +1117,23 @@ bool IsComment(const char *s, const int Len)
   if ((Len==0) || (s[0]=='#') || (s[0]=='*')){return true;}
   return false;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief replaces all instances of substring 'from' with string 'to in string str
+/// \param &str [in/out] string subjected to modification
+/// \param &from [in] substring to be replaced
+/// \param &to [in]  substring to replace it with
+/// from solution by Michael Mrozek in https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
+//
+void SubstringReplace(string &str,const string &from,const string &to) 
+{
+  if(from.empty()) { return; }
+  size_t start_pos = 0;
+  while((start_pos = str.find(from,start_pos)) != std::string::npos) {
+    str.replace(start_pos,from.length(),to);
+    start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+  }
+}
+
 /////////////////////////////////////////////////////////////////
 /// \brief writes warning to screen and to Raven_errors.txt file
 /// \param warn [in] warning message printed

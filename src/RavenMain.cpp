@@ -20,6 +20,7 @@ void MassEnergyBalance(CModel            *pModel,
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
 void CheckForErrorWarnings     (bool quiet);
 bool CheckForStopfile          (const int step, const time_struct &tt);
+void CallExternalScript        (const optStruct &Options, const time_struct &tt);
 
 // Main Driver Variables------------------------------------------
 static optStruct   Options;
@@ -131,6 +132,7 @@ int main(int argc, char* argv[])
         pModel->RecalculateHRUDerivedParams(Options,tt);
         pModel->UpdateHRUForcingFunctions  (Options,tt);
         pModel->UpdateDiagnostics          (Options,tt);
+        CallExternalScript                 (Options,tt);
 
         MassEnergyBalance(pModel,Options,tt); //where the magic happens!
 
@@ -390,4 +392,18 @@ bool CheckForStopfile(const int step, const time_struct &tt)
     return true;
   }
 }
-
+/////////////////////////////////////////////////////////////////
+/// \brief Calls external script to be run 
+/// idea/code from Kai Tsuruta, PCIC
+//
+void CallExternalScript(const optStruct &Options,const time_struct &tt) 
+{
+  if(Options.external_script!="") {
+    string script=Options.external_script;
+    SubstringReplace(script,"<model_time>",to_string(tt.model_time));
+    SubstringReplace(script,"<date>"      ,tt.date_string);
+    SubstringReplace(script,"<version>"   ,Options.version);
+    SubstringReplace(script,"<output_dir>",Options.output_dir);
+    system(Options.external_script.c_str()); //Calls script
+  }
+}
