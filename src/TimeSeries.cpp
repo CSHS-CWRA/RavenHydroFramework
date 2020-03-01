@@ -1220,8 +1220,23 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // (1) open NetCDF read-only (get ncid)
   // -------------------------------
   if (Options.noisy){ cout<<"Start reading time series for "<< VarNameNC << " from NetCDF file "<< FileNameNC << endl; }
-  retval = nc_open(FileNameNC.c_str(), NC_NOWRITE, &ncid);
-  HandleNetCDFErrors(retval);
+  retval = nc_open(FileNameNC.c_str(), NC_NOWRITE, &ncid);   HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(ncid,VarNameNC.c_str(),&varid_f);     HandleNetCDFErrors(retval);
+
+  // -------------------------------
+  // find "_FillValue" of forcing data
+  // -------------------------------
+  double fillval;
+  retval = nc_inq_att(ncid,varid_f,"_FillValue",&att_type,&att_len);
+  if(retval == NC_ENOTATT) {
+    // if not found, set to NETCDF_BLANK_VALUE
+    fillval = NETCDF_BLANK_VALUE;
+  }
+  else
+  {
+    HandleNetCDFErrors(retval);
+    retval = nc_get_att_double(ncid,varid_f,"_FillValue",&fillval);       HandleNetCDFErrors(retval);// read attribute value
+  }
 
   // -------------------------------
   // (2) get dimension lengths
@@ -1343,7 +1358,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
 
 
-  // if data are period ending need to shift by data interval
+  // if data are period ending, need to shift by data interval
   if (shift_to_per_ending) {
     start_day += tstep;
     int leap   = 0;
@@ -1456,7 +1471,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
         retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp1D[0]);
         HandleNetCDFErrors(retval);
         break;
-      }
+    }
     if (Options.noisy) {
       cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - none"<<endl;
       printf("  Dim of chunk read: dim1 = %i \n",dim1);
@@ -1479,8 +1494,8 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   double *aVal;
   aVal = NULL;
   aVal =  new double [ntime];
-  for (int it=0; it<ntime; it++) {                   // loop over time points in buffer
-      aVal[it]=NETCDF_BLANK_VALUE;                   // initialize
+  for (int it=0; it<ntime; it++) {               // loop over time points in buffer
+      aVal[it]=RAV_BLANK_DATA;                   // initialize
   }
 
   // -------------------------------
@@ -1492,8 +1507,10 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     // correct location in aVec data storage (see step 9)
 
     for (int it=0; it<ntime; it++){                     // loop over time points read
-      for (int ic=0; ic<1; ic++){                       // loop over stations
-        aVal[it] = LinTrans_a * aTmp2D[ic][it] + LinTrans_b;
+      for(int ic=0; ic<1; ic++) {                       // loop over stations
+        if(aTmp2D[ic][it]!=fillval) {
+          aVal[it] = LinTrans_a * aTmp2D[ic][it] + LinTrans_b;
+        } 
       }
     };
 
@@ -1502,9 +1519,10 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
 
     // no switch of dim_order required because aTmp2D already points to
     // correct location in aVec data storage (see step 9)
-
     for (int it=0; it<ntime; it++){                     // loop over time points read
-      aVal[it] = LinTrans_a * aTmp1D[it] + LinTrans_b;
+      if(aTmp1D[it]!=fillval) {
+        aVal[it] = LinTrans_a * aTmp1D[it] + LinTrans_b;
+      }
     };
   }
 
