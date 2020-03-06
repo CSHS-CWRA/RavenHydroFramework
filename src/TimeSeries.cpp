@@ -1273,11 +1273,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   unit_t[att_len] = '\0';// add string determining character
   unit_t_str = to_string(unit_t);
 
-  //         check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS"
+  //         check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS{+0000}"
   //         -> 3rd-last character needs to be a colon
   if(!IsValidNetCDFTimeString(unit_t_str)) {
     printf("time unit string: %s\n",unit_t_str.c_str());
-    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS' !",BAD_DATA);
+    ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
   }
   
   //     (c) calendar

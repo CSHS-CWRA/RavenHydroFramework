@@ -509,18 +509,18 @@ string TimeZoneToString(const int tz) {
 bool IsValidNetCDFTimeString(const string time_string)
 {
   int att_len=(int)strlen(time_string.c_str());
-  bool badstring(false);
-  if(att_len<15) {return false;}
+  bool isvalid = true;
+  
+  if (att_len<15) {return false;}
   int subtract=0;
 
-  if(!strstr(time_string.substr(att_len-6,2).c_str()," +")) { subtract=5; } //contains '+0000' appendage, shift by 5 chars
+  if (strstr(time_string.substr(att_len-6,2).c_str()," +")) { subtract=5; } //contains '+0000' appendage, shift by 5 chars
+  if(!strstr(time_string.substr(att_len- 3-subtract,1).c_str(),":")) { isvalid=false; } // ->  3rd-last character needs to be a colon
+  if(!strstr(time_string.substr(att_len- 6-subtract,1).c_str(),":")) { isvalid=false; } // ->  6th-last character needs to be a colon
+  if(!strstr(time_string.substr(att_len-12-subtract,1).c_str(),"-")) { isvalid=false; } // -> 12th-last character needs to be a dash
+  if(!strstr(time_string.substr(att_len-15-subtract,1).c_str(),"-")) { isvalid=false; } // -> 15th-last character needs to be a dash
 
-  if(!strstr(time_string.substr(att_len-3-subtract,1).c_str(),":")) { badstring=true; } // first dash in date
-  if(!strstr(time_string.substr(att_len-6-subtract,1).c_str(),":")) { badstring=true; }// -> 6th-last character needs to be a colon
-  if(!strstr(time_string.substr(att_len-12-subtract,1).c_str(),"-")) { badstring=true; }// -> 12th-last character needs to be a dash
-  if(!strstr(time_string.substr(att_len-15-subtract,1).c_str(),"-")) { badstring=true; } // -> 15th-last character needs to be a dash
-
-  return badstring;
+  return isvalid;
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief calculates time difference, in days, between two specified dates
