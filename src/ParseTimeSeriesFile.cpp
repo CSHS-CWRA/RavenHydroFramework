@@ -1297,6 +1297,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
+      ExitGracefullyIf(pSB==NULL,":DZTRResservoirModel: invalid subbasin ID",BAD_DATA);
 
       p->Tokenize(s,Len);
       Smax=s_to_d(s[1]);
@@ -1329,7 +1330,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else if (Len>=2){ for(int i=0;i<12;i++){ Qci[i]=s_to_d(s[1]  ); }}
 
       if(pSB->GetReservoir()!=NULL) {
-        pSB->GetReservoir()->SetDZTRModel(Qmax,Smax,Smi,Sni,Sci,Qmi,Qni,Qci);
+        pSB->GetReservoir()->SetDZTRModel(Qmax,Smax,Sni,Sci,Smi,Qni,Qci,Qmi);
       }
       else {
         ExitGracefully("ParseTimeSeriesFile: subbasin in :DZTRResservoirModel command does not have reservoir",BAD_DATA_WARN);

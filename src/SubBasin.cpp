@@ -686,15 +686,18 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("TIME_LAG"      ))  {_t_lag=value;}
   else if (!label_n.compare("RES_CONSTANT"  ))  {_reservoir_constant=value;}
   else if (!label_n.compare("NUM_RESERVOIRS"))  {_num_reservoirs=(int)(value);}
+  else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
+  else if (!label_n.compare("GAMMA_SCALE"   ))  {_gamma_scale=value;}
+
   else if (!label_n.compare("Q_REFERENCE"   ))  {_Q_ref=value;}
   else if (!label_n.compare("MANNINGS_N"    ))  {_mannings_n=value;}
   else if (!label_n.compare("SLOPE"         ))  {_slope=value;}
+  else if (!label_n.compare("DIFFUSIVITY"   ))  {_diffusivity=value; }
+  else if (!label_n.compare("CELERITY"      ))  {_c_ref=value; }  
+
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
-  else if (!label_n.compare("GAMMA_SHAPE"   ))  {_gamma_shape=value;}
-  else if (!label_n.compare("GAMMA_SCALE"   ))  {_gamma_scale=value;}
-  else if (!label_n.compare("DIFFUSIVITY"   ))  {_diffusivity=value; }
-  else if (!label_n.compare("CELERITY"      ))  {_c_ref=value; }
+  
   else{
     return false;//bad string
   }

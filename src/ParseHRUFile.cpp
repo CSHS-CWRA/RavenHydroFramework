@@ -690,6 +690,10 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
   double max_capacity=0;
   double seep_coeff  =RAV_BLANK_DATA;
   double GW_stage    =0;
+  double Smi[12],Sni[12],Sci[12];
+  double Qmi[12],Qni[12],Qci[12];
+  double Qmax,Smax;
+  bool dztr=false;
 
   curve_function type;
   type=CURVE_POWERLAW;
@@ -971,6 +975,59 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
       }
       p->Tokenize(s,Len); //:EndVaryingStageRelations
     }
+
+    else if(!strcmp(s[0],":DZTRResservoirModel"))
+    {/*:DZTRResservoirModel
+       :MaximumStorage           Vmax(m3)
+       :MaximumChannelCapacity   Qmax(m3/s)
+       :MonthlyMaxStorage        J F M A M J J A S N D  {or single constant value} (m3)
+       :MonthlyNormalStorage     J F M A M J J A S N D  {or constant value} (m3)
+       :MonthlyCriticalStorage   J F M A M J J A S N D  {or constant value} (m3)
+       :MonthlyMaxDischarge      J F M A M J J A S N D  {or constant value} (m3/s)
+       :MonthlyNormalDischarge   J F M A M J J A S N D  {or constant value} (m3/s)
+       :MonthlyCriticalDischarge J F M A M J J A S N D  {or constant value} (m3/s)
+     :EndDZTRReservoirModel
+     */
+     //Dynamically zoned target release model
+      if(Options.noisy) { cout <<"DZTR Reservoir Model"<<endl; }
+
+      dztr=true;
+      
+      p->Tokenize(s,Len);
+      Smax=s_to_d(s[1]);
+
+      p->Tokenize(s,Len);
+      Qmax=s_to_d(s[1]);
+
+      p->Tokenize(s,Len);
+      if    (Len>=13) { for(int i=0;i<12;i++) { Smi[i]=s_to_d(s[i+1]); } }
+      else if(Len>=2) { for(int i=0;i<12;i++) { Smi[i]=s_to_d(s[1]); } }
+
+      p->Tokenize(s,Len);
+      if    (Len>=13) { for(int i=0;i<12;i++) { Sni[i]=s_to_d(s[i+1]); } }
+      else if(Len>=2) { for(int i=0;i<12;i++) { Sni[i]=s_to_d(s[1]); } }
+
+      p->Tokenize(s,Len);
+      if    (Len>=13) { for(int i=0;i<12;i++) { Sci[i]=s_to_d(s[i+1]); } }
+      else if(Len>=2) { for(int i=0;i<12;i++) { Sci[i]=s_to_d(s[1]); } }
+
+      p->Tokenize(s,Len);
+      if    (Len>=13) { for(int i=0;i<12;i++) { Qmi[i]=s_to_d(s[i+1]); } }
+      else if(Len>=2) { for(int i=0;i<12;i++) { Qmi[i]=s_to_d(s[1]); } }
+
+      p->Tokenize(s,Len);
+      if    (Len>=13) { for(int i=0;i<12;i++) { Qni[i]=s_to_d(s[i+1]); } }
+      else if(Len>=2) { for(int i=0;i<12;i++) { Qni[i]=s_to_d(s[1]); } }
+
+      p->Tokenize(s,Len);
+      if    (Len>=13) { for(int i=0;i<12;i++) { Qci[i]=s_to_d(s[i+1]); } }
+      else if(Len>=2) { for(int i=0;i<12;i++) { Qci[i]=s_to_d(s[1]); } }
+      
+      p->Tokenize(s,Len); //:EndDZTR
+
+      break;
+    }
+
     //----------------------------------------------------------------------------------------------
     else if(!strcmp(s[0],":EndReservoir")) {
       if(Options.noisy) { cout << ":EndReservoir" << endl; }
@@ -999,6 +1056,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     ExitGracefullyIf(cwidth   ==DOESNT_EXIST,"CReservoir::Parse: :CrestWidth must be specified for lake-type reservoirs",BAD_DATA_WARN);
     ExitGracefullyIf(lakearea ==DOESNT_EXIST,"CReservoir::Parse: :LakeArea  must be specified for lake-type reservoirs",BAD_DATA_WARN);
     ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
+
     pRes=new CReservoir(name,SBID,weircoeff,cwidth,crestht,lakearea,max_depth);
   }
   else {
@@ -1006,12 +1064,21 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
   }
 
   if(max_capacity!=0) { pRes->SetMaxCapacity(max_capacity); }//overrides estimates (which will typically be too large)
-  if(seep_coeff  !=RAV_BLANK_DATA) { pRes->SetGWParameters(seep_coeff,GW_stage); }
-  if((type==CURVE_LAKE) && (aV!=NULL) &&
-    (aV_ht!=NULL)) {
-    pRes->SetVolumeStageCurve(aV_ht,aV,NV);
-  }//allows user to override prismatic reservoir assumption
 
+  if(seep_coeff  !=RAV_BLANK_DATA) 
+  { 
+    pRes->SetGWParameters(seep_coeff,GW_stage); 
+  }
+
+  if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL)) 
+  {
+    pRes->SetVolumeStageCurve(aV_ht,aV,NV);
+  }//allows user to override prismatic lake assumption
+
+  if(dztr) {
+    pRes->SetDZTRModel(Qmax,Smax,Sci,Sni,Smi,Qci,Qni,Qmi);
+  }
+  
   for(int i = 0; i < nDates; i++) { delete[] aQQ[i]; }delete[] aQQ;
   delete[] aQ;
   delete[] aQ_ht;

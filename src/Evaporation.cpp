@@ -440,7 +440,7 @@ double CModel::EstimatePET(const force_struct &F,
   }
   case(PET_OUDIN) :
   {
-    PET=max(F.ET_radia/DENSITY_WATER/LH_VAPOR*(F.temp_daily_ave+5.0)/100.0,0.0);
+    PET=max(F.ET_radia/DENSITY_WATER/LH_VAPOR*MM_PER_METER*(F.temp_daily_ave+5.0)/100.0,0.0);
     break;
   }
   case(PET_LINACRE):
