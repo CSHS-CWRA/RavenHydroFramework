@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Radiation.h"
@@ -61,6 +61,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_daily_tmax = NULL;
   CForcingGrid *pGrid_daily_tave = NULL;
   CForcingGrid *pGrid_recharge   = NULL;
+  CForcingGrid *pGrid_precip_temp= NULL;
 
   // see if gridded forcing is read from a NetCDF
   bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
@@ -72,6 +73,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX) ;
   bool temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE) ;
   bool recharge_gridded       = ForcingGridIsInput(F_RECHARGE)       ;
+  bool precip_temp_gridded    = ForcingGridIsInput(F_PRECIP_TEMP)    ;
 
   //Extract data from gauge time series
   for (g=0;g<_nGauges;g++)
@@ -130,6 +132,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
     if(!(recharge_gridded)){
       Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
+    }
+    if(!(precip_temp_gridded)) {
+      Fg[g].precip_temp     =_pGauges[g]->GetForcingValue    (F_TEMP_AVE,nn);
     }
   }
   if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//RFS Emulation cheat
@@ -205,6 +210,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           if(!(recharge_gridded)){
             F.recharge       += wt * Fg[g].recharge;
           }
+          if(!(precip_temp_gridded)) {
+            F.precip_temp    += wt * Fg[g].precip_temp;
+          }
           ref_measurement_ht+=wt*_pGauges[g]->GetMeasurementHt();
         }
       }
@@ -228,18 +236,19 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
       temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE);
       recharge_gridded       = ForcingGridIsInput(F_RECHARGE);
+      precip_temp_gridded    = ForcingGridIsInput(F_PRECIP_TEMP);
 
       // find the correct grid
-      if(pre_gridded)             { pGrid_pre        = GetForcingGrid((F_PRECIP)); }
-      if(rain_gridded)            { pGrid_rain       = GetForcingGrid((F_RAINFALL)); }
-      if(snow_gridded)            { pGrid_snow       = GetForcingGrid((F_SNOWFALL)); }
-      if(pet_gridded)             { pGrid_pet        = GetForcingGrid((F_PET)); }
-      if(temp_ave_gridded)        { pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); }
-      if(temp_daily_min_gridded)  { pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); }
-      if(temp_daily_max_gridded)  { pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); }
-      if(temp_daily_ave_gridded)  { pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); }
-      if(recharge_gridded)        { pGrid_recharge   = GetForcingGrid((F_RECHARGE)); }
-
+      if(pre_gridded)             { pGrid_pre         = GetForcingGrid(F_PRECIP); }
+      if(rain_gridded)            { pGrid_rain        = GetForcingGrid(F_RAINFALL); }
+      if(snow_gridded)            { pGrid_snow        = GetForcingGrid(F_SNOWFALL); }
+      if(pet_gridded)             { pGrid_pet         = GetForcingGrid(F_PET); }
+      if(temp_ave_gridded)        { pGrid_tave        = GetForcingGrid(F_TEMP_AVE); }
+      if(temp_daily_min_gridded)  { pGrid_daily_tmin  = GetForcingGrid(F_TEMP_DAILY_MIN); }
+      if(temp_daily_max_gridded)  { pGrid_daily_tmax  = GetForcingGrid(F_TEMP_DAILY_MAX); }
+      if(temp_daily_ave_gridded)  { pGrid_daily_tave  = GetForcingGrid(F_TEMP_DAILY_AVE); }
+      if(recharge_gridded)        { pGrid_recharge    = GetForcingGrid(F_RECHARGE); }
+      if(precip_temp_gridded)     { pGrid_precip_temp = GetForcingGrid(F_PRECIP_TEMP); }
       // ---------------------
       // (1A) read gridded precip/snowfall/rainfall and populate additional time series
       // ---------------------
@@ -312,12 +321,24 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // ---------------------
       if(recharge_gridded)
       {
-        pGrid_recharge   = GetForcingGrid((F_RECHARGE)); 
+        pGrid_recharge   = GetForcingGrid(F_RECHARGE); 
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         pGrid_recharge-> ReadData(Options,tt.model_time);
 
         F.recharge   = pGrid_recharge->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
+      // ---------------------
+      // (3) read gridded precipitation temperature
+      // ---------------------
+      if(precip_temp_gridded)
+      {
+        pGrid_precip_temp   = GetForcingGrid(F_PRECIP_TEMP);
+        // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
+        pGrid_precip_temp-> ReadData(Options,tt.model_time);
+
+        F.precip_temp   = pGrid_precip_temp->GetWeightedValue(k,tt.model_time,Options.timestep);
+      }
+
 
       //-------------------------------------------------------------------
       //  Temperature Corrections

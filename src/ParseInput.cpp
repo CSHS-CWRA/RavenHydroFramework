@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -26,6 +26,7 @@
 #include "LatAdvection.h"
 #include "PrairieSnow.h"
 #include "ProcessGroup.h"
+#include "HeatConduction.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
@@ -400,6 +401,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":TimeZone"                  )){code=97; }
     else if  (!strcmp(s[0],":WriteInterpolationWeights" )){code=101;}
     else if  (!strcmp(s[0],":CallExternalScript"        )){code=102;}
+    else if  (!strcmp(s[0],":rvl_Filename"              )){code=103;}
   
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510; }
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511; }
@@ -478,6 +480,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Advection"                 )){code=306;}
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
     else if  (!strcmp(s[0],":Mineralization"            )){code=308;}
+    else if  (!strcmp(s[0],":HeatConduction"            )){code=309;}
     //...
     //-------------------WATER MANAGEMENT---------------------
     else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
@@ -1304,6 +1307,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.rve_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rve extension!
       break;
     }
+    case(103):  //--------------------------------------------
+    {/*:rvl_Filename */
+      if(Options.noisy) { cout <<"rvl filename: "<<s[1]<<endl; }
+      Options.rvl_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rve extension!
+      break;
+    }
     case(63):  //--------------------------------------------
     {/*:OutputDirectory */
       if (Options.noisy) {cout <<"Output directory: "<<s[1]<<"/"<<endl;}
@@ -1993,7 +2002,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_ROOT"         )){se_type=SOILEVAP_ROOT;}
       else if (!strcmp(s[1],"SOILEVAP_ROOT_CONSTRAIN")){se_type=SOILEVAP_ROOT_CONSTRAIN;}
       else if (!strcmp(s[1],"SOILEVAP_HBV"          )){se_type=SOILEVAP_HBV;}
-      else if (!strcmp(s[1],"SOILEVAP_HBVPDM"       )){se_type=SOILEVAP_HBVPDM;}
+      else if (!strcmp(s[1],"SOILEVAP_HYPR"         )){se_type=SOILEVAP_HYPR;}
       else if (!strcmp(s[1],"SOILEVAP_UBC"          )){se_type=SOILEVAP_UBC;}
       else if (!strcmp(s[1],"SOILEVAP_CHU"          )){se_type=SOILEVAP_CHU;}
       else if (!strcmp(s[1],"SOILEVAP_GR4J"         )){se_type=SOILEVAP_GR4J;}
@@ -2725,7 +2734,11 @@ bool ParseMainInputFile (CModel     *&pModel,
         if(!strcmp(s[3],"PASSIVE")) { is_passive=true; }
         if(!strcmp(s[3],"TRACER" )) { is_tracer =true; }
       }
-      pModel->GetTransportModel()->AddConstituent(s[1],is_tracer,is_passive);
+      constit_type ctype;
+      if (is_tracer){ctype=TRACER;}
+      else          {ctype=AQUEOUS;}
+      if(!strcmp(s[2],"TEMPERATURE")) { ctype=ENTHALPY; }
+      pModel->GetTransportModel()->AddConstituent(s[1],ctype,is_passive);
 
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
@@ -2733,6 +2746,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
 
+      if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
+        int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
+        pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_AIR_TEMP);
+      }
       break;
     }
 
@@ -2867,6 +2884,22 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       pMover=new CmvTransformation(s[2],s[3],t_type,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case(309):  //----------------------------------------------
+    {/*Heat Conduction
+     :HeatConduction RAVEN_DEFAULT MULTIPLE MULTIPLE */
+      if(Options.noisy) { cout <<"Heat Conduction Process"<<endl; }
+      if(Len<4) { ImproperFormatWarning(":HeatConduction",p,Options.noisy); break; }
+
+      if(!strcmp(s[1],"RAVEN_DEFAULT")) {  }
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized heat conduction process representation",BAD_DATA_WARN); break;
+      }
+
+      pMover=new CmvHeatConduction(pModel->GetTransportModel());
+      AddProcess(pModel,pMover,pProcGroup);
+
       break;
     }
     case(400):  //----------------------------------------------

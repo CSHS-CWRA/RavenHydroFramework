@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
@@ -203,6 +203,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.rvv_filename=""; //GWMIGRATE - TO REMOVE
   Options.rvs_filename=""; //GWMIGRATE - TO REMOVE
   Options.rve_filename="";
+  Options.rvl_filename="";
   Options.output_dir  ="";
   Options.main_output_dir="";
   Options.silent=false;
@@ -226,7 +227,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvd_filename=argument+".rvd"; //GWMIGRATE - TO REMOVE
         Options.rvv_filename=argument+".rvv"; //GWMIGRATE - TO REMOVE
         Options.rvs_filename=argument+".rvs"; //GWMIGRATE - TO REMOVE
-        Options.rve_filename=argument+",rve";
+        Options.rve_filename=argument+".rve";
+        Options.rvl_filename=argument+".rvl";
         argument="";
         mode=10;
       }
@@ -236,19 +238,20 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==4){Options.rvc_filename=argument; argument="";}
       else if (mode==5){Options.output_dir  =argument; argument="";}
       else if (mode==6){Options.run_name    =argument; argument="";}
-      else if (mode==7){Options.rve_filename=argument; argument=""; }
+      else if (mode==7){Options.rve_filename=argument; argument="";}
       else if (mode==8){Options.rvg_filename=argument; argument="";}
-
-      if      (word=="-p"){mode=1;}
-      else if (word=="-h"){mode=2;}
-      else if (word=="-t"){mode=3;}
-      else if (word=="-c"){mode=4;}
-      else if (word=="-o"){mode=5;}
+      else if (mode==9){Options.rvl_filename=argument; argument="";}
+      if      (word=="-p"){mode=1; }
+      else if (word=="-h"){mode=2; }
+      else if (word=="-t"){mode=3; }
+      else if (word=="-c"){mode=4; }
+      else if (word=="-o"){mode=5; }
       else if (word=="-s"){Options.silent=true; mode=10;}
       else if (word=="-n"){Options.noisy=true;  mode=10;}
-      else if (word=="-r"){mode=6;}
+      else if (word=="-r"){mode=6; }
       else if (word=="-e"){mode=7; }
       else if (word=="-g"){mode=8; }	  
+      else if (word=="-l"){mode=9; }
     }
     else{
       if (argument==""){argument+=word;}
@@ -265,8 +268,9 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvg_filename="nomodel.rvg";
     Options.rvd_filename="nomodel.rvd"; //GWMIGRATE - TO REMOVE
     Options.rvv_filename="nomodel.rvv"; //GWMIGRATE - TO REMOVE
-    Options.rve_filename="nomodel.rvs"; //GWMIGRATE - TO REMOVE
+    Options.rvs_filename="nomodel.rvs"; //GWMIGRATE - TO REMOVE
     Options.rve_filename="nomodel.rve";
+    Options.rvl_filename="nomodel.rvl";
   }
 
   // make sure that output dir has trailing '/' if not empty

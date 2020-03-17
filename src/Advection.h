@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvAdvection
@@ -22,12 +22,7 @@ class CmvAdvection: public CHydroProcessABC
 private:/*------------------------------------------------------*/
   const CTransportModel* pTransModel;
 
-  int constit_ind;              ///< index of constituent being advected
-
-
-  int  nSources;                ///< number of Dirichlet source compartments
-  int *iSource;                 ///< state variable indices of Dirichlet source compartments [size: nSources]
-  double *aSourceConcs;         ///< array of source concentrations for Dirichlet sources [size: nSources]
+  int     _constit_ind;         ///< index of constituent being advected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

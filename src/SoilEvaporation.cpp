@@ -50,7 +50,7 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
     iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
     iFrom[1]=pModel->GetStateVarIndex(AET);        iTo[1]=iFrom[1];
   }
-  else if (type==SOILEVAP_HBVPDM)
+  else if (type==SOILEVAP_HYPR)
   {
     CHydroProcessABC::DynamicSpecifyConnections(3);
 
@@ -155,7 +155,7 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
     aP[4]="FOREST_COVERAGE";   aPC[4]=CLASS_LANDUSE; //JRCFLAG
   }
-  else if(type==SOILEVAP_HBVPDM)
+  else if(type==SOILEVAP_HYPR)
   {
     nP=9;
     aP[0]="PET_CORRECTION";       aPC[0]=CLASS_SOIL;
@@ -163,7 +163,7 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     aP[2]="FIELD_CAPACITY";       aPC[2]=CLASS_SOIL;
     aP[3]="SAT_WILT";             aPC[3]=CLASS_SOIL;
     aP[4]="FOREST_COVERAGE";      aPC[4]=CLASS_LANDUSE;
-    aP[5]="MAX_PONDED_AREA_FRAC"; aPC[5]=CLASS_LANDUSE;
+    aP[5]="MAX_DEP_AREA_FRAC";    aPC[5]=CLASS_LANDUSE;
     aP[6]="PONDED_EXP";           aPC[6]=CLASS_LANDUSE;
     aP[7]="DEP_MAX";              aPC[7]=CLASS_LANDUSE;
     aP[8]="PDMROF_B";             aPC[8]=CLASS_LANDUSE;
@@ -221,7 +221,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
     aLev[0]=0;     aLev[1]=DOESNT_EXIST;
   }
-  else if(se_type==SOILEVAP_HBVPDM) 
+  else if(se_type==SOILEVAP_HYPR)
   {
     nSV=3;
     aSV[0]=SOIL;  aSV[1]=ATMOSPHERE;      aSV[2]=DEPRESSION;
@@ -316,6 +316,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   PET=pHRU->GetSoilProps(0)->PET_correction*PET; //corrected PET
 
   if (!Options.suppressCompetitiveET){
+    //competitive ET - reduce PET by AET 
     PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
     PET=max(PET,0.0);
   }
@@ -359,7 +360,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     PETused=rates[0];
   }
   //------------------------------------------------------------
-  else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV)  || (type==SOILEVAP_HBVPDM))
+  else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV)  || (type==SOILEVAP_HYPR))
   {
     double stor,tens_stor; //[mm]
 
@@ -369,7 +370,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     rates[0]  = PET * min(stor/tens_stor,1.0);  //evaporation rate [mm/d]
 
     //correction for snow in non-forested areas
-    if ((type==SOILEVAP_HBV) || (type==SOILEVAP_HBVPDM))
+    if ((type==SOILEVAP_HBV) || (type==SOILEVAP_HYPR))
     {
       int iSnow=pModel->GetStateVarIndex(SNOW);
       double Fc=pHRU->GetSurfaceProps()->forest_coverage;
@@ -377,8 +378,8 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     }
     PETused=rates[0];
 
-    //SOILEVAP_HBV developed by Mohamed Ahmed and Amin Elshorbaghy at Univ. Saskatchewan for HBV-PDMROF model
-    if (type==SOILEVAP_HBVPDM) 
+    //SOILEVAP_HYPR developed by Mohamed Ahmed and Amin Elshorbaghy at Univ. Saskatchewan for HYPR model
+    if (type==SOILEVAP_HYPR)
     {
       int iDep=pModel->GetStateVarIndex(DEPRESSION);
       double maxPondedAreaFrac=pHRU->GetSurfaceProps()->max_dep_area_frac;
@@ -386,12 +387,17 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       double dep_max          =pHRU->GetSurfaceProps()->dep_max;
       double b                =pHRU->GetSurfaceProps()->PDMROF_b;
 
-      double maxPDMstor       =(b+1)*dep_max; //JRC: as calculated in PDM equations
+      //double maxPDMstor       =(b*0+1)*dep_max; //JRC: as calculated in PDM equations //JRC - HYPR uses dep_max, not (b+1)*dep max
+      //SMAX = 1.0 / (B + 1.0) * (B * CMIN + CMAX);
 
-      double area_frac=maxPondedAreaFrac*pow(max(state_vars[iDep]/maxPDMstor,1.0),n);
+      double area_ponded=maxPondedAreaFrac*pow(min(state_vars[iDep]/dep_max,1.0),n);
 
-      rates[0]*=(1.0-area_frac);
-      rates[1] = PET=pHRU->GetForcingFunctions()->OW_PET*area_frac;
+      g_debug_vars[0]=area_ponded;
+      g_debug_vars[1]=maxPondedAreaFrac;
+      
+      rates[0]=(1.0-area_ponded)*rates[0]; //correct AET              //SOIL->ATMOS
+      rates[1]=(    area_ponded)*pHRU->GetForcingFunctions()->OW_PET; //DEPRESSION->ATMOS
+
       PETused=(rates[0]+rates[1]);
     }
     
@@ -509,7 +515,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   else if (type==SOILEVAP_ROOT)
   {
     const  veg_var_struct *pVegVar;
-    double stor_u,stor_l;                                               //soil layer storage [mm]
+    double stor_u,stor_l;                       //soil layer storage [mm]
     double tens_stor_u,tens_stor_l;             //maximum layer tension storage [mm]
     double rootfrac_u,rootfrac_l;               //relative root fraction soil layers [unitless]
 

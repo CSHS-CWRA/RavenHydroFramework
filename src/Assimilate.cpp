@@ -41,11 +41,12 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   //assimilates all data after assimilation date 
   if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0)){return;}
   
+  int    p,pdown;
   double t_observationsOFF=ALMOST_INF;//Only for debugging
   double Qobs,Qmod;
-  int p,pdown;
-  double alpha =CGlobalParams::GetParams()->assimilation_fact; //for now: 0->no assimilation 1->full override
+  double alpha     =CGlobalParams::GetParams()->assimilation_fact; //for now: 0->no assimilation 1->full override
   double time_fact =CGlobalParams::GetParams()->assim_time_decay; 
+
   if(alpha>0.0) { alpha = exp(4.5*(alpha-1.0)); } //makes range natural, i.e., alph~0.5 means result is halfway between unassimilated modeled and observed
     
   for(int pp=_nSubBasins-1; pp>=0; pp--)//downstream to upstream
@@ -58,15 +59,18 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
       {
         Qobs = _pObservedTS[i]->GetAvgValue(tt.model_time+Options.timestep,Options.timestep);//correction for period ending storage of hydrograph
         Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-        if((Qmod>=0.0) && (Qobs!=RAV_BLANK_DATA) &&(tt.model_time<t_observationsOFF)){
-          _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);
-          _aDAlength[p]=0.0;
+        if((Qobs!=RAV_BLANK_DATA) && (tt.model_time<t_observationsOFF)) 
+        {
+          if(Qmod>=0.0) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);}
+          else          { _aDAscale[p]=1.0;                         }
+          _aDAlength   [p]=0.0;
           _aDAtimesince[p]=0.0;
         }
-        else { //found a blank or zero flow value -scaling extinguishes over time
+        else 
+        { //found a blank or zero flow value -scaling extinguishes over time
           _aDAtimesince[p]+=Options.timestep;
-          _aDAscale[p]=1.0+( _aDAscale[p]-1.0)*exp(-time_fact*_aDAtimesince[p]); //move the scale towards 1.0
-          _aDAlength[p]=0.0;
+          _aDAscale    [p]=1.0+( _aDAscale[p]-1.0)*exp(-time_fact*_aDAtimesince[p]); //move the scale towards 1.0
+          _aDAlength   [p]=0.0;
         }
         ObsExists=true;
       }
@@ -87,6 +91,8 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
     }
   }// end downstream to upstream
 
+  //Calculate artificial mass added/removed by data assimilation process
+  //--------------------------------------------------------------------------------
   double mass_added=0;
   double scalefact=1.0;
   double distfact=CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] //TMP DEBUG

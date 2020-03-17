@@ -21,32 +21,38 @@ CmvAdvection::CmvAdvection(string constit_name,
   :CHydroProcessABC(ADVECTION)
 {
   pTransModel=pTransportModel;
-  constit_ind=pTransModel->GetConstituentIndex(constit_name);
+  _constit_ind=pTransModel->GetConstituentIndex(constit_name);
 
   int nAdvConnections=pTransModel->GetNumAdvConnections();
 
-  CHydroProcessABC::DynamicSpecifyConnections(3*nAdvConnections+1);
+  CHydroProcessABC::DynamicSpecifyConnections(3*nAdvConnections+1);//+2 once GW added
 
   for (int q=0;q<nAdvConnections;q++) //for regular advection
   {
-    iFrom[q]=pTransModel->GetFromIndex(constit_ind,q);
-    iTo  [q]=pTransModel->GetToIndex  (constit_ind,q);
+    iFrom[q]=pTransModel->GetFromIndex(_constit_ind,q);
+    iTo  [q]=pTransModel->GetToIndex  (_constit_ind,q);
   }
   for (int q=0;q<nAdvConnections;q++)//for Dirichlet/Neumann source correction (from)
   {
-    iFrom[nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,constit_ind);
+    iFrom[nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     iTo  [nAdvConnections+q]=iFrom[q];
   }
   for (int q=0;q<nAdvConnections;q++)//for Dirichlet source correction (to)
   {
-    iFrom[2*nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,constit_ind);
+    iFrom[2*nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     iTo  [2*nAdvConnections+q]=iTo[q];
   }
   //advection into surface water
-  int iSW=pModel->GetStateVarIndex(SURFACE_WATER,0);
-  int   m=pTransModel->GetLayerIndex(constit_ind,iSW);
+  int iSW=pModel->GetStateVarIndex(SURFACE_WATER);
+  int   m=pTransModel->GetLayerIndex(_constit_ind,iSW);
   iFrom[3*nAdvConnections]=pModel->GetStateVarIndex(CONSTITUENT,m);
   iTo  [3*nAdvConnections]=pModel->GetStateVarIndex(CONSTITUENT_SW,0);
+  //advection into groundwater
+  //int iGW=pModel->GetStateVarIndex(GROUNDWATER);
+  //int   m=pTransModel->GetLayerIndex(constit_ind,iGW);
+  //iFrom[3*nAdvConnections+1]=pModel->GetStateVarIndex(CONSTITUENT,m);
+  //iTo  [3*nAdvConnections+1]=pModel->GetStateVarIndex(CONSTITUENT_GW,0);
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -57,7 +63,11 @@ CmvAdvection::~CmvAdvection(){}
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes Advection object
 //
-void   CmvAdvection::Initialize(){}
+void   CmvAdvection::Initialize()
+{
+  ExitGracefullyIf(pModel->GetOptStruct()->sol_method!=ORDERED_SERIES,
+    "CmvAdvection:Initalize: Advection only works with ordered series solution approach",BAD_DATA);
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
@@ -68,7 +78,7 @@ void   CmvAdvection::Initialize(){}
 //
 void CmvAdvection::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) const
 {
-  nP=0;
+  nP=0; //All parameters are externally determined
 }
 
 //////////////////////////////////////////////////////////////////
@@ -108,18 +118,16 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   double mass,vol,Cs;
   double Rf;                 //retardation factor
   double sv[MAX_STATE_VARS]; //state variable history
-
+  
   double tstep=Options.timestep;
   int    nAdvConnections=pTransModel->GetNumAdvConnections();
+  bool   isEnthalpy=(pTransModel->GetConstituent(_constit_ind)->type==ENTHALPY);
   int    k=pHRU->GetGlobalIndex();
-  static double    *Q=NULL; 
 
+  static double    *Q=NULL; 
   if(Q==NULL){
     Q=new double [nAdvConnections]; // only done once at start of simulation for speed 
   }
-
-  ExitGracefullyIf(Options.sol_method!=ORDERED_SERIES,
-                   "CmvAdvection: Advection only works with ordered series solution approach",BAD_DATA);// \todo [re-org] Should go in initialize
 
   // copy all state variables into array
   memcpy(sv/*dest*/,state_vars/*src*/,sizeof(double)*(pModel->GetNumStateVars()));
@@ -149,11 +157,11 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     Rf=1.0;
     //Rf=pTransModel->GetRetardationFactor(constit_ind,pHRU,iFromWater,iToWater);
 
-    //Advection rate calculation rates[q]=dm/dt=Q*C
+    //Advection rate calculation rates[q]=dm/dt=Q*C or dE/dt=Q*h
     mass=0;vol=1;
     if      (Q[q]>0)
     {
-      mass=sv[iFrom[q]];   //[mg/m2]
+      mass=sv[iFrom[q]];   //[mg/m2] or [MJ/m2]
       vol =sv[iFromWater]; //[mm]
     }
     else if (Q[q]<0)
@@ -162,20 +170,32 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       vol =sv[iToWater];
     }
     if (vol>1e-6){//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
-      rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d]
-      if (mass<-1e-9){ ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
-      if (fabs(rates[q])>mass/tstep){rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep;}//emptying out compartment
+      rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d] or [MJ/m2/d]
+      if(!isEnthalpy) { //negative enthalpy/temperature allowed
+        if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
+        if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
+      }
     }
 
     //special consideration - atmospheric precip can have negative storage but still specified concentration
     if ((pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) &&
-        (pTransModel->IsDirichlet(iFromWater,constit_ind,k,tt,Cs))){
+        (pTransModel->IsDirichlet(iFromWater,_constit_ind,k,tt,Cs)))
+    {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
+
+      if(isEnthalpy) {
+        if (Cs==DIRICHLET_AIR_TEMP) { //Special precip temperature condition
+          double Tair    =pHRU->GetForcingFunctions()->temp_ave;
+          double snowfrac=pHRU->GetForcingFunctions()->snow_frac;
+          Cs=ConvertTemperatureToVolumetricEnthalpy(Tair,snowfrac)/MM_PER_METER; //[C]->[MJ/m3]->[MJ/mm-m2]
+        }
+        else {
+          double pctFroz=0.0; //TMP DEBUG -assumes liquid water for flows (reasonable)
+          Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
+        }
+      }
       rates[q]=Q[q]*Cs;
     }
-
-    //double Ctmp1 = sv[iTo  [q]  ]/sv[iToWater  ]/LITER_PER_M3*MM_PER_METER ;
-    //double mtmp1=sv[iTo  [q]  ]/LITER_PER_M3*MM_PER_METER ; double vtmp1=sv[iToWater  ];
 
     //update local mass and volume history
     sv[iFromWater]-=Q[q]*tstep;
@@ -183,24 +203,34 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     sv[iFrom[q]  ]-=rates[q]*tstep;
     sv[iTo  [q]  ]+=rates[q]*tstep;
 
-    //Correct for Dirichlet conditions
+    //Correct for Dirichlet conditions - update/override source mass and update MB tracking [CONSTITUENT_SRC]
+    // two cases: contributor (iFromWater) or recipient (iToWater) water compartment is Dirichlet condition
     //----------------------------------------------------------------------
-    if (pTransModel->IsDirichlet(iFromWater,constit_ind,k,tt,Cs))
+    double dirichlet_mass;
+    if (pTransModel->IsDirichlet(iFromWater,_constit_ind,k,tt,Cs))
     {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
-      mass=sv[iFrom[q]];
-      vol =sv[iFromWater];
-      rates[nAdvConnections+q]+=(Cs*vol-mass)/Options.timestep;
-      sv[iFrom[q]]=Cs*vol;
+      if(isEnthalpy) {
+        double pctfroz=0;
+        Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctfroz)/MM_PER_METER; //[C]->[MJ/m3]->[MJ/mm-m2]
+      }
+      mass          =sv[iFrom[q]];
+      dirichlet_mass=Cs*sv[iFromWater]; //Cs*V 
+      rates[nAdvConnections+q]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC
+      sv[iFrom[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 
-    if (pTransModel->IsDirichlet(iToWater,constit_ind,k,tt,Cs))
+    if (pTransModel->IsDirichlet(iToWater,_constit_ind,k,tt,Cs))
     {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
-      mass=sv[iTo[q]];
-      vol =sv[iToWater];
-      rates[2*nAdvConnections+q]+=(Cs*vol-mass)/Options.timestep;
-      sv[iTo[q]]=Cs*vol;
+      if(isEnthalpy) {
+        double pctfroz=0;
+        Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctfroz)/MM_PER_METER; //[C]->[MJ/m3]->[MJ/mm-m2]
+      }
+      mass          =sv[iTo[q]];
+      dirichlet_mass=Cs*sv[iToWater]; //C*V
+      rates[2*nAdvConnections+q]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC
+      sv[iTo[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 
     // \todo [funct]: handle dumping into surface water
@@ -219,6 +249,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     int iFromWater = pTransModel->GetFromWaterIndex(q);
     rates[nAdvConnections + q] += pTransModel->GetSpecifiedMassFlux(iToWater, constit_ind, k, tt); //[mg/m2/d]
   }*/
+
+  //delete static memory during last timestep
   if(tt.model_time>=Options.duration-Options.timestep/2)
   {
     delete [] Q;

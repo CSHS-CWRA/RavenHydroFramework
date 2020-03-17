@@ -401,7 +401,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :DimNamesNC command",BAD_DATA);
   }
   if(_aElevation==NULL) {
-    string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations command is present.";
+    string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations or :StationElevationsByIdx command is present.";
     WriteAdvisory(warning,Options.noisy);
   }
 

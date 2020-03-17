@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -931,6 +931,7 @@ force_struct CModel::GetAverageForcings() const
       Fave.potential_melt +=area_wt*pF_hru->potential_melt;
 
       Fave.recharge       +=area_wt*pF_hru->recharge;
+      Fave.precip_temp    +=area_wt*pF_hru->precip_temp;
 
       Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
     }
@@ -1559,7 +1560,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
   for (int j = 0; j<_nClassChanges; j++)
   {
     if((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
-      (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
+       (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
     {//change happens this time step
 
       int kk   =_pClassChanges[j]->HRU_groupID;
@@ -1567,17 +1568,17 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
       {
         k=_pHRUGroups[kk]->GetHRU(k_loc)->GetGlobalIndex();
 
-        if(_pClassChanges[j]->tclass == CLASS_LANDUSE)
+        if      (_pClassChanges[j]->tclass == CLASS_LANDUSE)
         {
           CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeLandUse(lult_class);
         }
-        else if(_pClassChanges[j]->tclass == CLASS_VEGETATION)
+        else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
         {
           CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeVegetation(veg_class);
         }
-        else if(_pClassChanges[j]->tclass == CLASS_HRUTYPE)
+        else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE)
         {
           HRU_type typ=StringToHRUType(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeHRUType(typ);

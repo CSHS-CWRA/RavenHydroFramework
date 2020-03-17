@@ -8,19 +8,26 @@
 #include "RavenInclude.h"
 #include "Model.h"
 
+enum constit_type {
+  AQUEOUS,
+  ENTHALPY,
+  ISOTOPE,
+  TRACER
+};
 struct constituent
 {
   string   name;          ///< constituent name (e.g., "Nitrogen")
 
-  bool     is_tracer;     ///< true if tracer (actually unitless)
-  bool     can_evaporate; ///< true if constituent can be trasported through evaporation
+  constit_type type;      ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
+  bool     can_evaporate; ///< true if constituent can be transported through evaporation
   bool     is_passive;    ///< doesn't transport via advection
+
 
   double   decay_rate;    ///< independent linear decay rate of constituent (happens everywhere; not environmentally mediated) [1/d]
 
-  double   cumul_input;   ///< cumulative mass lost from system [mg]
-  double   cumul_output;  ///< cumulative mass lost from system [mg]
-  double   initial_mass;  ///< initial mass in system [mg]
+  double   cumul_input;   ///< cumulative mass [mg] or enthalpy [MJ] lost from system  
+  double   cumul_output;  ///< cumulative mass [mg] or enthalpy [MJ] lost from system 
+  double   initial_mass;  ///< initial mass [mg] or enthalpy [MJ] in system 
 
   ofstream OUTPUT;        ///< for concentrations.csv
   ofstream POLLUT;        ///< for pollutograph.csv
@@ -32,9 +39,9 @@ struct constit_source
   int    constit_index;   ///< constituent index (c)
   int    i_stor;          ///< index of water storage compartment
   int    kk;              ///< index of HRU group to which source is applied (default is all for DOESNT_EXIST)
-  double concentration;   ///< fixed concentration [mg/m2] (or DOESNT_EXIST=-1 if time series should be used)
-  double flux;            ///< fixed flux [mg/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
-  const  CTimeSeries *pTS; ///< time series of fixed concentration or flux (or NULL if fixed should be used)
+  double concentration;   ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] (or DOESNT_EXIST=-1 if time series should be used)
+  double flux;            ///< fixed mass flux [mg/m2/d] or heat flux [MJ/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
+  const  CTimeSeries *pTS; ///< time series of fixed concentration or mass/heat flux (or NULL if fixed should be used)
 };
 struct transport_params
 {
@@ -73,20 +80,20 @@ private:/*------------------------------------------------------*/
   constituent      **_pConstituents;  ///< array of pointers to constituent structures [size: _nConstituents]
   transport_params **_pConstitParams; ///< array of pointers to constituent parameters [size: _nConstituents]
 
-  double ***_aMinHist;                ///< array used for storing routing upstream loading history [mg/d] [size: nSubBasins x _nConstituents x nMinhist(p)]
-  double ***_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] [size: nSubBasins x _nConstituents x nMlathist(p)]
-  double ***_aMout;                   ///< array storing current mass flow at points along channel [mg/d] [size: nSubBasins x _nConstituents x _nSegments(p)]
-  double  **_aMout_last;              ///< array used for storing mass outflow from channel at start of timestep [mg/d] [size: nSubBasins x _nConstituents] 
+  double ***_aMinHist;                ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x _nConstituents x nMinhist(p)]
+  double ***_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins x _nConstituents x nMlathist(p)]
+  double ***_aMout;                   ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nConstituents x _nSegments(p)]
+  double  **_aMout_last;              ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins x _nConstituents] 
 
-  double  **_aMres;                   ///< array used for storing reservoir masses [mg] [size: nSubBasins x _nConstituents]
-  double  **_aMres_last;              ///< array storing reservoir mass [mg] at start of timestep [size: nSubBasins x _nConstituents]
-  double  **_aMout_res;               ///< array storing reservoir mass outflow [mg/d] [size: nSubBasins x _nConstituents]
-  double  **_aMout_res_last;          ///< array storing reservoir mass outflow [mg/d] at start of timestep  [size: nSubBasins x _nConstituents]
+  double  **_aMres;                   ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins x _nConstituents]
+  double  **_aMres_last;              ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins x _nConstituents]
+  double  **_aMout_res;               ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins x _nConstituents]
+  double  **_aMout_res_last;          ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins x _nConstituents]
 
   double  **_aMlat_last;              ///< array storing mass outflow from start of timestep [size: nSubBasins x _nConstituents]
 
-  double  **_channel_storage;         ///< array storing channel storage [mg] [size: nSubBasins x _nConstituents] 
-  double  **_rivulet_storage;         ///< array storing rivulet storage [mg] [size: nSubBasins x _nConstituents] 
+  double  **_channel_storage;         ///< array storing channel storage [mg] or [MJ] [size: nSubBasins x _nConstituents] 
+  double  **_rivulet_storage;         ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins x _nConstituents] 
   
   constit_source **pSources;         ///< array of pointers to constituent sources [size: nSources]
   int              nSources;         ///< number of constituent sources
@@ -152,7 +159,7 @@ public:/*-------------------------------------------------------*/
   double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const;
 
   //Manipulators
-  void   AddConstituent         (string name, bool is_tracer, bool is_passive);
+  void   AddConstituent         (string name, constit_type type, bool is_passive); 
   void   AddDirichletCompartment(const string const_name, const int i_stor, const int kk, const double Cs);
   void   AddDirichletTimeSeries (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
   void   AddInfluxSource        (const string const_name, const int i_stor, const int kk, const double flux);

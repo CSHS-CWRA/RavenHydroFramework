@@ -173,7 +173,7 @@ void   CmvAbstraction::GetRatesOfChange( const double                   *state_v
   //----------------------------------------------------------------------------
   else if(type==ABST_PDMROF)
   { //uses PDMROF algorithm from Mekonnen et al., Towards an improved land surface scheme for prairie landscapes, Journal of Hydrology 511, 2014
-    double b;          //[-] pareto front parameter
+    double b;          //[-] pareto distribution parameter
     double dep_max;    //[mm] maximum depression storage across HRU
     double c_max;      //[mm] maximum local storage capacity in HRU
     double c_star;     //[mm] critical capacity, c*

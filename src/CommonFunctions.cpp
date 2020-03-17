@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  Copyright (c) 2008-2019 the Raven Development Team
+///  Copyright (c) 2008-2020 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -977,6 +977,24 @@ double GetDewPointTemp(const double &e)
   denom=  0.0708 - 0.00421*log(e);
 
   return numer/denom; //[C]
+}
+//////////////////////////////////////////////////////////////////
+/// \brief converts volumetric enthalpy of water/ice only [MJ/m3 water] to temperature
+///
+/// \param hv [in] volumetric enthapy [MJ/m3 water]
+/// \return water temperature [C]
+//
+double ConvertVolumetricEnthalpyToTemperature(const double &hv) 
+{
+  if      (hv>0                       ){return hv/SPH_WATER/DENSITY_WATER;}
+  else if (hv>-LH_FUSION*DENSITY_WATER){return 0.0;}
+  else                                 {return (hv+LH_FUSION*DENSITY_WATER)/SPH_ICE/DENSITY_ICE; }
+}
+double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctfroz) 
+{
+  if      (fabs(T)<REAL_SMALL) { return -pctfroz*LH_FUSION*DENSITY_WATER;}
+  else if (T>0               ) { return T*SPH_WATER*DENSITY_WATER; }
+  else                         { return T*SPH_ICE*DENSITY_ICE-LH_FUSION*DENSITY_WATER;}
 }
 
 //////////////////////////////////////////////////////////////////

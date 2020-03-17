@@ -488,26 +488,30 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
   //-----------------------------------------------------------------
-  else if(type==INF_XINANXIANG) {
-    double a=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_a;
+  else if(type==INF_XINANXIANG) 
+  {
+    // from Jayawardena, AW and MC Zhou A modified spatial soil moisture storage capacity distribution curve for the Xinanjiang model. 
+    // Journal of Hydrology, 227(1-4), p93–113, 2000
+
     double b=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_b;
-    double c=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_shp;
+    double c=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_shp; [-0.5<c<0.5]
     double stor       =state_vars[iTopSoil];
     double tens_stor  =pHRU->GetSoilTensionStorageCapacity(0);
     double max_stor   =pHRU->GetSoilCapacity(0);
-    double infil,sat_excess;
+    double infil,sat_excess,direct;
 
-//    direct=(1.0-Fimp)*rainthru;
+    direct=(1.0-Fimp)*rainthru;
 
     double sat =max(0.0,stor/tens_stor);
     double sat1=max(0.0,stor/(max_stor-tens_stor));
-    if(sat<=0.5-a) { infil=(    pow(0.5-a,1-b)*pow(  sat,b))*(1.0-Fimp)*rainthru; }
-    else           { infil=(1.0-pow(0.5+a,1-b)*pow(1-sat,b))*(1.0-Fimp)*rainthru; }
+    if(sat<=0.5-c) { infil=(    pow(0.5-c,1-b)*pow(  sat,b))*direct; }
+    else           { infil=(1.0-pow(0.5+c,1-b)*pow(1-sat,b))*direct; }
     
-    sat_excess=1.0;//(1.0-pow(1-sat1,n))*(1.0-Fimp)*rainthru;
+    sat_excess=1.0;//(1.0-pow(1-sat1,n))*direct;
 
     ExitGracefully("INF_XINANXIANG",STUB);
     rates[0]=infil;        //PONDED->SOIL
+    rates[1]=rainthru-infil; //PONDED->SW 
   }
 }
 

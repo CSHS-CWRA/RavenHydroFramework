@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -165,6 +165,8 @@ const double  TC_ORGANIC              =0.25;                                    
 const double  TC_DRYS                 =0.275;                                   ///< [W/m/K] Thermal conductivity of dry soil
 const double  TC_AIR                  =0.023;                                   ///< [W/m/K] Thermal conductivity of air
 
+const double  COM_WATER		          =4.58e-10;                                ///< [Pa^-1] Compressiblity of Water
+const double  COM_ICE                 =4.58e-10;                                ///< [Pa^-1] Compressiblity of Ice
 const double  HCP_WATER               =4.187;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Water
 const double  HCP_ICE                 =1.938;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
 const double  HCP_CLAY                =2.380;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Clay
@@ -239,6 +241,7 @@ const double  NOT_NEEDED              =-66666.6;                                
 const double  NOT_NEEDED_AUTO         =-77777.7;                                ///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
 const double  NETCDF_BLANK_VALUE      =-9999.0;
 const double  RAV_BLANK_DATA          =-1.2345;
+const double  DIRICHLET_AIR_TEMP      =-9999;                                   ///< dirichlet concentration flag corresponding to fixed air temperature   
 
 //Decision constants
 const double  HUGE_RESIST             =1e20;                                    ///< [d/mm] essentially infinite resistance
@@ -854,10 +857,10 @@ enum sv_type
   CROP_HEAT_UNITS,         ///< [-] cumulative crop heat units
 
   //Transport variables
-  CONSTITUENT,             ///< [mg/m2] chemical species or tracer
-  CONSTITUENT_SRC,         ///< [mg/m2] chemical species or tracer cumulative source
-  CONSTITUENT_SW,          ///< [mg/m2] chemical species dumped to surface water
-  CONSTITUENT_SINK,        ///< [mg/m2] chemical species or tracer cumulative sink (e.g., decay)
+  CONSTITUENT,             ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-]
+  CONSTITUENT_SRC,         ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] cumulative source
+  CONSTITUENT_SW,          ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] dumped to surface water
+  CONSTITUENT_SINK,        ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] cumulative sink (e.g., decay)
 
   //Lateral exchange
   LATERAL_EXCHANGE,        ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
@@ -876,6 +879,9 @@ enum sv_type
 //
 enum process_type
 {
+  //In RichardsEquation.h
+  RICHARDS,
+
   //In Precipitation.h:
   PRECIPITATION,
 
@@ -918,6 +924,9 @@ enum process_type
 
   //in Decay.h
   DECAY, TRANSFORMATION,
+
+  //in HeatConduction.h
+  HEATCONDUCTION,
 
   //in ProcessGroup.h
   PROCESS_GROUP,
@@ -976,6 +985,7 @@ struct optStruct
   string           rvt_filename;              ///< fully qualified filename of rvt (time series) file
   string           rvc_filename;              ///< fully qualified filename of rvc (initial conditions) file
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
+  string           rvl_filename;              ///< fully qualified filename of rvl (live communications) file
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
   string           rvd_filename;              ///< fully qualified filename of rvd (groundwater discretization) file GWMIGRATE - TO REMOVE!!
   string           rvv_filename;              ///< fully qualified filename of rvv (groundwater-surface water overlap) file GWMIGRATE - TO REMOVE!!
@@ -1130,6 +1140,7 @@ enum forcing_type
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
   F_RECHARGE,
+  F_PRECIP_TEMP,
   F_UNRECOGNIZED
 };
 ////////////////////////////////////////////////////////////////////
@@ -1141,6 +1152,7 @@ struct force_struct
   double precip_daily_ave;    ///< average precipitaiton over day (0:00-24:00) [mm/d]
   double precip_5day;         ///< 5-day precipitation total [mm] (needed for SCS)
   double snow_frac;           ///< fraction of precip that is snow [0..1]
+  double precip_temp;         ///< precipitation temperature [C]
 
   double temp_ave;            ///< average air temp over time step [C]
   double temp_daily_min;      ///< minimum air temperature over day (0:00-24:00)[C]
@@ -1539,6 +1551,8 @@ double CalcAtmosphericConductance(const double &wind_vel,     //[m/d]
                                   const double &vap_rough_ht); //[m]
 double GetDewPointTemp          (const double &Ta,const double &rel_hum);
 double GetDewPointTemp          (const double &E);
+double ConvertVolumetricEnthalpyToTemperature(const double &hv);
+double ConvertTemperatureToVolumetricEnthalpy(const double &T, const double &pctfroz);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp

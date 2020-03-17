@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   Master Transport/Tracer class
   coordinates information about constituent storage
@@ -164,7 +164,7 @@ string CTransportModel::GetConstituentName(const int m) const
   m_to_cj(m,c,j);
   sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
   int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
-
+  // TMP DEBUG - if ENTHALPY, use " of " instead of " in "
   return _pConstituents[c]->name+" in "+CStateVariable::GetStateVarLongName(typ,ind);
 }
 //////////////////////////////////////////////////////////////////
@@ -446,7 +446,6 @@ double CTransportModel::GetDecayCoefficient(const int c, const CHydroUnit *pHRU,
   sv_type storType;
   double decay_coeff = GetConstituentParams(c)->decay_coeff;
 
-
   storType=pModel->GetStateVarType(iStorWater);
 
   //add special decay_coefficients from other processes
@@ -509,18 +508,21 @@ double CTransportModel::GetStoichioCoefficient(const int c, const int c2, const 
 /// \brief adds new transportable constituent to model
 /// \note adds corresponding state variables to model
 /// \param name [in] name of constituent
-/// \param is_tracer [in] boolean - true if this is a tracer
+/// \param type [in] constit_type - type of constituent (mass/energy/tracer)
 //
-void   CTransportModel::AddConstituent(string name, bool is_tracer,bool is_passive)
+void   CTransportModel::AddConstituent(string name, constit_type typ,bool is_passive)
 {
   constituent *pConstit=new constituent;
-
+  
   //Initialize constituent members
   pConstit->name=name;
-  pConstit->is_tracer=is_tracer;
+  pConstit->type=typ;
   pConstit->can_evaporate=false; //default behaviour - evaporation impossible for most contaminants
-  if (is_tracer){
+  if (pConstit->type==TRACER){
     pConstit->can_evaporate=true;
+  }
+  if(pConstit->type==ENTHALPY) {
+    pConstit->can_evaporate=true; //TMP DEBUG -to prevent accumulation of energy in soil/canopy stores during evaporation. 
   }
   pConstit->is_passive=false;
   pConstit->initial_mass=0;
@@ -786,22 +788,17 @@ void   CTransportModel::CalculateLateralConnections()
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
 /// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
-/// \param Cs [in] Dirichlet source concentration [mg/m2]
+/// \param Cs [in] Dirichlet source concentration [mg/L] or temperature [C]
 //
 void   CTransportModel::AddDirichletCompartment(const string const_name, const int i_stor, const int kk, const double Cs)
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
 
-  pSource->constit_index=DOESNT_EXIST;
-  for (int c=0; c<_nConstituents;c++){
-    if (StringToUppercase(const_name)==StringToUppercase(_pConstituents[c]->name)){
-      pSource->constit_index =c;
-    }
-  }
-  pSource->dirichlet    =true;
+  pSource->constit_index=GetConstituentIndex(const_name);
   pSource->concentration=Cs;
   pSource->flux         =0.0;
+  pSource->dirichlet    =true;
   pSource->i_stor       =i_stor;
   pSource->kk           =kk;
   pSource->pTS          =NULL;
@@ -819,18 +816,14 @@ void   CTransportModel::AddDirichletCompartment(const string const_name, const i
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
 /// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
-/// \param pTS [in] Time series of Dirichlet source concentration [mg/m2]
+/// \param pTS [in] Time series of Dirichlet source concentration [mg/l] or temperature [degC]
 //
 void   CTransportModel::AddDirichletTimeSeries(const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS)
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
-  pSource->constit_index=DOESNT_EXIST;
-  for (int c=0; c<_nConstituents;c++){
-    if (StringToUppercase(const_name)==StringToUppercase(_pConstituents[c]->name)){
-      pSource->constit_index =c;
-    }
-  }
+
+  pSource->constit_index=GetConstituentIndex(const_name);
   pSource->dirichlet    =true;
   pSource->concentration=DOESNT_EXIST;
   pSource->flux         =0.0;
@@ -852,19 +845,14 @@ void   CTransportModel::AddDirichletTimeSeries(const string const_name, const in
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
 /// \param kk [in] HRU group index (or DOESNT_EXIST if this applies to all HRUs)
-/// \param flux [in] specified fixed mass influx rate [mg/m2/d]
+/// \param flux [in] specified fixed mass influx rate [mg/m2/d] or energy influx rate [MJ/m2/d]
 //
 void   CTransportModel::AddInfluxSource(const string const_name, const int i_stor, const int kk, const double flux)
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
 
-  pSource->constit_index=DOESNT_EXIST;
-  for (int c=0; c<_nConstituents;c++){
-    if (StringToUppercase(const_name)==StringToUppercase(_pConstituents[c]->name)){
-      pSource->constit_index =c;
-    }
-  }
+  pSource->constit_index=GetConstituentIndex(const_name);
   pSource->dirichlet    =false;
   pSource->concentration=0.0;
   pSource->flux         =flux;
@@ -881,22 +869,18 @@ void   CTransportModel::AddInfluxSource(const string const_name, const int i_sto
   pLast=pSource;//so source is not deleted upon leaving this routine
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adds influx (Neumann) source source time series
+/// \brief adds influx (Neumann) source time series
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
 /// \param kk [in] HRU group index (or DOESNT_EXIST if this applies to all HRUs)
-/// \param pTS [in] Time series of Dirichlet source flux rate [mg/m2/d]
+/// \param pTS [in] Time series of Neumann source flux rate [mg/m2/d] or [MJ/m2/d]
 //
 void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS)
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
-  pSource->constit_index=DOESNT_EXIST;
-  for (int c=0; c<_nConstituents;c++){
-    if (StringToUppercase(const_name)==StringToUppercase(_pConstituents[c]->name)){
-      pSource->constit_index =c;
-    }
-  }
+
+  pSource->constit_index=GetConstituentIndex(const_name);
   pSource->dirichlet    =false;
   pSource->concentration=0.0;
   pSource->flux         =DOESNT_EXIST;
@@ -918,20 +902,19 @@ void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i
 //
 void   CTransportModel::SetGlobalParameter(const string const_name,const string param_name,const double &value, bool noisy)
 {
-  int constit_ind=DOESNT_EXIST;
-  for (int c=0; c<_nConstituents;c++){
-    if (StringToUppercase(const_name)==StringToUppercase(_pConstituents[c]->name)){
-      constit_ind=c;
-    }
-  }
+  int constit_ind=GetConstituentIndex(const_name);
   if(constit_ind==DOESNT_EXIST){
     WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized constituent name",noisy);
   }
-
-  if(StringToUppercase(param_name)=="DECAY_COEFF"){
+  
+  string ustr=StringToUppercase(param_name);
+  if(ustr=="DECAY_COEFF"){
     _pConstitParams[constit_ind]->decay_coeff=value;
     ExitGracefullyIf(value<0.0," CTransportModel::SetGlobalParameter: decay coefficient cannot be negative",BAD_DATA_WARN);
   }
+  //else if (ustr=="OTHER PARAM"){
+  //...
+  //}
   else{
     WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized parameter name",noisy);
   }
@@ -954,7 +937,7 @@ void CTransportModel::Initialize()
       int m=c*_nWaterCompartments+ii;
       int i=pModel->GetStateVarIndex(CONSTITUENT,m);
 
-      // zero out initial mass in all storage units with zero volume (to avoid absurdly high concentrations)
+      // zero out initial mass in all storage units with zero volume (to avoid absurdly high concentrations/temperatures)
       double watstor;
       int i_stor=GetStorWaterIndex(ii);
       for (int k = 0; k < pModel->GetNumHRUs(); k++){
@@ -966,10 +949,7 @@ void CTransportModel::Initialize()
     }
   }
 
-
-
   /// \todo [funct]: calculate initial mass from Dirichlet cells
-
 
   //populate array of source indices
   // \todo [funct] will have to revise to support different sources in different HRUs (e.g., _aSourceIndices[c][i_stor][k])
@@ -1035,7 +1015,7 @@ void CTransportModel::IncrementCumulOutput(const optStruct &Options)
 /// \brief Test for whether a dirichlet condition applies to a certain compartment, place, and time
 /// \note called within solver to track mass balance
 /// \returns true if dirichlet source applies
-/// \returns Cs, source concentration
+/// \returns Cs, source concentration [mg/L] or [C] for enthalpy
 /// \param i_stor [in] storage index of water compartment
 /// \param c [in] constituent index
 /// \param k [in] global HRU index
@@ -1047,26 +1027,26 @@ bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, c
   Cs=0.0;
 
   int i_source=_aSourceIndices[c][i_stor];
-  if (i_source!=DOESNT_EXIST) {
-    if (!pSources[i_source]->dirichlet){return false;}
-    if (pSources[i_source]->kk==DOESNT_EXIST)
+  if (i_source==DOESNT_EXIST) {return false;}
+  if (!pSources[i_source]->dirichlet){return false;}
+  Cs = pSources[i_source]->concentration;
+
+  if (pSources[i_source]->kk==DOESNT_EXIST) 
+  { //Not tied to HRU Group
+    if (Cs != DOESNT_EXIST){return true;}
+    else{//time series
+      Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
+      return true;
+    }
+  }
+  else 
+  { //Tied to HRU Group - Check if we are in HRU Group
+    if (pModel->GetHRUGroup(pSources[i_source]->kk)->IsInGroup(k))
     {
-      Cs = pSources[i_source]->concentration;
       if (Cs != DOESNT_EXIST){return true;}
       else{//time series
         Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
         return true;
-      }
-    }
-    else { //Check if we are in HRU Group
-      if (pModel->GetHRUGroup(pSources[i_source]->kk)->IsInGroup(k))
-      {
-        Cs=pSources[i_source]->concentration;
-        if (Cs != DOESNT_EXIST){return true;}
-        else{//time series
-          Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
-          return true;
-        }
       }
     }
   }
@@ -1088,7 +1068,7 @@ double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, con
   if (i_source == DOESNT_EXIST) {return 0.0;}
   if (pSources[i_source]->dirichlet){return 0.0;}
 
-  if (pSources[i_source]->kk==DOESNT_EXIST)//no HRU gorup
+  if (pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
   {
     retrieve=true;
   }
@@ -1125,17 +1105,30 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
 
     //units names
     kg="[kg]"; kgd="[kg/d]"; mgL="[mg/l]";
-    if (_pConstituents[c]->is_tracer){
-      kg="[-]"; kgd="[-]"; mgL="[-]";
-    }
-    if(Options.write_constitmass){
+    if(Options.write_constitmass) {
       kg="[mg/m2]"; kgd="[mg/m2/d]"; //mgL="[mg/m2]";
     }
+    if (_pConstituents[c]->type==TRACER){
+      kg="[-]"; kgd="[-]"; mgL="[-]";
+    }
+    else if(_pConstituents[c]->type==ENTHALPY) {
+      kg="[MJ]"; kgd="[MJ/d]"; mgL="[C]";
+      if(Options.write_constitmass) {
+        kg="[MJ/m2]"; kgd="[MJ/m2/d]"; 
+      }
+    }
+
 
     //Concentrations file
     //--------------------------------------------------------------------
-    filename=_pConstituents[c]->name+"Concentrations.csv";
-    if(Options.write_constitmass){ filename=_pConstituents[c]->name+"Mass.csv"; }
+    if(_pConstituents[c]->type!=ENTHALPY) {
+      filename=_pConstituents[c]->name+"Concentrations.csv";
+      if(Options.write_constitmass) { filename=_pConstituents[c]->name+"Mass.csv"; }
+    }
+    else {
+      filename="Temperatures.csv";
+      if(Options.write_constitmass) { filename="Enthalpy.csv"; }
+    }
     filename=FilenamePrepare(filename,Options);
 
     _pConstituents[c]->OUTPUT.open(filename.c_str());
@@ -1147,20 +1140,33 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
     for (int i=0;i<pModel->GetNumStateVars();i++)
     {
       if ((CStateVariable::IsWaterStorage(pModel->GetStateVarType(i))) && (i!=iCumPrecip)){
-        _pConstituents[c]->OUTPUT<<","<<CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<" "<<mgL;
+        _pConstituents[c]->OUTPUT<<","<<
+          CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<" "<<mgL;
       }
     }
-    _pConstituents[c]->OUTPUT<<", Total Mass "<<kg<<", Cum. Loading "<<kg<<", Cum. Mass Lost "<<kg<<", MB Error "<<kg<<endl;
+    if(_pConstituents[c]->type!=ENTHALPY) {
+      _pConstituents[c]->OUTPUT<<", Total Mass "<<kg<<", Cum. Loading "<<kg<<", Cum. Mass Lost "<<kg<<", MB Error "<<kg;
+      ///**/_pConstituents[c]->OUTPUT<<", atmos "<<kg<<", sink"<<kg<<endl;//TMP DEBUG
+    }
+    else {
+      _pConstituents[c]->OUTPUT<<", Total Energy "<<kg<<", Cum. Loading "<<kg<<", Cum. Energy Lost "<<kg<<", EB Error "<<kg;
+      ///**/_pConstituents[c]->OUTPUT<<", atmos "<<kg<<", sink"<<kg<<endl;//TMP DEBUG
+    }
 
-    //Pollutograph file
+    //Pollutograph / stream temperatures file
     //--------------------------------------------------------------------
-    filename=_pConstituents[c]->name+"Pollutographs.csv";
+    if(_pConstituents[c]->type!=ENTHALPY) {
+      filename=_pConstituents[c]->name+"Pollutographs.csv";
+    }
+    else {
+      filename="StreamTemperatures.csv";
+    }
     filename=FilenamePrepare(filename,Options);
-
     _pConstituents[c]->POLLUT.open(filename.c_str());
     if (_pConstituents[c]->POLLUT.fail()){
       ExitGracefully(("CTransportModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
+
     _pConstituents[c]->POLLUT<<"time[d],date,hour";
     const CSubBasin *pBasin;
     for (int p=0;p<pModel->GetNumSubBasins();p++){
@@ -1181,7 +1187,7 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
 //
 void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) const
 {
-
+  // \todo[funct] - support enthalpy/temperature in ensim output 
   string filename;
   ofstream OUT;
 
@@ -1199,7 +1205,7 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     //units names
     kg="kg"; kgd="kg/d"; mgL="mg/l";
     //kg="mg/m2"; kgd="mg/m2/d"; mgL="mg/m2";//TMP DEBUG OUTPUT OVERRIDE
-    if (_pConstituents[c]->is_tracer){
+    if (_pConstituents[c]->type==TRACER){
       kg="none"; kgd="none"; mgL="none";
     }
 
@@ -1347,10 +1353,10 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
 //
 void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_struct &tt) const
 {
-  double currentMass,CumInflux,CumOutflux,initMass; //[kg]
-  double M; //[mg/m2]
-  double V; //[mm]
-  double concentration; //[mg/L]
+  double currentMass,CumInflux,CumOutflux,initMass; //[kg] or [MJ]
+  double M; //[mg/m2] or [MJ/m2]
+  double V; //[mm] 
+  double concentration; //[mg/L] or [C]
   int    iCumPrecip;
 
   string thisdate=tt.date_string;
@@ -1361,13 +1367,15 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
   iCumPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
 
   double convert;//
-  convert=1.0/MG_PER_KG; //[mg->kg]
-  if(Options.write_constitmass){ convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2]
 
   if ((Options.suppressICs) && (tt.model_time==0.0)) { return; }
 
   for (int c=0;c<_nConstituents;c++)
   {
+    convert=1.0/MG_PER_KG; //[mg->kg]
+    if(Options.write_constitmass        ) { convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2]
+    if(_pConstituents[c]->type==ENTHALPY) { convert=1.0; } //[MJ]->[MJ]
+
     // Concentrations.csv
     //----------------------------------------------------------------
     double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2);//[mg/d] // \todo [funct]: create GetAverageInflux() routine
@@ -1386,11 +1394,22 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     {
       //Get constituent concentration
       int m=j+c*_nWaterCompartments;
-      M=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2
+      M=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2 or enthalpy - MJ/m2
       V=pModel->GetAvgStateVar(_iWaterStorage[j]); //mm
-      if (fabs(V)<=1e-6){concentration=0.0;}
-      else              {concentration=(M/V)*(MM_PER_METER/LITER_PER_M3);}//[mg/mm/m2]->[mg/L]
-      if(Options.write_constitmass){ concentration=M; }//[mg/m2]
+
+      if(_pConstituents[c]->type!=ENTHALPY)
+      {
+        if(fabs(V)<=1e-6) { concentration=0.0; }
+        else { concentration=(M/V)*(MM_PER_METER/LITER_PER_M3); }//[mg/mm/m2]->[mg/L]
+      }
+      else {
+        if(fabs(V)<=1e-6) { concentration=0.0; } // JRC: should this default to zero?
+        else { 
+          concentration=ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER); //[MJ/m3]->[C]
+        }
+        if(Options.write_constitmass) { concentration=M; }//[MJ/m2]
+      }
+      if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2]
 
       if (_iWaterStorage[j]!=iCumPrecip)
       {
@@ -1407,8 +1426,8 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     double sink  = pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//mg
     double source=-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC ,c))*(area*M2_PER_KM2);//mg
     CumInflux =source;
-    CumInflux +=-atmos_prec;//mg
-    CumOutflux=_pConstituents[c]->cumul_output;//outflow from system (mg)
+    CumInflux -=atmos_prec;//[mg] or [MJ]
+    CumOutflux=_pConstituents[c]->cumul_output;//outflow from system [mg] or [MJ]
     CumOutflux+=sink;
 
     initMass  =_pConstituents[c]->initial_mass;
@@ -1417,9 +1436,11 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     _pConstituents[c]->OUTPUT<<","<<CumInflux*convert;
     _pConstituents[c]->OUTPUT<<","<<CumOutflux*convert;
     _pConstituents[c]->OUTPUT<<","<<((currentMass-initMass)+(CumOutflux-CumInflux))*convert;
+    ///**/_pConstituents[c]->OUTPUT<<","<<-atmos_prec*convert;//TMP DEBUG - atmospheric
+    ///**/_pConstituents[c]->OUTPUT<<","<<sink*convert;//TMP DEBUG - sink
     _pConstituents[c]->OUTPUT<<endl;
 
-    // Pollutographs.csv
+    // Pollutographs.csv or StreamTemperatures.csv
     //----------------------------------------------------------------
     _pConstituents[c]->POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;
     for (int p=0;p<pModel->GetNumSubBasins();p++){

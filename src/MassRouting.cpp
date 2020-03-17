@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ------------------------------------------------------------------
-  routing of mass in catchment and channel
+  routing of mass/energy in catchment and channel
   ----------------------------------------------------------------*/
 
 #include "SubBasin.h"
@@ -14,17 +14,17 @@
 void CTransportModel::InitializeRoutingVars()
 {
   int nSB=pModel->GetNumSubBasins();
-  _aMinHist =new double **[nSB];
-  _aMlatHist=new double **[nSB];
-  _aMout    =new double **[nSB];
-  _aMout_last  =new double *[nSB];
-  _aMres     =new double *[nSB];
-  _aMres_last=new double *[nSB];
-  _aMlat_last=new double *[nSB];
-  _aMout_res =new double *[nSB];
-  _aMout_res_last =new double *[nSB];
-  _channel_storage=new double *[nSB];
-  _rivulet_storage=new double *[nSB];
+  _aMinHist       =new double **[nSB];
+  _aMlatHist      =new double **[nSB];
+  _aMout          =new double **[nSB];
+  _aMout_last     =new double  *[nSB];
+  _aMres          =new double  *[nSB];
+  _aMres_last     =new double  *[nSB];
+  _aMlat_last     =new double  *[nSB];
+  _aMout_res      =new double  *[nSB];
+  _aMout_res_last =new double  *[nSB];
+  _channel_storage=new double  *[nSB];
+  _rivulet_storage=new double  *[nSB];
   
   for (int p=0;p<nSB;p++)
   {
@@ -32,42 +32,40 @@ void CTransportModel::InitializeRoutingVars()
     _aMinHist  [p]=new double *[_nConstituents];
     _aMlatHist [p]=new double *[_nConstituents];
     _aMout     [p]=new double *[_nConstituents];
-    _aMout_last[p]=new double [_nConstituents];
+    _aMout_last[p]=new double  [_nConstituents];
     _aMres     [p]=new double  [_nConstituents];
-    _aMres_last[p]=new double [_nConstituents];
-    _aMlat_last[p]=new double [_nConstituents];
-    _aMout_res [p]=new double [_nConstituents];
-    _aMout_res_last [p] =new double [_nConstituents];
+    _aMres_last[p]=new double  [_nConstituents];
+    _aMlat_last[p]=new double  [_nConstituents];
+    _aMout_res [p]=new double  [_nConstituents];
+    _aMout_res_last [p]=new double [_nConstituents];
     _channel_storage[p]=new double [_nConstituents];
     _rivulet_storage[p]=new double [_nConstituents];
     
     ExitGracefullyIf(_rivulet_storage[p]==NULL,"CTransportModel::InitializeRoutingVars(1)",OUT_OF_MEMORY);
-    int nMinHist=pModel->GetSubBasin(p)->GetInflowHistorySize();
+    int nMinHist =pModel->GetSubBasin(p)->GetInflowHistorySize();
     int nMlatHist=pModel->GetSubBasin(p)->GetLatHistorySize();
     int nSegments=pModel->GetSubBasin(p)->GetNumSegments();
-    for (int c=0;c<_nConstituents;c++){
+    for (int c=0;c<_nConstituents;c++)
+    {
       _aMout    [p][c]=NULL;
       _aMinHist [p][c]=new double [nMinHist];
       _aMlatHist[p][c]=new double [nMlatHist];
       _aMout    [p][c]=new double [nSegments];
       ExitGracefullyIf(_aMout[p][c]==NULL,"CTransportModel::InitializeRoutingVars(2)",OUT_OF_MEMORY);
-      for (int i=0; i<nMinHist;i++){_aMinHist[p][c][i]=0.0;}
-      for (int i=0; i<nMinHist;i++){_aMinHist[p][c][i]=0.0;}
-      for (int i=0; i<nSegments;i++){_aMout  [p][c][i]=0.0;}
+      for (int i=0; i<nMinHist;i++ ){_aMinHist[p][c][i]=0.0;}
+      for (int i=0; i<nMinHist;i++ ){_aMinHist[p][c][i]=0.0;}
+      for (int i=0; i<nSegments;i++){_aMout   [p][c][i]=0.0;}
       _aMout_last[p][c]=0.0;
-      _aMres[p][c]=0.0;
-      _aMres_last[p][c]=0.0;
-      _aMlat_last[p][c]=0.0;
-      _aMout_res [p][c]=0.0;
+      _aMres          [p][c]=0.0;
+      _aMres_last     [p][c]=0.0;
+      _aMlat_last     [p][c]=0.0;
+      _aMout_res      [p][c]=0.0;
       _aMout_res_last [p][c]=0.0;
       _channel_storage[p][c]=0.0;
       _rivulet_storage[p][c]=0.0;
 
     }
   }
-
-  
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Delete mass routing variables
@@ -101,18 +99,18 @@ void CTransportModel::DeleteRoutingVars()
     delete [] _aMres;    _aMres    =NULL;
     delete [] _aMres_last; _aMres_last=NULL;
     delete [] _aMlat_last; _aMlat_last=NULL;
-    delete [] _aMout_res; _aMout_res=NULL;
-    delete [] _aMout_res_last; _aMout_res_last=NULL;
+    delete [] _aMout_res;  _aMout_res =NULL;
+    delete [] _aMout_res_last; _aMout_res_last =NULL;
     delete [] _channel_storage;_channel_storage=NULL;
     delete [] _rivulet_storage;_rivulet_storage=NULL;
-    delete [] _aMout_last;_aMout_last=NULL;
+    delete [] _aMout_last;     _aMout_last     =NULL;
   }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Set upstream mass loading to primary channel and updates mass loading history
 ///
 /// \param p    subbasin index
-/// \param aMin array of rates of upstream mass loading for the current timestep [mg/d] [size: _nConstituents]
+/// \param aMin array of rates of upstream mass/energy loading for the current timestep [mg/d]/[MJ/d] [size: _nConstituents]
 //
 void   CTransportModel::SetMassInflows    (const int p, const double *aMin)
 {
@@ -125,10 +123,10 @@ void   CTransportModel::SetMassInflows    (const int p, const double *aMin)
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Sets lateral mass loading to primary channel and updates mass loading history
+/// \brief Sets lateral mass/energy loading to primary channel and updates mass/energy loading history
 ///
 /// \param p    subbasin index
-/// \param aMin array of lateral mass loading rates for the current timestep [mg/d] [size: _nConstituents]
+/// \param aMin array of lateral mass loading rates for the current timestep [mg/d][MJ/d] [size: _nConstituents]
 //
 void   CTransportModel::SetLateralInfluxes(const int p, const double *aMlat)
 {
@@ -159,6 +157,7 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
   int c;//,seg;
   const double * aUnitHydro =pModel->GetSubBasin(p)->GetUnitHydrograph();
   const double * aRouteHydro=pModel->GetSubBasin(p)->GetRoutingHydrograph();
+
   int nMlatHist   =pModel->GetSubBasin(p)->GetLatHistorySize();
   int nMinHist    =pModel->GetSubBasin(p)->GetInflowHistorySize();
   int nSegments   =pModel->GetSubBasin(p)->GetNumSegments();
@@ -230,7 +229,7 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
     double tmp;
     double V_new=pRes->GetStorage();
     double V_old=pRes->GetOldStorage();
-    double Q_new=pRes->GetOutflowRate()*SEC_PER_DAY;
+    double Q_new=pRes->GetOutflowRate()   *SEC_PER_DAY;
     double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
 
     for(c=0;c<_nConstituents;c++)
@@ -265,13 +264,18 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
 /// \remark Called *after* RouteMass routine is called in Solver.cpp, to reset
 /// the mass outflow rates for this basin
 ///
-/// \param **aMoutnew [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
-/// \param *aResMass [in] Array of new reservoir masses [mg] [size:  _nConstituents]
+/// \param **aMoutnew     [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
+/// \param *aResMass      [in] Array of new reservoir masses [mg] [size:  _nConstituents]
 /// \param *aMassOutflow [out] Array of new mass outflows [mg/d] from last segment or reservoir [size:  _nConstituents]
-/// \param &Options [in] Global model options information
-/// \param initialize Flag to indicate if flows are to only be initialized
+/// \param &Options       [in] Global model options information
+/// \param initialize     [in] Flag to indicate if flows are to only be initialized
 //
-void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, double *aResMass, double *aMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize)
+void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, 
+                                                          double *aResMass, 
+                                                          double *aMassOutflow,
+                                                 const optStruct &Options,
+                                               const time_struct &tt,
+                                                            bool initialize)
 {
   double tstep=Options.timestep;
 
@@ -292,9 +296,8 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
     CReservoir *pRes=pModel->GetSubBasin(p)->GetReservoir();
     if(pRes!=NULL)
     {
-      _aMres_last[p][c]=_aMres[p][c];
-      _aMres     [p][c]=aResMass[c];
-
+      _aMres_last    [p][c]=_aMres[p][c];
+      _aMres         [p][c]=aResMass[c];
       _aMout_res_last[p][c]=_aMout_res[p][c];
       _aMout_res     [p][c]=(pRes->GetOutflowRate()*SEC_PER_DAY/pRes->GetStorage())*_aMres[p][c]; //mg/d
 
@@ -335,7 +338,7 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
     //Update rivulet storage
     //------------------------------------------------------
     dM=0.0;
-    dM+=_aMlatHist[p][c][0]*dt;//inflow from ground surface (integrated over time step)
+    dM+=_aMlatHist[p][c][0]*dt;//inflow from land surface (integrated over time step)
     dM-=0.5*(Mlat_new+_aMlat_last[p][c])*dt;//outflow to channel (integrated over time step)
 
     _rivulet_storage[p][c]+=dM;//[mg]
@@ -345,26 +348,45 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew, doub
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns outflow concentration of constituent c in subbasin p at current point in time
-///
+/// \brief returns outflow concentration of constituent c (or temperature) in subbasin p at current point in time
+/// \notes only used for reporting; calculations exclusively in terms of mass/energy
+/// 
 /// \param p [in] subbasin index 
 /// \param c [in] constituent index
 //
 double CTransportModel::GetOutflowConcentration(const int p, const int c) const
 {
   CReservoir *pRes=pModel->GetSubBasin(p)->GetReservoir();
-  if(pRes==NULL)
-  {
-    double mg_per_d=_aMout[p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
-    double flow=pModel->GetSubBasin(p)->GetOutflowRate();
-    if(flow<=0){ return 0.0; }
-    double C=mg_per_d/flow/SEC_PER_DAY/LITER_PER_M3; //[mg/L]
-    return C;
-  }
-  else{
-    return _aMres[p][c]/pRes->GetStorage()/LITER_PER_M3; //[mg/L]
-  }
 
+  //Chemical concentration [mg/L] --------------------------------------------
+  if(_pConstituents[c]->type!=ENTHALPY) {
+    if(pRes==NULL)
+    {
+      double mg_per_d=_aMout[p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
+      double flow=pModel->GetSubBasin(p)->GetOutflowRate();
+      if(flow<=0) { return 0.0; }
+      double C=mg_per_d/flow/SEC_PER_DAY/LITER_PER_M3; //[mg/L]
+      return C;
+    }
+    else {
+      return _aMres[p][c]/pRes->GetStorage()/LITER_PER_M3; //[mg/L]
+    }
+  }
+  //Temperatures [C] ---------------------------------------------------------
+  else { 
+    if(pRes==NULL)
+    {
+      double MJ_per_d=_aMout[p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
+      double flow=pModel->GetSubBasin(p)->GetOutflowRate();
+      if(flow<=0) { return 0.0; }
+      //hv=MJ/d / M3/d 
+      double T=ConvertVolumetricEnthalpyToTemperature(MJ_per_d/flow/SEC_PER_DAY); //[C]
+      return T;
+    }
+    else {
+      return ConvertVolumetricEnthalpyToTemperature(_aMres[p][c]/pRes->GetStorage()); //[C]
+    }
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns integrated mass outflow of constituent c from subbasin p over current timestep
@@ -388,5 +410,4 @@ double CTransportModel::GetIntegratedMassOutflow(const int p, const int c,const 
   {
     return 0.5*(_aMout_res[p][c]+_aMout_res_last[p][c])*tstep; //integrated - [mg]
   }
-
 }
