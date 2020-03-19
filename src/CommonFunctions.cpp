@@ -446,7 +446,7 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
 /// \param timezone   [out] time shift from GMT, in days
 /// \return Raven Time structure equivalent of passed date and time, time shift if applicable
 //
-time_struct TimeStructFromNetCDFString(const string unit_t_str,const string timestr,const int calendar, double &timezone)
+time_struct TimeStructFromNetCDFString(const string unit_t_str,const string timestr,const int calendar,double &timezone)
 {
   string dash,colon,tmp;
   tmp=unit_t_str;
@@ -459,19 +459,31 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
   // ---------------------------
   dash = tmp.substr(start+4,1);  // first dash in date
-  if(!strstr(dash.c_str(),"-")) 
+
+  if(!strstr(dash.c_str(),"-"))
   {
     printf("time unit string: %s\n",tmp.c_str());
     ExitGracefully("CommonFunctions:TimeStructFromNetCDFString: time unit string has weird format!",BAD_DATA);
   }
-  if(!strstr(tmp.substr(start+7 ,1).c_str(),"-")){tmp.insert(start+5 ,"0");} // second dash in date - fixes YYYY-M-dd
-  if(!strstr(tmp.substr(start+10,1).c_str()," ")){tmp.insert(start+8 ,"0");} // second dash in date - fixes YYYY-MM-d
-  if(!strstr(tmp.substr(start+13,1).c_str(),":")){tmp.insert(start+11,"0");} // first colon in time  - fixes 1:00:00
-  if(!strstr(tmp.substr(start+16,1).c_str(),":")){tmp.insert(start+14,"0");} // second colon in time - fixes 11:0:00 (?)
+  if(!strstr(tmp.substr(start+7 ,1).c_str(),"-")) { tmp.insert(start+5,"0"); } // second dash in date - fixes YYYY-M-dd
 
-  string sDate = tmp.substr(start   ,10); //YYYY-MM-DD
-  string sTime = tmp.substr(start+11,8);  //HH:MM:SS
-  
+  bool date_only=false;
+  if (strlen(tmp.c_str())<=start+10+2){date_only=true;} //00:00:00 +0000 not included in string
+
+  if(!date_only) {
+    if(!strstr(tmp.substr(start+10,1).c_str()," ")) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 
+    if(!strstr(tmp.substr(start+13,1).c_str(),":")) { tmp.insert(start+11,"0"); } // first colon in time  - fixes 1:00:00
+    if(!strstr(tmp.substr(start+16,1).c_str(),":")) { tmp.insert(start+14,"0"); } // second colon in time - fixes 11:0:00 (?)
+  }
+  else {
+    if(strlen(tmp.c_str())==start+9) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 
+  }
+  string sTime,sDate;
+  sDate = tmp.substr(start,10); //YYYY-MM-DD
+  if(!date_only) { sTime = tmp.substr(start+11,8); }  //HH:MM:SS
+  else           { sTime = "00:00:00";             }  // assumes start of day if no timestamp given
+  //cout<<"sTime"<<sTime<<" sDate"<< sDate<<" "<<unit_t_str<<" "<<date_only<<" "<<tmp<<endl;
+
   timezone=0;
   if((strlen(tmp.c_str())-start)==26) {
     if(!strcmp(tmp.substr(start+22,1).c_str(),"+")) {
@@ -503,20 +515,24 @@ string TimeZoneToString(const int tz) {
 
 ////////////////////////////////////////////////////////////////////////////
 /// \brief returns time struct corresponding to string in the following format
-/// \param unit_t_str [in] full time string from NetCDF file (e.g., '[days/minutes/hours] since YYYY-MM-dd 00:00:00{+0000}')
+/// \param unit_t_str [in] full time string from NetCDF file (e.g., '[days/minutes/hours] since YYYY-MM-dd 00:00:00{+0000}' or '[days/minutes/hours] since YYYY-MM-dd' )
 /// \return true if string is valid
 //
 bool IsValidNetCDFTimeString(const string time_string)
 {
   int att_len=(int)strlen(time_string.c_str());
   bool isvalid = true;
-  
+  bool hastimestamp=true;
   if (att_len<15) {return false;}
   int subtract=0;
 
   if (strstr(time_string.substr(att_len-6,2).c_str()," +")) { subtract=5; } //contains '+0000' appendage, shift by 5 chars
-  if(!strstr(time_string.substr(att_len- 3-subtract,1).c_str(),":")) { isvalid=false; } // ->  3rd-last character needs to be a colon
-  if(!strstr(time_string.substr(att_len- 6-subtract,1).c_str(),":")) { isvalid=false; } // ->  6th-last character needs to be a colon
+  if(!strstr(time_string.substr(att_len- 3-subtract,1).c_str(),":")) { subtract+=-9; hastimestamp=false;}// 3rd-last character not a colon; guess that hour string not provided
+  
+  if(hastimestamp) {
+    if(!strstr(time_string.substr(att_len- 3-subtract,1).c_str(),":")) { isvalid=false; } // ->  3rd-last character needs to be a colon
+    if(!strstr(time_string.substr(att_len- 6-subtract,1).c_str(),":")) { isvalid=false; } // ->  6th-last character needs to be a colon
+  }
   if(!strstr(time_string.substr(att_len-12-subtract,1).c_str(),"-")) { isvalid=false; } // -> 12th-last character needs to be a dash
   if(!strstr(time_string.substr(att_len-15-subtract,1).c_str(),"-")) { isvalid=false; } // -> 15th-last character needs to be a dash
 
