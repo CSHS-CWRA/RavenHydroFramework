@@ -275,6 +275,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.assimilation_on     =false;
   Options.assimilation_start  =0;
   Options.time_zone           =0;
+  Options.rvl_read_frequency  =0.0; //do not read at all
+  Options.custom_interval     =1.0; //daily
 
   pModel=NULL;
   pMover=NULL;
@@ -402,6 +404,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteInterpolationWeights" )){code=101;}
     else if  (!strcmp(s[0],":CallExternalScript"        )){code=102;}
     else if  (!strcmp(s[0],":rvl_Filename"              )){code=103;}
+    else if  (!strcmp(s[0],":ReadLiveFile"              )){code=104;}
+    else if  (!strcmp(s[0],":CustomOutputInterval"      )){code=105; }
   
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510; }
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511; }
@@ -1652,10 +1656,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"YEARLY"         )){ta=YEARLY;}
       else if (!strcmp(s[1],"ANNUAL"         )){ta=YEARLY;}
       else if (!strcmp(s[1],"WATER_YEARLY"   )){ta=WATER_YEARLY;}
+      else if (!strcmp(s[1],"EVERY_NDAYS"    )){ta=EVERY_NDAYS; }
       else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP;}
       else{
         ta=DAILY;
         ExitGracefully("ParseMainInputFile: Unrecognized custom output temporal aggregation method",BAD_DATA);
+      }
+      if((ta==EVERY_NDAYS) && (Options.custom_interval==1.0)) {
+        WriteWarning(":CustomOutput - EVERY_NDAYS option should only be used with :CustomInterval > 1, otherwise use of DAILY command preferred",Options.noisy);
       }
 
       //these statistics are always in time
@@ -1810,6 +1818,38 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(!system(NULL)) {
         WriteWarning("Unable to call external script on this machine - :CallExternalScript command will be ignored.",Options.noisy);
         Options.external_script="";
+      }
+      break;
+    }
+    case(104): //----------------------------------------------
+    {/*:ReadLiveFile {optional frequency, d or hh:mm:ss}*/
+      if(Options.noisy) { cout <<"Read Live File "<<endl; }
+      Options.rvl_read_frequency=Options.timestep; //default if not overrun - read every timestep
+      if(Len>=2) {
+        string tString=s[1];
+        if((tString.length()>=2) && 
+          ((tString.substr(2,1)==":") || 
+           (tString.substr(1,1)==":"))) //support for hh:mm:ss.00 format
+        {
+          time_struct tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
+          Options.rvl_read_frequency=FixTimestep(tt.julian_day);
+        }
+        else {
+          Options.rvl_read_frequency = s_to_d(s[1]);
+        }
+      }
+      break;
+    }
+    case(105):
+    {/*:CustomOutputInterval [interval, in days]*/
+      if(Options.noisy) { cout <<"Custom output interval "<<endl; }
+      if(Len<2) { ImproperFormatWarning(":CustomOutputInterval",p,Options.noisy); break; }
+      Options.custom_interval=s_to_d(s[1]);
+      if(Options.custom_interval==1.0) {
+        WriteWarning("CustomOutputInterval: using interval of 1 day is equivalent to use the DAILY aggregation of custom output, which is preferred",Options.noisy);
+      }
+      if((Options.custom_interval<1.0) || (floor(Options.custom_interval)!=Options.custom_interval)) {
+        ExitGracefully(":CustomOutputInterval: improper interval specified. Must be >0 and integer",BAD_DATA_WARN);
       }
       break;
     }

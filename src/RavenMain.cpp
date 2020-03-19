@@ -15,6 +15,7 @@ bool ParseInputFiles  (CModel      *&pModel,
 void MassEnergyBalance(CModel            *pModel,
                        const optStruct   &Options,
                        const time_struct &tt);        
+void ParseLiveFile             (CModel *&pModel,const optStruct &Options,const time_struct &tt);
 
 //Local functions defined below main()
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
@@ -133,6 +134,7 @@ int main(int argc, char* argv[])
         pModel->UpdateHRUForcingFunctions  (Options,tt);
         pModel->UpdateDiagnostics          (Options,tt);
         CallExternalScript                 (Options,tt);
+        ParseLiveFile                      (pModel,Options,tt);
 
         MassEnergyBalance(pModel,Options,tt); //where the magic happens!
 
@@ -408,6 +410,6 @@ void CallExternalScript(const optStruct &Options,const time_struct &tt)
     SubstringReplace(script,"<date>"      ,tt.date_string);
     SubstringReplace(script,"<version>"   ,Options.version);
     SubstringReplace(script,"<output_dir>",Options.output_dir);
-    system(Options.external_script.c_str()); //Calls script
+    system(script.c_str()); //Calls script
   }
 }

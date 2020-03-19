@@ -148,6 +148,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case MONTHLY:                   _timeAggStr="Monthly"; break;
   case DAILY:                     _timeAggStr="Daily"; break;
   case WATER_YEARLY:              _timeAggStr="WYearly";break;
+  case EVERY_NDAYS:               _timeAggStr="Every"+to_string(int(Options.custom_interval))+"days";break;
   case EVERY_TSTEP:               _timeAggStr="Continuous"; break;
   }
   FILENAME<<_timeAggStr<<"_";
@@ -240,6 +241,7 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
   {
     if      (_timeAgg==YEARLY      ){num_store=(int)ceil(366/Options.timestep)+1;}
     else if (_timeAgg==WATER_YEARLY){num_store=(int)ceil(366/Options.timestep)+1;}
+    else if (_timeAgg==EVERY_NDAYS ){num_store=(int)ceil(Options.custom_interval/Options.timestep)+1; }
     else if (_timeAgg==MONTHLY     ){num_store=(int)ceil( 31/Options.timestep)+1;}
     else if (_timeAgg==DAILY       ){num_store=(int)ceil(  1/Options.timestep)+1;}
     else if (_timeAgg==EVERY_TSTEP ){num_store=1;}
@@ -298,6 +300,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
   else if (_timeAgg==DAILY       ){_CUSTOM<<",";}
   else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<",,";}
   else if (_timeAgg==WATER_YEARLY){_CUSTOM<<",";}
+  else if (_timeAgg==EVERY_NDAYS ){_CUSTOM<<",";}
 
   if      (_spaceAgg==BY_HRU        ){_CUSTOM<<"HRU:,";}
   else if (_spaceAgg==BY_BASIN      ){_CUSTOM<<"SubBasin:,";}
@@ -333,6 +336,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
   //-Line 2-
   if      (_timeAgg==YEARLY      ){_CUSTOM<<"time,year,";}
   else if (_timeAgg==WATER_YEARLY){_CUSTOM<<"time,water year,";}
+  else if (_timeAgg==EVERY_NDAYS) {_CUSTOM<<"time,day,"; }
   else if (_timeAgg==MONTHLY     ){_CUSTOM<<"time,month,";}
   else if (_timeAgg==DAILY       ){_CUSTOM<<"time,day,";}
   else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<"time,day,hour,";}
@@ -399,9 +403,10 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
   string colType="float"; // the default, (histogram however is integer)
   switch(_timeAgg)
   {
-  case YEARLY: col1Name="Year"; col1Units="years"; col1Type="int"; break;
+  case YEARLY:       col1Name="Year"; col1Units="years"; col1Type="int"; break;
   case WATER_YEARLY: col1Name="WaterYear"; col1Units="years"; col1Type="int"; break;
-  case MONTHLY: col1Name="MonthEnd"; col1Units="months"; col1Type="date"; break;
+  case EVERY_NDAYS:  col1Name="Date"; col1Units="date"; col1Type="date"; break;
+  case MONTHLY:      col1Name="MonthEnd"; col1Units="months"; col1Type="date"; break;
   default: break;
   }
 
@@ -699,7 +704,10 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   else if ((_timeAgg==DAILY)   && (fabs(floor(t+time_shift+TIME_CORRECTION)-(t+time_shift)) <0.5*Options.timestep))       
                                                              {reset=true;}//start of day - print preceding day
   else if (_timeAgg==EVERY_TSTEP)                            {reset=true;}//every timestep
-  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    {reset=true;}//Oct 1 - print preceding year
+  else if((_timeAgg==EVERY_NDAYS)   && (fabs(ffmod(t,Options.custom_interval)) <=0.5*Options.timestep))//every N days print preceding N days
+                                                             {reset=true;}
+  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    
+                                                             {reset=true;}//Oct 1 - print preceding year
   //cout <<t <<" ->"<<fabs(floor(t)-t)<<"   "<<(fabs(floor(t)-t) <0.5*Options.timestep)<<endl;
 
   if (reset)
@@ -711,6 +719,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_timeAgg==DAILY       ){_CUSTOM<<t<<","<<yesterday<<",";}
       else if (_timeAgg==EVERY_TSTEP ){_CUSTOM<<t<<","<<thisdate<<","<<thishour<<","; }//period ending for forcing data
       else if (_timeAgg==WATER_YEARLY){_CUSTOM<<t<<","<<yest.year<<"-"<<yest.year+1<<",";}
+      else if (_timeAgg==EVERY_NDAYS ){ _CUSTOM<<t<<","<<yesterday<<","; }
     }
     else if(Options.output_format==OUTPUT_ENSIM)//===============================================================
     {
@@ -719,6 +728,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       case YEARLY:       _CUSTOM<<yest.year<<" "<<t<<" "; break;
       case MONTHLY:      _CUSTOM<<yest.year<<"-"<<yest.month<<"-"<<yest.day_of_month<<" "<<t<<" "; break;
       case DAILY:        _CUSTOM<<yest.year<<"-"<<yest.month<<"-"<<yest.day_of_month<<" "<<t<<" "; break;
+      case EVERY_NDAYS:  _CUSTOM<<yest.year<<"-"<<yest.month<<"-"<<yest.day_of_month<<" "<<t<<" "; break;
       case EVERY_TSTEP:
       {
         char dQuote = '"';
@@ -733,12 +743,13 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 #ifdef _RVNETCDF_
       int retval,time_id;
       size_t start1[1], count1[1];  // determines where and how much will be written to NetCDF; 1D variable (time)
-      double current_time[1];       // current time in days since start time
+      double current_time[1];       // current time in days since start of interval
        
       if      (_timeAgg==YEARLY      ){current_time[0]=yest.model_time-yest.julian_day;}
       else if (_timeAgg==MONTHLY     ){current_time[0]=yest.model_time-yest.day_of_month;}
       else if (_timeAgg==DAILY       ){current_time[0]=yest.model_time;}
       else if (_timeAgg==EVERY_TSTEP ){current_time[0]=tt.model_time-Options.timestep; }
+      else if (_timeAgg==EVERY_NDAYS ){current_time[0]=yest.model_time-Options.custom_interval*floor(yest.model_time/Options.custom_interval); }
       else if (_timeAgg==WATER_YEARLY){
         double days_to_first_of_month=0;
         for (int m=0; m<Options.wateryr_mo;m++){days_to_first_of_month+=DAYS_PER_MONTH[m];}

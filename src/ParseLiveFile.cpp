@@ -16,17 +16,22 @@ Copyright (c) 2008-2020 the Raven Development Team
 /// \param &Options [out] Global model options information
 /// \return True if operation is successful
 //
-bool ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &tt)
+void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &tt)
 {
+  if (Options.rvl_read_frequency==0.0){return;} //does nothing
+
+  //if not evenly divided by frequency, return
+  if(fabs(ffmod(tt.model_time,Options.rvl_read_frequency)) > 0.5*Options.timestep){return;}
+
   bool        ended(false);
   CHydroUnit *pHRU;
   CSubBasin  *pSB;
 
-
   ifstream    RVL;
   RVL.open(Options.rvl_filename.c_str());
   if(RVL.fail()) {
-    cout << "ERROR opening model live file: "<<Options.rvl_filename<<endl; return false;
+    string warn="ERROR opening model live file: "+Options.rvl_filename;
+    ExitGracefully(warn.c_str(), BAD_DATA);return;
   }
 
   int   Len,line(0),code;
@@ -44,7 +49,8 @@ bool ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     if     (Len==0)                                { code=-1; }//blank line
     else if(IsComment(s[0],Len))                   { code=-2; }//comment
 
-    //-------------------MODEL ENSEMBLE PARAMETERS----------------
+    else if(!strcmp(s[0],":Echo"                )) { code=-3; }
+   //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":VegetationChange"    )) { code=1; }
     else if(!strcmp(s[0],":LandUseChange"       )) { code=2; }
 
@@ -62,6 +68,13 @@ bool ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(-2):  //----------------------------------------------
     {/*Comment*/
+      break;
+    }
+    case(-3):  //----------------------------------------------
+    {/*:Echo [statement]*/
+      for(int i=1;i<Len;i++) {
+        cout<<s[i]<<" ";
+      }
       break;
     }
     case(1):  //----------------------------------------------
@@ -116,5 +129,4 @@ bool ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
 
   delete pp;
   pp=NULL;
-  return true;
 }
