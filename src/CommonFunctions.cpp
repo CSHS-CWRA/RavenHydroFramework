@@ -525,17 +525,24 @@ bool IsValidNetCDFTimeString(const string time_string)
   bool hastimestamp=true;
   if (att_len<15) {return false;}
   int subtract=0;
-
-  if (strstr(time_string.substr(att_len-6,2).c_str()," +")) { subtract=5; } //contains '+0000' appendage, shift by 5 chars
-  if(!strstr(time_string.substr(att_len- 3-subtract,1).c_str(),":")) { subtract+=-9; hastimestamp=false;}// 3rd-last character not a colon; guess that hour string not provided
   
-  if(hastimestamp) {
-    if(!strstr(time_string.substr(att_len- 3-subtract,1).c_str(),":")) { isvalid=false; } // ->  3rd-last character needs to be a colon
-    if(!strstr(time_string.substr(att_len- 6-subtract,1).c_str(),":")) { isvalid=false; } // ->  6th-last character needs to be a colon
-  }
-  if(!strstr(time_string.substr(att_len-12-subtract,1).c_str(),"-")) { isvalid=false; } // -> 12th-last character needs to be a dash
-  if(!strstr(time_string.substr(att_len-15-subtract,1).c_str(),"-")) { isvalid=false; } // -> 15th-last character needs to be a dash
+  size_t pos=time_string.find("since",0);
+  if(pos==string::npos) { return false; } //no "since" in string
+  
+  pos+=6;
+  string date_string=time_string.substr(pos,10);
 
+  if (!strstr(date_string.substr(4,1).c_str(),"-")){isvalid=false;}//properly located dashes in date string
+  if (!strstr(date_string.substr(7,1).c_str(),"-")){isvalid=false;}
+
+  if(time_string.length()<(pos+19)) { return isvalid; } //no time stamp 
+  
+  string hr_string  =time_string.substr(pos+11,8);
+  //cout<<"TIME STRING: "<<time_string<<" "<<pos<<" "<<date_string<<" "<<hr_string<<endl;
+
+  if(!strstr(hr_string.substr(2,1).c_str(),":")) { isvalid=false; }//properly located dashes in date string
+  if(!strstr(hr_string.substr(5,1).c_str(),":")) { isvalid=false; }
+  
   return isvalid;
 }
 ///////////////////////////////////////////////////////////////////
