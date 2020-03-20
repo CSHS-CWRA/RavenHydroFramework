@@ -147,8 +147,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
     else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
     else if  (!strcmp(s[0],":FlowDiversion"         )){code=66;}
-    else if  (!strcmp(s[0],":FlowDiversionLookupTable")){code=67;}    
-    else if  (!strcmp(s[0],":DZTRReservoirModel"    )){code=68;}
+    else if  (!strcmp(s[0],":FlowDiversionLookupTable")){code=67;}
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -1273,68 +1272,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       delete [] aQ1; delete [] aQ2;
-      break;
-    }
-    case (68): //---------------------------------------------
-    {/*:DZTRResservoirModel [SBID]
-        :MaximumStorage           Vmax(m3)  
-        :MaximumChannelCapacity   Qmax(m3/s)
-        :MonthlyMaxStorage        J F M A M J J A S N D  {or single constant value} (m3)
-        :MonthlyNormalStorage     J F M A M J J A S N D  {or constant value} (m3)
-        :MonthlyCriticalStorage   J F M A M J J A S N D  {or constant value} (m3)
-        :MonthlyMaxDischarge      J F M A M J J A S N D  {or constant value} (m3/s)
-        :MonthlyNormalDischarge   J F M A M J J A S N D  {or constant value} (m3/s)
-        :MonthlyCriticalDischarge J F M A M J J A S N D  {or constant value} (m3/s)
-      :EndDZTRReservoirModel
-     */
-      //Dynamically zoned target release model
-      if(Options.noisy) { cout <<"DZTR Reservoir Model"<<endl; }
-      double Smi[12],Sni[12],Sci[12];
-      double Qmi[12],Qni[12],Qci[12];
-      double Qmax,Smax;
-      CSubBasin *pSB;
-      long SBID;
-
-      if(Len>=2) { SBID=s_to_l(s[1]); }
-      pSB=pModel->GetSubBasinByID(SBID);
-      ExitGracefullyIf(pSB==NULL,":DZTRResservoirModel: invalid subbasin ID",BAD_DATA);
-
-      p->Tokenize(s,Len);
-      Smax=s_to_d(s[1]);
-
-      p->Tokenize(s,Len);
-      Qmax=s_to_d(s[1]);
-
-      p->Tokenize(s,Len);
-      if     (Len>=13){ for(int i=0;i<12;i++){ Smi[i]=s_to_d(s[i+1]); }}
-      else if (Len>=2){ for(int i=0;i<12;i++){ Smi[i]=s_to_d(s[1]  ); }}
-
-      p->Tokenize(s,Len);
-      if     (Len>=13){ for(int i=0;i<12;i++){ Sni[i]=s_to_d(s[i+1]); }}
-      else if (Len>=2){ for(int i=0;i<12;i++){ Sni[i]=s_to_d(s[1]  ); }}
-
-      p->Tokenize(s,Len);
-      if     (Len>=13){ for(int i=0;i<12;i++){ Sci[i]=s_to_d(s[i+1]); }}
-      else if (Len>=2){ for(int i=0;i<12;i++){ Sci[i]=s_to_d(s[1]  ); }}
-
-      p->Tokenize(s,Len);
-      if     (Len>=13){ for(int i=0;i<12;i++){ Qmi[i]=s_to_d(s[i+1]); }}
-      else if (Len>=2){ for(int i=0;i<12;i++){ Qmi[i]=s_to_d(s[1]  ); }}
-
-      p->Tokenize(s,Len);
-      if     (Len>=13){ for(int i=0;i<12;i++){ Qni[i]=s_to_d(s[i+1]); }}
-      else if (Len>=2){ for(int i=0;i<12;i++){ Qni[i]=s_to_d(s[1]  ); }}
-
-      p->Tokenize(s,Len);
-      if     (Len>=13){ for(int i=0;i<12;i++){ Qci[i]=s_to_d(s[i+1]); }}
-      else if (Len>=2){ for(int i=0;i<12;i++){ Qci[i]=s_to_d(s[1]  ); }}
-
-      if(pSB->GetReservoir()!=NULL) {
-        pSB->GetReservoir()->SetDZTRModel(Qmax,Smax,Sni,Sci,Smi,Qni,Qci,Qmi);
-      }
-      else {
-        ExitGracefully("ParseTimeSeriesFile: subbasin in :DZTRResservoirModel command does not have reservoir",BAD_DATA_WARN);
-      }
       break;
     }
     case (70): //---------------------------------------------
