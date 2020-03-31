@@ -205,7 +205,7 @@ void CProcessGroup::CalcWeightsFromUniformNums(const double *aVals,const int nVa
   double sum=0.0;
   int    N=_nSubProcesses;
   for(int q=0; q<N-1;q++) {
-    _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q)));
+    _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q-1)));
     sum+=_aWeights[q];
   }
   _aWeights[N-1]=1.0-sum;
