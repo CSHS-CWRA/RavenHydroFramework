@@ -2048,6 +2048,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
   } //end while (!end_of_file)
 
+  RVT.close();
+  
   delete p; p=NULL;
 
   return true;
