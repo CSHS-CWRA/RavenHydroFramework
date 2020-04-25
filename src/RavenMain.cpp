@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
     cout <<"============================================================"<<endl;
   }
 
-  ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
+  ofstream WARNINGS;
+  WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
@@ -149,7 +150,7 @@ int main(int argc, char* argv[])
         pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
         //pModel->WriteProgressOutput      (Options,clock()-t0,step+e*nsteps,nEnsembleMembers*nsteps); //TMP DEBUG - for ensemble support
 
-        if(CheckForStopfile(step,tt)) { break; }
+        if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
         step++;
       }
 
@@ -316,6 +317,7 @@ void ExitGracefully(const char *statement,exitcode code)
     ofstream WARNINGS;
     WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
     if (WARNINGS.fail()){
+      WARNINGS.close();
       string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
       ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
     }
@@ -388,7 +390,7 @@ bool CheckForStopfile(const int step, const time_struct &tt)
   if(step%100!=0){ return false; } //only check every 100th timestep 
   ifstream STOP;
   STOP.open("stop");
-  if (!STOP.is_open()){return false;}
+  if (STOP.fail()){STOP.close(); return false;}
   else //Stopfile found
   {
     STOP.close();

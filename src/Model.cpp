@@ -360,7 +360,7 @@ CHydroUnit *CModel::GetHRUByID(const int HRUID) const
   static int last_k=0;
   //smart find
   int k;
-  for (int i=0;i<_nHydroUnits;i++){ //could be very slow
+  for (int i=0;i<_nHydroUnits;i++){ 
     k=NearSearchIndex(i,last_k,_nHydroUnits);
     if (HRUID==_pHydroUnits[k]->GetID()){ last_k=k; return _pHydroUnits[k];}
   }

@@ -292,7 +292,23 @@ void CHydroProcessABC::AddCondition( condition_basis basis,
   if (!DynArrayAppend((void**&)(_pConditions),(void*)(pCO),_nConditions)){
     ExitGracefully("CHydroProcessABC::AddCondition: adding NULL condition",BAD_DATA);}
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief redefines state variable index of recieving compartment 
+///
+/// \param toSVindex [in] state variable index of original storage compartment 
+/// \param newToSVindex [in] state variable index of new storage compartment (assumed valid)
+//
+void CHydroProcessABC::Redirect(const int toSVindex,const int newToSVindex) 
+{
+  bool found=false;
+  for(int q=0;q<_nConnections;q++)
+  {
+   if (iTo[q]    ==toSVindex){iTo[q]=newToSVindex;found=true;}
+  }
+  if(!found) {
+    WriteWarning("CHydroProcessABC::Redirect: :-->RedirectFlow command refers to state variable not used by process",false);
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Tests conditional statements to determine whether this specific process should be applied in this particular HRU
 /// \note based upon HRU type or other diagnostics

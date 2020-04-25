@@ -1034,6 +1034,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
   INPUT.open(filename.c_str());
   if (INPUT.fail())
   {
+    INPUT.close();
     string errString="ERROR opening file: "+filename;
     ExitGracefully(errString.c_str(),BAD_DATA);
     return NULL;
@@ -1152,7 +1153,6 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
         delete [] aVal[i];   aVal[i] =NULL;
       }
       delete [] aVal; aVal=NULL;
-      INPUT.close();
 
       return pTimeSeries;
     }

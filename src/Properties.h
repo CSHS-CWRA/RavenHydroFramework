@@ -43,12 +43,14 @@ struct soil_struct
   double stone_frac;        ///< [0..1]    stone volume fraction
   double bulk_density;      ///< [kg/m3]   bulk dry density
   //double specific_storage;///< [-]       specific storage
+  double compressibility;   ///< [-]	   soil specific storage
 
   double cap_ratio;         ///< [-]       total water storage cap.=thick*cap_ratio ; cap_ratio=poro*(1-stone_f)
 
   //Thermal properties
   double heat_capacity;     ///< [MJ/m3/K]   saturated *volumetric* heat capacity
   double thermal_cond;      ///< [W/m/K]    saturated soil thermal conductivity
+  double freezing_point;    ///< [C]        soil freezing point
 
   //unsaturated flow parameters
   double hydraul_cond;      ///< [mm/d]  saturated hydraulic conductivity

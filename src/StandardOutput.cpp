@@ -491,6 +491,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         }
       }
       HRUSTOR<<", Total [mm]"<<endl;
+      HRUSTOR.close();
     }
   }
 
@@ -1189,8 +1190,10 @@ void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time,
 {
   if (Options.pavics)
   {
-    ofstream PROGRESS((Options.main_output_dir+"Raven_progress.txt").c_str());
+    ofstream PROGRESS;
+    PROGRESS.open((Options.main_output_dir+"Raven_progress.txt").c_str());
     if (PROGRESS.fail()){
+      PROGRESS.close();
       ExitGracefully("ParseInput:: Unable to open Raven_progress.txt. Bad output directory specified?",RUNTIME_ERR);
     }
     
@@ -1466,8 +1469,6 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   const char *current_basin_name[1];                 // current time in days since start time
 
   string      tmp,tmp2,tmp3;
-  static double fill_val[] = {NETCDF_BLANK_VALUE};
-  static double miss_val[] = {NETCDF_BLANK_VALUE}; 
 
   // initialize all potential file IDs with -9 == "not existing and hence not opened" 
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)

@@ -53,7 +53,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
    //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":VegetationChange"    )) { code=1; }
     else if(!strcmp(s[0],":LandUseChange"       )) { code=2; }
-
+    else if(!strcmp(s[0],":GroupLandUseChange"       )) { code=3; }
     else if(!strcmp(s[0],":SetStreamflow"       )) { code=10; }
     else if(!strcmp(s[0],":SetReservoirFlow"    )) { code=11; }
     else if(!strcmp(s[0],":SetReservoirStage"   )) { code=12; }
@@ -78,17 +78,56 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
       break;
     }
     case(1):  //----------------------------------------------
-    {/*:VegetationChange [HRU group] [new vegetation tag] */
+    {/*:VegetationChange [HRU ID] [new vegetation tag] */
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
-      CVegetationClass *veg_class= CVegetationClass::StringToVegClass(s[2]);
-      pHRU->ChangeVegetation(veg_class);
+      if(pHRU!=NULL) {
+        CVegetationClass *veg_class= CVegetationClass::StringToVegClass(s[2]);
+        if(veg_class!=NULL) {
+          pHRU->ChangeVegetation(veg_class);
+        }
+        else {
+          WriteWarning("ParseLiveFile: invalid vegetation tag provided in :LandUseChange command",Options.noisy);
+        }
+      }
+      else {
+        WriteWarning("ParseLiveFile: invalid HRU ID provided in :VegetationChange command",Options.noisy);
+      }
       break;
     }
     case(2):  //----------------------------------------------
-    {/*:LandUseChange [HRU group] [new LULT tag]*/
+    {/*:LandUseChange [HRU ID] [new LULT tag]*/
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
-      CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
-      pHRU->ChangeLandUse(lult_class);
+      if(pHRU!=NULL) {
+        CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
+        if(lult_class!=NULL) {
+          pHRU->ChangeLandUse(lult_class);
+        }
+        else {
+          WriteWarning("ParseLiveFile: invalid Land use tag provided in :LandUseChange command",Options.noisy);
+        }
+      }
+      else {
+        WriteWarning("ParseLiveFile: invalid HRU ID provided in :LandUseChange command",Options.noisy);
+      }
+      break;
+    }
+    case(3):  //----------------------------------------------
+    {/*:GroupLandUseChange [HRU group] [new LULT tag]*/
+      CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
+      if(pHRUGroup!=NULL) {
+        CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
+        if(lult_class!=NULL) {
+          for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
+            pHRUGroup->GetHRU(k)->ChangeLandUse(lult_class);
+          }
+        }
+        else {
+          WriteWarning("ParseLiveFile: invalid Land use tag provided in :GroupLandUseChange command",Options.noisy);
+        }
+      }
+      else {
+        WriteWarning("ParseLiveFile: invalid HRU Group name provided in :GroupLandUseChange command",Options.noisy);
+      }
       break;
     }
     case(10):  //----------------------------------------------
@@ -118,6 +157,8 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     default://------------------------------------------------
     {
+      string warning="Unrecognized command in live file at line "+to_string(Len);
+      WriteWarning(warning,Options.noisy);
       break;
     }
     }//end switch(code)

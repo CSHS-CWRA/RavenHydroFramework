@@ -967,6 +967,7 @@ struct optStruct
   ensemble_type    ensemble;                  ///< ensemble type (or ENSEMBLE_NONE if single model)
   string           external_script;           ///< call to external script/.exe once per timestep (or "" if none)
   double           rvl_read_frequency;        ///< frequency to read rvl file (in d, or 0.0 if not to be read)
+  bool             use_stopfile;              ///< true if Raven should look for stopfile
   
   model_type       modeltype;                 ///< type of model being simulated
   gw_nonlinear_num_method gw_solver_outer;    ///< nonlinear numerical solution method for groundwater GWMIGRATe - rename shorter
@@ -1033,6 +1034,7 @@ struct optStruct
 
   bool               keepUBCWMbugs;           ///< true if peculiar UBCWM bugs are retained (only really for BC Hydro use)
   bool               suppressCompetitiveET;   ///< true if competitive ET should be suppressed (for backward compatibility)
+  bool               snow_suppressPET;        ///< true if presence of snow should set PET to zero
 
   //Soil model information
   soil_model         soil_modeltype;          ///< soil model (e.g., one-layer, two-layer, lumped, etc.)

@@ -98,6 +98,8 @@ public:/*-------------------------------------------------------*/
                                     comparison      compare_method,
                                     string          data);
 
+  void                 Redirect(const int toSVindex, const int newToSVindex);
+
   virtual void Initialize();
   virtual void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const=0;
 

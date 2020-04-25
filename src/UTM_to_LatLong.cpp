@@ -1,13 +1,13 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 
 /* Ellipsoid model constants (actual values here are for WGS84) */
 const double sm_a           = 6378137.0;         ///< Ellipsoid model constant for WGS 1984
 const double sm_b           = 6356752.314;       ///< Ellipsoid model constant for WGS 1984
-const double sm_EccSquared  = 6.69437999013e-03; ///< Ellipsoid model constant for WGS 1984
+//const double sm_EccSquared  = 6.69437999013e-03; ///< Ellipsoid model constant for WGS 1984
 const double UTMScaleFactor = 0.9996;            ///< UTM scale factor for WGS 1984
 
 ///////////////////////////////////////////////////////////////////
