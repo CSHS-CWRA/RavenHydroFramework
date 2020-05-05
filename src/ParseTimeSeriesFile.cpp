@@ -8,6 +8,7 @@
 #include "IrregularTimeSeries.h"
 #include "ParseLib.h"
 
+void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long SBID, long SBIDres,double pct_met,int jul_start,int jul_end);
 //////////////////////////////////////////////////////////////////
 /// \brief Parse input time series file, model.rvt
 /// \details
@@ -1053,7 +1054,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     {/*:IrrigationDemand {long Basincode}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qin} x nMeasurements [m3/s]
-     :EndBasinInflowHydrograph2
+     :EndIrrigationDemand
      */
       if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
       long SBID=DOESNT_EXIST;
@@ -1073,94 +1074,27 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (64): //---------------------------------------------
-    {/*:ReservoirDownstreamDemand {long downstream SBID} {long reservoir SBID} {double percent_met}*/
+    {/*:ReservoirDownstreamDemand {long downstream SBID} {long reservoir SBID} {double percent_met} [julian_start] [julian_end]*/
       if(Options.noisy) { cout <<"Reservoir downstream demand"<<endl; }
-      long SBID=DOESNT_EXIST;
-      long SBIDres=DOESNT_EXIST;
-      CSubBasin *pSB,*pSBres;
-      double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
+      long   SBID     =DOESNT_EXIST;
+      long   SBIDres  =DOESNT_EXIST;
+      int    jul_start=0;
+      int    jul_end  =365;
+      double pct_met  =0.0;
       if(Len>=4) { 
         SBID=s_to_l(s[1]); 
         double tmp=AutoOrDouble(s[2]);
         if(tmp==AUTO_COMPUTE) { SBIDres=AUTO_COMPUTE_LONG; }
         else                  { SBIDres=s_to_l(s[2]); }
+        pct_met=s_to_d(s[3]);
       }
-      pSB=pModel->GetSubBasinByID(SBID);
-      if(pSB==NULL) {
-        string warn;
-        warn=":ReservoirDownstreamDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
-        WriteWarning(warn,Options.noisy);
+      if(Len>=6) { //optional date commands
+        jul_start=s_to_i(s[4])-1;
+        jul_end  =s_to_i(s[5])-1; //converts to internal Raven convention
       }
-      else 
-      {
-        if(SBIDres==AUTO_COMPUTE_LONG)
-        {
-          if (Options.res_demand_alloc==DEMANDBY_CONTRIB_AREA)
-          {
-            int nUpstr=0;
-            const CSubBasin **pUpstr = pModel->GetUpstreamSubbasins(SBID,nUpstr);
-            double Atot=0;
-            for(int p=0;p<nUpstr;p++) {
-              if(pUpstr[p]->GetReservoir()!=NULL) {
-                Atot+=pUpstr[p]->GetDrainageArea();
-              }
-            }
-            double area;
 
-            if(Atot>0.0) { //reservoirs exist upstream
-              for(int p=0;p<nUpstr;p++) {
-                if(pUpstr[p]->GetReservoir()!=NULL) {
-                /*  for(int i=0;i<pUpstr[p]->GetNumDemands();i++) {
-                    if(pUpstr[p]->GetReservoir()->GetDemand(i).DownSB==pSB->GetID()) {
-                      //demand already assigned; this overrides AUTO for this subbasin
-                    }
-                  }*/
-                  area=pUpstr[p]->GetDrainageArea();
-                  pSBres=pModel->GetSubBasinByID(pUpstr[p]->GetID());
-                  pSBres->AddReservoirDownstrDemand(pSB,area/Atot*mult);
-                }
-              }
-            }
-          }
-          //else if(Options.res_demand_alloc==DEMANDBY_SURFACE_AREA) {
+      AllocateReservoirDemand(pModel,Options,SBID,SBIDres,pct_met,jul_start,jul_end);
 
-          //}
-          else if(Options.res_demand_alloc==DEMANDBY_MAX_CAPACITY) {
-            int nUpstr=0;
-            const CSubBasin **pUpstr = pModel->GetUpstreamSubbasins(SBID,nUpstr);
-            double Vtot=0;
-            for(int p=0;p<nUpstr;p++) {
-              if(pUpstr[p]->GetReservoir()!=NULL) {
-                Vtot+=pUpstr[p]->GetReservoir()->GetMaxCapacity();
-              }
-            }
-            double volume;
-
-            if(Vtot>0.0) { //reservoirs exist upstream
-              for(int p=0;p<nUpstr;p++) {
-                if(pUpstr[p]->GetReservoir()!=NULL) {
-                  volume=pUpstr[p]->GetReservoir()->GetMaxCapacity();
-                  pSBres=pModel->GetSubBasinByID(pUpstr[p]->GetID());
-                  pSBres->AddReservoirDownstrDemand(pSB,volume/Vtot*mult);
-                }
-              }
-            }
-          }
-        }
-        else 
-        { //single connection
-          pSBres=pModel->GetSubBasinByID(SBIDres);
-          if(pSBres!=NULL) {
-            pSBres->AddReservoirDownstrDemand(pSB,s_to_d(s[3])*mult);
-          }
-          else
-          {
-            string warn;
-            warn=":ReservoirDownstreamDemand: Reservoir subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
-            WriteWarning(warn,Options.noisy);
-          }
-        }
-      }
       break;
     }
     case (65): //---------------------------------------------
@@ -1272,6 +1206,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       delete [] aQ1; delete [] aQ2;
+      break;
+    }
+    case (68): //---------------------------------------------
+    {/*:EnvironmentalMinFlow {long SBID}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qmin} x nMeasurements [m3/s]
+     :EndEnvironmentalMinFlow
+     */
+      if(Options.noisy) { cout <<"Environmental Minimum Flow"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,false,"EnviroMinFlow_"+to_string(SBID),to_string(SBID),Options);
+      if(pSB!=NULL) {
+        pSB->AddEnviroMinFlow(pTimeSer);
+      }
+      else
+      {
+        string warn;
+        warn=":EnvironmentalMinFlow: Subbasin "+to_string(SBID)+" not in model, cannot set minimum flow time series";
+        WriteWarning(warn,Options.noisy);
+      }
       break;
     }
     case (70): //---------------------------------------------
@@ -2055,4 +2012,94 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   return true;
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief handles allocation of reservoir demands from downstream
+/// \param *&pModel [out] Reference to the model object
+/// \param Options [in] Global model options
+//
+void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID,long SBIDres,double pct_met,int jul_start,int jul_end) 
+{
+  double dmult;
+  double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
 
+  CSubBasin *pSB,*pSBres;
+  pSB=pModel->GetSubBasinByID(SBID);
+  if(pSB==NULL) {
+    string warn;
+    warn=":AllocateReservoirDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
+    WriteWarning(warn,Options.noisy);
+    return;
+  }
+  if(SBIDres==AUTO_COMPUTE_LONG)
+  {
+    if(Options.res_demand_alloc==DEMANDBY_CONTRIB_AREA)//==================================================
+    {
+      int nUpstr=0;
+      const CSubBasin **pUpstr = pModel->GetUpstreamSubbasins(SBID,nUpstr);
+      double Atot=0;
+      for(int p=0;p<nUpstr;p++) {
+        if(pUpstr[p]->GetReservoir()!=NULL) {
+          Atot+=pUpstr[p]->GetDrainageArea();
+        }
+      }
+      double area;
+
+      if(Atot>0.0) { //reservoirs exist upstream
+        for(int p=0;p<nUpstr;p++) {
+          if(pUpstr[p]->GetReservoir()!=NULL) {
+            /*  for(int i=0;i<pUpstr[p]->GetNumDemands();i++) {
+            if(pUpstr[p]->GetReservoir()->GetDemand(i).DownSB==pSB->GetID()) {
+            //demand already assigned; this overrides AUTO for this subbasin
+            }
+            }*/
+            dmult=pUpstr[p]->GetReservoir()->GetDemandMultiplier();
+            area=pUpstr[p]->GetDrainageArea();
+            pUpstr[p]->GetReservoir()->AddDownstreamDemand(pSB,area/Atot*mult*dmult,jul_start,jul_end);
+          }
+        }
+      }
+    }
+    //else if(Options.res_demand_alloc==DEMANDBY_SURFACE_AREA) {//================================================
+
+    //}
+    else if(Options.res_demand_alloc==DEMANDBY_MAX_CAPACITY)//==================================================
+    {
+      int nUpstr=0;
+      const CSubBasin **pUpstr = pModel->GetUpstreamSubbasins(SBID,nUpstr);
+      double Vtot=0;
+      for(int p=0;p<nUpstr;p++) {
+        if(pUpstr[p]->GetReservoir()!=NULL) {
+          Vtot+=pUpstr[p]->GetReservoir()->GetMaxCapacity();
+        }
+      }
+      double volume;
+
+      if(Vtot>0.0) { //reservoirs exist upstream
+        for(int p=0;p<nUpstr;p++) {
+          if(pUpstr[p]->GetReservoir()!=NULL) {
+            dmult =pUpstr[p]->GetReservoir()->GetDemandMultiplier();
+            volume=pUpstr[p]->GetReservoir()->GetMaxCapacity();
+            pUpstr[p]->GetReservoir()->AddDownstreamDemand(pSB,(volume/Vtot)*dmult*mult,jul_start,jul_end);
+          }
+        }
+      }
+    }
+  }
+  else /* if SBIDres!=AUTO_COMPUTE_LONG */
+  { //single connection //===============================================================================
+    pSBres=pModel->GetSubBasinByID(SBIDres);
+    if(pSBres==NULL) {
+      string warn=":AllocateReservoirDemand: Reservoir subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
+      WriteWarning(warn,Options.noisy);
+    }
+    else if(pSBres->GetReservoir()==NULL) {
+      string warn=":AllocateReservoirDemand: subbasin "+to_string(SBID)+" does not have reservoir, cannot set reservoir downstream demand";
+      WriteWarning(warn,Options.noisy);
+    }
+    else
+    {  
+      dmult=pSBres->GetReservoir()->GetDemandMultiplier();
+      pSBres->GetReservoir()->AddDownstreamDemand(pSB,pct_met*dmult*mult,jul_start,jul_end);
+    }
+  }
+}

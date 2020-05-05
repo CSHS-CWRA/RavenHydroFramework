@@ -92,7 +92,9 @@ struct soil_struct
   double max_baseflow_rate; ///< [mm/d]    max baseflow rate (e.g., VIC_ARNO)- user defined between 0.001 - 10000.00
   double baseflow_n;        ///< [-]       VIC/ARNO baseflow exponent - user defined between 1.0 - 10.0
   double baseflow_coeff;    ///< [1/d]     Linear Baseflow storage coefficient [Q_base=K*S]
+  double baseflow_coeff2;   ///< [1/d]     Linear baseflow storage coefficient [threshhold]
   double baseflow_thresh;   ///< [0..1]    threshold saturation for onset of baseflow
+  double storage_threshold; ///< [mm]      threshhold storage for onset of baseflow
 
   double max_cap_rise_rate; ///< [mm/d]    HBV max capillary rise rate
 

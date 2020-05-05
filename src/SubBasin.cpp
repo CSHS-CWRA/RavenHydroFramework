@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -372,12 +372,13 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
 double CSubBasin::GetIrrigationDemand(const double &t) const
 {
   if(_pIrrigDemand==NULL) { return 0.0; }
-  return _pIrrigDemand->GetValue(t);
+  double Qirr=_pIrrigDemand->GetValue(t); if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+  return Qirr;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns cumulative downstream specified irrigation demand, including from this subbasin
 /// \param &t [in] Model time at which the demand from SB is to be determined
-/// \return specified cumulative downstream demand (in [m3/s])from subbasin at time t
+/// \return specified cumulative downstream demand (in [m3/s]) from subbasin at time t
 //
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const 
 {
@@ -389,6 +390,25 @@ double CSubBasin::GetDownstreamIrrDemand(const double &t) const
   //else                              { return _pDownstreamSB->GetDownstreamIrrDemand(t)+Qirr; }
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns specified environmental minimum flow at subbasin outlet at time t
+/// \param &t [in] Model time at which the environmental minimum flow is to be determined
+/// \return specified environmental minimum flow in subbasin at time t
+//
+double CSubBasin::GetEnviroMinFlow(const double &t) const 
+{
+  if(_pEnviroMinFlow==NULL) { return 0.0; }
+  double Qmin=_pEnviroMinFlow->GetValue(t); if(Qmin==RAV_BLANK_DATA) { Qmin=0; }
+  return Qmin;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns true if subbasin has irrigation demand
+/// \return true if subbasin has irrigation demand
+//
+bool CSubBasin::HasIrrigationDemand() const
+{
+  return (_pIrrigDemand!=NULL);
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
 /// \param &t [in] Model time at which the outflow from SB is to be determined
 /// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
@@ -398,12 +418,9 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
 {
   if (_pIrrigDemand==NULL){return 0.0;}
   double Qirr,unmet_demand;
-  double Qdemand=_pIrrigDemand->GetValue(t);
+  double Qdemand=GetIrrigationDemand(t);
+  double Qmin   =GetEnviroMinFlow(t);
 
-  if (Qdemand==RAV_BLANK_DATA){Qdemand=0.0;}
-
-  double Qmin=0.0; 
-  if(_pEnviroMinFlow!=NULL) { Qmin=_pEnviroMinFlow->GetValue(t); if(Qmin==RAV_BLANK_DATA) { Qmin=0; } }
   // could be fixed quantity, e.g., Q=20 m3/s 
   //or (1.0-use_percentage)*Q (e.g.., if only 20% of flow can be used for demand
 
@@ -427,14 +444,13 @@ int CSubBasin::GetNumDiversions() const {
 //
 double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const
 {
-
   if (_pDiversions[i]==NULL) { pDivert=DOESNT_EXIST; return 0.0; } //no diversion
   if ((i<0) || (i>=_nDiversions)){ExitGracefully("CSubBasin::GetDiversionFlow",RUNTIME_ERR); }
 
   pDivert=_pDiversions[i]->target_p;
 
-  if((tt.julian_day>=_pDiversions[i]->julian_start) &&
-    (tt.julian_day<=_pDiversions[i]->julian_end)) {
+  if (IsInDateRange(tt.julian_day,_pDiversions[i]->julian_start,_pDiversions[i]->julian_end)) 
+  {
     if(_pDiversions[i]->aQdivert==NULL) {
       if(Q>_pDiversions[i]->min_flow)
       {
@@ -747,21 +763,8 @@ void    CSubBasin::AddIrrigationDemand(CTimeSeries *pOutflow)
 void    CSubBasin::AddEnviroMinFlow(CTimeSeries *pMinFlow)
 {
   ExitGracefullyIf(_pEnviroMinFlow!=NULL,
-    "CSubBasin::AddEnviroMinFlow: only one irrigation demand time series may be specified per basin",BAD_DATA);
+    "CSubBasin::AddEnviroMinFlow: only one environmental minimum flow time series may be specified per basin",BAD_DATA);
   _pEnviroMinFlow=pMinFlow;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Adds reservoir downstream demand
-/// \param SBID subbasin ID of demand location or AUTO_COMPUTE_LONG
-/// \param pct percentage of flow demand to be satisfied by reservoir as fraction [0..1] or AUTO_COMPUTE
-//
-void  CSubBasin::AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct) {
-  if(_pReservoir!=NULL) {
-    _pReservoir->AddDownstreamDemand(pSB,pct);
-  }
-  else {
-    WriteWarning(" CSubBasin::AddReservoirDownstrDemand: downstream demand specified for basin without reservoir. Command ignored.",false);
-  }
 }
 
 //////////////////////////////////////////////////////////////////

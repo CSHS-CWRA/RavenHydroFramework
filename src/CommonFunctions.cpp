@@ -439,6 +439,21 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
   return tt;
 }
 ////////////////////////////////////////////////////////////////////////////
+/// \brief returns true if julian date is between two julian days (days inclusive)
+/// \param julian_day   [in] julian date from 0.0 to 365.0
+/// \param julian_start [in] integer start day of date range (0=Jan 1, 364=Dec 31 in non-leap)
+/// \param julian_end [in] integer end day of date range (0=Jan 1, 364=Dec 31 in non-leap)
+//
+bool        IsInDateRange(const double &julian_day,const int &julian_start,const int &julian_end) 
+{
+  if(julian_start<julian_end) {
+    return ((julian_day>=julian_start) && (julian_day<=julian_end));
+  }
+  else {
+    return ((julian_day>=julian_start) || (julian_day<=julian_end)); //wraps around Dec 31-Jan 1
+  }
+}
+////////////////////////////////////////////////////////////////////////////
 /// \brief returns time struct corresponding to string in the following format
 /// \param unit_t_str [in] full time string from NetCDF file (e.g., 'days since YYYY-MM-dd 00:00:00+0000')
 /// \param timestr    [in] first word of string (e.g., 'days')

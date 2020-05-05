@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -175,11 +175,13 @@ public:/*-------------------------------------------------------*/
   double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
   double          GetChannelStorage        () const;                   //[m3] volume in channel
   double          GetReservoirStorage      () const;                   //[m3] volume in reservoir
+
   double          GetSpecifiedInflow       (const double &t) const;    //[m3/s] to upstream end of channel at point in time
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
   double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
+  bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
 
   CReservoir         *GetReservoir         () const;
 
@@ -203,7 +205,6 @@ public:/*-------------------------------------------------------*/
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double *aQ1, const double *aQ2, const int NQ);
 
   // reservoir manipulators
-  void            AddReservoirDownstrDemand(const CSubBasin *pSB,const double pct);
   void            ResetReferenceFlow       (const double    &Qreference);
   void            SetReservoirFlow         (const double &Q,const double &Qlast,const double &t);
   void            SetInitialReservoirStage (const double &h,const double &hlast);

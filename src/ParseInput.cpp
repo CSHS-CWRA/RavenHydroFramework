@@ -262,6 +262,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_reservoirMB   =false;
   Options.write_basinfile     =false;
   Options.write_interp_wts    =false;
+  Options.write_demandfile    =false;
   Options.suppressICs         =false;
   Options.period_ending       =false;
   Options.period_starting     =false;//true;
@@ -408,12 +409,13 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":CallExternalScript"        )){code=102;}
     else if  (!strcmp(s[0],":rvl_Filename"              )){code=103;}
     else if  (!strcmp(s[0],":ReadLiveFile"              )){code=104;}
-    else if  (!strcmp(s[0],":CustomOutputInterval"      )){code=105; }
-    else if  (!strcmp(s[0],":UseStopFile"               )){code=106; }
+    else if  (!strcmp(s[0],":CustomOutputInterval"      )){code=105;}
+    else if  (!strcmp(s[0],":UseStopFile"               )){code=106;}
+    else if  (!strcmp(s[0],":WriteDemandFile"           )){code=107;}
 
-    else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510; }
-    else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511; }
-    else if  (!strcmp(s[0],":rvg_Filename"              )){code=512; }
+    else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}
+    else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}
+    else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}
     //-----------------------------------------------------------
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
@@ -1871,6 +1873,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.use_stopfile=true;
       break;
     }
+    case(107):  //--------------------------------------------
+    {/*:WriteDemandFile*/
+      if(Options.noisy) { cout << "Write Irrigation Demand file" << endl; }
+      Options.write_demandfile=true;
+      break;
+    }
     case(150):  //--------------------------------------------
     {/*:AggregatedVariable
        ":AggregatedVariable" [SV_TAG] {optional HRU_Group}
@@ -1896,15 +1904,16 @@ bool ParseMainInputFile (CModel     *&pModel,
       baseflow_type btype=BASE_LINEAR;
       if (Len<4){ImproperFormatWarning(":Baseflow",p,Options.noisy); break;}
 
-      if      (!strcmp(s[1],"BASE_VIC"            )){btype=BASE_VIC;}
-      else if (!strcmp(s[1],"BASE_TOPMODEL"       )){btype=BASE_TOPMODEL;}
-      else if (!strcmp(s[1],"BASE_LINEAR"         )){btype=BASE_LINEAR;}
+      if      (!strcmp(s[1],"BASE_VIC"             )){btype=BASE_VIC;}
+      else if (!strcmp(s[1],"BASE_TOPMODEL"        )){btype=BASE_TOPMODEL;}
+      else if (!strcmp(s[1],"BASE_LINEAR"          )){btype=BASE_LINEAR;}
       else if (!strcmp(s[1],"BASE_LINEAR_CONSTRAIN")){btype=BASE_LINEAR_CONSTRAIN;}
-      else if (!strcmp(s[1],"BASE_LINEAR_ANALYTIC")){btype=BASE_LINEAR_ANALYTIC;}
-      else if (!strcmp(s[1],"BASE_POWER_LAW"      )){btype=BASE_POWER_LAW;}
-      else if (!strcmp(s[1],"BASE_CONSTANT"       )){btype=BASE_CONSTANT;}
-      else if (!strcmp(s[1],"BASE_THRESH_POWER"   )){btype=BASE_THRESH_POWER;}
-      else if (!strcmp(s[1],"BASE_GR4J"           )){btype=BASE_GR4J;}
+      else if (!strcmp(s[1],"BASE_LINEAR_ANALYTIC" )){btype=BASE_LINEAR_ANALYTIC;}
+      else if (!strcmp(s[1],"BASE_POWER_LAW"       )){btype=BASE_POWER_LAW;}
+      else if (!strcmp(s[1],"BASE_CONSTANT"        )){btype=BASE_CONSTANT;}
+      else if (!strcmp(s[1],"BASE_THRESH_POWER"    )){btype=BASE_THRESH_POWER;}
+      else if (!strcmp(s[1],"BASE_THRESH_STOR"     )){btype=BASE_THRESH_STOR;}
+      else if (!strcmp(s[1],"BASE_GR4J"            )){btype=BASE_GR4J;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized baseflow process representation",BAD_DATA_WARN); break;
       }

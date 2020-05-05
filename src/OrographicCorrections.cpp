@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 
@@ -384,7 +384,7 @@ void CModel::CorrectPET(const optStruct &Options,
   if(Options.snow_suppressPET) 
   {
     double SWE     =0.0;
-    double snow_cov=0.0;
+    double snow_cov=1.0;
     int iSnow=GetStateVarIndex(SNOW);
     int iSC  =GetStateVarIndex(SNOW_COVER);
     if(iSnow!=DOESNT_EXIST) { SWE     =pHRU->GetStateVarValue(iSnow); }

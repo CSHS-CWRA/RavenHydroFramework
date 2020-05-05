@@ -106,6 +106,12 @@ void CmvBaseflow::GetParticipatingParamList(string *aP, class_type *aPC, int &nP
     aP[1]="BASEFLOW_N";        aPC[1]=CLASS_SOIL;
     aP[2]="BASEFLOW_THRESH";   aPC[2]=CLASS_SOIL;
   }
+  else if(type==BASE_THRESH_STOR)
+  {
+    nP=2;
+    aP[0]="BASEFLOW_COEFF2";   aPC[0]=CLASS_SOIL;
+    aP[1]="STORAGE_THRESHOLD"; aPC[1]=CLASS_SOIL;
+  }
   else{
     ExitGracefully("CmvBaseflow::GetParticipatingParamList: undefined baseflow algorithm",BAD_DATA);
   }
@@ -267,6 +273,18 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
 
     rates[0]=0.0;
     if (sat>tsat){ rates[0] = K*pow((sat - tsat) / (1.0-tsat),n); }
+
+  }
+  //-----------------------------------------------------------------
+  else if(type==BASE_THRESH_STOR)
+  {
+
+    double K,tstor;
+    K     = pSoil->baseflow_coeff2;   //linear baseflow coeff [1/d]
+    tstor = pSoil->storage_threshold; //threshold storage [mm]
+
+    rates[0]=0.0;
+    if(stor>tstor) { rates[0] = K*(stor-tstor); }
 
   }
   //-----------------------------------------------------------------

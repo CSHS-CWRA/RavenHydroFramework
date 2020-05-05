@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -444,6 +444,8 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   bad=SetSpecifiedValue(_Soil.GR4J_x3,Stmp.GR4J_x3,Sdefault.GR4J_x3,needed,"GR4J_X3");
   bad=SetSpecifiedValue(_Soil.baseflow_thresh,Stmp.baseflow_thresh,Sdefault.baseflow_thresh,needed,"BASEFLOW_THRESH");
   bad=SetSpecifiedValue(_Soil.exchange_flow,Stmp.exchange_flow,Sdefault.exchange_flow,needed,"EXCHANGE_FLOW");
+  bad=SetSpecifiedValue(_Soil.baseflow_coeff2,Stmp.baseflow_coeff2,Sdefault.baseflow_coeff2,needed,"BASEFLOW_COEFF2");
+  bad=SetSpecifiedValue(_Soil.storage_threshold,Stmp.storage_threshold,Sdefault.storage_threshold,needed,"STORAGE_THRESHOLD");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -516,7 +518,8 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.GR4J_x3           =DefaultParameterValue(is_template,false);//90 //[mm]
   S.baseflow_thresh   =DefaultParameterValue(is_template,false);//0 //[-]
   S.exchange_flow     =DefaultParameterValue(is_template,false);//0 //[mm/d]
-
+  S.storage_threshold =DefaultParameterValue(is_template,false);//0 //[-]
+  S.baseflow_coeff2   =DefaultParameterValue(is_template,false);//0.100;  //[1/day]
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the soil property corresponding to param_name
@@ -595,6 +598,8 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
   else if (!name.compare("GR4J_X3"             )){S.GR4J_x3 =value;}
   else if (!name.compare("BASEFLOW_THRESH"     )){S.baseflow_thresh =value;}
   else if (!name.compare("EXCHANGE_FLOW"       )){S.exchange_flow=value;}
+  else if (!name.compare("BASEFLOW_COEFF2"     )){S.baseflow_coeff2=value; }
+  else if (!name.compare("STORAGE_THRESHOLD"   )){S.storage_threshold=value;}
   else{
     WriteWarning("CSoilClass::SetSoilProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file",false);
   }
@@ -723,6 +728,8 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
   else if (!name.compare("GR4J_X3"             )){return S.GR4J_x3;}
   else if (!name.compare("BASEFLOW_THRESH"     )){return S.baseflow_thresh;}
   else if (!name.compare("EXCHANGE_FLOW"       )){return S.exchange_flow;}
+  else if (!name.compare("BASEFLOW_COEFF2"     )){return S.baseflow_coeff2; }
+  else if (!name.compare("STORAGE_THRESHOLD"   )){return S.storage_threshold;}
 
   //transport parameters NOT HANDLED HERE!
   else{

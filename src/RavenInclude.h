@@ -1065,6 +1065,7 @@ struct optStruct
   bool             write_constitmass;         ///< true if constituent mass [mg/m2] is written instead of concentration [mg/L] in output files
   bool             write_basinfile;           ///< true if subbasins params are written to SubbasinParams.csv
   bool             write_interp_wts;          ///< true if interpolation weights are written to InterpolationWeights.csv
+  bool             write_demandfile;          ///< true if demands.csv file is written
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files
@@ -1073,6 +1074,7 @@ struct optStruct
   string           working_dir;               ///< working directory
   int              wateryr_mo;                ///< starting month of water year (typically 10=October)
   bool             create_rvp_template;       ///< create an rvp template file after reading the .rvi
+
   //                                          ///< diagnostic options
   double           diag_start_time;           ///< Model time to start diagnostics
   double           diag_end_time;             ///< Model time to start diagnostics
@@ -1248,6 +1250,7 @@ string      GetCurrentTime(              void);
 double      FixTimestep(                 double      tstep);
 bool        IsValidDateString     (const string      sDate);
 bool       IsValidNetCDFTimeString(const string unit_t_str);
+bool        IsInDateRange(const double &julian_day, const int &julian_start, const int &julian_end);
 
 //Conversion Functions-------------------------------------------
 double CelsiusToFarenheit       (const double &T);

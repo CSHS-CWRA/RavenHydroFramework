@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
@@ -44,8 +44,11 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _pQdownSB=NULL;
   _nDemands=0;
   _aDemands=NULL;
+  _demand_mult=1.0;
 
   _pDZTR=NULL;
+
+  _minStageDominant=false;
 
   _crest_ht=0.0;
   _max_capacity=0.0;
@@ -572,7 +575,8 @@ void    CReservoir::AddMaxQTimeSeries(CTimeSeries *pQmax) {
 /// \param SBIDdown downstream target flow basin ID
 /// \param Qrange downstream target flow range [m3/s]
 //
-void    CReservoir::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB, const double &Qrange) {
+void    CReservoir::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB, const double &Qrange) 
+{
   ExitGracefullyIf(_pQdownTS!=NULL,
     "CReservoir::AddDownstreamTargetQ: only one downstream flow time series may be specified per reservoir",BAD_DATA_WARN);
   _pQdownTS=pQ;
@@ -584,11 +588,14 @@ void    CReservoir::AddDownstreamTargetQ(CTimeSeries *pQ,const CSubBasin *pSB, c
 /// \param SBID subbasin ID of demand location or AUTO_COMPUTE_LONG
 /// \param pct percentage of flow demand to be satisfied by reservoir as fraction [0..1] or AUTO_COMPUTE
 //
-void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct) {
+void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct, const int julian_start, const int julian_end) 
+{
   down_demand *pDemand;
   pDemand=new down_demand;
-  pDemand->pDownSB=pSB;
-  pDemand->percent=pct;
+  pDemand->pDownSB     =pSB;
+  pDemand->percent     =pct;
+  pDemand->julian_start=julian_start;
+  pDemand->julian_end  =julian_end;
   if(!DynArrayAppend((void**&)(_aDemands),(void*)(pDemand),_nDemands)) {
     ExitGracefully("CReservoir::AddDownstreamDemand: adding NULL source",RUNTIME_ERR);
   }
@@ -617,6 +624,14 @@ void  CReservoir::SetMaxCapacity(const double &max_cap)
 double  CReservoir::GetMaxCapacity() const
 {
   return _max_capacity;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief gets demand multiplier
+/// \returns reservoir demand multiplier
+//
+double CReservoir::GetDemandMultiplier() const
+{
+  return _demand_mult;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief gets current constraint name
@@ -655,6 +670,20 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief sets minmum stage constraint to dominant  
+//
+void CReservoir::SetMinStageDominant() 
+{ 
+  _minStageDominant=true; 
+}
+//////////////////////////////////////////////////////////////////
+/// \brief sets minmum stage constraint to dominant  
+//
+void CReservoir::SetDemandMultiplier(const double &value)
+{
+  _demand_mult=value;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief sets parameters for Dynamically zoned target release model  
@@ -916,7 +945,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 
   // Downstream irrigation demand 
   for(int i=0;i<_nDemands;i++) {
-    Qmin+=(_aDemands[i]->pDownSB->GetIrrigationDemand(tt.model_time)*_aDemands[i]->percent);
+    if(IsInDateRange(tt.julian_day,_aDemands[i]->julian_start,_aDemands[i]->julian_end)){
+      Qmin+=(_aDemands[i]->pDownSB->GetIrrigationDemand(tt.model_time)*_aDemands[i]->percent);
+      Qmin+= _aDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met 
+    }
   }
 
 
@@ -1065,36 +1097,42 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   {         
     if(Qoverride!=RAV_BLANK_DATA) {
       if((constraint!=RC_MAX_FLOW_INCREASE) && 
-          (constraint!=RC_MAX_FLOW_DECREASE) && 
-          (constraint!=RC_MIN_STAGE)) { constraint=RC_OVERRIDE_FLOW; } //Specified override flow
+         (constraint!=RC_MAX_FLOW_DECREASE) && 
+         (constraint!=RC_MIN_STAGE)) { constraint=RC_OVERRIDE_FLOW; } //Specified override flow
       res_outflow=max(2*Qoverride-_Qout,Qminstage); //Qoverride is avg over dt, res_outflow is end of dt
     }
-      
-    if (res_outflow<Qmin){ //overwrites any other specified or target flow
-      res_outflow=Qmin;
-      constraint=RC_MIN_FLOW; //minimum flow
-    }
-      
-    if(res_outflow>Qmax) { //overwrites any other specified or target flow
-      res_outflow=Qmax;
-      constraint=RC_MAX_FLOW; //maximum flow
-    }
 
-    double A_guess=A_old;
-    double A_last,V_new;
-    double seep_guess = seep_old;
-    do {
-      V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(seep_old+seep_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
-      if(V_new<0) {
-        V_new=0;
-        constraint=RC_DRY_RESERVOIR; //drying out reservoir
-        res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
+    if((constraint==RC_MIN_STAGE) && (_minStageDominant)) { 
+      //In this case, min stage constraint overrides min flow constraint; nothing done 
+    }
+    else
+    {
+      if (res_outflow<Qmin){ //overwrites any other specified or target flow
+        res_outflow=Qmin;
+        constraint=RC_MIN_FLOW; //minimum flow
       }
-      stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
-      A_last     = A_guess;
-      A_guess    = GetArea(stage_new);
-      seep_guess = _seepage_const*(stage_new-_local_GW_head);
-    } while(fabs(1.0-A_guess/A_last)>0.00001); //0.1% area error - done in one iter for constant area case
+      
+      if(res_outflow>Qmax) { //overwrites any other specified or target flow
+        res_outflow=Qmax;
+        constraint=RC_MAX_FLOW; //maximum flow
+      }
+
+      double A_guess=A_old;
+      double A_last,V_new;
+      double seep_guess = seep_old;
+      do {
+        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(seep_old+seep_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
+        if(V_new<0) {
+          V_new=0;
+          constraint=RC_DRY_RESERVOIR; //drying out reservoir
+          res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
+        }
+        stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
+        A_last     = A_guess;
+        A_guess    = GetArea(stage_new);
+        seep_guess = _seepage_const*(stage_new-_local_GW_head);
+      } while(fabs(1.0-A_guess/A_last)>0.00001); //0.1% area error - done in one iter for constant area case
+    }
   }
 
 

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
 
   Includes CModel routines for writing output headers and contents:
     CModel::CloseOutputStreams()
@@ -114,6 +114,7 @@ void CModel::CloseOutputStreams()
   if (   _HYDRO.is_open()){   _HYDRO.close();}
   if (_FORCINGS.is_open()){_FORCINGS.close();}
   if (_RESSTAGE.is_open()){_RESSTAGE.close();}
+  if ( _DEMANDS.is_open()){ _DEMANDS.close();}
 
 #ifdef _RVNETCDF_
   
@@ -262,6 +263,31 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
     }
     _RESSTAGE<<endl;
+  }
+
+  //ReservoirStages.csv
+  //--------------------------------------------------------------
+  if((Options.write_demandfile) && (Options.output_format!=OUTPUT_NONE))
+  {
+    tmpFilename=FilenamePrepare("Demands.csv",Options);
+    _DEMANDS.open(tmpFilename.c_str());
+    if(_DEMANDS.fail()) {
+      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+
+    _DEMANDS<<"time,date,hour";
+    for(p=0;p<_nSubBasins;p++) {
+      if((_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->HasIrrigationDemand())) {
+        string name;
+        if(_pSubBasins[p]->GetName()=="") { name="ID="+to_string(_pSubBasins[p]->GetID()); }
+        else                              { name=_pSubBasins[p]->GetName(); }
+        _DEMANDS<<","<<name<<" [m3/s]";
+        _DEMANDS<<","<<name<<" (demand) [m3/s]";
+        _DEMANDS<<","<<name<<" (min.) [m3/s]";
+        _DEMANDS<<","<<name<<" (unmet) [m3/s]";
+      }
+    }
+    _DEMANDS<<endl;
   }
 
   //ReservoirMassBalance.csv
@@ -813,6 +839,27 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	      }
 	      _RESSTAGE<<endl;
 			}
+    }
+
+    //Demands.csv
+    //----------------------------------------------------------------
+    if((Options.write_demandfile) && (Options.output_format!=OUTPUT_NONE))
+    {
+      if((Options.period_starting) && (t==0)) {}//don't write anything at time zero
+      else {
+        _DEMANDS<< t<<","<<thisdate<<","<<thishour;
+        for(int p=0;p<_nSubBasins;p++) {
+          if((_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->HasIrrigationDemand())) 
+          {
+            double irr=_pSubBasins[p]->GetIrrigationDemand(tt.model_time);
+            double eF =_pSubBasins[p]->GetEnviroMinFlow   (tt.model_time);
+            double Q  =_pSubBasins[p]->GetOutflowRate();
+            double unmet=max(min(irr+eF-Q,irr),0.0);
+            _DEMANDS<<","<<Q<<","<<irr<<","<<eF<<","<<unmet;
+          }
+        }
+        _DEMANDS<<endl;
+      }
     }
 
     //ReservoirMassBalance.csv

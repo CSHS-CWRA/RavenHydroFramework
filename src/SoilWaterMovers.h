@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvBaseflow
@@ -39,7 +39,8 @@ enum baseflow_type
   BASE_SACRAMENTO,      ///< Sacramento Baseflow method
   BASE_POWER_LAW,       ///< Power Law saturation
   BASE_GR4J,            ///< GR4J Baseflow method
-  BASE_THRESH_POWER     ///< power law saturation above threshold
+  BASE_THRESH_POWER,    ///< power law saturation above threshold
+  BASE_THRESH_STOR      ///< linear storage above threshold (HBV-Lite)
 };
 
 ////////////////////////////////////////////////////////////////////

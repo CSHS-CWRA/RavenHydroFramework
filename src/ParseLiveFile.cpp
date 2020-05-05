@@ -53,13 +53,16 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
    //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":VegetationChange"    )) { code=1; }
     else if(!strcmp(s[0],":LandUseChange"       )) { code=2; }
-    else if(!strcmp(s[0],":GroupLandUseChange"       )) { code=3; }
+    else if(!strcmp(s[0],":GroupLandUseChange"  )) { code=3; }
     else if(!strcmp(s[0],":SetStreamflow"       )) { code=10; }
     else if(!strcmp(s[0],":SetReservoirFlow"    )) { code=11; }
     else if(!strcmp(s[0],":SetReservoirStage"   )) { code=12; }
-//    else if(!strcmp(s[0],":SetExtractionRate"   )) { code=13; }//set streamflow extraction
-//    else if(!strcmp(s[0],":DistributedIrrigation"   )) { code=14; }//add irrigation water (mm/d) to landscape
-
+//    else if(!strcmp(s[0],":SetExtractionRate"     )) { code=13; }//set streamflow extraction
+//    else if(!strcmp(s[0],":DistributedIrrigation" )) { code=14; }//add irrigation water (mm/d) to landscape
+//    else if(!strcmp(s[0],":FlowDiversion"         )) { code=15; }//diverts flow from one basin to another
+//    else if(!strcmp(s[0],":IrrigationDemand"      )) { code=16; }//removes flow from basin
+//    else if(!strcmp(s[0],":UpdateStateVariable"   )) { code=17; }
+//    else if(!strcmp(s[0],":UpdateParameter"       )) { code=18; }
     switch(code)
     {
     case(-1):  //----------------------------------------------
