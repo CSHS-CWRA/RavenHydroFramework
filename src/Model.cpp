@@ -1528,7 +1528,8 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
       {
         _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
       }
-      _CumulOutput+=_pSubBasins[p]->GetReservoirLosses(Options.timestep)/area*MM_PER_METER;
+      _CumulOutput+=_pSubBasins[p]->GetReservoirLosses (Options.timestep)/area*MM_PER_METER;
+      _CumulOutput+=_pSubBasins[p]->GetIrrigationLosses(Options.timestep)/area*MM_PER_METER;
     }
   }
   _pTransModel->IncrementCumulOutput(Options);

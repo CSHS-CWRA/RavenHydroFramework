@@ -851,10 +851,11 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         for(int p=0;p<_nSubBasins;p++) {
           if((_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->HasIrrigationDemand())) 
           {
-            double irr=_pSubBasins[p]->GetIrrigationDemand(tt.model_time);
-            double eF =_pSubBasins[p]->GetEnviroMinFlow   (tt.model_time);
-            double Q  =_pSubBasins[p]->GetOutflowRate();
-            double unmet=max(min(irr+eF-Q,irr),0.0);
+            double irr =_pSubBasins[p]->GetIrrigationDemand(tt.model_time);
+            double eF  =_pSubBasins[p]->GetEnviroMinFlow   (tt.model_time);
+            double Q   =_pSubBasins[p]->GetOutflowRate     (); //AFTER irrigation removed
+            double Qirr=_pSubBasins[p]->GetIrrigationRate  ();
+            double unmet=max(irr-Qirr,0.0);
             _DEMANDS<<","<<Q<<","<<irr<<","<<eF<<","<<unmet;
           }
         }

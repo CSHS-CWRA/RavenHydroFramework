@@ -91,6 +91,9 @@ private:/*------------------------------------------------------*/
   double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
   double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
 
+  double             _Qirr;       ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
+  double             _QirrLast;   ///< Qirr (irrigation/diversion flow) at start of timestep [m3/s] (for MB accounting)
+
   //Hydrograph Memory
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
   //                              ///  _aQinHist[0]=Qin(t), _aQinHist[1]=Qin(t-dt), _aQinHist[2]=Qin(t-2dt)...
@@ -112,6 +115,8 @@ private:/*------------------------------------------------------*/
  
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
+
+  double    _unusable_flow_pct;   ///< for irrigation, fraction of flow above enviro min. flow that is not allowed to be used [0..1] (0 default)
 
   //Methods implemented in SubBasin.cpp
   double               GetMuskingumK(const double &dx) const;
@@ -171,6 +176,7 @@ public:/*-------------------------------------------------------*/
   double          GetReservoirInflow       () const;                   //[m3/s] from final segment upstream of reservoir, point in time
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
+  double          GetIrrigationLosses      (const double &tstep) const;//[m3] from actual irrigation (not just demand)
 
   double          GetRivuletStorage        () const;                   //[m3] volume en route to outflow
   double          GetChannelStorage        () const;                   //[m3] volume in channel
@@ -180,6 +186,7 @@ public:/*-------------------------------------------------------*/
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
   double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
+  double          GetIrrigationRate        () const;                   //[m3/s] instantaneous irrigation rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
 
@@ -218,11 +225,13 @@ public:/*-------------------------------------------------------*/
   void            Disable                  ();
   void            Enable                   ();
   double          ScaleAllFlows            (const double &scale_factor, const double &tstep);
+  void            SetUnusableFlowPercentage(const double &val);
 
   //called during model operation:
   void            SetInflow                (const double &Qin );//[m3/s]
   void            UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
   void            UpdateOutflows           (const double *Qout_new,
+                                            const double &Qirr,
                                             const double &res_ht,
                                             const double &res_outflow,
                                             const res_constraint &constraint,

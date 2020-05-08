@@ -522,7 +522,7 @@ void MassEnergyBalance( CModel            *pModel,
   //      ROUTING
   //-----------------------------------------------------------------
   double res_ht,res_outflow;
-  double down_Q,irr_Q,div_Q, Qout;
+  double down_Q,irr_Q,div_Q, Qwithdrawn;
   int    pDivert;
   res_constraint res_const;
 
@@ -557,7 +557,7 @@ void MassEnergyBalance( CModel            *pModel,
       }
       else {
         // \todo[funct] - must handle this in mass balance - should go to cumulative output
-		//Qdiverted+=div_Q;
+		    //Qdiverted+=div_Q;
       }
     }
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
@@ -575,31 +575,27 @@ void MassEnergyBalance( CModel            *pModel,
       
       pBasin->SetInflow(aQinnew[p]);                 // from upstream, diversions, and specified flows
 
-      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY));//[m3/d]->[m3/s]
+      down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
+
+      pBasin->SetLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 
       pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,Options,tt);      //Where everything happens!
 
-      Qout=aQoutnew[pBasin->GetNumSegments()-1];    //Qout is used as temporary shorthand for diversion calcs
-
-      down_Q=pBasin->GetDownstreamInflow(t+tstep);
-      Qout+=down_Q;
-
-      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,Qout);
-      Qout-=irr_Q;
+      Qwithdrawn=0;
+      irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1]);
+      Qwithdrawn+=irr_Q;
 
       for(int i=0; i<pBasin->GetNumDiversions();i++) {
         div_Q=pBasin->GetDiversionFlow(i,pBasin->GetOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
-        Qout-=div_Q;
+        Qwithdrawn+=div_Q;
       }
 
-      aQoutnew[pBasin->GetNumSegments()-1]=Qout;
-
-      pBasin->UpdateOutflows(aQoutnew,res_ht,res_outflow,res_const,Options,tt,false);//actually updates flow values here
+      pBasin->UpdateOutflows(aQoutnew,irr_Q,res_ht,res_outflow,res_const,Options,tt,false);//actually updates flow values here
 
       pTo   =pModel->GetDownstreamBasin(p);
       if(pTo!=DOESNT_EXIST)//update downstream inflows
       {
-        aQinnew[pTo]+=pBasin->GetOutflowRate();
+        aQinnew[pTo]+=pBasin->GetOutflowRate()-Qwithdrawn;
       }
 
     }

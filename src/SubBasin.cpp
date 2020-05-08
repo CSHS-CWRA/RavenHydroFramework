@@ -56,6 +56,7 @@ CSubBasin::CSubBasin(const long           Identifier,
 
   _rain_corr         =1.0;
   _snow_corr         =1.0;
+  _unusable_flow_pct =0.0;
 
   // estimate reach length if needed
   //------------------------------------------------------------------------
@@ -96,6 +97,9 @@ CSubBasin::CSubBasin(const long           Identifier,
   _QlatLast=AUTO_COMPUTE; //can be overridden by initial conditions
   _channel_storage=0.0;   //calculated from initial flows
   _rivulet_storage=0.0;   //calculated from initial flows
+
+  _Qirr=0.0;
+  _QirrLast=0.0;
 
   //Below are initialized in GenerateCatchmentHydrograph, GenerateRoutingHydrograph
   _aQlatHist     =NULL;  _nQlatHist     =0;
@@ -376,6 +380,14 @@ double CSubBasin::GetIrrigationDemand(const double &t) const
   return Qirr;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
+/// \return actual demand from subbasin [m3/s]
+//
+double CSubBasin::GetIrrigationRate() const
+{
+  return _Qirr;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns cumulative downstream specified irrigation demand, including from this subbasin
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified cumulative downstream demand (in [m3/s]) from subbasin at time t
@@ -417,16 +429,12 @@ bool CSubBasin::HasIrrigationDemand() const
 double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
 {
   if (_pIrrigDemand==NULL){return 0.0;}
-  double Qirr,unmet_demand;
+  double Qirr;
   double Qdemand=GetIrrigationDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
 
-  // could be fixed quantity, e.g., Q=20 m3/s 
-  //or (1.0-use_percentage)*Q (e.g.., if only 20% of flow can be used for demand
-
-  Qirr=min(max(Q-Qmin,0.0),Qdemand);
-
-  unmet_demand=(Qdemand-Qirr);
+  Qirr=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
+ 
   return Qirr;
 }
 //////////////////////////////////////////////////////////////////
@@ -599,7 +607,14 @@ double CSubBasin::GetReservoirLosses(const double &tstep) const
   if(_pReservoir==NULL){ return 0.0; }
   return _pReservoir->GetReservoirLosses(tstep);
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Irrigation losses integrated over specified timestep [m^3]
+/// \return Irrigation losses over specified timestep  [m^3]
+//
+double CSubBasin::GetIrrigationLosses(const double &tstep) const
+{
+  return 0.5*(_QirrLast+_Qirr)*tstep*SEC_PER_DAY;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total volume lost from main reach over timestep [m^3]
 /// \note Should be called only at end of completed tstep
@@ -631,7 +646,7 @@ double CSubBasin::GetIntegratedSpecInflow(const double &t, const double &tstep) 
   //used in mass balance to estimate water gain from unmodeled upstream sources
   double sum=0.0; 
   sum+=0.5*(GetSpecifiedInflow(t) +GetSpecifiedInflow (t+tstep))*(tstep*SEC_PER_DAY); //integrated
-  sum+=0.5*(GetDownstreamInflow(t)+GetDownstreamInflow(t+tstep))*(tstep*SEC_PER_DAY); //integrated
+  sum+=GetDownstreamInflow(t)*(tstep*SEC_PER_DAY);                   //integrated -period starting
   return sum;
 }
 //////////////////////////////////////////////////////////////////
@@ -895,6 +910,16 @@ void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
     _aQlatHist[n]=_aQlatHist[n-1];
   }
   _aQlatHist[0]=Qlat;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief sets unusable flow percentatge
+//
+void CSubBasin::SetUnusableFlowPercentage(const double &val) 
+{
+  ExitGracefullyIf((val<0) || (val>1.0),
+    "CSubBasin:SetUnusableFlowPercentage: invalid value for :UnusableFlowPercentage (must be between zero and one).",BAD_DATA_WARN);
+  _unusable_flow_pct=val;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief scales all internal flows by scale factor (for assimilation/nudging)
@@ -1411,6 +1436,7 @@ void  CSubBasin::UpdateFlowRules(const time_struct &tt, const optStruct &Options
 /// \param initialize Flag to indicate if flows are to only be initialized
 //
 void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
+                                  const double &irr_Q,  //[m3/s]
                                   const double &res_ht, //[m]
                                   const double &res_outflow, //[m3/s]
                                   const res_constraint &constraint,
@@ -1431,6 +1457,9 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
     _aQout[seg]=aQo[seg];
   }
   //_aQout[num_segments-1] is now the new outflow from the channel
+
+  _QirrLast=_Qirr;
+  _Qirr    =irr_Q;
 
   if (_pReservoir!=NULL){
     _pReservoir->UpdateStage(res_ht,res_outflow,constraint,Options,tt);

@@ -149,6 +149,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
     else if  (!strcmp(s[0],":FlowDiversion"         )){code=66;}
     else if  (!strcmp(s[0],":FlowDiversionLookupTable")){code=67;}
+    else if  (!strcmp(s[0],":EnvironmentalMinFlow"  )) { code=68; }
+    else if  (!strcmp(s[0],":UnusableFlowPercentage")){code=69; }
     //--------------------Other --------------------------------
     else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
     else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
@@ -1228,6 +1230,19 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         string warn;
         warn=":EnvironmentalMinFlow: Subbasin "+to_string(SBID)+" not in model, cannot set minimum flow time series";
         WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (69): //---------------------------------------------
+    {/*:UnusableFlowPercentage [SBID] [fraction]*/
+      if(Options.noisy) { cout <<"Unusable flow percentage"<<endl; }
+      if(Len<3) { p->ImproperFormat(s); break; }
+      CSubBasin *pBasin=pModel->GetSubBasinByID(s_to_l(s[1]));
+      if(pBasin==NULL) {
+        ExitGracefully("Invalid subbasin ID in :UnusableFlowPercentage command.",BAD_DATA_WARN);
+      }
+      else {
+        pBasin->SetUnusableFlowPercentage(s_to_d(s[2]));
       }
       break;
     }
