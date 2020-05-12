@@ -165,7 +165,7 @@ void CGWStressPeriodClass::AllocateArrays(gw_struct &W, string param_name, int n
   W.sp_props.pet_max        = new double[nodes];
   W.sp_props.ext_depth      = new double[nodes];
   W.sp_props.drain_elev     = new double[nodes];
-  W.sp_props.conductance    = new double[nodes];            //****FIX - ALL OF THIS NEEDS TO BE DELETED!
+  W.sp_props.conductance    = new double[nodes];            // ****FIX - ALL OF THIS NEEDS TO BE DELETED!
   W.sp_props.recharge       = new double[nodes];
   W.sp_props.hyd_cond       = new double[nodes];
   W.sp_props.ss             = new double[nodes];*/
@@ -176,7 +176,7 @@ void CGWStressPeriodClass::AllocateArrays(gw_struct &W, string param_name, int n
   if      (!name.compare("NUMREC_ET"         ))
   {
     W.sp_props.numcell_ET     = new double[nodes];
-    W.sp_props.pet_max        = new double[nodes];           //****FIX - NEED TO RELEASE MEMORY
+    W.sp_props.pet_max        = new double[nodes];           // ****FIX - NEED TO RELEASE MEMORY
     W.sp_props.ext_depth      = new double[nodes];
   }
   else if (!name.compare("NUMREC_D"     ))

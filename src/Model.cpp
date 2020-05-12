@@ -490,7 +490,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
 
   int p=GetSubBasinIndex(SBID);
   if((p==DOESNT_EXIST) || (p==INDEX_NOT_FOUND)) {
-    string warn="CModel::GetUpstreamSubbasins: invalid subbasin ID "+to_string(SBID)+" (:ReservoirDownstreamDemand command??)";
+    string warn="CModel::GetUpstreamSubbasins: invalid subbasin ID "+to_string(SBID)+" (:ReservoirDownstreamDemand command ? )";
     ExitGracefully(warn.c_str(),BAD_DATA);return NULL;
   }
   isUpstr[p]=true;
