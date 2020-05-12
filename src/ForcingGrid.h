@@ -78,8 +78,8 @@ private:/*------------------------------------------------------*/
   int         *_nWeights;                    ///< number of weights for each HRU k (size=_nHydroUnits) (each entry greater or equal to 1)
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   //                                         ///< This is effectively the number of data points which is stored from the original data. 
-  int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells] 
-
+  int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
+  
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
   ///                                        ///< piecewise-linear time series
@@ -179,59 +179,59 @@ public:/*------------------------------------------------------*/
                                            const int dim2_idx);                         ///< checks for missing and fill values in 2D array and exists Raven if found
 
   // set class variables
-  void         SetForcingType(         const forcing_type &ForcingType);               ///< set _ForcingType               of class
-  void         SetFilename(                   const string filename);                  ///< set _filename                  of class
-  void         SetVarname(                    const string varname);                   ///< set _varname                   of class
-  void         SetDimNames(                   const string DimNames[3]);               ///< set _DimNames                  of class
-  void         SetGridDims(                   const int    GridDims[3]);               ///< set _GridDims                  of class
-  void         SetToDeaccumulate();                                                    ///< set _deaccumulate              of class
-  void         SetLinearTransform(            const double LinTrans_a,                 ///< set _LinTrans_a and _b         of class
-                                              const double LinTrans_b);
-  void         SetTimeShift(                  const double TimeShift);                 ///< set _TimeShift                 of class
-  void         SetAsPeriodEnding              ();                                      ///< set _period_ending
-  void         SetIs3D(                       const bool   is3D);                      ///< set _is3D                      of class
-  void         SetIdxNonZeroGridCells(        const int    nHydroUnits,
-                                              const int    nGridCells);                ///< set _IdxNonZeroGridCells       of class
-  void         SetnHydroUnits(                const int    nHydroUnits);               ///< set _nHydroUnits               of class
-  void         SetChunkSize(                  const int    ChunkSize);                 ///< set _ChunkSize                 of class
-  void         SetInterval(                   const double interval);                  ///< set _interval                  of class
-  void         SetSnowfallCorr(               const double snowfall_corr);             ///< set _snowfall_corr             of class
-  void         SetRainfallCorr(               const double rainfall_corr);             ///< set _rainfall_corr             of class
-  void         Setcloud_min_temp(             const double cloud_min_temp);            ///< set _cloud_min_temp            of class
-  void         Setcloud_max_temp(             const double cloud_max_temp);            ///< set _cloud_max_temp            of class
-  void         SetaAveTemp(                   const double aAveTemp[12]);              ///< set _aAveTemp[12]              of class
-  void         SetaMinTemp(                   const double aMinTemp[12]);              ///< set _aMinTemp[12]              of class
-  void         SetaMaxTemp(                   const double aMaxTemp[12]);              ///< set _aMaxTemp[12]              of class
-  void         SetaAvePET(                    const double aAvePET [12]);              ///< set _aAvePET [12]              of class
-  void         SetValue(                      const int idx,
-                                              const int t,
-                                              const double aVal);                      ///< set _aVal              of class
-  void         SetAttributeVarName(           const string var, const string varname); ///< set elevation, lat, or long var name
-  void         SetStationElevation           (const int idx, const double &elev);      ///< set elevation of station idx
+  void         SetForcingType(             const forcing_type &ForcingType);               ///< set _ForcingType               of class
+  void         SetFilename(                const string filename);                  ///< set _filename                  of class
+  void         SetVarname(                 const string varname);                   ///< set _varname                   of class
+  void         SetDimNames(                const string DimNames[3]);               ///< set _DimNames                  of class
+  void         SetGridDims(                const int    GridDims[3]);               ///< set _GridDims                  of class
+  void         SetToDeaccumulate();                                                 ///< set _deaccumulate              of class
+  void         SetLinearTransform(         const double LinTrans_a,                 ///< set _LinTrans_a and _b         of class
+                                           const double LinTrans_b);
+  void         SetTimeShift(               const double TimeShift);                 ///< set _TimeShift                 of class
+  void         SetAsPeriodEnding           ();                                      ///< set _period_ending
+  void         SetIs3D(                    const bool   is3D);                      ///< set _is3D                      of class
+  void         SetIdxNonZeroGridCells(     const int    nHydroUnits,
+                                           const int    nGridCells);                ///< set _IdxNonZeroGridCells       of class
+  void         SetnHydroUnits(             const int    nHydroUnits);               ///< set _nHydroUnits               of class
+  void         SetChunkSize(               const int    ChunkSize);                 ///< set _ChunkSize                 of class
+  void         SetInterval(                const double interval);                  ///< set _interval                  of class
+  void         SetSnowfallCorr(            const double snowfall_corr);             ///< set _snowfall_corr             of class
+  void         SetRainfallCorr(            const double rainfall_corr);             ///< set _rainfall_corr             of class
+  void         Setcloud_min_temp(          const double cloud_min_temp);            ///< set _cloud_min_temp            of class
+  void         Setcloud_max_temp(          const double cloud_max_temp);            ///< set _cloud_max_temp            of class
+  void         SetaAveTemp(                const double aAveTemp[12]);              ///< set _aAveTemp[12]              of class
+  void         SetaMinTemp(                const double aMinTemp[12]);              ///< set _aMinTemp[12]              of class
+  void         SetaMaxTemp(                const double aMaxTemp[12]);              ///< set _aMaxTemp[12]              of class
+  void         SetaAvePET(                 const double aAvePET [12]);              ///< set _aAvePET [12]              of class
+  void         SetValue(                   const int idx,
+                                           const int t,
+                                           const double aVal);                      ///< set _aVal              of class
+  void         SetAttributeVarName(        const string var, const string varname); ///< set elevation, lat, or long var name
+  void         SetStationElevation(        const int idx, const double &elev);      ///< set elevation of station idx
 
   // get class variables
-  double       GetInterval()                       const;        ///< data interval (in days)
-  bool         GetIsDerived()                      const;        ///< if data are read from NetCDF (false) or derived from these data (true)
-  bool         GetIs3D()                           const;        ///< true if NetCDF data are (lat,lon,time), false if data are (nstations,time)
-  int          GetStartYear()                      const;        ///< start year of gridded time series data
-  double       GetStartDay()                       const;        ///< start day of time series data
-  int          GetCols()                           const;        ///< Number of columns (= 1st dimension of gridded data)
-  int          GetRows()                           const;        ///< Number of rows    (= 2nd dimension of gridded data)
-  int          GetNumValues()                      const;        ///< Number of pulses  (= 3rd dimension of gridded data)
-  int          GetNumberNonZeroGridCells()         const;        ///< Number of non-zero weighted grid cells 
-  int          GetChunkSize()                      const;        ///< Current chunk size
-  int          GetnHydroUnits()                    const;        ///< get number of HRUs _nHydroUnits
-  forcing_type GetForcingType()                    const;        ///< Type of forcing data, e.g. PRECIP, TEMP
-  bool         ShouldDeaccumulate()                const;        ///< true if data must be deaccumulated
-  double       GetSnowfallCorr()                   const;        ///< snowfall correction factor
-  double       GetRainfallCorr()                   const;        ///< rainfall correction factor
-  double       GetCloudMinRange()                  const;        ///< Minimum temperature threshold used to determine cloud_cover factor
-  double       GetCloudMaxRange()                  const;        ///< Maximum temperature threshold used to determine cloud_cover factor
-  double       GetMonthlyAveTemp(const int month)  const;        ///< Representative Average temperature for month
-  double       GetMonthlyMinTemp(const int month)  const;        ///< Representative minimum temperature for month
-  double       GetMonthlyMaxTemp(const int month)  const;        ///< Representative maximum temperature for month
-  double       GetMonthlyAvePET (const int month)  const;        ///< Average PET over month
-  double       DailyTempCorrection(const double t) const;        ///< Daily temperature correction [C]
+  double       GetInterval()                                      const; ///< data interval (in days)
+  bool         GetIsDerived()                                     const; ///< if data are read from NetCDF (false) or derived from these data (true)
+  bool         GetIs3D()                                          const; ///< true if NetCDF data are (lat,lon,time), false if data are (nstations,time)
+  int          GetStartYear()                                     const; ///< start year of gridded time series data
+  double       GetStartDay()                                      const; ///< start day of time series data
+  int          GetCols()                                          const; ///< Number of columns (= 1st dimension of gridded data)
+  int          GetRows()                                          const; ///< Number of rows    (= 2nd dimension of gridded data)
+  int          GetNumValues()                                     const; ///< Number of pulses  (= 3rd dimension of gridded data)
+  int          GetNumberNonZeroGridCells()                        const; ///< Number of non-zero weighted grid cells 
+  int          GetChunkSize()                                     const; ///< Current chunk size
+  int          GetnHydroUnits()                                   const; ///< get number of HRUs _nHydroUnits
+  forcing_type GetForcingType()                                   const; ///< Type of forcing data, e.g. PRECIP, TEMP
+  bool         ShouldDeaccumulate()                               const; ///< true if data must be deaccumulated
+  double       GetSnowfallCorr()                                  const; ///< snowfall correction factor
+  double       GetRainfallCorr()                                  const; ///< rainfall correction factor
+  double       GetCloudMinRange()                                 const; ///< Minimum temperature threshold used to determine cloud_cover factor
+  double       GetCloudMaxRange()                                 const; ///< Maximum temperature threshold used to determine cloud_cover factor
+  double       GetMonthlyAveTemp(const int month)                 const; ///< Representative Average temperature for month
+  double       GetMonthlyMinTemp(const int month)                 const; ///< Representative minimum temperature for month
+  double       GetMonthlyMaxTemp(const int month)                 const; ///< Representative maximum temperature for month
+  double       GetMonthlyAvePET (const int month)                 const; ///< Average PET over month
+  double       DailyTempCorrection(const double t)                const; ///< Daily temperature correction [C]
   int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
   
   double       GetCellLatitude       (const int l) const;        ///< returns Latitude of cell l (or 0, if not available)

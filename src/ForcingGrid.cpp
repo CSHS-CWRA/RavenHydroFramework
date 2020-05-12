@@ -33,20 +33,20 @@ CForcingGrid::CForcingGrid(string       ForcingType,
                            bool         is_3D
                           )
 {
-  _ForcingType  = GetForcingTypeFromString(ForcingType);
-  _filename     = filename;
-  _varname      = varname;
-  _DimNames[0]  = DimNames[0]; _DimNames[1]  = DimNames[1]; _DimNames[2]  = DimNames[2];
-  _is_3D        = is_3D;
+  _ForcingType		= GetForcingTypeFromString(ForcingType);
+  _filename		= filename;
+  _varname		= varname;
+  _DimNames[0]		= DimNames[0]; _DimNames[1]  = DimNames[1]; _DimNames[2]  = DimNames[2];
+  _is_3D		= is_3D;
 
-  _interval     = 1.0;
-  _steps_per_day= 1;
+  _interval		= 1.0;
+  _steps_per_day	= 1;
   
-  _TimeShift    = 0.0;
-  _LinTrans_a   = 1.0;
-  _LinTrans_b   = 0.0;
-  _deaccumulate = false;
-  _period_ending= false;
+  _TimeShift		= 0.0;
+  _LinTrans_a		= 1.0;
+  _LinTrans_b		= 0.0;
+  _deaccumulate		= false;
+  _period_ending	= false;
 
   // -------------------------------
   // Additional variables initialized and eventually overwritten by ParseTimeSeries
@@ -851,6 +851,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   int     varid_f;       // id of forcing variable read
   double  missval;       // value of "missing_value" attribute of forcing variable 
   double  fillval;       // value of "_FillValue"    attribute of forcing variable
+  double  add_offset;    // value of "add_offset"    attribute of forcing variable
+  double  scale_factor;  // value of "scale_factor"  attribute of forcing variable
   size_t  att_len;       // length of the attribute's text
   nc_type att_type;      // type of attribute
   int     retval;        // error value for NetCDF routines
@@ -1021,6 +1023,37 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       HandleNetCDFErrors(retval);
       retval = nc_get_att_double(ncid, varid_f, "missing_value", &missval);     HandleNetCDFErrors(retval);// read attribute value
     }
+
+    // -------------------------------
+    // check for attributes "add_offset" of forcing data
+    // -------------------------------
+    retval = nc_inq_att(ncid, varid_f, "add_offset", &att_type, &att_len);
+    if (retval == NC_ENOTATT) {
+      // (a) if not found, set add_offset = 0.0
+      add_offset = 0.0;
+    }
+    else {
+      // (b) found, set add_offset to value
+      HandleNetCDFErrors(retval);
+      retval = nc_get_att_double(ncid, varid_f, "add_offset", &add_offset);       HandleNetCDFErrors(retval);// read attribute value
+    }
+    if (Options.noisy){ cout << "add_offset = " << add_offset << endl; }
+    
+    // -------------------------------
+    // check for attributes "scale_factor" of forcing data
+    // -------------------------------
+    retval = nc_inq_att(ncid, varid_f, "scale_factor", &att_type, &att_len);
+    if (retval == NC_ENOTATT) {
+      // (a) if not found, set scale_factor = 1.0
+      scale_factor = 1.0;
+    }
+    else {
+      // (b) found, set scale_factor to value
+      HandleNetCDFErrors(retval);
+      retval = nc_get_att_double(ncid, varid_f, "scale_factor", &scale_factor);       HandleNetCDFErrors(retval);// read attribute value
+    }
+    if (Options.noisy){ cout << "scale_factor = " << scale_factor << endl; }
+    cout << "scale_factor = " << scale_factor << endl;
 
     // -------------------------------
     // allocate aTmp matrix
@@ -1216,6 +1249,27 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       // cout<<"NCGETVARS"<<endl;
     }
 
+    // -------------------------------
+    // Re-scale NetCDF variables based on their internal add-offset and scale_factor
+    // MANDATORY to do before any value of these data are used
+    // -------------------------------
+    if ( _is_3D ) {
+      for (int it=0;it<dim1;it++){
+        for (int ir=0;ir<dim2;ir++){
+	  for (int ic=0;ic<dim3;ic++){
+	    aTmp3D[it][ir][ic] = aTmp3D[it][ir][ic] * scale_factor + add_offset;
+	  }
+        }
+      }
+    }
+    else {
+      for (int it=0;it<dim1;it++){
+	for (int ir=0;ir<dim2;ir++){
+	  aTmp2D[it][ir] = aTmp2D[it][ir] * scale_factor + add_offset;
+	}
+      }
+    }
+    
     double val;
     // -------------------------------
     // Copy all data from aTmp array to member array _aVal.
@@ -1248,7 +1302,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             CheckValue3D(aTmp3D[icol][it][irow], missval, icol, it, irow);   // check if value to read in equals "missing_value"
-	          CheckValue3D(aTmp3D[icol][it][irow], fillval, icol, it, irow);   // check if value to read in equals "_FillValue"
+	    CheckValue3D(aTmp3D[icol][it][irow], fillval, icol, it, irow);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[icol][it][irow]+_LinTrans_b;
           }
         }
@@ -1270,8 +1324,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-		        CheckValue3D(aTmp3D[irow][it][icol], missval, irow, it, icol);   // check if value to read in equals "missing_value"
-		        CheckValue3D(aTmp3D[irow][it][icol], fillval, irow, it, icol);   // check if value to read in equals "_FillValue"
+	    CheckValue3D(aTmp3D[irow][it][icol], missval, irow, it, icol);   // check if value to read in equals "missing_value"
+	    CheckValue3D(aTmp3D[irow][it][icol], fillval, irow, it, icol);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[irow][it][icol]+_LinTrans_b;
           }
         }
@@ -1280,8 +1334,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (int it=0; it<iChunkSize; it++){                      // loop over time points in buffer
           for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){    // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-		        CheckValue3D(aTmp3D[it][irow][icol], missval, it, irow, icol);   // check if value to read in equals "missing_value"
-		        CheckValue3D(aTmp3D[it][irow][icol], fillval, it, irow, icol);   // check if value to read in equals "_FillValue"
+	    CheckValue3D(aTmp3D[it][irow][icol], missval, it, irow, icol);   // check if value to read in equals "missing_value"
+	    CheckValue3D(aTmp3D[it][irow][icol], fillval, it, irow, icol);   // check if value to read in equals "_FillValue"
             _aVal[it][ic]=_LinTrans_a*aTmp3D[it][irow][icol]+_LinTrans_b;
           }
         }
@@ -1783,6 +1837,7 @@ void  CForcingGrid::SetAttributeVarName(const string var,const string varname)
   else if (var=="Elevation") { _AttVarNames[2]=varname; }
   else if (var=="StationIDs"){ _AttVarNames[3]=varname; }
 }
+
 ///////////////////////////////////////////////////////////////////
 /// \brief sets linear transform parameters a and b in class CForcingGrid
 ///        to allow for linear transformation new = a*data + b of read-in data

@@ -1209,12 +1209,18 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   int    dim2;                  // length of 2nd dimension in NetCDF data
   int    dim_order;             // order of dimensions of variable to read
 
+  // some netcdf attributes
+  double  missval;              // value of "missing_value" attribute of forcing variable 
+  double  fillval;              // value of "_FillValue"    attribute of forcing variable
+  double  add_offset;           // value of "add_offset"    attribute of forcing variable
+  double  scale_factor;         // value of "scale_factor"  attribute of forcing variable
+
   // final variables to create time series object
-  int    nMeasurements;          // number of data points read
-  double start_day=0.0;          // start day of time series
-  int    start_yr=1900;          // start year of time series
-  double tstep=1.0;              // time difference between two data points
-  bool   is_pulse;               // if data are pulses
+  int    nMeasurements;         // number of data points read
+  double start_day=0.0;         // start day of time series
+  int    start_yr=1900;         // start year of time series
+  double tstep=1.0;             // time difference between two data points
+  bool   is_pulse;              // if data are pulses
 
   // -------------------------------
   // (1) open NetCDF read-only (get ncid)
@@ -1226,17 +1232,59 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // find "_FillValue" of forcing data
   // -------------------------------
-  double fillval;
   retval = nc_inq_att(ncid,varid_f,"_FillValue",&att_type,&att_len);
-  if(retval == NC_ENOTATT) {
+  if (retval == NC_ENOTATT) {
     // if not found, set to NETCDF_BLANK_VALUE
     fillval = NETCDF_BLANK_VALUE;
   }
-  else
-  {
+  else {
     HandleNetCDFErrors(retval);
     retval = nc_get_att_double(ncid,varid_f,"_FillValue",&fillval);       HandleNetCDFErrors(retval);// read attribute value
   }
+  
+  // -------------------------------
+  // find "missing_value" of forcing data
+  // -------------------------------
+  retval = nc_inq_att(ncid, varid_f, "missing_value", &att_type, &att_len);      
+  if (retval == NC_ENOTATT) {
+    // if not found, set to NETCDF_BLANK_VALUE
+    missval = NETCDF_BLANK_VALUE;
+  }
+  else {  
+    HandleNetCDFErrors(retval);
+    retval = nc_get_att_double(ncid, varid_f, "missing_value", &missval);     HandleNetCDFErrors(retval);// read attribute value
+  }
+  
+  // -------------------------------
+  // check for attributes "add_offset" of forcing data
+  // -------------------------------
+  retval = nc_inq_att(ncid, varid_f, "add_offset", &att_type, &att_len);
+  if (retval == NC_ENOTATT) {
+    // if not found, set add_offset = 0.0
+    add_offset = 0.0;
+  }
+  else {
+    // found, set add_offset to value
+    HandleNetCDFErrors(retval);
+    retval = nc_get_att_double(ncid, varid_f, "add_offset", &add_offset);       HandleNetCDFErrors(retval);// read attribute value
+  }
+  if (Options.noisy){ cout << "add_offset = " << add_offset << endl; }
+    
+  // -------------------------------
+  // check for attributes "scale_factor" of forcing data
+  // -------------------------------
+  retval = nc_inq_att(ncid, varid_f, "scale_factor", &att_type, &att_len);
+  if (retval == NC_ENOTATT) {
+    // if not found, set scale_factor = 1.0
+    scale_factor = 1.0;
+  }
+  else {
+    // found, set scale_factor to value
+    HandleNetCDFErrors(retval);
+    retval = nc_get_att_double(ncid, varid_f, "scale_factor", &scale_factor);       HandleNetCDFErrors(retval);// read attribute value
+  }
+  if (Options.noisy){ cout << "scale_factor = " << scale_factor << endl; }
+  cout << "scale_factor = " << scale_factor << endl;
 
   // -------------------------------
   // (2) get dimension lengths
@@ -1378,10 +1426,10 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   nMeasurements = ntime;
 
   // -------------------------------
-  // (7) determine dimension order in variable
+  // (7) etermine dimension order in variable
   // -------------------------------
   //     (a) Get the id of the data variable based on its name; varid will be set
-  retval = nc_inq_varid(ncid, VarNameNC.c_str(), &varid_f);       HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(ncid, VarNameNC.c_str(), &varid_f);       HandleNetCDFErrors(retval);  
   //     (b) determine in which order the dimensions are in variable
   retval = nc_inq_vardimid(ncid, varid_f, dimids_var);          HandleNetCDFErrors(retval);
   //     (c) determine order
@@ -1489,7 +1537,24 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   HandleNetCDFErrors(retval);
 
   // -------------------------------
-  // (11) Initialize data array (data type that is needed by RAVEN)
+  // (11) Re-scale NetCDF variables based on their internal add-offset and scale_factor
+  //      MANDATORY to do before any value of these data are used
+  // -------------------------------
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
+    for (int it=0;it<dim1;it++){
+      for (int ir=0;ir<dim2;ir++){
+        aTmp2D[it][ir] = aTmp2D[it][ir] * scale_factor + add_offset;
+      }
+    }
+  }
+  else {
+    for (int it=0;it<dim1;it++){
+      aTmp1D[it] = aTmp1D[it] * scale_factor + add_offset;
+    }
+  }
+  
+  // -------------------------------
+  // (12) Initialize data array (data type that is needed by RAVEN)
   // -------------------------------
   double *aVal;
   aVal = NULL;
@@ -1499,7 +1564,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (12) Convert into RAVEN data array and apply linear transformation: new = a*data+b
+  // (13) Convert into RAVEN data array and apply linear transformation: new = a*data+b
   // -------------------------------
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
 
@@ -1507,10 +1572,13 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     // correct location in aVec data storage (see step 9)
 
     for (int it=0; it<ntime; it++){                     // loop over time points read
-      for(int ic=0; ic<1; ic++) {                       // loop over stations
-        if(aTmp2D[ic][it]!=fillval) {
+      for (int ic=0; ic<1; ic++) {                       // loop over stations
+        if (aTmp2D[ic][it]!=fillval && aTmp2D[ic][it]!=missval) {
           aVal[it] = LinTrans_a * aTmp2D[ic][it] + LinTrans_b;
-        } 
+        }
+        else {
+          ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF:: 2D forcing data contain missing or fill values", BAD_DATA);
+        }
       }
     };
 
@@ -1520,8 +1588,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     // no switch of dim_order required because aTmp2D already points to
     // correct location in aVec data storage (see step 9)
     for (int it=0; it<ntime; it++){                     // loop over time points read
-      if(aTmp1D[it]!=fillval) {
+      if (aTmp1D[it]!=fillval && aTmp1D[it]!=missval) {
         aVal[it] = LinTrans_a * aTmp1D[it] + LinTrans_b;
+      }
+      else {
+        ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF:: 1D forcing data contain missing or fill values", BAD_DATA);
       }
     };
   }
@@ -1531,7 +1602,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (13) add time shift to data
+  // (14) add time shift to data
   //      --> only applied when tstep < 1.0 (daily)
   //      --> otherwise ignored and warning written to RavenErrors.txt
   // -------------------------------
@@ -1554,14 +1625,14 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
 
   // -------------------------------
-  // (14) convert to time series object
+  // (15) convert to time series object
   // -------------------------------
   is_pulse = true;
   
   pTimeSeries=new CTimeSeries(name,tag,FileNameNC.c_str(),start_day,start_yr,tstep,aVal,nMeasurements,is_pulse);
 
   // -------------------------------
-  // (15) delete dynamic memory
+  // (16) delete dynamic memory
   // -------------------------------
   delete [] aVal;  aVal =NULL;
 #endif   // ends #ifdef _RVNETCDF_
