@@ -16,8 +16,6 @@
 using namespace std;
 
 //type definitions-------------------
-typedef complex<double>              cmplex; ///< Complex type
-
 typedef const double *               Unchangeable1DArray; ///< unchangeable but movable 1d array
 typedef       double * const         Writeable1DArray;    ///< unmoveable but changeble 1d array
 typedef const double * const         Ironclad1DArray;     ///< unmodifiable 1d array
@@ -25,14 +23,6 @@ typedef const double * const         Ironclad1DArray;     ///< unmodifiable 1d a
 typedef const double * const *       Unchangeable2DArray; ///< unchangeable but moveable 2d array
 typedef       double *       * const Writeable2DArray;    ///< unmoveable but changeable 2d array
 typedef const double * const * const Ironclad2DArray;     ///< unmodifiable 2d array
-
-typedef const cmplex *               Unchangeable1DArray_z; ///< unchangeable but moveable 1d array of complex numbers
-typedef       cmplex * const         Writeable1DArray_z;    ///< unmoveable but changeable 1d array of complex numbers
-typedef const cmplex * const         Ironclad1DArray_z;     ///< Unmodifiable 1d array of complex numbers
-
-typedef const cmplex * const *       Unchangeable2DArray_z; ///< unchangeable but moveable 2d array of complex numbers
-typedef       cmplex *       * const Writeable2DArray_z;    ///< unmoveable but changeable 2d array of complex numbers
-typedef const cmplex * const * const Ironclad2DArray_z;     ///< Unmodifiable 2d array of complex numbers
 
 //Strings/Parser
 //************************************************************************
@@ -142,22 +132,6 @@ public:
      [double] [double] ... [double]              (fixed (known) array size)
      & (if optfollow=true) */
   parse_error    ParseBigArray_dbl (Writeable1DArray v,  int numv);
-
-  /* [cmplex re] [cmplex im]
-     ...
-     [cmplex re] [cmplex im] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
-     & (if optfollow=true) */
-  parse_error    ParseArray_cmp_dyn(Writeable1DArray_z v, int &numv, const int maxv, int &optfollow);
-  /* [cmplex re] [cmplex im] [double]
-     ...
-     [cmplex re] [cmplex im] [double] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
-     & (if optfollow=true) */
-  parse_error    ParseArray_cmp_dyn(Writeable1DArray_z v,Writeable1DArray v2, int &numv, const int maxv, int &optfollow);
-  /* [cmplex re] [cmplex im] [double] [double]
-     ...
-     [cmplex re] [cmplex im] [double] [double] (dynamic (unknown) array size, max entries maxv, re & im are doubles)
-     & (if optfollow=true) */
-  parse_error    ParseArray_cmp_dyn(Writeable1DArray_z v,Writeable1DArray v2,Writeable1DArray v3, int &numv, const int maxv, int &optfollow);
 };
 
 #endif
