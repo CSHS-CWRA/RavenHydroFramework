@@ -1284,7 +1284,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     retval = nc_get_att_double(ncid, varid_f, "scale_factor", &scale_factor);       HandleNetCDFErrors(retval);// read attribute value
   }
   if (Options.noisy){ cout << "scale_factor = " << scale_factor << endl; }
-  cout << "scale_factor = " << scale_factor << endl;
 
   // -------------------------------
   // (2) get dimension lengths
