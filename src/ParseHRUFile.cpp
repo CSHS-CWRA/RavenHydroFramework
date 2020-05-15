@@ -1087,7 +1087,11 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
   {
     pRes->SetVolumeStageCurve(aV_ht,aV,NV);//allows user to override prismatic lake assumption
   }
-  if(dztr) 
+  if((type==CURVE_LAKE) && (aA!=NULL) && (aA_ht!=NULL))
+  {
+    pRes->SetAreaStageCurve(aA_ht,aA,NV);//allows user to override prismatic lake assumption
+  }
+  if(dztr)
   {
     pRes->SetDZTRModel(Qmax,Smax,Sci,Sni,Smi,Qci,Qni,Qmi);
   }

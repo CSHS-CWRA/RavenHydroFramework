@@ -164,6 +164,7 @@ public:/*-------------------------------------------------------*/
   void              SetInitialFlow           (const double &Q,const double &Qlast,const double &t);
   void              SetInitialStage          (const double &ht, const double &ht_last);
   void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
+  void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);

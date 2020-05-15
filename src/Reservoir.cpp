@@ -672,6 +672,24 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
   }
 }
 //////////////////////////////////////////////////////////////////
+/// \brief overrides area stage curve for Lake-type reservoirs (if known)
+/// \param a_ht[] - array of stage values
+/// \param a_A[] array of areas 
+/// \param nPoints - number of points in array
+//
+
+void CReservoir::SetAreaStageCurve(const double *a_ht,const double *a_A,const int nPoints)
+{
+  for(int i=0;i<_Np;i++)
+  {
+    _aArea[i]=Interpolate2(_aStage[i],a_ht,a_A,nPoints,false);
+    if((i > 0) && ((_aArea[i] - _aArea[i-1]) <= -REAL_SMALL)) {
+      string warn = "CReservoir::SetAreaStageCurve: area-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
+      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
 /// \brief sets minmum stage constraint to dominant  
 //
 void CReservoir::SetMinStageDominant() 

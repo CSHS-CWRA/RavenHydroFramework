@@ -360,6 +360,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SuppressCompetitiveET"     )){code=48; }
     else if  (!strcmp(s[0],":SnowSuppressesPET"         )){code=49; }
 	//---I/O------------------------------------------------------
+    else if  (!strcmp(s[0],":OutputInterval"            )){code=15; }  // \todo[clean] - improperly numbered
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=51; }
     else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=52; }
@@ -371,7 +372,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":RunName"                   )){code=56; }
     else if  (!strcmp(s[0],":NoisyMode"                 )){code=57; }
     else if  (!strcmp(s[0],":SilentMode"                )){code=58; }
-    else if  (!strcmp(s[0],":PavicsMode"                )){code=88; }//some special options only for PAVICS
     else if  (!strcmp(s[0],":rvh_Filename"              )){code=59; }
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=60; }
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=61; }
@@ -389,7 +389,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=72; }
     else if  (!strcmp(s[0],":SuppressOutput"            )){code=73; }
     else if  (!strcmp(s[0],":WriteHRUGroupMBFile"       )){code=74; }
-    else if  (!strcmp(s[0],":OutputInterval"            )){code=15; }
     else if  (!strcmp(s[0],":EvaluationTime"            )){code=75; }//After StartDate or JulianStartDay and JulianStartYear commands
     else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
     else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; } 
@@ -397,6 +396,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=85; } 
     else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=86; }
     else if  (!strcmp(s[0],":PeriodStartingFormatOff"   )){code=87; }
+    else if  (!strcmp(s[0],":PavicsMode"                )){code=88; }//some special options only for PAVICS
     else if  (!strcmp(s[0],":OutputConstituentMass"     )){code=89; }
     else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
     else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
@@ -471,10 +471,10 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Recharge"                  )){code=234;}
     else if  (!strcmp(s[0],":BlowingSnow"               )){code=235;}
     else if  (!strcmp(s[0],":LakeRelease"               )){code=236;}
-    else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=237;}
+
     else if  (!strcmp(s[0],":Drain"                     )){code=252;}
-  
     //...
+    else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
     else if  (!strcmp(s[0],":EndProcessGroup"           )){code=296;}
     else if  (!strcmp(s[0],":-->Conditional"            )){code=297;}
@@ -931,14 +931,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SW_RAD_VALIANTZAS")){Options.SW_radiation=SW_RAD_VALIANTZAS;}
       else if (!strcmp(s[1],"SW_RAD_NONE"      )){Options.SW_radiation=SW_RAD_NONE; }
       else {ExitGracefully("ParseInput:SWRadiationMethod: Unrecognized method",BAD_DATA_WARN);}
-
-      if (Options.SW_radiation == SW_RAD_DATA){
-        Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
-        WriteWarning("Cloud cover corrections have been set to 'NONE', since the shortwave radiation method is SW_RAD_DATA",Options.noisy);
-      } //if data provided, then cloudcover corrections not needed
-      if(Options.SW_radiation==SW_RAD_NONE) {
-        WriteAdvisory("The shortwave radiation calculation method is SW_RAD_NONE. This may impact some snowmelt and PET algorithms which require radiation.",Options.noisy);
-      }
       break;
     }
     case(25):  //--------------------------------------------
@@ -2657,21 +2649,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
-    case(237):  //----------------------------------------------
-    {/*:-->RedirectFlow
-     :-->RedirectFlow  [old 'To' SV] [new 'To' SV]*/
-      if(Options.noisy) { cout <<"Redirecting Flow"<<endl; }
-      if(Len<3) { ImproperFormatWarning(":-->RedirectFlow",p,Options.noisy); break; }
-
-      tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
-      pModel->AddStateVariables(tmpS,tmpLev,1);
-
-      // \todo [QA\QC]: check if this is a process that can support this (infiltration can support runoff redirects)
-
-      pMover->Redirect(ParseSVTypeIndex(s[1],pModel),ParseSVTypeIndex(s[2],pModel));
-
-      break;
-    }
     case(252):  //----------------------------------------------
     {/*:Drain
       string ":Drain" string method */
@@ -2688,6 +2665,21 @@ bool ParseMainInputFile (CModel     *&pModel,
         
       pMover=new CmvDrain(d_type);
       pModel->AddProcess(pMover);
+      break;
+    }
+    case(294):  //----------------------------------------------
+    {/*:-->RedirectFlow
+     :-->RedirectFlow  [old 'To' SV] [new 'To' SV]*/
+      if(Options.noisy) { cout <<"Redirecting Flow"<<endl; }
+      if(Len<3) { ImproperFormatWarning(":-->RedirectFlow",p,Options.noisy); break; }
+
+      tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
+      pModel->AddStateVariables(tmpS,tmpLev,1);
+
+      // \todo [QA\QC]: check if this is a process that can support this (infiltration can support runoff redirects)
+
+      pMover->Redirect(ParseSVTypeIndex(s[1],pModel),ParseSVTypeIndex(s[2],pModel));
+
       break;
     }
     case (295)://----------------------------------------------
@@ -3140,7 +3132,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       ExitGracefully(warn.c_str(),BAD_DATA);
     }
   }
-
+  if(Options.SW_radiation == SW_RAD_DATA) {
+    Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
+    WriteWarning("Cloud cover corrections have been set to 'NONE', since the shortwave radiation method is SW_RAD_DATA",Options.noisy);
+  } //if data provided, then cloudcover corrections not needed
+  
+  if(Options.SW_radiation==SW_RAD_NONE) {
+    WriteAdvisory("The shortwave radiation calculation method is SW_RAD_NONE. This may impact some snowmelt and PET algorithms which require radiation.",Options.noisy);
+  }
 
   //Add Ensemble configuration to Model
   //===============================================================================================

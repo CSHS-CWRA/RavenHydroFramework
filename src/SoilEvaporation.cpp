@@ -369,8 +369,8 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     rates[0]  = PET * min(stor/tens_stor,1.0);  //evaporation rate [mm/d]
 
-    //correction for snow in non-forested areas
-    if ((type==SOILEVAP_HBV) || (type==SOILEVAP_HYPR))
+    //correction for snow in non-forested areas (not in HYPR)
+    if (type==SOILEVAP_HBV)
     {
       int iSnow=pModel->GetStateVarIndex(SNOW);
       double Fc=pHRU->GetSurfaceProps()->forest_coverage;
@@ -378,7 +378,9 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     }
     PETused=rates[0];
 
-    //SOILEVAP_HYPR developed by Mohamed Ahmed and Amin Elshorbaghy at Univ. Saskatchewan for HYPR model
+    //SOILEVAP_HYPR from
+    //Ahmed et al., Toward Simple Modeling Practices in the Complex Canadian Prairie Watersheds,  
+    //Journal of Hydrologic Engineering 25(6), 04020024, doi:10.1061/(ASCE)HE.1943-5584.0001922, 2020
     if (type==SOILEVAP_HYPR)
     {
       int iDep=pModel->GetStateVarIndex(DEPRESSION);
@@ -387,13 +389,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       double dep_max          =pHRU->GetSurfaceProps()->dep_max;
       double b                =pHRU->GetSurfaceProps()->PDMROF_b;
 
-      //double maxPDMstor       =(b*0+1)*dep_max; //JRC: as calculated in PDM equations //JRC - HYPR uses dep_max, not (b+1)*dep max
-      //SMAX = 1.0 / (B + 1.0) * (B * CMIN + CMAX);
-
       double area_ponded=maxPondedAreaFrac*pow(min(state_vars[iDep]/dep_max,1.0),n);
-
-      g_debug_vars[0]=area_ponded;
-      g_debug_vars[1]=maxPondedAreaFrac;
       
       rates[0]=(1.0-area_ponded)*rates[0]; //correct AET              //SOIL->ATMOS
       rates[1]=(    area_ponded)*pHRU->GetForcingFunctions()->OW_PET; //DEPRESSION->ATMOS
