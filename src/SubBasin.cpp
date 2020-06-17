@@ -45,6 +45,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _avg_ann_flow      =0.0;
   _reach_length      =reach_len;
   _is_headwater      =true;
+  _reach_HRUID       =DOESNT_EXIST; //default
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -728,6 +729,8 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
+
+  else if (!label_n.compare("REACH_HRU_ID"  ))  {_reach_HRUID=(int)(value); }
   
   else{
     return false;//bad string

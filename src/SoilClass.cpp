@@ -464,7 +464,8 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.porosity                               =DefaultParameterValue(is_template,true);;//AUTO_COMPUTE; //always needed
   S.bulk_density                           =DefaultParameterValue(is_template,true);
   S.stone_frac                             =AUTO_COMPUTE; //always needed
-  S.heat_capacity =S.thermal_cond          =DefaultParameterValue(is_template,true);
+  S.heat_capacity                          =DefaultParameterValue(is_template,true);
+  S.thermal_cond                           =DefaultParameterValue(is_template,true);
 
   S.hydraul_cond                           =DefaultParameterValue(is_template,true);
   S.clapp_b =S.clapp_m =S.clapp_n          =DefaultParameterValue(is_template,true);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   Class CSoilClass
   Class CVegetationClass
@@ -80,13 +80,6 @@ public:/*-------------------------------------------------------*/
   static double            CalcSoilPotential (const double      &sat_liq,
                                               const double      &sat_ice,
                                               const soil_struct &S);
-  static double            CalcSoilThermCond (const double      &sat_liq,
-                                              const double      &sat_ice,
-                                              const double      &T,
-                                              const soil_struct &S);
-  static double            CalcSoilHeatCap   (const double      &sat_liq,
-                                              const double      &sat_ice,
-                                              const soil_struct *pS);
 
   static void              SummarizeToScreen();
 };

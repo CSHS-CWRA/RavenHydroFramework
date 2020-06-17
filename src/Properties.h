@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -94,7 +94,7 @@ struct soil_struct
   double baseflow_coeff;    ///< [1/d]     Linear Baseflow storage coefficient [Q_base=K*S]
   double baseflow_coeff2;   ///< [1/d]     Linear baseflow storage coefficient [threshhold]
   double baseflow_thresh;   ///< [0..1]    threshold saturation for onset of baseflow
-  double storage_threshold; ///< [mm]      threshhold storage for onset of baseflow
+  double storage_threshold; ///< [mm]      threshold storage for onset of baseflow
 
   double max_cap_rise_rate; ///< [mm/d]    HBV max capillary rise rate
 
@@ -294,6 +294,8 @@ struct surface_struct
   double gamma_scale2;      ///< [-]       gamma distribution scaling parameter for convolution routing (v2)
 
   double sky_view_factor;   ///< [-]       sky view factor for estimating incoming longwave radiation (should be terrain param?)
+
+  double convection_coeff;  ///< [MJ/m2/d/K] thermal convection coefficieint q=h(T_a-T)
 };
 
 //////////////////////////////////////////////////////////////////

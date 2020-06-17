@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -329,6 +329,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.gamma_shape2,Stmp.gamma_shape2,Sdefault.gamma_shape2,needed,"GAMMA_SHAPE2");
   SetSpecifiedValue(S.HMETS_runoff_coeff,Stmp.HMETS_runoff_coeff,Sdefault.HMETS_runoff_coeff,needed,"HMETS_RUNOFF_COEFF");
   SetSpecifiedValue(S.bsnow_distrib,Stmp.bsnow_distrib,Sdefault.bsnow_distrib,needed,"BSNOW_DISTRIB");
+  SetSpecifiedValue(S.convection_coeff,Stmp.convection_coeff,Sdefault.convection_coeff,needed,"CONVECTION_COEFF");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -406,7 +407,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.gamma_shape2      =DefaultParameterValue(is_template,false);//
   S.HMETS_runoff_coeff=DefaultParameterValue(is_template,false);//0.4
   S.bsnow_distrib     =DefaultParameterValue(is_template,false);//0.4
-
+  S.convection_coeff  =DefaultParameterValue(is_template,false);//~20
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -492,6 +493,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("HMETS_RUNOFF_COEFF"     )){S.HMETS_runoff_coeff=value; }
   else if (!name.compare("BSNOW_DISTRIB"          )){S.bsnow_distrib=value;}
   else if (!name.compare("SKY_VIEW_FACTOR"        )){S.sky_view_factor=value;}
+  else if (!name.compare("CONVECTION_COEFF"       )){S.convection_coeff=value;}
   else{
     WriteWarning("Trying to set value of unrecognized/invalid land use/land type parameter "+ name,false);
   }
@@ -577,6 +579,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("HMETS_RUNOFF_COEFF"     )){return S.HMETS_runoff_coeff; }
   else if (!name.compare("BSNOW_DISTRIB"          )){return S.bsnow_distrib; }
   else if (!name.compare("SKY_VIEW_FACTOR"        )){return S.sky_view_factor; }
+  else if (!name.compare("CONVECTION_COEFF"       )){return S.convection_coeff; }
   else{
     string msg="CLandUseClass::GetSurfaceProperty: Unrecognized/invalid LU/LT parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TRANSPORTMODEL_H
 #define TRANSPORTMODEL_H
@@ -21,7 +21,6 @@ struct constituent
   constit_type type;      ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
   bool     can_evaporate; ///< true if constituent can be transported through evaporation
   bool     is_passive;    ///< doesn't transport via advection
-
 
   double   decay_rate;    ///< independent linear decay rate of constituent (happens everywhere; not environmentally mediated) [1/d]
 
@@ -103,6 +102,10 @@ private:/*------------------------------------------------------*/
   void DeleteRoutingVars();
   void InitializeConstitParams(transport_params *P);
 
+  double GetTotalRivuletConstituentStorage(const int c) const;
+  double GetTotalChannelConstituentStorage(const int c) const;
+  double GetAvgLatentHeatFlux() const;
+
 public:/*-------------------------------------------------------*/
   CTransportModel(CModel *pMod);
   ~CTransportModel();
@@ -148,6 +151,7 @@ public:/*-------------------------------------------------------*/
 
   double GetOutflowConcentration (const int p, const int c) const;
   double GetIntegratedMassOutflow(const int p, const int c,const double &tstep) const;
+  double GetOutflowIceFraction   (const int p, const int c) const;
 
   bool   ConstituentIsPassive   (const int c) const;
   double GetDecayCoefficient    (const int c,const CHydroUnit *pHRU, const int iStorWater) const;

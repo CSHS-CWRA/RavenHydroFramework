@@ -8,6 +8,7 @@
 #include "HydroUnits.h"
 #include "ParseLib.h"
 
+void SetInitialStateVar(CModel *&pModel,const int SVind,const int typ,const int m,const int k,const double &val);
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Initial conditions file
 /// \details model.rvc: input file that defines HRU and Subbasin initial conditions\n
@@ -177,7 +178,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
         if (SVind!=DOESNT_EXIST){
           for (k=0;k<pModel->GetNumHRUs();k++){
-            pModel->GetHydroUnit(k)->SetStateVarValue(SVind,s_to_d(s[2]));
+            SetInitialStateVar(pModel,SVind,typ,layer_ind,k,s_to_d(s[2]));
           }
         }
         else{
@@ -268,7 +269,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(5):  //----------------------------------------------
-    { /*
+    { /* \todo[clean]: make this command obsolete
         ":InitialConditions" {SV_NAME}
         {v1,v2,v3,v4} x nHRUs
         :EndInitialConditions
@@ -344,15 +345,15 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     {
       /*
         ":BasinStateVariables"
-        :BasinIndex ID, name
-        :ChannelStorage [val]
-        :RivuletStorage [val]
-        :Qout [nsegs] [aQout x nsegs] [aQoutLast]
-        :Qlat [nQlatHist] [aQlatHist x nQlatHist] [QlatLast]
-        :Qin  [nQinHist] [aQinHist x nQinHist]
-        {:ResStage [stage] [last stage]}
-        :BasinIndex 1D, name
-        ...
+          :BasinIndex ID, name
+            :ChannelStorage [val]
+            :RivuletStorage [val]
+            :Qout [nsegs] [aQout x nsegs] [aQoutLast]
+            :Qlat [nQlatHist] [aQlatHist x nQlatHist] [QlatLast]
+            :Qin  [nQinHist] [aQinHist x nQinHist]
+            {:ResStage [stage] [last stage]}
+          :BasinIndex 1D, name
+            ...
         :EndBasinStateVariables
       */
       if (Options.noisy) {cout <<"   Reading Basin State Variables"<<endl;}
@@ -598,4 +599,40 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   delete pp;
   pp=NULL;
   return true;
+}
+
+void SetInitialStateVar(CModel *&pModel,const int SVind,const int typ,const int m,const int k,const double &val) 
+{
+  if(typ!=CONSTITUENT) //native units, no problem
+  {
+    pModel->GetHydroUnit(k)->SetStateVarValue(SVind,val);
+  }
+  else { // specifying mg/L or degrees C, must be converted to mg/m2 or MJ/m2
+    string name =pModel->GetTransportModel()->GetConstituentTypeName(m);
+    int       c=pModel->GetTransportModel()->GetConstituentIndex(name);
+
+    if(c==DOESNT_EXIST) {
+      cout<<name<<" "<<m<<endl;
+      ExitGracefully("Constituent in .rvc file does not exist.",BAD_DATA_WARN);
+      return;
+    }
+
+    int   iStor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
+    double  vol=pModel->GetHydroUnit(k)->GetStateVarValue(iStor); //[mm]Assumes this has already been initialized (this will be true for .rvc file)
+    
+    if(pModel->GetTransportModel()->GetConstituent(c)->type==ENTHALPY) 
+    {
+      //specified in C, convert to MJ/m2
+      double pctfroz=0.0;
+      if (val<0.0){pctfroz=1.0;} //treats all 0 degree water as unfrozen
+      double energy=ConvertTemperatureToVolumetricEnthalpy(val,pctfroz)*vol/MM_PER_METER; //[C]->[MJ/m3]*[m]=[MJ/m2]
+      pModel->GetHydroUnit(k)->SetStateVarValue(SVind,energy);
+    }
+    else 
+    {
+      //specified in mg/L, convert to mg/m2
+      double mass=val*LITER_PER_M3*vol; //[mg/L]->[mg/L]*[L/m3]*[m]=[mg/m2]
+      pModel->GetHydroUnit(k)->SetStateVarValue(SVind,mass);
+    }
+  }
 }

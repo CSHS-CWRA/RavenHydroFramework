@@ -9,6 +9,70 @@ convention assumes conduction is positive downward
 #include "HydroProcessABC.h"
 #include "HeatConduction.h"
 
+/////////////////////////////////////////////////////////////////////
+/// \brief calculates volumetric heat capacity[MJ/m3/K] of soil/water/ice mix
+/// \details This is just a simple weighted average of soil, ice and water capacities
+///
+/// \param &sat_liq [in] Saturation fraction of liquid H_{2}0 [0..1]
+/// \param &sat_ice [in] Saturated fraction of ice [0..1]
+/// \param *pS [in] Soil properties structure
+/// \return Volumetric soil heat capacity [J/m^3/K]
+//
+//
+double CalculateHeatCapacity(const double &poro,const double&hcp_soil,const double &sat,const double &Fice) 
+{
+   return  (    sat)*(    poro)*(1.0-Fice)*HCP_WATER+
+           (    sat)*(    poro)*(    Fice)*HCP_ICE  +
+           (1.0-sat)*(    poro)           *HCP_AIR+
+                     (1.0-poro)           *hcp_soil; //[MJ/m3/K]
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief calculates density [kg/m3] of soil/water/ice mix
+//
+double CalculateDensity(const double &poro,const double&rho_soil,const double &sat,const double &Fice) 
+{
+   return  (    sat)*(    poro)*(1.0-Fice)*DENSITY_WATER+
+           (    sat)*(    poro)*(    Fice)*DENSITY_ICE  +
+           (1.0-sat)*(    poro)           *DENSITY_AIR+
+                     (1.0-poro)           *rho_soil; //[MJ/m3/K]
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief calculates thermal conductivity [MJ/m2/d/K] of soil/water/ice mix
+//
+double CalculateThermalConductivity(const double &poro,const double&kappa_soil,const double &sat,const double &Fice)
+{
+  double kappa;
+  //arithmetic mean of thermal conductivity
+  /*kappa= (    sat)*(    poro)*(1.0-Fice)*TC_WATER+
+         (    sat)*(    poro)*(    Fice)*TC_ICE  +
+         (1.0-sat)*(    poro)           *TC_AIR+
+                   (1.0-poro)           *kappa_soil; */ //[W/m2/K]
+
+ //geometric mean of thermal conductivity
+ kappa= pow(kappa_soil,1.0-poro)*
+        pow(TC_WATER  ,sat*poro*(1-Fice))*
+        pow(TC_ICE    ,sat*poro*(  Fice))*
+        pow(TC_AIR    ,(1.0-sat)*poro);
+ 
+ //Kersten number
+ /// \ref adapted from Community Land Model Manual 3.0, Oleson et al., 2004 \cite Oleson2012
+  /*double K=sat;
+  if(Fice==0.0) {
+    K = max(log(sat)+1.0,0.0);
+  }
+  //final thermal conductivity
+  //dry soil conductivity [W/m/K]
+  dry_cond=(0.135*rhob+64.7)/(2700-0.947*rhob); //CLM manual eqn. 6.62
+  kappa=kappa_soil;
+  if(sat>REAL_SMALL) {
+    kappa=(K)*kappa+(1.0-K)*dry_cond;//CLM eqn 6.58
+  }
+  */
+  return kappa*WATT_TO_MJ_PER_D; //[W/m2/K]->[MJ/m2/d/K]
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the heat conduction constructor
 ///
@@ -17,7 +81,9 @@ convention assumes conduction is positive downward
 CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroProcessABC(HEATCONDUCTION)
 {
   _pTransModel=pTransMod;
+
   int nSoils=pModel->GetNumSoilLayers();
+  
   CHydroProcessABC::DynamicSpecifyConnections(nSoils+1);
 
   int cTemp=_pTransModel->GetConstituentIndex("TEMPERATURE");
@@ -27,12 +93,14 @@ CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroP
   int layer1, layer2;
 
   //top connection - atmosphere to topsoil 
+  //-------------------------------------------------------------
   layer2=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,0)); //layer index of soil[0] enthalpy 
 
   iFrom[0]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp); //global index of energy source state variable 
   iTo  [0]=pModel->GetStateVarIndex(CONSTITUENT,    layer2);//global index of enthalpy in soil[0]
 
   //intermediate connections - soil to soil 
+  //-------------------------------------------------------------
   for(int m=0;m<nSoils-1;m++) 
   {
     layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m  )); //layer index of soil[m] enthalpy 
@@ -42,10 +110,20 @@ CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroP
     iTo  [m+1]=pModel->GetStateVarIndex(CONSTITUENT,layer2);//global index of enthalpy in soil[m+1]
   }
   //bottom connection -geothermal 
+  //-------------------------------------------------------------
   layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,nSoils-1)); //layer index of soil[m] enthalpy 
 
   iFrom[nSoils]=pModel->GetStateVarIndex(CONSTITUENT,layer1);     //global index of enthalpy in soil[nSoils-1] 
   iTo  [nSoils]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp);  //global index of energy source state variable 
+
+  //JRC: If we only track water enthalpy, we may need to include the sink/source term to the soil as it re-equilibrates
+  /*for(int m=0;m<nSoils;m++)
+  {
+    layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m)); //layer index of soil[m] enthalpy 
+
+    iFrom[nSoils+m+1]=pModel->GetStateVarIndex(CONSTITUENT,   layer1);//global index of enthalpy in soil[m] 
+    iTo  [nSoils+m+1]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp);//global index of energy source state variable 
+  }*/
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
@@ -78,6 +156,7 @@ void        CmvHeatConduction::GetParticipatingParamList(string  *aP,class_type 
   aP[nP]="HEAT_CAPACITY";    aPC[nP]=CLASS_SOIL; nP++;
   aP[nP]="CONVECTION_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating state variable list
 ///
@@ -92,6 +171,7 @@ void CmvHeatConduction::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int 
   //actual state variables just enthalpy of soil compartments
   nSV=0;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Solves Tridiagonal matrix with diagonals e,f, and g using Thomas Algorithm. RHS=b, returns solution vector x
 ///
@@ -121,6 +201,7 @@ void ThomasAlgorithm(Ironclad1DArray  e,Ironclad1DArray f,
   delete[] f1;
   delete[] b1;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Finds thermal rate of change
 /// \param *state_vars [in] Array of state variable values for this HRU
@@ -140,7 +221,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   double hv; //enthalpy [MJ/m3]
   double poro, sat;
   int    iSoil,iSoilEnthalpy;
-  double hcond = 20; //[MJ/m2/d] pHRU->GetSurfaceProps()->convection_coeff;
+  double hcond = pHRU->GetSurfaceProps()->convection_coeff; //[MJ/m2/d/K] ;
 
   int    nSoils=pModel->GetNumSoilLayers();
   
@@ -150,30 +231,27 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   double *rho =new double [nSoils];
   double *T   =new double [nSoils];
   double *Tnew=new double [nSoils];
-  double *dz = new double [nSoils]; 
+  double *dz = new double [nSoils];
+  double *Fi = new double [nSoils];
   for(int m=0;m<nSoils;m++)
   {
     iSoil=pModel->GetStateVarIndex(SOIL,m);
     iSoilEnthalpy=iTo[m];
     poro  =pHRU->GetSoilProps(m)->porosity;
-    k  [m]=pHRU->GetSoilProps(m)->thermal_cond;
-    cp [m]=pHRU->GetSoilProps(m)->heat_capacity;
     sat   =state_vars[iSoil]/pHRU->GetSoilCapacity(m);
 
     hv=0.0;
     if (state_vars[iSoil]>1e-9){hv=state_vars[iSoilEnthalpy]/(state_vars[iSoil]/MM_PER_METER);}//[MJ/m3] 
+
     T  [m]=ConvertVolumetricEnthalpyToTemperature(hv);
+    Fi [m]=ConvertVolumetricEnthalpyToIceContent (hv);
 
-    //arithmetic mean of heat capacity
-    // \todo [funct]: support ice content
-    cp [m]=sat*poro*HCP_WATER+(1.0-sat)*poro*HCP_AIR+(1.0-poro)*cp[m]; //[MJ/m3/K]
+    cp [m]=CalculateHeatCapacity       (poro,pHRU->GetSoilProps(m)->heat_capacity,sat,Fi[m]);
+    k  [m]=CalculateThermalConductivity(poro,pHRU->GetSoilProps(m)->thermal_cond ,sat,Fi[m]);
+    rho[m]=CalculateDensity            (poro,pHRU->GetSoilProps(m)->bulk_density ,sat,Fi[m]);
     
-    k  [m]=sat*poro*TC_WATER +(1.0-sat)*poro*TC_AIR +(1.0-poro)*k[m];               //arithmetic mean of thermal conductivity
-    //k[m]=pow(k[m],1.0-poro)*pow(TC_WATER,sat*poro)*pow(TC_AIR,(1.0-sat)*poro);//geometric mean of thermal conductivity
-    k[m]*=WATT_TO_MJ_PER_D; //[W/m2/K]->[MJ/m2/d/K]
+    //cp [m]+= pHRU->GetSoilProps(m)->heat_capacity*pHRU->GetSoilProps(m)->bulk_density /sat / poro / DENSITY_WATER; //JRC: this can be unstable for small saturations. 
 
-    rho[m]=sat*poro*DENSITY_WATER+pHRU->GetSoilProps(m)->bulk_density;                //arithmetic mean of density
-    
     dz [m]=pHRU->GetSoilThickness(m);
   }
 
@@ -209,16 +287,22 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   ThomasAlgorithm(AA,BB,CC,RHS,Tnew,nSoils);
   
   //extract energy fluxes from solution
+  //Need also to address heat exchanged with soil (sink/source term) 
   for(int m=0;m<nSoils;m++)
   {
-    T[m]=0.5*(T[m]+Tnew[m-1]); //T is now mean temp over time step
+    //-dHs/dt = - H*rho_b*c_p*dT/dt
+    //rates[m+nSoils] = - dz[m]*  pHRU->GetSoilProps(m)->heat_capacity*pHRU->GetSoilProps(m)->bulk_density*(Tnew[m]-T[m])/Options.timestep; //JRC
+  }
+  for(int m=0;m<nSoils;m++)
+  {
+    T[m]=0.5*(T[m]+Tnew[m]); //T is now mean temp over time step
     if(m>0)        { rates[m]=(k[m]+k[m-1])/2.0 * 1.0/(0.5*(dz[m]+dz[m-1]))*(T[m]-T[m-1]); } // [MJ/m2/d]
     else           { rates[m]=hcond*(Tair-T[m]); } //top condition [MJ/m2/d]
   }
   rates[nSoils]=0.0; //geothermal (eventually) [MJ/m2/d]
 
-  delete [] AA; delete [] BB; delete [] CC; delete [] RHS; 
-  delete [] k;  delete [] cp; delete [] rho; 
+  delete [] AA; delete [] BB; delete [] CC;  delete [] RHS; 
+  delete [] k;  delete [] cp; delete [] rho; delete [] Fi;
   delete [] T;  delete [] Tnew;
 }
 //////////////////////////////////////////////////////////////////

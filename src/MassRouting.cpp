@@ -216,7 +216,6 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
     }
   }
 
-
   //Reservoir Routing
   //-----------------------------------------------------------------
   CReservoir *pRes=pModel->GetSubBasin(p)->GetReservoir();
@@ -317,7 +316,7 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,
 
     //Update channel storage
     //------------------------------------------------------
-    double dt=tstep*SEC_PER_DAY;
+    double dt=tstep;
     double dM=0.0;
     double Mlat_new(0.0);
     for (int n=0;n<pBasin->GetLatHistorySize();n++){
@@ -341,10 +340,9 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,
     dM+=_aMlatHist[p][c][0]*dt;//inflow from land surface (integrated over time step)
     dM-=0.5*(Mlat_new+_aMlat_last[p][c])*dt;//outflow to channel (integrated over time step)
 
-    _rivulet_storage[p][c]+=dM;//[mg]
+    _rivulet_storage[p][c]+=dM;//[mg] or [MJ]
 
     _aMlat_last[p][c]=Mlat_new;
-
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -377,16 +375,48 @@ double CTransportModel::GetOutflowConcentration(const int p, const int c) const
     if(pRes==NULL)
     {
       double MJ_per_d=_aMout[p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
-      double flow=pModel->GetSubBasin(p)->GetOutflowRate();
+      double flow    =pModel->GetSubBasin(p)->GetOutflowRate();
       if(flow<=0) { return 0.0; }
-      //hv=MJ/d / M3/d 
-      double T=ConvertVolumetricEnthalpyToTemperature(MJ_per_d/flow/SEC_PER_DAY); //[C]
+      //hv=MJ/d / M3/d = [MJ/m3]
+      double T=ConvertVolumetricEnthalpyToTemperature(MJ_per_d/(flow*SEC_PER_DAY)); //[C]
+
+      return max(T,0.0); //Flowing water can't go below zero. HOWEVER, this may not conserve energy balance, as it is possible for the enthalpy to dip down below frozen conditions
+
+      //if (T<0){cout<<"     Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<" ***************"<<endl;}
+      //else {   cout<<" NOT Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<endl;}
       return T;
     }
     else {
       return ConvertVolumetricEnthalpyToTemperature(_aMres[p][c]/pRes->GetStorage()); //[C]
     }
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returnsice fraction of constituent c (which should be temperature) in subbasin p at current point in time
+/// \notes only used for reporting; calculations exclusively in terms of mass/energy
+/// 
+/// \param p [in] subbasin index 
+/// \param c [in] constituent index
+//
+double CTransportModel::GetOutflowIceFraction(const int p,const int c) const
+{
+  if(_pConstituents[c]->type!=ENTHALPY) { return 0.0; }
+  CReservoir *pRes=pModel->GetSubBasin(p)->GetReservoir();
+
+  double ice_content;
+  if(pRes==NULL)
+  {
+    double MJ_per_d=_aMout[p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
+    double flow=pModel->GetSubBasin(p)->GetOutflowRate();
+    //hv=MJ/d / M3/d = [MJ/m3]
+    ice_content=ConvertVolumetricEnthalpyToIceContent(MJ_per_d/flow/SEC_PER_DAY); //[C]
+    if(flow<=0) { ice_content= 0.0; }
+  }
+  else {
+    ice_content=ConvertVolumetricEnthalpyToIceContent(_aMres[p][c]/pRes->GetStorage()); //[C]
+  }
+  return ice_content;
+  
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns integrated mass outflow of constituent c from subbasin p over current timestep
@@ -402,9 +432,9 @@ double CTransportModel::GetIntegratedMassOutflow(const int p, const int c,const 
   if(pRes==NULL)
   {
     double mgdnew=_aMout     [p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
-    double mgdold=_aMout_last[p][c];//[mg/d]
+    double mgdold=_aMout_last[p][c];//[mg/d] or [MJ/d]
 
-    return 0.5*(mgdnew+mgdold)*tstep; //[mg]
+    return 0.5*(mgdnew+mgdold)*tstep; //[mg] or [MJ]
   }
   else
   {

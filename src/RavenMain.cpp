@@ -9,13 +9,15 @@
 
 // Function Declarations------------------------------------------
 //Defined in ParseInput.cpp
-bool ParseInputFiles  (CModel      *&pModel,
-                       optStruct    &Options);
+bool ParseInputFiles  (CModel           *&pModel,
+                       optStruct         &Options);
 //Defined in Solvers.cpp
 void MassEnergyBalance(CModel            *pModel,
                        const optStruct   &Options,
                        const time_struct &tt);        
-void ParseLiveFile             (CModel *&pModel,const optStruct &Options,const time_struct &tt);
+void ParseLiveFile    (CModel           *&pModel,
+                       const optStruct   &Options,
+                       const time_struct &tt);
 
 //Local functions defined below main()
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
@@ -56,12 +58,12 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="2.9.9";
+  Options.version="3.0";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif
 
-  for (int i=0;i<5;i++){g_debug_vars[i]=0;}
+  for (int i=0;i<10;i++){g_debug_vars[i]=0;}
 
   RavenUnitTesting(Options);
 
@@ -162,9 +164,9 @@ int main(int argc, char* argv[])
 
       if(!Options.silent) {
         cout <<"======================================================"<<endl;
-        cout <<"...Simulation Complete: "   <<Options.run_name<<endl;
-        cout <<"  Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-        cout <<"                Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+        cout <<"...Raven Simulation Complete: "<<Options.run_name<<endl;
+        cout <<"    Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+        cout <<"                  Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
         if(Options.output_dir!="") {
           cout <<"  Output written to "        << Options.output_dir                                       <<endl;
         }

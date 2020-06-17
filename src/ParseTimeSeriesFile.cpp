@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -55,6 +55,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   char *s[MAXINPUTITEMS];
   double monthdata[12];
   bool ended(false);
+  bool has_irrig=false;
 
   // some tmp variables for gridded forcing input
   bool grid_initialized = false;
@@ -1065,7 +1066,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,false,"IrrigationDemand_"+to_string(SBID),to_string(SBID),Options);
       if(pSB!=NULL) {
-        pSB->AddIrrigationDemand(pTimeSer);
+        pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
       }
       else
       {
@@ -1136,7 +1137,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         if(Len>=7) { start=s_to_i(s[5]); end=s_to_i(s[6]); }
         int target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
         if ((s_to_l(s[2])==-1) || (target_p!=DOESNT_EXIST)) {
-          pSB->AddFlowDiversion(start,end,target_p,s_to_d(s[4]),s_to_d(s[3]));
+          pSB->AddFlowDiversion(start,end,target_p,s_to_d(s[4]),s_to_d(s[3])); has_irrig=true;
         }
         else {
           string warn;
@@ -2019,6 +2020,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       end_of_file=p->Tokenize(s,Len);
     }
   } //end while (!end_of_file)
+
+  //QA/QC
+  //--------------------------------
+  if((has_irrig) && (pModel->GetTransportModel()->GetNumConstituents()>0)) {
+    WriteWarning("ParseTimeSeriesFile: irrigation/diversions included with transport constituents. Since water demands are not currently simulated in the Raven transport module, transport results must be interpreted with care.",Options.noisy);
+  }
 
   RVT.close();
   

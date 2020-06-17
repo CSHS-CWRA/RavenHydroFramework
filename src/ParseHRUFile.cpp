@@ -842,7 +842,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
         }
         else if(!strcmp(s[1],"LOOKUP_TABLE"))
         {
-          type = CURVE_DATA;
+//          type = CURVE_DATA;
           p->Tokenize(s,Len);
           if(Len >= 1) { NA = s_to_i(s[0]); }
           aA = new double[NA];
@@ -991,7 +991,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     else if(!strcmp(s[0],":DZTRResservoirModel"))
     {/*:DZTRResservoirModel
        :MaximumStorage           Vmax(m3)
-       :MaximumChannelCapacity   Qmax(m3/s)
+       :MaximumChannelDischarge  Qmax(m3/s)
        :MonthlyMaxStorage        J F M A M J J A S N D  {or single constant value} (m3)
        :MonthlyNormalStorage     J F M A M J J A S N D  {or constant value} (m3)
        :MonthlyCriticalStorage   J F M A M J J A S N D  {or constant value} (m3)
@@ -1089,7 +1089,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
   }
   if((type==CURVE_LAKE) && (aA!=NULL) && (aA_ht!=NULL))
   {
-    pRes->SetAreaStageCurve(aA_ht,aA,NV);//allows user to override prismatic lake assumption
+    pRes->SetAreaStageCurve(aA_ht,aA,NA);//allows user to override prismatic lake assumption
   }
   if(dztr)
   {

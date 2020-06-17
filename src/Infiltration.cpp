@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Infiltration.h"
@@ -510,7 +510,9 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     sat_excess=1.0;//(1.0-pow(1-sat1,n))*direct;
 
     ExitGracefully("INF_XINANXIANG",STUB);
-    rates[0]=infil;        //PONDED->SOIL
+
+    infil=(1.0-Fimp)*infil; //correct for impermeable surfaces (?)
+    rates[0]=infil;          //PONDED->SOIL
     rates[1]=rainthru-infil; //PONDED->SW 
   }
 }

@@ -60,6 +60,7 @@ private:/*------------------------------------------------------*/
   int          _num_reservoirs;   ///< number of linear reservoirs used for in-catchment routing
   double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph 
   double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
+  int             _reach_HRUID;   ///< HRU ID associated with reach. Used for reach-specific forcings.
 
   //River/stream  channel data:
   const CChannelXSect*_pChannel;  ///< Main channel
@@ -107,7 +108,7 @@ private:/*------------------------------------------------------*/
   int             _nHydroUnits;   ///< constituent HRUs with different hydrological characteristics
   CHydroUnit    **_pHydroUnits;   ///< [size:nHydroUnits] Array of pointers to constituent HRUs
 
-  //Treatment Plant/Other incoming hydrograph
+  //Treatment Plant/Irrigation/Other incoming hydrograph
   CTimeSeries   *_pInflowHydro;   ///< pointer to time series of inflows; NULL if no specified input - Inflow at upstream entrance of basin
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
   CTimeSeries   *_pIrrigDemand;   ///< pointer to time series of demand (which can be unmet) applied at downstream end of basin reach

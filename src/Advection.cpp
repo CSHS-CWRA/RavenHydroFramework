@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ------------------------------------------------------------------
   Advection of soluble contaminant/tracer/nutrient
   ----------------------------------------------------------------*/
@@ -42,11 +42,13 @@ CmvAdvection::CmvAdvection(string constit_name,
     iFrom[2*nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     iTo  [2*nAdvConnections+q]=iTo[q];
   }
+  
   //advection into surface water
   int iSW=pModel->GetStateVarIndex(SURFACE_WATER);
   int   m=pTransModel->GetLayerIndex(_constit_ind,iSW);
   iFrom[3*nAdvConnections]=pModel->GetStateVarIndex(CONSTITUENT,m);
   iTo  [3*nAdvConnections]=pModel->GetStateVarIndex(CONSTITUENT_SW,0);
+
   //advection into groundwater
   //int iGW=pModel->GetStateVarIndex(GROUNDWATER);
   //int   m=pTransModel->GetLayerIndex(constit_ind,iGW);
@@ -142,7 +144,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
 
     Q[q]=pModel->GetFlux(k,js,Options); //[mm/d]
 
-    sv[iFromWater]+=Q[q]*tstep;//reverse determination of state variable history (i.e., rewinding flow calculations)
+    sv[iFromWater]+=Q[q]*tstep; //reverse determination of state variable history (i.e., rewinding flow calculations)
     sv[iToWater]  -=Q[q]*tstep;
   }
 
@@ -169,32 +171,38 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       mass=sv[iTo[q]];
       vol =sv[iToWater];
     }
-    if (vol>1e-6){//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
+    if (vol>1e-6)//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
+    {
       rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d] or [MJ/m2/d]
-      if(!isEnthalpy) { //negative enthalpy/temperature allowed
+
+      if(!isEnthalpy) { //negative enthalpy/temperature allowed (but shouldnt happen)
         if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
-        if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
       }
+      if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
     }
 
-    //special consideration - atmospheric precip can have negative storage but still specified concentration
+    //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
+    //----------------------------------------------------------------------
     if ((pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) &&
         (pTransModel->IsDirichlet(iFromWater,_constit_ind,k,tt,Cs)))
     {
-      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
-
       if(isEnthalpy) {
         if (Cs==DIRICHLET_AIR_TEMP) { //Special precip temperature condition
           double Tair    =pHRU->GetForcingFunctions()->temp_ave;
           double snowfrac=pHRU->GetForcingFunctions()->snow_frac;
+          
           Cs=ConvertTemperatureToVolumetricEnthalpy(Tair,snowfrac)/MM_PER_METER; //[C]->[MJ/m3]->[MJ/mm-m2]
+          Cs=max(Cs,0.0); //precip @ 0 degrees
         }
         else {
-          double pctFroz=0.0; //TMP DEBUG -assumes liquid water for flows (reasonable)
+          double pctFroz=0.0; //assumes liquid water for flows
           Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
         }
       }
-      rates[q]=Q[q]*Cs;
+      else {
+        Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
+      }
+      rates[q]=Q[q]*Cs; //[mg/m2/d] or [MJ/m2/d]
     }
 
     //update local mass and volume history
@@ -209,12 +217,19 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     double dirichlet_mass;
     if (pTransModel->IsDirichlet(iFromWater,_constit_ind,k,tt,Cs))
     {
-      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       if(isEnthalpy) {
-        double pctfroz=0;
-        Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctfroz)/MM_PER_METER; //[C]->[MJ/m3]->[MJ/mm-m2]
+        if(Cs==DIRICHLET_AIR_TEMP) { //Special precip temperature condition
+          Cs=0; //don't explicitly try to track enthalpy content of atmosphere
+        }
+        else {
+          double pctFroz=0.0; //assumes liquid water for flows (reasonable)
+          Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
+        }
       }
-      mass          =sv[iFrom[q]];
+      else {
+        Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
+      }
+      mass          =sv[iFrom[q]]; 
       dirichlet_mass=Cs*sv[iFromWater]; //Cs*V 
       rates[nAdvConnections+q]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC
       sv[iFrom[q]]=dirichlet_mass;      //override previous mass/enthalpy
@@ -222,10 +237,12 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
 
     if (pTransModel->IsDirichlet(iToWater,_constit_ind,k,tt,Cs))
     {
-      Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       if(isEnthalpy) {
-        double pctfroz=0;
-        Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctfroz)/MM_PER_METER; //[C]->[MJ/m3]->[MJ/mm-m2]
+        double pctFroz=0.0; //assumes liquid water for flows (reasonable)
+        Cs=ConvertTemperatureToVolumetricEnthalpy(Cs,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
+      }
+      else {
+        Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       }
       mass          =sv[iTo[q]];
       dirichlet_mass=Cs*sv[iToWater]; //C*V

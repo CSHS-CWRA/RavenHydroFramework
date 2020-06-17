@@ -68,7 +68,7 @@ CTransportModel::~CTransportModel()
   delete [] _pConstituents;  _pConstituents=NULL;
   delete [] _pConstitParams; _pConstitParams=NULL;
   delete [] _aIndexMapping;  _aIndexMapping=NULL;
-  for (int i=0;i<nSources;i++     ){delete pSources[i];         } delete [] pSources;
+  for (int i=0;i<nSources;i++){delete pSources[i];} delete [] pSources;
   if (_aSourceIndices!=NULL){
     for (int c=0;c<_nConstituents;c++){delete [] _aSourceIndices[c];} delete [] _aSourceIndices;
   }
@@ -154,19 +154,6 @@ string CTransportModel::GetConstituentLongName(const int m)
 {
   return _pTransModel->GetConstituentName(m);
 }
-
-//////////////////////////////////////////////////////////////////
-/// \brief returns full name of constitutent e.g., "Nitrogen in Soil Water[2]"
-//
-string CTransportModel::GetConstituentName(const int m) const
-{
-  int c,j;
-  m_to_cj(m,c,j);
-  sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
-  int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
-  // TMP DEBUG - if ENTHALPY, use " of " instead of " in "
-  return _pConstituents[c]->name+" in "+CStateVariable::GetStateVarLongName(typ,ind);
-}
 //////////////////////////////////////////////////////////////////
 /// \brief returns name of constitutent type e.g., "Nitrogen"
 /// \remark static routine
@@ -177,13 +164,20 @@ string CTransportModel::GetConstituentTypeName2(const int c)
   return _pTransModel->GetConstituent(c)->name;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns global sv index of water storage unit corresponding to CONSTITUENT[m]
+/// \brief returns full name of constitutent e.g., "Nitrogen in Soil Water[2]"
 //
-int CTransportModel::GetWaterStorIndexFromLayer(const int m) const
+string CTransportModel::GetConstituentName(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
-  return _iWaterStorage[j];
+  sv_type typ=pModel->GetStateVarType (_iWaterStorage[j]);
+  int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
+  if(_pConstituents[c]->type==ENTHALPY) {
+    return _pConstituents[c]->name+" of "+CStateVariable::GetStateVarLongName(typ,ind);
+  }
+  else {
+    return _pConstituents[c]->name+" in "+CStateVariable::GetStateVarLongName(typ,ind);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns full name of constitutent e.g., "!Nitrogen|SOIL[2]"
@@ -209,7 +203,15 @@ string CTransportModel::GetConstituentTypeName(const int m)
   _pTransModel->m_to_cj(m,c,j);
   return _pTransModel->GetConstituent(c)->name;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief returns global sv index of water storage unit corresponding to CONSTITUENT[m]
+//
+int CTransportModel::GetWaterStorIndexFromLayer(const int m) const
+{
+  int c,j;
+  m_to_cj(m,c,j);
+  return _iWaterStorage[j];
+}
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of water compartments in model
 //
@@ -503,6 +505,32 @@ double CTransportModel::GetStoichioCoefficient(const int c, const int c2, const 
     return pHRU->GetSoilProps(m)->stoichio_coeff[c][c2];
   }
   return 0.0;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns total rivulet storage distributed over watershed [mg] or [MJ]
+/// \return Total rivulet storage distributed over watershed  [mg] or [MJ]
+//
+double CTransportModel::GetTotalRivuletConstituentStorage(const int c) const
+{
+  double sum(0);
+  for(int p=0;p<pModel->GetNumSubBasins();p++)
+  {
+    sum+=_rivulet_storage[p][c]; //[mg] or [MJ]
+  }
+  return sum; //[mg] or [MJ]
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns total channel storage distributed over watershed [mg] or [MJ]
+/// \return Total channel storage distributed over watershed  [mg] or [MJ]
+//
+double CTransportModel::GetTotalChannelConstituentStorage(const int c) const
+{
+  double sum(0);
+  for(int p=0;p<pModel->GetNumSubBasins();p++)
+  {
+    sum+=_channel_storage[p][c]; //[mg] or [MJ]
+  }
+  return sum; //[mg] or [MJ]
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
@@ -940,7 +968,8 @@ void CTransportModel::Initialize()
       // zero out initial mass in all storage units with zero volume (to avoid absurdly high concentrations/temperatures)
       double watstor;
       int i_stor=GetStorWaterIndex(ii);
-      for (int k = 0; k < pModel->GetNumHRUs(); k++){
+      for (int k = 0; k < pModel->GetNumHRUs(); k++)
+      {
         watstor = pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
         if (watstor<1e-9){pModel->GetHydroUnit (k)->SetStateVarValue(i,0.0);}
       }
@@ -1087,6 +1116,19 @@ double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, con
 
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns watershed-wide latent heat flux determined from AET
+//
+double CTransportModel::GetAvgLatentHeatFlux() const 
+{
+  int iAET=pModel->GetStateVarIndex(AET);
+  double AET=pModel->GetAvgStateVar(iAET)/MM_PER_METER; 
+  //int iSubl=pModel->GetStateVarIndex(SUBLIMATED); // \todo[funct] support actual sublimation as state variable
+  //double Subl=pModel->GetAvgStateVar(iSubl)/MM_PER_METER;
+  double area=pModel->GetWatershedArea()*M2_PER_KM2;
+  
+  return AET*LH_VAPOR*DENSITY_WATER*area; //+Subl*LH_SUBLIM*DENSITY_WATER*area;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Write transport output file headers
 /// \details Called prior to simulation (but after initialization) from CModel::Initialize()
 /// \param &Options [in] Global model options information
@@ -1106,7 +1148,7 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
     //units names
     kg="[kg]"; kgd="[kg/d]"; mgL="[mg/l]";
     if(Options.write_constitmass) {
-      kg="[mg/m2]"; kgd="[mg/m2/d]"; //mgL="[mg/m2]";
+      kg="[mg/m2]"; kgd="[mg/m2/d]"; mgL="[mg/m2]";
     }
     if (_pConstituents[c]->type==TRACER){
       kg="[-]"; kgd="[-]"; mgL="[-]";
@@ -1114,10 +1156,9 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
     else if(_pConstituents[c]->type==ENTHALPY) {
       kg="[MJ]"; kgd="[MJ/d]"; mgL="[C]";
       if(Options.write_constitmass) {
-        kg="[MJ/m2]"; kgd="[MJ/m2/d]"; 
+        kg="[MJ/m2]"; kgd="[MJ/m2/d]"; mgL="[MJ/m2]"; 
       }
     }
-
 
     //Concentrations file
     //--------------------------------------------------------------------
@@ -1136,6 +1177,7 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
       ExitGracefully(("CTransportModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
 
+    //    Header content ---------------------------
     _pConstituents[c]->OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
     for (int i=0;i<pModel->GetNumStateVars();i++)
     {
@@ -1144,13 +1186,14 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
           CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i))<<" "<<mgL;
       }
     }
+
     if(_pConstituents[c]->type!=ENTHALPY) {
       _pConstituents[c]->OUTPUT<<", Total Mass "<<kg<<", Cum. Loading "<<kg<<", Cum. Mass Lost "<<kg<<", MB Error "<<kg;
-      ///**/_pConstituents[c]->OUTPUT<<", atmos "<<kg<<", sink"<<kg<<endl;//TMP DEBUG
+      _pConstituents[c]->OUTPUT<<", atmos "<<kg<<", sink"<<kg<<endl;//TMP DEBUG
     }
     else {
       _pConstituents[c]->OUTPUT<<", Total Energy "<<kg<<", Cum. Loading "<<kg<<", Cum. Energy Lost "<<kg<<", EB Error "<<kg;
-      ///**/_pConstituents[c]->OUTPUT<<", atmos "<<kg<<", sink"<<kg<<endl;//TMP DEBUG
+      _pConstituents[c]->OUTPUT<<", sink "<<kg<<", source "<<kg<<", atmos "<<", latent heat "<<endl;//TMP DEBUG
     }
 
     //Pollutograph / stream temperatures file
@@ -1161,6 +1204,7 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
     else {
       filename="StreamTemperatures.csv";
     }
+
     filename=FilenamePrepare(filename,Options);
     _pConstituents[c]->POLLUT.open(filename.c_str());
     if (_pConstituents[c]->POLLUT.fail()){
@@ -1175,6 +1219,10 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
         string name;
         if (pBasin->GetName()==""){_pConstituents[c]->POLLUT<<",ID="<<pBasin->GetID()  <<" "<<mgL;}
         else                      {_pConstituents[c]->POLLUT<<","   <<pBasin->GetName()<<" "<<mgL;}
+        if(_pConstituents[c]->type==ENTHALPY) {
+          if(pBasin->GetName()=="") { _pConstituents[c]->POLLUT<<",ID="<<pBasin->GetID()  <<" pct froz."; }
+          else                      { _pConstituents[c]->POLLUT<<","   <<pBasin->GetName()<<" pct froz."; }
+        }
       }
     }
     _pConstituents[c]->POLLUT<<endl;
@@ -1358,6 +1406,7 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
   double V; //[mm] 
   double concentration; //[mg/L] or [C]
   int    iCumPrecip;
+  double convert;
 
   string thisdate=tt.date_string;
   string thishour=DecDaysToHours(tt.julian_day);
@@ -1366,30 +1415,42 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
 
   iCumPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
 
-  double convert;//
-
   if ((Options.suppressICs) && (tt.model_time==0.0)) { return; }
 
   for (int c=0;c<_nConstituents;c++)
   {
     convert=1.0/MG_PER_KG; //[mg->kg]
-    if(Options.write_constitmass        ) { convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2]
-    if(_pConstituents[c]->type==ENTHALPY) { convert=1.0; } //[MJ]->[MJ]
+    if(_pConstituents[c]->type==ENTHALPY) { convert=1.0;                   } //[MJ]->[MJ]
+    if(Options.write_constitmass        ) { convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2] [MJ->MJ/m2]
 
-    // Concentrations.csv
+    // Concentrations.csv or Temperatures.csv
     //----------------------------------------------------------------
-    double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2);//[mg/d] // \todo [funct]: create GetAverageInflux() routine
-    double channel_stor=0;//GetTotalChannelConstituentStorage(c);//[mg]// \todo [funct]: create GetTotalChannelConstituentStorage() routine
-    double rivulet_stor=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SW,c))*(area*M2_PER_KM2);//GetTotalRivuletConstituentStorage();//[mg]// \todo [funct]: create GetTotalRivuletConstituentStorage() routine
+    double atmos_prec  =0;//[mg] or [MJ] energy/mass advected in with snow/rain (calculated below)
+    double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2)*Options.timestep;//[mg] or [MJ] 
+    // \todo [funct]: create GetAverageInflux() routine -
+    //for Enthalpy, influx includes radiative heating/cooling of surface, sensible exchange, NOT latent heat flux 
+    // should also include external sources from streams / diversions / etc.
+    //for contaminant mass, influx includes distributed sources of contaminants
+    //double net_influx =//GetAverageInflux(c)*(area*M2_PER_KM2)*Options.timestep; // [MJ] 
+    double latent_flux =0.0;//GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)(zero, of course, for contaminant)
+    double channel_stor=GetTotalChannelConstituentStorage(c);//[mg] or [MJ]
+    double rivulet_stor=GetTotalRivuletConstituentStorage(c);//[mg] or [MJ]
+    double sink        = pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//[mg]  or [MJ] 
+    double source      =-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC ,c))*(area*M2_PER_KM2);//[mg]  or [MJ] 
 
     _pConstituents[c]->OUTPUT<<tt.model_time <<","<<thisdate<<","<<thishour;
 
-    if (tt.model_time!=0.0){_pConstituents[c]->OUTPUT<<","<<influx*convert;}
-    else                   {_pConstituents[c]->OUTPUT<<",---";}
-    _pConstituents[c]->OUTPUT<<","<<channel_stor*convert<<","<<rivulet_stor*convert;
+    if (tt.model_time!=0.0){
+    _pConstituents[c]->OUTPUT<<","<<influx*convert;
+    }
+    else                   {
+    _pConstituents[c]->OUTPUT<<",---";
+    }
+    _pConstituents[c]->OUTPUT<<","<<channel_stor*convert;
+    _pConstituents[c]->OUTPUT<<","<<rivulet_stor*convert;
 
     currentMass=0.0;
-    double atmos_prec=0;
+
     for (int j=0;j<_nWaterCompartments;j++)
     {
       //Get constituent concentration
@@ -1400,44 +1461,42 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
       if(_pConstituents[c]->type!=ENTHALPY)
       {
         if(fabs(V)<=1e-6) { concentration=0.0; }
-        else { concentration=(M/V)*(MM_PER_METER/LITER_PER_M3); }//[mg/mm/m2]->[mg/L]
+        else              { concentration=(M/V)*(MM_PER_METER/LITER_PER_M3); }//[mg/mm/m2]->[mg/L]
       }
       else {
         if(fabs(V)<=1e-6) { concentration=0.0; } // JRC: should this default to zero?
-        else { 
-          concentration=ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER); //[MJ/m3]->[C]
-        }
-        if(Options.write_constitmass) { concentration=M; }//[MJ/m2]
+        else              { concentration=ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER);} //[MJ/m3]->[C]
       }
       if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2]
 
       if (_iWaterStorage[j]!=iCumPrecip)
       {
-        _pConstituents[c]->OUTPUT<<","<<concentration;   //print column entry
+        _pConstituents[c]->OUTPUT<<","<<concentration;     //print column entry 
 
-        currentMass+=M*(area*M2_PER_KM2); //mg          //increment total mass in system
+        currentMass+=M*(area*M2_PER_KM2); //[mg]  or [MJ]  //increment total mass in system
       }
       else{
-        atmos_prec+=M*(area*M2_PER_KM2); //mg
+        atmos_prec-=M*(area*M2_PER_KM2);  //[mg]  or [MJ] //this M is always negative (loss from atmos.)
       }
     }
-    currentMass+=channel_stor+rivulet_stor;
-
-    double sink  = pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//mg
-    double source=-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC ,c))*(area*M2_PER_KM2);//mg
-    CumInflux =source;
-    CumInflux -=atmos_prec;//[mg] or [MJ]
-    CumOutflux=_pConstituents[c]->cumul_output;//outflow from system [mg] or [MJ]
-    CumOutflux+=sink;
-
+    currentMass+=channel_stor+rivulet_stor;  //[mg]  or [MJ] 
+    
     initMass  =_pConstituents[c]->initial_mass;
 
+    CumInflux =source+atmos_prec;                     //[mg] or [MJ] 
+    CumOutflux=sink  +_pConstituents[c]->cumul_output;//outflow from system [mg] or [MJ] 
+
     _pConstituents[c]->OUTPUT<<","<<currentMass*convert;
-    _pConstituents[c]->OUTPUT<<","<<CumInflux*convert;
-    _pConstituents[c]->OUTPUT<<","<<CumOutflux*convert;
+    _pConstituents[c]->OUTPUT<<","<<CumInflux  *convert;
+    _pConstituents[c]->OUTPUT<<","<<CumOutflux *convert;
     _pConstituents[c]->OUTPUT<<","<<((currentMass-initMass)+(CumOutflux-CumInflux))*convert;
-    ///**/_pConstituents[c]->OUTPUT<<","<<-atmos_prec*convert;//TMP DEBUG - atmospheric
-    ///**/_pConstituents[c]->OUTPUT<<","<<sink*convert;//TMP DEBUG - sink
+    if(_pConstituents[c]->type==ENTHALPY)
+    {
+    _pConstituents[c]->OUTPUT<<","<<sink       *convert;  // sink (incudes latent heat, dirichlet, latent heat)
+    _pConstituents[c]->OUTPUT<<","<<source     *convert;  // source (includes net surface flux,dirichlet) 
+    _pConstituents[c]->OUTPUT<<","<<atmos_prec *convert;  // atmospheric inputs 
+    _pConstituents[c]->OUTPUT<<","<<latent_flux*convert;  // latent heat
+    }
     _pConstituents[c]->OUTPUT<<endl;
 
     // Pollutographs.csv or StreamTemperatures.csv
@@ -1448,6 +1507,9 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
       if(pBasin->IsGauged() && (pBasin->IsEnabled()))
       {
         _pConstituents[c]->POLLUT<<","<<GetOutflowConcentration(p,c);
+        if(_pConstituents[c]->type==ENTHALPY) {
+          _pConstituents[c]->POLLUT<<","<<GetOutflowIceFraction(p,c);
+        }
       }
     }
     _pConstituents[c]->POLLUT<<endl;
@@ -1485,9 +1547,8 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
     // Concentrations.tb0
     //----------------------------------------------------------------
     double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2);//[mg/d]
-    double channel_stor=0;//GetTotalChannelConstituentStorage();//[mg]
-    double rivulet_stor=pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SW,c))*(area*M2_PER_KM2);//GetTotalRivuletConstituentStorage();//[mg]
-
+    double channel_stor=GetTotalChannelConstituentStorage(c);//[mg]
+    double rivulet_stor=GetTotalRivuletConstituentStorage(c);//[mg]
 
     if (tt.model_time!=0){_pConstituents[c]->OUTPUT<<" "<<influx*convert;}
     else                 {_pConstituents[c]->OUTPUT<<" 0.0";}

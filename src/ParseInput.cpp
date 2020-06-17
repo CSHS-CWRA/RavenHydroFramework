@@ -484,6 +484,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //--------------------TRANSPORT PROCESSES ---------------
     if       (!strcmp(s[0],":Transport"                 )){code=300;}
     else if  (!strcmp(s[0],":FixedConcentration"        )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
+    else if  (!strcmp(s[0],":FixedTemperature"          )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":MassInflux"                )){code=302;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":GeochemicalProcesses"      )){code=303;}
     else if  (!strcmp(s[0],":EndGeochemicalProcesses"   )){code=304;}
@@ -2811,7 +2812,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       constit_type ctype;
       if (is_tracer){ctype=TRACER;}
       else          {ctype=AQUEOUS;}
-      if(!strcmp(s[2],"TEMPERATURE")) { ctype=ENTHALPY; }
+      if(!strcmp(s[1],"TEMPERATURE")) { ctype=ENTHALPY; }
       pModel->GetTransportModel()->AddConstituent(s[1],ctype,is_passive);
 
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
@@ -2822,25 +2823,25 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
         int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
-        pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_AIR_TEMP);
+        //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_AIR_TEMP);
       }
       break;
     }
 
     case (301)://----------------------------------------------
-    {/*:FixedConcentration
-       :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l) or .rvt file name] {optional HRU Group name}*/
-      if (Options.noisy){cout <<"Fixed concentration transport constituent"<<endl;}
+    {/*:FixedConcentration or :FixedTemperature
+       :FixedConcentration [string constit_name] [string state_var (storage compartment)] [double concentration (mg/l) or double temperature (C) or .rvt file name] {optional HRU Group name}*/
+      if (Options.noisy){cout <<"Fixed concentration or temperature transport constituent"<<endl;}
 
       if (!transprepared){
-        ExitGracefully(":FixedConcentration command must be after :Transport command in .rvi file", BAD_DATA_WARN);
+        ExitGracefully(":FixedConcentration and :FixedTemperature commands must be after :Transport command in .rvi file", BAD_DATA_WARN);
         break;
       }
       int layer_ind;
       int i_stor;
       sv_type typ=CStateVariable::StringToSVType(s[2],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
-        WriteWarning(":FixedConcentration command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
+        WriteWarning(":FixedConcentration/:FixedTemperature command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
       }
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);
@@ -2850,7 +2851,7 @@ bool ParseMainInputFile (CModel     *&pModel,
           CHRUGroup *pSourceGrp;
           pSourceGrp = pModel->GetHRUGroup(s[4]);
           if (pSourceGrp == NULL){
-            ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration command in .rvi file", BAD_DATA_WARN);
+            ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration/:FixedTemperature command in .rvi file", BAD_DATA_WARN);
             break;
           }
           else{

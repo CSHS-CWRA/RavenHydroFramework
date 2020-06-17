@@ -561,6 +561,7 @@
     <ClCompile Include="GWGeometry.cpp" />
     <ClCompile Include="GWSolvers.cpp" />
     <ClCompile Include="GWStressPeriodClass.cpp" />
+    <ClCompile Include="HeatConduction.cpp" />
     <ClCompile Include="HRUGroups.cpp" />
     <ClCompile Include="IrregularTimeSeries.cpp" />
     <ClCompile Include="LatAdvection.cpp" />
@@ -579,6 +580,7 @@
     <ClCompile Include="ParseGWSWOverlapFile.cpp" />
     <ClCompile Include="ParseInitialConditionFile.cpp" />
     <ClCompile Include="ParseLib.cpp" />
+    <ClCompile Include="ParseLiveFile.cpp" />
     <ClCompile Include="PotentialMelt.cpp" />
     <ClCompile Include="PrairieSnow.cpp" />
     <ClCompile Include="ProcessGroup.cpp" />
@@ -777,6 +779,7 @@
     <ClInclude Include="GlacierProcesses.h" />
     <ClInclude Include="GlobalParams.h" />
     <ClInclude Include="GroundwaterClass.h" />
+    <ClInclude Include="HeatConduction.h" />
     <ClInclude Include="IrregularTimeSeries.h" />
     <ClInclude Include="LatAdvection.h" />
     <ClInclude Include="LateralExchangeABC.h" />

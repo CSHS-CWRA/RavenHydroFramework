@@ -1030,11 +1030,16 @@ double ConvertVolumetricEnthalpyToTemperature(const double &hv)
 }
 double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctfroz) 
 {
-  if      (fabs(T)<REAL_SMALL) { return -pctfroz*LH_FUSION*DENSITY_WATER;}
+  if      (fabs(T)<REAL_SMALL) { return -pctfroz*LH_FUSION*DENSITY_WATER;} //along zero line
   else if (T>0               ) { return T*SPH_WATER*DENSITY_WATER; }
-  else                         { return T*SPH_ICE*DENSITY_ICE-LH_FUSION*DENSITY_WATER;}
+  else                         { return T*SPH_ICE  *DENSITY_ICE-LH_FUSION*DENSITY_WATER;}
 }
-
+double ConvertVolumetricEnthalpyToIceContent(const double &hv)
+{
+  if      (hv>0                       ){return 0;}
+  else if (hv>-LH_FUSION*DENSITY_WATER){return -hv/LH_FUSION/DENSITY_WATER;}
+  else                                 {return 1.0; }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Converts any lowercase characters in a string to uppercase, returning the converted string
 /// \param &s [in] String to be converted to uppercase
