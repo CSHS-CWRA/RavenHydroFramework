@@ -784,7 +784,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     else if(!strcmp(s[0],":DemandMultiplier"))
     {
       if(Options.noisy) { cout << ":DemandMultiplier" << endl; }
-      demand_mult=s_to_d(s[0]);;
+      demand_mult=s_to_d(s[1]);
     }
     //----------------------------------------------------------------------------------------------
     else if(!strcmp(s[0],":VolumeStageRelation"))
