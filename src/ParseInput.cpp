@@ -27,6 +27,7 @@
 #include "PrairieSnow.h"
 #include "ProcessGroup.h"
 #include "HeatConduction.h"
+#include "SurfaceEnergyExchange.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
@@ -175,7 +176,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   CParser *p=new CParser(INPUT,Options.rvi_filename,line);
 
-  //Default Values---------------------------------------------------
+  //Default Option Values---------------------------------------------------
   if(Options.run_name!=""){runname_overridden=true;}
   Options.julian_start_day        =0;//Jan 1
   Options.julian_start_year       =1666;
@@ -234,13 +235,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.res_overflowmode        =OVERFLOW_ALL;
   
   //Groundwater model options
-  Options.modeltype           =MODELTYPE_SURFACE;
-  Options.gw_solver_outer     =GWSOL_NEWTONRAPHSON;
-  Options.gw_solver_inner     =GWSOL_BICGSTAB;
-  Options.gw_grid             =GRID_UNSTRUCTURED;
-  Options.exchange_freq       =EXFREQ_EVERY_TIMESTEP;
-  Options.flux_exchange       =FLUX_EX_STANDARD;
-  Options.overlap_type        =DIRECT;
+  Options.modeltype               =MODELTYPE_SURFACE;
+  Options.gw_solver_outer         =GWSOL_NEWTONRAPHSON;
+  Options.gw_solver_inner         =GWSOL_BICGSTAB;
+  Options.gw_grid                 =GRID_UNSTRUCTURED;
+  Options.exchange_freq           =EXFREQ_EVERY_TIMESTEP;
+  Options.flux_exchange           =FLUX_EX_STANDARD;
+  Options.overlap_type            =DIRECT;
   
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
@@ -492,7 +493,13 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Advection"                 )){code=306;}
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
     else if  (!strcmp(s[0],":Mineralization"            )){code=308;}
-    else if  (!strcmp(s[0],":HeatConduction"            )){code=309;}
+    //...
+    //--------------------ENERGY PROCESSES -------------------
+
+    else if  (!strcmp(s[0],":HeatConduction"            )){code=350;}
+    else if  (!strcmp(s[0],":EnergyProcesses"           )){code=351;}
+    else if  (!strcmp(s[0],":EndEnergyProcesses"        )){code=352;}
+    else if  (!strcmp(s[0],":SurfaceExchange"           )){code=353;}
     //...
     //-------------------WATER MANAGEMENT---------------------
     else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
@@ -1847,7 +1854,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       break;
     }
-    case(105):
+    case(105):  //--------------------------------------------
     {/*:CustomOutputInterval [interval, in days]*/
       if(Options.noisy) { cout <<"Custom output interval "<<endl; }
       if(Len<2) { ImproperFormatWarning(":CustomOutputInterval",p,Options.noisy); break; }
@@ -1860,7 +1867,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       break;
     }
-    case(106):
+    case(106):  //--------------------------------------------
     {/*:UseStopFile*/
       if(Options.noisy) { cout <<"Use stopfile "<<endl; }
       Options.use_stopfile=true;
@@ -2477,7 +2484,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"CONVOL_GR4J_1"  )){c_type=CONVOL_GR4J_1;}
       else if (!strcmp(s[1],"CONVOL_GR4J_2"  )){c_type=CONVOL_GR4J_2;}
       else if (!strcmp(s[1],"CONVOL_GAMMA"   )){c_type=CONVOL_GAMMA;}
-      else if (!strcmp(s[1],"CONVOL_GAMMA_2"  )){c_type=CONVOL_GAMMA_2;}
+      else if (!strcmp(s[1],"CONVOL_GAMMA_2" )){c_type=CONVOL_GAMMA_2;}
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized convolution process representation",BAD_DATA_WARN); break;
@@ -2961,7 +2968,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
-    case(309):  //----------------------------------------------
+    case(350):  //----------------------------------------------
     {/*Heat Conduction
      :HeatConduction RAVEN_DEFAULT MULTIPLE MULTIPLE */
       if(Options.noisy) { cout <<"Heat Conduction Process"<<endl; }
@@ -2973,6 +2980,32 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
 
       pMover=new CmvHeatConduction(pModel->GetTransportModel());
+      AddProcess(pModel,pMover,pProcGroup);
+
+      break;
+    }
+    case(351):  //----------------------------------------------
+    {/* :EnergyProcesses  */
+      if(Options.noisy) { cout <<"Energy processes"<<endl; }
+      break;
+    }
+    case(352):  //----------------------------------------------
+    {/* :EndEnergyProcesses  */
+      if(Options.noisy) { cout <<"End energy processes"<<endl; }
+      break;
+    }
+    case(353):  //----------------------------------------------
+    {/*Surface energy exchange
+     :SurfaceExchange RAVEN_DEFAULT MULTIPLE MULTIPLE */
+      if(Options.noisy) { cout <<"Surface energy exchange"<<endl; }
+      if(Len<4) { ImproperFormatWarning(":SurfaceExchange",p,Options.noisy); break; }
+
+      if(!strcmp(s[1],"RAVEN_DEFAULT")) {}
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized surface exchange process representation",BAD_DATA_WARN); break;
+      }
+
+      pMover=new CmvPartitionEnergy(pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
 
       break;
@@ -3094,13 +3127,13 @@ bool ParseMainInputFile (CModel     *&pModel,
       char firstChar = *(s[0]);
       if (firstChar==':')
       {
-        if     (!strcmp(s[0],":FileType"))    {if (Options.noisy){cout<<"Filetype"<<endl;}}//do nothing
-        else if(!strcmp(s[0],":Application")) {if (Options.noisy){cout<<"Application"<<endl;}}//do nothing
-        else if(!strcmp(s[0],":Version"))     {if (Options.noisy){cout<<"Version"<<endl;}}//do nothing
-        else if(!strcmp(s[0],":WrittenBy"))   {if (Options.noisy){cout<<"WrittenBy"<<endl;}}//do nothing
+        if     (!strcmp(s[0],":FileType"))    {if (Options.noisy){cout<<"Filetype"<<endl;    }}//do nothing
+        else if(!strcmp(s[0],":Application")) {if (Options.noisy){cout<<"Application"<<endl; }}//do nothing
+        else if(!strcmp(s[0],":Version"))     {if (Options.noisy){cout<<"Version"<<endl;     }}//do nothing
+        else if(!strcmp(s[0],":WrittenBy"))   {if (Options.noisy){cout<<"WrittenBy"<<endl;   }}//do nothing
         else if(!strcmp(s[0],":CreationDate")){if (Options.noisy){cout<<"CreationDate"<<endl;}}//do nothing
-        else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
-        else if(!strcmp(s[0],":Name"))        {if (Options.noisy){cout<<"Name"<<endl;}}//do nothing
+        else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;  }}//do nothing
+        else if(!strcmp(s[0],":Name"))        {if (Options.noisy){cout<<"Name"<<endl;        }}//do nothing
         else
         {
           string warn ="IGNORING unrecognized command: " + string(s[0])+ " in .rvi file";

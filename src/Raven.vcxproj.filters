@@ -91,6 +91,12 @@
     <Filter Include="Source Files\Groundwater">
       <UniqueIdentifier>{08362851-317f-4a7b-af3c-881fd5c506b7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Hydrological Processes\Energy Processes">
+      <UniqueIdentifier>{e7e53571-587a-4452-894b-944fc13d5e43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Hydrological Processes\Energy Processes">
+      <UniqueIdentifier>{5af9b0fb-3969-47e7-9cea-ff492aebbeda}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonFunctions.cpp">
@@ -372,11 +378,14 @@
     <ClCompile Include="GroundwaterModel.cpp">
       <Filter>Source Files\Groundwater</Filter>
     </ClCompile>
-    <ClCompile Include="HeatConduction.cpp">
-      <Filter>Source Files\Hydrological Processes\Soil Water Processes</Filter>
-    </ClCompile>
     <ClCompile Include="ParseLiveFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="HeatConduction.cpp">
+      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfaceEnergyExchange.cpp">
+      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -522,7 +531,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HeatConduction.h">
-      <Filter>Header Files\Hydrological Processes</Filter>
+      <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="SurfaceEnergyExchange.h">
+      <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

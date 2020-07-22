@@ -21,8 +21,8 @@ srcfiles := $(shell find . -name "*.cpp")
 objects  := $(patsubst %.cpp, %.o, $(srcfiles))
 
 # include netcdf
-CXXFLAGS += #-Dnetcdf                # if netcdf is installed use "CXXFLAGS += -Dnetcdf",                    else "CXXFLAGS += "
-LDLIBS   := #-L/usr/local -lnetcdf   # if netcdf is installed give first path "-L<PATH>"and then "-lnetcdf", else "LDLIBS   := "
+CXXFLAGS += -Dnetcdf                # if netcdf is installed use "CXXFLAGS += -Dnetcdf",                    else "CXXFLAGS += "
+LDLIBS   := -L/usr/local -lnetcdf   # if netcdf is installed give first path "-L<PATH>"and then "-lnetcdf", else "LDLIBS   := "
 
 # if you use a UNIX system, uncomment the LDFLAGS line below
 # this is to allow for use a 1Gb, see http://linuxtoosx.blogspot.ca/2010/10/stack-overflow-increasing-stack-limit.html

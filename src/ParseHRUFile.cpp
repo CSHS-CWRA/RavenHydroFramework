@@ -360,12 +360,24 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
           if (pSB!=NULL){
             for (i=1;i<nParamStrings;i++){
               double in=AutoOrDouble(s[i]);
-              if(!aParamStrings[i].compare("TIME_CONC") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+
+              //special handling of some parameters
+              if(!aParamStrings[i].compare("TIME_CONC")    && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
                 in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("TIME_TO_PEAK") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
                 in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
               }
+              if(!aParamStrings[i].compare("REACH_HRU_ID")) {
+                if(pModel->GetHRUByID((int)in)!=NULL) {
+                  in=pModel->GetHRUByID((int)in)->GetGlobalIndex(); //Convert ID to index
+                }
+                else {
+                  ExitGracefully("ParseHRUPropsFile::invalid REACH_HRU_ID in :SubBasinProperties command",BAD_DATA_WARN);
+                }
+              }
+              //end special handling 
+
               good_string=pSB->SetBasinProperties(aParamStrings[i],in);
               if (!good_string)
               {

@@ -45,7 +45,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _avg_ann_flow      =0.0;
   _reach_length      =reach_len;
   _is_headwater      =true;
-  _reach_HRUID       =DOESNT_EXIST; //default
+  _reach_HRUindex    =DOESNT_EXIST; //default
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -546,7 +546,13 @@ void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const in
   if(!DynArrayAppend((void**&)(_pDiversions),(void*)(div),_nDiversions)) {
     ExitGracefully("CSubBasin::AddFlowDiversion: adding NULL diversion",BAD_DATA);
   }
-  cout<<" ADDED FLOW DIVERSION"<<endl;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reach HRU index
+/// \return reach HRU index
+//
+int   CSubBasin::GetReachHRUIndex() const {
+  return _reach_HRUindex;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -619,12 +625,13 @@ double CSubBasin::GetIrrigationLosses(const double &tstep) const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total volume lost from main reach over timestep [m^3]
 /// \note Should be called only at end of completed tstep
+/// used in mass balance to estimate water loss through streamflow
 /// \return Total volume lost from main reach over timestep [m^3]
 //
 double CSubBasin::GetIntegratedOutflow(const double &tstep) const//[m3]
 {
   if (_pReservoir!=NULL){return _pReservoir->GetIntegratedOutflow(tstep);}
-  //used in mass balance to estimate water loss through streamflow
+
   return 0.5*(_aQout[_nSegments-1]+_QoutLast)*(tstep*SEC_PER_DAY); //integrated
 }
 //////////////////////////////////////////////////////////////////
@@ -676,6 +683,15 @@ double CSubBasin::GetDiffusivity() const {
   else {
     return _diffusivity;
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns channel depth, in meters
+/// \return  reference channel depth [m], with minimum depth of 5cm
+//
+double CSubBasin::GetRiverDepth() const {
+  if (_pChannel==NULL){return ALMOST_INF;}
+  const double MIN_CHANNEL_DEPTH=0.05;
+  return max(_pChannel->GetDepth(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_DEPTH);
 }
 
 /*****************************************************************
@@ -730,7 +746,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
 
-  else if (!label_n.compare("REACH_HRU_ID"  ))  {_reach_HRUID=(int)(value); }
+  else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   
   else{
     return false;//bad string

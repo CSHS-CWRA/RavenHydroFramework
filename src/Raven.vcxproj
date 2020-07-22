@@ -551,6 +551,7 @@
     <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />
     <ClCompile Include="Drain.cpp" />
+    <ClCompile Include="SurfaceEnergyExchange.cpp" />
     <ClCompile Include="Flush.cpp" />
     <ClCompile Include="ForcingGrid.cpp" />
     <ClCompile Include="Forcings.cpp" />
@@ -774,6 +775,7 @@
     <ClInclude Include="Decay.h" />
     <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
+    <ClInclude Include="SurfaceEnergyExchange.h" />
     <ClInclude Include="ForcingGrid.h" />
     <ClInclude Include="Forcings.h" />
     <ClInclude Include="GlacierProcesses.h" />

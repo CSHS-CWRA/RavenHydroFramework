@@ -60,7 +60,7 @@ private:/*------------------------------------------------------*/
   int          _num_reservoirs;   ///< number of linear reservoirs used for in-catchment routing
   double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph 
   double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
-  int             _reach_HRUID;   ///< HRU ID associated with reach. Used for reach-specific forcings.
+  int          _reach_HRUindex;   ///< HRU *index* k (not ID) associated with reach. Used for reach-specific forcings.
 
   //River/stream  channel data:
   const CChannelXSect*_pChannel;  ///< Main channel
@@ -163,6 +163,8 @@ public:/*-------------------------------------------------------*/
   bool                 IsEnabled            () const;
   double               GetRainCorrection    () const;
   double               GetSnowCorrection    () const;
+  int                  GetReachHRUIndex     () const;
+  double               GetRiverDepth        () const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;

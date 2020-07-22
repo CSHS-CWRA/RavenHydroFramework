@@ -103,8 +103,8 @@ const double  ZERO_CELSIUS            =273.16;                                  
 const double  UNIV_GAS_CONST          =8314.47;                                 ///< Universal gas constant [J/K/kmol]
 const double  DRY_GAS_CONST           =287.042;                                 ///< Specific gas constant for dry air [J/K/kg]
 const double  VAP_GAS_CONST           =461.504;                                 ///< Specific gas constant for water vapour [J/K/kmol]
-const double  STEFAN_BOLTZ            =4.90e-9;                                 // Stephan-Boltzmann constant [MJ/m2/d/K4]
-const double  VON_KARMAN              =0.42;                                    // Von Karmann constant
+const double  STEFAN_BOLTZ            =4.90e-9;                                 ///< Stephan-Boltzmann constant [MJ/m2/d/K4]
+const double  VON_KARMAN              =0.42;                                    ///< Von Karmann constant
 
 //units conversion constants
 const double  MM_PER_INCH             =25.4;                                    ///< [in] to [mm]
@@ -165,7 +165,7 @@ const double  TC_ORGANIC              =0.25;                                    
 const double  TC_DRYS                 =0.275;                                   ///< [W/m/K] Thermal conductivity of dry soil
 const double  TC_AIR                  =0.023;                                   ///< [W/m/K] Thermal conductivity of air
 
-const double  COM_WATER		          =4.58e-10;                                ///< [Pa^-1] Compressiblity of Water
+const double  COM_WATER		            =4.58e-10;                                ///< [Pa^-1] Compressiblity of Water
 const double  COM_ICE                 =4.58e-10;                                ///< [Pa^-1] Compressiblity of Ice
 const double  HCP_WATER               =4.187;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Water
 const double  HCP_ICE                 =1.938;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
@@ -862,6 +862,9 @@ enum sv_type
   CONSTITUENT_SW,          ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] dumped to surface water
   CONSTITUENT_SINK,        ///< chemical species [mg/m2], enthalpy [MJ/m2], or tracer [-] cumulative sink (e.g., decay)
 
+  //Energy variables
+  LATENT_HEAT,             ///< [MJ/m2] cumulative energy lost to evaporative phase change
+
   //Lateral exchange
   LATERAL_EXCHANGE,        ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
 
@@ -924,6 +927,9 @@ enum process_type
 
   //in Decay.h
   DECAY, TRANSFORMATION,
+
+  //in SurfaceEnergyExchange.h
+  PARTITION_ENERGY,
 
   //in HeatConduction.h
   HEATCONDUCTION,

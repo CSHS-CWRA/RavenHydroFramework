@@ -1615,3 +1615,42 @@ void CTransportModel::CloseOutputFiles() const
     _pConstituents[c]->POLLUT.close();
   }
 }
+
+double CTransportModel::GetIceContent(const double *state_vars,const int iWater) const 
+{  
+  int cTemp=GetConstituentIndex("TEMPERATURE");
+
+  if(cTemp==DOESNT_EXIST) { return 0.0; }
+
+  double Hv,stor,hv(0.0),Fi;
+  int    m,iEnth;
+  m    =GetLayerIndex(cTemp,iWater); //layer index of water compartment
+  iEnth=pModel->GetStateVarIndex(CONSTITUENT,m); //global index of water compartment enthalpy
+
+  Hv   =state_vars[iEnth ]; //enthalpy, [MJ/m2]
+  stor =state_vars[iWater]; //water storage [mm]
+  if(stor>PRETTY_SMALL) {
+    hv   =Hv/(stor/MM_PER_METER); //volumetric specific enthalpy [MJ/m3]
+  }
+  return ConvertVolumetricEnthalpyToIceContent(hv);
+
+}
+double CTransportModel::GetWaterTemperature(const double *state_vars,const int iWater) const 
+{
+  int cTemp=GetConstituentIndex("TEMPERATURE");
+  if(iWater==DOESNT_EXIST) { return 0.0; }
+  if( cTemp==DOESNT_EXIST) { return 0.0; }
+
+  double Hv,stor,hv(0.0),Fi;
+  int    m,iEnth;
+  m    =GetLayerIndex(cTemp,iWater); //layer index of water compartment
+  iEnth=pModel->GetStateVarIndex(CONSTITUENT,m); //global index of water compartment enthalpy
+
+  Hv   =state_vars[iEnth]; //enthalpy, [MJ/m2]
+  stor =state_vars[iWater]; //water storage [mm]
+  if(stor>PRETTY_SMALL) {
+    hv   =Hv/(stor/MM_PER_METER); //volumetric specific enthalpy [MJ/m3]
+  }
+  return ConvertVolumetricEnthalpyToTemperature(hv);
+
+}

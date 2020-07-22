@@ -1806,7 +1806,34 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
     pProc->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
   }
 
+  //Special frozen flow handling - constrains flows when water is partially/wholly frozen
+  //------------------------------------------------------------------------
+  int cTemp=_pTransModel->GetConstituentIndex("TEMPERATURE");
+  if(cTemp!=DOESNT_EXIST) 
+  { //simulating enthalpy, and therefore frozen water compartments 
+    double Fi,liq_stor;
+    sv_type typ;
+    for(int q=0;q<nConnections;q++)
+    {
+      typ=_aStateVarType[iFrom[q]];
+      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW)) 
+      {
+        //precip is special case (frozen snow can fall)
+        //snow is special case (already assume that only liquid water is lost)
+        
+        Fi=_pTransModel->GetIceContent(state_var,iFrom[q]);
+
+        liq_stor=(1.0-Fi)*state_var[iFrom[q]]; //[mm]
+
+        rates_of_change[q]=min(rates_of_change[q],liq_stor/Options.timestep);
+      }
+    }
+  }
+
+  //Apply constraints 
+  //------------------------------------------------------------------------
   pProc->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
+
   return true;
 }
 //////////////////////////////////////////////////////////////////

@@ -256,7 +256,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       mass=sv[iFrom[3*nAdvConnections]];
       rates[3*nAdvConnections]=mass/Options.timestep;
       }*/
-  }
+  } //ends "for (q=0;q<nAdvConnections;q++).."
 
   //Handle Neumann influx conditions, if present
   //-------------------------------------------------------
