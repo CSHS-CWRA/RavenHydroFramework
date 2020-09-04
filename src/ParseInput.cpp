@@ -2614,7 +2614,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       if(rech_type==RECHARGE_FROMFILE){
-        pMover=new CmvRecharge(ParseSVTypeIndex(s[3],pModel));
+        pMover=new CmvRecharge(rech_type,ParseSVTypeIndex(s[3],pModel),0);
       }
       else {
         int Conns=1;

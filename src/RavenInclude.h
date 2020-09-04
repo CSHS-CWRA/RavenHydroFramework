@@ -1567,6 +1567,7 @@ double GetDewPointTemp          (const double &E);
 double ConvertVolumetricEnthalpyToTemperature(const double &hv);
 double ConvertTemperatureToVolumetricEnthalpy(const double &T, const double &pctfroz);
 double ConvertVolumetricEnthalpyToIceContent (const double &hv);
+double TemperatureEnthalpyDerivative         (const double &hv);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp

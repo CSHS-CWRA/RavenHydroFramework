@@ -551,6 +551,7 @@
     <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />
     <ClCompile Include="Drain.cpp" />
+    <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="SurfaceEnergyExchange.cpp" />
     <ClCompile Include="Flush.cpp" />
     <ClCompile Include="ForcingGrid.cpp" />

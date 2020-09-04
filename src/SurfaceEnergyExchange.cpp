@@ -139,7 +139,7 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
                                           const time_struct &tt,
                                                 double      *rates) const
 {
-  double Hv,hv,stor;
+  //double Hv,hv,stor;
   double Tsoil,Tsnow,Tdep,Tcan,TcanS;
 
   double Tair=pHRU->GetForcingFunctions()->temp_ave;
@@ -158,7 +158,7 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   Tsnow=min(_pTransModel->GetWaterTemperature(state_vars,iSnow),0.0);
   Tdep =_pTransModel->GetWaterTemperature(state_vars,iDep );
   Tcan =_pTransModel->GetWaterTemperature(state_vars,iCan );
-  TcanS=_pTransModel->GetWaterTemperature(state_vars,iCanS);
+  TcanS=min(_pTransModel->GetWaterTemperature(state_vars,iCanS),0.0);
 
   double pct_cover=1.0;
 
@@ -203,11 +203,11 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
 
       LH_loss=ET*DENSITY_WATER*LH_VAPOR; //[MJ/m2/d]
 
-      if      (iFromWater==iSoil) { rates[N+0]-=LH_loss; } // SOIL ->LH_LOSSES
-      else if (iFromWater==iSnow) { rates[N+1]-=LH_loss; } // SNOW ->LH_LOSSES
-      else if (iFromWater==iDep ) { rates[N+2]-=LH_loss; } // DEPRESSION ->LH_LOSSES
-      else if (iFromWater==iCan ) { rates[N+3]-=LH_loss; } // CANOPY ->LH_LOSSES
-      else if (iFromWater==iCanS) { rates[N+4]-=LH_loss; } // CANOPY_SNOW ->LH_LOSSES
+      if      (iFromWater==iSoil) { rates[N+0]-=LH_loss; } // SOIL ->LATENT_HEAT
+      else if (iFromWater==iSnow) { rates[N+1]-=LH_loss; } // SNOW ->LATENT_HEAT
+      else if (iFromWater==iDep ) { rates[N+2]-=LH_loss; } // DEPRESSION ->LATENT_HEAT
+      else if (iFromWater==iCan ) { rates[N+3]-=LH_loss; } // CANOPY ->LATENT_HEAT
+      else if (iFromWater==iCanS) { rates[N+4]-=LH_loss; } // CANOPY_SNOW ->LATENT_HEAT
 
       //**RIGHT NOW THIS WILL OVERESTIMATE, SINCE IT DOESN'T ACCOUNT FOR SENSIBLE HEAT TRANSFER FROM WATER WHICH IS CHANGING PHASE**
     }

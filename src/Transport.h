@@ -111,6 +111,8 @@ private:/*------------------------------------------------------*/
   double  *_aEnthalpyBeta;           ///< array of beta terms for reach energy exchange [1/d] [size: nSubBasins] 
 
   double GetAvgLatentHeatFlux() const;
+  double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
+  void   UpdateReachEnergySourceTerms(const int p);
 
 public:/*-------------------------------------------------------*/
   CTransportModel(CModel *pMod);
@@ -155,22 +157,25 @@ public:/*-------------------------------------------------------*/
 
   int    GetLayerIndex             (const int c, const int i_stor) const;
 
+  double GetOutflowConcentration(const int p,const int c) const;
+  double GetIntegratedMassOutflow(const int p,const int c,const double &tstep) const;
+
+  bool   ConstituentIsPassive(const int c) const;
+
+  bool   IsDirichlet(const int i_stor,const int c,const int k,const time_struct &tt,double &Cs) const;
+  double GetSpecifiedMassFlux(const int i_stor,const int c,const int k,const time_struct &tt) const;
+
+  //Accessors specific to Enthalpy Transport
   double GetIceContent           (const double *state_vars, const int iWater) const;
   double GetWaterTemperature     (const double *state_vars, const int iWater) const;
+  double GetEnergyLossesFromReach(const int p, double &Q_sens,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const;
+  double GetOutflowIceFraction(const int p,const int c) const;
 
-  double GetOutflowConcentration (const int p, const int c) const;
-  double GetIntegratedMassOutflow(const int p, const int c,const double &tstep) const;
-  double GetOutflowIceFraction   (const int p, const int c) const;
-
-  bool   ConstituentIsPassive   (const int c) const;
-
+  //Accessors specific to Nutrient/Contaminant Transport
   double GetDecayCoefficient    (const int c,const CHydroUnit *pHRU, const int iStorWater) const;
   double GetRetardationFactor   (const int c,const CHydroUnit *pHRU, const int iFromWater,const int iToWater) const;
   double GetTransformCoefficient(const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
   double GetStoichioCoefficient (const int c, const int c2, const CHydroUnit *pHRU, const int iStorWater) const;
-
-  bool   IsDirichlet         (const int i_stor, const int c, const int k, const time_struct &tt, double &Cs) const;
-  double GetSpecifiedMassFlux(const int i_stor, const int c, const int k, const time_struct &tt) const;
 
   //Manipulators
   void   AddConstituent         (string name, constit_type type, bool is_passive); 
@@ -192,8 +197,6 @@ public:/*-------------------------------------------------------*/
   void   SetLateralInfluxes(const int p, const double *aRoutedMass);
   void   RouteMass         (const int p,       double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt) const;
   void   UpdateMassOutflows(const int p,       double **aMoutnew, double *aResMass, double *aResMassOutflow, const optStruct &Options,const time_struct &tt,bool initialize);
-  
-  void   UpdateReachEnergySourceTerms(const int p);
 
   void   WriteOutputFileHeaders     (const optStruct &Options) const;
   void   WriteMinorOutput           (const optStruct &Options, const time_struct &tt) const;

@@ -387,6 +387,9 @@
     <ClCompile Include="SurfaceEnergyExchange.cpp">
       <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
     </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

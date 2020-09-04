@@ -56,6 +56,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_rain       = NULL;
   CForcingGrid *pGrid_snow       = NULL;
   CForcingGrid *pGrid_pet        = NULL;
+  CForcingGrid *pGrid_owpet      = NULL;
   CForcingGrid *pGrid_tave       = NULL;
   CForcingGrid *pGrid_daily_tmin = NULL;
   CForcingGrid *pGrid_daily_tmax = NULL;
@@ -68,6 +69,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool rain_gridded           = ForcingGridIsInput(F_RAINFALL)       ;
   bool snow_gridded           = ForcingGridIsInput(F_SNOWFALL)       ;
   bool pet_gridded            = ForcingGridIsInput(F_PET)            ;
+  bool owpet_gridded          = ForcingGridIsInput(F_OW_PET)         ;
   bool temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE)       ;
   bool temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN) ;
   bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX) ;
@@ -128,16 +130,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].rel_humidity    =_pGauges[g]->GetForcingValue    (F_REL_HUMIDITY,nn);
     Fg[g].cloud_cover     =_pGauges[g]->GetForcingValue    (F_CLOUD_COVER,nn);
     Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
-    //}
-
-    if(!(recharge_gridded)){
-      Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
-    }
-    if(!(precip_temp_gridded)) {
-      Fg[g].precip_temp     =_pGauges[g]->GetForcingValue    (F_TEMP_AVE,nn);
-    }
+    Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
+    Fg[g].precip_temp     =_pGauges[g]->GetForcingValue    (F_TEMP_AVE,nn);
   }
-  if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//RFS Emulation cheat
+  if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//UBCWM RFS Emulation cheat
 
   //Generate HRU-specific forcings from gauge data
   //---------------------------------------------------------------------
@@ -167,7 +163,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       for(g = 0; g < _nGauges; g++)
       {
         wt=_aGaugeWtPrecip[k][g];
-        if(wt != 0.0){
+        if(wt != 0.0) {
           if(!(pre_gridded || snow_gridded || rain_gridded))
           {
             F.precip           += wt * Fg[g].precip;
@@ -192,7 +188,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           }
         }
         wt=_aGaugeWeights[k][g];
-        if(wt != 0.0){
+        if(wt != 0.0) {
           F.rel_humidity   += wt * Fg[g].rel_humidity;
           F.air_pres       += wt * Fg[g].air_pres;
           F.air_dens       += wt * Fg[g].air_dens;
@@ -204,15 +200,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           F.SW_radia       += wt * Fg[g].SW_radia;
           F.SW_radia_net   += wt * Fg[g].SW_radia_net;
           F.PET_month_ave  += wt * Fg[g].PET_month_ave;
+          F.potential_melt += wt * Fg[g].potential_melt;
           F.PET            += wt * Fg[g].PET;
           F.OW_PET         += wt * Fg[g].OW_PET;
-          F.potential_melt += wt * Fg[g].potential_melt;
-          if(!(recharge_gridded)){
-            F.recharge       += wt * Fg[g].recharge;
-          }
-          if(!(precip_temp_gridded)) {
-            F.precip_temp    += wt * Fg[g].precip_temp;
-          }
+          F.recharge       += wt * Fg[g].recharge;
+          F.precip_temp    += wt * Fg[g].precip_temp;
           ref_measurement_ht+=wt*_pGauges[g]->GetMeasurementHt();
         }
       }
@@ -227,10 +219,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       //Override forcing functions with gridded data, if present
       // see if gridded forcing is available (either from NetCDF or derived)
-      pre_gridded            = ForcingGridIsInput(F_PRECIP); 
+      pre_gridded            = ForcingGridIsInput(F_PRECIP);
       rain_gridded           = ForcingGridIsInput(F_RAINFALL);
       snow_gridded           = ForcingGridIsInput(F_SNOWFALL);
       pet_gridded            = ForcingGridIsInput(F_PET);
+      owpet_gridded          = ForcingGridIsInput(F_OW_PET);
       temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE);
       temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN);
       temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
@@ -243,12 +236,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(rain_gridded)            { pGrid_rain        = GetForcingGrid(F_RAINFALL); }
       if(snow_gridded)            { pGrid_snow        = GetForcingGrid(F_SNOWFALL); }
       if(pet_gridded)             { pGrid_pet         = GetForcingGrid(F_PET); }
+      if(owpet_gridded)           { pGrid_owpet       = GetForcingGrid(F_OW_PET); }
       if(temp_ave_gridded)        { pGrid_tave        = GetForcingGrid(F_TEMP_AVE); }
       if(temp_daily_min_gridded)  { pGrid_daily_tmin  = GetForcingGrid(F_TEMP_DAILY_MIN); }
       if(temp_daily_max_gridded)  { pGrid_daily_tmax  = GetForcingGrid(F_TEMP_DAILY_MAX); }
       if(temp_daily_ave_gridded)  { pGrid_daily_tave  = GetForcingGrid(F_TEMP_DAILY_AVE); }
       if(recharge_gridded)        { pGrid_recharge    = GetForcingGrid(F_RECHARGE); }
       if(precip_temp_gridded)     { pGrid_precip_temp = GetForcingGrid(F_PRECIP_TEMP); }
+
       // ---------------------
       // (1A) read gridded precip/snowfall/rainfall and populate additional time series
       // ---------------------
@@ -256,26 +251,26 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         new_chunk1 = false; new_chunk2 = false; new_chunk3 = false;
-        if(pre_gridded)  { new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time); }
+        if(pre_gridded) { new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time); }
         if(snow_gridded) { new_chunk2 = pGrid_snow->ReadData(Options,tt.model_time); }
         if(rain_gridded) { new_chunk3 = pGrid_rain->ReadData(Options,tt.model_time); }
 
         // populate derived data from the ones just read (e.g., precip -> (rain,snow), or (rain,snow)->(precip)
-        if(new_chunk1 || new_chunk2 || new_chunk3) { 
+        if(new_chunk1 || new_chunk2 || new_chunk3) {
           GenerateGriddedPrecipVars(Options);//only call if new data chunk found
-        } 
+        }
 
-        pGrid_pre  = GetForcingGrid((F_PRECIP)); 
-        pGrid_rain = GetForcingGrid((F_RAINFALL)); 
-        pGrid_snow = GetForcingGrid((F_SNOWFALL)); 
+        pGrid_pre  = GetForcingGrid((F_PRECIP));
+        pGrid_rain = GetForcingGrid((F_RAINFALL));
+        pGrid_snow = GetForcingGrid((F_SNOWFALL));
 
-        F.precip           = pGrid_pre->GetWeightedValue           (k,tt.model_time,Options.timestep);
-        F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue      (k,tt.model_time,Options.timestep,Options);
+        F.precip           = pGrid_pre->GetWeightedValue(k,tt.model_time,Options.timestep);
+        F.precip_daily_ave = pGrid_pre->GetDailyWeightedValue(k,tt.model_time,Options.timestep,Options);
         F.snow_frac        = pGrid_snow->GetWeightedAverageSnowFrac(k,tt.model_time,Options.timestep,pGrid_rain);
         F.precip_5day      = NETCDF_BLANK_VALUE;
 
         ref_elev_precip    = pGrid_pre->GetRefElevation(k);
-        if (ref_elev_precip==RAV_BLANK_DATA){ ref_elev_precip = _pHydroUnits[k]->GetElevation();} //disabling orographic effects if no elevation given (warning in Forcing grid init)
+        if(ref_elev_precip==RAV_BLANK_DATA) { ref_elev_precip = _pHydroUnits[k]->GetElevation(); } //disabling orographic effects if no elevation given (warning in Forcing grid init)
       }
 
       // ---------------------
@@ -285,32 +280,32 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         new_chunk1 = new_chunk2 = new_chunk3 = new_chunk4 = false;
-        if(temp_ave_gridded)       { new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
+        if(temp_ave_gridded) { new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
         if(temp_daily_ave_gridded) { new_chunk2 = pGrid_daily_tave->ReadData(Options,tt.model_time); }
         if(temp_daily_min_gridded) { new_chunk3 = pGrid_daily_tmin->ReadData(Options,tt.model_time); }
         if(temp_daily_max_gridded) { new_chunk4 = pGrid_daily_tmax->ReadData(Options,tt.model_time); }
 
         // populate derived data from the ones just read
-        if(new_chunk1 || new_chunk2 || new_chunk3 || new_chunk4) { 
+        if(new_chunk1 || new_chunk2 || new_chunk3 || new_chunk4) {
           GenerateGriddedTempVars(Options);//only generate if new data chunk found
         }
-        if (new_chunk3!=new_chunk4){
+        if(new_chunk3!=new_chunk4) {
           ExitGracefully("CModel::UpdateHRUForcingFunctions: Gridded Min and max temperature have to have same time discretization.",BAD_DATA);
         }
 
-        pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); 
-        pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); 
-        pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); 
-        pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); 
+        pGrid_tave       = GetForcingGrid((F_TEMP_AVE));
+        pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE));
+        pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN));
+        pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX));
 
         F.temp_ave         = pGrid_tave      ->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_ave   = pGrid_daily_tave->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_min   = pGrid_daily_tmin->GetWeightedValue(k,tt.model_time,Options.timestep);
         F.temp_daily_max   = pGrid_daily_tmax->GetWeightedValue(k,tt.model_time,Options.timestep);
-        
-				F.temp_month_ave   = NOT_SPECIFIED;
-				F.temp_month_min   = NOT_SPECIFIED;
-				F.temp_month_max   = NOT_SPECIFIED;
+
+        F.temp_month_ave   = NOT_SPECIFIED;
+        F.temp_month_min   = NOT_SPECIFIED;
+        F.temp_month_max   = NOT_SPECIFIED;
 
         ref_elev_temp      = pGrid_pre->GetRefElevation(k);
         if(ref_elev_temp==RAV_BLANK_DATA) { ref_elev_temp = _pHydroUnits[k]->GetElevation(); } //disabling orographic effects if no elevation given (warning in Forcing grid init)
@@ -321,24 +316,33 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // ---------------------
       if(recharge_gridded)
       {
-        pGrid_recharge   = GetForcingGrid(F_RECHARGE); 
-        // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
+        pGrid_recharge   = GetForcingGrid(F_RECHARGE);
         pGrid_recharge-> ReadData(Options,tt.model_time);
-
         F.recharge   = pGrid_recharge->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
       // ---------------------
-      // (3) read gridded precipitation temperature
+      // (4) read gridded precipitation temperature
       // ---------------------
       if(precip_temp_gridded)
       {
         pGrid_precip_temp   = GetForcingGrid(F_PRECIP_TEMP);
-        // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         pGrid_precip_temp-> ReadData(Options,tt.model_time);
-
         F.precip_temp   = pGrid_precip_temp->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
-
+      // ---------------------
+      // (5) read gridded PET
+      // ---------------------
+      if(pet_gridded)
+      {
+        pGrid_pet   = GetForcingGrid(F_PET);
+        pGrid_pet-> ReadData(Options,tt.model_time);
+        F.PET   = pGrid_pet->GetWeightedValue(k,tt.model_time,Options.timestep);
+      }
+      if(owpet_gridded) {
+        pGrid_owpet   = GetForcingGrid(F_OW_PET);
+        pGrid_owpet-> ReadData(Options,tt.model_time);
+        F.OW_PET   = pGrid_owpet->GetWeightedValue(k,tt.model_time,Options.timestep);
+      }
 
       //-------------------------------------------------------------------
       //  Temperature Corrections
@@ -346,14 +350,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.temp_ave_unc = F.temp_daily_ave;
       F.temp_min_unc = F.temp_daily_min;
       F.temp_max_unc = F.temp_daily_max;
-      
+
       CorrectTemp(Options,F,elev,ref_elev_temp,tt);
 
       //-------------------------------------------------------------------
       //  Copy Daily values from current day, earlier time steps
       //    (done after temperature corrections so that the uncorrected values are used in calculating the lapse rate for temp_ave)
       //-------------------------------------------------------------------
-      if(!tt.day_changed){
+      if(!tt.day_changed) {
         _pHydroUnits[k]->CopyDailyForcings(F);
       }
 
@@ -376,16 +380,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       // Snow fraction Calculations
       //-------------------------------------------------------------------
       F.snow_frac =EstimateSnowFraction(Options.rainsnow,&F,Options);
-      
+
       //-------------------------------------------------------------------
       //  Precip Corrections
       //-------------------------------------------------------------------
 
       //--Gauge Corrections------------------------------------------------
       if(!(pre_gridded || snow_gridded || rain_gridded)) //Gauge Data
-      {        
-				double gauge_corr; double rc,sc;
-				F.precip=F.precip_5day=F.precip_daily_ave=0.0;
+      {
+        double gauge_corr; double rc,sc;
+        F.precip=F.precip_5day=F.precip_daily_ave=0.0;
         int p=_pHydroUnits[k]->GetSubBasinIndex();
         rc=_pSubBasins[p]->GetRainCorrection();
         sc=_pSubBasins[p]->GetSnowCorrection();
@@ -401,11 +405,11 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
       else //Gridded Data
       {
-				double grid_corr;
+        double grid_corr;
         double rain_corr=pGrid_pre->GetRainfallCorr();
         double snow_corr=pGrid_pre->GetSnowfallCorr();
         grid_corr= F.snow_frac*snow_corr + (1.0-F.snow_frac)*rain_corr;
-				
+
         F.precip          *=grid_corr;
         F.precip_daily_ave*=grid_corr;
         F.precip_5day      =NETCDF_BLANK_VALUE;
@@ -419,7 +423,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
 
       F.wind_vel = EstimateWindVelocity(Options,F,ref_measurement_ht,k);
-      
+
       //-------------------------------------------------------------------
       //  Cloud Cover
       //-------------------------------------------------------------------
@@ -435,7 +439,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F,elev);
       F.SW_radia *= CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
 
-      if (Options.SW_radia_net == NETSWRAD_CALC) 
+      if(Options.SW_radia_net == NETSWRAD_CALC)
       {
         F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
       }//otherwise, uses data
@@ -452,12 +456,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  PET Calculations
       //-------------------------------------------------------------------
       // last but not least - needs all of the forcing params calculated above
-
-      F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation   ,Options,tt,false);
-      F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.ow_evaporation,Options,tt,true);
-
+      if(!pet_gridded) //Gauge Data
+      {
+        F.PET   =EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.evaporation,Options,tt,false);
+      }
+      if (!owpet_gridded)
+      {
+        F.OW_PET=EstimatePET(F,_pHydroUnits[k],ref_measurement_ht,ref_elev_temp,Options.ow_evaporation,Options,tt,true);
+      }
       CorrectPET(Options,F,_pHydroUnits[k],elev,ref_elev_temp,k);
-
+    
       //-------------------------------------------------------------------
       // Direct evaporation of rainfall
       //-------------------------------------------------------------------

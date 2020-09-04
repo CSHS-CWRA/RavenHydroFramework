@@ -145,50 +145,7 @@ void   CTransportModel::SetLateralInfluxes(const int p, const double *aMlat)
     _aMlatHist[p][c][0]=aMlat[c];
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief Updates source terms for energy balance on subbasin reaches
-/// \details both _aEnthalpyBeta and _aEnthalpySource (and its history) are generated here
-/// \param p    subbasin index
-//
-void   CTransportModel::UpdateReachEnergySourceTerms(const int p)
-{
-  if (!_EnthalpyIsSimulated){return;} //TMP DEBUG
- 
-  double tstep=pModel->GetOptStruct()->timestep;
 
-  const CSubBasin *pBasin=pModel->GetSubBasin(p);
-  int                   k=pBasin->GetReachHRUIndex();
-  ExitGracefullyIf(k==DOESNT_EXIST,"CTransportModel::UpdateReachEnergySourceTerms: subbasin missing reach HRU for temperature simulation",BAD_DATA);
-  const CHydroUnit  *pHRU=pModel->GetHydroUnit(k);
-  int                iAET=pModel->GetStateVarIndex(AET);
-
-  double SW      =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
-  double LW      =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
-  double AET     =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
-  double temp_air=pHRU->GetForcingFunctions()->temp_ave;           //[C]
-  double temp_GW  =0.0; // JRC: should I get this as the average groundwater temperature in all subbasin HRUs? 
-
-  double Qf       =0.0;//GetReachFrictionHeat(pBasin->GetOutflowRate());//[MJ/m2/d] //TMP DEBUG 
-  double hstar    =pHRU->GetSurfaceProps()->convection_coeff; //[MJ/m2/d/K]  - THIS SHOULD BE A REACH PROPERTY, NOT SURFACE PROP.
-  double qmix     =0.0;//pBasin->GetHyporheicExchangeFlux(); //TMP DEBUG
-  double bed_ratio=1.0;//pBasin->GetBedRatio(); //top width/wetted perimeter //TMP DEBUG
-  double dbar     =pBasin->GetRiverDepth();
-  
-  double S(0.0);                         //source term [MJ/m3/d]
-  S+=(SW+LW)/dbar;                       //net incoming energy term
-  S-=AET*DENSITY_WATER*LH_VAPOR/dbar;    //latent heat flux term
-  S+=Qf/dbar;                            //friction-generated heating term
-  S+=hstar/dbar*temp_air;                //convection with atmosphere
-  S+=qmix*HCP_WATER*DENSITY_WATER/dbar*bed_ratio*temp_GW; //hyporheic mixing
-
-  _aEnthalpyBeta[p]=(hstar/dbar+qmix/dbar*HCP_WATER*DENSITY_WATER*bed_ratio)/HCP_WATER*DENSITY_WATER;
-
-  int nMinHist=pModel->GetSubBasin(p)->GetInflowHistorySize();
-  for(int n=nMinHist-1;n>0;n--) {
-    _aEnthalpySource[p][n]=_aEnthalpySource[p][n-1];
-  }
-  _aEnthalpySource[p][0]=S;
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Creates aMoutnew [m^3/s], an array of point measurements for outflow at downstream end of each river segment
 /// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed),
@@ -403,7 +360,7 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,
     dM-=0.5*(_aMout[p][c][pBasin->GetNumSegments()-1]+_aMout_last[p][c])*dt;
 
     //energy change from loss of energy along reach over time step
-    //dM-=?? 
+    //dM-=GetEnergyLossesFromReach();?? 
 
     //mass change from lateral inflows
     dM+=0.5*(Mlat_new+_aMlat_last[p][c])*dt;
@@ -419,6 +376,12 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,
     _rivulet_storage[p][c]+=dM;//[mg] or [MJ]
 
     _aMlat_last[p][c]=Mlat_new;
+
+    //Update energy source terms for enthalpy transport
+    //------------------------------------------------------
+    if(_pConstituents[c]->type==ENTHALPY) {
+      UpdateReachEnergySourceTerms(p);
+    }
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -467,33 +430,7 @@ double CTransportModel::GetOutflowConcentration(const int p, const int c) const
     }
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief returnsice fraction of constituent c (which should be temperature) in subbasin p at current point in time
-/// \notes only used for reporting; calculations exclusively in terms of mass/energy
-/// 
-/// \param p [in] subbasin index 
-/// \param c [in] constituent index
-//
-double CTransportModel::GetOutflowIceFraction(const int p,const int c) const
-{
-  if(_pConstituents[c]->type!=ENTHALPY) { return 0.0; }
-  CReservoir *pRes=pModel->GetSubBasin(p)->GetReservoir();
 
-  double ice_content;
-  if(pRes==NULL)
-  {
-    double MJ_per_d=_aMout[p][c][pModel->GetSubBasin(p)->GetNumSegments()-1];
-    double flow=pModel->GetSubBasin(p)->GetOutflowRate();
-    //hv=MJ/d / M3/d = [MJ/m3]
-    ice_content=ConvertVolumetricEnthalpyToIceContent(MJ_per_d/flow/SEC_PER_DAY); //[C]
-    if(flow<=0) { ice_content= 0.0; }
-  }
-  else {
-    ice_content=ConvertVolumetricEnthalpyToIceContent(_aMres[p][c]/pRes->GetStorage()); //[C]
-  }
-  return ice_content;
-  
-}
 //////////////////////////////////////////////////////////////////
 /// \brief returns integrated mass outflow of constituent c from subbasin p over current timestep
 ///

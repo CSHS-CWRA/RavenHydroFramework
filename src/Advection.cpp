@@ -250,12 +250,6 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       sv[iTo[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 
-    // \todo [funct]: handle dumping into surface water
-    //if ROUTE_NONE, dump surface water compartment to CONSTIT_SW
-    /*if (Options.catchment_routing==ROUTE_NONE){
-      mass=sv[iFrom[3*nAdvConnections]];
-      rates[3*nAdvConnections]=mass/Options.timestep;
-      }*/
   } //ends "for (q=0;q<nAdvConnections;q++).."
 
   //Handle Neumann influx conditions, if present

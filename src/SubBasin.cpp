@@ -46,6 +46,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _reach_length      =reach_len;
   _is_headwater      =true;
   _reach_HRUindex    =DOESNT_EXIST; //default
+  _hyporheic_flux    =0.0; //default
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -233,6 +234,12 @@ const double        *CSubBasin::GetUnitHydrograph    () const{return _aUnitHydro
 /// \return routing Hydrograph as array pointer
 //
 const double        *CSubBasin::GetRoutingHydrograph () const{return _aRouteHydro;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns historical inflow hydrograph as array pointer
+/// \return historical inflow hydrograph as array pointer
+//
+const double        *CSubBasin::GetInflowHistory     () const{return _aQinHist;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of timesteps stored in unit hydrograph history
@@ -554,7 +561,13 @@ void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const in
 int   CSubBasin::GetReachHRUIndex() const {
   return _reach_HRUindex;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reach hyporheix gross flux
+/// \return reach hyporheic flux
+//
+double CSubBasin::GetHyporheicFlux() const {
+  return _hyporheic_flux;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel storage [m^3]
 /// \note Should only be called after _aQinHist has been updated by calling SetInflow
@@ -694,6 +707,30 @@ double CSubBasin::GetRiverDepth() const {
   return max(_pChannel->GetDepth(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_DEPTH);
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reach bedslope
+/// \return  reference reach bedslope [m/m]
+//
+double CSubBasin::GetSlope() const{return _slope;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns current wetted perimeter of stream
+/// \return  wetted perimeter [m]
+//
+double CSubBasin::GetWettedPerimeter() const 
+{
+  if(_pChannel==NULL) { return ALMOST_INF; }
+  return _pChannel->GetWettedPerim(_aQout[_nSegments-1],_slope,_mannings_n);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns top surface width of stream
+/// \return current top width [m]
+//
+double CSubBasin::GetTopWidth() const {
+  if(_pChannel==NULL) { return ALMOST_INF; }
+  return _pChannel->GetTopWidth(_aQout[_nSegments-1],_slope,_mannings_n);
+}
+
 /*****************************************************************
    Manipulators
 *****************************************************************/
@@ -747,7 +784,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
-  
+  else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }  
   else{
     return false;//bad string
   }

@@ -339,7 +339,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   tt.year=dyear;
 
   tt.day_changed = false;
-  if((model_time <= PRETTY_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<PRETTY_SMALL)) { tt.day_changed = true; }
+  if((model_time <= PRETTY_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<0.001)) { tt.day_changed = true; }
 
   static char out[50];
   sprintf(out,"%4.4d-%2.2i-%2.2d",dyear,tt.month,tt.day_of_month); //2006-02-28 (ISO Standard)
@@ -1039,6 +1039,13 @@ double ConvertVolumetricEnthalpyToIceContent(const double &hv)
   if      (hv>0                       ){return 0;}
   else if (hv>-LH_FUSION*DENSITY_WATER){return -hv/LH_FUSION/DENSITY_WATER;}
   else                                 {return 1.0; }
+}
+double TemperatureEnthalpyDerivative(const double &hv)
+{
+  //derivative of temperature with respect to volumetric enthalpy
+  if      (hv>0                       ){return 1.0/SPH_WATER/DENSITY_WATER;}
+  else if (hv>-LH_FUSION*DENSITY_WATER){return 0.0;}
+  else                                 {return 1.0/SPH_ICE/DENSITY_ICE; }   
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Converts any lowercase characters in a string to uppercase, returning the converted string

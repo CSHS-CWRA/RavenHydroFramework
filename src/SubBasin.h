@@ -13,6 +13,7 @@
 #include "Reservoir.h"
 class CReservoir;
 enum res_constraint;
+
 ///////////////////////////////////////////////////////////////////
 /// \brief flow diversion data strucure
 /// \details relates diversion quantity to flow rate in subbasin
@@ -31,6 +32,7 @@ struct diversion
   
   ~diversion() {delete [] aQsource; delete [] aQdivert;}
 };
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction class for contiguous watershed section with a primary channel, contains a collection of HRUs
 /// \details Used primarily to route water
@@ -61,6 +63,8 @@ private:/*------------------------------------------------------*/
   double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph 
   double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
   int          _reach_HRUindex;   ///< HRU *index* k (not ID) associated with reach. Used for reach-specific forcings.
+
+  double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]  
 
   //River/stream  channel data:
   const CChannelXSect*_pChannel;  ///< Main channel
@@ -165,9 +169,14 @@ public:/*-------------------------------------------------------*/
   double               GetSnowCorrection    () const;
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
+  double               GetHyporheicFlux     () const;
+  double               GetSlope             () const;
+  double               GetWettedPerimeter   () const;
+  double               GetTopWidth          () const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
+  const double   *GetInflowHistory         () const;
   int             GetLatHistorySize        () const;
   int             GetInflowHistorySize     () const;
   int             GetNumDiversions         () const;
@@ -193,7 +202,7 @@ public:/*-------------------------------------------------------*/
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
 
-  CReservoir         *GetReservoir         () const;
+  CReservoir     *GetReservoir             () const;
 
   //Manipulator functions
   //called during model construction/assembly:
@@ -215,10 +224,9 @@ public:/*-------------------------------------------------------*/
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double *aQ1, const double *aQ2, const int NQ);
 
   // reservoir manipulators
-  void            ResetReferenceFlow       (const double    &Qreference);
+  void            ResetReferenceFlow       (const double &Qreference);
   void            SetReservoirFlow         (const double &Q,const double &Qlast,const double &t);
   void            SetInitialReservoirStage (const double &h,const double &hlast);
-
   void            SetChannelStorage        (const double &V);
   void            SetRivuletStorage        (const double &V);
   void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
@@ -232,6 +240,7 @@ public:/*-------------------------------------------------------*/
 
   //called during model operation:
   void            SetInflow                (const double &Qin );//[m3/s]
+  void            SetLateralInflow         (const double &Qlat);//[m3/s]
   void            UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
   void            UpdateOutflows           (const double *Qout_new,
                                             const double &Qirr,
@@ -240,8 +249,8 @@ public:/*-------------------------------------------------------*/
                                             const res_constraint &constraint,
                                             const optStruct &Options,
                                             const time_struct &tt,
-                                            bool initialize);//[m3/s]
-  void            SetLateralInflow         (const double &Qlat);//[m3/s]
+                                            bool  initialize);//[m3/s]
+
   double          ApplyIrrigationDemand    (const double &t,const double &Q); //[m3/s] 
   double          GetDiversionFlow         (const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const;
 

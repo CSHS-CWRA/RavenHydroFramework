@@ -9,6 +9,7 @@
 #include "HydroProcessABC.h"
 #include "Model.h"
 #include "Transport.h"
+#include "HeatConduction.h"
 
 string FilenamePrepare(string filebase, const optStruct &Options); //Defined in StandardOutput.cpp
 
@@ -1005,6 +1006,8 @@ void CTransportModel::Initialize()
   }
 
   InitializeRoutingVars();
+
+  CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Increment cumulative input of mass to watershed.
@@ -1115,19 +1118,7 @@ double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, con
   else {return 0.0;}
 
 }
-//////////////////////////////////////////////////////////////////
-/// \brief Returns watershed-wide latent heat flux determined from AET
-//
-double CTransportModel::GetAvgLatentHeatFlux() const 
-{
-  int iAET=pModel->GetStateVarIndex(AET);
-  double AET=pModel->GetAvgStateVar(iAET)/MM_PER_METER; 
-  //int iSubl=pModel->GetStateVarIndex(SUBLIMATED); // \todo[funct] support actual sublimation as state variable
-  //double Subl=pModel->GetAvgStateVar(iSubl)/MM_PER_METER;
-  double area=pModel->GetWatershedArea()*M2_PER_KM2;
-  
-  return AET*LH_VAPOR*DENSITY_WATER*area; //+Subl*LH_SUBLIM*DENSITY_WATER*area;
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Write transport output file headers
 /// \details Called prior to simulation (but after initialization) from CModel::Initialize()
@@ -1432,7 +1423,10 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     // should also include external sources from streams / diversions / etc.
     //for contaminant mass, influx includes distributed sources of contaminants
     //double net_influx =//GetAverageInflux(c)*(area*M2_PER_KM2)*Options.timestep; // [MJ] 
-    double latent_flux =0.0;//GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)(zero, of course, for contaminant)
+    double latent_flux =GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)(zero, of course, for contaminant)
+
+    //this->GetEnergyLossesFromReach
+
     double channel_stor=GetTotalChannelConstituentStorage(c);//[mg] or [MJ]
     double rivulet_stor=GetTotalRivuletConstituentStorage(c);//[mg] or [MJ]
     double sink        = pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//[mg]  or [MJ] 
@@ -1614,43 +1608,4 @@ void CTransportModel::CloseOutputFiles() const
     _pConstituents[c]->OUTPUT.close();
     _pConstituents[c]->POLLUT.close();
   }
-}
-
-double CTransportModel::GetIceContent(const double *state_vars,const int iWater) const 
-{  
-  int cTemp=GetConstituentIndex("TEMPERATURE");
-
-  if(cTemp==DOESNT_EXIST) { return 0.0; }
-
-  double Hv,stor,hv(0.0),Fi;
-  int    m,iEnth;
-  m    =GetLayerIndex(cTemp,iWater); //layer index of water compartment
-  iEnth=pModel->GetStateVarIndex(CONSTITUENT,m); //global index of water compartment enthalpy
-
-  Hv   =state_vars[iEnth ]; //enthalpy, [MJ/m2]
-  stor =state_vars[iWater]; //water storage [mm]
-  if(stor>PRETTY_SMALL) {
-    hv   =Hv/(stor/MM_PER_METER); //volumetric specific enthalpy [MJ/m3]
-  }
-  return ConvertVolumetricEnthalpyToIceContent(hv);
-
-}
-double CTransportModel::GetWaterTemperature(const double *state_vars,const int iWater) const 
-{
-  int cTemp=GetConstituentIndex("TEMPERATURE");
-  if(iWater==DOESNT_EXIST) { return 0.0; }
-  if( cTemp==DOESNT_EXIST) { return 0.0; }
-
-  double Hv,stor,hv(0.0),Fi;
-  int    m,iEnth;
-  m    =GetLayerIndex(cTemp,iWater); //layer index of water compartment
-  iEnth=pModel->GetStateVarIndex(CONSTITUENT,m); //global index of water compartment enthalpy
-
-  Hv   =state_vars[iEnth]; //enthalpy, [MJ/m2]
-  stor =state_vars[iWater]; //water storage [mm]
-  if(stor>PRETTY_SMALL) {
-    hv   =Hv/(stor/MM_PER_METER); //volumetric specific enthalpy [MJ/m3]
-  }
-  return ConvertVolumetricEnthalpyToTemperature(hv);
-
 }

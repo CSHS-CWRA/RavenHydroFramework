@@ -25,6 +25,7 @@ void RavenUnitTesting(const optStruct &Options)
   //AddTimeTest( );
   //GammaTest();
   //BarycentricWeights();
+  //TestInversion();
   /*cout<<"STRINGISLONG TEST: 1023 "<< StringIsLong("1023")<<endl;
   cout<<"STRINGISLONG TEST: -1 "<< StringIsLong("-1")<<endl;
   cout<<"STRINGISLONG TEST: hamburger "<< StringIsLong("hamburger")<<endl;

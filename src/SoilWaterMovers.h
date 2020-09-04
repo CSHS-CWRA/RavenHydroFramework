@@ -343,7 +343,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvRecharge(int to_index);
+  CmvRecharge(recharge_type	rech_type, int to_index, int junk); //junk just to distinguish constructors
   CmvRecharge(recharge_type	rech_type, int nConns);			
   ~CmvRecharge();
 

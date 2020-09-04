@@ -72,7 +72,8 @@ double CalculateThermalConductivity(const double &poro,const double&kappa_soil,c
   */
   return kappa*WATT_TO_MJ_PER_D; //[W/m2/K]->[MJ/m2/d/K]
 }
-
+int CmvHeatConduction::_nHRUs=-1;
+void CmvHeatConduction::StoreNumberOfHRUs(const int nHRUs){_nHRUs=nHRUs;}
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the heat conduction constructor
 ///
@@ -201,7 +202,247 @@ void ThomasAlgorithm(Ironclad1DArray  e,Ironclad1DArray f,
   delete[] f1;
   delete[] b1;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Inverts Tridiagonal matrix with diagonals cc,a, and b using algorithm from
+/// assumes cc[0] and b[N] are zero, and all three indices correspond to matrix row - performs a shift to standard tridiagonal form
+/// from Usmani,R. A. (1994). "Inversion of a tridiagonal jacobi matrix". Linear Algebra and its Applications. 212-213: 413–414.
+/// \param cc   [in ] left diagonal  (c[i]=A[i][i-1]) [length=size]
+/// \param a    [in ] diagonal       (a[i]=A[i][i]) [length=size]
+/// \param b    [in ] right diagonal (b[i]=A[i][i+1] [length=size]
+/// \param Ainv [out] resultant inverse matrix (assumes memory is already allocated in array of doubles)
+/// \param size [in]  N, size of NxN square matrix 
+///
+void InvertTridiagonal(const double *cc,const double *a,const double *b,
+                       double **Ainv,const int     size)
+{
+  int i,j,k;
+  int N=size;
+  double th_im1,th_jm1,ph_ip1,ph_jp1;
+  double bprod,cprod;
+  double *theta=new double [N];
+  double *phi  =new double [N];
+  double *c    =new double [N];
+  for (i=0;i<N;i++){c[i]=cc[i+1]; } //requires a shift of the off-diagonal 
 
+  theta[0]=a[0];
+  theta[1]=a[1]*theta[0]-b[0]*c[0];
+  for(i=2;i<size;i++) { theta[i]=a[i]*theta[i-1]-b[i-1]*c[i-1]*theta[i-2]; }
+  phi[N-1]=a[N-1];
+  phi[N-2]=a[N-2]*phi[N-1]-b[N-2]*c[N-2];
+  for(i=N-3;i>=0;i--) { phi  [i]=a[i]*phi  [i+1]-b[i  ]*c[i  ]*phi  [i+2]; }
+  for(i=0;i<N;i++) {
+    if(i==0)  { th_im1=1.0;       }
+    else      { th_im1=theta[i-1];}
+    if(i==N-1){ ph_ip1=1.0;       }
+    else      { ph_ip1=phi  [i+1];}
+    for(j=0;j<N;j++) {
+      if(j==0)  { th_jm1=1.0;       }
+      else      { th_jm1=theta[j-1];}
+      if(j==N-1){ ph_jp1=1.0;       }
+      else      { ph_jp1=phi  [j+1];}
+    
+      if(i<j) {
+        bprod=1.0; for(k=i;k<=j-1;k++) { bprod*=b[k]; }
+        Ainv[i][j]=pow(-1.0,i+j+2)*bprod*th_im1*ph_jp1/theta[N-1];
+      }
+      else if(i==j) {
+        Ainv[i][j]=th_im1*ph_jp1/theta[N-1];
+      }
+      else {
+        cprod=1.0; for(k=j;k<=i-1;k++) { cprod*=c[k]; }
+        Ainv[i][j]=pow(-1.0,i+j+2)*cprod*th_jm1*ph_ip1/theta[N-1];
+      }
+    }
+  }
+  delete [] theta;
+  delete [] phi;
+  delete [] c;
+}
+void MatVecMult(const double * const *A,const double *x,double *B,int N) {
+  int i,j;
+  for(i=0;i<N;i++) {
+    B[i]=0.0;
+    for(j=0;j<N;j++){
+      B[i]+=A[j][i]*x[j];
+    }
+  }
+}
+void TestInversion() {
+  int N=10;
+  int i,j;
+  double *a=new double [N];
+  double *b=new double [N];
+  double *c=new double [N];
+  double **Ainv=new double *[N];
+  double **A   =new double *[N];
+  double *x=new double [N];
+  double *xx=new double [N];
+  double *B=new double [N];
+  for(i=0;i<N;i++) {
+    Ainv[i]=new double [N];
+    A   [i]=new double [N];
+    for(j=0;j<N;j++) { Ainv[i][j]=A[i][j]=0.0; }
+    a[i]=2;
+    b[i]=-1;
+    c[i]=-1.3*x[i];
+    B[i]=0;
+    x[i]=(double)(i)/double(N); //arbitrary
+    c[i]=-1.3*x[i];
+    A[i][i]=a[i];
+    if(i>0  ) { A[i][i-1]=c[i]; }
+    if(i<N-1) { A[i][i+1]=b[i]; }
+  }
+  InvertTridiagonal(c,a,b,Ainv,N);
+
+  MatVecMult(A,x,B,N);
+
+  MatVecMult(Ainv,B,xx,N);
+
+  for(i=0;i<N;i++) {
+    for(j=0;j<N;j++) {
+      cout<<A[i][j]<<" ";
+    }
+    cout<<" * "<<x[i];
+    cout<<" = "<<B[i]<<endl;
+  }
+  cout<<"-------------------------------"<<endl;
+  for(i=0;i<N;i++) {
+    for(j=0;j<N;j++) {
+      cout<<Ainv[i][j]<<" ";
+    }
+    cout<<" * "<<B[i];
+    cout<<" = "<<xx[i]<<endl;
+  }
+  double err(0.0);
+  for(i=0;i<N;i++) { err+=xx[i]-x[i]; cout<<"compare: "<<x[i]<< " "<<xx[i]<<endl;}
+  cout<<"Inversion error: "<<err<<endl;
+
+  delete [] a;
+  delete [] b;
+  delete [] c;
+  delete [] x;
+  delete [] B;
+  for(i=0;i<N;i++) { delete[] Ainv[i]; } delete [] Ainv;
+  for(i=0;i<N;i++) { delete[] A[i]; } delete[] A;
+  ExitGracefully("Unit Testing Done",BAD_DATA);
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Generates Jacobian for Newton solution to non-linear heat conduction problem
+/// \param *z [in] centroid of compartments
+/// \param *poro
+/// \param *H [in] vector of current energy content of each compartment
+/// \param tstep [in] time step (could be local timestep)
+/// \param J  [out] 3xN matrix storing diagonals of tridiagonal Jacobian [presumed memory is pre-allocated]
+//
+void CmvHeatConduction::GenerateJacobianMatrix(const double  *z,
+                                               const double  *eta, const double * poro,const double *kappa_s,
+                                               const double  *sat,  const double *satn,
+                                               const double  *Vold, const double *Vnew, //[mm]
+                                               const double  *hold, const double *h,
+                                               const double  &tstep,
+                                                     double **J, 
+                                                     double  *f,
+                                               const int      N) const 
+{
+  //    eta=thick[i]*(1-poro[i])*soil_dens[i]*soil_hcp[i];
+  double dTdHn;
+  double kappal,kappar,kappaln,kapparn,kappaln_d,kapparn_d,kappaln_di,kapparn_di;
+  double ai,bi;
+  double Bn;
+  double dh=0.001;
+  double *Fice   =new double [N];
+  double *Ficen  =new double [N];
+  double *Ficen_d=new double [N];
+  double *kap    =new double [N];
+  double *kapn   =new double [N];
+  double *kapn_d =new double [N];
+  double *T      =new double [N];
+  double *Tn     =new double [N];
+  double *kapl   =new double [N];
+  double *kapr   =new double [N];
+  double *kapl_d =new double [N];
+  double *kapr_d =new double [N];
+  for(int i=0;i<N;i++)
+  {
+    Fice   [i]=ConvertVolumetricEnthalpyToIceContent(hold[i]);
+    Ficen  [i]=ConvertVolumetricEnthalpyToIceContent(h   [i]);
+    Ficen_d[i]=ConvertVolumetricEnthalpyToIceContent(h[i]+dh);
+
+    kap    [i]=CalculateThermalConductivity(poro[i],kappa_s[i], sat[i],Fice[i]);
+    kapn   [i]=CalculateThermalConductivity(poro[i],kappa_s[i],satn[i],Ficen[i]);
+    kapn_d [i]=CalculateThermalConductivity(poro[i],kappa_s[i],satn[i],Ficen_d[i]);
+
+    T      [i]=ConvertVolumetricEnthalpyToTemperature(hold[i]);
+    Tn     [i]=ConvertVolumetricEnthalpyToTemperature(   h[i]);
+  }
+  for(int i=0;i<N;i++) 
+  {
+    if(i==0) {
+      ai=0.5*tstep/z[0]/(z[i+1]-z[i]);
+      bi=0;
+    }
+    else if(i==N-1) {
+      ai=0;
+      bi=0.5*tstep/z[N-1]/(z[i]-z[i-1]);
+    }
+    else {
+      ai=0.5*tstep/(z[i+1]-z[i-1])/(z[i+1]-z[i]);
+      bi=0.5*tstep/(z[i+1]-z[i-1])/(z[i]-z[i-1]);
+    }
+    if(i!=0) {
+      kappal    =pow(kap   [i]*kap   [i-1],0.5); // geometric mean
+      kappaln   =pow(kapn  [i]*kapn  [i-1],0.5);
+      kappaln_d =pow(kapn  [i]*kapn_d[i-1],0.5);
+      kappaln_di=pow(kapn_d[i]*kapn  [i-1],0.5);
+    }
+    else {kappal=kappaln=kappaln_d=kappaln_di=0.0;}
+    if(i!=N-1) {
+      kappar    =pow(kap   [i]*kap   [i+1],0.5); // geometric mean
+      kapparn   =pow(kapn  [i]*kapn  [i+1],0.5);
+      kapparn_d =pow(kapn  [i]*kapn_d[i+1],0.5);
+      kapparn_di=pow(kapn_d[i]*kapn  [i+1],0.5);
+    }
+    else { kappar=kapparn=kapparn_d=kapparn_di=0.0; }
+
+    dTdHn=TemperatureEnthalpyDerivative(h[i]);
+
+    Bn=hold[i]*Vold[i]-ai*kappar*(T[i]-T[i+1])-bi*kappal*(T[i]-T[i-1])-eta[i]*T[i];
+
+    f[i]=Vnew[i]+ai*kapparn*(Tn[i]-Tn[i+1])+bi*kappaln*(Tn[i]-Tn[i-1])-eta[i]*Tn[i]-Bn;
+
+    //left diagonal
+    if(i!=0) {
+      J[0][i]=bi*(Tn[i]-Tn[i-1])*(kappaln_d-kappaln)/(dh*Vnew[i])-bi*kappaln*TemperatureEnthalpyDerivative(h[i-1]);
+    }
+    else{J[0][i]=0.0; }
+
+    //central diagonal 
+    J[1][i] =Vnew[i];
+    J[1][i]+=ai*(Tn[i]-Tn[i+1])*(kapparn_di-kapparn)/dh+ai*kapparn*dTdHn;
+    J[1][i]+=bi*(Tn[i]-Tn[i-1])*(kappaln_di-kappaln)/dh+bi*kappaln*dTdHn;
+    J[1][i]-=eta[i]*dTdHn;
+
+    //right diagonal
+    if(i!=N-1) {
+      J[2][i]=ai*(Tn[i]-Tn[i+1])*(kapparn_d-kapparn)/dh-ai*kapparn*TemperatureEnthalpyDerivative(h[i+1]);
+    }
+    else {J[2][i]=0.0; }
+  }
+  delete [] Fice;
+  delete [] Ficen;
+  delete [] Ficen_d;
+  delete [] kap;
+  delete [] kapn;
+  delete [] kapn_d;
+  delete [] T;
+  delete [] Tn;
+  delete [] kapl;
+  delete [] kapr;
+  delete [] kapr_d;
+  delete [] kapl_d;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Finds thermal rate of change
 /// \param *state_vars [in] Array of state variable values for this HRU
@@ -218,92 +459,149 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
                                                double      *rates) const
 {
   double tstep=Options.timestep;
-  double hv; //enthalpy [MJ/m3]
-  double poro, sat;
   int    iSoil,iSoilEnthalpy;
   double hcond = pHRU->GetSurfaceProps()->convection_coeff; //[MJ/m2/d/K] ;
-
   int    nSoils=pModel->GetNumSoilLayers();
   
+  int N=nSoils;//+nSnowLayers
+  
+  static double **v_old;
+  if(tt.model_time==0.0) {
+    v_old=new double *[_nHRUs];
+    for(int k=0;k<_nHRUs;k++) {
+      v_old[k]=new double [N];
+      for(int i=0; i<N;i++) {
+        v_old[k][i]=0.0;
+      }
+    }
+  }
+
+  
+  double *dz     =new double [N];
+  double *z      =new double [N];
+  double *poro   =new double [N];
+  double *sat    =new double [N];
+  double *satn   =new double[N];
+  double *kappa_s=new double [N];
+  double *eta    =new double [N];
+  double *Vold   =new double [N];
+  double *Vnew   =new double [N];
+  double *hold   =new double[N];
+  double *Tnew   =new double[N];
+  double *Told   =new double[N];
+  double *kap    =new double[N];
+  double *kapn   =new double[N];
+  double *hguess =new double[N];
+  double *delta_h=new double[N];
+  double *f      =new double[N]; //TODO: Static storage
+  double **J     =new double *[3];
+  for(int i=0;i<3;i++) { J[i]=new double[N]; }
+  double **Jinv  =new double *[N];
+  for(int i=0;i<N;i++) { Jinv[i]=new double[N]; }
+
+  int k=pHRU->GetGlobalIndex();
+
   // Get Soil properties 
-  double *k   =new double [nSoils]; //TODO: static storage 
-  double *cp  =new double [nSoils];
-  double *rho =new double [nSoils];
-  double *T   =new double [nSoils];
-  double *Tnew=new double [nSoils];
-  double *dz = new double [nSoils];
-  double *Fi = new double [nSoils];
   for(int m=0;m<nSoils;m++)
   {
     iSoil=pModel->GetStateVarIndex(SOIL,m);
     iSoilEnthalpy=iTo[m];
-    poro  =pHRU->GetSoilProps(m)->porosity;
-    sat   =state_vars[iSoil]/pHRU->GetSoilCapacity(m);
 
-    hv=0.0;
-    if (state_vars[iSoil]>1e-9){hv=state_vars[iSoilEnthalpy]/(state_vars[iSoil]/MM_PER_METER);}//[MJ/m3] 
+    poro   [m]=pHRU->GetSoilProps(m)->porosity;
+    kappa_s[m]=pHRU->GetSoilProps(m)->thermal_cond;
+    eta    [m]=pHRU->GetSoilThickness(m)*(1.0-poro[m])*pHRU->GetSoilProps(m)->heat_capacity*pHRU->GetSoilProps(m)->bulk_density;
+    dz     [m]=pHRU->GetSoilThickness(m);
 
-    T  [m]=ConvertVolumetricEnthalpyToTemperature(hv);
-    Fi [m]=ConvertVolumetricEnthalpyToIceContent (hv);
+    if(m==0) { z[m]=0.5*dz[m]; }
+    else     { z[m]=0.5*(dz[m]+dz[m-1])+z[m-1]; }
 
-    cp [m]=CalculateHeatCapacity       (poro,pHRU->GetSoilProps(m)->heat_capacity,sat,Fi[m]);
-    k  [m]=CalculateThermalConductivity(poro,pHRU->GetSoilProps(m)->thermal_cond ,sat,Fi[m]);
-    rho[m]=CalculateDensity            (poro,pHRU->GetSoilProps(m)->bulk_density ,sat,Fi[m]);
+    if(tt.model_time==0.0) {
+      v_old[k][m]=state_vars[iSoil]/MM_PER_METER; 
+    }
+
+    Vold[m]=v_old[k][m]; 
+    Vnew[m]=state_vars[iSoil]/MM_PER_METER;
+    sat [m]=Vnew[m]*MM_PER_METER/pHRU->GetSoilCapacity(m);
+    satn[m]=Vold[m]*MM_PER_METER/pHRU->GetSoilCapacity(m);
+
+    //update vold
+    v_old[k][m]=Vnew[m];
+
+    hold[m]=0.0;
+    if(Vold[m]>1e-6) { hold[m]=state_vars[iSoilEnthalpy]/Vold[m]; }//[MJ/m3] 
+  }
+
+  // Crank Nicolson approach using Newton Raphson
+  const double TOLERANCE=1e-3;
+  const int MAX_ITER=30;
+  double err=ALMOST_INF;
+  int iter=1;
+  int i;
+
+  //Solve using Newton solution method
+  while((err>TOLERANCE) && (iter<MAX_ITER))
+  {
+    GenerateJacobianMatrix(z,eta,poro,kappa_s,sat,satn,Vold,Vnew,hold,hguess,tstep,J,f,N);
     
-    //cp [m]+= pHRU->GetSoilProps(m)->heat_capacity*pHRU->GetSoilProps(m)->bulk_density /sat / poro / DENSITY_WATER; //JRC: this can be unstable for small saturations. 
+    InvertTridiagonal(J[0],J[1],J[2],Jinv,N);
 
-    dz [m]=pHRU->GetSoilThickness(m);
+    MatVecMult(Jinv,f,delta_h,N);
+
+    err=0.0;
+    for(i=0;i<N;i++) {
+      hguess[i]=hguess[i]-delta_h[i];
+      upperswap(err,fabs(delta_h[i]));
+    }
+    iter++;
   }
-
-  // Crank Nicolson approach using Thomas Algorithm
-  double *AA =new double[nSoils]; //TODO: Static storage
-  double *BB =new double[nSoils];
-  double *CC =new double[nSoils];
-  double *RHS=new double[nSoils];
-  double *x  =new double[nSoils];
-  double a,b,c,d;
-
-  double Tair =pHRU->GetForcingFunctions()->temp_ave;
-
-  //top condition - heat flux = h*(T-Tair)
-  //bottom condition - flux = 0
-  for(int m=0;m<nSoils;m++) 
-  {
-    if(m>0)       { a=0.5*(k[m]+k[m-1])/2.0/(0.5*(dz[m]+dz[m-1]))/dz[m]; } //arithmetic mean (for now)
-    else          { a=hcond/2.0/dz[0];}
-    if(m<nSoils-1){ c=0.5*(k[m]+k[m+1])/2.0/(0.5*(dz[m]+dz[m+1]))/dz[m]; }
-    else          { c=0.0; }
-    b=-(a+c);
-    d=cp[m]*rho[m]/tstep;
-    AA [m]=-a;
-    BB [m]=(b+d);
-    CC [m]=-c;
-    if      (m==0       ) { RHS[m]=a*2*Tair+(d-b)*T[m]+c*T[m+1];}
-    else if (m==nSoils-1) { RHS[m]=a*T[m-1]+(d-b)*T[m]         ;}
-    else                  { RHS[m]=a*T[m-1]+(d-b)*T[m]+c*T[m+1];}
-  }
-
-  //solve system of equations
-  ThomasAlgorithm(AA,BB,CC,RHS,Tnew,nSoils);
   
-  //extract energy fluxes from solution
+  //Post-processing: extract energy fluxes from solution
   //Need also to address heat exchanged with soil (sink/source term) 
-  for(int m=0;m<nSoils;m++)
+  double Ficen,Ficeo;
+  for(int m=0;m<N;m++)
   {
-    //-dHs/dt = - H*rho_b*c_p*dT/dt
-    //rates[m+nSoils] = - dz[m]*  pHRU->GetSoilProps(m)->heat_capacity*pHRU->GetSoilProps(m)->bulk_density*(Tnew[m]-T[m])/Options.timestep; //JRC
+    Tnew[m]=ConvertVolumetricEnthalpyToTemperature(hguess[m]);
+    Told[m]=ConvertVolumetricEnthalpyToTemperature(hold[m]);
+    Ficen=ConvertVolumetricEnthalpyToIceContent(hguess[m]);
+    Ficeo=ConvertVolumetricEnthalpyToIceContent(hold[m]);
+    kap [i]=CalculateThermalConductivity(poro[i],kappa_s[i],sat[i],Ficeo);
+    kapn[i]=CalculateThermalConductivity(poro[i],kappa_s[i],satn[i],Ficen);
   }
-  for(int m=0;m<nSoils;m++)
+  double kappal,kappaln;
+  for(int m=0;m<N;m++)
   {
-    T[m]=0.5*(T[m]+Tnew[m]); //T is now mean temp over time step
-    if(m>0)        { rates[m]=(k[m]+k[m-1])/2.0 * 1.0/(0.5*(dz[m]+dz[m-1]))*(T[m]-T[m-1]); } // [MJ/m2/d]
-    else           { rates[m]=hcond*(Tair-T[m]); } //top condition [MJ/m2/d]
+    if(i!=0) {
+      kappal    =pow(kap [i]*kap [i-1],0.5); // geometric mean
+      kappaln   =pow(kapn[i]*kapn[i-1],0.5);
+    }
+    else { kappal=kappaln=0.0; }
+   
+    if(m>0)        { 
+      rates[m] =-0.5*kappal  * 1.0/(0.5*(dz[m]+dz[m-1]))*(Told[m]-Told[m-1]);// [MJ/m2/d]
+      rates[m]+=-0.5*kappaln * 1.0/(0.5*(dz[m]+dz[m-1]))*(Tnew[m]-Tnew[m-1]);
+    } 
+    else { rates[m]=0.0; }//cond*(Tair-T[m]); } //top condition [MJ/m2/d]
   }
-  rates[nSoils]=0.0; //geothermal (eventually) [MJ/m2/d]
+  for(int m=0;m<N;m++)
+  {
+    //-dHs/dt = - eta*dT/dt
+    rates[m+N] = -eta[m]*(Tnew[m]-Told[m])/Options.timestep; 
+  }
+  rates[N]=0.0; //geothermal (eventually) [MJ/m2/d]
 
-  delete [] AA; delete [] BB; delete [] CC;  delete [] RHS; 
-  delete [] k;  delete [] cp; delete [] rho; delete [] Fi;
-  delete [] T;  delete [] Tnew;
+  delete [] dz; delete [] z; delete [] poro;
+  delete [] sat; delete [] satn; delete [] kappa_s;
+  delete [] eta; delete [] Vold; delete [] Vnew;
+  delete [] hold;
+  delete [] Tnew; delete [] Told; delete [] kap; delete [] kapn;
+  delete [] hguess; delete [] delta_h; delete [] f;
+  for(int i=0;i<3;i++) { delete [] J[i]; } delete [] J;
+  for(int i=0;i<N;i++) { delete []  Jinv[i]; } delete [] Jinv;
+
+  if(tt.model_time>=Options.duration-Options.timestep)
+  {
+    for(int k=0;k<_nHRUs;k++) {delete [] v_old[k];} delete [] v_old;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief applies constraints to state variables 

@@ -20,7 +20,7 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvRecharge::CmvRecharge(int to_index)
+CmvRecharge::CmvRecharge(recharge_type rech_type,int to_index, int junk)
   :CHydroProcessABC(RECHARGE)
 {
   ExitGracefullyIf(to_index==DOESNT_EXIST,
@@ -29,6 +29,7 @@ CmvRecharge::CmvRecharge(int to_index)
   CHydroProcessABC::DynamicSpecifyConnections(1);
   iFrom[0]=pModel->GetStateVarIndex(ATMOS_PRECIP); 
   iTo[0]=to_index;
+  _type = rech_type;
 }
 
 //////////////////////////////////////////////////////////////////
