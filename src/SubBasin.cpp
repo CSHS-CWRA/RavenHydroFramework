@@ -44,6 +44,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _drainage_area     =0.0;
   _avg_ann_flow      =0.0;
   _reach_length      =reach_len;
+  _reach_length2     =reach_len;
   _is_headwater      =true;
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
@@ -59,6 +60,8 @@ CSubBasin::CSubBasin(const long           Identifier,
   _rain_corr         =1.0;
   _snow_corr         =1.0;
   _unusable_flow_pct =0.0;
+
+  _res_disabled      =false;
 
   // estimate reach length if needed
   //------------------------------------------------------------------------
@@ -753,6 +756,11 @@ void CSubBasin::AddReservoir(CReservoir *pRes)
 {
   ExitGracefullyIf(_pReservoir!=NULL,
                    "CSubBasin::AddReservoir: only one inflow reservoir may be specified per basin",BAD_DATA);
+  if(_res_disabled) {
+    delete pRes;
+    _reach_length=_reach_length2;
+    return; 
+  }
   _pReservoir=pRes;
 }
 
@@ -785,6 +793,9 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }  
+
+  else if (!label_n.compare("RESERVOIR_DISABLED")) { _res_disabled=(bool)(value); }
+  else if (!label_n.compare("CORR_REACH_LENGTH"))  { _reach_length2=value; }
   else{
     return false;//bad string
   }

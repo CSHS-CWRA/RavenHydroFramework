@@ -85,6 +85,8 @@ private:/*------------------------------------------------------*/
 
   //Reservoir
   CReservoir      *_pReservoir;   ///< Reservoir object (or NULL, if no reservoir)
+  bool           _res_disabled;   ///< true if lake or reservoir should be disabled/never created
+  double        _reach_length2;   ///< corrected reach length [m] if reservoir/lake is disabled
 
   //state variables:
   double               *_aQout;   ///< downstream river (out)flow [m3/s] at start of time step at end of each channel segment [size=_nSegments]
