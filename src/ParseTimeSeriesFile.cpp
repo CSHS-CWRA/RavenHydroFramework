@@ -615,10 +615,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        {":RainCorrection" double corr}
      */
       if (Options.noisy) {cout <<"Rainfall Correction"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Precipitation correction added before specifying a gauge station and its properties",BAD_DATA);
+      ExitGracefullyIf(pGage==NULL && pGrid==NULL,
+                       "ParseTimeSeriesFile::Precipitation correction added before specifying a gauge station/ gridded forcing and its properties",BAD_DATA);
       if (Len<2){p->ImproperFormat(s); break;}
-      pGage->SetProperty("RAINFALL_CORR",s_to_d(s[1]));
+      if (pGage != NULL) { pGage->SetProperty("RAINFALL_CORR",s_to_d(s[1])); }
+      if (pGrid != NULL) { pGrid->SetRainfallCorr(s_to_d(s[1])); }
       break;
     }
     case(31):  //----------------------------------------------
@@ -626,10 +627,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        {":SnowCorrection" double corr}
      */
       if (Options.noisy) {cout <<"Snowfall Correction"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Precipitation correction added before specifying a gauge station and its properties",BAD_DATA);
+      ExitGracefullyIf(pGage==NULL && pGrid==NULL,
+                       "ParseTimeSeriesFile::Snowfall correction added before specifying a gauge station/ gridded forcing and its properties",BAD_DATA);
       if (Len<2){p->ImproperFormat(s); break;}
-      pGage->SetProperty("SNOWFALL_CORR",s_to_d(s[1]));
+      if (pGage != NULL) { pGage->SetProperty("SNOWFALL_CORR",s_to_d(s[1])); }
+      if (pGrid != NULL) { pGrid->SetSnowfallCorr(s_to_d(s[1])); }
       break;
     }
     case(32):  //----------------------------------------------
