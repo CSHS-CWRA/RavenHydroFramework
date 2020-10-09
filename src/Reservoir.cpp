@@ -51,6 +51,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _minStageDominant=false;
 
   _crest_ht=0.0;
+  _crest_width=DOESNT_EXIST;
+
   _max_capacity=0.0;
 
   _aQ_back=NULL;
@@ -270,6 +272,7 @@ CReservoir::CReservoir(const string Name,
 {
    BaseConstructor(Name,SubID);
 
+  _crest_width=crestw;
   _crest_ht=crestht;
   _min_stage =-depth+_crest_ht;
   _max_stage=6.0+_crest_ht; //reasonable default?
@@ -393,6 +396,36 @@ int CReservoir::GetHRUIndex() const
 {
   if(_pHRU==NULL){return DOESNT_EXIST;}
   return _pHRU->GetGlobalIndex();
+}
+//////////////////////////////////////////////////////////////////
+/// \returns crest width, in meters
+//
+double CReservoir::GetCrestWidth() const
+{
+  return _crest_width;
+}
+//////////////////////////////////////////////////////////////////
+/// \returns multiplies discharge curve by correction factor
+//
+void CReservoir::MultiplyFlow(const double &mult) 
+{
+  for(int i=0;i<_Np;i++) {
+      _aQ[i]*=mult;
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \returns crest width, in meters
+//
+void CReservoir::SetCrestWidth(const double &width) 
+{
+  if(_crest_width==DOESNT_EXIST) {
+    ExitGracefully("CReservoir::SetCrestWidth - trying to change crest width of non-lake reservoir",BAD_DATA_WARN);
+    return;
+  }
+  else {
+    MultiplyFlow(width/_crest_width);
+    _crest_width=width;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief initializes reservoir variables

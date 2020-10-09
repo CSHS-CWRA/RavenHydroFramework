@@ -796,6 +796,12 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("RESERVOIR_DISABLED")) { _res_disabled=(bool)(value); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { _reach_length2=value; }
+
+  else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) { 
+    if(_pReservoir!=NULL) {
+      _pReservoir->SetCrestWidth(value);
+    }
+  }
   else{
     return false;//bad string
   }
@@ -831,6 +837,13 @@ double CSubBasin::GetBasinProperties(const string label)
 
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
+
+  else if(!label_n.compare("RESERVOIR_CREST_WIDTH")) {
+    if(_pReservoir!=NULL) {
+      return _pReservoir->GetCrestWidth();
+    }
+    else{return 0.0;}
+  }
   else{
     return false;//bad string
   }

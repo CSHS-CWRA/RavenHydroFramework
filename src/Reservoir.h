@@ -98,6 +98,7 @@ private:/*-------------------------------------------------------*/
   double       _max_stage;           ///< maximum reference elevation [m]
 
   double       _crest_ht;            ///< absolute crest height, m.a.s.l (0 by default)
+  double       _crest_width;         ///< crest width [m]
 
   int          _Np;                   ///< number of points on rating curves
   double      *_aStage;              ///< Rating curve for stage elevation [m]
@@ -121,6 +122,8 @@ private:/*-------------------------------------------------------*/
   double     GetWeirOutflow(const double &ht, const double &adj) const;
 
   double     GetDZTROutflow(const double &V,const double &Qin,const time_struct &tt,const optStruct &Options) const;
+
+  void       MultiplyFlow(const double &mult);
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -156,6 +159,7 @@ public:/*-------------------------------------------------------*/
   double            GetMaxCapacity           () const; //[m3]
   string            GetCurrentConstraint     () const;
   double            GetDemandMultiplier      () const;
+  double            GetCrestWidth            () const;
 
   //Manipulators
   void              SetMinStage              (const double &min_z);
@@ -166,6 +170,7 @@ public:/*-------------------------------------------------------*/
   void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
+  void              SetCrestWidth            (const double &width);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
