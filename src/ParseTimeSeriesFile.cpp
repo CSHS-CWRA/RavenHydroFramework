@@ -1163,8 +1163,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      */
       if(Options.noisy) { cout << ":FlowDiversionRatingCurve" << endl; }
       long SBID=DOESNT_EXIST;
-      int target_p,start, end;
-      int NQ;
+      int target_p(DOESNT_EXIST),start, end;
+      int NQ(0);
       CSubBasin *pSB;
       start=0;   //default - all year
       end  =366; //default - all year

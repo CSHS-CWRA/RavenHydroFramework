@@ -200,6 +200,13 @@ CModel::~CModel()
 int CModel::GetNumSubBasins   () const{return _nSubBasins;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns number of SB groups
+///
+/// \return Integer number of SB groups
+//
+int CModel::GetNumSubBasinGroups() const { return _nSBGroups; }
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns number of HRUs in model
 ///
 /// \return Integer number of HRUs
@@ -523,6 +530,54 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   }
   delete [] isUpstr;
   return pSBs;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns specific subbasin group denoted by parameter pp
+///
+/// \param pp [in] subbasin group index
+/// \return pointer to subbasin group corresponding to passed index pp
+//
+CSubbasinGroup  *CModel::GetSubBasinGroup(const int pp) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((pp<0) || (pp>=_nSBGroups),"CModel GetSubBasinGroup::improper index",BAD_DATA);
+#endif
+  return _pSBGroups[pp];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns specific subbasin group denoted by string parameter
+///
+/// \param name [in] String name of subbasin group
+/// \return pointer to subbasin group corresponding to passed name, or NULL if this group doesn't exist
+//
+CSubbasinGroup  *CModel::GetSubBasinGroup(const string name) const
+{
+  for(int pp=0;pp<_nSBGroups;pp++) {
+    if(!name.compare(_pSBGroups[pp]->GetName())) {
+      return _pSBGroups[pp];
+    }
+  }
+  return NULL;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns true if subbasin with global index k is in specified subbasin Group
+///
+/// \param SBID [in] subbasin identifier/// \param SBGroupName [in] String name of subbasin group
+/// \return true if subbasin SBID is in subbasin Group specified by SBGroupName
+//
+bool CModel::IsInSubBasinGroup(const long SBID,const string SBGroupName) const
+{
+  CSubbasinGroup *pGrp=NULL;
+  pGrp=GetSubBasinGroup(SBGroupName);
+  if(pGrp == NULL) { return false; }//throw warning?
+
+  int pp = pGrp->GetGlobalIndex();
+  for(int p_loc=0; p_loc<_pSBGroups[pp]->GetNumSubbasins(); p_loc++)
+  {
+    if(_pSBGroups[pp]->GetSubBasin(p_loc)->GetID()==SBID) { return true; }
+  }
+  return false;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1067,6 +1122,24 @@ void CModel::AddSubBasin(CSubBasin *pSB)
 {
   if (!DynArrayAppend((void**&)(_pSubBasins),(void*)(pSB),_nSubBasins)){
     ExitGracefully("CModel::AddSubBasin: adding NULL HRU",BAD_DATA);}
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Adds SubBasin group
+///
+/// \param *pSBGroup [in] (valid) pointer to SubBasin group to be added
+//
+void CModel::AddSubBasinGroup(CSubbasinGroup *pSBGroup)
+{
+  for(int pp=0;pp<_nSBGroups;pp++) {
+    if(pSBGroup->GetName()==_pSBGroups[pp]->GetName()) {
+      WriteWarning("CModel::AddSubBasinGroup: cannot add two Subbasin groups with the same name. Group "+pSBGroup->GetName()+ " is duplicated in input.",true);
+      break;
+    }
+  }
+  if(!DynArrayAppend((void**&)(_pSBGroups),(void*)(pSBGroup),_nSBGroups)) {
+    ExitGracefully("CModel::AddSubBasinGroup: adding NULL SubBasin Group",BAD_DATA);
+  }
 }
 
 //////////////////////////////////////////////////////////////////

@@ -423,7 +423,7 @@ double CTransportModel::GetOutflowConcentration(const int p, const int c) const
 
       //if (T<0){cout<<"     Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<" ***************"<<endl;}
       //else {   cout<<" NOT Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<endl;}
-      return T;
+      //return T;
     }
     else {
       return ConvertVolumetricEnthalpyToTemperature(_aMres[p][c]/pRes->GetStorage()); //[C]

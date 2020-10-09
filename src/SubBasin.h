@@ -212,6 +212,7 @@ public:/*-------------------------------------------------------*/
   void            AddReservoir             (CReservoir *pReservoir);
   bool            SetBasinProperties       (const string label,
                                             const double &value);
+  double          GetBasinProperties       (const string label);
   void            SetAsNonHeadwater        ();
   double          CalculateBasinArea       ();
   void            Initialize               (const double    &Qin_avg,          //[m3/s]
@@ -268,6 +269,41 @@ public:/*-------------------------------------------------------*/
 
   void            WriteMinorOutput         (const time_struct &tt) const;
   void            WriteToSolutionFile      (ofstream &OUT) const;
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction class for collection of Subbasins
+//
+class CSubbasinGroup
+{
+private:/*------------------------------------------------------*/
+
+  string          _name;       ///< Subbasin group name
+  int             _nSubbasins; ///< Number of HRUs present in group
+  CSubBasin     **_pSubbasins; ///< Array of pointers to member HRUs (size = nHRUs)
+  int             _global_pp;  ///< index of group in master Subbasin Group array (in CModel)
+  //bool            _disabled;   ///< true if all Subbasins in group are disabled
+
+  
+public:/*-------------------------------------------------------*/
+  //Constructors:
+  CSubbasinGroup(string tag,int global_ind);
+  ~CSubbasinGroup();
+
+  void AddSubbasin(CSubBasin *pSubBasin);
+  //void DisableGroup();
+  void Initialize();
+
+  string            GetName() const;
+  int               GetNumSubbasins() const;
+  int               GetGlobalIndex() const;
+  CSubBasin        *GetSubBasin(const int p_local) const;
+  double            GetAvgStateVar(const int i) const;
+  double            GetAvgForcing(const string &forcing_string) const;
+  double            GetAvgCumulFlux(const int i,const bool to) const;
+  double            GetAvgCumulFluxBet(const int iFrom,const int iTo) const;
+  bool              IsInGroup(const long SBID) const;
+
 };
 
 #endif

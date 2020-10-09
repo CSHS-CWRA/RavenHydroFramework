@@ -22,7 +22,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
 /// \param &Options [out] Global model options information
 /// \return True if operation is successful
 //
-bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
+bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_required)
 {
   int         i;                //counters
   long        SBID;             //subbasin ID
@@ -78,6 +78,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":SubBasinProperties"       )){code=7;  }
     else if  (!strcmp(s[0],":HRUGroup"                 )){code=8;  }
     else if  (!strcmp(s[0],":PopulateHRUGroup"         )){code=9;  }
+    else if  (!strcmp(s[0],":SubBasinGroup"            )){code=10; }
+    else if  (!strcmp(s[0],":SBGroupPropertyMultiplier")){code=11; }
+    else if  (!strcmp(s[0],":SBGroupPropertyOverride"  )){code=12; }
 
     switch(code)
     {
@@ -548,6 +551,88 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case(10):  //----------------------------------------------
+    { /*
+        ":SubBasinGroup" {name}
+         {SBID1,SBID2,SBID3,...} x nBasins in group
+        :EndSubBasinGroup
+      */
+      if (Options.noisy) {cout <<"   SubBasin Group..."<<endl;}
+      if (Len!=2){pp->ImproperFormat(s);}
+      CSubbasinGroup *pSBGrp=NULL;
+      pSBGrp=pModel->GetSubBasinGroup(s[1]);
+      if (pSBGrp==NULL){//group not yet defined
+      //  WriteAdvisory("HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file",Options.noisy);
+        pSBGrp=new CSubbasinGroup(s[1],pModel->GetNumSubBasinGroups());
+        pModel->AddSubBasinGroup(pSBGrp);
+      }
+      while ((Len==0) || (strcmp(s[0],":EndSubBasinGroup")))
+      {
+        pp->Tokenize(s,Len);
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":EndSubBasinGroup")){}//done
+        else
+        {
+          int p;
+          int nSBs=pModel->GetNumSubBasins();
+          for(i=0;i<Len;i++)
+          {
+            long SBID=s_to_l(s[i]);
+            for(p=0;p<nSBs;p++)
+            {
+              if(pModel->GetSubBasin(p)->GetID()==SBID)
+              {
+                pSBGrp->AddSubbasin(pModel->GetSubBasin(p));break;
+              }
+            }
+          }
+        }
+      }
+      break;
+    }
+    case(11):  //----------------------------------------------
+    { /*
+      :SBGroupPropertyMultiplier [SBGROUP] [PROPERTY] [multiplier] 
+      */
+      CSubbasinGroup *pSBGrp;
+      if(Len>=4) {
+        pSBGrp=pModel->GetSubBasinGroup(s[1]);
+        if(pSBGrp==NULL) {
+          WriteWarning(":SBGroupPropertyMultiplier: invalid subbasin group specified",Options.noisy);
+          break;
+        }
+        for(int p=0;p<pSBGrp->GetNumSubbasins();p++) {
+          double val=pSBGrp->GetSubBasin(p)->GetBasinProperties(s[2]);
+          if(val!=AUTO_COMPUTE) {
+            pSBGrp->GetSubBasin(p)->SetBasinProperties(s[2],s_to_d(s[3])*val);
+          }
+        }
+      }
+      else {
+        WriteWarning(":SBGroupPropertyMultiplier: improper syntax",Options.noisy);
+      }
+      break;
+    }
+    case(12):  //----------------------------------------------
+    { /*
+      :SBGroupPropertyOverride [SBGROUP] [PROPERTY] [value]
+      */
+      CSubbasinGroup *pSBGrp;
+      if(Len>=4) {
+        pSBGrp=pModel->GetSubBasinGroup(s[1]);
+        if(pSBGrp==NULL) {
+          WriteWarning(":SBGroupPropertyOverride: invalid subbasin group specified",Options.noisy);
+          break;
+        }
+        for(int p=0;p<pSBGrp->GetNumSubbasins();p++) {
+          pSBGrp->GetSubBasin(p)->SetBasinProperties(s[2],s_to_d(s[3]));          
+        }
+      }
+      else {
+        WriteWarning(":SBGroupPropertyOverride: improper syntax",Options.noisy);
+      }
+      break;
+    }
     default://------------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -607,6 +692,15 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options)
   {
     // \todo: reduce generalization- only really needed if routing method requires Q_REF
     ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied (using :AvgAnnualRunoff command in .rvp file) if more than one basin is included in model",BAD_DATA_WARN);
+  }
+
+  // Check if terrain class is needed but not specified
+  if(terrain_required) { //this is determined at start of .rvp file read
+    for(int k=0;k<pModel->GetNumHRUs(); k++) {
+      if(pModel->GetHydroUnit(k)->GetTerrainProps()==NULL) {
+        ExitGracefully("ParseHRUFile:: At least one model process requires terrain parameters. Cannot have NULL ([NONE]) Terrain class in :HRUs block",BAD_DATA_WARN);
+      }
+    }
   }
 
   delete pp;

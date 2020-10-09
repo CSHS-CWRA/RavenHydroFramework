@@ -44,7 +44,8 @@ void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_so
 /// \return Boolean variable indicating success of parsing
 //
 bool ParseClassPropertiesFile(CModel         *&pModel,
-                              const optStruct &Options)
+                              const optStruct &Options,
+                              bool            &terrain_required)
 {
 
   global_struct     global_template;
@@ -153,6 +154,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   if (true){//always
     aP [0]="TOC_MULTIPLIER"; aPC[0]=CLASS_GLOBAL;
     AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
+  }
+
+  //Throw warning if NULL Terrain but terrain parameter is needed
+  terrain_required=false;
+  for(int p=0;p<nPmaster;p++)
+  {
+    if(aPCmaster[p]==CLASS_TERRAIN){ terrain_required=true;}
   }
 
   //Prior to this, all parameters default to NOT_NEEDED or NOT_NEEDED_AUTO

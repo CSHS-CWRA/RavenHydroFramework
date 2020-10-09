@@ -537,9 +537,9 @@ bool IsValidNetCDFTimeString(const string time_string)
 {
   int att_len=(int)strlen(time_string.c_str());
   bool isvalid = true;
-  bool hastimestamp=true;
+  //bool hastimestamp=true;
   if (att_len<15) {return false;}
-  int subtract=0;
+  //int subtract=0;
   
   size_t pos=time_string.find("since",0);
   if(pos==string::npos) { return false; } //no "since" in string

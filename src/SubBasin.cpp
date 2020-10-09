@@ -802,6 +802,41 @@ bool CSubBasin::SetBasinProperties(const string label,
   return true;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Gets basin properties
+/// \param label [in] String property identifier
+/// \return value of basin property corresponding to label
+//
+double CSubBasin::GetBasinProperties(const string label)
+{
+  string label_n = StringToUppercase(label);
+  if      (!label_n.compare("TIME_CONC"     ))  {return _t_conc;}
+  else if (!label_n.compare("TIME_TO_PEAK"  ))  {return _t_peak;}
+  else if (!label_n.compare("TIME_LAG"      ))  {return _t_lag;}
+  else if (!label_n.compare("RES_CONSTANT"  ))  {return _reservoir_constant;}
+  else if (!label_n.compare("NUM_RESERVOIRS"))  {return (double)(_num_reservoirs);}
+  else if (!label_n.compare("GAMMA_SHAPE"   ))  {return _gamma_shape;}
+  else if (!label_n.compare("GAMMA_SCALE"   ))  {return _gamma_scale;}
+
+  else if (!label_n.compare("Q_REFERENCE"   ))  {return _Q_ref;}
+  else if (!label_n.compare("MANNINGS_N"    ))  {return _mannings_n;}
+  else if (!label_n.compare("SLOPE"         ))  {return _slope;}
+  else if (!label_n.compare("DIFFUSIVITY"   ))  {return _diffusivity; }
+  else if (!label_n.compare("CELERITY"      ))  { return _c_ref; }
+
+  else if (!label_n.compare("RAIN_CORR"     ))  { return _rain_corr;}
+  else if (!label_n.compare("SNOW_CORR"     ))  { return _snow_corr;}
+
+  else if (!label_n.compare("REACH_HRU_ID"  ))  { return (double)(_reach_HRUindex); }
+  else if (!label_n.compare("HYPORHEIC_FLUX"))  { return _hyporheic_flux; }
+
+  else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
+  else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
+  else{
+    return false;//bad string
+  }
+  return true;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Sets basin headwater status (called by model during subbasin initialization)
 //
 void CSubBasin::SetAsNonHeadwater()

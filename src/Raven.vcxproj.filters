@@ -390,6 +390,9 @@
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="SubbasinGroups.cpp">
+      <Filter>Source Files\HRUs and Subbasins</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

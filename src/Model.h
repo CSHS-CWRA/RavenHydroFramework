@@ -51,6 +51,8 @@ private:/*------------------------------------------------------*/
 
   int               _nHRUGroups;  ///< number of HRU groups in model
   CHRUGroup       **_pHRUGroups;  ///< Array of pointers to HRU groups
+  int                _nSBGroups;  ///< number of Subbasin groups in model
+  CSubbasinGroup   **_pSBGroups;  ///< Array of pointers to Subbasin groups
 
   int               _nSubBasins;  ///< number of subbasins
   CSubBasin       **_pSubBasins;  ///< array of pointers to subbasins [size:_nSubBasins]; each subbasin includes multiple HRUs/HydroUnits
@@ -259,12 +261,15 @@ public:/*-------------------------------------------------------*/
   int               GetNumHRUs                        () const;
   int               GetNumHRUGroups                   () const;
   int               GetNumSubBasins                   () const;
+  int               GetNumSubBasinGroups              () const;
   CHydroUnit       *GetHydroUnit                      (const int k ) const;
   CHydroUnit       *GetHRUByID                        (const int HRUID) const;
   CHRUGroup        *GetHRUGroup                       (const int kk) const;
   CHRUGroup        *GetHRUGroup                       (const string name) const;
   CSubBasin        *GetSubBasin                       (const int p ) const;
   CSubBasin        *GetSubBasinByID                   (const long ID) const;
+  CSubbasinGroup   *GetSubBasinGroup                  (const int pp) const;
+  CSubbasinGroup   *GetSubBasinGroup                  (const string name) const;
   CHydroProcessABC *GetProcess                        (const int j ) const;
   CGauge           *GetGauge                          (const int g) const;
   CForcingGrid     *GetForcingGrid                    (const forcing_type &ftype) const;
@@ -285,6 +290,8 @@ public:/*-------------------------------------------------------*/
   double            GetWatershedArea                  () const;
   bool              IsInHRUGroup                      (const int k,
                                                        const string HRUGroupName) const;
+  bool              IsInSubBasinGroup                 (const long SBID,
+                                                       const string SBGroupName) const;
 
   const optStruct  *GetOptStruct                      () const;
   CTransportModel  *GetTransportModel                 () const;
@@ -301,6 +308,7 @@ public:/*-------------------------------------------------------*/
   void    AddHRU                    (        CHydroUnit        *pHRU            );
   void    AddHRUGroup               (        CHRUGroup         *pHRUGrp         );
   void    AddSubBasin               (        CSubBasin         *pWS             );
+  void    AddSubBasinGroup          (        CSubbasinGroup    *pSBGrp          );
   void    AddGauge                  (        CGauge            *pGage           );
   void    AddForcingGrid            (        CForcingGrid      *pGrid           , forcing_type typ);
   void    AddStateVariables         (const sv_type           *aSV,

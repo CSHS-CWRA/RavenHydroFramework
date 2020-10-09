@@ -30,8 +30,8 @@
 #include "SurfaceEnergyExchange.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
-bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options);
-bool ParseHRUPropsFile         (CModel *&pModel, const optStruct &Options);
+bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options, bool &terrain_required);
+bool ParseHRUPropsFile         (CModel *&pModel, const optStruct &Options, bool terrain_required);
 bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
@@ -66,6 +66,7 @@ bool ParseInputFiles (CModel      *&pModel,
                       optStruct    &Options)
 {
   string filename;
+  bool   terr_reqd;
 
   //Main input file (.rvi)
   if (!ParseMainInputFile        (pModel,Options)){
@@ -75,11 +76,11 @@ bool ParseInputFiles (CModel      *&pModel,
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;}
 
   //Class Property file (.rvp)
-  if (!ParseClassPropertiesFile  (pModel,Options)){
+  if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){
     ExitGracefully("Cannot find or read .rvp file",BAD_DATA);return false;}
 
   //HRU Property file (.rvh)
-  if (!ParseHRUPropsFile         (pModel,Options)){
+  if (!ParseHRUPropsFile         (pModel,Options,terr_reqd)){
     ExitGracefully("Cannot find or read .rvh file",BAD_DATA);return false;}
 
   if((Options.modeltype == MODELTYPE_GROUNDWATER) || (Options.modeltype == MODELTYPE_COUPLED))
@@ -1772,8 +1773,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[4],"BY_SUBBASIN"     )){sa=BY_BASIN;}
       else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;}
       else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;}
-      else if (!strcmp(s[4],"BY_GROUP"        )){sa=BY_HRU_GROUP;}
       else if (!strcmp(s[4],"BY_HRU_GROUP"    )){sa=BY_HRU_GROUP;}
+      else if (!strcmp(s[4],"BY_SB_GROUP"     )){sa=BY_SB_GROUP; }
       else{
         sa=BY_HRU;
         ExitGracefully("ParseMainInputFile: Unrecognized custom output spatial aggregation method",BAD_DATA);

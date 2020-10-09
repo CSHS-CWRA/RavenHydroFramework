@@ -197,7 +197,7 @@ double CTransportModel::GetEnergyLossesFromReach(const int p, double &Q_sens, do
 
   double *zk=new double[nMinHist]; //percentage of flows in zone k
   double *Ik=new double[nMinHist];
-  double sum=0.0;
+  //double sum=0.0;
 
   //calculate mean residence time
   double tr_mean=0.0;

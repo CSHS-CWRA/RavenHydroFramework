@@ -25,6 +25,7 @@ enum spatial_agg
   BY_BASIN,      ///< Aggregate by drainage basin
   BY_WSHED,      ///< Aggregate by watershed
   BY_HRU_GROUP,  ///< Aggregate by HRU group
+  BY_SB_GROUP,   ///< Aggregate by SubBasin group
   BY_SELECT_HRUS ///< Aggregate by HRU, but only include one HRU Group
 };
 
