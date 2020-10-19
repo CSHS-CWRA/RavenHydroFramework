@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Precipitation.h"
@@ -89,7 +89,10 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
   {
     aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++; 
   }
-	
+  else if(pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_NONE)
+  {
+  }
+
   if (canopy_exists)
   {
     aP[nP] = "MAX_CAPACITY";  aPC[nP] = CLASS_VEGETATION; nP++;

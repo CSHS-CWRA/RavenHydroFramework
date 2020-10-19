@@ -1019,6 +1019,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"ICEPT_LAI"            )){Options.interception_factor=PRECIP_ICEPT_LAI;}
       else if (!strcmp(s[1],"LAI_EXPONENTIAL"      )){Options.interception_factor=PRECIP_ICEPT_EXPLAI;}
       else if (!strcmp(s[1],"ICEPT_EXPLAI"         )){Options.interception_factor=PRECIP_ICEPT_EXPLAI;}
+      else if (!strcmp(s[1],"PRECIP_ICEPT_NONE"    )){Options.interception_factor=PRECIP_ICEPT_NONE;}
       else if (!strcmp(s[1],"PRECIP_ICEPT_USER"    )){Options.interception_factor=PRECIP_ICEPT_USER;}
       else if (!strcmp(s[1],"PRECIP_ICEPT_LAI"     )){Options.interception_factor=PRECIP_ICEPT_LAI;}
       else if (!strcmp(s[1],"PRECIP_ICEPT_EXPLAI"  )){Options.interception_factor=PRECIP_ICEPT_EXPLAI;}
@@ -1084,6 +1085,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"POTMELT_USACE"     )){Options.pot_melt=POTMELT_USACE;}
       else if (!strcmp(s[1],"POTMELT_CRHM_EBSM" )){Options.pot_melt=POTMELT_CRHM_EBSM; }
       else if (!strcmp(s[1],"POTMELT_HMETS"     )){Options.pot_melt=POTMELT_HMETS; }
+      else if (!strcmp(s[1],"POTMELT_NONE"      )){Options.pot_melt=POTMELT_NONE; }
       else {ExitGracefully("ParseInput:PotentialMelt: Unrecognized method",BAD_DATA_WARN);}
       break;
     }

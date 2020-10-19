@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 
 // start of compilation if NetCDF library is available
@@ -401,8 +401,19 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :DimNamesNC command",BAD_DATA);
   }
   if(_aElevation==NULL) {
-    string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations or :StationElevationsByIdx command is present.";
-    WriteAdvisory(warning,Options.noisy);
+    if (((_ForcingType==F_TEMP_DAILY_MIN) && (Options.orocorr_temp  ==OROCORR_NONE)) ||
+        ((_ForcingType==F_TEMP_DAILY_MAX) && (Options.orocorr_temp  ==OROCORR_NONE)) ||
+        ((_ForcingType==F_TEMP_AVE      ) && (Options.orocorr_temp  ==OROCORR_NONE)) ||
+        ((_ForcingType==F_PRECIP        ) && (Options.orocorr_precip==OROCORR_NONE)) ||
+        ((_ForcingType==F_RAINFALL      ) && (Options.orocorr_precip==OROCORR_NONE)) ||
+        ((_ForcingType==F_PET           ) && (Options.orocorr_PET   ==OROCORR_NONE)))
+    {
+      //warning not needed
+    }
+    else {
+      string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations or :StationElevationsByIdx command is present.";
+      WriteAdvisory(warning,Options.noisy);
+    }
   }
 
   // open NetCDF read-only; ncid will be set
@@ -530,6 +541,16 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     calendar_t[att_len] = '\0';                // add string determining character
 
     calendar = StringToCalendar(calendar_t);
+
+    if(calendar!=Options.calendar) {
+      if((calendar==CALENDAR_GREGORIAN) && (Options.calendar==CALENDAR_PROLEPTIC_GREGORIAN)) {} //basically the same, not worth warning
+      else {
+        string warn;
+        warn="[Critical]: NetCDF file "+_filename+" does not use same calendar as the simulation. Use the :Calendar command to ensure consistency";
+        WriteWarning(warn,Options.noisy);
+      }
+    }
+
     delete [] calendar_t;
   }
 			 

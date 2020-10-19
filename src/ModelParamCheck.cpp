@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2019 the Raven Development Team
+Copyright (c) 2008-2020 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Properties.h"
@@ -422,6 +422,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     aP[nP]="SNOW_TEMPERATURE"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
   else if(Options.pot_melt==POTMELT_CRHM_EBSM)
+  {
+  }
+  else if(Options.pot_melt==POTMELT_NONE)
   {
   }
   else if(Options.pot_melt==POTMELT_HMETS)

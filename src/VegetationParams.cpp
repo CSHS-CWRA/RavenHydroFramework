@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -152,10 +152,14 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
     VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
     VV.snow_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
   }
+  else if(Options.interception_factor==PRECIP_ICEPT_NONE) {
+    VV.rain_icept_pct=VV.snow_icept_pct=0.0;
+  }
 
   if (Options.interception_factor == PRECIP_ICEPT_HEDSTROM)
   {
     int iCanSnow = pModel->GetStateVarIndex(CANOPY_SNOW);
+   
     if (iCanSnow == DOESNT_EXIST){
       VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
       VV.snow_icept_pct = 0.0;

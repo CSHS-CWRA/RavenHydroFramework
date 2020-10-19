@@ -377,7 +377,7 @@ double CTimeSeries::GetAvgValue(const double &t, const double &tstep) const
   double inc;
   double blank = 0;
   if (t_loc < -TIME_CORRECTION) {return RAV_BLANK_DATA; }
-  if (t_loc >= _nPulses*_interval) {return RAV_BLANK_DATA; }
+  if (t_loc > _nPulses*_interval) {return RAV_BLANK_DATA; }
   if (_pulse){
     if (n1 == n2){ return _aVal[n1]; }
     else{
@@ -1343,6 +1343,15 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     HandleNetCDFErrors(retval);
     calendar_t[att_len] = '\0';// add string determining character
     calendar = StringToCalendar(calendar_t);
+
+    if(calendar!=Options.calendar) {
+      if((calendar==CALENDAR_GREGORIAN) && (Options.calendar==CALENDAR_PROLEPTIC_GREGORIAN)) {} //basically the same, not worth warning
+      else {
+        string warn;
+        warn="[Critical]: NetCDF file "+FileNameNC+" does not use same calendar as the simulation. Use the :Calendar command to ensure consistency.";
+        WriteWarning(warn,Options.noisy);
+      }
+    }
     delete [] calendar_t;
   }
 
@@ -1425,7 +1434,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   nMeasurements = ntime;
 
   // -------------------------------
-  // (7) etermine dimension order in variable
+  // (7) determine dimension order in variable
   // -------------------------------
   //     (a) Get the id of the data variable based on its name; varid will be set
   retval = nc_inq_varid(ncid, VarNameNC.c_str(), &varid_f);       HandleNetCDFErrors(retval);  
@@ -1572,11 +1581,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
 
     for (int it=0; it<ntime; it++){                     // loop over time points read
       for (int ic=0; ic<1; ic++) {                       // loop over stations
-        if (aTmp2D[ic][it]!=fillval && aTmp2D[ic][it]!=missval) {
+        if ((aTmp2D[ic][it]!=fillval) && (aTmp2D[ic][it]!=missval)) {
           aVal[it] = LinTrans_a * aTmp2D[ic][it] + LinTrans_b;
         }
         else {
-          ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF:: 2D forcing data contain missing or fill values", BAD_DATA);
+          aVal[it]=RAV_BLANK_DATA;
         }
       }
     };
@@ -1587,11 +1596,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     // no switch of dim_order required because aTmp2D already points to
     // correct location in aVec data storage (see step 9)
     for (int it=0; it<ntime; it++){                     // loop over time points read
-      if (aTmp1D[it]!=fillval && aTmp1D[it]!=missval) {
+      if ((aTmp1D[it]!=fillval) && (aTmp1D[it]!=missval)) {
         aVal[it] = LinTrans_a * aTmp1D[it] + LinTrans_b;
       }
       else {
-        ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF:: 1D forcing data contain missing or fill values", BAD_DATA);
+        aVal[it]=RAV_BLANK_DATA;
       }
     };
   }

@@ -639,6 +639,7 @@ enum windvel_method
 //
 enum precip_icept_method
 {
+  PRECIP_ICEPT_NONE,        ///< interception is not represented (for routing mostly)
   PRECIP_ICEPT_USER,        ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
   PRECIP_ICEPT_LAI,         ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
   PRECIP_ICEPT_EXPLAI,      ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
@@ -660,7 +661,8 @@ enum potmelt_method
   POTMELT_DATA,             ///< user-specified potential melt forcing
   POTMELT_USACE,            ///< US Army Corps of Engineers Snow Melt
   POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM) (Pomeroy, 2007)
-  POTMELT_HMETS             ///< From HMETS model (Martel et al., 2017)
+  POTMELT_HMETS,            ///< From HMETS model (Martel et al., 2017)
+  POTMELT_NONE              ///< Potential melt not calculated
 };
 
 ////////////////////////////////////////////////////////////////////

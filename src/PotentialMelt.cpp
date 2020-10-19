@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 double UBC_DailyPotentialMelt( const optStruct &Options,
@@ -194,6 +194,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
 
     return Ma*(F->temp_daily_ave-melt_temp);
   }
+  //----------------------------------------------------------
+  else if(Options.pot_melt == POTMELT_NONE)
+  {
+    return 0.0;
+  }
+
   return 0.0;
 }
 

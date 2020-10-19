@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "IrregularTimeSeries.h"
@@ -292,11 +292,11 @@ void CModel::Initialize(const optStruct &Options)
                    "CModel::Initialize: at least 2 gauges necessary to use :OroTempCorrect method OROCORR_UBCWM2", BAD_DATA);
 
   //--Warn about interception handling
-  if(!StateVarExists(CANOPY_SNOW)){
-    WriteAdvisory("Since no processes with CANOPY_SNOW variable have been specified, all snow interception will be directly moved to the atmosphere as if it had sublimated.",Options.noisy);
+  if(!StateVarExists(CANOPY_SNOW) && (Options.interception_factor!=PRECIP_ICEPT_NONE)){
+    WriteAdvisory("Because no processes with CANOPY_SNOW variable have been specified, all snow interception will be directly moved to the atmosphere as if it had sublimated.",Options.noisy);
   }
-  if(!StateVarExists(CANOPY)){
-    WriteAdvisory("Since no processes with CANOPY variable have been specified, all rain interception will be directly moved to the atmosphere as if it had evaporated.",Options.noisy);
+  if(!StateVarExists(CANOPY) && (Options.interception_factor!=PRECIP_ICEPT_NONE)) {
+    WriteAdvisory("Because no processes with CANOPY variable have been specified, all rain interception will be directly moved to the atmosphere as if it had evaporated.",Options.noisy);
   }
   //--Check for empty HRU groups
   for (int kk = 0; kk < _nHRUGroups; kk++){
