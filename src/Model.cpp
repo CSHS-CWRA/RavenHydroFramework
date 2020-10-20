@@ -1570,8 +1570,10 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
 {
   double area;
   _CumulInput+=GetAveragePrecip()*Options.timestep;
-  area = _WatershedArea*M2_PER_KM2;
+  
+  _CumulInput+=GetAverageForcings().recharge*Options.timestep;
 
+  area = _WatershedArea*M2_PER_KM2;
   for (int p=0;p<_nSubBasins;p++){
     _CumulInput+=_pSubBasins[p]->GetIntegratedSpecInflow(tt.model_time,Options.timestep)/area*MM_PER_METER;//converted to [mm] over  basin
   }
