@@ -23,6 +23,7 @@ CModel::CModel(const soil_model SM,
   _nSubBasins=0;    _pSubBasins=NULL;
   _nHydroUnits=0;   _pHydroUnits=NULL;
   _nHRUGroups=0;    _pHRUGroups=NULL;
+  _nSBGroups=0;     _pSBGroups=NULL;
   _nGauges=0;       _pGauges=NULL;
   _nForcingGrids=0; _pForcingGrids=NULL;
   _nProcesses=0;    _pProcesses=NULL;
@@ -160,6 +161,7 @@ CModel::~CModel()
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
   }
   for (kk=0;kk<_nHRUGroups;kk++){delete _pHRUGroups[kk]; } delete [] _pHRUGroups;   _pHRUGroups  =NULL;
+  for (kk=0;kk<_nSBGroups;kk++ ){delete _pSBGroups[kk];  } delete [] _pSBGroups;     _pSBGroups  =NULL; 
   for (j=0;j<_nTransParams;j++) {delete _pTransParams[j];} delete [] _pTransParams; _pTransParams=NULL;
   for (j=0;j<_nClassChanges;j++){delete _pClassChanges[j];} delete [] _pClassChanges; _pClassChanges=NULL;
 
