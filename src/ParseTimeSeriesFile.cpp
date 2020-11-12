@@ -1529,8 +1529,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
 #endif
-      if(!grid_initialized) { pGrid->ForcingGridInit(Options);grid_initialized = true; }
-      pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
+      if(pGrid->GetNumberNonZeroGridCells()==0) { //Never called SetIdxNonZeroGridCells()
+        ExitGracefully("ParseTimeSeriesFile: :GriddedForcing command is missing :GridWeights or :StationWeightsByAttribute entry",BAD_DATA_WARN);
+      }
+      else {
+        if(!grid_initialized) { pGrid->ForcingGridInit(Options);grid_initialized = true; }
+        pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
+      }
       pGrid=NULL;
       break;
     }
@@ -1690,7 +1695,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       } // end while
 
       // check that weightings sum up to one per HRU
-      bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells);
+      bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells,pModel);
       ExitGracefullyIf(!WeightArrayOK,
                        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum per HRUID must be 1.0.",BAD_DATA);
 
@@ -1860,9 +1865,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       } // end while
 
         // check that weightings sum up to one per HRU
-      bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells);
+      bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells,pModel);
       ExitGracefullyIf(!WeightArrayOK,
-        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum per HRUID must be 1.0.",BAD_DATA);
+        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum for all enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) grid cell ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);

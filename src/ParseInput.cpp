@@ -1550,7 +1550,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pHRUGrp=pModel->GetHRUGroup(s[1]);
       if (pHRUGrp==NULL){
-        ExitGracefully("Invalid HRU Group name supplied in :DisableHRUGroup command in .rvi file",BAD_DATA_WARN);
+        ExitGracefully("Invalid HRU Group name supplied in :DisableHRUGroup command in .rvi file. Group must be defined first.",BAD_DATA_WARN);
         break;
       }
       else{

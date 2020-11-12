@@ -14,7 +14,7 @@ CSubbasinGroup::CSubbasinGroup(string tag, int global_ind)
   _name=tag;
   _nSubbasins=0;  _pSubbasins=NULL;
   _global_pp=global_ind;
-  //_disabled=false;
+  _disabled=false;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -68,7 +68,13 @@ CSubBasin *CSubbasinGroup::GetSubBasin(const int p) const
   ExitGracefullyIf((p<0) || (p>=_nSubbasins),"CSubbasinGroup GetSubbasin::improper index",BAD_DATA);
   return _pSubbasins[p];
 }
-
+//////////////////////////////////////////////////////////////////
+/// \return true if subbasin group is disabled
+//
+bool CSubbasinGroup::IsDisabled() const
+{
+  return _disabled;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Add an Subbasin to group by dynamically appending to array
 //
@@ -82,20 +88,20 @@ void CSubbasinGroup::AddSubbasin(CSubBasin *pSB)
 //
 void CSubbasinGroup::Initialize()
 {
-  /*if(_disabled)
+  if(_disabled)
   {
-    for(int p=0;p<__nSubbasins;p++){
-      _pSubbasins[p]->Disable();
+    for(int p=0;p<_nSubbasins;p++){
+      _pSubbasins[p]->Disable(); //this disables constituent HRUs
     }
-  }*/
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief disables HRU Group
 //
-/*void CSubbasinGroup::DisableGroup()
+void CSubbasinGroup::DisableGroup()
 {
-  _disabled=true;
-}*/
+  _disabled=true; //propagates once initialized
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a state variable specified by index i over the total area covered by the subbasin group
 /// \param i [in] Index corresponding to the state variable whose average will be calculated

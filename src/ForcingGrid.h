@@ -8,6 +8,7 @@
 #include "RavenInclude.h"
 #include "ParseLib.h"
 #include "Forcings.h"
+#include "Model.h"
 
 #ifdef _RVNETCDF_
 #include <netcdf.h>
@@ -159,7 +160,8 @@ public:/*------------------------------------------------------*/
                                            const int        CellID,
                                            const double     weight);                    ///< sets one entry of _GridWeight[HRUID, CellID] = weight
   bool   CheckWeightArray(                 const int        nHydroUnits,
-                                           const int        nGridCells);                ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
+                                           const int        nGridCells,
+                                           const CModel    *pModel);                ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   double GetGridWeight(                    const int        k,
                                            const int        CellID) const;              ///< returns weighting of HRU and CellID pair
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,

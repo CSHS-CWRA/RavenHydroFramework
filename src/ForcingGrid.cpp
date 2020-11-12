@@ -74,6 +74,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _CellIDToIdx         = NULL;
   _nWeights            = NULL;
   _IdxNonZeroGridCells = NULL;
+  _nNonZeroWeightedGridCells=0;
 
   //initialized in SetAttributeVarName
   _aLatitude           = NULL;
@@ -84,6 +85,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _AttVarNames[1]="NONE";
   _AttVarNames[2]="NONE";
   _AttVarNames[3]="NONE";
+  
 }
 
 void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,const int nrows, const int ncols,double *values) 
@@ -1626,7 +1628,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   bool *nonzero;
 
   nonzero = NULL;
-  nonzero =  new bool [nGridCells]; // \todo [optimization]: may wish to declare as static
+  nonzero =  new bool [nGridCells]; 
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     nonzero[il] = false;
   }
@@ -1986,16 +1988,17 @@ void   CForcingGrid::SetStationElevation(const int CellID,const double &elev)
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
+/// \brief checks if sum(_GridWeight[HRUID, :]) = 1.0 for all enabled HRUIDs
 ///
 /// \param nHydroUnits [in] Number of HRUs must be given
 ///                         (is read from :GridWeights block in *.rvi file)
 /// \param nGridCells  [in] Number of Grid Cells must be given
 ///                         (is read from :GridWeights block in *.rvi file)
+/// \param pModel     [in] pointer to model
 //
-/// return true if sum for each HRUID is one; otherwise false
+/// return true if sum for each enabled HRUID is one; otherwise false
 //
-bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCells)
+bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCells, const CModel *pModel)
 {
   double sum_HRU;
   bool   check = true;
@@ -2012,7 +2015,8 @@ bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCell
         }
         sum_HRU = 1.0;
       }
-      if(fabs(sum_HRU - 1.0) > 0.0001) {
+      bool enabled=pModel->GetHydroUnit(k)->IsEnabled();
+      if ((fabs(sum_HRU - 1.0) > 0.0001) && (enabled)) {
         cout<<"HRU ID = "<<k<<" Sum Forcing Weights = "<<sum_HRU<<endl;
         check = false;
       }

@@ -282,7 +282,7 @@ private:/*------------------------------------------------------*/
   int             _nSubbasins; ///< Number of HRUs present in group
   CSubBasin     **_pSubbasins; ///< Array of pointers to member HRUs (size = nHRUs)
   int             _global_pp;  ///< index of group in master Subbasin Group array (in CModel)
-  //bool            _disabled;   ///< true if all Subbasins in group are disabled
+  bool            _disabled;   ///< true if all Subbasins in group are disabled
 
   
 public:/*-------------------------------------------------------*/
@@ -291,7 +291,7 @@ public:/*-------------------------------------------------------*/
   ~CSubbasinGroup();
 
   void AddSubbasin(CSubBasin *pSubBasin);
-  //void DisableGroup();
+  void DisableGroup();
   void Initialize();
 
   string            GetName() const;
@@ -303,7 +303,7 @@ public:/*-------------------------------------------------------*/
   double            GetAvgCumulFlux(const int i,const bool to) const;
   double            GetAvgCumulFluxBet(const int iFrom,const int iTo) const;
   bool              IsInGroup(const long SBID) const;
-
+  bool              IsDisabled() const;
 };
 
 #endif

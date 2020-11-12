@@ -19,6 +19,10 @@
 #include <direct.h>
 #elif defined(__linux__)
 #include <sys/stat.h>
+#elif defined(__unix__)
+#include <sys/stat.h>
+#elif defined(__APPLE__)
+#include <sys/stat.h>
 #endif
 int  NetCDFAddMetadata  (const int fileid,const int time_dimid,                  string shortname,string longname,string units);
 int  NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
@@ -2015,6 +2019,10 @@ void PrepareOutputdirectory(const optStruct &Options)
     _mkdir(Options.output_dir.c_str());
 #elif defined(__linux__)
     mkdir(Options.output_dir.c_str(), 0777);
+#elif defined(__APPLE__)
+    mkdir(Options.output_dir.c_str(),0777);
+#elif defined(__unix__)
+    mkdir(Options.output_dir.c_str(),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
   }
   g_output_directory=Options.main_output_dir;//necessary evil

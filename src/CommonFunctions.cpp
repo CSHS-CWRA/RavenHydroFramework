@@ -483,7 +483,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   if(!strstr(tmp.substr(start+7 ,1).c_str(),"-")) { tmp.insert(start+5,"0"); } // second dash in date - fixes YYYY-M-dd
 
   bool date_only=false;
-  if (strlen(tmp.c_str())<=start+10+2){date_only=true;} //00:00:00 +0000 not included in string
+  if (strlen(tmp.c_str())<=(start+10+2)){date_only=true;} //00:00:00 +0000 not included in string
 
   if(!date_only) {
     if(!strstr(tmp.substr(start+10,1).c_str()," ")) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 

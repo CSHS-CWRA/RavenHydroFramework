@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -34,6 +34,7 @@ class CCustomOutput;
 class CGroundwaterModel;
 class CTransportModel;
 class CEnsemble;
+class CForcingGrid;
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
 /// \details Stores and organizes HRUs and basins, provides access to all

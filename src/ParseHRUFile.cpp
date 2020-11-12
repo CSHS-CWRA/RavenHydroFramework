@@ -81,7 +81,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":SubBasinGroup"            )){code=10; }
     else if  (!strcmp(s[0],":SBGroupPropertyMultiplier")){code=11; }
     else if  (!strcmp(s[0],":SBGroupPropertyOverride"  )){code=12; }
-
+    else if  (!strcmp(s[0],":DisableHRUGroup"          )){code=13; }
+    else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
+    else if  (!strcmp(s[0],":PopulateHRUGroup"         )){code=15;  } 
+    
     switch(code)
     {
     case(-1):  //----------------------------------------------
@@ -633,6 +636,84 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       }
       break;
     }
+    case(13):  //----------------------------------------------
+    { /*
+      :DisableHRUGroup [HRUGROUP] 
+      */
+      if(Options.noisy) { cout <<"Disabling HRU Group"<<endl; }
+      if(Len>=2) {
+        CHRUGroup *pHRUGrp=NULL;
+        pHRUGrp=pModel->GetHRUGroup(s[1]);
+        if(pHRUGrp==NULL) {
+          ExitGracefully("Invalid HRU Group name supplied in :DisableHRUGroup command in .rvh file. Group must be defined first.",BAD_DATA_WARN);
+          break;
+        }
+        else {
+          pHRUGrp->DisableGroup();
+        }
+      }
+      else {
+        WriteWarning(":DisableHRUGroup: improper syntax",Options.noisy);
+      }
+      break;
+    }
+    case(14):  //----------------------------------------------
+    { /*
+      :DisableSubBasinGroup [HRUGROUP]
+      */
+      if(Options.noisy) { cout <<"Disabling HRU Group"<<endl; }
+      if(Len>=2) {
+        CSubbasinGroup *pSBGrp=NULL;
+        pSBGrp=pModel->GetSubBasinGroup(s[1]);
+        if(pSBGrp==NULL) {
+          ExitGracefully("Invalid Subbasin Group name supplied in :DisableSubBasinGroup command in .rvh file. Group must be defined first.",BAD_DATA_WARN);
+          break;
+        }
+        else {
+          pSBGrp->DisableGroup();
+        }
+      }
+      else {
+        WriteWarning(":DisableSubBasinGroup: improper syntax",Options.noisy);
+      }
+      break;
+    }
+    case(15):  //----------------------------------------------
+    { /*
+      ":PopulateSubBasinGroup" {name} "With" {conditionbase} {condition} {conditiondata}
+      e.g.,
+      :PopulateSubBasinGroup NotRock With SUBBASINS NOTWITHIN RockSBGroup
+
+      */
+      if(Options.noisy) { cout <<"   Populate HRU Group..."<<endl; }
+      if(Len<6) { pp->ImproperFormat(s); }
+
+      CSubbasinGroup *pSBGroup=NULL;
+      pSBGroup=pModel->GetSubBasinGroup(s[1]);
+
+      if(pSBGroup==NULL) {//group not yet defined
+        WriteWarning("Subbasin groups should ideally be defined in .rvi file (using :DefineSubBasinGroup or :SubBasinGroup commands) before being populated in .rvh file (2)",Options.noisy);
+        pSBGroup=new CSubbasinGroup(s[1],pModel->GetNumSubBasinGroups());
+        pModel->AddSubBasinGroup(pSBGroup);
+      }
+      if(!strcmp(s[3],"SUBBASINS"))
+      {
+        CSubbasinGroup *pSBGroup2=NULL;
+        pSBGroup2=pModel->GetSubBasinGroup(s[5]);
+        if(pSBGroup2==NULL) {
+          ExitGracefully(":PopulateSubBasinGroup: invalid SB group reference used in command",BAD_DATA_WARN);
+        }
+        else {
+          if(!strcmp(s[4],"NOTWITHIN")) {
+            for(int p=0;p<pModel->GetNumSubBasins();p++)
+            {
+              if(!pSBGroup2->IsInGroup(p)) { pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); }
+            }
+          }
+        }
+      }
+      break;
+    }
     default://------------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -679,6 +760,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   HRU.close();
 
   //QA/QC
+  //--------------------------------------------------------------------------
   if ((pModel->GetNumSubBasins() > 1) && (Options.routing == ROUTE_NONE))
   {
     string warn;
@@ -695,6 +777,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   }
 
   // Check if terrain class is needed but not specified
+  //--------------------------------------------------------------------------
   if(terrain_required) { //this is determined at start of .rvp file read
     for(int k=0;k<pModel->GetNumHRUs(); k++) {
       if(pModel->GetHydroUnit(k)->GetTerrainProps()==NULL) {
