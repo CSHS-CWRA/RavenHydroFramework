@@ -4,7 +4,7 @@
   ----------------------------------------------------------------
   class definitions:
   CmvCanopyEvap
-  CmvCanopySnowEvap
+  CmvCanopySublimation
   CmvCanopyDrip
   ----------------------------------------------------------------*/
 #ifndef VEG_MOVERS_H
@@ -21,6 +21,15 @@ enum canevap_type
   CANEVP_RUTTER,                      ///< rutter conceptual model
   CANEVP_MAXIMUM,                     ///< evaporates at PET rate
   CANEVP_ALL                            ///< HBV model
+};
+
+////////////////////////////////////////////////////////////////////
+/// \brief Models of canopy sublimation
+//
+enum cansublim_type
+{
+  CANSUBLIM_ALL,                          ///< HBV model
+  CANSUBLIM_MAXIMUM                       ///< sublimates at PET rate
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -56,18 +65,18 @@ public:/*-------------------------------------------------------*/
 };
 
 ////////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for canopy snowpack evaporation
-/// \details Calculates loss of water from canopy snowpack to atmosphere
+/// \brief Data abstraction for canopy snow sublimation
+/// \details Calculates loss of water from canopy snow to atmosphere
 //
-class CmvCanopySnowEvap: public CHydroProcessABC
+class CmvCanopySublimation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  canevap_type                   type; ///< Type of canopy snowpack evaporation
+  cansublim_type                   type; ///< Type of canopy snowpack sublimation
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCanopySnowEvap(canevap_type eval_type);    //general constructor
-  ~CmvCanopySnowEvap();
+  CmvCanopySublimation(cansublim_type subl_type);    //general constructor
+  ~CmvCanopySublimation();
 
   //inherited functions
   void Initialize();
@@ -83,7 +92,7 @@ public:/*-------------------------------------------------------*/
                         double      *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-  static void GetParticipatingStateVarList(canevap_type eval_type,
+  static void GetParticipatingStateVarList(cansublim_type cs_type,
                                            sv_type *aSV, int *aLev, int &nSV);
 };
 

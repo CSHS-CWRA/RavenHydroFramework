@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   Canopy Evaporation
-  Canopy Snow Evaporation
+  Canopy Snow Sublimation
   Canopy Drip
   ----------------------------------------------------------------*/
 
@@ -199,12 +199,12 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 /// \brief Implementation of the snow evaporation constructor
 /// \param cetype [in] Model of canopy snow evaporation
 //
-CmvCanopySnowEvap::CmvCanopySnowEvap(canevap_type cetype)
+CmvCanopySublimation::CmvCanopySublimation(cansublim_type cetype)
   :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
 {
   type =cetype;
 
-  CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=1
+  CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
   iFrom[0]=pModel->GetStateVarIndex(CANOPY_SNOW);
   iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);
   iFrom[1]=iTo[1]=pModel->GetStateVarIndex(AET);
@@ -213,44 +213,40 @@ CmvCanopySnowEvap::CmvCanopySnowEvap(canevap_type cetype)
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the standard destructor
 //
-CmvCanopySnowEvap::~CmvCanopySnowEvap(){}
+CmvCanopySublimation::~CmvCanopySublimation(){}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Validate iTo/iFrom connectivity of the snowpack evaporation
 //
-void CmvCanopySnowEvap::Initialize()
+void CmvCanopySublimation::Initialize()
 {
   ExitGracefullyIf(pModel->GetStateVarType(iFrom[0])!=CANOPY_SNOW,
-                   "CmvCanopySnowEvap::Initialize:Canopy evaporation must come from canopy unit",BAD_DATA);
+                   "CmvCanopySublimation::Initialize:Canopy evaporation must come from canopy unit",BAD_DATA);
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=ATMOSPHERE,
-                   "CmvCanopySnowEvap::Initialize:Canopy evaporation must go to atmosphere",BAD_DATA);
+                   "CmvCanopySublimation::Initialize:Canopy evaporation must go to atmosphere",BAD_DATA);
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
 ///
-/// \param *aP [out] array of parameter names needed for canopy snowpack evaporation algorithm
+/// \param *aP [out] array of parameter names needed for canopy snowpack sublimation algorithm
 /// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
-/// \param &nP [out] Number of parameters required by canopy snowpack evaporation algorithm (size of aP[] and aPC[])
+/// \param &nP [out] Number of parameters required by canopy snowpack sublimation algorithm (size of aP[] and aPC[])
 //
-void CmvCanopySnowEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
+void CmvCanopySublimation::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if (type==CANEVP_RUTTER)
-  {
-    nP=0;
-  }
-  else if (type==CANEVP_MAXIMUM)
+  if (type==CANSUBLIM_MAXIMUM)
   {
     nP=1;
     aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; //JRCFLAG
   }
-  else if (type==CANEVP_ALL)
+  else if (type==CANSUBLIM_ALL)
   {
     nP=0;
   }
   else
   {
-    ExitGracefully("CmvCanopySnowEvap::GetParticipatingParamList: undefined canopy snowpack evaporation algorithm",BAD_DATA);
+    ExitGracefully("CmvCanopySublimation::GetParticipatingParamList: undefined canopy snowpack sublimation algorithm",BAD_DATA);
   }
 }
 
@@ -262,7 +258,7 @@ void CmvCanopySnowEvap::GetParticipatingParamList(string  *aP , class_type *aPC 
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by canopy snowpack evaporation algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvCanopySnowEvap::GetParticipatingStateVarList(canevap_type cetype,sv_type *aSV, int *aLev, int &nSV)
+void CmvCanopySublimation::GetParticipatingStateVarList(cansublim_type cs_type,sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=3;
   aSV[0]=CANOPY_SNOW; aLev[0]=DOESNT_EXIST;
@@ -280,11 +276,11 @@ void CmvCanopySnowEvap::GetParticipatingStateVarList(canevap_type cetype,sv_type
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from canopy SWE to atmosphere [mm/d]
 //
-void CmvCanopySnowEvap::GetRatesOfChange( const double      *state_vars,
-                                          const CHydroUnit  *pHRU,
-                                          const optStruct   &Options,
-                                          const time_struct &tt,
-                                          double      *rates) const
+void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
+                                              const CHydroUnit  *pHRU,
+                                              const optStruct   &Options,
+                                              const time_struct &tt,
+                                              double      *rates) const
 {
   if ((pHRU->GetHRUType()!=HRU_STANDARD) &&
       (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
@@ -303,21 +299,21 @@ void CmvCanopySnowEvap::GetRatesOfChange( const double      *state_vars,
     PET=max(PET,0.0);
   }
   
-  if (type==CANEVP_MAXIMUM)//----------------------------------
+  if (type==CANSUBLIM_MAXIMUM)//----------------------------------
   {
-    //all canopy mass evaporates 'instantaneously' (up to threshold)
+    //all canopy mass sublimates 'instantaneously' (up to threshold) based upon PET
     rates[0]=Fc*PET;
     PETused=rates[0];
   }
-  else if (type==CANEVP_ALL)//----------------------------------
+  else if (type==CANSUBLIM_ALL)//----------------------------------
   {
-    //all canopy mass evaporates 'instantaneously'
+    //all canopy mass sublimates 'instantaneously' to atmosphere
     rates[0]=state_vars[iFrom[0]]/Options.timestep;
     PETused=rates[0];
   }
   else//--------------------------------------------------------
   {
-    ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
+    ExitGracefully("CmvCanopySublimation: this process not coded yet",STUB);
   }
   rates[1]=PETused;
 }
@@ -332,7 +328,7 @@ void CmvCanopySnowEvap::GetRatesOfChange( const double      *state_vars,
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from canopy to atmosphere [mm/d]
 //
-void CmvCanopySnowEvap::ApplyConstraints( const double      *state_vars,
+void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
                                           const CHydroUnit  *pHRU,
                                           const optStruct   &Options,
                                           const time_struct &tt,

@@ -1000,7 +1000,8 @@ struct optStruct
   string           rvd_filename;              ///< fully qualified filename of rvd (groundwater discretization) file GWMIGRATE - TO REMOVE!!
   string           rvv_filename;              ///< fully qualified filename of rvv (groundwater-surface water overlap) file GWMIGRATE - TO REMOVE!!
   string           rvs_filename;              ///< fully qualified filename of rvs (groundwater-surface water exchange) file GWMIGRATE - TO REMOVE!!
- 
+  string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS 
+
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)
   string           output_dir;                ///< output directory (can change during ensemble run)
 
@@ -1247,8 +1248,8 @@ double      TimeDifference(        const double      jul_day1,
                                    const double      jul_day2,
                                    const int         year2,
                                    const int         calendar);
-void        AddTime(               const double      &jul_day1,
-                                   const int         &year1,
+void        AddTime(               const double      jul_day1,
+                                   const int         year1,
                                    const double      &daysadded,
                                    const int         calendar,
                                          double      &jul_day_out,
@@ -1499,6 +1500,14 @@ HRU_type StringToHRUType       (const string s);
 double fast_s_to_d             (const char *s);
 double FormatDouble            (const double &d);
 void SubstringReplace          (string& str,const string& from,const string& to);
+
+//defined in NetCDFReading.cpp
+int GetCalendarFromNetCDF       (const int ncid,int varid_t,const string filename,const optStruct &Options);
+void GetTimeVectorFromNetCDF    (const int ncid,const int varid_t,const int ntime,double *my_time);
+void GetTimeInfoFromNetCDF      (const char *unit_t,int calendar,const double *time,const int ntime,const string filename,
+                                 double &tstep,double &start_day,int &start_yr,double &time_zone);
+void GetJulianDateFromNetCDFTime(const string unit_t,int calendar,const double &time,
+                                 double &start_day,int &start_yr);
 
 //I/O Functions-----------------------------------------------
 //defined in StandardOutput.cpp

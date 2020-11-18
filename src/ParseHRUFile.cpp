@@ -939,6 +939,10 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     {
       if(Options.noisy) { cout << ":LakeArea" << endl; }
       lakearea=s_to_d(s[1]);
+      if (lakearea<100.0){
+        string warn=":LakeArea for lake-like reservoir in subbasin "+to_string(SBID)+" seems small. Note LakeArea should be in units of m2, not km2";
+        WriteWarning(warn,Options.noisy);
+      }
       type=CURVE_LAKE;
     }
     else if(!strcmp(s[0],":AbsoluteCrestHeight"))

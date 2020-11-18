@@ -393,6 +393,12 @@
     <ClCompile Include="SubbasinGroups.cpp">
       <Filter>Source Files\HRUs and Subbasins</Filter>
     </ClCompile>
+    <ClCompile Include="ParseFEWSRunInfo.cpp">
+      <Filter>Source Files\_Driver\Input Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="NetCDFReading.cpp">
+      <Filter>Source Files\_Driver\Input Parsing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

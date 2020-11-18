@@ -1306,126 +1306,43 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // (3) time values and unit
   // -------------------------------
   //     (a) ID of time variable
-  retval = nc_inq_varid(ncid,DimNamesNC_time.c_str(),&varid_t);
-  HandleNetCDFErrors(retval);
-  //     (b) time unit
-  unit_t = (char *) malloc(2);
-  strcpy(unit_t, "?\0");
-  retval = nc_inq_attlen (ncid, varid_t, "units", &att_len);// inquire length of attribute's text
-  HandleNetCDFErrors(retval);
+  retval = nc_inq_varid(ncid,DimNamesNC_time.c_str(),&varid_t); HandleNetCDFErrors(retval);
 
-  unit_t = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
-  retval = nc_get_att_text(ncid, varid_t, "units", unit_t);// read attribute text
-  HandleNetCDFErrors(retval);
-  unit_t[att_len] = '\0';// add string determining character
+  //     (b) time unit
+  retval = nc_inq_attlen (ncid, varid_t, "units", &att_len);    HandleNetCDFErrors(retval);
+  unit_t =new char[att_len + 1];
+  retval = nc_get_att_text(ncid, varid_t, "units", unit_t);     HandleNetCDFErrors(retval);
+  unit_t[att_len] = '\0';  // add string determining character
   unit_t_str = to_string(unit_t);
 
-  //         check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS{+0000}"
-  //         -> 3rd-last character needs to be a colon
-  if(!IsValidNetCDFTimeString(unit_t_str)) {
+  if(!IsValidNetCDFTimeString(unit_t_str)) {// check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS{+0000}"
     printf("time unit string: %s\n",unit_t_str.c_str());
     ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
   }
   
   //     (c) calendar
-  retval = nc_inq_att(ncid, varid_t, "calendar", &att_type, &att_len);
-  if (retval == NC_ENOTATT) {
-    //   (c1) if not found, set to proleptic_gregorian
-    calendar = StringToCalendar("PROLEPTIC_GREGORIAN");
-  }
-  else {
-    //   (c2) if found, read and make sure '\0' is terminating character
-    HandleNetCDFErrors(retval);
-    retval = nc_inq_attlen(ncid, varid_t, "calendar", &att_len);// inquire length of attribute's text
-    HandleNetCDFErrors(retval);
-    char * calendar_t = new char[att_len + 1];// allocate memory of char * to hold attribute's text
-    retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);// read attribute text
-    HandleNetCDFErrors(retval);
-    calendar_t[att_len] = '\0';// add string determining character
-    calendar = StringToCalendar(calendar_t);
+  calendar=GetCalendarFromNetCDF(ncid,varid_t,FileNameNC,Options);
 
-    if(calendar!=Options.calendar) {
-      if((calendar==CALENDAR_GREGORIAN) && (Options.calendar==CALENDAR_PROLEPTIC_GREGORIAN)) {} //basically the same, not worth warning
-      else {
-        string warn;
-        warn="[Critical]: NetCDF file "+FileNameNC+" does not use same calendar as the simulation. Use the :Calendar command to ensure consistency.";
-        WriteWarning(warn,Options.noisy);
-      }
-    }
-    delete [] calendar_t;
-  }
-
-  //     (d) allocate array for time values
-  int *time=NULL;
-  time=new int [ntime];
-  ExitGracefullyIf(time==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF",OUT_OF_MEMORY);
-
-  //     (e) time values
-  retval = nc_get_var_int(ncid,varid_t,&time[0]);
-  HandleNetCDFErrors(retval);
-
-  // -------------------------------
-  // (4) check if time intervals are equal and set tstep
-  // -------------------------------
-  double delta_t = time[1] - time[0];
-  for (int ii=1; ii<ntime-1 ; ii++)
-  {
-    double delta_t2 = time[ii+1] - time[ii];
-    if ( abs(delta_t2 - delta_t) > 0.00001 )
-    {
-      printf("\n\n\nCTimeSeries::ReadTimeSeriesFromNetCDF: variable name: %s\n",VarNameNC.c_str());
-      ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDFt: time steps are not equal in NetCDF time variable",BAD_DATA);
-    }
-  }
+  //     (d) allocate and extract array of time values
+  double *my_time=new double[ntime];
+  ExitGracefullyIf(my_time==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF",OUT_OF_MEMORY);
+  GetTimeVectorFromNetCDF(ncid,varid_t,ntime,my_time);
 
   // -------------------------------
   // (5) determine tstep, start_day and start_yr depending on time unit
+  // sets tstep, start_day, start_year, time_zone properties 
   // -------------------------------
-  double time_zone;
-  time_struct tt;
-  unit_t_str = to_string(unit_t);
-  if (strstr(unit_t, "hours")) 
-  { 
-    tt =TimeStructFromNetCDFString(unit_t_str,"hours",calendar,time_zone);
-    tstep   = (time[1] - time[0])/HR_PER_DAY;
-    AddTime(tt.julian_day,tt.year,time[0]/HR_PER_DAY,calendar,start_day,start_yr);
-  }
-  else if (strstr(unit_t, "days")) 
-  {  
-    tt =TimeStructFromNetCDFString(unit_t_str,"days",calendar,time_zone);
-    tstep   = (time[1] - time[0]);
-    AddTime(tt.julian_day,tt.year,time[0],calendar,start_day,start_yr) ;
-  }
-  else if (strstr(unit_t, "minutes")) 
-  { 
-    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_zone);
-    tstep   = (time[1] - time[0])/MIN_PER_DAY;
-    AddTime(tt.julian_day,tt.year,time[0]/MIN_PER_DAY,calendar,start_day,start_yr) ;
-  }
-  else if(strstr(unit_t,"seconds"))
-  {
-    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_zone);
-    tstep   = (time[1] - time[0])/SEC_PER_DAY;
-    AddTime(tt.julian_day,tt.year,time[0]/SEC_PER_DAY,calendar,start_day,start_yr);
-  }
-  else{
-     ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
-  }
-  ExitGracefullyIf(tstep<=0,"CTimeSeries::ReadTimeSeriesFromNetCDF: Interval is negative!",BAD_DATA);
+  double time_zone=0;
+  GetTimeInfoFromNetCDF(unit_t,calendar,my_time,ntime,FileNameNC,tstep,start_day,start_yr,time_zone);
 
+  delete [] my_time;
 
   // if data are period ending, need to shift by data interval
   if (shift_to_per_ending) {
-    start_day += tstep;
-    int leap   = 0;
-    if (IsLeapYear(start_yr,calendar)){ leap = 1; }
-    if (start_day>=365+leap){start_day-=365+leap; start_yr++;}
+    AddTime(start_day,start_yr,tstep,calendar,start_day,start_yr);
   }
   if(shift_from_per_ending) {
-    start_day -= tstep;
-    int leap   = 0;
-    if(IsLeapYear(start_yr-1,calendar)) { leap = 1; }
-    if(start_day<0) { start_day+=365+leap; start_yr--; }
+    AddTime(start_day,start_yr,-tstep,calendar,start_day,start_yr);
   }
 
   // -------------------------------
@@ -1470,7 +1387,6 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     
   double **aTmp2D=NULL; //stores pointers to rows/columns of 2D data (ntime x nstations)
   double  *aTmp1D=NULL; //stores pointers to rows/columns of 1D data (ntime)
-
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
     aTmp2D=new double *[dim1];
     ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadData : aTmp2D(0)",OUT_OF_MEMORY);
@@ -1486,25 +1402,21 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (9) Read data
   // -------------------------------
-  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
-
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) 
+  {
     size_t    nc_start [2];
     size_t    nc_length[2];
     ptrdiff_t nc_stride[2];
-    
-    switch(dim_order) {
-    case(1): // dimensions are (x,t)
+
+    if(dim_order==1) {// dimensions are (x,t)
       nc_start[0]  = StationIdx-1; nc_length[0] = (size_t)(1);      nc_stride[0] = 1;
       nc_start[1]  = 0;            nc_length[1] = (size_t)(ntime);  nc_stride[1] = 1;
-      retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);
-      HandleNetCDFErrors(retval);
-      break;
-    case(2): // dimensions are (t,x)
+      retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);   HandleNetCDFErrors(retval);
+    }
+    else{// dimensions are (t,x)
       nc_start[0]  = 0;            nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
       nc_start[1]  = StationIdx-1; nc_length[1] = (size_t)(1);      nc_stride[1] = 1;
-      retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);
-      HandleNetCDFErrors(retval);
-      break;
+      retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);   HandleNetCDFErrors(retval);
     }
     if (Options.noisy) {
       cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - !none"<<endl;
@@ -1516,18 +1428,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     }
   }
   else {
-
     size_t    nc_start [1];
     size_t    nc_length[1];
     ptrdiff_t nc_stride[1];
-    
-    switch(dim_order) {
-      case(1):
-        nc_start [0] = 0;  nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
-        retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp1D[0]);
-        HandleNetCDFErrors(retval);
-        break;
-    }
+    nc_start [0] = 0;  nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
+    retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp1D[0]);    HandleNetCDFErrors(retval);
     if (Options.noisy) {
       cout<<" CForcingGrid::ReadTimeSeriesFromNetCDF - none"<<endl;
       printf("  Dim of chunk read: dim1 = %i \n",dim1);
@@ -1564,9 +1469,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (12) Initialize data array (data type that is needed by RAVEN)
   // -------------------------------
-  double *aVal;
-  aVal = NULL;
-  aVal =  new double [ntime];
+  double *aVal = new double [ntime];
   for (int it=0; it<ntime; it++) {               // loop over time points in buffer
       aVal[it]=RAV_BLANK_DATA;                   // initialize
   }
@@ -1574,11 +1477,10 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   // (13) Convert into RAVEN data array and apply linear transformation: new = a*data+b
   // -------------------------------
-  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
-
+  if ( strcmp(DimNamesNC_stations.c_str(),"None") ) 
+  {
     // no switch of dim_order required because aTmp2D already points to
     // correct location in aVec data storage (see step 9)
-
     for (int it=0; it<ntime; it++){                     // loop over time points read
       for (int ic=0; ic<1; ic++) {                       // loop over stations
         if ((aTmp2D[ic][it]!=fillval) && (aTmp2D[ic][it]!=missval)) {
@@ -1591,8 +1493,8 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     };
 
   }
-  else {
-
+  else 
+  {
     // no switch of dim_order required because aTmp2D already points to
     // correct location in aVec data storage (see step 9)
     for (int it=0; it<ntime; it++){                     // loop over time points read
@@ -1614,12 +1516,9 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   //      --> only applied when tstep < 1.0 (daily)
   //      --> otherwise ignored and warning written to RavenErrors.txt
   // -------------------------------
-
   if (tstep >= 1.0) {   // data are not sub-daily
     if ( ceil(TimeShift) == TimeShift) {  // time shift of whole days requested
-      // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
       AddTime(start_day,start_yr,TimeShift,calendar,start_day,start_yr) ;
-      // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
     }
     else {  // sub-daily shifts (e.g. 1.25) of daily data requested
       WriteAdvisory("CTimeSeries::ReadTimeSeriesFromNetCDF: time shift specified for NetCDF time series will be ignored", Options.noisy);
@@ -1627,9 +1526,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     }
   }
   else {  // data are sub-daily
-    // if (TimeShift != 0.0) { cout<<"before: start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
     AddTime(start_day,start_yr,TimeShift,calendar,start_day,start_yr) ;
-    // if (TimeShift != 0.0) { cout<<"after:  start_day "<<start_day<<"  start_yr "<<start_yr<<endl; }
   }
 
   // -------------------------------

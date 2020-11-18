@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef _DIAGNOSTICS_H
 #define _DIAGNOSTICS_H
@@ -10,6 +10,7 @@
 
 enum diag_type {
   DIAG_NASH_SUTCLIFFE,
+  DIAG_DAILY_NSE,
   DIAG_RMSE,
   DIAG_PCT_BIAS,
   DIAG_ABSERR,
@@ -36,8 +37,8 @@ class CDiagnostic
 {
 private:/*------------------------------------------------------*/
 
-  diag_type     _type;    ///< output file stream
-  int _width;
+  diag_type   _type;    ///< diagnostic type
+  int         _width;   ///< moving window width (in timesteps)
 
 public:/*------------------------------------------------------*/
 
@@ -47,6 +48,9 @@ public:/*------------------------------------------------------*/
 
   string GetName() const;
 
-  double CalculateDiagnostic(CTimeSeriesABC *pTSmod, CTimeSeriesABC *pTSObs, CTimeSeriesABC *pTSWeights, const optStruct &Options) const;
+  double CalculateDiagnostic(CTimeSeriesABC  *pTSmod, 
+                             CTimeSeriesABC  *pTSObs, 
+                             CTimeSeriesABC  *pTSWeights, 
+                             const optStruct &Options) const;
 };
 #endif

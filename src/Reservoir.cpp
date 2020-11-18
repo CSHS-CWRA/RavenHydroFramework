@@ -1016,7 +1016,6 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double h_guess   =_stage;
   int    iter      =0;
   double change    =0;
-  double lastchange=-1;
   double f,dfdh,out,out2;
   double ET      (0.0);               //[m/s]
   double ext_old (0.0),ext_new (0.0); //[m3/s]
@@ -1042,12 +1041,15 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-seep_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
   if(gamma<0)
   {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
+   //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
     string warn="CReservoir::RouteWater: basin "+to_string(_SBID)+ " dried out on " +tt.date_string;
     WriteWarning(warn,false);
+    constraint=RC_DRY_RESERVOIR;
+    res_outflow=0.0;
     return _min_stage;
   }
 
-  //double hg[RES_MAXITER],ff[RES_MAXITER];//retain for debugging
+  //double hg[RES_MAXITER],ff[RES_MAXITER],fff[RES_MAXITER];//retain for debugging
   double relax=1.0;
   do //Newton's method with discrete approximation of df/dh
   {
@@ -1065,14 +1067,13 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     f   = (GetVolume(h_guess   )+out /2.0*(tstep*SEC_PER_DAY)); //[m3]
     dfdh=((GetVolume(h_guess+dh)+out2/2.0*(tstep*SEC_PER_DAY))-f)/dh; //[m3/m]
 
-    //hg[iter]=relax*h_guess; ff[iter]=f-gamma;//retain for debugging
+    //hg[iter]=relax*h_guess; ff[iter]=f-gamma; fff[iter]=f;//retain for debugging
 
     change=-(f-gamma)/dfdh;//[m]
     if(dfdh==0) { change=1e-7; }
 
     if(iter>3) { relax *=0.98; }
     h_guess+=relax*change;
-    lastchange=change;
     iter++;
   } while((iter<RES_MAXITER) && (fabs(change/relax)>RES_TOLERANCE));
 
@@ -1081,8 +1082,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(iter==RES_MAXITER) {
     string warn="CReservoir::RouteWater did not converge after "+to_string(RES_MAXITER)+"  iterations for basin "+to_string(_SBID)+" on "+tt.date_string;;
     WriteWarning(warn,false);
-    /*for (int i = 0; i < RES_MAXITER; i++){
-      string warn = to_string(hg[i]) + " " + to_string(ff[i])+ " "+to_string(gamma);WriteWarning(warn,false);
+    /*for(int i = 0; i < iter; i++) {
+      string warn = to_string(this->GetSubbasinID())+"["+to_string(i)+"] "+to_string(hg[i]) + " " + to_string(ff[i])+ " "+ to_string(fff[i])+ " "+to_string(gamma);WriteWarning(warn,false);
     }*/
   }
 

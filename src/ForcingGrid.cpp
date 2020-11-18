@@ -382,14 +382,12 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   int    retval1;
   size_t att_len;        // length of the attribute's text
-  nc_type att_type;      // type of attribute
 
   string dash;           // to check format of time unit string
   string colon;          // to check format of time unit string
   string unit_t_str;     // to check format of time unit string
   int    ntime;          // number of time steps
-  nc_type type;          // type of a NetCDF variable, e.g., nc_INT, nc_FLOAT, nc_DOUBLE
-
+  
   if(_ForcingType==F_UNRECOGNIZED) {
     ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :ForcingType command",BAD_DATA);
   }
@@ -511,15 +509,13 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   else       {retval = nc_inq_varid(ncid,_DimNames[1].c_str(),&varid_t);   HandleNetCDFErrors(retval);}
 
   // unit of time
+  //------------------------------------------------------------------------------------------------
   retval = nc_inq_attlen(ncid,varid_t,"units",&att_len);                   HandleNetCDFErrors(retval);
-
   unit_t=new char[att_len+1];
   retval = nc_get_att_text(ncid,varid_t,"units",unit_t);                   HandleNetCDFErrors(retval);// read attribute text
   unit_t[att_len] = '\0';// add string determining character
-  
-  // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS{+0000}"
   unit_t_str=to_string(unit_t);
-  if(!IsValidNetCDFTimeString(unit_t_str)) 
+  if(!IsValidNetCDFTimeString(unit_t_str))   // check that unit of time is in format "[days/minutes/...] since YYYY-MM-DD HH:MM:SS{+0000}"
   {
     cout<<"time unit string: "<<unit_t_str<<endl;
     ExitGracefully("CForcingGrid::ForcingGridInit: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
@@ -527,145 +523,21 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   
   // calendar attribute
   // ----------------------------------------------------------------------------------------------
-  retval = nc_inq_att(ncid, varid_t, "calendar", &att_type, &att_len);      
-  if (retval == NC_ENOTATT) {
-    // (a) if not found, set to proleptic_gregorian
-    calendar = StringToCalendar("PROLEPTIC_GREGORIAN");
-  }
-  else 
-  {  
-    HandleNetCDFErrors(retval);
-    // (b) if found, read and make sure '\0' is terminating character
-    retval = nc_inq_attlen(ncid, varid_t, "calendar", &att_len);            HandleNetCDFErrors(retval);// inquire length of attribute's text
-    
-    char *calendar_t = new char [att_len + 1]; // allocate memory of char * to hold attribute's text
-    retval = nc_get_att_text(ncid, varid_t, "calendar", calendar_t);        HandleNetCDFErrors(retval);// read attribute text
-    calendar_t[att_len] = '\0';                // add string determining character
-
-    calendar = StringToCalendar(calendar_t);
-
-    if(calendar!=Options.calendar) {
-      if((calendar==CALENDAR_GREGORIAN) && (Options.calendar==CALENDAR_PROLEPTIC_GREGORIAN)) {} //basically the same, not worth warning
-      else {
-        string warn;
-        warn="[Critical]: NetCDF file "+_filename+" does not use same calendar as the simulation. Use the :Calendar command to ensure consistency";
-        WriteWarning(warn,Options.noisy);
-      }
-    }
-
-    delete [] calendar_t;
-  }
+  calendar=GetCalendarFromNetCDF(ncid,varid_t,_filename,Options);
 			 
   // time attribute: set my_time[]
   // ----------------------------------------------------------------------------------------------
   if (_is_3D) {ntime = _GridDims[2];}
   else        {ntime = _GridDims[1];}
 
-  // the final time variable will be in double precision no matter what the incoming time variable type was
-  double *my_time=NULL;
-  my_time=new double [ntime];
+  double *my_time=new double[ntime];
   ExitGracefullyIf(my_time==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
+  GetTimeVectorFromNetCDF(ncid,varid_t,ntime,my_time);
 
-  // find out if time is an integer or double variable
-  retval = nc_inq_var( ncid, varid_t,
-                       NULL,     // out: name
-                       &type,    // out: type: nc_INT, nc_FLOAT, nc_DOUBLE, etc.
-                       NULL,     // out: dims
-                       NULL,     // out: dimids
-                       NULL );   HandleNetCDFErrors(retval);// out: natts
-
-  if (type == NC_DOUBLE)    // time is given as double --> use as is
-  {
-    retval = nc_get_var_double(ncid,varid_t,&my_time[0]);  HandleNetCDFErrors(retval);
-  }
-  else if (type == NC_FLOAT)    // time is given as float (single precision) --> convert to double
-  {
-    float *ttime=NULL;
-    ttime=new float [ntime];
-    ExitGracefullyIf(ttime==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
-
-    retval = nc_get_var_float(ncid,varid_t,&ttime[0]);     HandleNetCDFErrors(retval);
-
-    // convert to double to proceed
-    for (int itime=0; itime<ntime;itime++){       // loop over all time steps
-      my_time[itime]=double(ttime[itime]);        // convert to double
-    }
-    delete[] ttime;
-  }
-  else if ((type == NC_INT) || (type == NC_INT64))   // time is given as integer --> convert to double
-  {
-    int *ttime=NULL;
-    ttime=new int [ntime];
-    ExitGracefullyIf(ttime==NULL,"CForcingGrid::ForcingGridInit",OUT_OF_MEMORY);
-
-    retval = nc_get_var_int(ncid,varid_t,&ttime[0]);       HandleNetCDFErrors(retval);
-
-    // convert to double to proceed
-    for (int itime=0; itime<ntime;itime++){       // loop over all time steps
-      my_time[itime]=(double) ttime[itime];        // convert to double
-    }
-    delete [] ttime;
-  }
-  else
-  {
-    ExitGracefully("CForcingGrid: ForcingGridInit: time variable is not of type DOUBLE, FLOAT, or INT. Contact the developers to implement the type you need.",BAD_DATA);
-  }
-
-  // -------------------------------
-  // check if we have equal time steps
-  // -------------------------------  
-  double delta_t = my_time[1] - my_time[0];
-  for (int ii=1; ii<ntime-1 ; ii++)
-  {
-    double delta_t2 = my_time[ii+1] - my_time[ii];
-    if ( abs(delta_t2 - delta_t) > 0.00001 )
-    {
-      printf("\n\n\nCForcingGrid: ForcingGridInit: variable name: %s\n",_varname.c_str());
-      printf("\n\n\n              expected delta_t = %15.8lf\n",delta_t);
-      printf("\n\n\n              derived  delta_t = %15.8lf\n",delta_t2);
-      printf("\n\n\n                       i  =%i  t[i]  =%15.8lf\n",ii,  my_time[ii]);
-      printf("\n\n\n                       i+1=%i  t[i+1]=%15.8lf\n",ii+1,my_time[ii+1]);
-      ExitGracefully("CForcingGrid: ForcingGridInit: time steps are not equal in gridded input",BAD_DATA);
-    }
-  }
-  
-  // -------------------------------
-  // delta t and interval (in days) / steps per day
-  // -------------------------------
   double time_zone=0;
-  time_struct tt;
-  if (strstr(unit_t, "hours")) 
-  {  
-    tt =TimeStructFromNetCDFString(unit_t_str,"hours",calendar,time_zone);
-    _interval   = (my_time[1] - my_time[0])/HR_PER_DAY;
-    ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-    AddTime(tt.julian_day,tt.year,my_time[0]/HR_PER_DAY,calendar,_start_day,_start_year);
-  }
-  else if (strstr(unit_t, "days")) 
-  {  
-    tt =TimeStructFromNetCDFString(unit_t_str,"days",calendar,time_zone);
-    _interval   = (my_time[1] - my_time[0]);
-    ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-    AddTime(tt.julian_day,tt.year,my_time[0],calendar,_start_day,_start_year) ;
-  }
-  else if (strstr(unit_t, "minutes")) 
-  {  
-    tt =TimeStructFromNetCDFString(unit_t_str,"minutes",calendar,time_zone);
-    _interval   = (my_time[1] - my_time[0])/MIN_PER_DAY;
-    ExitGracefullyIf(_interval<=0, "CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-    AddTime(tt.julian_day,tt.year,my_time[0]/MIN_PER_DAY,calendar,_start_day,_start_year) ;
-  }
-  else if (strstr(unit_t, "seconds"))
-  {  
-    tt =TimeStructFromNetCDFString(unit_t_str,"seconds",calendar,time_zone);
-    _interval   = (my_time[1] - my_time[0])/SEC_PER_DAY;
-    ExitGracefullyIf(_interval<=0,"CForcingGrid: ForcingGridInit: Interval is negative!",BAD_DATA);
-    AddTime(tt.julian_day,tt.year,my_time[0]/SEC_PER_DAY,calendar,_start_day,_start_year) ;
-  }
-  else{
-    ExitGracefully("CForcingGrid: ForcingGridInit: this unit in time is not implemented yet (only days, hours, minutes, seconds)",BAD_DATA);
-  }
+  GetTimeInfoFromNetCDF(unit_t,calendar,my_time,ntime,_filename,_interval,_start_day,_start_year,time_zone);
   _steps_per_day=(int)(round(1.0/_interval)); //pre-calculate for speed.
+
   /*
   printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
   printf("ForcingGrid: tt.julian_day:   %f\n",tt.julian_day);
@@ -686,9 +558,11 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   delete[] my_time;
 
-  ExitGracefullyIf(_interval<=0,
-                   "CForcingGrid: ForcingGridInit: negative time interval is not allowed",BAD_DATA);
-
+  //QA/QC:
+  //--------------------------------
+  if(_interval<=0) {
+    ExitGracefully("CForcingGrid: ForcingGridInit: negative time interval is not allowed",BAD_DATA);
+  }
   if((ForcingToString(_ForcingType) == "TEMP_DAILY_AVE") && (_interval != 1.0)) {
     ExitGracefully("CForcingGrid: ForcingGridInit: Gridded forcing 'TEMP_DAILY_AVE' must have daily timestep. Please use 'TEMP_AVE' instead (see *.rvt file).",BAD_DATA);
   }
@@ -726,6 +600,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   _ChunkSize = int(max(min( (CHUNK_MEMORY *1024 * 1024) / BytesPerTimestep, ntime),1));  // number of timesteps per chunk - 10MB chunks
 // _ChunkSize = max(int(round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read
+
   if(!Options.deltaresFEWS) { 
     _ChunkSize = int(int(_ChunkSize*_interval)/_interval); 
   }  // make sure chunks are complete days (have to relax for FEWS)
@@ -753,32 +628,23 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   {
     // inquire attributes name
     retval = nc_inq_attname(ncid, varid_f, iatt, attrib_name);
-
     if (strcmp(attrib_name,"long_name") == 0)// long_name of forcing
     {
-      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
-      HandleNetCDFErrors(retval1);
+      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);     HandleNetCDFErrors(retval1);
       long_name_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
-      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, long_name_f);// read attribute text
-      HandleNetCDFErrors(retval1);
+      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, long_name_f); HandleNetCDFErrors(retval1);
       long_name_f[att_len] = '\0';// add string determining character
     }
     else if (strcmp(attrib_name,"units") == 0)// unit of forcing
     {
-      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);// inquire length of attribute's text
-      HandleNetCDFErrors(retval1);
+      retval1 = nc_inq_attlen (ncid, varid_f, attrib_name, &att_len);     HandleNetCDFErrors(retval1);
       unit_f = (char *) malloc(att_len + 1);// allocate memory of char * to hold attribute's text
-      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, unit_f);// read attribute text
-      HandleNetCDFErrors(retval1);
+      retval1 = nc_get_att_text(ncid, varid_f, attrib_name, unit_f);      HandleNetCDFErrors(retval1);
       unit_f[att_len] = '\0';// add string determining character
     }
-
     iatt++;
-
   }
-
   _tag = to_string(long_name_f)+" in ["+to_string(unit_f)+"]";
-
   free( unit_f); free(long_name_f);
   if (Options.noisy){ printf("Forcing found in NetCDF file: %s \n",_tag.c_str()); }
 

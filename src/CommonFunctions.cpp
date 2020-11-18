@@ -537,9 +537,7 @@ bool IsValidNetCDFTimeString(const string time_string)
 {
   int att_len=(int)strlen(time_string.c_str());
   bool isvalid = true;
-  //bool hastimestamp=true;
   if (att_len<15) {return false;}
-  //int subtract=0;
   
   size_t pos=time_string.find("since",0);
   if(pos==string::npos) { return false; } //no "since" in string
@@ -601,7 +599,7 @@ double TimeDifference(const double jul_day1,const int year1,const double jul_day
 /// \param jul_day_out [out] Julian day of output date (measured from Jan 1 of year @ 00:00:00)
 /// \param year_out    [out] year of output date
 //
-void AddTime(const double &jul_day1,const int &year1,const double &daysadded,const int calendar, double &jul_day_out,int &year_out)
+void AddTime(const double jul_day1,const int year1,const double &daysadded,const int calendar, double &jul_day_out,int &year_out)
 {
   int    yr;
   double leap;

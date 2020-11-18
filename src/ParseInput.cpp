@@ -39,6 +39,7 @@ bool ParseGWPropsFile          (CModel *&pModel, const optStruct &Options);
 bool ParseGWGeometryFile       (CModel *&pModel, const optStruct &Options);
 bool ParseGWSWExchangeFile     (CModel *&pModel, const optStruct &Options);
 bool ParseGWSWOverlapFile      (CModel *&pModel, const optStruct &Options);
+bool ParseNetCDFRunInfoFile    (CModel *&pModel,       optStruct &Options);
 
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 int *ParseSVTypeArray          (char *string,  CModel *&pModel, int size);
@@ -74,6 +75,8 @@ bool ParseInputFiles (CModel      *&pModel,
       ExitGracefully("A model input file name must be supplied as an argument to the Raven executable.",BAD_DATA);return false;
     }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;}
+
+  ParseNetCDFRunInfoFile(pModel,Options);
 
   //Class Property file (.rvp)
   if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){
@@ -282,6 +285,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.rvl_read_frequency  =0.0; //do not read at all
   Options.custom_interval     =1.0; //daily
   Options.use_stopfile        =false;
+  Options.runinfo_filename    ="";
 
   pModel=NULL;
   pMover=NULL;
@@ -414,6 +418,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":CustomOutputInterval"      )){code=105;}
     else if  (!strcmp(s[0],":UseStopFile"               )){code=106;}
     else if  (!strcmp(s[0],":WriteDemandFile"           )){code=107;}
+    else if  (!strcmp(s[0],":FEWSRunInfoFile"           )){code=108;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}
@@ -455,8 +460,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":GlacialMelt"               )){code=219;}
     else if  (!strcmp(s[0],":GlacierMelt"               )){code=219;}
     else if  (!strcmp(s[0],":GlacierRelease"            )){code=220;}
-    else if  (!strcmp(s[0],":CanopySnowEvaporation"     )){code=221;}
-    else if  (!strcmp(s[0],":CanopySnowEvap"            )){code=221;}
+    else if  (!strcmp(s[0],":CanopySnowEvaporation"     )){code=221;}//Obsolete
+    else if  (!strcmp(s[0],":CanopySnowEvap"            )){code=221;}//Obsolete
+    else if  (!strcmp(s[0],":CanopySublimation"         )){code=221;}//Preferred
     else if  (!strcmp(s[0],":Overflow"                  )){code=222;}
     else if  (!strcmp(s[0],":-->Overflow"               )){code=222;}
     else if  (!strcmp(s[0],":SnowAlbedoEvolve"          )){code=223;}
@@ -1882,6 +1888,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_demandfile=true;
       break;
     }
+    case(108):  //--------------------------------------------
+    {/*:FEWSRunInfoFile [filename]*/
+      if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
+      Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
+      break;
+    }
     case(150):  //--------------------------------------------
     {/*:AggregatedVariable
        ":AggregatedVariable" [SV_TAG] {optional HRU_Group}
@@ -2338,26 +2350,24 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(221):  //----------------------------------------------
-    {/*Canopy Snow Evaporation
-       :CanopySnowEvaporation [string method] CANOPY_SNOW ATMOSPHERE
+    {/*Canopy Sublimation
+       :CanopySublimation [string method] CANOPY_SNOW ATMOSPHERE
      */
-      if (Options.noisy){cout <<"Canopy Snow Evaporation Process"<<endl;}
-      canevap_type ce_type=CANEVP_ALL;
-      if (Len<4){ImproperFormatWarning(":CanopySnowEvaporation",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"MAXIMUM" )){ce_type=CANEVP_MAXIMUM;}
-      else if (!strcmp(s[1],"HBV"     )){ce_type=CANEVP_ALL;}
-      else if (!strcmp(s[1],"ALL"     )){ce_type=CANEVP_ALL;}
-      else if (!strcmp(s[1],"CANEVP_RUTTER"  )){ce_type=CANEVP_RUTTER;}
-      else if (!strcmp(s[1],"CANEVP_MAXIMUM" )){ce_type=CANEVP_MAXIMUM;}
-      else if (!strcmp(s[1],"CANEVP_ALL"     )){ce_type=CANEVP_ALL;}
-      else
+      if (Options.noisy){cout <<"Canopy Sublimation Process"<<endl;}
+      cansublim_type cs_type=CANSUBLIM_ALL;
+      if (Len<4){ImproperFormatWarning(":CanopySublimation",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"CANEVP_ALL"        )){ cs_type=CANSUBLIM_ALL;} //for backwards compatibility
+      else if (!strcmp(s[1],"CANEVP_MAXIMUM"    )){ cs_type=CANSUBLIM_MAXIMUM;} //for backwards compatibility
+      else if (!strcmp(s[1],"CANSUBLIM_ALL"     )){ cs_type=CANSUBLIM_ALL;    }
+      else if (!strcmp(s[1],"CANSUBLIM_MAXIMUM" )){ cs_type=CANSUBLIM_MAXIMUM;}
+	  else
       {
-        ExitGracefully("ParseMainInputFile: Unrecognized canopy snow evaporation process representation",BAD_DATA_WARN); break;
+        ExitGracefully("ParseMainInputFile: Unrecognized canopy sublimation process representation",BAD_DATA_WARN); break;
       }
-      CmvCanopySnowEvap::GetParticipatingStateVarList(ce_type,tmpS,tmpLev,tmpN);
+      CmvCanopySublimation::GetParticipatingStateVarList(cs_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvCanopySnowEvap(ce_type);
+      pMover=new CmvCanopySublimation(cs_type);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
