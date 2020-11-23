@@ -272,8 +272,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.period_ending       =false;
   Options.period_starting     =false;//true;
   Options.write_group_mb      =DOESNT_EXIST;
-  Options.diag_start_time     =-ALMOST_INF;
-  Options.diag_end_time       = ALMOST_INF;
   Options.wateryr_mo          =10; //October
   Options.create_rvp_template =false;
   Options.write_constitmass   =false;
@@ -419,6 +417,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":UseStopFile"               )){code=106;}
     else if  (!strcmp(s[0],":WriteDemandFile"           )){code=107;}
     else if  (!strcmp(s[0],":FEWSRunInfoFile"           )){code=108;}
+    else if  (!strcmp(s[0],":EvaluationPeriod"          )){code=109;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}
@@ -1483,17 +1482,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     }          
     case(75):  //--------------------------------------------
     {/*:EvaluationTime [yyyy-mm-dd] [00:00:00] {yyyy-mm-dd} {00:00:00}*/ //AFTER StartDate or JulianStartDay and JulianStartYear commands
-      if (Options.noisy) { cout << "Evaluation Time" << endl; }
-      if (Len<3) { ImproperFormatWarning(":EvaluationTime", p, Options.noisy); break; }
-
-      time_struct tt;
-      tt = DateStringToTimeStruct(s[1], s[2], Options.calendar);
-      Options.diag_start_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
-      if (Len >= 5) // optional diagnostic end time
-      {
-        tt = DateStringToTimeStruct(s[3], s[4], Options.calendar);
-        Options.diag_end_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
-      }
+      if (Options.noisy) { cout << "Evaluation Time (OBSOLETE, replaced with :EvaluationPeriod command) " << endl; }
+      WriteWarning(":EvaluationTime command deprecated. Please use :EvaluationPeriod command instead. ",Options.noisy);
       break;
     }
     case(76):  //--------------------------------------------
@@ -1892,6 +1882,16 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSRunInfoFile [filename]*/
       if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
       Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
+      break;
+    }
+    case(109):  //--------------------------------------------
+    {/*:EvaluationPeriod [period_name] [start yyyy-mm-dd] [end yyyy-mm-dd]*/
+      if(Options.noisy) { cout << ":EvaluationPeriod" << endl; }
+      CDiagPeriod *pDP=NULL;
+      if(Len>=4) {
+        pDP=new CDiagPeriod(s[1],s[2],s[3],Options);
+        pModel->AddDiagnosticPeriod(pDP);
+      }
       break;
     }
     case(150):  //--------------------------------------------

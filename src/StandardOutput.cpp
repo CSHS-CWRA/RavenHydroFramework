@@ -1325,31 +1325,35 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
 ///
 /// \param &Options [in] global model options
 //
-void CModel::RunDiagnostics (const optStruct &Options)
+void CModel::RunDiagnostics(const optStruct &Options)
 {
-  if ((_nObservedTS==0) || (_nDiagnostics==0)) {return;}
+  if((_nObservedTS==0) || (_nDiagnostics==0)) { return; }
 
   ofstream DIAG;
   string tmpFilename;
   tmpFilename=FilenamePrepare("Diagnostics.csv",Options);
   DIAG.open(tmpFilename.c_str());
-  if (DIAG.fail()){
+  if(DIAG.fail()) {
     ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
   //header
   DIAG<<"observed data series,filename,";
-  for (int j=0; j<_nDiagnostics;j++){
+  for(int j=0; j<_nDiagnostics;j++) {
     DIAG<<_pDiagnostics[j]->GetName()<<",";
   }
   DIAG<<endl;
   //body
-  for (int i=0;i<_nObservedTS;i++)
-  {
-    DIAG<<_pObservedTS[i]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";
-    for (int j=0; j<_nDiagnostics;j++){
-      DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],Options)<<",";
+  for (int d=0; d<_nDiagPeriods; d++){
+    double starttime=_pDiagPeriods[d]->GetStartTime();
+    double endtime  =_pDiagPeriods[d]->GetEndTime();
+    for(int i=0;i<_nObservedTS;i++)
+    {
+      DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility    
+      for(int j=0; j<_nDiagnostics;j++) {
+        DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
+      }
+      DIAG<<endl;
     }
-    DIAG<<endl;
   }
   DIAG.close();
 }

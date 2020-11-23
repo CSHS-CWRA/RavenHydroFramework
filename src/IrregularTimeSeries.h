@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef IRREGULARTIMESERIES_H
 #define IRREGULARTIMESERIES_H
@@ -18,13 +18,13 @@
 class CIrregularTimeSeries: public CTimeSeriesABC
 {
 private:/*------------------------------------------------------*/
-  int        *_aYears;  ///< Array of years
-  double     *_aDays;   ///< Array of julian days
-  double     *_aTimes ; ///< Array of model times
-  double     *_aVal;    ///< Array of values
-  int         _nVals;   ///< number of values
+  int        *_aYears;    ///< Array of years
+  double     *_aDays;     ///< Array of julian days
+  double     *_aTimes ;   ///< Array of model times
+  double     *_aVal;      ///< Array of values
+  int         _nVals;     ///< number of values
   int         _indexCorr; ///< index of first value within model time
-  int             _nSampVal; ///< number of values within model time
+  int         _nSampVal;  ///< number of values within model time
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -61,6 +61,8 @@ public:/*-------------------------------------------------------*/
   double GetSampledTime(const int nn) const; //nn is timestep number
   double GetSampledInterval() const;
   int    GetNumSampledValues() const;
+
+  int    GetTimeIndexFromModelTime(const double &t_mod) const;
 
   static CIrregularTimeSeries  *Parse (CParser *p, const string name, const string tag, const int nMeasurements);
 };

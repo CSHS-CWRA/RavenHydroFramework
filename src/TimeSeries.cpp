@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -327,14 +327,24 @@ void CTimeSeries::InitializeResample(const int nSampVal, const double sampInterv
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns index of time period for time t in terms of local time
+/// \brief Returns index of time period for time t_loc in terms of local time
 ///
-/// \param &t_loc [in] Local time
-/// \return Index of time period for time t; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1
+/// \param &t_loc [in] Local time for time series (=0 for first time data present)
+/// \return Index of time period for time t_loc; if t_loc<0, returns 0, if t_loc>_nPulses-1, returns nPulses-1
 //
 int CTimeSeries::GetTimeIndex(const double &t_loc) const
 {
   return min((int)(max(floor(t_loc/_interval),0.0)),_nPulses-1);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns sample index nn of time period for time t_model in terms of model time
+///
+/// \param &t_mod [in] Model time
+/// \return Sample index of time period nn for time t_mod; if t_mod<0, returns 0, if t_mod>time[_nSampVal-1], returns _nSampVal
+//
+int CTimeSeries::GetTimeIndexFromModelTime(const double &t_mod) const
+{
+  return min((int)(max(floor((t_mod+TIME_CORRECTION)/_sampInterval),0.0)),_nSampVal-1);
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns point value of time series at time t

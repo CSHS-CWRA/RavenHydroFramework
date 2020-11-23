@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TIMESERIES_H
 #define TIMESERIES_H
@@ -103,6 +103,8 @@ public:/*-------------------------------------------------------*/
   double GetSampledTime(const int nn) const; //nn is timestep number
   double GetSampledInterval() const;
   int    GetNumSampledValues() const;
+
+  int    GetTimeIndexFromModelTime(const double &t_mod) const;
 
   double GetDailyAvg    (const int model_day) const;
   double GetDailyMin    (const int model_day) const;

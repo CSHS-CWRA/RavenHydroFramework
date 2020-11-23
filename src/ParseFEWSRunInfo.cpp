@@ -21,7 +21,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   int ncid;          //NetCDF fileid
   int retval;        //return value of NetCDF routines
   size_t att_len;    //character string length
-  double time_zone;
+  //double time_zone;
 
   if(Options.noisy) { cout<<"Opening runinfo file "<<Options.runinfo_filename<<endl; }
   retval = nc_open(Options.runinfo_filename.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
@@ -46,7 +46,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
     retval=nc_get_var_double(ncid,varid_startt,&start_time);
     GetJulianDateFromNetCDFTime(unit_t,Options.calendar,start_time,Options.julian_start_day,Options.julian_start_year);
-    if (time_zone!=0.0){ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
+    //if (time_zone!=0.0){ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
 
     if(Options.noisy) { cout<<"ParseRunInfoFile: read variable start_time from NetCDF: start day: "<<Options.julian_start_day<<" yr: "<< Options.julian_start_year<<endl; }
 
@@ -77,7 +77,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
     
     retval=nc_get_var_double(ncid,varid_endt,&end_time);
     GetJulianDateFromNetCDFTime(unit_t,Options.calendar,end_time,end_day,end_year);
-    if(time_zone!=0.0) { ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
+    //if(time_zone!=0.0) { ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
 
     Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,end_day,end_year,Options.calendar);
 

@@ -67,21 +67,26 @@ string CDiagnostic::GetName() const
 /// \brief Implementation of the CDiagnostic constructor
 /// \param typ [in] type of diagnostics
 //
-double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
-                                        CTimeSeriesABC *pTSObs,
-                                        CTimeSeriesABC *pTSWeights,
+double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
+                                        CTimeSeriesABC  *pTSObs,
+                                        CTimeSeriesABC  *pTSWeights,
+                                        const double    &starttime,
+                                        const double    &endtime,
                                         const optStruct &Options) const
 {
   int nn;
   double N=0;
-  int    nVals=pTSObs->GetNumSampledValues();
+  string filename =pTSObs->GetSourceFile();
+  int    nVals    =pTSObs->GetNumSampledValues();
   double obsval,modval;
   double weight=1;
+
   int    skip  =0;
-  string filename =pTSObs->GetSourceFile();
-  
   if (!strcmp(pTSObs->GetName().c_str(), "HYDROGRAPH") && (Options.ave_hydrograph == true)){ skip = 1; }//skips first point (initial conditions)
   double dt = Options.timestep;
+
+  int nnstart=pTSObs->GetTimeIndexFromModelTime(starttime+1.0)+skip; //works for avg. hydrographs - unclear why 1.0 is neccessary
+  int nnend  =pTSObs->GetTimeIndexFromModelTime(endtime  +1.0)+1; //+1 is just because below loops expressed w.r.t N, not N-1
 
   switch (_type)
   {
@@ -90,7 +95,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double avgobs=0.0;
     N=0;
 
-    for(nn=skip;nn<nVals;nn++)
+    for(nn=nnstart;nn<nnend;nn++)
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
@@ -102,7 +107,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     if(N>0.0) { avgobs/=N; }
 
     double sum1(0.0),sum2(0.0);
-    for(nn=skip;nn<nVals;nn++)
+    for(nn=nnstart;nn<nnend;nn++)
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
@@ -128,12 +133,12 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   }
   case(DIAG_NASH_SUTCLIFFE_DER)://----------------------------------------------------
   {
-    nVals -= 1;     // Reduce nvals by 1 for derivative of NSE
+    nnend -= 1;     // Reduce nnend by 1 for derivative of NSE
     double obsval2,modval2;
     double avg=0;
     N=0.0;
     
-    for(nn=skip;nn<nVals;nn++)
+    for(nn=nnstart;nn<nnend;nn++)
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
@@ -148,7 +153,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       avg/=N;
     }
     double sum1(0.0),sum2(0.0);
-    for(nn=skip;nn<nVals;nn++)
+    for(nn=nnstart;nn<nnend;nn++)
     {
       weight=1.0;
       obsval2 = pTSObs->GetSampledValue(nn+1);
@@ -183,14 +188,14 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 			WriteWarning(warn, Options.noisy);
 			return -ALMOST_INF;
 		}
-		if (_width * 2 > nVals)
+		if (_width * 2 > nnend)
 		{
 			string warn = "Not enough sample values. Check width and timeseries";
 			WriteWarning(warn, Options.noisy);
 			return -ALMOST_INF;
 		}
-		nVals -= _width;
-		skip = _width;
+		nnend -= _width;
+		nnstart  += _width;
 		
     bool ValidObs = false;
     bool ValidMod = false;
@@ -198,7 +203,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double avg=0;
     N=0;
 
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
     	int front = 0;
 			int back = 0;
@@ -229,7 +234,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     avg/=N;
 
     double sum1(0.0),sum2(0.0);
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
       int front = 0;
       int back = 0;
@@ -312,13 +317,15 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   {
     double avgobs=0.0;
     int freq=(int)(round(1.0/Options.timestep)); 
-    int shift=(int)(1.0- Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION))*freq; //no. of timesteps skipped at start of simulation (starts on first full day)
+    
+    int shift=(int)(1.0- Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION))*freq; //no. of timesteps nnstartped at start of simulation (starts on first full day)
+    if (nnstart>skip){shift=0;}//using diagnostic period always midnight to midnight, no shift required
     double moddaily=0.0;
     double obsdaily=0.0;
     double dailyN  =0.;
     double N=0;
 
-    for(nn=skip+shift;nn<nVals;nn++) //calculate mean observation value
+    for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observation value
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
@@ -330,7 +337,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     if(N>0.0) { avgobs/=N; }
 
     double sum1(0.0),sum2(0.0);
-    for(nn=skip+shift;nn<nVals;nn++) //calculate numerator and denominator of NSE term
+    for(nn=nnstart+shift;nn<nnend;nn++) //calculate numerator and denominator of NSE term
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
@@ -341,7 +348,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
       obsdaily+=weight*obsval;
       moddaily+=weight*modval;
       dailyN  +=weight;
-      if(((nn-skip+shift)%freq)==(freq-1)) { //last timestep of day
+      if(((nn-nnstart+shift)%freq)==(freq-1)) { //last timestep of day
         if(dailyN>0) {
           obsdaily/=dailyN;
           moddaily/=dailyN;
@@ -368,7 +375,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   {
     double sum=0.0;
     N=0;
-    for(nn=skip;nn<nVals;nn++)
+    for(nn=nnstart;nn<nnend;nn++)
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
@@ -400,7 +407,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     N=0;
     sum=0;
 
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
 
       weight=1.0;
@@ -446,7 +453,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   {
     double sum1(0.0),sum2(0.0);
     N=0;
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
       obsval=pTSObs->GetSampledValue(nn);
       modval=pTSMod->GetSampledValue(nn);
@@ -475,7 +482,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double sum=0.0;
     N = 0;
    
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -503,7 +510,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double maxerr = -ALMOST_INF;
     double N=0.0;
 
-    for(nn = skip; nn<nVals; nn++)
+    for(nn = nnstart; nn<nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -536,7 +543,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double maxMod = 0;
     double N=0;
 
-    for (nn = skip; nn<nVals; nn++)
+    for (nn = nnstart; nn<nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -574,7 +581,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double tempsum = 0; // Temporary sum of errors in a month
 
     // Find month of first valid entry
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -591,7 +598,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     }
 
     // Perform diagnostics
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -663,7 +670,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double ObsSum = 0;
     double TopSum = 0;
 
-    for (nn = skip; nn < nVals - 1; nn++)
+    for (nn = nnstart; nn < nnend - 1; nn++)
     {
       double nxtobsval = pTSObs->GetSampledValue(nn + 1);
       double nxtmodval = pTSMod->GetSampledValue(nn + 1);
@@ -691,7 +698,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double ModDiffSum = 0;
     double ObsDiffSum = 0;
 
-    for (nn = skip; nn < nVals - 1; nn++)
+    for (nn = nnstart; nn < nnend - 1; nn++)
     {
 
       double nxtobsval = pTSObs->GetSampledValue(nn + 1);
@@ -743,7 +750,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double nxtobsval,nxtmodval;
     double nsc = 0;
     double N=0;
-    for (nn = skip; nn < nVals - 1; nn++)
+    for (nn = nnstart; nn < nnend - 1; nn++)
     {
 
       nxtobsval = pTSObs->GetSampledValue(nn + 1);
@@ -787,7 +794,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double TopSum = 0;
     double BotSum = 0;
 
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -807,7 +814,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
     double ObsAvg = ObsSum / N;
 
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
 
       obsval = pTSObs->GetSampledValue(nn);
@@ -858,7 +865,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double CovXX = 0;
     double CovYY = 0;
 
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -880,7 +887,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double ObsAvg = ObsSum / N;
     double ModAvg = ModSum / N;
 
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
 
       obsval = pTSObs->GetSampledValue(nn);
@@ -933,7 +940,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double avg=0;
     N=0;
 
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -959,7 +966,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     avg/=N;
 
     double sum1(0.0),sum2(0.0);
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
       obsval=pTSObs->GetSampledValue(nn);
       modval=pTSMod->GetSampledValue(nn);
@@ -1005,7 +1012,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double summod=0;
     N=0;
 
-    for (nn=skip;nn<nVals;nn++)
+    for (nn=nnstart;nn<nnend;nn++)
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
@@ -1043,7 +1050,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
   case(DIAG_KLING_GUPTA)://-----------------------------------------
   case(DIAG_KLING_GUPTA_DER):
   {
-    if(_type==DIAG_KLING_GUPTA_DER){ nVals -= 1; }      // Reduce nvals by 1 for derivative of Kling Gupta
+    if(_type==DIAG_KLING_GUPTA_DER){ nnend -= 1; }      // Reduce nnend by 1 for derivative of Kling Gupta
     bool ValidObs = false;
     bool ValidMod = false;
     bool ValidWeight = false;
@@ -1056,7 +1063,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     double ModStd = 0;
     double Cov = 0;
 
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       weight = 1.0;
       obsval=modval=0.0;
@@ -1098,7 +1105,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
     ObsAvg = ObsSum / N;
     ModAvg = ModSum / N;
 
-    for (nn = skip; nn < nVals; nn++)
+    for (nn = nnstart; nn < nnend; nn++)
     {
       obsval=modval=0.0;
       if (_type==DIAG_KLING_GUPTA)
@@ -1181,7 +1188,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
      N = 0;
      sum = 0.0;
 
-     for(nn = skip; nn < nVals; nn++)
+     for(nn = nnstart; nn < nnend; nn++)
      {
        obsval = pTSObs->GetSampledValue(nn);
        modval = pTSMod->GetSampledValue(nn);
@@ -1225,3 +1232,33 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC *pTSMod,
 
 
 }
+/*****************************************************************
+Constructor/Destructor
+------------------------------------------------------------------
+*****************************************************************/
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the CDiagnosticPeriod constructor/destructor
+/// \param name [in] period name (e.g., "CALIBRATION")
+/// \param startdate [in] string date of period beginning "yyyy-mm-dd" format
+/// \param enddate [in] string date of period ending "yyyy-mm-dd" format
+/// \param Options [in] options structure
+//
+CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,const optStruct &Options)
+{
+  _name=name;
+  time_struct tt;
+  tt=DateStringToTimeStruct(startdate,"00:00:00",Options.calendar);
+  _t_start = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+  
+  tt=DateStringToTimeStruct(enddate  ,"00:00:00",Options.calendar);
+  _t_end=   TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+
+  if (_t_end<=_t_start){WriteWarning("CDiagPeriod: :EvaluationPeriod startdate after enddate.",Options.noisy); }
+}
+CDiagPeriod::~CDiagPeriod() {}
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of the CDiagnosticPeriod accessors
+//
+string   CDiagPeriod::GetName()      const{return _name;}
+double   CDiagPeriod::GetStartTime() const{return _t_start;}
+double   CDiagPeriod::GetEndTime()   const{return _t_end;}

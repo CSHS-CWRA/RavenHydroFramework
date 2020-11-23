@@ -287,6 +287,11 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   InitializeObservations(Options);
 
+  // Generate default diagnostic period - entire simulation 
+  //--------------------------------------------------------------
+  CDiagPeriod *pDP=new CDiagPeriod("ALL","0001-01-01","9999-12-31",Options);
+  AddDiagnosticPeriod(pDP);
+
   //General QA/QC
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),
@@ -402,6 +407,7 @@ void CModel::InitializeObservations(const optStruct &Options)
                                       Options.julian_start_year,
                                       Options.timestep,nModeledValues,true);
 
+    // \todo [funct] : NOT SURE WHETHER THIS SHOULD BE MIN(dt,int) or MAX(dt,int) BELOW - HOW TO SAMPLE??
     _pObservedTS[i]->Initialize(Options.julian_start_day, Options.julian_start_year, Options.duration, max(Options.timestep,_pObservedTS[i]->GetInterval()),true,Options.calendar);
     _pModeledTS [i]->InitializeResample(nModeledValues,Options.timestep);
     _aObsIndex  [i]=0;

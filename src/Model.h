@@ -109,6 +109,8 @@ private:/*------------------------------------------------------*/
 
   CDiagnostic   **_pDiagnostics;  ///< array of pointers to diagnostics to be calculated [size: _nDiagnostics]
   int             _nDiagnostics;  ///< number of diagnostics to be calculated comparing obs. vs modeled
+  CDiagPeriod   **_pDiagPeriods;  ///< array of pointers to diagnostic periods [size _nDiagPeriods]
+  int             _nDiagPeriods;  ///< number of diagnostic periods 
 
   //Data Assimilation 
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
@@ -326,6 +328,8 @@ public:/*-------------------------------------------------------*/
   void    AddObservedTimeSeries     (        CTimeSeriesABC    *pTS             );
   void    AddObservedWeightsTS      (        CTimeSeriesABC    *pTS             );
   void    AddDiagnostic             (        CDiagnostic       *pDiag           );
+  void    AddDiagnosticPeriod       (        CDiagPeriod       *pDiagPer        );
+
   void    AddModelOutputTime        (const time_struct       &tt_out,
                                      const optStruct         &Options           );
   void    SetLakeStorage            (const sv_type            SV,

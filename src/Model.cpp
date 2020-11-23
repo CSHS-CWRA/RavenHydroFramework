@@ -33,7 +33,8 @@ CModel::CModel(const soil_model SM,
   _nObservedTS=0;   _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
   _nObsWeightTS =0; _pObsWeightTS=NULL;
   _nDiagnostics=0;  _pDiagnostics=NULL;
-
+  _nDiagPeriods=0;  _pDiagPeriods=NULL;
+  
   _nTotalConnections=0;
 
   _WatershedArea=0;
@@ -139,6 +140,7 @@ CModel::~CModel()
   }
   for (i=0;i<_nObsWeightTS;  i++){delete _pObsWeightTS  [i];} delete [] _pObsWeightTS;  _pObsWeightTS=NULL;
   for (j=0;j<_nDiagnostics;  j++){delete _pDiagnostics  [j];} delete [] _pDiagnostics;  _pDiagnostics=NULL;
+  for (j=0;j<_nDiagPeriods;  j++){delete _pDiagPeriods  [j];} delete [] _pDiagPeriods;  _pDiagPeriods=NULL;
 
   if (_aCumulativeBal!=NULL){
     for (k=0;k<_nHydroUnits;   k++){delete [] _aCumulativeBal[k];} delete [] _aCumulativeBal; _aCumulativeBal=NULL;
@@ -1268,7 +1270,17 @@ void CModel::AddDiagnostic(CDiagnostic       *pDiag)
   if (!DynArrayAppend((void**&)(_pDiagnostics),(void*)(pDiag),_nDiagnostics)){
     ExitGracefully("CModel::AddDiagnostic: adding NULL diagnostic",BAD_DATA);}
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Adds diagnostic period to model
+///
+/// \param *pDiag [in] (valid) pointer to diagnostic period to be added to model
+//
+void CModel::AddDiagnosticPeriod(CDiagPeriod       *pDiagPer)
+{
+  if(!DynArrayAppend((void**&)(_pDiagPeriods),(void*)(pDiagPer),_nDiagPeriods)) {
+    ExitGracefully("CModel::AddDiagnosticPeriod: adding NULL diagnostic period",BAD_DATA);
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds model output time to model
 ///
@@ -1806,12 +1818,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
 			     (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
-      value=RAV_BLANK_DATA; 
-      // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
-      if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
-      {
-        value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
-      }
+      value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
+      
       _pModeledTS[i]->SetSampledValue(_aObsIndex[i],value); //JRC : \todo[fix]: I'm not sure if this makes sense for irregular time series
       _aObsIndex[i]++;
       obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);

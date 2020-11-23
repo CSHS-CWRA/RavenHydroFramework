@@ -31,6 +31,7 @@ enum diag_type {
   DIAG_MBF
 };
 
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for time series comparison diagnostics
 class CDiagnostic
@@ -51,6 +52,28 @@ public:/*------------------------------------------------------*/
   double CalculateDiagnostic(CTimeSeriesABC  *pTSmod, 
                              CTimeSeriesABC  *pTSObs, 
                              CTimeSeriesABC  *pTSWeights, 
+                             const double    &starttime,
+                             const double    &endtime,
                              const optStruct &Options) const;
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for diagnostic period
+class CDiagPeriod
+{
+private:/*------------------------------------------------------*/
+
+  string    _name;    ///< period name (e.g., "CALIBRATION")
+  double    _t_start; ///< starttime (in local model time)
+  double    _t_end;   ///< endtime (in local model time)
+
+public:/*------------------------------------------------------*/
+
+  CDiagPeriod(string name, string startdate, string enddate, const optStruct &Options);
+  ~CDiagPeriod();
+
+  string   GetName()      const;
+  double   GetStartTime() const;
+  double   GetEndTime()   const;
 };
 #endif

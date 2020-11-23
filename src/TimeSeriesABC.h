@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef TIMESERIESABC_H
 #define TIMESERIESABC_H
@@ -61,6 +61,7 @@ public:/*-------------------------------------------------------*/
   virtual double GetSampledInterval() const=0;
   virtual int    GetNumSampledValues() const=0;
 
+  virtual int    GetTimeIndexFromModelTime(const double &t_mod) const=0;
 };
 
 #endif
