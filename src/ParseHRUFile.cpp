@@ -83,7 +83,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":SBGroupPropertyOverride"  )){code=12; }
     else if  (!strcmp(s[0],":DisableHRUGroup"          )){code=13; }
     else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
-    else if  (!strcmp(s[0],":PopulateHRUGroup"         )){code=15;  } 
+    else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15;  } 
     
     switch(code)
     {

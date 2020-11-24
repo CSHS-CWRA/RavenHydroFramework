@@ -243,12 +243,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       weight = 1.0;
 
       front = (int)floor(_width / 2);
-      if(_width % 2 == 1) {
-        back = front;
-      }
-      else {
-        back = front - 1;
-      }
+      if(_width % 2 == 1) {back = front;}
+      else                {back = front - 1;}
 
       for(int k = nn - front; k <= nn + back; k++)
       {
@@ -281,34 +277,14 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       sum2 += pow(obsval - avg   ,2)*weight;
     }
 
-    if(ValidObs && ValidMod && ValidWeight)
+    if(N>0.0)
     {
       return 1.0 - sum1 / sum2;
     }
     else
     {
-      string p1 = "OBSERVED_DATA  "+filename;
-      string p2 = "MODELED_DATA  ";
-      string p3 = "WEIGHTS ";
-      if(ValidObs) { p1 = ""; }
-      if(ValidMod) { p2 = ""; }
-      if(ValidWeight) { p3 = ""; }
-
-      switch(_type)
-      {
-      case(DIAG_NASH_SUTCLIFFE_DER):
-      {
-        string warn = "DIAG_NASH_SUTCLIFFE_DER not performed correctly. Check " + p1 + p2 + p3;
-        WriteWarning(warn,Options.noisy);
-        break;
-      }
-      case(DIAG_NASH_SUTCLIFFE_RUN):
-      {
-        string warn = "DIAG_NASH_SUTCLIFFE_RUN not performed correctly. Check " + p1 + p2 + p3;
-        WriteWarning(warn,Options.noisy);
-        break;
-      }
-      }
+      string warn = "DIAG_NASH_SUTCLIFFE_RUN not performed correctly. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
       return -ALMOST_INF;
     }
     break;
@@ -399,10 +375,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   }
   case(DIAG_RMSE_DER)://----------------------------------------------------
   {
-    bool ValidObs = false;
-    bool ValidMod = false;
-    bool ValidWeight = false;
-
     double sum;
     N=0;
     sum=0;
@@ -416,34 +388,24 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       obsval /= dt;
       modval /= dt;
 
-
       // both values at current timestep and next time step need to be valid
       if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
-      if (weight != 0) { ValidWeight = true; }
 
-      if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidObs = true;}
+      if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn+1) != RAV_BLANK_DATA) { }
       else {weight = 0;}
 
-      if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn+1) != RAV_BLANK_DATA) { ValidMod = true;}
+      if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn+1) != RAV_BLANK_DATA) { }
       else {weight = 0;}
 
-
-      sum+=pow(obsval-modval,2)*weight;
-      N+=weight;
+      sum+=weight*pow(obsval-modval,2);
+      N  +=weight;
     }
-    if (ValidObs && ValidMod && ValidWeight) {
+    if (N>0.0) {
       return sqrt(sum / N);
     }
     else
     {
-      string p1 = "OBSERVED_DATA  ";
-      string p2 = "MODELED_DATA  ";
-      string p3 = "WEIGHTS ";
-      if (ValidObs) { p1 = ""; }
-      if (ValidMod) { p2 = ""; }
-      if (ValidWeight) { p3 = ""; }
-
-      string warn = "DIAG_RMSE_DER not performed correctly. Check " + p1 + p2 + p3;
+      string warn = "DIAG_RMSE_DER not calculated. Missing non-zero weighted observations during simulation duration.";
       WriteWarning(warn, Options.noisy);
       return -ALMOST_INF;
     }
