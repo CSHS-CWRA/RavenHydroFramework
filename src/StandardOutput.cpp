@@ -1348,6 +1348,13 @@ void CModel::RunDiagnostics(const optStruct &Options)
     double endtime  =_pDiagPeriods[d]->GetEndTime();
     for(int i=0;i<_nObservedTS;i++)
     {
+      string datatype=_pObservedTS[i]->GetName();
+      if((datatype=="HYDROGRAPH") || (datatype=="RESERVOIR_STAGE") || (datatype=="RESERVOIR_INFLOW") || (datatype=="RESERVOIR_NET_INFLOW"))
+      {
+        CSubBasin *pBasin=GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+        if ((pBasin==NULL) || (!pBasin->IsEnabled())){break;}
+      }
+
       DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility    
       for(int j=0; j<_nDiagnostics;j++) {
         DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
