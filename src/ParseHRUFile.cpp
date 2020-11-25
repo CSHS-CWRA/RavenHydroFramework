@@ -685,7 +685,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       :PopulateSubBasinGroup NotRock With SUBBASINS NOTWITHIN RockSBGroup
 
       */
-      if(Options.noisy) { cout <<"   Populate HRU Group..."<<endl; }
+      if(Options.noisy) { cout <<"   Populate SubBasin Group..."<<endl; }
       if(Len<6) { pp->ImproperFormat(s); }
 
       CSubbasinGroup *pSBGroup=NULL;
@@ -707,7 +707,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           if(!strcmp(s[4],"NOTWITHIN")) {
             for(int p=0;p<pModel->GetNumSubBasins();p++)
             {
-              if(!pSBGroup2->IsInGroup(p)) { pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); }
+              if(!pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) { pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); }
             }
           }
         }
