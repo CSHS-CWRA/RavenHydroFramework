@@ -1343,23 +1343,27 @@ void CModel::RunDiagnostics(const optStruct &Options)
   }
   DIAG<<endl;
   //body
+  bool skip;
   for (int d=0; d<_nDiagPeriods; d++){
     double starttime=_pDiagPeriods[d]->GetStartTime();
     double endtime  =_pDiagPeriods[d]->GetEndTime();
     for(int i=0;i<_nObservedTS;i++)
     {
+      skip=false;
       string datatype=_pObservedTS[i]->GetName();
       if((datatype=="HYDROGRAPH") || (datatype=="RESERVOIR_STAGE") || (datatype=="RESERVOIR_INFLOW") || (datatype=="RESERVOIR_NET_INFLOW"))
       {
         CSubBasin *pBasin=GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
-        if ((pBasin==NULL) || (!pBasin->IsEnabled())){break;}
+        if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}
       }
-
-      DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility    
-      for(int j=0; j<_nDiagnostics;j++) {
-        DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
+      if (!skip)
+      {
+        DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility    
+        for(int j=0; j<_nDiagnostics;j++) {
+          DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
+        }
+        DIAG<<endl;
       }
-      DIAG<<endl;
     }
   }
   DIAG.close();
