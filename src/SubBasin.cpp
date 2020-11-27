@@ -203,6 +203,12 @@ double                   CSubBasin::GetReachLength      () const {return _reach_
 bool                     CSubBasin::IsGauged            () const {return _gauged;        }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns True if subbasin is headwater, false otherwise
+/// \return Boolean indicating if subbasin is headwater basin
+//
+bool                     CSubBasin::IsHeadwater         () const {return _is_headwater;  }
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns number of river segments used in routing
 /// \return Number of river segments used in routing
 //

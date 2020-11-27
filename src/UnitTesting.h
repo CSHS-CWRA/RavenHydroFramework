@@ -20,4 +20,5 @@ void AddTimeTest( );
 void BarycentricWeights();
 void RavenUnitTesting(const optStruct &Options);
 void TestInversion();
+void TestEnthalpyTempConvert();
 #endif

@@ -1586,8 +1586,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(89):  //--------------------------------------------
-    {/*:OutputConstituentMass*/
-      if (Options.noisy) {cout <<"Write constituent mass instead of concentrations"<<endl;}
+    {/*:OutputConstituentMass*/ 
+      if (Options.noisy) {cout <<"Write constituent mass / enthalpy instead of concentrations / temperatures"<<endl;}
       Options.write_constitmass=true;
       break;
     }

@@ -89,6 +89,7 @@ extern string g_output_directory; ///< Had to be here to avoid passing Options s
 extern double g_debug_vars[10];    ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
+extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code 
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -157,22 +158,21 @@ const double  DENSITY_OM              =1.300e3;                                 
 const double  MAX_SNOW_DENS           =0.350e3;                                 ///< [kg/m3] maximum dry density of snowpack (GAWSER)
 const double  FRESH_SNOW_DENS         =0.119e3;                                 ///< [kg/m3] fresh snow density @ 0 deg. C
 
-const double  TC_WATER                =0.57;                                    ///< [W/m/K] Thermal conductivity of Water
-const double  TC_ICE                  =2.24;                                    ///< [W/m/K] Thermal conductivity of Ice
-const double  TC_SAND                 =8.0;                                     ///< [W/m/K] Thermal conductivity of sand (8.8 in CLM)
-const double  TC_CLAY                 =2.5;                                     ///< [W/m/K] Thermal conductivity of clay (2.92 in CLM)
-const double  TC_ORGANIC              =0.25;                                    ///< [W/m/K] Thermal conductivity of organic matter
-const double  TC_DRYS                 =0.275;                                   ///< [W/m/K] Thermal conductivity of dry soil
-const double  TC_AIR                  =0.023;                                   ///< [W/m/K] Thermal conductivity of air
+const double  TC_WATER                =0.0492;                                  ///< [MJ/m/d/K] Thermal conductivity of Water (0.57 W/m/k)
+const double  TC_ICE                  =0.194;                                   ///< [MJ/m/d/K] Thermal conductivity of Ice (2.24 W/m/K)
+const double  TC_SAND                 =0.691;                                   ///< [MJ/m/d/K] Thermal conductivity of sand (8.0 W/m/K vs 8.8 in CLM)
+const double  TC_CLAY                 =0.216;                                   ///< [MJ/m/d/K] Thermal conductivity of clay (2.5 W/m/K vs 2.92 in CLM)
+const double  TC_ORGANIC              =0.0216;                                  ///< [MJ/m/d/K] Thermal conductivity of organic matter (0.25 W/m/K)
+const double  TC_AIR                  =0.00199;                                 ///< [MJ/m/d/K] Thermal conductivity of air (0.023 W/m/K)
 
-const double  COM_WATER		            =4.58e-10;                                ///< [Pa^-1] Compressiblity of Water
-const double  COM_ICE                 =4.58e-10;                                ///< [Pa^-1] Compressiblity of Ice
-const double  HCP_WATER               =4.187;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Water
+const double  COM_WATER		            =4.58e-10;                                ///< [1/Pa] Compressiblity of Water
+const double  COM_ICE                 =4.58e-10;                                ///< [1/Pa] Compressiblity of Ice
+const double  HCP_WATER               =4.186;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Water
 const double  HCP_ICE                 =1.938;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Ice
 const double  HCP_CLAY                =2.380;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Clay
 const double  HCP_SAND                =2.130;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Sand
 const double  HCP_ORGANIC             =2.500;                                   ///< [MJ/m3/K] Volumetric Heat Capacity of Organic Matter
-const double  HCP_AIR                 =1.240e3;                                 ///< [J/m3/K] Volumetric Heat capacity of air
+const double  HCP_AIR                 =0.00124;                                 ///< [MJ/m3/K] Volumetric Heat capacity of air
 
 const double  SPH_ICE                 =2.100e-3;                                ///< [MJ/kg/K] Specific heat capacity of ice
 const double  SPH_WATER               =4.186e-3;                                ///< [MJ/kg/K] Specific heat capacity of water
@@ -239,8 +239,8 @@ const double  NOT_SPECIFIED           =-33333.3;                                
 const double  USE_TEMPLATE_VALUE      =-55555.5;                                ///< arbitrary value indicating that a parameter should be set to the template value
 const double  NOT_NEEDED              =-66666.6;                                ///< arbitrary value indicating that a non-auto parameter is not needed for the current model configuration
 const double  NOT_NEEDED_AUTO         =-77777.7;                                ///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
-const double  NETCDF_BLANK_VALUE      =-9999.0;
-const double  RAV_BLANK_DATA          =-1.2345;
+const double  NETCDF_BLANK_VALUE      =-9999.0;                                 ///< NetCDF flag for blank value
+const double  RAV_BLANK_DATA          =-1.2345;                                 ///< double corresponding to blank/void data item (also used in input files)
 const double  DIRICHLET_AIR_TEMP      =-9999;                                   ///< dirichlet concentration flag corresponding to fixed air temperature   
 
 //Decision constants

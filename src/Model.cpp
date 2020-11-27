@@ -1230,10 +1230,16 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
 
   //convert time to model time
   pCC->modeltime= TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
-  if ((pCC->modeltime<0) || (pCC->modeltime>Options.duration)){
+  
+  if (pCC->modeltime>Options.duration){
     string warn;
-    warn="Property Class change dated "+tt.date_string+" does not occur during model simulation time";
+    warn="Property Class change dated "+tt.date_string+" occurs after model simulation is done; it will not effect results.";
     WriteWarning(warn,Options.noisy);
+  }
+  if(pCC->modeltime<0) {
+    string warn;
+    warn="Property Class change dated "+tt.date_string+" occurs before model simulation. All such changes will be processed before time zero, and these changes MUST be input in chronological order.";
+    WriteAdvisory(warn,Options.noisy);
   }
 
   //cout << "PROPERTY CLASS CHANGE " << pCC->HRU_groupID << " " << pCC->tclass << " "<<pCC->modeltime<<endl;
@@ -1649,9 +1655,10 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
   int k;
   for (int j = 0; j<_nClassChanges; j++)
   {
-    if((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
-       (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep))
-    {//change happens this time step
+    if( ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
+         (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep)) ||
+	    ((tt.model_time == 0.0) && (_pClassChanges[j]->modeltime < 0.0)) )
+    {//change happens this time step 
 
       int kk   =_pClassChanges[j]->HRU_groupID;
       for(int k_loc = 0; k_loc <_pHRUGroups[kk]->GetNumHRUs();k_loc++)

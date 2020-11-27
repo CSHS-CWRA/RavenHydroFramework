@@ -8,7 +8,7 @@
 #include "HydroUnits.h"
 #include "ParseLib.h"
 
-void SetInitialStateVar(CModel *&pModel,const int SVind,const int typ,const int m,const int k,const double &val);
+void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const int m,const int k,const double &val);
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Initial conditions file
 /// \details model.rvc: input file that defines HRU and Subbasin initial conditions\n
@@ -56,29 +56,36 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       0   thru 100 : All other
       ------------------------------------------------------------------
     */
-
+    string concname="UNKNOWN";
     code=0;
     //---------------------SPECIAL -----------------------------
-    if       (Len==0)                                    {code=-1; }//blank line
-    else if  (IsComment(s[0],Len))                       {code=-2; }//comment
-    else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
-    else if  (!strcmp(s[0],":End"                      )){code=-4; }//stop reading
+    if       (Len==0)                                       {code=-1; }//blank line
+    else if  (IsComment(s[0],Len))                          {code=-2; }//comment
+    else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
+    else if  (!strcmp(s[0],":End"                         )){code=-4; }//stop reading
     //-------------------MODEL INITIAL CONDITIONS----------------
-    else if  (!strcmp(s[0],":BasinInitialConditions"   )){code=1;  }
-    else if  (!strcmp(s[0],":HRUInitialConditions"     )){code=2;  }
-    else if  (!strcmp(s[0],":EndHRUInitialConditions"  )){code=-2; }
-    else if  (!strcmp(s[0],":ALL"                      )){code=3;  }
-    else if  (!strcmp(s[0],":UniformInitialConditions" )){code=3;  }
-    else if  (!strcmp(s[0],":HRUStateVariableTable"    )){code=4;  }
-    else if  (!strcmp(s[0],":EndHRUStateVariableTable" )){code=-2; }
-    else if  (!strcmp(s[0],":InitialConditions"        )){code=5;  }
-    else if  (!strcmp(s[0],":EndInitialConditions"     )){code=-2; }
-    else if  (!strcmp(s[0],":BasinStateVariables"      )){code=6;  }
-    else if  (!strcmp(s[0],":EndBasinStateVariables"   )){code=-2; }
-    else if  (!strcmp(s[0],":InitialReservoirFlow"     )){code=7;  }
-    else if  (!strcmp(s[0],":InitialReservoirStage"    )){code=8;  }
-    else if  (!strcmp(s[0],":TimeStamp"                )){code=10; }
-    else if  (!strcmp(s[0],":Nudge"                    )){code=11; }
+    else if  (!strcmp(s[0],":BasinInitialConditions"      )){code=1;  }
+    else if  (!strcmp(s[0],":HRUInitialConditions"        )){code=2;  }//UNUSED
+    else if  (!strcmp(s[0],":EndHRUInitialConditions"     )){code=-2; }//UNUSED
+    else if  (!strcmp(s[0],":ALL"                         )){code=3;  }
+    else if  (!strcmp(s[0],":UniformInitialConditions"    )){code=3;  }
+    else if  (!strcmp(s[0],":HRUStateVariableTable"       )){code=4;  concname="";}
+    else if  (!strcmp(s[0],":InitialTemperatureTable"     )){code=4; concname="TEMPERATURE";}
+    else if  (!strcmp(s[0],":InitialConcentrationTable"   )){code=4; concname=s[1]; }
+    else if  (!strcmp(s[0],":EndHRUStateVariableTable"    )){code=-2; }
+    else if  (!strcmp(s[0],":EndInitialTemperatureTable"  )){code=-2;}
+    else if  (!strcmp(s[0],":EndInitialConcentrationTable")){code=-2;}
+    else if  (!strcmp(s[0],":InitialConditions"           )){code=5;  }//OBSOLETE
+    else if  (!strcmp(s[0],":EndInitialConditions"        )){code=-2; }//OBSOLETE
+    else if  (!strcmp(s[0],":BasinStateVariables"         )){code=6;  }
+    else if  (!strcmp(s[0],":EndBasinStateVariables"      )){code=-2; }
+    else if  (!strcmp(s[0],":InitialReservoirFlow"        )){code=7;  }
+    else if  (!strcmp(s[0],":InitialReservoirStage"       )){code=8;  }
+    else if  (!strcmp(s[0],":TimeStamp"                   )){code=10; }
+    else if  (!strcmp(s[0],":Nudge"                       )){code=11; }
+
+
+
 
     switch(code)
     {
@@ -192,16 +199,41 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     }
     case(4):  //----------------------------------------------
     { /* :HRUStateVariableTable (formerly :IntialConditionsTable)
-         ":Attributes" {list of state variables}
-         ":Units" {list of units}
-         {HRUID, SV1,SV2,SV3} x nHRUs
+           :Attributes {list of state variables}
+           :Units {list of units}
+           {HRUID, SV1,SV2,SV3} x nHRUs
          :EndHRUStateVariableTable
          - sets unique IC values for different HRUs and one or multiple state variables
+
+         or 
+
+         :InitialTemperatureTable
+           :Attributes {list of WATER state variables}
+           :Units {list of units}
+           {HRUID, T1,T2,T3} x nHRUs
+         :EndInitialTemperatureTable
+
+         or 
+         :InitialConcentrationTable [constituent name]
+           :Attributes {list of WATER state variables}
+           :Units {list of units}
+           {HRUID, T1,T2,T3} x nHRUs
+         :EndInitialConcentrationTable
       */
-      if (Options.noisy) {cout <<"   Reading HRU Initial Condition Table..."<<endl;}
+      if      ((concname==""           ) && (Options.noisy)) {cout <<"   Reading HRU Initial Condition Table..."<<endl;}
+      else if ((concname=="TEMPERATURE") && (Options.noisy)) {cout <<"   Reading Temperature Initial Condition Table..."<<endl; }
+      else if (                             (Options.noisy)) {cout <<"   Reading Concentration Initial Condition Table for "<<concname<<"..."<<endl; }
 
       pp->Tokenize(s,Len);
+      int c=DOESNT_EXIST;
+      if(concname!="") {
+        c=pModel->GetTransportModel()->GetConstituentIndex(concname);
+        if(c==DOESNT_EXIST) {
+          ExitGracefully("Invalid constituent name in :InitialConcentrationTable or :InitialTemperatureTable",BAD_DATA);
+        }
+      }
 
+      // Read :Attributes header-------------------------------------------------
       if (strcmp(s[0],":Attributes")){
         WriteWarning(":HRUStateVariableTable command: first line must begin with :Attributes",Options.noisy);break;}
       int nSV=Len-1;
@@ -218,26 +250,51 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
         else{
           SVinds[i]=pModel->GetStateVarIndex(typ,layer_ind);
+          
+          if(c!=DOESNT_EXIST) { //convert water storage index to corresponding constituent index
+            int m=pModel->GetTransportModel()->GetLayerIndex(c,SVinds[i]);
+            SVinds[i]=DOESNT_EXIST;
+            if(m!=DOESNT_EXIST) {  
+              SVinds[i]=pModel->GetStateVarIndex(CONSTITUENT,m);
+            }
+            cout<<", i : "<<SVinds[i];
+          }
+
           if (SVinds[i]==DOESNT_EXIST){
             WriteWarning("Initial conditions specified for state variable not in model ("+to_string(s[i+1])+")",Options.noisy);
           }
+
           if ((typ==ATMOS_PRECIP) || (typ==ATMOSPHERE) || (typ==GLACIER_ICE)){//initial conditions of cumulative precip, evap, and glacier loss ignored, left at zero
             SVinds[i]=DOESNT_EXIST;
           }
-          /// \todo [funct] must also zero out concentrations linked to atmos_precip, atmosphere, and glacier ice
 
+          ///  zero out concentrations/temperatures linked to atmos_precip, atmosphere, and glacier ice
+          if(typ==CONSTITUENT) {
+            i=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(layer_ind);
+            sv_type wattyp=pModel->GetStateVarType(i);
+            if((wattyp==ATMOS_PRECIP) || (wattyp==ATMOSPHERE) || (wattyp==GLACIER_ICE)) {//initial concentrations conditions of cumulative precip, evap, and glacier loss ignored, left at zero
+              SVinds[i]=DOESNT_EXIST;
+            }
+          } //CODE UNCHECKED
         }
       }
+      
+      // Read body of Table -----------------------------------------------------
       int parsedHRUs=0;
       int HRUID;
       CHydroUnit *pHRU;
-      while ((Len==0) || (strcmp(s[0],":EndHRUStateVariableTable")))
+      while ( (Len==0) || 
+              ((strcmp(s[0],":EndHRUStateVariableTable")) && 
+               (strcmp(s[0],":EndInitialTemperatureTable")) &&
+               (strcmp(s[0],":EndInitialConcentrationTable"))) )
       {
         pp->Tokenize(s,Len);
 
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":Units")){}//ignored by Raven
         else if (!strcmp(s[0],":EndHRUStateVariableTable")){}//end command
+        else if (!strcmp(s[0],":EndInitialTemperatureTable")){cout<<"End"<<endl;}//end command
+        else if (!strcmp(s[0],":EndInitialConcentrationTable")){}//end command
         else //row in SV table
         {
           ExitGracefullyIf(Len!=(nSV+1),
@@ -255,7 +312,16 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           else{
             for(i=0;i<nSV;i++){
               if(SVinds[i]!=DOESNT_EXIST){
-                pHRU->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
+                if(c==DOESNT_EXIST) {
+                  pHRU->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
+                }
+                else{
+                  int      k=pHRU->GetGlobalIndex();
+                  double val=s_to_d(s[i+1]);
+                  int      m=pModel->GetStateVarLayer(SVinds[i]);
+                  //cout<<" i, SVind, c, m:"<<i<<","<<SVinds[i]<<"," <<c<<","<<m<<endl;
+                  SetInitialStateVar(pModel,SVinds[i],CONSTITUENT,m,k,val);
+                }
               }
             }
             parsedHRUs++;
@@ -601,7 +667,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   return true;
 }
 
-void SetInitialStateVar(CModel *&pModel,const int SVind,const int typ,const int m,const int k,const double &val) 
+void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const int m,const int k,const double &val) 
 {
   if(typ!=CONSTITUENT) //native units, no problem
   {
@@ -627,6 +693,12 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const int typ,const int 
       if (val<0.0){pctfroz=1.0;} //treats all 0 degree water as unfrozen
       double energy=ConvertTemperatureToVolumetricEnthalpy(val,pctfroz)*vol/MM_PER_METER; //[C]->[MJ/m3]*[m]=[MJ/m2]
       pModel->GetHydroUnit(k)->SetStateVarValue(SVind,energy);
+
+      //TMP DEBUG BELOW:
+      //========================
+      //int m=pModel->GetStateVarLayer(SVind); sv_type typ=pModel->GetStateVarType(SVind);
+      //cout <<"SETTING "<<CStateVariable::GetStateVarLongName(typ,m)<<" temp: "<<val<<"--> enthalpy: "<<energy<<endl;
+      //========================
     }
     else 
     {

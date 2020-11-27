@@ -34,6 +34,7 @@ string g_output_directory="";
 bool   g_suppress_warnings=false;
 bool   g_suppress_zeros=false;
 double g_debug_vars[10];
+bool   g_disable_freezing=false;
 
 static string RavenBuildDate(__DATE__);
 

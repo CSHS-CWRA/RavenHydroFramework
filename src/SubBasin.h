@@ -167,6 +167,7 @@ public:/*-------------------------------------------------------*/
   double               GetReachLength       () const;
   int                  GetNumSegments       () const;
   bool                 IsEnabled            () const;
+  bool                 IsHeadwater          () const;
   double               GetRainCorrection    () const;
   double               GetSnowCorrection    () const;
   int                  GetReachHRUIndex     () const;
@@ -175,6 +176,7 @@ public:/*-------------------------------------------------------*/
   double               GetSlope             () const;
   double               GetWettedPerimeter   () const;
   double               GetTopWidth          () const;
+
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;

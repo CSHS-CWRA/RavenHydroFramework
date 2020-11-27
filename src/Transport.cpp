@@ -43,7 +43,7 @@ CTransportModel::CTransportModel(CModel *pMod)
   pSources=NULL;
   nSources=0;
 
-  _aIndexMapping=NULL;
+  _aIndexMapping=NULL; _nIndexMapping=0;
   _aSourceIndices=NULL;
 
   _pTransModel=this;
@@ -81,7 +81,7 @@ CTransportModel* CTransportModel::_pTransModel=NULL;
 
 //////////////////////////////////////////////////////////////////
 /// \brief converts model layer index (i.e., m in CONSTITUENT[m]) to
-/// local constituent index c and index of corresponding local constiuent storage index j
+/// local constituent index c and index of corresponding local constituent storage index j
 //
 void CTransportModel::m_to_cj(const int m, int &c, int &j) const
 {
@@ -97,6 +97,8 @@ void CTransportModel::m_to_cj(const int m, int &c, int &j) const
 //
 int CTransportModel::GetLayerIndex(const int c, const int i_stor) const
 {
+
+  ExitGracefullyIf(i_stor>=_nIndexMapping,"CTransportModel::GetLayerIndex: invalid storage index",RUNTIME_ERR);
   int j=_aIndexMapping[i_stor];
   if (j==DOESNT_EXIST){return DOESNT_EXIST;}
   if (c==DOESNT_EXIST){return DOESNT_EXIST;}
@@ -148,12 +150,15 @@ int CTransportModel::GetLayerIndexFromName2(const string name,const int comp_m) 
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns full name of constitutent e.g.,  "Nitrogen in Soil Water[2]"
-/// static version allowing calls without passing transport model
+/// \brief returns name of constitutent type e.g., "Nitrogen"
+/// \remark static routine
+/// \param m layer index of constituent storage
 //
-string CTransportModel::GetConstituentLongName(const int m)
+string CTransportModel::GetConstituentTypeName(const int m)
 {
-  return _pTransModel->GetConstituentName(m);
+  int c,j;
+  _pTransModel->m_to_cj(m,c,j);
+  return _pTransModel->GetConstituent(c)->name;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns name of constitutent type e.g., "Nitrogen"
@@ -165,9 +170,17 @@ string CTransportModel::GetConstituentTypeName2(const int c)
   return _pTransModel->GetConstituent(c)->name;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns full name of constitutent e.g.,  "Nitrogen in Soil Water[2]"
+/// static version allowing calls without passing transport model
+//
+string CTransportModel::GetConstituentLongName(const int m)
+{
+  return _pTransModel->GetConstituentLongName_loc(m);
+}
+//////////////////////////////////////////////////////////////////
 /// \brief returns full name of constitutent e.g., "Nitrogen in Soil Water[2]"
 //
-string CTransportModel::GetConstituentName(const int m) const
+string CTransportModel::GetConstituentLongName_loc(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
@@ -193,17 +206,7 @@ string CTransportModel::GetConstituentShortName(const int m) const
   return "!"+_pConstituents[c]->name+"|"+CStateVariable::SVTypeToString(typ,ind);
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief returns name of constitutent type e.g., "Nitrogen"
-/// \remark static routine
-/// \param m layer index of constituent storage
-//
-string CTransportModel::GetConstituentTypeName(const int m)
-{
-  int c,j;
-  _pTransModel->m_to_cj(m,c,j);
-  return _pTransModel->GetConstituent(c)->name;
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns global sv index of water storage unit corresponding to CONSTITUENT[m]
 //
@@ -695,6 +698,7 @@ void CTransportModel::Prepare(const optStruct &Options)
       j++;
     }
   }
+  _nIndexMapping=pModel->GetNumStateVars();
 
    /// \todo [QA/QC]: check for two constituents with same name?
   if (_nConstituents==0){return;}/// all of the above work necessary even with no transport?
@@ -1384,6 +1388,7 @@ void CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) cons
     _pConstituents[c]->POLLUT<<":EndHeader"<<endl;
   }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Writes minor transport output to file at the end of each timestep (or multiple thereof)
 /// \note only thing this modifies should be output streams; called from CModel::WriteMinorOutput()
@@ -1598,6 +1603,7 @@ void CTransportModel::WriteEnsimMinorOutput(const optStruct &Options, const time
     _pConstituents[c]->POLLUT<<endl;
   }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Close transport output files
 //

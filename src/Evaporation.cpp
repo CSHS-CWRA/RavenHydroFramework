@@ -594,20 +594,20 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
   double Ccs=1.0/(1.0+Rsoil*Ratm/(Rcan *(Rsoil+Ratm)));//conductances [unitless]
   double Ccc=1.0/(1.0+Rcan *Ratm/(Rsoil*(Rcan +Ratm)));
 
-  double vpd1=vapor_def-de_dT*Rga*(AE - AE_grnd)/HCP_AIR;//revised vapor deficits [kPa]
-  double vpd2=vapor_def-de_dT*Rac*(     AE_grnd)/HCP_AIR;
+  double vpd1=vapor_def-de_dT*Rga*(AE - AE_grnd);//revised vapor deficits [kPa]
+  double vpd2=vapor_def-de_dT*Rac*(     AE_grnd);
 
-  double PMS =((Raa+Rga)*de_dT*AE+HCP_AIR*vpd1) / ((de_dT+gamma) * (Raa + Rga) + gamma * Rss);
-  double PMC =((Raa+Rac)*de_dT*AE+HCP_AIR*vpd2) / ((de_dT+gamma) * (Raa + Rac) + gamma * Rsc);
+  double PMS =((Raa+Rga)*de_dT*AE+vpd1) / ((de_dT+gamma) * (Raa + Rga) + gamma * Rss);
+  double PMC =((Raa+Rac)*de_dT*AE+vpd2) / ((de_dT+gamma) * (Raa + Rac) + gamma * Rsc);
   double LE=Ccc*PMC+Ccs*PMS;//total latent heat flux density
 
-  double vpd3 = vapor_def + Raa*(de_dT*AE-(de_dT+gamma)*LE)/HCP_AIR;
+  double vpd3 = vapor_def + Raa*(de_dT*AE-(de_dT+gamma)*LE);
 
   double PET,EVAP;
-  PET =(Rac*de_dT*(AE - AE_grnd)+HCP_AIR*vpd3)/((de_dT+gamma)*Rac+gamma*Rsc);
+  PET =(Rac*de_dT*(AE - AE_grnd)+vpd3)/((de_dT+gamma)*Rac+gamma*Rsc);
   PET =PET/(DENSITY_WATER*LH_vapor)*MM_PER_METER; //mm/d=[MJ/d/m2]*[m3/kg]*[kg/MJ]*[mm/m]=mm/d
 
-  EVAP =(Rga*de_dT*(     AE_grnd)+HCP_AIR*vpd3)/((de_dT+gamma)*Rga+gamma*Rss);
+  EVAP =(Rga*de_dT*(     AE_grnd)+vpd3)/((de_dT+gamma)*Rga+gamma*Rss);
   EVAP =EVAP/(DENSITY_WATER*LH_vapor)*MM_PER_METER;
 
   return PET;
@@ -695,7 +695,7 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
 
   double Rs = (de_dT + gamma) * Rga + gamma * Rss;
   double Ra = (de_dT + gamma) * Raa;
-  double LE = (Rs* trans + HCP_AIR*vapor_def + de_dT*(Rga*AE_grnd + Raa*AE)) / (Rs + Ra);
+  double LE = (Rs* trans + HCP_AIR/MJ_PER_J*vapor_def + de_dT*(Rga*AE_grnd + Raa*AE)) / (Rs + Ra);
 
   return (LE - trans)/DENSITY_WATER/LH_vapor;//[mm/d]
 
@@ -733,7 +733,7 @@ double SnowEvaporation(const force_struct   *F,
     esnow = GetSaturatedVaporPressure(min(F->temp_ave,snow_temp));
   }
   double tmp;
-  tmp=0.3*(MM_PER_METER/LH_SUBLIM/DENSITY_WATER)*(HCP_AIR/gamma)*(esnow-sat_vap)/(Raa+Rga);
+  tmp=0.3*(MM_PER_METER/LH_SUBLIM/DENSITY_WATER)*(HCP_AIR/MJ_PER_J/gamma)*(esnow-sat_vap)/(Raa+Rga); 
   //[-][kg/MJ]*[m3/kg]*[J/m3/K]*[K/kPa]*[kPa]*[m/s]-->[mm/s*J/MJ]
   return tmp*MJ_PER_J*SEC_PER_DAY;//=[m/d]
 }

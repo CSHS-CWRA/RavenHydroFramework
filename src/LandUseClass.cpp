@@ -289,6 +289,11 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
     if(chatty) { WriteAdvisory(warn,false); }
   }
 
+  autocalc = SetCalculableValue(S.geothermal_grad,Stmp.geothermal_grad,Sdefault.geothermal_grad);
+  if(autocalc) {
+    S.geothermal_grad = 0.0; //default is that geothermal gradient is ignored
+  }
+
   /*for(i=0;i<N_LU_PARAMETERS;i++) {
   if (!S.params[i].iscomputable){
     SetSpecifiedValue(S.params[i].value,Stmp.params[i].value,Sdefault.params[i].value,params[i].name);//(needed_params.partition_coeff>0.0)
@@ -330,6 +335,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.HMETS_runoff_coeff,Stmp.HMETS_runoff_coeff,Sdefault.HMETS_runoff_coeff,needed,"HMETS_RUNOFF_COEFF");
   SetSpecifiedValue(S.bsnow_distrib,Stmp.bsnow_distrib,Sdefault.bsnow_distrib,needed,"BSNOW_DISTRIB");
   SetSpecifiedValue(S.convection_coeff,Stmp.convection_coeff,Sdefault.convection_coeff,needed,"CONVECTION_COEFF");
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -374,6 +380,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.cond_melt_mult = DefaultParameterValue(is_template, true);
   S.rain_melt_mult = DefaultParameterValue(is_template, true);
   S.sky_view_factor   =DefaultParameterValue(is_template,true);
+  S.geothermal_grad   =DefaultParameterValue(is_template,true);//~0.03
 
   //User-specified parameters
   S.partition_coeff   =DefaultParameterValue(is_template,false);//0.4;//needs reasonable defaults
@@ -407,7 +414,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.gamma_shape2      =DefaultParameterValue(is_template,false);//
   S.HMETS_runoff_coeff=DefaultParameterValue(is_template,false);//0.4
   S.bsnow_distrib     =DefaultParameterValue(is_template,false);//0.4
-  S.convection_coeff  =DefaultParameterValue(is_template,false);//~20
+  S.convection_coeff  =DefaultParameterValue(is_template,false);//~2
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -494,6 +501,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("BSNOW_DISTRIB"          )){S.bsnow_distrib=value;}
   else if (!name.compare("SKY_VIEW_FACTOR"        )){S.sky_view_factor=value;}
   else if (!name.compare("CONVECTION_COEFF"       )){S.convection_coeff=value;}
+  else if (!name.compare("GEOTHERMAL_GRAD"        )){S.geothermal_grad=value;}
   else{
     WriteWarning("Trying to set value of unrecognized/invalid land use/land type parameter "+ name,false);
   }
@@ -580,6 +588,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("BSNOW_DISTRIB"          )){return S.bsnow_distrib; }
   else if (!name.compare("SKY_VIEW_FACTOR"        )){return S.sky_view_factor; }
   else if (!name.compare("CONVECTION_COEFF"       )){return S.convection_coeff; }
+  else if (!name.compare("GEOTHERMAL_GRAD"        )){return S.geothermal_grad; }
   else{
     string msg="CLandUseClass::GetSurfaceProperty: Unrecognized/invalid LU/LT parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);

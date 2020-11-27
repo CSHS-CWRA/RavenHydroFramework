@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -15,7 +15,7 @@ bool ParsePropArray(CParser *p,int *indices,double **properties,
                     int &num_read,string *tags,const int line_length,const int max_classes);
 void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStruct &Options);
-
+void  ImproperFormatWarning(string command,CParser *p,bool noisy);
 void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int       &nPm, 
                               const string  *aP , const class_type *aPC , const int &nP); 
 void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_soils,string *&soiltags,int &num_parsed_soils, const string name, bool isdefault);
@@ -357,7 +357,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string tag, double pct_sand,double pct_clay,double pct_silt, double pct_org}xNumSoilClasses
        :EndSoilClases*/
       if (Options.noisy) {cout <<"Soil Classes"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
+      if (Len!=1){ImproperFormatWarning(":SoilClasses",p,Options.noisy); break;} 
       p->Tokenize(s,Len);
       done=false;
       while (!done)
@@ -384,8 +384,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           }
         }
         else{
-          WriteWarning("Incorrect number of terms in :SoilClasses entry",Options.noisy );
-          p->ImproperFormat(s); break;
+          ImproperFormatWarning(":SoilClasses",p,Options.noisy);
+          break;
         }
         p->Tokenize(s,Len);
         if (!strcmp(s[0],":EndSoilClasses")){done=true;}
@@ -398,7 +398,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string soil_tag, double porosity,double stone_frac,double rho_bulk}x<=NumSoilClasses
        :EndSoilProperties*/
       if (Options.noisy) {cout <<"Soil Properties"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
 
       invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils);
       ExitGracefullyIf(invalid_index,
@@ -418,7 +417,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :EndSoilProfiles
        [[thicknesses in meters]]*/
       if (Options.noisy) {cout <<"Soil Profiles"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
       p->Tokenize(s,Len);
       done=false;
       while (!done)
@@ -458,7 +456,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           num_parsed_profiles++;
         }
         else{
-          p->ImproperFormat(s); break;
+          ImproperFormatWarning(":SoilProfiles",p,Options.noisy);
         }
         p->Tokenize(s,Len);
         if (!strcmp(s[0],":EndSoilProfiles")){done=true;}
@@ -491,7 +489,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           //Do nothing with units for now
           done=true;
         }
-        else {p->ImproperFormat(s); break;} 
+        else { ImproperFormatWarning("::SoilParameterList",p,Options.noisy);break;}
       }
       invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
       ExitGracefullyIf(invalid_index,
@@ -515,7 +513,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string LULT_tag, double frac_impermeable {opt forest_coverage}}
        :EndLandUseClasses*/
       if (Options.noisy) {cout <<"Land Use Classes"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
+
       p->Tokenize(s,Len);
       done=false;
       while (!done)
@@ -538,7 +536,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           num_parsed_lult++;
         }
         else{
-          p->ImproperFormat(s); break;
+          ImproperFormatWarning(":LandUseClasses",p,Options.noisy);
+          break;
         }
         p->Tokenize(s,Len);
         if (!strcmp(s[0],":EndLandUseClasses")){done=true;}
@@ -568,7 +567,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           //Do nothing with units for now
           done=true;
         }
-        else {p->ImproperFormat(s); break;} 
+        else { 
+          ImproperFormatWarning(":LandUseParameterList",p,Options.noisy); break;
+        }
       }
       invalid_index=ParsePropArray(p,indices,properties,num_read,lulttags,nParamStrings,num_parsed_lult);
       ExitGracefullyIf(invalid_index,
@@ -587,7 +588,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     case(102):  //----------------------------------------------
     {/*:LandUseChange [HRU group] [new LULT tag] [YYYY-mm-dd] */
       if (Options.noisy) {cout <<"Change in Land Use Class"<<endl;}
-      if (Len<4){p->ImproperFormat(s); break;} 
+      if (Len<4){ ImproperFormatWarning(":LandUseChange",p,Options.noisy); break;}
       time_struct tt;
       tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
       pModel->AddPropertyClassChange(s[1],CLASS_LANDUSE,s[2], tt, Options);
@@ -602,7 +603,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string tag, double max height [m], max LAI, max leaf cond}xNumVegetationClasses
        :EndVegetationClasses*/
       if (Options.noisy) {cout <<"Vegetation Classes"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
+
       p->Tokenize(s,Len);
       done=false;
       while (!done)
@@ -625,7 +626,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           num_parsed_veg++;
         }
         else{
-          p->ImproperFormat(s); break;
+          ImproperFormatWarning(":VegetationClasses",p,Options.noisy);  break;
         }
         p->Tokenize(s,Len);
         if (!strcmp(s[0],":EndVegetationClasses")){done=true;}
@@ -638,7 +639,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string veg_tag, double LAI_Jan..LAI_dec}x<=NumVegClasses
        :EndSeasonalCanopyLAI*/
       if (Options.noisy) {cout <<"Seasonal Canopy LAI"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
+      
       invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyLAI command",BAD_DATA);
@@ -655,7 +656,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string veg_tag, double Ht_Jan..Ht_dec}x<=NumVegClasses
        :EndSeasonalCanopyHeight*/
       if (Options.noisy) {cout <<"Seasonal Canopy Height"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
       invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyHeight command",BAD_DATA);
@@ -701,7 +701,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           //Do nothing with units for now
           done=true;
         }
-        else {p->ImproperFormat(s); break;} 
+        else { ImproperFormatWarning(":VegetationParameterList",p,Options.noisy);  break;}
       }
       invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,nParamStrings,num_parsed_veg);
       ExitGracefullyIf(invalid_index,
@@ -723,7 +723,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     case(207):  //----------------------------------------------
     {/*:VegetationChange [HRU group] [new Veg tag] [YYYY-mm-dd] */
       if (Options.noisy) {cout <<"Change in Vegetation"<<endl;}
-      if (Len<4){p->ImproperFormat(s); break;} 
+      if (Len<4){ ImproperFormatWarning(":VegetationChange",p,Options.noisy); break;}
       time_struct tt;
       tt=DateStringToTimeStruct(string(s[3]),string("00:00:00"),Options.calendar);
       pModel->AddPropertyClassChange(s[1],CLASS_VEGETATION,s[2], tt, Options);

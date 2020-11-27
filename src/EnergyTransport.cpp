@@ -32,7 +32,7 @@ double CTransportModel::GetIceContent(const double *state_vars,const int iWater)
 {
   int cTemp=GetConstituentIndex("TEMPERATURE");
   if(iWater==DOESNT_EXIST) { return 0.0; }
-  if(cTemp==DOESNT_EXIST) { return 0.0; }
+  if(cTemp==DOESNT_EXIST)  { return 0.0; }
 
   double Hv,stor,hv(0.0);
   int    m,iEnth;
@@ -122,6 +122,9 @@ void   CTransportModel::UpdateReachEnergySourceTerms(const int p)
   double tstep=pModel->GetOptStruct()->timestep;
 
   const CSubBasin *pBasin=pModel->GetSubBasin(p);
+
+  if (pBasin->IsHeadwater()){return;} //no reach, no need
+
   int                   k=pBasin->GetReachHRUIndex();
   ExitGracefullyIf(k==DOESNT_EXIST,"CTransportModel::UpdateReachEnergySourceTerms: subbasin missing reach HRU for temperature simulation",BAD_DATA);
   const CHydroUnit  *pHRU=pModel->GetHydroUnit(k);
@@ -252,4 +255,29 @@ double CTransportModel::GetEnergyLossesFromReach(const int p, double &Q_sens, do
 
   delete [] Ik;
   delete [] zk;
+}
+
+void TestEnthalpyTempConvert() 
+{
+  ofstream OUT;
+  OUT.open("EnthalpyTest.csv");
+  OUT<<"h,T,Fi,h_reverse"<<endl;
+  for(double h=-500; h<0.0; h+=10) {
+    double T=ConvertVolumetricEnthalpyToTemperature(h);
+    double Fi=ConvertVolumetricEnthalpyToIceContent(h);
+    double hr=ConvertTemperatureToVolumetricEnthalpy(T,Fi);
+    double dTdh=TemperatureEnthalpyDerivative(h);
+    OUT<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
+  }
+  for(double h=0; h<=150; h+=15) {
+    double T=ConvertVolumetricEnthalpyToTemperature(h);
+    double Fi=ConvertVolumetricEnthalpyToIceContent(h);
+    double hr=ConvertTemperatureToVolumetricEnthalpy(T,Fi);
+    double dTdh=TemperatureEnthalpyDerivative(h);
+    OUT<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
+  }
+  OUT.close();
+  
+  ExitGracefully("TestEnthalpyTempConvert",SIMULATION_DONE);
+
 }

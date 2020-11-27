@@ -1304,7 +1304,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"    #Connections: "<<_nTotalConnections          <<endl;
     cout <<"#Lat.Connections: "<<_nTotalLatConnections       <<endl;
     cout <<"        Duration: "<<Options.duration            <<" d"<<endl;
-    cout <<"       Time step: "<<Options.timestep            <<" d"<<endl;
+    cout <<"       Time step: "<<Options.timestep            <<" d ("<<(Options.timestep*MIN_PER_DAY)<<" min)"<<endl;
     cout <<"  Watershed Area: "<<_WatershedArea              <<" km2 (simulated) of "<<allarea<<" km2"<<endl;
     cout <<"======================================================"<<endl;
     cout <<endl;

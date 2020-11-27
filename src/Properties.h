@@ -49,8 +49,8 @@ struct soil_struct
 
   //Thermal properties
   double heat_capacity;     ///< [MJ/m3/K]   saturated *volumetric* heat capacity
-  double thermal_cond;      ///< [W/m/K]    saturated soil thermal conductivity
-  double freezing_point;    ///< [C]        soil freezing point
+  double thermal_cond;      ///< [MJ/m/d/K]  saturated soil thermal conductivity
+  double freezing_point;    ///< [C]         soil freezing point
 
   //unsaturated flow parameters
   double hydraul_cond;      ///< [mm/d]  saturated hydraulic conductivity
@@ -296,6 +296,7 @@ struct surface_struct
   double sky_view_factor;   ///< [-]       sky view factor for estimating incoming longwave radiation (should be terrain param?)
 
   double convection_coeff;  ///< [MJ/m2/d/K] thermal convection coefficieint q=h(T_a-T)
+  double geothermal_grad;   ///< [C/m]     local geothermal gradient (positive upward)
 };
 
 //////////////////////////////////////////////////////////////////

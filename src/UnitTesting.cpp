@@ -30,7 +30,7 @@ void RavenUnitTesting(const optStruct &Options)
   cout<<"STRINGISLONG TEST: -1 "<< StringIsLong("-1")<<endl;
   cout<<"STRINGISLONG TEST: hamburger "<< StringIsLong("hamburger")<<endl;
   cout<<"STRINGISLONG TEST: 10ham "<< StringIsLong("10ham")<<endl;*/
-
+  //TestEnthalpyTempConvert();
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function

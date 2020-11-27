@@ -71,9 +71,9 @@ private:/*------------------------------------------------------*/
 
   int  _nWaterCompartments;          ///< number of water storage compartments which may contain constituent
   int *_iWaterStorage;               ///< state variable indices of water storage compartments which may contain constituent [size: _nWaterCompartments]
-
   int *_aIndexMapping;               ///< lookup table to convert state variable index i to local water storage index [size: pModel::_nStateVars prior to transport variables being included]
                                      ///< basically inverse of iWaterStorage
+  int  _nIndexMapping;               ///< size of index mapping array [=pModel::_nStateVars prior to transport variables being included]
 
   int                _nConstituents;  ///< number of transported constituents [c=0.._nConstituents-1]
   constituent      **_pConstituents;  ///< array of pointers to constituent structures [size: _nConstituents]
@@ -114,6 +114,8 @@ private:/*------------------------------------------------------*/
   double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
   void   UpdateReachEnergySourceTerms(const int p);
 
+  string GetConstituentLongName_loc(const int layerindex) const; //e.g., "Nitrogen in Soil Water[2]"
+
 public:/*-------------------------------------------------------*/
   CTransportModel(CModel *pMod);
   ~CTransportModel();
@@ -122,30 +124,29 @@ public:/*-------------------------------------------------------*/
   static int    GetLayerIndexFromName(const string name,const int comp_m);
   int          GetLayerIndexFromName2(const string name,const int comp_m) const;     //non-static version
 
-  static string GetConstituentTypeName (const int m);         //e.g., "Nitrogen" (m=layer index)
-  static string GetConstituentTypeName2(const int c);         //e.g., !Nitrogen (c=constituent index)
+  static string GetConstituentTypeName (const int layerindex);//e.g., "Nitrogen" (m=layer index)
+  static string GetConstituentTypeName2(const int c);         //e.g., "Nitrogen" (c=constituent index)
   static string GetConstituentLongName (const int layerindex);//e.g., "Nitrogen in Soil Water[2]"
-  string GetConstituentName     (const int layerindex) const; //e.g., "Nitrogen in Soil Water[2]"
-  string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
+         string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
 
   int    GetNumConstituents() const;
-  const constituent      *GetConstituent(const int c) const;
+  const constituent      *GetConstituent      (const int c) const;
   const transport_params *GetConstituentParams(const int c) const;
   int    GetConstituentIndex(const string name) const;
 
   int    GetNumWaterCompartments() const;
-  int    GetNumAdvConnections() const;
+  int    GetNumAdvConnections   () const;
   int    GetNumLatAdvConnections() const;
 
-  int    GetFromIndex   (const int c,const int q) const;
-  int    GetToIndex     (const int c,const int q) const;
+  int    GetFromIndex   (const int c,const int q ) const;
+  int    GetToIndex     (const int c,const int q ) const;
   int    GetStorIndex   (const int c,const int ii) const;
   int    GetLatFromIndex(const int c,const int qq) const;
   int    GetLatToIndex  (const int c,const int qq) const;
 
-  int    GetFromWaterIndex   (const int q) const;
-  int    GetToWaterIndex     (const int q) const;
-  int    GetJsIndex          (const int q) const;
+  int    GetFromWaterIndex   (const int q ) const;
+  int    GetToWaterIndex     (const int q ) const;
+  int    GetJsIndex          (const int q ) const;
   int    GetLatFromHRU       (const int qq) const;
   int    GetLatToHRU         (const int qq) const;
   int    GetLatFromWaterIndex(const int qq) const;

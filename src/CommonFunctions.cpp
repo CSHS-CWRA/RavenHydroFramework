@@ -67,6 +67,8 @@ string GetProcessName(process_type p)
   case(LAT_FLUSH):          {name="Lateral Flush";            break;}
   case(DECAY):              {name="Decay";                    break;}
   case(TRANSFORMATION):     {name="Transformation";           break;}
+
+  case(HEATCONDUCTION):     {name="Heat Conduction";          break;}
     //..
   default:              {
     name="Unknown Hydrological Process";
@@ -1022,28 +1024,68 @@ double GetDewPointTemp(const double &e)
 //
 double ConvertVolumetricEnthalpyToTemperature(const double &hv) 
 {
-  if      (hv>0                       ){return hv/SPH_WATER/DENSITY_WATER;}
-  else if (hv>-LH_FUSION*DENSITY_WATER){return 0.0;}
-  else                                 {return (hv+LH_FUSION*DENSITY_WATER)/SPH_ICE/DENSITY_ICE; }
+  if      (g_disable_freezing)         { return hv/SPH_WATER/DENSITY_WATER; }
+
+  double g_freeze_temp=-0.1;
+  double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
+
+  if      (hv>0  ){ return hv/SPH_WATER/DENSITY_WATER;}
+  else if (hv>hvt){ return g_freeze_temp*hv/hvt;}
+  else            { return (hv-hvt)/SPH_ICE/DENSITY_ICE; }
 }
-double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctfroz) 
-{
-  if      (fabs(T)<REAL_SMALL) { return -pctfroz*LH_FUSION*DENSITY_WATER;} //along zero line
-  else if (T>0               ) { return T*SPH_WATER*DENSITY_WATER; }
-  else                         { return T*SPH_ICE  *DENSITY_ICE-LH_FUSION*DENSITY_WATER;}
-}
+//////////////////////////////////////////////////////////////////
+/// \brief converts volumetric enthalpy of water/ice only [MJ/m3 water] to ice fraction
+///
+/// \param hv [in] volumetric enthapy [MJ/m3 water]
+/// \return ice fraction [0..1]
+//
 double ConvertVolumetricEnthalpyToIceContent(const double &hv)
 {
-  if      (hv>0                       ){return 0;}
-  else if (hv>-LH_FUSION*DENSITY_WATER){return -hv/LH_FUSION/DENSITY_WATER;}
-  else                                 {return 1.0; }
+  if      (g_disable_freezing)            { return 0; }
+
+  double g_freeze_temp=-0.1;
+  double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
+
+  if      (hv>0  ){ return 0;}
+  else if (hv>hvt){ return hv/hvt;}
+  else            { return 1.0; }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief calculates dT/dh corresponding to volumetric enthalpy hv
+///
+/// \param hv [in] volumetric enthapy [MJ/m3 water]
+/// \return dT/dh [C-m3/MJ]
+//
 double TemperatureEnthalpyDerivative(const double &hv)
 {
+  if(g_disable_freezing)                  { return 1.0/SPH_WATER/DENSITY_WATER; }
+
+  double g_freeze_temp=-0.1;
+  double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER; //transition enthalpy [MJ/m3 water]
+
   //derivative of temperature with respect to volumetric enthalpy
-  if      (hv>0                       ){return 1.0/SPH_WATER/DENSITY_WATER;}
-  else if (hv>-LH_FUSION*DENSITY_WATER){return 0.0;}
-  else                                 {return 1.0/SPH_ICE/DENSITY_ICE; }   
+  if      (hv>0  ){ return 1.0/SPH_WATER/DENSITY_WATER;}
+  else if (hv>hvt){ return g_freeze_temp/hvt;}
+  else            { return 1.0/SPH_ICE/DENSITY_ICE; }   
+}
+//////////////////////////////////////////////////////////////////
+/// \brief converts temperature to volumetric enthalpy of water/ice only [MJ/m3 water] 
+///
+/// \param T [in] water temperature [C]
+/// \param pctfroz [in] percent frozen [0..1]
+/// \return volumetric enthapy [MJ/m3 water] 
+//
+double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctfroz)
+{
+  if(g_disable_freezing) { return T*SPH_WATER*DENSITY_WATER; }
+
+  double g_freeze_temp=-0.1;
+  double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
+
+  if     ((g_freeze_temp==0.0) && (fabs(T)<REAL_SMALL)){ return pctfroz*hvt; } //along zero line
+  else if(T>0)                                         { return T*SPH_WATER*DENSITY_WATER; }
+  else if((hvt<0.0) && (T>g_freeze_temp))              { return pctfroz*hvt; }
+  else                                                 { return T*SPH_ICE  *DENSITY_ICE+hvt; }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Converts any lowercase characters in a string to uppercase, returning the converted string
@@ -1564,7 +1606,7 @@ void quickSort(double arr[], int left, int right)
   if (i < right){quickSort(arr, i, right);}
 }
 ///////////////////////////////////////////////////////////////////////////
-/// \brief identifies index location of value in uneven continuous list of value ranges
+/// \brief identifies index location of value in uneven continuous list of sorted value ranges
 ///
 /// \param &x [in] value for which the interval index is to be found
 /// \param *ax [in] array of consecutive values from ax[0] to ax[N-1] indicating interval boundaries

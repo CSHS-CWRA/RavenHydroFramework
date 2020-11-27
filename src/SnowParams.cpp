@@ -7,7 +7,7 @@
 #include "HydroUnits.h"
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns thermal conductivity of snow [W/m/K]
+/// \brief Returns thermal conductivity of snow [MJ/d/m/K]
 /// \ref from Jordan (1991)/CLM 3.0 eqn 6.65 \cite Jordan1991
 ///
 /// \param &sno_dens [in] Snow density [kg/m^3]

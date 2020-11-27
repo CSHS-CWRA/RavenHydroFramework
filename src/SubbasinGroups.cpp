@@ -49,7 +49,7 @@ int    CSubbasinGroup::GetGlobalIndex       () const {return _global_pp;}
 /// \brief Returns true if subbasins with ID SBID is in group
 /// \param p_global [in] Global model index of a Subbasins
 ///
-/// \return true if Subbasin with global index p_global is in group
+/// \return true if Subbasin with subbasin ID SBID is in group
 //
 bool  CSubbasinGroup::IsInGroup          (const long SBID) const
 {
