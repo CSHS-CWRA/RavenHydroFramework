@@ -21,4 +21,5 @@ void BarycentricWeights();
 void RavenUnitTesting(const optStruct &Options);
 void TestInversion();
 void TestEnthalpyTempConvert();
+void TestConvectionSolution();
 #endif

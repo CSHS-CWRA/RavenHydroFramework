@@ -8,6 +8,7 @@ convention assumes conduction is positive downward
 
 #include "HydroProcessABC.h"
 #include "HeatConduction.h"
+double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,const double &Ta,const double &dt);
 
 /////////////////////////////////////////////////////////////////////
 /// \brief calculates volumetric heat capacity[MJ/m3/K] of soil/water/ice mix
@@ -461,6 +462,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   double geo_grad = pHRU->GetSurfaceProps()->geothermal_grad; //[MJ/m2]
   int    nSoils=pModel->GetNumSoilLayers();
   
+  //g_disable_freezing=true;
   int N=nSoils;//+nSnowLayers
   
   static double **v_old;
@@ -531,13 +533,15 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
 
   // Crank Nicolson approach using Newton Raphson
   const double TOLERANCE=1e-3; //~0.2e-3 degrees C
-  const int    MAX_ITER=30;
+  const int    MAX_ITER=50;
   double       err=ALMOST_INF;
   int          i,iter;
+  double relax;
 
   //double hguess_n=hguess;
   //for (n=0;n<nDivs;n++){
   iter=1;
+  relax=1.0;
   while((err>TOLERANCE) && (iter<MAX_ITER))
   {
     GenerateJacobianMatrix(z,eta,poro,kappa_s,sat,satn,Vold,Vnew,hold,hguess,tstep,J,f,N);
@@ -569,11 +573,11 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
 
     err=0.0;
     for(i=0;i<N;i++) {
-      hguess[i]=hguess[i]-delta_h[i];
-//      if(iter>15) {cout<<std::setprecision(5)<<hguess[i]<<"|";}
+      hguess[i]=hguess[i]-relax*delta_h[i];
+  //    if(iter>15) {cout<<std::setprecision(5)<<hguess[i]<<"|";}
       upperswap(err,fabs(delta_h[i]));
     }
-//    if(iter>15) { cout<<endl; }
+  //  if(iter>15) { cout<<endl;cout<<" iter "<<iter<<" err: "<<err<<endl;relax=0.95;}
     //cout<<endl<<"iteration "<<iter<<" err: "<<err<<endl;
     iter++;
   }
@@ -592,19 +596,19 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     kapn[m]=CalculateThermalConductivity(poro[m],kappa_s[m],satn[m],Ficen);
   }
   
-  /*
+  
   //cout<<"HEATCOND: ";
   for(int m=0;m<N;m++)
   {
     //cout <<"KAPPA: "<<kap[m]<<" "<<poro[m]<<" "<<sat[m]<<" "<<Ficeo<< " "<<kappa_s[m]<<endl;
     //cout <<Tnew[m]<<" ";
-    //cout<<kap[m]<<" ";
+   // cout<<kap[m]<<" ";
     //cout<<ConvertVolumetricEnthalpyToIceContent(hguess[m])<<" ";
     //cout<<eta[m]<<" ";
   }
   //ExitGracefully("stub",STUB);
   //cout<<endl;
-  */
+  
 
   double Tair=pHRU->GetForcingFunctions()->temp_ave;
   double kappal,kappaln;
@@ -619,7 +623,10 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
       rates[m] =-0.5*kappal  * 1.0/(0.5*(dz[m]+dz[m-1]))*(Told[m]-Told[m-1]);// [MJ/m2/d]
       rates[m]+=-0.5*kappaln * 1.0/(0.5*(dz[m]+dz[m-1]))*(Tnew[m]-Tnew[m-1]);
     } 
-    else { rates[m]=hcond*(Tair-0.5*(Told[m]+Tnew[m])); } //top condition [MJ/m2/d]
+    else { 
+      //rates[m]=hcond*(Tair-0.5*(Told[m]+Tnew[m])); 
+      rates[m]=MeanConvectiveFlux(hold[m],Vnew[m],hcond,Tair,Options.timestep);
+    } //top condition [MJ/m2/d]
   }
   for(int m=0;m<N;m++)
   {
@@ -659,4 +666,98 @@ void CmvHeatConduction::ApplyConstraints(const double      *state_vars,
 {
   //DOES NOTHING - constraints handled within GetRatesOfChange
 }
+//////////////////////////////////////////////////////////////////
+/// \brief calculates mean convective flux over timestep when freezing may impact temperature 
+/// \param hn [in] volumetric enthalpy at start of timestep [MJ/m3]
+/// \param Vw [in] water volume [m]
+/// \param alpha [in] convection coefficient [MJ/m2/d/K]
+/// \param Ta [in] air temperature for timestep [C]
+/// \param dt [out] timestep [d]
+/// \return mean convective flux [MJ/m2/d]
+//
+double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,const double &Ta, const double &dt) 
+{
+  double ht,hlim;
+  double hnew=hn;
+  double ha;
+  double tstar;
+  double gamma_w=alpha/HCP_WATER/Vw;
+  double gamma_i=alpha/HCP_ICE  /Vw;
 
+  ht=-LH_FUSION*DENSITY_WATER;
+  //ht=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER
+  ha=HCP_WATER*Ta;  if (Ta<0.0){ha=HCP_ICE*Ta+ht;}
+  
+  if (Ta>0.0) {
+    if(hn>0.0)      { //unfrozen (case v) 
+      hnew=hn+(ha-hn)*(1.0-exp(-gamma_w*dt));
+    }
+    else if(hn<ht)  { //frozen and warming (case i) -working
+      hlim=(Ta*HCP_ICE+ht);
+      tstar=-gamma_i*log((hlim-ht)/(hlim-hn));
+      if (dt<tstar) {hnew=hlim+(hn-hlim)*exp(-gamma_i*dt); }
+      else          {hnew=ht+(dt-tstar)*gamma_i*ha;        }
+    }
+    else            { //partially frozen and warming (case ii) -working
+      tstar=-hn/gamma_w/ha;
+      if(dt<tstar)  { hnew=hn+gamma_w*ha*dt;                  }
+      else          { hnew=ha*(1.0-exp(-gamma_w*(dt-tstar))); }
+    }
+  }
+  else 
+  {
+    if(hn<ht)       { //frozen (case v) -working
+      hnew=hn+(ha-hn)*(1.0-exp(-gamma_w*dt));
+    }
+    else if(hn>0.0) { //unfrozen and cooling (case iii) -working
+      double hlim=HCP_WATER*Ta;
+      tstar=-1/gamma_w*log((hlim)/(hlim-hn));
+      if(dt<tstar) { hnew=hn+(hlim-hn)*(1.0-exp(-gamma_i*dt)); }
+      else          {hnew=(dt-tstar)*gamma_i*(ha-ht);               }
+    }
+    else            { //partially frozen and cooling (case iv) -working
+      tstar=(ht-hn)/gamma_i/(ha-ht);
+      if(dt<tstar)  { hnew=hn+gamma_i*(ha-ht)*dt;                  }
+      else          { hnew=ht+(ha-ht)*(1.0-exp(-gamma_i*(dt-tstar))); }
+    }
+  }
+
+  return (hnew-hn)*Vw/dt;
+}
+//////////////////////////////////////////////////////////////////
+/// \breif Unit test for analytical convection solution
+//
+void TestConvectionSolution() {
+  ofstream CONV;
+  double Vw=1.0;
+  double alpha=3.0;
+  double ht=-LH_FUSION*DENSITY_WATER;
+  double h,h0;
+  CONV.open("AnalyticConvTest.csv");
+  CONV<<"t,case i,T,case ii,T,case iii,T,case iv,T,"<<endl;
+  for(double t=0.001;t<6;t+=0.2) {
+    CONV<<t<<",";
+    h0=4.0;
+    h=Vw*t*MeanConvectiveFlux(h0,Vw,alpha,3.0,t)+h0;
+    CONV<<h<<","<<ConvertVolumetricEnthalpyToTemperature(h)<<",";
+    h0=-30;
+    h=Vw*t*MeanConvectiveFlux(h0,Vw,alpha,3.0,t)+h0;;
+    CONV<<h<<","<<ConvertVolumetricEnthalpyToTemperature(h)<<",";
+    h0=ht-8;
+    h=Vw*t*MeanConvectiveFlux(h0,Vw,alpha,3.0,t)+h0;;
+    CONV<<h<<","<<ConvertVolumetricEnthalpyToTemperature(h)<<",";
+
+    h0=4;
+    h=Vw*t*MeanConvectiveFlux(h0,Vw,alpha,-3.0,t)+h0;;
+    CONV<<h<<","<<ConvertVolumetricEnthalpyToTemperature(h)<<",";
+    h0=ht+30;
+    h=Vw*t*MeanConvectiveFlux(h0,Vw,alpha,-3.0,t)+h0;;
+    CONV<<h<<","<<ConvertVolumetricEnthalpyToTemperature(h)<<",";
+    h0=ht-8;
+    h=Vw*t*MeanConvectiveFlux(h0,Vw,alpha,-3.0,t)+h0;;
+    CONV<<h<<","<<ConvertVolumetricEnthalpyToTemperature(h)<<",";
+    CONV<<endl;
+  }
+  CONV.close();
+  ExitGracefully("TestConvectionSolution",SIMULATION_DONE);
+}

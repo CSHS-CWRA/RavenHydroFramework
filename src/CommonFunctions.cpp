@@ -1026,7 +1026,7 @@ double ConvertVolumetricEnthalpyToTemperature(const double &hv)
 {
   if      (g_disable_freezing)         { return hv/SPH_WATER/DENSITY_WATER; }
 
-  double g_freeze_temp=-0.1;
+  double g_freeze_temp=-0.0;
   double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
 
   if      (hv>0  ){ return hv/SPH_WATER/DENSITY_WATER;}
@@ -1043,7 +1043,7 @@ double ConvertVolumetricEnthalpyToIceContent(const double &hv)
 {
   if      (g_disable_freezing)            { return 0; }
 
-  double g_freeze_temp=-0.1;
+  double g_freeze_temp=-0.0;
   double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
 
   if      (hv>0  ){ return 0;}
@@ -1060,8 +1060,12 @@ double TemperatureEnthalpyDerivative(const double &hv)
 {
   if(g_disable_freezing)                  { return 1.0/SPH_WATER/DENSITY_WATER; }
 
-  double g_freeze_temp=-0.1;
+  double g_freeze_temp=-0.0;
   double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER; //transition enthalpy [MJ/m3 water]
+
+  //double alpha=0.05; //smoothing factor
+  //return 0.5*erfc(alpha*(hv-hvt))*1.0/SPH_ICE/DENSITY_ICE+0.5*erfc(alpha*(-hv))*1.0/SPH_WATER/DENSITY_WATER;
+
 
   //derivative of temperature with respect to volumetric enthalpy
   if      (hv>0  ){ return 1.0/SPH_WATER/DENSITY_WATER;}
@@ -1079,7 +1083,7 @@ double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctf
 {
   if(g_disable_freezing) { return T*SPH_WATER*DENSITY_WATER; }
 
-  double g_freeze_temp=-0.1;
+  double g_freeze_temp=-0.0;
   double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
 
   if     ((g_freeze_temp==0.0) && (fabs(T)<REAL_SMALL)){ return pctfroz*hvt; } //along zero line
