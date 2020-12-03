@@ -73,7 +73,7 @@ Copyright (c) 2008-2020 the Raven Development Team
    for(int ii=1; ii<ntime-1; ii++)
    {
      double delta_t2 = time[ii+1] - time[ii];
-     if(abs(delta_t2 - delta_t) > 0.00001)
+     if(fabs(delta_t2 - delta_t) > 0.00001)
      {
        printf("\n\n\nGetTimeInfoFromNetCDF: file name: %s\n",filename.c_str());
        printf("\n\n\n              expected delta_t = %15.8lf\n",delta_t);
