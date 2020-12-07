@@ -1084,6 +1084,9 @@ struct optStruct
   int              wateryr_mo;                ///< starting month of water year (typically 10=October)
   bool             create_rvp_template;       ///< create an rvp template file after reading the .rvi
 
+  //                                          ///< diagnostic options
+  double           diag_start_time;           ///< Model time to start diagnostics
+  double           diag_end_time;             ///< Model time to start diagnostics
   bool             assimilation_on;           ///< turn on assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}

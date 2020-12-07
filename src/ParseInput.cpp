@@ -272,6 +272,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.period_ending       =false;
   Options.period_starting     =false;//true;
   Options.write_group_mb      =DOESNT_EXIST;
+  Options.diag_start_time     =-ALMOST_INF;
+  Options.diag_end_time       = ALMOST_INF;
   Options.wateryr_mo          =10; //October
   Options.create_rvp_template =false;
   Options.write_constitmass   =false;
@@ -1482,8 +1484,18 @@ bool ParseMainInputFile (CModel     *&pModel,
     }          
     case(75):  //--------------------------------------------
     {/*:EvaluationTime [yyyy-mm-dd] [00:00:00] {yyyy-mm-dd} {00:00:00}*/ //AFTER StartDate or JulianStartDay and JulianStartYear commands
-      if (Options.noisy) { cout << "Evaluation Time (OBSOLETE, replaced with :EvaluationPeriod command) " << endl; }
-      WriteWarning(":EvaluationTime command deprecated. Please use :EvaluationPeriod command instead. ",Options.noisy);
+      if (Options.noisy) { cout << "Evaluation Time" << endl; }
+      if (Len<3) { ImproperFormatWarning(":EvaluationTime", p, Options.noisy); break; }
+
+      time_struct tt;
+      tt = DateStringToTimeStruct(s[1], s[2], Options.calendar);
+      Options.diag_start_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
+      if (Len >= 5) // optional diagnostic end time
+      {
+        tt = DateStringToTimeStruct(s[3], s[4], Options.calendar);
+        Options.diag_end_time = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
+      }
+	  WriteWarning(":EvaluationTime command deprecated. Please use :EvaluationPeriod command instead. ",Options.noisy);
       break;
     }
     case(76):  //--------------------------------------------

@@ -1825,8 +1825,12 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
 			     (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
-      value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
-      
+      value=RAV_BLANK_DATA; 
+      // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
+      if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
+      {
+        value= _pModeledTS[i]->GetModelledValue(obsTime,_pObservedTS[i]->GetType());
+      }
       _pModeledTS[i]->SetSampledValue(_aObsIndex[i],value); //JRC : \todo[fix]: I'm not sure if this makes sense for irregular time series
       _aObsIndex[i]++;
       obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);
