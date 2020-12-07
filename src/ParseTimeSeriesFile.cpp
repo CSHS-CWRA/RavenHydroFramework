@@ -1656,9 +1656,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           nHydroUnits      = atoi(s[1]);
           nHydroUnitsGiven = true;
 
-          ExitGracefullyIf(pModel->GetNumHRUs() != nHydroUnits,
-                           "ParseTimeSeriesFile: :NumberHRUs given does not agree with HRUs given in *.rvh file",BAD_DATA);
+          ExitGracefullyIf(pModel->GetNumHRUs() < nHydroUnits,
+                           "ParseTimeSeriesFile: :GridWeights :NumberHRUs exceeds number of HRUs in model",BAD_DATA);
 
+          nHydroUnits=pModel->GetNumHRUs(); //no need to use this; should always use actual number of HRUs in model
           pGrid->SetnHydroUnits(nHydroUnits);
           if (nHydroUnitsGiven && nGridCellsGiven) {pGrid->AllocateWeightArray(nHydroUnits,nGridCells);}
         }
@@ -1697,7 +1698,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       // check that weightings sum up to one per HRU
       bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells,pModel);
       ExitGracefullyIf(!WeightArrayOK,
-                       "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum per HRUID must be 1.0.",BAD_DATA);
+                       "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) grid cell ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
@@ -1822,8 +1823,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           nHydroUnits      = atoi(s[1]);
           nHydroUnitsGiven = true;
 
-          ExitGracefullyIf(pModel->GetNumHRUs() != nHydroUnits,
-            "ParseTimeSeriesFile: :NumberHRUs given does not agree with HRUs given in *.rvh file",BAD_DATA);
+          ExitGracefullyIf(pModel->GetNumHRUs() < nHydroUnits,
+            "ParseTimeSeriesFile: :StationWeightsByAttribute :NumberHRUs exceeds number of HRUs in model",BAD_DATA);
+
+          nHydroUnits=pModel->GetNumHRUs(); //no need to use this; should always use actual number of HRUs in model
 
           pGrid->SetnHydroUnits(nHydroUnits);
           if(nHydroUnitsGiven && nGridCellsGiven) { pGrid->AllocateWeightArray(nHydroUnits,nGridCells); }
@@ -1867,7 +1870,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         // check that weightings sum up to one per HRU
       bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells,pModel);
       ExitGracefullyIf(!WeightArrayOK,
-        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum for all enabled HRUs must be 1.0.",BAD_DATA);
+        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) grid cell ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);

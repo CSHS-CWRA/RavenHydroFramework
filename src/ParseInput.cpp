@@ -1888,6 +1888,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:EvaluationPeriod [period_name] [start yyyy-mm-dd] [end yyyy-mm-dd]*/
       if(Options.noisy) { cout << ":EvaluationPeriod" << endl; }
       CDiagPeriod *pDP=NULL;
+      if(pModel==NULL) {
+        WriteWarning(":Evaluation period command must be after the :SoilModel command in the .rvi file. This command will be ignored.",Options.noisy); break;
+      }
       if(Len>=4) {
         pDP=new CDiagPeriod(s[1],s[2],s[3],Options);
         pModel->AddDiagnosticPeriod(pDP);

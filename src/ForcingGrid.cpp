@@ -1810,7 +1810,7 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
   int k=HRUID;
 
   //entry already exists in sparse weights matrix, replace
-  for(int i=0;i<_nWeights[k]-1;i++) {
+  for(int i=0;i<_nWeights[k];i++) {
     if (_GridWtCellIDs[k][i]==CellID){
       _GridWeight[k][i]=weight; return;
     }
@@ -1883,7 +1883,8 @@ bool   CForcingGrid::CheckWeightArray(const int nHydroUnits, const int nGridCell
       }
       bool enabled=pModel->GetHydroUnit(k)->IsEnabled();
       if ((fabs(sum_HRU - 1.0) > 0.0001) && (enabled)) {
-        cout<<"HRU ID = "<<k<<" Sum Forcing Weights = "<<sum_HRU<<endl;
+        cout<<"HRU ID = "<<pModel->GetHydroUnit(k)->GetID()<<" Sum Forcing Weights = "<<sum_HRU<<endl;
+        for(int i=0; i<_nWeights[k]; i++) { cout<< _GridWeight[k][i]<<" ";} cout<<endl;
         check = false;
       }
     }

@@ -96,11 +96,14 @@ void CSubbasinGroup::Initialize()
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief disables HRU Group
+/// \brief disables SubBasin Group
 //
 void CSubbasinGroup::DisableGroup()
 {
   _disabled=true; //propagates once initialized
+  for(int p=0;p<_nSubbasins;p++) {
+    _pSubbasins[p]->Disable(); //this disables constituent HRUs
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a state variable specified by index i over the total area covered by the subbasin group

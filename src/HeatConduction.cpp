@@ -352,19 +352,16 @@ void CmvHeatConduction::GenerateJacobianMatrix(const double  *z,
   //    eta=thick[i]*(1-poro[i])*soil_hcp[i];
   double dTdHn;
   double kappal,kappar,kappaln,kapparn,kappaln_d,kapparn_d,kappaln_di,kapparn_di;
-  double ai,bi;
-  double Bn;
-  double dh=0.01;
+  double ai,bi,Bn;
   double Fice,Ficen,Ficen_d;
+  double dh=0.01;
+  
   double *kap    =new double [N];
   double *kapn   =new double [N];
   double *kapn_d =new double [N];
   double *T      =new double [N];
-  double *Tn     =new double [N];
-  double *kapl   =new double [N];
-  double *kapr   =new double [N];
-  double *kapl_d =new double [N];
-  double *kapr_d =new double [N]; // \todo [optimize] - static storage
+  double *Tn     =new double [N]; // \todo [optimize] - static storage
+  
   for(int i=0;i<N;i++)
   {
     Fice      =ConvertVolumetricEnthalpyToIceContent(hold[i]);
@@ -436,10 +433,6 @@ void CmvHeatConduction::GenerateJacobianMatrix(const double  *z,
   delete [] kapn_d;
   delete [] T;
   delete [] Tn;
-  delete [] kapl;
-  delete [] kapr;
-  delete [] kapr_d;
-  delete [] kapl_d;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Finds thermal rate of change
