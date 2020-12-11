@@ -472,6 +472,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   start+=7; //first char of year YYYY (7=length(' since '))
   // ---------------------------
   // check if format is hours since YYYY-MM-DD HH:MM:SS, fill with leading zeros if necessary
+  // blank between date and time (position 10) can be either ' ' or 'T'
   // Y  Y  Y  Y  -  M  M  -  d  d  _  0  0  :  0  0  :  0  0  .  0     +  0  0  0  0 
   // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
   // ---------------------------
@@ -488,7 +489,8 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   if (strlen(tmp.c_str())<=(start+10+2)){date_only=true;} //00:00:00 +0000 not included in string
 
   if(!date_only) {
-    if(!strstr(tmp.substr(start+10,1).c_str()," ")) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 
+    if(!strstr(tmp.substr(start+10,1).c_str()," ") && !strstr(tmp.substr(start+10,1).c_str(),"T")) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d
+    if(strstr(tmp.substr(start+10,1).c_str(),"T")) {tmp.replace(start+10,1," "); } // replacing 'T' with ' ' in case date looks like YYYY-MM-DDTHH:MM:SS
     if(!strstr(tmp.substr(start+13,1).c_str(),":")) { tmp.insert(start+11,"0"); } // first colon in time  - fixes 1:00:00
     if(!strstr(tmp.substr(start+16,1).c_str(),":")) { tmp.insert(start+14,"0"); } // second colon in time - fixes 11:0:00 (?)
   }
