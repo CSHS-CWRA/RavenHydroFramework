@@ -128,6 +128,10 @@ CSubBasin::CSubBasin(const long           Identifier,
   _mannings_n =AUTO_COMPUTE;
   _slope      =AUTO_COMPUTE;
   _diffusivity=AUTO_COMPUTE;
+  if(pChan!=NULL) {
+    _mannings_n=_pChannel->GetMinMannings();
+    _slope     =_pChannel->GetBedslope();
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -618,6 +622,16 @@ double    CSubBasin::GetOutflowRate   () const
   if (_pReservoir!=NULL){return _pReservoir->GetOutflowRate();}
   return _aQout[_nSegments-1]; //[m3/s](from start of time step until after solver is called)
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns Outflow at start of previous timestep (during solution) or start of completed timestep [m^3/s]
+/// \return Outflow at start of previous timestep (during solution) or start of completed timestep [m^3/s]
+//
+double    CSubBasin::GetLastOutflowRate() const
+{
+  return _QoutLast;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 /// \return Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
@@ -720,7 +734,10 @@ double CSubBasin::GetRiverDepth() const {
 /// \brief Returns reach bedslope
 /// \return  reference reach bedslope [m/m]
 //
-double CSubBasin::GetSlope() const{return _slope;}
+double CSubBasin::GetBedslope() const{
+  if(_pChannel==NULL) { return 0; }
+  return _pChannel->GetBedslope();
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns current wetted perimeter of stream
@@ -1151,11 +1168,10 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
-      string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AnnualAvgRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
-      WriteAdvisory(advice,false);
+      //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AnnualAvgRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
+      //WriteAdvisory(advice,false);
     }
     else{
-
       ResetReferenceFlow(_Q_ref);
     }
     

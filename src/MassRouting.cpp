@@ -130,6 +130,118 @@ void   CTransportModel::SetMassInflows    (const int p, const double *aMin)
   }
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Updates aMinnew, array of mass loadings, to handle fixed concentration/temperature or specified mass inflow conditions
+///
+/// \param p    subbasin index
+/// \param t    end of timestep, in model time
+/// \param aMinnew array of rates of upstream mass/energy loading for the current timestep [mg/d]/[MJ/d] [size: _nConstituents]
+//
+void   CTransportModel::ApplySpecifiedMassInflows(const int p,const double t,double *aMinnew) 
+{
+  double C;
+  long tag1;
+  int  tag2;
+  long   SBID=pModel->GetSubBasin(p)->GetID();
+  double    Q=pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
+  
+  /*for(int c=0;c<_nConstituents;c++)
+  {
+    pTransportSubmodel[c]->ApplySpecifiedMassInflows(p,t,aMinnew[c]);
+  }*/
+
+  //Handle additional mass/energy inflows 
+  /*for(int i=0; i<_nMassInflowTS; i++) {
+    tag1=s_to_l(_pMassInflowTS[i]->GetTag().c_str());
+    tag2=s_to_i(_pMassInflowTS[i]->GetTag2().c_str());
+    for(int c=0;c<_nConstituents;c++) {
+      if(tag1==SBID) {
+        if(tag2==c) {
+          aMinnew[c]+=_pMassInflowTS[i]->GetValue(t); //mg/d or MJ/d  
+          // \todo[funct] - add specified mass inflow time series
+        }
+      }
+    }
+  }*/
+
+  //Handle specified concentrations/temperatures of streamflow
+  for(int i=0; i<_nSpecFlowConcs; i++) 
+  {
+    tag1=s_to_l(_pSpecFlowConcs[i]->GetTag().c_str());
+    tag2=s_to_i(_pSpecFlowConcs[i]->GetTag2().c_str());
+    for(int c=0;c<_nConstituents;c++) 
+    {
+      if ((tag1==SBID) && (tag2==c)) {
+        C=_pSpecFlowConcs[i]->GetValue(t); //mg/L or C
+        if(_pConstituents[c]->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+        else                                  { C*=LITER_PER_M3; } //mg/m3
+        aMinnew[c]=Q*C;  //[m3/d]*[mg/m3] or [m3/d]*[MJ/m3] 
+      }
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief determines net mass/energy added in this timestep due to inflow source terms
+///
+/// \param c    constituent index
+/// \param t    end of timestep, in model time
+/// \param tstep [in] 
+/// \returns net mass/energy added in this timestep due to inflow source terms [mg] or [MJ]
+//
+double   CTransportModel::GetMassAddedFromInflowSources(const int c, const double &t, const double &tstep) const 
+{
+  double C,Q,Qold;
+  long SBID,SBID_down;
+  long tag1; int tag2;
+  double mass=0; //[mg] or [MJ]
+  
+  // Handle additional mass/energy inflows 
+  /*for(int i=0; i<_nMassInflowTS; i++) {
+    tag1=s_to_l(_pMassInflowTS[i]->GetTag ().c_str());
+    tag2=s_to_i(_pMassInflowTS[i]->GetTag2().c_str());
+    for(int c=0;c<_nConstituents;c++) {
+      if ((tag1==SBID) && (tag2==c)) {
+          mass+=0.5*(_pMassInflowTS[i]->GetValue(t)+_pMassInflowTS[i]->GetValue(t-tstep)); //mg/d or MJ/d  
+        }
+      }
+    }
+  }*/
+
+  // remove mass which is overridden by specified mass inflow
+  for(int p=0;p<pModel->GetNumSubBasins();p++) 
+  {
+    SBID_down=pModel->GetSubBasin(p)->GetDownstreamID();
+    for(int i=0; i<_nSpecFlowConcs; i++) {
+      tag1=s_to_l(_pSpecFlowConcs[i]->GetTag ().c_str());
+      tag2=s_to_i(_pSpecFlowConcs[i]->GetTag2().c_str());
+      if ((tag2==c) && (tag1==SBID_down)) {
+        mass-=GetIntegratedMassOutflow(p,c,tstep);
+      }
+    }
+  }
+  // Handle specified concentrations/temperatures of streamflow
+  int spec_c;
+  for(int i=0; i<_nSpecFlowConcs; i++) 
+  {
+    spec_c=s_to_i(_pSpecFlowConcs[i]->GetTag2().c_str());
+    SBID  =s_to_l(_pSpecFlowConcs[i]->GetTag ().c_str());
+    if(spec_c==c) 
+    {
+      Q=pModel->GetSubBasinByID(SBID)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
+      C=_pSpecFlowConcs[i]->GetValue(t);                             //mg/L or C
+      if(_pConstituents[c]->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+      else                                  { C*=LITER_PER_M3;                                 } //mg/m3
+      mass+=0.5*Q*C*tstep;  //[mg] or [MJ]
+
+      Qold=pModel->GetSubBasinByID(SBID)->GetLastOutflowRate()*SEC_PER_DAY;//[m3/d] Flow at start of time step
+      C=_pSpecFlowConcs[i]->GetValue(t-tstep);                             //mg/L or C
+      if(_pConstituents[c]->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+      else                                  { C*=LITER_PER_M3;                                 } //mg/m3
+      mass+=0.5*Qold*C*tstep;
+    }    
+  }
+  return mass;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Sets lateral mass/energy loading to primary channel and updates mass/energy loading history
 ///
 /// \param p    subbasin index
@@ -203,6 +315,7 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
         double tstep=Options.timestep;
         double beta=_aEnthalpyBeta[p];
 
+        //beta=0.0; //TMP DEBUG
         aMout_new[nSegments-1][c]=0.0;
         //aMinHist and source term both have same indexing; 
         for(int i=0;i<nMinHist;i++) 
@@ -210,8 +323,9 @@ void   CTransportModel::RouteMass(const int          p,         // SB index
           term1=_aMinHist[p][c][i]*exp(-beta*i*tstep);
           term2=0.0;
           for(int j=0;j<i;j++) {
-            term2+=_aEnthalpySource[p][i-j]/beta*exp(-beta*(i-j)*tstep)*(exp(beta*tstep)-1.0);
+            term2+=_aEnthalpySource[p][i-j]/beta*exp(-beta*(i-j)*tstep)*(1.0-exp(-beta*tstep));
           }
+          //term2=0;//TMP DEBUG
           aMout_new[nSegments-1][c]+=aRouteHydro[i]*(term1+term2);
         }
       }
@@ -360,7 +474,7 @@ void   CTransportModel::UpdateMassOutflows(const int p,  double **aMoutnew,
     dM-=0.5*(_aMout[p][c][pBasin->GetNumSegments()-1]+_aMout_last[p][c])*dt;
 
     //energy change from loss of energy along reach over time step
-    //dM-=GetEnergyLossesFromReach();?? 
+    //dM-=GetEnergyLossesFromReach(); 
 
     //mass change from lateral inflows
     dM+=0.5*(Mlat_new+_aMlat_last[p][c])*dt;

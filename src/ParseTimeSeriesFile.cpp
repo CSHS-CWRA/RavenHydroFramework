@@ -166,8 +166,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     //-----------------CONTROLS ---------------------------------
     else if  (!strcmp(s[0],":OverrideStreamflow"    )){code=100; }
     //-----------------TRANSPORT--------------------------------
-    else if  (!strcmp(s[0],":ConcentrationTimeSeries")){code=300; }
-    else if  (!strcmp(s[0],":MassFluxTimeSeries"    )){code=300; }
+    else if  (!strcmp(s[0],":ConcentrationTimeSeries"     )){code=300; }
+    else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301; }
+    else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302; }  
+    else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303; }
     //---------GRIDDED INPUT (lat,lon,time)---------------------
     else if  (!strcmp(s[0],":GriddedForcing"          )){code=400;}
     else if  (!strcmp(s[0],":ForcingType"             )){code=401;}
@@ -1489,7 +1491,72 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
+    case(302):
+    {/*:SpecifiedInflowConcentration [constit_name] [SBID]
+      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+      {double value} x nMeasurements
+       :EndSpecifiedInflowConcentration
+        */
+      if(Options.noisy) { cout <<"Specified stream concentration"<<endl; }
 
+      int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+      if(c==DOESNT_EXIST) {
+        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid constituent name. Command will be ignored.",BAD_DATA_WARN); break;
+      }
+      long SBID=s_to_l(s[2]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. Command will be ignored.",BAD_DATA_WARN); break;
+      }
+      
+      CTimeSeries *pTS;
+      pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),"",Options);
+      pTS->SetTag(to_string(SBID));
+      pTS->SetTag2(to_string(c));
+
+      pModel->GetTransportModel()->AddInflowConcTimeSeries(pTS);
+      
+      break;
+
+      /*long SBID=s_to_l(s[2]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        WriteWarning("ParseTimeSeries::Trying to override stream concentration at non-existent subbasin "+to_string(SBID),Options.noisy);
+        break;
+      }
+      int c=pModel->GetTransportModel()->GetConstituentIndex(s[2]);
+      if(c==DOESNT_EXIST) {
+        WriteWarning("ParseTimeSeriesFile: :OverrideStreamConcentration: invalida constituent name. Command will be ignored.",Options.noisy);
+      }
+      else {
+        pModel->GetTransportModel()->OverrideStreamConcentration(SBID,c);
+      }
+      break;*/
+    }
+    case(303):
+    {/*:SpecifiedInflowTemperature [SBID]
+      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+      {double value} x nMeasurements
+       :EndSpecifiedInflowTemperature
+        */
+      if(Options.noisy) { cout <<"Specified stream temperature"<<endl; }
+
+      int c=pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
+      if(c==DOESNT_EXIST) {
+        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamTemperature: temperature is not being simulated. ",BAD_DATA_WARN); 
+      }
+      long SBID=s_to_l(s[1]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. ",BAD_DATA_WARN); 
+      }
+
+      CTimeSeries *pTS;
+      pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),"",Options);
+      pTS->SetTag(to_string(SBID));
+      pTS->SetTag2(to_string(c));
+
+      pModel->GetTransportModel()->AddInflowConcTimeSeries(pTS);
+
+      break;
+    }
     case (400)://----------------------------------------------
     {/*:GriddedForcing
          :ForcingType PRECIP

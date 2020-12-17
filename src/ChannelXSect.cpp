@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ChannelXSect.h"
 
@@ -10,7 +10,7 @@
 //
 void CChannelXSect::Construct(const string name)
 {
-  tag=name;
+  _name=name;
   if (!DynArrayAppend((void**&)(pAllChannelXSects),(void*)(this),NumChannelXSects)){
     ExitGracefully("CChannelXSect::Constructor: creating NULL channel profile",BAD_DATA);
   }
@@ -218,7 +218,14 @@ CChannelXSect::~CChannelXSect()
 /// \brief Returns Cross-section nickname
 /// \return Cross section nickname
 //
-string      CChannelXSect::GetTag()      const {return tag;}
+string      CChannelXSect::GetName()      const {return _name;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns minimum mannings n along channel
+/// \return minimum mannings n along channel
+//
+double      CChannelXSect::GetMinMannings()      const { return _min_mannings; }
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Riverbed slope
@@ -350,7 +357,7 @@ void CChannelXSect::GetFlowCorrections(const double &SB_slope,
 //////////////////////////////////////////////////////////////////
 /// \brief Returns celerity of channel [m/s]
 /// \param &Qref [in] Reference flowrate [m3/s]
-/// \return Celerity of channel corresponding to reference flowrate
+/// \return Celerity of channel corresponding to reference flowrate [m/s]
 //
 double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,const double &SB_n) const//Qref in m3/s, celerity in m/s
 {
@@ -381,7 +388,6 @@ double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, co
   double slope_mult=1.0;
   double Q_mult=1.0;
   GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);
- 
   return 0.5*(Q)/GetTopWidth(Q,SB_slope,SB_n)/(slope_mult*_bedslope);
 }
 
@@ -525,7 +531,7 @@ void CChannelXSect::SummarizeToScreen         ()
   cout<<"Channel Profile Summary:"<<NumChannelXSects<<" profiles in database"<<endl;
   for (int p=0; p<NumChannelXSects;p++)
   {
-    cout<<"-Channel profile \""<<pAllChannelXSects[p]->GetTag()<<"\" "<<endl;
+    cout<<"-Channel profile \""<<pAllChannelXSects[p]->GetName()<<"\" "<<endl;
     cout<<"           slope: " <<pAllChannelXSects[p]->_bedslope <<endl;
   }
 }
@@ -544,7 +550,7 @@ void CChannelXSect::WriteRatingCurves()
   for (int p=0; p<NumChannelXSects;p++)
   {
     const CChannelXSect *pP=pAllChannelXSects[p];
-    CURVES<<pP->tag <<"----------------"<<endl;
+    CURVES<<pP->_name <<"----------------"<<endl;
     CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->N;i++){CURVES<<pP->aQ[i]       <<",";}CURVES<<endl;
     CURVES<<"Stage Height [m],";    for(i=0;i<pP->N;i++){CURVES<<pP->aStage[i]   <<",";}CURVES<<endl;
     CURVES<<"Top Width [m],";       for(i=0;i<pP->N;i++){CURVES<<pP->aTopWidth[i]<<",";}CURVES<<endl;
@@ -564,7 +570,7 @@ const CChannelXSect*CChannelXSect::StringToChannelXSect(const string s)
   string sup=StringToUppercase(s);
   for (int p=0;p<NumChannelXSects;p++)
   {
-    if (!sup.compare(StringToUppercase(pAllChannelXSects[p]->GetTag()))){return pAllChannelXSects[p];}
+    if (!sup.compare(StringToUppercase(pAllChannelXSects[p]->GetName()))){return pAllChannelXSects[p];}
   }
   return NULL;
 }

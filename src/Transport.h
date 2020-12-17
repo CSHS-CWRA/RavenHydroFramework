@@ -2,6 +2,7 @@
   Raven Library Source Code
   Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
+#ifndef  _TRANSPORT_REFACTOR_
 #ifndef TRANSPORTMODEL_H
 #define TRANSPORTMODEL_H
 
@@ -94,9 +95,12 @@ private:/*------------------------------------------------------*/
   double  **_channel_storage;         ///< array storing channel storage [mg] or [MJ] [size: nSubBasins x _nConstituents] 
   double  **_rivulet_storage;         ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins x _nConstituents] 
   
-  constit_source **pSources;         ///< array of pointers to constituent sources [size: nSources]
-  int              nSources;         ///< number of constituent sources
+  constit_source **_pSources;         ///< array of pointers to constituent sources [size: nSources]
+  int              _nSources;         ///< number of constituent sources
   int            **_aSourceIndices;  ///< lookup table to convert constitutent and (global) water storage index to corresponding source, if any [size: _nConstituents x nStateVariables]
+
+  int              _nSpecFlowConcs; ///< number of specified flow concentration/temperature time series
+  CTimeSeries    **_pSpecFlowConcs; ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID, tag2 corresponds to constit_ind
   
   void m_to_cj(const int layerindex, int &c, int &j) const;
   void DeleteRoutingVars();
@@ -104,6 +108,7 @@ private:/*------------------------------------------------------*/
 
   double GetTotalRivuletConstituentStorage(const int c) const;
   double GetTotalChannelConstituentStorage(const int c) const;
+  double GetMassAddedFromInflowSources    (const int c,const double &t,const double &tstep) const;
 
   //Specific to Enthalpy Transport ------------------------------- 
   bool    _EnthalpyIsSimulated;      ///< boolean; true if ENTHALPY is one of the constituents in the model
@@ -184,6 +189,8 @@ public:/*-------------------------------------------------------*/
   void   AddDirichletTimeSeries (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
   void   AddInfluxSource        (const string const_name, const int i_stor, const int kk, const double flux);
   void   AddInfluxTimeSeries    (const string const_name, const int i_stor, const int kk, const CTimeSeries *pTS);
+  void   AddInflowConcTimeSeries(const CTimeSeries *pTS);
+
   //
   void   Prepare(const optStruct &Options);
   void   CalculateLateralConnections();
@@ -194,6 +201,8 @@ public:/*-------------------------------------------------------*/
   void   IncrementCumulOutput(const optStruct &Options);
 
   void   SetGlobalParameter(const string const_name, const string param_name, const double &value, bool noisy);
+  void   ApplySpecifiedMassInflows(const int p, const double t,double *aMinnew);
+
   void   SetMassInflows    (const int p, const double *aMinnew);
   void   SetLateralInfluxes(const int p, const double *aRoutedMass);
   void   RouteMass         (const int p,       double **aMoutnew, double *aResMass, const optStruct &Options,const time_struct &tt) const;
@@ -205,4 +214,5 @@ public:/*-------------------------------------------------------*/
   void   WriteEnsimMinorOutput      (const optStruct &Options, const time_struct &tt) const;
   void   CloseOutputFiles           () const;
 };
+#endif
 #endif

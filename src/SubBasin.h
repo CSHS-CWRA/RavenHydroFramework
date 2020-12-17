@@ -173,7 +173,7 @@ public:/*-------------------------------------------------------*/
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
   double               GetHyporheicFlux     () const;
-  double               GetSlope             () const;
+  double               GetBedslope          () const;
   double               GetWettedPerimeter   () const;
   double               GetTopWidth          () const;
 
@@ -186,6 +186,7 @@ public:/*-------------------------------------------------------*/
   int             GetNumDiversions         () const;
 
   double          GetOutflowRate           () const;                   //[m3/s] from final segment, point in time
+  double          GetLastOutflowRate       () const;                   //[m3/s] from final segment, previous timestep
   double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
   double          GetIntegratedSpecInflow  (const double &t,
                                             const double &tstep) const;//[m3] from specified inflows integrated over timestep

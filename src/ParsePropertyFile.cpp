@@ -791,15 +791,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       break;
     }
     case(500):  //----------------------------------------------
-    {/*ChannelProfile
-       :ChannelProfile [optional string name]
-       :Bedslope {double slope}
-       :SurveyPoints
-       {double x double bed_elev}x num survey points
-       :EndSurveyPoints
-       :RoughnessZones
-       {double x_z double mannings_n}xnum roughness zones
-       :EndRoughnessZones
+    {/*:ChannelProfile [string name]
+         :Bedslope {double slope}
+         :SurveyPoints
+           {double x double bed_elev}x num survey points
+         :EndSurveyPoints
+         :RoughnessZones
+           {double x_z double mannings_n}xnum roughness zones
+         :EndRoughnessZones
        :EndChannelProfile*/
       string tag;
       double slope=0.0;

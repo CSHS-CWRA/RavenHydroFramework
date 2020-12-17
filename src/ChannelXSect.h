@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------
   ChannelXSect.h
   ------------------------------------------------------------------
@@ -20,7 +20,7 @@
 class CChannelXSect
 {
 private:/*-------------------------------------------------------*/
-  string       tag;                 /// <nickname for XSect
+  string       _name;                 /// <nickname for XSect
 
   double       _bedslope;           /// <slope of river channel
   //double     conductivity;        /// <conductivity of channel bottom sediments [m/d]
@@ -89,8 +89,9 @@ public:/*-------------------------------------------------------*/
   ~CChannelXSect();
 
   //Accessors
-  string              GetTag        ()                const;
+  string              GetName       ()                const;
   double              GetBedslope   ()                const;
+  double              GetMinMannings()                const;
   double              GetTopWidth   (const double &Q, const double &SB_slope,const double &SB_n) const;
   double              GetArea       (const double &Q, const double &SB_slope,const double &SB_n) const;
   double              GetStageElev  (const double &Q, const double &SB_slope,const double &SB_n) const;

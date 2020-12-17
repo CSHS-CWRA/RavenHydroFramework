@@ -320,7 +320,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   SetSpecifiedValue(G.avg_annual_runoff,Gtmp.avg_annual_runoff,Gtemplate.avg_annual_runoff,false,"AVG_ANNUAL_RUNOFF");
   SetSpecifiedValue(G.MOHYSE_PET_coeff,Gtmp.MOHYSE_PET_coeff,Gtemplate.MOHYSE_PET_coeff,false,"MOHYSE_PET_COEFF");
   SetSpecifiedValue(G.SWI_reduct_coeff,Gtmp.SWI_reduct_coeff,Gtemplate.SWI_reduct_coeff,false,"SWI_REDUCT_COEFF");
-
+  SetSpecifiedValue(G.init_stream_temp,Gtmp.init_stream_temp,Gtemplate.init_stream_temp,false,"INIT_STREAM_TEMP");
 
 }
 
@@ -376,7 +376,8 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   //model-specific parameters
   g.avg_annual_snow     =DefaultParameterValue(is_template,false);
   g.avg_annual_runoff   =DefaultParameterValue(is_template,false);
-  
+  g.init_stream_temp    =DefaultParameterValue(is_template,false);
+
   for (int i=0;i<12;i++){
     g.UBC_s_corr[i]=DefaultParameterValue(is_template,true);
     g.UBC_n_corr[i]=DefaultParameterValue(is_template,true);
@@ -498,6 +499,7 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("AIRSNOW_COEFF"       )){G.airsnow_coeff=value;}
   else if (!name.compare("AVG_ANNUAL_SNOW"     )){G.avg_annual_snow=value;}
   else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){G.avg_annual_runoff=value;}
+  else if (!name.compare("INIT_STREAM_TEMP"    )){G.init_stream_temp=value;}
   else if (!name.compare("MAX_SWE_SURFACE"     )){G.max_SWE_surface=value;}
   else if (!name.compare("MOHYSE_PET_COEFF"    )){G.MOHYSE_PET_coeff=value;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){G.max_reach_seglength=value;}
@@ -590,7 +592,8 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
 
   else if (!name.compare("AIRSNOW_COEFF"       )){return G.airsnow_coeff;}
   else if (!name.compare("AVG_ANNUAL_SNOW"     )){return G.avg_annual_snow;}
-  else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){return G.avg_annual_runoff;}
+  else if (!name.compare("AVG_ANNUAL_RUNOFF"   )){return G.avg_annual_runoff;}  
+  else if (!name.compare("INIT_STREAM_TEMP"    )){return G.init_stream_temp;}
   else if (!name.compare("MAX_SWE_SURFACE"     )){return G.max_SWE_surface;}
   else if (!name.compare("MOHYSE_PET_COEFF"    )){return G.MOHYSE_PET_coeff;}
   else if (!name.compare("MAX_REACH_SEGLENGTH" )){return G.max_reach_seglength;}

@@ -400,5 +400,7 @@ struct global_struct
   double           assim_time_decay;    ///< [1/d] assimilation temporal decay factor (0=diminishes in future, 0.1 - diminshes in  3 days) [0.2]
 
   double           reservoir_demand_mult;///> [0..1+] multiplier of irrigation demand to be met by upstream reservoirs 
+
+  double           init_stream_temp;    ///< [C] intial stream temperature 
 };
 #endif

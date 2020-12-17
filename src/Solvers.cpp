@@ -51,11 +51,11 @@ void MassEnergyBalance( CModel            *pModel,
   static double     *aQoutnew;    //[m3/s] final outflow from reach segment seg at time t+dt [size=MAX_RIVER_SEGS]
   static double     *aRouted;     //[m3]
 
-  static double    **aMinnew;     //[mg/d] mass loading of constituents to subbasin reach p at t+dt [size=_nSubBasins x nConstituents ]
-  static double    **aMoutnew;    //[mg/d] final mass output from reach segment seg at time t+dt [size= MAX_RIVER_SEGS  x nConstituents ]
-  static double    **aRoutedMass; //[mg/d] amount of mass [size= _nSubBasins xnConstituents]
-  static double     *aResMass;    //[mg]   amount of mass in reservoir [size= nConstitutents]
-  static double     *aMassOutflow;//[mg/d] rate of mass outflow from subbasin at time t+dt [size=nConstituents]
+  static double    **aMinnew;     //[mg/d] or [MJ/d] mass/energy loading of constituents to subbasin reach p at t+dt [size=_nSubBasins x nConstituents ]
+  static double    **aMoutnew;    //[mg/d] or [MJ/d] final mass/energy output from reach segment seg at time t+dt [size= MAX_RIVER_SEGS  x nConstituents ]
+  static double    **aRoutedMass; //[mg/d] or [MJ/d] amount of mass/energy [size= _nSubBasins xnConstituents]
+  static double     *aResMass;    //[mg]   or [MJ/d] amount of mass/energy in reservoir [size= nConstitutents]
+  static double     *aMassOutflow;//[mg/d] or [MJ/d] rate of mass/energy outflow from subbasin at time t+dt [size=nConstituents]
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
@@ -640,6 +640,8 @@ void MassEnergyBalance( CModel            *pModel,
 
       if(pBasin->IsEnabled())
       {
+        pModel->GetTransportModel()->ApplySpecifiedMassInflows(p,t+tstep,aMinnew[p]); //overrides or supplements mass loadings 
+
         pModel->GetTransportModel()->SetMassInflows    (p,aMinnew[p]);
         pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]); 
         pModel->GetTransportModel()->RouteMass         (p,aMoutnew,aResMass,Options,tt);  //Where everything happens!

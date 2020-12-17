@@ -5,7 +5,7 @@
   Master Transport/Tracer class
   coordinates information about constituent storage
   ----------------------------------------------------------------*/
-
+#ifndef  _TRANSPORT_REFACTOR_
 #include "HydroProcessABC.h"
 #include "Model.h"
 #include "Transport.h"
@@ -40,8 +40,11 @@ CTransportModel::CTransportModel(CModel *pMod)
   _pConstituents=NULL;
   _pConstitParams=NULL;
 
-  pSources=NULL;
-  nSources=0;
+  _pSources=NULL;
+  _nSources=0;
+
+  _nSpecFlowConcs=0;
+  _pSpecFlowConcs=NULL;
 
   _aIndexMapping=NULL; _nIndexMapping=0;
   _aSourceIndices=NULL;
@@ -51,6 +54,8 @@ CTransportModel::CTransportModel(CModel *pMod)
   _aMinHist =NULL;
   _aMlatHist=NULL;
   _aMout    =NULL;
+
+  _EnthalpyIsSimulated=false;
 
 }
 //////////////////////////////////////////////////////////////////
@@ -69,7 +74,8 @@ CTransportModel::~CTransportModel()
   delete [] _pConstituents;  _pConstituents=NULL;
   delete [] _pConstitParams; _pConstitParams=NULL;
   delete [] _aIndexMapping;  _aIndexMapping=NULL;
-  for (int i=0;i<nSources;i++){delete pSources[i];} delete [] pSources;
+  delete [] _pSpecFlowConcs; _pSpecFlowConcs=NULL;
+  for (int i=0;i<_nSources;i++){delete _pSources[i];} delete [] _pSources;
   if (_aSourceIndices!=NULL){
     for (int c=0;c<_nConstituents;c++){delete [] _aSourceIndices[c];} delete [] _aSourceIndices;
   }
@@ -555,6 +561,7 @@ void   CTransportModel::AddConstituent(string name, constit_type typ,bool is_pas
   }
   if(pConstit->type==ENTHALPY) {
     pConstit->can_evaporate=true; //TMP DEBUG -to prevent accumulation of energy in soil/canopy stores during evaporation. 
+    _EnthalpyIsSimulated=true;
   }
   pConstit->is_passive=false;
   pConstit->initial_mass=0;
@@ -701,7 +708,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   _nIndexMapping=pModel->GetNumStateVars();
 
    /// \todo [QA/QC]: check for two constituents with same name?
-  if (_nConstituents==0){return;}/// all of the above work necessary even with no transport?
+  if (_nConstituents==0){return;}/// all of the above work necessary even with no transport. Not sure why.
 
   //Synopsis
   //----------------------------------------------------------------------------
@@ -711,9 +718,10 @@ void CTransportModel::Prepare(const optStruct &Options)
     cout<<"   number of constituents: "<<_nConstituents<<endl;
     cout<<"   number of connections:  "<<_nAdvConnections<<endl;
     cout<<"   number of lat. connect.:"<<_nLatConnections<<endl;
-    cout<<"   number of source terms: "<<nSources<<endl;
+    cout<<"   number of source terms: "<<_nSources<<endl;
+    cout<<"========================================================"<<endl;
     // TMP DEBUG below===================================================
-    if (false){
+    /*if (false){
       for (int i=0;i<_nAdvConnections;i++)
       {
         cout<<i<<": moves ";
@@ -741,9 +749,8 @@ void CTransportModel::Prepare(const optStruct &Options)
         cout<<" corresponds to "<<CStateVariable::SVTypeToString(CONSTITUENT,m);
         cout<<endl;
       }
-    }
+    }*/
     // ====================================================================
-    cout<<"========================================================"<<endl;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -839,7 +846,7 @@ void   CTransportModel::AddDirichletCompartment(const string const_name, const i
   ExitGracefullyIf(pSource->constit_index==DOESNT_EXIST,"AddDirichletCompartment: invalid constituent name",BAD_DATA_WARN);
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletCompartment: invalid storage compartment index",BAD_DATA_WARN);
 
-  if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
+  if (!DynArrayAppend((void**&)(_pSources),(void*)(pSource),_nSources)){
     ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
 
   pLast=pSource;//so source is not deleted upon leaving this routine
@@ -867,7 +874,7 @@ void   CTransportModel::AddDirichletTimeSeries(const string const_name, const in
   ExitGracefullyIf(pSource->constit_index==DOESNT_EXIST,("AddDirichletTimeSeries: invalid constituent name "+const_name).c_str(),BAD_DATA_WARN);
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
 
-  if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
+  if (!DynArrayAppend((void**&)(_pSources),(void*)(pSource),_nSources)){
     ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
 
   pLast=pSource; //so source is not deleted upon leaving this routine
@@ -896,7 +903,7 @@ void   CTransportModel::AddInfluxSource(const string const_name, const int i_sto
   ExitGracefullyIf(pSource->constit_index==DOESNT_EXIST,"AddInfluxSource: invalid constituent name",BAD_DATA_WARN);
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddInfluxSource: invalid storage compartment index",BAD_DATA_WARN);
 
-  if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
+  if (!DynArrayAppend((void**&)(_pSources),(void*)(pSource),_nSources)){
     ExitGracefully("CTransportModel::AddInfluxSource: adding NULL source",BAD_DATA);}
 
   pLast=pSource;//so source is not deleted upon leaving this routine
@@ -924,10 +931,21 @@ void   CTransportModel::AddInfluxTimeSeries(const string const_name, const int i
   ExitGracefullyIf(pSource->constit_index==DOESNT_EXIST,("AddDirichletTimeSeries: invalid constituent name "+const_name).c_str(),BAD_DATA_WARN);
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
 
-  if (!DynArrayAppend((void**&)(pSources),(void*)(pSource),nSources)){
-    ExitGracefully("CTransportModel::AddDirichletCompartment: adding NULL source",BAD_DATA);}
+  if (!DynArrayAppend((void**&)(_pSources),(void*)(pSource),_nSources)){
+    ExitGracefully("CTransportModel::AddInfluxTimeSeries: adding NULL source",BAD_DATA);}
 
   pLast=pSource; //so source is not deleted upon leaving this routine
+}
+//////////////////////////////////////////////////////////////////
+/// \brief adds specified in-reach flow concentration/temperature time series
+/// \param pTS [in] Time series of concentrations [mg/L] or temperatures [C]
+/// assumes SBID and c tags are already applied to time series
+//
+void   CTransportModel::AddInflowConcTimeSeries(const CTimeSeries *pTS) {
+  
+  if(!DynArrayAppend((void**&)(_pSpecFlowConcs),(void*)(pTS),_nSpecFlowConcs)) {
+    ExitGracefully("CTransportModel::AddSpecifConcTimeSeries: adding NULL source",BAD_DATA);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -960,8 +978,13 @@ void   CTransportModel::SetGlobalParameter(const string const_name,const string 
 //
 void CTransportModel::Initialize()
 {
+  int c;
+
   double area=pModel->GetWatershedArea();
-  for (int c=0;c<_nConstituents;c++)
+
+  // Calculate initial mass and zero out zero volume concentrations
+  //--------------------------------------------------------------------
+  for (c=0;c<_nConstituents;c++)
   {
     _pConstituents[c]->cumul_input=0;
     _pConstituents[c]->cumul_output=0;
@@ -978,14 +1001,37 @@ void CTransportModel::Initialize()
         watstor = pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
         if (watstor<1e-9){pModel->GetHydroUnit (k)->SetStateVarValue(i,0.0);}
       }
+
       //update initial model mass (initialized from .rvc file)
       _pConstituents[c]->initial_mass+=pModel->GetAvgStateVar(i)*(area*M2_PER_KM2); //mg
     }
   }
 
+  // initialize stream temperatures if init_stream_temp is given
+  //--------------------------------------------------------------------
+  for(c=0;c<_nConstituents;c++)
+  {
+    if(_pConstituents[c]->type==ENTHALPY) {
+
+      cout<<"In loop??"<<endl;
+      double hv;
+      if(CGlobalParams::GetParams()->init_stream_temp>0.0)
+      {
+        hv=ConvertTemperatureToVolumetricEnthalpy(CGlobalParams::GetParams()->init_stream_temp,0.0);
+        for(int p=0;p<pModel->GetNumSubBasins();p++) {
+          for(int i=0; i<pModel->GetSubBasin(p)->GetNumSegments(); i++) {
+            _aMout[p][c][i]=pModel->GetSubBasin(p)->GetOutflowRate()*hv; //not really - requires outflow rate from all segments. Don't have access to this.
+          }
+          _aMout_last[p][c]=_aMout[p][c][0];
+        }
+      }
+    }
+  }
+
   /// \todo [funct]: calculate initial mass from Dirichlet cells
 
-  //populate array of source indices
+  // populate array of source indices
+  //--------------------------------------------------------------------
   // \todo [funct] will have to revise to support different sources in different HRUs (e.g., _aSourceIndices[c][i_stor][k])
   _aSourceIndices=NULL;
   _aSourceIndices=new int *[_nConstituents];
@@ -997,8 +1043,8 @@ void CTransportModel::Initialize()
     ExitGracefullyIf(_aSourceIndices[c]==NULL,"CTransport::Initialize",OUT_OF_MEMORY);
     for (int i_stor=0;i_stor<pModel->GetNumStateVars();i_stor ++){
       _aSourceIndices[c][i_stor]=DOESNT_EXIST;
-      for (int i=0;i<nSources;i++){
-        if ((pSources[i]->i_stor==i_stor) && (pSources[i]->constit_index==c))
+      for (int i=0;i<_nSources;i++){
+        if ((_pSources[i]->i_stor==i_stor) && (_pSources[i]->constit_index==c))
         {
           if (_aSourceIndices[c][i_stor] != DOESNT_EXIST){
             WriteWarning("CTransportModel::Intiialize: cannot currently have more than one constitutent source per constituent/storage combination",false);
@@ -1009,6 +1055,8 @@ void CTransportModel::Initialize()
     }
   }
 
+  // Initialize routing variables
+  //--------------------------------------------------------------------
   InitializeRoutingVars();
 
   CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
@@ -1025,7 +1073,6 @@ void CTransportModel::IncrementCumulInput (const optStruct &Options, const time_
   for (int c=0;c<_nConstituents;c++)
   {
     _pConstituents[c]->cumul_input+=0;// \todo [funct]: increment cumulative input [mg]
-
     //Most of this is handled using the CONSTITUENT_SRC storage compartment
   }
 }
@@ -1064,24 +1111,24 @@ bool  CTransportModel::IsDirichlet(const int i_stor, const int c, const int k, c
 
   int i_source=_aSourceIndices[c][i_stor];
   if (i_source==DOESNT_EXIST) {return false;}
-  if (!pSources[i_source]->dirichlet){return false;}
-  Cs = pSources[i_source]->concentration;
+  if (!_pSources[i_source]->dirichlet){return false;}
+  Cs = _pSources[i_source]->concentration;
 
-  if (pSources[i_source]->kk==DOESNT_EXIST) 
+  if (_pSources[i_source]->kk==DOESNT_EXIST)
   { //Not tied to HRU Group
     if (Cs != DOESNT_EXIST){return true;}
     else{//time series
-      Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
+      Cs = _pSources[i_source]->pTS->GetValue(tt.model_time );
       return true;
     }
   }
   else 
   { //Tied to HRU Group - Check if we are in HRU Group
-    if (pModel->GetHRUGroup(pSources[i_source]->kk)->IsInGroup(k))
+    if (pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k))
     {
       if (Cs != DOESNT_EXIST){return true;}
       else{//time series
-        Cs = pSources[i_source]->pTS->GetValue(tt.model_time );
+        Cs = _pSources[i_source]->pTS->GetValue(tt.model_time );
         return true;
       }
     }
@@ -1102,27 +1149,26 @@ double  CTransportModel::GetSpecifiedMassFlux(const int i_stor, const int c, con
   bool retrieve=false;
   int i_source=_aSourceIndices[c][i_stor];
   if (i_source == DOESNT_EXIST) {return 0.0;}
-  if (pSources[i_source]->dirichlet){return 0.0;}
+  if (_pSources[i_source]->dirichlet){return 0.0;}
 
-  if (pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
+  if (_pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
   {
     retrieve=true;
   }
   else { //Check if we are in HRU Group
-    retrieve=pModel->GetHRUGroup(pSources[i_source]->kk)->IsInGroup(k);
+    retrieve=pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k);
   }
   if (retrieve)
   {
-    flux=pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
+    flux=_pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
     if (flux == DOESNT_EXIST){//get from time series
-      flux=pSources[i_source]->pTS->GetValue(tt.model_time );
+      flux=_pSources[i_source]->pTS->GetValue(tt.model_time );
     }
     return flux;
   }
   else {return 0.0;}
 
 }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Write transport output file headers
 /// \details Called prior to simulation (but after initialization) from CModel::Initialize()
@@ -1437,6 +1483,8 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
     double sink        = pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SINK,c))*(area*M2_PER_KM2);//[mg]  or [MJ] 
     double source      =-pModel->GetAvgStateVar(pModel->GetStateVarIndex(CONSTITUENT_SRC ,c))*(area*M2_PER_KM2);//[mg]  or [MJ] 
 
+    source+=GetMassAddedFromInflowSources(c,tt.model_time,Options.timestep);
+
     _pConstituents[c]->OUTPUT<<tt.model_time <<","<<thisdate<<","<<thishour;
 
     if (tt.model_time!=0.0){
@@ -1463,7 +1511,7 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options, const time_stru
         else              { concentration=(M/V)*(MM_PER_METER/LITER_PER_M3); }//[mg/mm/m2]->[mg/L]
       }
       else {
-        if(fabs(V)<=1e-6) { concentration=0.0; } // JRC: should this default to zero?
+        if(fabs(V)<=1e-6) { concentration=0.0; } // JRC: should this default to zero? or NA?
         else              { concentration=ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER);} //[MJ/m3]->[C]
       }
       if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2]
@@ -1615,3 +1663,4 @@ void CTransportModel::CloseOutputFiles() const
     _pConstituents[c]->POLLUT.close();
   }
 }
+#endif

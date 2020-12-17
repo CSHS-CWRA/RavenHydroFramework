@@ -52,7 +52,7 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   for(int pp=_nSubBasins-1; pp>=0; pp--)//downstream to upstream
   {
     p=GetOrderedSubBasinIndex(pp);
-    bool ObsExists=false;
+    bool ObsExists=false; //observation available in THIS basin
     for(int i=0; i<_nObservedTS; i++) //determine whether flow observation is available
     {
       if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available
@@ -78,12 +78,12 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
 
     pdown=GetDownstreamBasin(p);
     if(ObsExists==false){ //observations may be downstream, propagate scaling upstream
-      if(pdown!=DOESNT_EXIST){ 
+      if ((pdown!=DOESNT_EXIST) && (_pSubBasins[p]->GetReservoir()==NULL)){ 
         _aDAscale    [p]=_aDAscale [pdown];
         _aDAlength   [p]=_aDAlength[pdown]+_pSubBasins[pdown]->GetReachLength();
         _aDAtimesince[p]=_aDAtimesince[pdown];
       }
-      else{ //Nothing downstream, no assimilation
+      else{ //Nothing downstream or reservoir present in this basin, no assimilation
         _aDAscale    [p]=1.0; 
         _aDAlength   [p]=0.0;
         _aDAtimesince[p]=0.0;

@@ -69,7 +69,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":EndHRUInitialConditions"     )){code=-2; }//UNUSED
     else if  (!strcmp(s[0],":ALL"                         )){code=3;  }
     else if  (!strcmp(s[0],":UniformInitialConditions"    )){code=3;  }
-    else if  (!strcmp(s[0],":HRUStateVariableTable"       )){code=4;  concname="";}
+    else if  (!strcmp(s[0],":HRUStateVariableTable"       )){code=4; concname="";}
     else if  (!strcmp(s[0],":InitialTemperatureTable"     )){code=4; concname="TEMPERATURE";}
     else if  (!strcmp(s[0],":InitialConcentrationTable"   )){code=4; concname=s[1]; }
     else if  (!strcmp(s[0],":EndHRUStateVariableTable"    )){code=-2; }
@@ -83,7 +83,6 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":InitialReservoirStage"       )){code=8;  }
     else if  (!strcmp(s[0],":TimeStamp"                   )){code=10; }
     else if  (!strcmp(s[0],":Nudge"                       )){code=11; }
-
 
 
 
@@ -693,12 +692,6 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
       if (val<0.0){pctfroz=1.0;} //treats all 0 degree water as unfrozen
       double energy=ConvertTemperatureToVolumetricEnthalpy(val,pctfroz)*vol/MM_PER_METER; //[C]->[MJ/m3]*[m]=[MJ/m2]
       pModel->GetHydroUnit(k)->SetStateVarValue(SVind,energy);
-
-      //TMP DEBUG BELOW:
-      //========================
-      //int m=pModel->GetStateVarLayer(SVind); sv_type typ=pModel->GetStateVarType(SVind);
-      //cout <<"SETTING "<<CStateVariable::GetStateVarLongName(typ,m)<<" temp: "<<val<<"--> enthalpy: "<<energy<<endl;
-      //========================
     }
     else 
     {

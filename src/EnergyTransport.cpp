@@ -106,7 +106,7 @@ double CTransportModel::GetOutflowIceFraction(const int p,const int c) const
 //
 double CTransportModel::GetReachFrictionHeat(const double &Q,const double &slope, const double &perim) const 
 {
-  //from Theurer et al 1984, US Fish and Wildlife Serviec FWS/OBS-85/15, as reported in MacDonald and Moore 2014
+  //from Theurer et al 1984, US Fish and Wildlife Serviec FWS/OBS-85/15, as reported in MacDonald, Boon, and Byrne 2014
   return 9805*Q/perim*slope*WATT_TO_MJ_PER_D;
 }
 
@@ -141,22 +141,28 @@ void   CTransportModel::UpdateReachEnergySourceTerms(const int p)
   double bed_ratio=pBasin->GetTopWidth()/pBasin->GetWettedPerimeter(); 
   double dbar     =pBasin->GetRiverDepth();
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetSlope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
 
   double S(0.0);                         //source term [MJ/m3/d]
   S+=(SW+LW)/dbar;                       //net incoming energy term
   S-=AET*DENSITY_WATER*LH_VAPOR/dbar;    //latent heat flux term
   S+=Qf/dbar;                            //friction-generated heating term
-  S+=hstar/dbar*temp_air;                //convection with atmosphere
-  S+=qmix*HCP_WATER*DENSITY_WATER/dbar*bed_ratio*temp_GW; //hyporheic mixing
+  S+=hstar*temp_air/dbar;                //convection with atmosphere
+  S+=qmix*HCP_WATER*bed_ratio*temp_GW/dbar; //hyporheic mixing
 
-  _aEnthalpyBeta[p]=(hstar/dbar+qmix/dbar*HCP_WATER*DENSITY_WATER*bed_ratio)/HCP_WATER*DENSITY_WATER;
+  //cout<<" S terms: "<<(SW+LW)<<"|"<<AET*DENSITY_WATER*LH_VAPOR<<"|"<<Qf<<"|"<<hstar*temp_air<<"|"<<qmix*HCP_WATER*DENSITY_WATER*bed_ratio*temp_GW<<endl;
 
+  _aEnthalpyBeta[p]=(hstar/dbar + qmix/dbar*HCP_WATER*bed_ratio)/HCP_WATER;
+
+  //cout<<_aEnthalpyBeta[p]<<" "<<hstar/HCP_WATER<<" "<< qmix*bed_ratio<<endl;
+  
   int nMinHist=pModel->GetSubBasin(p)->GetInflowHistorySize();
   for(int n=nMinHist-1;n>0;n--) {
     _aEnthalpySource[p][n]=_aEnthalpySource[p][n-1];
   }
   _aEnthalpySource[p][0]=S;
+
+  //cout<<"EnthalpySource: p:"<<p<<" "<<S<<" "<<_aEnthalpyBeta[p]<<"/d"<<endl;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -172,6 +178,8 @@ void   CTransportModel::UpdateReachEnergySourceTerms(const int p)
 double CTransportModel::GetEnergyLossesFromReach(const int p, double &Q_sens, double &Q_lat, double &Q_GW, double &Q_rad, double &Q_fric) const 
 { 
   if(!_EnthalpyIsSimulated) { return 0.0; } 
+
+  //return 0.0;
   int c=GetConstituentIndex("TEMPERATURE");
 
   double tstep=pModel->GetOptStruct()->timestep;
@@ -192,7 +200,7 @@ double CTransportModel::GetEnergyLossesFromReach(const int p, double &Q_sens, do
   double bed_ratio=pBasin->GetTopWidth()/pBasin->GetWettedPerimeter();
   double dbar     =pBasin->GetRiverDepth();
   
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetSlope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
 
   int nMinHist              =pBasin->GetInflowHistorySize();
   const double * aRouteHydro=pBasin->GetRoutingHydrograph();

@@ -207,9 +207,9 @@ void ThomasAlgorithm(Ironclad1DArray  e,Ironclad1DArray f,
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Inverts Tridiagonal matrix with diagonals cc,a, and b using algorithm from
-/// assumes cc[0] and b[N] are zero, and all three indices correspond to matrix row - performs a shift to standard tridiagonal form
+/// assumes b[N] is zero, and all three indices correspond to matrix row - performs a shift to standard tridiagonal form
 /// from Usmani,R. A. (1994). "Inversion of a tridiagonal jacobi matrix". Linear Algebra and its Applications. 212-213: 413–414.
-/// \param cc   [in ] left diagonal  (c[i]=A[i][i-1]) [length=size]
+/// \param cc   [in ] shifted left diagonal  (cc[i+1]=A[i][i-1]) [length=size]
 /// \param a    [in ] diagonal       (a[i]=A[i][i]) [length=size]
 /// \param b    [in ] right diagonal (b[i]=A[i][i+1] [length=size]
 /// \param Ainv [out] resultant inverse matrix (assumes memory is already allocated in array of doubles)
