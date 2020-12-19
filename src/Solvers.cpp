@@ -51,11 +51,9 @@ void MassEnergyBalance( CModel            *pModel,
   static double     *aQoutnew;    //[m3/s] final outflow from reach segment seg at time t+dt [size=MAX_RIVER_SEGS]
   static double     *aRouted;     //[m3]
 
-  static double    **aMinnew;     //[mg/d] or [MJ/d] mass/energy loading of constituents to subbasin reach p at t+dt [size=_nSubBasins x nConstituents ]
-  static double    **aMoutnew;    //[mg/d] or [MJ/d] final mass/energy output from reach segment seg at time t+dt [size= MAX_RIVER_SEGS  x nConstituents ]
-  static double    **aRoutedMass; //[mg/d] or [MJ/d] amount of mass/energy [size= _nSubBasins xnConstituents]
-  static double     *aResMass;    //[mg]   or [MJ/d] amount of mass/energy in reservoir [size= nConstitutents]
-  static double     *aMassOutflow;//[mg/d] or [MJ/d] rate of mass/energy outflow from subbasin at time t+dt [size=nConstituents]
+  static double     *aMinnew;     //[mg/d] or [MJ/d] mass/energy loading of constituents to subbasin reach p at t+dt [size=_nSubBasins]
+  static double     *aMoutnew;    //[mg/d] or [MJ/d] final mass/energy output from reach segment seg at time t+dt [size= MAX_RIVER_SEGS]
+  static double     *aRoutedMass; //[mg/d] or [MJ/d] amount of mass/energy [size= _nSubBasins]
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
@@ -100,30 +98,22 @@ void MassEnergyBalance( CModel            *pModel,
     aQoutnew    =new double [MAX_RIVER_SEGS];
     ExitGracefullyIf(aQoutnew==NULL,"MassEnergyBalance",OUT_OF_MEMORY);
 
+    aMinnew     =NULL;
     aMoutnew    =NULL;
     aRoutedMass =NULL;
-    aResMass    =NULL;
-    aMassOutflow=NULL;
-    if (nConstituents>0)
+    if(nConstituents>0)
     {
-      aMinnew     =new double *[NB];
-      aRoutedMass =new double *[NB];
-      for (p=0;p<NB;p++){
-        aRoutedMass[p]=NULL;
-        aMinnew    [p] =new double [nConstituents];
-        aRoutedMass[p] =new double [nConstituents];
-        ExitGracefullyIf(aRoutedMass[p]==NULL,"MassEnergyBalance(2)",OUT_OF_MEMORY);
+      aMinnew     =new double [NB];
+      aRoutedMass =new double [NB];
+      aMoutnew    =new double[MAX_RIVER_SEGS];
+      ExitGracefullyIf(aMoutnew==NULL,"MassEnergyBalance(2)",OUT_OF_MEMORY);
+      for(p=0;p<NB;p++) {
+        aMinnew    [p] =0;
+        aRoutedMass[p] =0;
       }
-
-      aMoutnew    =new double *[MAX_RIVER_SEGS];
-      ExitGracefullyIf(aMoutnew==NULL,"MassEnergyBalance(3)",OUT_OF_MEMORY);
-      for (i=0;i<MAX_RIVER_SEGS;i++){
-        aMoutnew[i]=NULL;
-        aMoutnew[i]=new double [nConstituents];
-        ExitGracefullyIf(aMoutnew[i]==NULL,"MassEnergyBalance(4)",OUT_OF_MEMORY);
+      for(i=0;i<MAX_RIVER_SEGS;i++) {
+        aMoutnew   [i]=0.0;
       }
-      aResMass=new double [nConstituents];
-      aMassOutflow=new double [nConstituents];
     }
 
     if(Options.sol_method==ITERATED_HEUN)
@@ -133,7 +123,7 @@ void MassEnergyBalance( CModel            *pModel,
         rate_guess[j]=new double [NS*NS]; //maximum number of connections possible
       }
     }
-  }
+  }//end static memory if
 
   if((Options.modeltype == MODELTYPE_COUPLED) || (Options.modeltype == MODELTYPE_GROUNDWATER))
   {
@@ -604,35 +594,32 @@ void MassEnergyBalance( CModel            *pModel,
   //-----------------------------------------------------------------
   //      MASS CONSTITUENT ROUTING
   //-----------------------------------------------------------------
-
-  //determine total mass loading from HRUs into respective basins (aRoutedMass[p])
-  if (nConstituents>0)
+   //determine total mass loading from HRUs into respective basins (aRoutedMass[p])
+  double ResMass=0;
+  double MassOutflow=0;
+  for(c=0;c<nConstituents;c++)
   {
-    for (p=0;p<NB;p++){
-      for (c=0;c<nConstituents;c++){
-        aRoutedMass[p][c]=0.0;
-        aMinnew    [p][c]=0.0;
-      }
+    for(p=0;p<NB;p++) {
+      aRoutedMass[p]=0.0;
+      aMinnew[p]=0.0;
     }
-    for (k=0;k<nHRUs;k++)
+    for(k=0;k<nHRUs;k++)
     {
       pHRU=pModel->GetHydroUnit(k);
       if(pHRU->IsEnabled())
       {
         p   =pHRU->GetSubBasinIndex();
-
-        for(c=0;c<nConstituents;c++)
-        {
-          int iSWmass =pModel->GetStateVarIndex(CONSTITUENT,pModel->GetTransportModel()->GetLayerIndex(c,iSW));
-          aRoutedMass[p][c]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//aRoutedMass=[mg/d]
-          aPhinew[k][iSWmass]=0.0; //empty out
-        }
+ 
+        int iSWmass =pModel->GetStateVarIndex(CONSTITUENT,pModel->GetTransportModel()->GetLayerIndex(c,iSW));
+        aRoutedMass[p]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//aRoutedMass=[mg/d]
+        aPhinew[k][iSWmass]=0.0; //empty out
+       
       }
     }
-
+    
     //Route mass over timestep
     //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
-    for (pp=0;pp<NB;pp++)
+    for(pp=0;pp<NB;pp++)
     {
       p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list
 
@@ -640,23 +627,21 @@ void MassEnergyBalance( CModel            *pModel,
 
       if(pBasin->IsEnabled())
       {
-        pModel->GetTransportModel()->ApplySpecifiedMassInflows(p,t+tstep,aMinnew[p]); //overrides or supplements mass loadings 
+        pModel->GetTransportModel()->GetConstituentModel(c)->ApplySpecifiedMassInflows(p,t+tstep,aMinnew[p]); //overrides or supplements mass loadings
 
-        pModel->GetTransportModel()->SetMassInflows    (p,aMinnew[p]);
-        pModel->GetTransportModel()->SetLateralInfluxes(p,aRoutedMass[p]); 
-        pModel->GetTransportModel()->RouteMass         (p,aMoutnew,aResMass,Options,tt);  //Where everything happens!
-        pModel->GetTransportModel()->UpdateMassOutflows(p,aMoutnew,aResMass,aMassOutflow, Options,tt,false); //actually updates mass flow values here
+        pModel->GetTransportModel()->GetConstituentModel(c)->SetMassInflows    (p,aMinnew[p]);
+        pModel->GetTransportModel()->GetConstituentModel(c)->SetLateralInfluxes(p,aRoutedMass[p]);
+        pModel->GetTransportModel()->GetConstituentModel(c)->RouteMass         (p,aMoutnew,ResMass,Options,tt);  //Where everything happens!
+        pModel->GetTransportModel()->GetConstituentModel(c)->UpdateMassOutflows(p,aMoutnew,ResMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)
         {
-          for(int c=0;c<nConstituents;c++){
-            aMinnew[pTo][c]+=aMassOutflow[c];
-          }
+          aMinnew[pTo]+=MassOutflow;
         }
       }
     }//end for pp...
-  }//end if (nConstituents>0)
+  }//end (c=0;c<nConstituents;c++)
 
   //-----------------------------------------------------------------
   //          AGGREGATION ACROSS HRU GROUPS
@@ -709,39 +694,30 @@ void MassEnergyBalance( CModel            *pModel,
   }
 
   //delete static arrays (only called once)=========================
-  if (t>=Options.duration-Options.timestep)
+  if(t>=Options.duration-Options.timestep)
   {
-    if (DESTRUCTOR_DEBUG){cout<<"DELETING STATIC ARRAYS IN MASSENERGYBALANCE"<<endl;}
-    for (k=0;k<nHRUs;k++)     {delete [] aPhi   [k];}     delete [] aPhi;       aPhi=NULL;
-    for (k=0;k<nHRUs;k++)     {delete [] aPhinew[k];}     delete [] aPhinew;    aPhinew=NULL;
-    for (k=0;k<nHRUs;k++)     {delete [] aPhiPrevIter[k];}delete [] aPhiPrevIter; aPhiPrevIter=NULL;
+    if(DESTRUCTOR_DEBUG) { cout<<"DELETING STATIC ARRAYS IN MASSENERGYBALANCE"<<endl; }
+    for(k=0;k<nHRUs;k++) { delete[] aPhi[k]; }     delete[] aPhi;       aPhi=NULL;
+    for(k=0;k<nHRUs;k++) { delete[] aPhinew[k]; }     delete[] aPhinew;    aPhinew=NULL;
+    for(k=0;k<nHRUs;k++) { delete[] aPhiPrevIter[k]; }delete[] aPhiPrevIter; aPhiPrevIter=NULL;
     if(Options.sol_method == ITERATED_HEUN)
     {
-      for (j=0;j<nProcesses;j++){delete [] rate_guess[j];}  delete [] rate_guess; rate_guess=NULL;
+      for(j=0;j<nProcesses;j++) { delete[] rate_guess[j]; }  delete[] rate_guess; rate_guess=NULL;
     }
-    delete [] aQinnew;      aQinnew     =NULL;
-    delete [] aQoutnew;     aQoutnew    =NULL;
-    delete [] aRouted;      aRouted     =NULL;
-	delete [] GW_stor;      GW_stor     = NULL; //GWMIGRATE - should name aGW_stor,...
-    delete [] GW_stor_new;  GW_stor_new = NULL;
-    delete [] GW_heads;     GW_heads    = NULL;
-    delete [] GW_heads_new; GW_heads_new= NULL;
+    delete[] aQinnew;      aQinnew     =NULL;
+    delete[] aQoutnew;     aQoutnew    =NULL;
+    delete[] aRouted;      aRouted     =NULL;
+    delete[] GW_stor;      GW_stor     = NULL; //GWMIGRATE - should name aGW_stor,...
+    delete[] GW_stor_new;  GW_stor_new = NULL;
+    delete[] GW_heads;     GW_heads    = NULL;
+    delete[] GW_heads_new; GW_heads_new= NULL;
     //delete transport static arrays.
-    if (nConstituents>0){
-      for (p=0;p<NB;p++){
-        delete [] aMinnew[p];
-        delete [] aRoutedMass[p];
-      }
-
-      for (i=0;i<MAX_RIVER_SEGS;i++){
-        delete [] aMoutnew[i];
-      }
+    if(nConstituents>0)
+    {
+      delete[] aMinnew;
+      delete[] aRoutedMass;
+      delete[] aMoutnew;
     }
-    delete [] aMinnew;      aMinnew     =NULL;
-    delete [] aRoutedMass;  aRoutedMass =NULL;
-    delete [] aMoutnew;     aMoutnew    =NULL;
-    delete [] aResMass;
-    delete [] aMassOutflow;
   }
 }
 

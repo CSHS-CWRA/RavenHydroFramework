@@ -331,10 +331,10 @@ void ExitGracefully(const char *statement,exitcode code)
   if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode
 
   cout <<endl<<endl;
-  cout <<"===============Exiting Gracefully=============="<<endl;
-  cout <<"Exiting Gracefully: "<<statement                <<endl;
-  cout << typeline                                        <<endl;
-  cout <<"==============================================="<<endl;
+  cout <<"============== Exiting Gracefully =========================="<<endl;
+  cout <<"Exiting Gracefully: "<<statement                             <<endl;
+  cout << typeline                                                     <<endl;
+  cout <<"============================================================"<<endl;
 
   delete pModel; pModel=NULL;//deletes EVERYTHING!
   CStateVariable::Destroy();

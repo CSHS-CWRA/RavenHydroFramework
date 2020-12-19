@@ -183,8 +183,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
 
     //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
     //----------------------------------------------------------------------
-    if ((pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) &&
-        (pTransModel->IsDirichlet(iFromWater,_constit_ind,k,tt,Cs)))
+    if((pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) &&
+      (pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iFromWater,k,tt,Cs)))
     {
       if(isEnthalpy) {
         if (Cs==DIRICHLET_AIR_TEMP) { //Special precip temperature condition
@@ -215,7 +215,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     // two cases: contributor (iFromWater) or recipient (iToWater) water compartment is Dirichlet condition
     //----------------------------------------------------------------------
     double dirichlet_mass;
-    if (pTransModel->IsDirichlet(iFromWater,_constit_ind,k,tt,Cs))
+    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iFromWater,k,tt,Cs))
     {
       if(isEnthalpy) {
         if(Cs==DIRICHLET_AIR_TEMP) { //Special precip temperature condition
@@ -235,7 +235,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       sv[iFrom[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 
-    if (pTransModel->IsDirichlet(iToWater,_constit_ind,k,tt,Cs))
+    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iToWater,k,tt,Cs))
     {
       if(isEnthalpy) {
         double pctFroz=0.0; //assumes liquid water for flows (reasonable)

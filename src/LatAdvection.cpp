@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2017 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ------------------------------------------------------------------
 Advection of soluble contaminant/tracer/nutrient
 ----------------------------------------------------------------*/
@@ -183,7 +183,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
 
     //Correct for Dirichlet conditions
     //----------------------------------------------------------------------
-    if(pTransModel->IsDirichlet(iFromWater,_constit_ind,kFrom,tt,Cs))
+    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iFromWater,kFrom,tt,Cs))
     {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       mass=sv[kFrom][_iFromLat[q]];
@@ -191,8 +191,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
       exchange_rates[nLatConnections+q]+=(Cs*vol-mass)/Options.timestep*Afrom; //[mg/d]
       sv[kFrom][_iFromLat[q]]=Cs*vol;
     }
-
-    if(pTransModel->IsDirichlet(iToWater,_constit_ind,kTo,tt,Cs))
+    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iToWater,kTo,tt,Cs))
     {
       Cs*=LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
       mass=sv[kTo][_iToLat[q]];

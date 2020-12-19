@@ -256,7 +256,6 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
             if(m!=DOESNT_EXIST) {  
               SVinds[i]=pModel->GetStateVarIndex(CONSTITUENT,m);
             }
-            cout<<", i : "<<SVinds[i];
           }
 
           if (SVinds[i]==DOESNT_EXIST){

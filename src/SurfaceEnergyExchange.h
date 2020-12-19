@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ------------------------------------------------------------------
   definitions of surface energy transfer classes
 ----------------------------------------------------------------*/
@@ -10,6 +10,7 @@ Copyright (c) 2008-2020 the Raven Development Team
 #include "RavenInclude.h"
 #include "Model.h"
 #include "Transport.h"
+#include "EnergyTransport.h"
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for transfer of energy from atmosphere to land surface (canopy/soil/snow/depression)

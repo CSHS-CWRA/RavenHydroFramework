@@ -1443,7 +1443,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
         CTimeSeries *pTS;
         pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"",Options);//name=constitutent name
-        pModel->GetTransportModel()->AddDirichletTimeSeries(const_name, i_stor, kk,pTS);
+        
+        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        if(c!=DOESNT_EXIST) {
+          pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletTimeSeries(i_stor,kk,pTS);
+        }
+        else {
+          ExitGracefully("ParseMainInputFile: invalid constiuent in :ConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
+        }
       }
       else{
         ExitGracefully(":ConcentrationTimeSeries command: invalid state variable name",BAD_DATA_WARN);
@@ -1484,7 +1491,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
         CTimeSeries *pTS;
         pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"",Options);//name=constitutent name
-        pModel->GetTransportModel()->AddInfluxTimeSeries(const_name, i_stor, kk,pTS);
+
+        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        if(c!=DOESNT_EXIST) {
+          pModel->GetTransportModel()->GetConstituentModel(c)->AddInfluxTimeSeries(i_stor,kk,pTS);
+        }
+        else {
+          ExitGracefully("ParseTimeSeriesInputFile: invalid constiuent in :MassFluxTimeSeries command in .rvt file",BAD_DATA_WARN);
+        }
       }
       else{
         ExitGracefully(":MassFluxTimeSeries command: invalid state variable name",BAD_DATA_WARN);
@@ -1513,8 +1527,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pTS->SetTag(to_string(SBID));
       pTS->SetTag2(to_string(c));
 
-      pModel->GetTransportModel()->AddInflowConcTimeSeries(pTS);
-      
+      pModel->GetTransportModel()->GetConstituentModel(c)->AddInflowConcTimeSeries(pTS);
+
       break;
 
       /*long SBID=s_to_l(s[2]);
@@ -1553,7 +1567,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pTS->SetTag(to_string(SBID));
       pTS->SetTag2(to_string(c));
 
-      pModel->GetTransportModel()->AddInflowConcTimeSeries(pTS);
+
+      pModel->GetTransportModel()->GetConstituentModel(c)->AddInflowConcTimeSeries(pTS);
 
       break;
     }

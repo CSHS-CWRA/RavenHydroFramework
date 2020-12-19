@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ------------------------------------------------------------------
   Decay of soluble contaminant/tracer/nutrient
   ----------------------------------------------------------------*/
@@ -88,9 +88,9 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     iConstit=_pTransModel->GetStorIndex     (_constit_ind,ii);   //global state variable index of this constituent in this water storage
 
     mass=state_vars[iConstit];
-    decay_coeff = _pTransModel->GetDecayCoefficient(_constit_ind,pHRU,iStor);
 
-    if(_pTransModel->IsDirichlet(iStor,_constit_ind,k,tt,junk)){} //don't modify dirichlet source zones
+    decay_coeff = _pTransModel->GetConstituentModel2(_constit_ind)->GetDecayCoefficient(pHRU,iStor);
+    if(_pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) {} //don't modify dirichlet source zones
     else {
       if (_dtype==DECAY_BASIC)
       {

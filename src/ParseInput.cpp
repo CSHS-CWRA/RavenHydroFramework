@@ -2894,7 +2894,13 @@ bool ParseMainInputFile (CModel     *&pModel,
           }
         }
 
-        pModel->GetTransportModel()->AddDirichletCompartment(s[1], i_stor, kk, s_to_d(s[3]));
+        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        if(c!=DOESNT_EXIST) {
+          pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,s_to_d(s[3]));
+        }
+        else {
+          ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentration/:FixedTemperature command in .rvi file",BAD_DATA_WARN);
+        }
         //if time series is specified, s_to_d(time series file) returns zero
       }
       else{
@@ -2934,7 +2940,14 @@ bool ParseMainInputFile (CModel     *&pModel,
             kk=pSourceGrp->GetGlobalIndex();
           }
         }
-        pModel->GetTransportModel()->AddInfluxSource(s[1],i_stor,kk,s_to_d(s[3]));
+        
+        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        if(c!=DOESNT_EXIST) {
+          pModel->GetTransportModel()->GetConstituentModel(c)->AddInfluxSource(i_stor,kk,s_to_d(s[3]));
+        }
+        else {
+          ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentration/:FixedTemperature command in .rvi file",BAD_DATA_WARN);
+        }
         //if time series is specified, s_to_d(time series file) returns zero
       }
       else{

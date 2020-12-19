@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ------------------------------------------------------------------
   Transformation of soluble contaminant/tracer/nutrient into another constituent
   ----------------------------------------------------------------*/
@@ -101,11 +101,15 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
     mass2=state_vars[iConstit2];
     vol1 =state_vars[ii];
 
-    transf_coeff = _pTransModel->GetTransformCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
-    stoich_coeff = _pTransModel->GetStoichioCoefficient (_constit_ind1,_constit_ind2,pHRU,iStor);
+
+    CNutrientModel *pNModel=NULL;//=_pTransModel->GetNutrientModel();
+    ExitGracefully("TRANSPORT_REFACTOR",STUB);
+    transf_coeff = 1.0;//pNModel->GetTransformCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
+    stoich_coeff = 1.0;//pNModel->GetStoichioCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
     n            = 1.01;// _pTransModel->GetTransformPower      (_constit_ind1,_constit_ind2,pHRU,iStor);
 
-    if(_pTransModel->IsDirichlet(iStor,_constit_ind1,k,tt,junk)){} //don't reduce dirichlet source zones
+    if(_pTransModel->GetConstituentModel2(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) {} //don't reduce dirichlet source zones
+
     else {
       if (_ttype==TRANSFORM_LINEAR)
       {

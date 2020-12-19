@@ -3,6 +3,7 @@
   Copyright (c) 2008-2020 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
+#include "EnergyTransport.h"
 
 /*****************************************************************
    Constructor/Destructor
@@ -1904,8 +1905,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 
   //Special frozen flow handling - constrains flows when water is partially/wholly frozen
   //------------------------------------------------------------------------
-  int cTemp=_pTransModel->GetConstituentIndex("TEMPERATURE");
-  if(cTemp!=DOESNT_EXIST) 
+  if (_pTransModel->GetEnthalpyModel()!=NULL)
   { //simulating enthalpy, and therefore frozen water compartments 
     double Fi,liq_stor;
     sv_type typ;
@@ -1916,8 +1916,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
       {
         //precip is special case (frozen snow can fall)
         //snow is special case (already assume that only liquid water is lost)
-        
-        Fi=_pTransModel->GetIceContent(state_var,iFrom[q]);
+        Fi=_pTransModel->GetEnthalpyModel()->GetIceContent(state_var,iFrom[q]);
 
         liq_stor=(1.0-Fi)*state_var[iFrom[q]]; //[mm]
 

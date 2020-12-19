@@ -154,11 +154,12 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   int iCan =pModel->GetStateVarIndex(CANOPY);
   int iCanS=pModel->GetStateVarIndex(CANOPY_SNOW);
 
-  Tsoil=_pTransModel->GetWaterTemperature(state_vars,iSoil);
-  Tsnow=min(_pTransModel->GetWaterTemperature(state_vars,iSnow),0.0);
-  Tdep =_pTransModel->GetWaterTemperature(state_vars,iDep );
-  Tcan =_pTransModel->GetWaterTemperature(state_vars,iCan );
-  TcanS=min(_pTransModel->GetWaterTemperature(state_vars,iCanS),0.0);
+  const CEnthalpyModel *pEnthalpyModel=_pTransModel->GetEnthalpyModel();
+  Tsoil=pEnthalpyModel->GetWaterTemperature(state_vars,iSoil);
+  Tsnow=min(pEnthalpyModel->GetWaterTemperature(state_vars,iSnow),0.0);
+  Tdep =pEnthalpyModel->GetWaterTemperature(state_vars,iDep);
+  Tcan =pEnthalpyModel->GetWaterTemperature(state_vars,iCan);
+  TcanS=min(pEnthalpyModel->GetWaterTemperature(state_vars,iCanS),0.0);
 
   double pct_cover=1.0;
 
