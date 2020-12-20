@@ -54,10 +54,10 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors:
   CTimeSeries(string name,
-              string tag,
+              long   loc_ID,
               double one_value);
   CTimeSeries(string name,
-              string tag,
+              long   loc_ID,
               string filename,
               double start_day,
               int start_yr,
@@ -66,7 +66,7 @@ public:/*-------------------------------------------------------*/
               const int NumValues,
               const bool is_pulse_type);
   CTimeSeries(string name,
-              string tag,
+              long   loc_ID,
               string filename,
               double start_day,
               int start_yr,
@@ -113,7 +113,7 @@ public:/*-------------------------------------------------------*/
   bool   IsPulseType()  const;
 
   static CTimeSeries  *Sum          (CTimeSeries *pTS1, CTimeSeries *pTS2, string name);
-  static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending=false);
+  static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, long loc_ID, const optStruct &Options, bool shift_to_per_ending=false);
   static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse, const optStruct &Options);
   static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType, const optStruct &Options);
 
@@ -125,7 +125,7 @@ public:/*-------------------------------------------------------*/
 
   static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)
                                                string name,                 // forcing type
-                                               string tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
+                                               long   loc_ID,               // critical information about timeseries, e.g. subbasin ID or HRU ID
                                                bool   shift_to_per_ending,  // true if data are period starting and need to be shifted (HYDROGRAPH?)
                                                bool   shift_from_per_ending,// true if data are period-ending and need to be shifted 
                                                string FileNameNC,           // file name of NetCDF
@@ -150,7 +150,7 @@ private:/*------------------------------------------------------*/
   
 public:/*-------------------------------------------------------*/
        //Constructors:
-  CConstTimeSeries(string name,string tag,double one_value):CTimeSeries(name,tag,one_value){}
+  CConstTimeSeries(string name,long loc_ID,double one_value):CTimeSeries(name,loc_ID,one_value){}
   ~CConstTimeSeries() {}
 
   void Initialize(const double model_start_day, //jul day

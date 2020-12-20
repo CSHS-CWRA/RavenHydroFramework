@@ -14,8 +14,8 @@
 /// \brief Implementation of the time series constructor when time series is single constant value
 /// \param one_value [in] Constant value of time series
 //
-CTimeSeries::CTimeSeries(string Name, string tag, double one_value)
-  :CTimeSeriesABC(TS_REGULAR,Name,tag)
+CTimeSeries::CTimeSeries(string Name, long loc_ID, double one_value)
+  :CTimeSeriesABC(TS_REGULAR,Name,loc_ID)
 {
   _start_day=0.0;
   _start_year=1900;
@@ -42,7 +42,7 @@ CTimeSeries::CTimeSeries(string Name, string tag, double one_value)
 /// \param is_pulse_type [in] Flag determining time-series type (pulse-based vs. piecewise-linear)
 //
 CTimeSeries::CTimeSeries(string     Name,
-                         string     tag,
+                         long       loc_ID,
                          string     filename,
                          double     strt_day,
                          int        start_yr,
@@ -50,7 +50,7 @@ CTimeSeries::CTimeSeries(string     Name,
                          double    *aValues,
                          const int  NumPulses,
                          const bool is_pulse_type)
-  :CTimeSeriesABC(TS_REGULAR,Name,tag,filename)
+  :CTimeSeriesABC(TS_REGULAR,Name,loc_ID,filename)
 {
   _start_day =strt_day;
   _start_year=start_yr;
@@ -82,14 +82,14 @@ CTimeSeries::CTimeSeries(string     Name,
 /// \brief Implementation of the time series constructor for empty time series used to store model generated data
 ///
 CTimeSeries::CTimeSeries(string     Name,
-                         string     tag,
+                         long       loc_ID,
                          string     filename,
                          double     strt_day,
                          int        start_yr,
                          double     data_interval,
                          const int  NumPulses,
                          const bool is_pulse_type)
-  :CTimeSeriesABC(TS_REGULAR,Name,tag,filename)
+  :CTimeSeriesABC(TS_REGULAR,Name,loc_ID,filename)
 {
   _start_day =strt_day;
   _start_year=start_yr;
@@ -619,7 +619,7 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
   for (int n=0;n<nPulses;n++){
     _aVal[n]=pTS1->GetValue(n)+pTS2->GetValue(n);
   }
-  CTimeSeries *pOut=new CTimeSeries(name,"","",start_day,start_yr,interval,_aVal,nPulses,is_pulse);
+  CTimeSeries *pOut=new CTimeSeries(name,DOESNT_EXIST,"",start_day,start_yr,interval,_aVal,nPulses,is_pulse);
   delete [] _aVal;
   return pOut;
 }
@@ -649,7 +649,7 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 //    :LinearTransform 1.0 0.0
 // :EndReadFromNetCDF
 //
-CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string tag, const optStruct &Options, bool shift_to_per_ending)
+CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc_ID, const optStruct &Options, bool shift_to_per_ending)
 {
 
   char   *s[MAXINPUTITEMS];
@@ -746,7 +746,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     pTimeSeries = ReadTimeSeriesFromNetCDF(
                                            Options,              // model options (such as simulation period)
                                            name,                 // ForcingType
-                                           tag,                  // critical information about timeseries, e.g. subbasin ID or HRU ID
+                                           loc_ID,               // critical information about timeseries, e.g. subbasin ID or HRU ID
                                            shift_to_per_ending,  // true if data are period ending rtaher than period ending
                                            shift_from_per_ending,
                                            FileNameNC,           // file name of NetCDF
@@ -785,7 +785,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
       JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       aVal[n]=InterpolateMo(aMonVal,tt,Options);
     }
-    pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse); 
+    pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse); 
     delete[] aVal; aVal =NULL;
     p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
     if(string(s[0]).substr(0,4)!=":End"){
@@ -868,7 +868,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, string t
     ExitGracefully("CTimeSeries: Parse: exceeded specified number of time series points in sequence or no :EndData command used. ",BAD_DATA);
   }
 
-  pTimeSeries=new CTimeSeries(name,tag,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse);
+  pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),start_day,start_yr,tstep,aVal,n,is_pulse);
   delete [] aVal;  aVal =NULL;
   return pTimeSeries;
 }
@@ -1005,7 +1005,7 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
   pTimeSeries=new CTimeSeries *[nTS];
   for (i=0;i<nTS;i++){
     pTimeSeries[i]=NULL;
-    pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),"",p->GetFilename(),start_day,start_yr,tstep,aVal[i],nMeasurements,is_pulse);
+    pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),DOESNT_EXIST,p->GetFilename(),start_day,start_yr,tstep,aVal[i],nMeasurements,is_pulse);
   }
 
   //delete dynamic memory---------------------------------------
@@ -1155,7 +1155,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
       pTimeSeries=new CTimeSeries *[nTS];
       for (i=0;i<nTS;i++){
         pTimeSeries[i]=NULL;
-        pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),"",filename,start_day,start_yr,tstep,aVal[i],nMeasurements,true);
+        pTimeSeries[i]=new CTimeSeries(ForcingToString(aType[i]),DOESNT_EXIST,filename,start_day,start_yr,tstep,aVal[i],nMeasurements,true);
       }
 
       //delete dynamic memory---------------------------------------
@@ -1177,7 +1177,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 ///
 /// \param  Options             [in] global model otions such as simulation period
 /// \param  name                [in] forcing type
-/// \param  tag                 [in] critical information about timeseries, e.g. subbasin ID or HRU ID
+/// \param  loc_ID              [in] location information about timeseries, e.g. subbasin ID or HRU ID
 /// \param  FileNameNC          [in] file name of NetCDF
 /// \param  VarNameNC           [in] name of variable in NetCDF
 /// \param  DimNamesNC_stations [in] name of station dimension (optional; default=None)
@@ -1189,7 +1189,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \return array (size nTS) of pointers to time series
 //
 CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, string name,
-                                                   string tag, bool shift_to_per_ending, bool shift_from_per_ending, string FileNameNC, string VarNameNC,
+                                                   long loc_ID, bool shift_to_per_ending, bool shift_from_per_ending, string FileNameNC, string VarNameNC,
                                                    string DimNamesNC_stations, string DimNamesNC_time,
                                                    int StationIdx, double TimeShift, double LinTrans_a, double LinTrans_b)
 {
@@ -1544,7 +1544,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   is_pulse = true;
   
-  pTimeSeries=new CTimeSeries(name,tag,FileNameNC.c_str(),start_day,start_yr,tstep,aVal,nMeasurements,is_pulse);
+  pTimeSeries=new CTimeSeries(name,loc_ID,FileNameNC.c_str(),start_day,start_yr,tstep,aVal,nMeasurements,is_pulse);
 
   // -------------------------------
   // (16) delete dynamic memory

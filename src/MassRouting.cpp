@@ -104,7 +104,6 @@ void   CConstituentModel::SetMassInflows(const int p,const double Minnew)
 void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,double &Minnew)
 {
   double C;
-  long tag1;
   long   SBID=_pModel->GetSubBasin(p)->GetID();
   double    Q=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
 
@@ -121,8 +120,7 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   //Handle specified concentrations/temperatures of streamflow
   for(int i=0; i<_nSpecFlowConcs; i++)
   {
-    tag1=s_to_l(_pSpecFlowConcs[i]->GetTag().c_str());
-    if(tag1==SBID) {
+    if(_pSpecFlowConcs[i]->GetLocID()==SBID) {
       C=_pSpecFlowConcs[i]->GetValue(t); //mg/L or C
       if(_pConstituent->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
       else                              { C*=LITER_PER_M3; } //mg/m3
@@ -142,7 +140,6 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
 {
   double C,Q,Qold;
   long SBID,SBID_down;
-  long tag1; 
   double mass=0; //[mg] or [MJ]
 
   // Handle additional mass/energy inflows 
@@ -159,8 +156,7 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
   {
     SBID_down=_pModel->GetSubBasin(p)->GetDownstreamID();
     for(int i=0; i<_nSpecFlowConcs; i++) {
-      tag1=s_to_l(_pSpecFlowConcs[i]->GetTag().c_str());
-      if(tag1==SBID_down) {
+      if(_pSpecFlowConcs[i]->GetLocID()==SBID_down) {
         mass-=GetIntegratedMassOutflow(p,tstep);
       }
     }
@@ -168,7 +164,7 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
   // Handle specified concentrations/temperatures of streamflow
   for(int i=0; i<_nSpecFlowConcs; i++)
   {
-    SBID  =s_to_l(_pSpecFlowConcs[i]->GetTag().c_str());
+    SBID  =_pSpecFlowConcs[i]->GetLocID();
 
     Q=_pModel->GetSubBasinByID(SBID)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
     C=_pSpecFlowConcs[i]->GetValue(t);                             //mg/L or C

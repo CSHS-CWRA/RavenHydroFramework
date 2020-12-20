@@ -190,7 +190,7 @@ protected:
   int            *_aSourceIndices;   ///< lookup table to convert (global) water storage index to corresponding source, if any [size: nStateVariables]
 
   int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series
-  CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID, tag2 corresponds to constit_ind
+  CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID
 
   ofstream _OUTPUT;        ///< for concentrations.csv
   ofstream _POLLUT;        ///< for pollutograph.csv

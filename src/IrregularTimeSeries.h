@@ -29,7 +29,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors:
   CIrregularTimeSeries(string name,
-                       string tag,
+                       long   loc_ID,
                        string filename,
                        double *aValues,
                        double *aDays,
@@ -64,7 +64,7 @@ public:/*-------------------------------------------------------*/
 
   int    GetTimeIndexFromModelTime(const double &t_mod) const;
 
-  static CIrregularTimeSeries  *Parse (CParser *p, const string name, const string tag, const int nMeasurements);
+  static CIrregularTimeSeries  *Parse (CParser *p, const string name, const long loc_ID, const int nMeasurements);
 };
 
 #endif

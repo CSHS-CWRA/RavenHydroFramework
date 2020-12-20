@@ -20,13 +20,13 @@
 /// \param NumValues     [in] Number of entries in the time series
 //
 CIrregularTimeSeries::CIrregularTimeSeries(     string    Name,
-                                                string    tag,
+                                                long      loc_ID,
                                                 string    filename,
                                                 double   *aValues,
                                                 double   *aDays,
                                                 int      *aYears,
                                                 const int NumValues)
-  :CTimeSeriesABC(TS_IRREGULAR,Name,tag,filename)
+  :CTimeSeriesABC(TS_IRREGULAR,Name,loc_ID,filename)
 {
   _nVals= NumValues;
 
@@ -294,7 +294,7 @@ int    CIrregularTimeSeries::GetNumSampledValues() const{return _nSampVal;}
 /// \param *p [in] CParser object pointing to input file
 /// \return Pointer to created time series
 //
-CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string name, const string tag, const int nMeasurements)
+CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string name, const long loc_ID, const int nMeasurements)
 {
   char *s[MAXINPUTITEMS];
   int Len;
@@ -338,7 +338,7 @@ CIrregularTimeSeries  *CIrregularTimeSeries::Parse (CParser *p, const string nam
   p->Tokenize(s,Len);//read closing term (e.g., ":EndRain")
 
   CIrregularTimeSeries *pTimeSeries=NULL;
-  pTimeSeries=new CIrregularTimeSeries(name,tag,p->GetFilename(),aVal,aDays,aYears,nMeasurements);
+  pTimeSeries=new CIrregularTimeSeries(name,loc_ID,p->GetFilename(),aVal,aDays,aYears,nMeasurements);
   delete [] aVal;  aVal =NULL;
   delete [] aDays; aDays =NULL;
   delete [] aYears; aYears =NULL;

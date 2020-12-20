@@ -324,7 +324,7 @@ void CModel::Initialize(const optStruct &Options)
   for(int i=0; i<_nObservedTS; i++){
     if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE"))
     {
-      long SBID=s_to_l(_pObservedTS[i]->GetTag().c_str());
+      long SBID=_pObservedTS[i]->GetLocID();
       if(GetSubBasinByID(SBID)->GetReservoir()==NULL){
         string warn="Observations supplied for non-existent reservoir in subbasin "+to_string(SBID);
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -335,7 +335,7 @@ void CModel::Initialize(const optStruct &Options)
   for (int i = 0; i<_nObservedTS; i++) {
 	  if (!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_INFLOW"))
 	  {
-		  long SBID = s_to_l(_pObservedTS[i]->GetTag().c_str());
+		  long SBID =_pObservedTS[i]->GetLocID();
 		  if (GetSubBasinByID(SBID)->GetReservoir() == NULL) {
 			  string warn = "Inflow observations supplied for non-existent reservoir in subbasin " + to_string(SBID);
 			  ExitGracefully(warn.c_str(), BAD_DATA_WARN);
@@ -346,7 +346,7 @@ void CModel::Initialize(const optStruct &Options)
   for (int i = 0; i<_nObservedTS; i++) {
 	  if (!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_NETINFLOW"))
 	  {
-		  long SBID = s_to_l(_pObservedTS[i]->GetTag().c_str());
+		  long SBID = _pObservedTS[i]->GetLocID();
 		  if (GetSubBasinByID(SBID)->GetReservoir() == NULL) {
 			  string warn = "Net inflow Observations supplied for non-existent reservoir in subbasin " + to_string(SBID);
 			  ExitGracefully(warn.c_str(), BAD_DATA);
@@ -402,7 +402,7 @@ void CModel::InitializeObservations(const optStruct &Options)
   for (int i = 0; i < _nObservedTS; i++)
   {
     _pModeledTS[i] = new CTimeSeries("MODELED" + _pObservedTS[i]->GetName(),
-                                      _pObservedTS[i]->GetTag(),"",
+                                      _pObservedTS[i]->GetLocID(),"",
                                       Options.julian_start_day,
                                       Options.julian_start_year,
                                       Options.timestep,nModeledValues,true);
@@ -418,7 +418,7 @@ void CModel::InitializeObservations(const optStruct &Options)
 
       if (    _pObsWeightTS[n]!=NULL
            && _pObsWeightTS[n]->GetName()     == _pObservedTS[i]->GetName()
-           && _pObsWeightTS[n]->GetTag()      == _pObservedTS[i]->GetTag()
+           && _pObsWeightTS[n]->GetLocID()    == _pObservedTS[i]->GetLocID()
            && _pObsWeightTS[n]->GetNumValues()== _pObservedTS[i]->GetNumValues()  )
       {
         tmp[i] = _pObsWeightTS[n];
@@ -431,7 +431,7 @@ void CModel::InitializeObservations(const optStruct &Options)
   //clean up and warn about unmatched weights
   for (int n = 0; n < _nObsWeightTS; n++){
     if (_pObsWeightTS[n] != NULL){
-      WriteWarning("Observation Weight "+_pObsWeightTS[n]->GetName()+" "+_pObsWeightTS[n]->GetTag()+" not matched to observation time series. Please supply corresponding observation series.", Options.noisy);
+      WriteWarning("Observation Weight "+_pObsWeightTS[n]->GetName()+" "+to_string(_pObsWeightTS[n]->GetLocID())+" not matched to observation time series. Please supply corresponding observation series.", Options.noisy);
       delete _pObsWeightTS[n]; _pObsWeightTS[n]=NULL;
     }
   }

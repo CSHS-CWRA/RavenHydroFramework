@@ -22,12 +22,12 @@
 //
 CTimeSeriesABC::CTimeSeriesABC(ts_type type,
                                string  Name,
-                               string  tag,
+                               long    loc_ID,
                                string  filename)
 {
   _type      =type;
   _name      =Name;
-  _tag       =tag;
+  _loc_ID    =loc_ID;
   _srcfile   =filename;
 }
 
@@ -40,7 +40,7 @@ CTimeSeriesABC::CTimeSeriesABC(string Name,
 {
   _type=t.GetType();
   _name=Name;
-  _tag       =t.GetTag();
+  _loc_ID=t.GetLocID();
   _srcfile = "";
 }
 ///////////////////////////////////////////////////////////////////
@@ -68,10 +68,16 @@ CTimeSeriesABC::ts_type CTimeSeriesABC::GetType() const{return _type;}
 string CTimeSeriesABC::GetName()  const{return _name;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns data tag
-/// \return data tag (e.g., HRU ID or Basin ID of observation data)
+/// \brief Returns location identifier
+/// \return location identifier (e.g., HRU ID or Basin ID of observation data)
 //
-string   CTimeSeriesABC::GetTag()      const{return _tag;}
+long   CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets location identifier
+/// \param ID - HRU ID or SubBasin ID linked to observations
+//
+void   CTimeSeriesABC::SetLocID(long ID) { _loc_ID=ID; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns source input file

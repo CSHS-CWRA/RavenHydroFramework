@@ -1529,7 +1529,7 @@ void CModel::OverrideStreamflow   (const long SBID)
         string name="Inflow_Hydrograph_"+to_string(SBID);
         CTimeSeries *pObs=dynamic_cast<CTimeSeries *>(_pObservedTS[i]);
         CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
-        pTS->SetTag(to_string(SBID));
+        pTS->SetLocID(SBID);
 
         //add as inflow hydrograph to downstream
         GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
@@ -1768,7 +1768,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     if      (datatype=="HYDROGRAPH")//===============================================
     {
-      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      pBasin=GetSubBasinByID (_pObservedTS[i]->GetLocID());
 
       if ((Options.ave_hydrograph) && (tt.model_time!=0)){
         value=pBasin->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
@@ -1779,17 +1779,17 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     }
     else if (datatype == "RESERVOIR_STAGE")//=======================================
     {
-      pBasin=GetSubBasinByID (s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetReservoir()->GetResStage();
     }
     else if (datatype == "RESERVOIR_INFLOW")//======================================
     {
-      pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      pBasin =  GetSubBasinByID(_pObservedTS[i]->GetLocID());
       value = pBasin->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
     }
     else if (datatype == "RESERVOIR_NETINFLOW")//===================================
     {
-      pBasin = GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+      pBasin = GetSubBasinByID(_pObservedTS[i]->GetLocID());
       CReservoir *pRes= pBasin->GetReservoir(); 
       double avg_area=0.0;
       if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
@@ -1802,7 +1802,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     {
       CHydroUnit *pHRU=NULL;
-      pHRU=GetHRUByID(s_to_i(_pObservedTS[i]->GetTag().c_str()));
+      pHRU=GetHRUByID((int)(_pObservedTS[i]->GetLocID()));
       string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
       ExitGracefullyIf(pHRU==NULL,error.c_str(),BAD_DATA);
       int sv_index=this->GetStateVarIndex(svtyp,layer_ind);

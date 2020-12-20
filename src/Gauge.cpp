@@ -124,7 +124,7 @@ void CGauge::Initialize(const optStruct   &Options,
   }
   if (!hasSnowfall && (hasRainfall || hasPrecip))
   {
-    AddTimeSeries(new CTimeSeries("SNOWFALL","",0.0),F_SNOWFALL);//blank series, all 0.0s
+    AddTimeSeries(new CTimeSeries("SNOWFALL",DOESNT_EXIST,0.0),F_SNOWFALL);//blank series, all 0.0s
   }
 
 
@@ -563,9 +563,9 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
     //
     t+=1.0;
   }
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day-time_shift,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX","","",start_day-time_shift,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE","","",start_day-time_shift,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN",DOESNT_EXIST,"",start_day-time_shift,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX",DOESNT_EXIST,"",start_day-time_shift,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_AVE",DOESNT_EXIST,"",start_day-time_shift,start_yr,1.0,aAvg,nVals,true),F_TEMP_DAILY_AVE);
   delete [] aMin;
   delete [] aMax;
   delete [] aAvg;
@@ -608,7 +608,7 @@ void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       aAvg[n]=0.5*(pTmin->GetValue(t+0.5)+pTmax->GetValue(t+0.5));
       t+=1.0;
     }
-    pTdaily_ave=new CTimeSeries("TEMP_DAILY_AVE","","",start_day,start_yr,1.0,aAvg,nVals,true);
+    pTdaily_ave=new CTimeSeries("TEMP_DAILY_AVE",DOESNT_EXIST,"",start_day,start_yr,1.0,aAvg,nVals,true);
     ExitGracefullyIf(pTdaily_ave==NULL,"GenerateAveSubdailyTempFromMinMax",OUT_OF_MEMORY);
     this->AddTimeSeries(pTdaily_ave,F_TEMP_DAILY_AVE);
     delete[] aAvg;
@@ -629,7 +629,7 @@ void CGauge::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
       t+=Options.timestep;
     }
 
-    CTimeSeries *pNewTS=new CTimeSeries("TEMP_AVE","","",start_day,start_yr,Options.timestep,aT,nVals,true);
+    CTimeSeries *pNewTS=new CTimeSeries("TEMP_AVE",DOESNT_EXIST,"",start_day,start_yr,Options.timestep,aT,nVals,true);
     this->AddTimeSeries(pNewTS,F_TEMP_AVE);
     delete [] aT;
   }
@@ -665,8 +665,8 @@ void CGauge::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
     aMax[n]=pT->GetValue(t+0.5)+4.0;//Options.temp_swing*0.5;
     t+=1.0;
   }
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN","","",start_day,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
-  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX","","",start_day,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MIN",DOESNT_EXIST,"",start_day,start_yr,1.0,aMin,nVals,true),F_TEMP_DAILY_MIN);
+  this->AddTimeSeries(new CTimeSeries("TEMP_DAILY_MAX",DOESNT_EXIST,"",start_day,start_yr,1.0,aMax,nVals,true),F_TEMP_DAILY_MAX);
   delete [] aMin;
   delete [] aMax;
 

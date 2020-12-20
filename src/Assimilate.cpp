@@ -12,7 +12,7 @@ bool IsContinuousFlowObs2(CTimeSeriesABC *pObs,long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if(pObs==NULL)                                   { return false; }
-  if(s_to_l(pObs->GetTag().c_str()) != SBID)       { return false; }
+  if(pObs->GetLocID() != SBID)                     { return false; }
   if(pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
   return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
 }

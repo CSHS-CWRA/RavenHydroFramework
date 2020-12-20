@@ -270,7 +270,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Rainfall data"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Rainfall data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"RAINFALL","",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"RAINFALL",DOESNT_EXIST,Options);
       pGage->AddTimeSeries(pTimeSer,F_RAINFALL);
       break;
     }
@@ -283,7 +283,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Snow data"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Snow data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"SNOWFALL","",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"SNOWFALL",DOESNT_EXIST,Options);
       pGage->AddTimeSeries(pTimeSer,F_SNOWFALL);
       break;
     }
@@ -296,7 +296,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Minumum Temperature data"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MIN","",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MIN",DOESNT_EXIST,Options);
       pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_MIN);
       break;
     }
@@ -309,7 +309,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Maximum Temperature data"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MAX","",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MAX",DOESNT_EXIST,Options);
       pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_MAX);
       break;
     }
@@ -322,7 +322,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Total Precipitation data"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Precipitation data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"PRECIP","",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"PRECIP",DOESNT_EXIST,Options);
       pGage->AddTimeSeries(pTimeSer,F_PRECIP);
       //pGage->DeleteSnowData();//??
       break;
@@ -348,7 +348,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       string name=to_string(s[1]);
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Time Series Data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,name,"",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,name,DOESNT_EXIST,Options);
       forcing_type ftype=GetForcingTypeFromString(name);
       if(ftype==F_UNRECOGNIZED){ ExitGracefully("Unrecognized forcing type string in :Data command",BAD_DATA_WARN); }
       pGage->AddTimeSeries(pTimeSer,ftype);
@@ -390,7 +390,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Ave. Temperature data"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_AVE","",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_AVE",DOESNT_EXIST,Options);
       pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_AVE);
       break;
     }
@@ -568,7 +568,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           //done reading table, now populate
           for (int g=0;g<NG;g++)
           {
-            CTimeSeries *pTS=new CTimeSeries(ForcingToString(datatype),"",p->GetFilename(),start_day,start_yr,interval,values[g],numvalues,true);
+            CTimeSeries *pTS=new CTimeSeries(ForcingToString(datatype),DOESNT_EXIST,p->GetFilename(),start_day,start_yr,interval,values[g],numvalues,true);
             pModel->GetGauge(gauge_ind[g])->AddTimeSeries(pTS,datatype);
             delete [] values[g];
           }
@@ -666,7 +666,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool period_ending =(!strcmp(s[1],"HYDROGRAPH")); 
       //Hydrographs are internally stored as period-ending!
 
-      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options,period_ending);
+      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),Options,period_ending);
 
       if (ishyd && invalidSB){
         string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
@@ -695,7 +695,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Irregular Observation"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;}
       CTimeSeriesABC *pIrregTimeSers;
-      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),to_string(s[2]),s_to_i(s[3]));
+      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),s_to_l(s[2]),s_to_i(s[3]));
       pModel->AddObservedTimeSeries(pIrregTimeSers);
       break;
     }
@@ -714,7 +714,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
 
-      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),to_string(s[2]),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),Options);
 
       if (ishyd && invalidSB){
         string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
@@ -744,7 +744,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Irregular weights"<<endl;}
       if (Len<4){p->ImproperFormat(s); break;}
       CTimeSeriesABC *pIrregTimeSers;
-      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),to_string(s[2]),s_to_i(s[3]));
+      pIrregTimeSers=CIrregularTimeSeries::Parse(p,to_string(s[1]),s_to_l(s[2]),s_to_i(s[3]));
       pModel->AddObservedWeightsTS(pIrregTimeSers);
       break;
     }
@@ -759,7 +759,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,Options);
       if (pSB!=NULL){
         pSB->AddInflowHydrograph(pTimeSer);
       }
@@ -782,7 +782,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"Extraction_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"Extraction_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddExtractionTimeSeries(pTimeSer);
       }
@@ -805,7 +805,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"WeirHeight_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"WeirHeight_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddWeirHeightTS(pTimeSer);
       }
@@ -828,7 +828,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"MaxStage_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"MaxStage_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMaxStageTimeSeries(pTimeSer);
       }
@@ -851,7 +851,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"ResFlow_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"ResFlow_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddOverrideQTimeSeries(pTimeSer);
       }
@@ -874,7 +874,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"MinStage_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"MinStage_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMinStageTimeSeries(pTimeSer);
       }
@@ -897,7 +897,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"MinStageFlow_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"MinStageFlow_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMinStageFlowTimeSeries(pTimeSer);
       }
@@ -920,7 +920,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"TargetStage_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"TargetStage_"+to_string(SBID),SBID,Options);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
         pSB->GetReservoir()->AddTargetStageTimeSeries(pTimeSer);
       }
@@ -943,7 +943,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"QDelta_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"QDelta_"+to_string(SBID),SBID,Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
       }
@@ -966,7 +966,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,Options);
       if (pSB!=NULL){
         pSB->AddDownstreamInflow(pTimeSer);
       }
@@ -990,7 +990,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
+        pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),SBID,Options);
         pSB->GetReservoir()->AddMinQTimeSeries(pTimeSer);
       }
       else
@@ -1022,7 +1022,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       pSB    =pModel->GetSubBasinByID(SBID);
       pSBdown=pModel->GetSubBasinByID(SBID_down);
-      pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),SBID,Options);
       if((pSB!=NULL) && (pSBdown!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddDownstreamTargetQ(pTimeSer,pSBdown,range);
       }
@@ -1046,7 +1046,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        pTimeSer=CTimeSeries::Parse(p,true,"QDeltaDec_"+to_string(SBID),to_string(SBID),Options);
+        pTimeSer=CTimeSeries::Parse(p,true,"QDeltaDec_"+to_string(SBID),SBID,Options);
         pSB->GetReservoir()->AddMaxQDecreaseTimeSeries(pTimeSer);
       }
       else
@@ -1068,7 +1068,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"IrrigationDemand_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"IrrigationDemand_"+to_string(SBID),SBID,Options);
       if(pSB!=NULL) {
         pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
       }
@@ -1116,7 +1116,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
       if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        pTimeSer=CTimeSeries::Parse(p,true,"Qmax_"+to_string(SBID),to_string(SBID),Options);
+        pTimeSer=CTimeSeries::Parse(p,true,"Qmax_"+to_string(SBID),SBID,Options);
         pSB->GetReservoir()->AddMaxQTimeSeries(pTimeSer);
       }
       else
@@ -1226,7 +1226,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if(Len>=2) { SBID=s_to_l(s[1]); }
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"EnviroMinFlow_"+to_string(SBID),to_string(SBID),Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"EnviroMinFlow_"+to_string(SBID),SBID,Options);
       if(pSB!=NULL) {
         pSB->AddEnviroMinFlow(pTimeSer);
       }
@@ -1442,7 +1442,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           }
         }
         CTimeSeries *pTS;
-        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"",Options);//name=constitutent name
+        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),DOESNT_EXIST,Options);//name=constitutent name
         
         int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         if(c!=DOESNT_EXIST) {
@@ -1490,7 +1490,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           }
         }
         CTimeSeries *pTS;
-        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),"",Options);//name=constitutent name
+        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),DOESNT_EXIST,Options);//name=constitutent name
 
         int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         if(c!=DOESNT_EXIST) {
@@ -1523,9 +1523,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       
       CTimeSeries *pTS;
-      pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),"",Options);
-      pTS->SetTag(to_string(SBID));
-      pTS->SetTag2(to_string(c));
+      pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),SBID,Options);
+      pTS->SetLocID(SBID);
 
       pModel->GetTransportModel()->GetConstituentModel(c)->AddInflowConcTimeSeries(pTS);
 
@@ -1563,10 +1562,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
 
       CTimeSeries *pTS;
-      pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),"",Options);
-      pTS->SetTag(to_string(SBID));
-      pTS->SetTag2(to_string(c));
-
+      pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),SBID,Options);
+      pTS->SetLocID(SBID);
 
       pModel->GetTransportModel()->GetConstituentModel(c)->AddInflowConcTimeSeries(pTS);
 

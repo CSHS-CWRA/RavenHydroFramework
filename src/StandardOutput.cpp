@@ -36,9 +36,9 @@ void AddSingleValueToNetCDF     (const int out_ncid,const string &label,const si
 bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID)
 {
  // clears up  terribly ugly repeated if statements
-  if(pObs==NULL){return false;}
-  if (s_to_l(pObs->GetTag().c_str()) != SBID){ return false; }//SBID is correct
-  if(pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
+  if (pObs==NULL)                                   { return false; }
+  if (pObs->GetLocID() != SBID)                     { return false; }
+  if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
   return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
 }
 //////////////////////////////////////////////////////////////////
@@ -49,12 +49,10 @@ bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID)
 bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
 {
  // clears up  terribly ugly repeated if statements
-  if(pObs==NULL){return false;}
-  return (
-    (!strcmp(pObs->GetName().c_str(),"RESERVOIR_STAGE")) &&
-    (s_to_l(pObs->GetTag().c_str()) == SBID) &&
-    (pObs->GetType() == CTimeSeriesABC::TS_REGULAR)
-    );
+  if (pObs==NULL)                                   { return false; }
+  if (pObs->GetLocID() != SBID)                     { return false; }
+  if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
+  return (!strcmp(pObs->GetName().c_str(),"RESERVOIR_STAGE")); //name ="RESERVOIR_STAGE"  
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the reservoir inflow series for subbasin SBID
@@ -63,13 +61,10 @@ bool IsContinuousStageObs(CTimeSeriesABC *pObs,long SBID)
 //
 bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
 {
-	// clears up  terribly ugly repeated if statements
-	if (pObs == NULL) { return false; }
-	return (
-		(!strcmp(pObs->GetName().c_str(), "RESERVOIR_INFLOW")) &&
-		(s_to_l(pObs->GetTag().c_str()) == SBID) &&
-		(pObs->GetType() == CTimeSeriesABC::TS_REGULAR)
-		);
+  if (pObs==NULL)                                   { return false; }
+  if (pObs->GetLocID() != SBID)                     { return false; }
+  if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
+  return (!strcmp(pObs->GetName().c_str(),"RESERVOIR_INFLOW")); //name ="RESERVOIR_INFLOW"  
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the reservoir inflow series for subbasin SBID
@@ -78,13 +73,10 @@ bool IsContinuousInflowObs(CTimeSeriesABC *pObs, long SBID)
 //
 bool IsContinuousNetInflowObs(CTimeSeriesABC *pObs, long SBID)
 {
-	// clears up  terribly ugly repeated if statements
-	if (pObs == NULL) { return false; }
-	return (
-		(!strcmp(pObs->GetName().c_str(), "RESERVOIR_NETINFLOW")) &&
-		(s_to_l(pObs->GetTag().c_str()) == SBID) &&
-		(pObs->GetType() == CTimeSeriesABC::TS_REGULAR)
-		);
+  if (pObs==NULL)                                   { return false; }
+  if (pObs->GetLocID() != SBID)                     { return false; }
+  if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
+  return (!strcmp(pObs->GetName().c_str(),"RESERVOIR_NETINFLOW")); //name ="RESERVOIR_NETINFLOW"  
 }
 
 
@@ -1353,7 +1345,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       string datatype=_pObservedTS[i]->GetName();
       if((datatype=="HYDROGRAPH") || (datatype=="RESERVOIR_STAGE") || (datatype=="RESERVOIR_INFLOW") || (datatype=="RESERVOIR_NET_INFLOW"))
       {
-        CSubBasin *pBasin=GetSubBasinByID(s_to_l(_pObservedTS[i]->GetTag().c_str()));
+        CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
         if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}
       }
       if (!skip)

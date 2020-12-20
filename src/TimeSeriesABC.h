@@ -19,8 +19,7 @@ public:
 private:/*------------------------------------------------------*/
   ts_type     _type;
   string      _name; ///< name of time series (used only for error messages)
-  string       _tag; ///< data tag (stores additional info, like HRU or SB ID for observation data)
-  string      _tag2; ///< second data tag (stores additional info like constitutent index)
+  long      _loc_ID; ///< location ID (stores additional info, like HRU or SB ID for observation data)
   string   _srcfile; ///< original source file
 
   CTimeSeriesABC(const CTimeSeriesABC &t); //suppresses default copy constructor
@@ -29,7 +28,7 @@ public:/*-------------------------------------------------------*/
   //Constructors:
   CTimeSeriesABC(ts_type type,
                  string  name,
-                 string  tag,
+                 long    loc_ID,
                  string filename="");
   CTimeSeriesABC(string name,
                  const CTimeSeriesABC &t);
@@ -44,12 +43,10 @@ public:/*-------------------------------------------------------*/
 
   ts_type GetType      () const;
   string  GetName      () const;
-  string  GetTag       () const;
-  string  GetTag2      () const{return _tag2;}
+  long    GetLocID     () const;
   string  GetSourceFile() const;
 
-  void    SetTag       (string tag){_tag=tag;}
-  void    SetTag2      (string tag){_tag2=tag;}
+  void    SetLocID     (long ID);
 
   virtual double GetInterval() const=0;
   virtual double GetTime      (const int n) const=0;
