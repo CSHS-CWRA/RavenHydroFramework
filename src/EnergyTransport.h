@@ -1,0 +1,51 @@
+/*----------------------------------------------------------------
+Raven Library Source Code
+Copyright (c) 2008-2020 the Raven Development Team
+----------------------------------------------------------------*/
+
+#ifndef ENERGY_TRANSPORT_H
+#define ENERGY_TRANSPORT_H
+
+#include "RavenInclude.h"
+#include "Transport.h"
+
+///////////////////////////////////////////////////////////////////
+/// \brief Class for coordinating transport simulation for enthalpy (child of ConstituentModel)
+/// \details Implemented in EnergyTransport.cpp
+//
+class CEnthalpyModel :public CConstituentModel
+{
+  double **_aEnthalpySource;         ///< recent time history of reach source term [MJ/m3/d] [size: nSubBasins x nMinhist(p)]
+  double  *_aEnthalpyBeta;           ///< array of beta terms for reach energy exchange [1/d] [size: nSubBasins] 
+
+  double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
+  void   UpdateReachEnergySourceTerms(const int p);
+
+public:/*-------------------------------------------------------*/
+  CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,const int c);
+  ~CEnthalpyModel();
+
+  //Accessors specific to Enthalpy Transport
+  double GetIceContent(const double *state_vars,const int iWater) const;
+  double GetWaterTemperature(const double *state_vars,const int iWater) const;
+  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const;
+  double GetOutflowIceFraction(const int p) const;
+  double GetAvgLatentHeatFlux() const;
+
+  //Manipulators (inherited from CConstitModel)
+  void   Initialize();
+  void   ApplyConvolutionRouting(const int     p,
+    const double *aRouteHydro,
+    const int nSegments,
+    const int nMinHist,const double *aMinHist,
+    const double &tstep,double *aMout_new) const;
+
+  void   UpdateMassOutflows(const int          p,
+    double      *aMoutnew,
+    double      &ResMass,
+    double      &MassOutflow,
+    const optStruct   &Options,
+    const time_struct &tt,
+    bool         initialize);
+};
+#endif
