@@ -159,8 +159,8 @@ int main(int argc, char* argv[])
 
       //Finished Solving----------------------------------------------------
       pModel->UpdateDiagnostics(Options,tt);
-      pModel->RunDiagnostics(Options);
-      pModel->WriteMajorOutput("solution",Options,tt,true);
+      pModel->RunDiagnostics   (Options);
+      pModel->WriteMajorOutput (Options,tt,"solution",true);
       pModel->CloseOutputStreams();
 
       if(!Options.silent) {
@@ -397,7 +397,7 @@ bool CheckForStopfile(const int step, const time_struct &tt)
   else //Stopfile found
   {
     STOP.close();
-    pModel->WriteMajorOutput  ("solution",Options,tt,true);
+    pModel->WriteMajorOutput  (Options,tt,"solution",true);
     pModel->CloseOutputStreams();
     ExitGracefully("CheckForStopfile: simulation interrupted by user using stopfile",SIMULATION_DONE);
     return true;

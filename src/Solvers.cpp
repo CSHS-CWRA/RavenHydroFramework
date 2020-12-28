@@ -592,13 +592,16 @@ void MassEnergyBalance( CModel            *pModel,
   }//end for pp...
 
   //-----------------------------------------------------------------
-  //      MASS CONSTITUENT ROUTING
+  //      CONSTITUENT (MASS OR ENERGY) ROUTING
   //-----------------------------------------------------------------
-   //determine total mass loading from HRUs into respective basins (aRoutedMass[p])
+   //determine total mass/energy loading from HRUs into respective basins (aRoutedMass[p])
   double ResMass=0;
   double MassOutflow=0;
+  int    iSWmass,m;
+  CConstituentModel *pConstitModel;
   for(c=0;c<nConstituents;c++)
   {
+    pConstitModel=pModel->GetTransportModel()->GetConstituentModel(c);
     for(p=0;p<NB;p++) {
       aRoutedMass[p]=0.0;
       aMinnew[p]=0.0;
@@ -608,12 +611,11 @@ void MassEnergyBalance( CModel            *pModel,
       pHRU=pModel->GetHydroUnit(k);
       if(pHRU->IsEnabled())
       {
-        p   =pHRU->GetSubBasinIndex();
- 
-        int iSWmass =pModel->GetStateVarIndex(CONSTITUENT,pModel->GetTransportModel()->GetLayerIndex(c,iSW));
-        aRoutedMass[p]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//aRoutedMass=[mg/d]
-        aPhinew[k][iSWmass]=0.0; //empty out
-       
+        p       =pHRU->GetSubBasinIndex();
+        m       =pModel->GetTransportModel()->GetLayerIndex(c,iSW);
+        iSWmass =pModel->GetStateVarIndex(CONSTITUENT,m);
+        aRoutedMass[p]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//[mg/d] or [MJ/d]
+        aPhinew[k][iSWmass]=0.0; //empty out from landscape storage
       }
     }
     
@@ -621,18 +623,17 @@ void MassEnergyBalance( CModel            *pModel,
     //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
     for(pp=0;pp<NB;pp++)
     {
-      p=pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list
-
+      p     =pModel->GetOrderedSubBasinIndex(pp); //p refers to actual index of basin, pp is ordered list
       pBasin=pModel->GetSubBasin(p);
 
       if(pBasin->IsEnabled())
       {
-        pModel->GetTransportModel()->GetConstituentModel(c)->ApplySpecifiedMassInflows(p,t+tstep,aMinnew[p]); //overrides or supplements mass loadings
+        pConstitModel->ApplySpecifiedMassInflows(p,t+tstep,aMinnew[p]); //overrides or supplements mass loadings
 
-        pModel->GetTransportModel()->GetConstituentModel(c)->SetMassInflows    (p,aMinnew[p]);
-        pModel->GetTransportModel()->GetConstituentModel(c)->SetLateralInfluxes(p,aRoutedMass[p]);
-        pModel->GetTransportModel()->GetConstituentModel(c)->RouteMass         (p,aMoutnew,ResMass,Options,tt);  //Where everything happens!
-        pModel->GetTransportModel()->GetConstituentModel(c)->UpdateMassOutflows(p,aMoutnew,ResMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
+        pConstitModel->SetMassInflows    (p,aMinnew[p]);
+        pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
+        pConstitModel->RouteMass         (p,aMoutnew,ResMass,Options,tt);  //Where everything happens!
+        pConstitModel->UpdateMassOutflows(p,aMoutnew,ResMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)
@@ -645,7 +646,7 @@ void MassEnergyBalance( CModel            *pModel,
 
   //-----------------------------------------------------------------
   //          AGGREGATION ACROSS HRU GROUPS
-  // \todo[funct]  Should replace with special lateral exchange process
+  // \todo[funct]  Should replace with special lateral exchange process -right now not handled in transport
   //-----------------------------------------------------------------
   double agg_phi;
   double agg_area,area;

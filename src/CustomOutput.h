@@ -141,6 +141,8 @@ public:/*------------------------------------------------------*/
   void WriteFileHeader  (const optStruct &Options);
   void WriteCustomOutput(const time_struct &tt, const optStruct &Options);
 
+  static CCustomOutput *ParseCustomOutputCommand(char *s[MAXINPUTITEMS],const int Len,CModel *&pModel,const optStruct &Options);
+  
 private:
   void WriteCSVFileHeader(void);
   void WriteEnSimFileHeader(const optStruct &Options);

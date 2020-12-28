@@ -1129,7 +1129,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   {
     _currOutputTimeInd++;
     tmpFilename="state_"+tt.date_string;
-    WriteMajorOutput(tmpFilename,Options,tt,false);
+    WriteMajorOutput(Options,tt,tmpFilename,false);
   }
 
 }
@@ -1142,7 +1142,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 ///
 /// \param &Options [in] Global model options information
 //
-void CModel::WriteMajorOutput(string solfile, const optStruct &Options, const time_struct &tt, bool final) const
+void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, string solfile, bool final) const
 {
   int i,k;
   string tmpFilename;

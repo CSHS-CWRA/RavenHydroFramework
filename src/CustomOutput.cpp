@@ -1011,4 +1011,157 @@ void CCustomOutput::CloseFiles()
   if (_CUSTOM.is_open()){_CUSTOM.close();}
 }
 
+int  ParseSVTypeIndex(string s,CModel *&pModel);
+//////////////////////////////////////////////////////////////////
+/// \brief Parses custom output command 
+// Format:
+//  :CustomOutput [time_aggregation] [statistic] [parameter] [space_aggregation] {ONLY HRUGroup} {[hist_min] [hist_max] [#bins]} {filename} (optional)
+//
+CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], const int Len,CModel *&pModel, const optStruct &Options)
+{
+  time_agg    ta;
+  spatial_agg sa;
+  agg_stat    stat;
+  string force_str="";
 
+  if      (!strcmp(s[1],"DAILY"          )){ta=DAILY;}
+  else if (!strcmp(s[1],"MONTHLY"        )){ta=MONTHLY;}
+  else if (!strcmp(s[1],"YEARLY"         )){ta=YEARLY;}
+  else if (!strcmp(s[1],"ANNUAL"         )){ta=YEARLY;}
+  else if (!strcmp(s[1],"WATER_YEARLY"   )){ta=WATER_YEARLY;}
+  else if (!strcmp(s[1],"EVERY_NDAYS"    )){ta=EVERY_NDAYS; }
+  else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP;}
+  else{
+    ta=DAILY;
+    ExitGracefully(":CustomOutput command: Unrecognized custom output temporal aggregation method",BAD_DATA);
+  }
+  if((ta==EVERY_NDAYS) && (Options.custom_interval==1.0)) {
+    WriteWarning(":CustomOutput - EVERY_NDAYS option should only be used with :CustomInterval > 1, otherwise use of DAILY command preferred",Options.noisy);
+  }
+
+  //these statistics are always in time
+  if      (!strcmp(s[2],"AVERAGE"         )){stat=AGG_AVERAGE;}
+  else if (!strcmp(s[2],"MAXIMUM"         )){stat=AGG_MAXIMUM;}
+  else if (!strcmp(s[2],"MINIMUM"         )){stat=AGG_MINIMUM;}
+  else if (!strcmp(s[2],"MEDIAN"          )){stat=AGG_MEDIAN;}
+  else if (!strcmp(s[2],"RANGE"           )){stat=AGG_RANGE;}
+  else if (!strcmp(s[2],"HISTOGRAM"       )){stat=AGG_HISTOGRAM;}
+  else if (!strcmp(s[2],"QUARTILES"       )){stat=AGG_QUARTILES;}
+  else if (!strcmp(s[2],"95CI"            )){stat=AGG_95CI;}
+  //
+  else{
+    stat=AGG_AVERAGE;
+    ExitGracefully(":CustomOutput command: Unrecognized custom output processing method",BAD_DATA);
+    return NULL;
+  }
+
+  //read in parameter information
+  diagnostic diag;
+  diag=VAR_STATE_VAR ;//For now, default
+  int SV_ind,SV_ind2;
+  sv_type sv_typ;
+  SV_ind= ParseSVTypeIndex(s[3], pModel);
+  SV_ind2=DOESNT_EXIST;
+
+  //Special treatment of To:, From: and Between:1.And.2 fluxes
+  string tmp = s[3];
+  string right;
+  if (!strcmp((tmp.substr(0, 3)).c_str(), "To:")){
+    right = tmp.substr(3,string::npos);
+
+    SV_ind=ParseSVTypeIndex(right, pModel);
+    if (SV_ind == DOESNT_EXIST){
+      WriteWarning(":CustomOutput command: Custom output Flux variable " + right + " is unrecognized. No output will be written.", Options.noisy);
+      return NULL;
+    }
+    else
+    {
+      diag=VAR_TO_FLUX;
+    }
+  }
+  if (!strcmp((tmp.substr(0, 5)).c_str(), "From:")){
+    right = tmp.substr(5,string::npos);
+    SV_ind=ParseSVTypeIndex(right, pModel);
+    if (SV_ind == DOESNT_EXIST){
+      WriteWarning(":CustomOutput command: Custom output Flux variable " + right + " is unrecognized. No output will be written.", Options.noisy);
+      return NULL;
+    }
+    else
+    {
+      diag=VAR_FROM_FLUX;
+    }
+  }
+  //e.g., :Between SOIL[0].And.ATMOSPHERE for AET
+  if (!strcmp((tmp.substr(0, 8)).c_str(), "Between:")){
+    right = tmp.substr(8,string::npos);
+    string firstSV = right.substr(0,right.find(".And."));
+    string lastSV  = right.substr(right.find(".And.")+5,string::npos);
+
+    SV_ind =ParseSVTypeIndex(firstSV, pModel);
+    SV_ind2=ParseSVTypeIndex(lastSV,  pModel);
+    if (SV_ind == DOESNT_EXIST){
+      WriteWarning(":CustomOutput command: Custom output Flux variable " + firstSV + " is unrecognized. No output will be written.", Options.noisy);
+      return NULL;
+    }
+    else if (SV_ind2 == DOESNT_EXIST){
+      WriteWarning("Custom output Flux variable " + lastSV + " is unrecognized. No output will be written.", Options.noisy);
+      return NULL;
+    }
+    else
+    {
+      diag=VAR_BETWEEN_FLUX;
+    }
+  }
+  //not a state variable or a flux to/from state var - try forcing function
+  if (SV_ind==DOESNT_EXIST){
+    diag=VAR_FORCING_FUNCTION;
+    sv_typ=UNRECOGNIZED_SVTYPE;
+    force_str=s[3];
+    if (GetForcingTypeFromString(force_str) == F_UNRECOGNIZED){
+      WriteWarning("Custom output variable " + force_str + " is unrecognized. No output will be written.", Options.noisy);
+      return NULL;
+    }
+  }
+  else{
+    sv_typ=pModel->GetStateVarType(SV_ind);
+  }
+
+
+  if      (!strcmp(s[4],"BY_HRU"          )){sa=BY_HRU;}
+  else if (!strcmp(s[4],"BY_BASIN"        )){sa=BY_BASIN;}
+  else if (!strcmp(s[4],"BY_SUBBASIN"     )){sa=BY_BASIN;}
+  else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;}
+  else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;}
+  else if (!strcmp(s[4],"BY_HRU_GROUP"    )){sa=BY_HRU_GROUP;}
+  else if (!strcmp(s[4],"BY_SB_GROUP"     )){sa=BY_SB_GROUP; }
+  else{
+    sa=BY_HRU;
+    ExitGracefully("ParseMainInputFile: Unrecognized custom output spatial aggregation method",BAD_DATA);
+  }
+  int kk_only=DOESNT_EXIST;
+  string HRU_Group="";
+  if ((sa==BY_HRU) && (Len>=7) && (string(s[5])=="ONLY")){
+    sa=BY_SELECT_HRUS;
+    HRU_Group=s[6];
+    for (int kk=0;kk<pModel->GetNumHRUGroups();kk++){
+      if (pModel->GetHRUGroup(kk)->GetName()==HRU_Group){
+        kk_only=kk;
+      }
+    }
+  }
+
+  // get custom filename, if specified
+  int start=5;
+  if ((sa==BY_SELECT_HRUS) && (Len>=7) && (string(s[5])=="ONLY")){start=7;}
+  else if ((Len>=8) && (stat==AGG_HISTOGRAM))                    {start=8;}
+  string filename="";
+  if (Len>start){for (int i=start;i<Len;i++){filename=filename+to_string(s[i]);}}
+
+  CCustomOutput *pCustom;
+  pCustom=new CCustomOutput(diag,sv_typ,SV_ind,SV_ind2,force_str,stat,ta,sa,filename,kk_only,pModel,Options);
+  if ((Len>=8) && (stat==AGG_HISTOGRAM)){
+    pCustom->SetHistogramParams(s_to_d(s[5]),s_to_d(s[6]), s_to_i(s[7]));
+  }
+
+  return pCustom;
+}
