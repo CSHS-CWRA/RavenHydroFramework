@@ -775,8 +775,9 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   }
 
   bool is_concentration=false;
-
+  bool is_enthalpy     =false;
   is_concentration = (_var == VAR_STATE_VAR) && (pModel->GetStateVarType(_svind)==CONSTITUENT);
+  //is_enthalpy      = (is_concentration) && (pModel->GetTransportModel())
 
   //Sift through HRUs, BASINs or watershed, updating aggregate statistics
   //--------------------------------------------------------------------------
@@ -788,8 +789,17 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       int m = pModel->GetStateVarLayer(_svind);
       int i_stor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
       double conv=(MM_PER_METER/LITER_PER_M3);
+      double vol;
       val=-9999;
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind)/pModel->GetHydroUnit(k)->GetStateVarValue(i_stor)*conv;}
+      if      (_spaceAgg==BY_HRU        ){
+        vol=pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
+        if(vol>0.0) {
+          val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind)/pModel->GetHydroUnit(k)->GetStateVarValue(i_stor)*conv;
+        }
+        else {
+          val=0.0;
+        }
+      }
       else {
         ExitGracefully("CustomOutput: cannot currently generate basin,watershed, or hru group based aggregate constituent concentrations",STUB);
       }

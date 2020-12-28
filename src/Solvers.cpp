@@ -57,6 +57,10 @@ void MassEnergyBalance( CModel            *pModel,
 
   static double    **rate_guess;  //need to set first array to nProcesses
 
+  static int        *kFrom;
+  static int        *kTo; 
+  static double     *exchange_rates=NULL; 
+
   double             *GW_stor     =NULL; //[mm] groundwater storage at start of timestep
   double             *GW_stor_new =NULL; //[mm] groundwater storage after processes have moved water
   double             *GW_stor_old =NULL;
@@ -123,6 +127,10 @@ void MassEnergyBalance( CModel            *pModel,
         rate_guess[j]=new double [NS*NS]; //maximum number of connections possible
       }
     }
+    //For lateral flow processes
+    kFrom         =new int[MAX_LAT_CONNECTIONS];
+    kTo           =new int[MAX_LAT_CONNECTIONS];
+    exchange_rates=new double[MAX_LAT_CONNECTIONS];
   }//end static memory if
 
   if((Options.modeltype == MODELTYPE_COUPLED) || (Options.modeltype == MODELTYPE_GROUNDWATER))
@@ -177,37 +185,39 @@ void MassEnergyBalance( CModel            *pModel,
     {
       pHRU=pModel->GetHydroUnit(k);
 
-      if(pHRU->IsEnabled()) {
-        //model all hydrologic processes occuring at HRU scale
-        //-----------------------------------------------------------------
+      if(pHRU->IsEnabled()) 
+      {
         qs=0;
         for(j=0;j<nProcesses;j++)
         {
           nConnections=0;
-
-          if(pModel->ApplyProcess(j,aPhinew[k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change)) //note aPhinew is newest version
+          if(pModel->ApplyProcess(j,aPhinew[k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change)) //note aPhinew is newest state variable vector
           {
+#ifdef _STRICTCHECK_
             if(nConnections>MAX_CONNECTIONS) {
               cout<<nConnections<<endl;
-              ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);
-            }
-
+              ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR); }
+#endif
             for(q=0;q<nConnections;q++)//each process may have multiple connections
             {
               if(iTo[q]!=iFrom[q]) {
                 aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
-                aPhinew[k][iTo[q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+                aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
               }
               else {
-                aPhinew[k][iTo[q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
+                aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
               }
-              pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
+              pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);   //this is only this easy for Euler/Ordered!
               qs++;
             }//end for q=0 to nConnections
           }// end if (pModel->ApplyProcess
           else
           {
-            qs+=nConnections;
+            for(q=0;q<nConnections;q++)
+            {
+              pModel->IncrementBalance(qs,k,0.0);
+              qs++;
+            }
           }
         }//end for j=0 to nProcesses
       }
@@ -233,11 +243,11 @@ void MassEnergyBalance( CModel            *pModel,
 
         if (pModel->ApplyProcess(j,aPhi   [k],pHRU,Options,tt,iFrom,iTo,nConnections,rates_of_change))//note aPhi is info from start of timestep
         {
+#ifdef _STRICTCHECK_
           if(nConnections>MAX_CONNECTIONS) {
             cout<<nConnections<<endl;
-            ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);
-          }
-
+            ExitGracefully("MassEnergyBalance:: Maximum number of connections exceeded. Please contact author.",RUNTIME_ERR);}
+#endif
           for (q=0;q<nConnections;q++)//each process may have multiple connections
           {
             if (iTo[q]!=iFrom[q]){
@@ -247,14 +257,17 @@ void MassEnergyBalance( CModel            *pModel,
             else{
               aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
             }
-
             pModel->IncrementBalance(qs,k,rates_of_change[q]*tstep);//this is only this easy for Euler/Ordered!
             qs++;
           }//end for q=0 to nConnections
         }
         else
         {
-          qs+=nConnections;
+          for(q=0;q<nConnections;q++)
+          {
+            pModel->IncrementBalance(qs,k,0.0);
+            qs++;
+          }
         }
       }//end for j=0 to nProcesses
     }//end for k=0 to nHRUs
@@ -367,13 +380,6 @@ void MassEnergyBalance( CModel            *pModel,
   int    qss=0;//index of lateral process connection
   int    nLatConnections;
   double Afrom,Ato;
-  int    *kFrom,*kTo;
-  
-  double *exchange_rates=NULL;
-  kFrom         =new int   [MAX_LAT_CONNECTIONS];
-  kTo           =new int   [MAX_LAT_CONNECTIONS];
-  exchange_rates=new double[MAX_LAT_CONNECTIONS];
-  ExitGracefullyIf(exchange_rates==NULL,"MassEnergyBalance(5)",OUT_OF_MEMORY);
    
   for (int q=0;q<MAX_LAT_CONNECTIONS;q++)
   {
@@ -385,17 +391,14 @@ void MassEnergyBalance( CModel            *pModel,
   {
     if (pModel->ApplyLateralProcess(j,aPhinew,Options,tt,kFrom,kTo,iFrom,iTo,nLatConnections,exchange_rates))
     {       
+#ifdef _STRICTCHECK_
       if(nLatConnections>MAX_LAT_CONNECTIONS) {
         cout<<nLatConnections<<endl;
         ExitGracefully("MassEnergyBalance:: Maximum number of lateral connections exceeded. Please contact author.",RUNTIME_ERR);
       }
-
+#endif 
       for (int q=0;q<nLatConnections;q++)
       {
-#ifdef _STRICTCHECK_
-        ExitGracefullyIf(kFrom[q]==DOESNT_EXIST,"MassEnergyBalance: kFrom[q] doesnt exist",RUNTIME_ERR);
-        ExitGracefullyIf(kTo  [q]==DOESNT_EXIST,"MassEnergyBalance: kFrom[q] doesnt exist",RUNTIME_ERR);
-#endif 
         Afrom=pModel->GetHydroUnit(kFrom[q])->GetArea();
         Ato  =pModel->GetHydroUnit(kTo[q]  )->GetArea();
         aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q]/Afrom*tstep;  
@@ -407,12 +410,13 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
     else{
-      qss+=nLatConnections;
+      for(int q=0;q<nLatConnections;q++)
+      {
+        pModel->IncrementLatBalance(qss,0.0);
+        qss++;
+      }
     }
   }
-  delete [] kFrom;
-  delete [] kTo;
-  delete [] exchange_rates;
 
   //-----------------------------------------------------------------
   //      GROUNDWATER SOLVER
@@ -712,6 +716,9 @@ void MassEnergyBalance( CModel            *pModel,
     delete[] GW_stor_new;  GW_stor_new = NULL;
     delete[] GW_heads;     GW_heads    = NULL;
     delete[] GW_heads_new; GW_heads_new= NULL;
+    delete[] kFrom;
+    delete[] kTo;
+    delete[] exchange_rates;
     //delete transport static arrays.
     if(nConstituents>0)
     {

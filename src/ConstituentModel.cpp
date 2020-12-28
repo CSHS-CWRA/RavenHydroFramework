@@ -538,11 +538,13 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //    Header content ---------------------------
   _OUTPUT<<"time[d],date,hour,influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
-  for(int i=0;i<_pModel->GetNumStateVars();i++)
+
+  for(int ii=0;ii<_pTransModel->GetNumWaterCompartments();ii++)
   {
-    if((CStateVariable::IsWaterStorage(_pModel->GetStateVarType(i))) && (i!=iCumPrecip)) {
+    if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
+    {
       _OUTPUT<<","<<
-        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),_pModel->GetStateVarLayer(i))<<" "<<mgL;
+        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)))<<" "<<mgL;
     }
   }
 

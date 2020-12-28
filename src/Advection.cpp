@@ -286,3 +286,35 @@ void   CmvAdvection::ApplyConstraints(const double               *state_vars,
 
 }
 
+/*if((vol>1e-6) && (mass/vol>1.0)) {
+string tmpname;
+if     (Q[q]>0){tmpname=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iFromWater),0);}
+else if(Q[q]<0){tmpname=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iToWater),0);}
+cout<<"BADCONC: "<<tmpname<<" "<<mass<<" "<<vol<<" "<<mass/vol<<" "<<tt.date_string<<endl;
+}*/
+/*if(vol>1e-6)//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
+{
+  rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d] or [MJ/m2/d]
+
+  if(!isEnthalpy) { //negative enthalpy/temperature allowed (but shouldnt happen)
+    if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
+  }
+  if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
+}
+else if(mass>0) {
+  string tmpname,tmp2;
+  if(Q[q]>0)
+  {
+    tmpname=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iFromWater),0);
+    tmp2=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iToWater),0);
+  }
+  else if(Q[q]<0)
+  {
+    tmpname=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iToWater),0);
+    tmp2=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iFromWater),0);
+  }
+  if(vol<-0.01) {
+    cout<<"TINYVOL: "<<Q[q]<<" "<<vol<<" "<<tmpname<<" to "<<tmp2<<endl;
+  }
+  //rates[q]=mass/tstep/Rf;
+}*/

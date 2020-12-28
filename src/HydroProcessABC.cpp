@@ -318,7 +318,8 @@ void CHydroProcessABC::Redirect(const int toSVindex,const int newToSVindex)
 bool CHydroProcessABC::ShouldApply(const CHydroUnit *pHRU) const
 {
 
-  if (_nConditions==0){return true;}
+  if (!pHRU->IsEnabled()) { return false; }
+  if (_nConditions==0   ) { return true;  }
   for (int i=0;i<_nConditions;i++)
   {
     if (_pConditions[i]->basis==BASIS_HRU_TYPE)
