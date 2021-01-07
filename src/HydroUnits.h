@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -103,6 +103,7 @@ public:/*-------------------------------------------------------*/
   bool                   IsLinkedToReservoir() const;
 
   inline double          GetStateVarValue(const int i) const { return _aStateVar[i]; }
+  inline double          GetConcentration(const int i) const { return _pModel->GetConcentration(_global_k,i); }
   double*                GetStateVarArray() const;
 
   double                 GetElevation    () const;//[masl]
@@ -147,6 +148,7 @@ public:/*-------------------------------------------------------*/
   double                 GetSnowCover         () const;
   double                 GetSurfaceTemperature() const;
   double                 GetTotalAlbedo       () const;
+  double                 GetSnowDepth         () const;
 
   //Manipulator functions (used in parser)
   void                   Disable              ();
@@ -193,7 +195,6 @@ public:/*-------------------------------------------------------*/
 
   void AddHRU(CHydroUnit *pHRU);
   void DisableGroup();
-  void EnableGroup();
   void Initialize();
 
   string            GetName            () const;
@@ -201,6 +202,7 @@ public:/*-------------------------------------------------------*/
   int               GetGlobalIndex     () const;
   CHydroUnit       *GetHRU             (const int k_local) const;
   double            GetAvgStateVar     (const int i) const;
+  double            GetAvgConcentration(const int i) const;
   double            GetAvgForcing      (const string &forcing_string) const;
   double            GetAvgCumulFlux    (const int i, const bool to) const;
   double            GetAvgCumulFluxBet(const int iFrom, const int iTo) const;

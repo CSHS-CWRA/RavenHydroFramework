@@ -134,6 +134,8 @@ public:/*-------------------------------------------------------*/
 
   const CEnthalpyModel *GetEnthalpyModel() const;
 
+  double GetConcentration(const int k,const int sv_index) const;
+
   //Manipulators
   void   AddConstituent(string name,constit_type type,bool is_passive);
   //

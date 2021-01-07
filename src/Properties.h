@@ -230,7 +230,10 @@ struct surface_struct
   double forest_coverage;   ///< [0..1]    fraction of land covered by canopy
   double forest_sparseness; ///< [0..1]    sparseness of canopy in land covered by forest
   double UBC_icept_factor;  ///< [0..1]    effective forest cover for interception (C0TREE*C0CANY)
+  
   double wind_exposure;     ///< [0..1]    basin wind coefficient (1 for unforested areas)
+  double min_wind_speed;    ///< [m/s]     minimum wind speed used in regression estimates of windspeed from T_min-T_max
+  double max_wind_speed;    ///< [m/s]     maximum wind speed used in regression estimates of windspeed from T_min-T_max
 
   //snow parameters
   double melt_factor;       ///< [mm/d/C]  maximum snow melt factor used in degree day and hybrid snowmelt models
@@ -364,7 +367,7 @@ struct global_struct
   double           snow_SWI_max;        ///< [0..1] maximum irreducible sat fraction
   double           SWI_reduct_coeff;    ///< [1/mm] SWI reduction factor with cumulative snowmelt 
   double           snow_temperature;    ///< [°C]   default snow temperature if not explicitly modelled
-  double           snow_roughness;      ///< [mm]  roughness height of snow
+  double           snow_roughness;      ///< [m]  roughness height of snow
   double           min_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.3)
   double           max_snow_albedo;     ///< [0..1] albedo of fresh snow  (~0.95)
   double           alb_decay_cold;      ///< [1/d] 1st order albedo decay rate for cold conditions (~0.008/d)
@@ -399,8 +402,11 @@ struct global_struct
   double           assim_upstream_decay;///< [1/km] assimilation upstream decay factor (0= overrides everything upstream, large- observation influence decays quickly with distance from gauge) [~0.01]
   double           assim_time_decay;    ///< [1/d] assimilation temporal decay factor (0=diminishes in future, 0.1 - diminshes in  3 days) [0.2]
 
-  double           reservoir_demand_mult;///> [0..1+] multiplier of irrigation demand to be met by upstream reservoirs 
+  double           reservoir_demand_mult;///< [0..1+] multiplier of irrigation demand to be met by upstream reservoirs 
 
   double           init_stream_temp;    ///< [C] intial stream temperature 
+
+  double           windvel_icept;       ///< [m/s] intercept parameter for regression between wind vel. and F(T_max-T_min)
+  double           windvel_scale;       ///< [changes] slope parameter for regression between wind vel. and F(T_max-T_min)
 };
 #endif

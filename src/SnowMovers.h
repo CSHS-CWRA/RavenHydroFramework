@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvSublimation
@@ -20,12 +20,15 @@
 //
 enum sublimation_type
 {
+  SUBLIM_ALL,             ///< HBV model
+  SUBLIM_MAXIMUM,         ///< sublimates at PET rate (not very realistic)
   SUBLIM_SVERDRUP,        ///< Sverdrup 1946 : adapted from Gray 1973 \cite Sverdrup1946JoAS \cite gray1974
   SUBLIM_KUZMIN,          ///< Kuzmin 1972 : adapted from Gray 1973
   SUBLIM_CENTRAL_SIERRA,  ///< US Army Corps of Engineers : adapted from Gray 1973 \cite Engineers1956NPDPO
   SUBLIM_PBSM,            ///< Pomeroy Prairie Blowing Snow Model Sublimation : adapted from Pomeroy 1993 \cite Pomeroy1993JoH
-  SUBLIM_WILLIAMS,        ///< Canadian National Research Council [1959] -> developed from Sverdrup
-  SUBLIM_CRHM             ///< Pomeroy et al. (2007) variation of Kuzmin
+  SUBLIM_WILLIAMS,        ///< Canadian National Research Council [1959] - developed from Sverdrup
+  SUBLIM_KUCHMENT_GELFAN, ///< Kuchment Gelfan (1996) - essentially equivalent to Kuzmin 
+  SUBLIM_BULK_AERO        ///< Bulk aerodynamic approach of Hock (2005)
 };
 
 ///////////////////////////////////////////////////////////////////

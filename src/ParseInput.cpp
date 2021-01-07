@@ -237,6 +237,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.SW_cloudcovercorr       =SW_CLOUD_CORR_NONE;
   Options.SW_radia_net            =NETSWRAD_CALC;
   Options.wind_velocity           =WINDVEL_CONSTANT;
+  Options.wind_profile            =WINDPROF_UNIFORM;
   Options.rel_humidity            =RELHUM_CONSTANT;//RELHUM_MINDEWPT; [preferred]
   Options.air_pressure            =AIRPRESS_BASIC;
   Options.rainsnow                =RAINSNOW_DINGMAN;
@@ -1006,6 +1007,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"WINDVEL_CONSTANT"   )){Options.wind_velocity=WINDVEL_CONSTANT;}
       else if (!strcmp(s[1],"WINDVEL_DATA"       )){Options.wind_velocity=WINDVEL_DATA;}
       else if (!strcmp(s[1],"WINDVEL_UBCWM"      )){Options.wind_velocity=WINDVEL_UBCWM;}
+      else if (!strcmp(s[1],"WINDVEL_UBC_MOD"    )){Options.wind_velocity=WINDVEL_UBC_MOD;}
+      else if (!strcmp(s[1],"WINDVEL_SQRT"       )){Options.wind_velocity=WINDVEL_SQRT;}
+      else if (!strcmp(s[1],"WINDVEL_LOG"        )){Options.wind_velocity=WINDVEL_LOG;}
       else {ExitGracefully("ParseInput:WindspeedMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -2011,8 +2015,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SUBLIM_KUZMIN"          )){sub_type=SUBLIM_KUZMIN;}
       else if (!strcmp(s[1],"SUBLIM_CENTRAL_SIERRA"  )){sub_type=SUBLIM_CENTRAL_SIERRA;}
       else if (!strcmp(s[1],"SUBLIM_PBSM"            )){sub_type=SUBLIM_PBSM;}
-      else if (!strcmp(s[1],"SUBLIM_WILLIAMS"        )){sub_type=SUBLIM_WILLIAMS;}
-      else if (!strcmp(s[1],"SUBLIM_CRHM"            )){sub_type=SUBLIM_CRHM; }
+      else if (!strcmp(s[1],"SUBLIM_KUCHMENT_GELFAN" )){sub_type=SUBLIM_KUCHMENT_GELFAN; }
+      else if (!strcmp(s[1],"SUBLIM_BULK_AERO"       )){sub_type=SUBLIM_BULK_AERO; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized sublimation process representation",BAD_DATA_WARN); break;
       }
@@ -2218,20 +2222,26 @@ bool ParseMainInputFile (CModel     *&pModel,
        :CanopySublimation [string method] CANOPY_SNOW ATMOSPHERE
      */
       if (Options.noisy){cout <<"Canopy Sublimation Process"<<endl;}
-      cansublim_type cs_type=CANSUBLIM_ALL;
+      sublimation_type sub_type=SUBLIM_ALL;
       if (Len<4){ImproperFormatWarning(":CanopySublimation",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"CANEVP_ALL"        )){ cs_type=CANSUBLIM_ALL;} //for backwards compatibility
-      else if (!strcmp(s[1],"CANEVP_MAXIMUM"    )){ cs_type=CANSUBLIM_MAXIMUM;} //for backwards compatibility
-      else if (!strcmp(s[1],"CANSUBLIM_ALL"     )){ cs_type=CANSUBLIM_ALL;    }
-      else if (!strcmp(s[1],"CANSUBLIM_MAXIMUM" )){ cs_type=CANSUBLIM_MAXIMUM;}
+      if      (!strcmp(s[1],"CANEVP_ALL"             )){ sub_type=SUBLIM_ALL;    } //for backwards compatibility
+      else if (!strcmp(s[1],"CANEVP_MAXIMUM"         )){ sub_type=SUBLIM_MAXIMUM;} //for backwards compatibility
+      else if (!strcmp(s[1],"SUBLIM_ALL"             )){ sub_type=SUBLIM_ALL;    }
+      else if (!strcmp(s[1],"SUBLIM_MAXIMUM"         )){ sub_type=SUBLIM_MAXIMUM;}
+      else if (!strcmp(s[1],"SUBLIM_SVERDRUP"        )){ sub_type=SUBLIM_SVERDRUP;}
+      else if (!strcmp(s[1],"SUBLIM_KUZMIN"          )){ sub_type=SUBLIM_KUZMIN;}
+      else if (!strcmp(s[1],"SUBLIM_CENTRAL_SIERRA"  )){ sub_type=SUBLIM_CENTRAL_SIERRA;}
+      else if (!strcmp(s[1],"SUBLIM_PBSM"            )){ sub_type=SUBLIM_PBSM;}
+      else if (!strcmp(s[1],"SUBLIM_KUCHMENT_GELFAN" )){ sub_type=SUBLIM_KUCHMENT_GELFAN; }
+      else if (!strcmp(s[1],"SUBLIM_BULK_AERO"       )){ sub_type=SUBLIM_BULK_AERO; }
 	  else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized canopy sublimation process representation",BAD_DATA_WARN); break;
       }
-      CmvCanopySublimation::GetParticipatingStateVarList(cs_type,tmpS,tmpLev,tmpN);
+      CmvCanopySublimation::GetParticipatingStateVarList(sub_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvCanopySublimation(cs_type);
+      pMover=new CmvCanopySublimation(sub_type);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }

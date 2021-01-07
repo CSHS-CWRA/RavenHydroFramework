@@ -194,13 +194,19 @@ private:/*------------------------------------------------------*/
                                       const optStruct    &Options,
                                       const time_struct  &tt,
                                       const bool          open_water);
-  double         EstimateWindVelocity(const optStruct &Options,
+  double         EstimateWindVelocity(const optStruct    &Options,
+                                      const CHydroUnit   *pHRU,
                                       const force_struct &F,
-                                      const double &wind_measurement_ht,
-                                      const int k);
-  double         EstimateCloudCover  (const optStruct &Options,
+                                      const double       &wind_measurement_ht,
+                                      const int           k);
+  double            WindspeedAtHeight(const double &z,
+                                      const optStruct    &Options,
+                                      const CHydroUnit   *pHRU,
                                       const force_struct &F,
-                                      const int k);
+                                      const double       &wind_measurement_ht);
+  double         EstimateCloudCover  (const optStruct    &Options,
+                                      const force_struct &F,
+                                      const int           k);
   double  CalculateSubDailyCorrection(const force_struct &F,
                                       const optStruct    &Options,
                                       const double       &elev,
@@ -208,9 +214,9 @@ private:/*------------------------------------------------------*/
                                       const time_struct  &tt,
                                       const int          k);
   double        EstimatePotentialMelt(const force_struct *F,
-                                      const optStruct &Options,
-                                      const CHydroUnit *pHRU,
-                                      const time_struct &tt);
+                                      const optStruct    &Options,
+                                      const CHydroUnit   *pHRU,
+                                      const time_struct  &tt);
 
 
   //Routines for deriving missing data based on gridded data provided
@@ -244,6 +250,7 @@ public:/*-------------------------------------------------------*/
   int               GetStateVarIndex   (sv_type type) const; //assumes layer=0
   int               GetStateVarIndex   (sv_type type, int layer) const;//overriden for multilayer variables
   int               GetStateVarLayer   (const int i) const; //for multilayer variables
+  double            GetConcentration   (const int k, const int i) const;
 
   double            GetFlux            (const int k, const int js, const optStruct &Options) const;
   double            GetLatFlow         (const int js, const optStruct &Options) const;
@@ -251,6 +258,7 @@ public:/*-------------------------------------------------------*/
   double            GetCumulFluxBetween(const int k,const int iFrom,const int iTo) const;
 
   double            GetAvgStateVar     (const int i) const;
+  double            GetAvgConcentration(const int i) const;
   double            GetAvgForcing      (const string &forcing_string) const;
   double            GetAvgCumulFlux    (const int i, const bool to) const;
   double            GetAvgCumulFluxBet (const int iFrom, const int iTo) const;

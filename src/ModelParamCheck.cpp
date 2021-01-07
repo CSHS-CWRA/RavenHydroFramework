@@ -459,6 +459,21 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   {
     // no parameter required
   }
+  else if(Options.wind_velocity==WINDVEL_UBC_MOD)
+  {
+    aP[nP]="MIN_WIND_SPEED"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="MAX_WIND_SPEED"; aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(Options.wind_velocity==WINDVEL_SQRT)
+  {
+    aP[nP]="WINDVEL_ICEPT"; aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="WINDVEL_SCALE"; aPC[nP]=CLASS_GLOBAL; nP++;
+  }
+  else if(Options.wind_velocity==WINDVEL_LOG)
+  {
+    aP[nP]="WINDVEL_ICEPT"; aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="WINDVEL_SCALE"; aPC[nP]=CLASS_GLOBAL; nP++;
+  }
 
   // Relative Humidity Method parameters
   //----------------------------------------------------------------------

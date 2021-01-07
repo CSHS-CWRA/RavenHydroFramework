@@ -427,6 +427,33 @@ const CEnthalpyModel *CTransportModel::GetEnthalpyModel() const
   }
   return NULL;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns concentration (or temperature) in HRU k corresponding to transport state variable with i=sv_index
+/// \param k - global HRU index of interest
+/// \param sv_index - state variable index (i) 
+//
+double CTransportModel::GetConcentration(const int k,const int sv_index) const
+{
+  int         m=pModel->GetStateVarLayer(sv_index);
+  int    i_stor=GetWaterStorIndexFromLayer(m);
+  double    vol=pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
+  double   mass=pModel->GetHydroUnit(k)->GetStateVarValue(sv_index);
+  int       c,j;
+  m_to_cj(m,c,j);
+
+  if(fabs(vol)>1e-6) {
+    if(_pConstitModels[c]->GetConstituent()->type!=ENTHALPY) {
+      return mass/vol*MM_PER_METER/LITER_PER_M3; //[mg/mm]->[mg/L]
+    }
+    else { //Temperature      
+      return ConvertVolumetricEnthalpyToTemperature(mass/vol*MM_PER_METER);  //[MJ/m3]->[C]
+    }
+  }
+  else {
+    return 0.0;// JRC: should this default to zero? or NA?
+  }
+
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model

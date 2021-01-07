@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -558,12 +558,9 @@ double        CHydroUnit::GetStateVarMax(const int      i,
     case(SNOW_LIQ):
     {
       int iSNO=_pModel->GetStateVarIndex(SNOW);
-      int iSD =_pModel->GetStateVarIndex(SNOW_DEPTH);
-
       double snow_depth;
       double SWE       =curr_state_var[iSNO];
-      if (iSD!=DOESNT_EXIST){snow_depth=curr_state_var[iSD];}
-      else                  {snow_depth=GetSnowDepth(SWE,FRESH_SNOW_DENS);}
+      snow_depth=GetSnowDepth();
       if(!ignorevar) {
         max_var=CalculateSnowLiquidCapacity(SWE,snow_depth,Options);
       }
@@ -591,8 +588,24 @@ double CHydroUnit::GetSnowAlbedo() const
 {
   int    iSnAlb=_pModel->GetStateVarIndex(SNOW_ALBEDO);
   if     (iSnAlb==DOESNT_EXIST){return DEFAULT_SNOW_ALBEDO;}
-  else                         {return this->GetStateVarValue(iSnAlb);}
+  else                         {return GetStateVarValue(iSnAlb);}
 }
+/////////////////////////////////////////////////////////////////////
+/// \brief Calculates snow depth 
+/// \return Snow depth [mm]
+//
+double CHydroUnit::GetSnowDepth() const
+{ 
+  int iSnow   =_pModel->GetStateVarIndex(SNOW);
+  if (iSnow==DOESNT_EXIST){return 0.0; }
+
+  int iSnowDep=_pModel->GetStateVarIndex(SNOW_DEPTH);
+  if (iSnowDep!=DOESNT_EXIST){return GetStateVarValue(iSnowDep); }
+  
+  double SWE= GetStateVarValue(iSnow);
+  return (SWE/TYPICAL_SNOW_DENS)*DENSITY_WATER; //[mm]
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns snow surface temperature
 /// \note uses default snow temperature if not tracked as state variable

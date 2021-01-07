@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team, Ayman Khedr
+  Copyright (c) 2008-2021 the Raven Development Team, Ayman Khedr
   ----------------------------------------------------------------*/
 
 #include "CustomOutput.h"
@@ -775,9 +775,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   }
 
   bool is_concentration=false;
-  bool is_enthalpy     =false;
   is_concentration = (_var == VAR_STATE_VAR) && (pModel->GetStateVarType(_svind)==CONSTITUENT);
-  //is_enthalpy      = (is_concentration) && (pModel->GetTransportModel())
 
   //Sift through HRUs, BASINs or watershed, updating aggregate statistics
   //--------------------------------------------------------------------------
@@ -786,28 +784,12 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   {
     //---access current diagnostic variable (from end of timestep)------------
     if (is_concentration){
-      int m = pModel->GetStateVarLayer(_svind);
-      int i_stor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
-      double conv=(MM_PER_METER/LITER_PER_M3);
-      double vol;
-      val=-9999;
-      if      (_spaceAgg==BY_HRU        ){
-        vol=pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
-        if(vol>0.0) {
-          val=pModel->GetHydroUnit(k)->GetStateVarValue(_svind)/pModel->GetHydroUnit(k)->GetStateVarValue(i_stor)*conv;
-        }
-        else {
-          val=0.0;
-        }
-      }
-      else {
-        ExitGracefully("CustomOutput: cannot currently generate basin,watershed, or hru group based aggregate constituent concentrations",STUB);
-      }
-      /*else if (_spaceAgg==BY_BASIN      ){val=-9999;}// \todo [funct] pTransModel->GetSubBasinAvgConc(k,_svind)
-        else if (_spaceAgg==BY_WSHED      ){val=-9999;}
-        else if (_spaceAgg==BY_SB_GROU    ){val=-9999;}
-        else if (_spaceAgg==BY_HRU_GROUP  ){val=-9999;}
-        else if (_spaceAgg==BY_SELECT_HRUS){val=-9999;}*/
+      if      (_spaceAgg==BY_HRU        ) { val=pModel->GetTransportModel()->GetConcentration(k,_svind);}
+      else if (_spaceAgg==BY_BASIN      ) { val=pModel->GetSubBasin     (k)->GetAvgConcentration(_svind); }
+      else if (_spaceAgg==BY_WSHED      ) { val=pModel->                     GetAvgConcentration(_svind); }
+      else if (_spaceAgg==BY_HRU_GROUP  ) { val=pModel->GetHRUGroup     (k)->GetAvgConcentration(_svind); }
+      else if (_spaceAgg==BY_SB_GROUP   ) { val=pModel->GetSubBasinGroup(k)->GetAvgConcentration(_svind); }
+      else if (_spaceAgg==BY_SELECT_HRUS) { val=pModel->GetTransportModel()->GetConcentration(pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetGlobalIndex(),_svind);}
     }
     else if (_var==VAR_STATE_VAR){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetStateVarValue(_svind);}
@@ -842,7 +824,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetCumulFlux(_svind,false);}
     }
     else if (_var == VAR_BETWEEN_FLUX){
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFluxBet(_svind,_svind2);}
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFluxBet   (_svind,_svind2);}
       else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgCumulFluxBet(_svind,_svind2);}
       else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgCumulFluxBet(_svind,_svind2);}

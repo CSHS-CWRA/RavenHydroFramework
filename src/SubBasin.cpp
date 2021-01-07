@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -299,8 +299,9 @@ CReservoir    *CSubBasin::GetReservoir () const
 //
 double CSubBasin::GetAvgStateVar (const int i) const
 {
-  ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),
-                   "CSubBasin:GetAverageStateVar::improper index",BAD_DATA);
+#ifdef  _STRICTCHECK_
+  ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAverageStateVar::improper index",BAD_DATA);
+#endif 
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
@@ -311,7 +312,26 @@ double CSubBasin::GetAvgStateVar (const int i) const
   }
   return sum/_basin_area;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area-weighted average value of concentration/temperature with index i over all HRUs
+/// \param i [in] Index corresponding to a state variable
+/// \return area-weighted average value of concentration/temperature with index i over all HRUs
+//
+double CSubBasin::GetAvgConcentration(const int i) const
+{
+#ifdef  _STRICTCHECK_
+  ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAvgConcentration::improper index",BAD_DATA);
+#endif 
+  double sum=0.0;
+  for(int k=0;k<_nHydroUnits;k++)
+  {
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum+=_pHydroUnits[k]->GetConcentration(i)*_pHydroUnits[k]->GetArea();
+    }
+  }
+  return sum/_basin_area;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns area-weighted average value of forcing function with identifier forcing_string over entire subbasin
 /// \param &forcing_string [in] Identifier corresponding to a forcing function

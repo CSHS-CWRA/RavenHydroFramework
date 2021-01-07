@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -8,20 +8,19 @@
   ----------------------------------------------------------------*/
 #ifndef RAVENINCLUDE_H
 #define RAVENINCLUDE_H
+
 #define _CRT_SECURE_NO_DEPRECATE 1
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
-// #define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+//#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+//#define _ARMADILLO_   //comment out to compile without armadillo library
 #ifdef netcdf
-#define _RVNETCDF_       // if Makefile is used this will be automatically be uncommented if netCDF library is available
+#define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
-
 #ifdef _RVNETCDF_
 #include <netcdf.h>
 #endif
-
-//#define _ARMADILLO_      //comment out to compile without armadillo library
 
 #include <stdlib.h>
 #include <cstring>
@@ -66,7 +65,7 @@ UNITS: all time units in days
        all vertical flux rates in mm/day
        all routing flow rates in m3/s
        all energy fluxes in MJ/m2/d
-       all energy storage in terms of temp, C
+       all energy storage in terms of temp, C or MJ/m2
        all water storage units in mm
        all constituent storage units in mg/m2
        property units are those most commonly used
@@ -86,7 +85,7 @@ Other comments:
 // Global Variables (necessary, but minimized, evils)
 //*****************************************************************
 extern string g_output_directory; ///< Had to be here to avoid passing Options structure around willy-nilly
-extern double g_debug_vars[10];    ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
+extern double g_debug_vars[10];   ///< can store any variables used during debugging; written to raven_debug.csv if debug_mode is on
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code 
@@ -157,6 +156,7 @@ const double  DENSITY_CLAY            =2.650e3;                                 
 const double  DENSITY_OM              =1.300e3;                                 ///< [kg/m3] Organic Matter Density
 const double  MAX_SNOW_DENS           =0.350e3;                                 ///< [kg/m3] maximum dry density of snowpack (GAWSER)
 const double  FRESH_SNOW_DENS         =0.119e3;                                 ///< [kg/m3] fresh snow density @ 0 deg. C
+const double  TYPICAL_SNOW_DENS       =0.250e3;                                 ///< [kg/m3] "typical" snow density
 
 const double  TC_WATER                =0.0492;                                  ///< [MJ/m/d/K] Thermal conductivity of Water (0.57 W/m/k)
 const double  TC_ICE                  =0.194;                                   ///< [MJ/m/d/K] Thermal conductivity of Ice (2.24 W/m/K)
@@ -208,26 +208,26 @@ const double  SCAP_LAI_RATIO          =0.6;                                     
 const double  SAT_INF                 =0.92;                                    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
 const double  MIN_PRESSURE            =1e10;                                    ///< [-mm] minimum matric potential in soil
 
-const double  DEFAULT_SNOW_ALBEDO     =0.8;                                     ///< [0..1] default snow albedo used for all snow, if not tracked explicitly
-const double  NEGLIGBLE_SNOW          =0.1;                                     ///< [mm] SWE at which snow cover no longer impacts albedo/evap calculations (i.e., snow cover~0)
-const double  CZS                     =0.13;                                    ///< [0..1] ratio of roughness to height for smooth closed canopies (from Brook90)
-const double  CZS_HEIGHT              =1.0;                                     ///< [m] height below which CZS applies
-const double  CZR                     =0.05;                                    ///< [0..1] ratio of roughness to height for rough closed canopies
-const double  CZR_HEIGHT              =10.0;                                    ///< [m] height above which czr applies
-const double  CLOSED_LAI              =4.0;                                     ///< [m2/m2]   minimum LAI defining a closed canopy (Shuttleworth and Wallace (1985))
-const double  Z_REF_ADJUST            =2.0;                                     ///< [m] reference height for weather data above canopy height
-const double  WIND_EXTINCT            =2.5;                                     ///< [-]wind/diffusivity extinction coefficient
+const double  DEFAULT_SNOW_ALBEDO     =0.8;                                     ///< [0..1]  default snow albedo used for all snow, if not tracked explicitly
+const double  NEGLIGBLE_SNOW          =0.1;                                     ///< [mm]    SWE at which snow cover no longer impacts albedo/evap calculations (i.e., snow cover~0)
+const double  CZS                     =0.13;                                    ///< [0..1]  ratio of roughness to height for smooth closed canopies (from Brook90)
+const double  CZS_HEIGHT              =1.0;                                     ///< [m]     height below which CZS applies
+const double  CZR                     =0.05;                                    ///< [0..1]  ratio of roughness to height for rough closed canopies
+const double  CZR_HEIGHT              =10.0;                                    ///< [m]     height above which czr applies
+const double  CLOSED_LAI              =4.0;                                     ///< [m2/m2] minimum LAI defining a closed canopy (Shuttleworth and Wallace (1985))
+const double  Z_REF_ADJUST            =2.0;                                     ///< [m]     reference height for weather data above canopy height
+const double  WIND_EXTINCT            =2.5;                                     ///< [-]     wind/diffusivity extinction coefficient
 
 /// \note This is always 2 for broadleaves, and ranges from 2 for flat needles to pi for cylindrical needles.
 const double  LEAF_PROJ_RAT           =2.2;                                     ///< [m2/m2] ratio of total leaf area to projected area.
 
-const double HBV_REFERENCE_ELEV       =1000;                                    ///< [masl] (zref in HBV)
-const double HBV_PRECIP_CORR          =0.00008;                                 ///< [1/m] precipitation lapse rate for low elevations (PCALT in HBV, PGRADL in HBV-EC)
-const double HBV_PRECIP_CORR_UP       =0.0;                                     ///< [1/m] precipitation lapse rate for high elevations(PCALTUP in HBV, PGRADH in HBV-EC)
-const double HBV_PRECIP_CORR_ELEV     =5000;                                    ///< [masl] reference correction elevation (PCALTL/EMID in HBV-EC)
+const double HBV_REFERENCE_ELEV       =1000;                                    ///< [masl]  (zref in HBV)
+const double HBV_PRECIP_CORR          =0.00008;                                 ///< [1/m]   precipitation lapse rate for low elevations (PCALT in HBV, PGRADL in HBV-EC)
+const double HBV_PRECIP_CORR_UP       =0.0;                                     ///< [1/m]   precipitation lapse rate for high elevations(PCALTUP in HBV, PGRADH in HBV-EC)
+const double HBV_PRECIP_CORR_ELEV     =5000;                                    ///< [masl]  reference correction elevation (PCALTL/EMID in HBV-EC)
 const double HBV_PET_ELEV_CORR        =0.0005;                                  ///< [mm/m-d] PET lapse rate (ECALT in HBV-EC)
-const double HBV_PET_TEMP_CORR        =0.5;                                     ///< [-] (ETF in HBV-EC)
-const double GLOBAL_PET_CORR          =1.0;                                     ///< [-] (ECORR in HBV-EC)
+const double HBV_PET_TEMP_CORR        =0.5;                                     ///< [-]     (ETF in HBV-EC)
+const double GLOBAL_PET_CORR          =1.0;                                     ///< [-]     (ECORR in HBV-EC)
 
 //Flag variables
 const int     DOESNT_EXIST            =-1;                                      ///< return value for nonexistent index
@@ -244,12 +244,12 @@ const double  RAV_BLANK_DATA          =-1.2345;                                 
 const double  DIRICHLET_AIR_TEMP      =-9999;                                   ///< dirichlet concentration flag corresponding to fixed air temperature   
 
 //Decision constants
-const double  HUGE_RESIST             =1e20;                                    ///< [d/mm] essentially infinite resistance
+const double  HUGE_RESIST             =1e20;                                    ///< [d/mm]   essentially infinite resistance
 const double  SMALL_ROOT_DENS         =0.00001;                                 ///< [mm/mm3] essentially negligible root density
-const double  SMALL_ROOT_LENGTH       =0.1;                                     ///< [m] essentially negligible root length
-const double  SMALL_FLOWRATE          =0.0001;                                  ///< [m3/s] essentially negligible flow rate
-const double  TIME_CORRECTION         =0.0001;                                  ///< [d] offset for time series min/max functions
-const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km] very large maximum reach length (defaults to single segment per reach)
+const double  SMALL_ROOT_LENGTH       =0.1;                                     ///< [m]      essentially negligible root length
+const double  SMALL_FLOWRATE          =0.0001;                                  ///< [m3/s]   essentially negligible flow rate
+const double  TIME_CORRECTION         =0.0001;                                  ///< [d]      offset for time series min/max functions
+const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km]     very large maximum reach length (defaults to single segment per reach)
 //*****************************************************************
 //Exit Strategies
 //*****************************************************************
@@ -287,11 +287,11 @@ inline void ExitGracefullyIf(bool condition, const char *statement, exitcode cod
 //  Global Constants
 //*****************************************************************
 const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is generated when destructor is called
-const int     MAX_SV_LAYERS       =100;         ///< maximum number of layers per state variable (greater than MAX_SOILLAYERS)
-const int     MAX_SOILLAYERS      =50;          ///< maximum number of soil layers in profile
-const int     MAX_STATE_VARS      =200;         ///< maximum number of state variables in model
+const int     MAX_SV_LAYERS       =100;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
+const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
+const int     MAX_STATE_VARS      =200;         ///< Max number of state variables in model
 const int     MAX_GW_CLASSES      =50;          ///< Max number of gw classes
-const int     MAX_CONNECTIONS     =200;         ///< maximum number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_CONNECTIONS     =200;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
 const int     MAX_LULT_CLASSES    =200;         ///< Max number of lult classes
@@ -316,20 +316,16 @@ Enumerated Types
 ///////////////////////////////////////////////////////////////////
 /// \brief The numerical methods with which a solution to differential equations can be found
 //
-
 enum numerical_method
 {
   EULER,              ///< Euler's method
   ORDERED_SERIES,     ///< Conventional WB model method - processes in series
   ITERATED_HEUN       ///< 2nd Order Convergence Method
-  //RUNGE_KUTTA_4,    ///< 4th order Runge-Kutta 
-  //CONVERG_1ST_ORDER ///< 1st Order Convergence Method
 };
 
 ///////////////////////////////////////////////////////////////////
 /// \brief The type of model that is being simulated
 //
-
 enum model_type
 {
   MODELTYPE_SURFACE,          ///< Surface water simulation ONLY
@@ -340,7 +336,6 @@ enum model_type
 ///////////////////////////////////////////////////////////////////
 /// \brief The nonlinear solver to be used for the groundwater component
 //
-
 enum gw_nonlinear_num_method
 {
   GWSOL_NEWTONRAPHSON,       ///< newton-raphson method
@@ -350,7 +345,6 @@ enum gw_nonlinear_num_method
 ///////////////////////////////////////////////////////////////////
 /// \brief The linear solver to be used for the groundwater component
 //
-
 enum gw_linear_num_method
 {
   GWSOL_PCGU,                 ///< MODFLOW unstructured PCG solver
@@ -360,7 +354,6 @@ enum gw_linear_num_method
 ///////////////////////////////////////////////////////////////////
 /// \brief The type of grid being used to discretize the model space
 //
-
 enum gw_discretization
 {
   GRID_UNSTRUCTURED,          ///< Unstructured grid
@@ -370,7 +363,6 @@ enum gw_discretization
 ///////////////////////////////////////////////////////////////////
 /// \brief The method of HRU and aquifer connection
 //
-
 enum sw_gw_connection
 {
   DIRECT,               ///< 1:1 connection
@@ -380,7 +372,6 @@ enum sw_gw_connection
 ///////////////////////////////////////////////////////////////////
 /// \brief The frequency of the exchange fluxes between SW and GW
 //
-
 enum flux_frequency
 {
   EXFREQ_EVERY_TIMESTEP,      ///< Feedback between SW and GW occurs once every timestep
@@ -390,7 +381,6 @@ enum flux_frequency
 ///////////////////////////////////////////////////////////////////
 /// \brief The method of determining the amount of flux exchange crossing between SW and GW
 //
-
 enum flux_method
 {
   FLUX_EX_STANDARD,           ///< Regular process calculations
@@ -516,7 +506,7 @@ enum SW_cloudcover_corr
 //
 enum snalbedo_method
 {
-  SNOW_ALBEDO_UBC        ///< snow albedo according to UBCWM
+  SNOW_ALBEDO_UBC           ///< snow albedo evolution according to UBCWM
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating canopy transmittance of shortwave radiation
@@ -632,7 +622,19 @@ enum windvel_method
 {
   WINDVEL_CONSTANT,         ///< naive: constant wind velocity of 3 m/s
   WINDVEL_DATA,             ///< wind velocity specfied as time series at gauge
-  WINDVEL_UBCWM             ///< from UBC Watershed model: daily temperature range-based
+  WINDVEL_UBCWM,            ///< from UBC Watershed model: daily temperature range-based
+  WINDVEL_UBC_MOD,          ///< simplified version of UBCWM algorithm (linear relationship with T_max-T_min)
+  WINDVEL_SQRT,             ///< linear relationshipw with sqrt(T_max-T_min)
+  WINDVEL_LOG,              ///< linear relationship with ln(T_max-T_min)
+};
+////////////////////////////////////////////////////////////////////
+/// \brief Methods of approximating vertical wind profile
+//
+enum wind_profile
+{
+  WINDPROF_UNIFORM,          ///< naive: wind velocity doesnt change with height
+  WINDPROF_LOGARITHMIC,      ///< basic von Karman logarithmic profile
+  WINDPROF_MAHAT             ///< informed by presence of vegetation from Mahat (????)
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating precipitation interception fraction
@@ -679,25 +681,25 @@ enum recharge_method
 //
 enum netSWRad_method
 {
-   NETSWRAD_DATA,     ///< data supplied
-   NETSWRAD_CALC      ///< determined via calculations
+   NETSWRAD_DATA,          ///< data supplied
+   NETSWRAD_CALC           ///< determined via calculations
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of handling snow cover depletion
 //
 enum snowcov_method
 {
-   SNOWCOV_NONE,       ///< no SDC
-   SNOWCOV_LINEAR      ///< linear SDC characterized by threshold mean snow depth
+   SNOWCOV_NONE,           ///< no SDC
+   SNOWCOV_LINEAR          ///< linear SDC characterized by threshold mean snow depth
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of handling upstream allocation of downstream irrigation demand
 //
 enum demand_alloc
 {
-  DEMANDBY_MAX_CAPACITY,     ///< downstream demand support weighted by maximum storage capacity of reservoir
-  DEMANDBY_CONTRIB_AREA,     ///< downstream demand support weighted by contributing area to reservoir
-  DEMANDBY_STOR_DEFICIT      ///< downstream demand support weighted inversely to storage deficit
+  DEMANDBY_MAX_CAPACITY,   ///< downstream demand support weighted by maximum storage capacity of reservoir
+  DEMANDBY_CONTRIB_AREA,   ///< downstream demand support weighted by contributing area to reservoir
+  DEMANDBY_STOR_DEFICIT    ///< downstream demand support weighted inversely to storage deficit
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -705,10 +707,10 @@ enum demand_alloc
 //
 enum monthly_interp
 {
-  MONTHINT_UNIFORM,    ///< specified value is constant for month
-  MONTHINT_LINEAR_FOM, ///< linear interpolation between specified data on first of the month
-  MONTHINT_LINEAR_21,  ///< linear interpolation between specified data on twenty-first of the month
-  MONTHINT_LINEAR_MID  ///< linear interpolation between specified data on median day of the month (14th,15th,or 16th)
+  MONTHINT_UNIFORM,       ///< specified value is constant for month
+  MONTHINT_LINEAR_FOM,    ///< linear interpolation between specified data on first of the month
+  MONTHINT_LINEAR_21,     ///< linear interpolation between specified data on twenty-first of the month
+  MONTHINT_LINEAR_MID     ///< linear interpolation between specified data on median day of the month (14th,15th,or 16th)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -717,19 +719,19 @@ enum monthly_interp
 //
 enum condition_basis
 {
-  BASIS_HRU_TYPE,  ///< condition is based upon HRU type (e.g., if is a lake...)
-  BASIS_HRU_GROUP, ///< condition is based upon HRU group
-  BASIS_LANDCLASS, ///< condition is based upon land use/ land type class (e.g., if urban...)
-  BASIS_VEGETATION ///< condition is based upon vegetation class (e.g., if broadleaf...)
+  BASIS_HRU_TYPE,         ///< condition is based upon HRU type (e.g., if is a lake...)
+  BASIS_HRU_GROUP,        ///< condition is based upon HRU group
+  BASIS_LANDCLASS,        ///< condition is based upon land use/ land type class (e.g., if urban...)
+  BASIS_VEGETATION        ///< condition is based upon vegetation class (e.g., if broadleaf...)
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Ensemble mode type
 //
 enum ensemble_type
 {
-  ENSEMBLE_NONE,       ///< standard single model run
-  ENSEMBLE_MONTECARLO, ///< basic Monte Carlo simulation
-  ENSEMBLE_DDS         ///< DDS optimization run
+  ENSEMBLE_NONE,         ///< standard single model run
+  ENSEMBLE_MONTECARLO,   ///< basic Monte Carlo simulation
+  ENSEMBLE_DDS           ///< DDS optimization run
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -737,8 +739,8 @@ enum ensemble_type
 //
 enum comparison
 {
-  COMPARE_IS_EQUAL, ///< Compared entities are equal
-  COMPARE_NOT_EQUAL ///< Compared entities are not equal
+  COMPARE_IS_EQUAL,      ///< Compared entities are equal
+  COMPARE_NOT_EQUAL      ///< Compared entities are not equal
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -757,15 +759,16 @@ struct condition
 //
 enum out_format
 {
-  OUTPUT_STANDARD, ///< Output in default Raven format (.csv files)
-  OUTPUT_ENSIM,    ///< Output in Ensim format (.tb0 files)
-  OUTPUT_NETCDF,   ///< Output in NetCDF format (.nc files)
-  OUTPUT_NONE
+  OUTPUT_STANDARD,       ///< Output in default Raven format (.csv files)
+  OUTPUT_ENSIM,          ///< Output in Ensim format (.tb0 files)
+  OUTPUT_NETCDF,         ///< Output in NetCDF format (.nc files)
+  OUTPUT_NONE            ///< Output is suppressed
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief reservoir constraint conditions
 //
-enum res_constraint {
+enum res_constraint 
+{
   RC_MAX_STAGE,
   RC_MIN_STAGE,
   RC_NATURAL,
@@ -782,7 +785,8 @@ enum res_constraint {
 ////////////////////////////////////////////////////////////////////
 /// \brief reservoir overflow handling options - how discharge is estimated once max reservoir stage is met
 //
-enum overflowmode {
+enum overflowmode 
+{
   OVERFLOW_ALL,     ///< calculates Q required to fix stage at max value
   OVERFLOW_NATURAL  ///< uses stage discharge curve to calculate Q 
 };
@@ -946,14 +950,17 @@ enum process_type
 /******************************************************************
   Global Structures
 ******************************************************************/
+////////////////////////////////////////////////////////////////////
+/// \brief NetCDF attribute structure
+//
 
-struct netcdfatt{
+struct netcdfatt
+{
   string attribute;
   string value;
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Stores all global model and solution method options
-///
 //
 struct optStruct
 {
@@ -1009,7 +1016,7 @@ struct optStruct
   orographic_corr  orocorr_precip;            ///< method for correcting interpolated precipitation for elevation
   orographic_corr  orocorr_PET;               ///< method for correcting interpolated PET for elevation
 
-  //Algorithm Choices
+  // Algorithm Choices
   rainsnow_method    rainsnow;                ///< method for converting total precip to rain/snow
   cloudcov_method    cloud_cover;             ///< cloud cover estimation method
   snalbedo_method    snow_albedo;             ///< method for estimating snow albedo
@@ -1026,6 +1033,7 @@ struct optStruct
   relhum_method      rel_humidity;            ///< Relative humidity estimation method
   airpress_method    air_pressure;            ///< Air pressure estimation method
   windvel_method     wind_velocity;           ///< Wind velocity estimation mehtod
+  wind_profile       wind_profile;            ///< Wind vertical profile approximation method
   potmelt_method     pot_melt;                ///< Potential melt estimation method
   subdaily_method    subdaily;                ///< Subdaily PET/Snowmelt temporal downscaling correction
   recharge_method    recharge;                ///< aquifer/soil recharge method
@@ -1045,12 +1053,12 @@ struct optStruct
   bool               suppressCompetitiveET;   ///< true if competitive ET should be suppressed (for backward compatibility)
   bool               snow_suppressPET;        ///< true if presence of snow should set PET to zero
 
-  //Soil model information
+  // Soil model information
   soil_model         soil_modeltype;          ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
   int                num_soillayers;          ///< number of soil layers
   soil_charact       soil_representation;     ///< characteristic curves for unsaturated flow
 
-  //Output Options
+  // Output Options
   bool             debug_mode;                ///< true if debugging mode is on
   bool             noisy;                     ///< true if parsing information written to screen
   bool             silent;                    ///< true if nothing should be written to screen (overrides noisy)
@@ -1084,7 +1092,7 @@ struct optStruct
   int              wateryr_mo;                ///< starting month of water year (typically 10=October)
   bool             create_rvp_template;       ///< create an rvp template file after reading the .rvi
 
-  //                                          ///< diagnostic options
+  // Diagnostic options
   double           diag_start_time;           ///< Model time to start diagnostics
   double           diag_end_time;             ///< Model time to start diagnostics
   bool             assimilation_on;           ///< turn on assimilation
@@ -1238,29 +1246,32 @@ double      InterpolateMo(         const double      aVal[12],
 time_struct DateStringToTimeStruct(const string      sDate,
                                          string      sTime,
                                    const int         calendar);
-time_struct TimeStructFromNetCDFString(const string unit_t_str,
-                                       const string timestr,
-                                       const int calendar,
-                                       double &time_zone);
+
 string      TimeZoneToString      (const int tz);
-double      TimeDifference(        const double      jul_day1,
+double      TimeDifference        (const double      jul_day1,
                                    const int         year1,
                                    const double      jul_day2,
                                    const int         year2,
                                    const int         calendar);
-void        AddTime(               const double      jul_day1,
+void        AddTime               (const double      jul_day1,
                                    const int         year1,
                                    const double      &daysadded,
                                    const int         calendar,
                                          double      &jul_day_out,
                                          int         &year_out);
-int         StringToCalendar(            string      cal_chars);
-string      GetCurrentTime(              void);
-double      FixTimestep(                 double      tstep);
+int         StringToCalendar      (      string      cal_chars);
+string      GetCurrentTime        ();
+double      FixTimestep           (      double      tstep);
 bool        IsValidDateString     (const string      sDate);
-bool       IsValidNetCDFTimeString(const string unit_t_str);
-bool        IsInDateRange(const double &julian_day, const int &julian_start, const int &julian_end);
+bool        IsInDateRange         (const double &julian_day, 
+                                   const int    &julian_start, 
+                                   const int    &julian_end);
 
+bool        IsValidNetCDFTimeString   (const string unit_t_str);
+time_struct TimeStructFromNetCDFString(const string unit_t_str,
+                                       const string timestr,
+                                       const int calendar,
+                                       double &time_zone);
 //Conversion Functions-------------------------------------------
 double CelsiusToFarenheit       (const double &T);
 
@@ -1491,15 +1502,15 @@ inline double roundTo3dig(const double &v) {
 
 //Parsing Functions-------------------------------------------
 //defined in CommonFunctions.cpp
-double AutoOrDouble            (const string s);
-string StringToUppercase       (const string &s);
-bool   IsComment               (const char *s, const int Len);
-void   WriteWarning            (const string warn, bool noisy);
-void   WriteAdvisory           (const string warn, bool noisy);
-HRU_type StringToHRUType       (const string s);
-double fast_s_to_d             (const char *s);
-double FormatDouble            (const double &d);
-void SubstringReplace          (string& str,const string& from,const string& to);
+double   AutoOrDouble           (const string s);
+string   StringToUppercase      (const string &s);
+bool     IsComment              (const char *s, const int Len);
+void     WriteWarning           (const string warn, bool noisy);
+void     WriteAdvisory          (const string warn, bool noisy);
+HRU_type StringToHRUType        (const string s);
+double   fast_s_to_d            (const char *s);
+double   FormatDouble           (const double &d);
+void     SubstringReplace       (string& str,const string& from,const string& to);
 
 //defined in NetCDFReading.cpp
 int GetCalendarFromNetCDF       (const int ncid,int varid_t,const string filename,const optStruct &Options);
@@ -1544,9 +1555,9 @@ double ADRCumDist       (const double &t, const double &L, const double &v, cons
 
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
-void      quickSort(double arr[], int left, int right) ;
-int     SmartLookup(const double lookup_val, const int nguess, const double *aVals, const int nBins);
-double Interpolate2(const double x,const double *xx,const double *y,int N,bool extrapbottom);
+void   quickSort        (double arr[], int left, int right) ;
+int    SmartLookup      (const double lookup_val, const int nguess, const double *aVals, const int nBins);
+double Interpolate2     (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp
@@ -1582,7 +1593,6 @@ double TemperatureEnthalpyDerivative         (const double &hv);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp
-
 double EstimateSnowFraction       (const rainsnow_method method,
                                    const force_struct       *F,
                                    const optStruct          &Options);
@@ -1592,11 +1602,10 @@ double GetSensibleHeatSnow        (const double &air_temp,const double &surf_tem
 double GetLatentHeatSnow          (const double &P,const double &air_temp,const double &surf_temp,const double &rel_humid,const double &V,const double &ref_ht,const double &rough);
 double GetRainHeatInput           (const double &surf_temp, const double &air_temp,const double &rain_rate,const double &rel_humid);
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
-double GetSnowDepth               (const double &snowSWE,const double &snow_density);
 double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth,const optStruct &Options);
 
 //Crop Functions---------------------------------------------------
-bool   IsGrowingSeason       (const time_struct &tt, const double &CHU);
+bool   IsGrowingSeason            (const time_struct &tt, const double &CHU);
 
 
 

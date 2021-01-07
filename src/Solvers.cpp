@@ -381,7 +381,7 @@ void MassEnergyBalance( CModel            *pModel,
   int    nLatConnections;
   double Afrom,Ato;
    
-  for (int q=0;q<MAX_LAT_CONNECTIONS;q++)
+  for (q=0;q<MAX_LAT_CONNECTIONS;q++)
   {
     kFrom[q]=DOESNT_EXIST;
     kTo  [q]=DOESNT_EXIST;
@@ -397,7 +397,7 @@ void MassEnergyBalance( CModel            *pModel,
         ExitGracefully("MassEnergyBalance:: Maximum number of lateral connections exceeded. Please contact author.",RUNTIME_ERR);
       }
 #endif 
-      for (int q=0;q<nLatConnections;q++)
+      for (q=0;q<nLatConnections;q++)
       {
         Afrom=pModel->GetHydroUnit(kFrom[q])->GetArea();
         Ato  =pModel->GetHydroUnit(kTo[q]  )->GetArea();
@@ -410,7 +410,7 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
     else{
-      for(int q=0;q<nLatConnections;q++)
+      for(q=0;q<nLatConnections;q++)
       {
         pModel->IncrementLatBalance(qss,0.0);
         qss++;
@@ -702,16 +702,16 @@ void MassEnergyBalance( CModel            *pModel,
   if(t>=Options.duration-Options.timestep)
   {
     if(DESTRUCTOR_DEBUG) { cout<<"DELETING STATIC ARRAYS IN MASSENERGYBALANCE"<<endl; }
-    for(k=0;k<nHRUs;k++) { delete[] aPhi[k]; }     delete[] aPhi;       aPhi=NULL;
-    for(k=0;k<nHRUs;k++) { delete[] aPhinew[k]; }     delete[] aPhinew;    aPhinew=NULL;
-    for(k=0;k<nHRUs;k++) { delete[] aPhiPrevIter[k]; }delete[] aPhiPrevIter; aPhiPrevIter=NULL;
+    for(k=0;k<nHRUs;k++) { delete[] aPhi[k];         } delete[] aPhi;         aPhi=NULL;
+    for(k=0;k<nHRUs;k++) { delete[] aPhinew[k];      } delete[] aPhinew;      aPhinew=NULL;
+    for(k=0;k<nHRUs;k++) { delete[] aPhiPrevIter[k]; } delete[] aPhiPrevIter; aPhiPrevIter=NULL;
     if(Options.sol_method == ITERATED_HEUN)
     {
       for(j=0;j<nProcesses;j++) { delete[] rate_guess[j]; }  delete[] rate_guess; rate_guess=NULL;
     }
-    delete[] aQinnew;      aQinnew     =NULL;
-    delete[] aQoutnew;     aQoutnew    =NULL;
-    delete[] aRouted;      aRouted     =NULL;
+    delete[] aQinnew;      aQinnew     = NULL;
+    delete[] aQoutnew;     aQoutnew    = NULL;
+    delete[] aRouted;      aRouted     = NULL;
     delete[] GW_stor;      GW_stor     = NULL; //GWMIGRATE - should name aGW_stor,...
     delete[] GW_stor_new;  GW_stor_new = NULL;
     delete[] GW_heads;     GW_heads    = NULL;

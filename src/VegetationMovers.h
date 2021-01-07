@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvCanopyEvap
@@ -12,6 +12,7 @@
 
 #include "RavenInclude.h"
 #include "HydroProcessABC.h"
+#include "SnowMovers.h"
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Models of canopy evaporation
@@ -21,15 +22,6 @@ enum canevap_type
   CANEVP_RUTTER,                      ///< rutter conceptual model
   CANEVP_MAXIMUM,                     ///< evaporates at PET rate
   CANEVP_ALL                            ///< HBV model
-};
-
-////////////////////////////////////////////////////////////////////
-/// \brief Models of canopy sublimation
-//
-enum cansublim_type
-{
-  CANSUBLIM_ALL,                          ///< HBV model
-  CANSUBLIM_MAXIMUM                       ///< sublimates at PET rate
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -71,28 +63,28 @@ public:/*-------------------------------------------------------*/
 class CmvCanopySublimation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  cansublim_type                   type; ///< Type of canopy snowpack sublimation
+  sublimation_type                   type; ///< Type of canopy snowpack sublimation
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCanopySublimation(cansublim_type subl_type);    //general constructor
+  CmvCanopySublimation(sublimation_type subl_type);    //general constructor
   ~CmvCanopySublimation();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                              double      *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                              double      *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-  static void GetParticipatingStateVarList(cansublim_type cs_type,
+  static void GetParticipatingStateVarList(sublimation_type s_type,
                                            sv_type *aSV, int *aLev, int &nSV);
 };
 

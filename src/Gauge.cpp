@@ -208,16 +208,16 @@ void CGauge::Initialize(const optStruct   &Options,
   }
 
 
-  WarnAboutForcing(Options.SW_radiation==SW_RAD_DATA,F_SW_RADIA);
-  WarnAboutForcing(Options.SW_radia_net==NETSWRAD_DATA,F_SW_RADIA_NET);
-  WarnAboutForcing(Options.LW_radiation==LW_RAD_DATA,F_LW_RADIA_NET);
-  WarnAboutForcing(Options.cloud_cover==CLOUDCOV_DATA,F_CLOUD_COVER);
-  WarnAboutForcing(Options.ow_evaporation ==PET_DATA,F_OW_PET);
-  WarnAboutForcing(Options.evaporation==PET_DATA,F_PET);
-  WarnAboutForcing(Options.pot_melt==POTMELT_DATA,F_POTENTIAL_MELT);
-  WarnAboutForcing(Options.rel_humidity==RELHUM_DATA,F_REL_HUMIDITY);
-  WarnAboutForcing(Options.air_pressure==AIRPRESS_DATA,F_AIR_PRES);
-  WarnAboutForcing(Options.wind_velocity==WINDVEL_DATA,F_WIND_VEL);
+  WarnAboutForcing(Options.SW_radiation  ==SW_RAD_DATA,   F_SW_RADIA);
+  WarnAboutForcing(Options.SW_radia_net  ==NETSWRAD_DATA, F_SW_RADIA_NET);
+  WarnAboutForcing(Options.LW_radiation  ==LW_RAD_DATA,   F_LW_RADIA_NET);
+  WarnAboutForcing(Options.cloud_cover   ==CLOUDCOV_DATA, F_CLOUD_COVER);
+  WarnAboutForcing(Options.ow_evaporation==PET_DATA,      F_OW_PET);
+  WarnAboutForcing(Options.evaporation   ==PET_DATA,      F_PET);
+  WarnAboutForcing(Options.pot_melt      ==POTMELT_DATA,  F_POTENTIAL_MELT);
+  WarnAboutForcing(Options.rel_humidity  ==RELHUM_DATA,   F_REL_HUMIDITY);
+  WarnAboutForcing(Options.air_pressure  ==AIRPRESS_DATA, F_AIR_PRES);
+  WarnAboutForcing(Options.wind_velocity ==WINDVEL_DATA,  F_WIND_VEL);
 
   // Check for monthly values, when needed
   //--------------------------------------------------------------------------

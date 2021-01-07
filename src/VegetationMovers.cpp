@@ -199,8 +199,8 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 /// \brief Implementation of the snow evaporation constructor
 /// \param cetype [in] Model of canopy snow evaporation
 //
-CmvCanopySublimation::CmvCanopySublimation(cansublim_type cetype)
-  :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
+CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype)
+                     :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
 {
   type =cetype;
 
@@ -235,36 +235,44 @@ void CmvCanopySublimation::Initialize()
 //
 void CmvCanopySublimation::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if (type==CANSUBLIM_MAXIMUM)
+  if (type==SUBLIM_MAXIMUM)
   {
     nP=1;
     aP[0]="FOREST_COVERAGE"; aPC[0]=CLASS_LANDUSE; //JRCFLAG
   }
-  else if (type==CANSUBLIM_ALL)
+  else if(type==SUBLIM_SVERDRUP)
+  {
+    nP=1;
+    aP[0]="SNOW_ROUGHNESS";   aPC[0]=CLASS_GLOBAL;
+  }
+  else //most don't have parameters
   {
     nP=0;
-  }
-  else
-  {
-    ExitGracefully("CmvCanopySublimation::GetParticipatingParamList: undefined canopy snowpack sublimation algorithm",BAD_DATA);
   }
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to participating state variables
 ///
-/// \param cetype [in] Model of canopy snowpack evaporation used
-/// \param *aSV [out] Array of state variable types needed by canopy snowpack evaporation algorithm
+/// \param cetype [in] Model of canopy snowpack sublimation used
+/// \param *aSV [out] Array of state variable types needed by canopy snowpack sublimation algorithm
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
-/// \param &nSV [out] Number of state variables required by canopy snowpack evaporation algorithm (size of aSV[] and aLev[] arrays)
+/// \param &nSV [out] Number of state variables required by canopy snowpack sublimation algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvCanopySublimation::GetParticipatingStateVarList(cansublim_type cs_type,sv_type *aSV, int *aLev, int &nSV)
+void CmvCanopySublimation::GetParticipatingStateVarList(sublimation_type cs_type,sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=3;
   aSV[0]=CANOPY_SNOW; aLev[0]=DOESNT_EXIST;
   aSV[1]=ATMOSPHERE;  aLev[1]=DOESNT_EXIST;
   aSV[2]=AET;         aLev[2]=DOESNT_EXIST;
 }
+
+double  SublimationRate(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        const double      &wind_vel,
+                        sublimation_type   type); //defined in Sublimation.cpp
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rate of loss of water from canopy to atmosphere [mm/d]
@@ -286,12 +294,10 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
       (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   double Fc=pHRU->GetSurfaceProps()->forest_coverage;
-  //double cap=pHRU->GetVegVarProps()->capacity;
   rates[0]=0.0;//default
   if (Fc==0){return;}
 
   double PET=max(pHRU->GetForcingFunctions()->PET,0.0);
-  //double stor=min(max(state_vars[iFrom[0]],0.0),cap*Fc); //correct for potentially invalid storage
 
   double PETused=0.0;//[mm/d]
   if(!Options.suppressCompetitiveET) {
@@ -299,13 +305,13 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
     PET=max(PET,0.0);
   }
   
-  if (type==CANSUBLIM_MAXIMUM)//----------------------------------
+  if (type==SUBLIM_MAXIMUM)//----------------------------------
   {
     //all canopy mass sublimates 'instantaneously' (up to threshold) based upon PET
     rates[0]=Fc*PET;
     PETused=rates[0];
   }
-  else if (type==CANSUBLIM_ALL)//----------------------------------
+  else if (type==SUBLIM_ALL)//----------------------------------
   {
     //all canopy mass sublimates 'instantaneously' to atmosphere
     rates[0]=state_vars[iFrom[0]]/Options.timestep;
@@ -313,7 +319,10 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
   }
   else//--------------------------------------------------------
   {
-    ExitGracefully("CmvCanopySublimation: this process not coded yet",STUB);
+    double wind_vel=pHRU->GetForcingFunctions()->wind_vel;//pModel->WindspeedAtHeight(pHRU->GetVegVarProps()->height, Options,pHRU,F,2.0);
+
+    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity",STUB);
+    rates[0]=Fc*SublimationRate(state_vars,pHRU,Options,tt,wind_vel,type);
   }
   rates[1]=PETused;
 }
@@ -338,9 +347,6 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
       (pHRU->GetHRUType()!=HRU_WETLAND)){return;}
 
   double oldRates=rates[0];
-
-  //must be positive
-  rates[0]=max(rates[0],0.0);
 
   //cant remove more than is there
   rates[0]=min(rates[0],state_vars[iFrom[0]]/Options.timestep);

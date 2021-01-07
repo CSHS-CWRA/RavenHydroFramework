@@ -831,6 +831,10 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
   {
     //Get constituent concentration
     int m=(_constit_index*_pTransModel->GetNumWaterCompartments())+ii;
+
+    //concentration=_pTransModel->GetConcentration(k,_pModel->GetStateVarIndex(CONSTITUENT,m));
+    //if(Options.write_constitmass) { concentration=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); }
+
     M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2 or enthalpy - MJ/m2
     V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
     
@@ -843,6 +847,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
       if(fabs(V)<=1e-6) { concentration=0.0; } // JRC: should this default to zero? or NA?
       else              { concentration=ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER); } //[MJ/m3]->[C]
     }
+
     if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2]
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)

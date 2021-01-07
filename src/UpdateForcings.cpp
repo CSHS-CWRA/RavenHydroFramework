@@ -422,7 +422,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  Wind Velocity
       //-------------------------------------------------------------------
 
-      F.wind_vel = EstimateWindVelocity(Options,F,ref_measurement_ht,k);
+      F.wind_vel = EstimateWindVelocity(Options,_pHydroUnits[k],F,ref_measurement_ht,k);
 
       //-------------------------------------------------------------------
       //  Cloud Cover
@@ -438,7 +438,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.SW_radia_unc = F.SW_radia;
       F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F,elev);
       F.SW_radia *= CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
-
+      
       if(Options.SW_radia_net == NETSWRAD_CALC)
       {
         F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
@@ -556,7 +556,9 @@ double EstimateRelativeHumidity(const relhum_method method,
 /// \param &F [in] Reference to forcing functions for HRU k
 /// \param k [in] index of HRU
 /// \return Estimated wind velocity in HRU k [m/s]
+//
 double CModel::EstimateWindVelocity(const optStruct    &Options,
+                                    const CHydroUnit   *pHRU,
                                     const force_struct &F,
                                     const double       &wind_measurement_ht,
                                     const int           k)
@@ -570,6 +572,38 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
   else if (Options.wind_velocity==WINDVEL_DATA)
   {
     return F.wind_vel;
+  }
+  //---------------------------------------------------------------------
+  else if(Options.wind_velocity==WINDVEL_UBC_MOD)
+  { //simplifed version of the UBCWM algorithm
+    double v_min=pHRU->GetSurfaceProps()->min_wind_speed;
+    double v_max=pHRU->GetSurfaceProps()->max_wind_speed;
+    double Tmin =F.temp_daily_min;
+    double Tmax =F.temp_daily_max;
+
+    double wt=min(0.04*(Tmax-Tmin),1.0);
+
+    return max(0.0,(1-wt)*v_min+(wt)*v_max);
+  }
+  //---------------------------------------------------------------------
+  else if(Options.wind_velocity==WINDVEL_SQRT)
+  {
+    double b=CGlobalParams::GetParams()->windvel_icept;
+    double m=CGlobalParams::GetParams()->windvel_scale;
+    double Tmin =F.temp_daily_min;
+    double Tmax =F.temp_daily_max;
+
+    return max(0.0,m*(Tmax-Tmin)+b);
+  }
+  //---------------------------------------------------------------------
+  else if(Options.wind_velocity==WINDVEL_LOG)
+  {
+    double b=CGlobalParams::GetParams()->windvel_icept;
+    double m=CGlobalParams::GetParams()->windvel_scale;
+    double Tmin =F.temp_daily_min;
+    double Tmax =F.temp_daily_max;
+
+    return max(0.0,exp(m*(Tmax-Tmin)+b)-1.0);
   }
   //---------------------------------------------------------------------
   else if (Options.wind_velocity==WINDVEL_UBCWM)
@@ -618,6 +652,72 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
   }
 }
 
+double CModel::WindspeedAtHeight (const double       &z,
+                                  const optStruct    &Options,
+                                  const CHydroUnit   *pHRU,
+                                  const force_struct &F,
+                                  const double       &z_ref)
+{
+  //---------------------------------------------------------------------
+  if      (Options.wind_profile==WINDPROF_UNIFORM)
+  {
+    return F.wind_vel;//m/s 
+  }
+  //---------------------------------------------------------------------
+  else if (Options.wind_profile==WINDPROF_LOGARITHMIC)
+  {
+    double z_0=pHRU->GetVegVarProps()->roughness;     //[m] 
+    double zpd=pHRU->GetVegVarProps()->zero_pln_disp; //[m]
+
+    return F.wind_vel*log((z-zpd)/z_0)/log((z_ref-zpd)/z_0);
+  }
+  //---------------------------------------------------------------------
+  else if(Options.wind_profile==WINDPROF_MAHAT)
+  {
+    double LAI       =pHRU->GetVegVarProps()->LAI;
+    double h_raw     =pHRU->GetVegVarProps()->height;
+    double snow_depth=pHRU->GetSnowDepth();
+    double z0ground  =pHRU->GetSurfaceProps()->roughness;
+    double nd=1.0;
+    double y=1;
+    //y is an integer indicating one of the three basic forest profiles [e.g., Massman, 1982; Meyers et al., 1998]: 
+    //y = 1 for young pine, y=2 for leafed deciduous tree, and y=3 for old pine with long stems and clumping at the top.
+
+    double z0snow = 0.01;         // roughness length of snow[m]
+    double z0s = z0ground;        //surface roughness
+
+    double h,zz,d,z0c,u_star,Ua,Uc,Ub,Uz;
+    if(snow_depth>z0ground) {z0s=z0snow;}
+    // Generate coordinates; correct heights relative to surface(wind profile,arbitrarily,goes to double veg height)
+    h = h_raw - snow_depth;                                 // height of canopy above snow depth[m]
+    zz = z - snow_depth;                                     // height above snow[m]
+    d   = h*(0.05+0.5*pow(LAI,0.20)+0.050*(y-1));           // zero-plane displacement height[m] FLAG!the exponent is 0.02 in paper,0.2 in source code
+    //d      = h*0.64                                       // zero-plane displacement height[m] simple
+    z0c = h*(0.23-0.1*pow(LAI,0.25)-0.015*(y-1));           // roughness length for top of canopy
+    // z0c+=z0snow;                                    // add nominal depth so it's never 0
+
+    // if canopy taller than reference height (and not buried in snow), calculate canopy corrections
+    if((h_raw > z_ref) & (h > snow_depth)) 
+    {
+      // Wind at different heights
+      u_star = VON_KARMAN * F.wind_vel/log((h+zz-d)/z0c);                  // compute the friction velocity(m/s)
+      Ua=u_star/VON_KARMAN*log((zz-d)/z0c);                                // above canopy(Logarithmic) // z >= h
+      Uc=u_star/VON_KARMAN*log((h -d)/z0c)*exp(-nd*LAI*((h-zz    )/h));     // within canopy(exponential)
+      Ub=u_star/VON_KARMAN*log((h -d)/z0c)*exp(-nd*LAI*((h-z_ref)/h))*log((zz-z0s)/z0s)/log(z_ref/z0s);    // assuming zero-plane displacement of ground is 0...
+
+      // Assemble them(logarithmic when z > h; exponential when z <= h & z > z_ms' logarithmic as z_ref -> 0)
+      if       (zz>=h)               {Uz=Ua;}
+      else if ((zz< h) && (zz>z_ref)){Uz=Uc;}
+      else                           {Uz=Ub;}
+    }
+    else {
+      // Otherwise,single logarithmic profile
+      Uz = F.wind_vel*log((zz-z0s)/z0s)/log((10.0+h)/z0s);    // 10 m measurement height assumign zero-plane displacement of ground is 0...
+    }
+    return max(0.0,Uz);
+  }
+  return 0.0;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns estimate of cloud cover
 /// \param &Options [in] Global model options information

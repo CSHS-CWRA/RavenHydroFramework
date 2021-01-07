@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODELABC_H
 #define MODELABC_H
@@ -27,6 +27,7 @@ public:/*-------------------------------------------------------*/
   virtual int         GetStateVarIndex   (sv_type type, int layer) const=0;
   virtual int         GetStateVarLayer   (const int i) const=0;
 
+  virtual double      GetConcentration   (const int k, const int i) const=0;
   virtual double      GetFlux            (const int k, const int js, const optStruct &Options) const=0;
   virtual double      GetLatFlow         (const int js, const optStruct &Options) const=0;
   virtual double      GetCumulativeFlux  (const int k, const int i, const bool to) const=0;
@@ -36,6 +37,7 @@ public:/*-------------------------------------------------------*/
   virtual int         GetNumAquiferLayers() const=0;
 
   virtual double      GetAvgStateVar     (const int i) const=0;
+  virtual double      GetAvgConcentration(const int i) const=0;
   virtual double      GetAvgCumulFlux    (const int i, const bool to) const=0;
   virtual double      GetAvgCumulFluxBet (const int iFrom, const int iTo) const=0;
 

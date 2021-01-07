@@ -429,7 +429,7 @@ void CmvPrairieBlowingSnow::GetRatesOfChange(const double              *state_va
 
   //Get forcings
   const force_struct *F=pHRU->GetForcingFunctions();
-  double u_meas =F->wind_vel;                              // [m/s] measured wind velocity @ 2m
+  double u_meas =F->wind_vel;                              // [m/s] wind velocity @ 2m
   
   u_meas=10;// m/s TMP DEBUG:  override
 

@@ -154,6 +154,7 @@ public:/*-------------------------------------------------------*/
   double               GetDrainageArea      () const;
   double               GetAvgAnnualFlow     () const;
   double               GetAvgStateVar       (const int i) const;
+  double               GetAvgConcentration  (const int i) const;
   double               GetAvgForcing        (const string &forcing_string) const;
   double               GetAvgCumulFlux      (const int i, const bool to) const;
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
@@ -297,16 +298,17 @@ public:/*-------------------------------------------------------*/
   void DisableGroup();
   void Initialize();
 
-  string            GetName() const;
-  int               GetNumSubbasins() const;
-  int               GetGlobalIndex() const;
-  CSubBasin        *GetSubBasin(const int p_local) const;
-  double            GetAvgStateVar(const int i) const;
-  double            GetAvgForcing(const string &forcing_string) const;
-  double            GetAvgCumulFlux(const int i,const bool to) const;
-  double            GetAvgCumulFluxBet(const int iFrom,const int iTo) const;
-  bool              IsInGroup(const long SBID) const;
-  bool              IsDisabled() const;
+  string            GetName            () const;
+  int               GetNumSubbasins    () const;
+  int               GetGlobalIndex     () const;
+  CSubBasin        *GetSubBasin        (const int p_local) const;
+  double            GetAvgStateVar     (const int i) const;
+  double            GetAvgConcentration(const int i) const;
+  double            GetAvgForcing      (const string &forcing_string) const;
+  double            GetAvgCumulFlux    (const int i,const bool to) const;
+  double            GetAvgCumulFluxBet (const int iFrom,const int iTo) const;
+  bool              IsInGroup          (const long SBID) const;
+  bool              IsDisabled         () const;
 };
 
 #endif

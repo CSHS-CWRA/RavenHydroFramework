@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "EnergyTransport.h"
@@ -736,6 +736,17 @@ double CModel::GetFlux(const int k, const int js, const optStruct &Options) cons
   return _aFlowBal[k][js]/Options.timestep;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns concentration or temperature within hru k with storage index i
+///
+/// \param k [in] HRU index
+/// \param i [in] mass/energy state variable index
+//
+double CModel::GetConcentration(const int k, const int i) const 
+{
+  return _pTransModel->GetConcentration(k,i);
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns current mass/energy flow (mm-m2/d, MJ/d, mg/d) between two storage compartments iFrom and iTo
 /// \details required for advective transport processes
 ///
@@ -1021,7 +1032,28 @@ double CModel::GetAvgStateVar(const int i) const
   }
   return sum/_WatershedArea;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns area weighted average of concentrations across all modeled HRUs
+///
+/// \param i [in] State variable index
+/// \return Area weighted average of concentrations across all modeled HRUs
+//
+double CModel::GetAvgConcentration(const int i) const
+{
+  //Area-weighted average
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf((i<0) || (i>=_nStateVars),"CModel GetAvgStateVar::improper index",BAD_DATA);
+#endif
+  double sum(0.0);
+  for(int k=0;k<_nHydroUnits;k++)
+  {
+    if(_pHydroUnits[k]->IsEnabled())
+    {
+      sum+=(_pTransModel->GetConcentration(k,i)*_pHydroUnits[k]->GetArea());
+    }
+  }
+  return sum/_WatershedArea;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns area-weighted average of specified forcing function over watershed
 ///

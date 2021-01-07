@@ -179,18 +179,6 @@ double GetSnowDensity(const double &snowSWE,const double &snow_depth)
   return (snowSWE/snow_depth)*DENSITY_WATER; // [kg m^-3]
 }
 
-/////////////////////////////////////////////////////////////////////
-/// \brief Calculates snow depth from SWE and density [mm]
-/// \param &snowSWE [in] Snow water equivalent [mm]
-/// \param &snow_density [in] Density of snow [kg/m^3]
-/// \return Snow depth [mm]
-//
-double GetSnowDepth(const double &snowSWE,//[mm]
-                    const double &snow_density)//[kg/m^3]
-{
-  return (snowSWE/snow_density)*DENSITY_WATER; //[mm]
-}
-
 //////////////////////////////////////////////////////////////////////
 /// \brief Calculates snow liquid holding capacity
 /// \param &SWE [in] Snow water equivalent [mm]

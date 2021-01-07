@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 
@@ -134,7 +134,24 @@ double CHRUGroup::GetAvgStateVar (const int i) const
   }
   return sum/areasum;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns average value of a state variable specified by index i over the total area covered by the HRU group
+/// \param i [in] Index corresponding to the state variable whose average will be calculated
+/// \return Average of state variable with index i across all HRUs in group, per unit area coverage of group
+//
+double CHRUGroup::GetAvgConcentration(const int i) const
+{
+  double sum=0.0;
+  double areasum=0.0;
+  double area;
+  for(int k=0;k<_nHRUs;k++)
+  {
+    area    =_pHRUs[k]->GetArea();
+    sum    +=_pHRUs[k]->GetConcentration(i)*area;
+    areasum+=area;
+  }
+  return sum/areasum;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a forcing function specified by forcing_string over the total area covered by the HRU group
 /// \param &forcing_string [in] Index corresponding to the state variable whose average will be calculated

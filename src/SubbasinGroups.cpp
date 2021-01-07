@@ -123,7 +123,24 @@ double CSubbasinGroup::GetAvgStateVar (const int i) const
   }
   return sum/areasum;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Returns average value of a concentration/temperature specified by index i over the total area covered by the subbasin group
+/// \param i [in] Index corresponding to the constituent state variable whose average will be calculated
+/// \return Average of concentration/temperature with index i across all subbasins in group, per unit area coverage of group
+//
+double CSubbasinGroup::GetAvgConcentration(const int i) const
+{
+  double sum=0.0;
+  double areasum=0.0;
+  double area;
+  for(int p=0;p<_nSubbasins;p++)
+  {
+    area    =_pSubbasins[p]->GetBasinArea();
+    sum    +=_pSubbasins[p]->GetAvgConcentration(i)*area;
+    areasum+=area;
+  }
+  return sum/areasum;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a forcing function specified by forcing_string over the total area covered by the HRU group
 /// \param &forcing_string [in] Index corresponding to the state variable whose average will be calculated
