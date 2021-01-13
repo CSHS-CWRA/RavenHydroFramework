@@ -1545,12 +1545,11 @@ double NashCumDist(const double &t, const double &k, const int &NR)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates cumulative kinematic wave solution distribution
-/// \docminor These parameters need to be described
 ///
-/// \param &t
-/// \param &L
-/// \param &v
-/// \param &D
+/// \param &t time [d]
+/// \param &L reach length [m]
+/// \param &v celerity [m/d]
+/// \param &D diffusivity [m2/d]
 /// \return Returns cumulative kinematic wave solution distribution
 //
 //int_0^time L/2/t^(3/2)/sqrt(pi*D)*exp(-(v*t-L)^2/(4*D*t)) dt
@@ -1559,7 +1558,7 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
 {
   ExitGracefullyIf(D<=0,"ADRCumDist: Invalid diffusivity",RUNTIME_ERR);
 
-  double term =L/2.0*pow(PI*D,-0.5);
+ /* double term =L/2.0*pow(PI*D,-0.5);
   double beta =L/sqrt(D);
   double alpha=v/sqrt(D);
   double dt   =t/5000.0; //t in [day] (5000.0 is # of integral divisions)
@@ -1571,14 +1570,47 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
     integ+=pow(tt,-1.5)*exp(-((alpha*tt-beta)*(alpha*tt-beta))/4.0/tt);
     // equivalent to (old) version, but more stable since alpha, beta ~1-10 whereas both v^2 and D can be very large
     //integ+=pow(tt,-1.5)*exp(-((v*tt-L)*(v*tt-L))/4.0/D/tt); //old version
-  }
-  //analytical (unstable due to exp*erf term):
-  //term=term*pow(PI,0.5)/2.0/beta;
-  //double integ2=erf((beta-alpha*t)/pow(t,0.5))-1.0+exp(4*alpha*beta)*(erf((alpha*t+beta)/pow(t,0.5))-1.0+1.0 )+1.0;
-  //  cout<<integ<<" "<<term*integ2<<endl;
+  }  
   return integ*term*dt;
+  */
+  //Analytical- Ogata Banks, 1969
+  double F=0;
+  if (t<=0){return 0.0;}
+  if(L < 500*(D/v)) {
+    F=0.5*(exp((v*L)/D)*erfc((L+v*t)/sqrt(4.0*D*t)));
+  }
+  F+=0.5*(erfc((L-v*t)/sqrt(4.0*D*t)));
+  return F;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates time-varying cumulative kinematic wave solution distribution
+///
+/// \param &t time [d]
+/// \param &L reach length [m]
+/// \param *v array of celerities [m/d] for nv timesteps of length dt
+/// \param &nv number of celerity values in array 
+/// \param &D diffusivity [m2/d]
+/// \param &dt timestep [d]
+/// \return Returns cumulative kinematic wave solution distribution for temporally variable velocity
+//
+double TimeVaryingADRCumDist(const double &t,const double &L,const double *v, int nv,const double &D,const double &dt)
+{
+  ExitGracefullyIf(D<=0   ,"TimeVaryingADRCumDist: Invalid diffusivity",RUNTIME_ERR);
+  ExitGracefullyIf(t>nv*dt,"TimeVaryingADRCumDist: not enough celerity terms in array",RUNTIME_ERR);
+  int i;
+  i=(int)(floor((t+TIME_CORRECTION)/dt));
+  double tstar=v[i]/v[0]*(t-(double)(i)*dt);
+  for(int j=0;j<i;j++) {
+    tstar+=dt*v[j]/v[0];
+  }
+  double F=0;
+  if (t<=0){return 0.0;}
+  if(L < 500*(D/v[0])) {
+    F=0.5*(exp((v[0]*L)/D)*erfc((L+v[0]*tstar)/sqrt(4.0*D*tstar)));
+  }
+  F+=0.5*(erfc((L-v[0]*tstar)/sqrt(4.0*D*tstar)));
+  return F;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Quicksort algorithm
 /// \author coded by Ayman Khedr, 3A Environmental University of Waterloo

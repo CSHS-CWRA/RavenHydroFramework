@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
 
   Includes CModel routines for writing output headers and contents:
     CModel::CloseOutputStreams()
@@ -679,10 +679,12 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
       //----------------------------------------------------------------
-      if ((Options.ave_hydrograph) && (t!=0.0))
+      if (Options.ave_hydrograph)
       {
-        
-        _HYDRO<<usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
+        _HYDRO<<usetime<<","<<usedate<<","<<usehour;
+        if(t!=0) { _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip
+        else     { _HYDRO<<",---";                  }
+
         for (int p=0;p<_nSubBasins;p++){
           if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
           {
@@ -713,7 +715,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         else{
           _HYDRO<<t<<","<<thisdate<<","<<thishour;
           if(t!=0){ _HYDRO<<","<<GetAveragePrecip(); }//watershed-wide precip
-          else     { _HYDRO<<",---"; }
+          else    { _HYDRO<<",---";                  }
           for(int p=0;p<_nSubBasins;p++){
             if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
             {
@@ -1752,7 +1754,7 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
     currentWater=0.0;
     for (i=0;i<GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) &&  (i!=iCumPrecip)){
-	S=GetAvgStateVar(i);_STORAGE<<" "<<FormatDouble(S);currentWater+=S;
+	      S=GetAvgStateVar(i);_STORAGE<<" "<<FormatDouble(S);currentWater+=S;
       }
     }
     currentWater+=channel_stor+rivulet_stor;
@@ -1760,10 +1762,10 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
       // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
       // JRC: I think somehow this is being double counted in the delta V calculations in the first timestep
       for(int p=0;p<_nSubBasins;p++){
-	if(_pSubBasins[p]->GetReservoir()!=NULL){
-	  currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-	  currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-	}
+	      if(_pSubBasins[p]->GetReservoir()!=NULL){
+	        currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	        currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+	      }
       }
     }
     _STORAGE<<" "<<currentWater<<" "<<_CumulInput<<" "<<_CumulOutput<<" "<<FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput));
@@ -1772,9 +1774,10 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   
   //----------------------------------------------------------------
   //Write hydrographs for gauged watersheds (ALWAYS DONE) (Hydrographs.tb0)
-  if ((Options.ave_hydrograph) && (tt.model_time!=0))
+  if (Options.ave_hydrograph)
   {
-    _HYDRO<<" "<<GetAveragePrecip();
+    if(tt.model_time!=0) { _HYDRO<<" "<<GetAveragePrecip(); }
+    else                 { _HYDRO<<" 0.0"; }
     for (int p=0;p<_nSubBasins;p++){
       if (_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()))
       {
@@ -1849,9 +1852,10 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   // (c) obtain data 
   iSim = 0;
   current_prec[0] = NETCDF_BLANK_VALUE;
-  if ((Options.ave_hydrograph) && (current_time[0] != 0.0))
+  if (Options.ave_hydrograph) 
   {
-    current_prec[0] = GetAveragePrecip();
+    if(current_time[0] != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
+    else                       { current_prec[0] = NETCDF_BLANK_VALUE; } // was originally '---'
     for (int p=0;p<_nSubBasins;p++)
     {
       if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){

@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   PrepareOutputdirectory(Options);
 
   Options.pause=true;
-  Options.version="3.0.2";
+  Options.version="3.0.3";
 #ifdef _NETCDF_ 
   Options.version=Options.version+" w/ netCDF";
 #endif

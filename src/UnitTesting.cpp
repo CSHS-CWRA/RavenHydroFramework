@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -26,6 +26,7 @@ void RavenUnitTesting(const optStruct &Options)
   //GammaTest();
   //BarycentricWeights();
   //TestInversion();
+  //ADRCumDistTest();
   /*cout<<"STRINGISLONG TEST: 1023 "<< StringIsLong("1023")<<endl;
   cout<<"STRINGISLONG TEST: -1 "<< StringIsLong("-1")<<endl;
   cout<<"STRINGISLONG TEST: hamburger "<< StringIsLong("hamburger")<<endl;
@@ -263,13 +264,47 @@ void ADRCumDistTest()
 {
   ofstream OUT;
   OUT.open("ADRCumDistTest.csv");
-  for (double t=0;t<10;t+=0.125){
+  double *v=new double[10];
+  for(int j=0;j<10;j++) {
+    v[j]=1.0+5.0*((double)(rand())/RAND_MAX);
+  }
+  for(double t=0;t<10;t+=0.125) {
     OUT<<t<<",";
-    for (double D=0.03; D<0.3;D+=0.03){
+    for(double D=0.03; D<0.3;D+=0.03) {
       //OUT<<ADRCumDist(t,5,1.0,D)<<",";
       OUT<<ADRCumDist(t+0.125,5,1.0,D)-ADRCumDist(t,5,1.0,D)<<",";
     }
     OUT<<endl;
+  }
+  OUT<<endl;
+  for(int j=0;j<10;j++) {
+    OUT<<v[j]<<",";
+  }
+  OUT<<endl;
+  for(double t=0;t<10;t+=0.125) {    
+    OUT<<t<<",";
+    for(double D=0.12; D<1.2;D+=0.12) {
+      //OUT<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
+      OUT<<TimeVaryingADRCumDist(t+0.125,5,v,10,D,1.0)-
+           TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
+    }
+    OUT<<endl;
+
+  }
+  OUT<<endl;
+  //paper figure
+  for(int j=0;j<10;j++) {
+    v[j]=1.0;
+  }
+  v[1]=4; v[2]=2; v[3]=5; v[4]=4; v[5]=3; v[6]=3; v[7]=5; 
+  for(double t=0;t<6.0;t+=0.025) {
+    OUT<<t<<",";
+    double D=1.0;
+    OUT<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
+    OUT<< TimeVaryingADRCumDist(t+0.025,5,v,10,D,1.0)-
+          TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
+    OUT<<endl;
+
   }
   OUT.close();
   ExitGracefully("ADRCumDistTest",SIMULATION_DONE);
