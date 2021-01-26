@@ -194,6 +194,14 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         if (_pSubBasins[p]->GetReservoir() != NULL){
           if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (res. inflow) [m3/s]";}
           else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (res. inflow) [m3/s]";}
+          for(i = 0; i < _nObservedTS; i++){
+            if(IsContinuousInflowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+            {
+              if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (obs. res. inflow) [m3/s]";}
+              else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (obs. res. inflow) [m3/s]";}
+            }
+          }
+
         }
       }
     }
@@ -656,6 +664,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
           {
             S=GetAvgStateVar(i);
+            if ((Options.modeltype!=MODELTYPE_SURFACE) && (i==GetStateVarIndex(GROUNDWATER))){S=0.0;} //already in _CumulOutput/_CumulInput
             if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
             _STORAGE<<","<<FormatDouble(S);
             currentWater+=S;
@@ -704,6 +713,15 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             }
             if (_pSubBasins[p]->GetReservoir() != NULL){
               _HYDRO<<","<<_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+              for(i = 0; i < _nObservedTS; i++)
+              {
+                if(IsContinuousInflowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+                {
+                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                  if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _HYDRO << "," << val; }
+                  else                                             { _HYDRO << ","; }
+                }
+              }            
             }
           }
         }
@@ -1945,9 +1963,9 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       AddSingleValueToNetCDF(_STORAGE_ncid,"rainfall"       ,time_ind2,precip-snowfall);
       AddSingleValueToNetCDF(_STORAGE_ncid,"snowfall"       ,time_ind2,snowfall);
     }
-    AddSingleValueToNetCDF(_STORAGE_ncid,"Channel Storage"  ,time_ind2,channel_stor);
-    AddSingleValueToNetCDF(_STORAGE_ncid,"Reservoir Storage",time_ind2,reservoir_stor);
-    AddSingleValueToNetCDF(_STORAGE_ncid,"Rivulet Storage"  ,time_ind2,rivulet_stor);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"channel_storage"  ,time_ind2,channel_stor);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"reservoir_storage",time_ind2,reservoir_stor);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"rivulet_storage"  ,time_ind2,rivulet_stor);
     
     double currentWater=0.0;
     double S;string short_name;
@@ -1974,10 +1992,10 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 	      }
       }
     }
-    AddSingleValueToNetCDF(_STORAGE_ncid,"Total"        ,time_ind2,currentWater);
-    AddSingleValueToNetCDF(_STORAGE_ncid,"Cum. Input"   ,time_ind2,_CumulInput);
-    AddSingleValueToNetCDF(_STORAGE_ncid,"Cum. Outflow" ,time_ind2,_CumulOutput);
-    AddSingleValueToNetCDF(_STORAGE_ncid,"MB Error"     ,time_ind2,FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput)));
+    AddSingleValueToNetCDF(_STORAGE_ncid,"total"        ,time_ind2,currentWater);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"cum_input"    ,time_ind2,_CumulInput);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"cum_outflow"  ,time_ind2,_CumulOutput);
+    AddSingleValueToNetCDF(_STORAGE_ncid,"MB_error"     ,time_ind2,FormatDouble((currentWater-_initWater)+(_CumulOutput-_CumulInput)));
   }
   
   //====================================================================
@@ -2000,18 +2018,18 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     AddSingleValueToNetCDF(_FORCINGS_ncid,"temp_daily_min"   ,time_ind2,pFave->temp_daily_min);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"temp_daily_max"   ,time_ind2,pFave->temp_daily_max);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"temp_daily_ave"   ,time_ind2,pFave->temp_daily_ave);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"air density"      ,time_ind2,pFave->air_dens);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"air pressure"     ,time_ind2,pFave->air_pres);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"relative humidity",time_ind2,pFave->rel_humidity);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"cloud cover"      ,time_ind2,pFave->cloud_cover);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"ET radiation"     ,time_ind2,pFave->ET_radia);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"SW radiation"     ,time_ind2,pFave->SW_radia);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"net SW radiation" ,time_ind2,pFave->SW_radia_net);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"LW radiation"     ,time_ind2,pFave->cloud_cover);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"wind velocity"    ,time_ind2,pFave->wind_vel);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"air_density"      ,time_ind2,pFave->air_dens);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"air_pressure"     ,time_ind2,pFave->air_pres);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"relative_humidity",time_ind2,pFave->rel_humidity);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"cloud_cover"      ,time_ind2,pFave->cloud_cover);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"ET_radiation"     ,time_ind2,pFave->ET_radia);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"SW_radiation"     ,time_ind2,pFave->SW_radia);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"net_SW_radiation" ,time_ind2,pFave->SW_radia_net);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"LW_radiation"     ,time_ind2,pFave->cloud_cover);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"wind_velocity"    ,time_ind2,pFave->wind_vel);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"PET"              ,time_ind2,pFave->PET);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"OW PET"           ,time_ind2,pFave->OW_PET);
-    AddSingleValueToNetCDF(_FORCINGS_ncid,"potential melt"   ,time_ind2,pFave->potential_melt);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"OW_PET"           ,time_ind2,pFave->OW_PET);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"potential_melt"   ,time_ind2,pFave->potential_melt);
   }
 #endif
 }

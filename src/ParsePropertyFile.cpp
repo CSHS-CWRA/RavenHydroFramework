@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -867,9 +867,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       }
        
       int j=0;
-      for (int i=0; i<countSP;i++) //go through segments (segment i between x[i] and x[i+1])
+      for (int i=0; i<countSP;i++) //go through profile segments (segment i between x[i] and x[i+1])
       {
-        if      (j==countRS-1){nn[i]=n[j];} //in rightmost zone
+        if      (j==countRS-1  ){nn[i]=n[j];} //in rightmost zone
         else if (xz[j+1]>x[i+1]){nn[i]=n[j];}//next zone switch not in this segment, use most recent
         else { //zone switch (potentially more than one) in this segment
           double Li=(x[i+1]-x[i]);
@@ -878,11 +878,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           {
             j++;
             if (j==countRS-1){nn[i]+=(x[i+1]-xz[j])/Li*n[j];}
-            else            {nn[i]+=(min(x[i+1],xz[j+1])-xz[j])/Li*n[j];}
+            else             {nn[i]+=(min(x[i+1],xz[j+1])-xz[j])/Li*n[j];}
           }
         }
         //cout<<"n["<<i<<"]:"<<nn[i]<<endl;
       }
+      for(int i=0; i<countSP; i++) {
+        ExitGracefullyIf(nn[i]<=0.0,"ParseClassPropertiesFile: Mannings n values in :RoughnessZones command must be greater than zero",BAD_DATA_WARN);
+      }
+      ExitGracefullyIf(slope<=0,"ParseClassPropertiesFile: :Bedslope of channel must be greater than zero",BAD_DATA_WARN);
 
       pChannel=new CChannelXSect(tag,countSP,x,y,nn,slope); 
 

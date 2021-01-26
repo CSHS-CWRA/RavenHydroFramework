@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -207,6 +207,7 @@ public:/*-------------------------------------------------------*/
   double          GetIrrigationRate        () const;                   //[m3/s] instantaneous irrigation rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
+  int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 
   CReservoir     *GetReservoir             () const;
 

@@ -454,6 +454,17 @@ double CSubBasin::GetEnviroMinFlow(const double &t) const
   return Qmin;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns subbasin index p of diversion target basin 
+/// \return subbasin index p of diversion target basin
+//
+int CSubBasin::GetDiversionTargetIndex(const int i) const 
+{
+#if _STRICTCHECK_
+  if ((i<0) || (i>=_nDiversions)){ExitGracefully("GetDiversionTargetIndex: bad index",RUNTIME_ERR);}
+#endif 
+  return _pDiversions[i]->target_p;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns true if subbasin has irrigation demand
 /// \return true if subbasin has irrigation demand
 //
@@ -486,17 +497,20 @@ int CSubBasin::GetNumDiversions() const {
   return _nDiversions;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
-/// \param &t [in] Model time at which the outflow from SB is to be determined
-/// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
+/// \brief Returns diverted flow rate to target subbasin with index pDivert
+/// \param &i [in] diversion index
+/// \param &Q [in] Estimate of subbasin outflow prior to applying diversion [m3/s]
+/// \param &Options [in] model options structure
+/// \param &tt [in] current model time structure
+/// \param &pDivert [out] index of subbasin to divert to
 /// \return irrigation demand outflow from subbasin at time t [m3/s]
 //
-double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const
+double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &p_Divert) const
 {
-  if (_pDiversions[i]==NULL) { pDivert=DOESNT_EXIST; return 0.0; } //no diversion
+  if (_pDiversions[i]==NULL) { p_Divert=DOESNT_EXIST; return 0.0; } //no diversion
   if ((i<0) || (i>=_nDiversions)){ExitGracefully("CSubBasin::GetDiversionFlow",RUNTIME_ERR); }
 
-  pDivert=_pDiversions[i]->target_p;
+  p_Divert=_pDiversions[i]->target_p;
 
   if (IsInDateRange(tt.julian_day,_pDiversions[i]->julian_start,_pDiversions[i]->julian_end)) 
   {
@@ -1334,6 +1348,7 @@ void CSubBasin::ResetReferenceFlow(const double &Qreference)
     }
     if(_c_ref==AUTO_COMPUTE) {
       _c_ref=_pChannel->GetCelerity(_Q_ref,_slope,_mannings_n);
+      ExitGracefullyIf(_c_ref<=0.0,"CSubBasin::ResetReferenceFlow: negative or zero celerity",RUNTIME_ERR);
     }
     _w_ref=_pChannel->GetTopWidth(_Q_ref,_slope,_mannings_n);
   }

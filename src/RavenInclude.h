@@ -630,7 +630,7 @@ enum windvel_method
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of approximating vertical wind profile
 //
-enum wind_profile
+enum wind_prof_meth
 {
   WINDPROF_UNIFORM,          ///< naive: wind velocity doesnt change with height
   WINDPROF_LOGARITHMIC,      ///< basic von Karman logarithmic profile
@@ -1033,7 +1033,7 @@ struct optStruct
   relhum_method      rel_humidity;            ///< Relative humidity estimation method
   airpress_method    air_pressure;            ///< Air pressure estimation method
   windvel_method     wind_velocity;           ///< Wind velocity estimation mehtod
-  wind_profile       wind_profile;            ///< Wind vertical profile approximation method
+  wind_prof_meth     wind_profile;            ///< Wind vertical profile approximation method
   potmelt_method     pot_melt;                ///< Potential melt estimation method
   subdaily_method    subdaily;                ///< Subdaily PET/Snowmelt temporal downscaling correction
   recharge_method    recharge;                ///< aquifer/soil recharge method

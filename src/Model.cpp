@@ -1630,6 +1630,18 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
   for (int p=0;p<_nSubBasins;p++){
     _CumulInput+=_pSubBasins[p]->GetIntegratedSpecInflow(tt.model_time,Options.timestep)/area*MM_PER_METER;//converted to [mm] over  basin
   }
+  //add from groundwater
+  if(Options.modeltype!=MODELTYPE_SURFACE) {
+    int iGW=GetStateVarIndex(GROUNDWATER);
+    for(int k=0;k<_nHydroUnits;k++) {
+      double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
+      double area=_pHydroUnits[k]->GetArea();
+      if (GW<0){_CumulInput-=GW*area/_WatershedArea;} //negative recharge
+    }
+    /*for(int p=0;p<_nSubBasins;p++) {
+      _CumulInput+=max(pGW2River->CalcRiverFluxBySB(p),0.0)*Options.timestep*area/MM_PER_METER; ///m3/d baseflow
+    }*/
+  }
 
   _pTransModel->IncrementCumulInput(Options,tt);
 }
@@ -1659,6 +1671,18 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
       _CumulOutput+=_pSubBasins[p]->GetReservoirLosses (Options.timestep)/area*MM_PER_METER;
       _CumulOutput+=_pSubBasins[p]->GetIrrigationLosses(Options.timestep)/area*MM_PER_METER;
     }
+  }
+  //lost to groundwater
+  if(Options.modeltype!=MODELTYPE_SURFACE) {
+    int iGW=GetStateVarIndex(GROUNDWATER);
+    for(int k=0;k<_nHydroUnits;k++) {
+      double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
+      double area=_pHydroUnits[k]->GetArea();
+      if(GW>0) { _CumulOutput+=GW*area/_WatershedArea; }
+    }
+    /*for(int p=0;p<_nSubBasins;p++) {
+      _CumulOutput-=min(pGW2River->CalcRiverFluxBySB(p),0.0)*Options.timestep*area/MM_PER_METER; ///mm baseflow
+    }*/
   }
   _pTransModel->IncrementCumulOutput(Options);
 }

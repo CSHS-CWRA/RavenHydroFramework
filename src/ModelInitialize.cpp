@@ -539,6 +539,12 @@ void CModel::InitializeRoutingNetwork()
     if (_aSubBasinOrder[p] != _maxSubBasinOrder){
       _pSubBasins[p]->SetAsNonHeadwater();
     }
+    for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) {
+      int pdown=_pSubBasins[p]->GetDiversionTargetIndex(i);
+      if((pdown!=DOESNT_EXIST) && (pdown>0) && (pdown<_nSubBasins)) {
+        _pSubBasins[pdown]->SetAsNonHeadwater();
+      }
+    }
   }
 }
 
