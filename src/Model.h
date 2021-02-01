@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -127,8 +127,6 @@ private:/*------------------------------------------------------*/
 
   double            _CumulInput;  ///< cumulative water added to watershed (precipitation, basin inflows, etc.) [mm]
   double           _CumulOutput;  ///< cumulative outflow of water from system [mm]
-  double         _CumEnergyGain;  ///< cumulative area-averaged average energy gain [MJ/m2]
-  double         _CumEnergyLoss;  ///< cumulative area-averaged energy loss [MJ/m2]
   double             _initWater;  ///< initial water in system [mm]
 
   //Output
@@ -303,6 +301,9 @@ public:/*-------------------------------------------------------*/
                                                        const string HRUGroupName) const;
   bool              IsInSubBasinGroup                 (const long SBID,
                                                        const string SBGroupName) const;
+
+  int                   GetNumObservedTS              () const;
+  const CTimeSeriesABC *GetObservedTS                 (const int i) const;
 
   const optStruct  *GetOptStruct                      () const;
   CTransportModel  *GetTransportModel                 () const;

@@ -250,6 +250,10 @@ const double  SMALL_ROOT_LENGTH       =0.1;                                     
 const double  SMALL_FLOWRATE          =0.0001;                                  ///< [m3/s]   essentially negligible flow rate
 const double  TIME_CORRECTION         =0.0001;                                  ///< [d]      offset for time series min/max functions
 const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km]     very large maximum reach length (defaults to single segment per reach)
+
+//Special symbols
+const string  DEG_SYMBOL              ="\370";                                  ///< degree symbol, °
+
 //*****************************************************************
 //Exit Strategies
 //*****************************************************************
@@ -1069,7 +1073,6 @@ struct optStruct
   double           custom_interval;           ///< custom output interval (i.e., for generating 10-day interval outputs) 
   bool             write_forcings;            ///< true if ForcingFunctions.csv is written
   bool             write_mass_bal;            ///< true if WatershedMassEnergyBalance.csv is written
-  bool             write_energy;              ///< true if WatershedEneryStorage.csv is written
   bool             write_gwhead;      		  ///< true if GWHead.csv is written
   bool             write_gwflow;      		  ///< true if GWFlow.csv is written
   bool             write_reservoir;           ///< true if ReservoirStages.csv is written

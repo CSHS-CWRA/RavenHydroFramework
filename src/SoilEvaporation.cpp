@@ -586,10 +586,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     //E_net is unused PET
     double E_net;//[mm]
 
-    //E_net=max(PET-pHRU->GetForcingFunctions()->precip*(1-pHRU->GetForcingFunctions()->snow_frac),0.0)*Options.timestep;
-    //double used_evap=state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep;
-    double used_evap=g_debug_vars[1]; //mm/d
-    E_net=max(PET-used_evap,0.0)*1.0;//*Options.timestep; //equivalent daily E_net
+    E_net=max(PET,0.0)*1.0;//*Options.timestep; //equivalent daily E_net
     double sat=stor/x1;
     double tmp=tanh(E_net/x1);
 

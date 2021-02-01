@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ENERGY_TRANSPORT_H
@@ -20,10 +20,14 @@ class CEnthalpyModel :public CConstituentModel
 
   double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
   void   UpdateReachEnergySourceTerms(const int p);
+  double GetNetReachLosses           (const int p) const;
 
 public:/*-------------------------------------------------------*/
   CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,const int c);
   ~CEnthalpyModel();
+
+  double CalculateConcentration(const double &M,const double &V) const;
+  double GetOutflowConcentration(const int p) const;
 
   //Accessors specific to Enthalpy Transport
   double GetIceContent(const double *state_vars,const int iWater) const;
@@ -34,18 +38,24 @@ public:/*-------------------------------------------------------*/
 
   //Manipulators (inherited from CConstitModel)
   void   Initialize();
-  void   ApplyConvolutionRouting(const int     p,
-    const double *aRouteHydro,
-    const int nSegments,
-    const int nMinHist,const double *aMinHist,
-    const double &tstep,double *aMout_new) const;
+  void   ApplyConvolutionRouting( const int     p,
+                                  const double *aRouteHydro,
+                                  const double *aQinHist,
+                                  const double *aMinHist,
+                                  const int     nSegments,
+                                  const int     nMinHist,
+                                  const double &tstep,double *aMout_new) const;
 
   void   UpdateMassOutflows(const int          p,
-    double      *aMoutnew,
-    double      &ResMass,
-    double      &MassOutflow,
-    const optStruct   &Options,
-    const time_struct &tt,
-    bool         initialize);
+                                  double      *aMoutnew,
+                                  double      &ResMass,
+                                  double      &MassOutflow,
+                            const optStruct   &Options,
+                            const time_struct &tt,
+                                  bool         initialize);
+
+  void   WriteEnsimOutputFileHeaders(const optStruct &Options);
+  void   WriteEnsimMinorOutput(const optStruct &Options,const time_struct &tt);
+
 };
 #endif

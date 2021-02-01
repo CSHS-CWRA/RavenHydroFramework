@@ -18,9 +18,9 @@ CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype, const int i_from)
 {
   type =owtype;
 
-  CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
-  iFrom[0]=i_from;
-  iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
+  CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
+  iFrom[0]=i_from;                          iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
+  iFrom[1]=pModel->GetStateVarIndex(AET);   iTo[1]=iFrom[1];                                  //rates[1]: AET->AET
 }
 
 //////////////////////////////////////////////////////////////////
@@ -34,8 +34,8 @@ CmvOWEvaporation::~CmvOWEvaporation(){}
 void CmvOWEvaporation::Initialize()
 {
   sv_type typ=pModel->GetStateVarType(iFrom[0]);
-  ExitGracefullyIf((typ!=DEPRESSION) && (typ!=PONDED_WATER),
-                   "CmvOWEvaporation::Initialize:Open Water evaporation must come from depression unit",BAD_DATA);
+  ExitGracefullyIf((typ!=DEPRESSION) && (typ!=PONDED_WATER) && (type!=SURFACE_WATER),
+                   "CmvOWEvaporation::Initialize:Open Water evaporation must come from depression, ponded water, or surface water",BAD_DATA);
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=ATMOSPHERE,
                    "CmvOWEvaporation::Initialize:Open Water evaporation must go to atmosphere",BAD_DATA);
 }
@@ -61,8 +61,9 @@ void CmvOWEvaporation::GetParticipatingParamList(string *aP, class_type *aPC, in
 //
 void CmvOWEvaporation::GetParticipatingStateVarList(owevap_type owtype, sv_type *aSV, int *aLev, int &nSV)
 {
-  nSV=1;
+  nSV=2;
   aSV[0]=ATMOSPHERE;  aLev[0]=DOESNT_EXIST;
+  aSV[1]=AET;         aLev[1]=DOESNT_EXIST;
 
   //other state var is specified in constructor
 }
@@ -86,12 +87,20 @@ void CmvOWEvaporation::GetRatesOfChange( const double                   *state_v
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;            //open water PET rate [mm/d]
   
+ 
+  if(!Options.suppressCompetitiveET) {
+    //competitive ET - reduce PET by AET 
+    OWPET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
+    OWPET=max(OWPET,0.0);
+  }
+
   if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 
   if (type==OPEN_WATER_EVAP)//-------------------------------------
   {
     rates[0]=pHRU->GetSurfaceProps()->ow_PET_corr*OWPET;
   }
+  rates[1]=rates[0]; 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -110,13 +119,14 @@ void  CmvOWEvaporation::ApplyConstraints( const double            *state_vars,
                                           const time_struct &t,
                                           double      *rates) const
 {
-
   if (rates[0]<0)             {rates[0]=0.0;}//positivity constraint
-
-  //can't remove more than is there
-  rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
-  if (state_vars[iFrom[0]]<=0){rates[0]=0.0;}//reality check
-
+  //can't remove more than is there (with exception of surface water in reach HRU)
+  if(iFrom[0]!=pModel->GetStateVarIndex(SURFACE_WATER)) {
+    rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
+    if(state_vars[iFrom[0]]<=0) { rates[0]=0.0; }//reality check
+  }
+  rates[1]=rates[0]; //correct AET accordingly
+  
   g_debug_vars[1]=rates[0];//Used Evap
 
 }

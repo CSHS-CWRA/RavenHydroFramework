@@ -8,7 +8,7 @@
 /*****************************************************************
    Model Streamflow Assimilation Routines
 *****************************************************************/
-bool IsContinuousFlowObs2(CTimeSeriesABC *pObs,long SBID)
+bool IsContinuousFlowObs2(const CTimeSeriesABC *pObs,long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if(pObs==NULL)                                   { return false; }

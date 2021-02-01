@@ -269,7 +269,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     Options.silent                =false;
   }
   Options.output_format           =OUTPUT_STANDARD;
-  Options.write_energy            =false;
   Options.write_forcings          =false;
   Options.write_mass_bal          =false;
   Options.write_exhaustiveMB      =false;
@@ -1244,7 +1243,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Debug Mode ON"<<endl;}
       Options.debug_mode      =true;
       Options.write_mass_bal  =true;
-      Options.write_energy    =true;
       Options.write_forcings  =true;
       Options.write_channels  =true;
       Options.write_gwhead    =true;
@@ -1700,9 +1698,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(172):  //--------------------------------------------
-    {/*:WriteEnergyStorage */
-      if(Options.noisy) { cout <<"Write Energy Storage File ON"<<endl; }
-      Options.write_energy =true;
+    {
       break;
     }
     case(173):  //--------------------------------------------
@@ -2029,7 +2025,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(211):  //----------------------------------------------
     {/*OpenWaterEvaporation
-       :OpenWaterEvaporation [string method] [PONDED_WATER/DEPRESSION] ATMOSPHERE */
+       :OpenWaterEvaporation [string method] [PONDED_WATER/DEPRESSION/SURFACE_WATER] ATMOSPHERE */
       if (Options.noisy){cout <<"Open Water Evaporation Process"<<endl;}
       owevap_type ow_type=OPEN_WATER_EVAP;
       if (Len<4){ImproperFormatWarning(":OpenWaterEvaporation",p,Options.noisy); break;}

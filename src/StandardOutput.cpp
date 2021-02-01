@@ -33,13 +33,28 @@ void AddSingleValueToNetCDF     (const int out_ncid,const string &label,const si
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
-bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID)
+bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long SBID)
 {
  // clears up  terribly ugly repeated if statements
   if (pObs==NULL)                                   { return false; }
   if (pObs->GetLocID() != SBID)                     { return false; }
   if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
   return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if specified observation time series is the flow series for subbasin SBID
+/// \param pObs [in] observation time series
+/// \param SBID [in] subbasin ID
+//
+bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID, const int c)
+{
+ // clears up  terribly ugly repeated if statements
+  if (pObs==NULL)                                   { return false; }
+  if (pObs->GetLocID() != SBID)                     { return false; }
+  if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
+  if (pObs->GetConstitInd() != c                   ){ return false; }
+  return ((!strcmp(pObs->GetName().c_str(),"STREAM_CONCENTRATION")) || 
+          (!strcmp(pObs->GetName().c_str(),"STREAM_TEMPERATURE"  ))); //name ="STREAM_CONCENTRATION" or "STREAM_TEMPERATURE" 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the reservoir stage series for subbasin SBID
@@ -180,14 +195,12 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         string name;
         if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" [m3/s]";}
         else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" [m3/s]";}
-        //if (Options.print_obs_hydro)
-        {
-          for (i = 0; i < _nObservedTS; i++){
-            if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-            {
-              if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
-              else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
-            }
+
+        for (i = 0; i < _nObservedTS; i++){
+          if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+          {
+            if (_pSubBasins[p]->GetName()==""){_HYDRO<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m3/s]";}
+            else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m3/s]";}
           }
         }
 
@@ -201,7 +214,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
               else                              {_HYDRO<<","   <<_pSubBasins[p]->GetName()<<" (obs. res. inflow) [m3/s]";}
             }
           }
-
         }
       }
     }
@@ -214,27 +226,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   else if (Options.output_format==OUTPUT_NETCDF)
   {
     WriteNetcdfStandardHeaders(Options);  // creates NetCDF files, writes dimensions and creates variables (without writing actual values)   
-  }
-
-  //WatershedEnergyStorage.csv
-  //--------------------------------------------------------------
-  if (Options.write_energy)
-  {
-    ofstream EN_STORAGE;
-    tmpFilename=FilenamePrepare("WatershedEnergyStorage.csv",Options);
-    EN_STORAGE.open(tmpFilename.c_str());
-    if (EN_STORAGE.fail()){
-      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-
-    EN_STORAGE<<"time[d],date,hour,temp[C],net incoming [MJ/m2/d]";
-    for (i=0;i<GetNumStateVars();i++){
-      if (CStateVariable::IsEnergyStorage(_aStateVarType[i])){
-        EN_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [MJ/m2]";
-      }
-    }
-    EN_STORAGE<<", Total [MJ/m2], Cum. In [MJ/m2], Cum. Out [MJ/m2], EB Error [MJ/m2]"<<endl;
-    EN_STORAGE.close();
   }
 
   //ReservoirStages.csv
@@ -593,8 +584,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   double  S,currentWater;
   string  thisdate;
   string  thishour;
-  bool    silent=true;
-  bool    quiet=true;
+  bool    silent=true; //for debugging
+  bool    quiet=true;  //for debugging
   double  t;
 
   string tmpFilename;
@@ -679,6 +670,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               currentWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
               currentWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
             }
+            //currentWater-=_pSubBasins[p]->GetIntegratedSpecInflow(0,Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
           }
         }
 
@@ -699,19 +691,16 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           {
             _HYDRO<<","<<_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
 
-            //if (Options.print_obs_hydro)
+            for (i = 0; i < _nObservedTS; i++)
             {
-              for (i = 0; i < _nObservedTS; i++)
+              if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
               {
-                if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-                {
-                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
-                  if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
-                  else                                             { _HYDRO << ",";       }
-                }
+                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                else                                             { _HYDRO << ",";       }
               }
             }
-            if (_pSubBasins[p]->GetReservoir() != NULL){
+          if (_pSubBasins[p]->GetReservoir() != NULL){
               _HYDRO<<","<<_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
               for(i = 0; i < _nObservedTS; i++)
               {
@@ -739,17 +728,15 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             {
               _HYDRO<<","<<_pSubBasins[p]->GetOutflowRate();
 
-              //if (Options.print_obs_hydro)
-              {
-                for(i = 0; i < _nObservedTS; i++){
-                  if(IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-                  {
-                    double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-                    if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
-                    else                                                         { _HYDRO << ","; }
-                  }
+              for(i = 0; i < _nObservedTS; i++){
+                if(IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+                {
+                  double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+                  if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
+                  else                                                         { _HYDRO << ","; }
                 }
               }
+              
               if(_pSubBasins[p]->GetReservoir() != NULL){
                 _HYDRO<<","<<_pSubBasins[p]->GetReservoirInflow();
               }
@@ -918,38 +905,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     }
 
 
-    // WatershedEnergyStorage.csv
-    //----------------------------------------------------------------
-    double sum=0.0;
-    if (Options.write_energy)
-    {
-      force_struct F=GetAverageForcings();
-
-      ofstream EN_STORAGE;
-      tmpFilename=FilenamePrepare("WatershedEnergyStorage.csv",Options);
-      EN_STORAGE.open(tmpFilename.c_str(),ios::app);
-
-      EN_STORAGE<<t<<","<<thisdate<<","<<thishour;
-      EN_STORAGE<<","<<F.temp_ave;
-      EN_STORAGE<<",TMP_DEBUG";
-      //  STOR<<","<<GetAverageNetRadiation();//TMP DEBUG
-      for (i=0;i<GetNumStateVars();i++)
-      {
-        if (CStateVariable::IsEnergyStorage(_aStateVarType[i]))
-        {
-          S=GetAvgStateVar(i);
-          if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
-          EN_STORAGE<<","<<S;
-          sum+=S;
-        }
-      }
-      EN_STORAGE<<","<<sum<<","<<_CumEnergyGain<<","<<_CumEnergyLoss<<","<<_CumEnergyGain-sum-_CumEnergyLoss;
-      EN_STORAGE<<endl;
-      EN_STORAGE.close();
-    }
-
-    if (!silent){cout<<endl;}
-
     // ExhaustiveMassBalance.csv
     //--------------------------------------------------------------
     if (Options.write_exhaustiveMB)
@@ -958,6 +913,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       else{
         int j,js,q;
         double cumsum;
+        double sum;
 
         ofstream MB;
         tmpFilename=FilenamePrepare("ExhaustiveMassBalance.csv",Options);
@@ -1363,7 +1319,9 @@ void CModel::RunDiagnostics(const optStruct &Options)
     {
       skip=false;
       string datatype=_pObservedTS[i]->GetName();
-      if((datatype=="HYDROGRAPH") || (datatype=="RESERVOIR_STAGE") || (datatype=="RESERVOIR_INFLOW") || (datatype=="RESERVOIR_NET_INFLOW"))
+      if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE") ||
+         (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NET_INFLOW") || 
+         (datatype=="STREAM_CONCENTRATION") || (datatype=="STREAM_TEMPERATURE"))
       {
         CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
         if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}

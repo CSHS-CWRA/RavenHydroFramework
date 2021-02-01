@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ------------------------------------------------------------------
   Advection of soluble contaminant/tracer/nutrient
   ----------------------------------------------------------------*/
@@ -123,9 +123,9 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   
   double tstep=Options.timestep;
   int    nAdvConnections=pTransModel->GetNumAdvConnections();
-  bool   isEnthalpy=(pTransModel->GetConstituent(_constit_ind)->type==ENTHALPY);
+  bool   isEnthalpy=(pTransModel->GetConstituentModel2(_constit_ind)->GetType()==ENTHALPY);
   int    k=pHRU->GetGlobalIndex();
-
+  
   static double    *Q=NULL; 
   if(Q==NULL){
     Q=new double [nAdvConnections]; // only done once at start of simulation for speed 

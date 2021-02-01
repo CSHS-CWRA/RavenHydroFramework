@@ -101,8 +101,6 @@ CModel::CModel(const soil_model SM,
   _aFlowLatBal      =NULL;
   _CumulInput       =0.0;
   _CumulOutput      =0.0;
-  _CumEnergyGain    =0.0;
-  _CumEnergyLoss    =0.0;
   _initWater        =0.0;
 
   _UTM_zone=-1;
@@ -273,6 +271,22 @@ int CModel::GetNumProcesses   () const{return _nProcesses;}
 /// \return total modeled watershed area [km2]
 //
 double CModel::GetWatershedArea () const{return _WatershedArea;}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of observation time series
+/// \return number of observation time series
+//
+int    CModel::GetNumObservedTS() const { return _nObservedTS; }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns observation time series i
+/// \param i [in] index of observation time series
+/// \return pointer to observation time series i
+//
+const CTimeSeriesABC *CModel::GetObservedTS(const int i) const {
+  return _pObservedTS[i];
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific hydrologic process denoted by parameter
@@ -1118,6 +1132,7 @@ double CModel::GetTotalRivuletStorage() const
   return sum/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;
 }
 
+
 /*****************************************************************
    Model Creation Functions
 *****************************************************************/
@@ -1532,7 +1547,7 @@ void  CModel::SetNumSnowLayers     (const int          nLayers)
   delete [] aLev;
 }
 
-bool IsContinuousFlowObs(CTimeSeriesABC *pObs,long SBID);
+bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long SBID);
 
 //////////////////////////////////////////////////////////////////
 /// \brief overrides streamflow with observed streamflow
@@ -1855,6 +1870,16 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       losses            += pRes->GetReservoirGWLosses          (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
     }
+    else if(datatype == "STREAM_CONCENTRATION")//=======================================
+    {
+      int c=_pObservedTS[i]->GetConstitInd();
+      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(_pObservedTS[i]->GetLocID());
+    }
+    else if(datatype == "STREAM_TEMPERATURE")//=======================================
+    {
+      int c=_pObservedTS[i]->GetConstitInd();
+      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(_pObservedTS[i]->GetLocID());
+    }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     {
       CHydroUnit *pHRU=NULL;
@@ -1967,7 +1992,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
     for(int q=0;q<nConnections;q++)
     {
       typ=_aStateVarType[iFrom[q]];
-      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW)) 
+      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW) && (typ!=SURFACE_WATER)) 
       {
         //precip is special case (frozen snow can fall)
         //snow is special case (already assume that only liquid water is lost)

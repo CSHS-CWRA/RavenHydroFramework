@@ -37,6 +37,7 @@ CTransportModel::CTransportModel(CModel *pMod)
 
   _nConstituents=0;
   _pConstitModels=NULL;
+  _pEnthalpyModel=NULL;
 
   _aIndexMapping=NULL; _nIndexMapping=0;
   
@@ -141,7 +142,7 @@ string CTransportModel::GetConstituentTypeName(const int m)
 {
   int c,j;
   _pTransModel->m_to_cj(m,c,j);
-  return _pTransModel->GetConstituent(c)->name;
+  return _pTransModel->GetConstituentModel(c)->GetName();
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns name of constitutent type e.g., "Nitrogen"
@@ -150,7 +151,7 @@ string CTransportModel::GetConstituentTypeName(const int m)
 //
 string CTransportModel::GetConstituentTypeName2(const int c)
 {
-  return _pTransModel->GetConstituent(c)->name;
+  return _pTransModel->GetConstituentModel(c)->GetName();
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns full name of constitutent e.g.,  "Nitrogen in Soil Water[2]"
@@ -170,11 +171,11 @@ string CTransportModel::GetConstituentLongName_loc(const int m) const
   sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
   int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
   
-  if(_pConstitModels[c]->GetConstituent()->type==ENTHALPY) {
-    return _pConstitModels[c]->GetConstituent()->name+" of "+CStateVariable::GetStateVarLongName(typ,ind);
+  if(_pConstitModels[c]->GetType()==ENTHALPY) {
+    return _pConstitModels[c]->GetName()+" of "+CStateVariable::GetStateVarLongName(typ,ind);
   }
   else {
-    return _pConstitModels[c]->GetConstituent()->name+" in "+CStateVariable::GetStateVarLongName(typ,ind);
+    return _pConstitModels[c]->GetName()+" in "+CStateVariable::GetStateVarLongName(typ,ind);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -187,7 +188,7 @@ string CTransportModel::GetConstituentShortName(const int m) const
   sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
   int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
 
-  return "!"+_pConstitModels[c]->GetConstituent()->name+"|"+CStateVariable::SVTypeToString(typ,ind);
+  return "!"+_pConstitModels[c]->GetName()+"|"+CStateVariable::SVTypeToString(typ,ind);
 }
 
 
@@ -220,16 +221,6 @@ int    CTransportModel::GetNumLatAdvConnections() const { return _nLatConnection
 //
 int    CTransportModel::GetNumConstituents() const { return _nConstituents; }
 
-//////////////////////////////////////////////////////////////////
-/// \brief returns constituent c in model
-//
-const constituent *CTransportModel::GetConstituent(const int c) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((c<0)||(c>=_nConstituents),"CTransportModel::GetConstituent: invalid index",BAD_DATA);
-#endif
-  return _pConstitModels[c]->GetConstituent();
-}
 //////////////////////////////////////////////////////////////////
 /// \brief returns constituent c in model
 //
@@ -266,7 +257,7 @@ CConstituentModel *CTransportModel::GetConstituentModel2(const int c) const
 int    CTransportModel::GetConstituentIndex(const string name) const
 {
   for(int c=0; c<_nConstituents;c++) {
-    if(StringToUppercase(_pConstitModels[c]->GetConstituent()->name)==StringToUppercase(name)) { return c; }
+    if(StringToUppercase(_pConstitModels[c]->GetName())==StringToUppercase(name)) { return c; }
   }
   return DOESNT_EXIST;
 }
@@ -419,13 +410,7 @@ int CTransportModel::GetLatqsIndex(const int qq) const
 //
 const CEnthalpyModel *CTransportModel::GetEnthalpyModel() const 
 {
-  // \todo [optim] - replace with member _pEnthalpyModel
-  for(int c=0;c<_nConstituents;c++) {
-    if(_pConstitModels[c]->GetConstituent()->type==ENTHALPY) {
-      return (CEnthalpyModel*)_pConstitModels[c];
-    }
-  }
-  return NULL;
+  return _pEnthalpyModel;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns concentration (or temperature) in HRU k corresponding to transport state variable with i=sv_index
@@ -441,18 +426,7 @@ double CTransportModel::GetConcentration(const int k,const int sv_index) const
   int       c,j;
   m_to_cj(m,c,j);
 
-  if(fabs(vol)>1e-6) {
-    if(_pConstitModels[c]->GetConstituent()->type!=ENTHALPY) {
-      return mass/vol*MM_PER_METER/LITER_PER_M3; //[mg/mm]->[mg/L]
-    }
-    else { //Temperature      
-      return ConvertVolumetricEnthalpyToTemperature(mass/vol*MM_PER_METER);  //[MJ/m3]->[C]
-    }
-  }
-  else {
-    return 0.0;// JRC: should this default to zero? or NA?
-  }
-
+  return _pConstitModels[c]->CalculateConcentration(mass,vol);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -465,7 +439,8 @@ void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_pass
 {
   CConstituentModel *pConstitModel;
   if (typ==ENTHALPY){
-    pConstitModel=new CEnthalpyModel(pModel,_pTransModel,name,_nConstituents);
+    _pEnthalpyModel=new CEnthalpyModel(pModel,_pTransModel,name,_nConstituents);
+    pConstitModel=_pEnthalpyModel;
   }
   else {
     pConstitModel=new CConstituentModel(pModel,_pTransModel,name,typ,is_passive,_nConstituents);
@@ -755,41 +730,10 @@ void   CTransportModel::SetGlobalParameter(const string const_name,const string 
 //
 void CTransportModel::Initialize()
 {
-  int c;
-
-  for(c=0;c<_nConstituents;c++)
+  for(int c=0;c<_nConstituents;c++)
   {
     _pConstitModels[c]->Initialize();
   }
-  double area=pModel->GetWatershedArea();
-
-  // Calculate initial mass and zero out zero volume concentrations
-  //--------------------------------------------------------------------
-  for(c=0;c<_nConstituents;c++)
-  {
-    double init_mass=0;
-    //_pConstitModels[c]->GetConstituent()->cumul_input=0; //now handled in _pConstitModels[c]->Initialize();
-    //_pConstitModels[c]->GetConstituent()->cumul_output=0;
-    for(int ii=0;ii<_nWaterCompartments;ii++)
-    {
-      int m=c*_nWaterCompartments+ii;
-      int i=pModel->GetStateVarIndex(CONSTITUENT,m);
-
-      // zero out initial mass in all storage units with zero volume (to avoid absurdly high concentrations/temperatures)
-      double watstor;
-      int i_stor=GetStorWaterIndex(ii);
-      for(int k = 0; k < pModel->GetNumHRUs(); k++)
-      {
-        watstor = pModel->GetHydroUnit(k)->GetStateVarValue(i_stor);
-        if(watstor<1e-9) { pModel->GetHydroUnit(k)->SetStateVarValue(i,0.0); }
-      }
-
-      //update initial model mass (initialized from .rvc file)
-      init_mass+=pModel->GetAvgStateVar(i)*(area*M2_PER_KM2); //mg 
-    }
-    _pConstitModels[c]->SetInitialMass(init_mass);
-  }
-
   CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
 }
 //////////////////////////////////////////////////////////////////
@@ -826,12 +770,7 @@ void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
 void   CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) const 
 {
   for(int c=0;c<_nConstituents;c++) {
-    if(_pConstitModels[c]->GetConstituent()->type!=ENTHALPY) {
-      _pConstitModels[c]->WriteEnsimOutputFileHeaders(Options);
-    }
-    else {
-      _pConstitModels[c]->WriteOutputFileHeaders(Options);
-    }
+     _pConstitModels[c]->WriteEnsimOutputFileHeaders(Options);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -849,12 +788,7 @@ void CTransportModel::WriteMinorOutput(const optStruct &Options,const time_struc
 void   CTransportModel::WriteEnsimMinorOutput(const optStruct &Options,const time_struct &tt) const 
 {
   for(int c=0;c<_nConstituents;c++) {
-    if(_pConstitModels[c]->GetConstituent()->type!=ENTHALPY) {
-      _pConstitModels[c]->WriteEnsimMinorOutput(Options,tt);
-    }
-    else {
-      _pConstitModels[c]->WriteMinorOutput(Options,tt);
-    }
+     _pConstitModels[c]->WriteEnsimMinorOutput(Options,tt);
   }
 }
 

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "IrregularTimeSeries.h"
@@ -114,7 +114,6 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
   _CumulInput   =_CumulOutput  =0.0;
-  _CumEnergyGain=_CumEnergyLoss=0.0;
 
   // Identify model UTM_zone for interpolation
   //--------------------------------------------------------------

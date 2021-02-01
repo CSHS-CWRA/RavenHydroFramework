@@ -16,22 +16,6 @@ enum constit_type {
   TRACER
 };
 
-//move to members of constituent model.
-struct constituent
-{
-  string   name;          ///< constituent name (e.g., "Nitrogen")
-
-  constit_type type;      ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
-  bool     can_evaporate; ///< true if constituent can be transported through evaporation
-  bool     is_passive;    ///< doesn't transport via advection
-
-  double   decay_rate;    ///< independent linear decay rate of constituent (happens everywhere; not environmentally mediated) [1/d]
-
-  double   cumul_input;   ///< cumulative mass [mg] or enthalpy [MJ] lost from system  
-  double   cumul_output;  ///< cumulative mass [mg] or enthalpy [MJ] lost from system 
-  double   initial_mass;  ///< initial mass [mg] or enthalpy [MJ] in system 
-};
-
 struct constit_source
 {
   bool   dirichlet;       ///< =true for dirichlet, false for neumann
@@ -60,7 +44,6 @@ class CTransportModel
 {
 private:/*------------------------------------------------------*/
   CModel *pModel;                    ///< pointer to model object
-  static CTransportModel *_pTransModel;    ///< pointer to only transport model (needed for access to transport model through static functions)
 
   int  _nAdvConnections;             ///< number of advective/dispersive transport connections between water storage units
   int *_iFromWater;                  ///< state variable indices of water compartment source [size: nAdvConnections]
@@ -82,10 +65,13 @@ private:/*------------------------------------------------------*/
 
   int                 _nConstituents;  ///< number of transported constituents [c=0.._nConstituents-1]
   CConstituentModel **_pConstitModels; ///< array of pointers to constituent models [size:_nConstituents]
+  CEnthalpyModel     *_pEnthalpyModel; ///< special pointer to enthalpy constituent, if present (or NULL if not)
 
   void m_to_cj(const int layerindex,int &c,int &j) const;
 
   string GetConstituentLongName_loc(const int layerindex) const; //e.g., "Nitrogen in Soil Water[2]"
+
+  static CTransportModel *_pTransModel;    ///< pointer to self (needed for access to transport model through static functions)
 
 public:/*-------------------------------------------------------*/
   CTransportModel(CModel *pMod);
@@ -101,7 +87,6 @@ public:/*-------------------------------------------------------*/
   string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
 
   int    GetNumConstituents() const;
-  const constituent      *GetConstituent(const int c) const;
   const transport_params *GetConstituentParams(const int c) const;
   int    GetConstituentIndex(const string name) const;
 
@@ -163,10 +148,13 @@ class CConstituentModel
 protected:
   const CModel          *_pModel;
   const CTransportModel *_pTransModel;
+  
+  string            _name;           ///< constituent name (e.g., "Nitrogen")
+  int               _constit_index;  ///< master constituent index of this constituent 
+  constit_type      _type;           ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
+  bool              _can_evaporate;  ///< true if constituent can be transported through evaporation (default:false)
+  bool              _is_passive;     ///< doesn't transport via advection (default: false)
 
-  int _constit_index;                ///< master constituent index of this constituent 
-
-  constituent      *_pConstituent;  ///<  pointer to constituent structures
   transport_params *_pConstitParams; ///< pointer to constituent parameters 
 
   // Routing/state var storage
@@ -182,8 +170,13 @@ protected:
 
   double  *_aMlat_last;              ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
 
+  // Mass balance tracking variables
   double  *_channel_storage;         ///< array storing channel storage [mg] or [MJ] [size: nSubBasins] 
   double  *_rivulet_storage;         ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins] 
+
+  double   _cumul_input;             ///< cumulative mass [mg] or enthalpy [MJ] added to system  
+  double   _cumul_output;            ///< cumulative mass [mg] or enthalpy [MJ] lost from system 
+  double   _initial_mass;            ///< initial mass [mg] or enthalpy [MJ] in system 
 
   // Source information
   constit_source **_pSources;        ///< array of pointers to constituent sources [size: nSources]
@@ -201,28 +194,32 @@ protected:
   void DeleteRoutingVars();
   void InitializeConstitParams(transport_params *P);
 
+  // mass balance routines
   double GetTotalRivuletConstituentStorage() const;
   double GetTotalChannelConstituentStorage() const;
   double GetMassAddedFromInflowSources(const double &t,const double &tstep) const;
+  virtual double GetNetReachLosses(const int p) const;
 
 public:/*-------------------------------------------------------*/
   CConstituentModel(CModel *pMod,CTransportModel *pTMod,string name,constit_type type,bool is_passive,const int c);
   ~CConstituentModel();
 
   //Accessors
-  const constituent      *GetConstituent();// REFACTOR - need to return to const;
   const transport_params *GetConstituentParams() const;
-
-  double GetOutflowConcentration(const int p) const;
+  constit_type            GetType() const;
+  string                  GetName() const;
+  bool                    IsPassive() const;
+  
+  virtual double GetOutflowConcentration(const int p) const;
   double GetIntegratedMassOutflow(const int p,const double &tstep) const;
-
-  bool   IsPassive() const;
 
   bool   IsDirichlet         (const int i_stor,const int k,const time_struct &tt,double &Cs) const;
   double GetSpecifiedMassFlux(const int i_stor,const int k,const time_struct &tt) const;
 
   double GetDecayCoefficient (const CHydroUnit *pHRU,const int iStorWater) const;
   double GetRetardationFactor(const CHydroUnit *pHRU,const int iFromWater,const int iToWater) const;
+
+  virtual double CalculateConcentration(const double &M,const double &V) const;
 
   //Manipulators
   void   AddDirichletCompartment (const int i_stor,const int kk,const double Cs);
@@ -231,31 +228,30 @@ public:/*-------------------------------------------------------*/
   void   AddInfluxTimeSeries     (const int i_stor,const int kk,const CTimeSeries *pTS);
   void   AddInflowConcTimeSeries (const CTimeSeries *pTS);
   
-  void   Prepare(const optStruct &Options);
+          void   Prepare(const optStruct &Options);
   virtual void   Initialize();
-  void   InitializeRoutingVars();
+          void   InitializeRoutingVars();
 
-  void   SetInitialMass(const double &mass);
-  void   IncrementCumulInput(const optStruct &Options,const time_struct &tt);
-  void   IncrementCumulOutput(const optStruct &Options);
+          void   IncrementCumulInput(const optStruct &Options,const time_struct &tt);
+          void   IncrementCumulOutput(const optStruct &Options);
 
-  virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const int nSegments,const int nMinHist,const double *aMinHist,const double &tstep,double *aMout_new) const;
-  void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
-  void   SetMassInflows           (const int p,const double Minnew);
-  void   SetLateralInfluxes       (const int p,const double RoutedMass);
-  void   RouteMass                (const int p,double *aMoutnew,double &ResMass,const optStruct &Options,const time_struct &tt) const;
+  virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist,const double *aMinHist,const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
+          void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
+          void   SetMassInflows           (const int p,const double Minnew);
+          void   SetLateralInfluxes       (const int p,const double RoutedMass);
+          void   RouteMass                (const int p,double *aMoutnew,double &ResMass,const optStruct &Options,const time_struct &tt) const;
   virtual void   UpdateMassOutflows       (const int p,double *aMoutnew,double &ResMass,double &ResMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize);
 
-  void   WriteOutputFileHeaders     (const optStruct &Options);
-  void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt);
-  void   WriteEnsimOutputFileHeaders(const optStruct &Options);
-  void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
-  void   CloseOutputFiles();
+          void   WriteOutputFileHeaders     (const optStruct &Options);
+          void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt);
+  virtual void   WriteEnsimOutputFileHeaders(const optStruct &Options);
+  virtual void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
+          void   CloseOutputFiles();
 };
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Class for coordinating transport simulation for enthalpy (child of ConstituentModel)
-/// \details Implemented in EnergyTransport.cpp
+/// \brief Class for coordinating transport simulation for nutrients (child of ConstituentModel)
+/// \details Implemented in NutrientTransport.cpp
 //
 class CNutrientModel:public CConstituentModel
 {

@@ -49,9 +49,6 @@ void CConstituentModel::InitializeRoutingVars()
     _channel_storage[p]=0.0;
     _rivulet_storage[p]=0.0;
     
-    //_aEnthalpySource[p]=new double[nMinHist];
-    //for(int i=0; i<nMinHist;i++) { _aEnthalpySource[p][i]=0.0; }
-    //_aEnthalpyBeta[p]=0.0;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -122,8 +119,8 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   {
     if(_pSpecFlowConcs[i]->GetLocID()==SBID) {
       C=_pSpecFlowConcs[i]->GetValue(t); //mg/L or C
-      if(_pConstituent->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
-      else                              { C*=LITER_PER_M3; } //mg/m3
+      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+      else                { C*=LITER_PER_M3; } //mg/m3
       Minnew=Q*C;  //[m3/d]*[mg/m3] or [m3/d]*[MJ/m3] 
     }
   }
@@ -167,16 +164,18 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
     SBID  =_pSpecFlowConcs[i]->GetLocID();
 
     Q=_pModel->GetSubBasinByID(SBID)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
-    C=_pSpecFlowConcs[i]->GetValue(t);                             //mg/L or C
-    if(_pConstituent->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
-    else                              { C*=LITER_PER_M3; } //mg/m3
+    C=_pSpecFlowConcs[i]->GetValue(t+tstep);                             //mg/L or C
+    if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+    else                { C*=LITER_PER_M3; } //mg/m3
     mass+=0.5*Q*C*tstep;  //[mg] or [MJ]
 
-    Qold=_pModel->GetSubBasinByID(SBID)->GetLastOutflowRate()*SEC_PER_DAY;//[m3/d] Flow at start of time step
-    C=_pSpecFlowConcs[i]->GetValue(t-tstep);                             //mg/L or C
-    if(_pConstituent->type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
-    else                              { C*=LITER_PER_M3; } //mg/m3
-    mass+=0.5*Qold*C*tstep;
+    if(t>0) {
+      Qold=_pModel->GetSubBasinByID(SBID)->GetLastOutflowRate()*SEC_PER_DAY;//[m3/d] Flow at start of time step
+      C=_pSpecFlowConcs[i]->GetValue(t);                             //mg/L or C
+      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+      else                { C*=LITER_PER_M3; } //mg/m3
+      mass+=0.5*Qold*C*tstep;
+    }
 }
   return mass;
 }
@@ -214,6 +213,7 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
 {
   const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
+  const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
 
   int nMlatHist   =_pModel->GetSubBasin(p)->GetLatHistorySize();
   int nMinHist    =_pModel->GetSubBasin(p)->GetInflowHistorySize();
@@ -235,8 +235,8 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
   //==============================================================
   if((Options.routing==ROUTE_PLUG_FLOW) || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
   {     
-    // convolution
-    ApplyConvolutionRouting(p,aRouteHydro, nSegments,nMinHist,_aMinHist[p],Options.timestep,aMout_new);
+    // (sometimes fancy) convolution
+    ApplyConvolutionRouting(p,aRouteHydro,aQinHist,_aMinHist[p],nSegments,nMinHist,Options.timestep,aMout_new);
   }
   //==============================================================
   else if(Options.routing==ROUTE_NONE)
@@ -364,13 +364,13 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
   //mass change from linearly varying downstream outflow over time step
   dM-=0.5*(_aMout[p][pBasin->GetNumSegments()-1]+_aMout_last[p])*dt;
 
-  //energy change from loss of energy along reach over time step
-  //dM-=GetEnergyLossesFromReach(); 
+  //energy change from loss of mass/energy along reach over time step
+  dM-=GetNetReachLosses(p);
 
   //mass change from lateral inflows
   dM+=0.5*(Mlat_new+_aMlat_last[p])*dt;
-
-  _channel_storage[p]+=dM;//[mg]
+  
+  _channel_storage[p]+=dM;//[mg] or [MJ]
 
   //Update rivulet storage
   //------------------------------------------------------
@@ -387,45 +387,21 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
 /// \notes only used for reporting; calculations exclusively in terms of mass/energy
 /// 
 /// \param p [in] subbasin index 
-/// \param c [in] constituent index
 //
 double CConstituentModel::GetOutflowConcentration(const int p) const
 {
   CReservoir *pRes=_pModel->GetSubBasin(p)->GetReservoir();
 
-  //Chemical concentration [mg/L] --------------------------------------------
-  if(_pConstituent->type!=ENTHALPY) {
-    if(pRes==NULL)
-    {
-      double mg_per_d=_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1];
-      double flow    =_pModel->GetSubBasin(p)->GetOutflowRate();
-      if(flow<=0) { return 0.0; }
-      double C=mg_per_d/flow/SEC_PER_DAY/LITER_PER_M3; //[mg/L]
-      return C;
-    }
-    else {
-      return _aMres[p]/pRes->GetStorage()/LITER_PER_M3; //[mg/L]
-    }
+  if(pRes==NULL)
+  {
+    double mg_per_d=_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1];
+    double flow    =_pModel->GetSubBasin(p)->GetOutflowRate();
+    if(flow<=0) { return 0.0; }
+    double C=mg_per_d/flow/SEC_PER_DAY/LITER_PER_M3; //[mg/L]
+    return C;
   }
-  //Temperatures [C] ---------------------------------------------------------
   else {
-    if(pRes==NULL)
-    {
-      double MJ_per_d=_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1];
-      double flow    =_pModel->GetSubBasin(p)->GetOutflowRate();
-      if(flow<=0) { return 0.0; }
-      //hv=MJ/d / M3/d = [MJ/m3]
-      double T=ConvertVolumetricEnthalpyToTemperature(MJ_per_d/(flow*SEC_PER_DAY)); //[C]
-
-      return max(T,0.0); //Flowing water can't go below zero. HOWEVER, this may not conserve energy balance, as it is possible for the enthalpy to dip down below frozen conditions
-
-      //if (T<0){cout<<"     Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<" ***************"<<endl;}
-      //else {   cout<<" NOT Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<endl;}
-      //return T;
-    }
-    else {
-      return ConvertVolumetricEnthalpyToTemperature(_aMres[p]/pRes->GetStorage()); //[C]
-    }
+    return _aMres[p]/pRes->GetStorage()/LITER_PER_M3; //[mg/L]
   }
 }
 

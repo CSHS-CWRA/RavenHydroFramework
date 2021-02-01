@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -649,7 +649,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (40): //---------------------------------------------
-    {/*:ObservationData {data type} {long SBID or int HRUID} {(optional) units}
+    {/*:ObservationData {data type} {long SBID or int HRUID} {constituent name if data type=STREAM_CONCENTRATION } 
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationData
@@ -661,12 +661,28 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
       bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
       bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
+      bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
+      bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
         
-      bool period_ending =(!strcmp(s[1],"HYDROGRAPH")); 
+      bool period_ending =ishyd; 
       //Hydrographs are internally stored as period-ending!
 
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),Options,period_ending);
+
+      if(isconc) {
+        ExitGracefullyIf(Len<4,"ParseTimeSeriesFile: STREAM_CONCENTRATION observation must include constituent name",BAD_DATA_WARN);
+        int c = pModel->GetTransportModel()->GetConstituentIndex(s[3]);
+        if(c==DOESNT_EXIST) {
+          string warn="ParseTimeSeries:: Invalid/unused constituent name in observation stream concentration time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+          WriteWarning(warn.c_str(),Options.noisy); break;
+        }
+        pTimeSer->SetConstitInd(c);
+      }
+      else if(istemp) {
+        int c = pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
+        pTimeSer->SetConstitInd(c);
+      }
 
       if (ishyd && invalidSB){
         string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
@@ -700,7 +716,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (42): //---------------------------------------------
-    {/*:ObservationWeights {data type} {long SBID or int HRUID}
+    {/*:ObservationWeights {data type} {long SBID or int HRUID}  {constituent name if data type=STREAM_CONCENTRATION } 
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationWeights
@@ -712,9 +728,25 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
       bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
       bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
+      bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
+      bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
 
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),Options);
+
+      if(isconc) {
+        ExitGracefullyIf(Len<4,"ParseTimeSeriesFile: STREAM_CONCENTRATION observation must include constituent name",BAD_DATA_WARN);
+        int c = pModel->GetTransportModel()->GetConstituentIndex(s[3]);
+        if(c==DOESNT_EXIST) {
+          string warn="ParseTimeSeries:: Invalid/unused constituent name in observation stream concentration time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+          WriteWarning(warn.c_str(),Options.noisy); break;
+        }
+        pTimeSer->SetConstitInd(c);
+      }
+      else if(istemp) {
+        int c = pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
+        pTimeSer->SetConstitInd(c);
+      }
 
       if (ishyd && invalidSB){
         string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";

@@ -1,12 +1,8 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeriesABC.h"
-
-
-// Should be moved to RavenInclude??
-
 
 /*****************************************************************
    Constructor/Destructor
@@ -25,10 +21,11 @@ CTimeSeriesABC::CTimeSeriesABC(ts_type type,
                                long    loc_ID,
                                string  filename)
 {
-  _type      =type;
-  _name      =Name;
-  _loc_ID    =loc_ID;
-  _srcfile   =filename;
+  _type       =type;
+  _name       =Name;
+  _loc_ID     =loc_ID;
+  _srcfile    =filename;
+  _constit_ind=DOESNT_EXIST;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -74,10 +71,22 @@ string CTimeSeriesABC::GetName()  const{return _name;}
 long   CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns location identifier
+/// \return constituent index (or DOESNT_EXIST, otherwise) 
+//
+int    CTimeSeriesABC::GetConstitInd() const { return _constit_ind; }
+
+//////////////////////////////////////////////////////////////////
 /// \brief Sets location identifier
 /// \param ID - HRU ID or SubBasin ID linked to observations
 //
 void   CTimeSeriesABC::SetLocID(long ID) { _loc_ID=ID; }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets constituent index
+/// \param c - constituent index
+//
+void   CTimeSeriesABC::SetConstitInd(const int c) {_constit_ind=c; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns source input file
