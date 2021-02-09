@@ -1812,7 +1812,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
                        "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) grid cell ids with non-zero weight in array
-      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
+      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,Options);
       break;
     }
 
@@ -1984,7 +1984,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
 
       // store (sorted) grid cell ids with non-zero weight in array
-      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells);
+      pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,Options);
       break;
 
     }

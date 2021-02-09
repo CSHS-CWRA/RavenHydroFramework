@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef FORCINGGRID_H
 #define FORCINGGRID_H
@@ -80,6 +80,8 @@ private:/*------------------------------------------------------*/
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   //                                         ///< This is effectively the number of data points which is stored from the original data. 
   int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
+  int          _WinLength[3];                ///< length of data grid window in each dimension (x,y,t - defaults to _GridDims)
+  int          _WinStart [3];                ///< data grid window starting point (x,y,t - defaults to 0, 0, chunksize)
   
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
@@ -193,7 +195,8 @@ public:/*------------------------------------------------------*/
   void         SetAsPeriodEnding           ();                                      ///< set _period_ending
   void         SetIs3D(                    const bool   is3D);                      ///< set _is3D                      of class
   void         SetIdxNonZeroGridCells(     const int    nHydroUnits,
-                                           const int    nGridCells);                ///< set _IdxNonZeroGridCells       of class
+                                           const int    nGridCells, const optStruct &Options); 
+                                                                                    ///< set _IdxNonZeroGridCells       of class
   void         SetnHydroUnits(             const int    nHydroUnits);               ///< set _nHydroUnits               of class
   void         SetChunkSize(               const int    ChunkSize);                 ///< set _ChunkSize                 of class
   void         SetInterval(                const double interval);                  ///< set _interval                  of class
