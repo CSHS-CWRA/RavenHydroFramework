@@ -15,10 +15,13 @@ Copyright (c) 2008-2020 the Raven Development Team
 //
  int GetCalendarFromNetCDF(const int ncid,int varid_t,const string filename,const optStruct &Options) 
 {
+   int calendar=CALENDAR_PROLEPTIC_GREGORIAN;
+
+#ifdef _RVNETCDF_
   int     retval;
   size_t  att_len;        // length of the attribute's text
   nc_type att_type;      // type of attribute
-  int calendar;
+  
 
   retval = nc_inq_att(ncid,varid_t,"calendar",&att_type,&att_len);
   if(retval == NC_ENOTATT) 
@@ -49,6 +52,7 @@ Copyright (c) 2008-2020 the Raven Development Team
 
     delete[] calendar_t;
   }
+#endif
   return calendar;
 }
 
@@ -66,6 +70,7 @@ Copyright (c) 2008-2020 the Raven Development Team
  //
  void GetTimeInfoFromNetCDF(const char *unit_t,int calendar,const double *time,const int ntime,const string filename,double &tstep,double &start_day,int &start_yr,double &time_zone) 
  {
+#ifdef _RVNETCDF_
    // -------------------------------
    // check if we have equal time steps in time data vector
    // -------------------------------  
@@ -99,6 +104,8 @@ Copyright (c) 2008-2020 the Raven Development Team
 
    //Get julian date/year of time[0]
    GetJulianDateFromNetCDFTime(unit_t,calendar,time[0],start_day,start_yr);
+#endif
+
 }
  //////////////////////////////////////////////////////////////////
  /// reads converts Netcdf time since a reference date to a julian date 
@@ -111,6 +118,7 @@ Copyright (c) 2008-2020 the Raven Development Team
  //
  void GetJulianDateFromNetCDFTime(string unit_t_str,int calendar,const double &time,double &julian_day,int &year)
  {
+#ifdef _RVNETCDF_
    time_struct tt_ref;   //reference time in NetCDF time string (e.g., time in days since 2001-10-01)
    double delta_t;       //timeshift in days
    double time_zone;
@@ -124,6 +132,7 @@ Copyright (c) 2008-2020 the Raven Development Team
    }
    tt_ref =TimeStructFromNetCDFString(unit_t_str,unit_string,calendar,time_zone);
    AddTime(tt_ref.julian_day,tt_ref.year,delta_t,calendar,julian_day,year);
+#endif
 }
  //////////////////////////////////////////////////////////////////
  /// reads reads in a vector of NetCDF times in integer/float/double format
@@ -136,6 +145,7 @@ Copyright (c) 2008-2020 the Raven Development Team
 void GetTimeVectorFromNetCDF(const int ncid,const int varid_t,const int ntime,double *my_time) 
 {
   
+#ifdef _RVNETCDF_
   int     retval;
   nc_type type;
 
@@ -177,4 +187,5 @@ void GetTimeVectorFromNetCDF(const int ncid,const int varid_t,const int ntime,do
   {
     ExitGracefully("GetTimeVectorFromNetCDF: time variable in NetCDF is not of type DOUBLE, FLOAT, or INT.",BAD_DATA);
   }
+#endif
 }
