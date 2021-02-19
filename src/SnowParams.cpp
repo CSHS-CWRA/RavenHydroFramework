@@ -298,25 +298,3 @@ double GetRainHeatInput(const double &surf_temp,
   }
   return R; // [MJ/m2/d]
 }
-//////////////////////////////////////////////////////////////////
-/// \brief returns snow depletion curve correction factor for melt of average snowpack in HRU
-/// equivalent to percentage of snow cover ground
-/// \param SWE [in] SWE [mm]
-/// \param SD [in] snow depth [mm]
-/// \param pHRU [in] pointer to Hydrologic response unit 
-/// \return Options [in] options structure
-//
-double GetSDCCorrection(const double &SWE,const double &SD,const CHydroUnit *pHRU, const optStruct &Options)
-{
-  if(Options.snow_depletion==SNOWCOV_NONE)
-  {
-    return 1.0; //all ground covered in snow
-  }
-  else if(Options.snow_depletion==SNOWCOV_LINEAR)
-  {
-    //double snowthresh=pHRU->GetSurfaceProps()->SDC_threshold;
-    double snowthresh=200;
-    return min(max(SWE,0.0)/snowthresh,1.0);
-  }
-  return 1.0;
-}

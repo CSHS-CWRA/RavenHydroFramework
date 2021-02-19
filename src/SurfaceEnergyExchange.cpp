@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "SurfaceEnergyExchange.h"
 
@@ -89,8 +89,9 @@ void CmvPartitionEnergy::Initialize() {} //do nothing
 void        CmvPartitionEnergy::GetParticipatingParamList(string  *aP,class_type *aPC,int &nP) const
 {
   nP=0;
-  aP[nP]="CONVECTION_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
-  //aP[nP]="VEG_CONV_COEFF"; aPC[nP]=CLASS_VEGETATION; nP++;
+  aP[nP]="CONVECTION_COEFF";  aPC[nP]=CLASS_LANDUSE;    nP++;
+  aP[nP]="VEG_CONV_COEFF";    aPC[nP]=CLASS_VEGETATION; nP++;
+  aP[nP]="MAX_DEP_AREA_FRAC"; aPC[nP]=CLASS_LANDUSE;    nP++; //TMP debug - may change with variable depression area support
 }
 
 //////////////////////////////////////////////////////////////////
@@ -112,7 +113,7 @@ void CmvPartitionEnergy::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int
 //
 double CmvPartitionEnergy::GetStorTemp(int iEnth,int iWatStor,const double &Tair,const double *state_vars) const{
   double Hv,stor,hv;
-
+ // _pTransModel->GetConcentration(k,iWatStor)
   if(iWatStor!=DOESNT_EXIST) {
     Hv   =state_vars[iEnth]; //enthalpy, [MJ/m2]
     stor =state_vars[iWatStor]; //water storage [mm]
@@ -143,10 +144,12 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   double Tsoil,Tsnow,Tdep,Tcan,TcanS;
 
   double Tair=pHRU->GetForcingFunctions()->temp_ave;
-  double Rnet=pHRU->GetForcingFunctions()->LW_radia_net+pHRU->GetForcingFunctions()->SW_radia_net;
+  double Rnet=pHRU->GetForcingFunctions()->LW_radia_net+
+              pHRU->GetForcingFunctions()->SW_radia_net;
 
-  double conv_coeff=pHRU->GetSurfaceProps()->convection_coeff; // [MJ/m2/d/K]
-  double vconv_coeff=0.0;//=pHRU->GetVegetationProps()->veg_conv_coeff; // [MJ/m2/d/K]
+  double LAI        =pHRU->GetVegVarProps()->LAI;
+  double conv_coeff =pHRU->GetSurfaceProps()->convection_coeff; // [MJ/m2/d/K]
+  double vconv_coeff=pHRU->GetVegetationProps()->veg_conv_coeff*LAI; // [MJ/m2/d/K]
 
   int iSoil=pModel->GetStateVarIndex(SOIL,0);
   int iSnow=pModel->GetStateVarIndex(SNOW);
@@ -156,22 +159,24 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
 
   const CEnthalpyModel *pEnthalpyModel=_pTransModel->GetEnthalpyModel();
   Tsoil=pEnthalpyModel->GetWaterTemperature(state_vars,iSoil);
-  Tsnow=min(pEnthalpyModel->GetWaterTemperature(state_vars,iSnow),0.0);
-  Tdep =pEnthalpyModel->GetWaterTemperature(state_vars,iDep);
-  Tcan =pEnthalpyModel->GetWaterTemperature(state_vars,iCan);
-  TcanS=min(pEnthalpyModel->GetWaterTemperature(state_vars,iCanS),0.0);
+  Tsnow=pEnthalpyModel->GetWaterTemperature(state_vars,iSnow);
+  Tdep =pEnthalpyModel->GetWaterTemperature(state_vars,iDep );
+  Tcan =pEnthalpyModel->GetWaterTemperature(state_vars,iCan );
+  TcanS=pEnthalpyModel->GetWaterTemperature(state_vars,iCanS);
+  Tsnow=min(Tsnow,0.0);
+  TcanS=min(TcanS,0.0);
 
   double pct_cover=1.0;
 
   //evaluate partial coverage of HRU 
-  double dep_cover   =0.0;   //TMP DEBUG
-  double snow_cover  =0.0; //TMP DEBUG
+  double dep_cover   =pHRU->GetSurfaceProps()->max_dep_area_frac;  //pHRU->GetDepressionAreaFraction(); //TMP DEBUG - may have to vary with depression storage 
+  double snow_cover  =pHRU->GetSnowCover(); 
   double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
   double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
 
-  pct_cover=1.0-snow_cover-dep_cover;
+  pct_cover=max(1.0-snow_cover-dep_cover,0.0);
 
-  double sv_fact=forest_cover*1.0;
+  double sv_fact=(1.0-forest_cover)*1.0; //TMP DEBUG- should include some skyview factor impacts - these are already implicitly in Rnet??
 
   double K =(1.0-exp(- conv_coeff*Options.timestep))/Options.timestep; //analytical correction factors ensure proper asymptotic approach to Tair (replace just conv_coeff)
   double Kv=(1.0-exp(-vconv_coeff*Options.timestep))/Options.timestep;
@@ -190,7 +195,7 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   //----------------------------------------------------------------------
   int    nAdvConnections=_pTransModel->GetNumAdvConnections();
   int    k              =pHRU->GetGlobalIndex();
-  double ET,LH_loss;
+  double ET,LH_loss,LH_loss_sub;
   int N=5; //# of compartments 
   for(int q=0;q<nAdvConnections;q++)
   {
@@ -202,15 +207,16 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
 
       ET=pModel->GetFlux(k,js,Options)/MM_PER_METER; //[m/d]
 
-      LH_loss=ET*DENSITY_WATER*LH_VAPOR; //[MJ/m2/d]
+      LH_loss    =ET*DENSITY_WATER*LH_VAPOR; //[MJ/m2/d]
+      LH_loss_sub=ET*DENSITY_WATER*LH_SUBLIM;
 
-      if      (iFromWater==iSoil) { rates[N+0]-=LH_loss; } // SOIL ->LATENT_HEAT
-      else if (iFromWater==iSnow) { rates[N+1]-=LH_loss; } // SNOW ->LATENT_HEAT
-      else if (iFromWater==iDep ) { rates[N+2]-=LH_loss; } // DEPRESSION ->LATENT_HEAT
-      else if (iFromWater==iCan ) { rates[N+3]-=LH_loss; } // CANOPY ->LATENT_HEAT
-      else if (iFromWater==iCanS) { rates[N+4]-=LH_loss; } // CANOPY_SNOW ->LATENT_HEAT
+      if      (iFromWater==iSoil) { rates[N+0]-=LH_loss;     } // SOIL ->LATENT_HEAT (soil evaporation)
+      else if (iFromWater==iSnow) { rates[N+1]-=LH_loss_sub; } // SNOW ->LATENT_HEAT (sublimation)
+      else if (iFromWater==iDep ) { rates[N+2]-=LH_loss;     } // DEPRESSION ->LATENT_HEAT (OW evaporation)
+      else if (iFromWater==iCan ) { rates[N+3]-=LH_loss;     } // CANOPY ->LATENT_HEAT (Canopy evap)
+      else if (iFromWater==iCanS) { rates[N+4]-=LH_loss_sub; } // CANOPY_SNOW ->LATENT_HEAT (canopy sublimation)
 
-      //**RIGHT NOW THIS WILL OVERESTIMATE, SINCE IT DOESN'T ACCOUNT FOR SENSIBLE HEAT TRANSFER FROM WATER WHICH IS CHANGING PHASE**
+      //implicitly assumes that no energy comes from cooling down evaporated/sublimated water
     }
   }
 }

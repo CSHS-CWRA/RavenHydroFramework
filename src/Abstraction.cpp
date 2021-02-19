@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ------------------------------------------------------------------
   Abstraction (partitioning of ponded water/snowmelt to depression
   storage)
@@ -21,15 +21,15 @@
 CmvAbstraction::CmvAbstraction(abstraction_type absttype)
   :CHydroProcessABC(ABSTRACTION)
 {
-  type=absttype;
+  _type=absttype;
 
-  if (absttype!=ABST_PDMROF){
+  if((_type==ABST_PERCENTAGE) || (_type==ABST_FILL) || (_type==ABST_SCS)){
     CHydroProcessABC::DynamicSpecifyConnections(1);
     //abstraction (ponded-->depression)
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
     iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
   }
-  else {
+  else if ((_type==ABST_PDMROF) || (_type==ABST_UWFS)) { 
     CHydroProcessABC::DynamicSpecifyConnections(2);
     //abstraction (ponded-->depression)
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
@@ -61,27 +61,35 @@ void   CmvAbstraction::Initialize()
 //
 void CmvAbstraction::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if (type==ABST_PERCENTAGE)
+  if (_type==ABST_PERCENTAGE)
   {
     nP=1;
     aP[0]="ABST_PERCENT";           aPC[0]=CLASS_LANDUSE;
   }
-  else if (type==ABST_FILL)
+  else if (_type==ABST_FILL)
   {
     nP=1;
     aP[0]="DEP_MAX";                aPC[0]=CLASS_LANDUSE;
   }
-  else if (type==ABST_SCS)
+  else if (_type==ABST_SCS)
   {
     nP=2;
     aP[0]="SCS_CN";                 aPC[0]=CLASS_LANDUSE;
     aP[1]="SCS_IA_FRACTION";        aPC[1]=CLASS_LANDUSE;
   }
-  else if(type==ABST_PDMROF)
+  else if(_type==ABST_PDMROF)
   {
     nP=2;
     aP[0]="PDMROF_B";               aPC[0]=CLASS_LANDUSE;
     aP[1]="DEP_MAX";                aPC[1]=CLASS_LANDUSE;
+  }
+  else if(_type==ABST_UWFS)
+  {
+    nP=4;
+    aP[0]="MAX_DEP_AREA_FRAC";      aPC[0]=CLASS_LANDUSE;
+    aP[1]="DEP_MAX";                aPC[1]=CLASS_LANDUSE;
+    aP[2]="UWFS_B";                 aPC[2]=CLASS_LANDUSE;
+    aP[3]="UWFS_BETAMIN";           aPC[3]=CLASS_LANDUSE;
   }
   else
   {
@@ -106,6 +114,12 @@ void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_
     nSV=3;
     aSV[2]=SURFACE_WATER;    aLev[2]=DOESNT_EXIST;
   }
+  else if(absttype==ABST_UWFS) {
+    //nSV=4;
+    nSV=3;
+    aSV[2]=SURFACE_WATER;    aLev[2]=DOESNT_EXIST;
+    //aSV[3]=DEFICIT_STDDEV;   aLev[3]=DOESNT_EXIST;
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -117,22 +131,22 @@ void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_
 /// \param &tt [in] Current model time at which abstraction is to be calculated
 /// \param *rates [out] rates[0]= rate of abstraction [mm/d]
 //
-void   CmvAbstraction::GetRatesOfChange( const double                   *state_vars,
-                                         const CHydroUnit       *pHRU,
-                                         const optStruct        &Options,
-                                         const time_struct &tt,
-                                         double     *rates) const
+void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
+                                         const CHydroUnit    *pHRU,
+                                         const optStruct     &Options,
+                                         const time_struct   &tt,
+                                               double        *rates) const
 {
   double ponded=state_vars[iFrom[0]];
   double depression=state_vars[iTo[0]];
 
   //----------------------------------------------------------------------------
-  if (type==ABST_PERCENTAGE)
+  if      (_type==ABST_PERCENTAGE)
   {
     rates[0]=pHRU->GetSurfaceProps()->abst_percent*ponded/Options.timestep;
   }
   //----------------------------------------------------------------------------
-  else if (type==ABST_FILL)
+  else if (_type==ABST_FILL)
   { //fills up storage, then stops
     double dep_space;           //[mm] available space left in depression storage
 
@@ -141,7 +155,7 @@ void   CmvAbstraction::GetRatesOfChange( const double                   *state_v
     rates[0]=min(dep_space,max(ponded,0.0))/Options.timestep;
   }
   //----------------------------------------------------------------------------
-  else if (type==ABST_SCS)
+  else if (_type==ABST_SCS)
   {
     double S,CN,TR,Ia;
 
@@ -171,7 +185,7 @@ void   CmvAbstraction::GetRatesOfChange( const double                   *state_v
     rates[0]=max(Ia,ponded)/Options.timestep;
   }
   //----------------------------------------------------------------------------
-  else if(type==ABST_PDMROF)
+  else if(_type==ABST_PDMROF)
   { //uses PDMROF algorithm from Mekonnen et al., Towards an improved land surface scheme for prairie landscapes, Journal of Hydrology 511, 2014
     double b;          //[-] pareto distribution parameter
     double dep_max;    //[mm] maximum depression storage across HRU
@@ -192,6 +206,57 @@ void   CmvAbstraction::GetRatesOfChange( const double                   *state_v
     
     rates[0]=(       abstracted)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]
     rates[1]=(ponded-abstracted)/Options.timestep; //runoff rate [PONDED->SURFACE_WATER]
+  }
+  else if(_type==ABST_UWFS) 
+  {
+    double runoff;     //[mm] total runoff amount, <O_1> (averaged over HRU)
+    double P=ponded;   //[mm] total "preciptiation" (averaged over HRU)
+    double deltaDmin=0;//[mm] change in Dmin (in wetland; not averaged over HRU)
+
+    double alpha=1.0;  //runoff ratio - here assume infiltration already applied, alpha=1.0 - all runs off
+    double b       =pHRU->GetSurfaceProps()->uwfs_b;
+    double beta_min=pHRU->GetSurfaceProps()->uwfs_betamin;
+    double depfrac =pHRU->GetSurfaceProps()->max_dep_area_frac; //percentage of landscape covered in depressions
+    double depmax  =pHRU->GetSurfaceProps()->dep_max;           //[mm] maximum total depression storage on landscape (averaged over HRU)
+
+    if (depfrac==0){runoff=ponded;} //no abstraction, all will run off
+    else 
+    {
+      double Davg=(depmax-depression)/depfrac; //mm in wetland (not averaged over HRU as depression storage is)
+      double Dmin=state_vars[iFrom[2]];        //=Dmin [mm] if positive,=-Pf if negative
+      double Pf=0.0;                           //Fraction full
+      double d;                                //[-] deficit distribution parameter 
+      double beta_ave=beta_min+1/b;            //<beta>
+      double a=b/P;
+      double Pstar=beta_min*P-Dmin;
+
+      if(Dmin<0) { //partially full
+        Pf=-Dmin;
+        Dmin=0.0; 
+      }
+      //backcalculate d from Dmin (or Pf) and Davg
+      d=min((1.0-Pf)/(Davg-Dmin),1000.0);
+      
+      //Calculate net runoff (in mm averaged over basin)
+      double mult=alpha/(beta_ave-1.0-alpha);
+      if(Pstar>0.0) {
+        runoff =mult*a*d/(a+d)*(1-Pf)*((d*Pstar-1+exp(d*Pstar))/d/d+(a*Pstar+1)/a/a);
+        runoff+=mult*          (Pf)*(Pstar-1.0/a);
+      }
+      else {
+        runoff=mult*a*d/(a+d)*(exp(a*Pstar)/a/a);
+      }
+    
+      //[unfinished] - calculate Dmin (or Pf) after the runoff event
+      deltaDmin=beta_min*P; //THis is wrong except in case where runoff~0.0 //Mahkameh -figure out how to update Dmin
+                            //deltaDmin=Dmin (after runoff)- Dmin (before runoff)
+                            // note that Dmin =-Pf if Pf at end is non-zero
+      ExitGracefully("ABST_UWFS",STUB);
+    }
+
+    rates[0]=(ponded- runoff)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]
+    rates[1]=(        runoff)/Options.timestep; //runoff rate      [PONDED->SURFACE_WATER]
+    rates[2]=(deltaDmin     )/Options.timestep; //change in Dmin   [MIN_DEP_DEFICIT->MIN_DEP_DEFICIT]]   
   }
 }
 

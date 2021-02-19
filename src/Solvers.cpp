@@ -551,7 +551,7 @@ void MassEnergyBalance( CModel            *pModel,
       }
       else {
         // \todo[funct] - must handle this in mass balance - should go to cumulative output
-		    //Qdiverted+=div_Q;
+	    //Qdivloss+=div_Q;
       }
     }
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
@@ -591,7 +591,10 @@ void MassEnergyBalance( CModel            *pModel,
       {
         aQinnew[pTo]+=pBasin->GetOutflowRate()-Qwithdrawn;
       }
-
+      else {
+        //still need to remove Qwithdrawn from somewhere if downstream outflow doesn't exist!
+        //Qdivloss+=Qwithdrawn;
+      }
     }
   }//end for pp...
 

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvDepressionOverflow
@@ -28,7 +28,7 @@ enum depflow_type{
 class CmvDepressionOverflow: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  depflow_type type; ///< Model of abstaction selected
+  depflow_type _type; ///< Model of abstaction selected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
@@ -68,7 +68,7 @@ enum seepage_type{
 class CmvSeepage: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  seepage_type type; ///< Model of abstaction selected
+  seepage_type _type; ///< Model of abstaction selected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
@@ -103,7 +103,8 @@ enum abstraction_type{
   ABST_PERCENTAGE, ///< Abstraction by percentage
   ABST_FILL,       ///< Fill abstraction
   ABST_SCS,        ///< Abstraction using SCS method
-  ABST_PDMROF      ///< Abstraction using PDMROF Method (Mekkonen et al., 2014)
+  ABST_PDMROF,     ///< Abstraction using PDMROF Method (Mekkonen et al., 2014)
+  ABST_UWFS        ///< Abstraction using upscaled wetland fill and spill model (Taheri et al.)
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -112,7 +113,7 @@ enum abstraction_type{
 class CmvAbstraction: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  abstraction_type type; ///< Model of abstaction selected
+  abstraction_type _type; ///< Model of abstaction selected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
@@ -151,7 +152,7 @@ enum lakerel_type{
 class CmvLakeRelease: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  lakerel_type type; ///< Model of abstaction selected
+  lakerel_type _type; ///< Model of abstaction selected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

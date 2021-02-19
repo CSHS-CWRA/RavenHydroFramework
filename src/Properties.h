@@ -43,7 +43,6 @@ struct soil_struct
   double stone_frac;        ///< [0..1]    stone volume fraction
   double bulk_density;      ///< [kg/m3]   bulk dry density
   //double specific_storage;///< [-]       specific storage
-  double compressibility;   ///< [-]	   soil specific storage
 
   double cap_ratio;         ///< [-]       total water storage cap.=thick*cap_ratio ; cap_ratio=poro*(1-stone_f)
 
@@ -101,7 +100,7 @@ struct soil_struct
   double max_interflow_rate;///< [mm/d]    PRMS max_interflow rate
   double interflow_coeff;   ///< [1/d]     Linear Interflow storage coefficient
 
-  double HBV_beta;          ///< [?]       soil infiltration param from HBV (move to Surface struct?)
+  double HBV_beta;          ///< [-]       soil infiltration param from HBV (move to Surface struct?)
 
   double UBC_evap_soil_def; ///< [mm]      soil deficit at which AET=0.1*PET (UBCWM P0EGEN)
   double UBC_infil_soil_def;///< [mm]      soil deficit at which effective impermeable fraction depletes to 0.1 (UBCWM P0AGEN)
@@ -111,7 +110,7 @@ struct soil_struct
 
   double exchange_flow;     ///< [mm/d]    exchange flow rate with mixing zone (greater than 0)
 
-  //Transport parameters (all per soil/constituent combination)
+  //Transport parameters (all per soil/constituent combination) //TMP DEBUG - will move.
   double retardation   [MAX_CONSTITUENTS]; ///< [-] soil-specific retardation factor
   double mineraliz_rate[MAX_CONSTITUENTS]; ///< [1/d] soil-specific mineralization rate 
   double loss_rate     [MAX_CONSTITUENTS]; ///> [1/d] soil-specific unspecified linear loss rate
@@ -159,6 +158,8 @@ struct veg_struct
   double veg_dens;          ///< [1/m2]    vegetation count per meter squared (range: 1.0-500.0; recommended 300.0 for crops and grass, 1.0 for forests and shrubs)
   double veg_diam;          ///< [m]       vegetation diameter (range 0.0-2.0; recommended 0.003 for crops and grass, 0.5-1.0 for forests and shrubs [m]
   double veg_mBeta;         ///< [-]       mBeta parameter
+
+  double veg_conv_coeff;    ///< [MJ/m2/d/K] vegetation convection coefficient (multiplied by LAI) =~2.0
 
   double PET_veg_corr;      ///< [0..1]    vegetation-based PET correction (multiplicative)  
 
@@ -282,6 +283,8 @@ struct surface_struct
   double PDMROF_b;          ///< [-]       PDFROF Pareto distribution function exponent 
   double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area 
   double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
+  double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area
+  double uwfs_betamin;      ///< [-]       upscaled wetland fill and spill betamin parameter, defined distribution of contributing area
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

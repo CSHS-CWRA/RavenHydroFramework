@@ -402,6 +402,7 @@ enum routing_method
   ROUTE_MUSKINGUM_CUNGE, ///< Muskingum-Cunge algorithm
   ROUTE_STORAGECOEFF,    ///< Storage coefficient approach
   ROUTE_DIFFUSIVE_WAVE,  ///< diffusive wave approximation
+  ROUTE_DIFFUSIVE_VARY,  ///< variable celerity/diffusivity diffusive wave approach
   ROUTE_HYDROLOGIC,      ///< simple iterative mass balance approach dS/dt=I-O
   ROUTE_TVD              ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
 };
@@ -1048,7 +1049,6 @@ struct optStruct
 
   routing_method     routing;                 ///< channel routing method
   catchment_route    catchment_routing;       ///< catchment routing method
-  bool               distrib_lat_inflow;      ///< true if lateral inflow to a reach is distributed at all subsegment nodes; if false, deposited at downstream only
   demand_alloc       res_demand_alloc;        ///< method used for allocating upstream reservoir support to meet downstream irrigation demand
   overflowmode       res_overflowmode;        ///< method used for handling outflow estimates when max stage exceeded in reservoir
   monthly_interp     month_interp;            ///< means of interpolating monthly data

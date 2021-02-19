@@ -263,7 +263,7 @@ public:/*-------------------------------------------------------*/
 
   int               GetNumSoilLayers   () const;
   int               GetNumAquiferLayers() const;
-  int               GetLakeStorageIndex() const; //TMP?
+  int               GetLakeStorageIndex() const; 
 
   /*--below are only available to global routines--*/
   //Accessor functions
@@ -404,7 +404,7 @@ public:/*-------------------------------------------------------*/
   void        IncrementLatBalance     (const int j_star,  
                                        const double moved);//[mm] or [MJ/m2] or [mg]
   void        IncrementCumulInput     (const optStruct &Options, const time_struct &tt);
-  void        IncrementCumOutflow     (const optStruct &Options);
+  void        IncrementCumOutflow     (const optStruct &Options, const time_struct &tt);
 
   //output routines
   void        WriteMinorOutput        (const optStruct &Options, const time_struct &tt);

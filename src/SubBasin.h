@@ -105,6 +105,7 @@ private:/*------------------------------------------------------*/
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
   //                              ///  _aQinHist[0]=Qin(t), _aQinHist[1]=Qin(t-dt), _aQinHist[2]=Qin(t-2dt)...
   int                _nQinHist;   ///< size of _aQinHist array
+  double            *_c_hist;     ///< reach celerity history [size: _nQinHist] (used for ROUTE_DIFFUSIVE_VARY only)
 
   //characteristic weighted hydrographs
   double          *_aUnitHydro;   ///< [size:_nQlatHist] catchment unit hydrograph (time step-dependent). area under = 1.0.
@@ -135,6 +136,7 @@ private:/*------------------------------------------------------*/
   double                         thQ(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const;
   double                    TVDTheta(double In_old,double In_new,double Out_old,double Out_new,double th_in,double dx,double tstep) const;
 
+  void            UpdateRoutingHydro(const double &tstep);
 public:/*-------------------------------------------------------*/
   //Constructors:
   CSubBasin(const long           ID,

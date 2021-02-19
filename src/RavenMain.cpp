@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
         MassEnergyBalance(pModel,Options,tt); //where the magic happens!
 
         pModel->IncrementCumulInput        (Options,tt);
-        pModel->IncrementCumOutflow        (Options);
+        pModel->IncrementCumOutflow        (Options,tt);
 
         pModel->AssimilateStreamflow       (Options,tt);
 

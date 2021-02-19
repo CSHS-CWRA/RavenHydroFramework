@@ -133,7 +133,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   for (int ii=0; ii<12; ii++) {_aAvePET [ii] = grid._aAvePET [ii];}
   
   _aVal=NULL;
-  _aVal =  new double *[_ChunkSize];
+  _aVal = new double *[_ChunkSize];
   ExitGracefullyIf(_aVal==NULL,"CForcingGrid::Copy Constructor(1)",OUT_OF_MEMORY);
   for (int it=0; it<_ChunkSize; it++) {                       // loop over time points in buffer
     _aVal[it]=NULL;
@@ -389,7 +389,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     cout<<"time unit string: "<<unit_t_str<<endl;
     ExitGracefully("CForcingGrid::ForcingGridInit: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
   }
-  
+
   // calendar attribute
   // ----------------------------------------------------------------------------------------------
   calendar=GetCalendarFromNetCDF(ncid,varid_t,_filename,Options);
@@ -406,6 +406,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   double time_zone=0;
   GetTimeInfoFromNetCDF(unit_t,calendar,my_time,ntime,_filename,_interval,_start_day,_start_year,time_zone);
   _steps_per_day=(int)(round(1.0/_interval)); //pre-calculate for speed.
+  delete[] unit_t;
 
   /*
   printf("ForcingGrid: unit_t:          %s\n",unit_t_str.c_str());
@@ -599,15 +600,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   {
     Initialize(Options);
 
-    // determine chunk size 
-    // -------------------------------
-    iChunkSize = min(_ChunkSize,int((Options.duration - global_model_time) / _interval));
-
-    // allocate _aVal matrix
+    // allocate _aVal matrix using maximum chunk size
     // -------------------------------
     _aVal = NULL;
-    _aVal = new double *[iChunkSize];
-    for (int it=0; it<iChunkSize; it++) {                    // loop over time points in buffer
+    _aVal = new double *[_ChunkSize];
+    for (int it=0; it<_ChunkSize; it++) {                    // loop over time points in buffer
       _aVal[it]=NULL;
       _aVal[it] = new double [_nNonZeroWeightedGridCells];
       ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReadData",OUT_OF_MEMORY);
@@ -786,7 +783,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         break;
       }
 
-      //Read from NetCDF (this is the bottleneck of this code)
+      //Read giant chunk of data from NetCDF (this is the bottleneck of this code)
       retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp3D[0][0][0]);   HandleNetCDFErrors(retval);
       new_chunk_read = true;
 
@@ -948,6 +945,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
             val=aTmp2D[it][_IdxNonZeroGridCells[ic]];
             if(val==missval) { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
             if(val==fillval) { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
+            if(isnan(val))   { CheckValue2D(val,NAN,    it,_IdxNonZeroGridCells[ic]); }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }

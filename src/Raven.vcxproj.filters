@@ -261,12 +261,6 @@
     <ClCompile Include="Advection.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="Transport.cpp">
-      <Filter>Source Files\Transport Processes</Filter>
-    </ClCompile>
-    <ClCompile Include="MassRouting.cpp">
-      <Filter>Source Files\Transport Processes</Filter>
-    </ClCompile>
     <ClCompile Include="Diagnostics.cpp">
       <Filter>Source Files\_Driver\Output</Filter>
     </ClCompile>
@@ -387,9 +381,6 @@
     <ClCompile Include="SurfaceEnergyExchange.cpp">
       <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
     </ClCompile>
-    <ClCompile Include="EnergyTransport.cpp">
-      <Filter>Source Files\Transport Processes</Filter>
-    </ClCompile>
     <ClCompile Include="SubbasinGroups.cpp">
       <Filter>Source Files\HRUs and Subbasins</Filter>
     </ClCompile>
@@ -398,6 +389,18 @@
     </ClCompile>
     <ClCompile Include="NetCDFReading.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="Transport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="MassRouting.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstituentModel.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -494,9 +497,6 @@
     <ClInclude Include="ParseLib.h">
       <Filter>Header Files\Input/Output</Filter>
     </ClInclude>
-    <ClInclude Include="Transport.h">
-      <Filter>Header Files\Transport</Filter>
-    </ClInclude>
     <ClInclude Include="Decay.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
@@ -547,6 +547,12 @@
     </ClInclude>
     <ClInclude Include="SurfaceEnergyExchange.h">
       <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="EnergyTransport.h">
+      <Filter>Header Files\Transport</Filter>
+    </ClInclude>
+    <ClInclude Include="Transport.h">
+      <Filter>Header Files\Transport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

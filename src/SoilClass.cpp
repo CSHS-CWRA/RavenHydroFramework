@@ -135,7 +135,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   _Soil.org_con =Stmp.org_con;
   ExitGracefullyIf((_Soil.sand_con<0) || (_Soil.sand_con>1.0),"AutoCalculateSoilProps: SAND_CON must be between 0 and 1",BAD_DATA);
   ExitGracefullyIf((_Soil.clay_con<0) || (_Soil.clay_con>1.0),"AutoCalculateSoilProps: CLAY_CON must be between 0 and 1",BAD_DATA);
-  ExitGracefullyIf((_Soil.org_con<0)  || (_Soil.org_con>1.0), "AutoCalculateSoilProps: ORG_CON must be between 0 and 1",BAD_DATA);
+  ExitGracefullyIf((_Soil.org_con <0) || (_Soil.org_con >1.0), "AutoCalculateSoilProps: ORG_CON must be between 0 and 1",BAD_DATA);
 
   double Vsand=_Soil.sand_con/DENSITY_SAND;
   double Vorg =_Soil.org_con /DENSITY_OM  ;

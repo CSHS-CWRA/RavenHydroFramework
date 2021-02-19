@@ -327,6 +327,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.PDMROF_b,Stmp.PDMROF_b,Sdefault.PDMROF_b,needed,"PDMROF_B");
   SetSpecifiedValue(S.max_dep_area_frac,Stmp.max_dep_area_frac,Sdefault.max_dep_area_frac,needed,"MAX_DEP_AREA_FRAC");
   SetSpecifiedValue(S.ponded_exp,Stmp.ponded_exp,Sdefault.ponded_exp,needed,"PONDED_EXP");
+  SetSpecifiedValue(S.uwfs_b,Stmp.uwfs_b,Sdefault.uwfs_b,needed,"UWFS_B");
+  SetSpecifiedValue(S.uwfs_betamin,Stmp.uwfs_betamin,Sdefault.uwfs_betamin,needed,"UWFS_BETAMIN");
   SetSpecifiedValue(S.lake_rel_coeff,Stmp.lake_rel_coeff,Sdefault.lake_rel_coeff,needed,"LAKE_REL_COEFF");
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
   SetSpecifiedValue(S.HBV_glacier_Kmin,Stmp.HBV_glacier_Kmin,Sdefault.HBV_glacier_Kmin,needed,"HBV_GLACIER_KMIN");
@@ -406,7 +408,10 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.dep_crestratio    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.PDMROF_b          =DefaultParameterValue(is_template,false);//4;        //[-]
   S.max_dep_area_frac =DefaultParameterValue(is_template,false);//0;        //[0..1]
-  S.ponded_exp        =DefaultParameterValue(is_template,false);//2        //[-]
+  S.ponded_exp        =DefaultParameterValue(is_template,false);//2         //[-]
+  S.uwfs_b            =DefaultParameterValue(is_template,false);//~1-10     //[-]
+  S.uwfs_betamin      =DefaultParameterValue(is_template,false);//1+        //[-]
+
   S.dep_threshhold    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.lake_rel_coeff    =DefaultParameterValue(is_template,false);//0.3;      //[1/d]
   S.dep_k             =DefaultParameterValue(is_template,false);//0.1;      //[1/d]
@@ -496,6 +501,8 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("PDMROF_B"               )){S.PDMROF_b =value; }
   else if (!name.compare("MAX_DEP_AREA_FRAC"      )){S.max_dep_area_frac =value; }
   else if (!name.compare("PONDED_EXP"             )){S.ponded_exp =value; }
+  else if (!name.compare("UWFS_B"                 )){S.uwfs_b =value; }
+  else if (!name.compare("UWFS_BETAMIN"           )){S.uwfs_betamin =value; }
   else if (!name.compare("LAKE_REL_COEFF"         )){S.lake_rel_coeff =value;}
   else if (!name.compare("DEP_K"                  )){S.dep_k =value;}
   else if (!name.compare("DEP_SEEP_K"             )){S.dep_seep_k =value;}
@@ -587,6 +594,8 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("PDMROF_B"               )){return S.PDMROF_b; }
   else if (!name.compare("MAX_DEP_AREA_FRAC"      )){return S.max_dep_area_frac; }
   else if (!name.compare("PONDED_EXP"             )){return S.ponded_exp; }
+  else if (!name.compare("UWFS_B"                 )){return S.uwfs_b; }
+  else if (!name.compare("UWFS_BETAMIN"           )){return S.uwfs_betamin; }
   else if (!name.compare("LAKE_REL_COEFF"         )){return S.lake_rel_coeff;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}

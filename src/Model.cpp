@@ -1667,8 +1667,10 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
 ///
 /// \param &Options [in] Global model options information
 //
-void CModel::IncrementCumOutflow(const optStruct &Options)
+void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt)
 {
+  int pDivert;
+  double Qdiv;
   double area=(_WatershedArea*M2_PER_KM2);
   for(int p=0;p<_nSubBasins;p++)
   {
@@ -1685,6 +1687,16 @@ void CModel::IncrementCumOutflow(const optStruct &Options)
       }
       _CumulOutput+=_pSubBasins[p]->GetReservoirLosses (Options.timestep)/area*MM_PER_METER;
       _CumulOutput+=_pSubBasins[p]->GetIrrigationLosses(Options.timestep)/area*MM_PER_METER;
+
+      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) {
+        Qdiv=_pSubBasins[p]->GetDiversionFlow(i,_pSubBasins[p]->GetLastOutflowRate(),Options,tt,pDivert)*Options.timestep*SEC_PER_DAY;
+        if(pDivert==DOESNT_EXIST) {
+          _CumulOutput+=Qdiv/area*MM_PER_METER; //water that is diverted out of the watershed
+        }
+        if(_pSubBasins[p]->GetDownstreamID()==DOESNT_EXIST) {
+          _CumulOutput-=Qdiv/area*MM_PER_METER; //water that doesn't leave the system but is calculated as outflow 
+        }
+      }
     }
   }
   //lost to groundwater

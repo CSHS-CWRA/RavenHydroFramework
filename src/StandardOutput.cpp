@@ -1101,10 +1101,11 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   // Write major output, if necessary
   //--------------------------------------------------------------
-  if ((_nOutputTimes>0) && (tt.model_time>_aOutputTimes[_currOutputTimeInd]-0.5*Options.timestep))
+  if ((_nOutputTimes>0) && (_currOutputTimeInd<_nOutputTimes) && (tt.model_time>_aOutputTimes[_currOutputTimeInd]-0.5*Options.timestep))
   {
+    string thishour=DecDaysToHours(tt.julian_day);
     _currOutputTimeInd++;
-    tmpFilename="state_"+tt.date_string;
+    tmpFilename="state_"+tt.date_string.substr(0,4)+tt.date_string.substr(5,2)+tt.date_string.substr(8,2)+"_"+thishour.substr(0,2)+thishour.substr(3,2);
     WriteMajorOutput(Options,tt,tmpFilename,false);
   }
 

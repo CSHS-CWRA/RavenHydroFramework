@@ -20,7 +20,7 @@
 CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype)
   :CHydroProcessABC(DEPRESSION_OVERFLOW)
 {
-  type=dtype;
+  _type=dtype;
 
   CHydroProcessABC::DynamicSpecifyConnections(1);
   //abstraction (ponded-->depression)
@@ -50,7 +50,7 @@ void   CmvDepressionOverflow::Initialize()
 //
 void CmvDepressionOverflow::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if (type==DFLOW_THRESHPOW)
+  if (_type==DFLOW_THRESHPOW)
   {
     nP=4;
     aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
@@ -59,13 +59,13 @@ void CmvDepressionOverflow::GetParticipatingParamList(string  *aP , class_type *
     aP[3]="DEP_MAX";            aPC[3]=CLASS_LANDUSE;
 
   }
-  else if (type==DFLOW_LINEAR)
+  else if (_type==DFLOW_LINEAR)
   {
     nP=2;
     aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
     aP[1]="DEP_K";              aPC[1]=CLASS_LANDUSE;
   }
-  else if (type==DFLOW_WEIR)
+  else if (_type==DFLOW_WEIR)
   {
     nP=2;
     aP[0]="DEP_THRESHHOLD";     aPC[0]=CLASS_LANDUSE;
@@ -111,7 +111,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
   double stor=state_vars[iFrom[0]];
 
   //----------------------------------------------------------------------------
-  if (type==DFLOW_THRESHPOW)
+  if (_type==DFLOW_THRESHPOW)
   {
     double max_flow   =pHRU->GetSurfaceProps()->dep_max_flow;
     double n          =pHRU->GetSurfaceProps()->dep_n;
@@ -126,7 +126,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
     }
   }
   //----------------------------------------------------------------------------
-  else if(type==DFLOW_LINEAR)
+  else if(_type==DFLOW_LINEAR)
   {
     double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
     double dep_k      =pHRU->GetSurfaceProps()->dep_k;
@@ -135,7 +135,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
     rates[0]= max(stor-thresh_stor,0.0)*(1-exp(-dep_k*Options.timestep))/Options.timestep; //analytical formulation
   }
   //----------------------------------------------------------------------------
-  else if(type==DFLOW_WEIR)
+  else if(_type==DFLOW_WEIR)
   {
     double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
     double dep_rat    =pHRU->GetSurfaceProps()->dep_crestratio;
@@ -181,7 +181,7 @@ void   CmvDepressionOverflow::ApplyConstraints(const double              *state_
 CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil)
   :CHydroProcessABC(SEEPAGE)
 {
-  type=stype;
+  _type=stype;
 
   CHydroProcessABC::DynamicSpecifyConnections(1);
   //abstraction (ponded-->depression)
@@ -215,7 +215,7 @@ void   CmvSeepage::Initialize()
 //
 void CmvSeepage::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if (type==SEEP_LINEAR)
+  if (_type==SEEP_LINEAR)
   {
     nP=1;
     aP[0]="DEP_SEEP_K";     aPC[0]=CLASS_LANDUSE;
@@ -259,7 +259,7 @@ void   CmvSeepage::GetRatesOfChange(const double      *state_vars,
   double stor=state_vars[iFrom[0]];
 
   //----------------------------------------------------------------------------
-   if(type==SEEP_LINEAR)
+   if(_type==SEEP_LINEAR)
   {
     double dep_k      =pHRU->GetSurfaceProps()->dep_seep_k;
     
@@ -303,7 +303,8 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
 CmvLakeRelease::CmvLakeRelease(lakerel_type lktype)
   :CHydroProcessABC(LAKE_RELEASE)
 {
-  type =lktype;
+  _type =lktype;
+  
   CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
   iFrom[0]=pModel->GetLakeStorageIndex();
   iTo  [0]=pModel->GetStateVarIndex(SURFACE_WATER);     //rates[0]: LAKE->SURFACE_WATER
@@ -335,7 +336,7 @@ void CmvLakeRelease::Initialize()
 //
 void CmvLakeRelease::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
-  if(type==LAKEREL_LINEAR)//-------------------------------------
+  if(_type==LAKEREL_LINEAR)//-------------------------------------
   {
     nP=1;
     aP[0]="LAKE_REL_COEFF"; aPC[0]=CLASS_LANDUSE;
@@ -376,7 +377,7 @@ void CmvLakeRelease::GetRatesOfChange(const double      *state_vars,
 
   if(pHRU->IsLinkedToReservoir()){rates[0]= iFrom[0]/Options.timestep;}//reservoir-linked HRUs release directly to surface water
 
-  if (type==LAKEREL_LINEAR)//-------------------------------------
+  if (_type==LAKEREL_LINEAR)//-------------------------------------
   {
     double K=pHRU->GetSurfaceProps()->lake_rel_coeff;
     rates[0]= iFrom[0]*(1-exp(-K*Options.timestep))/Options.timestep; // analytical formulation

@@ -111,6 +111,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _aQinHist      =NULL;  _nQinHist      =0;
   _aUnitHydro    =NULL;
   _aRouteHydro   =NULL;
+  _c_hist        =NULL; 
 
   //Below are modified using AddDiversion()
   _nDiversions   =0;
@@ -147,6 +148,7 @@ CSubBasin::~CSubBasin()
   delete [] _aQinHist;   _aQinHist   =NULL;
   delete [] _aUnitHydro; _aUnitHydro =NULL;
   delete [] _aRouteHydro;_aRouteHydro=NULL;
+  delete [] _c_hist;     _c_hist     =NULL;
   delete [] _pDiversions;_pDiversions=NULL; _nDiversions=0;
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
@@ -1386,6 +1388,10 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   {
     _nQinHist=(int)(ceil(2*travel_time/tstep))+2;//really a function of reach length and diffusivity
   }
+  else if(Options.routing==ROUTE_DIFFUSIVE_VARY)
+  {
+    _nQinHist=(int)(ceil(2.5*travel_time/tstep))+2;//really a function of reach length and diffusivity
+  }
   else if ((Options.routing==ROUTE_HYDROLOGIC) || (Options.routing==ROUTE_TVD))
   {
     _nQinHist=2;
@@ -1451,23 +1457,34 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     }
   }
   //---------------------------------------------------------------
+  else if(Options.routing==ROUTE_DIFFUSIVE_VARY)
+  {
+    //intialized here to dump hydrograph. Updated each timestep within the UpdateFlowRules() routine.
+    for(n=0;n<_nQinHist;n++) { _aRouteHydro[n]=0.0; } //should not be used
+    _aRouteHydro[0]=1.0;
+
+    double cc=_c_ref*SEC_PER_DAY; //[m/day]
+    double diffusivity=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)*SEC_PER_DAY;// m2/d
+    _c_hist=new double [_nQinHist];
+    for(n=0;n<_nQinHist;n++) {_c_hist[n]=cc; }
+  }
+  //---------------------------------------------------------------
   else
   {
-    for (n=0;n<_nQinHist;n++)
-    {
-      _aRouteHydro[n  ]=1/(double)(_nQinHist);
-    }
+    for (n=0;n<_nQinHist;n++){_aRouteHydro[n  ]=0.0;} //should not be used
+    _aRouteHydro[0]=1.0;
   }
  
   //correct to ensure that sum _aRouteHydro[m]=1.0
   sum=0.0;
   for (n=0;n<_nQinHist;n++){sum+=_aRouteHydro[n];}
+
   if(sum<0.2) {
     cout<<"diff: "<<_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)<<" cel"<<_c_ref<<endl;
     cout<<"---";for(n=0;n<_nQinHist;n++) { cout<< _aRouteHydro[n]<<" "; }cout<<" SUM: "<<sum<<endl;
+    string warning="CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed in subbasin "+to_string(_ID);
+    ExitGracefully(warning.c_str(),RUNTIME_ERR); //for very diffusive channels - reach length too long
   }
-  string warning="CSubBasin::GenerateRoutingHydrograph: bad routing hydrograph constructed in subbasin "+to_string(_ID);
-  ExitGracefullyIf(sum<0.2,warning.c_str(),RUNTIME_ERR); //for very diffusive channels - reach length too long
   for (n=0;n<_nQinHist;n++){_aRouteHydro[n]/=sum;}
 }
 
@@ -1596,6 +1613,8 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 //
 void  CSubBasin::UpdateFlowRules(const time_struct &tt, const optStruct &Options)
 {
+  if (Options.routing==ROUTE_DIFFUSIVE_VARY){UpdateRoutingHydro(Options.timestep); }
+
   if (_pReservoir != NULL){ _pReservoir->UpdateFlowRules(tt,Options); }
 }
 //////////////////////////////////////////////////////////////////
@@ -1777,6 +1796,62 @@ double CSubBasin::TVDTheta(double In_old,double In_new,double Out_old,double Out
   return 0.5;
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief updates c history, _aRouteHydro for ROUTE_DIFFUSIVE_VARY method
+//
+void CSubBasin::UpdateRoutingHydro(const double &tstep) 
+{
+  int n;
+  double Q=_aQinHist[0]; //Initial guess -we may have to revise this
+  //could also be flow-weighted avg flow
+  //amount outflowed = aQin[0]*_aRouteHydro[0]+a_Qin[1]*(_aRouteHydro[0]+_aRouteHydro[1])
+  //amount still in channel= aQin[0]*(1-A[0])+aQin[1]*(1-A[0]-A[1])...
+  double sum=0,sumwt=0,sum2=0;
+  for(n=0; n<_nQinHist;n++) {
+    sumwt+=_aRouteHydro[n];
+    sum+=_aQinHist[n]*(1.0-sumwt);
+    sum2+=(1.0-sumwt);
+  }
+  //Q=sum/sum2; //alternate weighted channel flowrate (ideally would be using current _aRouteHydro, not possible)
+
+  double cc   =_pChannel->GetCelerity   (     Q,_slope,_mannings_n)*SEC_PER_DAY;// [m/day]
+  double D_ref=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)*SEC_PER_DAY;// [m2/d]
+
+  if(_ID==1) {
+    cout<<setprecision(3);
+    cout<<"Q:  "<<Q<<endl;
+    cout<<"c hist: [m/s]";
+    for(n=0;n<_nQinHist;n++) {
+      cout<<_c_hist[n]/SEC_PER_DAY<<" ";
+    }
+    cout<<" c_ref: "<<_c_ref<<" "<<_Q_ref<<endl;
+  }
+  for(n=_nQinHist; n>0; n--) {
+    _c_hist[n]=_c_hist[n-1]; 
+  }
+  _c_hist[0]=cc;
+  
+  sum=0;
+  double alpha=D_ref/2;
+  for(n=0;n<_nQinHist;n++) {
+    //may have to shift _c_hist
+    _aRouteHydro[n]=max(TimeVaryingADRCumDist((n)*tstep,_reach_length,_c_hist,_nQinHist,alpha,tstep)-sum,0.0);
+    sum+=_aRouteHydro[n];
+  }
+  for(n=0;n<_nQinHist;n++) {
+    _aRouteHydro[n]/=sum;
+  }
+
+  //cout<<" SUM: "<<sum<<endl;
+  //if reference flow is too fast, fancy stuff goes out the window?
+  double travel_time=_reach_length/_c_ref;
+  if(travel_time<tstep) { //very sharp ADR CDF or reach length==0 -override
+    _aRouteHydro[0]=1.0-travel_time/tstep;
+    _aRouteHydro[1]=travel_time/tstep;
+    for(int n=2;n<_nQinHist;n++) { _aRouteHydro[n]=0.0; }
+    cout<<"HERE"<<endl;
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Creates aQout_new [m^3/s], an array of point measurements for outflow at downstream end of each river segment
@@ -1817,12 +1892,13 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     Qlat_last+=_aUnitHydro[n]*_aQlatHist[n+1];
   }
 
-  routing_method route_method;
-  if (_is_headwater){route_method=ROUTE_NONE;}
-  else              {route_method=Options.routing;}
   //==============================================================
   // route in channel
   //==============================================================
+  routing_method route_method;
+  if (_is_headwater){route_method=ROUTE_NONE;}
+  else              {route_method=Options.routing;}
+
   if ((route_method==ROUTE_MUSKINGUM) ||
       (route_method==ROUTE_MUSKINGUM_CUNGE))
   {
@@ -1843,8 +1919,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     {
       if (dt>(tstep-t)){dt=tstep-t;}
       cunge=0;
-      if ((route_method==ROUTE_MUSKINGUM_CUNGE) &&
-          (!Options.distrib_lat_inflow)){cunge=1;}
+      if (route_method==ROUTE_MUSKINGUM_CUNGE){cunge=1;}
 
       //Standard Muskingum/Muskingum Cunge
       denom=(2*K*(1.0-X)+dt);
@@ -1859,9 +1934,6 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
       for (seg=0;seg<_nSegments;seg++)//move downstream
       {
         aQout_new[seg] = c1*Qin_new + c2*Qin + c3*_aQout[seg] + cunge*c4*(Qlat_new*seg_fraction);
-        if (Options.distrib_lat_inflow==true){
-          aQout_new[seg]+= (Qlat_new*seg_fraction);// more appropriate than musk-cunge?
-        }
         Qin    =_aQout    [seg];
         Qin_new=aQout_new[seg];
 
@@ -1896,12 +1968,8 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
 
       //new outflow proportional to old outflow without correction
       double corr=1.0;
-      if (Options.distrib_lat_inflow){corr=seg_fraction;}
       aQout_new[seg] = c1*Qin + c2*Qin_new + c3*(_aQout[seg]-corr*_QlatLast);
-      if (Options.distrib_lat_inflow==true){
-        aQout_new[seg]+= Qlat_new*seg_fraction;
-      }
-      Qin    =_aQout    [seg];
+      Qin    =_aQout   [seg];
       Qin_new=aQout_new[seg];
     }
   }
@@ -1952,9 +2020,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
 
     aQout_new[_nSegments-1]=Q_guess;
     if (Q_guess<0){ cout << "Negative flow in basin "<<to_string(this->_ID)<<" Qoutold: "<<Qout_old<<" Qin: "<<Qin_new<<" "<<Qin_old<<endl; }
-    if (Options.distrib_lat_inflow){
-      aQout_new[_nSegments-1]+=(seg_fraction)*Qlat_new;
-    }
+
     if (iter==ROUTE_MAXITER){
       string warn="CSubBasin::RouteWater did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+ 
                   " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess,_slope,_mannings_n));
@@ -2024,9 +2090,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
 
     aQout_new[_nSegments-1]=Q_guess;
     if (Q_guess<0){ cout << "Negative flow in basin "<<to_string(this->_ID)<<" Qoutold: "<<Qout_old<<" Qin: "<<Qin_new<<" "<<Qin_old<<endl; }
-    if (Options.distrib_lat_inflow){
-      aQout_new[_nSegments-1]+=(seg_fraction)*Qlat_new;
-    }
+
     if (iter==ROUTE_MAXITER){
       string warn="CSubBasin::RouteWater:TVD did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "
                    +to_string(_ID)+ " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess,_slope,_mannings_n));
@@ -2046,8 +2110,13 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     for (int n=0;n<_nQinHist;n++){
       aQout_new[_nSegments-1]+=_aRouteHydro[n]*_aQinHist[n];
     }
-    if (Options.distrib_lat_inflow){
-      aQout_new[_nSegments-1]+=(1-seg_fraction)*Qlat_new;
+  }
+  //==============================================================
+  else if (route_method==ROUTE_DIFFUSIVE_VARY)
+  {     
+    aQout_new[_nSegments-1]=0.0;
+    for(int n=0;n<_nQinHist;n++) {
+      aQout_new[_nSegments-1]+=_aRouteHydro[n]*_aQinHist[n];
     }
   }
   //==============================================================
@@ -2057,23 +2126,15 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
       aQout_new[seg]=0.0;
     }
     aQout_new[_nSegments-1]=_aQinHist[0];
-    if (Options.distrib_lat_inflow){
-      aQout_new[_nSegments-1]+=(1-seg_fraction)*Qlat_new;
-    }
   }
   //==============================================================
   else{
     ExitGracefully("Unrecognized routing method",STUB);
   }
 
-  if (Options.distrib_lat_inflow==false)
-  {//all fluxes from catchment are routed directly to basin outlet
-    aQout_new[_nSegments-1]+=Qlat_new;
-  }
-  else{//only last segments worth is routed directly to basin outlet
-    aQout_new[_nSegments-1]+=Qlat_new*seg_fraction;
-  }
-
+  //all fluxes from catchment are routed directly to basin outlet
+  aQout_new[_nSegments-1]+=Qlat_new;
+  
   //Reservoir Routing
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)

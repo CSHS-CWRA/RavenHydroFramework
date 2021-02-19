@@ -639,12 +639,32 @@ double  CHydroUnit::GetSnowSWE      () const
 //
 double  CHydroUnit::GetSnowCover () const
 {
+  const optStruct *Options=_pModel->GetOptStruct();
+
   int    iSnFrac=_pModel->GetStateVarIndex(SNOW_COVER);
-  if (iSnFrac==DOESNT_EXIST){
-    if (GetSnowSWE()<NEGLIGBLE_SNOW){return 0.0;}
-    else                            {return 1.0;}
+  int    iSnow  =_pModel->GetStateVarIndex(SNOW);
+  
+  if (iSnow==DOESNT_EXIST){return 0.0;}
+  double SWE=this->GetStateVarValue(iSnow);
+  
+  if(iSnFrac!=DOESNT_EXIST) { //snow cover explicitly simulated
+    return this->GetStateVarValue(iSnFrac);
   }
-  else                      {return this->GetStateVarValue(iSnFrac);}
+  else  //snowcover depletion curves
+  {
+    if(Options->snow_depletion==SNOWCOV_NONE) 
+    {
+      if(GetSnowSWE()<NEGLIGBLE_SNOW) { return 0.0; }
+      else                            { return 1.0; }
+    }
+    else if(Options->snow_depletion==SNOWCOV_LINEAR) 
+    {
+      //double snowthresh=GetSurfaceProps()->SDC_threshold;
+      double snowthresh=200;
+      return min(max(SWE,0.0)/snowthresh,1.0);
+    }
+  }
+  return 0.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns surface temperature

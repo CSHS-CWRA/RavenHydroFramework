@@ -252,13 +252,8 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
     ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
   }
 
-  if(Options.distrib_lat_inflow==false)
-  {//all fluxes from catchment are routed directly to basin outlet
-    aMout_new[nSegments-1]+=Mlat_new;
-  }
-  else {//only last segments worth
-    aMout_new[nSegments-1]+=Mlat_new*seg_fraction;
-  }
+  //all fluxes from catchment are routed directly to basin outlet
+  aMout_new[nSegments-1]+=Mlat_new;
 
   //Reservoir Routing
   //-----------------------------------------------------------------

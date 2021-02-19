@@ -182,12 +182,16 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   const CHydroUnit  *pHRU=_pModel->GetHydroUnit(k);
   int                iAET=_pModel->GetStateVarIndex(AET);
 
+  int           m=_pTransModel->GetLayerIndexFromName2("!TEMPERATURE_SOIL",2);
+  int    iGWTemp=_pModel->GetStateVarIndex(CONSTITUENT,m);
+
   double SW      =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
   double LW      =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
   double AET     =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
   double temp_air=pHRU->GetForcingFunctions()->temp_ave;           //[C]
-  double temp_GW  =0.0; // JRC: should I get this as the average groundwater temperature in all subbasin HRUs? 
-
+  double temp_GW =0.0; // JRC: should I get this as the average groundwater temperature in all subbasin HRUs? 
+ 
+  //double temp_GW=  pHRU->GetConcentration(iGWTemp); //[C]
   double hstar    =pHRU->GetSurfaceProps()->convection_coeff; //[MJ/m2/d/K]  - TMP_DEBUG - THIS SHOULD BE A SUBBASIN REACH PROPERTY, NOT SURFACE PROP.
   double qmix     =pBasin->GetHyporheicFlux(); //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/pBasin->GetWettedPerimeter();

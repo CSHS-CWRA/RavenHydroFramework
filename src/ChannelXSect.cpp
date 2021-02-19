@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ChannelXSect.h"
-
+void TestManningsInfluence(const CChannelXSect *pChan,const double &Qref);
 //////////////////////////////////////////////////////////////////
 /// \brief Utility method to assign parameter name to cross section "nickname", add to static array of all x-sections
 /// \param name [in] Nickname for cross section
@@ -41,9 +41,9 @@ CChannelXSect::CChannelXSect(const string  name,
   _min_mannings=ALMOST_INF;
   for (i=0;i<nSurveyPts;i++)
   {
-    aX   [i]=X        [i];//cout<<aX[i]<<" ";
-    aElev[i]=Elev     [i];//cout<<aElev[i]<<" ";
-    _aMann[i]=ManningsN[i];//cout<<aMann[i]<<endl;
+    aX    [i]=X        [i];
+    aElev [i]=Elev     [i];
+    _aMann[i]=ManningsN[i];
     lowerswap(_min_mannings,_aMann[i]);
     //check for valid mannings n
     if(_aMann[i]<0){
@@ -65,6 +65,9 @@ CChannelXSect::CChannelXSect(const string  name,
   ExitGracefullyIf(_bedslope<0.0,"CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA);
 
   GenerateRatingCurvesFromProfile(); //All the work done here
+
+ // TestManningsInfluence(this,20.0);
+ // ExitGracefully("TestManningsInfluence Unit Testing",SIMULATION_DONE);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Constructor implementation if channel profile is specified from rating curves
@@ -576,5 +579,24 @@ const CChannelXSect*CChannelXSect::StringToChannelXSect(const string s)
 }
 
 
+void TestManningsInfluence(const CChannelXSect *pChan, const double &Qref) {
+  ofstream OUT;
+  OUT.open("ManningsTest.csv");
 
+  OUT<<pChan->GetName()<<endl;
+  OUT<<"ManningsN,1/n,Diffusivity,Celerity,Qref*2 Diff, Qref*2 Cel, Qref*3 Diff, Qref*3 Cel"<<endl;
+  for(double overn=5;overn<100;overn+=5.0) {
+    double n=1.0/overn;
+    OUT<<n<<",";
+    OUT<<overn<<",";
+    OUT<<pChan->GetDiffusivity(1*Qref,AUTO_COMPUTE,n)<<",";
+    OUT<<pChan->GetCelerity   (1*Qref,AUTO_COMPUTE,n)<<",";
+    OUT<<pChan->GetDiffusivity(2*Qref,AUTO_COMPUTE,n)<<",";
+    OUT<<pChan->GetCelerity   (2*Qref,AUTO_COMPUTE,n)<<",";
+    OUT<<pChan->GetDiffusivity(3*Qref,AUTO_COMPUTE,n)<<",";
+    OUT<<pChan->GetCelerity   (3*Qref,AUTO_COMPUTE,n)<<",";
+    OUT<<endl;
+  }
+  OUT.close();
+}
 

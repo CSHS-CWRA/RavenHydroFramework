@@ -387,7 +387,6 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       double maxPondedAreaFrac=pHRU->GetSurfaceProps()->max_dep_area_frac;
       double n                =pHRU->GetSurfaceProps()->ponded_exp;
       double dep_max          =pHRU->GetSurfaceProps()->dep_max;
-      double b                =pHRU->GetSurfaceProps()->PDMROF_b;
 
       double area_ponded=maxPondedAreaFrac*pow(min(state_vars[iDep]/dep_max,1.0),n);
       

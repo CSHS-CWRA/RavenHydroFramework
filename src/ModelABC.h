@@ -45,7 +45,7 @@ public:/*-------------------------------------------------------*/
 
   virtual bool        IsInHRUGroup       (const int k, const string HRUGroupName) const=0;
 
-  virtual int         GetLakeStorageIndex() const=0;//TMP?
+  virtual int         GetLakeStorageIndex() const=0;
 
   virtual const optStruct   *GetOptStruct() const = 0;
 };

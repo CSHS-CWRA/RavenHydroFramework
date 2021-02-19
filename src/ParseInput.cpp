@@ -211,7 +211,6 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   Options.routing                 =ROUTE_STORAGECOEFF;
   Options.catchment_routing       =ROUTE_DUMP;
-  Options.distrib_lat_inflow      =false;
   Options.res_demand_alloc        =DEMANDBY_CONTRIB_AREA;
 
   Options.interpolation           =INTERP_NEAREST_NEIGHBOR;
@@ -246,6 +245,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.subdaily                =SUBDAILY_NONE;
   Options.interception_factor     =PRECIP_ICEPT_USER;
   Options.recharge                =RECHARGE_NONE;
+  Options.snow_depletion          =SNOWCOV_NONE;
   Options.direct_evap             =false;
   Options.keepUBCWMbugs           =false;
   Options.suppressCompetitiveET   =false;
@@ -253,6 +253,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.pavics                  =false;
   Options.deltaresFEWS            =false;
   Options.res_overflowmode        =OVERFLOW_ALL;
+
   
   //Groundwater model options
   Options.modeltype               =MODELTYPE_SURFACE;
@@ -657,6 +658,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"ROUTE_STORAGECOEFF"     )){Options.routing =ROUTE_STORAGECOEFF;}
       else if (!strcmp(s[1],"ROUTE_PLUG_FLOW"        )){Options.routing =ROUTE_PLUG_FLOW;}
       else if (!strcmp(s[1],"ROUTE_DIFFUSIVE_WAVE"   )){Options.routing =ROUTE_DIFFUSIVE_WAVE;}
+      else if (!strcmp(s[1],"ROUTE_DIFFUSIVE_VARY"   )){Options.routing =ROUTE_DIFFUSIVE_VARY;}
       else if (!strcmp(s[1],"ROUTE_HYDROLOGIC"       )){Options.routing =ROUTE_HYDROLOGIC;}
       else if (!strcmp(s[1],"ROUTE_NONE"             )){Options.routing =ROUTE_NONE;}
       else if (!strcmp(s[1],"ROUTE_TVD"              )){Options.routing =ROUTE_TVD;}
@@ -2143,7 +2145,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvLakeEvaporation::GetParticipatingStateVarList(lk_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
       int lake_ind;
-      if (Len==3){
+      if (Len==3){ // \todo [funct] -check - this is NEVER called
         tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
         lake_ind=ParseSVTypeIndex(s[2],pModel);
@@ -2308,6 +2310,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"ABST_PERCENTAGE"  )){abst_type=ABST_PERCENTAGE;}
       else if (!strcmp(s[1],"ABST_FILL"        )){abst_type=ABST_FILL;}
       else if (!strcmp(s[1],"ABST_PDMROF"      )){abst_type=ABST_PDMROF; }
+      else if (!strcmp(s[1],"ABST_UWFS"        )){abst_type=ABST_UWFS; }
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized abstraction algorithm",BAD_DATA_WARN); break;
@@ -2893,7 +2896,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*Surface energy exchange
      :SurfaceEnergyExchange RAVEN_DEFAULT MULTIPLE MULTIPLE */
       if(Options.noisy) { cout <<"Surface energy exchange"<<endl; }
-      if(Len<4) { ImproperFormatWarning(":SurfaceExchange",p,Options.noisy); break; }
+      if(Len<4) { ImproperFormatWarning(":SurfaceEnergyExchange",p,Options.noisy); break; }
 
       if(!strcmp(s[1],"RAVEN_DEFAULT")) {}
       else {

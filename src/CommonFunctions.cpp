@@ -486,11 +486,11 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   if(!strstr(tmp.substr(start+7 ,1).c_str(),"-")) { tmp.insert(start+5,"0"); } // second dash in date - fixes YYYY-M-dd
 
   bool date_only=false;
-  if (strlen(tmp.c_str())<=(start+10+2)){date_only=true;} //00:00:00 +0000 not included in string
+  if ((int)(strlen(tmp.c_str()))<=(start+10+2)){date_only=true;} //00:00:00 +0000 not included in string
 
   if(!date_only) {
     if(!strstr(tmp.substr(start+10,1).c_str()," ") && !strstr(tmp.substr(start+10,1).c_str(),"T")) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d
-    if(strstr(tmp.substr(start+10,1).c_str(),"T")) {tmp.replace(start+10,1," "); } // replacing 'T' with ' ' in case date looks like YYYY-MM-DDTHH:MM:SS
+    if( strstr(tmp.substr(start+10,1).c_str(),"T")) {tmp.replace(start+10,1," "); } // replacing 'T' with ' ' in case date looks like YYYY-MM-DDTHH:MM:SS
     if(!strstr(tmp.substr(start+13,1).c_str(),":")) { tmp.insert(start+11,"0"); } // first colon in time  - fixes 1:00:00
     if(!strstr(tmp.substr(start+16,1).c_str(),":")) { tmp.insert(start+14,"0"); } // second colon in time - fixes 11:0:00 (?)
   }

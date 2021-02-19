@@ -560,6 +560,10 @@
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="NetCDFReading.cpp" />
     <ClCompile Include="ParseFEWSRunInfo.cpp" />
+    <ClCompile Include="ConstituentModel.cpp" />
+    <ClCompile Include="EnergyTransport.cpp" />
+    <ClCompile Include="MassRouting.cpp" />
+    <ClCompile Include="Transport.cpp" />
     <ClCompile Include="RobinInterface.cpp" />
     <ClCompile Include="SubbasinGroups.cpp" />
     <ClCompile Include="SurfaceEnergyExchange.cpp" />
@@ -578,7 +582,6 @@
     <ClCompile Include="IrregularTimeSeries.cpp" />
     <ClCompile Include="LatAdvection.cpp" />
     <ClCompile Include="LateralExchangeABC.cpp" />
-    <ClCompile Include="MassRouting.cpp" />
     <ClCompile Include="ModelEnsemble.cpp" />
     <ClCompile Include="ModelForcingGrids.cpp" />
     <ClCompile Include="ModelInitialize.cpp" />
@@ -607,7 +610,6 @@
     <ClCompile Include="TimeSeriesABC.cpp" />
     <ClCompile Include="Transformation.cpp" />
     <ClCompile Include="TransientParam.cpp" />
-    <ClCompile Include="Transport.cpp" />
     <ClCompile Include="UnitTesting.cpp" />
     <ClCompile Include="UTM_to_LatLong.cpp" />
     <ClCompile Include="HydroProcessABC.cpp" />
@@ -786,6 +788,7 @@
     <ClInclude Include="Decay.h" />
     <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
+    <ClInclude Include="EnergyTransport.h" />
     <ClInclude Include="SurfaceEnergyExchange.h" />
     <ClInclude Include="ForcingGrid.h" />
     <ClInclude Include="Forcings.h" />
