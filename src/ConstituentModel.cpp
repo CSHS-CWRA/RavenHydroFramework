@@ -175,22 +175,91 @@ double CConstituentModel::GetTotalChannelConstituentStorage() const
   return sum; //[mg] or [MJ]
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Initialization of transport parameter structure
-/// \param pP [in] valid pointer to transport_params structure pP
+/// \brief returns net mass lost while transporting along reach p [mg]
+/// \param p [in] subbasin index
+/// \returns net mass lost while transporting along reach p [mg]
 //
-void CConstituentModel::InitializeConstitParams(transport_params *pP)
+double CConstituentModel::GetNetReachLosses(const int p) const
 {
-  pP->decay_coeff = 0.0;
+  return 0.0;//default -assumes conservative transport in streams (more interesting for child classes)
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Preparation of all transport variables
-/// \note  called after all waterbearing state variables & processes have been generated, but before constiuents created
-/// \param Options [in] Global model options structure
+/// \brief Test for whether a dirichlet condition applies to a certain compartment, place, and time
+/// \note called within solver to track mass balance
+/// \returns true if dirichlet source applies
+/// \returns Cs, source concentration [mg/L] or [C] for enthalpy
+/// \param i_stor [in] storage index of water compartment
+/// \param c [in] constituent index
+/// \param k [in] global HRU index
+/// \param tt [in] current time structure
+/// \param Cs [out] Dirichlet source concentration
 //
-void CConstituentModel::Prepare(const optStruct &Options)
+bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs) const
 {
+  Cs=0.0;
 
-}//////////////////////////////////////////////////////////////////
+  int i_source=_aSourceIndices[i_stor];
+  if(i_source==DOESNT_EXIST) { return false; }
+  if(!_pSources[i_source]->dirichlet) { return false; }
+  Cs = _pSources[i_source]->concentration;
+
+  if(_pSources[i_source]->kk==DOESNT_EXIST)
+  { //Not tied to HRU Group
+    if(Cs != DOESNT_EXIST) { return true; }
+    else {//time series
+      Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
+      return true;
+    }
+  }
+  else
+  { //Tied to HRU Group - Check if we are in HRU Group
+    if(_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k))
+    {
+      if(Cs != DOESNT_EXIST) { return true; }
+      else {//time series
+        Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns specified mass flux for given constitutent and water storage unit at time tt
+/// \returns source flux in mg/m2/d
+/// \param i_stor [in] storage index of water compartment
+/// \param c [in] constituent index
+/// \param k [in] global HRU index
+/// \param tt [in] current time structure
+//
+double  CConstituentModel::GetSpecifiedMassFlux(const int i_stor,const int k,const time_struct &tt) const
+{
+  int i_source=_aSourceIndices[i_stor];
+  if(i_source == DOESNT_EXIST) { return 0.0; }
+  if(_pSources[i_source]->dirichlet) { return 0.0; }
+
+  double flux;
+  bool retrieve=false;
+  if(_pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
+  {
+    retrieve=true;
+  }
+  else { //Check if we are in HRU Group
+    retrieve=_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k);
+  }
+  if(retrieve)
+  {
+    flux=_pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
+    if(flux == DOESNT_EXIST) {//get from time series
+      flux=_pSources[i_source]->pTS->GetValue(tt.model_time);
+    }
+    return flux;
+  }
+  else { return 0.0; }
+}
+
+
+//////////////////////////////////////////////////////////////////
 /// \brief adds dirichlet source
 /// \param const_name [in] constituent name
 /// \param i_stor [in] global index of water storage state variable
@@ -314,7 +383,92 @@ void   CConstituentModel::AddInflowConcTimeSeries(const CTimeSeries *pTS) {
     ExitGracefully("CConstituentModel::AddSpecifConcTimeSeries: adding NULL source",BAD_DATA);
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Set subbasin initial channel reach mass 
+/// \param p [in] global subbasin index
+/// \param aMout [in] total rivulet mass [mg] or [MJ]
+//
+void   CConstituentModel::SetChannelMass(const int p,const double mass)
+{
+  _channel_storage[p]=mass;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set subbasin initial rivulet mass 
+/// \param p [in] global subbasin index
+/// \param aMout [in] total rivulet mass [mg] or [MJ]
+//
+void   CConstituentModel::SetRivuletMass(const int p,const double mass)
+{
+  _rivulet_storage[p]=mass;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set subbasin mass outflow conditions
+/// \param p [in] global subbasin index
+/// \param nsegs [in] number of segments in subbasin reach
+/// \param aMout [in] array of mass/energy flows [mg/d] or [MJ/d]
+/// \param MoutLast [in] mass flow from end of reach from last timestep [mg/d] or [MJ/d]
+//
+void   CConstituentModel::SetMoutArray(const int p,const int nsegs,const double *aMout,const double MoutLast)
+{
+  if(nsegs!=_pModel->GetSubBasin(p)->GetNumSegments()) {
+    WriteWarning("Number of reach segments in state file and input file are inconsistent. Unable to read in-reach mass flow initial conditions",false);
+    return;
+  }
+  for(int i=0;i<nsegs;i++) { _aMout[p][i]=aMout[i]; }
+  _aMout_last[p]=MoutLast;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set subbasin mass lateral inflow history conditions
+/// \param p [in] global subbasin index
+/// \param histsize [in] size of reservoir mass lateral inflow history
+/// \param aMlat [in] array of mass lateral inflows [mg/d] or [MJ/d]
+/// \param MlatLast [in] mass lateral inflow from last timestep [mg/d] or [MJ/d]
+//
+void   CConstituentModel::SetMlatHist(const int p,const int histsize,const double *aMlat,const double MlatLast)
+{
+  if(histsize!=_pModel->GetSubBasin(p)->GetLatHistorySize()) {
+    WriteWarning("Size of lateral inflow history in state file and input file are inconsistent. Unable to read in-reach mass lateral flow initial conditions",false);
+    return;
+  }
+  for(int i=0;i<histsize;i++) { _aMlatHist[p][i]=aMlat[i]; }
+  _aMlat_last[p]=MlatLast;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set subbasin mass inflow history conditions
+/// \param p [in] global subbasin index
+/// \param histsize [in] size of reservoir mass inflow history
+/// \param aMin [in] array of mass inflows [mg/d] or [MJ/d]
+//
+void   CConstituentModel::SetMinHist(const int p,const int histsize,const double *aMin)
+{
+  if(histsize!=_pModel->GetSubBasin(p)->GetLatHistorySize()) {
+    WriteWarning("Size of mass inflow history in state file and input file are inconsistent. Unable to read in-reach mass inflow initial conditions",false);
+    return;
+  }
+  for(int i=0;i<histsize;i++) { _aMinHist[p][i]=aMin[i]; }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set reservoir initial mass conditions
+/// \param p [in] global subbasin index
+/// \param Mout [in] reservoir mass  [mg]
+/// \param MoutLast [in] reservoir mass from previous timestep [mg]
+//
+void   CConstituentModel::SetInitialReservoirMass(const int p,const double res_mass,const double res_mass_last)
+{
+  _aMres[p]=res_mass;
+  _aMres_last[p]=res_mass_last;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set reservoir initial mass flow conditions
+/// \param p [in] global subbasin index
+/// \param Mout [in] reservoir mass outflow [mg/d]
+/// \param MoutLast [in] reservoir mass outflow from previous timestep [mg/d]
+//
+void   CConstituentModel::SetReservoirMassOutflow(const int p,const double Mout,const double MoutLast)
+{
+  _aMout_res[p]=Mout;
+  _aMout_res_last[p]=MoutLast;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Set transport parameter value for specified constituent
 //
@@ -399,6 +553,23 @@ void CConstituentModel::Initialize()
 
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Initialization of transport parameter structure
+/// \param pP [in] valid pointer to transport_params structure pP
+//
+void CConstituentModel::InitializeConstitParams(transport_params *pP)
+{
+  pP->decay_coeff = 0.0;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Preparation of all transport variables
+/// \note  called after all waterbearing state variables & processes have been generated, but before constiuents created
+/// \param Options [in] Global model options structure
+//
+void CConstituentModel::Prepare(const optStruct &Options)
+{
+
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Calculate concentration for reporting (converts to mg/L)
 /// \param M [in] mass [mg/m2] 
 /// \param V [in] volume [mm]
@@ -410,16 +581,6 @@ double CConstituentModel::CalculateConcentration(const double &M, const double &
   }
   return 0.0;// JRC: should this default to zero? or NA?
 }
-//////////////////////////////////////////////////////////////////
-/// \brief returns net mass lost while transporting along reach p [mg]
-/// \param p [in] subbasin index
-/// \returns net mass lost while transporting along reach p [mg]
-//
-double CConstituentModel::GetNetReachLosses(const int p) const 
-{
-  return 0.0;//default -assumes conservative transport in streams (more interesting for child classes)
-}
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief Increment cumulative input of mass to watershed.
@@ -449,81 +610,7 @@ void CConstituentModel::IncrementCumulOutput(const optStruct &Options)
     _cumul_output+=GetNetReachLosses(p);
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief Test for whether a dirichlet condition applies to a certain compartment, place, and time
-/// \note called within solver to track mass balance
-/// \returns true if dirichlet source applies
-/// \returns Cs, source concentration [mg/L] or [C] for enthalpy
-/// \param i_stor [in] storage index of water compartment
-/// \param c [in] constituent index
-/// \param k [in] global HRU index
-/// \param tt [in] current time structure
-/// \param Cs [out] Dirichlet source concentration
-//
-bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs) const
-{
-  Cs=0.0;
 
-  int i_source=_aSourceIndices[i_stor];
-  if(i_source==DOESNT_EXIST)          { return false; }
-  if(!_pSources[i_source]->dirichlet) { return false; }
-  Cs = _pSources[i_source]->concentration;
-
-  if(_pSources[i_source]->kk==DOESNT_EXIST)
-  { //Not tied to HRU Group
-    if(Cs != DOESNT_EXIST) { return true; }
-    else {//time series
-      Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
-      return true;
-    }
-  }
-  else
-  { //Tied to HRU Group - Check if we are in HRU Group
-    if(_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k))
-    {
-      if(Cs != DOESNT_EXIST) { return true; }
-      else {//time series
-        Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns specified mass flux for given constitutent and water storage unit at time tt
-/// \returns source flux in mg/m2/d
-/// \param i_stor [in] storage index of water compartment
-/// \param c [in] constituent index
-/// \param k [in] global HRU index
-/// \param tt [in] current time structure
-//
-double  CConstituentModel::GetSpecifiedMassFlux(const int i_stor,const int k,const time_struct &tt) const
-{
-  int i_source=_aSourceIndices[i_stor];
-  if(i_source == DOESNT_EXIST)       { return 0.0; }
-  if(_pSources[i_source]->dirichlet) { return 0.0; }
-  
-  double flux;
-  bool retrieve=false;
-  if(_pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
-  {
-    retrieve=true;
-  }
-  else { //Check if we are in HRU Group
-    retrieve=_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k);
-  }
-  if(retrieve)
-  {
-    flux=_pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
-    if(flux == DOESNT_EXIST) {//get from time series
-      flux=_pSources[i_source]->pTS->GetValue(tt.model_time);
-    }
-    return flux;
-  }
-  else { return 0.0; }
-
-}
 
 //////////////////////////////////////////////////////////////////
 /// \brief calculates mass outflow using convoluition
@@ -1059,4 +1146,28 @@ void CConstituentModel::CloseOutputFiles()
 {
   _OUTPUT.close();
   _POLLUT.close();
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Writes state variables to RVC file
+//
+void CConstituentModel::WriteMajorOutput(ofstream &RVC) const 
+{
+  RVC<<":BasinTransportVariables "<<_name<<endl;
+  for(int p=0;p<_pModel->GetNumSubBasins();p++) 
+  {
+    RVC<<"  :BasinIndex "<<_pModel->GetSubBasin(p)->GetID()<<endl;
+    int nSegs    =_pModel->GetSubBasin(p)->GetNumSegments();
+    int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();
+    int nMinHist =_pModel->GetSubBasin(p)->GetInflowHistorySize();
+    RVC<<"    :ChannelMass, "<<_channel_storage[p]<<endl;
+    RVC<<"    :RivuletMass, "<<_rivulet_storage[p]<<endl;
+    RVC<<"    :Mout,"<<nSegs;    for(int i=0;i<nSegs;    i++) { RVC<<","<<_aMout    [p][i]; }RVC<<","<<_aMout_last[p]<<endl;
+    RVC<<"    :Mlat,"<<nMlatHist;for(int i=0;i<nMlatHist;i++) { RVC<<","<<_aMlatHist[p][i]; }RVC<<","<<_aMlat_last[p]<<endl;
+    RVC<<"    :Min ,"<<nMinHist; for(int i=0;i<nMinHist; i++) { RVC<<","<<_aMinHist [p][i]; }RVC<<endl;
+    if(_pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
+      RVC<<"    :ResMassOut, "<<_aMout_res[p]<<","<<_aMout_res_last[p]<<endl;
+      RVC<<"    :ResMass, "   <<_aMres    [p]<<","<<_aMres_last    [p]<<endl;
+    }
+  }
+  RVC<<":EndBasinTransportVariables"<<endl;
 }

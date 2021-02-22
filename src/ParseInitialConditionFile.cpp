@@ -83,7 +83,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":InitialReservoirStage"       )){code=8;  }
     else if  (!strcmp(s[0],":TimeStamp"                   )){code=10; }
     else if  (!strcmp(s[0],":Nudge"                       )){code=11; }
-
+    else if  (!strcmp(s[0],":BasinTransportVariables"     )){code=12; concname=s[1];}
+    else if  (!strcmp(s[0],":EndBasinTransportVariables"  )){code=-2; }
+    
 
 
     switch(code)
@@ -585,6 +587,123 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           }
         }
       }
+      break;
+    }
+    case(12):  //----------------------------------------------
+    {
+      /*
+      :BasinTransportVariables [constit_name]
+        :BasinIndex ID
+          :ChannelMass [val]
+          :RivuletMass [val]
+          :Mout [nsegs]     [aMout     x nsegs    ] [aMoutLast]
+          :Mlat [nQlatHist] [aMlatHist x nQlatHist] [MlatLast]
+          :Min  [nQinHist]  [aMinHist  x nQinHist ]
+          {:ResMassOut [Mout_res] [last_Mout_res]}
+          {:ResMass [mass] [last mass]}
+        :BasinIndex ID
+        ...
+      :EndBasinTransportVariables
+      */
+      int c=pModel->GetTransportModel()->GetConstituentIndex(concname);
+      if(c==DOESNT_EXIST) {
+        WriteWarning("Unrecognized constituent entry in :BasinTransportVariables within .rvc file. Command was ignored.",Options.noisy);
+        break;
+      }
+      CConstituentModel *pConstit=pModel->GetTransportModel()->GetConstituentModel(c);
+      
+
+      int p=-1;
+      if(Options.noisy) { cout <<"   Reading Basin Transport Variables"<<endl; }
+      bool done=false;
+      CSubBasin *pBasin=NULL;
+      int SBID=DOESNT_EXIST;
+      do
+      {
+        bool eof=pp->Tokenize(s,Len);
+        if(eof) { done=true; }
+        if(Len==0) {}//do nothing
+        else if(IsComment(s[0],Len)) {}//do nothing
+        else if(!strcmp(s[0],":BasinIndex"))
+        {
+          SBID=s_to_l(s[1]);
+          pBasin=pModel->GetSubBasinByID(SBID);
+          ExitGracefullyIf(pBasin==NULL,
+            "ParseInitialConditionsFile: bad basin index in .rvc file",BAD_DATA);
+          p++;
+          if(Options.noisy) { cout <<"     Reading Transport Vars for Basin "<<pBasin->GetID()<<": "<<pBasin->GetName()<<endl; }
+        }
+        else if(!strcmp(s[0],":ChannelMass"))
+        {
+          if(Len>=2) {
+            pConstit->SetChannelMass(p,s_to_d(s[1]));
+          }
+        }
+        else if(!strcmp(s[0],":RivuletMass"))
+        {
+          if(Len>=2) {
+            pConstit->SetRivuletMass(p,s_to_d(s[1]));
+          }
+        }
+        else if(!strcmp(s[0],":Mout"))
+        {
+          if(Len>2) {
+            int nsegs=s_to_i(s[1]);
+            if(Len>=nsegs+3) {
+              double *aMout=new double[nsegs+1];
+              for(int i=0;i<=nsegs;i++) {
+                aMout[i]=s_to_d(s[i+2]);
+              }
+              pConstit->SetMoutArray(p,nsegs,aMout,aMout[nsegs]);
+              delete[] aMout;
+            }
+          }
+        }
+        else if(!strcmp(s[0],":Mlat"))
+        {
+          if(Len>2) {
+            int histsize=s_to_i(s[1]);
+            if(Len>=histsize+3) {
+              double *aMlat=new double[histsize+1];
+              for(int i=0;i<=histsize;i++) {
+                aMlat[i]=s_to_d(s[i+2]);
+              }
+              pConstit->SetMlatHist(p,histsize,aMlat,aMlat[histsize]);
+              delete[] aMlat;
+            }
+          }
+        }
+        else if(!strcmp(s[0],":Min"))
+        {
+          if(Len>2) {
+            int histsize=s_to_i(s[1]);
+            if(Len>=histsize+2) {
+              double *aMin=new double[histsize];
+              for(int i=0;i<histsize;i++) {
+                aMin[i]=s_to_d(s[i+2]);
+              }
+              pConstit->SetMinHist(p,histsize,aMin);
+              delete[] aMin;
+            }
+          }
+        }
+        else if(!strcmp(s[0],":ResMass"))
+        {
+          if(Len>=3) {
+            pConstit->SetInitialReservoirMass(p,s_to_d(s[1]),s_to_d(s[2]));
+          }
+        }
+        else if(!strcmp(s[0],":ResMassOut"))
+        {
+          if(Len>=3) {
+            pConstit->SetReservoirMassOutflow(p,s_to_d(s[1]),s_to_d(s[2]));
+          }
+        }
+        else if(!strcmp(s[0],":EndBasinTransportVariables"))
+        {
+          done=true;
+        }
+      } while(!done);
       break;
     }
     default://------------------------------------------------

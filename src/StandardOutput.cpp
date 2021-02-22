@@ -1125,52 +1125,56 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
   string tmpFilename;
 
   // WRITE {RunName}_solution.rvc - final state variables file
-  ofstream OUT;
+  ofstream RVC;
   tmpFilename=FilenamePrepare(solfile+".rvc",Options);
-  OUT.open(tmpFilename.c_str());
-  if (OUT.fail()){
+  RVC.open(tmpFilename.c_str());
+  if (RVC.fail()){
     WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
   }
-  OUT<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
+  RVC<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
 
   //Header--------------------------
-  OUT<<":HRUStateVariableTable"<<endl;
-  OUT<<"  :Attributes,";
+  RVC<<":HRUStateVariableTable"<<endl;
+  RVC<<"  :Attributes,";
   for (i=0;i<GetNumStateVars();i++)
   {
-    OUT<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
-    if (i!=GetNumStateVars()-1){OUT<<",";}
+    RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+    if (i!=GetNumStateVars()-1){RVC<<",";}
   }
-  OUT<<endl;
-  OUT<<"  :Units,";
+  RVC<<endl;
+  RVC<<"  :Units,";
   for (i=0;i<GetNumStateVars();i++)
   {
-    OUT<<CStateVariable::GetStateVarUnits(_aStateVarType[i]);
-    if (i!=GetNumStateVars()-1){OUT<<",";}
+    RVC<<CStateVariable::GetStateVarUnits(_aStateVarType[i]);
+    if (i!=GetNumStateVars()-1){RVC<<",";}
   }
-  OUT<<endl;
+  RVC<<endl;
   //Data----------------------------
   for (k=0;k<_nHydroUnits;k++)
   {
-    OUT<<std::fixed; OUT.precision(5);
-    OUT<<"  "<<_pHydroUnits[k]->GetID()<<",";
+    RVC<<std::fixed; RVC.precision(5);
+    RVC<<"  "<<_pHydroUnits[k]->GetID()<<",";
     for (i=0;i<GetNumStateVars();i++)
     {
-      OUT<<_pHydroUnits[k]->GetStateVarValue(i);
-      if (i!=GetNumStateVars()-1){OUT<<",";}
+      RVC<<_pHydroUnits[k]->GetStateVarValue(i);
+      if (i!=GetNumStateVars()-1){RVC<<",";}
     }
-    OUT<<endl;
+    RVC<<endl;
   }
-  OUT<<":EndHRUStateVariableTable"<<endl;
+  RVC<<":EndHRUStateVariableTable"<<endl;
 
   //By basin------------------------
-  OUT<<":BasinStateVariables"<<endl;
+  RVC<<":BasinStateVariables"<<endl;
   for (int p=0;p<_nSubBasins;p++){
-    OUT<<"  :BasinIndex "<<_pSubBasins[p]->GetID()<<",";
-    _pSubBasins[p]->WriteToSolutionFile(OUT);
+    RVC<<"  :BasinIndex "<<_pSubBasins[p]->GetID()<<",";
+    _pSubBasins[p]->WriteToSolutionFile(RVC);
   }
-  OUT<<":EndBasinStateVariables"<<endl;
-  OUT.close();
+  RVC<<":EndBasinStateVariables"<<endl;
+  
+  _pTransModel->WriteMajorOutput(RVC);
+
+  RVC.close();
+
 
   if(Options.write_channels){
     CChannelXSect::WriteRatingCurves();

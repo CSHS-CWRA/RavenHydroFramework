@@ -2205,15 +2205,15 @@ void CSubBasin::WriteMinorOutput(const time_struct &tt) const
 /// \brief Write subbasin state variable data to solution file
 /// \param &OUT [out] Output file stream to which data will be written
 //
-void CSubBasin::WriteToSolutionFile (ofstream &OUT) const
+void CSubBasin::WriteToSolutionFile (ofstream &RVC) const
 {
-  OUT<<_name<<endl;
-  OUT<<"    :ChannelStorage, "<<_channel_storage<<endl;
-  OUT<<"    :RivuletStorage, "<<_rivulet_storage<<endl;
-  OUT<<"    :Qout,"<<_nSegments  ;for (int i=0;i<_nSegments;i++){OUT<<","<<_aQout    [i];}OUT<<","<<_QoutLast<<endl;
-  OUT<<"    :Qlat,"<<_nQlatHist  ;for (int i=0;i<_nQlatHist;i++){OUT<<","<<_aQlatHist[i];}OUT<<","<<_QlatLast<<endl;
-  OUT<<"    :Qin ,"<<_nQinHist   ;for (int i=0;i<_nQinHist; i++){OUT<<","<<_aQinHist [i];}OUT<<endl;
+  RVC<<_name<<endl;
+  RVC<<"    :ChannelStorage, "<<_channel_storage<<endl;
+  RVC<<"    :RivuletStorage, "<<_rivulet_storage<<endl;
+  RVC<<"    :Qout,"<<_nSegments  ;for (int i=0;i<_nSegments;i++){RVC<<","<<_aQout    [i];}RVC<<","<<_QoutLast<<endl;
+  RVC<<"    :Qlat,"<<_nQlatHist  ;for (int i=0;i<_nQlatHist;i++){RVC<<","<<_aQlatHist[i];}RVC<<","<<_QlatLast<<endl;
+  RVC<<"    :Qin ,"<<_nQinHist   ;for (int i=0;i<_nQinHist; i++){RVC<<","<<_aQinHist [i];}RVC<<endl;
   if (_pReservoir!=NULL){
-    _pReservoir->WriteToSolutionFile(OUT);
+    _pReservoir->WriteToSolutionFile(RVC);
   }
 }

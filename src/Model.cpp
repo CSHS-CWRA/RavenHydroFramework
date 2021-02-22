@@ -551,6 +551,25 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   return pSBs;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
+/// \notes recursive call, keeps marching downstream until outlet or SBIDdown is encounterd
+/// \param SBID [in] ID of subbasin being queried
+/// \param SBIDdown [in] subbasin ID basis of query 
+/// \return true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
+//
+
+bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const 
+{
+  if      (SBID==DOESNT_EXIST    ) { return false;} //end of the recursion line
+  else if (SBIDdown==SBID)         { return true; } //a subbasin is upstream of itself
+  else if (SBIDdown==DOESNT_EXIST) { return true; } //everything is upstream of an outlet
+  else if (GetSubBasinByID(SBID)->GetDownstreamID()==SBIDdown){return true;} //directly upstream
+  else {
+    return IsSubBasinUpstream(GetSubBasinByID(SBID)->GetDownstreamID(),SBIDdown);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns specific subbasin group denoted by parameter pp
 ///
 /// \param pp [in] subbasin group index
@@ -1578,6 +1597,9 @@ void CModel::OverrideStreamflow   (const long SBID)
         CTimeSeries *pTS =new CTimeSeries(name,*pObs);//copy time series
         pTS->SetLocID(SBID);
 
+        //need to shift everything by one interval, since hydrographs are stored as period-ending
+        pTS->ShiftInTime(-(pTS->GetInterval()),*_pOptStruct);
+       
         //add as inflow hydrograph to downstream
         GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
         GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);

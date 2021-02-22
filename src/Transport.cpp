@@ -802,3 +802,10 @@ void CTransportModel::CloseOutputFiles() const
     _pConstitModels[c]->CloseOutputFiles();
   }
 }
+
+void  CTransportModel::WriteMajorOutput(ofstream &RVC) const 
+{
+  for(int c=0;c<_nConstituents;c++) {
+    _pConstitModels[c]->WriteMajorOutput(RVC);
+  }
+}

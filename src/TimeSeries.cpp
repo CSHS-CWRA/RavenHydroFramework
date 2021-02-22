@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -872,7 +872,18 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
   delete [] aVal;  aVal =NULL;
   return pTimeSeries;
 }
-
+///////////////////////////////////////////////////////////////////
+/// \brief Shifts entire time series by an amount tshift, which can be positive or negative
+/// \notes - must be done BEFORE initialization and/or resampling
+//
+void CTimeSeries::ShiftInTime(double tshift,const optStruct &Options) 
+{
+  double new_start;
+  int    new_year;
+  AddTime(_start_day,_start_year,tshift,Options.calendar,new_start,new_year);
+  _start_day=new_start;
+  _start_year=new_year;
+}
 ///////////////////////////////////////////////////////////////////
 /// \brief Parses multicolumn single time series format and create array of time series objects
 /// \note Creates output array and aType array; these must be

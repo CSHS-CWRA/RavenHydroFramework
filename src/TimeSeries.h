@@ -117,11 +117,12 @@ public:/*-------------------------------------------------------*/
   static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse, const optStruct &Options);
   static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType, const optStruct &Options);
 
-  void   Multiply       (const double &factor);
+  void   Multiply        (const double &factor);
 
   double GetModelledValue(const double &t,const ts_type type) const;
-  void   SetValue(const int n, const double &val);
-  void   SetSampledValue(const int nn, const double &val);
+  void   SetValue        (const int n, const double &val);
+  void   SetSampledValue (const int nn, const double &val);
+  void   ShiftInTime     (const double t, const optStruct &Options);
 
   static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)
                                                string name,                 // forcing type

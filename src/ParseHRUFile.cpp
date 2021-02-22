@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -83,7 +83,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":SBGroupPropertyOverride"  )){code=12; }
     else if  (!strcmp(s[0],":DisableHRUGroup"          )){code=13; }
     else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
-    else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15;  } 
+    else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15; } 
     
     switch(code)
     {
@@ -683,13 +683,16 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       ":PopulateSubBasinGroup" {name} "With" {conditionbase} {condition} {conditiondata}
       e.g.,
       :PopulateSubBasinGroup NotRock With SUBBASINS NOTWITHIN RockSBGroup
-
+      :PopulateSubBasinGroup UpstreamOfBasin2 With SUBBASINS UPSTREAM_OF 2
+      :PopulateSubBasinGroup DownstreamOfBasin35 With SUBBASINS DOWNSTREAM_OF 35
       */
       if(Options.noisy) { cout <<"   Populate SubBasin Group..."<<endl; }
       if(Len<6) { pp->ImproperFormat(s); }
 
       CSubbasinGroup *pSBGroup=NULL;
       pSBGroup=pModel->GetSubBasinGroup(s[1]);
+
+      string advice="SubBasinGroup "+to_string(s[1])+" was populated with these basins :";
 
       if(pSBGroup==NULL) {//group not yet defined
         WriteWarning("Subbasin groups should ideally be defined in .rvi file (using :DefineSubBasinGroup or :SubBasinGroup commands) before being populated in .rvh file (2)",Options.noisy);
@@ -698,20 +701,52 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       }
       if(!strcmp(s[3],"SUBBASINS"))
       {
-        CSubbasinGroup *pSBGroup2=NULL;
-        pSBGroup2=pModel->GetSubBasinGroup(s[5]);
-        if(pSBGroup2==NULL) {
-          ExitGracefully(":PopulateSubBasinGroup: invalid SB group reference used in command",BAD_DATA_WARN);
-        }
-        else {
-          if(!strcmp(s[4],"NOTWITHIN")) {
+        if(!strcmp(s[4],"NOTWITHIN")) 
+        {
+          CSubbasinGroup *pSBGroup2=NULL;
+          pSBGroup2=pModel->GetSubBasinGroup(s[5]);
+          if(pSBGroup2==NULL) {
+            ExitGracefully(":PopulateSubBasinGroup: invalid SB group reference used in command",BAD_DATA_WARN);
+          }
+          else {
             for(int p=0;p<pModel->GetNumSubBasins();p++)
             {
               if(!pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) { pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); }
             }
           }
         }
+        else if(!strcmp(s[4],"UPSTREAM_OF")) 
+        {
+          int SBID=s_to_l(s[5]);
+          for(int p=0;p<pModel->GetNumSubBasins();p++)
+          {
+            if(pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) { 
+              pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
+              advice=advice+to_string(pModel->GetSubBasin(p)->GetID());
+            }
+          }
+        }
+        else if(!strcmp(s[4],"DOWNSTREAM_OF")) 
+        {
+          CSubBasin *pBasin=pModel->GetSubBasinByID(s_to_l(s[5]));
+          if(pBasin==NULL) {
+            ExitGracefully(":PopulateSubBasinGroup : invalid subbasin ID specified",BAD_DATA_WARN);
+          }
+          else {
+            int iter=0;
+            while ((pBasin->GetDownstreamID()!=DOESNT_EXIST) && (iter<1000)){
+              pBasin=pModel->GetSubBasinByID(pBasin->GetDownstreamID());
+              pSBGroup->AddSubbasin(pBasin);
+              advice=advice+to_string(pBasin->GetID());
+              iter++;
+            }
+            if(iter==1000) {
+              ExitGracefully(":PopulateSubBasinGroup: cyclical downstream references in :SubBasins list",BAD_DATA_WARN);
+            }
+          }
+        }
       }
+	  WriteAdvisory(advice,Options.noisy);
       break;
     }
     default://------------------------------------------------

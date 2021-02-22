@@ -135,6 +135,7 @@ public:/*-------------------------------------------------------*/
 
   void   WriteOutputFileHeaders     (const optStruct &Options) const;
   void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt) const;
+  void   WriteMajorOutput           (ofstream &RVC) const;
   void   WriteEnsimOutputFileHeaders(const optStruct &Options) const;
   void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt) const;
   void   CloseOutputFiles           () const;
@@ -162,13 +163,12 @@ protected:
   double **_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x nMlathist(p)]
   double **_aMout;                   ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
   double  *_aMout_last;              ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ] 
+  double  *_aMlat_last;              ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
 
   double  *_aMres;                   ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins]
   double  *_aMres_last;              ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins]
   double  *_aMout_res;               ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins]
   double  *_aMout_res_last;          ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins]
-
-  double  *_aMlat_last;              ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
 
   // Mass balance tracking variables
   double  *_channel_storage;         ///< array storing channel storage [mg] or [MJ] [size: nSubBasins] 
@@ -227,6 +227,14 @@ public:/*-------------------------------------------------------*/
   void   AddInfluxSource         (const int i_stor,const int kk,const double flux);
   void   AddInfluxTimeSeries     (const int i_stor,const int kk,const CTimeSeries *pTS);
   void   AddInflowConcTimeSeries (const CTimeSeries *pTS);
+
+  void   SetChannelMass          (const int p,const double mass);
+  void   SetRivuletMass          (const int p,const double mass);
+  void   SetMoutArray            (const int p,const int nsegs,   const double *aMout,const double MoutLast);
+  void   SetMlatHist             (const int p,const int histsize,const double *aMlat,const double MlatLast);
+  void   SetMinHist              (const int p,const int histsize,const double *aMin);
+  void   SetInitialReservoirMass (const int p,const double res_mass,const double res_mass_last);
+  void   SetReservoirMassOutflow (const int p,const double Mout,    const double MoutLast);
   
           void   Prepare(const optStruct &Options);
   virtual void   Initialize();
@@ -244,6 +252,7 @@ public:/*-------------------------------------------------------*/
 
           void   WriteOutputFileHeaders     (const optStruct &Options);
           void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt);
+          void   WriteMajorOutput           (ofstream &RVC) const;
   virtual void   WriteEnsimOutputFileHeaders(const optStruct &Options);
   virtual void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
           void   CloseOutputFiles();
