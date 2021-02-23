@@ -306,6 +306,8 @@ public:/*-------------------------------------------------------*/
   int                   GetNumObservedTS              () const;
   const CTimeSeriesABC *GetObservedTS                 (const int i) const;
 
+  double            GetObjFuncVal                     (long calib_SBID,diag_type calib_Obj, const string calib_period) const;
+
   const optStruct  *GetOptStruct                      () const;
   CTransportModel  *GetTransportModel                 () const;
   CGroundwaterModel*GetGroundwaterModel               () const;

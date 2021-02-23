@@ -553,6 +553,7 @@
     </ClCompile>
     <ClCompile Include="Convolution.cpp" />
     <ClCompile Include="CropGrowth.cpp" />
+    <ClCompile Include="DDS.cpp" />
     <ClCompile Include="Decay.cpp" />
     <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />

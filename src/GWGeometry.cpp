@@ -80,32 +80,32 @@ void CGWGeometryClass::SummarizeToScreen()
 
 //////////////////////////////////////////////////////////////////
 /// \brief Write groundwater geometry class properties to file
-/// \param &OUT [out] Output stream to which information is written
+/// \param &GWOUT [out] Output stream to which information is written
 /// \todo [add funct] repair such that only parameters that are used by model are written to parameters.csv.
 /// one way to do this would be to store the template groundwater structure with class, and use NOT_NEEDED status of variables as indicator.
 //
-void CGWGeometryClass::WriteParamsToFile(ofstream &OUT)
+void CGWGeometryClass::WriteParamsToFile(ofstream &GWOUT)
 {
   CGWGeometryClass *s;
   const gw_dis_struct *w;
-  OUT<<endl<<"---Groundwater Geometry Class Parameters---------------------"<<endl;
-  OUT<<"CLASS,";
-  OUT<<"NODES,LAYERS,CONNECTIONS,VERT_DIS,MATRIX,ORIGIN,";
-  OUT<<"BASEMENT,NODE/LAYER,TOP_ELEV,BOT_ELEV,CELL_AREA,";
-  OUT<<"NUM_CELL_CONNECTIONS,CELL_CONNECTIONS,VERT_CELL_CONN,";
-  OUT<<"NODE_INTERFACE_LENGTH,FACE_WIDTH,INTERFACE_AREA";
-  OUT<<endl;
+  GWOUT<<endl<<"---Groundwater Geometry Class Parameters---------------------"<<endl;
+  GWOUT<<"CLASS,";
+  GWOUT<<"NODES,LAYERS,CONNECTIONS,VERT_DIS,MATRIX,ORIGIN,";
+  GWOUT<<"BASEMENT,NODE/LAYER,TOP_ELEV,BOT_ELEV,CELL_AREA,";
+  GWOUT<<"NUM_CELL_CONNECTIONS,CELL_CONNECTIONS,VERT_CELL_CONN,";
+  GWOUT<<"NODE_INTERFACE_LENGTH,FACE_WIDTH,INTERFACE_AREA";
+  GWOUT<<endl;
   for (int c=0; c<NumGWGeoClasses;c++)
   {
     s=pAllGWGeoClasses[c];
     w=s->GetGWGeoStruct();
-    OUT<<s->GetTag()<<",";
-	OUT << w->num_nodes << "," << w->num_layers << "," << w->num_connections << ",";
-	OUT << w->vert_dis << "," << w->matrix_format << "," << w->grid_origin << ",";
-	OUT << w->basement << "," << w->node_layer << "," << w->top_elev << "," << w->bot_elev << ",";
-	OUT << w->cell_area << "," << w->num_cell_connections << "," << w->cell_connections << "," << w->vert_cell_connections << ",";
-    OUT<<w->node_interface_length <<","<<w->face_width          <<","<<w->interface_area      <<",";
-    OUT<<endl;
+    GWOUT<<s->GetTag()<<",";
+	GWOUT << w->num_nodes << "," << w->num_layers << "," << w->num_connections << ",";
+	GWOUT << w->vert_dis << "," << w->matrix_format << "," << w->grid_origin << ",";
+	GWOUT << w->basement << "," << w->node_layer << "," << w->top_elev << "," << w->bot_elev << ",";
+	GWOUT << w->cell_area << "," << w->num_cell_connections << "," << w->cell_connections << "," << w->vert_cell_connections << ",";
+    GWOUT<<w->node_interface_length <<","<<w->face_width          <<","<<w->interface_area      <<",";
+    GWOUT<<endl;
   }
 }
 

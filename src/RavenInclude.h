@@ -1520,7 +1520,7 @@ int GetCalendarFromNetCDF       (const int ncid,int varid_t,const string filenam
 void GetTimeVectorFromNetCDF    (const int ncid,const int varid_t,const int ntime,double *my_time);
 void GetTimeInfoFromNetCDF      (const char *unit_t,int calendar,const double *time,const int ntime,const string filename,
                                  double &tstep,double &start_day,int &start_yr,double &time_zone);
-void GetJulianDateFromNetCDFTime(const string unit_t,int calendar,const double &time,
+void GetJulianDateFromNetCDFTime(const string unit_t,const int calendar,const double &time,
                                  double &start_day,int &start_yr);
 
 //I/O Functions-----------------------------------------------

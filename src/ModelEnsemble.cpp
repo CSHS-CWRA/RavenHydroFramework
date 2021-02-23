@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2019 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "ModelEnsemble.h"
 //#include <random>
@@ -8,8 +8,25 @@ Copyright (c) 2008-2019 the Raven Development Team
 
 bool ParseInitialConditionsFile(CModel *&pModel,const optStruct &Options);
 
-double UniformRandom(){return rand()/RAND_MAX; }
-double GaussRandom(){return 1.0;}//TMP DEBUG
+//////////////////////////////////////////////////////////////////
+/// \brief returns uniformly distributed random variable between 0 and 1
+/// \return uniformly distributed random variable between 0 and 1
+//
+double UniformRandom()
+{
+  return (double)(rand())/RAND_MAX; 
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns normally distributed random variable with mean of 0, variance=1
+/// \notes uses Box-Muller transform
+/// \return normally distributed random variable with mean of 0, variance=1
+//
+double GaussRandom()
+{
+  double u1=(double)(rand())/RAND_MAX;
+  double u2=(double)(rand())/RAND_MAX;
+  return sqrt(-2.0*log(u1))*cos(2.0*PI*u2);
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Ensemble Default Constructor
@@ -64,8 +81,9 @@ ensemble_type CEnsemble::GetType() {
 /// \brief sets random seed
 /// \param [in] random seed
 //
-void CEnsemble::SetRandomSeed(const int seed) {
-
+void CEnsemble::SetRandomSeed(const unsigned int seed) 
+{
+  srand(seed);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief sets output directory for ensemble member output
@@ -229,182 +247,9 @@ double SampleFromDistribution(param_dist *dist)
   else if(dist->distribution==DIST_NORMAL) 
   {  
     //std::normal_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
-    value=0;
     //value = distribution(generator);
+    value=dist->distpar[0]+(dist->distpar[1]*GaussRandom());
   }
   return value;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// DDS ENSEMBLE CLASS
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////
-/// \brief Monte Carlo Ensemble Construcutor 
-/// \param num_members [in] number of MC ensemble realizations
-/// \param &Options [out] Global model options information
-//
-CDDSEnsemble::CDDSEnsemble(const int num_members,const optStruct &Options)
-  :CEnsemble(num_members,Options)
-{
-  _type=ENSEMBLE_DDS;
-  _nParamDists=0;
-  _pParamDists=NULL;
-  _BestParams=NULL;
-  _TestParams=NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Monte Carlo Ensemble Destrucutor 
-//
-CDDSEnsemble::~CDDSEnsemble()
-{
-  for(int i=0;i<_nParamDists;i++) {
-    delete _pParamDists[i];
-  }
-  delete [] _pParamDists; _nParamDists=0;
-  delete [] _BestParams;
-  delete [] _TestParams;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Adds parameter distribution to DDS setup
-/// \param dist [in] pointer to parameter distribution structure for specified parameter
-//
-void CDDSEnsemble::AddParamDist(const param_dist *dist)
-{
-  if(!DynArrayAppend((void**&)(_pParamDists),(void*)(dist),_nParamDists)) {
-    ExitGracefully("CDDSEnsemble::AddParamDist: adding NULL distribution",BAD_DATA);
-  }
-}
-
-void CDDSEnsemble::Initialize(const optStruct &Options) {
-
-  _BestParams=new double [_nParamDists];
-  _TestParams=new double [_nParamDists];
-  for(int i=0; i<_nParamDists;i++)
-  {
-    _BestParams[i]=_TestParams[i]=_pParamDists[i]->default_val;
-  }
-  ofstream DDSOUT;
-  string filename=Options.main_output_dir+"DDSOutput.csv";
-  DDSOUT.open(filename.c_str(),ios::app);
-  DDSOUT.close();
-}
-
-void CDDSEnsemble::SetPerturbationValue(const double &perturb) {
-  _r_val=perturb;
-  if((_r_val<0) || (_r_val>1.0)) {
-    ExitGracefully("CDDSEnsemble::SetPerturbationValue",BAD_DATA_WARN);
-  }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief updates model - called prior to each model ensemble run 
-/// \param pModel [out] pointer to global model instance
-/// \param &Options [out] Global model options information
-//
-void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
-{
-  ExitGracefullyIf(e>=_nMembers,"CDDSEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
-
-  int iters_remaining=_nMembers-e;
-
-  //- update output file/ run names ----------------------------
-  Options.output_dir=_aOutputDirs[e];
-  Options.run_name  =_aRunNames[e];
-
-  //- Update parameter values ----------------------------------
-  // Determine variable selected as neighbour 
-  double Pn=1.0-log(double(e))/log(double(_nMembers));
-  int dvn_count=0;
-  
-  // define TestParams initially as best current solution
-  for(int k=0;k<_nParamDists;k++)
-  {
-    _TestParams[k]=_BestParams[k];
-  }
-
-  for(int k=0;k<_nParamDists;k++)
-  {
-    if(UniformRandom()<Pn) {
-      dvn_count++;
-      _TestParams[k]=PerturbParam(_BestParams[k],_pParamDists[k]->distpar[1],_pParamDists[k]->distpar[1]);
-    }
-  }
-  if(dvn_count==0) {
-    int dv=(int)(ceil((double)(_nParamDists)*UniformRandom()))-1; // index for one DV 
-    _TestParams[dv]=PerturbParam(_BestParams[dv],_pParamDists[dv]->distpar[1],_pParamDists[dv]->distpar[1]);
-  }
-
-  //- Re-read initial conditions to update state variables----
-  if(!ParseInitialConditionsFile(pModel,Options)) {
-    ExitGracefully("Cannot find or read .rvc file",BAD_DATA);
-  }
-
-
-}
-void CDDSEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e)
-{
-  double Ftest=-1;//=pModel->GetObjFuncVal(); //TMP DEBUG - must extract objective function!
-  
-  if(Ftest<=_Fbest) // update current (best) solution
-  {
-    _Fbest = Ftest;
-    for(int k=0;k<_nParamDists;k++) { _BestParams[k]=_TestParams[k]; }
-    
-    //write results
-    ofstream DDSOUT;
-    string filename=Options.main_output_dir+"DDSOutput.csv";
-    DDSOUT.open(filename.c_str(),ios::app);
-    DDSOUT<<e+1<<", "<<_Fbest<<",";
-    DDSOUT<<endl;
-    DDSOUT.close();
-  }
-  if(e==_nMembers-1) 
-  {
-    //write best parameter vector
-    ofstream DDSOUT;
-    string filename=Options.main_output_dir+"DDSOutput.csv";
-    DDSOUT.open(filename.c_str(),ios::app);
-    DDSOUT<<"Best parameter vector"<<endl;
-    for (int k=0;k<_nParamDists;k++) {DDSOUT<<_pParamDists[k]->param_name<<"("<<_pParamDists[k]->class_group <<"), "<<_BestParams[k]<<endl; }
-    DDSOUT.close();
-  }
-
-}
-/**********************************************************************
-PerturbParam
------------------------------------------------------------------------
-Generates a neighboring decision variable value for a single
-decision variable value being perturbed by the DDS optimization algorithm.
-New DV value respects the upper and lower DV bounds.
-
-Translated by James Craig July 2006 from Bryan Tolson's Fortran DDS code
-
-returns  new decision variable value (within specified min and max)
-**********************************************************************/
-double CDDSEnsemble::PerturbParam(const double &x_best, //current best decision variable (DV) value
-                                  const double &upperbound, 
-                                  const double &lowerbound)
-{
-
-  double x_new;
-  double x_max = upperbound;
-  double x_min = lowerbound;
-
-  x_new=x_best+GaussRandom()*_r_val*(x_max-x_min);
-
-  // need if statements to check within DV bounds.  If not, bounds are reflecting.
-  if(x_new<x_min)
-  {
-    x_new=x_min+(x_min-x_new); //reflect
-    if(x_new>x_max) { x_new=x_min; }
-  }
-  else if(x_new>x_max)
-  {
-    x_new=x_max-(x_new-x_max);//reflect
-    if(x_new<x_min) { x_new=x_max; }
-  }
-
-  return x_new;
-}

@@ -78,27 +78,27 @@ void CGWStressPeriodClass::SummarizeToScreen()
 
 //////////////////////////////////////////////////////////////////
 /// \brief Write groundwater stress period class properties to file
-/// \param &OUT [out] Output stream to which information is written
+/// \param &GWOUT [out] Output stream to which information is written
 /// \todo [add funct] repair such that only parameters that are used by model are written to parameters.csv.
 /// one way to do this would be to store the template groundwater structure with class, and use NOT_NEEDED status of variables as indicator.
 //
-void CGWStressPeriodClass::WriteParamsToFile(ofstream &OUT)
+void CGWStressPeriodClass::WriteParamsToFile(ofstream &GWOUT)
 {
   CGWStressPeriodClass *s;
   const gw_struct *w;
-  OUT<<endl<<"---Groundwater Stress Period Class Parameters---------------------"<<endl;
-  OUT<<"CLASS,";
-  OUT<<"STRESS_PERIOD,";
-  OUT<<"NUM_REC_ET,NUM_REC_D,NUM_REC_R,NUM_REC_K,NUM_REC_S,CELL_ET,CELL_DRAIN,CELL_RECHARGE,PET_MAX,EXT_DEPTH,DRAIN_ELEV,CONDUCT,RECHARGE,HYD_COND,SS";
-  OUT<<endl;
+  GWOUT<<endl<<"---Groundwater Stress Period Class Parameters---------------------"<<endl;
+  GWOUT<<"CLASS,";
+  GWOUT<<"STRESS_PERIOD,";
+  GWOUT<<"NUM_REC_ET,NUM_REC_D,NUM_REC_R,NUM_REC_K,NUM_REC_S,CELL_ET,CELL_DRAIN,CELL_RECHARGE,PET_MAX,EXT_DEPTH,DRAIN_ELEV,CONDUCT,RECHARGE,HYD_COND,SS";
+  GWOUT<<endl;
   for (int c=0; c<NumGWClasses;c++)
   {
     s=pAllGWClasses[c];
     w=s->GetGWStruct();
-    OUT<<s->GetTag()<<",";
-    OUT<<w->stressperiod <<",";
-    OUT<<w->sp_props.numrec_ET <<","<<w->sp_props.numrec_D  <<","<<w->sp_props.numrec_R  <<","<<w->sp_props.numrec_K <<","<<w->sp_props.numrec_S <<","<<w->sp_props.numcell_ET  <<","<<w->sp_props.numcell_Drains   <<","<<w->sp_props.numcell_Rech  <<","<<w->sp_props.pet_max  <<","<<w->sp_props.ext_depth   <<","<<w->sp_props.drain_elev   <<","<<w->sp_props.conductance   <<","<<w->sp_props.recharge   <<","<<w->sp_props.hyd_cond   <<","<<w->sp_props.ss   <<",";
-    OUT<<endl;
+    GWOUT<<s->GetTag()<<",";
+    GWOUT<<w->stressperiod <<",";
+    GWOUT<<w->sp_props.numrec_ET <<","<<w->sp_props.numrec_D  <<","<<w->sp_props.numrec_R  <<","<<w->sp_props.numrec_K <<","<<w->sp_props.numrec_S <<","<<w->sp_props.numcell_ET  <<","<<w->sp_props.numcell_Drains   <<","<<w->sp_props.numcell_Rech  <<","<<w->sp_props.pet_max  <<","<<w->sp_props.ext_depth   <<","<<w->sp_props.drain_elev   <<","<<w->sp_props.conductance   <<","<<w->sp_props.recharge   <<","<<w->sp_props.hyd_cond   <<","<<w->sp_props.ss   <<",";
+    GWOUT<<endl;
   }
 }
 

@@ -99,26 +99,26 @@ void COverlapExchangeClass::SummarizeToScreen()
 
 //////////////////////////////////////////////////////////////////
 /// \brief Write groundwater stress period class properties to file
-/// \param &OUT [out] Output stream to which information is written
+/// \param &GWOUT [out] Output stream to which information is written
 /// \todo [add funct] repair such that only parameters that are used by model are written to parameters.csv.
 /// one way to do this would be to store the template groundwater structure with class, and use NOT_NEEDED status of variables as indicator.
 //
-void COverlapExchangeClass::WriteParamsToFile(ofstream &OUT)
+void COverlapExchangeClass::WriteParamsToFile(ofstream &GWOUT)
 {
   COverlapExchangeClass *s;
   const oe_struct *e;
 
-  OUT<<endl<<"---Overlap/ Exchange Class Parameters---------------------"<<endl;
-  OUT<<"NHRU,NGWCELLS,OVERLAP,CELL,ET RELATIONSHIP TYPE,DRAIN RELATIONSHIP TYPE, SAT. AREA RELATIONSHIP TYPE";
-  OUT<<endl;
+  GWOUT<<endl<<"---Overlap/ Exchange Class Parameters---------------------"<<endl;
+  GWOUT<<"NHRU,NGWCELLS,OVERLAP,CELL,ET RELATIONSHIP TYPE,DRAIN RELATIONSHIP TYPE, SAT. AREA RELATIONSHIP TYPE";
+  GWOUT<<endl;
   for (int c=0; c<NumOEClasses;c++)
   {
     s=pAllOEClasses[c];
     e=s->GetOEStruct();
-    OUT<<e->nHRU <<","<<e->nGWCells  <<","<<"ADD OVERLAP OUTPUT"<<",";
-    if(e->cell == -9999){OUT<<"ALL";}else{OUT<<e->cell;}
-    OUT<<","<<e->oe_props.ET_type<<","<<e->oe_props.D_type<<","<<e->oe_props.SA_type<<",";
-    OUT<<endl;
+    GWOUT<<e->nHRU <<","<<e->nGWCells  <<","<<"ADD OVERLAP GWOUTPUT"<<",";
+    if(e->cell == -9999){GWOUT<<"ALL";}else{GWOUT<<e->cell;}
+    GWOUT<<","<<e->oe_props.ET_type<<","<<e->oe_props.D_type<<","<<e->oe_props.SA_type<<",";
+    GWOUT<<endl;
   }
 }
 

@@ -97,6 +97,9 @@
     <Filter Include="Source Files\Hydrological Processes\Energy Processes">
       <UniqueIdentifier>{5af9b0fb-3969-47e7-9cea-ff492aebbeda}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_Driver\Ensemble Methods">
+      <UniqueIdentifier>{ee044da0-1e2f-4d88-8599-65fd2a419063}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonFunctions.cpp">
@@ -297,9 +300,6 @@
     <ClCompile Include="UnitTesting.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ModelForcingGrids.cpp">
-      <Filter>Source Files\_Driver</Filter>
-    </ClCompile>
     <ClCompile Include="ModelInitialize.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
@@ -331,9 +331,6 @@
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
     <ClCompile Include="ModelParamCheck.cpp">
-      <Filter>Source Files\_Driver</Filter>
-    </ClCompile>
-    <ClCompile Include="ModelEnsemble.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
     <ClCompile Include="ParseEnsembleFile.cpp">
@@ -401,6 +398,15 @@
     </ClCompile>
     <ClCompile Include="ConstituentModel.cpp">
       <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelEnsemble.cpp">
+      <Filter>Source Files\_Driver\Ensemble Methods</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelForcingGrids.cpp">
+      <Filter>Source Files\Forcing Functions\Gauge/Time Series/ForcingGrid</Filter>
+    </ClCompile>
+    <ClCompile Include="DDS.cpp">
+      <Filter>Source Files\_Driver\Ensemble Methods</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1212,10 +1212,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 //////////////////////////////////////////////////////////////////
 /// \brief writes state variables to solution file
 //
-void CReservoir::WriteToSolutionFile (ofstream &OUT) const
+void CReservoir::WriteToSolutionFile (ofstream &RVC) const
 {
-  OUT<<"    :ResFlow, "<<_Qout<<","<<_Qout_last<<endl;
-  OUT<<"    :ResStage, "<<_stage<<","<<_stage_last<<endl;
+  RVC<<"    :ResFlow, "<<_Qout<<","<<_Qout_last<<endl;
+  RVC<<"    :ResStage, "<<_stage<<","<<_stage_last<<endl;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates value from rating curve

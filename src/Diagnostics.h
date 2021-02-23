@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef _DIAGNOSTICS_H
 #define _DIAGNOSTICS_H
@@ -47,7 +47,8 @@ public:/*------------------------------------------------------*/
   CDiagnostic(const diag_type  typ, const int wid);
   ~CDiagnostic();
 
-  string GetName() const;
+  string    GetName() const;
+  diag_type GetType() const;
 
   double CalculateDiagnostic(CTimeSeriesABC  *pTSmod, 
                              CTimeSeriesABC  *pTSObs, 

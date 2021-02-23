@@ -580,23 +580,23 @@ const CChannelXSect*CChannelXSect::StringToChannelXSect(const string s)
 
 
 void TestManningsInfluence(const CChannelXSect *pChan, const double &Qref) {
-  ofstream OUT;
-  OUT.open("ManningsTest.csv");
+  ofstream TEST;
+  TEST.open("ManningsTest.csv");
 
-  OUT<<pChan->GetName()<<endl;
-  OUT<<"ManningsN,1/n,Diffusivity,Celerity,Qref*2 Diff, Qref*2 Cel, Qref*3 Diff, Qref*3 Cel"<<endl;
+  TEST<<pChan->GetName()<<endl;
+  TEST<<"ManningsN,1/n,Diffusivity,Celerity,Qref*2 Diff, Qref*2 Cel, Qref*3 Diff, Qref*3 Cel"<<endl;
   for(double overn=5;overn<100;overn+=5.0) {
     double n=1.0/overn;
-    OUT<<n<<",";
-    OUT<<overn<<",";
-    OUT<<pChan->GetDiffusivity(1*Qref,AUTO_COMPUTE,n)<<",";
-    OUT<<pChan->GetCelerity   (1*Qref,AUTO_COMPUTE,n)<<",";
-    OUT<<pChan->GetDiffusivity(2*Qref,AUTO_COMPUTE,n)<<",";
-    OUT<<pChan->GetCelerity   (2*Qref,AUTO_COMPUTE,n)<<",";
-    OUT<<pChan->GetDiffusivity(3*Qref,AUTO_COMPUTE,n)<<",";
-    OUT<<pChan->GetCelerity   (3*Qref,AUTO_COMPUTE,n)<<",";
-    OUT<<endl;
+    TEST<<n<<",";
+    TEST<<overn<<",";
+    TEST<<pChan->GetDiffusivity(1*Qref,AUTO_COMPUTE,n)<<",";
+    TEST<<pChan->GetCelerity   (1*Qref,AUTO_COMPUTE,n)<<",";
+    TEST<<pChan->GetDiffusivity(2*Qref,AUTO_COMPUTE,n)<<",";
+    TEST<<pChan->GetCelerity   (2*Qref,AUTO_COMPUTE,n)<<",";
+    TEST<<pChan->GetDiffusivity(3*Qref,AUTO_COMPUTE,n)<<",";
+    TEST<<pChan->GetCelerity   (3*Qref,AUTO_COMPUTE,n)<<",";
+    TEST<<endl;
   }
-  OUT.close();
+  TEST.close();
 }
 

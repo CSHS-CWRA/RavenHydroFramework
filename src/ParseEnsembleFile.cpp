@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2019 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -68,6 +68,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":OutputDirectoryFormat"))       { code=1; }
     else if(!strcmp(s[0],":RunNameFormat"))               { code=2; }
     else if(!strcmp(s[0],":ParameterDistributions"))      { code=10; }
+    else if(!strcmp(s[0],":ObjectiveFunction"))           { code=11; }
 
 
     switch(code)
@@ -90,9 +91,9 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
 
       INPUT2.open(filename.c_str());
       if(INPUT2.fail()) {
-        ostrstream FILENAME;
-        FILENAME<<":RedirectToFile (from .rve): Cannot find file "<<filename<<ends;
-        ExitGracefully(FILENAME.str(),BAD_DATA);
+        string warn;
+        warn=":RedirectToFile (from .rve): Cannot find file "+filename;
+        ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else {
         pMainParser=pp;   //save pointer to primary parser
@@ -147,6 +148,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           else if(!strcmp(s[1],"LANDUSE"   )) { ptype=CLASS_LANDUSE; }
           else if(!strcmp(s[1],"TERRAIN"   )) { ptype=CLASS_TERRAIN; }
           else if(!strcmp(s[1],"GLOBALS"   )) { ptype=CLASS_GLOBAL; }
+          //else if(!strcmp(s[1],"SUBBASIN"  )) { ptype=CLASS_SUBBASIN; }
           else {
             ExitGracefully("ParseEnsembleFile: invalid parameter class in :ParameterDistributions command",BAD_DATA);
           }
@@ -163,11 +165,55 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           dist->distpar[1]=s_to_d(s[6]);
           if(Len>7) { dist->distpar[2]=s_to_d(s[7]); }
 
-          
           if (pEnsemble->GetType() == ENSEMBLE_MONTECARLO){
             ((CMonteCarloEnsemble*)(pEnsemble))->AddParamDist(dist);
           }
+          else if(pEnsemble->GetType()==ENSEMBLE_DDS) {
+            ((CDDSEnsemble*)(pEnsemble))->AddParamDist(dist);
+          }
         }
+      }
+      break;
+    }
+    case(11):  //----------------------------------------------
+    {/*:ObjectiveFunction [SBID] [Diagnostic] {Period}*/
+      /*ObjectiveFunction READFROMFILE [filename] //LATER! */
+      if(Options.noisy) { cout <<":ObjectiveFunction"<<endl; }
+
+      diag_type diag;
+      if     (!strcmp(s[2],"NASH_SUTCLIFFE"    )) { diag=DIAG_NASH_SUTCLIFFE; }
+      else if(!strcmp(s[2],"RMSE"              )) { diag=(DIAG_RMSE); }
+      else if(!strcmp(s[2],"PCT_BIAS"          )) { diag=(DIAG_PCT_BIAS); }
+      else if(!strcmp(s[2],"ABSERR"            )) { diag=(DIAG_ABSERR); }
+      else if(!strcmp(s[2],"ABSMAX"            )) { diag=(DIAG_ABSMAX); }
+      else if(!strcmp(s[2],"PDIFF"             )) { diag=(DIAG_PDIFF); }
+      else if(!strcmp(s[2],"TMVOL"             )) { diag=(DIAG_TMVOL); }
+      else if(!strcmp(s[2],"RCOEF"             )) { diag=(DIAG_RCOEF); }
+      else if(!strcmp(s[2],"NSC"               )) { diag=(DIAG_NSC); }
+      else if(!strcmp(s[2],"RSR"               )) { diag=(DIAG_RSR); }
+      else if(!strcmp(s[2],"R2"                )) { diag=(DIAG_R2); }
+      else if(!strcmp(s[2],"CUMUL_FLOW"        )) { diag=(DIAG_CUMUL_FLOW); }
+      else if(!strcmp(s[2],"LOG_NASH"          )) { diag=(DIAG_LOG_NASH); }
+      else if(!strcmp(s[2],"KLING_GUPTA"       )) { diag=(DIAG_KLING_GUPTA); }
+      else if(!strcmp(s[2],"NASH_SUTCLIFFE_DER")) { diag=(DIAG_NASH_SUTCLIFFE_DER); }
+      else if(!strcmp(s[2],"RMSE_DER"          )) { diag=(DIAG_RMSE_DER); }
+      else if(!strcmp(s[2],"KLING_GUPTA_DER"   )) { diag=(DIAG_KLING_GUPTA_DER); }
+      else if(!strcmp(s[2],"MBF"               )) { diag=(DIAG_MBF); }
+      else {
+        ExitGracefully("ParseEnsembleFile::unknown diagnostic in :ObjectiveFunction command.",BAD_DATA_WARN);
+      }
+      string per_string="ALL";
+      if (Len>=4){per_string=to_string(s[3]); }
+      
+      //if diagnostic doesn't exist,
+      //CDiagnostic *pDiag=CDiagnostic(diag);
+      //pModel->AddDiagnostic(pDiag);
+      if(pEnsemble->GetType()==ENSEMBLE_DDS) {
+        CDDSEnsemble *pDDS=((CDDSEnsemble*)(pEnsemble));
+        pDDS->SetCalibrationTarget(s_to_l(s[1]),diag,per_string);
+      }
+      else {
+        WriteWarning(":ObjectiveFunction command will be ignored; no calibration method specified.",Options.noisy);
       }
       break;
     }

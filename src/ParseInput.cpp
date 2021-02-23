@@ -3080,6 +3080,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CEnsemble *pEnsemble=NULL;
   if     (Options.ensemble==ENSEMBLE_NONE      ) {pEnsemble=new CEnsemble(1,Options);}
   else if(Options.ensemble==ENSEMBLE_MONTECARLO) {pEnsemble=new CMonteCarloEnsemble(num_ensemble_members,Options);}
+  else if(Options.ensemble==ENSEMBLE_DDS)        {pEnsemble=new CDDSEnsemble(num_ensemble_members,Options); }
   pModel->SetEnsembleMode(pEnsemble);
   //===============================================================================================
 

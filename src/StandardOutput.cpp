@@ -1342,7 +1342,14 @@ void CModel::RunDiagnostics(const optStruct &Options)
     }
   }
   DIAG.close();
+  
+  //reset for ensemble mode
+  for(int i=0;i<_nObservedTS;i++)
+  {
+    _aObsIndex[i]=0;
+  }
 }
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief Writes output headers for WatershedStorage.tb0 and Hydrographs.tb0
@@ -2182,4 +2189,49 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
   retval = nc_inq_varid      (out_ncid,shortname.c_str(),&var_id);      HandleNetCDFErrors(retval);
   retval = nc_put_vara_double(out_ncid,var_id,time_ind,count1,&val[0]); HandleNetCDFErrors(retval);
 #endif
+}
+
+//JRC \todo[clean] - find a best place to put this. Might eventually require separate file?
+//////////////////////////////////////////////////////////////////
+/// \brief return calibration objective function
+/// \notes right now only supports hydrograph goodness of fit metrics at one subbasin 
+/// \param &calib_SBID [in] target subbasin ID
+/// \param &calib_Obj [in] calibration objective diagnostics (e.g., NSE)
+//
+double CModel::GetObjFuncVal(long calib_SBID,diag_type calib_Obj, const string calib_period) const
+{
+  double starttime=0.0;
+  double endtime  =0.0;
+  double objval;
+  int ii=DOESNT_EXIST; // observation index
+  int jj=DOESNT_EXIST; // diagnostic measure
+
+  //- grab diagnostic information -----------------------------------
+  for(int d=0;d<_nDiagPeriods;d++) {
+    if(_pDiagPeriods[d]->GetName()==calib_period) {
+      starttime=_pDiagPeriods[d]->GetStartTime();
+      endtime  =_pDiagPeriods[d]->GetEndTime();
+    }
+  }
+
+  for(int i=0;i<_nObservedTS;i++)
+  {
+    if((_pObservedTS[i]->GetName()=="HYDROGRAPH") && (_pObservedTS[i]->GetLocID()==calib_SBID)) { ii=i; }
+  }
+  for(int j=0; j<_nDiagnostics;j++) {
+    if(_pDiagnostics[j]->GetType()==calib_Obj) { jj=j; }
+  }
+  ExitGracefullyIf(ii==DOESNT_EXIST,"GetObjFuncVal: unable to find calibration target time series (hydrograph in basin :CalibrationSBID)",BAD_DATA);
+  ExitGracefullyIf(jj==DOESNT_EXIST,"GetObjFuncVal: unable to find calibration target diagnostic ",BAD_DATA);
+  ExitGracefullyIf(endtime==0.0,    "GetObjFuncVal: unable to find calibration period with this name ",BAD_DATA);
+
+  //- Calculate objective function -----------------------------------
+  objval=_pDiagnostics[jj]->CalculateDiagnostic(_pModeledTS[ii],_pObservedTS[ii],_pObsWeightTS[ii],starttime,endtime,*_pOptStruct);
+
+  if((calib_Obj==DIAG_NASH_SUTCLIFFE) ||
+     (calib_Obj==DIAG_KLING_GUPTA))
+  {
+    objval*=-1;
+  }
+  return objval;
 }

@@ -463,24 +463,24 @@ void CEnthalpyModel::WriteEnsimMinorOutput(const optStruct &Options,const time_s
 //
 void TestEnthalpyTempConvert()
 {
-  ofstream OUT;
-  OUT.open("EnthalpyTest.csv");
-  OUT<<"h,T,Fi,h_reverse"<<endl;
+  ofstream TEST;
+  TEST.open("EnthalpyTest.csv");
+  TEST<<"h,T,Fi,h_reverse"<<endl;
   for(double h=-500; h<0.0; h+=10) {
     double T=ConvertVolumetricEnthalpyToTemperature(h);
     double Fi=ConvertVolumetricEnthalpyToIceContent(h);
     double hr=ConvertTemperatureToVolumetricEnthalpy(T,Fi);
     double dTdh=TemperatureEnthalpyDerivative(h);
-    OUT<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
+    TEST<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
   }
   for(double h=0; h<=150; h+=15) {
     double T=ConvertVolumetricEnthalpyToTemperature(h);
     double Fi=ConvertVolumetricEnthalpyToIceContent(h);
     double hr=ConvertTemperatureToVolumetricEnthalpy(T,Fi);
     double dTdh=TemperatureEnthalpyDerivative(h);
-    OUT<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
+    TEST<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
   }
-  OUT.close();
+  TEST.close();
 
   ExitGracefully("TestEnthalpyTempConvert",SIMULATION_DONE);
 

@@ -5,7 +5,7 @@
 
 #include "CustomOutput.h"
 
-void WriteNetCDFGlobalAttributes(int out_ncid,const optStruct &Options,string descript);//in StandardOutput.cpp
+void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript);//in StandardOutput.cpp
 
 /*****************************************************************
    Constructor/Destructor
@@ -79,9 +79,9 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   //-------------------------------------------------------------
   // figure out filename here
   // RunName if available
-  ostrstream FILENAME;
-  if (Options.run_name!=""){FILENAME<<Options.output_dir<<Options.run_name<<"_";}
-  else                     {FILENAME<<Options.output_dir;                       }
+  ostrstream sFILENAME;
+  if (Options.run_name!=""){sFILENAME<<Options.output_dir<<Options.run_name<<"_";}
+  else                     {sFILENAME<<Options.output_dir;                       }
       
   // Get the variable name (either the state variable name of the forcing variable name)
   // and the units
@@ -139,7 +139,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     break;
   }
   }
-  FILENAME<<_varName<<"_";
+  sFILENAME<<_varName<<"_";
 
 // temporal aggregation
   switch(_timeAgg)
@@ -151,7 +151,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case EVERY_NDAYS:               _timeAggStr="Every"+to_string(int(Options.custom_interval))+"days";break;
   case EVERY_TSTEP:               _timeAggStr="Continuous"; break;
   }
-  FILENAME<<_timeAggStr<<"_";
+  sFILENAME<<_timeAggStr<<"_";
 
 // statistic
   switch(_aggstat)
@@ -165,7 +165,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case AGG_QUARTILES:             _statStr="Quartiles"; break;
   case AGG_HISTOGRAM:             _statStr="Histogram"; break;
   }
-  FILENAME<<_statStr<<"_";
+  sFILENAME<<_statStr<<"_";
 
 // spatial aggregation
   switch(_spaceAgg)
@@ -177,18 +177,18 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case BY_SB_GROUP:               _spaceAggStr="BySubbasinGroup"; break;
   case BY_SELECT_HRUS:            _spaceAggStr="ByHRU"; break;
   }
-  FILENAME<<_spaceAggStr;
+  sFILENAME<<_spaceAggStr;
 
   // filename extension
   switch(Options.output_format)
   {
-  case OUTPUT_ENSIM:      FILENAME<<".tb0"<<ends; break;
-  case OUTPUT_NETCDF:     FILENAME<<".nc" <<ends; break;
+  case OUTPUT_ENSIM:      sFILENAME<<".tb0"<<ends; break;
+  case OUTPUT_NETCDF:     sFILENAME<<".nc" <<ends; break;
   case OUTPUT_STANDARD:
-  default:                FILENAME<<".csv"<<ends; break;
+  default:                sFILENAME<<".csv"<<ends; break;
   }
 
-  if (filename_spec==""){_filename=FILENAME.str();}
+  if (filename_spec==""){_filename=sFILENAME.str();}
   else                  {
     if (Options.run_name!=""){_filename=Options.output_dir+Options.run_name+"_"+filename_spec;}
     else                     {_filename=Options.output_dir+filename_spec; } // \todo [QA/QC]: should check for proper extension of filename_spec

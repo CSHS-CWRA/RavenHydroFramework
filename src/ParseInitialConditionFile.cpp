@@ -43,6 +43,31 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     cout <<"======================================================"<<endl;
   }
 
+  //Initialize everything to zero (required for ensemble simulation)
+  //--------------------------------------------------------------------------
+  for (int i=0;i<pModel->GetNumStateVars();i++)
+  {
+    sv_type typ      =pModel->GetStateVarType(i);
+    int     layer_ind=pModel->GetStateVarLayer(i);
+    for(k=0;k<pModel->GetNumHRUs();k++) {
+      SetInitialStateVar(pModel,i,typ,layer_ind,k,0.0);
+    }
+  }
+  for(int p=0;p<pModel->GetNumSubBasins();p++) {
+    pModel->GetSubBasin(p)->SetBasinProperties("Q_REFERENCE",AUTO_COMPUTE);
+    double *aQo=new double [pModel->GetSubBasin(p)->GetNumSegments()];
+    for(int i=0;i<pModel->GetSubBasin(p)->GetNumSegments();i++) {
+      aQo[i]=AUTO_COMPUTE;
+    }
+    //pModel->GetSubBasin(p)->SetQoutArray(pModel->GetSubBasin(p)->GetNumSegments(),aQo,AUTO_COMPUTE); //seems to cause issues
+    delete [] aQo;
+    pModel->GetSubBasin(p)->SetChannelStorage(0.0);
+    pModel->GetSubBasin(p)->SetRivuletStorage(0.0);
+    if(pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
+      pModel->GetSubBasin(p)->GetReservoir()->SetInitialStage(0.0,0.0);
+    }
+  }
+
   //--Sift through file-----------------------------------------------
   bool end_of_file=pp->Tokenize(s,Len);
   while (!end_of_file)
@@ -108,9 +133,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
       INPUT2.open(filename.c_str());
       if (INPUT2.fail()){
-        ostrstream FILENAME;
-        FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
-        ExitGracefully(FILENAME.str() ,BAD_DATA);
+        string warn=":RedirectToFile: Cannot find file "+filename;
+        ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else{
         pMainParser=pp;   //save pointer to primary parser
@@ -408,9 +432,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(6):  //----------------------------------------------
-    {
-      /*
-        ":BasinStateVariables"
+    { /* :BasinStateVariables
           :BasinIndex ID, name
             :ChannelStorage [val]
             :RivuletStorage [val]

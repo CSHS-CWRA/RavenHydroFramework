@@ -183,10 +183,10 @@ bool ParseGWPropsFile(CModel         *&pModel,
         for (int i=1;i<Len;i++){filename+=s[i]; if(i<Len-1){filename+=' ';}}
         if (Options.noisy) {cout <<"Redirect to file: "<<filename<<endl;}
         INPUT2.open(filename.c_str()); 
-        if (INPUT2.fail()){
-          ostrstream FILENAME;
-          FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
-          ExitGracefully(FILENAME.str() ,BAD_DATA); 
+        if (INPUT2.fail()){ 
+          string warn;
+          warn=":RedirectToFile: Cannot find file "+filename;
+          ExitGracefully(warn.c_str(),BAD_DATA);
         }
         else{
           pMainParser=p;    //save pointer to primary parser

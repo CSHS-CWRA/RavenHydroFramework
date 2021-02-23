@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
@@ -162,6 +162,8 @@ int main(int argc, char* argv[])
       pModel->RunDiagnostics   (Options);
       pModel->WriteMajorOutput (Options,tt,"solution",true);
       pModel->CloseOutputStreams();
+
+      pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,e);
 
       if(!Options.silent) {
         cout <<"======================================================"<<endl;

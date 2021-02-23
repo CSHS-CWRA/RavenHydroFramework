@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 
@@ -24,15 +24,10 @@ Copyright (c) 2008-2020 the Raven Development Team
   
 
   retval = nc_inq_att(ncid,varid_t,"calendar",&att_type,&att_len);
-  if(retval == NC_ENOTATT) 
-  {
-    // (a) if not found, set to proleptic_gregorian
-    calendar = StringToCalendar("PROLEPTIC_GREGORIAN");
-  }
-  else
+  if(retval != NC_ENOTATT) 
   {
     HandleNetCDFErrors(retval);
-    // (b) if found, read and make sure '\0' is terminating character
+    // if found, read and make sure '\0' is terminating character
     retval = nc_inq_attlen(ncid,varid_t,"calendar",&att_len);            HandleNetCDFErrors(retval);// inquire length of attribute's text
 
     char *calendar_t = new char[att_len + 1]; // allocate memory of char * to hold attribute's text
@@ -116,7 +111,7 @@ Copyright (c) 2008-2020 the Raven Development Team
  /// \param julian_day [out] julian start day of data
  /// \param year [out] julian start year of data
  //
- void GetJulianDateFromNetCDFTime(string unit_t_str,int calendar,const double &time,double &julian_day,int &year)
+ void GetJulianDateFromNetCDFTime(const string unit_t_str,const int calendar,const double &time,double &julian_day,int &year)
  {
 #ifdef _RVNETCDF_
    time_struct tt_ref;   //reference time in NetCDF time string (e.g., time in days since 2001-10-01)

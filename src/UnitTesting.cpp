@@ -262,51 +262,51 @@ void GammaTest()
 //
 void ADRCumDistTest()
 {
-  ofstream OUT;
-  OUT.open("ADRCumDistTest.csv");
+  ofstream TEST;
+  TEST.open("ADRCumDistTest.csv");
   double *v=new double[10];
   for(int j=0;j<10;j++) {
     v[j]=1.0+5.0*((double)(rand())/RAND_MAX);
   }
   for(double t=0;t<10;t+=0.125) {
-    OUT<<t<<",";
+    TEST<<t<<",";
     for(double D=0.03; D<0.3;D+=0.03) {
-      //OUT<<ADRCumDist(t,5,1.0,D)<<",";
-      OUT<<ADRCumDist(t+0.125,5,1.0,D)-ADRCumDist(t,5,1.0,D)<<",";
+      //TEST<<ADRCumDist(t,5,1.0,D)<<",";
+      TEST<<ADRCumDist(t+0.125,5,1.0,D)-ADRCumDist(t,5,1.0,D)<<",";
     }
-    OUT<<endl;
+    TEST<<endl;
   }
-  OUT<<endl;
+  TEST<<endl;
   for(int j=0;j<10;j++) {
-    OUT<<v[j]<<",";
+    TEST<<v[j]<<",";
   }
-  OUT<<endl;
+  TEST<<endl;
   for(double t=0;t<10;t+=0.125) {    
-    OUT<<t<<",";
+    TEST<<t<<",";
     for(double D=0.12; D<1.2;D+=0.12) {
-      //OUT<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
-      OUT<<TimeVaryingADRCumDist(t+0.125,5,v,10,D,1.0)-
+      //TEST<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
+      TEST<<TimeVaryingADRCumDist(t+0.125,5,v,10,D,1.0)-
            TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
     }
-    OUT<<endl;
+    TEST<<endl;
 
   }
-  OUT<<endl;
+  TEST<<endl;
   //paper figure
   for(int j=0;j<10;j++) {
     v[j]=1.0;
   }
   v[1]=4; v[2]=2; v[3]=5; v[4]=4; v[5]=3; v[6]=3; v[7]=5; 
   for(double t=0;t<6.0;t+=0.025) {
-    OUT<<t<<",";
+    TEST<<t<<",";
     double D=1.0;
-    OUT<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
-    OUT<< TimeVaryingADRCumDist(t+0.025,5,v,10,D,1.0)-
+    TEST<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
+    TEST<< TimeVaryingADRCumDist(t+0.025,5,v,10,D,1.0)-
           TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
-    OUT<<endl;
+    TEST<<endl;
 
   }
-  OUT.close();
+  TEST.close();
   ExitGracefully("ADRCumDistTest",SIMULATION_DONE);
 }
 //////////////////////////////////////////////////////////////////
@@ -577,8 +577,8 @@ void BarycentricWeights() {
   int    N=5;
   double _aWeights[5];
   double aVals[4];
-  ofstream OUT;
-  OUT.open("BarycentricWeights.csv");
+  ofstream TEST;
+  TEST.open("BarycentricWeights.csv");
   rand();
   for(int m=0; m<10000;m++) {
     sum=0;
@@ -589,10 +589,10 @@ void BarycentricWeights() {
     }
     _aWeights[N-1]=1.0-sum;
     for(int q=0; q<N;q++) {
-      OUT<<_aWeights[q]<<",";
-    }OUT<<endl;
+      TEST<<_aWeights[q]<<",";
+    }TEST<<endl;
   }
-  OUT.close();
+  TEST.close();
   ExitGracefully("BarycentricWeights",SIMULATION_DONE);
 }
 

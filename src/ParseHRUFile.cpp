@@ -105,9 +105,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
       INPUT2.open(filename.c_str());
       if (INPUT2.fail()){
-        ostrstream FILENAME;
-        FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
-        ExitGracefully(FILENAME.str() ,BAD_DATA);
+        string warn=":RedirectToFile: Cannot find file "+filename;
+        ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else{
         pMainParser=pp;   //save pointer to primary parser

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2021 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -61,6 +61,13 @@ string CDiagnostic::GetName() const
   case(DIAG_MBF):               {return "DIAG_MBF"; break;}
   default:                      {return "";break;}
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns the type of the diagnostic
+//
+diag_type CDiagnostic::GetType() const
+{
+  return _type;
 }
 
 //////////////////////////////////////////////////////////////////
