@@ -1640,9 +1640,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     int varid;
     varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"rainfall","rainfall","mm d**-1");
     varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"snowfall","snowfall","mm d**-1");
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Channel Storage","Channel Storage","mm");
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Reservoir Storage","Reservoir Storage","mm");
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Rivulet Storage","Rivulet Storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"channel_storage","Channel Storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"reservoir_storage","Reservoir Storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"rivulet_storage","Rivulet Storage","mm");
     
     int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
     for(int i=0;i<_nStateVars;i++){
@@ -1651,10 +1651,10 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 	varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,name,name,"mm");
       }
     }
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Total","total water storage","mm");
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Input","cumulative water input","mm");
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"Cum. Outflow","cumulative water output","mm");
-    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"MB Error","mass balance error","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"total","total water storage","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"cum_input","cumulative water input","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"cum_outflow","cumulative water output","mm");
+    varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,"MB_error","mass balance error","mm");
     
     // End define mode. This tells netCDF we are done defining metadata. 
     retval = nc_enddef(_STORAGE_ncid);  HandleNetCDFErrors(retval);

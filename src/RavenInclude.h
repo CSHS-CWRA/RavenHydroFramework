@@ -1098,10 +1098,13 @@ struct optStruct
   // Diagnostic options
   double           diag_start_time;           ///< Model time to start diagnostics
   double           diag_end_time;             ///< Model time to start diagnostics
+
+  // Other
   bool             assimilation_on;           ///< turn on assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
+  int              NetCDF_chunk_mem;          ////< [MB] size of memory chunk for each forcing grid
 };
 
 ///////////////////////////////////////////////////////////////////

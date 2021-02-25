@@ -573,6 +573,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 #ifdef _RVNETCDF_
 
   // local variables
+  int     ir,ic,it;
   int     ncid;          // file unit
   int     dim1;          // length of 1st dimension in NetCDF data
   int     dim2;          // length of 2nd dimension in NetCDF data
@@ -604,11 +605,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // -------------------------------
     _aVal = NULL;
     _aVal = new double *[_ChunkSize];
-    for (int it=0; it<_ChunkSize; it++) {                    // loop over time points in buffer
+    for (it=0; it<_ChunkSize; it++) {                    // loop over time points in buffer
       _aVal[it]=NULL;
       _aVal[it] = new double [_nNonZeroWeightedGridCells];
       ExitGracefullyIf(_aVal[it]==NULL,"CForcingGrid::ReadData",OUT_OF_MEMORY);
-      for (int ic=0; ic<_nNonZeroWeightedGridCells;ic++){    // loop over all non-zero weighted grid cells
+      for (ic=0; ic<_nNonZeroWeightedGridCells;ic++){    // loop over all non-zero weighted grid cells
         _aVal[it][ic]=NETCDF_BLANK_VALUE;
       }
     }
@@ -732,11 +733,11 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     if ( _is_3D ) {
       aTmp3D=new double **[dim1];
       ExitGracefullyIf(aTmp3D==NULL,"CForcingGrid::ReadData : aTmp3D(0)",OUT_OF_MEMORY);
-      for(int it=0;it<dim1;it++){
+      for(it=0;it<dim1;it++){
         aTmp3D[it]=NULL;
         aTmp3D[it]=new double *[dim2];
         ExitGracefullyIf(aTmp3D[it]==NULL,"CForcingGrid::ReadData : aTmp3D(1)",OUT_OF_MEMORY);
-        for(int ir=0;ir<dim2;ir++){
+        for(ir=0;ir<dim2;ir++){
           aTmp3D[it][ir]=&aVec[it*dim2*dim3+ir*dim3]; //points to correct location in aVec data storage
         }
       }
@@ -744,7 +745,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     else {
       aTmp2D=new double *[dim1];
       ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadData : aTmp2D(0)",OUT_OF_MEMORY);
-      for(int it=0;it<dim1;it++){
+      for(it=0;it<dim1;it++){
         aTmp2D[it]=&aVec[it*dim2]; //points to correct location in aVec data storage
       }
     }
@@ -834,17 +835,17 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // MANDATORY to do before any value of these data are used
     // -------------------------------
     if ( _is_3D ) {
-      for (int it=0;it<dim1;it++){
-        for (int ir=0;ir<dim2;ir++){
-	        for (int ic=0;ic<dim3;ic++){
+      for (it=0;it<dim1;it++){
+        for (ir=0;ir<dim2;ir++){
+	        for (ic=0;ic<dim3;ic++){
 	          aTmp3D[it][ir][ic] = aTmp3D[it][ir][ic] * scale_factor + add_offset;
 	        }
         }
       }
     }
     else {
-      for (int it=0;it<dim1;it++){
-	      for (int ir=0;ir<dim2;ir++){
+      for (it=0;it<dim1;it++){
+	      for (ir=0;ir<dim2;ir++){
 	        aTmp2D[it][ir] = aTmp2D[it][ir] * scale_factor + add_offset;
 	      }
       }
@@ -858,8 +859,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     {
       int irow,icol;
       if (_dim_order == 1) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol); 
             val=aTmp3D[icol-_WinStart[0]][irow-_WinStart[1]][it];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
@@ -870,8 +871,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
       else if (_dim_order == 2) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
 		        CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
 		        val=aTmp3D[irow-_WinStart[1]][icol-_WinStart[0]][it];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
@@ -881,8 +882,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 		    }
       }
       else if (_dim_order == 3) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[icol-_WinStart[0]][it][irow-_WinStart[1]];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
@@ -892,8 +893,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
       else if (_dim_order == 4) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[it][icol-_WinStart[0]][irow-_WinStart[1]];
             if(!((Options.deltaresFEWS) && (it==0))) {
@@ -905,8 +906,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
       else if (_dim_order == 5) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[irow-_WinStart[1]][it][icol-_WinStart[0]];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
@@ -916,8 +917,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
       else if (_dim_order == 6) {
-        for (int it=0; it<iChunkSize; it++){                      // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){    // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                      // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){    // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[it][irow-_WinStart[1]][icol-_WinStart[0]];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol);}   
@@ -930,8 +931,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     else // 2D
     {
       if (_dim_order == 1) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             val=aTmp2D[_IdxNonZeroGridCells[ic]][it];
             if(val==missval) { CheckValue2D(val,missval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "missing_value"
             if(val==fillval) { CheckValue2D(val,fillval,_IdxNonZeroGridCells[ic],it); }   // throw error  if value to read in equals "_FillValue"
@@ -940,8 +941,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         }
       }
       else if (_dim_order == 2) {
-        for (int it=0; it<iChunkSize; it++){                     // loop over time points in buffer
-          for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
+        for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
+          for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             val=aTmp2D[it][_IdxNonZeroGridCells[ic]];
             if(val==missval) { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
             if(val==fillval) { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
@@ -954,7 +955,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
     //delete dynamic arrays
     // -------------------------------
-    if ( _is_3D ) {for (int it=0;it<dim1;it++){delete [] aTmp3D[it];} delete [] aTmp3D;}
+    if ( _is_3D ) {for (it=0;it<dim1;it++){delete [] aTmp3D[it];} delete [] aTmp3D;}
     else          {delete [] aTmp2D;}
     delete [] aVec;
 
@@ -1255,7 +1256,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   if(_is_3D) { BytesPerTimestep = 8 * _WinLength[0] * _WinLength[1]; }
   else       { BytesPerTimestep = 8 * _WinLength[0]; }
 
-  const int CHUNK_MEMORY=10; //MB
+  int CHUNK_MEMORY=Options.NetCDF_chunk_mem;
 
   _ChunkSize = int(max(min((CHUNK_MEMORY *1024 * 1024) / BytesPerTimestep,ntime),1));  // number of timesteps per chunk - 10MB chunks
   // _ChunkSize = max(int(round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read

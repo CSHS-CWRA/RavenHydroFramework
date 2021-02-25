@@ -721,7 +721,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           {
             if(pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) { 
               pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
-              advice=advice+to_string(pModel->GetSubBasin(p)->GetID());
+              advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
             }
           }
         }
@@ -736,7 +736,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             while ((pBasin->GetDownstreamID()!=DOESNT_EXIST) && (iter<1000)){
               pBasin=pModel->GetSubBasinByID(pBasin->GetDownstreamID());
               pSBGroup->AddSubbasin(pBasin);
-              advice=advice+to_string(pBasin->GetID());
+              advice=advice+to_string(pBasin->GetID())+" ";
               iter++;
             }
             if(iter==1000) {

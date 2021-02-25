@@ -168,6 +168,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   bool              transprepared(false);
   bool              runname_overridden(false);
   int               num_ensemble_members=1;
+  unsigned int      random_seed=0; //actually random
   ifstream          INPUT;
 
   int               tmpN;
@@ -303,6 +304,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.use_stopfile            =false;
   Options.runinfo_filename        ="";
 
+  Options.NetCDF_chunk_mem        =10; //MB
+
   pModel=NULL;
   pMover=NULL;
 
@@ -427,7 +430,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":CustomOutputInterval"      )){code=100;}
     else if  (!strcmp(s[0],":CallExternalScript"        )){code=102;}
     else if  (!strcmp(s[0],":ReadLiveFile"              )){code=104;}
-
+    else if  (!strcmp(s[0],":RandomSeed"                )){code=105;}
     else if  (!strcmp(s[0],":UseStopFile"               )){code=106;}
     else if  (!strcmp(s[0],":FEWSRunInfoFile"           )){code=108;}
     
@@ -1637,6 +1640,12 @@ bool ParseMainInputFile (CModel     *&pModel,
           Options.rvl_read_frequency = s_to_d(s[1]);
         }
       }
+      break;
+    }
+    case(105):  //--------------------------------------------
+    {/*:RandomSeed [seed]*/
+      if(Options.noisy) { cout <<"Random seed "<<endl; }
+      random_seed=fabs(s_to_i(s[1]));
       break;
     }
     case(106):  //--------------------------------------------
@@ -3008,7 +3017,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_gwhead =true;
       break;
     }
-      case(511):  //--------------------------------------------
+    case(511):  //--------------------------------------------
     {/*:WriteGroundwaterFlows */
       if (Options.noisy) {cout <<"Write Groundwater Flows File ON"<<endl;}
       Options.write_gwflow =true;
@@ -3082,6 +3091,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   else if(Options.ensemble==ENSEMBLE_MONTECARLO) {pEnsemble=new CMonteCarloEnsemble(num_ensemble_members,Options);}
   else if(Options.ensemble==ENSEMBLE_DDS)        {pEnsemble=new CDDSEnsemble(num_ensemble_members,Options); }
   pModel->SetEnsembleMode(pEnsemble);
+  pEnsemble->SetRandomSeed(random_seed);
   //===============================================================================================
 
   delete p; p=NULL;
