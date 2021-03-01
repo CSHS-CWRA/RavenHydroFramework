@@ -79,6 +79,18 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
     }
     iFrom[nSoilLayers]=pModel->GetStateVarIndex(AET);   iTo[nSoilLayers]=iFrom[nSoilLayers];
   }
+  else if(type==SOILEVAP_SACSMA)
+  {
+    CHydroProcessABC::DynamicSpecifyConnections(7);
+    iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
+    iFrom[1]=pModel->GetStateVarIndex(SOIL,1);     iTo[1]=iAtmos;
+    iFrom[2]=pModel->GetStateVarIndex(SOIL,1);     iTo[2]=pModel->GetStateVarIndex(SOIL,0);
+    iFrom[3]=pModel->GetStateVarIndex(SOIL,2);     iTo[3]=iAtmos;
+    iFrom[4]=pModel->GetStateVarIndex(SOIL,4);     iTo[4]=pModel->GetStateVarIndex(SOIL,2);
+    iFrom[5]=pModel->GetStateVarIndex(SOIL,5);     iTo[5]=iAtmos;
+
+    iFrom[6]=pModel->GetStateVarIndex(AET);   iTo[6]=iFrom[6];
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -191,6 +203,13 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
   {
     nP=0;
   }
+  else if(type==SOILEVAP_SACSMA)
+  {
+    nP=3;
+    aP[0]="MAX_SAT_AREA_FRAC";       aPC[0]=CLASS_LANDUSE;
+    aP[1]="IMPERMEABLE_FRAC";        aPC[1]=CLASS_LANDUSE;
+    aP[2]="UNAVAIL_FRAC";            aPC[2]=CLASS_SOIL;
+  }
   else
   {
     ExitGracefully("CmvSoilEvap::GetParticipatingParamList: undefined soil evaporation algorithm",BAD_DATA);
@@ -255,6 +274,14 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     nSV=2;
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
     aLev[0]=0;     aLev[1]=DOESNT_EXIST;
+  }
+  else if(se_type==SOILEVAP_SACSMA)
+  {
+    nSV=7;
+    for(int m=0;m<=5;m++) {
+      aSV[m]=SOIL; aLev[m]=m;
+    }
+    aSV[6]=ATMOSPHERE; aLev[6]=DOESNT_EXIST;
   }
   nSV++;
   aSV[nSV-1]=AET;
@@ -591,6 +618,74 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     rates[0]=stor*(2.0-sat)*tmp/(1.0+(1.0-sat)*tmp);
     PETused=rates[0];
+  }
+  //------------------------------------------------------------------
+  else if(type==SOILEVAP_SACSMA)
+  {
+    double red;            // [mm] residual evap demand
+    double e1,e2,e3,e5;    // [mm] different ETs from different regions
+
+    double Adimp       =pHRU->GetSurfaceProps()->max_sat_area_frac; //ADIMP
+    double Aimp        =pHRU->GetSurfaceProps()->impermeable_frac; //AIMP
+    double rserv       =pHRU->GetSoilProps(3)->unavail_frac; //RSERV
+
+    double Aperv = 1.0 - Adimp - Aimp;
+
+    double uzt_stor_max =pHRU->GetSoilCapacity(0); //UZTM
+    double uzf_stor_max =pHRU->GetSoilCapacity(1); //UZFM
+    double lzt_stor_max =pHRU->GetSoilCapacity(2); //LZTM
+    double lzfp_stor_max=pHRU->GetSoilCapacity(3); //LZFPM
+    double lzfs_stor_max=pHRU->GetSoilCapacity(4); //LZFSM
+
+    double uzt_stor  =state_vars[pModel->GetStateVarIndex(SOIL,0)]/Aperv;
+    double uzf_stor  =state_vars[pModel->GetStateVarIndex(SOIL,1)]/Aperv;
+    double lzt_stor  =state_vars[pModel->GetStateVarIndex(SOIL,2)]/Aperv;
+    double lzfp_stor =state_vars[pModel->GetStateVarIndex(SOIL,3)]/Aperv;
+    double lzfs_stor =state_vars[pModel->GetStateVarIndex(SOIL,4)]/Aperv;
+    double adimc_stor=state_vars[pModel->GetStateVarIndex(SOIL,5)]/Adimp;
+    if(Adimp==0) { adimc_stor=0; }
+
+    e1 = min(PET * (uzt_stor/uzt_stor_max),uzt_stor);
+    red = PET - e1;
+    uzt_stor -= e1;
+    rates[0]=e1*Aperv/Options.timestep; //UZT SOIL[0]->ATMOSPHERE
+
+    e2=min(red,uzf_stor);
+    red-=e2;
+    uzf_stor-=e2;
+    rates[1]=e2*Aperv/Options.timestep; //UZF SOIL[1]->ATMOSPHERE  
+
+    // equilibrate storage ratios in upper zone 
+    if((uzt_stor/uzt_stor_max) < (uzf_stor/uzf_stor_max))
+    {
+      double delta= uzt_stor_max*(uzt_stor + uzf_stor) / (uzt_stor_max + uzf_stor_max)-uzt_stor;
+      //cout<<"uzf_stor "<<uzt_stor/uzt_stor_max<<" "<<uzf_stor/uzf_stor_max<<" "<<uzf_stor<<" "<<delta<<endl;
+      uzt_stor += delta;
+      uzf_stor -= delta;
+      rates[2] = delta*Aperv/Options.timestep; //UZF SOIL[1]-> UZT SOIL[0]
+    }
+
+    e3 = min(red * (lzt_stor/(uzt_stor_max + lzt_stor_max)),lzt_stor);
+    lzt_stor -= e3;
+    rates[3]=e3*Aperv/Options.timestep;       //LZT SOIL[2]->ATMOSPHERE  
+
+    double ratlzt = lzt_stor/lzt_stor_max;
+    double saved = rserv * (lzfp_stor_max + lzfs_stor_max);
+    double ratlz = (lzt_stor+lzfp_stor+lzfs_stor-saved)/(lzt_stor_max+lzfp_stor_max+lzfs_stor_max-saved);
+    if(ratlzt < ratlz)
+    { // resupply lower zone tension water from lower zone free water if more water available there
+      double del = min((ratlz - ratlzt) * lzt_stor_max,lzfs_stor);
+      lzt_stor  += del;
+      lzfs_stor -= del;
+      //rates[4]=del*Aperv/Options.timestep;   //LZFS SOIL[4]->LZT SOIL[2]
+    }
+
+    // adjust adimc,additional impervious area storage, for evaporation 
+    e5 = min(e1 + (red+e2) * (adimc_stor-uzt_stor-e1) / (uzt_stor_max+lzt_stor_max),adimc_stor);
+    adimc_stor -= e5;
+    rates[5]=e5*Adimp/Options.timestep;     //ADIMC (SOIL[5])->ATMOS
+  
+    PETused=(e1+e2+e3)*Aperv+e5*Adimp;
   }
   else
   {

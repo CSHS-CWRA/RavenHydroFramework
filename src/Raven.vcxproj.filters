@@ -408,6 +408,9 @@
     <ClCompile Include="DDS.cpp">
       <Filter>Source Files\_Driver\Ensemble Methods</Filter>
     </ClCompile>
+    <ClCompile Include="SoilBalance.cpp">
+      <Filter>Source Files\Hydrological Processes\Soil Water Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

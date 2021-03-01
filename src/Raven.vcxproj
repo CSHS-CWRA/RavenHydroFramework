@@ -564,6 +564,7 @@
     <ClCompile Include="ConstituentModel.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="MassRouting.cpp" />
+    <ClCompile Include="SoilBalance.cpp" />
     <ClCompile Include="Transport.cpp" />
     <ClCompile Include="RobinInterface.cpp" />
     <ClCompile Include="SubbasinGroups.cpp" />

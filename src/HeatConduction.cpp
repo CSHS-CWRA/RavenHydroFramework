@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ------------------------------------------------------------------
 Soil Heat Conduction
 convention assumes conduction is positive downward
@@ -470,6 +470,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   // Allocate Memory for static arrays
   if(tt.model_time==0.0) 
   {
+    Jinv=NULL;
     v_old=new double *[_nHRUs];
     for(int k=0;k<_nHRUs;k++) {
       v_old[k]=new double [N];
@@ -488,6 +489,9 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     J      =new double *[3];
     for(int i=0;i<3;i++) {    J[i]=new double[N]; }
     Jinv  =new double *[N];
+    if(Jinv==NULL) {
+      ExitGracefully("CmvHeatConduction::GetRatesOfChange", OUT_OF_MEMORY);
+    }
     for(int i=0;i<N;i++) { Jinv[i]=new double[N]; }
   }
 

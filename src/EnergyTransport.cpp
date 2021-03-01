@@ -270,6 +270,13 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   const CSubBasin *pBasin=_pModel->GetSubBasin(p);
   int                   k= pBasin->GetReachHRUIndex();
+
+  if((pBasin->IsHeadwater()) || (k==DOESNT_EXIST))
+  {
+    Q_sens=Q_lat=Q_GW=Q_rad=Q_fric=0.0;
+    return 0.0;
+  }
+
   const CHydroUnit  *pHRU=_pModel->GetHydroUnit(k);
   int                iAET=_pModel->GetStateVarIndex(AET);
 

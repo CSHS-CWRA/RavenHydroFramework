@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
 
   Open Water Evap
   Lake Evap
@@ -16,7 +16,7 @@
 CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype, const int i_from)
   :CHydroProcessABC(OPEN_WATER_EVAPORATION)
 {
-  type =owtype;
+  _type =owtype;
 
   CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
   iFrom[0]=i_from;                          iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
@@ -34,7 +34,7 @@ CmvOWEvaporation::~CmvOWEvaporation(){}
 void CmvOWEvaporation::Initialize()
 {
   sv_type typ=pModel->GetStateVarType(iFrom[0]);
-  ExitGracefullyIf((typ!=DEPRESSION) && (typ!=PONDED_WATER) && (type!=SURFACE_WATER),
+  ExitGracefullyIf((typ!=DEPRESSION) && (typ!=PONDED_WATER) && (typ!=SURFACE_WATER),
                    "CmvOWEvaporation::Initialize:Open Water evaporation must come from depression, ponded water, or surface water",BAD_DATA);
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=ATMOSPHERE,
                    "CmvOWEvaporation::Initialize:Open Water evaporation must go to atmosphere",BAD_DATA);
@@ -50,6 +50,11 @@ void CmvOWEvaporation::GetParticipatingParamList(string *aP, class_type *aPC, in
 {
   nP=1;
   aP[0]="OW_PET_CORR";   aPC[0]=CLASS_LANDUSE;
+
+  if(_type==OPEN_WATER_RIPARIAN) {
+    nP=2;
+    aP[1]="STREAM_FRACTION"; aPC[1]=CLASS_LANDUSE;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to state variable types needed by evaporation algorithm
@@ -87,7 +92,6 @@ void CmvOWEvaporation::GetRatesOfChange( const double                   *state_v
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;            //open water PET rate [mm/d]
   
- 
   if(!Options.suppressCompetitiveET) {
     //competitive ET - reduce PET by AET 
     OWPET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
@@ -96,9 +100,14 @@ void CmvOWEvaporation::GetRatesOfChange( const double                   *state_v
 
   if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 
-  if (type==OPEN_WATER_EVAP)//-------------------------------------
+  if (_type==OPEN_WATER_EVAP)//-------------------------------------
   {
     rates[0]=pHRU->GetSurfaceProps()->ow_PET_corr*OWPET;
+  }
+  else if(_type==OPEN_WATER_RIPARIAN)//-----------------------------
+  {
+    double Fstream=pHRU->GetSurfaceProps()->stream_fraction; 
+    rates[0]=pHRU->GetSurfaceProps()->ow_PET_corr*Fstream*OWPET;
   }
   rates[1]=rates[0]; 
 }

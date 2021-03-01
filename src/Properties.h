@@ -63,6 +63,7 @@ struct soil_struct
   double wilting_pressure;  ///< [-mm]     Wilting pressure
   double wetting_front_psi; ///< [-mm]     Wetting front matric potential (for GA model)
   double ksat_std_deviation;///< [-]       standard deviation in log(k_sat)
+  double unavail_frac;      ///< [-]       fraction of storage unavailable for transpiration 
 
   //evaporation parameters
   double evap_res_fc;       ///< [d/mm]     soil evaporation resistance at field capacity
@@ -84,8 +85,9 @@ struct soil_struct
   double max_perc_rate;     ///< [mm/d]    VIC/ARNO/GAWSER percolation rate - user defined between 0.010 - 1000.0
   double perc_coeff;        ///< [1/d]     Linear percolation storage coefficient
   double perc_n;            ///< [-]       VIC/ARNO percolation exponent - user defined between 1.00 - 20.00
-  double SAC_perc_alpha;    ///< [-]       Sacremento percolation multiplier - user defined between 1.00 - 250.00
-  double SAC_perc_expon;    ///< [-]       Sacremento percolation exponent - user defined between 1.00 - 5.00
+  double SAC_perc_alpha;    ///< [-]       Sacramento percolation multiplier (ZPERC in Sac-SMA lingo) - user defined between 0.00 - 80.00
+  double SAC_perc_expon;    ///< [-]       Sacramento percolation exponent (REXP in Sac-SMA lingo) - user defined between 0-3
+  double SAC_perc_pfree;    ///< [0..1]    Sacramento free percentage (PFREE in Sac-SMA lingo) - user defined between 0 and 1
   double perc_aspen;        ///< [mm/d]    constant max percolation rate for PERC_ASPEN model (S. Grass, 2018)
 
   double max_baseflow_rate; ///< [mm/d]    max baseflow rate (e.g., VIC_ARNO)- user defined between 0.001 - 10000.00
@@ -231,6 +233,7 @@ struct surface_struct
   double forest_coverage;   ///< [0..1]    fraction of land covered by canopy
   double forest_sparseness; ///< [0..1]    sparseness of canopy in land covered by forest
   double UBC_icept_factor;  ///< [0..1]    effective forest cover for interception (C0TREE*C0CANY)
+  double stream_fraction;   ///< [0..1]    fraction of land covered by streams/lakes/riparian vegetation
   
   double wind_exposure;     ///< [0..1]    basin wind coefficient (1 for unforested areas)
   double min_wind_speed;    ///< [m/s]     minimum wind speed used in regression estimates of windspeed from T_min-T_max
@@ -285,6 +288,7 @@ struct surface_struct
   double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
   double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area
   double uwfs_betamin;      ///< [-]       upscaled wetland fill and spill betamin parameter, defined distribution of contributing area
+  double bf_loss_fraction;  ///< [0..1]    fraction of baseflow which never reaches stream (in SAC-SMA) =1-1/(1+side)
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

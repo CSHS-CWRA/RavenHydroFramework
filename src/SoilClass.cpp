@@ -361,9 +361,15 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   autocalc=SetCalculableValue(_Soil.PET_correction,Stmp.PET_correction,Sdefault.PET_correction);
   if (autocalc)
   {
-    _Soil.PET_correction=1.0;
-    //no warning - no correction
+    _Soil.PET_correction=1.0; //no warning - no correction
   }
+  //unavailable fraction
+  autocalc=SetCalculableValue(_Soil.unavail_frac,Stmp.unavail_frac,Sdefault.unavail_frac);
+  if(autocalc)
+  {
+    _Soil.unavail_frac=0.0; //no warning
+  }
+  
 
   //Albedo
   //----------------------------------------------------------------------------
@@ -430,6 +436,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   bad=SetSpecifiedValue(_Soil.perc_coeff,Stmp.perc_coeff,Sdefault.perc_coeff,needed,"PERC_COEFF");
   bad=SetSpecifiedValue(_Soil.SAC_perc_alpha,Stmp.SAC_perc_alpha,Sdefault.SAC_perc_alpha,needed,"SAC_PERC_ALPHA");
   bad=SetSpecifiedValue(_Soil.SAC_perc_expon,Stmp.SAC_perc_expon,Sdefault.SAC_perc_expon,needed,"SAC_PERC_EXPON");
+  bad=SetSpecifiedValue(_Soil.SAC_perc_pfree,Stmp.SAC_perc_pfree,Sdefault.SAC_perc_pfree,needed,"SAC_PERC_PFREE");
   bad=SetSpecifiedValue(_Soil.perc_aspen,Stmp.perc_aspen,Sdefault.perc_aspen,needed,"PERC_ASPEN");
   bad=SetSpecifiedValue(_Soil.max_interflow_rate,Stmp.max_interflow_rate,Sdefault.max_interflow_rate,needed,"MAX_INTERFLOW_RATE");
   bad=SetSpecifiedValue(_Soil.interflow_coeff,Stmp.interflow_coeff,Sdefault.interflow_coeff,needed,"INTERFLOW_COEFF");
@@ -474,6 +481,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.air_entry_pressure =S.wilting_pressure =DefaultParameterValue(is_template,true);
   S.wetting_front_psi                      =DefaultParameterValue(is_template,true);
   S.ksat_std_deviation                     =DefaultParameterValue(is_template,true);
+  S.unavail_frac                           =DefaultParameterValue(is_template,true);
 
   S.evap_res_fc =S.shuttleworth_b          =DefaultParameterValue(is_template,true);
   S.PET_correction                         =DefaultParameterValue(is_template,true);
@@ -505,6 +513,7 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template)//sta
   S.perc_coeff        =DefaultParameterValue(is_template,false);//
   S.SAC_perc_alpha    =DefaultParameterValue(is_template,false);//100;
   S.SAC_perc_expon    =DefaultParameterValue(is_template,false);//3.0;
+  S.SAC_perc_pfree    =DefaultParameterValue(is_template,false);//0.06;
   S.perc_aspen        =DefaultParameterValue(is_template,false);//
   S.max_interflow_rate=DefaultParameterValue(is_template,false);//500;    //[mm/d]
   S.interflow_coeff   =DefaultParameterValue(is_template,false);//0.1;
@@ -566,6 +575,7 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
   else if (!name.compare("WILTING_PRESSURE"    )){S.wilting_pressure=value;}
   else if (!name.compare("WETTING_FRONT_PSI"   )){S.wetting_front_psi=value;}
   else if (!name.compare("KSAT_STD_DEVIATION"  )){S.ksat_std_deviation=value;}
+  else if (!name.compare("UNAVAIL_FRAC"        )){S.unavail_frac=value;}
 
   else if (!name.compare("EVAP_RES_FC"         )){S.evap_res_fc=value;}
   else if (!name.compare("SHUTTLEWORTH_B"      )){S.shuttleworth_b=value;}
@@ -583,7 +593,7 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
   else if (!name.compare("PERC_COEFF"          )){S.perc_coeff=value;}
   else if (!name.compare("SAC_PERC_ALPHA"      )){S.SAC_perc_alpha=value;}
   else if (!name.compare("SAC_PERC_EXPON"      )){S.SAC_perc_expon=value;}
-  else if (!name.compare("SAC_PERC_ALPHA"      )){S.SAC_perc_alpha=value;}
+  else if (!name.compare("SAC_PERC_PFREE"      )){S.SAC_perc_pfree=value;}
   else if (!name.compare("PERC_ASPEN"          )){S.perc_aspen=value;}
   else if (!name.compare("MAX_INTERFLOW_RATE"  )){S.max_interflow_rate=value;}
   else if (!name.compare("INTERFLOW_COEFF"     )){S.interflow_coeff=value;}
@@ -696,6 +706,7 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
   else if (!name.compare("WILTING_PRESSURE"    )){return S.wilting_pressure;}
   else if (!name.compare("WETTING_FRONT_PSI"   )){return S.wetting_front_psi;}
   else if (!name.compare("KSAT_STD_DEVIATION"  )){return S.ksat_std_deviation;}
+  else if (!name.compare("UNAVAIL_FRAC"        )){return S.unavail_frac;}
 
   else if (!name.compare("EVAP_RES_FC"         )){return S.evap_res_fc;}
   else if (!name.compare("SHUTTLEWORTH_B"      )){return S.shuttleworth_b;}
@@ -713,7 +724,7 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
   else if (!name.compare("PERC_COEFF"          )){return S.perc_coeff;}
   else if (!name.compare("SAC_PERC_ALPHA"      )){return S.SAC_perc_alpha;}
   else if (!name.compare("SAC_PERC_EXPON"      )){return S.SAC_perc_expon;}
-  else if (!name.compare("SAC_PERC_ALPHA"      )){return S.SAC_perc_alpha;}
+  else if (!name.compare("SAC_PERC_PFREE"      )){return S.SAC_perc_pfree;}
   else if (!name.compare("PERC_ASPEN"          )){return S.perc_aspen;}
   else if (!name.compare("MAX_INTERFLOW_RATE"  )){return S.max_interflow_rate;}
   else if (!name.compare("INTERFLOW_COEFF"     )){return S.interflow_coeff;}

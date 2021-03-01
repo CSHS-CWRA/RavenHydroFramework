@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvOWEvaporation
@@ -17,7 +17,8 @@
 //
 enum owevap_type
 {
-  OPEN_WATER_EVAP,                              ///< evaporates at OW_PET rate
+  OPEN_WATER_EVAP,        ///< evaporates at OW_PET rate
+  OPEN_WATER_RIPARIAN     ///< evaporates at OW_PET rate, but only for fraction of landscape covered in streams
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -27,7 +28,7 @@ enum owevap_type
 class CmvOWEvaporation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  owevap_type                    type; ///< Model of open water evaporation used
+  owevap_type   _type; ///< Model of open water evaporation used
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

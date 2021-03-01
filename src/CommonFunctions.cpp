@@ -32,6 +32,7 @@ string GetProcessName(process_type p)
   case(PERCOLATION):        {name="Percolation";              break;}
   case(SOIL_EVAPORATION):   {name="Soil Evaporation";         break;}
   case(CAPILLARY_RISE):     {name="Capillary Rise";           break;}
+  case(SOIL_BALANCE):       {name="Soil Balance";             break;}
 
   case(CANOPY_EVAPORATION): {name="Canopy Evaporation";       break;}
   case(CANOPY_SNOW_EVAPORATION):{name="Canopy Snow Evaporation";break;}

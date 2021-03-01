@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvBaseflow
@@ -10,6 +10,7 @@
   CmvCappilaryRise
   CmvDrain
   CmvRecharge
+  CmvSoilBalance
   ----------------------------------------------------------------*/
 
 #ifndef SOILWATERMOVERS_H
@@ -95,6 +96,7 @@ enum soilevap_type
   SOILEVAP_CHU,           ///< Crop Heat Unit method
   SOILEVAP_GR4J,          ///< GR4J model approach
   SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
+  SOILEVAP_SACSMA,        ///< Sacramento Soil Moisture Accounting algorithm (should only be used with SOILBAL_SACSMA)
   SOILEVAP_ALL            ///< AET=PET
 };
 ////////////////////////////////////////////////////////////////////
@@ -362,5 +364,43 @@ public:/*-------------------------------------------------------*/
 
   void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
   static void GetParticipatingStateVarList(recharge_type	r_type,sv_type *aSV, int *aLev, int &nSV);
+};
+
+///////////////////////////////////////////////////////////////////
+/// \brief Methods for modelling soil balance
+enum soilbal_type
+{
+  SOILBAL_SACSMA       ///< Sacramento Soil Moisture Accounting Model
+};
+
+////////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for loss of water from soil/groundwater to surface water
+//
+class CmvSoilBalance : public CHydroProcessABC
+{
+private:/*------------------------------------------------------*/
+  soilbal_type  _type; ///< Model of soil balance selected
+
+public:/*-------------------------------------------------------*/
+       //Constructors/destructors:
+  CmvSoilBalance(soilbal_type sb_type);
+  ~CmvSoilBalance();
+
+  //inherited functions
+  void Initialize();
+  void GetRatesOfChange(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double            *rates) const;
+  void ApplyConstraints(const double      *state_vars,
+                        const CHydroUnit  *pHRU,
+                        const optStruct   &Options,
+                        const time_struct &tt,
+                        double            *rates) const;
+
+  void        GetParticipatingParamList   (string  *aP,class_type *aPC,int &nP) const;
+  static void GetParticipatingStateVarList(soilbal_type sb_type,
+                                           sv_type *aSV,int *aLev,int &nSV);
 };
 #endif

@@ -505,6 +505,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Recharge"                  )){code=234;}
     else if  (!strcmp(s[0],":BlowingSnow"               )){code=235;}
     else if  (!strcmp(s[0],":LakeRelease"               )){code=236;}
+    else if  (!strcmp(s[0],":SoilBalance"               )){code=237;}
 
     else if  (!strcmp(s[0],":Drain"                     )){code=252;}
     //...
@@ -1645,7 +1646,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(105):  //--------------------------------------------
     {/*:RandomSeed [seed]*/
       if(Options.noisy) { cout <<"Random seed "<<endl; }
-      random_seed=fabs(s_to_i(s[1]));
+      random_seed=(unsigned int)(s_to_i(s[1]));
       break;
     }
     case(106):  //--------------------------------------------
@@ -1949,6 +1950,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(208):  //----------------------------------------------
     {/*Soil Evaporation
        :SoilEvaporation [string method] MULTIPLE ATMOSPHERE
+       :SoilEvaporation [string method] SOIL[0]  ATMOSPHERE
      */
       if (Options.noisy){cout <<"Soil Evaporation Process"<<endl;}
       soilevap_type se_type=SOILEVAP_VIC;
@@ -1964,6 +1966,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_CHU"          )){se_type=SOILEVAP_CHU;}
       else if (!strcmp(s[1],"SOILEVAP_GR4J"         )){se_type=SOILEVAP_GR4J;}
       else if (!strcmp(s[1],"SOILEVAP_LINEAR"       )){se_type=SOILEVAP_LINEAR;}
+      else if (!strcmp(s[1],"SOILEVAP_SACSMA"       )){se_type=SOILEVAP_SACSMA;}
       else if (!strcmp(s[1],"SOILEVAP_ALL"          )){se_type=SOILEVAP_ALL;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
@@ -2041,6 +2044,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       owevap_type ow_type=OPEN_WATER_EVAP;
       if (Len<4){ImproperFormatWarning(":OpenWaterEvaporation",p,Options.noisy); break;}
       if      (!strcmp(s[1],"OPEN_WATER_EVAP"     )){ow_type=OPEN_WATER_EVAP;}
+      else if (!strcmp(s[1],"OPEN_WATER_RIPARIAN" )){ow_type=OPEN_WATER_RIPARIAN;} //should come from SURFACE_WATER
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Open Water Evaporation process representation",BAD_DATA_WARN); break;
       }
@@ -2549,6 +2553,23 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       pMover=new CmvLakeRelease(l_type);
+      AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case(237):  //----------------------------------------------
+    {/*:SoilBalance SOILBAL_SACSMA MULTIPLE MULTIPLE */
+      if(Options.noisy) { cout <<"Soil balance/redistribution process"<<endl; }
+      if(Len<4) { ImproperFormatWarning(":SoilBalance",p,Options.noisy); break; }
+      soilbal_type sb_type=SOILBAL_SACSMA;
+      if(!strcmp(s[1],"SOILBAL_SACSMA")) { sb_type=SOILBAL_SACSMA; }
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized soil balance algorithm",BAD_DATA_WARN); break;
+      }
+      CmvSoilBalance::GetParticipatingStateVarList(sb_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover=new CmvSoilBalance(sb_type);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
