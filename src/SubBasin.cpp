@@ -1459,7 +1459,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
   //---------------------------------------------------------------
   else if(Options.routing==ROUTE_DIFFUSIVE_VARY)
   {
-    //intialized here to dump hydrograph. Updated each timestep within the UpdateFlowRules() routine.
+    //intialized here to dump hydrograph. Updated each timestep within the UpdateSubBasin() routine.
     for(n=0;n<_nQinHist;n++) { _aRouteHydro[n]=0.0; } //should not be used
     _aRouteHydro[0]=1.0;
 
@@ -1611,12 +1611,13 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 /// \param tt [in] current model time
 /// \param Options [in] model options structure
 //
-void  CSubBasin::UpdateFlowRules(const time_struct &tt, const optStruct &Options)
+void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 {
   if (Options.routing==ROUTE_DIFFUSIVE_VARY){UpdateRoutingHydro(Options.timestep); }
 
-  if (_pReservoir != NULL){ _pReservoir->UpdateFlowRules(tt,Options); }
+  if (_pReservoir != NULL){ _pReservoir->UpdateReservoir(tt,Options); }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Sets outflow from primary channel and updates flow history
 /// \details Also recalculates channel storage (uglier than desired), resets _QlatLast and _QoutLast

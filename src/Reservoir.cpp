@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
@@ -68,6 +68,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
 
   _seepage_const=0;
   _local_GW_head=0.0;
+
+  _assimilate_stage=false;
+  _pObsStage=NULL; 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -737,6 +740,16 @@ void CReservoir::SetDemandMultiplier(const double &value)
   _demand_mult=value;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief enables lake stage assimilation  
+/// \param pObs -time series of observed lake stage (can have NULL entries)
+//
+void CReservoir::TurnOnAssimilation(CTimeSeriesABC *pObs)
+{
+  _assimilate_stage=true;
+  _pObsStage=pObs;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief sets parameters for Dynamically zoned target release model  
 //
 void CReservoir::SetDZTRModel(const double Qmc,const double Smax,
@@ -838,13 +851,14 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief updates rating curves based upon the time
+/// \brief updates rating curves based upon the time and assimilates lake stage
 /// \notes can later support quite generic temporal changes to treatmetn of outflow-volume-area-stage relations
 /// \param tt [in] current model time
 /// \param Options [in] model options structure
 //
-void CReservoir::UpdateFlowRules(const time_struct &tt, const optStruct &Options)
+void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options)
 {
+  // update flow rules-----------------------------------
   if (_nDates == 0){return;}
   int vv=_nDates-1;
   for (int v = 0; v < _nDates; v++){
@@ -854,6 +868,29 @@ void CReservoir::UpdateFlowRules(const time_struct &tt, const optStruct &Options
   for (int i = 0; i < _Np; i++){
     _aQ[i] = _aQ_back[vv][i];
   }
+
+  // Assimilate lake stage-------------------------------
+  if(_assimilate_stage) 
+  {
+    if(tt.model_time>Options.assimilation_start-Options.timestep/2.0) 
+    {
+      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+
+      double weir_adj=0.0;
+      if(_pWeirHeightTS!=NULL) {
+        weir_adj=_pWeirHeightTS->GetValue(nn);
+      }
+      
+      double obs_stage=_pObsStage->GetValue(nn);
+      if(obs_stage!=RAV_BLANK_DATA) {
+        _stage=obs_stage;
+        _Qout =GetWeirOutflow(_stage,weir_adj);//[m3/s]
+      }
+    }
+    //Calculate change in reservoir mass 
+    // \todo[funct] - correct mass balance for assimlating lake stage
+  }
+
   return;
 }
 //////////////////////////////////////////////////////////////////

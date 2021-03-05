@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -80,6 +80,9 @@ private:/*-------------------------------------------------------*/
   bool          _minStageDominant;   ///< true if minimum stage dominates minflow/overrideflow constraints (false by default)
   double        _demand_mult;        ///< reservoir demand multiplier that indicates percentage of requested downstream irrigation demand 
                                      ///< satisfied from this reservoir. 
+
+  bool          _assimilate_stage;   ///< true if assimilating lake stage for this reservoir
+  const CTimeSeriesABC *_pObsStage;  ///< observed lake stage 
 
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
@@ -171,6 +174,7 @@ public:/*-------------------------------------------------------*/
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
   void              SetCrestWidth            (const double &width);
+  void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);
@@ -210,7 +214,7 @@ public:/*-------------------------------------------------------*/
                                               const optStruct   &Options,
                                               const time_struct &tt);
   void              WriteToSolutionFile      (ofstream &OUT) const;
-  void              UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
+  void              UpdateReservoir          (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep);
 };
 #endif

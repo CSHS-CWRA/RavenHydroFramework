@@ -251,7 +251,7 @@ public:/*-------------------------------------------------------*/
   //called during model operation:
   void            SetInflow                (const double &Qin );//[m3/s]
   void            SetLateralInflow         (const double &Qlat);//[m3/s]
-  void            UpdateFlowRules          (const time_struct &tt, const optStruct &Options);
+  void            UpdateSubBasin          (const time_struct &tt, const optStruct &Options);
   void            UpdateOutflows           (const double *Qout_new,
                                             const double &Qirr,
                                             const double &res_ht,

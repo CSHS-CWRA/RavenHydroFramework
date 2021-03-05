@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -565,7 +565,7 @@ void MassEnergyBalance( CModel            *pModel,
     pBasin=pModel->GetSubBasin(p);
     if(pBasin->IsEnabled())
     {
-      pBasin->UpdateFlowRules(tt,Options);
+      pBasin->UpdateSubBasin(tt,Options);           //also used to assimilate lake levels and update routing hydrograph for timestep
       
       pBasin->SetInflow(aQinnew[p]);                 // from upstream, diversions, and specified flows
 

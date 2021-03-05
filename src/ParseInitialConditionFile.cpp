@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -544,7 +544,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
                        "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
       time_struct tt;
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
-      pBasin->GetReservoir()->UpdateFlowRules(tt,Options); //ensures correct discharge rating curve is used to calculate flow
+      pBasin->GetReservoir()->UpdateReservoir(tt,Options); //ensures correct discharge rating curve is used to calculate flow
       pBasin->SetReservoirFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),0.0);
       break;
     }

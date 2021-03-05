@@ -10,9 +10,23 @@
 #include "SoilAndLandClasses.h"
 #include <string>
 
-
+struct val_alias
+{
+  string tag;
+  double value;
+  val_alias(string t,double &v) { tag=t;value=v; } //constructor
+};
+double AutoOrDoubleOrAlias(const string s, val_alias **aAl,const int nAl)
+{
+  if(s.at(0)=='_') //look for alias
+  {
+    for(int i=0;i<nAl;i++) { if(aAl[i]->tag==s) { cout<<"Found alias!"<<endl;return aAl[i]->value; } }
+  }
+  return AutoOrDouble(s);
+}
 bool ParsePropArray(CParser *p,int *indices,double **properties,
-                    int &num_read,string *tags,const int line_length,const int max_classes);
+                    int &num_read,string *tags,const int line_length,const int max_classes,  
+                    val_alias **pAliases,  const int nAliases);  
 void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  ImproperFormatWarning(string command,CParser *p,bool noisy);
@@ -23,24 +37,11 @@ void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_so
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the class properties .rvp file
 ///
-/// \details Parses input \b model.rvp file that defines soil, land use, terrain, and vegetation classes and their properties \n
-///   ":SoilClasses"  \n
-///   {string tag, double pct_sand,double pct_clay,double pct_org}xNumSoilClasses  \n
-///   :EndSoilClasses  \n
-///   ":SoilProfiles"  \n
-///   {string tag, int numhorizons, \n
-///        soil1,thick1,soil2,thick2,...,soilN,thickN}xNumHorizons [where thickness is in meters]  \n
-///   :EndSoilProfiles  \n
-///   ":VegetationClasses"  \n
-///   {string tag, max height [m], max LAI, max leaf cond.}xNumVegetationClasses  \n
-///   :EndVegetationClasses  \n
-///   ":LandUseClasses"  \n
-///   {string tag, imperm. frac[-], SCS}xNumLUClasses  \n
-///   :EndLandUseClasses  \n
-///   ":TerrainClasses" \n
+/// \details Parses input \b model.rvp file that defines soil, land use, terrain, and vegetation classes and their properties 
 ///
 /// \param *&pModel [in] The input model object
 /// \param &Options [in] Global model options information
+/// \param terrain_required [in] true if terrain classes are needed
 /// \return Boolean variable indicating success of parsing
 //
 bool ParseClassPropertiesFile(CModel         *&pModel,
@@ -86,6 +87,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   double          **properties;
   string            aParamStrings[MAXINPUTITEMS];
   int               nParamStrings=0;
+
+  val_alias       **aAliases=NULL;
+  int               nAliases=0;
 
   CGlobalParams::InitializeGlobalParameters(global_template,true);
   CGlobalParams::InitializeGlobalParameters(parsed_globals,false); 
@@ -317,6 +321,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     //--------------------OTHER ------- ------------------------
     else if  (!strcmp(s[0],":TransientParameter"     )){code=800;}
     else if  (!strcmp(s[0],":HRUTypeChange"          )){code=801;} 
+    else if  (!strcmp(s[0],":ValueAlias"             )){code=802;}
 
     switch(code)
     {
@@ -399,7 +404,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :EndSoilProperties*/
       if (Options.noisy) {cout <<"Soil Properties"<<endl;}
 
-      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid soiltype code in SoilProperties command",BAD_DATA);
       for (int i=0;i<num_read;i++)
@@ -491,7 +496,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         }
         else { ImproperFormatWarning("::SoilParameterList",p,Options.noisy);break;}
       }
-      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid soiltype code in SoilParameterList command",BAD_DATA);
       if (Options.noisy){
@@ -571,7 +576,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           ImproperFormatWarning(":LandUseParameterList",p,Options.noisy); break;
         }
       }
-      invalid_index=ParsePropArray(p,indices,properties,num_read,lulttags,nParamStrings,num_parsed_lult);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,lulttags,nParamStrings,num_parsed_lult,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid land use code in LandUseParameterList command",BAD_DATA);
       if (Options.noisy){
@@ -640,7 +645,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :EndSeasonalCanopyLAI*/
       if (Options.noisy) {cout <<"Seasonal Canopy LAI"<<endl;}
       
-      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyLAI command",BAD_DATA);
       for (int i=0;i<num_read;i++){
@@ -656,7 +661,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string veg_tag, double Ht_Jan..Ht_dec}x<=NumVegClasses
        :EndSeasonalCanopyHeight*/
       if (Options.noisy) {cout <<"Seasonal Canopy Height"<<endl;}
-      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,13,num_parsed_veg,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid vegetation code in SeasonalCanopyHeight command",BAD_DATA);
       for (int i=0;i<num_read;i++){
@@ -703,7 +708,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         }
         else { ImproperFormatWarning(":VegetationParameterList",p,Options.noisy);  break;}
       }
-      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,nParamStrings,num_parsed_veg);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,vegtags,nParamStrings,num_parsed_veg,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid vegetation code in VegetationParameterList command",BAD_DATA);
       if (Options.noisy){
@@ -1028,7 +1033,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         }
         else {p->ImproperFormat(s); break;} 
       }
-      invalid_index=ParsePropArray(p,indices,properties,num_read,terraintags,nParamStrings,num_parsed_terrs);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,terraintags,nParamStrings,num_parsed_terrs,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid terrain class code in TerrainParameterList command",BAD_DATA);
       if (Options.noisy){
@@ -1281,6 +1286,21 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       pModel->AddPropertyClassChange(s[1],CLASS_HRUTYPE,s[2], tt, Options);
       break;
     }
+    case(802): //----------------------------------------------
+    {/*:ValueAlias [_NAME]  [value (or _AUTO or _DEFAULT)]*/
+      //All value aliases MUST start with _
+      if(s[1][0]!='_') {
+        string warning="Invalid name ("+to_string(s[1])+" in :ValueAlias command - aliases must begin with underscore character: _";
+        WriteWarning(warning.c_str(),Options.noisy);
+      }
+      else if (Len>2)
+      {
+        string tmp=to_string(s[1]);
+        double tmp2=AutoOrDouble(s[2]);
+        val_alias *alias=new val_alias(tmp,tmp2);
+        DynArrayAppend((void**&)(aAliases),(void*)(alias),nAliases);
+      }
+    }
     case(900):  //----------------------------------------------
     {/*:GlobalTransportParam [NAME] [constit_name] [value]*/
       if (Options.noisy){cout <<"GlobalTransportParam"<<endl;}
@@ -1334,7 +1354,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         }
         else {p->ImproperFormat(s); break;} 
       }
-      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils);
+      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils,aAliases,nAliases);
       ExitGracefullyIf(invalid_index,
                        "ParseClassPropertiesFile: Invalid soiltype code in SoilTransportParameterList command",BAD_DATA);
       if (Options.noisy){
@@ -1486,13 +1506,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 /// \param max_classes [in] Maximum allowable rows in array
 /// \return True if operation is successful
 //
-bool ParsePropArray(CParser   *p,           //parser
-                    int       *indices,     //output: index number of class (with reference to tags[] array)
-                    double   **properties,  //output: array of properties
-                    int       &num_read,    //output: number of rows read
-                    string    *tags,        //array of tag names
-                    const int  line_length, //number of expected columns in array
-                    const int  max_classes) //maximum allowable rows in array
+bool ParsePropArray(CParser          *p,           //parser
+                    int              *indices,     //output: index number of class (with reference to tags[] array)
+                    double          **properties,  //output: array of properties
+                    int              &num_read,    //output: number of rows read
+                    string           *tags,        //array of tag names
+                    const int         line_length, //number of expected columns in array
+                    const int         max_classes, //maximum allowable rows in array
+                          val_alias **pAliases,    //array of value aliases [size:nAliases](or NULL, if none)
+                    const int         nAliases)    //size of pAliases array
 {
   int Len;
   char *s[MAXINPUTITEMS];
@@ -1517,7 +1539,7 @@ bool ParsePropArray(CParser   *p,           //parser
       indices[num_read]=index;
 
       for (int j=1;j<line_length;j++){
-        properties[num_read][j-1]=AutoOrDouble(s[j]);
+        properties[num_read][j-1]=AutoOrDoubleOrAlias(s[j],pAliases,nAliases);
       }
       num_read++;
     }

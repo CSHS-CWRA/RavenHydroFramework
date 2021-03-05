@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -16,17 +16,39 @@ bool IsContinuousFlowObs2(const CTimeSeriesABC *pObs,long SBID)
   if(pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
   return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
 }
+/////////////////////////////////////////////////////////////////
+/// \brief initializes memory for assimilation and sets up connections to observation data
+/// \param Options [in] current model options structure
+//
 void CModel::InitializeDataAssimilation(const optStruct &Options)
 {
-  if(!Options.assimilation_on) { return; }
-  _aDAscale    =new double[_nSubBasins];
-  _aDAlength   =new double[_nSubBasins];
-  _aDAtimesince=new double[_nSubBasins];
-  for(int p=0; p<_nSubBasins; p++) {
-    _aDAscale[p]=1.0;
-    _aDAlength[p]=0.0;
-    _aDAtimesince[p]=0.0;
+  if(Options.assimilation_on) 
+  {
+    _aDAscale    =new double[_nSubBasins];
+    _aDAlength   =new double[_nSubBasins];
+    _aDAtimesince=new double[_nSubBasins];
+    for(int p=0; p<_nSubBasins; p++) {
+      _aDAscale[p]=1.0;
+      _aDAlength[p]=0.0;
+      _aDAtimesince[p]=0.0;
+    }
   }
+  
+  //Connect Lake assimilation observations
+  if(Options.assimilate_stage) 
+  {
+    for(int i=0;i<_nObservedTS;i++) {
+      if((!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE")) && (_pObservedTS[i]->GetType() == CTimeSeriesABC::TS_REGULAR)) {
+        CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
+        CReservoir *pRes=pBasin->GetReservoir();
+        if(pRes!=NULL) {
+          pRes->TurnOnAssimilation(_pObservedTS[i]);
+        }
+      }
+    }
+    WriteAdvisory("Lake stage data assimilation will lead to mass balance error estimates in the WatershedStorage output file. This is a natural side effect of assimilation.",Options.noisy);
+  }
+
 }
 /////////////////////////////////////////////////////////////////
 /// \brief sifts through all observation time series. Overrides flows with observations at gauges and scales all flows and channel storages upstream of those gauges. 

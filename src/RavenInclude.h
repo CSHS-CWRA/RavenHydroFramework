@@ -1101,6 +1101,7 @@ struct optStruct
 
   // Other
   bool             assimilation_on;           ///< turn on assimilation
+  bool             assimilate_stage;          ///< turn on lake stage assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes

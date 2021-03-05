@@ -297,6 +297,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.nNetCDFattribs          =0;
   Options.aNetCDFattribs          =NULL;
   Options.assimilation_on         =false;
+  Options.assimilate_stage        =false;
   Options.assimilation_start      =0;
   Options.time_zone               =0;
   Options.rvl_read_frequency      =0.0; //do not read at all
@@ -424,6 +425,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
     else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
     else if  (!strcmp(s[0],":AssimilateStreamflow"      )){code=93; }
+    else if  (!strcmp(s[0],":AssimilateReservoirStage"  )){code=94; }
     else if  (!strcmp(s[0],":TimeZone"                  )){code=97; }
     else if  (!strcmp(s[0],":Alias"                     )){code=98; }
     else if  (!strcmp(s[0],":CustomOutput"              )){code=99; }
@@ -1572,6 +1574,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:AssimilateStreamflow*/
       if(Options.noisy) { cout << "Assimilate streamflow on" << endl; }
       Options.assimilation_on=true;
+      break;
+    }
+    case(94):  //--------------------------------------------
+    {/*:AssimilatReservoirStage*/
+      if(Options.noisy) { cout << "Assimilate lake stage on" << endl; }
+      Options.assimilate_stage=true;
       break;
     }
     case(97):  //--------------------------------------------
