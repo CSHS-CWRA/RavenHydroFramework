@@ -40,7 +40,6 @@ CmvRecharge::CmvRecharge(recharge_type rech_type, int nConns)
                          :CHydroProcessABC(RECHARGE, nConns)
 {
   int iGW, i;
-  soil_ind=NULL;
   _type = rech_type;
   if (_type==RECHARGE_CONSTANT)
   {  
@@ -67,7 +66,6 @@ CmvRecharge::CmvRecharge(recharge_type rech_type, int nConns)
 //
 CmvRecharge::~CmvRecharge()
 {
-  delete [] soil_ind;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Verifies iFrom - iTo connectivity
@@ -157,7 +155,7 @@ void   CmvRecharge::GetRatesOfChange( const double      *storage,
   else if(_type==RECHARGE_CONSTANT)
   {
     // MUST FIX!!================================
-    ExitGracefully("CmvRecharge::ApplyConstraints",STUB);
+    ExitGracefully("CmvRecharge::ApplyConstraints",STUB); return;
     CGroundwaterModel *pGWModel=NULL; //\todo[funct] - must have mechanism for accessing groundwater class to get stress period info
     // MUST FIX!!================================
 

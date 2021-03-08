@@ -216,5 +216,6 @@ public:/*-------------------------------------------------------*/
   void              WriteToSolutionFile      (ofstream &OUT) const;
   void              UpdateReservoir          (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep);
+  double            ScaleFlow                (const double &scale, const double &tstep);
 };
 #endif

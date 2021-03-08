@@ -1734,11 +1734,7 @@ int CForcingGrid::GetnHydroUnits() const{return _nHydroUnits;}
 //
 int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 {
-  //JRC_TIME_FIX
   return int(( t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
-  //return int((t+0.25*tstep)*_steps_per_day)  % _ChunkSize; //JRC \todo[fix] - I believe this is the correct approach
-
-  //return int((_t_corr + t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
 }
 
 ///////////////////////////////////////////////////////////////////

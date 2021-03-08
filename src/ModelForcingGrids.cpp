@@ -441,7 +441,7 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
   CForcingGrid *pPre(NULL),*pSnow;
   if      (ForcingGridIsAvailable(F_PRECIP))   { pPre=GetForcingGrid((F_PRECIP)); }
   else if (ForcingGridIsAvailable(F_RAINFALL)) { pPre=GetForcingGrid((F_RAINFALL)); }
-  else {ExitGracefully("CModel:GenerateZeroSnow: missing precip or rainfall grid",RUNTIME_ERR); }
+  else {ExitGracefully("CModel:GenerateZeroSnow: missing precip or rainfall grid",RUNTIME_ERR); return;}
 
   pPre->Initialize(Options);//needed for correct mapping from time series to model time
 

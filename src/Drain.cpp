@@ -23,7 +23,6 @@ CmvDrain::CmvDrain(drain_type d_type)
 {
   int iSW;
   iSW  =pModel->GetStateVarIndex(SURFACE_WATER); 
-  soil_ind=NULL;
   type = d_type;
   if (type==DRAIN_CONDUCTANCE)
   {  
@@ -48,7 +47,6 @@ CmvDrain::CmvDrain(drain_type d_type)
 //
 CmvDrain::~CmvDrain()
 {
-  delete [] soil_ind;
 }
 
 //////////////////////////////////////////////////////////////////

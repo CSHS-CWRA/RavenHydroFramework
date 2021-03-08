@@ -146,7 +146,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options,const double &t)
 #ifdef _RVNETCDF_
   int ncid;          //NetCDF fileid
   int retval;        //return value of NetCDF routines
-  size_t att_len;    //character string length
+  //size_t att_len;    //character string length
                      //double time_zone;
   int HRUvecID;      //attribute ID of HRU vector
   size_t nHRUsLocal;    //size of HRU Vector
@@ -170,7 +170,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options,const double &t)
 
   //Get size of HRUID vector
   nHRUsLocal= 0;
-  int dimid; //how to get this?? "stations" is ID?
+  int dimid=0; //how to get this?? "stations" is ID?
   size_t lenp[]={0};
   retval= nc_inq_dimlen(ncid,dimid,lenp);
   if(retval!=NC_NOERR) {

@@ -22,14 +22,14 @@ bool IsContinuousFlowObs2(const CTimeSeriesABC *pObs,long SBID)
 //
 void CModel::InitializeDataAssimilation(const optStruct &Options)
 {
-  if(Options.assimilation_on) 
+  if(Options.assimilate_flow)
   {
     _aDAscale    =new double[_nSubBasins];
     _aDAlength   =new double[_nSubBasins];
     _aDAtimesince=new double[_nSubBasins];
     for(int p=0; p<_nSubBasins; p++) {
-      _aDAscale[p]=1.0;
-      _aDAlength[p]=0.0;
+      _aDAscale    [p]=1.0;
+      _aDAlength   [p]=0.0;
       _aDAtimesince[p]=0.0;
     }
   }
@@ -58,13 +58,13 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
 //
 void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt)
 {
-  if (!Options.assimilation_on){return;}
+  if (!Options.assimilate_flow){return;}
   
   //assimilates all data after assimilation date 
   if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0)){return;}
   
   int    p,pdown;
-  double t_observationsOFF=ALMOST_INF;//Only for debugging
+  double t_observationsOFF=ALMOST_INF;//Only used for debugging - keep as ALMOST_INF otherwise
   double Qobs,Qmod;
   double alpha     =CGlobalParams::GetParams()->assimilation_fact; //for now: 0->no assimilation 1->full override
   double time_fact =CGlobalParams::GetParams()->assim_time_decay; 
@@ -80,7 +80,7 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
       if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available
       {
         Qobs = _pObservedTS[i]->GetAvgValue(tt.model_time+Options.timestep,Options.timestep);//correction for period ending storage of hydrograph
-        Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+        Qmod = _pSubBasins [p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
         if((Qobs!=RAV_BLANK_DATA) && (tt.model_time<t_observationsOFF)) 
         {
           if(Qmod>=0.0) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);}
@@ -95,12 +95,14 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
           _aDAlength   [p]=0.0;
         }
         ObsExists=true;
+        break; //avoids duplicate observations
       }
     }
 
     pdown=GetDownstreamBasin(p);
-    if(ObsExists==false){ //observations may be downstream, propagate scaling upstream
-      if ((pdown!=DOESNT_EXIST) && (_pSubBasins[p]->GetReservoir()==NULL)){ 
+    if(ObsExists==false){ //observations may be downstream, propagate scaling upstream 
+      //if (pdown!=DOESNT_EXIST){ //alternate - allow information to pass through reservoirs 
+      if((pdown!=DOESNT_EXIST) && (_pSubBasins[p]->GetReservoir()==NULL)) {
         _aDAscale    [p]=_aDAscale [pdown];
         _aDAlength   [p]=_aDAlength[pdown]+_pSubBasins[pdown]->GetReachLength();
         _aDAtimesince[p]=_aDAtimesince[pdown];
@@ -114,6 +116,7 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   }// end downstream to upstream
 
   //Calculate artificial mass added/removed by data assimilation process
+  // actual changing of river flows occurs in ScaleAllFlows() call
   //--------------------------------------------------------------------------------
   double mass_added=0;
   double scalefact=1.0;
@@ -121,7 +124,6 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   for(p=0; p<_nSubBasins; p++)
   {
     scalefact =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p]);
-    //if(tt.model_time>(t_observationsOFF-1.0)) { cout<<tt.model_time<<" p:"<<p<<" "<<scalefact<<" "<<_aDAlength[p]<<" "<<_aDAtimesince[p]<<endl; }
     mass_added+=_pSubBasins[p]->ScaleAllFlows(scalefact,Options.timestep); 
   }
   if(mass_added>0.0){_CumulInput +=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}

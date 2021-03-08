@@ -305,14 +305,14 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     if (nnstart>skip){shift=0;}//using diagnostic period always midnight to midnight, no shift required
     double moddaily=0.0;
     double obsdaily=0.0;
-    double dailyN  =0.;
+    double dailyN  =0.0;
     double N=0;
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observation value
     {
       weight=1.0;
       obsval = pTSObs->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
+      if(pTSWeights != NULL)    { weight=pTSWeights->GetSampledValue(nn); }
       if(obsval==RAV_BLANK_DATA){ weight=0.0; }
       avgobs+=weight*obsval;
       N     +=weight;

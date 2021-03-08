@@ -811,6 +811,24 @@ void  CReservoir::DisableOutflow()
 {
   for (int i=0;i<_Np;i++){_aQ[i]=0.0;_aQunder[i]=0.0;}
 }
+//////////////////////////////////////////////////////////////////
+/// \brief scales all internal flows by scale factor (for assimilation/nudging)
+/// \remark Messes with mass balance something fierce!
+///
+/// \return mass added to system [m3]
+//
+double CReservoir::ScaleFlow(const double& scale,const double& tstep) 
+{
+  double ma=0.0; //mass added
+  double sf=(scale-1.0)/scale;
+  _Qout*=scale;
+  _Qout_last*=scale;
+
+  //Estimate mass added through scaling 
+  ma+=0.5*(_Qout_last+_Qout)*sf*tstep*SEC_PER_DAY;
+
+  return ma;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief updates state variable "stage" at end of computational time step

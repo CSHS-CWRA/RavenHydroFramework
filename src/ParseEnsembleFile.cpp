@@ -180,7 +180,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       /*ObjectiveFunction READFROMFILE [filename] //LATER! */
       if(Options.noisy) { cout <<":ObjectiveFunction"<<endl; }
 
-      diag_type diag;
+      diag_type diag=DIAG_NASH_SUTCLIFFE;
       if     (!strcmp(s[2],"NASH_SUTCLIFFE"    )) { diag=DIAG_NASH_SUTCLIFFE; }
       else if(!strcmp(s[2],"RMSE"              )) { diag=(DIAG_RMSE); }
       else if(!strcmp(s[2],"PCT_BIAS"          )) { diag=(DIAG_PCT_BIAS); }

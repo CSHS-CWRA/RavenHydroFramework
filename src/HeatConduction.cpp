@@ -287,7 +287,6 @@ void TestInversion() {
     for(j=0;j<N;j++) { Ainv[i][j]=A[i][j]=0.0; }
     a[i]=2;
     b[i]=-1;
-    c[i]=-1.3*x[i];
     B[i]=0;
     x[i]=(double)(i)/double(N); //arbitrary
     c[i]=-1.3*x[i];

@@ -296,9 +296,9 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.create_rvp_template     =false;
   Options.nNetCDFattribs          =0;
   Options.aNetCDFattribs          =NULL;
-  Options.assimilation_on         =false;
+  Options.assimilate_flow         =false;
   Options.assimilate_stage        =false;
-  Options.assimilation_start      =0;
+  Options.assimilation_start      =-1.0;
   Options.time_zone               =0;
   Options.rvl_read_frequency      =0.0; //do not read at all
   Options.custom_interval         =1.0; //daily
@@ -1573,7 +1573,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(93):  //--------------------------------------------
     {/*:AssimilateStreamflow*/
       if(Options.noisy) { cout << "Assimilate streamflow on" << endl; }
-      Options.assimilation_on=true;
+      Options.assimilate_flow=true;
       break;
     }
     case(94):  //--------------------------------------------
@@ -3092,8 +3092,11 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
   ExitGracefullyIf(Options.timestep<=0,
                    "ParseMainInputFile::Must have a postitive time step",BAD_DATA);
+  ExitGracefullyIf(Options.duration<0,
+                   "ParseMainInputFile::Model duration less than zero. Make sure :EndDate is after :StartDate.",BAD_DATA_WARN);
   ExitGracefullyIf((pModel->GetStateVarIndex(CONVOLUTION,0)!=DOESNT_EXIST) && (pModel->GetTransportModel()->GetNumConstituents()>0),
                    "ParseMainInputFile: cannot currently perform transport with convolution processes",BAD_DATA);
+
   if((Options.nNetCDFattribs>0) && (Options.output_format!=OUTPUT_NETCDF)){
     WriteAdvisory("ParseMainInputFile: NetCDF attributes were specified but output format is not NetCDF.",Options.noisy);
   }

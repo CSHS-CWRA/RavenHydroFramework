@@ -1108,6 +1108,10 @@ double CSubBasin::ScaleAllFlows(const double &scale, const double &tstep)
   double sf=(scale-1.0)/scale;
   for (int n=0;n<_nQlatHist;n++){_aQlatHist[n]*=scale; ma+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;}
   for (int i=0;i<_nSegments;i++){    _aQout[i]*=scale; } _QoutLast*=scale;
+
+  if(_pReservoir!=NULL) {
+    ma+=_pReservoir->ScaleFlow(scale,tstep);
+  }
   //note that _aQin not scaled - leads to serious side effects
 
   //Estimate mass added through scaling 
@@ -1870,7 +1874,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            const optStruct &Options,
                            const time_struct &tt) const
 {
-  int    seg;
+  int    seg,n;
   double tstep;       //[d] time step
   double dx;          //[m]
   double Qlat_new;    //[m3/s] flow at end of timestep to reach from catchment storage
@@ -1884,12 +1888,12 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   // route from catchment
   //==============================================================
   Qlat_new=0.0;
-  for (int n=0;n<_nQlatHist;n++){
+  for (n=0;n<_nQlatHist;n++){
     Qlat_new+=_aUnitHydro[n]*_aQlatHist[n];
   }
 
   double Qlat_last=0;
-  for (int n=0;n<_nQlatHist-1;n++){
+  for (n=0;n<_nQlatHist-1;n++){
     Qlat_last+=_aUnitHydro[n]*_aQlatHist[n+1];
   }
 
@@ -2106,9 +2110,10 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //==============================================================
   else if ((route_method==ROUTE_PLUG_FLOW)
            || (route_method==ROUTE_DIFFUSIVE_WAVE))
-  {     //Simple convolution - segmentation unused
+  {     
+    //Simple convolution - segmentation unused
     aQout_new[_nSegments-1]=0.0;
-    for (int n=0;n<_nQinHist;n++){
+    for (n=0;n<_nQinHist;n++){
       aQout_new[_nSegments-1]+=_aRouteHydro[n]*_aQinHist[n];
     }
   }
@@ -2116,7 +2121,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   else if (route_method==ROUTE_DIFFUSIVE_VARY)
   {     
     aQout_new[_nSegments-1]=0.0;
-    for(int n=0;n<_nQinHist;n++) {
+    for(n=0;n<_nQinHist;n++) {
       aQout_new[_nSegments-1]+=_aRouteHydro[n]*_aQinHist[n];
     }
   }

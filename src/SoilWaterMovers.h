@@ -211,7 +211,6 @@ class CmvPercolation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
   perc_type       type;        ///< Model of percolation selected
-  int            *soil_ind;    ///< array of soil indices
   int             nSoilLayers; ///< number of soil layers subject to percolation
 
 public:/*-------------------------------------------------------*/
@@ -255,7 +254,6 @@ class CmvCapillaryRise: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
   crise_type      type;        ///< Model of capillary rise selected
-  int            *soil_ind;    ///< array of soil indices
   int             nSoilLayers; ///< number of soil layers subject to evaporation
 
 public:/*-------------------------------------------------------*/
@@ -299,7 +297,6 @@ class CmvDrain: public CHydroProcessABC
 {  
   private:/*------------------------------------------------------*/
 		drain_type					type; ///< Model of drainage selected
-		int						 *soil_ind;	///< array of soil indices
 		int					 nSoilLayers; ///< number of soil layers subject to drainage
 
   public:/*-------------------------------------------------------*/
@@ -340,7 +337,6 @@ class CmvRecharge: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
   recharge_type	      _type;        ///< Model of recharge 
-  int				  *soil_ind;	///< array of soil indices
   int				  nSoilLayers; ///< number of soil layers subject to drainage
 
 public:/*-------------------------------------------------------*/

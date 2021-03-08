@@ -503,7 +503,7 @@ string CStateVariable::SVStringBreak(const string s, int &num)
   char key2[] = "]";
   pch  = strpbrk (ss, key1); //pch is now pointer to '[' character
   pch2 = strpbrk (ss, key2); //pch is now pointer to ']' character
-  if ((pch==NULL) || (pch==NULL)){num=0;return s;}//one or both brackets missing - layer = 0
+  if ((pch==NULL) || (pch2==NULL)){num=0;return s;}//one or both brackets missing - layer = 0
 #if defined (__APPLE__) || defined (__CYGWIN__)
   strxfrm(tmp,ss,pch-ss+1);
   strxfrm(tmp2,pch+1,pch2-pch);

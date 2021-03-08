@@ -678,6 +678,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         _STORAGE<<endl;
       }
 
+
+       
+        
+      
       //Write hydrographs for gauged watersheds (ALWAYS DONE)
       //----------------------------------------------------------------
       if (Options.ave_hydrograph)
@@ -700,7 +704,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                 else                                             { _HYDRO << ",";       }
               }
             }
-          if (_pSubBasins[p]->GetReservoir() != NULL){
+            if (_pSubBasins[p]->GetReservoir() != NULL){
               _HYDRO<<","<<_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
               for(i = 0; i < _nObservedTS; i++)
               {
@@ -733,12 +737,21 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                 {
                   double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
                   if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _HYDRO << "," << val; }
-                  else                                                         { _HYDRO << ","; }
+                  else                                            { _HYDRO << ","; }
                 }
               }
               
               if(_pSubBasins[p]->GetReservoir() != NULL){
                 _HYDRO<<","<<_pSubBasins[p]->GetReservoirInflow();
+                for(i = 0; i < _nObservedTS; i++)
+                {
+                  if(IsContinuousInflowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+                  {
+                    double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+                    if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _HYDRO << "," << val; }
+                    else                                             { _HYDRO << ","; }
+                  }
+                }
               }
             }
           }

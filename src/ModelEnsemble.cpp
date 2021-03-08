@@ -234,7 +234,7 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
 //
 double SampleFromDistribution(param_dist *dist) 
 {
-  double value;
+  double value=0;
 
   //std::mt19937 generator;
 

@@ -211,6 +211,7 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
                                     const optStruct   &Options,
                                     const time_struct &tt) const
 {
+  int n;
   const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
   const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
@@ -226,8 +227,8 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
   // route from catchment
   //==============================================================
   Mlat_new=0.0;
-  for(int n=0;n<nMlatHist;n++) {
-    Mlat_new+=aUnitHydro[n]*_aMlatHist[p][n];
+  for(n=0;n<nMlatHist;n++) {
+    Mlat_new+=_aMlatHist[p][n]*aUnitHydro[n];
   }
   
   //==============================================================
@@ -349,8 +350,9 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
   double dt=tstep;
   double dM=0.0;
   double Mlat_new(0.0);
+  const double *pUH=pBasin->GetUnitHydrograph();
   for(int n=0;n<pBasin->GetLatHistorySize();n++) {
-    Mlat_new+=pBasin->GetUnitHydrograph()[n]*_aMlatHist[p][n];
+    Mlat_new+=pUH[n]*_aMlatHist[p][n];
   }
 
   //mass change from linearly varying upstream inflow over time step

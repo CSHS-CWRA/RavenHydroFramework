@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   Soil Evaporation
   ----------------------------------------------------------------*/
@@ -22,7 +22,6 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
 {
   int iAtmos;
   iAtmos  =pModel->GetStateVarIndex(ATMOSPHERE);
-  soil_ind=NULL;
   type = se_type;
 
   if(type==SOILEVAP_GAWSER)
@@ -98,7 +97,6 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
 //
 CmvSoilEvap::~CmvSoilEvap()
 {
-  delete [] soil_ind;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -359,14 +357,14 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     for (m=0;m<nSoilLayers;m++)
     {
-      cap      [m]=pHRU->GetSoilCapacity(soil_ind[m]);
+      cap      [m]=pHRU->GetSoilCapacity(pModel->GetStateVarIndex(SOIL,m));
       root_frac[m]=pHRU->GetVegVarProps()->rel_rootden;
 
       rootsum+=root_frac[m];
     }
     for (q=0;q<_nConnections-1;q++)
     {
-      m=soil_ind[q];
+      m=q;
       rates[q]=PET*(root_frac[m]/rootsum)*threshMin(1.0,state_vars[iFrom[q]]/cap[m],0.0);
       PETused+=rates[q];
     }
