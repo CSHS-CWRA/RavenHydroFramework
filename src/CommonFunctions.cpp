@@ -303,6 +303,10 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   {
     model_time = floor(model_time+TIME_CORRECTION);
   }
+  //handles hourly roundoff error (e.g., t=5.24999873->t=5.25) 
+  if(model_time*HR_PER_DAY-floor(model_time*HR_PER_DAY) > (1.0-TIME_CORRECTION)*HR_PER_DAY) {
+    model_time = floor(HR_PER_DAY*(model_time+TIME_CORRECTION))/HR_PER_DAY;
+  }
 
   double dec_date=start_date+model_time; //decimal date calculated from start_date,start year
 
@@ -523,12 +527,12 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
 string TimeZoneToString(const int tz) {
   string ends="";
   if(tz<0) {
-    if(tz<-9) { ends=" -"+to_string(-tz)+"00"; }
-    else { ends=" -0"+to_string(-tz)+"00"; }
+    if(tz<-9) { ends=" -" +to_string(-tz)+"00"; }
+    else      { ends=" -0"+to_string(-tz)+"00"; }
   }
   else if(tz>0) {
-    if(tz>9) { ends=" +"+to_string(tz)+"00"; }
-    else { ends=" +0"+to_string(tz)+"00"; }
+    if(tz>9) { ends=" +" +to_string(tz)+"00"; }
+    else     { ends=" +0"+to_string(tz)+"00"; }
   }
   return ends;
 }
@@ -893,6 +897,7 @@ double GetPsychometricConstant  (const double &P,const double &LH_vapor)
 {
   return SPH_AIR/AIR_H20_MW_RAT*P/LH_vapor;//[kPa/K];
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns air density [kg/m3]
 /// \remark From CLM Manual, pg. 12 \cite Oleson2012
@@ -1053,6 +1058,7 @@ double ConvertVolumetricEnthalpyToIceContent(const double &hv)
   else if (hv>hvt){ return hv/hvt;}
   else            { return 1.0; }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief calculates dT/dh corresponding to volumetric enthalpy hv
 ///
@@ -1075,6 +1081,7 @@ double TemperatureEnthalpyDerivative(const double &hv)
   else if (hv>hvt){ return g_freeze_temp/hvt;}
   else            { return 1.0/SPH_ICE/DENSITY_ICE; }   
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief converts temperature to volumetric enthalpy of water/ice only [MJ/m3 water] 
 ///
@@ -1094,6 +1101,7 @@ double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctf
   else if((hvt<0.0) && (T>g_freeze_temp))              { return pctfroz*hvt; }
   else                                                 { return T*SPH_ICE  *DENSITY_ICE+hvt; }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Converts any lowercase characters in a string to uppercase, returning the converted string
 /// \param &s [in] String to be converted to uppercase
@@ -1114,7 +1122,7 @@ string StringToUppercase(const string &s)
 /// \brief Simple and fast atof (ascii to float) function.
 /// \notes Executes about 5x faster than standard MSCRT library atof().
 ///
-/// \notes ported from 09-May-2009 Tom Van Baak (tvb) www.LeapSecond.com
+/// \notes ported 09-May-2009 from Tom Van Baak (tvb) www.LeapSecond.com
 //
 
 #define white_space(c) ((c) == ' ' || (c) == '\t')

@@ -83,8 +83,8 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
         Qmod = _pSubBasins [p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
         if((Qobs!=RAV_BLANK_DATA) && (tt.model_time<t_observationsOFF)) 
         {
-          if(Qmod>=0.0) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);}
-          else          { _aDAscale[p]=1.0;                         }
+          if(Qmod>PRETTY_SMALL) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);}
+          else                  { _aDAscale[p]=1.0;                         }
           _aDAlength   [p]=0.0;
           _aDAtimesince[p]=0.0;
         }
