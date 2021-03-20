@@ -170,9 +170,11 @@ void   CmvCapillaryRise::ApplyConstraints( const double     *storage,
                                            double     *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
+  
+  double min_stor=g_min_storage;
 
   //cant remove more than is there
-  rates[0]=threshMin(rates[0],storage[iFrom[0]]/Options.timestep,0.0);
+  rates[0]=threshMin(rates[0],max(storage[iFrom[0]],min_stor)/Options.timestep,0.0);
 
   //exceedance of max "to" compartment
   //water flow simply slows (or stops) so that receptor will not overfill during tstep

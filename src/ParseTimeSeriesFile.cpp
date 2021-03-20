@@ -9,36 +9,10 @@
 #include "ParseLib.h"
 
 void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long SBID, long SBIDres,double pct_met,int jul_start,int jul_end);
+bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long SBID);
 //////////////////////////////////////////////////////////////////
 /// \brief Parse input time series file, model.rvt
-/// \details
-///model.rvt: input file that defines temperature, precip, and other external vars at a set of gauges \n
-/// .rvt format: \n
-///   ":Gauge" [optional name]
-///     - :Latitude {lat}
-///     - :Longitude {long}
-///     - :Elevation {elev}
-///     - :Rain
-///        {int nMeasurements int julian day int julian year double tstep} // start of data collection
-///        {double precip} x nMeasurements
-///     - :EndRain
-///     - :Snow
-///        {int nMeasurements int julian day int julian year double tstep} // start of data collection
-///        {double snow_precip} x nMeasurements
-///     - :EndSnow
-///     - :MinimumTemperature
-///        {int nMeasurements int julian day int julian year double tstep}
-///        {double min_temp} x nMeasurements
-///     - :EndMinimumTemperature
-///     - :MultiData
-///        {int nMeasurements int julian day int julian year double timestep}
-///      -   :Parameters, PARAM_1_TAG, PARAM_2_TAG, ...
-///      -  :Units,      unit1,        unit2, ...
-///     {double param_1, double param_2, ...} x nMeasurements
-///     - ":EndMultiData" \n
-///
-///   ":EndGauge" \n
-///   ...
+/// 
 /// \param *&pModel [out] Reference to the model object
 /// \param Options [in] Global model options
 /// \return True if operation was successful
@@ -54,30 +28,30 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   int   Len,line(0);
   char *s[MAXINPUTITEMS];
   double monthdata[12];
-  bool ended(false);
-  bool has_irrig=false;
+  string warn;
 
-  // some tmp variables for gridded forcing input
-  bool grid_initialized = false;
-  bool is_3D            = false;  //
+  bool ended            = false;
+  bool has_irrig        = false;
+  bool grid_initialized = false;  
+  bool is_3D            = false;  // true if gridded forcing is 3D
 
   ifstream RVT;
+  ifstream INPUT2;           //For Secondary input
+  CParser* pMainParser=NULL; //for storage of main parser while reading secondary files
+
   RVT.open(Options.rvt_filename.c_str());
   if (RVT.fail()){
     cout << "ERROR opening *.rvt file: "<<Options.rvt_filename<<endl; return false;}
 
   CParser *p=new CParser(RVT,Options.rvt_filename,line);
 
-  ifstream INPUT2;           //For Secondary input
-  CParser *pMainParser=NULL; //for storage of main parser while reading secondary files
-
-  if (Options.noisy){
-    cout <<"======================================================"<<endl;
+  if (Options.noisy)
+  {
+    cout <<"==========================================================="<<endl;
     cout << "Parsing Forcing Data File " << Options.rvt_filename <<"..."<<endl;
-    cout <<"======================================================"<<endl;
+    cout <<"==========================================================="<<endl;
   }
 
-  //Default Values
   //--Sift through file-----------------------------------------------
   bool end_of_file=p->Tokenize(s,Len);
   while (!end_of_file)
@@ -85,115 +59,92 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     if (ended){break;}
     if (Options.noisy){ cout << "reading line " << p->GetLineNumber() << ": ";}
 
-    /*assign code for switch statement
-      --------------------------------------------------------------------------------------
-      <100         : ignored/special
-      0   thru 100 : data
-      --------------------------------------------------------------------------------------
-    */
-
-    code=0;
+    code=0; 
     //---------------------SPECIAL -----------------------------
-    if       (Len==0)                                 {code=-1; }
-    else if  (!strcmp(s[0],"*"                      )){code=-2; }//comment
-    else if  (!strcmp(s[0],"%"                      )){code=-2; }//comment
-    else if  (!strcmp(s[0],"#"                      )){code=-2; }//comment
-    else if  (s[0][0]=='#')                           {code=-2; }//comment
-    else if  (!strcmp(s[0],":RedirectToFile"        )){code=-3; }//redirect to secondary file
-    else if  (!strcmp(s[0],":End"                   )){code=-4; }//premature end of file
+    if       (Len==0)                                       {code=-1; }
+    else if  (IsComment(s[0],Len))                          {code=-2; }//comment
+    else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
+    else if  (!strcmp(s[0],":End"                         )){code=-4; }//premature end of file
     //--------------------GAUGE BASIC DATA- --------------------
-    else if  (!strcmp(s[0],":Gauge"                 )){code=1;  }
-    else if  (!strcmp(s[0],":EndGauge"              )){code=2;  }
-    else if  (!strcmp(s[0],":Latitude"              )){code=9;  }
-    else if  (!strcmp(s[0],":Longitude"             )){code=10; }
-    else if  (!strcmp(s[0],":Elevation"             )){code=11; }
-    else if  (!strcmp(s[0],":GaugeList"             )){code=14; }
-    else if  (!strcmp(s[0],":MeasurementHeight"     )){code=16; }
+    else if  (!strcmp(s[0],":Gauge"                       )){code=1;  }
+    else if  (!strcmp(s[0],":EndGauge"                    )){code=2;  }
+    else if  (!strcmp(s[0],":Latitude"                    )){code=9;  }
+    else if  (!strcmp(s[0],":Longitude"                   )){code=10; }
+    else if  (!strcmp(s[0],":Elevation"                   )){code=11; }
+    else if  (!strcmp(s[0],":MeasurementHeight"           )){code=16; }
     //--------------------FORCING FUNCTIONS --------------------
-    else if  (!strcmp(s[0],":Rain"                  )){code=3;  } //should make obsolete
-    else if  (!strcmp(s[0],":Snow"                  )){code=4;  } //should make obsolete
-    else if  (!strcmp(s[0],":MinTemperature"        )){code=5;  } //should make obsolete
-    else if  (!strcmp(s[0],":MaxTemperature"        )){code=6;  } //should make obsolete
-    else if  (!strcmp(s[0],":TotalPrecip"           )){code=7;  } //should make obsolete
-    else if  (!strcmp(s[0],":Precipitation"         )){code=7;  } //should make obsolete
-    else if  (!strcmp(s[0],":AveTemperature"        )){code=12; } //should make obsolete
-
-    else if  (!strcmp(s[0],":Data"                  )){code=8;  }
-    else if  (!strcmp(s[0],":MultiData"             )){code=13; }
-    else if  (!strcmp(s[0],":GaugeDataTable"        )){code=15; }
-    else if  (!strcmp(s[0],":EnsimTimeSeries"       )){code=20; }
+    else if  (!strcmp(s[0],":Data"                        )){code=12; }
+    else if  (!strcmp(s[0],":MultiData"                   )){code=13; }
+    else if  (!strcmp(s[0],":GaugeDataTable"              )){code=15; }
+    else if  (!strcmp(s[0],":EnsimTimeSeries"             )){code=20; }
     //----------GAUGE-SPECIFIC CORRECTION TERMS / PARAMETERS----
-    else if  (!strcmp(s[0],":RainCorrection"        )){code=30; }
-    else if  (!strcmp(s[0],":SnowCorrection"        )){code=31; }
-    else if  (!strcmp(s[0],":CloudTempRanges"       )){code=32; }
+    else if  (!strcmp(s[0],":RainCorrection"              )){code=30; }
+    else if  (!strcmp(s[0],":SnowCorrection"              )){code=31; }
+    else if  (!strcmp(s[0],":CloudTempRanges"             )){code=32; }
     //-------------------OBSERVATIONS---------------------------
-    else if  (!strcmp(s[0],":ObservationData"       )){code=40; }
-    else if  (!strcmp(s[0],":IrregularObservations" )){code=41; }
-    else if  (!strcmp(s[0],":ObservationWeights"    )){code=42; }
-    else if  (!strcmp(s[0],":IrregularWeights"      )){code=43; }
+    else if  (!strcmp(s[0],":ObservationData"             )){code=40; }
+    else if  (!strcmp(s[0],":IrregularObservations"       )){code=41; }
+    else if  (!strcmp(s[0],":ObservationWeights"          )){code=42; }
+    else if  (!strcmp(s[0],":IrregularWeights"            )){code=43; }
     //----------HYDROGRAPHS /RESERVOIR PARAMS -------------------
-    else if  (!strcmp(s[0],":BasinInflowHydrograph" )){code=50; }
-    else if  (!strcmp(s[0],":ReservoirExtraction"   )){code=51; }
-    else if  (!strcmp(s[0],":VariableWeirHeight"    )){code=52; }
-    else if  (!strcmp(s[0],":ReservoirMaxStage"     )){code=53; }
-    else if  (!strcmp(s[0],":OverrideReservoirFlow" )){code=54; }
-    else if  (!strcmp(s[0],":ReservoirMinStage"     )){code=55; }
-    else if  (!strcmp(s[0],":ReservoirMinStageFlow" )){code=56; }
-    else if  (!strcmp(s[0],":ReservoirTargetStage"  )){code=57; }
-    else if  (!strcmp(s[0],":ReservoirMaxQDelta"    )){code=58; }
-    else if  (!strcmp(s[0],":BasinInflowHydrograph2")){code=59; }
-    else if  (!strcmp(s[0],":ReservoirMinFlow"      )){code=60; }
-    else if  (!strcmp(s[0],":ReservoirDownstreamFlow")){code=61;}
-    else if  (!strcmp(s[0],":ReservoirMaxQDecrease" )){code=62; }
-    else if  (!strcmp(s[0],":IrrigationDemand"      )){code=63; }
-    else if  (!strcmp(s[0],":ReservoirDownstreamDemand")){code=64; }
-    else if  (!strcmp(s[0],":ReservoirMaxFlow"      )){code=65;}
-    else if  (!strcmp(s[0],":FlowDiversion"         )){code=66;}
-    else if  (!strcmp(s[0],":FlowDiversionLookupTable")){code=67;}
-    else if  (!strcmp(s[0],":EnvironmentalMinFlow"  )) { code=68; }
-    else if  (!strcmp(s[0],":UnusableFlowPercentage")){code=69; }
+    else if  (!strcmp(s[0],":BasinInflowHydrograph"       )){code=50; }
+    else if  (!strcmp(s[0],":ReservoirExtraction"         )){code=51; }
+    else if  (!strcmp(s[0],":VariableWeirHeight"          )){code=52; }
+    else if  (!strcmp(s[0],":ReservoirMaxStage"           )){code=53; }
+    else if  (!strcmp(s[0],":OverrideReservoirFlow"       )){code=54; }
+    else if  (!strcmp(s[0],":ReservoirMinStage"           )){code=55; }
+    else if  (!strcmp(s[0],":ReservoirMinStageFlow"       )){code=56; }
+    else if  (!strcmp(s[0],":ReservoirTargetStage"        )){code=57; }
+    else if  (!strcmp(s[0],":ReservoirMaxQDelta"          )){code=58; }
+    else if  (!strcmp(s[0],":BasinInflowHydrograph2"      )){code=59; }
+    else if  (!strcmp(s[0],":ReservoirMinFlow"            )){code=60; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamFlow"     )){code=61; }
+    else if  (!strcmp(s[0],":ReservoirMaxQDecrease"       )){code=62; }
+    else if  (!strcmp(s[0],":IrrigationDemand"            )){code=63; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamDemand"   )){code=64; }
+    else if  (!strcmp(s[0],":ReservoirMaxFlow"            )){code=65; }
+    else if  (!strcmp(s[0],":FlowDiversion"               )){code=66; }
+    else if  (!strcmp(s[0],":FlowDiversionLookupTable"    )){code=67; }
+    else if  (!strcmp(s[0],":EnvironmentalMinFlow"        )){code=68; }
+    else if  (!strcmp(s[0],":UnusableFlowPercentage"      )){code=69; }
     //--------------------Other --------------------------------
-    else if  (!strcmp(s[0],":MonthlyAveTemperature" )){code=70; }
-    else if  (!strcmp(s[0],":MonthlyAveEvaporation" )){code=71; }
-    else if  (!strcmp(s[0],":MonthlyEvapFactor"     )){code=71; }
-    else if  (!strcmp(s[0],":MonthlyMinTemperature" )){code=72; }
-    else if  (!strcmp(s[0],":MonthlyMaxTemperature" )){code=73; }
-    else if  (!strcmp(s[0],":MonthlyEvapFactors"    )){code=74; }
-    else if  (!strcmp(s[0],":MonthlyAveEvaporations")){code=74; }
-    else if  (!strcmp(s[0],":MonthlyMaxTemperatures")){code=75; }
-    else if  (!strcmp(s[0],":MonthlyMinTemperatures")){code=76; }
-    else if  (!strcmp(s[0],":MonthlyAveTemperatures")){code=77; }
+    else if  (!strcmp(s[0],":MonthlyAveTemperature"       )){code=70; }
+    else if  (!strcmp(s[0],":MonthlyAveEvaporation"       )){code=71; }
+    else if  (!strcmp(s[0],":MonthlyEvapFactor"           )){code=71; }
+    else if  (!strcmp(s[0],":MonthlyMinTemperature"       )){code=72; }
+    else if  (!strcmp(s[0],":MonthlyMaxTemperature"       )){code=73; }
     //-----------------CONTROLS ---------------------------------
-    else if  (!strcmp(s[0],":OverrideStreamflow"    )){code=100; }
+    else if  (!strcmp(s[0],":OverrideStreamflow"          )){code=100;}
+    else if  (!strcmp(s[0],":AssimlateStreamflow"         )){code=101;}
     //-----------------TRANSPORT--------------------------------
-    else if  (!strcmp(s[0],":ConcentrationTimeSeries"     )){code=300; }
-    else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301; }
-    else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302; }  
-    else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303; }
+    else if  (!strcmp(s[0],":ConcentrationTimeSeries"     )){code=300;}
+    else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}
+    else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302;}  
+    else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303;}
     //---------GRIDDED INPUT (lat,lon,time)---------------------
-    else if  (!strcmp(s[0],":GriddedForcing"          )){code=400;}
-    else if  (!strcmp(s[0],":ForcingType"             )){code=401;}
-    else if  (!strcmp(s[0],":FileNameNC"              )){code=402;}
-    else if  (!strcmp(s[0],":VarNameNC"               )){code=403;}
-    else if  (!strcmp(s[0],":DimNamesNC"              )){code=404;}
-    else if  (!strcmp(s[0],":GridWeights"             )){code=405;}
-    else if  (!strcmp(s[0],":EndGriddedForcing"       )){code=406;}
-    else if  (!strcmp(s[0],":Deaccumulate"            )){code=407;}
-    else if  (!strcmp(s[0],":TimeShift"               )){code=408;}
-    else if  (!strcmp(s[0],":LinearTransform"         )){code=409;}
-    else if  (!strcmp(s[0],":PeriodEndingNC"          )){code=410;}
-    else if  (!strcmp(s[0],":LatitudeVarNameNC"       )){code=411;}
-    else if  (!strcmp(s[0],":LongitudeVarNameNC"      )){code=412;}
-    else if  (!strcmp(s[0],":ElevationVarNameNC"      )){code=413;}
-    else if  (!strcmp(s[0],":GridWeightsByAttribute"  )){code=414;}
+    else if  (!strcmp(s[0],":GriddedForcing"              )){code=400;}
+    else if  (!strcmp(s[0],":ForcingType"                 )){code=401;}
+    else if  (!strcmp(s[0],":FileNameNC"                  )){code=402;}
+    else if  (!strcmp(s[0],":VarNameNC"                   )){code=403;}
+    else if  (!strcmp(s[0],":DimNamesNC"                  )){code=404;}
+    else if  (!strcmp(s[0],":GridWeights"                 )){code=405;}
+    else if  (!strcmp(s[0],":EndGriddedForcing"           )){code=406;}
+    else if  (!strcmp(s[0],":Deaccumulate"                )){code=407;}
+    else if  (!strcmp(s[0],":TimeShift"                   )){code=408;}
+    else if  (!strcmp(s[0],":LinearTransform"             )){code=409;}
+    else if  (!strcmp(s[0],":PeriodEndingNC"              )){code=410;}
+    else if  (!strcmp(s[0],":LatitudeVarNameNC"           )){code=411;}
+    else if  (!strcmp(s[0],":LongitudeVarNameNC"          )){code=412;}
+    else if  (!strcmp(s[0],":ElevationVarNameNC"          )){code=413;}
+    else if  (!strcmp(s[0],":GridWeightsByAttribute"      )){code=414;}
     else if  (!strcmp(s[0],":StationElevationsByAttribute")){code=415;}
-    else if  (!strcmp(s[0],":StationIDNameNC"         )){code=416;}
-    else if  (!strcmp(s[0],":StationElevationsByIdx"  )){code=417;}
+    else if  (!strcmp(s[0],":StationIDNameNC"             )){code=416;}
+    else if  (!strcmp(s[0],":StationElevationsByIdx"      )){code=417;}
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
     //             code 401-405 & 407-409 are shared between
     //             GriddedForcing and StationForcing
-    else if  (!strcmp(s[0],":StationForcing"          )){code=500;}
-    else if  (!strcmp(s[0],":EndStationForcing"       )){code=506;}
+    else if  (!strcmp(s[0],":StationForcing"              )){code=500;}
+    else if  (!strcmp(s[0],":EndStationForcing"           )){code=506;}
 
     switch(code)
     {
@@ -215,7 +166,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       INPUT2.open(filename.c_str());
       if (INPUT2.fail()){
-        string warn=":RedirectToFile: Cannot find file "+filename;
+        warn=":RedirectToFile: Cannot find file "+filename;
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else{
@@ -241,11 +192,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       pGage=new CGauge(gName,NOT_SPECIFIED,NOT_SPECIFIED,0.0);
       pModel->AddGauge(pGage);
-
       break;
     }
     case(2):  //----------------------------------------------
-    {/*":EndGauge"*/
+    {/*:EndGauge*/
       if (Options.noisy) {cout <<"End Gauge"<<endl;}
       if(pGage == NULL)
       {
@@ -258,99 +208,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         ExitGracefullyIf(pGage->GetLocation().longitude==NOT_SPECIFIED,
                          "ParseTimeSeriesFile::longitude not specified for gauge station",BAD_DATA);
       }
-      break;
-    }
-    case(3):  //----------------------------------------------
-    {/*":Rain"
-       {int nMeasurements double start_day int start_year double tstep}
-       {double rain} x nMeasurements [mm/d]
-       :EndRain
-     */
-      if (Options.noisy) {cout <<"Rainfall data"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Rainfall data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"RAINFALL",DOESNT_EXIST,Options);
-      pGage->AddTimeSeries(pTimeSer,F_RAINFALL);
-      break;
-    }
-    case(4):  //----------------------------------------------
-    {/*:Snow
-       {int nMeasurements double start_day int start_year double tstep}
-       {double snow} x nMeasurements [mm/d SWE]
-       :EndSnow
-     */
-      if (Options.noisy) {cout <<"Snow data"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Snow data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"SNOWFALL",DOESNT_EXIST,Options);
-      pGage->AddTimeSeries(pTimeSer,F_SNOWFALL);
-      break;
-    }
-    case(5):  //----------------------------------------------
-    {/*:MinTemperature
-       {int nMeasurements double start_day int start_year double tstep}
-       {double snow} x nMeasurements [C]
-       :EndMinTemperature
-     */
-      if (Options.noisy) {cout <<"Minumum Temperature data"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MIN",DOESNT_EXIST,Options);
-      pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_MIN);
-      break;
-    }
-    case(6):  //----------------------------------------------
-    {/*:MaxTemperature
-       {int nMeasurements double start_day int start_year double tstep}
-       {double snow} x nMeasurements [C]
-       :EndMaxTemperature
-     */
-      if (Options.noisy) {cout <<"Maximum Temperature data"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_MAX",DOESNT_EXIST,Options);
-      pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_MAX);
-      break;
-    }
-    case(7):  //----------------------------------------------
-    {/*:TotalPrecip
-       {int nMeasurements double start_day int start_year double tstep}
-       {double rain} x nMeasurements [mm/d]
-       :EndTotalPrecip
-     */
-      if (Options.noisy) {cout <<"Total Precipitation data"<<endl;}
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Precipitation data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"PRECIP",DOESNT_EXIST,Options);
-      pGage->AddTimeSeries(pTimeSer,F_PRECIP);
-      //pGage->DeleteSnowData();//??
-      break;
-    }
-    case(8):  //----------------------------------------------
-    {/*:Data [DATA TYPE] {units string}
-       {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
-       {double values} x nMeasurements
-       :EndData
-
-       or
-
-       :Data [DATA TYPE] {units string}
-          :ReadFromNetCDF
-             :FileNameNC     {NetCDF file name}
-             :VarNameNC      {name of variable in NetCDF file; variable must be 2D (nstations x ntime) or (ntime x nstations)}
-             :DimNamesNC     {dimension name of stations ; dimension name of time}
-             #:RedirectToFile {weights of station contribution to each HRU; usually redirect to txt-file}  --> is coming from Interp_from_file (*.rvi)
-          :EndReadFromNetCDF
-       :EndData 
-     */
-      if (Options.noisy) {cout <<"Time Series Data: "<<s[1]<<endl;}
-      string name=to_string(s[1]);
-      ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Time Series Data added outside of a :Gage-:EndGauge statement",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,name,DOESNT_EXIST,Options);
-      forcing_type ftype=GetForcingTypeFromString(name);
-      if(ftype==F_UNRECOGNIZED){ ExitGracefully("Unrecognized forcing type string in :Data command",BAD_DATA_WARN); }
-      pGage->AddTimeSeries(pTimeSer,ftype);
       break;
     }
     case(9):  //----------------------------------------------
@@ -381,16 +238,30 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(12):  //----------------------------------------------
-    {/*":AveTemperature"
-       {int nMeasurements double start_day int start_year double tstep}
-       {double temp} x nMeasurements [mm/d]
-       :EndAveTemperature
+    {/*:Data [DATA TYPE] {units string}
+       {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
+       {double values} x nMeasurements
+       :EndData
+
+       or
+
+       :Data [DATA TYPE] {units string}
+          :ReadFromNetCDF
+             :FileNameNC     {NetCDF file name}
+             :VarNameNC      {name of variable in NetCDF file; variable must be 2D (nstations x ntime) or (ntime x nstations)}
+             :DimNamesNC     {dimension name of stations ; dimension name of time}
+             #:RedirectToFile {weights of station contribution to each HRU; usually redirect to txt-file}  --> is coming from Interp_from_file (*.rvi)
+          :EndReadFromNetCDF
+       :EndData
      */
-      if (Options.noisy) {cout <<"Ave. Temperature data"<<endl;}
+      if(Options.noisy) { cout <<"Time Series Data: "<<s[1]<<endl; }
+      string name=to_string(s[1]);
       ExitGracefullyIf(pGage==NULL,
-                       "ParseTimeSeriesFile::Temperature data added before specifying a gauge station and its properties",BAD_DATA);
-      pTimeSer=CTimeSeries::Parse(p,true,"TEMP_DAILY_AVE",DOESNT_EXIST,Options);
-      pGage->AddTimeSeries(pTimeSer,F_TEMP_DAILY_AVE);
+        "ParseTimeSeriesFile::Time Series Data added outside of a :Gage-:EndGauge statement",BAD_DATA);
+      pTimeSer=CTimeSeries::Parse(p,true,name,DOESNT_EXIST,Options);
+      forcing_type ftype=GetForcingTypeFromString(name);
+      if(ftype==F_UNRECOGNIZED) { ExitGracefully("Unrecognized forcing type string in :Data command",BAD_DATA_WARN); }
+      pGage->AddTimeSeries(pTimeSer,ftype);
       break;
     }
     case(13):  //----------------------------------------------
@@ -418,164 +289,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       {
         pGage->AddTimeSeries(pTimeSerArray[i],aTypes[i]);
       }
-      break;
-    }
-    case(14):  //----------------------------------------------
-    {/*":GaugeList"
-       :Attributes,  LATITUDE, LONGITUDE, ELEVATION, RAINCORRECTION,...
-       :Units,   dec.deg, dec.deg, masl,none,...
-       [name1, lat1, long1,elev1,...]
-       ...
-       [nameN, latN, longN,elevN,...]
-       :EndGaugeList
-     */
-      if (Options.noisy) {cout <<"Gauge List"<<endl;}
-      bool done=false;
-      string aAttStrings[MAXINPUTITEMS];
-      int nAttStrings=0;
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if      (IsComment(s[0], Len)){}//comment line
-        else if (!strcmp(s[0],":Attributes")){
-          for (int i=1;i<Len;i++){
-            aAttStrings[i-1]=s[i];
-          }
-          nAttStrings=Len-1;
-        }
-        else if (!strcmp(s[0],":Units")){
-          //Do nothing with units for now
-          done=true;
-        }
-        else {WriteWarning("Improper format of :GaugeList command",Options.noisy); break;}
-      }
-
-      double *values[MAX_GAUGES_IN_LIST];
-      string gaugenames[MAX_GAUGES_IN_LIST];
-      for (int g=0;g<MAX_GAUGES_IN_LIST;g++){values[g]=new double [nAttStrings];}
-      p->Tokenize(s,Len);
-      done=false;
-      int nGauges=0;
-      while (!done)
-      {
-        if      (IsComment(s[0],Len)){}
-        else if (Len==nAttStrings+1)
-        {
-          gaugenames[nGauges]=s[0];
-          for (int j=1;j<nAttStrings+1;j++){
-            values[nGauges][j-1]=s_to_d(s[j]);
-          }
-          nGauges++;
-        }
-        else{
-          p->ImproperFormat(s); break;
-        }
-        p->Tokenize(s,Len);
-        if (!strcmp(s[0],":EndGaugeList")){done=true;}
-      }
-      //Create gauges, add to model
-      for (int g=0;g<nGauges;g++)
-      {
-        CGauge *pGage=new CGauge(gaugenames[g],NOT_SPECIFIED,NOT_SPECIFIED,0);
-        for (int j=0;j<nAttStrings;j++){
-          pGage->SetProperty(aAttStrings[j],values[g][j]);
-        }
-        pModel->AddGauge(pGage);
-      }
-      for (int g=0;g<MAX_GAUGES_IN_LIST;g++){delete [] values[g];}
-      break;
-    }
-    case(15):  //----------------------------------------------
-    {/*":GaugeDataTable"
-       :DataType PRECIP
-       :Units         mm/d
-       :StartTime 01-01-2012 00:00:00.0
-       :TimeIncrement   01:00:00.0
-       :NumMeasurements 730
-       :Gauge, Cell_11,Cell_12,Cell_13, ... Cell_240360
-       1,  0.0,0.0,0.0,                         ...,0.2
-       2,  0.0,0.0,0.0,                         ...,0.1
-       ...
-       :EndGaugeDataTable
-     */
-      if (Options.noisy) {cout <<"Gauge Data Table"<<endl;}
-      forcing_type datatype=F_UNRECOGNIZED;
-      time_struct  tt;
-      double   start_day=0;
-      int      start_yr=1863;
-      double   interval=0;
-      int      numvalues;
-
-      long     nMeasurements=0;
-      bool     done=false;
-      int      NG;
-      double **values;
-      int     *gauge_ind;
-
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if      (IsComment(s[0],Len))           {/* do nothing */}
-        else if (!strcmp(s[0],":Units"        )){/* do nothing */}
-        else if (!strcmp(s[0],":DataType"     )){
-          datatype=GetForcingTypeFromString(s[1]);
-          ExitGracefullyIf(datatype==F_UNRECOGNIZED,
-                           "ParseTimeSeriesFile:GaugeDataTable: invalid data type specifier",BAD_DATA);
-        }
-        else if (!strcmp(s[0],":NumMeasurements")){nMeasurements=s_to_l(s[1]);}
-        else if (!strcmp(s[0],":TimeIncrement")){interval=s_to_d(s[1]);}
-        else if (!strcmp(s[0],":StartTime"    )){
-          tt=DateStringToTimeStruct(string(s[1]),string(s[2]),Options.calendar);
-          start_day=tt.julian_day;
-          start_yr =tt.year;
-        }
-        else if (!strcmp(s[0],":Gauge"))
-        {
-          ExitGracefullyIf(nMeasurements<=0,
-                           "ParseTimeSeriesFile:GaugeDataTable: :NumMeasurements not specified or invalid",BAD_DATA);
-          NG=Len-1;
-          values=new double *[NG];
-          gauge_ind=new int [NG];
-          for (int g=0;g<NG;g++){
-            values[g]=new double [nMeasurements];
-          }
-          numvalues=0;
-          for (int g=0;g<NG;g++){
-            gauge_ind[g]=pModel->GetGaugeIndexFromName(s[g+1]);
-            ExitGracefullyIf(gauge_ind[g]==DOESNT_EXIST,
-                             "ParseTimeSeriesFile:GaugeDataTable: unrecognized gauge name",BAD_DATA);
-          }
-          while (!done)
-          {
-            p->Tokenize(s,Len);
-            if (IsComment(s[0],Len)){}
-            else if (!strcmp(s[0],":EndGaugeDataTable")){done=true;}
-            else if (Len==NG+1){
-              ExitGracefullyIf(numvalues>=nMeasurements,
-                               "ParseTimeSeriesFile:GaugeDataTable: more measurement entries than specified by :NumMeasurements",BAD_DATA);
-              for (int g=0;g<NG;g++){
-                values[g][numvalues]=s_to_d(s[g+1]);
-              }
-              numvalues++;
-            }
-            else{
-              ExitGracefully("ParseTimeSeriesFile:GaugeDataTable: incorrect number of columns in table",BAD_DATA);
-            }
-          }
-          ExitGracefullyIf(interval<=0,"ParseTimeSeriesFile:GaugeDataTable: invalid interval",BAD_DATA);
-          ExitGracefullyIf(datatype==F_UNRECOGNIZED,"ParseTimeSeriesFile:GaugeDataTable: unrecognized datatype",BAD_DATA);
-          //done reading table, now populate
-          for (int g=0;g<NG;g++)
-          {
-            CTimeSeries *pTS=new CTimeSeries(ForcingToString(datatype),DOESNT_EXIST,p->GetFilename(),start_day,start_yr,interval,values[g],numvalues,true);
-            pModel->GetGauge(gauge_ind[g])->AddTimeSeries(pTS,datatype);
-            delete [] values[g];
-          }
-          delete [] values;
-          delete [] gauge_ind;
-        }
-      }
-
       break;
     }
     case(16):  //----------------------------------------------
@@ -612,9 +325,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(30):  //----------------------------------------------
-    {/*RainCorrection
-       {":RainCorrection" double corr}
-     */
+    {/* :RainCorrection [double value] */
       if (Options.noisy) {cout <<"Rainfall Correction"<<endl;}
       ExitGracefullyIf(pGage==NULL && pGrid==NULL,
                        "ParseTimeSeriesFile::Precipitation correction added before specifying a gauge station/ gridded forcing and its properties",BAD_DATA);
@@ -624,9 +335,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(31):  //----------------------------------------------
-    {/*"SnowCorrection"
-       {":SnowCorrection" double corr}
-     */
+    {/* :SnowCorrection [double value] */
       if (Options.noisy) {cout <<"Snowfall Correction"<<endl;}
       ExitGracefullyIf(pGage==NULL && pGrid==NULL,
                        "ParseTimeSeriesFile::Snowfall correction added before specifying a gauge station/ gridded forcing and its properties",BAD_DATA);
@@ -636,9 +345,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(32):  //----------------------------------------------
-    {/*":CloudTempRanges"
-       {":CloudTempRanges" double cloud_temp_min [C] cloud_temp_max [C]}
-     */
+    {/* :CloudTempRanges [double cloud_temp_min C] [cloud_temp_max C] */
       if (Options.noisy) {cout <<"Cloud cover temperature ranges"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Cloudcover temperature ranges added before specifying a gauge station and its properties",BAD_DATA);
@@ -648,7 +355,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (40): //---------------------------------------------
-    {/*:ObservationData {data type} {long SBID or int HRUID} {constituent name if data type=STREAM_CONCENTRATION } 
+    {/*:ObservationData [data type] [long SBID or int HRUID] {constituent name if data type=STREAM_CONCENTRATION } 
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationData
@@ -673,7 +380,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         ExitGracefullyIf(Len<4,"ParseTimeSeriesFile: STREAM_CONCENTRATION observation must include constituent name",BAD_DATA_WARN);
         int c = pModel->GetTransportModel()->GetConstituentIndex(s[3]);
         if(c==DOESNT_EXIST) {
-          string warn="ParseTimeSeries:: Invalid/unused constituent name in observation stream concentration time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+          warn="ParseTimeSeries:: Invalid/unused constituent name in observation stream concentration time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
           WriteWarning(warn.c_str(),Options.noisy); break;
         }
         pTimeSer->SetConstitInd(c);
@@ -684,19 +391,19 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
 
       if (ishyd && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy); break;
       }
       if(isstage && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir stage time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir stage time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy); break;
       }
       if(isinflow && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy); break;
       }
       if(isnetinflow && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
       pModel->AddObservedTimeSeries(pTimeSer);
@@ -737,7 +444,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         ExitGracefullyIf(Len<4,"ParseTimeSeriesFile: STREAM_CONCENTRATION observation must include constituent name",BAD_DATA_WARN);
         int c = pModel->GetTransportModel()->GetConstituentIndex(s[3]);
         if(c==DOESNT_EXIST) {
-          string warn="ParseTimeSeries:: Invalid/unused constituent name in observation stream concentration time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+          warn="ParseTimeSeries:: Invalid/unused constituent name in observation stream concentration time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
           WriteWarning(warn.c_str(),Options.noisy); break;
         }
         pTimeSer->SetConstitInd(c);
@@ -748,19 +455,19 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
 
       if (ishyd && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observation hydrograph weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy); break;
       }
       if(isstage && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir stage weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir stage weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy); break;
       }
       if(isinflow && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy); break;
       }
       if(isnetinflow && invalidSB){
-        string warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
 
@@ -796,7 +503,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":BasinInflowHydrograph Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
         WriteWarning(warn,Options.noisy);
       }
@@ -819,7 +525,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirExtraction Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir Extraction";
         WriteWarning(warn,Options.noisy);
       }
@@ -842,7 +547,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":VariableWeirHeight Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir weir height";
         WriteWarning(warn,Options.noisy);
       }
@@ -865,7 +569,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMaxStage Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir maximum stage";
         WriteWarning(warn,Options.noisy);
       }
@@ -888,7 +591,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":OverrideReservoirFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set overriden discharge";
         WriteWarning(warn,Options.noisy);
       }
@@ -911,7 +613,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMinStage Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum stage";
         WriteWarning(warn,Options.noisy);
       }
@@ -934,7 +635,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMinStageFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum stage discharge";
         WriteWarning(warn,Options.noisy);
       }
@@ -957,7 +657,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirTargetStage Subbasin "+to_string(SBID)+" not in model or doesnt have reservoir, cannot set target stage";
         WriteWarning(warn,Options.noisy);
       }
@@ -980,7 +679,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMaxQDelta Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum Qdelta";
         WriteWarning(warn,Options.noisy);
       }
@@ -1003,7 +701,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":BasinInflowHydrograph2 Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
         WriteWarning(warn,Options.noisy);
       }
@@ -1026,7 +723,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMinFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum flow";
         WriteWarning(warn,Options.noisy);
       }
@@ -1059,7 +755,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model or doesn't have reservoir, cannot set downstream flow target";
         WriteWarning(warn,Options.noisy);
       }
@@ -1082,7 +777,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMaxQDecrease Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum Qdelta decrease";
         WriteWarning(warn,Options.noisy);
       }
@@ -1105,7 +799,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation demand time series";
         WriteWarning(warn,Options.noisy);
       }
@@ -1152,7 +845,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":ReservoirMaxFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum flow";
         WriteWarning(warn,Options.noisy);
       }
@@ -1175,14 +867,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           pSB->AddFlowDiversion(start,end,target_p,s_to_d(s[4]),s_to_d(s[3])); has_irrig=true;
         }
         else {
-          string warn;
           warn=":FlowDiversion command: Target subbasin "+to_string(s_to_l(s[2]))+" not found in model, cannot add diversion";
           WriteWarning(warn,Options.noisy);
         }
       }
       else
       {
-        string warn;
         warn=":FlowDiversion command: Subbasin "+to_string(SBID)+" not in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
@@ -1211,7 +901,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":FlowDiversionLookupTable command: Subbasin "+to_string(SBID)+" not found in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
@@ -1239,7 +928,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         pSB->AddFlowDiversion(start,end,target_p,aQ1,aQ2,NQ);
       }
       else {
-        string warn;
         warn=":FlowDiversionLookupTable command: Target subbasin "+to_string(s_to_l(s[2]))+" not in model, cannot add diversion";
         WriteWarning(warn,Options.noisy);
       }
@@ -1263,7 +951,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        string warn;
         warn=":EnvironmentalMinFlow: Subbasin "+to_string(SBID)+" not in model, cannot set minimum flow time series";
         WriteWarning(warn,Options.noisy);
       }
@@ -1322,114 +1009,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGage->SetMonthlyMaxTemps(monthdata);
       break;
     }
-    case (74): //---------------------------------------------
-    {/*:MonthlyAveEvaporations
-       gaugename1, J,F,M,A...O,N,D
-       gaugename2, J,F,M,A...O,N,D
-       ...
-       :EndMonthlyAveEvaporations
-     */
-      if (Options.noisy) {cout <<"Monthly Average Evaporation"<<endl;}
-      bool done=false;
-      int g;
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if (IsComment(s[0],Len)){}
-        else if (!strncmp(s[0],":End",4)){done=true;}
-        else
-        {
-          g=pModel->GetGaugeIndexFromName(s[0]);
-          ExitGracefullyIf(g==DOESNT_EXIST,
-                           "ParseTimeSeriesFile:: :MonthlyAveEvaporations: invalid gauge name",BAD_DATA);
-          if (Len < 13){WriteWarning(":MonthlyAveEvaporations: bad number of entries",Options.noisy); break;}
-          for (int i=0;i<12;i++){monthdata[i]=s_to_d(s[i+1]);}
-          pModel->GetGauge(g)->SetMonthlyPET(monthdata);
-        }
-      }
-      break;
-    }
-    case (75): //---------------------------------------------
-    {/*:MonthlyMaxTemperatures
-       gaugename1, J,F,M,A...O,N,D
-       gaugename2, J,F,M,A...O,N,D
-       ...
-       :EndMonthlyMaxTemperatures
-     */
-      if (Options.noisy) {cout <<"Monthly Maximum temperatures"<<endl;}
-      bool done=false;
-      int g;
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if (IsComment(s[0],Len)){}
-        else if (!strncmp(s[0],":End",4)){done=true;}
-        else
-        {
-          g=pModel->GetGaugeIndexFromName(s[0]);
-          ExitGracefullyIf(g==DOESNT_EXIST,
-                           "ParseTimeSeriesFile:: :MonthlyMaxTemperatures: invalid gauge name",BAD_DATA);
-          if (Len < 13){WriteWarning(":MonthlyMaxTemperatures: bad number of entries",Options.noisy); break;}
-          for (int i=0;i<12;i++){monthdata[i]=s_to_d(s[i+1]);}
-          pModel->GetGauge(g)->SetMonthlyMaxTemps(monthdata);
-        }
-      }
-      break;
-    }
-    case (76): //---------------------------------------------
-    {/*:MonthlyMinTemperatures
-       gaugename1, J,F,M,A...O,N,D
-       gaugename2, J,F,M,A...O,N,D
-       ...
-       :EndMonthlyMinTemperatures
-     */
-      if (Options.noisy) {cout <<"Monthly Minimum temperatures"<<endl;}
-      bool done=false;
-      int g;
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if (IsComment(s[0],Len)){}
-        else if (!strncmp(s[0],":End",4)){done=true;}
-        else
-        {
-          g=pModel->GetGaugeIndexFromName(s[0]);
-          ExitGracefullyIf(g==DOESNT_EXIST,
-                           "ParseTimeSeriesFile:: :MonthlyMinTemperatures: invalid gauge name",BAD_DATA);
-          if (Len < 13){WriteWarning(":MonthlyMinTemperatures: bad number of entries",Options.noisy); break;}
-          for (int i=0;i<12;i++){monthdata[i]=s_to_d(s[i+1]);}
-          pModel->GetGauge(g)->SetMonthlyMinTemps(monthdata);
-        }
-      }
-      break;
-    }
-    case (77): //---------------------------------------------
-    {/*:MonthlyAveTemperatures
-       gaugename1, J,F,M,A...O,N,D
-       gaugename2, J,F,M,A...O,N,D
-       ...
-       :EndMonthlyAveTemperatures
-     */
-      if (Options.noisy) {cout <<"Monthly Average temperatures"<<endl;}
-      bool done=false;
-      int g;
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if (IsComment(s[0],Len)){}
-        else if (!strncmp(s[0],":End",4)){done=true;}
-        else
-        {
-          g=pModel->GetGaugeIndexFromName(s[0]);
-          ExitGracefullyIf(g==DOESNT_EXIST,
-                           "ParseTimeSeriesFile:: :MonthlyAveTemperatures: invalid gauge name",BAD_DATA);
-          if (Len < 13){WriteWarning(":MonthlyAveTemperatures: bad number of entries",Options.noisy); break;}
-          for (int i=0;i<12;i++){monthdata[i]=s_to_d(s[i+1]);}
-          pModel->GetGauge(g)->SetMonthlyAveTemps(monthdata);
-        }
-      }
-      break;
-    }
     case(100):
     {/*:OverrideStreamflow  [SBID]*/
       if (Options.noisy){cout <<"Override streamflow"<<endl;}
@@ -1441,11 +1020,35 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pModel->OverrideStreamflow(SBID);
       break;
     }
+    case(101):
+    {/*:AssimilateStreamflow  [SBID]*/
+      if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }
+      long SBID=s_to_l(s[1]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        WriteWarning("ParseTimeSeries::Trying to assimilate streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
+        break;
+      }
+      bool ObsExists=false;
+      for(int i=0; i<pModel->GetNumObservedTS(); i++) {
+        if(IsContinuousFlowObs2(pModel->GetObservedTS(i),SBID)) {
+          ObsExists=true;
+          break;
+        }
+      }
+      if(ObsExists) {
+        pModel->GetSubBasinByID(SBID)->IncludeInAssimilation();
+      }
+      else {
+        warn="ParseTimeSeriesFile::AssimilateStreamflow: no observation time series associated with subbasin "+to_string(SBID)+". Cannot assimilate flow in this subbasin.";
+        WriteWarning(warn.c_str(),Options.noisy);
+      }
+      break;
+    }
     case (300)://----------------------------------------------
     {/*:ConcentrationTimeSeries
        :ConcentrationTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
-       {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
-       {double concentration values} x nMeasurements
+         {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
+         {double concentration values} x nMeasurements
        :EndConcentrationTimeSeries
      */
       if (Options.noisy){cout <<"Fixed concentration time series"<<endl;}
@@ -1491,8 +1094,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (301)://----------------------------------------------
     {/*:MassFluxTimeSeries
        :MassFluxTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
-       {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
-       {double flux values, in mg/m2/d} x nMeasurements
+         {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
+         {double flux values, in mg/m2/d} x nMeasurements
        :EndMassFluxTimeSeries
      */
       if (Options.noisy){cout <<"Mass flux time series"<<endl;}
@@ -1568,7 +1171,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       int c=pModel->GetTransportModel()->GetConstituentIndex(s[2]);
       if(c==DOESNT_EXIST) {
-        WriteWarning("ParseTimeSeriesFile: :OverrideStreamConcentration: invalida constituent name. Command will be ignored.",Options.noisy);
+        WriteWarning("ParseTimeSeriesFile: :OverrideStreamConcentration: invalid constituent name. Command will be ignored.",Options.noisy);
       }
       else {
         pModel->GetTransportModel()->OverrideStreamConcentration(SBID,c);
@@ -1678,7 +1281,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ifstream TESTNETCDF;
       TESTNETCDF.open(filename.c_str());
       if(TESTNETCDF.fail()){
-        string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
+        warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
         break;
       }
@@ -1977,7 +1580,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         } // end else
       } // end while
 
-        // check that weightings sum up to one per HRU
+      // check that weightings sum up to one per HRU
       bool WeightArrayOK = pGrid->CheckWeightArray(nHydroUnits,nGridCells,pModel);
       ExitGracefullyIf(!WeightArrayOK,
         "ParseTimeSeriesFile: Check of weights for gridded forcing failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
@@ -2112,7 +1715,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
         else 
         {
-          string warn ="IGNORING unrecognized command: |" + string(s[0])+ "| in .rvt file "+p->GetFilename()+" line: "+ to_string(p->GetLineNumber());
+          warn ="IGNORING unrecognized command: |" + string(s[0])+ "| in .rvt file "+p->GetFilename()+" line: "+ to_string(p->GetLineNumber());
           WriteWarning(warn,Options.noisy);
         }
       }
@@ -2163,11 +1766,11 @@ void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID
 {
   double dmult;
   double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
+  string warn;
 
   CSubBasin *pSB,*pSBres;
   pSB=pModel->GetSubBasinByID(SBID);
   if(pSB==NULL) {
-    string warn;
     warn=":AllocateReservoirDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
     WriteWarning(warn,Options.noisy);
     return;
@@ -2231,11 +1834,11 @@ void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID
   { //single connection //===============================================================================
     pSBres=pModel->GetSubBasinByID(SBIDres);
     if(pSBres==NULL) {
-      string warn=":AllocateReservoirDemand: Reservoir subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
+      warn=":AllocateReservoirDemand: Reservoir subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
       WriteWarning(warn,Options.noisy);
     }
     else if(pSBres->GetReservoir()==NULL) {
-      string warn=":AllocateReservoirDemand: subbasin "+to_string(SBID)+" does not have reservoir, cannot set reservoir downstream demand";
+      warn=":AllocateReservoirDemand: subbasin "+to_string(SBID)+" does not have reservoir, cannot set reservoir downstream demand";
       WriteWarning(warn,Options.noisy);
     }
     else

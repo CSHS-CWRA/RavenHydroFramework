@@ -197,9 +197,35 @@ double CConstituentModel::GetNetReachLosses(const int p) const
 bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs) const
 {
   Cs=0.0;
-
+  // \todo[optim] : should replace with a precalculated _aDirichletConc[i_source][k] generated each timestep
+  // this will speed up checking whether k is in HRU group and greatly reduce calls to pTS->GetValue()
+  
+  /*for(int i=0;i<_nSources; i++) 
+  {
+    Cs=_pSources[i]->concentration;
+    bool transient=false;
+    if (Cs==DOESNT_EXIST){
+      Cs=_pSources[i]->pTS->GetValue(tt.model_time);
+      transient=true;
+    }
+    if ((tt.model_time==0.0) || (transient))
+    {
+      if((!_pSources[i]->dirichlet) || (_pSources[i]->kk!=DOESNT_EXIST))  {Cs=DOESNT_EXIST;}
+      
+      for(int k=0;k<_pModel->GetNumHRUs();k++) {
+        _aDirichletConc[i][k]=Cs;
+      }
+      if(_pSources[i]->kk!=DOESNT_EXIST){ {
+        for(int k=0;k<_pModel->GetHRUGroup(_pSources[i_source]->kk)->GetNumHRUs();k++) {
+          k=_pModel->GetHRUGroup(_pSources[i_source]->kk)->GetHRU(k)->GetGlobalIndex();
+          _aDirichletConc[i][k]=Cs;
+        }
+      }
+    }
+  }*/
   int i_source=_aSourceIndices[i_stor];
-  if(i_source==DOESNT_EXIST) { return false; }
+  //if (_aDiricihletConc[k][i_source]!=DOESNT_EXIST){Cs= _aDiricihletConc[k][i_source]; return true;}
+  if(i_source==DOESNT_EXIST)          { return false; }
   if(!_pSources[i_source]->dirichlet) { return false; }
   Cs = _pSources[i_source]->concentration;
 
@@ -716,6 +742,9 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   }
 
   _POLLUT<<"time[d],date,hour";
+  if(_type==ENTHALPY) {
+    _POLLUT<<",air temp.";
+  }
   const CSubBasin *pBasin;
   for(int p=0;p<_pModel->GetNumSubBasins();p++) {
     pBasin=_pModel->GetSubBasin(p);
@@ -1033,6 +1062,9 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
   // Pollutographs.csv or StreamTemperatures.csv
   //----------------------------------------------------------------
   _POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;
+  if(_type==ENTHALPY) {
+    _POLLUT<<","<<_pModel->GetAvgForcing("TEMP_AVE"); //Air temperature
+  }
   for(int p=0;p<_pModel->GetNumSubBasins();p++) {
     CSubBasin *pBasin=_pModel->GetSubBasin(p);
     if(pBasin->IsGauged() && (pBasin->IsEnabled()))

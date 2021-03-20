@@ -1032,10 +1032,17 @@ double GetDewPointTemp(const double &e)
 //
 double ConvertVolumetricEnthalpyToTemperature(const double &hv) 
 {
-  if      (g_disable_freezing)         { return hv/SPH_WATER/DENSITY_WATER; }
+
+  if      (g_disable_freezing)         { 
+    if(hv/SPH_WATER/DENSITY_WATER  > 40) { return  40.0; } //upper limit - due to small volume, small energy roundoff error
+    return hv/SPH_WATER/DENSITY_WATER; 
+  }
 
   double g_freeze_temp=-0.0;
   double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER;//transition enthalpy [MJ/m3 water]
+
+  if(hv/SPH_WATER/DENSITY_WATER  > 40) { return  40.0; } //upper limit - due to small volume, small energy roundoff error
+  if((hv-hvt)/SPH_ICE/DENSITY_ICE<-40) { return -40.0; } //lower limit
 
   if      (hv>0  ){ return hv/SPH_WATER/DENSITY_WATER;}
   else if (hv>hvt){ return g_freeze_temp*hv/hvt;}

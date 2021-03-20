@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   Percolation
   ----------------------------------------------------------------*/
@@ -344,8 +344,10 @@ void   CmvPercolation::ApplyConstraints(const double             *state_vars,
 {
   if (pHRU->GetHRUType()==HRU_LAKE){return;}//Lakes
 
+  double min_stor=g_min_storage;
+
   //cant remove more than is there
-  rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
+  rates[0]=threshMin(rates[0],max(state_vars[iFrom[0]]-min_stor,0.0)/Options.timestep,0.0);
 
   //exceedance of max "to" compartment
   //water flow simply slows (or stops) so that receptor will not overfill during tstep

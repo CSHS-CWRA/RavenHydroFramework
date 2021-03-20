@@ -53,6 +53,7 @@ private:/*------------------------------------------------------*/
   long          _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
+  bool             _assimilate;   ///< true if observed data in this basin should be assimilated.
 
   //catchment routing properties
   double               _t_conc;   ///< basin time of concentration [d]
@@ -65,6 +66,7 @@ private:/*------------------------------------------------------*/
   int          _reach_HRUindex;   ///< HRU *index* k (not ID) associated with reach. Used for reach-specific forcings.
 
   double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]  
+  double        _convect_coeff;   ///< convection coefficient [MJ/m2/d/K]
 
   //River/stream  channel data:
   const CChannelXSect*_pChannel;  ///< Main channel
@@ -176,9 +178,11 @@ public:/*-------------------------------------------------------*/
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
   double               GetHyporheicFlux     () const;
+  double               GetConvectionCoeff   () const;
   double               GetBedslope          () const;
   double               GetWettedPerimeter   () const;
   double               GetTopWidth          () const;
+  bool                 UseInFlowAssimilation() const;
 
 
   const double   *GetUnitHydrograph        () const;
@@ -237,6 +241,7 @@ public:/*-------------------------------------------------------*/
   void            ResetReferenceFlow       (const double &Qreference);
   void            SetReservoirFlow         (const double &Q,const double &Qlast,const double &t);
   void            SetInitialReservoirStage (const double &h,const double &hlast);
+
   void            SetChannelStorage        (const double &V);
   void            SetRivuletStorage        (const double &V);
   void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
@@ -247,6 +252,7 @@ public:/*-------------------------------------------------------*/
   void            Enable                   ();
   double          ScaleAllFlows            (const double &scale_factor, const double &tstep);
   void            SetUnusableFlowPercentage(const double &val);
+  void            IncludeInAssimilation    ();
 
   //called during model operation:
   void            SetInflow                (const double &Qin );//[m3/s]

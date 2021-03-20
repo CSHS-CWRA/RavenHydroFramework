@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ParseLib.h"
@@ -73,7 +73,6 @@ bool CParser::Tokenize(char **out, int &numwords){
     l++;
     if ((parserdebug) && ((*wholeline)!=0)){cout <<wholeline<<endl;}
   }                 //if line is null, break, return true
-  //p=strtok_s(wholeline, delimiters,&junk);                   //tokenize first word in line
   p=strtok(wholeline, delimiters);
   while (p){                                         //sift through words, place in temparray, count line length
     tempwordarray[ct]=p;
@@ -82,9 +81,11 @@ bool CParser::Tokenize(char **out, int &numwords){
     ct++;
   }
   for (w=0; w<ct; w++){                              //copy temp array of words into out[]
-    if (w>MAXINPUTITEMS){numwords=ct;return true;}
-    //  cout<<filename<<endl;
-    //      ExitGracefully("Tokenizeline:: exceeded maximum number of items in line",BAD_DATA);}
+    if (w>MAXINPUTITEMS){numwords=ct;
+      string warn="Tokenizeline:: exceeded maximum number of items in single line in file "+filename;
+      ExitGracefully(warn.c_str(),BAD_DATA);
+      return true;
+    }
     out[w]=tempwordarray[w];
     //cout<<out[w]<<"|";
   }

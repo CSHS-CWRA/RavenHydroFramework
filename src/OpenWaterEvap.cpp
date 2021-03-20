@@ -217,7 +217,7 @@ void CmvLakeEvaporation::GetRatesOfChange(const double                  *state_v
                                           const time_struct &tt,
                                           double      *rates) const
 {
-  if ((!pHRU->IsLake()) && (pModel->GetLakeStorageIndex()!=iFrom[0])){return;}
+  if ((!pHRU->IsLake()) && (pModel->GetLakeStorageIndex()!=iFrom[0])){return;} //only works for lakes OR special storage units designated using :LakeStorage (the latter is to support HBV)
   
   if(pHRU->IsLinkedToReservoir()){return;}//reservoir-linked HRUs handle ET via reservoir MB
 

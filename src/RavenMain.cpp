@@ -35,6 +35,7 @@ bool   g_suppress_warnings=false;
 bool   g_suppress_zeros=false;
 double g_debug_vars[10];
 bool   g_disable_freezing=false;
+double g_min_storage=0.0;
 
 static string RavenBuildDate(__DATE__);
 

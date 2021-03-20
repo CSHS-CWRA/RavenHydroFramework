@@ -48,6 +48,7 @@ CSubBasin::CSubBasin(const long           Identifier,
   _is_headwater      =true;
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
+  _convect_coeff     =2.0; //default 
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -62,10 +63,10 @@ CSubBasin::CSubBasin(const long           Identifier,
   _unusable_flow_pct =0.0;
 
   _res_disabled      =false;
+  _assimilate        =false;
 
   // estimate reach length if needed
-  //------------------------------------------------------------------------
-
+  //-----------------------------------------------------------------------
   double max_len=CGlobalParams::GetParams()->max_reach_seglength*M_PER_KM;
 
   if((_reach_length==AUTO_COMPUTE) && (max_len/M_PER_KM<0.99*DEFAULT_MAX_REACHLENGTH))
@@ -267,6 +268,12 @@ int                  CSubBasin::GetLatHistorySize    () const{return _nQlatHist;
 /// \return number of timesteps stored in routing hydrograph history
 //
 int                  CSubBasin::GetInflowHistorySize () const{return _nQinHist;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if subbasin outflow data should be used in assimilation
+/// \return true if subbasin outflow data should be used in assimilation
+//
+bool                 CSubBasin::UseInFlowAssimilation() const { return _assimilate; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Number of HRUs in SB
@@ -611,6 +618,13 @@ int   CSubBasin::GetReachHRUIndex() const {
   return _reach_HRUindex;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns reach convection coefficient
+/// \return reach convection coefficient
+//
+double CSubBasin::GetConvectionCoeff() const {
+  return _convect_coeff;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns reach hyporheix gross flux
 /// \return reach hyporheic flux
 //
@@ -852,7 +866,8 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }  
-
+  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }  
+  
   else if (!label_n.compare("RESERVOIR_DISABLED")) { _res_disabled=(bool)(value); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { _reach_length2=value; }
 
@@ -893,6 +908,7 @@ double CSubBasin::GetBasinProperties(const string label)
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { return (double)(_reach_HRUindex); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { return _hyporheic_flux; }
+  else if (!label_n.compare("CONVECT_COEFF"))   { return _convect_coeff; }
 
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
@@ -1030,7 +1046,9 @@ void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
     ExitGracefully("CSubBasin::SetQlatHist: should not overwrite existing history array. Improper use.",RUNTIME_ERR);
   }
   _nQlatHist=N;
+  if(N==0) { return; }
   _aQlatHist=new double [_nQlatHist];
+  ExitGracefullyIf(_aQlatHist==NULL,"CSubBasin::SetQlatHist",OUT_OF_MEMORY);
   for (int i=0;i<_nQlatHist;i++){_aQlatHist[i]=aQl[i];}
   _QlatLast=QlLast;
 }
@@ -1047,7 +1065,9 @@ void CSubBasin::SetQinHist          (const int N, const double *aQi)
     ExitGracefully("CSubBasin::SetQinHist: should not overwrite existing history array. Improper use.",RUNTIME_ERR);
   }
   _nQinHist=N;
+  if(N==0) { return; }
   _aQinHist=new double [_nQinHist];
+  ExitGracefullyIf(_aQinHist==NULL,"CSubBasin::SetQinHist",OUT_OF_MEMORY);
   for (int i=0;i<_nQinHist;i++){_aQinHist[i]=aQi[i];}
 }
 
@@ -1109,6 +1129,10 @@ double CSubBasin::ScaleAllFlows(const double &scale, const double &tstep)
   for (int n=0;n<_nQlatHist;n++){_aQlatHist[n]*=scale; ma+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;}
   for (int i=0;i<_nSegments;i++){    _aQout[i]*=scale; } _QoutLast*=scale;
 
+  for(int n=0;n<_nQlatHist;n++) { upperswap(_aQlatHist[n],0.0); }
+  for(int i=0;i<_nSegments;i++) { upperswap(_aQout[i],0.0); }
+  upperswap(_QoutLast,0.0);
+
   if(_pReservoir!=NULL) {
     ma+=_pReservoir->ScaleFlow(scale,tstep);
   }
@@ -1140,6 +1164,12 @@ void CSubBasin::Disable(){
 void CSubBasin::Enable(){
   _disabled=false;
   for(int k=0; k<_nHydroUnits; k++){ _pHydroUnits[k]->Enable(); }
+}
+/////////////////////////////////////////////////////////////////
+/// \brief Sets assimilation to true
+//
+void CSubBasin::IncludeInAssimilation() {
+  _assimilate=true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates subbasin area as a sum of HRU areas
@@ -1533,6 +1563,11 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
 
   //add additional history required for lag
   _nQlatHist+=(int)(ceil(_t_lag/tstep));
+
+  if(_nQlatHist<=0) {
+    string warn="GenerateCatchmentHydrograph: negative or zero inflow history. Something is wrong with catchment routing parameters in basin "+to_string(_ID);
+    ExitGracefully(warn.c_str(),RUNTIME_ERR);
+  }
 
   bool bad_initcond=((OldnQlatHist!=_nQlatHist) && (OldnQlatHist!=0));
 

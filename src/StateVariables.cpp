@@ -356,7 +356,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   }
   else                                      {typ=UNRECOGNIZED_SVTYPE;}
 
-  if ((typ==CONSTITUENT) && ((int)(tmp.find_first_of("|"))!=-1)) //only used if e.g., !Nitrogen|SOIL (rather than CONSTITUENT[32] or !Nitrogen[32]) is used
+  if ((typ==CONSTITUENT) && ((int)(tmp.find_first_of("|"))!=-1)) //only used if e.g., !Nitrogen|SOIL[1] (rather than CONSTITUENT[32] or !Nitrogen[32]) is used
   {
     layer_index=CTransportModel::GetLayerIndexFromName(tmp,layer_index);
     if (layer_index==DOESNT_EXIST){typ=UNRECOGNIZED_SVTYPE;}

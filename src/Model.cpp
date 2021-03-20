@@ -561,7 +561,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
 bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const 
 {
   if      (SBID==DOESNT_EXIST    ) { return false;} //end of the recursion line
-  else if (SBIDdown==SBID)         { return true; } //a subbasin is upstream of itself
+  else if (SBIDdown==SBID)         { return true; } //a subbasin is upstream of itself (even handles loops on bad networks)
   else if (SBIDdown==DOESNT_EXIST) { return true; } //everything is upstream of an outlet
   else if (GetSubBasinByID(SBID)->GetDownstreamID()==SBIDdown){return true;} //directly upstream
   else {
@@ -1907,12 +1907,14 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else if(datatype == "STREAM_CONCENTRATION")//=======================================
     {
       int c=_pObservedTS[i]->GetConstitInd();
-      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(_pObservedTS[i]->GetLocID());
+      int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
+      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
     }
     else if(datatype == "STREAM_TEMPERATURE")//=======================================
     {
       int c=_pObservedTS[i]->GetConstitInd();
-      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(_pObservedTS[i]->GetLocID());
+      int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
+      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     {
@@ -2021,6 +2023,8 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
   //------------------------------------------------------------------------
   if (_pTransModel->GetEnthalpyModel()!=NULL)
   { //simulating enthalpy, and therefore frozen water compartments 
+    //if ((tt.model_time==0.0) && (j==0)){WriteWarning("JAMES: Temporarily disabled frozen ground feedback",Options.noisy); }
+  /*
     double Fi,liq_stor;
     sv_type typ;
     for(int q=0;q<nConnections;q++)
@@ -2037,6 +2041,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
         rates_of_change[q]=min(rates_of_change[q],liq_stor/Options.timestep);
       }
     }
+    */
   }
 
   //Apply constraints 

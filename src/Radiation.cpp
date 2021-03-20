@@ -330,6 +330,8 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
 double CRadiation::SWCanopyCorrection(const optStruct  &Options,
                                       const CHydroUnit *pHRU)
 {
+  double Fc=pHRU->GetSurfaceProps()->forest_coverage;
+
   switch(Options.SW_canopycorr)
   {
   case(SW_CANOPY_CORR_STATIC):
@@ -338,13 +340,12 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
     double SAI = pHRU->GetVegVarProps()->SAI;
     double extinction = pHRU->GetVegetationProps()->svf_extinction;
 
-    return exp(-extinction*(LAI+SAI)); // Dingman (2008) Eq. 5-33
+    return (1.0-Fc)*1.0+Fc*exp(-extinction*(LAI+SAI)); // Dingman (2008) Eq. 5-33
     break;
   }
   case(SW_CANOPY_CORR_UBCWM):  // A simple factor that switches on when forest cover is greater than zero
   {
     double shortwave_corr = 1.0;
-    double Fc = pHRU->GetSurfaceProps()->forest_coverage; // forest cover
     double UBC_correction_fact = CGlobalParams::GetParams()->UBC_exposure_fact; //Sun exposure factor of forested areas
     shortwave_corr*=((Fc)*UBC_correction_fact+(1.0-Fc)*1.0);
     return shortwave_corr;
@@ -353,10 +354,12 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
   case(SW_CANOPY_CORR_DYNAMIC):  // stub for Jost and Moore (2010) equations
   {
     ExitGracefully("SWCanopyCorrection::SW_CANOPY_CORR_DYNAMIC",STUB);
+    break;
   }
   case(SW_CANOPY_CORR_NONE):
   {
     return 1.0;
+    break;
   }
   default: // apply no correction for canopy (default)
   {

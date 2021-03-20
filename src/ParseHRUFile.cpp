@@ -155,6 +155,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
            
             double length;
             length=AutoOrDouble(s[4]);
+            ExitGracefullyIf(length>2000,
+              "ParseHRUPropsFile: length of river greater than 1000km in :SubBasin command block. Units issue? Reach length should be provided in km.",BAD_DATA_WARN);
             if (length!=AUTO_COMPUTE){length*=M_PER_KM;}//convert to m from km
 
             bool gaged;
@@ -568,9 +570,11 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         pSBGrp=new CSubbasinGroup(s[1],pModel->GetNumSubBasinGroups());
         pModel->AddSubBasinGroup(pSBGrp);
       }
+      bool eof=false;
       while ((Len==0) || (strcmp(s[0],":EndSubBasinGroup")))
       {
-        pp->Tokenize(s,Len);
+        eof=pp->Tokenize(s,Len);
+        if(eof) { break; }
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":EndSubBasinGroup")){}//done
         else
@@ -694,7 +698,6 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       string advice="SubBasinGroup "+to_string(s[1])+" was populated with these basins :";
 
       if(pSBGroup==NULL) {//group not yet defined
-        WriteWarning("Subbasin groups should ideally be defined in .rvi file (using :DefineSubBasinGroup or :SubBasinGroup commands) before being populated in .rvh file (2)",Options.noisy);
         pSBGroup=new CSubbasinGroup(s[1],pModel->GetNumSubBasinGroups());
         pModel->AddSubBasinGroup(pSBGroup);
       }

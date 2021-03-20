@@ -26,7 +26,7 @@ CmvSoilBalance::CmvSoilBalance(soilbal_type   sb_type)
 
   if(_type==SOILBAL_SACSMA) 
   {
-    CHydroProcessABC::DynamicSpecifyConnections(12);
+    CHydroProcessABC::DynamicSpecifyConnections(13);
     
     int iPond,iSW,iUZT,iADIM,iLZT,iUZF,iLZFS,iLZFP,iGW;
     iPond=pModel->GetStateVarIndex(PONDED_WATER);
@@ -39,18 +39,19 @@ CmvSoilBalance::CmvSoilBalance(soilbal_type   sb_type)
     iADIM=pModel->GetStateVarIndex(SOIL,5);
     iGW  =pModel->GetStateVarIndex(SOIL,6);
 
-    iFrom[ 0]=iPond;       iTo[ 0]=iSW;        //rates[0]: PONDED_WATER->SURFACE_WATER
-    iFrom[ 1]=iPond;       iTo[ 1]=iUZT;       //rates[1]: PONDED_WATER->UZT
-    iFrom[ 2]=iPond;       iTo[ 2]=iADIM;      //rates[2]: PONDED_WATER->ADIMC 
-    iFrom[ 3]=iLZFP;       iTo[ 3]=iSW;        //rates[3]: LZFP->SURFACE_WATER
-    iFrom[ 4]=iLZFP;       iTo[ 4]=iGW;        //rates[4]: LZFP->GW
-    iFrom[ 5]=iLZFS;       iTo[ 5]=iSW;        //rates[5]: LZFS->SURFACE_WATER
-    iFrom[ 6]=iLZFS;       iTo[ 6]=iGW;        //rates[6]: LZFS->GW
-    iFrom[ 7]=iUZF;        iTo[ 7]=iLZT;       //rates[7]: UZF->LZT
-    iFrom[ 8]=iUZF;        iTo[ 8]=iLZFS;      //rates[8]: UZF->LZFS
-    iFrom[ 9]=iUZF;        iTo[ 9]=iLZFP;      //rates[9]: UZF->LZFP
+    iFrom[ 0]=iPond;       iTo[ 0]=iSW;        //rates[0]:  PONDED_WATER->SURFACE_WATER
+    iFrom[ 1]=iPond;       iTo[ 1]=iUZT;       //rates[1]:  PONDED_WATER->UZT
+    iFrom[ 2]=iPond;       iTo[ 2]=iADIM;      //rates[2]:  PONDED_WATER->ADIMC 
+    iFrom[ 3]=iLZFP;       iTo[ 3]=iSW;        //rates[3]:  LZFP->SURFACE_WATER
+    iFrom[ 4]=iLZFP;       iTo[ 4]=iGW;        //rates[4]:  LZFP->GW
+    iFrom[ 5]=iLZFS;       iTo[ 5]=iSW;        //rates[5]:  LZFS->SURFACE_WATER
+    iFrom[ 6]=iLZFS;       iTo[ 6]=iGW;        //rates[6]:  LZFS->GW
+    iFrom[ 7]=iUZF;        iTo[ 7]=iLZT;       //rates[7]:  UZF->LZT
+    iFrom[ 8]=iUZF;        iTo[ 8]=iLZFS;      //rates[8]:  UZF->LZFS
+    iFrom[ 9]=iUZF;        iTo[ 9]=iLZFP;      //rates[9]:  UZF->LZFP
     iFrom[10]=iUZF;        iTo[10]=iSW;        //rates[10]: UZF->SURFACE_WATER
-    iFrom[11]=iPond;       iTo[11]=iUZF;       //rates[11]:  PONDED->UZF
+    iFrom[11]=iPond;       iTo[11]=iUZF;       //rates[11]: PONDED->UZF
+    iFrom[12]=iADIM;       iTo[12]=iADIM;      //rates[12]: ADIMC->ADIMC [violates mass balance!]
 
   }
   //-----------------------------------------------------------------
@@ -286,7 +287,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
 
         //- compute interflow --------------------------------------------------
         double delta = duz * uzf_stor;
-        uzf_stor      -= delta;
+        uzf_stor -= delta;
         rates[10]+=delta*Aperv/Options.timestep; //UZF->SURFACE_WATER
 
         //cout<<"interflow: "<<delta<<endl;
@@ -304,18 +305,18 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
       uzf_stor   += pinc;  //any uninfiltrated water that didnt overflow
       rates[11]  += pinc*Aperv/Options.timestep; // PONDED->UZF
 
-
       //JRC: NOT SURE THIS IS WHOLLY CONSISTENT WITH SUM_OVERFLOW CALCULATION ABOVE
       //shouldn't there be something else for water if adimc_stor is full and overflowing?? (not a huge problem - this will stay as ponded water)
       double to_adimc=min(pinc* (1.0 - Frunoff),max(adimc_stor_max-adimc_stor,0.0));
       adimc_stor += to_adimc;
-      rates[2]  += to_adimc*Adimp/Options.timestep; // PONDED->ADIMC
+      rates[2]   += to_adimc*Adimp/Options.timestep; // PONDED->ADIMC
 
     } // end for (int n=0;n<N;n++) 
 
     // JRC: if this is not automatically satisfied, then this is a mass balance error, by definition - nowhere to get this water from
     //this was included in original SAC-SMA code.
     //if(adimc_stor < uzt_stor) { adimc_stor = uzt_stor; }
+    //rates[12]+=max(uzt_stor-adimc_stor,0.0)*Adimp/Options.timestep; //VIOLATES MASS BALANCE
   }
 }
 

@@ -312,8 +312,10 @@ void   CmvBaseflow::ApplyConstraints( const double     *storage,
                                       const time_struct &tt,
                                       double     *rates) const
 {
+  double min_stor=g_min_storage;
+
   //cant remove more than is there
-  rates[0]=threshMin(rates[0],storage[iFrom[0]]/Options.timestep,0.0);
+  rates[0]=threshMin(rates[0],max(storage[iFrom[0]],min_stor)/Options.timestep,0.0);
 
   //cannot pull water from river
   rates[0]=max(rates[0],0.0);

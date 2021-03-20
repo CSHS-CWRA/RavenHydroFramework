@@ -35,6 +35,7 @@ public:/*-------------------------------------------------------*/
   double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const;
   double GetOutflowIceFraction(const int p) const;
   double GetAvgLatentHeatFlux() const;
+  double GetDirichletEnthalpy(const CHydroUnit *pHRU, const double &Cs) const;
 
   //Manipulators (inherited from CConstitModel)
   void   Initialize();

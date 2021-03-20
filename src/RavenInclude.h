@@ -89,6 +89,7 @@ extern double g_debug_vars[10];   ///< can store any variables used during debug
 extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options structure around willy-nilly
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code 
+extern double g_min_storage;      ///< minimum soil storage 
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -241,7 +242,7 @@ const double  NOT_NEEDED              =-66666.6;                                
 const double  NOT_NEEDED_AUTO         =-77777.7;                                ///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
 const double  NETCDF_BLANK_VALUE      =-9999.0;                                 ///< NetCDF flag for blank value
 const double  RAV_BLANK_DATA          =-1.2345;                                 ///< double corresponding to blank/void data item (also used in input files)
-const double  DIRICHLET_AIR_TEMP      =-9999;                                   ///< dirichlet concentration flag corresponding to fixed air temperature   
+const double  DIRICHLET_TEMP          =-9999;                                   ///< dirichlet concentration flag corresponding to air temperature   
 
 //Decision constants
 const double  HUGE_RESIST             =1e20;                                    ///< [d/mm]   essentially infinite resistance
@@ -252,7 +253,7 @@ const double  TIME_CORRECTION         =0.0001;                                  
 const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km]     very large maximum reach length (defaults to single segment per reach)
 
 //Special symbols
-const string  DEG_SYMBOL              ="\370";                                  ///< degree symbol, °
+const string  DEG_SYMBOL              ="°";                                     ///< degree symbol, ° (used to work as \370, bu not with VS 2019?)
 
 //*****************************************************************
 //Exit Strategies

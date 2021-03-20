@@ -1664,19 +1664,19 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(108):  //--------------------------------------------
-    {/*:FEWSRunInfoFile [filename]*/
+    {/*:FEWSRunInfoFile [filename.nc]*/
       if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
       Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
       break;
     }
     case(160):  //--------------------------------------------
-    {/*:rvh_Filename [filename]*/
+    {/*:rvh_Filename [filename.rvh]*/
       if(Options.noisy) { cout <<"rvh filename: "<<s[1]<<endl; }
-      Options.rvh_filename=CorrectForRelativePath(s[1],Options.rvi_filename);
+      Options.rvh_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvh extension!
       break;
     }
     case(161):  //--------------------------------------------
-    {/*:rvp_Filename [filename]*/
+    {/*:rvp_Filename [filename.rvp]*/
       if(Options.noisy) { cout <<"rvp filename: "<<s[1]<<endl; }
       Options.rvp_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvp extension!
       break;
@@ -2753,7 +2753,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
         int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
-        //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_AIR_TEMP);
+        //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_TEMP);
       }
       break;
     }

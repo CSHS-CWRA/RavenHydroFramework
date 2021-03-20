@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------
 class definitions: CmvHeatConduction
 ----------------------------------------------------------------*/
@@ -22,7 +22,9 @@ private:/*------------------------------------------------------*/
   const CTransportModel *_pTransModel;
   static int             _nHRUs;   //must store locally to retain start-of-timestep water storage
 
-  void GenerateJacobianMatrix(const double  *z,
+  bool                   _initialized;
+
+  bool GenerateJacobianMatrix(const double  *z,
                               const double  *eta,const double * poro,const double *kappa_s,
                               const double  *sat,const double *satn,
                               const double  *Vold,const double *Vnew, //[m]

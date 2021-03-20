@@ -22,6 +22,7 @@ bool IsContinuousFlowObs2(const CTimeSeriesABC *pObs,long SBID)
 //
 void CModel::InitializeDataAssimilation(const optStruct &Options)
 {
+  // Initialize Streamflow assimilation
   if(Options.assimilate_flow)
   {
     _aDAscale    =new double[_nSubBasins];
@@ -31,6 +32,16 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
       _aDAscale    [p]=1.0;
       _aDAlength   [p]=0.0;
       _aDAtimesince[p]=0.0;
+    }
+    int count=0;
+    for(int p=0; p<_nSubBasins; p++) {
+      if(_pSubBasins[p]->UseInFlowAssimilation())
+      {
+        count++;
+      }
+    }
+    if(count==0) {
+      ExitGracefully("InitializeDataAssimlation: :AssimilateStreamflow command was used in .rvi file, but no observations were enabled for assimilation using :AssimilateStreamflow command in .rvt file",BAD_DATA_WARN);
     }
   }
   
@@ -69,36 +80,42 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   double alpha     =CGlobalParams::GetParams()->assimilation_fact; //for now: 0->no assimilation 1->full override
   double time_fact =CGlobalParams::GetParams()->assim_time_decay; 
 
+  int nn           =(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+
   if(alpha>0.0) { alpha = exp(4.5*(alpha-1.0)); } //makes range natural, i.e., alph~0.5 means result is halfway between unassimilated modeled and observed
     
   for(int pp=_nSubBasins-1; pp>=0; pp--)//downstream to upstream
   {
     p=GetOrderedSubBasinIndex(pp);
+
     bool ObsExists=false; //observation available in THIS basin
-    for(int i=0; i<_nObservedTS; i++) //determine whether flow observation is available
+    if(_pSubBasins[p]->UseInFlowAssimilation()) 
     {
-      if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available
+      for(int i=0; i<_nObservedTS; i++) //determine whether flow observation is available
       {
-        Qobs = _pObservedTS[i]->GetAvgValue(tt.model_time+Options.timestep,Options.timestep);//correction for period ending storage of hydrograph
-        Qmod = _pSubBasins [p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-        if((Qobs!=RAV_BLANK_DATA) && (tt.model_time<t_observationsOFF)) 
+        if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available and linked to this subbasin
+        //&& 
         {
-          if(Qmod>PRETTY_SMALL) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);}
-          else                  { _aDAscale[p]=1.0;                         }
-          _aDAlength   [p]=0.0;
-          _aDAtimesince[p]=0.0;
+          Qobs = _pObservedTS[i]->GetSampledValue(nn+1);//correction for period ending storage of hydrograph
+          Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+          if((Qobs!=RAV_BLANK_DATA) && (tt.model_time<t_observationsOFF))
+          {
+            if(Qmod>PRETTY_SMALL) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod); }
+            else { _aDAscale[p]=1.0; }
+            _aDAlength[p]=0.0;
+            _aDAtimesince[p]=0.0;
+          }
+          else
+          { //found a blank or zero flow value -scaling extinguishes over time
+            _aDAtimesince[p]+=Options.timestep;
+            _aDAscale[p]=1.0+(_aDAscale[p]-1.0)*exp(-time_fact*_aDAtimesince[p]); //move the scale towards 1.0
+            _aDAlength[p]=0.0;
+          }
+          ObsExists=true;
+          break; //avoids duplicate observations
         }
-        else 
-        { //found a blank or zero flow value -scaling extinguishes over time
-          _aDAtimesince[p]+=Options.timestep;
-          _aDAscale    [p]=1.0+( _aDAscale[p]-1.0)*exp(-time_fact*_aDAtimesince[p]); //move the scale towards 1.0
-          _aDAlength   [p]=0.0;
-        }
-        ObsExists=true;
-        break; //avoids duplicate observations
       }
     }
-
     pdown=GetDownstreamBasin(p);
     if(ObsExists==false){ //observations may be downstream, propagate scaling upstream 
       //if (pdown!=DOESNT_EXIST){ //alternate - allow information to pass through reservoirs 
@@ -120,7 +137,7 @@ void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt
   //--------------------------------------------------------------------------------
   double mass_added=0;
   double scalefact=1.0;
-  double distfact=CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] //TMP DEBUG
+  double distfact=CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] 
   for(p=0; p<_nSubBasins; p++)
   {
     scalefact =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p]);
