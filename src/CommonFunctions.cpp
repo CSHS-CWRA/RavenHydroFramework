@@ -250,7 +250,7 @@ double threshMin(const double &v1, const double &v2, const double &smooth_coeff)
 //
 double RoundToNearestMinute(const double& t)
 {
-  return floor(t+TIME_CORRECTION)+((int)((t-floor(t+TIME_CORRECTION))*MIN_PER_DAY))/MIN_PER_DAY;
+  return floor(t+TIME_CORRECTION)+(round((t-floor(t+TIME_CORRECTION))*MIN_PER_DAY))/MIN_PER_DAY;
 }
 
 ////////////////////////////////////////////////////////////////////////////
