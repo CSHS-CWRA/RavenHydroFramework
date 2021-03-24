@@ -1528,8 +1528,6 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   string      tmpFilename;
   int         ibasin, p;                             // loop over all sub-basins
   size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
-  const char *current_basin_name[1];                 // current time in days since start time
-
   string      tmp,tmp2,tmp3;
 
   // initialize all potential file IDs with -9 == "not existing and hence not opened"
@@ -1610,17 +1608,22 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   // write values to NetCDF
   // (a) write gauged basin names/IDs to variable "basin_name"
   ibasin = 0;
+  char* current_basin_name[1];                       // current name of basin
+  current_basin_name[0]=new char[200];
   for(p=0;p<_nSubBasins;p++){
     if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      if(_pSubBasins[p]->GetName()==""){ current_basin_name[0] = (to_string(_pSubBasins[p]->GetID())).c_str(); }
-      else                             { current_basin_name[0] = (_pSubBasins[p]->GetName()).c_str(); }
-      // write sub-basin name
+      string bname;
+      if(_pSubBasins[p]->GetName()==""){ bname = to_string(_pSubBasins[p]->GetID()); }
+      else                             { bname = _pSubBasins[p]->GetName(); }
       start[0] = ibasin;
       count[0] = 1;
-      retval = nc_put_vara_string(_HYDRO_ncid,varid_bsim,start,count,&current_basin_name[0]);  HandleNetCDFErrors(retval);
+      strcpy(current_basin_name[0],bname.c_str());
+      retval = nc_put_vara_string(_HYDRO_ncid,varid_bsim,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
       ibasin++;
     }
   }
+  delete [] current_basin_name[0];
+
   //====================================================================
   //  WatershedStorage.nc
   //====================================================================
@@ -1820,6 +1823,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   double current_prec[1];       // precipitation of current time step
   size_t time_ind2;
   current_time[0] = tt.model_time;
+  current_time[0]=RoundToNearestMinute(current_time[0]);
 
   time_index [0] = int(round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
   time_ind2       =int(round(tt.model_time/Options.timestep));

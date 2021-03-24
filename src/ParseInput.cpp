@@ -170,6 +170,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   int               num_ensemble_members=1;
   unsigned int      random_seed=0; //actually random
   ifstream          INPUT;
+  ifstream          INPUT2;           //For Secondary input
+  CParser          *pMainParser=NULL; //for storage of main parser while reading secondary files
 
   int               tmpN;
   sv_type          *tmpS;
@@ -188,6 +190,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     cout << "Parsing Input File " << Options.rvi_filename <<"..."<<endl;
     cout <<"======================================================"<<endl;
   }
+
 
   INPUT.open(Options.rvi_filename.c_str());
   if (INPUT.fail()){cout << "Cannot find file "<<Options.rvi_filename <<endl; return false;}
@@ -313,7 +316,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
   // Sift through file, processing each command
   //===============================================================================================
-  while (!(p->Tokenize(s,Len)))
+  bool end_of_file=p->Tokenize(s,Len);
+  while(!end_of_file)
   {
     if (ended){break;}
     if (Options.noisy){ cout << "reading line " << p->GetLineNumber() << ": ";}
@@ -338,6 +342,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],"#"                          )){code=-2; }//comment
     else if  (s[0][0]=='#')                               {code=-2; }//comment
     else if  (!strcmp(s[0],":End"                       )){code=-3; }//premature end of file
+    else if  (!strcmp(s[0],":RedirectToFile"            )){code=-4; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],"?? "                        )){code=1;  }
     else if  (!strcmp(s[0],":JulianStartDay"            )){code=2;  }
@@ -567,6 +572,25 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(-3):  //----------------------------------------------
     {/*:End*/
       if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
+    }
+    case(-4):  //----------------------------------------------
+    {/*:RedirectToFile*/
+      string filename="";
+      for(int i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
+      if(Options.noisy) { cout <<"Redirect to file: "<<filename<<endl; }
+
+      filename =CorrectForRelativePath(filename,Options.rvt_filename);
+
+      INPUT2.open(filename.c_str());
+      if(INPUT2.fail()) {
+        string warn=":RedirectToFile: Cannot find file "+filename;
+        ExitGracefully(warn.c_str(),BAD_DATA);
+      }
+      else {
+        pMainParser=p;    //save pointer to primary parser
+        p=new CParser(INPUT2,filename,line);//open new parser
+      }
+      break;
     }
     case(2):  //----------------------------------------------
     {/*:JulianStartDay [double day] */
@@ -3084,7 +3108,20 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     }//switch
-  } //end while (!(p->Tokenize(s,Len)))
+
+    end_of_file=p->Tokenize(s,Len);
+
+    //return after file redirect, if in secondary file
+    if((end_of_file) && (pMainParser!=NULL))
+    {
+      INPUT2.clear();
+      INPUT2.close();
+      delete p;
+      p=pMainParser;
+      pMainParser=NULL;
+      end_of_file=p->Tokenize(s,Len);
+    }
+  } //end while (!end_of_file)
   INPUT.close();
 
   //===============================================================================================

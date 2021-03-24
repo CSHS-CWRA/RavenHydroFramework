@@ -1271,6 +1271,7 @@ int         StringToCalendar      (      string      cal_chars);
 string      GetCurrentTime        ();
 double      FixTimestep           (      double      tstep);
 bool        IsValidDateString     (const string      sDate);
+double      RoundToNearestMinute  (const double& t);
 bool        IsInDateRange         (const double &julian_day, 
                                    const int    &julian_start, 
                                    const int    &julian_end);

@@ -444,10 +444,14 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                   pHRUGrp->AddHRU(pModel->GetHydroUnit(k));found=true; break;
                 }
               }
-              if (!found){gaps=true;}
+              if ((!found) && (ind2-ind1>1)){gaps=true;}
+              if((!found) && (ind2==ind2)) {
+                string warn="HRU ID "+to_string(ii)+" specified in :HRUGroup command for group "+pHRUGrp->GetName()+ " does not exist";
+                WriteWarning(warn.c_str(),Options.noisy);
+              }
             }
             if (gaps){
-              WriteWarning("Range specified in HRUGroup command has gaps",Options.noisy);
+              WriteWarning("Range specified in :HRUGroup command has gaps",Options.noisy);
             }
           }
         }
@@ -464,6 +468,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         :PopulateHRUGroup CroplandHRUs With LANDUSE EQUALS CROPLAND
         :PopulateHRUGroup NonCroplandHRUs With LANDUSE NOTEQUALS CROPLAND
         :PopulateHRUGroup BroadleafHRUs With VEGETATION  EQUALS  BROADLEAF
+        :PopulateHRUGroup UpperWigwamHRUs With HRUS WITHIN_SBGROUP UpperWigwamSBs
         [not in here yet] :PopulateHRUGroup Rocks With HRUTYPE EQUALS ROCK
       */
       if (Options.noisy) {cout <<"   Populate HRU Group..."<<endl;}
@@ -480,16 +485,34 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       int k;
       if(!strcmp(s[3],"HRUS"))
       {
-        CHRUGroup *pHRUGrp2=NULL;
-        pHRUGrp2=pModel->GetHRUGroup(s[5]);
-        if(pHRUGrp2==NULL){
-          ExitGracefully(":PopulateHRUGroup: invalid HRU group reference used in command",BAD_DATA_WARN);
-        }
-        else{
-          if(!strcmp(s[4],"NOTWITHIN")){
+        if(!strcmp(s[4],"NOTWITHIN")){
+          CHRUGroup* pHRUGrp2=NULL;
+          pHRUGrp2=pModel->GetHRUGroup(s[5]);
+          if(pHRUGrp2==NULL) {
+            ExitGracefully(":PopulateHRUGroup: invalid HRU group reference used in command",BAD_DATA_WARN);
+          }
+          else {
             for(k=0;k<pModel->GetNumHRUs();k++)
             {
-              if(!pHRUGrp2->IsInGroup(k)){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+              if(!pHRUGrp2->IsInGroup(k)) { pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            }
+          }
+        }
+        else if (!strcmp(s[4],"WITHIN_SBGROUP")) 
+        {
+          CSubbasinGroup *pSBGrp=NULL;
+          pSBGrp=pModel->GetSubBasinGroup(s[5]);
+          if(pSBGrp==NULL) {
+            ExitGracefully(":PopulateHRUGroup: invalid Subbasin group reference used in command",BAD_DATA_WARN);
+          }
+          else {
+            for(int p=0;p<pSBGrp->GetNumSubbasins();p++)
+            {
+              for(k=0;k<pSBGrp->GetSubBasin(p)->GetNumHRUs();k++)
+              {
+                pHRU=pModel->GetHRUByID(pSBGrp->GetSubBasin(p)->GetHRU(k)->GetID());
+                pHRUGrp->AddHRU(pHRU);
+              }
             }
           }
         }

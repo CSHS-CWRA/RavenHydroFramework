@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  Copyright (c) 2008-2020 the Raven Development Team
+///  Copyright (c) 2008-2021 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -241,6 +241,16 @@ double threshMin(const double &v1, const double &v2, const double &smooth_coeff)
   else{
     return v2 - 0.5 * (x + sqrt(x*x + 4.0*smooth_coeff*smooth_coeff));
   }
+}
+
+////////////////////////////////////////////////////////////////////////////
+/// \brief Rounds time to nearest minute to prevent roundoff error in NetCDF reporting of time
+/// \param &t [in] model time, in days
+/// \return time, rounded to nearest minute
+//
+double RoundToNearestMinute(const double& t)
+{
+  return floor(t+TIME_CORRECTION)+((int)((t-floor(t+TIME_CORRECTION))*MIN_PER_DAY))/MIN_PER_DAY;
 }
 
 ////////////////////////////////////////////////////////////////////////////

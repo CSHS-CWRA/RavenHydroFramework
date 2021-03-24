@@ -564,7 +564,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     tmp =long_name;
     tmp2="timeseries_id";
     tmp3="1";
-    tmp4="basin_name";
+    tmp4=group_name;
     retval = nc_put_att_text(_netcdf_ID, varid_grps, "long_name"  ,  tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_netcdf_ID, varid_grps, "cf_role"    , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_netcdf_ID, varid_grps, "units"      , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
@@ -594,7 +594,9 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   // write values to NetCDF 
   // write HRU/subbasin/HRU group names to variable "HRUID" or "SBID" or... 
   int k = 0;
-  const char *group_name[1];                         // HRU/watershed/basin name
+  char *group_name[1];                         // HRU/watershed/basin name
+  group_name[0]=new char[200];
+  
   for(k=0; k<num_data; k++)
   {
     ostrstream  TMP;
@@ -606,11 +608,13 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     else if (_spaceAgg==BY_BASIN      ){TMP<<pModel->GetSubBasin(k)->GetID()       <<ends;}
     else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()<<ends;}
     temp=TMP.str();
-    group_name[0]=temp.c_str();
+    strcpy(group_name[0],temp.c_str());
+    //const char** strpointer=group_name;
     start[0]=k;
     count[0]=1;
-    retval = nc_put_vara_string(_netcdf_ID,varid_grps,start,count,&group_name[0]);  HandleNetCDFErrors(retval);
+    retval = nc_put_vara_string(_netcdf_ID,varid_grps,start,count,(const char**)group_name);  HandleNetCDFErrors(retval);
   }
+  delete [] group_name[0];
 
   if(Options.noisy){ cout<<"netCDF file header written for "<<_filename<<endl; }
 #endif   // end compilation if NetCDF library is available
@@ -763,7 +767,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         if (IsLeapYear(yest.year,Options.calendar) && (Options.wateryr_mo>2)){days_to_first_of_month+=1;}
         current_time[0]=yest.model_time-yest.julian_day+days_to_first_of_month;
       }
-      
+      current_time[0]=RoundToNearestMinute(current_time[0]);
+
       //start1[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
       start1[0]=_time_index;
       count1[0] = 1;                                              // writes exactly one time step

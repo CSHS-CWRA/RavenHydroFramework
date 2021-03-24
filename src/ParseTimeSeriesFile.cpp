@@ -1743,6 +1743,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       end_of_file=p->Tokenize(s,Len);
     }
   } //end while (!end_of_file)
+  
+  RVT.close();
 
   //QA/QC
   //--------------------------------
@@ -1750,8 +1752,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     WriteWarning("ParseTimeSeriesFile: irrigation/diversions included with transport constituents. Since water demands are not currently simulated in the Raven transport module, transport results must be interpreted with care.",Options.noisy);
   }
 
-  RVT.close();
-  
   delete p; p=NULL;
 
   return true;
