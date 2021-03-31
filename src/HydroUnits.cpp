@@ -106,8 +106,6 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _pTerrain  =terrain_class->GetTerrainStruct();
 
   soil_profile->AllocateSoilLayers(_pModel->GetNumSoilLayers(),_pSoil,aThickness);
-  //aquifer_system ->AllocateAqLayers(_pModel->GetNumAquiferLayers(),pAquifers,aAqThickness); //GWMIGRATE - uncomment
-  //aq_system ->AllocateAquiferLayers(_pModel->GetNumAquiferLayers(),pAquifers,aquifer_thick,aquitard_thick);
 }
 
 //////////////////////////////////////////////////////////////////

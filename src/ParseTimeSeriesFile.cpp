@@ -115,7 +115,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":MonthlyMaxTemperature"       )){code=73; }
     //-----------------CONTROLS ---------------------------------
     else if  (!strcmp(s[0],":OverrideStreamflow"          )){code=100;}
-    else if  (!strcmp(s[0],":AssimlateStreamflow"         )){code=101;}
+    else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":ConcentrationTimeSeries"     )){code=300;}
     else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}

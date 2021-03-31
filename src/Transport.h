@@ -182,7 +182,7 @@ protected:
   constit_source **_pSources;        ///< array of pointers to constituent sources [size: nSources]
   int              _nSources;        ///< number of constituent sources
 
-  int            *_aSourceIndices;   ///< lookup table to convert (global) water storage index to corresponding source, if any [size: nStateVariables]
+  int            **_aSourceIndices;   ///< lookup table to convert (global) water storage index to corresponding source, if any [size: nStateVariables][size: nHRUs]
 
   int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series
   CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID

@@ -64,7 +64,7 @@ CConstituentModel::~CConstituentModel()
   delete[] _pConstitParams; 
   delete[] _pSpecFlowConcs; _pSpecFlowConcs=NULL;
   for(int i=0;i<_nSources;i++) { delete _pSources[i]; } delete[] _pSources;
-  delete[] _aSourceIndices;
+  for(int i=0;i<_nSources;i++) { delete _aSourceIndices[i]; } delete[] _aSourceIndices;
   DeleteRoutingVars();
 }
 //////////////////////////////////////////////////////////////////
@@ -223,13 +223,19 @@ bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_str
       }
     }
   }*/
-  int i_source=_aSourceIndices[i_stor];
+  int i_source=_aSourceIndices[i_stor][k];
   //if (_aDiricihletConc[k][i_source]!=DOESNT_EXIST){Cs= _aDiricihletConc[k][i_source]; return true;}
   if(i_source==DOESNT_EXIST)          { return false; }
   if(!_pSources[i_source]->dirichlet) { return false; }
   Cs = _pSources[i_source]->concentration;
 
-  if(_pSources[i_source]->kk==DOESNT_EXIST)
+  if(Cs != DOESNT_EXIST) { return true; }
+  else {//time series
+    Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
+    return true;
+  }
+
+  /*if(_pSources[i_source]->kk==DOESNT_EXIST)
   { //Not tied to HRU Group
     if(Cs != DOESNT_EXIST) { return true; }
     else {//time series
@@ -241,13 +247,14 @@ bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_str
   { //Tied to HRU Group - Check if we are in HRU Group
     if(_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k))
     {
+      cout<<"Is in Group "<<_pSources[i_source]->kk<<" CS: "<<Cs<<" isource: "<<i_source<<endl;
       if(Cs != DOESNT_EXIST) { return true; }
       else {//time series
         Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
         return true;
       }
     }
-  }
+  }*/
   return false;
 }
 //////////////////////////////////////////////////////////////////
@@ -260,19 +267,20 @@ bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_str
 //
 double  CConstituentModel::GetSpecifiedMassFlux(const int i_stor,const int k,const time_struct &tt) const
 {
-  int i_source=_aSourceIndices[i_stor];
+  int i_source=_aSourceIndices[i_stor][k];
   if(i_source == DOESNT_EXIST) { return 0.0; }
   if(_pSources[i_source]->dirichlet) { return 0.0; }
 
   double flux;
   bool retrieve=false;
-  if(_pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
+  retrieve=true;
+  /*if(_pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
   {
     retrieve=true;
   }
   else { //Check if we are in HRU Group
     retrieve=_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k);
-  }
+  }*/
   if(retrieve)
   {
     flux=_pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
@@ -556,19 +564,32 @@ void CConstituentModel::Initialize()
 
   // populate array of source indices
   //--------------------------------------------------------------------
-  // \todo [funct] will have to revise to support different sources in different HRUs (e.g., _aSourceIndices[c][i_stor][k])
   _aSourceIndices=NULL;
-  _aSourceIndices=new int[_pModel->GetNumStateVars()];
+  _aSourceIndices=new int *[_pModel->GetNumStateVars()];
   ExitGracefullyIf(_aSourceIndices==NULL,"CTransport::Initialize",OUT_OF_MEMORY);
   for(int i_stor=0;i_stor<_pModel->GetNumStateVars();i_stor++) {
-    _aSourceIndices[i_stor]=DOESNT_EXIST;
+    _aSourceIndices[i_stor]=NULL;
+    _aSourceIndices[i_stor]=new int[_pModel->GetNumHRUs()];
+    ExitGracefullyIf(_aSourceIndices==NULL,"CTransport::Initialize(2)",OUT_OF_MEMORY);
+    for(int k=0; k<_pModel->GetNumHRUs();k++) {
+      _aSourceIndices[i_stor][k]=DOESNT_EXIST; //default assumption - no source in compartment
+    }
     for(int i=0;i<_nSources;i++) {
       if(_pSources[i]->i_stor==i_stor)
       {
-        if(_aSourceIndices[i_stor] != DOESNT_EXIST) {
-          WriteWarning("CConstituentModel::Intiialize: cannot currently have more than one constitutent source per constituent/storage combination",false);
+        int kk=_pSources[i]->kk;
+        if(kk==DOESNT_EXIST) {
+          for(int k=0; k<_pModel->GetNumHRUs();k++) {
+            _aSourceIndices[i_stor][k]=i; 
+          }
         }
-        _aSourceIndices[i_stor]=i; //each
+        else {
+          for(int k=0; k<_pModel->GetNumHRUs();k++) {
+            if(_pModel->GetHRUGroup(kk)->IsInGroup(k)) {
+              _aSourceIndices[i_stor][k]=i;
+            }
+          }
+        }
       }
     }
   }

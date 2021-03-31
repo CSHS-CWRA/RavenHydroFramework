@@ -14,10 +14,11 @@ double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,
 /// \brief calculates volumetric heat capacity[MJ/m3/K] of soil/water/ice mix
 /// \details This is just a simple weighted average of soil, ice and water capacities
 ///
-/// \param &sat_liq [in] Saturation fraction of liquid H_{2}0 [0..1]
-/// \param &sat_ice [in] Saturated fraction of ice [0..1]
-/// \param *pS [in] Soil properties structure
-/// \return Volumetric soil heat capacity [J/m^3/K]
+/// \param &poro [in] soil porosity [0..1]
+/// \param &sat [in] Saturated fraction  [0..1]
+/// \param &Fice [in] Ice fraction  [0..1]
+/// \param &hcp_soil [in] heat capacity of soil [MJ/m3/K]
+/// \return Volumetric soil heat capacity [MJ/m3/K]
 //
 //
 double CalculateHeatCapacity(const double &poro,const double&hcp_soil,const double &sat,const double &Fice) 
@@ -353,7 +354,7 @@ void TestInversion() {
 
 //////////////////////////////////////////////////////////////////
 /// \brief Generates Jacobian for Newton solution to non-linear heat conduction problem
-/// \param *z [in] centroid of compartments [size:N]
+/// \param *z [in] centroid of compartments [m] [size:N]
 /// \param eta [in] array of  heat capacity term in each layer (thickness*(1-poro)*soil_hcp) [MJ/m2/K][size:N]
 /// \param poro [in] array of porosities in each layer [size:N]
 /// \param kappa_s [in] array of soil thermal conductivities in each layer [size:N]
@@ -417,7 +418,7 @@ bool CmvHeatConduction::GenerateJacobianMatrix( const double  *z,
       bi=0.5*tstep/(z[i]-z[i-1]);
     }
     if(i!=0) {
-      kappal    =pow(kap   [i]*kap   [i-1],0.5); // geometric mean
+      kappal    =pow(kap   [i]*kap   [i-1],0.5); // geometric mean (should really be pow(kap[i]^(dzi/(dzi+dz(i-1))*kap[i-1]^(dz(i-1)/(dzi+dz(i-1))
       kappaln   =pow(kapn  [i]*kapn  [i-1],0.5);
       kappaln_d =pow(kapn  [i]*kapn_d[i-1],0.5);
       kappaln_di=pow(kapn_d[i]*kapn  [i-1],0.5);
@@ -433,7 +434,7 @@ bool CmvHeatConduction::GenerateJacobianMatrix( const double  *z,
 
     dTdHn=TemperatureEnthalpyDerivative(h[i]);
 
-    Bn  =hold[i]*Vold[i]-ai*kappar *(T [i]-T [i+1])-bi*kappal *(T [i]-T [i-1])+eta[i]*T [i];
+    Bn  =hold[i]*Vold[i]-ai*kappar *(T [i]-T [i+1])-bi*kappal *(T [i]-T [i-1])+eta[i]*T [i]; 
 
     f[i]=h   [i]*Vnew[i]+ai*kapparn*(Tn[i]-Tn[i+1])+bi*kappaln*(Tn[i]-Tn[i-1])+eta[i]*Tn[i]-Bn;
 
@@ -642,7 +643,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   for(int m=0;m<N;m++)
   {
     Told[m]=ConvertVolumetricEnthalpyToTemperature(hold[m]);
-    Ficeo  =ConvertVolumetricEnthalpyToIceContent(hold[m]);
+    Ficeo  =ConvertVolumetricEnthalpyToIceContent (hold[m]);
     kap[m] =CalculateThermalConductivity(poro[m],kappa_s[m],sat[m],Ficeo);
     
     Tnew[m]=ConvertVolumetricEnthalpyToTemperature(hguess[m]);
@@ -700,7 +701,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   if(!zfx) { //if the problem was properly solved,
     for(int m=1;m<N;m++)
     {
-      kappal    =pow(kap[m]*kap[m-1],0.5); // geometric mean
+      kappal    =pow(kap [m]*kap [m-1],0.5); // geometric mean
       kappaln   =pow(kapn[m]*kapn[m-1],0.5);
       rates[m] =-0.5*kappal  * 1.0/(0.5*(dz[m]+dz[m-1]))*(Told[m]-Told[m-1]);// [MJ/m2/d]
       rates[m]+=-0.5*kappaln * 1.0/(0.5*(dz[m]+dz[m-1]))*(Tnew[m]-Tnew[m-1]);
@@ -715,7 +716,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     for(int m=0;m<N;m++)
     {
       //-dHs/dt = - eta*dT_w/dt  = gain of heat by soil, lost by water if Tnew>Told
-      rates[m+N+1] = -eta[m]*(Tnew[m]-Told[m])/Options.timestep; // energy gained by soil
+      rates[m+N+1] = -eta[m]*(Tnew[m]-Told[m])/Options.timestep; // energy gained by soil [MJ/m2/d]
       //cout<<" lost: "<<rates[m+N+1]<<" "<<eta[m]<<" "<<Tnew[m]<<" "<<Told[m]<<endl;
     }
   }

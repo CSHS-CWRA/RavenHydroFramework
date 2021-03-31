@@ -333,7 +333,7 @@ void CVegetationClass::RecalculateRootParams(       veg_var_struct   &VV,
   /// Cowan alpha and root resistance calculations
   for (m=0;m<pModel->GetNumSoilLayers();m++)
   {
-    DD[m]=(pHRU->GetSoilThickness(m)*MM_PER_METER)*(1.0-pHRU->GetSoilProps(m)->stone_frac);  //stonefree thickness
+    DD[m]=(pHRU->GetSoilThickness(m)/MM_PER_METER)*(1.0-pHRU->GetSoilProps(m)->stone_frac);  //stonefree thickness
     sum+=DD[m]*VV.rel_rootden;
   }
   for (m=0;m<pModel->GetNumSoilLayers();m++)

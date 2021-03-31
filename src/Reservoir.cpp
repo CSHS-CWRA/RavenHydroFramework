@@ -1111,6 +1111,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if     (_pDZTR==NULL) {
       out =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       out2=GetWeirOutflow(h_guess+dh,weir_adj);//[m3/s]
+      /*for(int i=0; i<_nControlStructures; i++) {
+        out +=_pControlStructures[i]->GetWeirOutflow(out, _Qout,h_guess);
+        out2+=_pControlStructures[i]->GetWeirOutflow(out2,_Qout,h_guess+dh);
+      }*/
     }
     else if(_pDZTR!=NULL) {
       out =GetDZTROutflow(GetVolume(h_guess   ),Qin_old,tt,Options);
@@ -1146,6 +1150,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   //---------------------------------------------------------------------------------------------
   if(_pDZTR==NULL) {
     res_outflow=GetWeirOutflow(stage_new,weir_adj);
+    /*for(int i=0; i<_nControlStructures; i++) {
+      Qstruct[i]=_pControlStructures[i]->GetWeirOutflow(out, _Qout,stage_new);
+      res_outflow +=Qstruct[i];  
+    }*/
     constraint =RC_NATURAL;
   }
   else if(_pDZTR!=NULL) {
@@ -1261,6 +1269,15 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   }
   // ======================================================================================
   
+  /*
+  double total_outflow=res_outflow;
+  for(int i=0; i<_nControlStructures; i++) {
+    Qstruct[i]*=(total_outflow/outflow_nat); //correct for applied reservoir rules; assumes fractions unchanged -doesn't really work for stage constraints.
+    if (_pControlStructures[i]->GetTargetBasin()!=pBasin->GetDownstreamID()){
+      res_outflow-=Qstruct[i]; //adjust main outflow for diversions elsewhere
+    }
+  }*/
+
   return stage_new;
 }
 
