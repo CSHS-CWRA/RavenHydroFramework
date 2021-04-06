@@ -24,6 +24,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   //CHydroUnit *pHRU;           //temporary pointers to HRUs, Subbasins
   CSubBasin  *pSB;
   bool        ended(false);
+  bool        in_ifmode_statement=false;
 
   ifstream    IC;
   IC.open(Options.rvc_filename.c_str());
@@ -86,8 +87,10 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                       {code=-1; }//blank line
     else if  (IsComment(s[0],Len))                          {code=-2; }//comment
-    else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     else if  (!strcmp(s[0],":End"                         )){code=-4; }//stop reading
+    else if  (!strcmp(s[0],":IfModeEquals"                )){code=-5; }
+    else if  (in_ifmode_statement)                          {code=-6; }
+    else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     //-------------------MODEL INITIAL CONDITIONS----------------
     else if  (!strcmp(s[0],":BasinInitialConditions"      )){code=1;  }
     else if  (!strcmp(s[0],":HRUInitialConditions"        )){code=2;  }//UNUSED
@@ -145,6 +148,26 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     case(-4):  //----------------------------------------------
     {/*:End*/
       if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
+    }
+    case(-5):  //----------------------------------------------
+    {/*:IfModeEquals*/
+      if(Len>1) {
+        if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
+        char testmode=s[1][0];
+        if(testmode!=Options.run_mode) {
+          in_ifmode_statement=true;
+        }
+      }
+      break;
+    }
+    case(-6):  //----------------------------------------------
+    {/*in_ifmode_statement*/
+      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+      if(!strcmp(s[0],":EndIfModeEquals"))
+      {
+        in_ifmode_statement=false;
+      }
+      break;
     }
     case(1):  //----------------------------------------------
     { /*

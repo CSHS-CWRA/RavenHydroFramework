@@ -1002,6 +1002,7 @@ struct optStruct
   string           interp_file;               ///< name of file (in working directory) which stores interpolation weights
 
   string           run_name;                  ///< prefix to be used for all output files
+  char             run_mode;                  ///< run mode - single character used to enable multiple model configs with if statements (default==' ')
   string           rvi_filename;              ///< fully qualified filename of rvi (main input) file
   string           rvh_filename;              ///< fully qualified filename of rvh (HRU-basin) file
   string           rvp_filename;              ///< fully qualified filename of rvp (parameters) file

@@ -29,6 +29,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   CHydroUnit *pHRU;             //temp pointers
   CSubBasin  *pSB;
   bool        ended=false;
+  bool        in_ifmode_statement=false;
 
   ifstream    HRU;
   HRU.open(Options.rvh_filename.c_str());
@@ -69,8 +70,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                    {code=-1; }//blank line
     else if  (IsComment(s[0],Len))                       {code=-2; }//comment
-    else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
     else if  (!strcmp(s[0],":End"                      )){code=-4; }//stop reading
+    else if  (!strcmp(s[0],":IfModeEquals"             )){code=-5; }
+    else if  (in_ifmode_statement)                       {code=-6; }
+    else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],":SubBasins"                )){code=1;  }
     else if  (!strcmp(s[0],":HRUs"                     )){code=2;  }
@@ -117,6 +120,26 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     case(-4):  //----------------------------------------------
     {/*:End*/
       if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
+    }
+    case(-5):  //----------------------------------------------
+    {/*:IfModeEquals*/
+      if(Len>1) {
+        if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
+        char testmode=s[1][0];
+        if(testmode!=Options.run_mode) {
+          in_ifmode_statement=true;
+        }
+      }
+      break;
+    }
+    case(-6):  //----------------------------------------------
+    {/*in_ifmode_statement*/
+      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+      if(!strcmp(s[0],":EndIfModeEquals"))
+      {
+        in_ifmode_statement=false;
+      }
+      break;
     }
     case(1):  //----------------------------------------------
     { /*

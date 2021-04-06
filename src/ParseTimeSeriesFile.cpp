@@ -29,6 +29,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   char *s[MAXINPUTITEMS];
   double monthdata[12];
   string warn;
+  bool   in_ifmode_statement=false;
 
   bool ended            = false;
   bool has_irrig        = false;
@@ -63,8 +64,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                       {code=-1; }
     else if  (IsComment(s[0],Len))                          {code=-2; }//comment
-    else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     else if  (!strcmp(s[0],":End"                         )){code=-4; }//premature end of file
+    else if  (!strcmp(s[0],":IfModeEquals"                )){code=-5; }
+    else if  (in_ifmode_statement)                          {code=-6; }
+    else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     //--------------------GAUGE BASIC DATA- --------------------
     else if  (!strcmp(s[0],":Gauge"                       )){code=1;  }
     else if  (!strcmp(s[0],":EndGauge"                    )){code=2;  }
@@ -178,6 +181,26 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case(-4):  //----------------------------------------------
     {/*:End*/
       if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
+    }
+    case(-5):  //----------------------------------------------
+    {/*:IfModeEquals*/
+      if(Len>1) {
+        if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
+        char testmode=s[1][0];
+        if(testmode!=Options.run_mode) {
+          in_ifmode_statement=true;
+        }
+      }
+      break;
+    }
+    case(-6):  //----------------------------------------------
+    {/*in_ifmode_statement*/
+      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+      if(!strcmp(s[0],":EndIfModeEquals"))
+      {
+        in_ifmode_statement=false;
+      }
+      break;
     }
     case(1):  //----------------------------------------------
     {/*:Gauge [optional name]*/

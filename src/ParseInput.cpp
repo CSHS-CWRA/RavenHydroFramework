@@ -167,11 +167,13 @@ bool ParseMainInputFile (CModel     *&pModel,
   CProcessGroup    *pProcGroupOuter=NULL; //for nested processgroups
   bool              transprepared(false);
   bool              runname_overridden(false);
+  bool              runmode_overridden(false);
   int               num_ensemble_members=1;
   unsigned int      random_seed=0; //actually random
   ifstream          INPUT;
   ifstream          INPUT2;           //For Secondary input
   CParser          *pMainParser=NULL; //for storage of main parser while reading secondary files
+  bool              in_ifmode_statement=false;
 
   int               tmpN;
   sv_type          *tmpS;
@@ -200,7 +202,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
   // Set Default Option Values
   //===============================================================================================
-  if(Options.run_name!=""){runname_overridden=true;}
+  if(Options.run_name!="" ){runname_overridden=true;}
+  if(Options.run_mode!=' '){runmode_overridden=true;}
   Options.julian_start_day        =0;//Jan 1
   Options.julian_start_year       =1666;
   Options.duration                =365;
@@ -342,6 +345,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],"#"                          )){code=-2; }//comment
     else if  (s[0][0]=='#')                               {code=-2; }//comment
     else if  (!strcmp(s[0],":End"                       )){code=-3; }//premature end of file
+    else if  (!strcmp(s[0],":IfModeEquals"              )){code=-5; }
+    else if  (in_ifmode_statement)                        {code=-6; }
     else if  (!strcmp(s[0],":RedirectToFile"            )){code=-4; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],"?? "                        )){code=1;  }
@@ -423,6 +428,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=75; }
     else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
     else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; } 
+    else if  (!strcmp(s[0],":Mode"                      )){code=78; }
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
     else if  (!strcmp(s[0],":DisableHRUGroup"           )){code=82; }
@@ -444,7 +450,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
-        
+    
+	if       (in_ifmode_statement)                        {code=-6; }
     else if  (!strcmp(s[0],":rvh_Filename"              )){code=160;}
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=161;}
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=162;}
@@ -469,7 +476,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
 
     //--------------------HYDROLOGICAL PROCESSES ---------------
-    if       (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
+    if       (in_ifmode_statement)                        {code=-6; }
+    else if  (!strcmp(s[0],":HydrologicProcesses"       )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":HydrologicalProcesses"     )){code=200;}//REQUIRED
     else if  (!strcmp(s[0],":Baseflow"                  )){code=201;}
     else if  (!strcmp(s[0],":CanopyEvaporation"         )){code=202;}
@@ -524,7 +532,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":-->Cascade"                )){code=299;}
     //...
     //--------------------TRANSPORT PROCESSES ---------------
-    if       (!strcmp(s[0],":Transport"                 )){code=300;}
+    if       (in_ifmode_statement)                        {code=-6; }
+    else if  (!strcmp(s[0],":Transport"                 )){code=300;}
     else if  (!strcmp(s[0],":FixedConcentration"        )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":FixedTemperature"          )){code=301;}//After corresponding DefineHRUGroup(s) command, if used
     else if  (!strcmp(s[0],":MassInflux"                )){code=302;}//After corresponding DefineHRUGroup(s) command, if used
@@ -592,8 +601,28 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       break;
     }
+    case(-5):  //----------------------------------------------
+    {/*:IfModeEquals*/
+      if(Len>1) {
+        if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
+        char testmode=s[1][0];
+        if(testmode!=Options.run_mode) {
+          in_ifmode_statement=true;
+        }
+      }
+      break;
+    }
+    case(-6):  //----------------------------------------------
+    {/*in_ifmode_statement*/
+      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+      if(!strcmp(s[0],":EndIfModeEquals"))
+      { 
+        in_ifmode_statement=false; 
+      }
+      break;
+    }
     case(2):  //----------------------------------------------
-    {/*:JulianStartDay [double day] */
+    {/*:JulianStartDay [double day] 
       if (Options.noisy) {cout <<"Julian Start Day"<<endl;}
       if (Len<2){ImproperFormatWarning(":JulianStartDay",p,Options.noisy); break;}
       Options.julian_start_day =s_to_d(s[1]);
@@ -1520,6 +1549,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:CreateRVPTemplate*/
       if (Options.noisy) {cout <<"Create RVP Template File"<<endl;}
       Options.create_rvp_template=true;
+      break;
+    }
+    case(78):  //--------------------------------------------
+    {/*:Mode [run mode]*/
+      if(Options.noisy) { cout <<"Using Mode: "<<s[1]<<endl; }
+      if(!runmode_overridden) {
+        Options.run_mode=s[1][0];
+      }
+      else {
+        WriteWarning("ParseInputFile: when run mode is specified from command line, it cannot be overridden in the .rvi file. :Mode command ignored.",Options.noisy);
+      }
       break;
     }
     case(80):  //--------------------------------------------

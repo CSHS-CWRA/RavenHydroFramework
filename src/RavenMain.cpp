@@ -30,12 +30,12 @@ static optStruct   Options;
 static CModel      *pModel;
 
 // Global variables - declared as extern in RavenInclude.h--------
-string g_output_directory="";
+string g_output_directory ="";
 bool   g_suppress_warnings=false;
-bool   g_suppress_zeros=false;
+bool   g_suppress_zeros   =false;
 double g_debug_vars[10];
-bool   g_disable_freezing=false;
-double g_min_storage=0.0;
+bool   g_disable_freezing =false;
+double g_min_storage      =0.0;
 
 static string RavenBuildDate(__DATE__);
 
@@ -123,9 +123,9 @@ int main(int argc, char* argv[])
       //Write initial conditions-------------------------------------
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
-      pModel->UpdateHRUForcingFunctions(Options,tt);
-      pModel->UpdateDiagnostics(Options,tt);
-      pModel->WriteMinorOutput(Options,tt);
+      pModel->UpdateHRUForcingFunctions  (Options,tt);
+      pModel->UpdateDiagnostics          (Options,tt);
+      pModel->WriteMinorOutput           (Options,tt);
 
       //Solve water/energy balance over time--------------------------------
       t1=clock();
@@ -159,14 +159,15 @@ int main(int argc, char* argv[])
       }
 
       //Finished Solving----------------------------------------------------
-      pModel->UpdateDiagnostics(Options,tt);
-      pModel->RunDiagnostics   (Options);
-      pModel->WriteMajorOutput (Options,tt,"solution",true);
+      pModel->UpdateDiagnostics (Options,tt);
+      pModel->RunDiagnostics    (Options);
+      pModel->WriteMajorOutput  (Options,tt,"solution",true);
       pModel->CloseOutputStreams();
 
       pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,e);
 
-      if(!Options.silent) {
+      if(!Options.silent) 
+      {
         cout <<"======================================================"<<endl;
         cout <<"...Raven Simulation Complete: "<<Options.run_name<<endl;
         cout <<"    Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
@@ -202,15 +203,13 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   argument="";
   //initialization:
   Options.run_name    ="";
+  Options.run_mode    =' ';
   Options.rvi_filename="";
   Options.rvh_filename="";
   Options.rvp_filename="";
   Options.rvt_filename="";
   Options.rvc_filename="";
   Options.rvg_filename="";
-  Options.rvd_filename=""; //GWMIGRATE - TO REMOVE
-  Options.rvv_filename=""; //GWMIGRATE - TO REMOVE
-  Options.rvs_filename=""; //GWMIGRATE - TO REMOVE
   Options.rve_filename="";
   Options.rvl_filename="";
   Options.output_dir  ="";
@@ -224,7 +223,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     if (i!=argc){
       word=to_string(argv[i]);
     }
-    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || (word=="-s") || (word=="-r") || (word=="-n") || (i==argc))
+    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || 
+        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -233,9 +233,6 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvt_filename=argument+".rvt";
         Options.rvc_filename=argument+".rvc";
         Options.rvg_filename=argument+".rvg";
-        Options.rvd_filename=argument+".rvd"; //GWMIGRATE - TO REMOVE
-        Options.rvv_filename=argument+".rvv"; //GWMIGRATE - TO REMOVE
-        Options.rvs_filename=argument+".rvs"; //GWMIGRATE - TO REMOVE
         Options.rve_filename=argument+".rve";
         Options.rvl_filename=argument+".rvl";
         argument="";
@@ -250,6 +247,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (mode==7){Options.rve_filename=argument; argument="";}
       else if (mode==8){Options.rvg_filename=argument; argument="";}
       else if (mode==9){Options.rvl_filename=argument; argument="";}
+      else if (mode==11){Options.run_mode=argument[0]; argument="";}
+
       if      (word=="-p"){mode=1; }
       else if (word=="-h"){mode=2; }
       else if (word=="-t"){mode=3; }
@@ -261,6 +260,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-e"){mode=7; }
       else if (word=="-g"){mode=8; }	  
       else if (word=="-l"){mode=9; }
+      else if (word=="-m"){mode=11;}
     }
     else{
       if (argument==""){argument+=word;}
@@ -275,15 +275,12 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvt_filename="nomodel.rvt";
     Options.rvc_filename="nomodel.rvc";
     Options.rvg_filename="nomodel.rvg";
-    Options.rvd_filename="nomodel.rvd"; //GWMIGRATE - TO REMOVE
-    Options.rvv_filename="nomodel.rvv"; //GWMIGRATE - TO REMOVE
-    Options.rvs_filename="nomodel.rvs"; //GWMIGRATE - TO REMOVE
     Options.rve_filename="nomodel.rve";
     Options.rvl_filename="nomodel.rvl";
   }
 
   // make sure that output dir has trailing '/' if not empty
-  if (Options.output_dir.compare("") != 0) { Options.output_dir=Options.output_dir+"/"; }
+  if ((Options.output_dir.compare("") != 0) && (Options.output_dir.back()!='/')){ Options.output_dir=Options.output_dir+"/"; }
 
   char cCurrentPath[FILENAME_MAX];
   if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))){
@@ -291,11 +288,6 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   }
   Options.working_dir = to_string(cCurrentPath);
   Options.main_output_dir=Options.output_dir;
-
-  // identify executable directory
-  //char basePath[255] = "";
-  //_fullpath(basePath, argv[0], sizeof(basePath)); //_realpath in linux
-  //cout << to_string(basePath) << endl;
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Exits gracefully from program, explaining reason for exit and destructing simulation all pertinent parameters
