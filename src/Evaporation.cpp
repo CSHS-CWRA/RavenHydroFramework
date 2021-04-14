@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
 
   Routines for calculating PET:
   -Penman Monteith Equation
@@ -69,7 +69,7 @@ double TurcEvap(const force_struct *F)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns evaporation rate [mm/d]
-/// \details Returns evaporation rate using the Penman-monteith equation, which
+/// \details Returns evaporation rate using the Penman-Monteith equation, which
 /// is an energy-balance approach
 /// \ref  Adapted from Dingman, Howell, T.A and Evett, S.R. (USDA-Agricultural research service) \cite Howell2004 \cite Dingman2004
 /// http://www.cprl.ars.usda.gov/pdfs/PM COLO Bar 2004 corrected 9apr04.pdf
@@ -147,12 +147,12 @@ double PenmanCombinationEvap(const force_struct *F,
 /// \brief Returns potential evaporation rate [mm/d] \cite Stannard1993WRR
 /// \details  returns the potential evaporation rate [mm/d] using the
 /// Priestley-Taylor equation
-/// \ref adapted from SWAT
 /// \note This is a utility function called by EstimatePET
 /// \param *F [in] Forcing functions for a specific HRU over the current time step
+/// \param PT_coeff [in] Priestley Taylor coefficient (defaults to 1.28)
 /// \return Potential evaporation rate [mm/d]
 //
-double PriestleyTaylorEvap(const force_struct *F)
+double PriestleyTaylorEvap(const force_struct *F, const double &PT_coeff)
 {
   double gamma;     //psychometric "constant" [kPa/K]
   double de_dT;     //Vapor pressure-temp slope=de*/dT [kPa/K]
@@ -164,7 +164,7 @@ double PriestleyTaylorEvap(const force_struct *F)
   LH_vapor=GetLatentHeatVaporization(F->temp_ave);
   gamma   =GetPsychometricConstant  (F->air_pres,LH_vapor);
 
-  return 1.28 * (de_dT/(de_dT+gamma))*max(F->SW_radia_net+F->LW_radia_net,0.0)/LH_vapor/DENSITY_WATER*MM_PER_METER;
+  return PT_coeff * (de_dT/(de_dT+gamma))*max(F->SW_radia_net+F->LW_radia_net,0.0)/LH_vapor/DENSITY_WATER*MM_PER_METER;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -291,10 +291,12 @@ double CModel::EstimatePET(const force_struct &F,
 
   switch(evap_type)
   {
+  //-------------------------------------------------------------------------------------
   case(PET_CONSTANT):
   {
     PET =3.0; break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_DATA):
   {
     if(open_water) {PET=F.OW_PET;}
@@ -312,14 +314,15 @@ double CModel::EstimatePET(const force_struct &F,
     
     break;//calculated direct from Gauge
   }
+  //-------------------------------------------------------------------------------------
   case(PET_FROMMONTHLY):
   {
     double peRatio=1.0+HBV_PET_TEMP_CORR*(F.temp_ave_unc-F.temp_month_ave);
-    //double peRatio=1.0+0.687*(F.temp_ave_unc-F.temp_month_ave);//TMP DEBUG - HYPR comparison
     peRatio=max(0.0,min(2.0,peRatio));
     PET=F.PET_month_ave*peRatio;
     break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_MONTHLY_FACTOR):
   {
     double forest_corr,max_temp;
@@ -341,6 +344,7 @@ double CModel::EstimatePET(const force_struct &F,
 
     break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_PENMAN_MONTEITH):
   {
     double can_cond;
@@ -361,6 +365,7 @@ double CModel::EstimatePET(const force_struct &F,
 
     PET=PenmanMonteithEvap(&F,atmos_cond,can_cond); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_PENMAN_COMBINATION):
   {
     double zero_pl,z0,vert_trans,ref_ht;
@@ -375,41 +380,51 @@ double CModel::EstimatePET(const force_struct &F,
 
     PET   =PenmanCombinationEvap(&F,vert_trans); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_JENSEN_HAISE):
   {
     //double sat_vap_max
     ExitGracefully("PET_JENSEN_HAISE",STUB);
     PET=0.0;break;//JensenHaise1963Evap(&F,sat_vap_max,sat_vap_min,elev,julian_day);
   }
+  //-------------------------------------------------------------------------------------
   case(PET_HAMON):
   {
     PET=Hamon1961Evap(&F); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_PRIESTLEY_TAYLOR):
   {
-    PET=PriestleyTaylorEvap(&F); break;
+    double PT_coeff=pHRU->GetSurfaceProps()->priestleytaylor_coeff; //1.28 by default
+    PET=PriestleyTaylorEvap(&F,PT_coeff); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_HARGREAVES):
   {
     PET=HargreavesEvap(&F); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_HARGREAVES_1985):
   {
     PET=Hargreaves1985Evap(&F); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_TURC_1961):
   {
     PET=TurcEvap(&F); break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_MAKKINK_1957):
   {
     PET=Makkink1957Evap(&F);break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_SHUTTLEWORTH_WALLACE):
   {
     //PET=ShuttleworthWallaceEvap(&F,matric_pot,&S,&G,&CV);  // \todo [funct] (need to import additional data)
     ExitGracefully("EstimatePET:Shuttleworth Wallace",STUB);
   }
+  //-------------------------------------------------------------------------------------
   case(PET_PENMAN_SIMPLE33) :
   {
     double Rs =F.SW_radia;   //[MJ/m2/d]
@@ -420,6 +435,7 @@ double CModel::EstimatePET(const force_struct &F,
     PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
     break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_PENMAN_SIMPLE39) :
   {
     double Rs  =F.SW_radia;   //[MJ/m2/d]
@@ -430,6 +446,7 @@ double CModel::EstimatePET(const force_struct &F,
     PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
     break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_MOHYSE) :
   {
     double lat_rad=pHRU->GetLatRad();
@@ -439,11 +456,13 @@ double CModel::EstimatePET(const force_struct &F,
     PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
     break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_OUDIN) :
   {
     PET=max(F.ET_radia/DENSITY_WATER/LH_VAPOR*MM_PER_METER*(F.temp_daily_ave+5.0)/100.0,0.0);
     break;
   }
+  //-------------------------------------------------------------------------------------
   case(PET_LINACRE):
   {
     //eqns 8 and 9  of Linacre, E., A simple formula for estimating evaporation rates in various climates, using temperature data alone, Agricultural Meteorology 18, p409-424, 1977
@@ -457,11 +476,13 @@ double CModel::EstimatePET(const force_struct &F,
     }
     break;
   }
+  //-------------------------------------------------------------------------------------
   case (PET_GRANGERGRAY):
   {
     PET=EvapGrangerGray(&F,pHRU);
     break;
   }
+  //-------------------------------------------------------------------------------------
   default:
   {
     ExitGracefully("CModel::UpdateHRUPET: Invalid Evaporation Type",BAD_DATA); break;
@@ -469,9 +490,8 @@ double CModel::EstimatePET(const force_struct &F,
   }
 
   if (PET<(-REAL_SMALL)){
-    string warn="negative PET ("+to_string(PET)+" mm/d) calculated in CModel::UpdateHRUPET";
-    WriteWarning(warn,false);
-    PET=0.0;
+    string warn="Negative PET ("+to_string(PET)+" mm/d) calculated in CModel::UpdateHRUPET";
+    ExitGracefully(warn.c_str(),RUNTIME_ERR);
   }
 
   double veg_corr=pHRU->GetVegetationProps()->PET_veg_corr;

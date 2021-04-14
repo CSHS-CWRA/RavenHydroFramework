@@ -131,11 +131,12 @@ public:/*-------------------------------------------------------*/
 class CmvFlush: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
+  double _percentage;
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvFlush(int   from_index,
-           int     to_index);
+           int     to_index, const double &pct);
   ~CmvFlush();
 
   //inherited functions

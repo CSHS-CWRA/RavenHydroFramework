@@ -29,7 +29,7 @@ CmvAbstraction::CmvAbstraction(abstraction_type absttype)
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
     iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
   }
-  else if ((_type==ABST_PDMROF) || (_type==ABST_UWFS)) { 
+  else if (_type==ABST_PDMROF) { 
     CHydroProcessABC::DynamicSpecifyConnections(2);
     //abstraction (ponded-->depression)
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
@@ -37,6 +37,18 @@ CmvAbstraction::CmvAbstraction(abstraction_type absttype)
     //runoff (ponded-->surface water)
     iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);
     iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER);
+  }
+  else if (_type==ABST_UWFS) {
+    CHydroProcessABC::DynamicSpecifyConnections(3);
+    //abstraction (ponded-->depression)
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
+    iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
+    //runoff (ponded-->surface water)
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);
+    iTo  [1]=pModel->GetStateVarIndex(SURFACE_WATER);
+    //adjust minimum deficit
+    iFrom[2]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);
+    iTo  [2]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);
   }
 }
 
@@ -108,17 +120,16 @@ void CmvAbstraction::GetParticipatingParamList(string  *aP , class_type *aPC , i
 void CmvAbstraction::GetParticipatingStateVarList(abstraction_type absttype, sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=2;
-  aSV[0]=PONDED_WATER;  aLev[0]=DOESNT_EXIST;
-  aSV[1]=DEPRESSION;    aLev[1]=DOESNT_EXIST;
+  aSV[0]=PONDED_WATER;        aLev[0]=DOESNT_EXIST;
+  aSV[1]=DEPRESSION;          aLev[1]=DOESNT_EXIST;
   if(absttype==ABST_PDMROF) {
     nSV=3;
-    aSV[2]=SURFACE_WATER;    aLev[2]=DOESNT_EXIST;
+    aSV[2]=SURFACE_WATER;     aLev[2]=DOESNT_EXIST;
   }
   else if(absttype==ABST_UWFS) {
-    //nSV=4;
-    nSV=3;
-    aSV[2]=SURFACE_WATER;    aLev[2]=DOESNT_EXIST;
-    //aSV[3]=DEFICIT_STDDEV;   aLev[3]=DOESNT_EXIST;
+    nSV=4;
+    aSV[2]=SURFACE_WATER;     aLev[2]=DOESNT_EXIST;
+    aSV[3]=MIN_DEP_DEFICIT;   aLev[3]=DOESNT_EXIST;
   }
 }
 

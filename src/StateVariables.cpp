@@ -122,8 +122,6 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(LAKE_STORAGE):       {name="Net Lake Storage";           break;}
 
     //Temperature/Energy storage
-  case(FREEZING_LOSS):      {name="Energy lost during freezing";    break;}
-  case(MELTING_LOSS):       {name="Energy consumed during melting"; break;}
   case(ENERGY_LOSSES):      {name="Energy Losses";              break;}
   case(SURFACE_WATER_TEMP): {name="Surface Water Temperature";  break;}
   case(SNOW_TEMP):          {name="Temperature of snow";        break;}
@@ -229,8 +227,6 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(LAKE_STORAGE):     {units="mm"; break;}
 
     //Temperature/Energy storage [C] or [MJ/m^2]
-  case(FREEZING_LOSS):    {units="MJ/m2"; break;}
-  case(MELTING_LOSS):     {units="MJ/m2"; break;}
   case(ENERGY_LOSSES):    {units="MJ/m2"; break;}
   case(SURFACE_WATER_TEMP):{units="C";  break;}
   case(SNOW_TEMP):        {units="C";   break;}
@@ -402,8 +398,6 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(LAKE_STORAGE):       {name="LAKE_STORAGE";             break;}
 
     //Temperature/Energy storage
-    case(FREEZING_LOSS):      {name="FREEZING_LOSS";            break;}
-    case(MELTING_LOSS):       {name="MELTING_LOSS";             break;}
     case(ENERGY_LOSSES):      {name="ENERGY_LOSSES";            break;}
     case(SURFACE_WATER_TEMP): {name="SURFACE_WATER_TEMP";       break;}
     case(SNOW_TEMP):          {name="SNOW_TEMP";                break;}

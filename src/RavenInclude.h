@@ -483,7 +483,8 @@ enum rainsnow_method
   RAINSNOW_HBV,          ///< Linear variation between two temperatures - corrects only rain portion
   RAINSNOW_HSPF,         ///< HSPF approach - variable transition temperature
   RAINSNOW_UBCWM,        ///< Linear variation between two temperatures
-  RAINSNOW_HARDER        ///< Harder & Pomeroy (2013) method ported over from CRHM (Pomeroy et al 2007)
+  RAINSNOW_HARDER,       ///< Harder & Pomeroy (2013) method ported over from CRHM (Pomeroy et al 2007)
+  RAINSNOW_THRESHOLD
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -531,6 +532,7 @@ enum SW_canopy_corr
 enum LW_method
 {
   LW_RAD_DATA,              ///< Longwave radiation specified in time series files
+  LW_RAD_NONE,              ///< Longwave radiation not simulated (equal to zero)
   LW_RAD_DEFAULT,           ///< from Dingman text: uses Kustas (1994) approach for effective emissivity \cite Moran1994WRR
   LW_RAD_UBCWM,             ///< UBCWM approach
   LW_RAD_HSPF,              ///< HSPF approach (U.S. Corps of Engineers, 1956)
@@ -834,6 +836,9 @@ enum sv_type
   CONVOLUTION,             ///< [mm] Convolution storage - for conceptual models with intermediate convolution steps
   CONV_STOR,               ///< [mm] Convolution sub-storage - tracks internal water mass for convolution
 
+  // Distribution tracking variables
+  MIN_DEP_DEFICIT,         ///< [mm or -1..0] Minimum depression deficit (describes deficit distribution), =-percent full if negative
+
   // Memory variables
   CUM_INFIL,               ///< [mm] Cumulative infiltration to topsoil
   GA_MOISTURE_INIT,        ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
@@ -841,9 +846,7 @@ enum sv_type
   AET,                     ///< [mm] PET used up in given time step (diagnostic variable)
 
   //Temperature/Energy storage [C] or [MJ/m^2]
-  FREEZING_LOSS,           ///< [MJ/m2] Energy lost during freezing (for energy balance) // \ todo[clean] - remove- not used
-  MELTING_LOSS,            ///< [MJ/m2] Energy consumed during melting // \ todo[clean] - remove- not used
-  ENERGY_LOSSES,           ///< [MJ/m2] general energy losses // \ todo[clean] - remove- not used
+  ENERGY_LOSSES,           ///< [MJ/m2] general energy losses 
 
   SURFACE_WATER_TEMP,      ///< [C] Temperature of surface water
   SNOW_TEMP,               ///< [C] Temperature of snow
@@ -886,11 +889,10 @@ enum sv_type
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of hydrological processes
-/// \note If an additional process type is added, the following routines must be revised: \n
-/// - An additional HydroProcess class must be created (e.g., CmvInterflow) \n
-/// - ParseInput.cpp: ParseMainInputFile: case(200+) (An additional parse statement is neccesary) \n
-/// - GetProcessName (in CommonFunctions.cpp) \n
-///
+/// \note If an additional process type is added, the following routines must be revised: 
+/// - An additional HydroProcess class must be created (e.g., CmvInterflow) 
+/// - ParseInput.cpp: ParseMainInputFile: case(200+) (An additional parse statement is neccesary) 
+/// - GetProcessName (in CommonFunctions.cpp) 
 //
 enum process_type
 {
@@ -1141,13 +1143,13 @@ struct time_struct
 //
 enum calendars
 {
-    CALENDAR_STANDARD,
-    CALENDAR_GREGORIAN,
-    CALENDAR_PROLEPTIC_GREGORIAN,
-    CALENDAR_365_DAY, //=NO_LEAP
-    CALENDAR_360_DAY,
-    CALENDAR_JULIAN,
-    CALENDAR_366_DAY //=ALL_LEAP
+  CALENDAR_STANDARD,
+  CALENDAR_GREGORIAN,
+  CALENDAR_PROLEPTIC_GREGORIAN,
+  CALENDAR_365_DAY, //=NO_LEAP
+  CALENDAR_360_DAY,
+  CALENDAR_JULIAN,
+  CALENDAR_366_DAY //=ALL_LEAP
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -1523,7 +1525,7 @@ double   FormatDouble           (const double &d);
 void     SubstringReplace       (string& str,const string& from,const string& to);
 
 //defined in NetCDFReading.cpp
-int GetCalendarFromNetCDF       (const int ncid,int varid_t,const string filename,const optStruct &Options);
+int  GetCalendarFromNetCDF      (const int ncid,int varid_t,const string filename,const optStruct &Options);
 void GetTimeVectorFromNetCDF    (const int ncid,const int varid_t,const int ntime,double *my_time);
 void GetTimeInfoFromNetCDF      (const char *unit_t,int calendar,const double *time,const int ntime,const string filename,
                                  double &tstep,double &start_day,int &start_yr,double &time_zone);
@@ -1549,7 +1551,6 @@ string CorrectForRelativePath    (const string filename, const string relfile);
 bool   SetCalculableValue      (double &val, double set_val, double template_val);
 bool   SetSpecifiedValue       (double &val, double set_val, double template_val, bool needed, string name);
 double DefaultParameterValue   (bool is_template, bool is_computable);
-
 
 //Mathematical Functions-------------------------------------------
 //defined in CommonFunctions.cpp

@@ -18,7 +18,8 @@
 enum owevap_type
 {
   OPEN_WATER_EVAP,        ///< evaporates at OW_PET rate
-  OPEN_WATER_RIPARIAN     ///< evaporates at OW_PET rate, but only for fraction of landscape covered in streams
+  OPEN_WATER_RIPARIAN,    ///< evaporates at OW_PET rate, but only for fraction of landscape covered in streams
+  OPEN_WATER_UWFS         ///< Upscaled wetland fill and spill approach - tracks depression storage and deficit distribution
 };
 
 ///////////////////////////////////////////////////////////////////

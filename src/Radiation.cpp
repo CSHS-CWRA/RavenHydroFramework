@@ -147,6 +147,12 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     break;
   }
   //--------------------------------------------------------
+  case(LW_RAD_NONE):
+  {
+    return 0.0;
+    break;
+  }
+  //--------------------------------------------------------
   case(LW_RAD_DEFAULT):
   {
     //from Dingman eqns. 5-40

@@ -515,16 +515,14 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   static double **J,**Jinv;
   
   // Allocate Memory for static arrays
+  //-----------------------------------------------------------------------
   //if (pModel->FirstHRUFirstTimestep())
   if ((tt.model_time==0.0) && (pHRU->GetGlobalIndex()==0)) //TMP DEBUG - this is not valid if HRU 0 is disabled!
   {
     Jinv=NULL;
     v_old=new double *[_nHRUs];
     for(int k=0;k<_nHRUs;k++) {
-      v_old[k]=new double [N];
-      for(int i=0; i<N;i++) {
-        v_old[k][i]=0.0;
-      }
+      v_old[k]=new double [N]; for(int i=0; i<N;i++) {v_old[k][i]=0.0;}
     }
     dz     =new double[N];    z      =new double[N];
     sat    =new double[N];    satn   =new double[N];    poro   =new double[N];
@@ -544,6 +542,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   int k=pHRU->GetGlobalIndex();
 
   // Get Soil properties 
+  //-----------------------------------------------------------------------
   for(int m=0;m<nSoils;m++)
   {
     iSoil=pModel->GetStateVarIndex(SOIL,m);
@@ -575,6 +574,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   }
 
   // Crank Nicolson approach using Newton Raphson
+  //-----------------------------------------------------------------------
   //const double TOLERANCE=1e-3; //~0.2e-3 degrees C
   const double TOLERANCE=0.5e-2; 
   const int    MAX_ITER=50;
@@ -637,8 +637,9 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     zfx=true;//ExitGracefully("CmvHeatConduction::Hit maximum iterations. Reduce model timestep",RUNTIME_ERR);
   }
  
-  //Post-processing: extract energy fluxes from solution
-  //Need also to address heat exchanged with soil (sink/source term) 
+  // Post-processing: extract energy fluxes from solution
+  // Need also to address heat exchanged with soil (sink/source term) 
+  //-----------------------------------------------------------------------
   double Ficen,Ficeo;
   for(int m=0;m<N;m++)
   {
@@ -685,10 +686,11 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   double Vsoil,wfrac,condflux;
 
   // top convection condition [MJ/m2/d]
+  //-----------------------------------------------------------------------
   Vsoil   =dz[0]*(1.0-poro[0]);
   wfrac   =Vnew[0]/(Vsoil+Vnew[0]);
-//  wfrac   =Vnew[0]/(eta[0]*TemperatureEnthalpyDerivative(hold[0])+Vnew[0]);//pct of conductive flux going to water
-  //wfrac=1;
+  //wfrac =Vnew[0]/(eta[0]*TemperatureEnthalpyDerivative(hold[0])+Vnew[0]);//pct of conductive flux going to water
+  //wfrac =1.0;
   condflux=MeanConvectiveFlux(hold[0],Vnew[0],hcond,Tair,Options.timestep);
 
   if(pHRU->GetSnowDepth()>100) {
@@ -698,6 +700,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   //rates[2*N+1]=(1.0-wfrac)*condflux;
 
   //conductive heat fluxes
+  //-----------------------------------------------------------------------
   if(!zfx) { //if the problem was properly solved,
     for(int m=1;m<N;m++)
     {
@@ -708,6 +711,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     }
   }
   // geothermal heat flux
+  //-----------------------------------------------------------------------
   wfrac   =Vnew[N-1]/(dz[N-1]*(1.0-poro[N-1])+Vnew[N-1]);
   //  wfrac   =Vnew[0]/(eta[0]*TemperatureEnthalpyDerivative(hold[0])+Vnew[0]);//pct of conductive flux going to water (can go to zero now for Vnew=deriv=0.0);
   rates[N]=wfrac*kap[N]*geo_grad; // [MJ/m2/d]
@@ -720,7 +724,9 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
       //cout<<" lost: "<<rates[m+N+1]<<" "<<eta[m]<<" "<<Tnew[m]<<" "<<Told[m]<<endl;
     }
   }
+
   // Delete static arrays
+  //-----------------------------------------------------------------------
   //if (pModel->LastHRULastTimeStep())
   if((tt.model_time>=Options.duration-Options.timestep-TIME_CORRECTION) && 
     (pHRU->GetGlobalIndex()==((CModel*)(pModel))->GetNumHRUs()-1))

@@ -39,6 +39,7 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
           (type==SOILEVAP_VIC)    ||
           (type==SOILEVAP_HBV)    ||
           (type==SOILEVAP_UBC)    ||
+          (type==SOILEVAP_PDM)    ||
           (type==SOILEVAP_CHU)    ||
           (type==SOILEVAP_GR4J)   ||
           (type==SOILEVAP_LINEAR) ||
@@ -189,8 +190,14 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
   }
   else if (type==SOILEVAP_CHU)
   {
-    nP=2;
+    nP=1;
     aP[0]="CHU_MATURITY";      aPC[0]=CLASS_VEGETATION;
+  }
+  else if(type==SOILEVAP_PDM)
+  {
+    nP=2;
+    aP[0]="PDM_B";             aPC[0]=CLASS_LANDUSE;
+    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
   }
   else if (type==SOILEVAP_LINEAR)
   {
@@ -232,7 +239,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     aSV [0]=SOIL;  aSV  [1]=SOIL;  aSV [2]=ATMOSPHERE;    aSV [3]=DEPRESSION;
     aLev[0]=0;     aLev [1]=1;     aLev[2]=DOESNT_EXIST;  aLev[3]=DOESNT_EXIST;
   }
-  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR) || (se_type==SOILEVAP_ALL))
+  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR) || (se_type==SOILEVAP_ALL) || (se_type==SOILEVAP_PDM))
   {
     nSV=2;
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
@@ -289,35 +296,6 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rates of loss from set of soil layers to atmosphere due to evapotranspiration/transpiration[mm/day]
-/// \details Note that the formatting issues below will be resolved once the references have been extracted.. \n \n
-/// if type=SOILEVAP_ROOTFRAC
-///             <ul> <li> evaporation rates weighted by relative root fractions </ul>
-///     \ref from Desborough, 1997 \cite Desborough1997MWR
-/// if type=SOILEVAP_VIC
-///     <ul> <li> evaporation rated calculated using VIC model (only depletes top soil layer) </ul>
-/// \ref (Woods et al 1992) \cite Wood1992JoGR
-/// if type=SOILEVAP_HBV
-///     <ul> <li> evaporation rated calculated using HBV model (only depletes top soil layer) </ul>
-/// \ref (Bergstrom, 1995) \cite Bergstrom1995
-/// if type=SOILEVAP_UBC
-///     <ul> <li> evaporation rated calculated using UBCWM model (only depletes top soil layer) </ul>
-/// \ref c) Michael Quick
-/// if type=SOILEVAP_CHU
-///     <ul> <li> evaporation rated calculated using ratio of crop heat units to CHU maturity </ul>
-/// if type=SOILEVAP_FEDERER
-///             <ul> <li> calculates actual transpiration from layers (UNFINISHED)</ul>
-///     \ref Adapted from Brook90 routine TBYLAYER based on model of Federer 1979, [A soil-plant-atmosphere model for transpiration and availability of soil water. Water Resour Res 15:555-562.] \cite Federer2010
-///     if type=SOILEVAP_TOPMODEL
-///             <ul> <li> Sequential soil evaporation of the upper soil layer (Used for TOPMODEL ) </ul>
-///     if type=SOILEVAP_SEQUEN
-///             <ul> <li> Sequential soil evaporation of the lower soil layer (Used ONLY for VIC/ARNO emulation (NOT Topmodel)) </ul>
-///     if type=SOILEVAP_ROOT
-///             <ul> <li> Root weighting soil evaporation of the soil layer (Used ONLY for VIC/ARNO emulation ) </ul>
-///     if type=SOILEVAP_GAWSER
-///             <ul> <li> somewhat awkward staggered distribution between top and bottom soil layers </ul> \n
-///        \ref from GAWSER Manual, 1996 \cite Hinckley1996
-///     if type=SOILEVAP_GR4J
-///             <ul> <li> from Gr4J model \cite PerrinEtAl2003 </ul> \n
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -349,6 +327,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   if (type==SOILEVAP_ROOTFRAC)
   {
+    ///  from Desborough, 1997 \cite Desborough1997MWR
     double      root_frac[MAX_SOILLAYERS];
     double      cap      [MAX_SOILLAYERS];
     int         m,q;
@@ -387,6 +366,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_HBV)  || (type==SOILEVAP_HYPR))
   {
+    //From HBV Model (Bergstrom,1995)
     double stor,tens_stor; //[mm]
 
     stor      = state_vars[iFrom[0]];
@@ -423,8 +403,23 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     
   }
   //------------------------------------------------------------
-  else if (type==SOILEVAP_CHU)
+  else if(type==SOILEVAP_PDM)
   {
+    double stor    =state_vars[iFrom[0]];
+    double max_stor=pHRU->GetSoilCapacity(0);
+    
+    double b=pHRU->GetSurfaceProps()->PDM_b;
+
+    double c_max =(b+1)*max_stor;
+    double c_star=c_max*(1.0-pow(1.0-(stor/max_stor),1.0/(b+1.0)));
+
+    rates[0] = min(c_star,(c_star/c_max)*PET);     //AET: SOIL->ATMOS
+
+    PETused=rates[0];
+  }
+  //------------------------------------------------------------
+  else if (type==SOILEVAP_CHU)
+  { //Ontario Heat Crop Method: evaporation rated calculated using ratio of crop heat units to CHU maturity
     double stor,CHU;
 
     stor      = state_vars[iFrom[0]];//[mm]
@@ -436,7 +431,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_UBC)
-  {
+  { //From UBCWM Watershed Model (Quick, 1995)
     double P0AGEN=pHRU->GetSoilProps(0)->UBC_infil_soil_def; // [mm] - soil deficit at which effective impermeable fraction depletes to 0.1
     double P0EGEN=pHRU->GetSoilProps(0)->UBC_evap_soil_def;  // [mm] - soil deficit at which AET depletes to =0.1*PET
     double soil_deficit=max(pHRU->GetSoilCapacity(0)-state_vars[iFrom[0]],0.0);
@@ -460,7 +455,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   }
   //------------------------------------------------------------
   else if (type==SOILEVAP_VIC)
-  {
+  {/// from (Woods et al 1992)
     double alpha,zmax,zmin,gamma2,Smax,Sat;
     double stor=state_vars[iFrom[0]];
     double stor_max;
@@ -481,7 +476,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   }
   //------------------------------------------------------------------
   else if (type==SOILEVAP_GAWSER)
-  {
+  { //from GAWSER Manual,1996 (Hinckley et al., 1996)
     double stor,stor2,dep_stor,max_stor1;
     double PETremain;
 
@@ -512,6 +507,8 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   else if (type==SOILEVAP_FEDERER)
   {
+  ///  Adapted from Brook90 routine TBYLAYER based on model of Federer 1979, [A soil-plant-atmosphere model for transpiration and availability of soil water. Water Resour Res 15:555-562.] 
+
     ExitGracefully("FedererSoilEvap::Not tested!",STUB);
     //FedererSoilEvap(PET,state_vars,pHRU,Options,tt,rates);
   }
@@ -603,23 +600,19 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     }*/
   //------------------------------------------------------------------
   else if (type==SOILEVAP_GR4J)
-  {
-    //ExitGracefullyIf(Options.timestep<1.0,"SOILEVAP_GR4J: cannot use subdaily timestep",BAD_DATA);
-    double x1=pHRU->GetSoilCapacity(0);
-    double stor=state_vars[iFrom[0]];
-    //E_net is unused PET
-    double E_net;//[mm]
+  { //from GR4J model (Perrin et al., 2003) 
+    double max_stor=pHRU->GetSoilCapacity(0);
+    double stor    =state_vars[iFrom[0]];    
+    double sat     =stor/max_stor;
 
-    E_net=max(PET,0.0)*1.0;//*Options.timestep; //equivalent daily E_net
-    double sat=stor/x1;
-    double tmp=tanh(E_net/x1);
+    double tmp=tanh(max(PET,0.0)/max_stor);
 
     rates[0]=stor*(2.0-sat)*tmp/(1.0+(1.0-sat)*tmp);
     PETused=rates[0];
   }
   //------------------------------------------------------------------
   else if(type==SOILEVAP_SACSMA)
-  {
+  { //From Sacramento Soil Accounting Model 
     double red;            // [mm] residual evap demand
     double e1,e2,e3,e5;    // [mm] different ETs from different regions
 

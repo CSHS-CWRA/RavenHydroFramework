@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -283,7 +283,8 @@ struct surface_struct
   double dep_k;             ///< [1/d]     linear overflow coefficient Q=k*(h-dep_threshhold)
   double dep_seep_k;        ///< [1/d]     linear seepage coefficient Q=k*h
   double dep_crestratio;    ///<-[m/m]     ratio of crest width to square root of HRU area (0-5) ~1.5
-  double PDMROF_b;          ///< [-]       PDFROF Pareto distribution function exponent 
+  double PDMROF_b;          ///< [-]       PDMROF Pareto distribution function exponent 
+  double PDM_b;             ///< [-]       PDM (Moore, 1986) Pareto distribution function exponent
   double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area 
   double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
   double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area
@@ -294,6 +295,7 @@ struct surface_struct
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation
   double forest_PET_corr;   ///< [-]       fraction of PET to apply to forest evapotranspiration
   double AET_coeff;         ///< [-]       linear AET coefficient
+  double priestleytaylor_coeff; ///< [-]   Priestley-Taylor coefficient (defaults to 1.28)
 
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient 
 

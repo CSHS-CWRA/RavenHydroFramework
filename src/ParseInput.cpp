@@ -953,6 +953,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"RAINSNOW_UBCWM"     )){Options.rainsnow=RAINSNOW_UBCWM;}
       else if (!strcmp(s[1],"RAINSNOW_HSPF"      )){Options.rainsnow=RAINSNOW_HSPF;}
       else if (!strcmp(s[1],"RAINSNOW_HARDER"    )){Options.rainsnow=RAINSNOW_HARDER;}
+      else if (!strcmp(s[1],"RAINSNOW_THRESHOLD" )){Options.rainsnow=RAINSNOW_THRESHOLD;}
       else {ExitGracefully("ParseInput:RainSnowMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -982,6 +983,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"LW_RAD_UBCWM"     )){Options.LW_radiation=LW_RAD_UBCWM;}
       else if (!strcmp(s[1],"LW_RAD_HSPF"      )){Options.LW_radiation=LW_RAD_HSPF;}
       else if (!strcmp(s[1],"LW_RAD_VALIANTZAS")){Options.LW_radiation=LW_RAD_VALIANTZAS;}
+      else if (!strcmp(s[1],"LW_RAD_NONE"      )){Options.LW_radiation=LW_RAD_NONE;}
       else {ExitGracefully("ParseInput:LWRadiationMethod: Unrecognized method ",BAD_DATA_WARN);}
       break;
     }
@@ -1952,6 +1954,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_HMETS"       )){itype=INF_HMETS;     }
       else if (!strcmp(s[1],"INF_ALL_INFILTRATES")) { itype=INF_ALL_INFILTRATES; }
       else if (!strcmp(s[1],"INF_XINANXIANG"  )) { itype=INF_XINANXIANG; }
+      else if (!strcmp(s[1],"INF_PDM"         )) { itype=INF_PDM; }
+      
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
       }
@@ -2035,6 +2039,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_HBV"          )){se_type=SOILEVAP_HBV;}
       else if (!strcmp(s[1],"SOILEVAP_HYPR"         )){se_type=SOILEVAP_HYPR;}
       else if (!strcmp(s[1],"SOILEVAP_UBC"          )){se_type=SOILEVAP_UBC;}
+      else if (!strcmp(s[1],"SOILEVAP_PDM"          )){se_type=SOILEVAP_PDM;}
       else if (!strcmp(s[1],"SOILEVAP_CHU"          )){se_type=SOILEVAP_CHU;}
       else if (!strcmp(s[1],"SOILEVAP_GR4J"         )){se_type=SOILEVAP_GR4J;}
       else if (!strcmp(s[1],"SOILEVAP_LINEAR"       )){se_type=SOILEVAP_LINEAR;}
@@ -2180,16 +2185,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(215):  //----------------------------------------------
     {/*Flush
-       :Flush RAVEN_DEFAULT [state_var from] [state_var to]*/
+       :Flush RAVEN_DEFAULT [state_var from] [state_var to] {Optional percentage}*/
       if (Options.noisy){cout <<"Flushing Process"<<endl;}
-
+      double pct=1.0;
       if (Len<4){ImproperFormatWarning(":Flush",p,Options.noisy); break;}
       tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
       tmpS[1]=CStateVariable::StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
+      if ((Len>=5) && (s[4][0]!='#')){pct=max(min(s_to_d(s[4]),1.0),0.0);}
 
       pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
-                          ParseSVTypeIndex(s[3],pModel));
+                          ParseSVTypeIndex(s[3],pModel),pct);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }

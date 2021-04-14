@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Infiltration.h"
@@ -195,6 +195,13 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
     aP[4]="POROSITY";              aPC[4]=CLASS_SOIL;
     aP[5]="FIELD_CAPACITY";        aPC[5]=CLASS_SOIL;
     aP[6]="XINANXIANG_SHP";        aPC[6]=CLASS_SOIL;
+  }
+  else if(type==INF_PDM)
+  {
+    nP=3;
+    aP[0]="IMPERMEABLE_FRAC";      aPC[0]=CLASS_LANDUSE;
+    aP[1]="PDM_B";                 aPC[1]=CLASS_LANDUSE;
+    aP[2]="POROSITY";              aPC[2]=CLASS_SOIL;
   }
   else
   {
@@ -513,6 +520,32 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     infil=(1.0-Fimp)*infil; //correct for impermeable surfaces (?)
     rates[0]=infil;          //PONDED->SOIL
+    rates[1]=rainthru-infil; //PONDED->SW 
+  }
+  //----------------------------------------------------------------------------
+  else if(type==INF_PDM)
+  { //uses PDM algorithm from Moore (1986)
+    double b;          //[-] pareto distribution parameter
+    double c_max;      //[mm] maximum local storage capacity in HRU
+    double c_star;     //[mm] critical capacity, c*
+    double infil;      //[mm] total amount abstracted
+
+    b = pHRU->GetSurfaceProps()->PDM_b;
+
+    double stor    =state_vars[iTopSoil];
+    double max_stor=pHRU->GetSoilCapacity(0);
+
+    c_max=(b+1)*max_stor;
+
+    c_star=c_max*(1.0-pow(1.0-(stor/max_stor),1.0/(b+1.0)));
+
+    //analytical evaluation of P*dt-equation 3 of Mekonnen et al. (2014); min() handles case where entire landscape sheds
+    infil=max_stor*(pow(1.0-(c_star/c_max),b+1.0)-pow(1.0-min(c_star+ponded_water,c_max)/c_max,b+1.0));
+    infil=min(infil,ponded_water);
+    
+    infil=(1.0-Fimp)*infil/Options.timestep; //correct for impermeable surfaces
+
+    rates[0]=infil;          //PONDED->SOIL[0]
     rates[1]=rainthru-infil; //PONDED->SW 
   }
 }

@@ -85,19 +85,20 @@ enum soilevap_type
   SOILEVAP_GAWSER,        ///< uses GAWSER approach
   SOILEVAP_FEDERER,       ///< uses Federer 1979 resistance calculations \ref Federer 1979 \cite federer1979WRR
   SOILEVAP_ROOTFRAC,      ///< linear relation between ET and tension storage, distributed by root fraction
-  SOILEVAP_VIC,           ///< variable infiltration capacity model
+  SOILEVAP_VIC,           ///< Variable Infiltration Capacity model
   SOILEVAP_TOPMODEL,      ///< linear relation between ET and tension storage
   SOILEVAP_SEQUEN,        ///< Sequential soil evaporation method for FUSE emulation - VIC ONLY
   SOILEVAP_ROOT,          ///< Root weighting soil evaporation method for FUSE emulation - VIC ONLY
   SOILEVAP_ROOT_CONSTRAIN,///< same as ROOT, but top layer constrained to be above sat_wilt
-  SOILEVAP_HBV,           ///< Simple HBV model -linear relation between ET and tension storage, with snow correction
-  SOILEVAP_HYPR,          ///< HYPR model with ponded area correction
-  SOILEVAP_UBC,           ///< UBCWM Model
-  SOILEVAP_CHU,           ///< Crop Heat Unit method
-  SOILEVAP_GR4J,          ///< GR4J model approach
+  SOILEVAP_HBV,           ///< Simple HBV model (Bergstrom, 1996) -linear relation between ET and tension storage, with snow correction
+  SOILEVAP_HYPR,          ///< HYPR model with ponded area correction (Ahmed et al, 2020)
+  SOILEVAP_UBC,           ///< UBCWM Model (Quick, 1996)
+  SOILEVAP_CHU,           ///< Ontario Crop Heat Unit method
+  SOILEVAP_PDM,           ///< From Probabilty Distributed Model (Moore, 1986)
+  SOILEVAP_GR4J,          ///< GR4J model approach (Perrin et al., 2003)
   SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
   SOILEVAP_SACSMA,        ///< Sacramento Soil Moisture Accounting algorithm (should only be used with SOILBAL_SACSMA)
-  SOILEVAP_ALL            ///< AET=PET
+  SOILEVAP_ALL            ///< AET==PET
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction of loss of water from multiple soil layers to atmosphere

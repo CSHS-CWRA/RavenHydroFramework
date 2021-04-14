@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvInfiltration
@@ -34,7 +34,8 @@ enum infil_type{
   INF_UBC,                      ///< UBC Watershed model infiltration algorithm
   INF_GR4J,                     ///< GR4J Watershed model infiltration algorithm
   INF_HMETS,                    ///< HMETS model infiltration algorithm
-  INF_XINANXIANG                ///< Xinanxiang model infiltration algorithm
+  INF_XINANXIANG,               ///< Xinanxiang model infiltration algorithm
+  INF_PDM                       ///< Probability Distributed Model (PDM) of Moore (1986) [HYMOD]
 };
 
 ////////////////////////////////////////////////////////////////////

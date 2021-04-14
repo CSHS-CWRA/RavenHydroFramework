@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "GlobalParams.h"
@@ -57,6 +57,13 @@ double EstimateSnowFraction( const rainsnow_method method,
     if (F->temp_daily_max<=temp){return 1.0;}
     if (F->temp_daily_min>=temp){return 0.0;}
     return (temp-F->temp_daily_min)/(F->temp_daily_max-F->temp_daily_min);
+  }
+  //-----------------------------------------------------------
+  else if(method==RAINSNOW_THRESHOLD)
+  { //abrupt threshhold temperature (e.g., HYMOD)
+    double temp =CGlobalParams::GetParams()->rainsnow_temp;
+    if(F->temp_ave<=temp) { return 1.0; }
+    else                  { return 0.0; }
   }
   //-----------------------------------------------------------
   else if ((method==RAINSNOW_HBV) || (method==RAINSNOW_UBCWM))

@@ -1305,9 +1305,9 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int    retval;                // error value for NetCDF routines
       retval = nc_open(filename.c_str(),NC_NOWRITE,&ncid);
       if (retval != 0){
-	string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
-	ExitGracefully(warn.c_str(),BAD_DATA_WARN);
-	break;
+	    string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
+	    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+	    break;
       }
       HandleNetCDFErrors(retval);
 

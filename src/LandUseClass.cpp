@@ -242,6 +242,11 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
     S.forest_PET_corr =1.0;  //Default - no correction
     //no warning
   }
+  autocalc=SetCalculableValue(S.priestleytaylor_coeff,Stmp.priestleytaylor_coeff,Sdefault.priestleytaylor_coeff);
+  if(autocalc)
+  {
+    S.priestleytaylor_coeff =1.28;  //Default - no correction
+  }
   autocalc=SetCalculableValue(S.SCS_Ia_fraction,Stmp.SCS_Ia_fraction,Sdefault.SCS_Ia_fraction);
   if (autocalc)
   {
@@ -332,6 +337,7 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.dep_seep_k,Stmp.dep_seep_k,Sdefault.dep_seep_k,needed,"DEP_SEEP_K");
   SetSpecifiedValue(S.dep_crestratio,Stmp.dep_crestratio,Sdefault.dep_crestratio,needed,"DEP_CRESTRATIO");
   SetSpecifiedValue(S.PDMROF_b,Stmp.PDMROF_b,Sdefault.PDMROF_b,needed,"PDMROF_B");
+  SetSpecifiedValue(S.PDM_b,Stmp.PDM_b,Sdefault.PDM_b,needed,"PDM_B");
   SetSpecifiedValue(S.max_dep_area_frac,Stmp.max_dep_area_frac,Sdefault.max_dep_area_frac,needed,"MAX_DEP_AREA_FRAC");
   SetSpecifiedValue(S.ponded_exp,Stmp.ponded_exp,Sdefault.ponded_exp,needed,"PONDED_EXP");
   SetSpecifiedValue(S.uwfs_b,Stmp.uwfs_b,Sdefault.uwfs_b,needed,"UWFS_B");
@@ -395,6 +401,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.ow_PET_corr      =DefaultParameterValue(is_template,true);//1.0;      //[-]
   S.lake_PET_corr    =DefaultParameterValue(is_template,true);//1.0;      //[-]
   S.forest_PET_corr  =DefaultParameterValue(is_template,true);//1.0;      //[-]
+  S.priestleytaylor_coeff  =DefaultParameterValue(is_template,true);//1.28;      //[-]
   S.SCS_Ia_fraction  =DefaultParameterValue(is_template,true);//0.2
   S.snow_patch_limit = DefaultParameterValue(is_template,true);//0.0
   S.conv_melt_mult = DefaultParameterValue(is_template, true);
@@ -414,6 +421,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.dep_n             =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.dep_crestratio    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.PDMROF_b          =DefaultParameterValue(is_template,false);//4;        //[-]
+  S.PDM_b             =DefaultParameterValue(is_template,false);//4;        //[-]
   S.max_dep_area_frac =DefaultParameterValue(is_template,false);//0;        //[0..1]
   S.ponded_exp        =DefaultParameterValue(is_template,false);//2         //[-]
   S.uwfs_b            =DefaultParameterValue(is_template,false);//~1-10     //[-]
@@ -507,6 +515,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("DEP_THRESHHOLD"         )){S.dep_threshhold =value;}
   else if (!name.compare("DEP_CRESTRATIO"         )){S.dep_crestratio =value;}
   else if (!name.compare("PDMROF_B"               )){S.PDMROF_b =value; }
+  else if (!name.compare("PDM_B"                  )){S.PDM_b =value; }
   else if (!name.compare("MAX_DEP_AREA_FRAC"      )){S.max_dep_area_frac =value; }
   else if (!name.compare("PONDED_EXP"             )){S.ponded_exp =value; }
   else if (!name.compare("UWFS_B"                 )){S.uwfs_b =value; }
@@ -519,6 +528,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("OW_PET_CORR"            )){S.ow_PET_corr=value;}
   else if (!name.compare("LAKE_PET_CORR"          )){S.lake_PET_corr=value;}
   else if (!name.compare("FOREST_PET_CORR"        )){S.forest_PET_corr=value;}
+  else if (!name.compare("PRIESTLEYTAYLOR_COEFF"  )){S.priestleytaylor_coeff=value;}
   else if (!name.compare("GR4J_X4"                )){S.GR4J_x4=value;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){S.UBC_icept_factor=value;}
   else if (!name.compare("WIND_EXPOSURE"          )){S.wind_exposure=value;}
@@ -602,6 +612,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("DEP_SEEP_K"             )){return S.dep_seep_k;}
   else if (!name.compare("DEP_CRESTRATIO"         )){return S.dep_crestratio;}
   else if (!name.compare("PDMROF_B"               )){return S.PDMROF_b; }
+  else if (!name.compare("PDM_B"                  )){return S.PDM_b; }
   else if (!name.compare("MAX_DEP_AREA_FRAC"      )){return S.max_dep_area_frac; }
   else if (!name.compare("PONDED_EXP"             )){return S.ponded_exp; }
   else if (!name.compare("UWFS_B"                 )){return S.uwfs_b; }
@@ -612,6 +623,7 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}
   else if (!name.compare("LAKE_PET_CORR"          )){return S.lake_PET_corr;}
   else if (!name.compare("FOREST_PET_CORR"        )){return S.forest_PET_corr;}
+  else if (!name.compare("PRIESTLEYTAYLOR_COEFF"  )){return S.priestleytaylor_coeff;}
   else if (!name.compare("GR4J_X4"                )){return S.GR4J_x4;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){return S.UBC_icept_factor;}
   else if (!name.compare("WIND_EXPOSURE"          )){return S.wind_exposure;}

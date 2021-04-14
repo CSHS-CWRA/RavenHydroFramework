@@ -18,9 +18,18 @@ CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype, const int i_from)
 {
   _type =owtype;
 
-  CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
-  iFrom[0]=i_from;                          iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
-  iFrom[1]=pModel->GetStateVarIndex(AET);   iTo[1]=iFrom[1];                                  //rates[1]: AET->AET
+  if(_type==OPEN_WATER_UWFS) {
+    CHydroProcessABC::DynamicSpecifyConnections(3);
+    iFrom[0]=i_from;                          iTo[0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
+    iFrom[1]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);      
+                                              iTo[1]=iFrom[1];                                //rates[1]: 
+    iFrom[2]=pModel->GetStateVarIndex(AET);   iTo[2]=iFrom[2];                                //rates[2]: AET->AET
+  }
+  else { //Default
+    CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
+    iFrom[0]=i_from;                          iTo[0]=pModel->GetStateVarIndex(ATMOSPHERE);    //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
+    iFrom[1]=pModel->GetStateVarIndex(AET);   iTo[1]=iFrom[1];                                  //rates[1]: AET->AET
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -36,6 +45,8 @@ void CmvOWEvaporation::Initialize()
   sv_type typ=pModel->GetStateVarType(iFrom[0]);
   ExitGracefullyIf((typ!=DEPRESSION) && (typ!=PONDED_WATER) && (typ!=SURFACE_WATER),
                    "CmvOWEvaporation::Initialize:Open Water evaporation must come from depression, ponded water, or surface water",BAD_DATA);
+  ExitGracefullyIf((_type==OPEN_WATER_UWFS) && (typ!=DEPRESSION),
+                   "CmvOWEvaporation::Initialize:OPEN_WATER_UWFS must come from depression storage only",BAD_DATA);
   ExitGracefullyIf(pModel->GetStateVarType(iTo[0])!=ATMOSPHERE,
                    "CmvOWEvaporation::Initialize:Open Water evaporation must go to atmosphere",BAD_DATA);
 }
@@ -54,6 +65,9 @@ void CmvOWEvaporation::GetParticipatingParamList(string *aP, class_type *aPC, in
   if(_type==OPEN_WATER_RIPARIAN) {
     nP=2;
     aP[1]="STREAM_FRACTION"; aPC[1]=CLASS_LANDUSE;
+  }
+  else if(_type==OPEN_WATER_UWFS) {
+
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -109,7 +123,14 @@ void CmvOWEvaporation::GetRatesOfChange( const double                   *state_v
     double Fstream=pHRU->GetSurfaceProps()->stream_fraction; 
     rates[0]=pHRU->GetSurfaceProps()->ow_PET_corr*Fstream*OWPET;
   }
-  rates[1]=rates[0]; 
+  else if(_type==OPEN_WATER_UWFS)//---------------------------------
+  {
+    double Dmin=state_vars[iFrom[1]];        //=Dmin [mm] if positive,=-Pf if negative
+    rates[0]=0.0;
+    rates[1]=0.0;
+  }
+  
+  rates[_nConnections-1]=rates[0]; //handles AET
 }
 
 //////////////////////////////////////////////////////////////////
