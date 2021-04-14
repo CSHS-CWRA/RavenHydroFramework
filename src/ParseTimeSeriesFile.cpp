@@ -1299,16 +1299,17 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       string filename=s[1];
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
-      
-      //check for file existence
-      ifstream TESTNETCDF;
-      TESTNETCDF.open(filename.c_str());
-      if(TESTNETCDF.fail()){
-        warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
-        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
-        break;
+
+      // check for existence
+      int    ncid;                  // file unit
+      int    retval;                // error value for NetCDF routines
+      retval = nc_open(filename.c_str(),NC_NOWRITE,&ncid);
+      if (retval != 0){
+	string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
+	ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+	break;
       }
-      TESTNETCDF.close();
+      HandleNetCDFErrors(retval);
 
       pGrid->SetFilename(filename);
 
