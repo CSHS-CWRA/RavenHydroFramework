@@ -1535,10 +1535,10 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
 
-  //converts start day into "days since YYYY-MM-DD HH:MM:SS"  (model start time)
-  char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
+  //converts start day into "hours since YYYY-MM-DD HH:MM:SS"  (model start time)
+  char  starttime[200]; // start time string in format 'hours since YYY-MM-DD HH:MM:SS'
   JulianConvert( 0.0,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
-  strcpy(starttime, "days since ") ;
+  strcpy(starttime, "hours since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime, " ");
   strcat(starttime, DecDaysToHours(tt.julian_day,true).c_str());
@@ -1819,11 +1819,11 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   int    time_id;               // variable id in NetCDF for time
   size_t time_index[1], count1[1];  // determines where and how much will be written to NetCDF; 1D variable (pre, time)
   size_t start2[2], count2[2];  // determines where and how much will be written to NetCDF; 2D variable (qsim, qobs, qin)
-  double current_time[1];       // current time in days since start time
+  double current_time[1];       // current time in hours since start time
   double current_prec[1];       // precipitation of current time step
   size_t time_ind2;
-  current_time[0] = tt.model_time;
-  current_time[0]=RoundToNearestMinute(current_time[0]);
+  current_time[0] = tt.model_time*HR_PER_DAY;
+  current_time[0]=RoundToNearestMinute(current_time[0]); 
 
   time_index [0] = int(round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
   time_ind2       =int(round(tt.model_time/Options.timestep));
@@ -1859,8 +1859,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   current_prec[0] = NETCDF_BLANK_VALUE;
   if (Options.ave_hydrograph)
   {
-    if(current_time[0] != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
-    else                       { current_prec[0] = NETCDF_BLANK_VALUE; } // was originally '---'
+    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
+    else                     { current_prec[0] = NETCDF_BLANK_VALUE; } // was originally '---'
     for (int p=0;p<_nSubBasins;p++)
     {
       if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){
@@ -1869,8 +1869,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         for (int i = 0; i < _nObservedTS; i++){
           if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
-            double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep); //time shift handled in CTimeSeries::Parse
-            if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iSim] = val;    }
+            double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
+            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ outflow_obs[iSim] = val;    }
           }
         }
         inflow_obs[iSim] =NETCDF_BLANK_VALUE;
@@ -1882,8 +1882,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     }
   }
   else {  // point-value hydrograph
-    if (current_time[0] != 0.0){current_prec[0] = GetAveragePrecip();} //watershed-wide precip
-    else                       {current_prec[0] = NETCDF_BLANK_VALUE;} // was originally '---'
+    if (tt.model_time != 0.0){current_prec[0] = GetAveragePrecip();} //watershed-wide precip
+    else                     {current_prec[0] = NETCDF_BLANK_VALUE;} // was originally '---'
     for (int p=0;p<_nSubBasins;p++)
     {
       if (_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled())){
@@ -1892,8 +1892,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         for (int i = 0; i < _nObservedTS; i++){
           if (IsContinuousFlowObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
-            double val = _pObservedTS[i]->GetAvgValue(current_time[0],Options.timestep);
-            if ((val != RAV_BLANK_DATA) && (current_time[0]>0)){ outflow_obs[iSim] = val;    }
+            double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ outflow_obs[iSim] = val;    }
           }
         }
         inflow_obs[iSim] =NETCDF_BLANK_VALUE;
@@ -1915,7 +1915,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
   // write simulated outflow/obs outflow/obs inflow values
   if (nSim > 0){
-    start2[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
+    start2[0] = int(round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
     start2[1] = 0;                                              // element of NetCDF array that will be written
     count2[0] = 1;      // writes exactly one time step
     count2[1] = nSim;   // writes exactly nSim elements

@@ -245,12 +245,13 @@ double threshMin(const double &v1, const double &v2, const double &smooth_coeff)
 
 ////////////////////////////////////////////////////////////////////////////
 /// \brief Rounds time to nearest minute to prevent roundoff error in NetCDF reporting of time
-/// \param &t [in] model time, in days
-/// \return time, rounded to nearest minute
+/// \param &t [in] model time, in hours
+/// \return time, in hours, rounded to nearest minute
 //
-double RoundToNearestMinute(const double& t)
+double RoundToNearestMinute(const double &t)
 {
-  return floor(t+TIME_CORRECTION)+(round((t-floor(t+TIME_CORRECTION))*MIN_PER_DAY))/MIN_PER_DAY;
+  const double MIN_PER_HOUR=60;
+  return floor(t+TIME_CORRECTION)+(round((t-floor(t+TIME_CORRECTION))*MIN_PER_HOUR))/MIN_PER_HOUR;
 }
 
 ////////////////////////////////////////////////////////////////////////////

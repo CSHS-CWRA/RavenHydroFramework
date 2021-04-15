@@ -79,6 +79,7 @@ bool CParser::Tokenize(char **out, int &numwords){
     //p=strtok_s(NULL, delimiters,&junk);
     p=strtok(NULL, delimiters);
     ct++;
+    if ((p!=NULL) && (p[0]=='#')){break;} //ignore all content after '#'
   }
   for (w=0; w<ct; w++){                              //copy temp array of words into out[]
     if (w>MAXINPUTITEMS){numwords=ct;

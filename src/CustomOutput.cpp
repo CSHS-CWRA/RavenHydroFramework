@@ -525,10 +525,10 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   retval = nc_def_var(_netcdf_ID, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
 
   // (c) Assign units attributes to the netCDF VARIABLES. 
-  //     --> converts start day into "days since YYYY-MM-DD HH:MM:SS" 
+  //     --> converts start day into "hours since YYYY-MM-DD HH:MM:SS" 
   char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
   JulianConvert( 0.0+Options.timestep,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt); //File is referenced to end of first time step
-  strcpy(starttime, "days since ") ;
+  strcpy(starttime, "hours since ") ;
   strcat(starttime, tt.date_string.c_str()) ;
   strcat(starttime," ");
   strcat(starttime,DecDaysToHours(tt.julian_day,true).c_str());
@@ -767,7 +767,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         if (IsLeapYear(yest.year,Options.calendar) && (Options.wateryr_mo>2)){days_to_first_of_month+=1;}
         current_time[0]=yest.model_time-yest.julian_day+days_to_first_of_month;
       }
-      current_time[0]=RoundToNearestMinute(current_time[0]);
+      current_time[0]=RoundToNearestMinute(current_time[0]*HR_PER_DAY); //convert to hours
 
       //start1[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
       start1[0]=_time_index;
