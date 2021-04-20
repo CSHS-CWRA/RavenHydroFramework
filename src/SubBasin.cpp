@@ -1118,31 +1118,43 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
 //////////////////////////////////////////////////////////////////
 /// \brief scales all internal flows by scale factor (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
-///
-/// \param &Qlat [in] New lateral inflow [m^3/s]
-/// \return mass added to system [m3]
+/// \param &scale [in] Flow scaling factor
+/// \param &scale_last [in] True if Qlast should be scaled (overriding); false for no-data scaling
+/// \param &tstep [in] time step [d]
+/// \return volume added to system [m3]
 //
-double CSubBasin::ScaleAllFlows(const double &scale, const double &tstep)
+double CSubBasin::ScaleAllFlows(const double &scale, const bool scale_last, const double &tstep)
 {
-  double ma=0.0; //mass added
+  double va=0.0; //volume added [m3]
   double sf=(scale-1.0)/scale;
-  for (int n=0;n<_nQlatHist;n++){_aQlatHist[n]*=scale; ma+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;}
-  for (int i=0;i<_nSegments;i++){    _aQout[i]*=scale; } _QoutLast*=scale;
+  if(!scale_last) {
+    for(int n=0;n<_nQlatHist;n++) {
+      _aQlatHist[n]*=scale;  upperswap(_aQlatHist[n],0.0);
+      va+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;
+    }
+    for(int n=0;n<_nQinHist; n++) {
+      _aQinHist[n]*=scale; upperswap(_aQinHist[n],0.0);
+      va+=_aQinHist[n]*sf*tstep*SEC_PER_DAY; 
+    }
+  }
 
-  for(int n=0;n<_nQlatHist;n++) { upperswap(_aQlatHist[n],0.0); }
-  for(int i=0;i<_nSegments;i++) { upperswap(_aQout[i],0.0); }
-  upperswap(_QoutLast,0.0);
+  for (int i=0;i<_nSegments;i++){    
+    _aQout[i]*=scale; upperswap(_aQout[i],0.0);
+    va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
+  }
+  
+  if(scale_last) {//ensures integrated flows scaled with direct insertion
+    _QoutLast*=scale; upperswap(_QoutLast,0.0);
+  }
 
   if(_pReservoir!=NULL) {
-    ma+=_pReservoir->ScaleFlow(scale,tstep);
+    va+=_pReservoir->ScaleFlow(scale,tstep);
   }
-  //note that _aQin not scaled - leads to serious side effects
 
-  //Estimate mass added through scaling 
-  for (int n=0;n<_nSegments; n++){ma+=0.5*(_aQout   [n]+_aQout[n+1]   )*sf*tstep*SEC_PER_DAY;}  
-  _channel_storage*=scale; ma+=_channel_storage*sf;
-  _rivulet_storage*=scale; ma+=_rivulet_storage*sf;
-  return ma;
+  //Estivate vass added through scaling 
+  _channel_storage*=scale; va+=_channel_storage*sf;
+  _rivulet_storage*=scale; va+=_rivulet_storage*sf;
+  return va;
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets Downstream ID (use sparingly!)

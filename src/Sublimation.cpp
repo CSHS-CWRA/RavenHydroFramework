@@ -143,7 +143,8 @@ double  SublimationRate  (const double      *state_vars,
   }
   //-----------------------------------------------------------------
   else if(type==SUBLIM_BULK_AERO)
-  { ///bulk aerodynamix flux formulation described in Hock [2005]
+  { ///bulk aerodynamix flux formulation described in Hock & Holmgren [2005]
+    //Hock, R., & Holmgren, B. (2005). A distributed surface energy-balance model for complex topography and its application to Storglaciären, Sweden. Journal of Glaciology, 51(172), 25-36. doi:10.3189/172756505781829566
     double air_pres=pHRU->GetForcingFunctions()->air_pres; //air pressure [kPa]
     double air_dens=pHRU->GetForcingFunctions()->air_dens;
     double Tsnow   =pHRU->GetSnowTemperature();

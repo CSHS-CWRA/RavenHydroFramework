@@ -387,6 +387,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":AquiferLayers"             )){code=33; }//AFTER :SoilModel Commmand \todo [clean] - remove make obsolete
     else if  (!strcmp(s[0],":PotentialMeltMethod"       )){code=34; }
     else if  (!strcmp(s[0],":SubdailyMethod"            )){code=35; }
+    else if  (!strcmp(s[0],":SubDailyMethod"            )){code=35; }
     else if  (!strcmp(s[0],":SWCanopyCorrect"           )){code=36; }
     else if  (!strcmp(s[0],":SWCloudCorrect"            )){code=37; }
     else if  (!strcmp(s[0],":LakeStorage"               )){code=38; }//AFTER SoilModel Commmand
@@ -446,7 +447,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":RandomSeed"                )){code=105;}
     else if  (!strcmp(s[0],":UseStopFile"               )){code=106;}
     else if  (!strcmp(s[0],":FEWSRunInfoFile"           )){code=108;}
-    
+    else if  (!strcmp(s[0],":ChunkSize"                 )){code=109;}
+
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
@@ -1308,8 +1310,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_mass_bal  =true;
       Options.write_forcings  =true;
       Options.write_channels  =true;
-      Options.write_gwhead    =true;
-      Options.write_gwflow    =true;
     
       WriteWarning("Debug mode is ON: this will significantly slow down model progress. Note that ':DebugMode no' command is deprecated",Options.noisy);
       break;
@@ -1733,6 +1733,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSRunInfoFile [filename.nc]*/
       if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
       Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
+      break;
+    }
+    case(109):  //--------------------------------------------
+    {/*:ChunkSize [size, in MB]*/
+      if(Options.noisy) { cout << "NetCDF buffering size" << endl; }
+      Options.NetCDF_chunk_mem =max(s_to_i(s[1]),1);
       break;
     }
     case(160):  //--------------------------------------------

@@ -47,6 +47,7 @@ CModel::CModel(const soil_model SM,
   _aDAscale       =NULL; //Initialized in InitializeDataAssimilation
   _aDAlength      =NULL; 
   _aDAtimesince   =NULL;
+  _aDAon          =NULL;
 
   _pOptStruct = &Options;
 
@@ -177,6 +178,7 @@ CModel::~CModel()
   delete [] _aDAscale;       _aDAscale=NULL;
   delete [] _aDAlength;      _aDAlength=NULL;
   delete [] _aDAtimesince;   _aDAtimesince=NULL;
+  delete [] _aDAon;          _aDAon=NULL;
 
   CSoilClass::      DestroyAllSoilClasses();
   CVegetationClass::DestroyAllVegClasses();

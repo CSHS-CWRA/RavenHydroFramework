@@ -100,14 +100,14 @@ private:/*------------------------------------------------------*/
   double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
   double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
 
-  double             _Qirr;       ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
+  double                 _Qirr;   ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
   double             _QirrLast;   ///< Qirr (irrigation/diversion flow) at start of timestep [m3/s] (for MB accounting)
 
   //Hydrograph Memory
   double            *_aQinHist;   ///< history of inflow from upstream into primary channel [m3/s][size:nQinHist] (aQinHist[n] = Qin(t-ndt))
   //                              ///  _aQinHist[0]=Qin(t), _aQinHist[1]=Qin(t-dt), _aQinHist[2]=Qin(t-2dt)...
   int                _nQinHist;   ///< size of _aQinHist array
-  double            *_c_hist;     ///< reach celerity history [size: _nQinHist] (used for ROUTE_DIFFUSIVE_VARY only)
+  double              *_c_hist;   ///< reach celerity history [size: _nQinHist] (used for ROUTE_DIFFUSIVE_VARY only)
 
   //characteristic weighted hydrographs
   double          *_aUnitHydro;   ///< [size:_nQlatHist] catchment unit hydrograph (time step-dependent). area under = 1.0.
@@ -250,7 +250,7 @@ public:/*-------------------------------------------------------*/
   void            SetDownstreamID          (const long down_SBID);
   void            Disable                  ();
   void            Enable                   ();
-  double          ScaleAllFlows            (const double &scale_factor, const double &tstep);
+  double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep);
   void            SetUnusableFlowPercentage(const double &val);
   void            IncludeInAssimilation    ();
 

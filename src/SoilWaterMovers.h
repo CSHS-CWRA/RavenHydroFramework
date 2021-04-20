@@ -94,7 +94,7 @@ enum soilevap_type
   SOILEVAP_HYPR,          ///< HYPR model with ponded area correction (Ahmed et al, 2020)
   SOILEVAP_UBC,           ///< UBCWM Model (Quick, 1996)
   SOILEVAP_CHU,           ///< Ontario Crop Heat Unit method
-  SOILEVAP_PDM,           ///< From Probabilty Distributed Model (Moore, 1986)
+  SOILEVAP_PDM,           ///< From Probabilty Distributed Model (Moore, 1985)
   SOILEVAP_GR4J,          ///< GR4J model approach (Perrin et al., 2003)
   SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
   SOILEVAP_SACSMA,        ///< Sacramento Soil Moisture Accounting algorithm (should only be used with SOILBAL_SACSMA)

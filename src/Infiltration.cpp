@@ -524,7 +524,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   }
   //----------------------------------------------------------------------------
   else if(type==INF_PDM)
-  { //uses PDM algorithm from Moore (1986)
+  { //uses PDM algorithm from Moore (1985)
     double b;          //[-] pareto distribution parameter
     double c_max;      //[mm] maximum local storage capacity in HRU
     double c_star;     //[mm] critical capacity, c*

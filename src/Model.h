@@ -116,6 +116,7 @@ private:/*------------------------------------------------------*/
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
   double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
   double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
+  bool                  *_aDAon; ///< array of booleans indicating if data assimilation is active (i.e., downstream flow data is missing) [size: _nSubBasins] (NULL w/o DA)
   
   //Water/Energy Balance information
   double      **_aCumulativeBal;  ///< cumulative amount of flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
