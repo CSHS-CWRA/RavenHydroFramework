@@ -44,26 +44,24 @@ static string RavenBuildDate(__DATE__);
 /// \brief Primary Raven driver routine
 //
 /// \param argc [in] number of arguments to executable
-/// \param argv[] [in] executable arguments; Raven.exe [filebase] [-p rvp_file] [-h hru_file] [-t rvt_file] [-o output_dir]
+/// \param argv[] [in] executable arguments; Raven.exe [base_filename] [-p rvp_file] [...] [-t rvt_file] [-o output_dir]
 /// for using WD\output subdirectory, can use "-o .\output\"
 /// \return Success of main method
 //
 int main(int argc, char* argv[])
 {
   double      t;
-  string      filebase;
   clock_t     t0, t1, t2;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
-
-  ProcessExecutableArguments(argc, argv, Options);
-  PrepareOutputdirectory(Options);
-
-  Options.pause=true;
+  
   Options.version="3.0.4";
 #ifdef _NETCDF_ 
-  Options.version=Options.version+" w/ netCDF";
+  Options.version+=" w/ netCDF";
 #endif
+  
+  ProcessExecutableArguments(argc,argv,Options);
+  PrepareOutputdirectory(Options);
 
   for (int i=0;i<10;i++){g_debug_vars[i]=0;}
 
@@ -98,7 +96,8 @@ int main(int argc, char* argv[])
 
     if (!Options.silent){
       cout <<"======================================================"<<endl;
-      cout <<"Initializing Model..."<<endl;}
+      cout <<"Initializing Model..."<<endl;
+    }
     pModel->Initialize       (Options);
     pModel->SummarizeToScreen(Options);
     pModel->GetEnsemble()->Initialize(Options);
@@ -152,7 +151,6 @@ int main(int argc, char* argv[])
 
         pModel->WriteMinorOutput           (Options,tt);
         pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
-        //pModel->WriteProgressOutput      (Options,clock()-t0,step+e*nsteps,nEnsembleMembers*nsteps); //TMP DEBUG - for ensemble support
 
         if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
         step++;
@@ -177,7 +175,8 @@ int main(int argc, char* argv[])
         }
         cout <<"======================================================"<<endl;
       }
-    }
+
+    }/* end ensemble loop*/
   }
   else
   {
@@ -199,6 +198,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 {
   int i=1;
   string word,argument;
+  bool version_announce=false;
   int mode=0;
   argument="";
   //initialization:
@@ -216,6 +216,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.main_output_dir="";
   Options.silent=false;
   Options.noisy =false;
+  Options.pause =true;
 
   //Parse argument list
   while (i<=argc)
@@ -224,7 +225,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       word=to_string(argv[i]);
     }
     if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || 
-        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (i==argc))
+        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") || (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -261,6 +262,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-g"){mode=8; }	  
       else if (word=="-l"){mode=9; }
       else if (word=="-m"){mode=11;}
+      else if (word=="-v"){Options.pause=false; version_announce=true; mode=10;} //For PAVICS
     }
     else{
       if (argument==""){argument+=word;}
@@ -288,6 +290,11 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   }
   Options.working_dir = to_string(cCurrentPath);
   Options.main_output_dir=Options.output_dir;
+
+  if(version_announce) {
+    cout<<Options.version<<endl;
+    ExitGracefully("Version check",SIMULATION_DONE);
+  }
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Exits gracefully from program, explaining reason for exit and destructing simulation all pertinent parameters
