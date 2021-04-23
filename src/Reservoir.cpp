@@ -70,7 +70,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _local_GW_head=0.0;
 
   _assimilate_stage=false;
-  _pObsStage=NULL; 
+  _pObsStage=NULL;
+  _DAscale=1.0;
+  _DAscale_last=1.0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -337,27 +339,35 @@ CReservoir::~CReservoir()
 //////////////////////////////////////////////////////////////////
 /// \returns Subbasin ID
 //
-long  CReservoir::GetSubbasinID        () const{return _SBID;}
+long  CReservoir::GetSubbasinID          () const { return _SBID; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns reservoir storage [m3]
 //
-double  CReservoir::GetStorage           () const{return GetVolume(_stage);}
-
-//////////////////////////////////////////////////////////////////
-/// \returns current outflow rate [m3/s]
-//
-double  CReservoir::GetOutflowRate        () const{return _Qout;}
+double  CReservoir::GetStorage           () const { return GetVolume(_stage); }
 
 //////////////////////////////////////////////////////////////////
 /// \returns current stage [m]
 //
-double  CReservoir::GetResStage           () const{return _stage;}
+double  CReservoir::GetResStage          () const { return _stage; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns current outflow rate [m3/s]
+//
+double  CReservoir::GetOutflowRate       () const { return _DAscale*_Qout; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns previous outflow rate [m3/s]
 //
-double CReservoir::GetOldOutflowRate() const { return _Qout_last; }
+double CReservoir::GetOldOutflowRate     () const { return _DAscale_last*_Qout_last; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns outflow integrated over timestep [m3/d]
+//
+double  CReservoir::GetIntegratedOutflow(const double& tstep) const
+{
+  return 0.5*(_DAscale*_Qout+_DAscale_last*_Qout_last)*(tstep*SEC_PER_DAY); //integrated
+}
 
 //////////////////////////////////////////////////////////////////
 /// \returns previous storage [m3]
@@ -386,13 +396,6 @@ double  CReservoir::GetReservoirGWLosses(const double &tstep) const
   return _GW_seepage;
 }
 //////////////////////////////////////////////////////////////////
-/// \returns outflow integrated over timestep [m3/d]
-//
-double  CReservoir::GetIntegratedOutflow        (const double &tstep) const
-{
-  return 0.5*(_Qout+_Qout_last)*(tstep*SEC_PER_DAY); //integrated
-}
-//////////////////////////////////////////////////////////////////
 /// \returns global HRU index (or DOESNT_EXIST) if no HRU is linked to reservoir
 //
 int CReservoir::GetHRUIndex() const
@@ -408,6 +411,22 @@ double CReservoir::GetCrestWidth() const
   return _crest_width;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief gets max capacity
+/// \returns capacity, in m3
+//
+double  CReservoir::GetMaxCapacity() const
+{
+  return _max_capacity;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief gets demand multiplier
+/// \returns reservoir demand multiplier
+//
+double CReservoir::GetDemandMultiplier() const
+{
+  return _demand_mult;
+}
+//////////////////////////////////////////////////////////////////
 /// \returns multiplies discharge curve by correction factor
 //
 void CReservoir::MultiplyFlow(const double &mult) 
@@ -416,20 +435,7 @@ void CReservoir::MultiplyFlow(const double &mult)
       _aQ[i]*=mult;
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \returns crest width, in meters
-//
-void CReservoir::SetCrestWidth(const double &width) 
-{
-  if(_crest_width==DOESNT_EXIST) {
-    ExitGracefully("CReservoir::SetCrestWidth - trying to change crest width of non-lake reservoir",BAD_DATA_WARN);
-    return;
-  }
-  else {
-    MultiplyFlow(width/_crest_width);
-    _crest_width=width;
-  }
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief initializes reservoir variables
 /// \param Options [in] model options structure
@@ -646,6 +652,20 @@ void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
   _pHRU=pHRUpointer;
 }
 //////////////////////////////////////////////////////////////////
+/// sets crest width, in meters
+//
+void CReservoir::SetCrestWidth(const double& width)
+{
+  if(_crest_width==DOESNT_EXIST) {
+    ExitGracefully("CReservoir::SetCrestWidth - trying to change crest width of non-lake reservoir",BAD_DATA_WARN);
+    return;
+  }
+  else {
+    MultiplyFlow(width/_crest_width);
+    _crest_width=width;
+  }
+}
+//////////////////////////////////////////////////////////////////
 /// \brief sets max capacity
 /// \param capacity, in m3
 //
@@ -653,22 +673,7 @@ void  CReservoir::SetMaxCapacity(const double &max_cap)
 {
   _max_capacity=max_cap;
 }
-//////////////////////////////////////////////////////////////////
-/// \brief gets max capacity
-/// \returns capacity, in m3
-//
-double  CReservoir::GetMaxCapacity() const
-{
-  return _max_capacity;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief gets demand multiplier
-/// \returns reservoir demand multiplier
-//
-double CReservoir::GetDemandMultiplier() const
-{
-  return _demand_mult;
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief gets current constraint name
 /// \returns current constraint applied to estimate stage/flow
@@ -739,6 +744,15 @@ void CReservoir::SetDemandMultiplier(const double &value)
 {
   _demand_mult=value;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief sets data assimilation scale factors (read from .rvc file)  
+//
+void CReservoir::SetDataAssimFactors(const double& da_scale,const double& da_scale_last) 
+{
+  _DAscale     =da_scale;
+  _DAscale_last=da_scale_last;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief enables lake stage assimilation  
 /// \param pObs -time series of observed lake stage (can have NULL entries)
@@ -817,17 +831,17 @@ void  CReservoir::DisableOutflow()
 ///
 /// \return mass added to system [m3]
 //
-double CReservoir::ScaleFlow(const double& scale,const double& tstep) 
+double CReservoir::ScaleFlow(const double& scale,const bool overriding, const double& tstep, const double &t) 
 {
-  double ma=0.0; //mass added
+  double va=0.0; //volume added
   double sf=(scale-1.0)/scale;
-  _Qout*=scale;
-  _Qout_last*=scale;
+  
+  _DAscale=scale;
+  
+  //Estimate volume added through scaling 
+  va+=0.5*(_Qout_last+_Qout)*sf*tstep*SEC_PER_DAY;
 
-  //Estimate mass added through scaling 
-  ma+=0.5*(_Qout_last+_Qout)*sf*tstep*SEC_PER_DAY;
-
-  return ma;
+  return va;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -841,6 +855,8 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
   _constraint=constr;
   _Qout_last =_Qout;
   _Qout      =res_outflow;
+  _DAscale_last=_DAscale;
+  _DAscale   =1.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief updates current mass balance (called at end of time step)
@@ -1288,6 +1304,9 @@ void CReservoir::WriteToSolutionFile (ofstream &RVC) const
 {
   RVC<<"    :ResFlow, "<<_Qout<<","<<_Qout_last<<endl;
   RVC<<"    :ResStage, "<<_stage<<","<<_stage_last<<endl;
+  if(_DAscale_last!=1.0) {
+    RVC<<"    :ResDAscale, "<<_DAscale<<","<<_DAscale_last<<endl;
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates value from rating curve

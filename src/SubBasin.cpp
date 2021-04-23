@@ -21,14 +21,14 @@
 /// \param Qreference [in] Reference flow [m^3/s] [or AUTO_COMPUTE]
 /// \param gaged      [in] If true, hydrographs are generated
 //
-CSubBasin::CSubBasin(const long           Identifier,
-  const string         Name,
-  const CModelABC     *pMod,
-  const long           down_ID,     //index of downstream SB, if <0, downstream outlet
-  const CChannelXSect *pChan,                               //Channel
-  const double         reach_len,   //reach length [m]
-  const double         Qreference,  //reference flow, m3/s [or AUTO_COMPUTE]
-  const bool           gaged)       //if true, hydrographs are generated
+CSubBasin::CSubBasin( const long           Identifier,
+                      const string         Name,
+                      const CModelABC     *pMod,
+                      const long           down_ID,     //index of downstream SB, if <0, downstream outlet
+                      const CChannelXSect *pChan,       //Channel
+                      const double         reach_len,   //reach length [m]
+                      const double         Qreference,  //reference flow, m3/s [or AUTO_COMPUTE]
+                      const bool           gaged)       //if true, hydrographs are generated
 {
   ExitGracefullyIf(pMod==NULL,
     "CSubBasin:Constructor: NULL model",BAD_DATA);
@@ -1123,11 +1123,13 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
 /// \param &tstep [in] time step [d]
 /// \return volume added to system [m3]
 //
-double CSubBasin::ScaleAllFlows(const double &scale, const bool scale_last, const double &tstep)
+double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, const double &tstep, const double &t)
 {
   double va=0.0; //volume added [m3]
   double sf=(scale-1.0)/scale;
-  if(!scale_last) {
+  
+  if(!overriding) 
+  {
     for(int n=0;n<_nQlatHist;n++) {
       _aQlatHist[n]*=scale;  upperswap(_aQlatHist[n],0.0);
       va+=_aQlatHist[n]*sf*tstep*SEC_PER_DAY;
@@ -1136,22 +1138,25 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool scale_last, cons
       _aQinHist[n]*=scale; upperswap(_aQinHist[n],0.0);
       va+=_aQinHist[n]*sf*tstep*SEC_PER_DAY; 
     }
+    for(int i=0;i<_nSegments;i++) {
+      _aQout[i]*=scale; upperswap(_aQout[i],0.0);
+      va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
+    }
   }
 
-  for (int i=0;i<_nSegments;i++){    
-    _aQout[i]*=scale; upperswap(_aQout[i],0.0);
-    va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
-  }
-  
-  if(scale_last) {//ensures integrated flows scaled with direct insertion
-    _QoutLast*=scale; upperswap(_QoutLast,0.0);
+  if((overriding) && (_pReservoir==NULL)) {
+    for (int i=0;i<_nSegments;i++)
+    {  
+      _aQout[i]*=scale;  upperswap(_aQout[i],0.0);
+      va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
+    }
   }
 
   if(_pReservoir!=NULL) {
-    va+=_pReservoir->ScaleFlow(scale,tstep);
+    va+=_pReservoir->ScaleFlow(scale,overriding,tstep,t);
   }
 
-  //Estivate vass added through scaling 
+  //Estivate volume added through scaling 
   _channel_storage*=scale; va+=_channel_storage*sf;
   _rivulet_storage*=scale; va+=_rivulet_storage*sf;
   return va;

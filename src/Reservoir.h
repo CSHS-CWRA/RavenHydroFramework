@@ -84,6 +84,9 @@ private:/*-------------------------------------------------------*/
   bool          _assimilate_stage;   ///< true if assimilating lake stage for this reservoir
   const CTimeSeriesABC *_pObsStage;  ///< observed lake stage 
 
+  double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
+  double        _DAscale_last;       //< outflow scale factor for previous time step
+
   //state variables :
   double       _stage;               ///< current stage [m] (actual state variable)
   double       _stage_last;          ///< stage at beginning of current time step [m]
@@ -174,6 +177,7 @@ public:/*-------------------------------------------------------*/
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
   void              SetCrestWidth            (const double &width);
+  void              SetDataAssimFactors      (const double &da_scale, const double &da_scale_last);
   void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
@@ -216,6 +220,6 @@ public:/*-------------------------------------------------------*/
   void              WriteToSolutionFile      (ofstream &OUT) const;
   void              UpdateReservoir          (const time_struct &tt, const optStruct &Options);
   void              UpdateMassBalance        (const time_struct &tt, const double &tstep);
-  double            ScaleFlow                (const double &scale, const double &tstep);
+  double            ScaleFlow                (const double &scale, const bool overriding,const double &tstep,const double &t);
 };
 #endif

@@ -340,7 +340,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":Units")){}//ignored by Raven
         else if (!strcmp(s[0],":EndHRUStateVariableTable")){}//end command
-        else if (!strcmp(s[0],":EndInitialTemperatureTable")){cout<<"End"<<endl;}//end command
+        else if (!strcmp(s[0],":EndInitialTemperatureTable")){}//end command
         else if (!strcmp(s[0],":EndInitialConcentrationTable")){}//end command
         else //row in SV table
         {
@@ -549,6 +549,12 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         {
           if(Len>=3) {
             pBasin->SetReservoirFlow(s_to_d(s[1]),s_to_d(s[2]),0.0);
+          }
+        }
+        else if(!strcmp(s[0],":ResDAscale"))
+        {
+          if(Len>=3) {
+            pBasin->GetReservoir()->SetDataAssimFactors(s_to_d(s[1]),s_to_d(s[2]));
           }
         }
         else if (!strcmp(s[0],":EndBasinStateVariables"))

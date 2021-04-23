@@ -137,6 +137,7 @@ int main(int argc, char* argv[])
         pModel->RecalculateHRUDerivedParams(Options,tt);
         pModel->UpdateHRUForcingFunctions  (Options,tt);
         pModel->UpdateDiagnostics          (Options,tt);
+        pModel->PrepareAssimilation        (Options,tt);
         CallExternalScript                 (Options,tt);
         ParseLiveFile                      (pModel,Options,tt);
 
@@ -144,8 +145,6 @@ int main(int argc, char* argv[])
 
         pModel->IncrementCumulInput        (Options,tt);
         pModel->IncrementCumOutflow        (Options,tt);
-
-        pModel->AssimilateStreamflow       (Options,tt);
 
         JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
 
@@ -308,7 +307,7 @@ void ExitGracefully(const char *statement,exitcode code)
 
   string typeline;
   switch (code){
-  case(SIMULATION_DONE):  {typeline="===============================================";break;}
+  case(SIMULATION_DONE):  {typeline="============================================================";break;}
   case(RUNTIME_ERR):      {typeline="Error Type: Runtime Error";       break;}
   case(BAD_DATA):         {typeline="Error Type: Bad input data";      break;}
   case(BAD_DATA_WARN):    {typeline="Error Type: Bad input data";      break;}

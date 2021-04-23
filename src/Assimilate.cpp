@@ -28,12 +28,16 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
     _aDAscale    =new double[_nSubBasins];
     _aDAlength   =new double[_nSubBasins];
     _aDAtimesince=new double[_nSubBasins];
-    _aDAon       =new bool  [_nSubBasins];
+    _aDAoverride =new bool  [_nSubBasins];
+    _aDAobsQ     =new double[_nSubBasins];
+    _aDAlast     =new double[_nSubBasins];
     for(int p=0; p<_nSubBasins; p++) {
       _aDAscale    [p]=1.0;
       _aDAlength   [p]=0.0;
       _aDAtimesince[p]=0.0;
-      _aDAon       [p]=false;
+      _aDAoverride [p]=false;
+      _aDAobsQ     [p]=0.0;
+      _aDAlast     [p]=1.0;
     }
     int count=0;
     for(int p=0; p<_nSubBasins; p++) {
@@ -64,108 +68,132 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
 
 }
 /////////////////////////////////////////////////////////////////
-/// \brief sifts through all observation time series. Overrides flows with observations at gauges and scales all flows and channel storages upstream of those gauges. 
-/// \note updates cumulative mass input/output to reflect mass added during scaling
+/// \brief Overrides flows with observations at gauges, or  
+/// \param p [in] global subbasin index
+/// \param Options [in] current model options structure
+/// \param tt [in] current model time structure
+//
+void CModel::AssimilationOverride(const int p,const optStruct& Options,const time_struct& tt)
+{
+  if(!Options.assimilate_flow)                                        { return; }
+
+  //Get current, up-to-date flow and calculate scaling factor
+  //---------------------------------------------------------------------
+  if(_aDAoverride[p]) 
+  {
+    double Qobs,Qmod;
+    double alpha     =CGlobalParams::GetParams()->assimilation_fact;
+
+    Qobs = _aDAobsQ[p];
+    //Option A: mean flow
+    //Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+    //Option B: instantaneous flow
+    Qmod = _pSubBasins[p]->GetOutflowRate();
+    if(Qmod>PRETTY_SMALL) { 
+      _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);
+    }
+    else { 
+      _aDAscale[p]=1.0;                         
+    }
+    _aDAlast[p]=1.0;//no need to scale previous
+  }
+
+  // actually scale flows
+  //---------------------------------------------------------------------
+  double mass_added=_pSubBasins[p]->ScaleAllFlows(_aDAscale[p]/_aDAlast[p],_aDAoverride[p],Options.timestep,tt.model_time);
+  if(mass_added>0.0){_CumulInput +=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
+  else              {_CumulOutput-=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
+
+}
+/////////////////////////////////////////////////////////////////
+/// \brief Calculates updated DA scaling coefficients for all subbasins for forthcoming timestep
+/// \note most scale coefficients will be 1.0  except:
+/// (1) gauges with valid observation data, which scale to override OR
+/// (2) basins at or upstream of missing observation data 
+/// actual scaling performed in CModel::AssimilationOverride() during routing
 /// \param tt [in] current model time structure
 /// \param Options [in] current model options structure
 //
-void CModel::AssimilateStreamflow(const optStruct &Options,const time_struct &tt)
+void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 {
-  if (!Options.assimilate_flow){return;}
-  
-  //assimilates all data after assimilation date 
-  if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0)){return;}
+  if (!Options.assimilate_flow)                                      {return;}
+  if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0)){return;}//assimilates all data after assimilation date 
   
   int    p,pdown;
+  double Qobs;
   double t_observationsOFF=ALMOST_INF;//Only used for debugging - keep as ALMOST_INF otherwise
-  double Qobs,Qmod;
-  double alpha     =CGlobalParams::GetParams()->assimilation_fact; //for now: 0->no assimilation 1->full override
-  double time_fact =CGlobalParams::GetParams()->assim_time_decay; 
-  double distfact  =CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] 
-
-  if(alpha>0.0) { alpha = exp(4.5*(alpha-1.0)); } //makes range natural, i.e., alph~0.5 means result is halfway between unassimilated modeled and observed
 
   int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
-    
-  bool *aDataPresent=new bool [_nSubBasins];
-  for (p=0;p<_nSubBasins;p++){aDataPresent[p]=false; }
+  
+  for(int p=0; p<_nSubBasins; p++) {
+    _aDAlast[p]=_aDAscale[p];
+  }
 
   for(int pp=_nSubBasins-1; pp>=0; pp--)//downstream to upstream
   {
     p=GetOrderedSubBasinIndex(pp);
 
     bool ObsExists=false; //observation available in THIS basin
-    if(_pSubBasins[p]->UseInFlowAssimilation()) 
+    // observations in this basin, determine scaling variables based upon blank/not blank
+    //----------------------------------------------------------------
+    if(_pSubBasins[p]->UseInFlowAssimilation())
     {
       for(int i=0; i<_nObservedTS; i++) //determine whether flow observation is available
       {
         if(IsContinuousFlowObs2(_pObservedTS[i],_pSubBasins[p]->GetID()))//flow observation is available and linked to this subbasin
         {
-          Qobs = _pObservedTS[i]->GetSampledValue(nn+1);//correction for period ending storage of hydrograph
-          Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+          Qobs = _pObservedTS[i]->GetSampledValue(nn+1);//+1: correction for period ending storage of hydrograph
+
+          //bool fakeblank=((tt.model_time>30) && (tt.model_time<40)) || ((tt.model_time>45) && (tt.model_time<47));//TMP DEBUG
+          //if (fakeblank){Qobs=RAV_BLANK_DATA;}
+
           if((Qobs!=RAV_BLANK_DATA) && (tt.model_time<t_observationsOFF))
           {
-            if(Qmod>PRETTY_SMALL) { _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod); }
-            else                  { _aDAscale[p]=1.0;                          }
+            //_aDAscale[p] calculated live in AssimilationOverride when up-to-date modelled flow available
             _aDAlength   [p]=0.0;
             _aDAtimesince[p]=0.0;
-            _aDAon       [p]=false; //propagates upstream, no assimilation upstream if insertion used here
-            aDataPresent [p]=true;
+            _aDAoverride [p]=true;
+            _aDAobsQ     [p]=Qobs;
           }
           else
           { //found a blank or zero flow value 
-            _aDAtimesince[p]+=Options.timestep;
             _aDAscale    [p]=_aDAscale[p];
+            _aDAtimesince[p]+=Options.timestep;
             _aDAlength   [p]=0.0;
-            _aDAon       [p]=true;
-            aDataPresent [p]=false;
+            _aDAoverride [p]=false;
+            _aDAobsQ     [p]=0.0;
           }
           ObsExists=true;
           break; //avoids duplicate observations
         }
       }
     }
+    // no observations in this basin, get scaling from downstream
+    //----------------------------------------------------------------
     pdown=GetDownstreamBasin(p);
-    if(ObsExists==false){ //observations may be downstream, propagate scaling upstream 
-      //if (pdown!=DOESNT_EXIST){ //alternate - allow information to pass through reservoirs 
-      if((pdown!=DOESNT_EXIST) && (_pSubBasins[p]->GetReservoir()==NULL)) {
-        _aDAscale    [p]=_aDAscale [pdown];
-        _aDAlength   [p]=_aDAlength[pdown]+_pSubBasins[pdown]->GetReachLength()+0.1;
-        _aDAtimesince[p]=_aDAtimesince[pdown];
-        _aDAon       [p]=_aDAon[pdown];
+    if(ObsExists==false) { //observations may be downstream, propagate scaling upstream 
+      //if ((pdown!=DOESNT_EXIST) && (!_aDAoverride[pdown])){ //alternate - allow information to pass through reservoirs 
+      if((pdown!=DOESNT_EXIST) && (_pSubBasins[p]->GetReservoir()==NULL) && (!_aDAoverride[pdown])) {
+        _aDAscale      [p]= _aDAscale    [pdown];
+        _aDAlength     [p]+=_pSubBasins  [pdown]->GetReachLength();
+        _aDAtimesince  [p]= _aDAtimesince[pdown];
+        _aDAoverride   [p]=false;
       }
       else{ //Nothing downstream or reservoir present in this basin, no assimilation
         _aDAscale    [p]=1.0; 
         _aDAlength   [p]=0.0;
         _aDAtimesince[p]=0.0;
-        _aDAon       [p]=false;
+        _aDAoverride [p]=false;
       }
     }
   }// end downstream to upstream
 
-  //Calculate artificial mass added/removed by data assimilation process
-  // actual changing of river flows occurs in ScaleAllFlows() call
-  //--------------------------------------------------------------------------------
-  double mass_added=0;
-  double scalefact=1.0;
+  // Apply time and space correction factors
+  //----------------------------------------------------------------
+  double time_fact =CGlobalParams::GetParams()->assim_time_decay;
+  double distfact  =CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] 
   for(p=0; p<_nSubBasins; p++)
   {
-    scalefact =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);
-
-    //probably don't need the _aDAon here, since tstep handles it.
-    if (((_aDAon[p]) && (fabs(_aDAtimesince[p]-Options.timestep)<1e-4)) || (aDataPresent[p]))//if *past* downstream data available or data in this basin available
-    { 
-      mass_added+=_pSubBasins[p]->ScaleAllFlows(scalefact,aDataPresent[p],Options.timestep); 
-    } 
-    else if((_aDAon[p]) && (_aDAtimesince[p]>0) && (!aDataPresent[p])) 
-    {
-      scalefact/=1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p])*exp(-time_fact*(_aDAtimesince[p]-Options.timestep)); //remove scaling from previous tstep
-
-      mass_added+=_pSubBasins[p]->ScaleAllFlows(scalefact,aDataPresent[p],Options.timestep); 
-    }
+    _aDAscale[p] =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);
   }
-  if(mass_added>0.0){_CumulInput +=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
-  else              {_CumulOutput-=mass_added/(_WatershedArea*M2_PER_KM2)*MM_PER_METER;}
-
-  delete [] aDataPresent;
 }

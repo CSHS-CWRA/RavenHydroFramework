@@ -250,7 +250,7 @@ public:/*-------------------------------------------------------*/
   void            SetDownstreamID          (const long down_SBID);
   void            Disable                  ();
   void            Enable                   ();
-  double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep);
+  double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep, const double &t);
   void            SetUnusableFlowPercentage(const double &val);
   void            IncludeInAssimilation    ();
 

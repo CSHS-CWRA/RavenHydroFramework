@@ -499,7 +499,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.\Armadillo\Include\; %(AdditionalIncludeDirectories); </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories> %(AdditionalIncludeDirectories); </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_RVNETCDF_; _CRT_SECURE_NO_WARNINGS;</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

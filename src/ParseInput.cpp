@@ -453,7 +453,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
     
-	if       (in_ifmode_statement)                        {code=-6; }
+	  if       (in_ifmode_statement)                        {code=-6; }
     else if  (!strcmp(s[0],":rvh_Filename"              )){code=160;}
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=161;}
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=162;}
@@ -616,10 +616,11 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(-6):  //----------------------------------------------
     {/*in_ifmode_statement*/
-      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+      if(Options.noisy) { cout <<"* skip"<<endl; }
       if(!strcmp(s[0],":EndIfModeEquals"))
-      { 
-        in_ifmode_statement=false; 
+      {
+        if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+        in_ifmode_statement=false;
       }
       break;
     }

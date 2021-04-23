@@ -586,6 +586,8 @@ void MassEnergyBalance( CModel            *pModel,
 
       pBasin->UpdateOutflows(aQoutnew,irr_Q,res_ht,res_outflow,res_const,Options,tt,false);//actually updates flow values here
 
+      pModel->AssimilationOverride(p,Options,tt); //modifies flows using assimilation, if needed
+
       pTo   =pModel->GetDownstreamBasin(p);
       if(pTo!=DOESNT_EXIST)//update downstream inflows
       {

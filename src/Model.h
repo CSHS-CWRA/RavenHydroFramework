@@ -116,8 +116,10 @@ private:/*------------------------------------------------------*/
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
   double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
   double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
-  bool                  *_aDAon; ///< array of booleans indicating if data assimilation is active (i.e., downstream flow data is missing) [size: _nSubBasins] (NULL w/o DA)
-  
+  bool            *_aDAoverride; ///< array of booleans indicating if observation data is available for assimilation at basin p's outlet [size: _nSubBasins] (NULL w/o DA) 
+  double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
+  double             * _aDAlast; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
+
   //Water/Energy Balance information
   double      **_aCumulativeBal;  ///< cumulative amount of flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
   double            **_aFlowBal;  ///< current time step flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
@@ -397,9 +399,9 @@ public:/*-------------------------------------------------------*/
                                                 int         *iTo,
                                                 int         &nLatConnections,
                                                 double      *exchange_rates) const;
-
-  void         AssimilateStreamflow      (const optStruct &Options,
-                                          const time_struct &tt);
+  void         AssimilationOverride      (const int p,
+                                          const optStruct &Options, const time_struct &tt);
+  void         PrepareAssimilation       (const optStruct &Options, const time_struct &tt);
 
   //water/energy/mass balance routines
   void        IncrementBalance        (const int q_star,

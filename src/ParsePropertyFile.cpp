@@ -372,9 +372,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     case(-6):  //----------------------------------------------
     {/*in_ifmode_statement*/
-      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+      if(Options.noisy) { cout <<"* skip"<<endl; }
       if(!strcmp(s[0],":EndIfModeEquals"))
       {
+        if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
         in_ifmode_statement=false;
       }
       break;
