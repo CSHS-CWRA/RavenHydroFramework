@@ -7,6 +7,8 @@ CEnthalpyModel routines related to energy/enthalpy transport
 #include "RavenInclude.h"
 #include "EnergyTransport.h"
 
+string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
+
 //////////////////////////////////////////////////////////////////
 /// \brief enthalpy model constructor
 //
@@ -193,7 +195,7 @@ double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,
 //////////////////////////////////////////////////////////////////
 /// \brief Updates source terms for energy balance on subbasin reaches each time step
 /// \details both _aEnthalpyBeta and _aEnthalpySource (and its history) are generated here
-/// \param p    subbasin index
+/// \param p  subbasin index
 /// \notes this is the meat behind the in-stream thermal routing algorithm
 //
 void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
@@ -312,43 +314,43 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
     zsum+=zk[k];
   }
 
-  //calculate integral term Ik [degC*d] (see paper)
+  //calculate integral term I_m^n [degC*d] (see paper)
   double hin;
   double beta=_aEnthalpyBeta[p];
   beta=max(beta,1e-9); //to avoid divide by zero error
-  double betaterm=(1.0-exp(-beta*tstep));
+  double gamma=(1.0-exp(-beta*tstep));
   Ik[0]=0.0;
-  for(int k=1;k<nMinHist;k++)
+  for(int m=1;m<nMinHist;m++)
   {
-    hin=(_aMinHist[p][k-1]/aQin[k-1]);
-    if(_aMinHist[p][k-1]<PRETTY_SMALL) { hin=0.0; }
-    Ik[k]=hin*betaterm*exp(-beta*(k-1)*tstep);
-    for(int j=1;j<=k;j++)
+    hin=(_aMinHist[p][m-1]/aQin[m-1]);
+    if(_aMinHist[p][m-1]<PRETTY_SMALL) { hin=0.0; }
+
+    Ik[m]=-hin/beta*gamma*exp(-beta*(m-1)*tstep);
+    for(int j=1;j<m;j++)
     {
-      Ik[k]+=tstep/beta*_aEnthalpySource[p][j-1];
-      if(j>2) {
-        Ik[k]+=(betaterm*betaterm/beta/beta)*_aEnthalpySource[p][j-1]*exp(-beta*(j-2))*tstep; 
-      }
+      Ik[m]+=gamma*gamma/beta/beta*_aEnthalpySource[p][j-1]*exp(-beta*(m-j-1)*tstep);
     }
-    Ik[k]+=betaterm/beta/beta*_aEnthalpySource[p][0];
-    Ik[k]*=1.0/HCP_WATER/DENSITY_WATER;
+    Ik[m]+=tstep/beta     *_aEnthalpySource[p][0];
+    Ik[m]+=gamma/beta/beta*_aEnthalpySource[p][0];
+
+    Ik[m]*=1.0/HCP_WATER/DENSITY_WATER;
   }
 
   Q_sens = Q_lat = Q_GW = Q_rad = Q_fric =0.0; //incoming radiation [MJ/d]
 
   double kprime=qmix/dbar*HCP_WATER*bed_ratio;
 
-  for(int k=1;k<nMinHist;k++)
+  for(int m=1;m<nMinHist;m++)
   {
-    Q_sens+=zk[k]*(hstar/dbar)*(temp_air*tstep-Ik[k]);//[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
+    Q_sens+=zk[m]*(hstar/dbar)*(temp_air*tstep-Ik[m]);//[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
 
-    Q_GW  +=zk[k]*kprime      *(temp_GW *tstep-Ik[k]);
+    Q_GW  +=zk[m]*kprime      *(temp_GW *tstep-Ik[m]);
 
-    Q_rad +=zk[k]*(SW+LW)/dbar*tstep;                //[m3/d]*[MJ/m2/d]*[1/m]*[d]=[MJ/d]
+    Q_rad +=zk[m]*(SW+LW)/dbar*tstep;                //[m3/d]*[MJ/m2/d]*[1/m]*[d]=[MJ/d]
 
-    Q_lat -=zk[k]*AET*DENSITY_WATER*LH_VAPOR/dbar*tstep; //[m3/d]*[m/d]*[kg/m3]*[MJ/kg]*[1/m]*[d] = [MJ/d]
+    Q_lat -=zk[m]*AET*DENSITY_WATER*LH_VAPOR/dbar*tstep; //[m3/d]*[m/d]*[kg/m3]*[MJ/kg]*[1/m]*[d] = [MJ/d]
 
-    Q_fric+=zk[k]*Qf/dbar*tstep;
+    Q_fric+=zk[m]*Qf/dbar*tstep;
 
    // cout<<" Losses: "<<k<<": "<<Q_sens<<" "<<Q_GW<<" "<<Q_rad<<" "<<Q_lat<<" "<<Q_fric<< " "<<zk[k]*kprime*(temp_GW*tstep-Ik[k])<<" "<<Ik[k]<<" "<<zk[k]<<endl;
    // cout<<"mean res time: "<<tr_mean<<endl;
@@ -373,16 +375,16 @@ double CEnthalpyModel::GetNetReachLosses(const int p) const
   return GetEnergyLossesFromReach(p,Q_sens,Q_lat,Q_GW,Q_rad,Q_fric);
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief initializes enthalpy model
 //
 void CEnthalpyModel::Initialize()
 {
+  // Initialize base class members
+  //--------------------------------------------------------------------
+  CConstituentModel::Initialize();
 
-  CConstituentModel::Initialize();//call base class
-
-  //Allocate memory
+  // Allocate memory
   //--------------------------------------------------------------------
   int nSB=_pModel->GetNumSubBasins();
   _aEnthalpySource=new double  *[nSB];
@@ -424,7 +426,8 @@ void CEnthalpyModel::Initialize()
     }
   }
 
-  // check for invalid reach HRU index
+  // QA/QC - check for invalid reach HRU index
+  //--------------------------------------------------------------------
   const CSubBasin* pBasin;
   for(int p=0;p<_pModel->GetNumSubBasins();p++)
   {
@@ -436,6 +439,8 @@ void CEnthalpyModel::Initialize()
   //  int  m=_pTransModel->GetLayerIndexFromName2("!TEMPERATURE_SOIL",2);
   //  ExitGracefullyIf(m==DOESNT_EXIST,"UpdateReachEnergySourceTerms: must have 3 layers",BAD_DATA_WARN);
 
+  // update beta & source matrices
+  //--------------------------------------------------------------------
   for(int p=0;p<nSB;p++) {
     UpdateReachEnergySourceTerms(p);
   }
@@ -456,11 +461,9 @@ void CEnthalpyModel::Initialize()
 void    CEnthalpyModel::ApplyConvolutionRouting(const int p,const double *aRouteHydro,const double *aQinHist,const double *aMinHist,
                                                 const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const
 {
-  //support energy exchange along reach for enthalpy transport
   double term1,term2=0.0;
   double beta=_aEnthalpyBeta[p];
 
-  //beta=0.0; //TMP DEBUG
   beta=max(beta,1e-9); //to avoid divide by zero error
 
   aMout_new[nSegments-1]=0.0;
@@ -517,6 +520,83 @@ void CEnthalpyModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
 void CEnthalpyModel::WriteEnsimMinorOutput(const optStruct &Options,const time_struct &tt)
 {
   this->WriteMinorOutput(Options,tt);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Write transport output file headers in .tb0 format
+/// \details Called prior to simulation (but after initialization) from CModel::Initialize()
+/// \param &Options [in] Global model options information
+//
+void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options) 
+{
+  //StreamTemperatures.csv and Temperatures.csv (similar to concentration output files)
+  CConstituentModel::WriteOutputFileHeaders(Options);
+
+  //StreamReachEnergyBalances.csv
+  //--------------------------------------------------------------------
+  string filename ="StreamReachEnergyBalances.csv"; 
+  filename=FilenamePrepare(filename,Options);
+
+  _STREAMOUT.open(filename.c_str());
+  if(_STREAMOUT.fail()) {
+    ExitGracefully(("CEnthalpyModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
+  }
+
+  _STREAMOUT<<"time[d],date,hour,air temp.["+DEG_SYMBOL+"C]"<<",";
+  for(int p=0;p<_pModel->GetNumSubBasins();p++)
+  {
+    if(_pModel->GetSubBasin(p)->IsGauged()) {
+      _STREAMOUT<<"Ein[MJ/d],Eout[MJ/d],";
+      _STREAMOUT<<"Q_sens[MJ/d],Q_lat[MJ/d],Q_GW[MJ/d],Q_rad[MJ/d],Q_fric[MJ/d],channel storage[MJ],";
+    }
+  }
+  _STREAMOUT<<endl;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Writes minor transport output at the end of each timestep (or multiple thereof)
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Local (model) time at the end of the pertinent time step
+//
+void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct& tt)
+{
+  //StreamTemperatures.csv and Temperatures.csv (similar to concentration output files)
+  CConstituentModel::WriteMinorOutput(Options,tt);
+
+  if(tt.model_time==0.0) { return; }
+
+  int    p;
+  double Q_sens,Q_lat,Q_GW,Q_rad,Q_fric;
+  
+  string thisdate=tt.date_string;
+  string thishour=DecDaysToHours(tt.julian_day);
+
+  _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour;
+  _STREAMOUT<<","<<_pModel->GetAvgForcing("TEMP_AVE")<<",";
+
+  for(p=0;p<_pModel->GetNumSubBasins();p++)
+  {
+    if(_pModel->GetSubBasin(p)->IsGauged()) {
+      GetEnergyLossesFromReach(p,Q_sens,Q_lat,Q_GW,Q_rad,Q_fric);
+      _STREAMOUT<<0.5*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<",";
+      _STREAMOUT<<0.5*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1])<<",";
+      _STREAMOUT<<Q_sens<<","<<Q_lat<<","<<Q_GW<<","<<Q_rad<<","<<Q_fric<<",";
+      _STREAMOUT<<_channel_storage[p]<<","; 
+    }
+  }
+  _STREAMOUT<<endl;
+
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Writes minor transport output at the end of each timestep (or multiple thereof)
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Local (model) time at the end of the pertinent time step
+//
+void CEnthalpyModel::CloseOutputFiles() 
+{
+  CConstituentModel::CloseOutputFiles();
+  _STREAMOUT.close();
 }
 
 //////////////////////////////////////////////////////////////////

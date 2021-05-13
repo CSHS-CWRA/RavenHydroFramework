@@ -105,14 +105,11 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   double    Q=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
 
   //Handle additional mass/energy inflows 
-  /*for(int i=0; i<_nMassInflowTS; i++) {
-    tag1=s_to_l(_pMassInflowTS[i]->GetTag().c_str());
-    if(tag1==SBID) {
-      Minnew+=_pMassInflowTS[i]->GetValue(t); //mg/d or MJ/d
-       // \todo[funct] - add specified mass inflow time series
+  for(int i=0; i<_nMassLoadingTS; i++) {
+    if(_pMassLoadingTS[i]->GetLocID()==SBID) {
+      Minnew+=_pMassLoadingTS[i]->GetValue(t); //mg/d or MJ/d
     }
-}*/
-
+  }
 
   //Handle specified concentrations/temperatures of streamflow
   for(int i=0; i<_nSpecFlowConcs; i++)
@@ -138,15 +135,6 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
   double C,Q,Qold;
   long SBID,SBID_down;
   double mass=0; //[mg] or [MJ]
-
-  // Handle additional mass/energy inflows 
-  /*for(int i=0; i<_nMassInflowTS; i++) {
-    tag1=s_to_l(_pMassInflowTS[i]->GetTag ().c_str());
-    if (tag1==SBID) {
-      mass+=0.5*(_pMassInflowTS[i]->GetValue(t)+_pMassInflowTS[i]->GetValue(t-tstep)); //mg/d or MJ/d
-    }
-    }
-  }*/
 
   // remove mass which is overridden by specified mass inflow
   for(int p=0;p<_pModel->GetNumSubBasins();p++)
@@ -176,7 +164,16 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
       else                { C*=LITER_PER_M3; } //mg/m3
       mass+=0.5*Qold*C*tstep;
     }
-}
+  }
+  // Handle external additions of mass
+  for(int i=0; i<_nMassLoadingTS; i++)
+  {
+    mass+=0.5*_pMassLoadingTS[i]->GetValue(t+tstep)*tstep;  //[mg] or [MJ]
+    if(t>0) {
+    mass+=0.5*_pMassLoadingTS[i]->GetValue(t      )*tstep;  //[mg] or [MJ]
+    }
+  }
+
   return mass;
 }
 //////////////////////////////////////////////////////////////////

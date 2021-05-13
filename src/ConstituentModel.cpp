@@ -33,6 +33,8 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
 
   _nSpecFlowConcs=0;
   _pSpecFlowConcs=NULL;
+  _nMassLoadingTS=0;
+  _pMassLoadingTS=NULL;
 
   _aSourceIndices=NULL;
 
@@ -63,6 +65,7 @@ CConstituentModel::~CConstituentModel()
 {
   delete[] _pConstitParams; 
   delete[] _pSpecFlowConcs; _pSpecFlowConcs=NULL;
+  delete[] _pMassLoadingTS; _pMassLoadingTS=NULL;
   for(int i=0;i<_nSources;i++) { delete _pSources[i]; } delete[] _pSources;
   for(int i=0;i<_nSources;i++) { delete _aSourceIndices[i]; } delete[] _aSourceIndices;
   DeleteRoutingVars();
@@ -415,6 +418,18 @@ void   CConstituentModel::AddInflowConcTimeSeries(const CTimeSeries *pTS) {
 
   if(!DynArrayAppend((void**&)(_pSpecFlowConcs),(void*)(pTS),_nSpecFlowConcs)) {
     ExitGracefully("CConstituentModel::AddSpecifConcTimeSeries: adding NULL source",BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief adds specified in-reach mass loading time series
+/// \param pTS [in] Time series of mass loading [mg/d] or heat loading ? [MJ/d]
+/// assumes SBID and c tags are already applied to time series
+//
+void   CConstituentModel::AddMassLoadingTimeSeries(const CTimeSeries* pTS) 
+{
+  if(!DynArrayAppend((void**&)(_pMassLoadingTS),(void*)(pTS),_nMassLoadingTS)) {
+    ExitGracefully("CConstituentModel::AddMassLoadingTimeSeries: adding NULL source",BAD_DATA);
   }
 }
 //////////////////////////////////////////////////////////////////

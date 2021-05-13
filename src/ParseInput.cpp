@@ -1472,6 +1472,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:EvaluationMetrics [diag1] {diag2}...{diagN}*/
       if (Options.noisy) {cout<<"Evaluation Metrics"<<endl;}
       CDiagnostic *pDiag=NULL;
+      if(pModel==NULL) {
+        ExitGracefully(":EvaluationMetrics command must be after :SoilModel command in .rvi file",BAD_DATA_WARN); break;
+      }
       bool invalid;
       for (int i=1; i<Len; i++)
       {
@@ -1527,7 +1530,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout << ":EvaluationPeriod" << endl; }
       CDiagPeriod *pDP=NULL;
       if(pModel==NULL) {
-        WriteWarning(":Evaluation period command must be after the :SoilModel command in the .rvi file. This command will be ignored.",Options.noisy); break;
+        WriteWarning(":EvaluationPeriod command must be after the :SoilModel command in the .rvi file. This command will be ignored.",Options.noisy); break;
       }
       if(Len>=4) {
         pDP=new CDiagPeriod(s[1],s[2],s[3],Options);
@@ -1543,6 +1546,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(76):  //--------------------------------------------
     {/*:WaterYearStartMonth [int month]*/
       if (Options.noisy) {cout <<"Water year starting month"<<endl;}
+      if(Len<2) { ImproperFormatWarning(":WaterYearStartMonth",p,Options.noisy); break; }
+
       int mo=s_to_i(s[1]);
       if((mo>0) && (mo<=12)){Options.wateryr_mo=mo;}
       else { WriteWarning("Invalid water year starting month in :WaterYearStartMonth command. Should be integer month between 1- and 12",Options.noisy); }
@@ -1572,6 +1577,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(pModel==NULL) {
         ExitGracefully(":DefineHRUGroup command must be after :SoilModel command in .rvi file.",BAD_DATA_WARN); break;
       }
+
       CHRUGroup *pHRUGrp=NULL;
       pHRUGrp=new CHRUGroup(s[1],pModel->GetNumHRUGroups());
       pModel->AddHRUGroup(pHRUGrp);
@@ -1584,6 +1590,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(pModel==NULL) {
         ExitGracefully(":DefineHRUGroups command must be after :SoilModel command in .rvi file.",BAD_DATA_WARN); break;
       }
+
       CHRUGroup *pHRUGrp=NULL;
       for (int i=1;i<Len;i++){
         pHRUGrp=new CHRUGroup(s[i],pModel->GetNumHRUGroups());
@@ -1595,8 +1602,11 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:DisableHRUGroup */ //AFTER DefineHRUGroup(s) commands 
       if (Options.noisy) {cout <<"Disabling HRU Group"<<endl;}
       if (Len<2){ImproperFormatWarning(":DisableHRUGroup",p,Options.noisy); break;}
-      CHRUGroup *pHRUGrp=NULL;
 
+      CHRUGroup *pHRUGrp=NULL;
+      if(pModel==NULL) {
+        ExitGracefully(":DisableHRUGroup command must be after :SoilModel command in .rvi file.",BAD_DATA_WARN); break;
+      }
       pHRUGrp=pModel->GetHRUGroup(s[1]);
       if (pHRUGrp==NULL){
         ExitGracefully("Invalid HRU Group name supplied in :DisableHRUGroup command in .rvi file. Group must be defined first.",BAD_DATA_WARN);
@@ -1617,6 +1627,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:NetCDFAttribute [attrib_name] [value (commas not allowed)]*/
       if (Options.noisy) {cout <<"Add NetCDF attribute"<<endl;}
       if (Len<3){ImproperFormatWarning(":NetCDFAttribute",p,Options.noisy); break;}
+
       string tmpstring=s[2];
       for(i=3;i<Len;i++){tmpstring=tmpstring+" "+s[i];}
       AddNetCDFAttribute(Options,s[1],tmpstring);
@@ -2129,6 +2140,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<4){ImproperFormatWarning(":OpenWaterEvaporation",p,Options.noisy); break;}
       if      (!strcmp(s[1],"OPEN_WATER_EVAP"     )){ow_type=OPEN_WATER_EVAP;}
       else if (!strcmp(s[1],"OPEN_WATER_RIPARIAN" )){ow_type=OPEN_WATER_RIPARIAN;} //should come from SURFACE_WATER
+      else if (!strcmp(s[1],"OPEN_WATER_UWFS"     )){ow_type=OPEN_WATER_UWFS; } 
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Open Water Evaporation process representation",BAD_DATA_WARN); break;
       }

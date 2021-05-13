@@ -147,64 +147,67 @@ public:/*-------------------------------------------------------*/
 class CConstituentModel
 {
 protected:
-  const CModel          *_pModel;
+  const CModel               *_pModel;
   const CTransportModel *_pTransModel;
   
-  string            _name;           ///< constituent name (e.g., "Nitrogen")
+  string                     _name;  ///< constituent name (e.g., "Nitrogen")
   int               _constit_index;  ///< master constituent index of this constituent 
-  constit_type      _type;           ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
+  constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
   bool              _can_evaporate;  ///< true if constituent can be transported through evaporation (default:false)
-  bool              _is_passive;     ///< doesn't transport via advection (default: false)
+  bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
   transport_params *_pConstitParams; ///< pointer to constituent parameters 
 
   // Routing/state var storage
-  double **_aMinHist;                ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x nMinhist(p)]
-  double **_aMlatHist;               ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x nMlathist(p)]
-  double **_aMout;                   ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
-  double  *_aMout_last;              ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ] 
-  double  *_aMlat_last;              ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
+  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x nMinhist(p)]
+  double              **_aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x nMlathist(p)]
+  double                  **_aMout;  ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
+  double              *_aMout_last;  ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ] 
+  double              *_aMlat_last;  ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
 
-  double  *_aMres;                   ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins]
-  double  *_aMres_last;              ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins]
-  double  *_aMout_res;               ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins]
-  double  *_aMout_res_last;          ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins]
+  double                   *_aMres;  ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins]
+  double              *_aMres_last;  ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins]
+  double               *_aMout_res;  ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins]
+  double          *_aMout_res_last;  ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins]
 
   // Mass balance tracking variables
-  double  *_channel_storage;         ///< array storing channel storage [mg] or [MJ] [size: nSubBasins] 
-  double  *_rivulet_storage;         ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins] 
-
-  double   _cumul_input;             ///< cumulative mass [mg] or enthalpy [MJ] added to system  
-  double   _cumul_output;            ///< cumulative mass [mg] or enthalpy [MJ] lost from system 
-  double   _initial_mass;            ///< initial mass [mg] or enthalpy [MJ] in system 
+  double         *_channel_storage;  ///< array storing channel storage [mg] or [MJ] [size: nSubBasins] 
+  double         *_rivulet_storage;  ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins] 
+  double              _cumul_input;  ///< cumulative mass [mg] or enthalpy [MJ] added to system  
+  double             _cumul_output;  ///< cumulative mass [mg] or enthalpy [MJ] lost from system 
+  double             _initial_mass;  ///< initial mass [mg] or enthalpy [MJ] in system 
 
   // Source information
-  constit_source **_pSources;        ///< array of pointers to constituent sources [size: nSources]
-  int              _nSources;        ///< number of constituent sources
+  constit_source       **_pSources;  ///< array of pointers to constituent sources [size: nSources]
+  int                    _nSources;  ///< number of constituent sources
 
-  int            **_aSourceIndices;   ///< lookup table to convert (global) water storage index to corresponding source, if any [size: nStateVariables][size: nHRUs]
+  int            **_aSourceIndices;  ///< lookup table to convert (global) water storage index to corresponding source, if any [size: nStateVariables][size: nHRUs]
 
-  int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series
+  int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series [mg/L]
   CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID
+  int              _nMassLoadingTS;  ///< number of specified mass/energy loading time series [mg/d]
+  CTimeSeries    **_pMassLoadingTS;  ///< array of pointers to time series of mass loadings - TS tag corresponds to SBID
 
-  ofstream _OUTPUT;        ///< for concentrations.csv
-  ofstream _POLLUT;        ///< for pollutograph.csv
+  ofstream                 _OUTPUT;  ///< output stream for Concentrations.csv/Temperatures.csv
+  ofstream                 _POLLUT;  ///< output stream for Pollutograph.csv/StreamTemperatures.csv
 
   // private member funcctions
-  void DeleteRoutingVars();
-  void InitializeConstitParams(transport_params *P);
+  void   DeleteRoutingVars();
+  void   InitializeConstitParams(transport_params *P);
 
   // mass balance routines
   double GetTotalRivuletConstituentStorage() const;
   double GetTotalChannelConstituentStorage() const;
   double GetMassAddedFromInflowSources(const double &t,const double &tstep) const;
+  
   virtual double GetNetReachLosses(const int p) const;
 
 public:/*-------------------------------------------------------*/
+  // Constructor/destructor
   CConstituentModel(CModel *pMod,CTransportModel *pTMod,string name,constit_type type,bool is_passive,const int c);
   ~CConstituentModel();
 
-  //Accessors
+  // Accessors
   const transport_params *GetConstituentParams() const;
   constit_type            GetType() const;
   string                  GetName() const;
@@ -221,12 +224,13 @@ public:/*-------------------------------------------------------*/
 
   virtual double CalculateConcentration(const double &M,const double &V) const;
 
-  //Manipulators
+  // Manipulators
   void   AddDirichletCompartment (const int i_stor,const int kk,const double Cs);
   void   AddDirichletTimeSeries  (const int i_stor,const int kk,const CTimeSeries *pTS);
   void   AddInfluxSource         (const int i_stor,const int kk,const double flux);
   void   AddInfluxTimeSeries     (const int i_stor,const int kk,const CTimeSeries *pTS);
   void   AddInflowConcTimeSeries (const CTimeSeries *pTS);
+  void   AddMassLoadingTimeSeries(const CTimeSeries *pTS);
 
   void   SetChannelMass          (const int p,const double mass);
   void   SetRivuletMass          (const int p,const double mass);
@@ -250,12 +254,12 @@ public:/*-------------------------------------------------------*/
           void   RouteMass                (const int p,double *aMoutnew,double &ResMass,const optStruct &Options,const time_struct &tt) const;
   virtual void   UpdateMassOutflows       (const int p,double *aMoutnew,double &ResMass,double &ResMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize);
 
-          void   WriteOutputFileHeaders     (const optStruct &Options);
-          void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt);
+  virtual void   WriteOutputFileHeaders     (const optStruct &Options);
+  virtual void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt);
           void   WriteMajorOutput           (ofstream &RVC) const;
   virtual void   WriteEnsimOutputFileHeaders(const optStruct &Options);
   virtual void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
-          void   CloseOutputFiles();
+  virtual void   CloseOutputFiles();
 };
 
 ///////////////////////////////////////////////////////////////////

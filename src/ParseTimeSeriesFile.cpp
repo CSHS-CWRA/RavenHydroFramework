@@ -124,6 +124,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}
     else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302;}  
     else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303;}
+    else if  (!strcmp(s[0],":MassLoading"                 )){code=304;}
     //---------GRIDDED INPUT (lat,lon,time)---------------------
     else if  (!strcmp(s[0],":GriddedForcing"              )){code=400;}
     else if  (!strcmp(s[0],":ForcingType"                 )){code=401;}
@@ -1188,7 +1189,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       break;
 
-      /*long SBID=s_to_l(s[2]);
+      /*
+      :OverrideStreamConcentration [constit_ind] [SBID]
+        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+        {double value} x nMeasurements
+      :EndOverrideStreamConcentration
+        
+      long SBID=s_to_l(s[2]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         WriteWarning("ParseTimeSeries::Trying to override stream concentration at non-existent subbasin "+to_string(SBID),Options.noisy);
         break;
@@ -1227,6 +1234,32 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       break;
     }
+    case(304)://----------------------------------------------
+    {/*:MassLoading [constit_name] [SBID]
+         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+         {double value [mg/d]} x nMeasurements
+       :EndMassLoading
+       */
+      if(Options.noisy) { cout <<"Specified stream concentration"<<endl; }
+
+      int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+      if(c==DOESNT_EXIST) {
+        ExitGracefully("ParseTimeSeriesFile: :MassLoading: invalid constituent name. Command will be ignored.",BAD_DATA_WARN); break;
+      }
+      long SBID=s_to_l(s[2]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        ExitGracefully("ParseTimeSeriesFile: :MassLoading: invalid subbasin ID. Command will be ignored.",BAD_DATA_WARN); break;
+      }
+
+      CTimeSeries* pTS;
+      pTS=CTimeSeries::Parse(p,true,"Mass Loading "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),SBID,Options);
+      pTS->SetLocID(SBID);
+
+      pModel->GetTransportModel()->GetConstituentModel(c)->AddMassLoadingTimeSeries(pTS);
+
+      break;
+    }
+
     case (400)://----------------------------------------------
     {/*:GriddedForcing
          :ForcingType PRECIP
