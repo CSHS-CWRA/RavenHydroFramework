@@ -728,11 +728,11 @@ void   CTransportModel::SetGlobalParameter(const string const_name,const string 
 /// \note determines initial conditions for all constituents, initializes routing variables
 /// \note  called after all constituents have been added by CModel::Initialize
 //
-void CTransportModel::Initialize()
+void CTransportModel::Initialize(const optStruct &Options)
 {
   for(int c=0;c<_nConstituents;c++)
   {
-    _pConstitModels[c]->Initialize();
+    _pConstitModels[c]->Initialize(Options);
   }
   CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
 }

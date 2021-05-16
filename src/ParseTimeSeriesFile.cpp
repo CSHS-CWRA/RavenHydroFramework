@@ -1237,10 +1237,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case(304)://----------------------------------------------
     {/*:MassLoading [constit_name] [SBID]
          {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-         {double value [mg/d]} x nMeasurements
+         {double value [kg/d]} x nMeasurements
        :EndMassLoading
        */
-      if(Options.noisy) { cout <<"Specified stream concentration"<<endl; }
+      if(Options.noisy) { cout <<"Specified mass loading to stream"<<endl; }
 
       int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
       if(c==DOESNT_EXIST) {

@@ -41,7 +41,7 @@ public:/*-------------------------------------------------------*/
   double GetDirichletEnthalpy    (const CHydroUnit *pHRU, const double &Cs) const;
 
   //Manipulators (inherited from CConstitModel)
-  void   Initialize();
+  void   Initialize              (const optStruct& Options);
   void   ApplyConvolutionRouting (const int     p,
                                   const double *aRouteHydro,
                                   const double *aQinHist,

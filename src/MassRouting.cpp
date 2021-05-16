@@ -107,7 +107,7 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   //Handle additional mass/energy inflows 
   for(int i=0; i<_nMassLoadingTS; i++) {
     if(_pMassLoadingTS[i]->GetLocID()==SBID) {
-      Minnew+=_pMassLoadingTS[i]->GetValue(t); //mg/d or MJ/d
+      Minnew+=_pMassLoadingTS[i]->GetValue(t)*MG_PER_KG; //[mg/d]
     }
   }
 
@@ -168,9 +168,9 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
   // Handle external additions of mass
   for(int i=0; i<_nMassLoadingTS; i++)
   {
-    mass+=0.5*_pMassLoadingTS[i]->GetValue(t+tstep)*tstep;  //[mg] or [MJ]
+    mass+=0.5*_pMassLoadingTS[i]->GetValue(t+tstep)*MG_PER_KG*tstep;  //[mg] 
     if(t>0) {
-    mass+=0.5*_pMassLoadingTS[i]->GetValue(t      )*tstep;  //[mg] or [MJ]
+    mass+=0.5*_pMassLoadingTS[i]->GetValue(t      )*MG_PER_KG*tstep;  //[mg] 
     }
   }
 
@@ -389,9 +389,9 @@ double CConstituentModel::GetOutflowConcentration(const int p) const
   if(pRes==NULL)
   {
     double mg_per_d=_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1];
-    double flow    =_pModel->GetSubBasin(p)->GetOutflowRate();
+    double flow    =_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d]
     if(flow<=0) { return 0.0; }
-    double C=mg_per_d/flow/SEC_PER_DAY/LITER_PER_M3; //[mg/L]
+    double C=mg_per_d/flow/LITER_PER_M3; //[mg/d]/[m3/d]/[L/m3]->[mg/L]
     return C;
   }
   else {

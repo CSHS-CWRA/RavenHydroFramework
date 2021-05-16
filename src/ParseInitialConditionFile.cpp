@@ -852,7 +852,7 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
     }
 
     int   iStor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
-    double  vol=pModel->GetHydroUnit(k)->GetStateVarValue(iStor); //[mm]Assumes this has already been initialized (this will be true for .rvc file)
+    double  vol=pModel->GetHydroUnit(k)->GetStateVarValue(iStor); //[mm] Assumes this has already been initialized (this will be true for .rvc file)
     
     if(pModel->GetTransportModel()->GetConstituentModel(c)->GetType()==ENTHALPY) 
     {
@@ -865,7 +865,7 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
     else 
     {
       //specified in mg/L, convert to mg/m2
-      double mass=val*LITER_PER_M3*vol; //[mg/L]->[mg/L]*[L/m3]*[m]=[mg/m2]
+      double mass=val*LITER_PER_M3*vol/MM_PER_METER; //[mg/L]->[mg/L]*[L/m3]*[mm]/[mm/m]=[mg/m2]
       pModel->GetHydroUnit(k)->SetStateVarValue(SVind,mass);
     }
   }

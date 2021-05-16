@@ -378,11 +378,11 @@ double CEnthalpyModel::GetNetReachLosses(const int p) const
 //////////////////////////////////////////////////////////////////
 /// \brief initializes enthalpy model
 //
-void CEnthalpyModel::Initialize()
+void CEnthalpyModel::Initialize(const optStruct& Options)
 {
   // Initialize base class members
   //--------------------------------------------------------------------
-  CConstituentModel::Initialize();
+  CConstituentModel::Initialize(Options);
 
   // Allocate memory
   //--------------------------------------------------------------------

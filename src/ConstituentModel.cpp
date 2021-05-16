@@ -546,7 +546,7 @@ void   CConstituentModel::SetReservoirMassOutflow(const int p,const double Mout,
 /// \note determines initial conditions for all constituents, initializes routing variables
 /// \note  called after all constituents have been added by CModel::Initialize
 //
-void CConstituentModel::Initialize()
+void CConstituentModel::Initialize(const optStruct &Options)
 {
   int i,m,i_stor;
   double watstor;
@@ -613,6 +613,14 @@ void CConstituentModel::Initialize()
   //--------------------------------------------------------------------
   InitializeRoutingVars();
 
+  // Initialize time series
+  //--------------------------------------------------------------------  
+  for(int i=0; i<_nMassLoadingTS; i++) {
+    _pMassLoadingTS[i]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,true,Options.calendar);
+  }
+  for(int i=0; i<_nSpecFlowConcs; i++) {
+    _pSpecFlowConcs[i]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,true,Options.calendar);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization of transport parameter structure
@@ -1167,8 +1175,7 @@ void CConstituentModel::WriteEnsimMinorOutput(const optStruct &Options,const tim
     int m=ii+_constit_index*_pTransModel->GetNumWaterCompartments();
     M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mg/m2
     V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
-    if(fabs(V)<=1e-6)             { concentration=0.0; }
-    else                          { concentration=(M/V)*(MM_PER_METER/LITER_PER_M3); }//[mg/mm/m2]->[mg/L]
+    concentration=CalculateConcentration(M,V);
     if(Options.write_constitmass) { concentration=M;}//[mg/m2]
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)

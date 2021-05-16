@@ -251,7 +251,7 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   if (_pTransModel->GetNumConstituents()>0){
     if (!Options.silent){cout<<"  Initializing Transport Model..."<<endl;}
-    _pTransModel->Initialize();
+    _pTransModel->Initialize(Options);
   }
 
   // Precalculate whether individual processes should apply (for speed)

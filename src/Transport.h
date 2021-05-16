@@ -119,17 +119,17 @@ public:/*-------------------------------------------------------*/
 
   const CEnthalpyModel *GetEnthalpyModel() const;
 
-  double GetConcentration(const int k,const int sv_index) const;
+  double GetConcentration           (const int k,const int sv_index) const;
 
   //Manipulators
-  void   AddConstituent(string name,constit_type type,bool is_passive);
+  void   AddConstituent             (string name,constit_type type,bool is_passive);
   //
-  void   Prepare(const optStruct &Options);
+  void   Prepare                    (const optStruct &Options);
+  void   Initialize                 (const optStruct& Options);
   void   CalculateLateralConnections();
-  void   Initialize();
 
-  void   IncrementCumulInput(const optStruct &Options,const time_struct &tt);
-  void   IncrementCumulOutput(const optStruct &Options);
+  void   IncrementCumulInput        (const optStruct &Options,const time_struct &tt);
+  void   IncrementCumulOutput       (const optStruct &Options);
 
   void   SetGlobalParameter(const string const_name,const string param_name,const double &value,bool noisy);
 
@@ -185,8 +185,8 @@ protected:
 
   int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series [mg/L]
   CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID
-  int              _nMassLoadingTS;  ///< number of specified mass/energy loading time series [mg/d]
-  CTimeSeries    **_pMassLoadingTS;  ///< array of pointers to time series of mass loadings - TS tag corresponds to SBID
+  int              _nMassLoadingTS;  ///< number of specified mass/energy loading time series [kg/d] 
+  CTimeSeries    **_pMassLoadingTS;  ///< array of pointers to time series of mass loadings [kg/d] - TS tag corresponds to SBID
 
   ofstream                 _OUTPUT;  ///< output stream for Concentrations.csv/Temperatures.csv
   ofstream                 _POLLUT;  ///< output stream for Pollutograph.csv/StreamTemperatures.csv
@@ -240,12 +240,12 @@ public:/*-------------------------------------------------------*/
   void   SetInitialReservoirMass (const int p,const double res_mass,const double res_mass_last);
   void   SetReservoirMassOutflow (const int p,const double Mout,    const double MoutLast);
   
-          void   Prepare(const optStruct &Options);
-  virtual void   Initialize();
+          void   Prepare              (const optStruct &Options);
+  virtual void   Initialize           (const optStruct& Options);
           void   InitializeRoutingVars();
 
-          void   IncrementCumulInput(const optStruct &Options,const time_struct &tt);
-          void   IncrementCumulOutput(const optStruct &Options);
+          void   IncrementCumulInput  (const optStruct &Options,const time_struct &tt);
+          void   IncrementCumulOutput (const optStruct &Options);
 
   virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist,const double *aMinHist,const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
           void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);

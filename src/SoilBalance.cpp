@@ -197,10 +197,10 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     // determine computational time increments for the basic time interval 
     int    N = (int)(1.0 + 0.2 * (uzf_stor + (ponded-fill))); // number of increments in time interval
     N=min(N,100);
-    double dt   = Options.timestep / (double)N;          // time increment in days
-    double pinc = (ponded-fill)    / (double)N;          // moisture available in each increment
+    double dt   = Options.timestep / (double)N;   // time increment in days
+    double pinc = (ponded-fill)    / (double)N;   // moisture available in each increment
 
-    double duz   = 1.0 - pow((1.0 - uzk ),dt); // compute free water depletion fractions for the time increment
+    double duz   = 1.0 - pow((1.0 - uzk ),dt);    // compute free water depletion fractions for the time increment
     double dlzp  = 1.0 - pow((1.0 - lzpk),dt);
     double dlzs  = 1.0 - pow((1.0 - lzsk),dt);
 
@@ -250,9 +250,6 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
         uzf_stor -= perct;
         rates[7]+=perct *Aperv/Options.timestep;  //UZF->LZT
 
-        /*if(perct<-REAL_SMALL) {
-          cout<<"NEGATIVE PERCT: "<<perct<<" "<<perc<<" "<<uzf_stor<<" "<<defr<<" "<<deficit<<" "<<pfree<<endl;
-        }*/
         if(percf > 0.)
         {
           double hpl;   //relative size of the primary storage  as compared with total lower zone free water storage
@@ -279,7 +276,6 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
           lzt_stor  += excess;
           uzf_stor  -= excess;
 
-          //cout<<"f p s e : "<<percf<<" "<<percp<<" "<<percs<<" "<<excess<<endl;
           rates[8]+=percs *Aperv/Options.timestep;  //UZF->LZFS
           rates[9]+=percp *Aperv/Options.timestep;  //UZF->LZFP
           rates[7]+=excess*Aperv/Options.timestep;  //UZF->LZT
@@ -289,8 +285,6 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
         double delta = duz * uzf_stor;
         uzf_stor -= delta;
         rates[10]+=delta*Aperv/Options.timestep; //UZF->SURFACE_WATER
-
-        //cout<<"interflow: "<<delta<<endl;
 
         //- compute overflow from full UZF--------------------------------------
         double overflow=max(pinc-(uzf_stor_max-uzf_stor),0.0);
@@ -314,9 +308,9 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     } // end for (int n=0;n<N;n++) 
 
     // JRC: if this is not automatically satisfied, then this is a mass balance error, by definition - nowhere to get this water from
-    //this was included in original SAC-SMA code.
-    //if(adimc_stor < uzt_stor) { adimc_stor = uzt_stor; }
-    //rates[12]+=max(uzt_stor-adimc_stor,0.0)*Adimp/Options.timestep; //VIOLATES MASS BALANCE
+    // BUT, this was included in original SAC-SMA code.
+    // if(adimc_stor < uzt_stor) { adimc_stor = uzt_stor; }
+    // rates[12]+=max(uzt_stor-adimc_stor,0.0)*Adimp/Options.timestep; //VIOLATES MASS BALANCE
   }
 }
 
