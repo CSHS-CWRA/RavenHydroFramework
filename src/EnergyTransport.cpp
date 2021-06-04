@@ -542,7 +542,7 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
     ExitGracefully(("CEnthalpyModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
 
-  _STREAMOUT<<"time[d],date,hour,air temp.["+DEG_SYMBOL+"C]"<<",";
+  _STREAMOUT<<"time[d],date,hour,air temp.["+to_string(DEG_SYMBOL)+"C]"<<",";
   for(int p=0;p<_pModel->GetNumSubBasins();p++)
   {
     if(_pModel->GetSubBasin(p)->IsGauged()) {

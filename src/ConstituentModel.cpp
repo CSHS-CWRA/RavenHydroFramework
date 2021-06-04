@@ -719,7 +719,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
     kg="[-]"; kgd="[-]"; mgL="[-]";
   }
   else if(_type==ENTHALPY) {
-    kg="[MJ]"; kgd="[MJ/d]"; mgL="["+DEG_SYMBOL+"C]";
+    kg="[MJ]"; kgd="[MJ/d]"; mgL="["+to_string(DEG_SYMBOL)+"C]";
     if(Options.write_constitmass) {
       kg="[MJ/m2]"; kgd="[MJ/m2/d]"; mgL="[MJ/m2]";
     }

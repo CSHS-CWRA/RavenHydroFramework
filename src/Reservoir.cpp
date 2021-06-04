@@ -89,36 +89,51 @@ CReservoir::CReservoir(const string Name,const long SubID)
 //////////////////////////////////////////////////////////////////
 /// \brief Constructor for reservoir using power law rating curves
 /// \param Name [in] Nickname for reservoir
-/// \param SubID [in] subbasin ID
-/// \param a_V [in] power law coefficient for volume rating curve
-/// \param b_V [in] power law exponent for volume rating curve
-//
-CReservoir::CReservoir(const string Name, const long SubID, 
-                       //min_stage
-                       const double a_V, const double b_V,
-                       const double a_Q, const double b_Q,
-                       const double a_A,const double b_A)
-{
-   BaseConstructor(Name,SubID);
+/// \param SBID [in] subbasin ID
+/// \param a_V [in] volume of reservoir/lake when stage at absolute crest height [m3]
+/// \param b_V [in] power law exponent for volume rating curve [-]
+/// \param a_Q [in] power law coefficient for discharge rating curve [m3/s*m^-b_Q]
+/// \param b_Q [in] power law exponent for discharge rating curve [-]
+/// \param a_A[in] surface area of reservoir/lake when stage at absolute crest height [m2]
+/// \param b_A [in] power law exponent for area rating curve [-] (0 for prismatic reservoir)
 
-  _Np=30;
-  _aStage =new double [_Np];
-  _aQ     =new double [_Np];
-  _aQunder=new double [_Np];
-  _aArea  =new double [_Np];
-  _aVolume=new double [_Np];
+//
+CReservoir::CReservoir(const string Name, const long SBID,
+                       const double a_V,  const double b_V,
+                       const double a_Q,  const double b_Q,
+                       const double a_A,  const double b_A,
+                       const double crestht,const double depth)
+{
+  BaseConstructor(Name,SBID);
+
+  _Np=100;
+  _aStage =new double[_Np];
+  _aQ     =new double[_Np];
+  _aQunder=new double[_Np];
+  _aArea  =new double[_Np];
+  _aVolume=new double[_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor",OUT_OF_MEMORY);
 
-  double ht;
-  _min_stage=0.0;
-  _max_stage=10; //reasonable default?
-  for (int i=0;i<_Np;i++)
+  double aA=a_A;
+  double bA=b_A;
+  if(aA==AUTO_COMPUTE) {aA=a_V/depth*b_V;}
+  if(bA==AUTO_COMPUTE) {bA=b_V-1.0;      }
+
+  double ht,dh;
+  _crest_ht  =crestht;       // zero by default
+  _min_stage =_crest_ht-depth;
+  _max_stage =_crest_ht+6.0; // a postive value relative to _crest_ht
+  dh=(_max_stage-_min_stage)/(double)(_Np-1);
+
+  for(int i=0;i<_Np;i++)
   {
-    ht  =_min_stage+(_max_stage-_min_stage)*(double)(i)/(double)(_Np-1);
+    ht  =_min_stage+(double)(i)*dh;
+    if (((ht+dh)-_crest_ht)*(ht-_crest_ht)<0.0){ht=_crest_ht;}//ensures zero discharge point included
+    double ht_above_bottom=ht-_min_stage;
     _aStage [i]=ht;
-    _aQ     [i]=a_Q*pow(ht,b_Q);
-    _aArea  [i]=a_A*pow(ht,b_Q);
-    _aVolume[i]=a_V*pow(ht,b_Q);
+    _aQ     [i]=a_Q*pow(max(ht-_crest_ht,0.0),b_Q);
+    _aArea  [i]=aA *pow(ht_above_bottom/depth,bA );
+    _aVolume[i]=a_V*pow(ht_above_bottom/depth,b_V);
     _aQunder[i]=0.0;
   }
   _max_capacity=_aVolume[_Np-1];
@@ -283,14 +298,14 @@ CReservoir::CReservoir(const string Name,
   _max_stage=6.0+_crest_ht; //reasonable default?
   ExitGracefullyIf(depth<0,"CReservoir::Constructor (Lake): cannot have negative maximum lake depth",BAD_DATA_WARN);
   
-  _Np=30;
+  _Np=100;
   _aStage =new double [_Np];
   _aQ     =new double [_Np];
   _aQunder=new double [_Np];
   _aArea  =new double [_Np];
   _aVolume=new double [_Np];
   ExitGracefullyIf(_aVolume==NULL,"CReservoir::constructor (4)",OUT_OF_MEMORY);
-
+  
   double dh;
   string warn;
   dh=(_max_stage-_min_stage)/(_Np-1);
@@ -300,7 +315,7 @@ CReservoir::CReservoir(const string Name,
     if((_min_stage+(i-1)*dh-_crest_ht)*(_min_stage+i*dh-_crest_ht)<0.0){_aStage[i]=_crest_ht;} //ensures zero point is included
     if(_aStage[i]<_crest_ht){_aQ[i]=0.0;}
     else{
-      _aQ[i]=2.0/3.0*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
+      _aQ[i]=weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
     }
     _aQunder[i]=0.0;
     _aArea  [i]=A;

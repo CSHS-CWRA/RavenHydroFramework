@@ -133,11 +133,12 @@ private:/*-------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CReservoir(const string Name,const long SubID);
-  CReservoir(const string name, const long SubID,
+  CReservoir(const string Name, const long SubID);
+  CReservoir(const string name, const long SubID, //Power law constructor
              const double a_v, const double b_v,
              const double a_Q, const double b_Q,
-             const double a_A, const double b_A);
+             const double a_A, const double b_A,
+             const double crestht, const double depth);
   CReservoir(const string name, const long SubID, 
              const double *a_ht,
              const double *a_Q, const double *aQ_und,const double *a_A, const double *a_V,

@@ -950,7 +950,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
 
   double a_V(1000.0),b_V(1.0);
   double a_Q(10.0),b_Q(1.0);
-  double a_A(1000.0),b_A(0.0);
+  double a_A(AUTO_COMPUTE),b_A(AUTO_COMPUTE);
   double *aQ(NULL),*aQ_ht(NULL); int NQ(0);
   double *aV(NULL),*aV_ht(NULL); int NV(0);
   double *aA(NULL),*aA_ht(NULL); int NA(0);
@@ -1327,9 +1327,11 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     }
   }
 
+  //Data ingested; build reservoir object
+  //------------------------------------------------------------------------------------
   if((type==CURVE_POWERLAW) || (type==CURVE_LINEAR))
   {
-    pRes=new CReservoir(name,SBID,a_V,b_V,a_Q,b_Q,a_A,b_A);
+    pRes=new CReservoir(name,SBID,a_V,b_V,a_Q,b_Q,a_A,b_A,crestht,max_depth);
   }
   else if(type==CURVE_DATA)
   {

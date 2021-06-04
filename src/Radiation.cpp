@@ -373,6 +373,7 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
     break;
   }
   }
+  return 1.0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates day angle [rad]

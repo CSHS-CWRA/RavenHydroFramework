@@ -253,7 +253,7 @@ const double  TIME_CORRECTION         =0.0001;                                  
 const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km]     very large maximum reach length (defaults to single segment per reach)
 
 //Special symbols
-const string  DEG_SYMBOL              ="°";                                     ///< degree symbol, ° (used to work as \370, bu not with VS 2019?)
+const char  DEG_SYMBOL              ='\370';                                    ///< degree symbol, °
 
 //*****************************************************************
 //Exit Strategies
