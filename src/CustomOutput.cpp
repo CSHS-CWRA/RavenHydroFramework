@@ -14,15 +14,15 @@ void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,con
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the CCustomOutput constructor
-/// \param variable [in] Output variable assessed in custom output file
-/// \param sv [in] State variable output type (if output is a SV)
-/// \param sv_index [in] State variable index (if output is a state variable)
-/// \param force_string [in] Forcing function name (if output is a forcing function)
-/// \param stat [in] Time aggregate statistic (average, maximum, range, etc.)
-/// \param time_aggregation [in] How frequently data is aggregated (monthly, daily, hourly, etc.)
+/// \param variable          [in] Output variable assessed in custom output file
+/// \param sv                [in] State variable output type (if output is a SV)
+/// \param sv_index          [in] State variable index (if output is a state variable)
+/// \param force_string      [in] Forcing function name (if output is a forcing function)
+/// \param stat              [in] Time aggregate statistic (average, maximum, range, etc.)
+/// \param time_aggregation  [in] How frequently data is aggregated (monthly, daily, hourly, etc.)
 /// \param space_aggregation [in] How data is spatially aggregated (by HRU, by basin, etc.)
-/// \param *pMod [in] Pointer to model
-/// \param &Options [in] Global model options information
+/// \param *pMod             [in] Pointer to model
+/// \param &Options          [in] Global model options information
 //
 CCustomOutput::CCustomOutput( const diagnostic    variable,
                               const sv_type       sv,
@@ -54,7 +54,6 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 
   pModel     =pMod;                                         // pointer to the main model
 
-
   _varName        ="UNKNOWN";
   _varUnits       ="none";
   _timeAggStr     ="UNKNOWN";
@@ -77,14 +76,12 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _time_index=0;
 
   //-------------------------------------------------------------
-  // figure out filename here
-  // RunName if available
+  // figure out filename
   ostrstream sFILENAME;
   if (Options.run_name!=""){sFILENAME<<Options.output_dir<<Options.run_name<<"_";}
   else                     {sFILENAME<<Options.output_dir;                       }
       
-  // Get the variable name (either the state variable name of the forcing variable name)
-  // and the units
+  // Get the variable name (either the state variable name of the forcing variable name) and the units
   switch(_var)
   {
   case (VAR_STATE_VAR):
@@ -609,6 +606,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     else if (_spaceAgg==BY_SELECT_HRUS){TMP<<pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetID()<<ends;}
     temp=TMP.str();
     strcpy(group_name[0],temp.c_str());
+
     //const char** strpointer=group_name;
     start[0]=k;
     count[0]=1;
@@ -719,7 +717,6 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
                                                              {reset=true;}
   else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    
                                                              {reset=true;}//Oct 1 - print preceding year
-  //cout <<t <<" ->"<<fabs(floor(t)-t)<<"   "<<(fabs(floor(t)-t) <0.5*Options.timestep)<<endl;
 
   if (reset)
   {
@@ -1054,10 +1051,11 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
 
   //read in parameter information
   diagnostic diag;
-  diag=VAR_STATE_VAR ;//For now, default
-  int SV_ind,SV_ind2;
-  sv_type sv_typ;
-  SV_ind= ParseSVTypeIndex(s[3], pModel);
+  int        SV_ind,SV_ind2;
+  sv_type    sv_typ;
+
+  diag  =VAR_STATE_VAR;//the default
+  SV_ind=ParseSVTypeIndex(s[3], pModel);
   SV_ind2=DOESNT_EXIST;
 
   //Special treatment of To:, From: and Between:1.And.2 fluxes

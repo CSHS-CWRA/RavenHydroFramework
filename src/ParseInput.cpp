@@ -77,10 +77,6 @@ bool ParseInputFiles (CModel      *&pModel,
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;
   }
 
-  // NetCDF run info file (if using with FEWS)
-  //--------------------------------------------------------------------------------
-  ParseNetCDFRunInfoFile(pModel,Options);
-
   // Class Property file (.rvp)
   //--------------------------------------------------------------------------------
   if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){
@@ -263,7 +259,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   
   //Groundwater model options
-  Options.modeltype               =MODELTYPE_SURFACE;
+  Options.modeltype               =MODELTYPE_SURFACE; //GWMIGRATE -TO REMOVE
   Options.gw_solver_outer         =GWSOL_NEWTONRAPHSON;
   Options.gw_solver_inner         =GWSOL_BICGSTAB;
   Options.gw_grid                 =GRID_UNSTRUCTURED;
@@ -310,6 +306,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.custom_interval         =1.0; //daily
   Options.use_stopfile            =false;
   Options.runinfo_filename        ="";
+  Options.stateinfo_filename      ="";
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -448,6 +445,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":UseStopFile"               )){code=106;}
     else if  (!strcmp(s[0],":FEWSRunInfoFile"           )){code=108;}
     else if  (!strcmp(s[0],":ChunkSize"                 )){code=109;}
+    else if  (!strcmp(s[0],":FEWSStateInfoFile"         )){code=110;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1372,7 +1370,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(57):  //--------------------------------------------
     {/*:NoisyMode */
-      if (Options.noisy) {cout <<"Noisy Mode!!!!"<<endl;}
+      cout <<"Noisy Mode!!!!"<<endl;
       Options.noisy=true;
       break;
     }
@@ -1745,12 +1743,20 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSRunInfoFile [filename.nc]*/
       if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
       Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
+
+      ParseNetCDFRunInfoFile(pModel, Options);
       break;
     }
     case(109):  //--------------------------------------------
     {/*:ChunkSize [size, in MB]*/
       if(Options.noisy) { cout << "NetCDF buffering size" << endl; }
       Options.NetCDF_chunk_mem =max(s_to_i(s[1]),1);
+      break;
+    }
+    case(110):  //
+    {/*:FEWSStateInfoFile [filename.nc]*/
+      if (Options.noisy) { cout << "FEWS Stateinfo file" << endl; }
+      Options.stateinfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
       break;
     }
     case(160):  //--------------------------------------------

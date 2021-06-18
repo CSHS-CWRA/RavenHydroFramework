@@ -411,6 +411,15 @@
     <ClCompile Include="SoilBalance.cpp">
       <Filter>Source Files\Hydrological Processes\Soil Water Processes</Filter>
     </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IsotopeTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -561,6 +570,9 @@
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
     <ClInclude Include="Transport.h">
+      <Filter>Header Files\Transport</Filter>
+    </ClInclude>
+    <ClInclude Include="IsotopeTransport.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
   </ItemGroup>

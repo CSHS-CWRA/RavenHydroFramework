@@ -535,7 +535,6 @@ void MassEnergyBalance( CModel            *pModel,
 
       //surface water moved instantaneously from HRU to basin reach/channel storage
       aRouted[p]+=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//aRouted=[m3]
-
       aPhinew[k][iSW]=0.0;//zero out surface water storage
     }
   }

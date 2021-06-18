@@ -17,7 +17,6 @@ CEnthalpyModel::CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,c
 {
   _aEnthalpyBeta=NULL;
   _aEnthalpySource=NULL;
-  _can_evaporate=true; //TMP DEBUG -to prevent accumulation of energy in soil/canopy stores during evaporation.
 }
 
 //////////////////////////////////////////////////////////////////

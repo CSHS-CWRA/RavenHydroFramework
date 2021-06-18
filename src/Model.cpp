@@ -1552,6 +1552,17 @@ void CModel::SetOutputGroup(const CHRUGroup *pOut){
 void CModel::SetEnsembleMode(CEnsemble *pEnsemble) {
   _pEnsemble=pEnsemble;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Deletes all custom outputs (For FEWS override)
+//
+void CModel::DeleteCustomOutputs() 
+{
+  for(int i=0;i<_nCustomOutputs;i++) {
+    delete _pCustomOutputs[i];
+  }
+  delete [] _pCustomOutputs;
+  _nCustomOutputs=0;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets number of layers used to simulate snowpack

@@ -428,7 +428,16 @@ double CTransportModel::GetConcentration(const int k,const int sv_index) const
 
   return _pConstitModels[c]->CalculateConcentration(mass,vol);
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief adds new transportable constituent to model
+/// \note adds corresponding state variables to model
+/// \param name [in] name of constituent
+/// \param type [in] constit_type - type of constituent (mass/energy/tracer)
+//
+double CTransportModel::GetAdvectionCorrection(const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const
+{
+  return _pConstitModels[c]->GetAdvectionCorrection(pHRU,iFromWater,iToWater,C);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
 /// \note adds corresponding state variables to model

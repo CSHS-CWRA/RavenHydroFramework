@@ -464,9 +464,9 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // -------------------------------
   retval = 0;
   iatt   = 0;
-  long_name_f = (char *) malloc(2);
+  long_name_f = (char *) malloc(3);
   strcpy(long_name_f, "?\0");
-  unit_f = (char *) malloc(2);
+  unit_f = (char *) malloc(3);
   strcpy(unit_f, "?\0");
 
   while (retval==0)

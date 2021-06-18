@@ -120,7 +120,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":OverrideStreamflow"          )){code=100;}
     else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
     //-----------------TRANSPORT--------------------------------
-    else if  (!strcmp(s[0],":ConcentrationTimeSeries"     )){code=300;}
+    else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300;}
     else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}
     else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302;}  
     else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303;}
@@ -1070,11 +1070,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (300)://----------------------------------------------
-    {/*:ConcentrationTimeSeries
-       :ConcentrationTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
+    {/*:FixedConcentrationTimeSeries
+       :FixedConcentrationTimeSeries [string constit_name] [string state_var (storage compartment)] {optional HRU Group name}
          {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
          {double concentration values} x nMeasurements
-       :EndConcentrationTimeSeries
+       :EndFixedConcentrationTimeSeries
      */
       if (Options.noisy){cout <<"Fixed concentration time series"<<endl;}
 
@@ -1093,7 +1093,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           CHRUGroup *pSourceGrp;
           pSourceGrp=pModel->GetHRUGroup(s[3]);
           if (pSourceGrp==NULL){
-            ExitGracefully("Invalid HRU Group name supplied in :ConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
+            ExitGracefully("Invalid HRU Group name supplied in :FixedConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
             break;
           }
           else{
@@ -1101,14 +1101,15 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           }
         }
         CTimeSeries *pTS;
-        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),DOESNT_EXIST,Options);//name=constitutent name
+        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),DOESNT_EXIST,Options);//name=constitutent name+storage name
         
         int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         if(c!=DOESNT_EXIST) {
           pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletTimeSeries(i_stor,kk,pTS);
+          pTS->SetConstitInd(c);
         }
         else {
-          ExitGracefully("ParseMainInputFile: invalid constiuent in :ConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
+          ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
         }
       }
       else{
@@ -1154,6 +1155,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         if(c!=DOESNT_EXIST) {
           pModel->GetTransportModel()->GetConstituentModel(c)->AddInfluxTimeSeries(i_stor,kk,pTS);
+          pTS->SetConstitInd(c);
         }
         else {
           ExitGracefully("ParseTimeSeriesInputFile: invalid constiuent in :MassFluxTimeSeries command in .rvt file",BAD_DATA_WARN);

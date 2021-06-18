@@ -358,6 +358,8 @@ public:/*-------------------------------------------------------*/
   void    OverrideStreamflow        (const long SBID);
   void    SetEnsembleMode           (CEnsemble *pEnsemble);
 
+  void    DeleteCustomOutputs       ();
+
   /*--Other Functions: mostly called by Solver--*/
   //called only once prior to simulation:
   void        Initialize                 (const optStruct &Options);

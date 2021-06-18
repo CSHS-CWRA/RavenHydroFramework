@@ -45,10 +45,6 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
   //Initialize constituent members
   _name=name;
   _type=typ;
-  _can_evaporate=false; //default behaviour - evaporation impossible for most contaminants
-  if(_type==TRACER) {
-    _can_evaporate=true;
-  }
   _is_passive=false;
   _initial_mass=0;
   _cumul_input =0;
@@ -99,27 +95,40 @@ bool  CConstituentModel::IsPassive() const {
   return _is_passive;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns effective retardation factor for constituent c
-/// being transported from storage compartment _iFromWater to storage compartment _iToWater
-/// \param c [in] constituent index
-/// \param _iFromWater [in] index of "from" water storage state variable
-/// \param _iToWater [in] index of "to" water storage state variable
+/// \brief returns advection correction factor for constituent c
+/// being transported from storage compartment iFromWater to storage compartment iToWater
+/// \param pHRU [in] pointer to HRU of interest
+/// \param iFromWater [in] index of "from" water storage state variable
+/// \param iToWater [in] index of "to" water storage state variable
+/// \param Cs [in] RAW constituent concentration (mg/L or MJ/L or L/L, not mg/L or C or o/oo)
 //
-double CConstituentModel::GetRetardationFactor(const CHydroUnit *pHRU,const  int _iFromWater,const int _iToWater) const
+double CConstituentModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& Cs) const
+{
+  return 1.0;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns advection correction factor for nutrient constituent
+/// being transported from storage compartment iFromWater to storage compartment iToWater
+/// \param pHRU [in] pointer to HRU of interest
+/// \param iFromWater [in] index of "from" water storage state variable
+/// \param iToWater [in] index of "to" water storage state variable
+/// \param Cs [in] RAW constituent concentration (mg/L or MJ/L or L/L, not mg/L or C or o/oo)
+//
+double CNutrientModel::GetAdvectionCorrection(const CHydroUnit *pHRU,const int iFromWater,const int iToWater, const double &Cs) const
 {
   sv_type fromType,toType;
-  fromType=_pModel->GetStateVarType(_iFromWater);
-  toType  =_pModel->GetStateVarType(_iToWater);
+  fromType=_pModel->GetStateVarType(iFromWater);
+  toType  =_pModel->GetStateVarType(iToWater);
 
-  if(IsPassive()) { return ALMOST_INF; }
+  if(IsPassive()) { return 1.0; }
   if(fromType==SOIL)
   {
-    int    m=_pModel->GetStateVarLayer(_iFromWater);
+    int    m=_pModel->GetStateVarLayer(iFromWater);
 #ifdef _STRICTCHECK_
-    ExitGracefullyIf(m==DOESNT_EXIST,"GetRetardationFactor:invalid _iFromWater",RUNTIME_ERR);
+    ExitGracefullyIf(m==DOESNT_EXIST,"GetAdvectionCorrection:invalid iFromWater",RUNTIME_ERR);
 #endif
 
-    if(toType!=ATMOSPHERE) { return pHRU->GetSoilProps(m)->retardation[_constit_index]; }
+    if(toType!=ATMOSPHERE) { return 1.0/pHRU->GetSoilProps(m)->retardation[_constit_index]; }
     else                   { return pHRU->GetVegetationProps()->uptake_moderator[_constit_index]; }
   }
   return 1.0;
@@ -724,16 +733,22 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
       kg="[MJ/m2]"; kgd="[MJ/m2/d]"; mgL="[MJ/m2]";
     }
   }
+  else if(_type==ISOTOPE) {
+    kg="[kg-L]"; kgd="[kg-L/d]"; mgL="[o/oo]";
+    if(Options.write_constitmass) {
+      kg="[1/m2]"; kgd="[1/m2/d]"; mgL="[1/m2]"; //very hard to interpret these units
+    }
+  }
 
   //Concentrations or Temperatures file
   //--------------------------------------------------------------------
-  if(_type!=ENTHALPY) {
-    filename=_name+"Concentrations.csv";
-    if(Options.write_constitmass) { filename=_name+"Mass.csv"; }
+  if(Options.write_constitmass) {
+    if(_type!=ENTHALPY) { filename=_name+"Mass.csv"; }
+    else                { filename="Enthalpy.csv"; }
   }
   else {
-    filename="Temperatures.csv";
-    if(Options.write_constitmass) { filename="Enthalpy.csv"; }
+    if(_type!=ENTHALPY) { filename=_name+"Concentrations.csv";}
+    else                { filename="Temperatures.csv"; }
   }
   filename=FilenamePrepare(filename,Options);
 
@@ -749,7 +764,6 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   else {
     _OUTPUT<<"time[d],date,hour,air temp."<<mgL<<",influx"<<kgd<<",Channel Storage"<<kg<<",Rivulet Storage"<<kg;
   }
-
 
   for(int ii=0;ii<_pTransModel->GetNumWaterCompartments();ii++)
   {
@@ -772,12 +786,8 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //Pollutograph / stream temperatures file
   //--------------------------------------------------------------------
-  if(_type!=ENTHALPY) {
-    filename=_name+"Pollutographs.csv";
-  }
-  else {
-    filename="StreamTemperatures.csv";
-  }
+  if(_type!=ENTHALPY) {filename=_name+"Pollutographs.csv";}
+  else                {filename="StreamTemperatures.csv"; }
 
   filename=FilenamePrepare(filename,Options);
   _POLLUT.open(filename.c_str());
@@ -803,8 +813,8 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
       for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
         if(IsContinuousConcObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
         {
-          if(pBasin->GetName()=="") { _POLLUT<<",ID="<<pBasin->GetID()  <<" (observed) [m3/s]"; }
-          else                      { _POLLUT<<","   <<pBasin->GetName()<<" (observed) [m3/s]"; }
+          if(pBasin->GetName()=="") { _POLLUT<<",ID="<<pBasin->GetID()  <<" (observed) "<<mgL; }
+          else                      { _POLLUT<<","   <<pBasin->GetName()<<" (observed) "<<mgL; }
         }
       }
     }
@@ -818,7 +828,6 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
 //
 void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
 {
-  // \todo[funct] - support enthalpy/temperature in ensim output 
   string filename;
   ofstream OUT;
 
@@ -830,7 +839,6 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
   time_struct tt,tt2;
   JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
   JulianConvert(Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt2);//end of the timestep
-
 
   //units names
   kg="kg"; kgd="kg/d"; mgL="mg/l";
@@ -1011,7 +1019,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
   if((Options.suppressICs) && (tt.model_time==0.0)) { return; }
 
   convert=1.0/MG_PER_KG; //[mg->kg]
-  if(_type==ENTHALPY)               { convert=1.0; } //[MJ]->[MJ]
+  if(_type==ENTHALPY)               { convert=1.0;                   } //[MJ]->[MJ]
   if(Options.write_constitmass)     { convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2] [MJ->MJ/m2]
 
   // Concentrations.csv or Temperatures.csv
@@ -1062,15 +1070,12 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
     M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2 or enthalpy - MJ/m2
     V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
 
-    concentration=CalculateConcentration(M,V); // [mg/L] or [C]
-    if(Options.write_constitmass) { concentration=M; }
-
-    if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2]
+    concentration=CalculateConcentration(M,V); // [mg/L] or [C] or [o/oo]
+    if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2] or [1/m2]
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
       _OUTPUT<<","<<concentration;     //print column entry 
-
       currentMass+=M*(area*M2_PER_KM2); //[mg]  or [MJ]  //increment total mass in system
     }
     else {
@@ -1125,7 +1130,6 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
            else                                             { _POLLUT << ",";        }
         }
       }
-
     }
   }
   _POLLUT<<endl;

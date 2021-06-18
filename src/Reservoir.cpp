@@ -315,7 +315,7 @@ CReservoir::CReservoir(const string Name,
     if((_min_stage+(i-1)*dh-_crest_ht)*(_min_stage+i*dh-_crest_ht)<0.0){_aStage[i]=_crest_ht;} //ensures zero point is included
     if(_aStage[i]<_crest_ht){_aQ[i]=0.0;}
     else{
-      _aQ[i]=weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
+      _aQ[i]=2.0/3.0*weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
     }
     _aQunder[i]=0.0;
     _aArea  [i]=A;

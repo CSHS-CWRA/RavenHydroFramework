@@ -119,12 +119,13 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
 {
   int    q,iFromWater,iToWater,js;
   double mass,vol,Cs;
-  double Rf;                 //retardation factor
+  double corr;               // advective correction (e.g.,1/retardation factor)
   double sv[MAX_STATE_VARS]; //state variable history
   
   double tstep=Options.timestep;
   int    nAdvConnections=pTransModel->GetNumAdvConnections();
   bool   isEnthalpy=(pTransModel->GetConstituentModel2(_constit_ind)->GetType()==ENTHALPY);
+  bool   isIsotope =(pTransModel->GetConstituentModel2(_constit_ind)->GetType()==ISOTOPE);
   int    k=pHRU->GetGlobalIndex();
   
   static double    *Q=NULL; 
@@ -157,29 +158,31 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     iFromWater=pTransModel->GetFromWaterIndex(q);
     iToWater  =pTransModel->GetToWaterIndex  (q);
 
-    Rf=1.0;
-    //Rf=pTransModel->GetRetardationFactor(constit_ind,pHRU,iFromWater,iToWater);
-
     //Advection rate calculation rates[q]=dm/dt=Q*C or dE/dt=Q*h
     mass=0;vol=1;
+    int iF,iT;
     if      (Q[q]>0)
     {
       mass=sv[iFrom[q]];   //[mg/m2] or [MJ/m2]
       vol =sv[iFromWater]; //[mm]
+      iF=iFromWater; iT=iToWater;
     }
     else if (Q[q]<0)
     {
       mass=sv[iTo[q]];
       vol =sv[iToWater];
+      iF=iToWater;iT=iFromWater;
     }
-    if (vol>1e-6)//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
+    if (vol>1e-6)//note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep*corr)
     {
-      rates[q]=Q[q]*mass/vol/Rf; //[mg/m2/d] or [MJ/m2/d]
+      corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRU,iF,iT,mass/vol*MM_PER_METER/LITER_PER_M3);//mg/m2/mm->mg/L
 
-      if(!isEnthalpy) { //negative enthalpy/temperature allowed (but shouldnt happen)
+      rates[q]=Q[q]*mass/vol*corr; //[mg/m2/d] or [MJ/m2/d]
+      if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
+
+      if ((!isEnthalpy) && (!isIsotope)){ //negative enthalpy/temperature/isotopic composition allowed
         if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       }
-      if(fabs(rates[q])>mass/tstep) { rates[q]=(Q[q]/fabs(Q[q]))*mass/tstep; }//emptying out compartment
     }
     
     //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
@@ -213,7 +216,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       }
       else{
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
-        if(pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) { Cs=0.0; }//don't explicitly try to track enthalpy content of atmosphere
+        if(pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) { Cs=0.0; }//don't explicitly try to track enthalpy content of atmospheric precip
       }
       mass          =sv[iFrom[q]]; 
       dirichlet_mass=Cs*sv[iFromWater]; //Cs*V 

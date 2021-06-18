@@ -99,7 +99,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
 
   int    q,iFromWater,iToWater,qs,kFrom,kTo;
   double mass,vol,Cs,Asource;
-  double Rf;                 //retardation factor
+  double corr;                 //advective correction factor (e.g., retardation)
 
   double **sv,*Q;
   int    nHRUs=_pModel->GetNumHRUs();
@@ -148,8 +148,6 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
     Ato       =pHRUs[kTo  ]->GetArea();
 
     //cout<<"lat con (iF,iT): ("<<iFromWater<<","<<iToWater<<") kF,kT:("<<kFrom<<","<<kTo<<") icF,icT:("<<_iFromLat[q]<<","<<_iToLat[q]<<")"<<endl;
-    Rf=1.0;
-    //Rf=pTransModel->GetRetardationFactor(constit_ind,pHRU,iFromWater,iToWater);
 
     //Advection rate calculation rates[q]=dm/dt=Q*C
     mass=0;vol=1;Asource=1.0;
@@ -165,11 +163,13 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
       vol =sv[kTo][iToWater];
       Asource=Ato; 
     }
-
+    corr=1.0;
+    corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRUs[kFrom],iFromWater,iToWater,mass/vol*MM_PER_METER/LITER_PER_M3);//mg/m2/mm->mg/L
+    
     exchange_rates[q]=0.0;
     if(vol>1e-6) //note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
     {
-      exchange_rates[q]=(Q[q])*mass/vol/Rf; //[mm-m2/d]*[mg/m2]/[mm]=[mg/d]
+      exchange_rates[q]=(Q[q])*mass/vol*corr; //[mm-m2/d]*[mg/m2]/[mm]=[mg/d]
 
       ExitGracefullyIf(mass<-1e-9,"CmvLatAdvection - negative mass",RUNTIME_ERR);
       if(fabs(exchange_rates[q])>Asource*mass/tstep) { exchange_rates[q]=(Q[q]/fabs(Q[q]))*Asource*mass/tstep; }//emptying out compartment

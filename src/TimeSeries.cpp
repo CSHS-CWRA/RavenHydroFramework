@@ -76,6 +76,8 @@ CTimeSeries::CTimeSeries(string     Name,
 
   _aSampVal =NULL; //generated in Resample() routine
   _nSampVal =0;
+  _sampInterval = 1.0;
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1448,7 +1450,8 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       printf("  Data read: [%.4f, %.4f, %.4f ... %.4f]\n",aTmp2D[0][0], aTmp2D[0][1], aTmp2D[0][2], aTmp2D[0][ntime-1]);
     }
   }
-  else {
+  else 
+  {
     size_t    nc_start [1];
     size_t    nc_length[1];
     ptrdiff_t nc_stride[1];
@@ -1477,13 +1480,17 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
     for (int it=0;it<dim1;it++){
       for (int ir=0;ir<dim2;ir++){
-        aTmp2D[it][ir] = aTmp2D[it][ir] * scale_factor + add_offset;
+        if (aTmp2D[it][ir] != missval) {
+           aTmp2D[it][ir] = aTmp2D[it][ir] * scale_factor + add_offset;
+        }
       }
     }
   }
   else {
     for (int it=0;it<dim1;it++){
-      aTmp1D[it] = aTmp1D[it] * scale_factor + add_offset;
+      if (aTmp1D[it] != missval) {
+        aTmp1D[it] = aTmp1D[it] * scale_factor + add_offset;
+      }
     }
   }
   
@@ -1492,7 +1499,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   double *aVal = new double [ntime];
   for (int it=0; it<ntime; it++) {               // loop over time points in buffer
-      aVal[it]=RAV_BLANK_DATA;                   // initialize
+    aVal[it]=RAV_BLANK_DATA;                   // initialize
   }
 
   // -------------------------------
@@ -1511,8 +1518,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
           aVal[it]=RAV_BLANK_DATA;
         }
       }
-    };
-
+    }
   }
   else 
   {
@@ -1525,7 +1531,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       else {
         aVal[it]=RAV_BLANK_DATA;
       }
-    };
+    }
   }
 
   if (Options.noisy) {

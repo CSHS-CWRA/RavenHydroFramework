@@ -21,9 +21,8 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   int ncid;          //NetCDF fileid
   int retval;        //return value of NetCDF routines
   size_t att_len;    //character string length
-  //double time_zone;
-
-  if(Options.noisy) { cout<<"Opening runinfo file "<<Options.runinfo_filename<<endl; }
+  
+  if(Options.noisy) { cout<<"Opening FEWS runinfo file "<<Options.runinfo_filename<<endl; }
   retval = nc_open(Options.runinfo_filename.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
 
   // Ingest start time=============================================================================
@@ -59,10 +58,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   double end_day;
   int end_year;
   retval = nc_inq_varid(ncid,"end_time",&varid_endt);
-  if(retval == NC_ENOTATT) {
-    //end_time not found. Do nothing
-  }
-  else {
+  if(retval != NC_ENOTATT) {
     HandleNetCDFErrors(retval);
     retval = nc_inq_attlen(ncid,varid_endt,"units",&att_len);                 HandleNetCDFErrors(retval);
     char *unit_t=new char[att_len+1];
@@ -85,6 +81,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
     delete[] unit_t;
   }
+
   // Ingest working directory=====================================================================
   int varid_workdir;
   retval = nc_inq_varid(ncid,"work_dir",&varid_workdir);
@@ -99,6 +96,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
     if(Options.noisy) { cout<<"ParseRunInfoFile: read variable work_dir from NetCDF: "<<Options.output_dir<<endl; }
     delete [] workdir;
   }
+
   // Ingest properties      =====================================================================
   int varid_props;
   retval = nc_inq_varid(ncid,"properties",&varid_props);
@@ -106,7 +104,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   {
     HandleNetCDFErrors(retval);
     
-    //  RunName
+    // RunName
     retval = nc_inq_attlen(ncid,varid_props,"RunName",&att_len);                    
     if(retval !=NC_ENOTATT)
     {
@@ -118,6 +116,50 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
       Options.run_name=runname;
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:RunName from NetCDF: "<<Options.run_name<<endl; }
       delete[] runname;
+    }
+
+    // SuppressWarnings
+    retval = nc_inq_attlen(ncid,varid_props,"BlockRavenWarnings",&att_len);
+    if(retval !=NC_ENOTATT)
+    {
+      HandleNetCDFErrors(retval);
+      char* boolean=new char[att_len+1];
+      retval = nc_get_att_text(ncid,varid_props,"BlockRavenWarnings",boolean);       HandleNetCDFErrors(retval);// read attribute text
+      boolean[att_len] = '\0';// add string determining character
+
+      g_suppress_warnings=(boolean=="true");
+      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenWarnings from NetCDF: "<<g_suppress_warnings<<endl; }
+      delete[] boolean;
+    }
+
+    //Block custom output
+    retval = nc_inq_attlen(ncid,varid_props,"BlockRavenCustomOutput",&att_len);
+    if(retval !=NC_ENOTATT)
+    {
+      HandleNetCDFErrors(retval);
+      char* boolean=new char[att_len+1];
+      retval = nc_get_att_text(ncid,varid_props,"BlockRavenCustomOutput",boolean);       HandleNetCDFErrors(retval);// read attribute text
+      boolean[att_len] = '\0';// add string determining character
+
+      if (boolean=="true") {
+        pModel->DeleteCustomOutputs();
+      }
+      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(boolean=="true")<<endl; }
+      delete[] boolean;
+    }
+
+    // Mode
+    retval = nc_inq_attlen(ncid, varid_props, "Mode", &att_len);
+    if (retval != NC_ENOTATT)
+    {
+      HandleNetCDFErrors(retval);
+      char* mode = new char[att_len];
+      retval = nc_get_att_text(ncid, varid_props, "Mode", mode);       HandleNetCDFErrors(retval);// read attribute text
+
+      Options.run_mode=mode[0];//only uses first character
+      
+      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
+      delete[] mode;
     }
   }
 
@@ -147,19 +189,24 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options,const double &t)
   int ncid;          //NetCDF fileid
   int retval;        //return value of NetCDF routines
   //size_t att_len;    //character string length
-                     //double time_zone;
   int HRUvecID;      //attribute ID of HRU vector
   size_t nHRUsLocal;    //size of HRU Vector
 
   //The state info file includes:
-    //1)	A vector of size[1:NumHRUs] which includes HRU IDs which reference the HRUID used in the Raven .rvh file. The index i of each entry will be the same as that used by the matrix in part 2. Suggested variable name: HRUIDs.
-    //2)	One or more matrices of size[1:NumTimes,1:NumHRUs] which includes the state variable being updated,using the same indexing[i=1:NumHRUs] as the vector of HRUIDs. Blank values will not be updated. Raven model HRUs with IDs not in this list will not be updated. HRUIDs in this list but not in Raven model will throw a warning to RavenErrors.txt.
-    //Ideally,the naming convention of this would be that either(1) the variable name of this 2D matrix or (2) the long_name attribute of this matrix would be equivalent to the raven state variable tag,e.g.,SNOW,PONDED_WATER,SOIL[0]. Another option would be to add a raven_name attribute.
+    //1)	A vector of size[1:NumHRUs] which includes HRU IDs which reference the HRUID used in the Raven .rvh file. 
+    // The index i of each entry will be the same as that used by the matrix in part 2. Suggested variable name: HRUIDs.
+    //2)	One or more matrices of size[1:NumTimes,1:NumHRUs] which includes the state variable being updated,using the 
+    // same indexing[i=1:NumHRUs] as the vector of HRUIDs. Blank values will not be updated. Raven model HRUs with IDs 
+    // not in this list will not be updated. HRUIDs in this list but not in Raven model will throw a warning to RavenErrors.txt.
+    //Ideally,the naming convention of this would be that either(1) the variable name of this 2D matrix or 
+    //(2) the long_name attribute of this matrix would be equivalent to the raven state variable tag,e.g.,SNOW,PONDED_WATER,SOIL[0]. 
+    // Another option would be to add a raven_name attribute.
 
-  string statefile="state_mods.nc"; //=Options.stateinfo_filename;
+  string statefile=Options.stateinfo_filename;
 
   if(Options.noisy) { cout<<"Opening state info file "<<statefile<<endl; }
   retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+
 
   retval = nc_inq_varid(ncid,"HRUIDs",&HRUvecID);                HandleNetCDFErrors(retval);
   if(retval==NC_ENOTVAR) {

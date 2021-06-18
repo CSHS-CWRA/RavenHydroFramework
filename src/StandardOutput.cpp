@@ -898,7 +898,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if((_pSubBasins[p]->IsGauged()) &&  (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
 
             string name,constraint_str;
-            if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
+            if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID()); }
             else                             { name=_pSubBasins[p]->GetName(); }
 
             in     =_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep);//m3
@@ -1613,8 +1613,8 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   for(p=0;p<_nSubBasins;p++){
     if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
       string bname;
-      if(_pSubBasins[p]->GetName()==""){ bname = to_string(_pSubBasins[p]->GetID()); }
-      else                             { bname = _pSubBasins[p]->GetName(); }
+      if ((_pSubBasins[p]->GetName()=="") || (Options.deltaresFEWS)){ bname = to_string(_pSubBasins[p]->GetID()); }
+      else                                                          { bname = _pSubBasins[p]->GetName(); }
       start[0] = ibasin;
       count[0] = 1;
       strcpy(current_basin_name[0],bname.c_str());

@@ -1017,6 +1017,7 @@ struct optStruct
   string           rvv_filename;              ///< fully qualified filename of rvv (groundwater-surface water overlap) file GWMIGRATE - TO REMOVE!!
   string           rvs_filename;              ///< fully qualified filename of rvs (groundwater-surface water exchange) file GWMIGRATE - TO REMOVE!!
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS 
+  string           stateinfo_filename;        ///< fully qualified filename of stateinfo.nc file from FEWS
 
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)
   string           output_dir;                ///< output directory (can change during ensemble run)
@@ -1381,7 +1382,7 @@ inline double        s_to_d (const char *s1)            {return atof(s1);       
 inline bool StringIsLong(const char *s1)
 {
   char *p;
-  strtol(s1,&p,10);
+  long tmp=strtol(s1,&p,10);
   return !(*p);
 }
 ///////////////////////////////////////////////////////////////////
@@ -1414,7 +1415,7 @@ inline void      s_to_range (const char *s1, int &v1, int &v2)
   if (p==-1){v1=v2=s_to_i(s1);return;}
   else{
     v1=atoi(s.substr(0,(unsigned int)(p)).c_str());
-    v2=atoi(s.substr((unsigned int)(p+1),1000).c_str());
+    v2=atoi(s.substr((unsigned int)(p)+1,1000).c_str());
   };
 }
 #ifndef _WIN32

@@ -151,7 +151,7 @@ private:/*------------------------------------------------------*/
   
 public:/*-------------------------------------------------------*/
        //Constructors:
-  CConstTimeSeries(string name,long loc_ID,double one_value):CTimeSeries(name,loc_ID,one_value){}
+  CConstTimeSeries(string name, long loc_ID, double one_value) :CTimeSeries(name, loc_ID, one_value) { _value = one_value; }
   ~CConstTimeSeries() {}
 
   void Initialize(const double model_start_day, //jul day

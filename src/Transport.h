@@ -121,6 +121,9 @@ public:/*-------------------------------------------------------*/
 
   double GetConcentration           (const int k,const int sv_index) const;
 
+  double GetAdvectionCorrection     (const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
+
+
   //Manipulators
   void   AddConstituent             (string name,constit_type type,bool is_passive);
   //
@@ -153,7 +156,6 @@ protected:
   string                     _name;  ///< constituent name (e.g., "Nitrogen")
   int               _constit_index;  ///< master constituent index of this constituent 
   constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
-  bool              _can_evaporate;  ///< true if constituent can be transported through evaporation (default:false)
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
   transport_params *_pConstitParams; ///< pointer to constituent parameters 
@@ -220,7 +222,7 @@ public:/*-------------------------------------------------------*/
   double GetSpecifiedMassFlux(const int i_stor,const int k,const time_struct &tt) const;
 
   double GetDecayCoefficient (const CHydroUnit *pHRU,const int iStorWater) const;
-  double GetRetardationFactor(const CHydroUnit *pHRU,const int iFromWater,const int iToWater) const;
+  virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
 
   virtual double CalculateConcentration(const double &M,const double &V) const;
 
@@ -269,9 +271,10 @@ public:/*-------------------------------------------------------*/
 class CNutrientModel:public CConstituentModel
 {
 public:/*-------------------------------------------------------*/
-       //Accessors specific to Nutrient/Contaminant Transport
-  double GetDecayCoefficient(const int c,const CHydroUnit *pHRU,const int iStorWater) const;
-  double GetRetardationFactor(const int c,const CHydroUnit *pHRU,const int iFromWater,const int iToWater) const;
+  //Accessors specific to Nutrient/Contaminant Transport
+  double GetDecayCoefficient   (const CHydroUnit *pHRU,const int iStorWater) const;
+  double GetAdvectionCorrection(const CHydroUnit *pHRU,const int iFromWater,const int iToWater, const double &C) const;
+
   //double GetTransformCoefficient(const int c,const int c2,const CHydroUnit *pHRU,const int iStorWater) const;
   //double GetStoichioCoefficient(const int c,const int c2,const CHydroUnit *pHRU,const int iStorWater) const;
 };
