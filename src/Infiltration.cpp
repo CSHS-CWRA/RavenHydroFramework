@@ -553,7 +553,6 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment (soil) is handled using cascade
 ///
 /// \param *storage [in] Reference to compartments from which water infiltrates
 /// \param *pHRU [in] Reference to pertinent HRU

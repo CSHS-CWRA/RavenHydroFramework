@@ -16,8 +16,7 @@
 /// \param SM [in] Input soil model object
 /// \param nsoillayers [in] Integer number of soil layers
 //
-CModel::CModel(const soil_model SM,
-               const int        nsoillayers,
+CModel::CModel(const int        nsoillayers,
                const optStruct &Options)
 {
   int i;
@@ -53,8 +52,8 @@ CModel::CModel(const soil_model SM,
 
   _pOptStruct = &Options;
 
-  _HYDRO_ncid=-9; 
-  _STORAGE_ncid=-9;
+  _HYDRO_ncid   =-9; 
+  _STORAGE_ncid =-9;
   _FORCINGS_ncid=-9; 
 
   ExitGracefullyIf(nsoillayers<1,
@@ -355,33 +354,6 @@ CHydroUnit *CModel::GetHydroUnit(const int k) const
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns index of array for near searching (ordered search around a guessed array index)
-///
-/// \param i [in] near search index, ranges from 0 to size-1
-/// \param guess_p [in] best guess of appropriate array index p in search
-/// \param size [in] size of array being searched
-/// \return Returns index of array for near searching (ordered search around a guessed array index)
-/// \details: NearSearch should proceed as
-/// a[size];     //some kind of array of items where we are looking for the 'correct' item
-/// int guess=4; //a best guess of the index of a[] which we believe is close to the 'correct' one
-/// for (int i=0; i<size;i++){
-///   p=NearSearchIndex(i,guess_p,size);
-///   if (comparison_operator using a[p] that needs to go through minimal a[p] entries){break;}
-/// }
-//
-int NearSearchIndex(const int i,int guess_p,const int size) 
-{
-  int p;
-  if((guess_p>=size) || (guess_p<0)) { guess_p=0; }//fix bad guess
-  if((i<0) || (i>=size)) {
-    ExitGracefully("NearSearchIndex: bad index",RUNTIME_ERR);}
-  if(i%2==0) { p=guess_p-((i+0)/2); }
-  else       { p=guess_p+((i+1)/2); }
-  if(p<0    ){ p+=size; } //valid wraparound
-  if(p>=size){ p-=size; }
-  return p;
-}
-//////////////////////////////////////////////////////////////////
 /// \brief Returns specific HRU with HRU identifier HRUID
 ///
 /// \param HRUID [in] HRU identifier
@@ -484,10 +456,14 @@ int         CModel::GetDownstreamBasin(const int p) const
 /// \return pointer to Sub basin object corresponding to passed ID, if ID is valid
 //
 CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
-{ //could be quite slow...
-  if (SBID<0){return NULL;}
-  for (int p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->GetID()==SBID){return _pSubBasins[p];}
+{ 
+  static int last_p=0;
+  int p;
+  if (SBID < 0) { return NULL; }
+  //smart find
+  for (int i=0;i<_nSubBasins;i++){
+    p = NearSearchIndex(i, last_p, _nSubBasins);
+    if (_pSubBasins[p]->GetID()==SBID){last_p=p; return _pSubBasins[p];}
   }
   return NULL;
 }
@@ -499,10 +475,14 @@ CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
 /// \return Sub basin index corresponding to passed ID, if ID is valid
 //
 int         CModel::GetSubBasinIndex(const long SBID) const
-{  //could be quite slow...
+{  
+  static int last_p = 0;
+  int p;
   if (SBID<0){return DOESNT_EXIST;}
-  for (int p=0;p<_nSubBasins;p++){
-    if (_pSubBasins[p]->GetID()==SBID){return p;}
+  //smart find
+  for (int i = 0; i < _nSubBasins; i++) {
+    p = NearSearchIndex(i, last_p, _nSubBasins);
+    if (_pSubBasins[p]->GetID() == SBID) { last_p = p; return p; }
   }
   return INDEX_NOT_FOUND;
 }
@@ -563,7 +543,6 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
 /// \param SBIDdown [in] subbasin ID basis of query 
 /// \return true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
 //
-
 bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const 
 {
   if      (SBID==DOESNT_EXIST    ) { return false;} //end of the recursion line
@@ -1398,7 +1377,7 @@ void CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &O
 //
 void CModel::AddProcess(CHydroProcessABC *pHydroProc)
 {
-  ExitGracefullyIf(pHydroProc==NULL                 ,"CModel AddProcess::NULL process"  ,BAD_DATA);
+  ExitGracefullyIf(pHydroProc==NULL,"CModel AddProcess::NULL process"  ,BAD_DATA);
   for (int q=0;q<pHydroProc->GetNumConnections();q++)
   {
     int i=pHydroProc->GetFromIndices()[q];
@@ -1676,14 +1655,16 @@ void CModel::IncrementLatBalance( const int jss,
 void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt)
 {
   double area;
+  area = _WatershedArea * M2_PER_KM2;
+
   _CumulInput+=GetAveragePrecip()*Options.timestep;
   
   _CumulInput+=GetAverageForcings().recharge*Options.timestep;
 
-  area = _WatershedArea*M2_PER_KM2;
   for (int p=0;p<_nSubBasins;p++){
     _CumulInput+=_pSubBasins[p]->GetIntegratedSpecInflow(tt.model_time,Options.timestep)/area*MM_PER_METER;//converted to [mm] over  basin
   }
+
   //add from groundwater
   if(Options.modeltype!=MODELTYPE_SURFACE) {
     int iGW=GetStateVarIndex(GROUNDWATER);
@@ -1703,7 +1684,7 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
 //////////////////////////////////////////////////////////////////
 /// \brief Increments cumulative outflow from system for mass balance diagnostics
 /// \details Increment cumulative outflow according to timestep, flow, and area of basin
-///
+/// \details Called every timestep after MassEnergyBalance
 /// \param &Options [in] Global model options information
 //
 void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt)
@@ -1719,15 +1700,17 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
     
     outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
 
-    if(_pSubBasins[p]->IsEnabled()){
+    if(_pSubBasins[p]->IsEnabled())
+    {
       if((_aSubBasinOrder[p]==0) || (outflowdisabled))//outlet does not drain into another subbasin
       {
-        _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
+      _CumulOutput+=_pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/area*MM_PER_METER;//converted to [mm] over entire watershed
       }
       _CumulOutput+=_pSubBasins[p]->GetReservoirLosses (Options.timestep)/area*MM_PER_METER;
       _CumulOutput+=_pSubBasins[p]->GetIrrigationLosses(Options.timestep)/area*MM_PER_METER;
 
-      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) {
+      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) 
+      {
         Qdiv=_pSubBasins[p]->GetDiversionFlow(i,_pSubBasins[p]->GetLastOutflowRate(),Options,tt,pDivert)*Options.timestep*SEC_PER_DAY;
         if(pDivert==DOESNT_EXIST) {
           _CumulOutput+=Qdiv/area*MM_PER_METER; //water that is diverted out of the watershed
@@ -1772,8 +1755,8 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
     double     value=_pTransParams[j]->GetTimeSeries()->GetSampledValue(nn);
 
     UpdateParameter(ctype,pname,cname,value);
-    
   }
+
   //--update land use and HRU types-----------------------------------------------
   int k;
   for (int j = 0; j<_nClassChanges; j++)
@@ -1934,7 +1917,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
-    {
+    { //State variable
       CHydroUnit *pHRU=NULL;
       pHRU=GetHRUByID((int)(_pObservedTS[i]->GetLocID()));
       string error="CModel::UpdateDiagnostics: Invalid HRU ID specified in observed state variable time series "+_pObservedTS[i]->GetName();
@@ -2005,7 +1988,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 #endif
   CHydroProcessABC *pProc=_pProcesses[j];
 
-  nConnections=pProc->GetNumConnections();//total connections: nConnections+nCascades
+  nConnections=pProc->GetNumConnections();//total connections: nConnections
   int k=pHRU->GetGlobalIndex();
   if (!_aShouldApplyProcess[j][k]){return false;}
 
@@ -2017,24 +2000,6 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
   }
 
   pProc->GetRatesOfChange(state_var,pHRU,Options,tt,rates_of_change);
-
-  //special cascade handling (prior to applying constraints)
-  //------------------------------------------------------------------------
-  if (pProc->HasCascade())
-  {
-    int nCascades;
-    static double max_state_var[MAX_STATE_VARS];
-    nCascades=pProc->GetNumCascades();
-    for (int i=0;i<_nStateVars;i++){//should only calculate for participating compartments
-      max_state_var[i]=pHRU->GetStateVarMax(i,state_var,Options);
-    }
-    for (int q=0;q<nCascades;q++)
-    {
-      iFrom[nConnections-nCascades+q]=pProc->GetCascadeFromIndex();
-      iTo  [nConnections-nCascades+q]=pProc->GetCascadeToIndices()[q];
-    }
-    pProc->Cascade(rates_of_change,state_var,&max_state_var[0],Options.timestep);
-  }
 
   //Special frozen flow handling - constrains flows when water is partially/wholly frozen
   //------------------------------------------------------------------------

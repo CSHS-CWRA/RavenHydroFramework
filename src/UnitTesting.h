@@ -13,7 +13,6 @@ void ClearSkyTest();
 void ShortwaveTest();
 void ShortwaveGenerator();
 void JulianConvertTest();
-void SmartLookupUnitTest();
 void SmartIntervalTest();
 void GammaTest();
 void AddTimeTest( );

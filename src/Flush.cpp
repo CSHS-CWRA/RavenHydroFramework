@@ -79,7 +79,6 @@ void   CmvFlush::GetRatesOfChange( const double      *storage,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *storage [in] Array of all state variables for HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -178,7 +177,6 @@ void   CmvSplit::GetRatesOfChange( const double                 *storage,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *storage [in] Array of all state variables for HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -261,7 +259,6 @@ void   CmvOverflow::GetRatesOfChange( const double                      *state_v
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *state_var [in] Array of state variables
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -356,7 +353,6 @@ void   CmvExchangeFlow::GetRatesOfChange( const double                  *state_v
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *state_var [in] Array of state variables
 /// \param *pHRU [in] Reference to pertinent HRU

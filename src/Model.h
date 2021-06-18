@@ -240,7 +240,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
 
   //Constructor/Destructor:
-  CModel(const soil_model SM, const int nsoillayers, const optStruct &Options);
+  CModel(const int nsoillayers, const optStruct &Options);
   ~CModel();
 
   //Inherited Accessor functions (from ModelABC.h)

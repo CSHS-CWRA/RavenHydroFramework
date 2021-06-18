@@ -219,7 +219,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.interpolation           =INTERP_NEAREST_NEIGHBOR;
   Options.interp_file             ="";
 
-  Options.soil_modeltype          =SOIL_ONE_LAYER;
   Options.num_soillayers          =-1;//used to check if SoilModel command is used
   Options.soil_representation     =BROOKS_COREY;
 
@@ -257,7 +256,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.deltaresFEWS            =false;
   Options.res_overflowmode        =OVERFLOW_ALL;
 
-  
   //Groundwater model options
   Options.modeltype               =MODELTYPE_SURFACE; //GWMIGRATE -TO REMOVE
   Options.gw_solver_outer         =GWSOL_NEWTONRAPHSON;
@@ -529,7 +527,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EndProcessGroup"           )){code=296;}
     else if  (!strcmp(s[0],":-->Conditional"            )){code=297;}
     else if  (!strcmp(s[0],":EndHydrologicProcesses"    )){code=298;}
-    else if  (!strcmp(s[0],":-->Cascade"                )){code=299;}
     //...
     //--------------------TRANSPORT PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
@@ -623,7 +620,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(2):  //----------------------------------------------
-    {/*:JulianStartDay [double day] 
+    {/*:JulianStartDay [double day] */
       if (Options.noisy) {cout <<"Julian Start Day"<<endl;}
       if (Len<2){ImproperFormatWarning(":JulianStartDay",p,Options.noisy); break;}
       Options.julian_start_day =s_to_d(s[1]);
@@ -733,15 +730,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout <<"Soil Model"<<endl; }
       if(Len<2) { ImproperFormatWarning(":SoilModel",p,Options.noisy);  break; }
       if(!strcmp(s[1],"SOIL_ONE_LAYER")) {
-        Options.soil_modeltype =SOIL_ONE_LAYER;
         Options.num_soillayers =1;
       }
       else if(!strcmp(s[1],"SOIL_TWO_LAYER")) {
-        Options.soil_modeltype =SOIL_TWO_LAYER;
         Options.num_soillayers =2;
       }
       else if(!strcmp(s[1],"SOIL_MULTILAYER")) {
-        Options.soil_modeltype = SOIL_MULTILAYER;
         Options.num_soillayers =s_to_i(s[2]);
       }
       else {
@@ -750,7 +744,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       //****************************************************
       // MODEL BUILT HERE AFTER SOIL MODEL IS KNOWN
       //****************************************************
-      pModel=new CModel(Options.soil_modeltype,Options.num_soillayers,Options);
+      pModel=new CModel(Options.num_soillayers,Options);
       //****************************************************
       break;
     }
@@ -2794,30 +2788,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){ cout<<"  ...prepared"<<endl;}
       break;
     }
-
-    case (299)://----------------------------------------------
-    {/*->Cascade
-       :-->Cascade [int start_variable] [next_variable] [next_variable]...*/
-      if (Options.noisy){cout <<"Cascade"<<endl;}
-      if (Len<=1){ImproperFormatWarning(":-->Cascade",p,Options.noisy); break;}
-      int CascInds[MAX_STATE_VARS];
-
-      for (i=1; i<Len;i++){//.add variables to model (if they arent there)
-        tmpS    [i-1]=CStateVariable::StringToSVType  (s[i],tmpLev[i-1],true);
-      }
-      pModel->AddStateVariables(tmpS,tmpLev,Len-1);
-      if (pMover!=NULL){
-        for (i=1; i<Len;i++){
-          CascInds[i-1]=ParseSVTypeIndex(s[i],pModel);
-        }
-        pMover->AddCascade  (CascInds,   Len-1);
-      }
-      else{
-        ExitGracefully("ParseMainInputFile: Cannot add cascade without corresponding process",BAD_DATA_WARN);
-      }
-      break;
-    }
-
     case (300)://----------------------------------------------
     {/*:Transport
        :Transport [string constituent_name] {PASSIVE} {TRACER}*/

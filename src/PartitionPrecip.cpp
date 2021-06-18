@@ -298,7 +298,6 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
 //////////////////////////////////////////////////////////////////
 /// \brief Applies constraints to baseflow
 /// \details For all methods, ensures that rate of flow cannot drain "from" compartment over timestep.
-/// \note Presumes overfilling of "to" compartment is handled using cascade.
 ///
 /// \param *state_vars [in] array of state variable values for this HRU (of size CModel::_nStateVars)
 /// \param *pHRU [in] Pointer to HRU object

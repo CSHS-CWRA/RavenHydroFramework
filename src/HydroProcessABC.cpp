@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "StateVariables.h"
@@ -15,10 +15,6 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype)
   _nConnections=0;
   iFrom=NULL;
   iTo  =NULL;
-
-  _cascading  =false;
-  _nCascades  =0;
-  _iCascade   =NULL;
 
   _pConditions=NULL;
   _nConditions=0;
@@ -38,10 +34,6 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype, const int nConns)
   iFrom=NULL;
   iTo  =NULL;
 
-  _cascading  =false;
-  _nCascades  =0;
-  _iCascade   =NULL;
- 
   _pConditions=NULL;
   _nConditions=0;
 
@@ -67,10 +59,6 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype,
 
   iFrom[0]    =From_index;
   iTo  [0]    =To_index;
-
-  _cascading  =false;
-  _nCascades  =0;
-  _iCascade   =NULL;
 
   _pConditions=NULL;
   _nConditions=0;
@@ -115,10 +103,6 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype,
   ExitGracefullyIf(pModel==NULL,
                    "CHydroProcessABC::Constructor:no model associated with hydrologic process",BAD_DATA);
 
-  _cascading  =false;
-  _nCascades  =0;
-  _iCascade   =NULL;
-
   _pConditions=NULL;
   _nConditions=0;
 }
@@ -131,7 +115,6 @@ CHydroProcessABC::~CHydroProcessABC()
   if (DESTRUCTOR_DEBUG){cout<<"  DELETING HYDROLOGIC PROCESS"<<endl;}
   delete [] iFrom;       iFrom      =NULL;
   delete [] iTo;         iTo        =NULL;
-  delete [] _iCascade;  _iCascade   =NULL;
   for (int i=0;i<_nConditions;i++){delete _pConditions[i];} delete [] _pConditions; _pConditions=NULL;
 }
 /*****************************************************************
@@ -194,24 +177,6 @@ void CHydroProcessABC::GetParticipatingParamList(string *aP, class_type *aPC, in
 process_type CHydroProcessABC::GetProcessType()     const{return _process;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns number of cascade connections
-/// \return Number of cascade connections
-//
-int          CHydroProcessABC::GetNumCascades()     const{return _nCascades;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns reference to list of indices of consecutive storage units from which cascade connections occur
-/// \return Reference to list of indices of consecutive storage units from which cascade connections occur
-//
-int          CHydroProcessABC::GetCascadeFromIndex()const{return _iCascade[0];}//iFrom[0];}//default-works for single from/To- may wish to change
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns reference to list of indicies of consecutive storage units to which cascade connections occur
-/// \return Reference to list of indicies of consecutive storage units to which cascade connections occur
-//
-const int*   CHydroProcessABC::GetCascadeToIndices()const{return &_iCascade[1];}
-
-//////////////////////////////////////////////////////////////////
 /// \brief Reserves memory (Creates variables) for dynamically generated to/from index arrays
 /// \param nConnects [in] Number of connections
 /// \remarks typically called from constructors of child classes
@@ -239,7 +204,7 @@ void CHydroProcessABC::DynamicSpecifyConnections(const int nConnects)
 /// \param *pHRU [in] Reference to pertinent HRU
 /// \param &Options [in] Global model option information
 /// \param &tt [in] Current model time
-/// \param *rates [out] Rates of water/energy moved between storage locations / rates of change of modified state variables (size: _nConnections+_nCascades)
+/// \param *rates [out] Rates of water/energy moved between storage locations / rates of change of modified state variables (size: _nConnections)
 //
 void CHydroProcessABC::GetRatesOfChange(const double             *state_vars,
                                         const CHydroUnit *pHRU,
@@ -247,7 +212,7 @@ void CHydroProcessABC::GetRatesOfChange(const double             *state_vars,
                                         const time_struct &tt,
                                         double     *rates) const
 {
-  for (int q=0;q<_nConnections+_nCascades;q++)
+  for (int q=0;q<_nConnections;q++)
   {
     rates[q]=0.0;
   }
@@ -262,7 +227,7 @@ void CHydroProcessABC::GetRatesOfChange(const double             *state_vars,
 /// \param *pHRU [in] Reference to pertinent HRU
 /// \param &Options [in] Global model option information
 /// \param &tt [in] Current model time
-/// \param *rates [out] Rates of water/energy moved between storage locations / rates of change of modified state variables (size: _nConnections+_nCascades)
+/// \param *rates [out] Rates of water/energy moved between storage locations / rates of change of modified state variables (size: _nConnections)
 //
 void CHydroProcessABC::ApplyConstraints(const double *state_vars,
                                         const CHydroUnit *pHRU,
@@ -353,84 +318,4 @@ bool CHydroProcessABC::ShouldApply(const CHydroUnit *pHRU) const
     }
   }
   return true;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Adds cascade to process
-/// \param *indices [in] Reference to indicies of _cascading storage units
-/// \param nIndices [in] Number of indicies in cascade
-//
-void CHydroProcessABC::AddCascade(const int *indices, const int nIndices)
-{
-  ExitGracefullyIf(_nConnections>1,
-                   "CHydroProcessABC::AddCascade: cannot currently support _cascading for multi-connection processes",BAD_DATA);
-
-  if (_iCascade!=NULL){
-    WriteWarning("Cascade is being overwritten!",true);
-    delete [] _iCascade; _iCascade=NULL;
-  }
-  _nCascades=nIndices-1;
-  _iCascade = new int [nIndices];
-  for (int i=0; i<nIndices; i++){
-    _iCascade[i]=indices[i]; //first entry in _iCascade is original 'from' entry
-    ExitGracefullyIf(_iCascade[i]==DOESNT_EXIST,
-                     "CHydroProcessABC::AddCascade: invalid cascade compartment specified",BAD_DATA);
-
-  }
-  _cascading=true;
-
-  int *iFromNew=new int [_nConnections+_nCascades];
-  int *iToNew  =new int [_nConnections+_nCascades];
-  for (int q=0;q<_nConnections;q++)
-  {
-    iFromNew[q]=iFrom[q];
-    iToNew  [q]=iTo[q];
-  }
-  for (int q=0;q<_nCascades;q++)
-  {
-    iFromNew[_nConnections+q]=_iCascade[q];
-    iToNew  [_nConnections+q]=_iCascade[q+1];
-  }
-  delete [] iFrom; iFrom=NULL; //a problem for some reason!
-  delete [] iTo;   iTo=NULL;
-  iFrom=iFromNew;
-  iTo  =iToNew;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Portions flow of material (typically water) through cascade of storage units until a unit with sufficient storage is reached
-/// \details given a flow rate q1, into a _cascading, bucket-type system, portions this flow
-/// downward through cascade until a receptacle with sufficient or infinite storage is reached \n
-/// Example: \n
-/// assume maxstorage =1mm for 3 buckets except the last, with infinite
-/// storage. Each bucket starts out with 0.5 mm of water and a inflow rate of 5mm/day is
-/// applied to the first bucket for tstep=1 day.
-/// The distributed rates to each of the 4 buckets over the time step should be r[0]=0.5,
-/// r[1]=0.5,r[2]=0.5;and r[3]=3.5 [mm/d]
-///
-/// \param *rates [out] Rates of change in state variable values modified by this process (size: _nConnections)
-/// \param *state_vars [in] Array of state variables for this HRU
-/// \param *maxstorage [in] maximum value of state variables (max storage in this case)
-/// \param &tstep [in] Simulation time step
-//
-void CHydroProcessABC::Cascade(      double *rates,
-                                     const double *state_vars,
-                                     const double *maxstorage,
-                                     const double &tstep)
-{
-  if (!_cascading){return;}
-
-  double storage_remaining;
-  int    q;
-  q=_nConnections-1;//assumes last process connection is the one with overflow -may wish to correct
-  for (int i=0;i<_nCascades;i++)
-  {
-    storage_remaining=maxstorage[_iCascade[i]]-state_vars[_iCascade[i]];
-    if (rates[q]*tstep>storage_remaining)
-    {
-      rates[q+1]=rates[q]-storage_remaining/tstep;
-      rates[q  ]=         storage_remaining/tstep;
-    }
-    q++;
-  }
 }

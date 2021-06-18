@@ -20,7 +20,6 @@ void RavenUnitTesting(const optStruct &Options)
   //ShortwaveTest();
   //ShortwaveGenerator();
   //JulianConvertTest();
-  //SmartLookupUnitTest();
   //SmartIntervalTest();
   //AddTimeTest( );
   //GammaTest();
@@ -169,32 +168,6 @@ void DecDaysTest()
   ExitGracefully("DecDaysTest",SIMULATION_DONE);
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Tests SmartLookup() function
-//
-void SmartLookupUnitTest(){
-  int n;
-  double *aVals=new double [40];
-  for (int i=0;i<40;i++){
-    aVals[i]=(double)(i)*3.0;
-  }
-  n=SmartLookup(60.1,20,aVals,40);
-  cout<<"Guess: 20, lookup=60: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  n=SmartLookup(60.1,19,aVals,40);
-  cout<<"Guess: 19, lookup=60: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  n=SmartLookup(94,19,aVals,40);
-  cout<<"Guess: 19, lookup=94: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  n=SmartLookup(-12.0,19,aVals,40);
-  cout<<"Guess: 19, lookup=-12: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  n=SmartLookup(-12.0,120,aVals,40);
-  cout<<"Guess: 120, lookup= -12: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  n=SmartLookup(94,0,aVals,40);
-  cout<<"Guess: 0, lookup=94: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  n=SmartLookup(94,38,aVals,40);
-  cout<<"Guess: 0, lookup=38: n="<<n<<" between "<<aVals[n]<<" and "<<aVals[n+1]<<endl;
-  delete [] aVals;
-  ExitGracefully("SmartLookupUnitTest",SIMULATION_DONE);
-}
-/////////////////////////////////////////////////////////////////
 /// \brief Tests FixTimestep() function
 //
 void FixTimestepTest()
@@ -225,15 +198,12 @@ void SmartIntervalTest()
 
   for(int ig=0;ig<7;ig++){
     cout<<"odd-sized array: "<< ig<<" "<<SmartIntervalSearch(3.2,arr,7,ig)<<endl;
-    cout<<"odd-sized array: "<< ig<<" "<<SmartLookup(3.2,ig,arr,7)<<endl;
   }
   for(int ig=0;ig<6;ig++){
     cout<<"even-sized array: "<< ig<<" "<<SmartIntervalSearch(-1.7,arr,6,ig)<<endl;
-    cout<<"even-sized array: "<< ig<<" "<<SmartLookup(-1.7,ig,arr,6)<<endl;
   }
   for(int ig=0;ig<6;ig++){
     cout<<"out of array: "<< ig<<" "<<SmartIntervalSearch(-17,arr,6,ig)<<endl;
-    cout<<"out of array: "<< ig<<" "<<SmartLookup(-17,ig,arr,6)<<endl;
   }
   ExitGracefully("SmartIntervalTest", SIMULATION_DONE);
 }

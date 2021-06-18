@@ -155,7 +155,6 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep.
-/// Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *storage [in] state variable array for this HRU
 /// \param *pHRU [in] Reference to pertinent HRU

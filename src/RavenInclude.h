@@ -54,7 +54,7 @@ counters- i    loops through state variables
           k    loops through HRUs
           kk   loops through land surface elements, HRU groups
           m    loops through soil layers, soil horizons and multilayer variables
-          q    loops through connections between storage units/state vars, cascades
+          q    loops through connections between storage units/state vars
           c    loops through transported constituents
                loops through soil, lult, terrain, & vegetation classes
           n    loops through time series pulses
@@ -579,16 +579,6 @@ enum soil_charact
 };
 
 ////////////////////////////////////////////////////////////////////
-/// \brief Methods used for modelling soil
-//
-enum soil_model
-{
-  SOIL_ONE_LAYER,           ///< Single soil layer with additional groundwater storage
-  SOIL_TWO_LAYER,           ///< Two soil layers with additional groundwater storage
-  SOIL_MULTILAYER           ///< Multiple (2+) soil layers with additional groundwater storage
-};
-
-////////////////////////////////////////////////////////////////////
 /// \brief Types of HRUs
 /// \remark Lake, Rock, and Glacier types are special because there is no soil storage
 //
@@ -1063,7 +1053,6 @@ struct optStruct
   bool               snow_suppressPET;        ///< true if presence of snow should set PET to zero
 
   // Soil model information
-  soil_model         soil_modeltype;          ///< soil model (e.g., one-layer, two-layer, lumped, etc.)
   int                num_soillayers;          ///< number of soil layers
   soil_charact       soil_representation;     ///< characteristic curves for unsaturated flow
 
@@ -1235,7 +1224,8 @@ string GetProcessName(process_type ptype);
 
 //Array Functions--------------------------------------------------
 bool   DynArrayAppend(void **& pArr,void *xptr,int &size);
-int SmartIntervalSearch(const double &x, const double *ax, const int N,const int ilast);
+int    SmartIntervalSearch(const double &x, const double *ax, const int N,const int ilast);
+int    NearSearchIndex(const int i, int guess_p, const int size);
 
 //Threshold Correction Functions-----------------------------------
 double threshPositive(const double &val);
@@ -1569,7 +1559,6 @@ double TimeVaryingADRCumDist(const double &t,const double &L,const double *v,int
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
 void   quickSort        (double arr[], int left, int right) ;
-int    SmartLookup      (const double lookup_val, const int nguess, const double *aVals, const int nBins);
 double Interpolate2     (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 
 //Geographic Conversion Functions-----------------------------------

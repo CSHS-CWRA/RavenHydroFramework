@@ -1670,6 +1670,34 @@ void quickSort(double arr[], int left, int right)
   if (left <  j){quickSort(arr, left,  j);}
   if (i < right){quickSort(arr, i, right);}
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns index of array for near searching (ordered search around a guessed array index)
+///
+/// \param i [in] near search index, ranges from 0 to size-1
+/// \param guess_p [in] best guess of appropriate array index p in search
+/// \param size [in] size of array being searched
+/// \return Returns index of array for near searching (ordered search around a guessed array index)
+/// \details: NearSearch should proceed as
+/// a[size];     //some kind of array of items where we are looking for the 'correct' item
+/// int guess=4; //a best guess of the index of a[] which we believe is close to the 'correct' one
+/// for (int i=0; i<size;i++){
+///   p=NearSearchIndex(i,guess_p,size);
+///   if (comparison_operator using a[p] that needs to go through minimal a[p] entries){break;}
+/// }
+//
+int NearSearchIndex(const int i, int guess_p, const int size)
+{
+  int p;
+  if ((guess_p >= size) || (guess_p < 0)) { guess_p = 0; }//fix bad guess
+  if ((i < 0) || (i >= size)) {
+    ExitGracefully("NearSearchIndex: bad index", RUNTIME_ERR);
+  }
+  if (i % 2 == 0) { p = guess_p - ((i + 0) / 2); }
+  else { p = guess_p + ((i + 1) / 2); }
+  if (p < 0) { p += size; } //valid wraparound
+  if (p >= size) { p -= size; }
+  return p;
+}
 ///////////////////////////////////////////////////////////////////////////
 /// \brief identifies index location of value in uneven continuous list of sorted value ranges
 ///
@@ -1699,39 +1727,7 @@ int SmartIntervalSearch(const double &x,const double *ax,const int N,const int i
   return DOESNT_EXIST;
 }
 
-///////////////////////////////////////////////////////////////////
-/// \brief returns index of bin that lookup_val is contained in, where array aVals of size 'size'
-/// \param lookup_val [in] value to be looked up
-/// \param nguess [in] guess for bin index (0<=nguess<=size-2)
-/// \param *aVals [in] ordered array of bin values (size = nBins)
-/// \param nBins [in] size of aVals[]
-/// \return index of bin, or DOESNT_EXIST
-/// \note all values less than aVals[1] are in bin 0, \n
-///        all between aVals[n] and aVals[n+1] are in bin n, \n
-///        all values greater than aVals[nBins-2] are in bin nBins-2 \n
-//
-int SmartLookup(const double lookup_val, const int nguess, const double *aVals, const int nBins)
-{
-  int i,n;
-  if ((lookup_val>aVals[nguess]) && (lookup_val<=aVals[nguess+1])){return nguess;} //most likely choice
-  if (lookup_val<aVals[0]      ){return 0;}
-  if (lookup_val>aVals[nBins-2]){return nBins-2;}
 
-  for (i=1;i<(nBins/2+2);i++)
-  {
-    n=nguess+i;
-    if (n>nBins-2){n-=nBins-1;}//wraparound
-
-    if ((lookup_val>aVals[n]) && (lookup_val<=aVals[n+1])){ return n;}///second most likely case
-
-    n=nguess-i;
-    if (n<0      ){n+=nBins-1;}//wraparound
-
-    if ((lookup_val>aVals[n]) && (lookup_val<=aVals[n+1])){return n;}
-  }
-  cout<<i<<" tries NOT FOUND"<<endl;
-  return DOESNT_EXIST;
-}
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates value from rating curve
 /// \param x [in] interpolation location

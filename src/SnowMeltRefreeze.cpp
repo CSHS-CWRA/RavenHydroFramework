@@ -102,7 +102,6 @@ void CmvSnowMelt::GetRatesOfChange( const double                 *state_vars,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -124,7 +123,6 @@ void   CmvSnowMelt::ApplyConstraints( const double               *state_vars,
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
 
-  //overfilling of melt reciever should be handled using cascade!
 }
 
 //************************************************************************************************
@@ -224,7 +222,6 @@ void CmvSnowSqueeze::GetRatesOfChange( const double              *state_vars,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU

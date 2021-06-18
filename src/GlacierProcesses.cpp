@@ -167,7 +167,6 @@ void CmvGlacierMelt::GetRatesOfChange( const double             *state_var,
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
-/// \remark Presumes overfilling of "to" compartment is handled using cascade
 ///
 /// \param *state_var [in] Reference to set of participating state variables
 /// \param *pHRU [in] Reference to pertinent HRU

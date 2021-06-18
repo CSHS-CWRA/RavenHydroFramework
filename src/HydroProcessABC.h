@@ -48,13 +48,6 @@ protected:/*----------------------------------------------------*/
   int                  *iTo;  ///< indices of state variables/storage units that (typically) gain water/energy/mass (size: nConnections) (==iFrom if no mass/energy is exchanged in change of state variable)
   int         _nConnections;  ///< usually 1, number of transfer routes between state variables/storage units
 
-  bool           _cascading;  ///< true if outflow cascades
-
-  /// \remark first storage unit iCascade[0] should belong to iTo[] array
-  /// size: nCascades+1
-  int            *_iCascade;  ///< indices of consecutive storage units that are subject to cascade
-  int            _nCascades;  ///< number of cascade connections
-
   condition  **_pConditions;  ///< array of conditions for process to occur (ALL must be satisfied)
   int          _nConditions;  ///< number of conditions
 
@@ -79,21 +72,15 @@ public:/*-------------------------------------------------------*/
   //accessors (some inlined for speed)
   inline const int*    GetFromIndices()       const { return &iFrom[0]; } ///< Returns pointer to array of 'from' indices
   inline const int*    GetToIndices()         const { return &iTo[0];   } ///< Returns pointer to array of 'to' indices
-  inline int           GetNumConnections()    const { return _nConnections+_nCascades; } ///< Returns total number of connections between state variables manipulated by process
+  inline int           GetNumConnections()    const { return _nConnections; } ///< Returns total number of connections between state variables manipulated by process
   process_type         GetProcessType()       const;
 
-  bool                 HasCascade()           const { return _cascading; }
-  int                  GetNumCascades()       const;
-  int                  GetCascadeFromIndex()  const;
-  const int*           GetCascadeToIndices()  const;
   virtual int          GetNumLatConnections() const { return 0; }
 
   bool                 ShouldApply(const CHydroUnit*pHRU) const;
   //functions
   static void          SetModel    (CModelABC *pM);/// \todo [reorg]: should really not be accessible
 
-  void                 AddCascade  (const int      *indices, 
-                                    const int       nIndices);
   void                 AddCondition(condition_basis basis,
                                     comparison      compare_method,
                                     string          data);
@@ -118,11 +105,6 @@ public:/*-------------------------------------------------------*/
                                 const optStruct   &Options,
                                 const time_struct &tt,
                                       double      *rates) const=0;
-
-  void                  Cascade(            double    *rates,
-                                      const double    *storage,
-                                      const double    *maxstorage,
-                                      const double    &tstep);
 };
 
 ///////////////////////////////////////////////////////////////////
