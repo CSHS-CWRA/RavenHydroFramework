@@ -120,7 +120,6 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   int    q,iFromWater,iToWater,js;
   double mass,vol,Cs;
   double corr;               // advective correction (e.g.,1/retardation factor)
-  double sv[MAX_STATE_VARS]; //state variable history
   
   double tstep=Options.timestep;
   int    nAdvConnections=pTransModel->GetNumAdvConnections();
@@ -128,9 +127,11 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   bool   isIsotope =(pTransModel->GetConstituentModel2(_constit_ind)->GetType()==ISOTOPE);
   int    k=pHRU->GetGlobalIndex();
   
-  static double    *Q=NULL; 
+  static double *Q =NULL; 
+  static double *sv=NULL;
   if(Q==NULL){
-    Q=new double [nAdvConnections]; // only done once at start of simulation for speed 
+    Q =new double [nAdvConnections]; // only done once at start of simulation for speed 
+    sv=new double [pModel->GetNumStateVars()];
   }
 
   // copy all state variables into array
@@ -253,6 +254,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   if(tt.model_time>=Options.duration-Options.timestep/2)
   {
     delete [] Q;
+    delete [] sv;
   }
 }
 

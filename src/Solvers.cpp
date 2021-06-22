@@ -282,8 +282,8 @@ void MassEnergyBalance( CModel            *pModel,
     int    iter = 0;              //iteration counter
     bool   converg = false;
     double converg_check = 0.0;
-    double rate1[MAX_STATE_VARS];
-    double rate2[MAX_STATE_VARS];
+    double rate1[MAX_CONNECTIONS];
+    double rate2[MAX_CONNECTIONS];
 
     //Go through all HRUs
     for (k=0;k<nHRUs;k++)
@@ -651,45 +651,6 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }//end for pp...
   }//end (c=0;c<nConstituents;c++)
-
-  //-----------------------------------------------------------------
-  //          AGGREGATION ACROSS HRU GROUPS
-  // \todo[funct]  Should replace with special lateral exchange process -right now not handled in transport
-  //-----------------------------------------------------------------
-  double agg_phi;
-  double agg_area,area;
-  double avg_phi;
-  int    nHRUgroups=pModel->GetNumHRUGroups();
-  for (i=0;i<NS;i++)
-  {
-    for (int kk=0;kk<nHRUgroups;kk++)
-    {
-      if (pModel->GetHRUGroup(kk)->IsAggregatorGroup(i))
-      {
-        CHRUGroup *pAggGroup=pModel->GetHRUGroup(kk);
-        //calculate average state variable value
-        agg_phi=0.0;
-        agg_area=0.0;
-        for (int k2=0;k2<pAggGroup->GetNumHRUs();k2++)
-        {
-          pHRU=pAggGroup->GetHRU(k2);
-          k   =pHRU->GetGlobalIndex();
-          area=pHRU->GetArea();
-          agg_phi +=area*aPhinew[k][i];
-          agg_area+=area;
-        }
-        avg_phi=agg_phi/agg_area;
-
-        //assign average state variable value to all HRUs in aggregation group
-        for (int k2=0;k2<pAggGroup->GetNumHRUs();k2++)
-        {
-          k=pAggGroup->GetHRU(k2)->GetGlobalIndex();
-          aPhinew[k][i]=avg_phi;
-          //No need to increment cumulative mass balance?
-        }
-      }
-    }
-  }
 
   //update state variable values=====================================
   for (k=0;k<nHRUs;k++){

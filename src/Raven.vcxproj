@@ -510,7 +510,7 @@
       <ProgramDataBaseFileName>.\ReleaseNetCDF/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DisableSpecificWarnings>4996; 26812</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4996; 26812; 26451</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -560,6 +560,7 @@
     <ClCompile Include="Drain.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="IsotopeTransport.cpp" />
+    <ClCompile Include="LatEquilibrate.cpp" />
     <ClCompile Include="NetCDFReading.cpp" />
     <ClCompile Include="ParseFEWSRunInfo.cpp" />
     <ClCompile Include="ConstituentModel.cpp" />

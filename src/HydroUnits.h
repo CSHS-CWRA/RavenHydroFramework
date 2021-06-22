@@ -186,8 +186,6 @@ private:/*------------------------------------------------------*/
     int          _global_kk; ///< index of group in master HRU Group array (in CModel)
     bool          _disabled; ///< true if all HRUs in group are disabled
 
-    bool     *_aAggregateSV; ///< array (size MAX_STATE_VARS) - true if state variable is averaged over HRU group each timestep
-
 public:/*-------------------------------------------------------*/
   //Constructors:
   CHRUGroup(string tag, int global_ind);
@@ -207,9 +205,5 @@ public:/*-------------------------------------------------------*/
   double            GetAvgCumulFlux    (const int i, const bool to) const;
   double            GetAvgCumulFluxBet(const int iFrom, const int iTo) const;
   bool              IsInGroup          (const int k) const;
-
-  bool              IsAggregatorGroup  (const int i) const;
-
-  void              SetAsAggregator    (const int i);
 };
 #endif

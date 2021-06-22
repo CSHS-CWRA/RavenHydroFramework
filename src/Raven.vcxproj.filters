@@ -420,6 +420,12 @@
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LatEquilibrate.cpp">
+      <Filter>Source Files\Hydrological Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

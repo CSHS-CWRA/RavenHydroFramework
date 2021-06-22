@@ -303,7 +303,7 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
 /// \param *pHRU [in] Pointer to HRU object
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Current input time structure
-/// \param *rates [out] Rates of change of state variables (of size MAX_STATE_VARS)
+/// \param *rates [out] Rates of change of state variables 
 //
 void   CmvBaseflow::ApplyConstraints( const double     *storage,
                                       const CHydroUnit *pHRU,

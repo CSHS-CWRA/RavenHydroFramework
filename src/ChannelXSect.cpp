@@ -491,7 +491,7 @@ void CChannelXSect::GenerateRatingCurvesFromProfile()
   ExitGracefullyIf((maxe-mine)<REAL_SMALL,
                    "CChannelXSect::GenerateRatingCurvesFromProfile: profile survey points all have same elevation",BAD_DATA);
 
-  double dz=(maxe-mine)/(N-1);
+  double dz=(maxe-mine)/((int)(N)-1.0);
 
   int i=0;
   for (double z=mine;z<maxe+0.5*dz;z+=dz)

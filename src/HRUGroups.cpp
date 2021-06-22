@@ -13,11 +13,6 @@ CHRUGroup::CHRUGroup(string tag, int global_ind)
 {
   _name=tag;
   _nHRUs=0;  _pHRUs=NULL;
-  _aAggregateSV=NULL;
-  _aAggregateSV=new bool [MAX_STATE_VARS];
-  for (int i=0;i<MAX_STATE_VARS;i++){
-    _aAggregateSV[i]=false;
-  }
   _global_kk=global_ind;
   _disabled=false;
 }
@@ -29,7 +24,6 @@ CHRUGroup::CHRUGroup(string tag, int global_ind)
 CHRUGroup::~CHRUGroup()
 {
   delete [] _pHRUs; _pHRUs=NULL; //deletes pointers only
-  delete [] _aAggregateSV;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -101,20 +95,6 @@ void CHRUGroup::Initialize()
 void CHRUGroup::DisableGroup()
 {
   _disabled=true;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief returns true if state variable i is aggregated across this HRU group
-/// \returns true if state variable i is aggregated across this HRU group
-//
-bool  CHRUGroup::IsAggregatorGroup   (const int i) const
-{
-  return _aAggregateSV[i];
-}
-//////////////////////////////////////////////////////////////////
-/// \brief ensures that state variable i is aggregated across this HRU group
-//
-void  CHRUGroup::SetAsAggregator    (const int i){
-  _aAggregateSV[i]=true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a state variable specified by index i over the total area covered by the HRU group

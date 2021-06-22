@@ -360,16 +360,6 @@ void CModel::Initialize(const optStruct &Options)
   if((wetlandsinmodel) && (GetStateVarIndex(DEPRESSION)==DOESNT_EXIST)) {
     ExitGracefully("CModel::Initialize: At least one WETLAND-type soil profile is included but no DEPRESSION storage processes included in hydrologic process list.",BAD_DATA_WARN);
   }
-  //--Check for aggregated HRUs and Transport
-  int nAgg=0;
-  for(i=0;i<_nStateVars; i++){
-    for(int kk=0;kk<_nHRUGroups;kk++){
-      if(_pHRUGroups[kk]->IsAggregatorGroup(i)){ nAgg++; }
-    }
-  }
-  if((_pTransModel->GetNumConstituents()>0) && (nAgg>0)) {
-    WriteWarning("CModel::Initialize: Transport processes will not work properly with aggregation of state variables (:AggregatedVariable command)",Options.noisy);
-  }
   //--Check for non-standard calendar with observations
   if((Options.calendar!=CALENDAR_PROLEPTIC_GREGORIAN) && (_nObservedTS!=0)){
     WriteWarning("CModelInitialize: if a non-standard calendar is used, all observation data must be converted into the same calendar format",Options.noisy);

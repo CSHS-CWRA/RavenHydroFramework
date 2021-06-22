@@ -519,7 +519,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":BlowingSnow"               )){code=235;}
     else if  (!strcmp(s[0],":LakeRelease"               )){code=236;}
     else if  (!strcmp(s[0],":SoilBalance"               )){code=237;}
-
+    else if  (!strcmp(s[0],":LateralEquilibrate"        )){code=238;}
     else if  (!strcmp(s[0],":Drain"                     )){code=252;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
@@ -1868,12 +1868,24 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(199):  //--------------------------------------------
     {/*:AggregatedVariable [SV_TAG] {optional HRU_Group}*/
-      if(Options.noisy) { cout <<"Aggregated Variable"<<endl; }
-      if(Len<2) { ImproperFormatWarning(":AggregatedVariable",p,Options.noisy); break; }
-      tmpS[0]=CStateVariable::StringToSVType(s[1],tmpLev[0],true);
-      string group_name="ALL";
-      if(Len==3) { group_name=s[2]; }
-      pModel->SetAggregatedVariable(tmpS[0],tmpLev[0],group_name);
+
+      WriteWarning("The :AggregatedVariable command has been deprecated. Please use the :LateralEquilibrate command in its stead.", Options.noisy);
+
+      bool interbasin = false;
+      tmpS[0] = CStateVariable::StringToSVType(s[1], tmpLev[0], true);
+      pModel->AddStateVariables(tmpS, tmpLev, 2);
+
+      if (pModel->GetHRUGroup(s[2]) == NULL) {
+        ExitGracefully("ParseInput: :AggregatedVariable - invalid HRU Group used. Must define using :DefineHRUGroups command.", BAD_DATA_WARN);
+      }
+      else
+      {
+        pMover = new CmvLatEquilibrate (pModel->GetStateVarIndex(tmpS[0], tmpLev[0]),//SV index
+                                        pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
+                                        100, //instantaneous
+                                        !interbasin);
+        AddProcess(pModel, pMover, pProcGroup);
+      }
       break;
     }
     case(200):  //----------------------------------------------
@@ -2558,7 +2570,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       if ((Len>=8) && (!strcmp(s[7],"INTERBASIN"))){interbasin=true; }
  
-      if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[2])==NULL)){
+      if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[5])==NULL)){
         ExitGracefully("ParseInput: Lateral Flush - invalid 'to' or 'from' HRU Group used. Must define using :DefineHRUGroups command.",BAD_DATA_WARN);
       }
       else{
@@ -2668,6 +2680,31 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover=new CmvSoilBalance(sb_type);
       AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case(238):  //----------------------------------------------
+    {/*Lateral Equilibrate
+       :LateralEquilibrate RAVEN_DEFAULT [HRUGroup] [SV] [mixing_rate] {'INTERBASIN'} */
+      if (Options.noisy) { cout << "Lateral Equilibrate Process" << endl; }
+      bool interbasin = false;
+      if (Len < 5) { ImproperFormatWarning(":LateralEquilibrate", p, Options.noisy); break; }
+
+      tmpS[0] = CStateVariable::StringToSVType(s[3], tmpLev[0], true);
+      pModel->AddStateVariables(tmpS, tmpLev, 2);
+
+      if ((Len >= 6) && (!strcmp(s[5], "INTERBASIN"))) { interbasin = true; }
+
+      if (pModel->GetHRUGroup(s[2]) == NULL)  {
+        ExitGracefully("ParseInput: Lateral Equilibrate - invalid HRU Group used. Must define using :DefineHRUGroups command.", BAD_DATA_WARN);
+      }
+      else 
+      {
+        pMover = new CmvLatEquilibrate(pModel->GetStateVarIndex(tmpS[0], tmpLev[0]),//SV index
+                                       pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
+                                       s_to_d(s[4]),
+                                       !interbasin);
+        AddProcess(pModel, pMover, pProcGroup);
+      }
       break;
     }
     case(252):  //----------------------------------------------

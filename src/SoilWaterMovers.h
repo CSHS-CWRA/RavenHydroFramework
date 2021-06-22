@@ -254,8 +254,7 @@ enum crise_type
 class CmvCapillaryRise: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  crise_type      type;        ///< Model of capillary rise selected
-  int             nSoilLayers; ///< number of soil layers subject to evaporation
+  crise_type      _type;        ///< Model of capillary rise selected
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

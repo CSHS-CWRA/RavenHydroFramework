@@ -112,5 +112,40 @@ public:/*-------------------------------------------------------*/
 
 };
 
+///////////////////////////////////////////////////////////////////
+/// \brief Data abstraction for the complete dump of water from one storage 
+/// compartment in one HRU to another in another HRU
+//
+class CmvLatEquilibrate : public CLateralExchangeProcessABC
+{
+private:/*------------------------------------------------------*/
+  int                 _iSV;   //< global state variable index of state var
+  int                  _kk;   //< HRU group index (or DOESNT_EXIST, if all HRUs should be equlibrated)
+  double            *_Asum;   //< sum of areas of HRUs in HRU group within subbasin  [size: nSubBasins]
+  int          * _halfconn;   //< 1/2 number of connections in basin b (=nHRUs in kk within basin-1) [size: nSubBasins]
+  bool   _constrain_to_SBs;   //< all transfer is within one sub-basin; otherwise, requires only one recipient HRU in model
+  double       _mixing_rate;  //< [0..1] % of water mixed per day
 
+public:/*-------------------------------------------------------*/
+  //Constructors/destructors:
+  CmvLatEquilibrate(int   sv_ind,
+                    int   HRU_grp,
+                    double mixing_rate,
+                    bool  constrain_to_SBs);
+  ~CmvLatEquilibrate();
+
+  //inherited functions
+  void Initialize();
+
+  static void GetParticipatingStateVarList(sv_type* aSV, int* aLev, int& nSV);
+
+  void           GetParticipatingParamList(string* aP, class_type* aPC, int& nP) const;
+
+  void GetLateralExchange(const double* const* state_vars, //array of all SVs for all HRUs, [k][i]
+                          const CHydroUnit* const* pHRUs,
+                          const optStruct& Options,
+                          const time_struct& tt,
+                          double* exchange_rates) const;//purely virtual
+
+};
 #endif

@@ -36,6 +36,7 @@ CModel::CModel(const int        nsoillayers,
   _nDiagPeriods=0;  _pDiagPeriods=NULL;
   
   _nTotalConnections=0;
+  _nTotalLatConnections=0;
 
   _WatershedArea=0;
 
@@ -60,7 +61,7 @@ CModel::CModel(const int        nsoillayers,
                    "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);
 
   //Initialize Lookup table for state variable indices
-  for (i=0;i<MAX_STATE_VARS;i++){
+  for (i=0;i< MAX_STATE_VAR_TYPES;i++){
     for (int m=0;m<MAX_SV_LAYERS;m++){
       _aStateVarIndices[i][m]=DOESNT_EXIST;
     }
@@ -1406,6 +1407,8 @@ void  CModel::AddStateVariables( const sv_type *aSV,
 {
   int i,ii;
   bool found;
+  ExitGracefullyIf(nSV > MAX_STATE_VARS,
+    "CModel::AddStateVariables: exceeded maximum number of state variables manipulable by one process", RUNTIME_ERR);
   for (ii=0;ii<nSV;ii++)
   {
     found=false;
@@ -1429,7 +1432,7 @@ void  CModel::AddStateVariables( const sv_type *aSV,
       tmpSV[_nStateVars]=aSV[ii];
       tmpLy[_nStateVars]=aLev[ii];
       //add index to state variable lookup table
-      ExitGracefullyIf((int)(aSV[ii])>MAX_STATE_VARS,
+      ExitGracefullyIf((int)(aSV[ii])> MAX_STATE_VAR_TYPES,
                        "CModel::AddStateVariables: bad type specified",RUNTIME_ERR);
       ExitGracefullyIf((aLev[ii]<-1) || (aLev[ii]>=MAX_SV_LAYERS),
                        "CModel::AddStateVariables: bad layer index specified",RUNTIME_ERR);
@@ -1441,8 +1444,6 @@ void  CModel::AddStateVariables( const sv_type *aSV,
       _aStateVarType =tmpSV;
       _aStateVarLayer=tmpLy;
       _nStateVars++;
-      ExitGracefullyIf(_nStateVars>MAX_STATE_VARS,
-                       "CModel::AddStateVariables: exceeded maximum number of state variables in model",RUNTIME_ERR);
     }
   }
 }
@@ -1495,23 +1496,6 @@ void CModel::SetLakeStorage   (const sv_type      lak_sv, const int lev)
   _lake_sv=GetStateVarIndex(lak_sv,lev);
   ExitGracefullyIf(_lake_sv==DOESNT_EXIST,
                    "CModel::SetLakeStorage: non-existent state variable",BAD_DATA);
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Sets state variable defined by SV and lev to be an aggregated variable
-///
-/// \param SV [in] SV type to be aggregated
-///     \param lev [in] Layer of SV to be aggregated
-/// \param group_name [in] HRU group over which aggregation takes place
-//
-void CModel::SetAggregatedVariable(const sv_type SV, const int lev, const string group_name)
-{
-  int i=GetStateVarIndex(SV,lev);
-  ExitGracefullyIf(i==DOESNT_EXIST,
-                   "CModel::SetAggregatedVariable: non-existent state variable",BAD_DATA);
-  for (int kk=0;kk<_nHRUGroups;kk++){
-    if (!_pHRUGroups[kk]->GetName().compare(group_name)){_pHRUGroups[kk]->SetAsAggregator(i);}
-  }
 }
 
 //////////////////////////////////////////////////////////////////

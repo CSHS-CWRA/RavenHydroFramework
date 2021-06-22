@@ -14,7 +14,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
-//#define _ARMADILLO_   //comment out to compile without armadillo library
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -141,8 +140,8 @@ const double  MPH_PER_MPS             =2.237;                                   
 const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
 const double  DEGREES_TO_RADIANS      =0.017453293;                             ///< [deg] to [rad]
 
-/// \details 0.278*(24hr/d)*(1000^2m^2/km)*(0.001m/mm)*(1/86400s/day) \n
-/// runoff=RATIONAL_CONV*C_R*rainfall intensity \n
+/// \details 0.278*(24hr/d)*(1000^2m^2/km)*(0.001m/mm)*(1/86400s/day)
+/// runoff=RATIONAL_CONV*C_R*rainfall intensity 
 /// [mm/d]=                  [mm/d]
 const double  RATIONAL_CONV           =0.7722;                                  ///< Allows rational method to be applied
 const double  DAYS_PER_MONTH[12]      ={31,28,31,30,31,30,31,31,30,31,30,31};   ///< Array of doubles containing the number of days in each month
@@ -201,10 +200,10 @@ const double  PEAK_TEMP_HR            =3;                                       
 const double  WINTER_SOLSTICE_ANG     =6.111043;                                ///< Dec 21 as day angle
 
 //Hard-coded Empirical parameters
-const double  CAP_LAI_RATIO           =0.15;                                    ///< [mm] maximum ratio of canopy capacity to LAI+SAI \n
-//                                                                              ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60)) \n
+const double  CAP_LAI_RATIO           =0.15;                                    ///< [mm] maximum ratio of canopy capacity to LAI+SAI 
+//                                                                              ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60)) 
 //                                                                              ///> \cite Federer2010 \cite Dingman1994
-const double  SCAP_LAI_RATIO          =0.6;                                     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI \n
+const double  SCAP_LAI_RATIO          =0.6;                                     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI 
 //                                                                              ///< (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
 const double  SAT_INF                 =0.92;                                    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
 const double  MIN_PRESSURE            =1e10;                                    ///< [-mm] minimum matric potential in soil
@@ -294,22 +293,23 @@ inline void ExitGracefullyIf(bool condition, const char *statement, exitcode cod
 const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is generated when destructor is called
 const int     MAX_SV_LAYERS       =100;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
-const int     MAX_STATE_VARS      =200;         ///< Max number of state variables in model
-const int     MAX_GW_CLASSES      =50;          ///< Max number of gw classes
+const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
+const int     MAX_STATE_VARS      =200;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
 const int     MAX_CONNECTIONS     =200;         ///< Max number of to/from connections in any single process (CAdvection worst offender)
+const int     MAX_LAT_CONNECTIONS =4000;        ///< Max number of lateral HRU flow connections
 const int     MAX_SOIL_PROFILES   =200;         ///< Max number of soil profiles
 const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation classes
 const int     MAX_LULT_CLASSES    =200;         ///< Max number of lult classes
-const int     MAX_AQUIFER_LAYERS  =10;          ///< Max number aquifer layers
-const int     MAX_AQUIFER_STACKS  =50;          ///< Max number aquifer stacks GWMIGRATE - Set at 10000!?
 const int     MAX_TERRAIN_CLASSES =50;          ///< Max number of terrain classes
 const int     MAX_SURVEY_PTS      =50;          ///< Max number of survey points
 const int     MAX_GAUGES_IN_LIST  =250;         ///< Max number of gauges in :GaugeList command
-const int     MAX_CONSTITUENTS    =10;          ///< Max number of transport constituents
+const int     MAX_CONSTITUENTS    =10;          ///< Max number of transported constituents
 const int     MAX_RIVER_SEGS      =50;          ///< Max number of river segments
 const int     MAX_FILENAME_LENGTH =256;         ///< Max filename length
 const int     MAX_MULTIDATA       =10;          ///< Max multidata length
-const int     MAX_LAT_CONNECTIONS =4000;        ///< Maximum number of lateral HRU flow connections
+const int     MAX_GW_CLASSES      =50;          ///< Max number of gw classes
+const int     MAX_AQUIFER_LAYERS = 10;          ///< Max number aquifer layers
+const int     MAX_AQUIFER_STACKS = 50;          ///< Max number aquifer stacks GWMIGRATE - Set at 10000!?
 const int     MAX_GW_CELLS        =10000;       ///< Max number of cells in gw model grid
 const int     MAX_SP_CLASSES      =100;         ///< Max number of stress periods
 const int     MAX_OE_CLASSES      =1;           ///< Max number of overlap/exchange classes
@@ -409,18 +409,6 @@ enum routing_method
 };
 
 ////////////////////////////////////////////////////////////////////
-/// \brief Methods for interpolating Met Station/Gauge data to HRUs
-//
-enum interp_method
-{
-  INTERP_AVERAGE_ALL,                ///< Interpolation by taking the average of all values
-  INTERP_NEAREST_NEIGHBOR,           ///< Interpolation by assuming the value of the nearest-neighbour
-  INTERP_INVERSE_DISTANCE,           ///< Interpolates by a average of all values, weighted by the inverse distance to the interpolated point
-  INTERP_INVERSE_DISTANCE_ELEVATION, ///< Interpolates by a average of all values, weighted by the inverse elevation distance to the interpolated point
-  INTERP_FROM_FILE                   ///< User-specified file used to specify interpolation weights for all HRUs
-};
-
-////////////////////////////////////////////////////////////////////
 /// \brief Methods for routing water (lateral flow) to catchment outlet
 //
 enum catchment_route//methods used for routing water (lateral flow) to catchment outlet
@@ -430,6 +418,18 @@ enum catchment_route//methods used for routing water (lateral flow) to catchment
   ROUTE_GAMMA_CONVOLUTION,   ///< Gamma Unit Hydrograph
   ROUTE_TRI_CONVOLUTION,     ///< Triangular Unit Hydrograph
   ROUTE_RESERVOIR_SERIES     ///< Series of linear reservoirs (Nash Hydrograph)
+};
+
+////////////////////////////////////////////////////////////////////
+/// \brief Methods for interpolating Met Station/Gauge data to HRUs
+//
+enum interp_method
+{
+  INTERP_AVERAGE_ALL,                ///< Interpolation by taking the average of all values
+  INTERP_NEAREST_NEIGHBOR,           ///< Interpolation by assuming the value of the nearest-neighbour
+  INTERP_INVERSE_DISTANCE,           ///< Interpolates by a average of all values, weighted by the inverse distance to the interpolated point
+  INTERP_INVERSE_DISTANCE_ELEVATION, ///< Interpolates by a average of all values, weighted by the inverse elevation distance to the interpolated point
+  INTERP_FROM_FILE                   ///< User-specified file used to specify interpolation weights for all HRUs
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -515,6 +515,7 @@ enum snalbedo_method
 {
   SNOW_ALBEDO_UBC           ///< snow albedo evolution according to UBCWM
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for estimating canopy transmittance of shortwave radiation
 //
@@ -634,6 +635,7 @@ enum wind_prof_meth
   WINDPROF_LOGARITHMIC,      ///< basic von Karman logarithmic profile
   WINDPROF_MAHAT             ///< informed by presence of vegetation from Mahat (????)
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of calculating precipitation interception fraction
 //
@@ -682,6 +684,7 @@ enum netSWRad_method
    NETSWRAD_DATA,          ///< data supplied
    NETSWRAD_CALC           ///< determined via calculations
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods of handling snow cover depletion
 //
@@ -722,6 +725,7 @@ enum condition_basis
   BASIS_LANDCLASS,        ///< condition is based upon land use/ land type class (e.g., if urban...)
   BASIS_VEGETATION        ///< condition is based upon vegetation class (e.g., if broadleaf...)
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Ensemble mode type
 //
@@ -762,6 +766,7 @@ enum out_format
   OUTPUT_NETCDF,         ///< Output in NetCDF format (.nc files)
   OUTPUT_NONE            ///< Output is suppressed
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief reservoir constraint conditions
 //
@@ -780,6 +785,7 @@ enum res_constraint
   RC_DRY_RESERVOIR,
   RC_DZTR
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief reservoir overflow handling options - how discharge is estimated once max reservoir stage is met
 //
@@ -912,7 +918,7 @@ enum process_type
   FLUSH, SPLIT, OVERFLOW_PROC,CONVOLVE,EXCHANGE_FLOW,
 
   //in LateralExchangeABC.h
-  LAT_FLUSH,
+  LAT_FLUSH, LAT_EQUIL,
 
   //in Albedo.h
   SNOW_ALBEDO_EVOLVE,
@@ -951,12 +957,12 @@ enum process_type
 ////////////////////////////////////////////////////////////////////
 /// \brief NetCDF attribute structure
 //
-
 struct netcdfatt
 {
   string attribute;
   string value;
 };
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Stores all global model and solution method options
 //
