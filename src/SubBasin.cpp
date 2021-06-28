@@ -776,7 +776,7 @@ double CSubBasin::GetDiffusivity() const {
 //
 double CSubBasin::GetRiverDepth() const {
   if (_pChannel==NULL){return ALMOST_INF;}
-  const double MIN_CHANNEL_DEPTH=0.05;
+  const double MIN_CHANNEL_DEPTH=0.01;
   return max(_pChannel->GetDepth(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_DEPTH);
 }
 

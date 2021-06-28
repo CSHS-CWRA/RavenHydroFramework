@@ -26,6 +26,7 @@
 #include "LatAdvection.h"
 #include "PrairieSnow.h"
 #include "ProcessGroup.h"
+#include "GWSWProcesses.h"
 #include "HeatConduction.h"
 #include "SurfaceEnergyExchange.h"
 
@@ -35,11 +36,8 @@ bool ParseHRUPropsFile         (CModel *&pModel, const optStruct &Options, bool 
 bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
-bool ParseGWPropsFile          (CModel *&pModel, const optStruct &Options);
-bool ParseGWGeometryFile       (CModel *&pModel, const optStruct &Options);
-bool ParseGWSWExchangeFile     (CModel *&pModel, const optStruct &Options);
-bool ParseGWSWOverlapFile      (CModel *&pModel, const optStruct &Options);
-bool ParseNetCDFRunInfoFile    (CModel *&pModel,       optStruct &Options);
+bool ParseGWFile               (CModel *&pModel, const optStruct &Options);
+bool ParseNetCDFRunInfoFile    (CModel*& pModel, optStruct& Options);
 
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
@@ -88,6 +86,14 @@ bool ParseInputFiles (CModel      *&pModel,
   if (!ParseHRUPropsFile         (pModel,Options,terr_reqd)){
     ExitGracefully("Cannot find or read .rvh file",BAD_DATA);return false;
   }
+
+  //Groundwater file (.rvg)
+  //--------------------------------------------------------------------------------
+  if (Options.modeltype == MODELTYPE_COUPLED)
+  {
+    if (!ParseGWFile(pModel, Options)) { return false; }
+  }
+
   for(int pp=0;pp<pModel->GetNumSubBasins(); pp++) {
     if(pModel->GetSubBasin(pp)->GetReservoir()!=NULL) { Options.write_reservoir=true; }
   }
@@ -97,29 +103,6 @@ bool ParseInputFiles (CModel      *&pModel,
   if (!ParseInitialConditionsFile(pModel,Options)){
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
   }
-
-  // Groundwater files (.rvh)
-  //--------------------------------------------------------------------------------
-  if((Options.modeltype == MODELTYPE_GROUNDWATER) || (Options.modeltype == MODELTYPE_COUPLED))
-  {
-    //GWMIGRATE - move all GW information to one GW file
-    //Groundwater discretization input file
-    if(!ParseGWGeometryFile(pModel,Options)) { return false; }
-    if(!ParseGWPropsFile(pModel,Options)) { return false; }
-
-    if(Options.modeltype == MODELTYPE_COUPLED)
-    {
-      //Groundwater Surface water interface input files
-      if(!ParseGWSWOverlapFile(pModel,Options)) { return false; }
-
-      if(Options.flux_exchange == FLUX_EX_UFR)
-      {
-        if(!ParseGWSWExchangeFile(pModel,Options)) { return false; }
-      }
-    }
-  }
-  CGroundwaterModel *pGW=pModel->GetGroundwaterModel();
-  if (pGW!=NULL){pGW->ConvertInitialConditions(pModel);}//GWMIGRATE ****FIX - Shouldn't be here, need to place it somewhere else
     
   // Time series input file (.rvt)
   //--------------------------------------------------------------------------------
@@ -161,6 +144,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CmvPrecipitation *pPrecip=NULL;
   CProcessGroup    *pProcGroup=NULL;
   CProcessGroup    *pProcGroupOuter=NULL; //for nested processgroups
+  CGroundwaterModel *pGW=NULL;
   bool              transprepared(false);
   bool              runname_overridden(false);
   bool              runmode_overridden(false);
@@ -257,13 +241,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.res_overflowmode        =OVERFLOW_ALL;
 
   //Groundwater model options
-  Options.modeltype               =MODELTYPE_SURFACE; //GWMIGRATE -TO REMOVE
-  Options.gw_solver_outer         =GWSOL_NEWTONRAPHSON;
-  Options.gw_solver_inner         =GWSOL_BICGSTAB;
-  Options.gw_grid                 =GRID_UNSTRUCTURED;
-  Options.exchange_freq           =EXFREQ_EVERY_TIMESTEP;
-  Options.flux_exchange           =FLUX_EX_STANDARD;
-  Options.overlap_type            =DIRECT;
+  Options.modeltype            =MODELTYPE_SURFACE;
   
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
@@ -379,7 +357,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":PrecipIceptFract"          )){code=30; }
     else if  (!strcmp(s[0],":OroTempCorrect"            )){code=31; }
     else if  (!strcmp(s[0],":OroPrecipCorrect"          )){code=32; }
-    else if  (!strcmp(s[0],":AquiferLayers"             )){code=33; }//AFTER :SoilModel Commmand \todo [clean] - remove make obsolete
+    
     else if  (!strcmp(s[0],":PotentialMeltMethod"       )){code=34; }
     else if  (!strcmp(s[0],":SubdailyMethod"            )){code=35; }
     else if  (!strcmp(s[0],":SubDailyMethod"            )){code=35; }
@@ -553,12 +531,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     //...
     //-------------------GROUNDWATER -------------------------
     else if  (!strcmp(s[0],":ModelType"                 )){code=500; }//AFTER SoilModel Commmand
-    else if  (!strcmp(s[0],":GWMethodOuter"             )){code=501; }
-    else if  (!strcmp(s[0],":GWMethodInner"             )){code=502; }
-    else if  (!strcmp(s[0],":GWDiscretization"          )){code=503; }
-    else if  (!strcmp(s[0],":GWSWExchangeFreq"          )){code=504; }
-    else if  (!strcmp(s[0],":FluxExchange"              )){code=505; }
-    else if  (!strcmp(s[0],":OverlapType"               )){code=506; }	
+    else if  (!strcmp(s[0],":rvg_Filename"              )){code=501;}
+    else if  (!strcmp(s[0],":Drain"                     )){code=503;}
+    else if  (!strcmp(s[0],":Recharge"                  )){code=504;}
 
     ExitGracefullyIf((code>200) && (code<300) && (pModel==NULL),
                      "ParseMainInputFile: :HydrologicProcesses AND :SoilModel commands must be called before hydrologic processes are specified",BAD_DATA);
@@ -1137,13 +1112,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {ExitGracefully("ParseInput:OroPrecipCorrect: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
-    case(33): //----------------------------------------------
-    {/*:AquiferLayers [int number_of_layers] */ //OBSOLETE
-      if (Options.noisy) {cout <<"Number of Aquifer Layers"<<endl;}
-      if (Len<2){ImproperFormatWarning(":AquiferLayers",p,Options.noisy); break;}
-      pModel->AddAquiferStateVars(s_to_i(s[1]));
-      break;
-    }
     case(34): //----------------------------------------------
     {/*:PotentialMeltMethod [string method] */
       if (Options.noisy) {cout <<"Potential Melt Calculation Method"<<endl;}
@@ -1240,8 +1208,9 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:RechargeMethod"  string method */
       if (Options.noisy) {cout <<"Recharge Calculation Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":RechargeMethod",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"RECHARGE_NONE"     )){Options.recharge=RECHARGE_NONE;}
-      else if (!strcmp(s[1],"RECHARGE_DATA"     )){Options.recharge=RECHARGE_DATA;}
+      if      (!strcmp(s[1],"RECHARGE_NONE"            )){Options.recharge=RECHARGE_NONE;} //default
+      else if (!strcmp(s[1],"RECHARGE_MODEL"           )){Options.recharge=RECHARGE_MODEL;} 
+      else if (!strcmp(s[1],"RECHARGE_DATA"            )){Options.recharge=RECHARGE_DATA;}
       else {ExitGracefully("ParseInput:RechargeMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
@@ -2707,24 +2676,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       break;
     }
-    case(252):  //----------------------------------------------
-    {/*:Drain
-      string ":Drain" string method */
-      if (Options.noisy){cout <<"Drain Process"<<endl;}
-        drain_type d_type=DRAIN_CONDUCTANCE;
-      if (Len<2){ImproperFormatWarning(":Drain",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"CONDUCTANCE"        )){d_type=DRAIN_CONDUCTANCE;}
-      else if (!strcmp(s[1],"UFR"                )){d_type=DRAIN_UFR;}
-      else {
-        ExitGracefully("ParseMainInputFile: Unrecognized drain process representation",BAD_DATA);
-      }
-      CmvDrain::GetParticipatingStateVarList(d_type,tmpS,tmpLev,tmpN);
-      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-        
-      pMover=new CmvDrain(d_type);
-      pModel->AddProcess(pMover);
-      break;
-    }
     case(294):  //----------------------------------------------
     {/*:-->RedirectFlow
      :-->RedirectFlow  [old 'To' SV] [new 'To' SV]*/
@@ -2769,11 +2720,11 @@ bool ParseMainInputFile (CModel     *&pModel,
           for(i=0;i<N;i++) { aWts[i]=s_to_d(s[i+1]); }
           pProcGroup->SetWeights(aWts,N);
         }
-        delete aWts;
       }
       else if(Len>1) {
         WriteWarning("ParseMainInputFile: incorrect number of weights in :EndProcessGroup command. Contents ignored.",Options.noisy);
       }
+      delete[] aWts;
       pModel->AddProcess(pProcGroup);
       pProcGroup=NULL;
       if(pProcGroupOuter!=NULL) {
@@ -3080,84 +3031,68 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:ModelType" string type */
       if (Options.noisy) {cout <<"Model Type"<<endl;}
       if (Len<2){ImproperFormatWarning(":ModelType",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"SURFACE"     )){Options.modeltype=MODELTYPE_SURFACE;}
-      else if (!strcmp(s[1],"GROUNDWATER" )){
-          Options.modeltype=MODELTYPE_GROUNDWATER;
-          pModel->AddAquiferStateVars(1);}
-      else if (!strcmp(s[1],"COUPLED"     )){
-          Options.modeltype=MODELTYPE_COUPLED;
-          pModel->AddAquiferStateVars(1);}
+      if      (!strcmp(s[1],"SURFACE")) {Options.modeltype = MODELTYPE_SURFACE;} //default
+      else if (!strcmp(s[1],"COUPLED")) {Options.modeltype = MODELTYPE_COUPLED;}
       else {ExitGracefully("ParseInput:ModelType: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
-    case(501): //----------------------------------------------
-    {/*:GWMethodOuter" string method */
-      if (Options.noisy) {cout <<"Groundwater Nonlinear Solver Method"<<endl;}
-      if (Len<2){ImproperFormatWarning(":GWMethodOuter",p,Options.noisy); break;}
-        if      (!strcmp(s[1],"NEWTON_RAPHSON")){Options.gw_solver_outer=GWSOL_NEWTONRAPHSON;}
-      else if (!strcmp(s[1],"PICARD"        )){Options.gw_solver_outer=GWSOL_PICARD;}
-      else {ExitGracefully("ParseInput:GWMethodOuter: Unrecognized method",BAD_DATA_WARN);}
-      break;
-    }
-    case(502): //----------------------------------------------
-    {/*:GWMethodInner" string method */
-      if (Options.noisy) {cout <<"Groundwater Linear Solver Method"<<endl;}
-      if (Len<2){ImproperFormatWarning(":GWMethodInner",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"PCGU"        )){Options.gw_solver_inner=GWSOL_PCGU;}
-        else if (!strcmp(s[1],"BICGStab"    )){Options.gw_solver_inner=GWSOL_BICGSTAB;}
-      else {ExitGracefully("ParseInput:GWMethodInner: Unrecognized method",BAD_DATA_WARN);}
-      break;
-    }
-    case(503): //----------------------------------------------
-    {/*:GWDiscretization" string gridtype */
-      if (Options.noisy) {cout <<"Groundwater Discretization"<<endl;}
-      if (Len<2){ImproperFormatWarning(":GWDiscretization",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"UNSTRUCT"    )){Options.gw_grid=GRID_UNSTRUCTURED;}
-      else {ExitGracefully("ParseInput:GWDiscretization: Unrecognized method",BAD_DATA_WARN);}
-      break;
-    }
-    case(504): //----------------------------------------------
-    {/*:GWSWExchangeFreq" string timestep */
-      if (Options.noisy) {cout <<"Groundwater-Surface Water Exchange Frequency"<<endl;}
-      if (Len<2){ImproperFormatWarning(":GWSWExchangeFreq",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"EVERY_TIMESTEP")){Options.exchange_freq=EXFREQ_EVERY_TIMESTEP;}
-      else {ExitGracefully("ParseInput:GWSWExchangeFreq: Unrecognized method",BAD_DATA_WARN);}
-      break;
-    }
-    case(505): //----------------------------------------------
-    {/*:FluxExchange" string type */
-      if (Options.noisy) {cout <<"Groundwater-Surface Water Exchange Type"<<endl;}
-      if (Len<2){ImproperFormatWarning(":FluxExchange",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"STANDARD"      )){Options.flux_exchange=FLUX_EX_STANDARD;}
-      else if (!strcmp(s[1],"UFR"           )){Options.flux_exchange=FLUX_EX_UFR;}
-      else {ExitGracefully("ParseInput:FluxExchange: Unrecognized method",BAD_DATA_WARN);}
-      break;
-    }
-    case(506): //----------------------------------------------
-    {/*:OverlapType" string type */
-      if (Options.noisy) {cout <<"HRU-Aquifer Overlap Type"<<endl;}
-      if (Len<2){ImproperFormatWarning(":OverlapType",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"DIRECT"          )){Options.overlap_type=DIRECT;}
-      else if (!strcmp(s[1],"AREA_WEIGHTED"   )){Options.overlap_type=AREA_WEIGHTED;}
-      else {ExitGracefully("ParseInput:OverlapType: Unrecognized method",BAD_DATA_WARN);}
-      break;
-    }
-    case(510):  //--------------------------------------------
-    {/*:WriteGroundwaterHeads */
-      if (Options.noisy) {cout <<"Write Groundwater Head File ON"<<endl;}
-      Options.write_gwhead =true;
-      break;
-    }
-    case(511):  //--------------------------------------------
-    {/*:WriteGroundwaterFlows */
-      if (Options.noisy) {cout <<"Write Groundwater Flows File ON"<<endl;}
-      Options.write_gwflow =true;
-      break;
-    }
-    case(512):  //--------------------------------------------
+    case(501) :  //-------------------------------------------- //GWMIGRATE move to 60s?
     {/*:rvg_Filename */
-      if (Options.noisy) {cout <<"rvg filename: "<<s[1]<<endl;}
-      Options.rvg_filename=s[1];
+      if (Options.noisy) { cout << "rvg filename: " << s[1] << endl; }
+      Options.rvg_filename = s[1];
+      break;
+    }
+    case(502) :
+    {
+      break;
+    }
+    case(503) :  //----------------------------------------------
+    {/*:Drain
+     :Drain RAVEN_DEFAULT GROUNDWATER SOIL[?] or SURFACE_WATER */
+      if (Options.noisy){ cout << "Drain Process" << endl; }
+      if (Len<2){ ImproperFormatWarning(":Drain", p, Options.noisy); break; }
+      /*   //GWUPDATE
+      CmvDrain::GetParticipatingStateVarList(tmpS, tmpLev, tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover=new CmvDrain(); // Needs TO sv
+      pModel->AddProcess(pMover);
+      */
+      CGWDrain::GetParticipatingStateVarList(tmpS, tmpLev, tmpN);
+      pModel->AddStateVariables(tmpS, tmpLev, tmpN);
+      tmpS[0] = CStateVariable::StringToSVType(s[3], tmpLev[0], true);
+      pModel->AddStateVariables(tmpS, tmpLev, 1);
+
+      pGW = pModel->GetGroundwaterModel();
+      pMover = new CGWDrain(pGW);
+      AddProcess(pModel, pMover, pProcGroup);
+      pGW->AddProcess(DRAIN, pMover);
+      break;
+    }
+    case(504) :  //----------------------------------------------
+    {/*:Recharge
+     :Recharge [string method] SOIL[?] GROUNDWATER */
+      if (Options.noisy){ cout << "Recharge GWSW Process" << endl; }
+      if (Len<4){ ImproperFormatWarning(":Recharge", p, Options.noisy); break; }
+      
+      //-- Determine Recharge Type
+      gwrecharge_type rech_type=RECHARGE_FLUX;
+      if      (!strcmp(s[1],"RECHARGE_DATA"   )){rech_type=RECHARGE_HRU_DATA;}
+      else if (!strcmp(s[1],"RECHARGE_FLUX"   )){rech_type=RECHARGE_FLUX;}
+      //else if (!strcmp(s[1],"RECHARGE_COEF" )){rech_type=RECHARGE_COEF;}  TBA
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized recharge process representation",BAD_DATA_WARN); break;
+      }
+
+      CGWRecharge::GetParticipatingStateVarList(tmpS, tmpLev, tmpN);
+      pModel->AddStateVariables(tmpS, tmpLev, tmpN);
+      tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
+      pModel->AddStateVariables(tmpS,tmpLev,1);
+
+      pGW = pModel->GetGroundwaterModel();
+      pMover = new CGWRecharge(pGW, rech_type, ParseSVTypeIndex(s[2],pModel));
+      AddProcess(pModel, pMover, pProcGroup);
+      pGW->AddProcess(GWRECHARGE, pMover);
       break;
     }
     default://----------------------------------------------

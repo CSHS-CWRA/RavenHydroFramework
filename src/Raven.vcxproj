@@ -535,7 +535,6 @@
   <ItemGroup>
     <ClCompile Include="Abstraction.cpp" />
     <ClCompile Include="Advection.cpp" />
-    <ClCompile Include="AquiferStack.cpp" />
     <ClCompile Include="CapillaryRise.cpp" />
     <ClCompile Include="CommonFunctions.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -559,6 +558,9 @@
     <ClCompile Include="Diagnostics.cpp" />
     <ClCompile Include="Drain.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
+    <ClCompile Include="GWRecharge.cpp" />
+    <ClCompile Include="GWRiverConnection.cpp" />
+    <ClCompile Include="GWSWProcessABC.cpp" />
     <ClCompile Include="IsotopeTransport.cpp" />
     <ClCompile Include="LatEquilibrate.cpp" />
     <ClCompile Include="NetCDFReading.cpp" />
@@ -566,6 +568,8 @@
     <ClCompile Include="ConstituentModel.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="MassRouting.cpp" />
+    <ClCompile Include="ParseGWFile.cpp" />
+    <ClCompile Include="RiverReach.cpp" />
     <ClCompile Include="SoilBalance.cpp" />
     <ClCompile Include="Transport.cpp" />
     <ClCompile Include="RobinInterface.cpp" />
@@ -578,9 +582,6 @@
     <ClCompile Include="GlobalParams.cpp" />
     <ClCompile Include="GreenAmpt.cpp" />
     <ClCompile Include="GroundwaterModel.cpp" />
-    <ClCompile Include="GWGeometry.cpp" />
-    <ClCompile Include="GWSolvers.cpp" />
-    <ClCompile Include="GWStressPeriodClass.cpp" />
     <ClCompile Include="HeatConduction.cpp" />
     <ClCompile Include="HRUGroups.cpp" />
     <ClCompile Include="IrregularTimeSeries.cpp" />
@@ -591,12 +592,7 @@
     <ClCompile Include="ModelInitialize.cpp" />
     <ClCompile Include="ModelParamCheck.cpp" />
     <ClCompile Include="OrographicCorrections.cpp" />
-    <ClCompile Include="OverlapExchangeClass.cpp" />
     <ClCompile Include="ParseEnsembleFile.cpp" />
-    <ClCompile Include="ParseGWGeometryFile.cpp" />
-    <ClCompile Include="ParseGWPropsFile.cpp" />
-    <ClCompile Include="ParseGWSWExchangeFile.cpp" />
-    <ClCompile Include="ParseGWSWOverlapFile.cpp" />
     <ClCompile Include="ParseInitialConditionFile.cpp" />
     <ClCompile Include="ParseLib.cpp" />
     <ClCompile Include="ParseLiveFile.cpp" />
@@ -793,13 +789,18 @@
     <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />
+    <ClInclude Include="GroundwaterModel.h" />
+    <ClInclude Include="GWRiverConnection.h" />
+    <ClInclude Include="GWSWProcesses.h" />
     <ClInclude Include="IsotopeTransport.h" />
+    <ClInclude Include="MFUSGpp.h" />
+    <ClInclude Include="RiverReach.h" />
+    <ClInclude Include="RobinInterface.h" />
     <ClInclude Include="SurfaceEnergyExchange.h" />
     <ClInclude Include="ForcingGrid.h" />
     <ClInclude Include="Forcings.h" />
     <ClInclude Include="GlacierProcesses.h" />
     <ClInclude Include="GlobalParams.h" />
-    <ClInclude Include="GroundwaterClass.h" />
     <ClInclude Include="HeatConduction.h" />
     <ClInclude Include="IrregularTimeSeries.h" />
     <ClInclude Include="LatAdvection.h" />

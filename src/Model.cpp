@@ -189,7 +189,6 @@ CModel::~CModel()
   CLandUseClass::   DestroyAllLUClasses();
   CTerrainClass::   DestroyAllTerrainClasses();
   CSoilProfile::    DestroyAllSoilProfiles();
-  CAquiferStack::   DestroyAllAqStacks();
   CChannelXSect::   DestroyAllChannelXSections();
 
   delete _pTransModel;
@@ -1446,26 +1445,6 @@ void  CModel::AddStateVariables( const sv_type *aSV,
       _nStateVars++;
     }
   }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Adds aquifer state variables during model construction
-/// \details Should be called once during parse of .rvi file when :AquiferLayers command is specified
-///
-/// \param nLayers [in] number of aquifer layers in model
-//
-void CModel::AddAquiferStateVars(const int nLayers)
-{
-  _nAquiferLayers=nLayers;
-  sv_type *aSV =new sv_type [_nAquiferLayers];
-  int     *aLev=new int       [_nAquiferLayers];
-  for (int i=0;i<_nAquiferLayers;i++)
-  {
-    aSV [i]=GROUNDWATER;
-    aLev[i]=i;
-  }
-  AddStateVariables(aSV,aLev,_nAquiferLayers);
-  delete [] aSV;
-  delete [] aLev;
 }
 
 //////////////////////////////////////////////////////////////////

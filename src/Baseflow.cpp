@@ -179,11 +179,6 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
     pSoil    = pHRU->GetSoilProps(m);
     max_stor = pHRU->GetSoilCapacity(m);  //maximum storage of soil layer [mm]
   }
-  else if (fromType==GROUNDWATER){
-    m                            = pModel->GetStateVarLayer(iFrom[0]); //which aquifer layer
-    pSoil    = pHRU->GetAquiferProps(m);
-    max_stor = pHRU->GetAquiferCapacity(m);//[mm]
-  }
 
   stor=min(max(stor,0.0),max_stor); //correct for potentially invalid storage
 

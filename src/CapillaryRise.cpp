@@ -45,11 +45,9 @@ CmvCapillaryRise::~CmvCapillaryRise(){}
 //
 void CmvCapillaryRise::Initialize()
 {
-  ExitGracefullyIf((pModel->GetStateVarType(iFrom[0])!=SOIL) &&
-                   (pModel->GetStateVarType(iFrom[0])!=GROUNDWATER),
-                   "CmvCapillaryRise::Initialize:CapillaryRise must come from soil or groundwater unit",BAD_DATA);
-  ExitGracefullyIf((pModel->GetStateVarType(iTo[0])!=SOIL) &&
-                   (pModel->GetStateVarType(iTo[0])!=GROUNDWATER),
+  ExitGracefullyIf((pModel->GetStateVarType(iFrom[0])!=SOIL),
+                   "CmvCapillaryRise::Initialize:CapillaryRise must come from soil unit",BAD_DATA);
+  ExitGracefullyIf((pModel->GetStateVarType(iTo[0])!=SOIL),
                    "CmvCapillaryRise::Initialize:CapillaryRise must go to soil or groundwater unit",BAD_DATA);
 }
 
@@ -124,11 +122,6 @@ void   CmvCapillaryRise::GetRatesOfChange( const double      *storage,
     m                            = pModel->GetStateVarLayer(iTo[0]); //which soil layer
     pSoil    = pHRU->GetSoilProps(m);
     max_stor = pHRU->GetSoilCapacity(m);  //maximum storage of soil layer [mm]
-  }
-  else if (toType==GROUNDWATER){
-    m                            = pModel->GetStateVarLayer(iTo[0]); //which aquifer layer
-    pSoil    = pHRU->GetAquiferProps(m);
-    max_stor = pHRU->GetAquiferCapacity(m);  //maximum storage of soil layer [mm]
   }
 
   stor=min(max(stor,0.0),max_stor); //correct for potentially invalid storage

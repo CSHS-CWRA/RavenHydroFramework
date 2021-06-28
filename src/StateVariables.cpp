@@ -167,12 +167,12 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     break;
   }
   }
-  if ((typ==SOIL) || (typ==GROUNDWATER) || (typ==SOIL_TEMP) || 
+  if ((typ==SOIL) || (typ==SOIL_TEMP) || 
       (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";
   }
-  if ((typ==SNOW) && (layerindex>=0)){
+  if (((typ==SNOW) || (typ==GROUNDWATER))  && (layerindex>=0)){  //GROUNDWATER Removed LS 2/25/2020
     name=name+"["+to_string(layerindex)+"]";
   }
   if (typ==CONSTITUENT){
@@ -303,6 +303,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("SOIL"            )){typ=SOIL;}
   else if (!tmp.compare("GROUNDWATER"     )){typ=GROUNDWATER;}
   else if (!tmp.compare("GROUND_WATER"    )){typ=GROUNDWATER;}
+  else if (!tmp.compare("GWMODEL"         )){typ=GROUNDWATER;}
   else if (!tmp.compare("AQUIFER"         )){typ=GROUNDWATER;}
   else if (!tmp.compare("CANOPY"          )){typ=CANOPY;}
   else if (!tmp.compare("CANOPYSNOW"      )){typ=CANOPY_SNOW;}
@@ -462,12 +463,12 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     }
   }
   //multilayer variables
-  if ((typ==SOIL) || (typ==GROUNDWATER) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  || 
+  if ((typ==SOIL) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  || 
     (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";
   }
-  if (((typ==SNOW) || (typ==SNOW_LIQ) || (typ==COLD_CONTENT)) && (layerindex>0)){
+  if (((typ==SNOW) || (typ==SNOW_LIQ) || (typ==COLD_CONTENT) || (typ==GROUNDWATER)) && (layerindex>0)){
     name=name+"["+to_string(layerindex)+"]";
   }
   return name;

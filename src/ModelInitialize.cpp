@@ -34,21 +34,13 @@ void CModel::Initialize(const optStruct &Options)
   // Quality control
   //--------------------------------------------------------------
   ExitGracefullyIf(_nSubBasins<1,
-                   "CModel::Initialize: Must have at least one SubBasin",BAD_DATA);
+                    "CModel::Initialize: Must have at least one SubBasin",BAD_DATA);
   ExitGracefullyIf(_nHydroUnits<1,
-                   "CModel::Initialize: Must have at least one hydrologic unit",BAD_DATA);
+                    "CModel::Initialize: Must have at least one hydrologic unit",BAD_DATA);
   ExitGracefullyIf(_nGauges<1 && _nForcingGrids<1,
-                   "CModel::Initialize: Must have at least one meteorological gauge station or forcing grid",BAD_DATA);
+                    "CModel::Initialize: Must have at least one meteorological gauge station or forcing grid",BAD_DATA);
   ExitGracefullyIf(_nProcesses==0,
-                   "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
-
-  if (_pGWModel!=NULL)
-  {
-    ExitGracefullyIf(_pGWModel->GetGWGeom()==NULL,
-      "CModel::Initialize: Must have Groundwater Geometry",BAD_DATA);
-    ExitGracefullyIf(GetStateVarIndex(GROUNDWATER)==DOESNT_EXIST,
-      "CModel::Initialize: Must have aquifer storage included in model",BAD_DATA);
-  }
+                    "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
 
   //Ensure Basins & HRU IDs are unique
   for (p=0;p<_nSubBasins;p++){
@@ -246,6 +238,17 @@ void CModel::Initialize(const optStruct &Options)
   // Initialize Data Assimilation
   //--------------------------------------------------------------
   InitializeDataAssimilation(Options);
+
+  // Initialize Groundwater
+  //--------------------------------------------------------------
+  if (Options.modeltype == MODELTYPE_COUPLED) {
+    _pGWModel->Initialize(Options);
+    // Ensure duration matches between models
+    if (_pGWModel->GetTotalTSteps() != (int)(Options.duration/Options.timestep)) {
+      ExitGracefully("CModel::Initialize: groundwater model total time steps not equal to Raven time steps", BAD_DATA);
+    }
+    // Eventually - more checks on time step compatability
+  }
 
   // Initialize Transport
   //--------------------------------------------------------------

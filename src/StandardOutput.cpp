@@ -118,9 +118,6 @@ void CModel::CloseOutputStreams()
     _pCustomOutputs[c]->CloseFiles();
   }
   _pTransModel->CloseOutputFiles();
-  if(_pGWModel!=NULL) {
-    _pGWModel->CloseOutputFiles();
-  }
   if ( _STORAGE.is_open()){ _STORAGE.close();}
   if (   _HYDRO.is_open()){   _HYDRO.close();}
   if (_FORCINGS.is_open()){_FORCINGS.close();}
@@ -534,12 +531,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     _pTransModel->WriteEnsimOutputFileHeaders(Options);
   }
 
-  // Groundwater output files
-  //-------------------------------------------------------------
-
-  _pGWModel->WriteOutputFileHeaders(Options);
-
-
   //raven_debug.csv
   //--------------------------------------------------------------
   if (Options.debug_mode)
@@ -655,7 +646,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iCumPrecip))
           {
             S=GetAvgStateVar(i);
-            if ((Options.modeltype!=MODELTYPE_SURFACE) && (i==GetStateVarIndex(GROUNDWATER))){S=0.0;} //already in _CumulOutput/_CumulInput
             if (!silent){cout<<"  |"<< setw(6)<<setiosflags(ios::fixed) << setprecision(2)<<S;}
             _STORAGE<<","<<FormatDouble(S);
             currentWater+=S;
@@ -1053,10 +1043,6 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       _pTransModel->WriteEnsimMinorOutput(Options,tt);
     }
 
-    // Groundwater output files
-    //--------------------------------------------------------------
-    _pGWModel->WriteMinorOutput(Options,tt);
-
     // raven_debug.csv
     //--------------------------------------------------------------
     if (Options.debug_mode)
@@ -1236,7 +1222,7 @@ void CModel::WriteProgressOutput(const optStruct &Options, clock_t elapsed_time,
     }
 
     float total_time = (float(total_steps) * float(elapsed_time) / float(elapsed_steps)) / CLOCKS_PER_SEC;
-    if (Options.benchmarking){ total_time =float(elapsed_time);}
+    if (Options.benchmarking){ total_time =float(elapsed_time) / CLOCKS_PER_SEC;}
     PROGRESS<<"{"<<endl;
     PROGRESS<<"       \"% progress\": "       << int( float(elapsed_steps) * 100.0 / float(total_steps) ) <<","<< endl;
     PROGRESS<<"       \"seconds remaining\": "<< total_time - float(elapsed_time) / CLOCKS_PER_SEC <<endl;
@@ -1294,15 +1280,7 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"  Watershed Area: "<<_WatershedArea              <<" km2 (simulated) of "<<allarea<<" km2"<<endl;
     cout <<"======================================================"<<endl;
     cout <<endl;
-	if((Options.modeltype == MODELTYPE_COUPLED) || (Options.modeltype == MODELTYPE_GROUNDWATER))
-  	{
-    	cout <<"==GROUNDWATER SUMMARY================================"<<endl;
-    	//CAquiferStack::SummarizeToScreen();
-    	CGWGeometryClass::SummarizeToScreen();
-    	CGWStressPeriodClass::SummarizeToScreen();
-    	COverlapExchangeClass::SummarizeToScreen();
-    	cout <<"====================================================="<<endl;
-  	}
+
   }
 }
 

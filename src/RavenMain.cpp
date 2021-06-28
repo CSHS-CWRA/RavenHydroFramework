@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   
-  Options.version="3.0.4";
+  Options.version="3.1.0";
 #ifdef _NETCDF_ 
   Options.version+=" w/ netCDF";
 #endif

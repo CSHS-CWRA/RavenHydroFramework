@@ -104,6 +104,8 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _pVeg      =veg_class    ->GetVegetationStruct();
   _pSurface  =lult_class   ->GetSurfaceStruct();
   _pTerrain  =terrain_class->GetTerrainStruct();
+  
+  _PrecipMult = 1.0;
 
   soil_profile->AllocateSoilLayers(_pModel->GetNumSoilLayers(),_pSoil,aThickness);
 }
@@ -271,65 +273,6 @@ double CHydroUnit::GetSoilTensionStorageCapacity(const int m) const
                    "CHydroUnit GetSoilTensionStorageCapacity::improper index",BAD_DATA);
 #endif
   return aThickness[m]*MM_PER_METER*_pSoil[m]->cap_ratio*(_pSoil[m]->field_capacity-_pSoil[m]->sat_wilt);
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns soil properties of an aquifer layer in HRU
-/// \param m [in] Integer index specifying aquifer layer
-/// \return Pointer to structure containing aquifer soil properties in HRU
-//
-soil_struct  const *CHydroUnit::GetAquiferProps         (const int m) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((m<0) || (m>=_pModel->GetNumAquiferLayers()),
-                   "CHydroUnit GetAquiferProps::improper layer index",BAD_DATA);
-#endif
-  return pAquifers[m];
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns thickness of an aquifer layer in HRU [mm]
-/// \param m [in] Integer index specifying aquifer layer
-/// \return Double soil thickness of an aquifer layer in HRU [mm]
-//
-double  CHydroUnit::GetAquiferThickness   (const int m) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((m<0) || (m>=_pModel->GetNumAquiferLayers()),
-                   "CHydroUnit GetAquiferThickness::improper index",BAD_DATA);
-#endif
-  return aAqThickness[m]*MM_PER_METER;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns soil capacity of a layer of soil in HRU
-///
-/// \param m [in] Integer index specifying aquifer layer
-/// \return Double indicating maximum water storage capacity of aquifer layer in [mm]
-//
-double CHydroUnit::GetAquiferCapacity(const int m) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((m<0) || (m>=_pModel->GetNumAquiferLayers()),
-    "CHydroUnit GetAquiferCapacity::improper index",BAD_DATA);
-#endif
-  return aAqThickness[m]*MM_PER_METER*pAquifers[m]->cap_ratio;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns aquifer head capacity of a layer of aquifer in HRU
-///
-/// \param m [in] Integer index specifying aquifer layer
-/// \param HRU [in] index of HRU
-/// \return Double indicating maximum water storage capacity of aquifer layer in [mm]
-//
-double CHydroUnit::GetAquiferHeadCapacity   (const int m, const int HRU) const
-{
-  ExitGracefullyIf((m<0) || (m>=_pModel->GetNumAquiferLayers()),
-    "CHydroUnit GetAquiferHeadCapacity::improper index",BAD_DATA);
-  //CGWGeometryClass *pGWDis;
-  //pGWDis = _pModel->GetGWGeos(0);
-  return ALMOST_INF;//pGWDis->GetGWGeoProperty("TOP_ELEV",HRU,0);
-  //GWMIGRATE - this has to be handled by some other means
 }
 
 //////////////////////////////////////////////////////////////////

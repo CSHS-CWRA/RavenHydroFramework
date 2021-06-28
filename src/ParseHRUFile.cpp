@@ -262,17 +262,6 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             ExitGracefully(error.c_str(),BAD_DATA);
           }
 
-          void *pAqStack=NULL; //GWMIGRATE
-          /*CAquiferStack const *pAqStack=NULL;
-            if (string(s[9])!="[NONE]") //Aquifer profile can be NULL
-            {
-            pAqStack=CAquiferStack::StringToAquiferStack(string(s[9]));
-            if (pAqStack==NULL){
-            error="Parse HRU File: Unrecognized Soil Profile Code/index: \""+string(s[9])+"\"";
-            ExitGracefully(error.c_str(),BAD_DATA_WARN);
-            }
-          }*/
-
           CTerrainClass const *pTerrain=NULL;
           if (string(s[10])!="[NONE]") //Terrain class can be NULL
           {
@@ -300,9 +289,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                                s_to_d(s[12])*DEGREES_TO_RADIANS,//aspect (deg->radians)
                                HRUtype,
                                pSoilProfile,
-							                 //pAqStack, GWMIGRATE
                                pVegetation,
-                               pAqStack,
+                               NULL,   // PLACEHOLDER see HydroUnits.cpp line 41
                                pTerrain,
                                pLULT);
           ExitGracefullyIf(pHRU==NULL,"ParseHRUPropsFile",OUT_OF_MEMORY);

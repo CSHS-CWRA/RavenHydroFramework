@@ -1,13 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright © 2008-2012 the Raven Development Team
+  Copyright © 2008-2021 the Raven Development Team
 ------------------------------------------------------------------
-  Recharge
+  GW Drain Condition
 ----------------------------------------------------------------*/
 
-#include "HydroProcessABC.h"
-#include "SoilWaterMovers.h"
-#include "GroundwaterClass.h"
+#include "GWSWProcesses.h"
 
 /*****************************************************************
    Drain Constructor/Destructor
@@ -16,43 +14,55 @@
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the drain constructor
-/// \param se_type [in] Model of drain selected
+/// \param pGWModel [in] pointer to groundwater model
 //
-CmvDrain::CmvDrain(drain_type d_type)
-                         :CHydroProcessABC(DRAIN)
+CGWDrain::CGWDrain(CGroundwaterModel *pGWModel)
+  :CGWSWProcessABC(pGWModel, DRAIN)
 {
+  _aElevations   = NULL;
+  _aConductances = NULL;
+  _aHeads    = NULL;
   int iSW;
-  iSW  =pModel->GetStateVarIndex(SURFACE_WATER); 
-  type = d_type;
-  if (type==DRAIN_CONDUCTANCE)
-  {  
-    CHydroProcessABC::DynamicSpecifyConnections(1);
+  iSW=pModel->GetStateVarIndex(SURFACE_WATER);   // NEEDS TO BE AN ARGUMENT
 
-    iFrom[0]=pModel->GetStateVarIndex(GROUNDWATER); iTo[0]=iSW;
-    //iFrom[1]=pModel->GetStateVarIndex(SOIL,0);     iTo[1]=iSW;
-    //iFrom[2]=pModel->GetStateVarIndex(SOIL,1);     iTo[2]=iSW;
-  }
-  else if (type==DRAIN_UFR)
-  {  
-    CHydroProcessABC::DynamicSpecifyConnections(1);
+  CHydroProcessABC::DynamicSpecifyConnections(1);
 
-    iFrom[0]=pModel->GetStateVarIndex(GROUNDWATER);   iTo[0]=iSW;
-    //iFrom[1]=pModel->GetStateVarIndex(SOIL,0);        iTo[1]=iSW;
-    //iFrom[2]=pModel->GetStateVarIndex(SOIL,1);        iTo[2]=iSW;
-  }
+  iFrom[0]=pModel->GetStateVarIndex(GROUNDWATER);
+  iTo[0]=iSW;
+  setProcName("RAVEN DRAINS");
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
 //
-CmvDrain::~CmvDrain()
+CGWDrain::~CGWDrain()
 {
+  delete[] _aElevations;
+  delete[] _aConductances;
+  delete[] _aHeads;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Initializes soil evaporation
+/// \brief Initializes arrays
 //
-void CmvDrain::Initialize(){}
+void CGWDrain::Initialize(int nDrains)
+{
+  _nnodes        = nDrains;
+  _inodes        = new int   [nDrains];
+  _aElevations   = new double[nDrains];
+  _aConductances = new double[nDrains];
+  _aHeads    = new double[nDrains];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Adds Drain Node
+//
+void CGWDrain::addDrain(int drainID, int nodeID, double drain_elev, double drain_cond)
+{
+  _inodes       [drainID] = nodeID;
+  _aElevations  [drainID] = drain_elev;
+  _aConductances[drainID] = drain_cond;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
@@ -61,24 +71,13 @@ void CmvDrain::Initialize(){}
 /// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
 /// \param &nP [out] Number of parameters required by drain algorithm (size of aP[] and aPC[])
 //
-void CmvDrain::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
+void CGWDrain::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if (type==DRAIN_CONDUCTANCE)
-  {
-    nP=2;
-    aP[0]="DRAIN_ELEV";       aPC[0]=CLASS_GWSTRESSPERIOD;
-    aP[1]="CONDUCTANCE";      aPC[1]=CLASS_GWSTRESSPERIOD;
-  }
-  else if (type==DRAIN_UFR)
-  {
-    nP=2;
-    aP[0]="D_A";       aPC[0]=CLASS_OVERLAPEXCHANGE;
-    aP[1]="D_B";       aPC[1]=CLASS_OVERLAPEXCHANGE;
-  }
-  else
-  {
-    ExitGracefully("CmvDrain::GetParticipatingParamList: undefined drain algorithm",BAD_DATA);
-  }
+  /*
+  nP=2;
+  aP[0]="DRAIN_ELEV";       aPC[0]=CLASS_GWSTRESSPERIOD;
+  aP[1]="CONDUCTANCE";      aPC[1]=CLASS_GWSTRESSPERIOD;
+  */
 }
 
 //////////////////////////////////////////////////////////////////
@@ -87,32 +86,17 @@ void CmvDrain::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP
 /// \param se_type [in] Model of drain used
 /// \param *aSV [out] Array of state variable types needed by Drain algorithm
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
-/// \param &nSV [out] Number of state variables required by soil evaporation algorithm (size of aSV[] and aLev[] arrays)
+/// \param &nSV [out] Number of state variables required by drain algorithm (size of aSV[] and aLev[] arrays)
 //
-void CmvDrain::GetParticipatingStateVarList(drain_type d_type,sv_type *aSV, int *aLev, int &nSV) 
+void CGWDrain::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
 {
-  if (d_type==DRAIN_CONDUCTANCE)
-  {  
-    nSV=2;
-    aSV [0]=GROUNDWATER;  aSV [1]=SURFACE_WATER;//aSV	[1]=SOIL;  aSV [2]=SOIL;   aSV [3]=SURFACE_WATER;  
-    aLev[0]=0;            aLev[1]=DOESNT_EXIST;//aLev[1]=0;	   aLev[2]=1;      aLev[3]=DOESNT_EXIST;
-  }
-  else if (d_type==DRAIN_UFR)
-  {  
-    nSV=2;
-    aSV [0]=GROUNDWATER;  aSV [1]=SURFACE_WATER;//aSV	[1]=SOIL;  aSV [2]=SOIL;   aSV [3]=SURFACE_WATER;  
-    aLev[0]=0;            aLev[1]=DOESNT_EXIST;//aLev[1]=0;	   aLev[2]=1;      aLev[3]=DOESNT_EXIST;
-  }
+  nSV=1;
+  aSV [0]=GROUNDWATER;  aLev[0]=DOESNT_EXIST;
+  // To SV is set by user
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rates of loss from set of soil layers & aquifer to SW due to Drains [mm/day]
-/// \details Note that the formatting issues below will be resolved once the references have been extracted.. \n \n 
-/// if type=DRAIN_CONDUCTANCE
-///		<ul> <li> Drains work as in MODFLOW with a conductance layer at the topographic surface </ul>
-///
-/// if type=DISCHARGE_UFR
-///		<ul> <li> Drain rate of change determined from Upscaled Flux Relationship </ul>
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -120,99 +104,88 @@ void CmvDrain::GetParticipatingStateVarList(drain_type d_type,sv_type *aSV, int 
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from "from" compartment [mm/day]
 //
-void CmvDrain::GetRatesOfChange (const double		 *state_vars, 
-                                    const CHydroUnit *pHRU, 
-                                    const optStruct	 &Options,
-                                    const time_struct &tt,
-                                          double     *rates) const
+void CGWDrain::GetRatesOfChange (const double		   *state_vars, 
+                                 const CHydroUnit  *pHRU, 
+                                 const optStruct	 &Options,
+                                 const time_struct &tt,
+                                       double      *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
+  if (pHRU->GetHRUType() != HRU_STANDARD) { return; } // CHECK
+  set<int> HRU_nodes;
+  int      index;
+  double   head, area;
+  double   weight;
+  double   drain_flow, AMAT_change, RHS_change;
 
-  CGWStressPeriodClass *pGWSP = NULL;
-  CGWGeometryClass     *pGWG = NULL;
+  //-- Drainage is any amount of head over drain elevation controlled by conductance layer
+  int HRUid = pHRU->GetID();
+  rates[0] = 0.0;
 
+  //-- Loop over drain nodes in HRU
+  HRU_nodes = getHRUnodes(HRUid);
 
-  // MUST FIX!!================================
-  ExitGracefully("CmvDrain::GetRatesOFChange",STUB);
-  CGroundwaterModel *pGWModel=NULL; //\todo[funct] - must have mechanism for accessing groundwater class to get stress period info
-  // MUST FIX!!================================
+  for (auto n : HRU_nodes) {
+    index = _mNodeIndex.at(n);  // location of node in arrays
 
-  pGWSP     = pGWModel->GetGWSPs(0);        // \todo[funct] - should be able to change Stress Periods
-  pGWG      = pGWModel->GetGWGeom();
+    // Replicating MFUSG GWF2DRN7U1FM subroutine
 
-  //------------------------------------------------------------
-  if(type==DRAIN_CONDUCTANCE)
-  {
-    //drainage is any amount of head over topographic surface controlled by conductance layer
-    double conductance, drain_elev, head, poro, drain_rate, bot, area;
-    int HRUid;
-    const soil_struct *S = pHRU->GetAquiferProps(0);
-    
-    poro        = S->porosity;
-    HRUid       = pHRU->GetID();
-    conductance = pGWSP->GetGWStruct()->sp_props.conductance[HRUid-1];      
-    drain_elev  = pGWSP->GetGWStruct()->sp_props.drain_elev[HRUid-1];
-    bot         = pGWG->GetGWGeoProperty("BOT_ELEV",HRUid-1,0);
-    area        = pGWG->GetGWGeoProperty("CELL_AREA",HRUid-1,0);
-
-    head = ((state_vars[iFrom[0]] / poro) / MM_PER_METER) + bot;        //convert storage to head
-
-    if(head > drain_elev)
+    //-- See if node head is above elevation
+    head = pGWModel->GetNodeHead(n);
+    _aHeads[index] = head;
+    if (head > _aElevations[index])
     {
-      drain_rate = ((conductance * head) - (conductance * drain_elev)) / area;         //modflow drainage  [m/d]
-      rates[0]   = drain_rate * MM_PER_METER * poro;                                 //convert back to storage [mm]
-    }
-    else
-    {
-      rates[0] = 0;
+      //-- Get HRU-node overlap weight
+      weight = pGWModel->GetOverlapWeight(HRUid, n);
+
+      //-- Calculate rate of water volume leaving through drain
+      //-- (Convention is positive leaving aquifer)
+      drain_flow = weight * _aConductances[index] * (head - _aElevations[index]);  //modflow drainage  [m3/d]
+
+      //-- Add to Flow Equation
+      AMAT_change = weight * _aConductances[index];
+      RHS_change  = weight * _aConductances[index] * _aElevations[index];
+
+      //-- Node Area
+      area = pGWModel->GetNodeArea(n);
+
+      //-- Rate to SW SV
+      rates[0] += (drain_flow / area) * MM_PER_METER;
+
+      //-- Rate to GW Modle
+      pGWModel->AddToGWEquation(n, AMAT_change, RHS_change);
     }
   }
-  else if(type==DRAIN_UFR)
+  // Important for not double-counting fluxes added to GWSV
+  SendRateToFluxTracker(pHRU->GetGlobalIndex(), rates);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Fills arrays[_nnodes] with drain rates to(+)/from(-) the GW model.
+/// 
+/// \param pModel [in] pointer to groundwater model
+/// \param nodes [out] array of drain nodes
+/// \param rates [out] rates of flux to GW model
+//
+void CGWDrain::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
+{
+  // Replicates MFUSG Subroutine GWF2DRN7U1BD
+
+  // Loop over all drains
+  for (int i = 0; i < _nnodes; i++)
   {
-    double poro;
-    int HRUid;
-    double head, head_norm, drain_norm, drain_rate;
-    double topog_elev, bot, topog_min;
-    double ext_depth, hyd_cond;
-    double powerA, powerB;
-    const soil_struct *S;
-    COverlapExchangeClass *pOEP = NULL;
-    pOEP      = pGWModel->GetOEs(0);          //****FIX - needs to get more than one overlap exchange class???
+    nodes[i] = _inodes[i];
+    // HRU-cell overlap weights are not needed here, since nothing is being calculated at the HRU level
 
-    HRUid     = pHRU->GetID();
-    S         = pHRU->GetAquiferProps(0);
-    bot       = pGWG->GetGWGeoProperty("BOT_ELEV",HRUid-1,0);
+    // Update Heads
+    _aHeads[i] = pGWModel->GetNodeHead(nodes[i]);
 
-    topog_elev = pGWG->GetGWGeoProperty("TOP_ELEV",HRUid-1,0);
-    topog_min  = pGWG->GetGWGeoProperty("MIN_TOPOG",HRUid-1,0);
-    //cout<<"tmin: "<<topog_min<<endl;
-    ext_depth  = pGWSP->GetGWStruct()->sp_props.ext_depth[HRUid-1];
-    poro       = S->porosity;
-    head       = ((state_vars[iFrom[0]] / poro) / MM_PER_METER) + bot;        //convert storage to head
-    //cout<<"t: "<<topog_elev<<"   ed: "<<ext_depth<<"   p: "<<poro<<"   h: "<<head<<endl;
-    if(head < (topog_elev - ext_depth))
+    //-- Check if head over drain elevation
+    if (_aHeads[i] > _aElevations[i])
     {
-      rates[0] = 0;
+      // outflow = C * (elev_water - elev_drain)
+      rates[i] = _aConductances[i] * (_aElevations[i] - _aHeads[i]);
     }
-    else
-    {
-      head_norm  = (head - (topog_min - ext_depth))/(topog_elev - (topog_min - ext_depth));   //normalied head [0..1]
-      powerA     = pOEP->GetOEProperty("D_A",HRUid-1);
-      powerB     = pOEP->GetOEProperty("D_B",HRUid-1);
-      hyd_cond   = pGWSP->GetGWProperty("HYD_COND",HRUid-1);
-
-      //cout<<"hn: "<<head_norm<<"   A: "<<powerA<<"   B: "<<powerB<<"   K: "<<hyd_cond<<endl;
-      //normalize head and use powerlaw to get drainage
-      drain_norm = powerA * pow(head_norm, powerB);
-      drain_rate = drain_norm * hyd_cond;
-      rates[0]   = drain_rate * MM_PER_METER * poro;                     //convert back to storage
-    }
-    //cout<<"r1: "<<rates[0]<<endl;
   }
-  else 
-  {
-    ExitGracefully("CmvDrain::GetRatesOfChange: undefined drain type",BAD_DATA);
-  }//end drain type select
 }
 
 //////////////////////////////////////////////////////////////////
@@ -224,9 +197,8 @@ void CmvDrain::GetRatesOfChange (const double		 *state_vars,
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from "from" compartment [mm/day]
-
 //
-void   CmvDrain::ApplyConstraints( const double		 *state_vars, 
+void   CGWDrain::ApplyConstraints( const double		 *state_vars, 
                                       const CHydroUnit *pHRU, 
                                       const optStruct	 &Options,
                                       const time_struct &tt,
@@ -234,7 +206,60 @@ void   CmvDrain::ApplyConstraints( const double		 *state_vars,
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lake/Glacier case
 
-  //cant remove more than is there
-  rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
+  //cant remove more than is there  // GWUPDATE needs to be from MODEL
+  //rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
   //cout<<"dr: "<<rates[0]<<endl;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Updates SV rates of change given new head. Placeholder method for child processes to override.
+///
+/// \param *state_vars [in] Array of state variables stored in current HRU
+/// \param *pHRU [in] Reference to pertinent HRU
+/// \param &Options [in] Global model option information
+/// \param &tt [in] Current model time
+/// \param *rates [out] Rates of water/energy moved between storage locations / rates of change of modified state variables (size: _nConnections+_nCascades)
+//
+void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
+                                   const CHydroUnit  *pHRU,
+                                   const optStruct   &Options,
+                                   const time_struct &tt,
+                                         double      *rates) const
+{
+  //-- Would it be worth it to store the previous rate of change to avoid recalculation?
+  set<int> HRU_nodes;
+  int      index;
+  double   old_head, area, weight, flow_change;
+  int      HRUid = pHRU->GetID();
+  rates[0] = 0.0;
+
+  //-- Loop over drain nodes in HRU
+  HRU_nodes = getHRUnodes(HRUid);
+
+  for (auto n : HRU_nodes)
+  {
+    index = _mNodeIndex.at(n);  // location of node in arrays
+
+    //-- Store old head
+    old_head = _aHeads[index];
+
+    //-- Update head, see if node head is above elevation
+    _aHeads[index] = pGWModel->GetNodeHead(n);
+
+    if (_aHeads[index] > _aElevations[index])
+    {
+      // But what if old head wasn't? Set to Drain Elevation
+      if (old_head < _aElevations[index]) { old_head = _aElevations[index]; }
+
+      //-- Get HRU-node overlap weight & node area
+      weight = pGWModel->GetOverlapWeight(HRUid, n);
+      area = pGWModel->GetNodeArea(n);
+
+      //-- Calc drain flow change
+      flow_change = weight * _aConductances[index] * ((_aHeads[index] - _aElevations[index]) - (old_head - _aElevations[index]));
+
+      //-- Flux Change
+      rates[0] += (flow_change / area) * MM_PER_METER;
+    }
+  }
 }

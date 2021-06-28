@@ -100,6 +100,9 @@
     <Filter Include="Source Files\_Driver\Ensemble Methods">
       <UniqueIdentifier>{ee044da0-1e2f-4d88-8599-65fd2a419063}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Groundwater">
+      <UniqueIdentifier>{d870bb41-d9f9-4166-8030-2b86c1b5be5a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonFunctions.cpp">
@@ -231,9 +234,6 @@
     <ClCompile Include="CropGrowth.cpp">
       <Filter>Source Files\Hydrological Processes\Vegetation Processes</Filter>
     </ClCompile>
-    <ClCompile Include="AquiferStack.cpp">
-      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
-    </ClCompile>
     <ClCompile Include="ParseInitialConditionFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
@@ -336,32 +336,8 @@
     <ClCompile Include="ParseEnsembleFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
-    <ClCompile Include="GWGeometry.cpp">
-      <Filter>Source Files\Groundwater</Filter>
-    </ClCompile>
-    <ClCompile Include="GWSolvers.cpp">
-      <Filter>Source Files\Groundwater</Filter>
-    </ClCompile>
-    <ClCompile Include="GWStressPeriodClass.cpp">
-      <Filter>Source Files\Groundwater</Filter>
-    </ClCompile>
     <ClCompile Include="SparseMatrix.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OverlapExchangeClass.cpp">
-      <Filter>Source Files\Groundwater</Filter>
-    </ClCompile>
-    <ClCompile Include="ParseGWGeometryFile.cpp">
-      <Filter>Source Files\_Driver\Input Parsing</Filter>
-    </ClCompile>
-    <ClCompile Include="ParseGWPropsFile.cpp">
-      <Filter>Source Files\_Driver\Input Parsing</Filter>
-    </ClCompile>
-    <ClCompile Include="ParseGWSWExchangeFile.cpp">
-      <Filter>Source Files\_Driver\Input Parsing</Filter>
-    </ClCompile>
-    <ClCompile Include="ParseGWSWOverlapFile.cpp">
-      <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
     <ClCompile Include="Drain.cpp">
       <Filter>Source Files\Hydrological Processes</Filter>
@@ -425,6 +401,21 @@
     </ClCompile>
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GWRecharge.cpp">
+      <Filter>Source Files\Groundwater</Filter>
+    </ClCompile>
+    <ClCompile Include="GWRiverConnection.cpp">
+      <Filter>Source Files\Groundwater</Filter>
+    </ClCompile>
+    <ClCompile Include="GWSWProcessABC.cpp">
+      <Filter>Source Files\Groundwater</Filter>
+    </ClCompile>
+    <ClCompile Include="RiverReach.cpp">
+      <Filter>Source Files\Groundwater</Filter>
+    </ClCompile>
+    <ClCompile Include="ParseGWFile.cpp">
+      <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -560,9 +551,6 @@
     <ClInclude Include="ModelEnsemble.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
-    <ClInclude Include="GroundwaterClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SparseMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -580,6 +568,21 @@
     </ClInclude>
     <ClInclude Include="IsotopeTransport.h">
       <Filter>Header Files\Transport</Filter>
+    </ClInclude>
+    <ClInclude Include="MFUSGpp.h">
+      <Filter>Header Files\Groundwater</Filter>
+    </ClInclude>
+    <ClInclude Include="GWSWProcesses.h">
+      <Filter>Header Files\Groundwater</Filter>
+    </ClInclude>
+    <ClInclude Include="GroundwaterModel.h">
+      <Filter>Header Files\Groundwater</Filter>
+    </ClInclude>
+    <ClInclude Include="GWRiverConnection.h">
+      <Filter>Header Files\Groundwater</Filter>
+    </ClInclude>
+    <ClInclude Include="RiverReach.h">
+      <Filter>Header Files\Groundwater</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

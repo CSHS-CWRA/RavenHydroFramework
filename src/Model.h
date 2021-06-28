@@ -26,7 +26,8 @@
 #include "Diagnostics.h"
 #include "ForcingGrid.h"        
 #include "ModelEnsemble.h"
-#include "GroundwaterClass.h"
+#include "GroundwaterModel.h"
+#include "GWSWProcesses.h"
 
 class CHydroProcessABC;
 class CGauge;
@@ -332,7 +333,6 @@ public:/*-------------------------------------------------------*/
   void    AddStateVariables         (const sv_type           *aSV,
                                      const int               *aLev,
                                      const int                nSV               );
-  void    AddAquiferStateVars       (const int                nLayers           );
   void    AddCustomOutput           (        CCustomOutput     *pCO             );
   void    AddTransientParameter     (        CTransientParam   *pTP             );
   void    AddPropertyClassChange    (const string             HRUgroup,

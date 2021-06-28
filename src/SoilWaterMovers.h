@@ -337,7 +337,6 @@ class CmvRecharge: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
   recharge_type	      _type;        ///< Model of recharge 
-  int				  nSoilLayers; ///< number of soil layers subject to drainage
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

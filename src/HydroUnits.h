@@ -51,8 +51,6 @@ private:/*------------------------------------------------------*/
   double                  _PrecipMult;  ///< HRU-specific precipitation correction factor
 
   const soil_struct           *_pSoil[MAX_SOILLAYERS];     ///< array of pointers to structures with profile soil properties
-  const soil_struct        *pAquifers[MAX_AQUIFER_LAYERS]; ///< array of pointers to structures with aquifer layer properties
-  //const soil_struct      *pAquitard[MAX_AQUIFER_LAYERS]; ///< /todo Add aquitard information
 
   const veg_struct             *_pVeg;  ///< pointer to structure with vegetation properties
   const CVegetationClass *pVegetation;  ///< pointer to corresponding vegetation class (not currently used)
@@ -61,8 +59,6 @@ private:/*------------------------------------------------------*/
 
   //variable property structures (locally stored, HRU-specific)
   double                   aThickness[MAX_SOILLAYERS];     ///< soil layer thicknesses [m]
-  double                 aAqThickness[MAX_AQUIFER_LAYERS]; ///< aquifer layer thicknesses [m]
-  //double             aAquitardThick[MAX_AQUIFER_LAYERS]; ///< aquitard layer thicknesses [m]
   //double                  aRootFrac[MAX_SOILLAYERS];     ///< root distribution (sum over all layers == 1)
 
   /// /todo allow for variable aquifer properties in each HRU (see above)
@@ -120,10 +116,7 @@ public:/*-------------------------------------------------------*/
   double                 GetSoilCapacity    (const int m) const;//[mm]
   double                 GetSoilTensionStorageCapacity(const int m) const;//[mm]
 
-  soil_struct     const *GetAquiferProps    (const int m) const;
-  double                 GetAquiferThickness(const int m) const;//[mm]
-  double                 GetAquiferCapacity (const int m) const;//[mm]
-  double                 GetAquiferHeadCapacity(const int m, const int HRU) const;
+
 
   veg_struct      const *GetVegetationProps () const;
   veg_var_struct  const *GetVegVarProps     () const;

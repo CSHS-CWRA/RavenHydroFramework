@@ -1,13 +1,13 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ------------------------------------------------------------------
   Recharge
   ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
-#include "GroundwaterClass.h"
+#include "GroundwaterModel.h"
 
 /*****************************************************************
    Recharge Constructor/Destructor
@@ -88,7 +88,11 @@ void CmvRecharge::Initialize()
 //
 void CmvRecharge::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  if ((_type==RECHARGE_CONSTANT) || (_type==RECHARGE_FROMFILE))
+  if (_type == RECHARGE_CONSTANT)
+  {
+    nP = 0;
+  }
+  else if (_type == RECHARGE_FROMFILE)
   {
     nP=0;
   }
@@ -154,25 +158,9 @@ void   CmvRecharge::GetRatesOfChange( const double      *storage,
   //------------------------------------------------------------
   else if(_type==RECHARGE_CONSTANT)
   {
-    // MUST FIX!!================================
-    ExitGracefully("CmvRecharge::ApplyConstraints",STUB); return;
-    CGroundwaterModel *pGWModel=NULL; //\todo[funct] - must have mechanism for accessing groundwater class to get stress period info
-    // MUST FIX!!================================
+    double rech = 1.0;  // GWUPDATE How's that for constant?
+    rates[0] = rech;     //[mm/d]
 
-    CGWStressPeriodClass *pGWSP = NULL;
-    pGWSP     = pGWModel->GetGWSPs(0);        //****FIX - should be able to change Stress Periods
-    double Rech,poro, HRU_area, spec_stor;
-    int HRUid            = pHRU->GetID();
-    const soil_struct *S = pHRU->GetAquiferProps(0);
-    poro                 = S->porosity;
-    HRU_area             = pHRU->GetArea() * M2_PER_KM2 * MM2_PER_M2;        //[mm2]
-    spec_stor            = pGWSP->GetGWProperty("SS",HRUid-1); //GWMIGRATE - issue! HRUID!= HRU index k
-
-    Rech = pGWSP->GetGWStruct()->sp_props.recharge[HRUid-1];    //[mm/d]    
-    //rates[0] = Rech * HRU_area; //[mm3/d]
-    rates[0] = Rech * poro;     //[mm]
-    //rates[0] = Rech * HRU_area * spec_stor;
-    //cout<<"R: "<<rates[0]<<endl;
   }
   else if(_type==RECHARGE_CONSTANT_OVERLAP)
   {
@@ -210,38 +198,8 @@ void   CmvRecharge::ApplyConstraints( const double     *state_vars,
                      (pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]])/Options.timestep,0.0);
   }
   else 
-  { //GWMIGRATE - CLEAN UP 
-	  int HRUid;
-	  double room, space, head, headMax, poro, bot;
-    // MUST FIX!!================================
-    ExitGracefully("CmvRecharge::ApplyConstraints",STUB);
-    CGroundwaterModel *pGWModel=NULL; //\todo[funct] - must have mechanism for accessing groundwater class to get stress period info
-    // MUST FIX!!================================
-
-	  CGWGeometryClass *pGWGeo;
-	  pGWGeo = pGWModel->GetGWGeom();
-
-	  //cant remove more than is there
-	  rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
-
-	  //exceedance of max "to" compartment
-		//water flow simply slows (or stops) so that receptor will not overfill during tstep
-	  if(iTo[0] == pModel->GetStateVarIndex(GROUNDWATER,0))
-	  {
-	    HRUid  = pHRU->GetID();
-	    poro   = pHRU->GetAquiferProps(0)->porosity;
-	    bot    = pGWGeo->GetGWGeoProperty("BOT_ELEV",HRUid-1,0); //GWMIGRATE - BIG ISSUE HERE - HRU ID != HRU index - can't just subtract 1
-      
-	    head     = ((state_vars[iTo[0]] / poro) / MM_PER_METER) + bot;        //convert storage to head
-	    headMax  = pHRU->GetStateVarMax(iTo[0],state_vars,Options,HRUid-1);
-	    space = threshMax(headMax - head,0.0,0.0);
-	    room = (space * MM_PER_METER) * poro;                         //convert head to storage
-	    //cout<<"ID: "<<HRUid<<"   poro: "<<poro<<"   head: "<<head<<"   headMax: "<<headMax<<"   space: "<<space<<"   room: "<<room<<endl;
-	  }
-	  else
-	  {
-	    room=threshMax(pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]],0.0,0.0);
-	  }
-    rates[0]=threshMin(rates[0],room/Options.timestep,0.0);
+  { 
+     //cant remove more than is there
+  	 rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
   }
 }

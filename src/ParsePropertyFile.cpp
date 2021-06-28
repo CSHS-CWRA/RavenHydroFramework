@@ -77,7 +77,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   CSoilProfile     *pProfiles   [MAX_SOIL_PROFILES];
 
   int               num_parsed_aqstacks=0;
-  CAquiferStack    *pAqStacks   [MAX_AQUIFER_STACKS];
 
   const int         MAX_PROPERTIES_PER_LINE=20;
 
@@ -287,8 +286,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":VegetationChange"       )){code=207;}
     //--------------------AQUIFER PARAMS -----------------------'
     else if  (!strcmp(s[0],":AquiferClasses"         )){code=300;}
-    else if  (!strcmp(s[0],":AquiferProfiles"        )){code=301;}
-    else if  (!strcmp(s[0],":AquiferStacks"          )){code=301;}
     //--------------------RIVER CHANNEL PARAMS -------------------
     else if  (!strcmp(s[0],":ChannelProfile"         )){code=500;}
     else if  (!strcmp(s[0],":ChannelRatingCurves"    )){code=501;}
@@ -766,57 +763,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string tag, soil_type, thickness}xNumAquiferClasses
        :EndAquiferClasses*/
       if (Options.noisy) {cout <<"Aquifer Classes (OBSOLETE)"<<endl;}
-      break;
-    }
-    case(301):  //----------------------------------------------
-    {/*AquiferProfiles / AquiferStacks
-       ":AquiferProfiles" 
-       {string tag, int numhorizons, soil1,thick1,soil2,thick2,...,soilN,thickN}xNumHorizons
-       :EndAquiferProfiles
-       [[thicknesses in meters]]*/
-      if (Options.noisy) {cout <<"Aquifer Profiles"<<endl;}
-      if (Len!=1){p->ImproperFormat(s); break;} 
-      p->Tokenize(s,Len);
-      done=false;
-      while (!done)
-      { 
-        if      (IsComment(s[0], Len)){}//comment line
-        else if (Len>=2)
-        {
-          if (num_parsed_profiles>=MAX_AQUIFER_STACKS-1){
-            ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of aquifer stacks",BAD_DATA);}
-            
-          pAqStacks[num_parsed_aqstacks]=new CAquiferStack(s[0]);
-
-          int nlayers=s_to_i(s[1]);
-		      pModel->GetGroundwaterModel()->SetNumAquiferStack(nlayers);   //GWMIGRATE necessary???
-          ExitGracefullyIf(nlayers<0,
-                           "ParseClassPropertiesFile: invalid number of aquifer layers in stack",BAD_DATA);
-          //zero is a valid entry for lakes & glaciers (zero horizons)
-          ExitGracefullyIf(Len!=(nlayers*2+2),
-                           "ParseClassPropertiesFile:  :AquiferProfiles invalid command length",BAD_DATA);       
-          for (int m=0;m<nlayers;m++)
-          {
-            const CSoilClass *pLayerSoil;
-            double thisthick;
-            thisthick=s_to_d(s[2*m+2+1]);
-            pLayerSoil =CSoilClass::StringToSoilClass(string(s[2*m+2]));
-            if (pLayerSoil==NULL){cout<<"Offending soilcode: "<<string(s[2*m+2])<<endl;}
-            ExitGracefullyIf(pLayerSoil==NULL,
-                             "ParseClassPropertiesFile: bad soiltype code in aquifer stack",BAD_DATA);
-            pAqStacks[num_parsed_aqstacks]->AddLayer(thisthick,pLayerSoil);
-          }
-		  //add layer to Model definition
-          pModel->GetGroundwaterModel()->AddAquiferStack(pAqStacks[num_parsed_aqstacks]); //GWMIGRATE - move to end of file parse
-          num_parsed_aqstacks++;
-        }
-        else{
-          p->ImproperFormat(s); break;
-        }
-        p->Tokenize(s,Len);
-        if (!strcmp(s[0],":EndAquiferProfiles")){done=true;}
-      }
-
       break;
     }
     case(500):  //----------------------------------------------
