@@ -566,7 +566,7 @@ double CLandUseClass::GetSurfaceProperty(string param_name) const
 /// \param param_name [in] Parameter name
 /// \return LULT property corresponding to parameter name
 //
-double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_name)
+double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_name, const bool strict)
 {
   string name;
   name = StringToUppercase(param_name);
@@ -642,10 +642,13 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("MAX_WIND_SPEED"         )){return S.max_wind_speed; }
   else if (!name.compare("STREAM_FRACTION"        )){return S.stream_fraction; }
   else{
-    string msg="CLandUseClass::GetSurfaceProperty: Unrecognized/invalid LU/LT parameter name in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
-    return 0.0;
+    if (strict){
+      string msg="CLandUseClass::GetSurfaceProperty: Unrecognized/invalid LU/LT parameter name in .rvp file: "+name;
+      ExitGracefully(msg.c_str(),BAD_DATA_WARN);
+      return 0.0;
+    }
+    else {
+      return INDEX_NOT_FOUND;
+    }
   }
-
-
 }

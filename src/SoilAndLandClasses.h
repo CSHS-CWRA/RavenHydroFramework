@@ -27,9 +27,7 @@ enum class_type{
   CLASS_TRANSPORT,  ///< Transport class
   CLASS_GLOBAL,     ///< Global parameter class
   CLASS_HRUTYPE,     ///< special flag to handle HRU type changes; not assoc. with parameters
-  CLASS_GWSTRESSPERIOD, ///< GW Stress Period Class //GWMIGRATE - NECESSARY?
-  CLASS_GWGEOMETRY,     ///< GW Geometry Class //GWMIGRATE - NECESSARY?
-  CLASS_OVERLAPEXCHANGE ///< GW-SW Overlap and Exchange Flux Class //GWMIGRATE - NECESSARY?
+  CLASS_UNKNOWN
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -67,7 +65,7 @@ public:/*-------------------------------------------------------*/
   static void              DestroyAllSoilClasses();
   static void              SetSoilProperty         (soil_struct &S, string param_name, const double value);
   static void              SetSoilTransportProperty(int constit_ind, int constit_ind2,soil_struct &S, string param_name, const double value);
-  static double            GetSoilProperty         (const soil_struct &S, string param_name);
+  static double            GetSoilProperty         (const soil_struct &S, string param_name, const bool strict=true);
   static double            GetSoilTransportProperty(const int constit_ind, const soil_struct &S, string param_name);
   static void              InitializeSoilProperties(soil_struct &S, bool is_template);
 
@@ -121,7 +119,7 @@ public:/*-------------------------------------------------------*/
   static void                    SetVegetationProperty(veg_struct &V, const string param_name, const double &value);
   static void                    SetVegTransportProperty( int          constit_ind,int          constit_ind2,
                                                           veg_struct  &V,string param_name, const double value);
-  static double                  GetVegetationProperty(const veg_struct &V, string param_name);
+  static double                  GetVegetationProperty(const veg_struct &V, string param_name, const bool strict=true);
   static double                  GetVegTransportProperty(int constit_ind, const veg_struct &V,string &param_name);
 
   static void                    InitializeVegetationProps(string name, veg_struct &V, bool is_template);
@@ -197,7 +195,7 @@ public:/*-------------------------------------------------------*/
 
   static void                    InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
   static void                    SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
-  static double                  GetSurfaceProperty         (const surface_struct &S, string param_name);
+  static double                  GetSurfaceProperty         (const surface_struct &S, string param_name, const bool strict=true);
 
   static void                    SummarizeToScreen();
 };

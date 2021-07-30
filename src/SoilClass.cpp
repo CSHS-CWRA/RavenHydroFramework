@@ -682,7 +682,7 @@ double CSoilClass::GetSoilTransportProperty(int constit_ind, string &param_name)
 /// \param param_name [in] Parameter name
 /// \return Soil propertie corresponding to parameter name
 //
-double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
+double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name,  const bool strict)
 {
   string name;
   name = StringToUppercase(param_name);
@@ -745,9 +745,15 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name)
 
   //transport parameters NOT HANDLED HERE!
   else{
-    string msg="CSoilClass::GetSoilProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
-    return 0.0;
+    if (strict){
+      string msg="CSoilClass::GetSoilProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file: "+name;
+      ExitGracefully(msg.c_str(),BAD_DATA_WARN);
+      return 0.0;
+    }
+    else {
+      return INDEX_NOT_FOUND;
+    }
+
   }
 }
 ///////////////////////////////////////////////////////////////////////////

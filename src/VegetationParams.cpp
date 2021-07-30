@@ -167,7 +167,13 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
     else
     {///< \ref from Hedstrom & Pomeroy, 1998
       double rho_s = CalcFreshSnowDensity(pHRU->GetForcingFunctions()->temp_ave);
-      VV.snow_capacity =VV.LAI*5.0*(0.27+46/rho_s);
+      VV.snow_capacity = VV.LAI * 5.0 * (0.27 + 46 / rho_s);
+
+      //storage capacity override for floppy trees [M. Chernos]
+      double max_cap = pHRU->GetVegetationProps()->max_snow_capacity;
+      if (max_cap > 0.0) {
+       lowerswap(VV.snow_capacity, max_cap);
+      }
 
       double P       =pHRU->GetForcingFunctions()->snow_frac*pHRU->GetForcingFunctions()->precip* Options.timestep; //[mm]
       double stor    =pHRU->GetStateVarValue(iCanSnow);//[mm]

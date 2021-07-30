@@ -35,7 +35,7 @@ public:/*-------------------------------------------------------*/
 
   static void InitializeGlobalParameters (global_struct &G, bool is_template);
   static void SetGlobalProperty          (global_struct &G, const string  param_name, const double value);
-  static double GetGlobalProperty        (const global_struct &G, string  param_name);
+  static double GetGlobalProperty        (const global_struct &G, string  param_name, const bool strict=true);
 
   static void SummarizeToScreen();
 };

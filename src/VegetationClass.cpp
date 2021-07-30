@@ -494,7 +494,7 @@ double CVegetationClass::GetVegTransportProperty(const int constit_ind, const ve
 /// \param param_name [in] Parameter name
 /// \return Vegetation property corresponding to parameter name
 //
-double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param_name)
+double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param_name, const bool strict)
 {
   string name;
   name = StringToUppercase(param_name);
@@ -537,9 +537,14 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
   else if (!name.compare("RELATIVE_LAI"         )){return V.relative_LAI[0];} //special case: only used for autocalc
 
   else{
-    string msg="CVegetationClass::GetVegetationProperty: Unrecognized/invalid vegetation parameter name: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
-    return 0.0;
+    if (strict){
+      string msg="CVegetationClass::GetVegetationProperty: Unrecognized/invalid vegetation parameter name: "+name;
+      ExitGracefully(msg.c_str(),BAD_DATA_WARN);
+      return 0.0;
+    }
+    else {
+      return INDEX_NOT_FOUND;
+    }
   }
 }
 

@@ -73,11 +73,7 @@ void CGWDrain::addDrain(int drainID, int nodeID, double drain_elev, double drain
 //
 void CGWDrain::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP) const
 {
-  /*
-  nP=2;
-  aP[0]="DRAIN_ELEV";       aPC[0]=CLASS_GWSTRESSPERIOD;
-  aP[1]="CONDUCTANCE";      aPC[1]=CLASS_GWSTRESSPERIOD;
-  */
+
 }
 
 //////////////////////////////////////////////////////////////////

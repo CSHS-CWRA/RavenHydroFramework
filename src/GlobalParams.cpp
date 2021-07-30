@@ -534,7 +534,7 @@ double CGlobalParams::GetParameter(const string param_name)
 /// \param param_name [in] Parameter name
 /// \return parameter value corresponding to parameter name
 //
-double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_name)
+double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_name, const bool strict)
 {
 
   string name;
@@ -610,9 +610,14 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("WINDVEL_ICEPT"        )){return G.windvel_icept; }
   else if (!name.compare("WINDVEL_SCALE"        )){return G.windvel_scale; }
   else{
-    string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA_WARN);
-    return 0.0;
+    if (strict){
+      string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;
+      ExitGracefully(msg.c_str(),BAD_DATA_WARN);
+      return 0.0;
+    }
+    else {
+      return INDEX_NOT_FOUND;
+    }
   }
 
 }

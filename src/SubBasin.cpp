@@ -1457,7 +1457,8 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
 
   if (bad_initcond){
     //cout<<_nQinHist<<" "<<OldnQinHist<<endl;
-    WriteWarning("CSubBasin::GenerateRoutingHydrograph: size of inflow history array differs between initial conditions file and calculated size. Initial conditions will be overwritten",Options.noisy);
+    string warn = "CSubBasin::GenerateRoutingHydrograph: size of inflow history array differs between initial conditions file and calculated size in basin " + to_string(_ID) + ". Initial conditions will be overwritten";
+    WriteWarning(warn,Options.noisy);
     delete [] _aQinHist;
   }
 

@@ -38,6 +38,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
 bool ParseGWFile               (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFRunInfoFile    (CModel*& pModel, optStruct& Options);
+bool ParseNetCDFStateFile      (CModel*& pModel, optStruct& Options);
+bool ParseNetCDFParamFile      (CModel*& pModel, optStruct& Options);
 
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
@@ -80,7 +82,9 @@ bool ParseInputFiles (CModel      *&pModel,
   if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){
     ExitGracefully("Cannot find or read .rvp file",BAD_DATA);return false;
   }
-
+  if (!ParseNetCDFParamFile(pModel, Options)) {
+    ExitGracefully("Cannot find or read NetCDF parameter file", BAD_DATA); return false;
+  }
   //HRU Property file (.rvh)
   //--------------------------------------------------------------------------------
   if (!ParseHRUPropsFile         (pModel,Options,terr_reqd)){
@@ -102,6 +106,9 @@ bool ParseInputFiles (CModel      *&pModel,
   //--------------------------------------------------------------------------------
   if (!ParseInitialConditionsFile(pModel,Options)){
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
+  }
+  if (!ParseNetCDFStateFile(pModel, Options)) {
+    ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;
   }
     
   // Time series input file (.rvt)
@@ -283,6 +290,9 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.use_stopfile            =false;
   Options.runinfo_filename        ="";
   Options.stateinfo_filename      ="";
+  Options.paraminfo_filename      ="";
+  //Options.stateinfo_filename = "C:/temp/FEWS state_mods/state_mods.nc"; //TMP DEBUG
+  Options.paraminfo_filename = "C:/temp/FEWS state_mods/mods_rvp_ubc.nc"; //TMP DEBUG
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -422,6 +432,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":FEWSRunInfoFile"           )){code=108;}
     else if  (!strcmp(s[0],":ChunkSize"                 )){code=109;}
     else if  (!strcmp(s[0],":FEWSStateInfoFile"         )){code=110;}
+    else if  (!strcmp(s[0],":FEWSParamInfoFile"         )){code=111;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1718,8 +1729,14 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(110):  //
     {/*:FEWSStateInfoFile [filename.nc]*/
-      if (Options.noisy) { cout << "FEWS Stateinfo file" << endl; }
+      if (Options.noisy) { cout << "FEWS state update file" << endl; }
       Options.stateinfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
+      break;
+    }
+    case(111):  //
+    {/*:FEWSParamInfoFile [filename.nc]*/
+      if (Options.noisy) { cout << "FEWS parameter update file" << endl; }
+      Options.paraminfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
       break;
     }
     case(160):  //--------------------------------------------

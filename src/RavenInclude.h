@@ -13,6 +13,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
+//#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
@@ -36,7 +37,7 @@
 using namespace std;
 
 /*****************************************************************
-NAMING AND PROGRAMMING CONVENTIONS IN RAVEN LIBRARY
+ NAMING AND PROGRAMMING CONVENTIONS IN RAVEN LIBRARY
 ------------------------------------------------------------------
 
 all classes are named beginning with a capital C
@@ -307,12 +308,6 @@ const int     MAX_CONSTITUENTS    =10;          ///< Max number of transported c
 const int     MAX_RIVER_SEGS      =50;          ///< Max number of river segments
 const int     MAX_FILENAME_LENGTH =256;         ///< Max filename length
 const int     MAX_MULTIDATA       =10;          ///< Max multidata length
-const int     MAX_GW_CLASSES      =50;          ///< Max number of gw classes
-const int     MAX_AQUIFER_LAYERS = 10;          ///< Max number aquifer layers
-const int     MAX_AQUIFER_STACKS = 50;          ///< Max number aquifer stacks GWMIGRATE - Set at 10000!?
-const int     MAX_GW_CELLS        =10000;       ///< Max number of cells in gw model grid
-const int     MAX_SP_CLASSES      =100;         ///< Max number of stress periods
-const int     MAX_OE_CLASSES      =1;           ///< Max number of overlap/exchange classes
 /******************************************************************
 Enumerated Types
    found in optStruct - the structure of global model options
@@ -334,44 +329,7 @@ enum numerical_method
 enum model_type
 {
   MODELTYPE_SURFACE,          ///< Surface water simulation ONLY
-  MODELTYPE_GROUNDWATER,      ///< Groundwater simulation ONLY
   MODELTYPE_COUPLED,          ///< Coupled groundwater-surface water simulation
-};
-
-///////////////////////////////////////////////////////////////////
-/// \brief The nonlinear solver to be used for the groundwater component
-//
-enum gw_nonlinear_num_method
-{
-  GWSOL_NEWTONRAPHSON,       ///< newton-raphson method
-  GWSOL_PICARD,              ///< picard iteration method
-};
-
-///////////////////////////////////////////////////////////////////
-/// \brief The linear solver to be used for the groundwater component
-//
-enum gw_linear_num_method
-{
-  GWSOL_PCGU,                 ///< MODFLOW unstructured PCG solver
-  GWSOL_BICGSTAB,             ///< BiConjugate Gradient solver
-};
-
-///////////////////////////////////////////////////////////////////
-/// \brief The type of grid being used to discretize the model space
-//
-enum gw_discretization
-{
-  GRID_UNSTRUCTURED,          ///< Unstructured grid
-  //GRID_STRUCTURED,            ///< Structured grid
-};
-
-///////////////////////////////////////////////////////////////////
-/// \brief The method of HRU and aquifer connection
-//
-enum sw_gw_connection
-{
-  DIRECT,               ///< 1:1 connection
-  AREA_WEIGHTED,        ///< area weighted connection
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -673,6 +631,7 @@ enum potmelt_method
 enum recharge_method
 {
   RECHARGE_NONE,            ///< assumes recharge=0
+  RECHARGE_MODEL,           ///< Recharge from GW SV Storage 
   RECHARGE_DATA             ///< recharge from (usually gridded) data (e.g., from other model)
 };
 
@@ -902,7 +861,7 @@ enum process_type
   INFILTRATION,
 
   //in SoilWaterMovers.h:
-  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,RECHARGE,DRAIN,SOIL_BALANCE,
+  BASEFLOW,SOIL_EVAPORATION,INTERFLOW,PERCOLATION,CAPILLARY_RISE,RECHARGE,SOIL_BALANCE,
 
   //in VegetationMovers.h:
   CANOPY_EVAPORATION, CANOPY_SNOW_EVAPORATION, CANOPY_DRIP,
@@ -946,6 +905,10 @@ enum process_type
 
   //in ProcessGroup.h
   PROCESS_GROUP,
+
+  //in GWSWProcesses.h
+  DRAIN, GWRECHARGE,
+
   //..
   NULL_PROCESS_TYPE
 };
@@ -989,12 +952,8 @@ struct optStruct
   bool             use_stopfile;              ///< true if Raven should look for stopfile
   
   model_type       modeltype;                 ///< type of model being simulated
-  gw_nonlinear_num_method gw_solver_outer;    ///< nonlinear numerical solution method for groundwater GWMIGRATe - rename shorter
-  gw_linear_num_method    gw_solver_inner;    ///< linear numerical solution method for groundwater
-  gw_discretization       gw_grid;            ///< grid storage type
-  flux_frequency          exchange_freq;      ///< frequency of exchange fluxes
-  flux_method             flux_exchange;      ///< method of calculating exchange fluxes
-  sw_gw_connection        overlap_type;       ///< method to determine how HRU/Aquifer connections occur
+  flux_frequency   exchange_freq;             ///< frequency of exchange fluxes
+  flux_method      flux_exchange;             ///< method of calculating exchange fluxes
 
   interp_method    interpolation;             ///< Method for interpolating Met Station/Gauge data to HRUs
   string           interp_file;               ///< name of file (in working directory) which stores interpolation weights
@@ -1009,11 +968,9 @@ struct optStruct
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
   string           rvl_filename;              ///< fully qualified filename of rvl (live communications) file
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
-  string           rvd_filename;              ///< fully qualified filename of rvd (groundwater discretization) file GWMIGRATE - TO REMOVE!!
-  string           rvv_filename;              ///< fully qualified filename of rvv (groundwater-surface water overlap) file GWMIGRATE - TO REMOVE!!
-  string           rvs_filename;              ///< fully qualified filename of rvs (groundwater-surface water exchange) file GWMIGRATE - TO REMOVE!!
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS 
-  string           stateinfo_filename;        ///< fully qualified filename of stateinfo.nc file from FEWS
+  string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
+  string           paraminfo_filename;        ///< fully qualified filename of param_mods.nc file from FEWS
 
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)
   string           output_dir;                ///< output directory (can change during ensemble run)

@@ -501,7 +501,24 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     // no parameter required
   }
 
-
+  // Interception factor estimators
+  //----------------------------------------------------------------------
+  if (Options.interception_factor == PRECIP_ICEPT_LAI) {
+    aP[nP] = "RAIN_ICEPT_FACT"; aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "SNOW_ICEPT_FACT"; aPC[nP] = CLASS_VEGETATION; nP++;
+  }
+  else if (Options.interception_factor == PRECIP_ICEPT_USER) {
+    aP[nP] = "RAIN_ICEPT_PCT"; aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "SNOW_ICEPT_PCT"; aPC[nP] = CLASS_VEGETATION; nP++;
+  }
+  else if (Options.interception_factor == PRECIP_ICEPT_HEDSTROM) {
+    aP[nP] = "MAX_SNOW_CAPACITY"; aPC[nP] = CLASS_VEGETATION; nP++;
+  }
+  else if ((Options.interception_factor == PRECIP_ICEPT_EXPLAI) ||
+    (Options.interception_factor == PRECIP_ICEPT_NONE)) {
+    //no params but LAI
+  }
+    
   //...
 }
 
