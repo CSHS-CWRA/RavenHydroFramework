@@ -43,7 +43,7 @@ protected:/*-------------------------------------------------------*/
 	int         *_inodes;                     ///< array of nodes with process
   char        *_pProcName;                  ///< Name of process to be displayed in MFUSG Budget
 
-	map<int, set<int>>   _mNodesByHRU;         ///< Map of the set of nodes with process, keyed by HRU
+	map<int, set<int> >  _mNodesByHRU;         ///< Map of the set of nodes with process, keyed by HRU
 	map<int, int>        _mNodeIndex;           ///< Hash to easily find index of a node within _inode [nodeid, index]
 
 public: /*-------------------------------------------------------*/

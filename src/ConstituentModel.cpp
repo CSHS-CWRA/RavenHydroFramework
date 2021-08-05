@@ -267,7 +267,7 @@ bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_str
       }
     }
   }*/
-  return false;
+ // return false;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns specified mass flux for given constitutent and water storage unit at time tt
@@ -591,14 +591,14 @@ void CConstituentModel::Initialize(const optStruct &Options)
   _aSourceIndices=NULL;
   _aSourceIndices=new int *[_pModel->GetNumStateVars()];
   ExitGracefullyIf(_aSourceIndices==NULL,"CTransport::Initialize",OUT_OF_MEMORY);
-  for(int i_stor=0;i_stor<_pModel->GetNumStateVars();i_stor++) {
+  for(i_stor=0;i_stor<_pModel->GetNumStateVars();i_stor++) {
     _aSourceIndices[i_stor]=NULL;
     _aSourceIndices[i_stor]=new int[_pModel->GetNumHRUs()];
     ExitGracefullyIf(_aSourceIndices==NULL,"CTransport::Initialize(2)",OUT_OF_MEMORY);
     for(int k=0; k<_pModel->GetNumHRUs();k++) {
       _aSourceIndices[i_stor][k]=DOESNT_EXIST; //default assumption - no source in compartment
     }
-    for(int i=0;i<_nSources;i++) {
+    for(i=0;i<_nSources;i++) {
       if(_pSources[i]->i_stor==i_stor)
       {
         int kk=_pSources[i]->kk;
@@ -624,10 +624,10 @@ void CConstituentModel::Initialize(const optStruct &Options)
 
   // Initialize time series
   //--------------------------------------------------------------------  
-  for(int i=0; i<_nMassLoadingTS; i++) {
+  for(i=0; i<_nMassLoadingTS; i++) {
     _pMassLoadingTS[i]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,true,Options.calendar);
   }
-  for(int i=0; i<_nSpecFlowConcs; i++) {
+  for(i=0; i<_nSpecFlowConcs; i++) {
     _pSpecFlowConcs[i]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,true,Options.calendar);
   }
 }

@@ -5,6 +5,9 @@
 #include "TimeSeries.h"
 #include "ParseLib.h"
 #include "Forcings.h"
+
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *aStations, int &nStations); 
+
 /*****************************************************************
    Constructor/Destructor
 ------------------------------------------------------------------
@@ -709,7 +712,14 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
           ExitGracefully("CTimeSeries::Parse: ReadFromNetCDF requires 1 or 2 arguments for :DimNamesNC",BAD_DATA); return NULL;
         }
       }
-      if(!strcmp(s[0],":StationIdx"))      { StationIdx = s_to_i(s[1]); }
+      if(!strcmp(s[0],":StationIdx"))      { 
+        if (!strcmp(s[1], "FROM_STATION_VAR")) {
+          StationIdx=-1; //Special code used in ReadTimeSeriesFromNetCDF()
+        }
+        else{
+          StationIdx = s_to_i(s[1]); 
+        }
+      }
       if(!strcmp(s[0],":TimeShift"))       { TimeShift  = s_to_d(s[1]); }
       if(!strcmp(s[0],":LinearTransform")) {
         if (Len != 3) {
@@ -755,7 +765,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
                                            VarNameNC,            // name of variable in NetCDF
                                            DimNamesNC_stations,  // name of station dimension (optional; default=None)
                                            DimNamesNC_time,      // name of time dimension (mandatory)
-                                           StationIdx,           // idx of station to be read
+                                           StationIdx,           // idx of station to be read (or -1 if to be determined from FEWS station_id variable)
                                            //                    // (only used if DimNamesNC_stations not None)
                                            TimeShift,            // time shift of data (fractional day by which
                                            //                    // read data should be shifted)
@@ -807,7 +817,6 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
     
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
-      time_struct tt;
       tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
       tstep=FixTimestep(tt.julian_day);
     }
@@ -923,7 +932,6 @@ CTimeSeries **CTimeSeries::ParseMultiple(CParser *p, int &nTS, forcing_type *aTy
 
     string tString=s[2];
     if ((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))){//support for hh:mm:ss.00 format in timestep
-      time_struct tt;
       tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
       tstep=FixTimestep(tt.julian_day);
     }
@@ -1195,7 +1203,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \param  VarNameNC           [in] name of variable in NetCDF
 /// \param  DimNamesNC_stations [in] name of station dimension (optional; default=None)
 /// \param  DimNamesNC_time     [in] name of time dimension (mandatory)
-/// \param  StationIdx          [in] idx of station to be read (only used if DimNamesNC_stations not None)
+/// \param  StationIdx          [in] idx of station to be read (or -1 if to be determined from FEWS station_id variable) (only used if DimNamesNC_stations not None)
 /// \param  TimeShift           [in] time shift of data (fractional day by which read data should be shifted)
 /// \param  LinTrans_a,         [in] linear transformation: a in new = a*data+b
 /// \param  LinTrans_b          [in] linear transformation: b in new = a*data+b
@@ -1422,11 +1430,25 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     ExitGracefullyIf(aTmp1D==NULL,"CForcingGrid::ReadData : aTmp1D(0)",OUT_OF_MEMORY);
   }
 
+
+
   // -------------------------------
   // (9) Read data
   // -------------------------------
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) 
   {
+    if (StationIdx == -1) { //special indicator that station index determined via subbasin/HRUID and station_id NetCDF variable array
+      int stat_dimid;
+      int stat_varid;
+      long *aStations=NULL;
+      int nStations;
+      GetNetCDFStationArray(ncid, FileNameNC,stat_dimid,stat_varid, aStations, nStations); 
+      for (int i = 0; i < nStations; i++) {
+        if (aStations[i]==loc_ID){StationIdx=i+1;}
+      }
+      delete [] aStations;
+    }
+
     size_t    nc_start [2];
     size_t    nc_length[2];
     ptrdiff_t nc_stride[2];
@@ -1499,7 +1521,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   double *aVal = new double [ntime];
   for (int it=0; it<ntime; it++) {               // loop over time points in buffer
-    aVal[it]=RAV_BLANK_DATA;                   // initialize
+      aVal[it]=RAV_BLANK_DATA;                   // initialize
   }
 
   // -------------------------------

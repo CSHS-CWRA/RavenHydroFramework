@@ -90,9 +90,9 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
   
     //from Horita and Wesolowski,  Liquid-vapor fractionation of oxygen and hydrogen isotopes of water from the freezing to the critical temperature,
     //Geochimica et Cosmochimica Acta, 58(16), 1994,
-    double alpha_star,ep_star,tmp;
+    double alpha_star,ep_star,tmp(0.0);
     double beta;
-    double CK0;
+    double CK0(0.0);
     if     (_isotope==ISO_O18) {
       tmp=-7.685+6.7123*(1e3/T)-1.6664*(1e6/T/T)+0.35401*(1e9/T/T/T); //eqn 6 of H&W
       CK0=28.6/TO_PER_MILLE;   //[-] Vogt, 1976

@@ -1043,6 +1043,7 @@ struct optStruct
   bool             write_basinfile;           ///< true if subbasins params are written to SubbasinParams.csv
   bool             write_interp_wts;          ///< true if interpolation weights are written to InterpolationWeights.csv
   bool             write_demandfile;          ///< true if demands.csv file is written
+  bool             write_simpleout;           ///< true if simple_out.csv file is written (for scripting)
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files
@@ -1336,6 +1337,7 @@ inline bool StringIsLong(const char *s1)
 {
   char *p;
   long tmp=strtol(s1,&p,10);
+  tmp=0;
   return !(*p);
 }
 ///////////////////////////////////////////////////////////////////

@@ -143,7 +143,7 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
         double temp=pHRU->GetForcingFunctions()->temp_ave;
         double c1=1.0;
         double sat=1.0;
-        double k;
+        double ks;
         if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
         else if ((temp>=10) && (temp<=30)) { c1=1.0; }
         else if (temp< 10)                 { c1=(temp-5.0)/(10.0-5.0);}
@@ -152,9 +152,9 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
 
         sat=min(vol1/vol_max,1.0);
         double rn_min =10;// = _pTransModel->GetMineralizationCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
-        k = rn_min * c1 * sat;
+        ks = rn_min * c1 * sat;
         ExitGracefully("TRANSFORM_MINERALIZATION - need way of storing mineralization coeff",STUB);
-        rates[ii] = mass1*(1 - exp(-k*Options.timestep))/Options.timestep;
+        rates[ii] = mass1*(1 - exp(-ks*Options.timestep))/Options.timestep;
       }
     }
   }

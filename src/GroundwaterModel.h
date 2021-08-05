@@ -74,8 +74,8 @@ private:/*----------------------------------------------------*/
                                                 ///  =A_ki/A_i where A_ki is area of overlap between HRU k and node i and A_i is area of node i
                                                 ///  Only contains weights for layer 1 (see HRU-node comment at top)
                                                 ///  Dimensions : [_nHydroUnits][_aNodesPerLayer[0]] (variable)
-  map<int,vector<int>>           _mNodesByHRU;  ///< Map of length _nNodes with vectors of the HRUs connected to that node
-  map<int,vector<int>>           _mHRUsByNode;  ///< Map of length _nHRU with vectors of the nodes connected to that HRU
+  map<int,vector<int> >          _mNodesByHRU;  ///< Map of length _nNodes with vectors of the HRUs connected to that node
+  map<int,vector<int> >          _mHRUsByNode;  ///< Map of length _nHRU with vectors of the nodes connected to that HRU
 
   void                   UpdateTStep         (const double &t);
   void                   UpdateProcessBudgets(const double& timestep);

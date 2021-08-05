@@ -1139,6 +1139,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double relax=1.0;
   do //Newton's method with discrete approximation of df/dh
   {
+    out=out2=0.0;
     if     (_pDZTR==NULL) {
       out =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       out2=GetWeirOutflow(h_guess+dh,weir_adj);//[m3/s]

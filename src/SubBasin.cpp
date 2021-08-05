@@ -1516,7 +1516,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     _aRouteHydro[0]=1.0;
 
     double cc=_c_ref*SEC_PER_DAY; //[m/day]
-    double diffusivity=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)*SEC_PER_DAY;// m2/d
+    //double diffusivity=_pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n)*SEC_PER_DAY;// m2/d
     _c_hist=new double [_nQinHist];
     for(n=0;n<_nQinHist;n++) {_c_hist[n]=cc; }
   }

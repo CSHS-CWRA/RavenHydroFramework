@@ -7,8 +7,14 @@
 #define RIVERREACH_H
 
 //-- Declaration of classes for use in CRiverReach (Definitions below)
+enum LeakanceMethod
+{
+  LEAK_CONSTANT     ,      ///< Leakance coefficient given as a single value
+  LEAK_MODFLOW      ,      ///< MODFLOW River leakance, hydraulic conductivity of clogging layer over its thickness
+  LEAK_MOREL_SEYTOUX,      ///< Morel-Seytoux et al. (2018) analytically derived, physically based coefficient
+};
+
 class CRiverLeakanceABC;
-enum LeakanceMethod;
 
 class CRiverReach
 {
@@ -38,13 +44,6 @@ public:/*-------------------------------------------------------*/
   //-- Accessors
   vector<int>* getNodes         ();
   double       getDischarge     (double head_cell, double head_river, double tstep);
-};
-
-enum LeakanceMethod
-{
-  LEAK_CONSTANT     ,      ///< Leakance coefficient given as a single value
-  LEAK_MODFLOW      ,      ///< MODFLOW River leakance, hydraulic conductivity of clogging layer over its thickness
-  LEAK_MOREL_SEYTOUX,      ///< Morel-Seytoux et al. (2018) analytically derived, physically based coefficient
 };
 
 

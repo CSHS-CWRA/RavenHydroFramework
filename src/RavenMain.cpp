@@ -138,6 +138,7 @@ int main(int argc, char* argv[])
         pModel->UpdateHRUForcingFunctions  (Options,tt);
         pModel->UpdateDiagnostics          (Options,tt);
         pModel->PrepareAssimilation        (Options,tt);
+        pModel->WriteSimpleOutput          (Options,tt);
         CallExternalScript                 (Options,tt);
         ParseLiveFile                      (pModel,Options,tt);
 

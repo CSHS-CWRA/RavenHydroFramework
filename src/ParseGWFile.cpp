@@ -33,15 +33,10 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
   ExitGracefullyIf(pModel == NULL,"ParseClassGWFile: model has not yet been created.", BAD_DATA);
 
   int  code, Len, line(0);
-  int  num_parsed_gw=0; //GWUPDATE REVIEW
   CGroundwaterModel*    pGWModel = pModel->GetGroundwaterModel();
   char *s[MAXINPUTITEMS];
   bool ended(false);
   bool done;
-
-  int         nPmaster(0);   //number of parameters in master list of required parameters
-  string     *aPmaster=NULL;  //array of parameter names in master list of required parameters 
-  class_type *aPCmaster=NULL; //array of parameter class types in master list of required parameters 
 
   //Open file
   ifstream RVG;
@@ -289,7 +284,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
        :EndRecharge*/
         int i=0, nodeid;
 
-        gwrecharge_type rech_type;
+        gwrecharge_type rech_type=RECHARGE_FLUX;
 
         // Get Recharge obj from GWModel
         CGWRecharge *pGWRecharge = pGWModel->GetRechProcess();

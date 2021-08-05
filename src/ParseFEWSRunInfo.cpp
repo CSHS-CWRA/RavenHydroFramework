@@ -7,6 +7,7 @@ Copyright (c) 2008-2021 the Raven Development Team
 #include "SoilAndLandClasses.h"
 
 void GetNetCDFTimeInfo(const int ncid, int &time_dimid,int &ntime, int &start_time_index, const optStruct &Options);
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *aStations, int &nStations);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS RunInfo file
@@ -200,10 +201,11 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
   return true;
 #else
-  return false;
   ExitGracefully("ParseRunInfoFile: Deltares FEWS Runinfo file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
+  return false;
 #endif
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS State info file
 ///
@@ -212,10 +214,11 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 /// \return True if operation is successful
 //
 // The state info file includes:
-// 1)	A vector named "station_id" of size[1:NumHRUs] which includes HRU IDs which reference the HRUID used in the Raven .rvh file. 
+// 1) 'time' and 'stations' dimensions
+// 2)	A vector named "station_id" of size[1:stations] which includes HRU IDs which reference the HRUID used in the Raven .rvh file. 
 //  The index i of each entry will be the same as that used by the matrix in part 2. 
-// 2)	One or more matrices of size[1:NumTimes,1:NumHRUs] which includes the state variable being updated,using the 
-//  same indexing[i=1:NumHRUs] as the vector of HRUIDs. Blank values will not be updated. Raven model HRUs with IDs 
+// 3)	One or more matrices of size[1:time,1:stations] which includes the state variable being updated,using the 
+//  same indexing[i=1:stations] as the vector of HRUIDs. Blank values will not be updated. Raven model HRUs with IDs 
 //  not in this list will not be updated. HRUIDs in this list but not in Raven model will throw a warning to RavenErrors.txt.
 //  The naming convention of this attribute is equivalent to the raven state variable tag,e.g.,SNOW,PONDED_WATER,SOIL[0]. 
 //  Note : this ONLY looks for state variables that are in model, all other state variable arrays will be ignored
@@ -225,23 +228,23 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   if(Options.stateinfo_filename=="") { return true; }
 
 #ifdef _RVNETCDF_
-  int     ncid;          // NetCDF file id
-  int     retval;        // return value of NetCDF routines
-  int     nHRUsLocal=0;  // size of HRU Vector
-  int     charsize = 0;  // size of character vector
-  int     ntime    = 0;  // size of time vector
-  size_t  att_len;       // length of the attribute's text
-  nc_type att_type;      // type of attribute
-  int     time_dimid;    // dimension id of time variable
+  int     ncid;                // NetCDF file id
+  int     retval;              // return value of NetCDF routines
+  int     ntime    = 0;        // size of time vector
+  size_t  att_len;             // length of the attribute's text
+  nc_type att_type;            // type of attribute
+  int     time_dimid;          // dimension id of time variable
+  int     start_time_index=0;  // index of NetCDF time array which corresponds to Raven start time
 
+  // Open file
+  //====================================================================
   string statefile=Options.stateinfo_filename;
 
   if(Options.noisy) { cout<<"Opening state info file "<<statefile<<endl; }
   retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
 
-  //Get information from time vector
+  // Get information from time vector
   //====================================================================
-  int start_time_index=0;
   GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
 
   start_time_index = 1;  //TMP DEBUG!!
@@ -255,13 +258,16 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
     return false;
   }
 
-  //Get vector of HRUIDs 
+  // Get vector of HRUIDs 
   //====================================================================
-  // find attribute
-  int  HRUvecID;      //attribute ID of HRU vector
-  int* HRUIDs=NULL;
+  int   HRUvecID;         //attribute ID of HRU vector
+  int   HRUdimID;         // nstations dimension ID
+  long* HRUIDs    =NULL;  // vector of HRUIDs
+  int   nHRUsLocal=0;     // size of HRU Vector
 
-  retval = nc_inq_varid(ncid,"station_id",&HRUvecID);               
+  GetNetCDFStationArray(ncid, statefile,HRUdimID,HRUvecID, HRUIDs, nHRUsLocal); 
+
+/*  retval = nc_inq_varid(ncid,"station_id",&HRUvecID);               
   if(retval==NC_ENOTVAR) {
     string warning="Variable 'station_id' not found in NetCDF state update file "+statefile;
     ExitGracefully(warning.c_str(),BAD_DATA); retval=0;
@@ -287,14 +293,13 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   HandleNetCDFErrors(retval);
   nHRUsLocal=(int)(dimlens[0]);
   HRUIDs = new int[nHRUsLocal];
-  
-  cout << "[STATEFILE]: " << " station id found:" << HRUvecID << endl;
-  cout << "[STATEFILE]: " << " station dimid found:" << station_dimid[0] << endl;
-  cout << "[STATEFILE]: " << " charlen dimid found:" << char_dimid[0] << endl;
+  */
+  cout << "[STATEFILE]: " << " station id found:" << HRUvecID << endl;  
+  cout << "[STATEFILE]: " << " station dimid found:" << HRUdimID << endl;  
   cout << "[STATEFILE]: " << " time vector size:" << ntime << endl;
-  cout << "[STATEFILE]: " << " character string size=" << charsize << endl;
   cout << "[STATEFILE]: " << " nHRUs=" << nHRUsLocal << endl;
  
+  /*
   // parse and store vector of HRU IDs
   // ===============================================================================
   size_t    start[]   = {0,0};
@@ -323,10 +328,11 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
     //cout << "[STATEFILE]: " << " ID["<<k<<"]="<< HRUIDs[k] << to_string(ipcast[k])<<endl;
   }
   delete[] ip;
+  */
 
   //check that valid (integer) HRUIDs exist in Raven Model
   for (int k = 0; k < nHRUsLocal; k++) {
-    if ((HRUIDs[k]!=DOESNT_EXIST) && (pModel->GetHRUByID(HRUIDs[k]) == NULL)) {
+    if ((HRUIDs[k]!=DOESNT_EXIST) && (pModel->GetHRUByID((int)(HRUIDs[k])) == NULL)) {
       ExitGracefully("ParseNetCDFStateFile: invalid HRU ID found in FEWS state update file. ", BAD_DATA);
     }
   }
@@ -359,7 +365,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
       // -------------------------------
       int      sv_dimid[] = { 0 , 0 };
       retval = nc_inq_var(ncid, SVID, NULL, NULL, NULL, sv_dimid, NULL);                    HandleNetCDFErrors(retval);
-      if ((sv_dimid[0] != time_dimid) || (sv_dimid[1] != station_dimid[0])) {
+      if ((sv_dimid[0] != time_dimid) || (sv_dimid[1] != HRUdimID)) {
         ExitGracefully("ParseNetCDFStateFile: dimensions of state variable array are not (time,nstations)", BAD_DATA);
       }
       
@@ -393,7 +399,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 
     }
     else {
-      //variable not found; do nothing
+      //state variable not found in NetCDF file; do nothing
     }
   }
 
@@ -434,8 +440,8 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 
   return true;
 #else
-  return false;
   ExitGracefully("ParseRunInfoFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
+  return false;
 #endif
 }
 //////////////////////////////////////////////////////////////////
@@ -446,7 +452,9 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 /// \return True if operation is successful
 //
 // The parameter update file includes:
-// 1)	
+// 1)	a time vector of size ntime
+// 2) Vectors of size (ntime) with parameter time series; these are named PARAM_in_CLASS where
+//    PARAM is a valid parameter name and CLASS is a valid soil class, veg class, land use class, or GLOBALS 
 //
 bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 {
@@ -455,14 +463,13 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 #ifdef _RVNETCDF_
   int     ncid;          // NetCDF file id
   int     retval;        // return value of NetCDF routines
-  size_t  att_len;       // length of the attribute's text
-  nc_type att_type;      // type of attribute
+  //size_t  att_len;       // length of the attribute's text
+  //nc_type att_type;      // type of attribute
 
   string paramfile=Options.paraminfo_filename;
 
   if(Options.noisy) { cout<<"Opening FEWS parameter info file "<<paramfile<<endl; }
   retval = nc_open(paramfile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
-
 
   //Get information from time vector
   //====================================================================
@@ -470,6 +477,8 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
   int time_dimid;
   int start_time_index=0;
   GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
+
+  cout<<"[PARAMFILE]: "<<" start time index="<<start_time_index<<endl;
 
   start_time_index = 1;  //TMP DEBUG!!
 
@@ -569,13 +578,22 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 
   retval = nc_close(ncid);
 
-  ExitGracefully("PARSE FEWS PARAM FILE",STUB);
+  ExitGracefully("PARSE FEWS PARAM FILE",STUB); //TMP DEBUG
 #endif
   return true;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Extracts time array info and timestep index within NetCDF time() array corresponding to Raven model start time 
+///
+/// \param ncid [in] NetCDF file id
+/// \param time_dimid[out] NetCDF dimension idea for time dimension
+/// \param ntime[out] size of NetCDF time array
+/// \param start_time_index[out] index of NetCDF time array corresponding to Raven model start time 
+/// \param &Options [in] Global model options information
+//
 void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_time_index, const optStruct& Options) 
 {
+#ifdef _RVNETCDF_
   size_t att_len;
   int    retval;
   string unit_t;
@@ -618,5 +636,86 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
 
   delete[] timearr;
   delete[] unitstr;
+#endif
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Extracts station array info from Deltares FEWS-generated NetCDF file 
+///
+/// \param ncid [in] NetCDF file id
+/// \param filename [in] filename of NetCDF file
+/// \param stat_dimid [out] dimension ID of 'stations' dimension
+/// \param stat_varid [out] NetCDF variable id for variable 'station_id'
+/// \param aStations [out] array of station IDs, as long (this vector is created here, and aStations should be deleted outside this routine)
+/// \param nStations [out] size of aStations array
+//
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *aStations, int &nStations) 
+{
+#ifdef _RVNETCDF_
+  int retval;
+  int charsize;
 
+  aStations=NULL;
+
+  // get varid of station_id
+  //---------------------------------------------------
+  retval = nc_inq_varid(ncid,"station_id",&stat_varid);               
+  if(retval==NC_ENOTVAR) {
+    string warning="GetNetCDFStationArray: Variable 'station_id' not found in NetCDF forcing file "+filename;
+    ExitGracefully(warning.c_str(),BAD_DATA); retval=0;
+  }
+  HandleNetCDFErrors(retval);
+  
+  // get character length dimension
+  //---------------------------------------------------
+  int      char_dimid[] = { 0 };
+  size_t   chdimlens [] = { 0 };
+  retval = nc_inq_dimid (ncid, "char_leng_id", char_dimid);   HandleNetCDFErrors(retval);
+  retval = nc_inq_dimlen(ncid, char_dimid[0], chdimlens);     HandleNetCDFErrors(retval);
+  charsize = (int)(chdimlens[0]); //usually 64
+
+  //Get size of station vector, allocate memory
+  //---------------------------------------------------
+  int    station_dimid[] = { 0 };
+  size_t       dimlens[] = { 0 };
+  retval = nc_inq_dimid (ncid, "stations", station_dimid);    HandleNetCDFErrors(retval);
+  retval = nc_inq_dimlen(ncid, station_dimid[0],dimlens);
+  if(retval!=NC_NOERR) {
+    string warning="GetNetCDFStationArray: Failure determining size of stations dimension in "+filename;
+    ExitGracefully(warning.c_str(),BAD_DATA); retval=0;
+  }
+  HandleNetCDFErrors(retval);
+  stat_dimid=station_dimid[0];
+  nStations=(int)(dimlens[0]);
+  aStations = new long [nStations];
+
+  // parse and store vector of station IDs
+  // ===============================================================================
+  size_t    start[]   = {0,0};
+  size_t    count[]   = {(size_t)(nStations),(size_t)(charsize)};
+  ptrdiff_t stridep[] = {1,1};
+  char     *ID_chars;
+  void     *ip;
+  string    str;
+  char      tmp;
+
+  ip     = new char [nStations * charsize];
+  retval = nc_get_vars(ncid, stat_varid, start, count, stridep, ip);   HandleNetCDFErrors(retval); //read string array
+  ID_chars = (char*)(ip);
+ 
+  //convert character array to long IDs, store in aStations[]
+  for (int k = 0; k < nStations; k++) 
+  {
+    str="";
+    for (int j = 0; j < charsize; j++) {
+      tmp = ID_chars[k * charsize + j];
+      if (isdigit(tmp)) {str += tmp;} 
+      //if (isdigit(tmp)) { cout << tmp << " |"; }
+    }
+    //cout << endl;
+    aStations[k] = s_to_l(str.c_str());
+    if (aStations[k] == 0) { aStations[k] = DOESNT_EXIST;}
+    //cout << "[STATION_ID]: " << " ID["<<k<<"]="<< aStations[k] << to_string(ipcast[k])<<endl;
+  }
+  delete[] ip;
+#endif
 }

@@ -393,7 +393,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         int p=_pHydroUnits[k]->GetSubBasinIndex();
         rc=_pSubBasins[p]->GetRainCorrection();
         sc=_pSubBasins[p]->GetSnowCorrection();
-        for(int g=0; g<_nGauges; g++)
+        for(g=0; g<_nGauges; g++)
         {
           gauge_corr= F.snow_frac*sc*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*rc*_pGauges[g]->GetRainfallCorr();
           wt=_aGaugeWtPrecip[k][g];

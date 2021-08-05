@@ -44,12 +44,12 @@ void CModel::Initialize(const optStruct &Options)
 
   //Ensure Basins & HRU IDs are unique
   for (p=0;p<_nSubBasins;p++){
-    for (int pp=0;pp<p;pp++){
+    for (pp=0;pp<p;pp++){
       if (_pSubBasins[p]->GetID()==_pSubBasins[pp]->GetID()){
         ExitGracefully("CModel::Initialize: non-unique basin identifier found",BAD_DATA);}}}
 
   for (k=0;k<_nHydroUnits;k++){
-    for (int kk=0;kk<p;kk++){
+    for (kk=0;kk<p;kk++){
       if ((k!=kk) && (_pHydroUnits[k]->GetID()==_pHydroUnits[kk]->GetID())){
         ExitGracefully("CModel::Initialize: non-unique HRU identifier found",BAD_DATA);}}}
 
@@ -58,7 +58,7 @@ void CModel::Initialize(const optStruct &Options)
   // initialize process algorithms, initialize water/energy balance arrays to zero
   //--------------------------------------------------------------
   _nTotalConnections=0;
-  for (int j=0; j<_nProcesses;j++){
+  for (j=0; j<_nProcesses;j++){
     if((_pProcesses[j]->GetProcessType()!=PRECIPITATION) && 
        (_pProcesses[j]->GetProcessType()!=LAT_ADVECTION))
        {_pProcesses[j]->Initialize();} //precip already initialized in ParseInput.cpp
@@ -66,7 +66,7 @@ void CModel::Initialize(const optStruct &Options)
   }
   if (_pTransModel->GetNumConstituents()>0){
     _pTransModel->CalculateLateralConnections();
-    for (int j=0; j<_nProcesses;j++){
+    for (j=0; j<_nProcesses;j++){
       if (_pProcesses[j]->GetProcessType()==LAT_ADVECTION){
         _pProcesses[j]->Initialize(); //must be re-initialized after all lateral processes are initialized above
         _nTotalConnections+=_pProcesses[j]->GetNumConnections();
@@ -260,7 +260,7 @@ void CModel::Initialize(const optStruct &Options)
   // Precalculate whether individual processes should apply (for speed)
   //--------------------------------------------------------------
   _aShouldApplyProcess = new bool *[_nProcesses];
-  for (int j=0; j<_nProcesses;j++){
+  for (j=0; j<_nProcesses;j++){
     _aShouldApplyProcess[j]=NULL;
     _aShouldApplyProcess[j] = new bool [_nHydroUnits];
     ExitGracefullyIf(_aShouldApplyProcess[j]==NULL,"CModel::Initialize (_aShouldApplyProcess)",OUT_OF_MEMORY);
@@ -307,14 +307,14 @@ void CModel::Initialize(const optStruct &Options)
     WriteAdvisory("Because no processes with CANOPY variable have been specified, all rain interception will be directly moved to the atmosphere as if it had evaporated.",Options.noisy);
   }
   //--Check for empty HRU groups
-  for (int kk = 0; kk < _nHRUGroups; kk++){
+  for (kk = 0; kk < _nHRUGroups; kk++){
     if (_pHRUGroups[kk]->GetNumHRUs() == 0){
       string warn = "CModel::Initialize: HRU Group " + _pHRUGroups[kk]->GetName() + " is empty.";
       WriteAdvisory(warn,Options.noisy);
     }
   }
   //--Check for repeated HRU groups
-  for (int kk = 0; kk < _nHRUGroups; kk++){
+  for (kk = 0; kk < _nHRUGroups; kk++){
     for (int kkk = 0; kkk < kk; kkk++){
       if(StringToUppercase(_pHRUGroups[kk]->GetName()) == StringToUppercase(_pHRUGroups[kkk]->GetName())){
         string warn = "CModel::Initialize: Name of HRU Group " + _pHRUGroups[kk]->GetName() + " is repeated.";
@@ -323,7 +323,7 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
   //--check for stage observations not linked to valid reservoir
-  for(int i=0; i<_nObservedTS; i++){
+  for(i=0; i<_nObservedTS; i++){
     if(!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE"))
     {
       long SBID=_pObservedTS[i]->GetLocID();
@@ -334,7 +334,7 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
   //--check for inflow observations not linked to valid reservoir
-  for (int i = 0; i<_nObservedTS; i++) {
+  for (i = 0; i<_nObservedTS; i++) {
 	  if (!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_INFLOW"))
 	  {
 		  long SBID =_pObservedTS[i]->GetLocID();
@@ -345,7 +345,7 @@ void CModel::Initialize(const optStruct &Options)
 	  }
   }
   //--check for net inflow observations not linked to valid reservoir
-  for (int i = 0; i<_nObservedTS; i++) {
+  for (i = 0; i<_nObservedTS; i++) {
 	  if (!strcmp(_pObservedTS[i]->GetName().c_str(), "RESERVOIR_NETINFLOW"))
 	  {
 		  long SBID = _pObservedTS[i]->GetLocID();

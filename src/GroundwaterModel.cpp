@@ -619,7 +619,7 @@ vector<int> CGroundwaterModel::GetHRUsByNode(const int node)
 {
   vector<int> HRUs = {};
   //-- Obtain vector of HRUIDs for given cell
-  map<int, vector<int>>::iterator map_query;
+  map<int, vector<int> >::iterator map_query;
   map_query = _mHRUsByNode.find(node);
 
   //-- If not empty set to the return value
@@ -640,7 +640,7 @@ vector<int> CGroundwaterModel::GetNodesByHRU(const int HRUID)
 {
   vector<int> Cells = {};
   //-- Obtain vector of nodes given HRU
-  map<int, vector<int>>::iterator map_query;
+  map<int, vector<int> >::iterator map_query;
   map_query = _mNodesByHRU.find(HRUID);
 
   //-- If not empty set to the return value

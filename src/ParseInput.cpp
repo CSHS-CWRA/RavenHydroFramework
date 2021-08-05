@@ -270,6 +270,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_basinfile         =false;
   Options.write_interp_wts        =false;
   Options.write_demandfile        =false;
+  Options.write_simpleout         =false;
   Options.write_constitmass       =false;
   Options.suppressICs             =false;
   Options.period_ending           =false;
@@ -292,7 +293,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
   //Options.stateinfo_filename = "C:/temp/FEWS state_mods/state_mods.nc"; //TMP DEBUG
-  Options.paraminfo_filename = "C:/temp/FEWS state_mods/mods_rvp_ubc.nc"; //TMP DEBUG
+  //Options.paraminfo_filename = "C:/temp/FEWS state_mods/mods_rvp_ubc.nc"; //TMP DEBUG
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -458,6 +459,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteInterpolationWeights" )){code=179;}
     else if  (!strcmp(s[0],":HRUStorageOutput"          )){code=180;}//After corresponding DefineHRUGroup(s) command
     else if  (!strcmp(s[0],":WriteHRUStorageOutput"     )){code=180;}//After corresponding DefineHRUGroup(s) command
+    else if  (!strcmp(s[0],":WriteSimpleOutput"         )){code=181;}
     //...
     //--------------------SYSTEM OPTIONS -----------------------
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
@@ -1850,6 +1852,12 @@ bool ParseMainInputFile (CModel     *&pModel,
           pModel->SetOutputGroup(pModel->GetHRUGroup(kk));
         }
       }
+      break;
+    }
+    case(181):  //--------------------------------------------
+    {/*:WriteSimpleOutput*/
+      if(Options.noisy) { cout << "Write Simple Output" << endl; }
+      Options.write_simpleout=true;
       break;
     }
     case(199):  //--------------------------------------------
