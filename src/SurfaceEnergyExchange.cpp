@@ -134,7 +134,6 @@ double CmvPartitionEnergy::GetStorTemp(int iEnth,int iWatStor,const double &Tair
 /// \param *rates [out] rates of energy transfer from atmosphere to land and land to latent heat transfer [MJ/m2/d]
 //
 void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
-
                                           const CHydroUnit  *pHRU,
                                           const optStruct   &Options,
                                           const time_struct &tt,

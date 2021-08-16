@@ -321,6 +321,7 @@ public:/*-------------------------------------------------------*/
                                                        class_type *aPC,
                                                        int &nP,
                                                        const optStruct &Options) const;
+  class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
 
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );

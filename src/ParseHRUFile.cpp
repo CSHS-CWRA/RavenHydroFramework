@@ -148,7 +148,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         {int ID , string (no spaces) name, int down_ID, string profile, double length [km], bool gauged,{optional double Qref}}x nSubBasins
         :EndSubBasins
         -down_ID=-1 for basins not draining into other modeled basins
-        -profile can be 'NONE' for ROUTE_NONE option, but must be linked to actual profile otherwise
+        -profile can be 'NONE' for ROUTE_NONE or ROUTE_EXTERNAL option, but must be linked to actual profile otherwise
       */
       if (Options.noisy) {cout <<"Subbasin data..."<<endl;}
       if (Len!=1){pp->ImproperFormat(s);}
@@ -168,9 +168,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             pChan=CChannelXSect::StringToChannelXSect(string(s[3]));
             string error,error2;
             error="Parse HRU File: Unrecognized Channel profile code ("+string(s[3])+") in SubBasins command";
-            error2="Parse HRU File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE";
+            error2="Parse HRU File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE or ROUTE_EXTERNAL";
             ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE") && (Options.routing!=ROUTE_NONE),error.c_str() ,BAD_DATA_WARN);
-            ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE),error2.c_str(),BAD_DATA_WARN);
+            ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),error2.c_str(),BAD_DATA_WARN);
 
             if(!StringIsLong(s[0])){
               error="Parse HRU File: Subbasin ID \""+string(s[0])+"\" must be unique integer or long integer";

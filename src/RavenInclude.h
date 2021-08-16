@@ -363,7 +363,8 @@ enum routing_method
   ROUTE_DIFFUSIVE_WAVE,  ///< diffusive wave approximation
   ROUTE_DIFFUSIVE_VARY,  ///< variable celerity/diffusivity diffusive wave approach
   ROUTE_HYDROLOGIC,      ///< simple iterative mass balance approach dS/dt=I-O
-  ROUTE_TVD              ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
+  ROUTE_TVD,             ///< Total variation diminishing approach of Schwanenberg and Montero, 2016
+  ROUTE_EXTERNAL         ///< routing handled via external script/live file support
 };
 
 ////////////////////////////////////////////////////////////////////

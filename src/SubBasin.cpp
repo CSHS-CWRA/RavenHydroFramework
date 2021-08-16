@@ -913,16 +913,15 @@ double CSubBasin::GetBasinProperties(const string label)
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
 
-  else if(!label_n.compare("RESERVOIR_CREST_WIDTH")) {
+  else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) {
     if(_pReservoir!=NULL) {
       return _pReservoir->GetCrestWidth();
     }
     else{return 0.0;}
   }
   else{
-    return false;//bad string
+    return INDEX_NOT_FOUND;//bad string
   }
-  return true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets basin headwater status (called by model during subbasin initialization)
@@ -1237,8 +1236,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
   ExitGracefullyIf(_nHydroUnits==0,
                    "CSubBasin::Initialize: a SubBasin with no HRUs has been found", BAD_DATA);
-  ExitGracefullyIf((_pChannel==NULL) && (Options.routing!=ROUTE_NONE) ,
-                   "CSubBasin::Initialize: channel profile for basin may only be 'NONE' if Routing=ROUTE_NONE",BAD_DATA);
+  ExitGracefullyIf((_pChannel==NULL) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL) ,
+                   "CSubBasin::Initialize: channel profile for basin may only be 'NONE' if Routing=ROUTE_NONE or ROUTE_EXTERNAL",BAD_DATA);
 
   if (_pInflowHydro != NULL){_is_headwater=false;}
 
@@ -1314,7 +1313,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
     _channel_storage=0.0;
-    if (Options.routing!=ROUTE_NONE)
+    if ((Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL))
     {
       for (seg=0;seg<_nSegments;seg++)
       {
@@ -1954,8 +1953,8 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   // route in channel
   //==============================================================
   routing_method route_method;
-  if (_is_headwater){route_method=ROUTE_NONE;}
-  else              {route_method=Options.routing;}
+  if ((_is_headwater) && (route_method!=ROUTE_EXTERNAL)){route_method=ROUTE_NONE;}
+  else                                                  {route_method=Options.routing;}
 
   if ((route_method==ROUTE_MUSKINGUM) ||
       (route_method==ROUTE_MUSKINGUM_CUNGE))
@@ -2177,6 +2176,14 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     for(n=0;n<_nQinHist;n++) {
       aQout_new[_nSegments-1]+=_aRouteHydro[n]*_aQinHist[n];
     }
+  }
+  //==============================================================
+  else if (route_method==ROUTE_EXTERNAL)
+  {//In channel routing skipped, overridden flow from .rvl file used
+    for (seg=0;seg<_nSegments;seg++){
+      aQout_new[seg]=0.0;
+    }
+    aQout_new[_nSegments-1]=_aQout[_nSegments-1]; //flow is same as overriden flow from start of timestep
   }
   //==============================================================
   else if (route_method==ROUTE_NONE)

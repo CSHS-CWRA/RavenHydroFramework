@@ -444,6 +444,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   return false;
 #endif
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS Parameter update file
 ///
@@ -463,8 +464,6 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 #ifdef _RVNETCDF_
   int     ncid;          // NetCDF file id
   int     retval;        // return value of NetCDF routines
-  //size_t  att_len;       // length of the attribute's text
-  //nc_type att_type;      // type of attribute
 
   string paramfile=Options.paraminfo_filename;
 
@@ -491,14 +490,15 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
     return false;
   }
 
-  //sift through all attributes that include "_in_"
+  // Sift through all attributes that include "_in_"
+  //====================================================================
   int nvars[]={0};
   int nVars=0;
-  retval=nc_inq_nvars(ncid,nvars);       HandleNetCDFErrors(retval);
+  retval=nc_inq_nvars(ncid,nvars);                    HandleNetCDFErrors(retval);
   nVars=nvars[0];
 
   int *varids=new int[nVars];
-  retval=nc_inq_varids(ncid,nvars,varids); HandleNetCDFErrors(retval);
+  retval=nc_inq_varids(ncid,nvars,varids);            HandleNetCDFErrors(retval);
 
   cout<<"[PARAMFILE]: "<<" nVars="<<nVars<<endl;
 
@@ -506,8 +506,8 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
   string param_str;
   string class_str;
   char *varname=new char [256];
-  for (int j = 0; j < nVars; j++) {
-
+  for (int j = 0; j < nVars; j++) 
+  {
     retval=nc_inq_varname(ncid,varids[j],varname);    HandleNetCDFErrors(retval);
     cout<<"[PARAMFILE]: "<<" var="<<varname<<" ";
     namestr=varname;
@@ -517,30 +517,18 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
       param_str=namestr.substr(0,i);
       class_str=namestr.substr(i+4,1000);
       
-      //figure out if soil, veg, lult, or global parameter
+      //figure out if soil, veg, lult, subbasin, or global parameter
       class_type pclass=CLASS_UNKNOWN;
-      double pval;
-      soil_struct    S;
-      veg_struct     V;
-      surface_struct L;
-      global_struct  G;
-      pval=CSoilClass::GetSoilProperty(S,param_str,false);
-      if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SOIL;}
-      pval=CVegetationClass::GetVegetationProperty(V,param_str,false);
-      if (pval!=INDEX_NOT_FOUND){pclass=CLASS_VEGETATION;}
-      pval=CLandUseClass::GetSurfaceProperty(L,param_str,false);
-      if (pval!=INDEX_NOT_FOUND){pclass=CLASS_LANDUSE;}
-      pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
-      if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GLOBAL;}
-
+      pclass=pModel->ParamNameToParamClass(param_str,class_str);
+      
       if (pclass!=CLASS_UNKNOWN)
       {
         // check for valid class name
         bool bad=false;
-        if      (pclass==CLASS_SOIL      ){if (CSoilClass::StringToSoilClass(class_str)==NULL     ){bad=true;}}
-        else if (pclass==CLASS_VEGETATION){if (CVegetationClass::StringToVegClass(class_str)==NULL){bad=true;}}
-        else if (pclass==CLASS_LANDUSE   ){if (CLandUseClass::StringToLUClass(class_str)==NULL    ){bad=true;}}
-        
+        if      (pclass==CLASS_SOIL      ){if (CSoilClass      ::StringToSoilClass(class_str)==NULL){bad=true;}}
+        else if (pclass==CLASS_VEGETATION){if (CVegetationClass::StringToVegClass (class_str)==NULL){bad=true;}}
+        else if (pclass==CLASS_LANDUSE   ){if (CLandUseClass   ::StringToLUClass  (class_str)==NULL){bad=true;}}
+
         if (bad){
           string warn="ParseNetCDFParamFile:: unrecognized soil/veg/lult class found ("+class_str+") in FEWS parameter update file";
           WriteWarning(warn.c_str(),Options.noisy);
@@ -555,7 +543,7 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 
           nc_get_vars_float(ncid,varids[j],start,count,stridep,ip);    HandleNetCDFErrors(retval); 
       
-          pval=ip[start_time_index];
+          double pval=ip[start_time_index];
           cout<<" * ";
           cout<<" |"<<param_str<<"| ";
           cout<<" |"<<class_str<<"| ";

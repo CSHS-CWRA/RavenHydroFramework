@@ -497,7 +497,7 @@ void MassEnergyBalance( CModel            *pModel,
 
       gw_Q = 0.0;
       if (Options.modeltype == MODELTYPE_COUPLED)
-	  {
+	    {
         gw_Q = pGW2River->CalcRiverFlowBySB(p);      // [m3/d]
       }
 

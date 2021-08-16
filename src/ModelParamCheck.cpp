@@ -40,7 +40,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   // Routing algorithms parameters
   //----------------------------------------------------------------------
   // Routing Method
-  if((Options.routing==ROUTE_NONE) || (Options.routing==ROUTE_DIFFUSIVE_WAVE) || (Options.routing==ROUTE_DIFFUSIVE_VARY) || (Options.routing==ROUTE_PLUG_FLOW)
+  if((Options.routing==ROUTE_NONE) || (Options.routing==ROUTE_EXTERNAL) || (Options.routing==ROUTE_DIFFUSIVE_WAVE) || (Options.routing==ROUTE_DIFFUSIVE_VARY) || (Options.routing==ROUTE_PLUG_FLOW)
     || (Options.routing==ROUTE_STORAGECOEFF) || (Options.routing==ROUTE_MUSKINGUM) || (Options.routing==ROUTE_MUSKINGUM_CUNGE))
   {
     // Parameters are located in the RVH file?

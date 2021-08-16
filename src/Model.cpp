@@ -1760,16 +1760,47 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Determines parameter class (e.g., CLASS_GLOBAL or CLASS_SOIL) from parameter name and class name through slow search 
+///
+/// \param param_str [in] string for parameter name (e.g., BASEFLOW_COEFF)
+/// \param class_name [in] class name (e.g., FOREST) or SBID for subbasin parameters
+/// \return parameter class enum, or CLASS_UNKNOWN if the parameter is not found
+//
+class_type CModel::ParamNameToParamClass(const string param_str, const string class_name) const
+{
+  double pval;
+  class_type pclass=CLASS_UNKNOWN;
+  soil_struct    S;
+  veg_struct     V;
+  surface_struct L;
+  global_struct  G;
+  pval=CSoilClass::GetSoilProperty(S,param_str,false);
+  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SOIL;}
+  pval=CVegetationClass::GetVegetationProperty(V,param_str,false);
+  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_VEGETATION;}
+  pval=CLandUseClass::GetSurfaceProperty(L,param_str,false);
+  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_LANDUSE;}
+  pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
+  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GLOBAL;}
+  long SBID=s_to_l(class_name.c_str());
+  CSubBasin *pSB=GetSubBasinByID(SBID);
+  if (pSB != NULL) {
+    pval=pSB->GetBasinProperties(param_str);
+    if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SUBBASIN;}
+  }
+  return pclass;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Updates model parameter during course of simulation
 ///
 /// \param &ctype [in] parameter class type 
-/// \param &pname [in] parameter name
-/// \param &cname [in] parameter class name
-/// \param &value [in] updated parametre value
+/// \param &pname [in] valid parameter name
+/// \param &cname [in] valid parameter class name (or SBID as string for CLASS_SUBBASIN)
+/// \param &value [in] updated parameter value
 //
 void CModel::UpdateParameter(const class_type &ctype,const string pname,const string cname,const double &value)
 {
-  if(ctype==CLASS_SOIL)
+  if (ctype==CLASS_SOIL)
   {
     CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
   }
@@ -1788,6 +1819,17 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   else if(ctype==CLASS_GLOBAL)
   {
     CGlobalParams::SetGlobalProperty(pname,value);
+  }
+  else if(ctype==CLASS_SUBBASIN)
+  {
+    long SBID=s_to_l(cname.c_str()); //class name should be SBID in this case
+    CSubBasin *pSB=GetSubBasinByID(SBID);
+    if (pSB != NULL) {
+      pSB->SetBasinProperties(pname,value);
+    }
+    else {
+      WriteWarning("CModel::UpdateParameter: Unrecognized/invalid subbasin ID ("+to_string(SBID)+") in input",false);
+    }
   }
 }
 //////////////////////////////////////////////////////////////////

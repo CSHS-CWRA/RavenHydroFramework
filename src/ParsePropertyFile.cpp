@@ -1450,7 +1450,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   ExitGracefullyIf(num_parsed_profiles<1,
                    "No soil profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
   
-  ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE),
+  ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),
                    "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
   delete [] indices;
   for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
