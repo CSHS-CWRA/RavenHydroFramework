@@ -1953,8 +1953,8 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   // route in channel
   //==============================================================
   routing_method route_method;
+  route_method=Options.routing;
   if ((_is_headwater) && (route_method!=ROUTE_EXTERNAL)){route_method=ROUTE_NONE;}
-  else                                                  {route_method=Options.routing;}
 
   if ((route_method==ROUTE_MUSKINGUM) ||
       (route_method==ROUTE_MUSKINGUM_CUNGE))

@@ -6,7 +6,7 @@
 #include "ParseLib.h"
 #include "Forcings.h"
 
-void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *aStations, int &nStations); 
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, int &nStations); 
 
 /*****************************************************************
    Constructor/Destructor
@@ -1258,7 +1258,15 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   if (Options.noisy){ cout<<"Start reading time series for "<< VarNameNC << " from NetCDF file "<< FileNameNC << endl; }
   retval = nc_open(FileNameNC.c_str(), NC_NOWRITE, &ncid);   HandleNetCDFErrors(retval);
-  retval = nc_inq_varid(ncid,VarNameNC.c_str(),&varid_f);     HandleNetCDFErrors(retval);
+  if (retval != NC_NOERR) {
+    string warn="ReadTimeSeriesFromNetCDF : unable to open file "+FileNameNC;
+    ExitGracefully(warn.c_str(),BAD_DATA);
+  }
+  retval = nc_inq_varid(ncid,VarNameNC.c_str(),&varid_f);     
+  if (retval==NC_ENOTVAR) {
+    string warn="ReadTimeSeriesFromNetCDF : unable to find variable "+VarNameNC+" in file "+FileNameNC;
+    ExitGracefully(warn.c_str(),BAD_DATA);
+  }
 
   // -------------------------------
   // find "_FillValue" of forcing data

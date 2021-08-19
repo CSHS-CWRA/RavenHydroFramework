@@ -76,6 +76,9 @@ bool ParseInputFiles (CModel      *&pModel,
     }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;
   }
+  if (!ParseNetCDFRunInfoFile(pModel, Options)){
+    ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
+  }
 
   // Class Property file (.rvp)
   //--------------------------------------------------------------------------------
@@ -83,7 +86,7 @@ bool ParseInputFiles (CModel      *&pModel,
     ExitGracefully("Cannot find or read .rvp file",BAD_DATA);return false;
   }
   if (!ParseNetCDFParamFile(pModel, Options)) {
-    ExitGracefully("Cannot find or read NetCDF parameter file", BAD_DATA); return false;
+    ExitGracefully("Cannot find or read NetCDF parameter update file", BAD_DATA); return false;
   }
   //HRU Property file (.rvh)
   //--------------------------------------------------------------------------------
@@ -1720,8 +1723,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSRunInfoFile [filename.nc]*/
       if(Options.noisy) { cout << "FEWS Runinfo file" << endl; }
       Options.runinfo_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .nc extension!
-
-      ParseNetCDFRunInfoFile(pModel, Options);
       break;
     }
     case(109):  //--------------------------------------------
