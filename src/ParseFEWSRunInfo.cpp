@@ -35,7 +35,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   if(retval != NC_ENOTATT) 
   {
     HandleNetCDFErrors(retval);
-    retval = nc_inq_attlen  (ncid,varid_startt,"units",&att_len);                 HandleNetCDFErrors(retval);
+    retval = nc_inq_attlen (ncid,varid_startt,"units",&att_len);                  HandleNetCDFErrors(retval);
     char *unit_t=new char[att_len+1];
     retval = nc_get_att_text(ncid,varid_startt,"units",unit_t);                   HandleNetCDFErrors(retval);// read attribute text
     unit_t[att_len] = '\0';// add string determining character
@@ -119,6 +119,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       Options.run_name=runname;
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:RunName from NetCDF: "<<Options.run_name<<endl; }
+      cout << "[RUNINFO]: " << " run name: " << Options.run_name <<endl;
       delete[] runname;
     }
 
@@ -133,6 +134,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       g_suppress_warnings=(boolean=="true");
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenWarnings from NetCDF: "<<g_suppress_warnings<<endl; }
+      cout << "[RUNINFO]: " << " block warnings: " << g_suppress_warnings <<endl;
       delete[] boolean;
     }
 
@@ -150,6 +152,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
       }
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(boolean=="true")<<endl; }
       delete[] boolean;
+      cout << "[RUNINFO]: " << " block customout: " << (boolean=="true") <<endl;
     }
 
     //NoisyMode
@@ -165,6 +168,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;
+      cout << "[RUNINFO]: " << " noisymode: " << (boolean=="true") <<endl;
     }
 
     //SilentMode
@@ -181,21 +185,42 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
       
       if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;
+      cout << "[RUNINFO]: " << " silentmode: " << (boolean=="true") <<endl;
     }
 
     // Mode
     retval = nc_inq_attlen(ncid, varid_props, "Mode", &att_len);
-    if (retval != NC_ENOTATT)
+    if(retval != NC_ENOTATT)
     {
       HandleNetCDFErrors(retval);
       char* mode = new char[att_len];
-      retval = nc_get_att_text(ncid, varid_props, "Mode", mode);       HandleNetCDFErrors(retval);// read attribute text
+      retval = nc_get_att_text(ncid,varid_props,"Mode",mode);       HandleNetCDFErrors(retval);// read attribute text
 
       Options.run_mode=mode[0];//only uses first character
-      
-      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
+
+      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
       delete[] mode;
+      cout << "[RUNINFO]: " << " mode: " <<Options.run_mode <<endl;
     }
+
+    // AssimilateStreamflow
+    retval = nc_inq_attlen(ncid,varid_props,"AssimilateStreamflow",&att_len);
+    if(retval != NC_ENOTATT)
+    {
+      HandleNetCDFErrors(retval);
+      char* boolean = new char[att_len + 1];
+      retval = nc_get_att_text(ncid,varid_props,"AssimilateStreamflow",boolean);       HandleNetCDFErrors(retval);// read attribute text
+      boolean[att_len] = '\0';// add string determining character
+
+      Options.assimilate_flow = (boolean == "true");
+
+      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (boolean == "true") << endl; }
+      delete[] boolean;
+      cout << "[RUNINFO]: " << " AssimilateStreamflow: " << (boolean=="true") <<endl;
+    }
+  }
+  else {
+    WriteWarning("ParseNetCDFRunInfoFile: Properties variable not found",Options.noisy);
   }
 
   retval = nc_close(ncid);         HandleNetCDFErrors(retval);
@@ -217,11 +242,12 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 // The state info file includes:
 // 1) 'time' and 'stations' dimensions
 // 2)	A vector named "station_id" of size[1:stations] which includes HRU IDs which reference the HRUID used in the Raven .rvh file. 
-//  The index i of each entry will be the same as that used by the matrix in part 2. 
+//  The index i of each entry will be the same as that used by the matrix in part 3. 
 // 3)	One or more matrices of size[1:time,1:stations] which includes the state variable being updated,using the 
 //  same indexing[i=1:stations] as the vector of HRUIDs. Blank values will not be updated. Raven model HRUs with IDs 
 //  not in this list will not be updated. HRUIDs in this list but not in Raven model will throw a warning to RavenErrors.txt.
 //  The naming convention of this attribute is equivalent to the raven state variable tag,e.g.,SNOW,PONDED_WATER,SOIL[0]. 
+//  The state variable corresponding to the model start time will be used for initialization; all other values in the time vector are ignored
 //  Note : this ONLY looks for state variables that are in model, all other state variable arrays will be ignored
 //
 bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
@@ -256,7 +282,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
     time_struct tt;
     JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
     string warn = "ParseNetCDFStateFile: Model start time ("+tt.date_string+" "+ DecDaysToHours(Options.julian_start_day)+") does not occur during time window provided in NetCDF state update file";
-    ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    ExitGracefully(warn.c_str(), BAD_DATA);
     return false;
   }
 
@@ -394,6 +420,27 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Parses Deltares FEWS Flow State update file
+///
+/// \param *&pModel [out] Reference to model object
+/// \param &Options [out] Global model options information
+/// \return True if operation is successful
+//
+// The flow state update file includes:
+// 1) 'time' and 'stations' dimensions
+// 2)	A vector named "station_id" of size[1:stations] which includes Subbasin IDs which reference the Subbasin used in the Raven .rvh file. 
+//  The index i of each entry will be the same as that used by the matrix in part 3. 
+// 3)	One or more matrices of size[1:time,1:stations] which includes the flow/stage state variable being initialized,using the 
+//  same indexing[i=1:stations] as the vector of SBIDs. Blank values will not be updated. Raven model subbasins with IDs 
+//  not in this list will not be updated. SBIDs in this list but not in Raven model will throw a warning to RavenErrors.txt. 
+// .The state variable corresponding to the model start time will be used for initialization of flow/stage; all other values in the time vector are ignored
+//  The naming convention of this attribute is one of: {QOUT, STAGE,  }
+//
+bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
+  return false;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS Parameter update file
 ///
 /// \param *&pModel [out] Reference to model object
@@ -405,7 +452,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 // 2) Vectors of size (ntime) with parameter time series; these are named PARAM_in_CLASS where
 //    PARAM is a valid parameter name and CLASS is a valid soil class, veg class, land use class, or GLOBALS 
 //
-bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
+bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
 {
   if (Options.paraminfo_filename == "") { return true; }
 
@@ -417,6 +464,8 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 
   if(Options.noisy) { cout<<"Opening FEWS parameter info file "<<paramfile<<endl; }
   retval = nc_open(paramfile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+
+  cout<<"[PARAMFILE]: "<<" OPEN"<<endl;
 
   //Get information from time vector
   //====================================================================
@@ -514,10 +563,12 @@ bool ParseNetCDFParamFile(CModel*& pModel, optStruct& Options)
 
   retval = nc_close(ncid);
 
-  ExitGracefully("PARSE FEWS PARAM FILE",STUB); //TMP DEBUG
 #endif
   return true;
 }
+
+
+
 //////////////////////////////////////////////////////////////////
 /// \brief Extracts time array info and timestep index within NetCDF time() array corresponding to Raven model start time 
 ///
@@ -574,6 +625,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
   delete[] unitstr;
 #endif
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Extracts station array info from Deltares FEWS-generated NetCDF file 
 ///

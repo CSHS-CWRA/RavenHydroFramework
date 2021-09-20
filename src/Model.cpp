@@ -1782,7 +1782,14 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   if (pval!=INDEX_NOT_FOUND){pclass=CLASS_LANDUSE;}
   pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
   if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GLOBAL;}
+ // pval=CGauge::GetGaugeProperty(0,param_str,false);
+ //if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GAUGE;}
+
   long SBID=s_to_l(class_name.c_str());
+  if( (strlen(class_name.c_str())>8) && //also accept SUBBASIN32 instead of 32
+      (!strcmp(class_name.substr(0,8).c_str(),"SUBBASIN")) ) {
+    SBID=s_to_l(class_name.substr(8,strlen(class_name.c_str())-8).c_str());
+  }
   CSubBasin *pSB=GetSubBasinByID(SBID);
   if (pSB != NULL) {
     pval=pSB->GetBasinProperties(param_str);
@@ -1795,7 +1802,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
 ///
 /// \param &ctype [in] parameter class type 
 /// \param &pname [in] valid parameter name
-/// \param &cname [in] valid parameter class name (or SBID as string for CLASS_SUBBASIN)
+/// \param &cname [in] valid parameter class name (or SBID as string for CLASS_SUBBASIN or gauge ID as string for CLASS_GAUGE)
 /// \param &value [in] updated parameter value
 //
 void CModel::UpdateParameter(const class_type &ctype,const string pname,const string cname,const double &value)
@@ -1819,6 +1826,10 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   else if(ctype==CLASS_GLOBAL)
   {
     CGlobalParams::SetGlobalProperty(pname,value);
+  }
+  else if(ctype==CLASS_GAUGE)
+  {
+    //CGauge::SetGaugeProperty(s_to_i(cname.c_str()),pname,value);
   }
   else if(ctype==CLASS_SUBBASIN)
   {

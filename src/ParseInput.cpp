@@ -549,7 +549,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":ModelType"                 )){code=500; }//AFTER SoilModel Commmand
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=501;}
     else if  (!strcmp(s[0],":Drain"                     )){code=503;}
-    else if  (!strcmp(s[0],":Recharge"                  )){code=504;}
 
     ExitGracefullyIf((code>200) && (code<300) && (pModel==NULL),
                      "ParseMainInputFile: :HydrologicProcesses AND :SoilModel commands must be called before hydrologic processes are specified",BAD_DATA);
@@ -1975,12 +1974,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_UBC"         )){itype=INF_UBC;       }
       else if (!strcmp(s[1],"INF_PARTITION"   )){itype=INF_RATIONAL;  }
       else if (!strcmp(s[1],"INF_GR4J"        )){itype=INF_GR4J;      }
-      else if (!strcmp(s[1],"INF_SCS"         )){itype=INF_SCS;       }
+      else if (!strcmp(s[1],"INF_SCS"              )){itype=INF_SCS;       }
       else if (!strcmp(s[1],"INF_SCS_NOABSTRACTION")){itype=INF_SCS_NOABSTRACTION;  }
-      else if (!strcmp(s[1],"INF_HMETS"       )){itype=INF_HMETS;     }
-      else if (!strcmp(s[1],"INF_ALL_INFILTRATES")) { itype=INF_ALL_INFILTRATES; }
-      else if (!strcmp(s[1],"INF_XINANXIANG"  )) { itype=INF_XINANXIANG; }
-      else if (!strcmp(s[1],"INF_PDM"         )) { itype=INF_PDM; }
+      else if (!strcmp(s[1],"INF_HMETS"            )){itype=INF_HMETS;     }
+      else if (!strcmp(s[1],"INF_ALL_INFILTRATES"  )){itype=INF_ALL_INFILTRATES; }
+      else if (!strcmp(s[1],"INF_XINANXIANG"       )){itype=INF_XINANXIANG; }
+      else if (!strcmp(s[1],"INF_PDM"              )){itype=INF_PDM; }
       
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
@@ -2602,34 +2601,52 @@ bool ParseMainInputFile (CModel     *&pModel,
        :Recharge RECHARGE_FROMFILE ATMOS_PRECIP SOIL[?]*/
       if(Options.noisy) { cout <<"Recharge process"<<endl; }
       if(Len<4) { ImproperFormatWarning(":Recharge",p,Options.noisy); break; }
-      recharge_type rech_type=RECHARGE_FROMFILE;
+      recharge_type   rech_type =RECHARGE_FROMFILE;
+      gwrecharge_type rech_type2=RECHARGE_FLUX;
+      int rech_typ=1;
 
       if     (!strcmp(s[1],"RECHARGE_CONSTANT"        )) { rech_type=RECHARGE_CONSTANT; }
       else if(!strcmp(s[1],"RECHARGE_FROMFILE"        )) { rech_type=RECHARGE_FROMFILE; }
       else if(!strcmp(s[1],"RAVEN_DEFAULT"            )) { rech_type=RECHARGE_FROMFILE; }
       else if(!strcmp(s[1],"RECHARGE_CONSTANT_OVERLAP")) { rech_type=RECHARGE_CONSTANT_OVERLAP; }
+      else if(!strcmp(s[1],"RECHARGE_DATA"            )) {rech_type2=RECHARGE_HRU_DATA; rech_typ=2;}
+      else if(!strcmp(s[1],"RECHARGE_FLUX"            )) {rech_type2=RECHARGE_FLUX;     rech_typ=2;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized recharge process representation",BAD_DATA);
       }
-      CmvRecharge::GetParticipatingStateVarList(rech_type,tmpS,tmpLev,tmpN);
-      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+      if(rech_typ==1) 
+      {
+        CmvRecharge::GetParticipatingStateVarList(rech_type,tmpS,tmpLev,tmpN);
+        pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
-      pModel->AddStateVariables(tmpS,tmpLev,1);
+        tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
+        pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      if(rech_type==RECHARGE_FROMFILE){
-        pMover=new CmvRecharge(rech_type,ParseSVTypeIndex(s[3],pModel),0);
+        if(rech_type==RECHARGE_FROMFILE) {
+          pMover=new CmvRecharge(rech_type,ParseSVTypeIndex(s[3],pModel),0);
+        }
+        else {
+          int Conns=1;
+          if(Len == 2) { Conns = 1; }
+          else if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
+          pMover=new CmvRecharge(rech_type,Conns);
+        }
+        AddProcess(pModel,pMover,pProcGroup);
       }
-      else {
-        int Conns=1;
-        if     (Len == 2) { Conns = 1; }
-        else if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
-        pMover=new CmvRecharge(rech_type,Conns);
+      else //Groundwater recharge class
+      {
+        CGWRecharge::GetParticipatingStateVarList(tmpS,tmpLev,tmpN);
+        pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+        tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
+        pModel->AddStateVariables(tmpS,tmpLev,1);
+
+        pGW = pModel->GetGroundwaterModel();
+        pMover = new CGWRecharge(pGW,rech_type2,ParseSVTypeIndex(s[2],pModel));
+        AddProcess(pModel,pMover,pProcGroup);
+        pGW->AddProcess(GWRECHARGE,pMover);
       }
-      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
-
     case(235):  //----------------------------------------------
     {/*Blowing snow redistribution & Sublimation
        :BlowingSnow PBSM MULTIPLE MULTIPLE*/
@@ -3096,32 +3113,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pGW->AddProcess(DRAIN, pMover);
       break;
     }
-    case(504) :  //----------------------------------------------
-    {/*:Recharge
-     :Recharge [string method] SOIL[?] GROUNDWATER */
-      if (Options.noisy){ cout << "Recharge GWSW Process" << endl; }
-      if (Len<4){ ImproperFormatWarning(":Recharge", p, Options.noisy); break; }
-      
-      //-- Determine Recharge Type
-      gwrecharge_type rech_type=RECHARGE_FLUX;
-      if      (!strcmp(s[1],"RECHARGE_DATA"   )){rech_type=RECHARGE_HRU_DATA;}
-      else if (!strcmp(s[1],"RECHARGE_FLUX"   )){rech_type=RECHARGE_FLUX;}
-      //else if (!strcmp(s[1],"RECHARGE_COEF" )){rech_type=RECHARGE_COEF;}  TBA
-      else {
-        ExitGracefully("ParseMainInputFile: Unrecognized recharge process representation",BAD_DATA_WARN); break;
-      }
-
-      CGWRecharge::GetParticipatingStateVarList(tmpS, tmpLev, tmpN);
-      pModel->AddStateVariables(tmpS, tmpLev, tmpN);
-      tmpS[0]=CStateVariable::StringToSVType(s[2],tmpLev[0],true);
-      pModel->AddStateVariables(tmpS,tmpLev,1);
-
-      pGW = pModel->GetGroundwaterModel();
-      pMover = new CGWRecharge(pGW, rech_type, ParseSVTypeIndex(s[2],pModel));
-      AddProcess(pModel, pMover, pProcGroup);
-      pGW->AddProcess(GWRECHARGE, pMover);
-      break;
-    }
+    
     default://----------------------------------------------
     {
       char firstChar = *(s[0]);

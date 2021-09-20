@@ -1203,7 +1203,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
 /// \param  VarNameNC           [in] name of variable in NetCDF
 /// \param  DimNamesNC_stations [in] name of station dimension (optional; default=None)
 /// \param  DimNamesNC_time     [in] name of time dimension (mandatory)
-/// \param  StationIdx          [in] idx of station to be read (or -1 if to be determined from FEWS station_id variable) (only used if DimNamesNC_stations not None)
+/// \param  StationIdx          [in] idx of station to be read (or -1 if to be determined from FEWS station_id variable via FROM_STATION_VAR) (only used if DimNamesNC:stations not None)
 /// \param  TimeShift           [in] time shift of data (fractional day by which read data should be shifted)
 /// \param  LinTrans_a,         [in] linear transformation: a in new = a*data+b
 /// \param  LinTrans_b          [in] linear transformation: b in new = a*data+b
@@ -1445,7 +1445,8 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // -------------------------------
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) 
   {
-    if (StationIdx == -1) { //special indicator that station index determined via subbasin/HRUID and station_id NetCDF variable array
+    if (StationIdx == -1) //FROM_STATION_VAR
+    { //special indicator that station index determined via subbasin/HRUID and station_id NetCDF variable array
       int stat_dimid;
       int stat_varid;
       long *aStations=NULL;

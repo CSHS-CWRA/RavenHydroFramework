@@ -513,6 +513,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   }
   else if (Options.interception_factor == PRECIP_ICEPT_HEDSTROM) {
     aP[nP] = "MAX_SNOW_CAPACITY"; aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "MAX_SNOW_LOAD";     aPC[nP] = CLASS_VEGETATION; nP++;
   }
   else if ((Options.interception_factor == PRECIP_ICEPT_EXPLAI) ||
     (Options.interception_factor == PRECIP_ICEPT_NONE)) {

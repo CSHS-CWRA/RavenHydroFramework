@@ -50,7 +50,10 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     double solar_noon=pHRU->GetSolarNoon();
     double aspect    =pHRU->GetAspect();
 
-    return ClearSkySolarRadiation(tt.julian_day,Options.timestep,latrad,lateq,slope,aspect,F->day_angle,F->day_length,solar_noon,dew_pt,ET_rad,(Options.timestep>=1.0));
+    return ClearSkySolarRadiation(tt.julian_day, Options.timestep,
+                                  latrad, lateq, slope, aspect,
+                                  F->day_angle, F->day_length,
+                                  solar_noon, dew_pt, ET_rad,(Options.timestep>=1.0));
 
     break;
   }

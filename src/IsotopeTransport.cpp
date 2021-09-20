@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------
+﻿/*----------------------------------------------------------------
 Raven Library Source Code
 Copyright (c) 2008-2021 the Raven Development Team
 ----------------------------------------------------------------
@@ -45,10 +45,10 @@ double CIsotopeModel::GetConcentration(const double& mass,const double& vol)
 //////////////////////////////////////////////////////////////////
 /// \brief returns advection correction factor for isotope
 /// handles enrichment factor for evaporating waters 
-/// \param pHRU [in] pointer to HRU of interest
+/// \param pHRU       [in] pointer to HRU of interest
 /// \param iFromWater [in] index of "from" water storage state variable
-/// \param iToWater [in] index of "to" water storage state variable
-/// \param Cs [in] isotopic concentration of source water [mg/mg]
+/// \param iToWater   [in] index of "to" water storage state variable
+/// \param Cs         [in] isotopic concentration of source water [mg/mg]
 /// 
 double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& Cs) const
 {  
@@ -58,14 +58,14 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
   if(toType==ATMOSPHERE) // handles all enrichment due to evaporation
   {
     //From Stadnyk-Falcone, PhD Thesis, University of Waterloo 2008
-    double dE;     // evaporative composition [o/oo]
-    double dL;     // lake/wetland composition [o/oo]
+    double dE;     // evaporative composition    [o/oo]
+    double dL;     // lake/wetland composition   [o/oo]
     double dP;     // meteoric water composition [o/oo]
-    double dA;     // atmospheric composition [o/oo]
+    double dA;     // atmospheric composition    [o/oo]
     double dStar;  // limiting steady state composition of source water (not used here) [o/oo]
 
     double h=pHRU->GetForcingFunctions()->rel_humidity;
-    double T=pHRU->GetForcingFunctions()->temp_ave+ZERO_CELSIUS;
+    double T=pHRU->GetForcingFunctions()->temp_ave+ZERO_CELSIUS; //[K]
     
     //TMP DEBUG - this should not be this hard. Should have a _pTransModel->GetConcentration(k,c,ATMOS_PRECIP,m=0);
     int iAtmPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
@@ -73,10 +73,8 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     int i         =_pModel->GetStateVarIndex(CONSTITUENT,m);
     dP=_pTransModel->GetConcentration(pHRU->GetGlobalIndex(),i); //[o/oo]
 
-    //dP=ConcToComposition(dP);//[mg/mg]->[o/oo]
-    dL=ConcToComposition(Cs);//[mg/mg]->[o/oo]
+    dL=ConcToComposition(Cs);//[mg/mg]->[o/oo] // is this necessary? I feel this should be specified in [o/oo]?
     
-
     double eta=1.0;        //turbulence parameter = 1 for soil, 0.5 for open water, 0.6 for wetlands
     double hprime=1.0;     //1.0 for small water bodies, 0.88 for large lakes/reservoirs 
     double theta;          //advection correction
@@ -107,7 +105,8 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
 
     dA   =((  dP/TO_PER_MILLE-ep_star)/alpha_star)*TO_PER_MILLE;//[o/oo]
     
-    //conversion - all compositions in o/oo must be converted to 
+    //conversion - all compositions in o/oo must be converted to concentrations
+    // from Gat & Levy (1978), Gat (1981)
     dStar=(h*dA/TO_PER_MILLE+beta*(1-h)+ep_star/alpha_star)/(h - beta*(1-h) - ep_star/alpha_star)*TO_PER_MILLE; //[o/oo]
 
     dE   =((dL/TO_PER_MILLE-ep_star)/alpha_star - h*dA/TO_PER_MILLE - beta*(1-h)) / ((1-h)*(1+beta))*TO_PER_MILLE; //[o/oo]
@@ -116,6 +115,17 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     double C_L=CompositionToConc(dL);
     return min(C_E/C_L,1.0);
   }
+
+  else if ( ((toType==SNOW_LIQ    ) || (fromType==SNOW)) ||
+            ((toType==PONDED_WATER) || (fromType==SNOW)) ) //snow melt - enriches snow
+  {
+    // minus refreeze offset
+
+  }
+  else if ( ((fromType==SNOW_LIQ) || (toType==SNOW)) ) //refreeze - dilutes snow
+  {
+  }
+  
   return 1.0;
 }
 //////////////////////////////////////////////////////////////////
@@ -139,22 +149,48 @@ void CIsotopeModel::WriteEnsimMinorOutput(const optStruct& Options,const time_st
   this->WriteMinorOutput(Options,tt);//Ensim format not supported by isotope model
 }
 
-//R-values are O18/O16 ratio
-//concentrations are 18O/(16O+18O) =%18O by mass (<1)
+//R-values       are O18/O16 mass ratio [mg/mg]
+//concentrations are 18O/(16O+18O) =%18O by mass [mg/mg] (<1)
+//compositions   are delta values = δ=(R/RV-1)*10^3
+
+//////////////////////////////////////////////////////////////////
+/// \brief converts from  R val (ratio of, e.g., 18O/16O) [mg/mg] to concentration [mg/mg]
+/// \param R [in] R-value [mg/mg]
+//
 double CIsotopeModel::RvalToConcentration(const double &Rv) const
 {
   return Rv/(Rv+1);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief converts from concentration [mg/mg] to R val (ratio of, e.g., 18O/16O) [mg/mg]
+/// \param conc [in] [mg/mg]
+//
 double CIsotopeModel::ConcentrationToRval(const double &conc) const
 {
   return conc/(1-conc);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief converts from concentration [mg/mg] to delta value (composition) [o/oo] 
+/// \param conc [in] [mg/mg]
+//
 double CIsotopeModel::ConcToComposition(const double &conc) const
 {
-  return (conc/(1-conc)/RV_VMOW-1.0)*TO_PER_MILLE; //only valid for O18!
+  double RV;
+  if(_isotope==ISO_O18) { RV=RV_VMOW_O18; }
+  else                  { RV=RV_VMOW_H2;}
+  return (conc/(1-conc)/RV-1.0)*TO_PER_MILLE; //δ
+
 }
+//////////////////////////////////////////////////////////////////
+/// \brief converts from delta value (composition) [o/oo]  to concentration [mg/mg] to 
+/// \param d [in] δ-value (composition) [o/oo]
+//
 double CIsotopeModel::CompositionToConc(const double& d) const
 {
-  double R=((d/TO_PER_MILLE)+1.0)*RV_VMOW; //only valid for O18!
+  double RV;
+  if(_isotope==ISO_O18) { RV=RV_VMOW_O18; }
+  else                  { RV=RV_VMOW_H2;}
+  
+  double R=((d/TO_PER_MILLE)+1.0)*RV; 
   return RvalToConcentration(R);
 }
