@@ -112,11 +112,10 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].temp_month_ave  =_pGauges[g]->GetMonthlyAveTemp  (mo);
     Fg[g].PET_month_ave   =_pGauges[g]->GetMonthlyAvePET   (mo);
 
-    //if (Options.uses_full_data)
-    //{ // \todo [optimize] should add Options.uses_full_data to be calculated if LW,SW,etc. methods=USE_DATA or otherwise need data streams
     Fg[g].LW_radia_net    =_pGauges[g]->GetForcingValue    (F_LW_RADIA_NET,nn);
     Fg[g].SW_radia        =_pGauges[g]->GetForcingValue    (F_SW_RADIA,nn);
     Fg[g].SW_radia_net    =_pGauges[g]->GetForcingValue    (F_SW_RADIA_NET,nn);
+    Fg[g].SW_radia_subcan =_pGauges[g]->GetForcingValue    (F_SW_RADIA_SUBCAN,nn);
     Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
     Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
     Fg[g].SW_radia_unc    =Fg[g].SW_radia;
@@ -199,6 +198,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           F.LW_radia_net   += wt * Fg[g].LW_radia_net;
           F.SW_radia       += wt * Fg[g].SW_radia;
           F.SW_radia_net   += wt * Fg[g].SW_radia_net;
+          F.SW_radia_subcan+= wt * Fg[g].SW_radia_subcan;
           F.PET_month_ave  += wt * Fg[g].PET_month_ave;
           F.potential_melt += wt * Fg[g].potential_melt;
           F.PET            += wt * Fg[g].PET;
@@ -251,7 +251,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         new_chunk1 = false; new_chunk2 = false; new_chunk3 = false;
-        if(pre_gridded) { new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time); }
+        if(pre_gridded)  { new_chunk1 = pGrid_pre-> ReadData(Options,tt.model_time); }
         if(snow_gridded) { new_chunk2 = pGrid_snow->ReadData(Options,tt.model_time); }
         if(rain_gridded) { new_chunk3 = pGrid_rain->ReadData(Options,tt.model_time); }
 
@@ -280,7 +280,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         // read data (actually new chunk is only read if timestep is not covered by old chunk anymore)
         new_chunk1 = new_chunk2 = new_chunk3 = new_chunk4 = false;
-        if(temp_ave_gridded) { new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
+        if(temp_ave_gridded)       { new_chunk1 =       pGrid_tave->ReadData(Options,tt.model_time); }
         if(temp_daily_ave_gridded) { new_chunk2 = pGrid_daily_tave->ReadData(Options,tt.model_time); }
         if(temp_daily_min_gridded) { new_chunk3 = pGrid_daily_tmin->ReadData(Options,tt.model_time); }
         if(temp_daily_max_gridded) { new_chunk4 = pGrid_daily_tmax->ReadData(Options,tt.model_time); }
@@ -437,11 +437,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       F.SW_radia = CRadiation::EstimateShortwaveRadiation(Options,&F,_pHydroUnits[k],tt,F.ET_radia);
       F.SW_radia_unc = F.SW_radia;
       F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F,elev);
-      F.SW_radia *= CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
+
+      F.SW_radia_subcan = F.SW_radia * CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
       
       if(Options.SW_radia_net == NETSWRAD_CALC)
       {
-        F.SW_radia_net = F.SW_radia*(1 - _pHydroUnits[k]->GetTotalAlbedo());
+        F.SW_radia_net        = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo());
+//      F.SW_radia_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetLandAlbedo());
       }//otherwise, uses data
 
       F.LW_radia_net=CRadiation::EstimateLongwaveRadiation(GetStateVarIndex(SNOW),Options,&F,_pHydroUnits[k],F.LW_incoming);

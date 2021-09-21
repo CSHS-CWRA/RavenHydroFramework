@@ -65,6 +65,7 @@ public:/*-------------------------------------------------------*/
   double   GetSnowfallCorr    () const;
   double   GetCloudMinRange   () const;
   double   GetCloudMaxRange   () const;
+  double   GetGaugeProperty   (const string &pname) const;
   bool     TimeSeriesExists   (const forcing_type ftype) const;
 
   //special accessors (built from multiple time series):
@@ -85,7 +86,7 @@ public:/*-------------------------------------------------------*/
   void     SetLongitude       (const double &l);
   void     SetElevation       (const double &e);
   void     SetMeasurementHt   (const double &ht);
-  bool     SetProperty        (const string prop_tag, const double &value);
+  bool     SetGaugeProperty   (const string prop_tag, const double &value);
 
   void     AddTimeSeries        (CTimeSeries *pTS, const forcing_type ftype);
 

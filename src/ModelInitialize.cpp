@@ -276,6 +276,7 @@ void CModel::Initialize(const optStruct &Options)
   _HYDRO_ncid    = -9;   // output file ID for Hydrographs.nc         (-9 --> not opened)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
+  _RESSTAGE_ncid = -9;   // output file ID for ReservoirStages.nc     (-9 --> not opened)
 
   //Initialize Custom Output
   //--------------------------------------------------------------

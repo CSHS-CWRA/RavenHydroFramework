@@ -302,7 +302,7 @@ void     CGauge::SetMeasurementHt     (const double &ht){_meas_ht=ht;}
 /// \param &value [in] Set value
 /// \return True if operation was successful, false otherwise (unrecognized string)
 //
-bool     CGauge::SetProperty          (const string prop_tag, const double &value)
+bool     CGauge::SetGaugeProperty          (const string prop_tag, const double &value)
 {
   string label_n = StringToUppercase(prop_tag);
   if      (!label_n.compare("RAINFALL_CORR"   ))  {_rainfall_corr=value;}
@@ -313,11 +313,12 @@ bool     CGauge::SetProperty          (const string prop_tag, const double &valu
   else if (!label_n.compare("LATITUDE"        ))  {_Loc.latitude=value;}
   else if (!label_n.compare("LONGITUDE"       ))  {_Loc.longitude=value;}
   else{
-    WriteWarning("CGauge::SetProperty: unrecognized gauge property "+prop_tag,false);
+    WriteWarning("CGauge::SetGaugeProperty: unrecognized gauge property "+prop_tag,false);
     return false;//bad string
   }
   return true;
 }
+
 /*****************************************************************
    Add Precip, Temperature Time Series
 *****************************************************************/
@@ -444,7 +445,26 @@ double CGauge::GetAverageSnowFrac       (const int nn) const
   if ((snow+rain)==0){return 0.0;}
   return snow/(snow+rain);
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Gets gauge property
+/// \param pname [in] parameter name (string)
+/// \return parameter value if pname is valid, DOESNT_EXIST otherwise (unrecognized string)
+//
+double     CGauge::GetGaugeProperty          (const string &pname) const
+{
+  string label_n = StringToUppercase(pname);
+  if      (!label_n.compare("RAINFALL_CORR"   ))  { return _rainfall_corr;}
+  else if (!label_n.compare("SNOWFALL_CORR"   ))  { return _snowfall_corr;}
+  else if (!label_n.compare("ELEVATION"       ))  { return _elevation;}
+  else if (!label_n.compare("CLOUD_MIN_RANGE" ))  { return _cloud_min_temp;}
+  else if (!label_n.compare("CLOUD_MAX_RANGE" ))  { return _cloud_max_temp;}
+  else if (!label_n.compare("LATITUDE"        ))  { return _Loc.latitude;}
+  else if (!label_n.compare("LONGITUDE"       ))  { return _Loc.longitude;}
+  else{
+    WriteWarning("CGauge::GetGaugeProperty: unrecognized gauge property "+pname,false);
+    return DOESNT_EXIST;
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average forcing function value between time t and t+tstep
 /// \param f [in] desired forcing function

@@ -41,6 +41,7 @@ void ZeroOutForcings(force_struct &F)
   F.cloud_cover=0.0;
   F.ET_radia=0.0;
   F.SW_radia=0.0;
+  F.SW_radia_subcan=0.0;
   F.LW_incoming=0.0;
   F.SW_radia_net=0.0;
   F.LW_radia_net=0.0;
@@ -101,6 +102,7 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="SW_RADIA"         ){return F_SW_RADIA;}
   else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}//alias
   else if (f=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
+  else if (f=="SW_RADIA_SUBCAN"  ){return F_SW_RADIA_SUBCAN;}
   else if (f=="LW_INCOMING"      ){return F_LW_INCOMING;}
   else if (f=="LW_RADIA"         ){return F_LW_RADIA_NET;}//alias
   else if (f=="LONGWAVE"         ){return F_LW_RADIA_NET;}//alias
@@ -171,8 +173,9 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
   else if (ftype==F_ET_RADIA        ){return f.ET_radia;}
   else if (ftype==F_SW_RADIA        ){return f.SW_radia;}
   else if (ftype==F_SW_RADIA_UNC    ){return f.SW_radia_unc;}
-  else if (ftype==F_LW_INCOMING     ){return f.LW_incoming;}
+  else if (ftype==F_SW_RADIA_SUBCAN ){return f.SW_radia_subcan;}
   else if (ftype==F_SW_RADIA_NET    ){return f.SW_radia_net;}
+  else if (ftype==F_LW_INCOMING     ){return f.LW_incoming;}
   else if (ftype==F_LW_RADIA_NET    ){return f.LW_radia_net;}
 
   else if (ftype==F_DAY_LENGTH      ){return f.day_length;}
@@ -237,8 +240,9 @@ string GetForcingTypeUnits(forcing_type ftype)
   case F_ET_RADIA:        {units="MJ/m2/d"; break;}
   case F_SW_RADIA:        {units="MJ/m2/d"; break;}
   case F_SW_RADIA_UNC:    {units="MJ/m2/d"; break;}
-  case F_LW_INCOMING:     {units="MJ/m2/d"; break;}
+  case F_SW_RADIA_SUBCAN: {units="MJ/m2/d"; break;}
   case F_SW_RADIA_NET:    {units="MJ/m2/d"; break;}
+  case F_LW_INCOMING:     {units="MJ/m2/d"; break;}
   case F_LW_RADIA_NET:    {units="MJ/m2/d"; break;}
 
   case F_DAY_LENGTH:      {units="d"; break;}
@@ -299,6 +303,7 @@ string ForcingToString(const forcing_type ftype)
   case F_ET_RADIA:        {fstring="ET_RADIA"; break;}
   case F_SW_RADIA:        {fstring="SW_RADIA"; break;}
   case F_SW_RADIA_UNC:    {fstring="SW_RADIA_UNC"; break;}
+  case F_SW_RADIA_SUBCAN: {fstring="SW_RADIA_SUBCAN"; break;}
   case F_LW_INCOMING:     {fstring="LW_INCOMING"; break;}
   case F_SW_RADIA_NET:    {fstring="SW_RADIA_NET"; break;}
   case F_LW_RADIA_NET:    {fstring="LW_RADIA_NET"; break;}

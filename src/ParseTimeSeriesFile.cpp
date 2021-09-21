@@ -205,7 +205,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(1):  //----------------------------------------------
-    {/*:Gauge [optional name]*/
+    {/*:Gauge [optional name (no spaces)]*/
       if (Options.noisy) {cout <<"Gauge Information Begin"<<endl;}
       char tmp[64];
       sprintf(tmp, "Gauge%i", pModel->GetNumGauges()+1);
@@ -355,7 +355,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGage==NULL && pGrid==NULL,
                        "ParseTimeSeriesFile::Precipitation correction added before specifying a gauge station/ gridded forcing and its properties",BAD_DATA);
       if (Len<2){p->ImproperFormat(s); break;}
-      if (pGage != NULL) { pGage->SetProperty("RAINFALL_CORR",s_to_d(s[1])); }
+      if (pGage != NULL) { pGage->SetGaugeProperty("RAINFALL_CORR",s_to_d(s[1])); }
       if (pGrid != NULL) { pGrid->SetRainfallCorr(s_to_d(s[1])); }
       break;
     }
@@ -365,7 +365,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGage==NULL && pGrid==NULL,
                        "ParseTimeSeriesFile::Snowfall correction added before specifying a gauge station/ gridded forcing and its properties",BAD_DATA);
       if (Len<2){p->ImproperFormat(s); break;}
-      if (pGage != NULL) { pGage->SetProperty("SNOWFALL_CORR",s_to_d(s[1])); }
+      if (pGage != NULL) { pGage->SetGaugeProperty("SNOWFALL_CORR",s_to_d(s[1])); }
       if (pGrid != NULL) { pGrid->SetSnowfallCorr(s_to_d(s[1])); }
       break;
     }
@@ -375,8 +375,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile::Cloudcover temperature ranges added before specifying a gauge station and its properties",BAD_DATA);
       if (Len<3){p->ImproperFormat(s); break;}
-      pGage->SetProperty("CLOUD_MIN_RANGE",s_to_d(s[1]));
-      pGage->SetProperty("CLOUD_MAX_RANGE",s_to_d(s[2]));
+      pGage->SetGaugeProperty("CLOUD_MIN_RANGE",s_to_d(s[1]));
+      pGage->SetGaugeProperty("CLOUD_MAX_RANGE",s_to_d(s[2]));
       break;
     }
     case (40): //---------------------------------------------

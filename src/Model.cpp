@@ -1006,6 +1006,7 @@ force_struct CModel::GetAverageForcings() const
       Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
       Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
       Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
+      Fave.SW_radia_subcan+=area_wt*pF_hru->SW_radia_subcan;
       Fave.LW_incoming    +=area_wt*pF_hru->LW_incoming;
       Fave.LW_radia_net   +=area_wt*pF_hru->LW_radia_net;
       Fave.day_length     +=area_wt*pF_hru->day_length;
@@ -1782,8 +1783,10 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   if (pval!=INDEX_NOT_FOUND){pclass=CLASS_LANDUSE;}
   pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
   if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GLOBAL;}
- // pval=CGauge::GetGaugeProperty(0,param_str,false);
- //if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GAUGE;}
+  if(_nGauges>0) {
+    pval=_pGauges[0]->GetGaugeProperty(param_str);
+    if(pval!=INDEX_NOT_FOUND) { pclass=CLASS_GAUGE; }
+  }
 
   long SBID=s_to_l(class_name.c_str());
   if( (strlen(class_name.c_str())>8) && //also accept SUBBASIN32 instead of 32
@@ -1829,7 +1832,13 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_GAUGE)
   {
-    //CGauge::SetGaugeProperty(s_to_i(cname.c_str()),pname,value);
+    int g=GetGaugeIndexFromName(cname);
+    if(g!=DOESNT_EXIST) {
+      _pGauges[g]->SetGaugeProperty(pname,value);
+    }
+    else {
+      WriteWarning("CModel::UpdateParameter: Unrecognized/invalid gauge ID ("+cname+") in input",false);
+    }
   }
   else if(ctype==CLASS_SUBBASIN)
   {

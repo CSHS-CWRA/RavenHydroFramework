@@ -1124,7 +1124,7 @@ enum forcing_type
   F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
   F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
   F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
-  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA_NET,   F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC, F_LW_INCOMING,
+  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA_NET,   F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC, F_LW_INCOMING, F_SW_RADIA_SUBCAN,
   F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
@@ -1162,7 +1162,8 @@ struct force_struct
   double ET_radia;            ///< uncorrected extraterrestrial shortwave radiation [MJ/m2/d]
   double SW_radia_unc;        ///< uncorrected shortwave radiation (before cloud and canopy corrections)[MJ/m2/d]
   double SW_radia;            ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) [MJ/m2/d]
-  double SW_radia_net;        ///< Net shortwave radiation (albedo corrected) [MJ/m2/d]
+  double SW_radia_net;        ///< Net shortwave radiation at canopy top (albedo corrected) [MJ/m2/d]
+  double SW_radia_subcan;     ///< Shortwave incoming radiation at ground beneath canopy [MJ/m2/d]
   double LW_radia_net;        ///< Net longwave radiation [MJ/m2/d]
   double LW_incoming;         ///< Incoming longwave radiation [MJ/m2/d]
   double day_length;          ///< day length [d]  (e.g., ~0.5 for equinox @ 45lat, 0.0 for the north pole during winter)
