@@ -174,4 +174,4 @@ public:/*-------------------------------------------------------*/
   gwrecharge_type getRechargeType();
 };
 
-#endif GWSWPROCESSES_H
+#endif

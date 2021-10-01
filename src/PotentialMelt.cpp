@@ -241,7 +241,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
 
   //calculate shortwave energy component.
-  SHORM=(1.0-albedo)*F.SW_radia;     //[MJ/m2/d]
+  SHORM=(1.0-albedo)*F.SW_radia_subcan;            //[MJ/m2/d] //Uses subcanopy correction
   SHORM*=(MM_PER_METER/DENSITY_WATER/LH_FUSION);   //[MJ/m2/d-->mm/d]
 
   //longwave energy component

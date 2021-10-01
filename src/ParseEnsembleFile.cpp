@@ -148,8 +148,8 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           else if(!strcmp(s[1],"LANDUSE"   )) { ptype=CLASS_LANDUSE; }
           else if(!strcmp(s[1],"TERRAIN"   )) { ptype=CLASS_TERRAIN; }
           else if(!strcmp(s[1],"GLOBALS"   )) { ptype=CLASS_GLOBAL; }
-          //else if(!strcmp(s[1],"SUBBASIN"  )) { ptype=CLASS_SUBBASIN; }
-          //else if(!strcmp(s[1],"GAUGE"   )) { ptype=CLASS_GAUGE; }
+          else if(!strcmp(s[1],"SUBBASIN"  )) { ptype=CLASS_SUBBASIN; }
+          else if(!strcmp(s[1],"GAUGE"     )) { ptype=CLASS_GAUGE; }
           else {
             ExitGracefully("ParseEnsembleFile: invalid parameter class in :ParameterDistributions command",BAD_DATA);
           }

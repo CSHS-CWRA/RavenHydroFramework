@@ -144,7 +144,7 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
 
   double Tair=pHRU->GetForcingFunctions()->temp_ave;
   double Rnet=pHRU->GetForcingFunctions()->LW_radia_net+
-              pHRU->GetForcingFunctions()->SW_radia_net;
+              pHRU->GetForcingFunctions()->SW_radia_net;//SW_radia_subcan*(1-land_albedo);
 
   double LAI        =pHRU->GetVegVarProps()->LAI;
   double conv_coeff =pHRU->GetSurfaceProps()->convection_coeff; // [MJ/m2/d/K]

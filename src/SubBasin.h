@@ -244,6 +244,7 @@ public:/*-------------------------------------------------------*/
 
   void            SetChannelStorage        (const double &V);
   void            SetRivuletStorage        (const double &V);
+  void            SetQout                  (const double &Q);
   void            SetQoutArray             (const int N, const double *aQo, const double QoLast);
   void            SetQlatHist              (const int N, const double *aQl, const double QlLast);
   void            SetQinHist               (const int N, const double *aQi);

@@ -1020,19 +1020,24 @@ void CSubBasin::SetRivuletStorage   (const double &V){
 //
 void CSubBasin::SetQoutArray(const int N, const double *aQo, const double QoLast)
 {
-  if ((N!=_nSegments) && (N!=DOESNT_EXIST)){
-    WriteWarning("Number of reach segments in state file and input file are inconsistent. Unable to read in-reach flow initial conditions",false);
+  if (N!=_nSegments){
+    string warn="Number of reach segments in state file and input file are inconsistent in basin "+to_string(_ID)+". Unable to read in-reach flow initial conditions";
+    WriteWarning(warn.c_str(),false);
   }
   else if (N==_nSegments){
     for (int i=0;i<_nSegments;i++){_aQout[i]=aQo[i];}
     _QoutLast=QoLast;
   }
-  else if (N==DOESNT_EXIST){//special flag if only one flow is sent in
-    for (int i=0;i<_nSegments;i++){_aQout[i]=aQo[0];}
-    _QoutLast=QoLast;
-  }
 }
-
+/////////////////////////////////////////////////////////////////
+/// \brief Sets qout storage array, usually upon read of state file
+/// \param Q flow [m3/s]
+//
+void CSubBasin::SetQout(const double &Q)
+{
+  for (int i=0;i<_nSegments;i++){_aQout[i]=Q;}
+  _QoutLast=Q;
+}
 /////////////////////////////////////////////////////////////////
 /// \brief Sets Qlat storage array, usually upon read of state file
 /// \param &N [in] size of aQl array (=_nQlatHist)

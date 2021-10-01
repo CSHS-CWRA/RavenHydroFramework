@@ -898,7 +898,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         {
           slope=s_to_d(s[1]);
         }
-        else if ((Len>=1) && (!strcmp(s[0],":StageRelationships")))
+        else if ((Len>=1) && (!strcmp(s[0],":StageRelations")))
         {
           p->Tokenize(s,Len);
           done=false;
@@ -921,7 +921,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
             }
             else{p->ImproperFormat(s); break;}
             p->Tokenize(s,Len);
-            if (!strcmp(s[0],":EndStageRelationships")){done=true;}
+            if (!strcmp(s[0],":EndStageRelations")){done=true;}
           }
           done=false;
         }
@@ -1229,6 +1229,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       else if (!strcmp(s[2],"LANDUSE"     )){ptype=CLASS_LANDUSE;}
       else if (!strcmp(s[2],"TERRAIN"     )){ptype=CLASS_TERRAIN;}
       else if (!strcmp(s[2],"GLOBALS"     )){ptype=CLASS_GLOBAL;}
+      else if (!strcmp(s[2],"SUBBASIN"    )){ptype=CLASS_SUBBASIN; }
+      else if (!strcmp(s[2],"GAUGE"       )){ptype=CLASS_GAUGE; }
       else{
         ExitGracefully("ParsePropertyFile: invalid parameter class in :TransientParameter command",BAD_DATA);
       }

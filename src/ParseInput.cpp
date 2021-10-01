@@ -295,8 +295,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.runinfo_filename        ="";
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
-  //Options.stateinfo_filename = "C:/temp/FEWS state_mods/state_mods.nc"; //TMP DEBUG
-  //Options.paraminfo_filename = "C:/temp/FEWS state_mods/mods_rvp_ubc.nc"; //TMP DEBUG
+  Options.flowinfo_filename       ="";
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -437,6 +436,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":ChunkSize"                 )){code=109;}
     else if  (!strcmp(s[0],":FEWSStateInfoFile"         )){code=110;}
     else if  (!strcmp(s[0],":FEWSParamInfoFile"         )){code=111;}
+    else if  (!strcmp(s[0],":FEWSFlowStateInfoFile"     )){code=112;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1740,6 +1740,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:FEWSParamInfoFile [filename.nc]*/
       if (Options.noisy) { cout << "FEWS parameter update file" << endl; }
       Options.paraminfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
+      break;
+    }
+    case(112):  //
+    {/*:FEWSFlowStateInfoFile [filename.nc]*/
+      if (Options.noisy) { cout << "FEWS flow state update file" << endl; }
+      Options.flowinfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
       break;
     }
     case(160):  //--------------------------------------------

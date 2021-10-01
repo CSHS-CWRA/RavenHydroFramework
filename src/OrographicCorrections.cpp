@@ -198,8 +198,8 @@ void CModel::CorrectPrecip(const optStruct     &Options,
     double lapse=CGlobalParams::GetParams()->precip_lapse;
     lapse/=1000; //[mm/d/km]->[mm/d/m]
     if (F.precip > REAL_SMALL){
-      F.precip = max(F.precip + lapse*(elev - ref_elev), 0.0);
-      F.precip_5day = max(F.precip_5day + lapse*(elev - ref_elev), 0.0);
+      F.precip           = max(F.precip           + lapse*(elev - ref_elev), 0.0);
+      F.precip_5day      = max(F.precip_5day      + lapse*(elev - ref_elev), 0.0);
       F.precip_daily_ave = max(F.precip_daily_ave + lapse*(elev - ref_elev), 0.0);
     }
   }

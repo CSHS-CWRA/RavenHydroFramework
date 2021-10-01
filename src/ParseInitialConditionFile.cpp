@@ -191,10 +191,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           pSB=NULL;
           pSB=pModel->GetSubBasinByID(SBID);
           if (pSB!=NULL){
-            double *aQout=new double [1];
-            aQout[0]=s_to_d(s[1]);
-            pSB->SetQoutArray(DOESNT_EXIST,aQout,aQout[0]);
-            delete [] aQout;
+            pSB->SetQout(s_to_d(s[1]));
           }
           else          {
             WriteWarning("Subbasin "+to_string(SBID)+" not in model, cannot set initial conditions",Options.noisy);

@@ -21,7 +21,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   if (Options.runinfo_filename==""){return true;}
 
 #ifdef _RVNETCDF_
-  int ncid;          //NetCDF fileid
+  int ncid;          //NetCDF file id
   int retval;        //return value of NetCDF routines
   size_t att_len;    //character string length
   
@@ -414,7 +414,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   cout<<"[STATEFILE]: done reading state file."<<endl;
   return true;
 #else
-  ExitGracefully("ParseRunInfoFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
+  ExitGracefully("ParseNetCDFStateFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
   return false;
 #endif
 }
@@ -437,7 +437,143 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 //  The naming convention of this attribute is one of: {QOUT, STAGE,  }
 //
 bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
+  if(Options.flowinfo_filename=="") { return true; }
+
+#ifdef _RVNETCDF_
+  int     ncid;                // NetCDF file id
+  int     retval;              // return value of NetCDF routines
+  int     ntime    = 0;        // size of time vector
+  size_t  att_len;             // length of the attribute's text
+  nc_type att_type;            // type of attribute
+  int     time_dimid;          // dimension id of time variable
+  int     start_time_index=0;  // index of NetCDF time array which corresponds to Raven start time
+
+  // Open file
+  //====================================================================
+  string statefile=Options.flowinfo_filename;
+
+  if(Options.noisy) { cout<<"Opening flow state info file "<<statefile<<endl; }
+  retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+
+  // Get information from time vector
+  //====================================================================
+  cout<<"[FLOWFILE]: Reading time array..."<<endl;
+  GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
+
+  if ((start_time_index < 0) || (start_time_index >= ntime))
+  {
+    time_struct tt;
+    JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
+    string warn = "ParseNetCDFFlowStateFile: Model start time ("+tt.date_string+" "+ DecDaysToHours(Options.julian_start_day)+") does not occur during time window provided in NetCDF state update file";
+    ExitGracefully(warn.c_str(), BAD_DATA);
+    return false;
+  }
+
+  // Get vector of Subbasin IDs 
+  //====================================================================
+  int   SBvecID;         //attribute ID of SB vector
+  int   SBdimID;         // nstations dimension ID
+  long* SBIDs    =NULL;  // vector of Subbasin IDs
+  int   nSBsLocal=0;     // size of subbasin Vector
+
+  GetNetCDFStationArray(ncid, statefile,SBdimID,SBvecID, SBIDs, nSBsLocal); 
+  
+  cout << "[FLOWFILE]: " << " station id found:" << SBvecID << endl;  
+  cout << "[FLOWFILE]: " << " station dimid found:" << SBdimID << endl;  
+  cout << "[FLOWFILE]: " << " time vector size:" << ntime << endl;
+  cout << "[FLOWFILE]: " << " nSBs=" << nSBsLocal << endl;
+  cout << "[FLOWFILE]: Check"<<endl;
+  
+  //check that valid (integer) SBIDs exist in Raven Model
+  // ===============================================================================
+  for (int p = 0; p < nSBsLocal; p++) {
+    if ((SBIDs[p]!=DOESNT_EXIST) && (pModel->GetSubBasinByID((int)(SBIDs[p])) == NULL)) {
+      ExitGracefully("ParseNetCDFStateFile: invalid SB ID found in FEWS state update file. ", BAD_DATA);
+    }
+  }
+  
+  cout<<"[FLOWFILE]: Parse arrays"<<endl;
+ 
+  //Parse arrays of states   (look for all state variables in model)
+  // ===============================================================================
+  string* aSV_names = new string[2];
+  aSV_names[0]="QOUT";
+  aSV_names[1]="STAGE";
+ 
+  int       SVID;
+  double*   state_vec;
+
+  size_t    nc_start [] = { 0, 0 }; 
+  size_t    nc_length[] = { (size_t)(ntime), (size_t)(nSBsLocal) };
+  ptrdiff_t nc_stride[] = { 1, 1 };
+
+  state_vec = new double[nSBsLocal*ntime];
+
+  for (int i = 0; i < 2; i++)
+  {
+    //look to see if state variable name is in file
+    retval = nc_inq_varid(ncid, aSV_names[i].c_str(), &SVID);
+    if (retval != NC_ENOTVAR) 
+    {
+      HandleNetCDFErrors(retval);
+
+      // verify dimensions are ntimes*nSBsLocal, else throw error
+      // -------------------------------
+      int      sv_dimid[] = { 0 , 0 };
+      retval = nc_inq_var(ncid, SVID, NULL, NULL, NULL, sv_dimid, NULL);                    HandleNetCDFErrors(retval);
+      if ((sv_dimid[0] != time_dimid) || (sv_dimid[1] != SBdimID)) {
+        ExitGracefully("ParseNetCDFFlowStateFile: dimensions of state variable array are not (time,nstations)", BAD_DATA);
+      }
+      
+      // find "_FillValue" of data, if present
+      // -------------------------------
+      double fillval = NETCDF_BLANK_VALUE; //Default
+      retval = nc_inq_att(ncid, SVID, "_FillValue", &att_type, &att_len);
+      if (retval != NC_ENOTATT) {
+        HandleNetCDFErrors(retval);
+        retval = nc_get_att_double(ncid, SVID, "_FillValue", &fillval);                     HandleNetCDFErrors(retval);
+      }
+
+      // read array of doubles, update model states
+      // -------------------------------
+      retval = nc_get_vars_double(ncid, SVID, nc_start, nc_length, nc_stride, state_vec);   HandleNetCDFErrors(retval);
+
+      for (int p = 0; p < nSBsLocal; p++) 
+      {
+        int index = start_time_index * nSBsLocal + p;
+        if ((state_vec[index] != NETCDF_BLANK_VALUE) && (state_vec[index] != fillval))
+        {
+          cout << "[FLOWFILE]: " <<aSV_names[i]<<" ["<< p<<"]: "<< state_vec[index] << endl;
+          if (SBIDs[p] != DOESNT_EXIST) 
+          {
+            if      (i==0){pModel->GetSubBasinByID(SBIDs[p])->SetQout(state_vec[index]);}
+            else if (i==1){pModel->GetSubBasinByID(SBIDs[p])->GetReservoir()->SetInitialStage(state_vec[index],state_vec[index]);}
+          }
+        }
+        else {
+          cout << "[FLOWFILE]: " << aSV_names[i] << " [" << p << "]: NULL"  << endl;
+        }
+      }
+
+    }
+    else {
+      //state variable not found in NetCDF file; do nothing
+    }
+  }
+  cout<<"[FLOWFILE]: closing"<<endl;
+  delete[] state_vec;
+  delete[] aSV_names;
+
+  //close file
+  //====================================================================
+  retval = nc_close(ncid);         HandleNetCDFErrors(retval);
+
+  cout<<"[FLOWFILE]: done reading flow state file."<<endl;
+  return true;
+#else
+  ExitGracefully("ParseNetCDFFlowStateFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
   return false;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////

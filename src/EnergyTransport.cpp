@@ -208,8 +208,9 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   const CHydroUnit  *pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
   int                iAET=_pModel->GetStateVarIndex(AET);
 
-  int    iGW      =_pModel->GetStateVarIndex(SOIL,2);
-  double temp_GW  =0.0;//pBasin->GetAvgConcentration(iGW); 
+  int    mHypo    =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
+  int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);  
+  double temp_GW  =pBasin->GetAvgConcentration(iGW); 
   
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
   double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
@@ -271,8 +272,9 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   const CHydroUnit* pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
   int                iAET=_pModel->GetStateVarIndex(AET);
 
-  int    iGW      =_pModel->GetStateVarIndex(SOIL,2);
-  double temp_GW  =0.0;//pBasin->GetAvgConcentration(iGW); 
+  int    mHypo    =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
+  int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);  
+  double temp_GW  =pBasin->GetAvgConcentration(iGW); 
 
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
   double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
@@ -295,7 +297,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   const double * aQin       =pBasin->GetInflowHistory();
 
   double *zk=new double[nMinHist]; //percentage of flows in zone k
-  double *Ik=new double[nMinHist];
+  double *Ik=new double[nMinHist]; //Integral term [degC-d]
   
   //calculate mean residence time
   double tr_mean=0.0;
@@ -324,15 +326,14 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
     hin=(_aMinHist[p][m-1]/aQin[m-1]);
     if(_aMinHist[p][m-1]<PRETTY_SMALL) { hin=0.0; }
 
-    Ik[m]=-hin/beta*gamma*exp(-beta*(m-1)*tstep);
+    Ik[m]=hin/beta*gamma*exp(-beta*(m-1)*tstep);
     for(int j=1;j<m;j++)
     {
-      Ik[m]+=gamma*gamma/beta/beta*_aEnthalpySource[p][j-1]*exp(-beta*(m-j-1)*tstep);
+      Ik[m]+=gamma*gamma/beta/beta*_aEnthalpySource[p][j]*exp(-beta*(m-j-1)*tstep);
     }
-    Ik[m]+=tstep/beta     *_aEnthalpySource[p][0];
-    Ik[m]+=gamma/beta/beta*_aEnthalpySource[p][0];
+    Ik[m]+=(tstep/beta-gamma/beta/beta)*_aEnthalpySource[p][0];
 
-    Ik[m]*=1.0/HCP_WATER/DENSITY_WATER;
+    Ik[m]*=1.0/HCP_WATER/DENSITY_WATER;// /tstep;
   }
 
   Q_sens = Q_lat = Q_GW = Q_rad = Q_fric =0.0; //incoming radiation [MJ/d]
@@ -341,11 +342,13 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   for(int m=1;m<nMinHist;m++)
   {
-    Q_sens+=zk[m]*(hstar/dbar)*(temp_air*tstep-Ik[m]);//[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
+    Q_sens+=zk[m]*(hstar/dbar)*(temp_air*tstep-Ik[m]);   //[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
+
+    //cout<<"Ik term: "<<temp_air<<" "<<Ik[m]/tstep<<" beta: "<<beta<<" "<<gamma<<endl;
 
     Q_GW  +=zk[m]*kprime      *(temp_GW *tstep-Ik[m]);
 
-    Q_rad +=zk[m]*(SW+LW)/dbar*tstep;                //[m3/d]*[MJ/m2/d]*[1/m]*[d]=[MJ/d]
+    Q_rad +=zk[m]*(SW+LW)/dbar*tstep;                    //[m3/d]*[MJ/m2/d]*[1/m]*[d]=[MJ/d]
 
     Q_lat -=zk[m]*AET*DENSITY_WATER*LH_VAPOR/dbar*tstep; //[m3/d]*[m/d]*[kg/m3]*[MJ/kg]*[1/m]*[d] = [MJ/d]
 
@@ -573,13 +576,15 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour;
   _STREAMOUT<<","<<_pModel->GetAvgForcing("TEMP_AVE")<<",";
 
+   double mult=1.0; //TMP DEBUG - convert everything to MJ/m2/d 
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
+    //mult=1.0/_pModel->GetSubBasin(p)->GetReachLength()/_pModel->GetSubBasin(p)->GetTopWidth();
     if(_pModel->GetSubBasin(p)->IsGauged()) {
       GetEnergyLossesFromReach(p,Q_sens,Q_lat,Q_GW,Q_rad,Q_fric);
-      _STREAMOUT<<0.5*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<",";
-      _STREAMOUT<<0.5*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1])<<",";
-      _STREAMOUT<<Q_sens<<","<<Q_lat<<","<<Q_GW<<","<<Q_rad<<","<<Q_fric<<",";
+      _STREAMOUT<<0.5*mult*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<",";
+      _STREAMOUT<<0.5*mult*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1])<<",";
+      _STREAMOUT<<mult*Q_sens<<","<<mult*Q_lat<<","<<mult*Q_GW<<","<<mult*Q_rad<<","<<mult*Q_fric<<",";
       _STREAMOUT<<_channel_storage[p]<<","; 
     }
   }

@@ -702,7 +702,10 @@ enum ensemble_type
 enum comparison
 {
   COMPARE_IS_EQUAL,      ///< Compared entities are equal
-  COMPARE_NOT_EQUAL      ///< Compared entities are not equal
+  COMPARE_NOT_EQUAL,     ///< Compared entities are not equal
+  COMPARE_GREATERTHAN,   ///< Entity 1 greater than Entit 2
+  COMPARE_LESSTHAN,      ///< Entity 1 less than entity 2
+  COMPARE_BETWEEN        ///< Entity 1 within range 
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -971,6 +974,7 @@ struct optStruct
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS 
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
+  string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS
   string           paraminfo_filename;        ///< fully qualified filename of param_mods.nc file from FEWS
 
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)

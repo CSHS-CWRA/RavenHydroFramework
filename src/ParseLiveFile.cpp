@@ -137,10 +137,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     { /*:SetStreamflow [SBID] [value]*/
       pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
       double Q=fast_s_to_d(s[2]);
-      double *aQ=new double[1];
-      aQ[0]=Q;
-      pSB->SetQoutArray(DOESNT_EXIST,aQ,Q);
-      delete [] aQ;
+      pSB->SetQout(Q);
       //or pSB->SetCurrentOutflow(Q);
       break;
     }
