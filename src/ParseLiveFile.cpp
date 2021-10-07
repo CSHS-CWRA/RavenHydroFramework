@@ -144,7 +144,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     case(11):  //----------------------------------------------
     { /*:SetReservoirStage [SBID] [value]*/
       pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
-      pSB->SetInitialReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
+      pSB->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
       break;
     }
     case(12):  //----------------------------------------------

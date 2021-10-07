@@ -108,10 +108,13 @@ double CHRUGroup::GetAvgStateVar (const int i) const
   double area;
   for (int k=0;k<_nHRUs;k++)
   {
-    area    =_pHRUs[k]->GetArea();
-    sum    +=_pHRUs[k]->GetStateVarValue(i)*area;
-    areasum+=area;
+    if(_pHRUs[k]->IsEnabled()){
+      area    =_pHRUs[k]->GetArea();
+      sum    +=_pHRUs[k]->GetStateVarValue(i)*area;
+      areasum+=area;
+    }
   }
+  if (areasum==0.0){return 0.0;}
   return sum/areasum;
 }
 //////////////////////////////////////////////////////////////////
@@ -126,10 +129,13 @@ double CHRUGroup::GetAvgConcentration(const int i) const
   double area;
   for(int k=0;k<_nHRUs;k++)
   {
-    area    =_pHRUs[k]->GetArea();
-    sum    +=_pHRUs[k]->GetConcentration(i)*area;
-    areasum+=area;
+    if(_pHRUs[k]->IsEnabled()){
+      area    =_pHRUs[k]->GetArea();
+      sum    +=_pHRUs[k]->GetConcentration(i)*area;
+      areasum+=area;
+    }
   }
+  if (areasum==0.0){return 0.0;}
   return sum/areasum;
 }
 //////////////////////////////////////////////////////////////////
@@ -150,6 +156,7 @@ double CHRUGroup::GetAvgForcing (const string &forcing_string) const
       areasum+=area;
     }
   }
+  if (areasum==0.0){return 0.0;}
   return sum/areasum;
 }
 //////////////////////////////////////////////////////////////////
@@ -173,6 +180,7 @@ double CHRUGroup::GetAvgCumulFlux (const int i, const bool to) const
       areasum+=area;
     }
   }
+  if (areasum==0.0){return 0.0;}
   return sum/areasum;
 }
 //////////////////////////////////////////////////////////////////
@@ -196,5 +204,6 @@ double CHRUGroup::GetAvgCumulFluxBet (const int iFrom, const int iTo) const
       areasum+=area;
     }
   }
+  if (areasum==0.0){return 0.0;}
   return sum/areasum;
 }

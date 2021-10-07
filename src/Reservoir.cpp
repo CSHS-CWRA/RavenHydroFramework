@@ -25,6 +25,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _MB_losses =0.0;
   _AET		   =0.0;
   _GW_seepage=0.0;
+  _aQstruct=NULL;
+  _aQstruct_last=NULL;
 
   _pHRU=NULL;
   _pExtractTS=NULL;
@@ -65,6 +67,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _aQunder =NULL;
   _aArea   =NULL;
   _aVolume =NULL;
+
+  _nControlStructures=0;
+  _pControlStructures=NULL;
 
   _seepage_const=0;
   _local_GW_head=0.0;
@@ -349,6 +354,11 @@ CReservoir::~CReservoir()
   delete _pQminTS; _pQminTS=NULL;
   delete _pQmaxTS; _pQmaxTS=NULL;
   delete _pQdownTS; _pQdownTS=NULL;
+
+  delete _aQstruct; _aQstruct=NULL;
+  delete _aQstruct_last; _aQstruct_last=NULL;
+
+  for (int i=0;i<_nControlStructures;i++){delete _pControlStructures[i];} delete [] _pControlStructures; _pControlStructures=NULL;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -377,6 +387,11 @@ double  CReservoir::GetOutflowRate       () const { return _DAscale*_Qout; }
 double CReservoir::GetOldOutflowRate     () const { return _DAscale_last*_Qout_last; }
 
 //////////////////////////////////////////////////////////////////
+/// \returns current outflow rate from control structure i[m3/s]
+//
+double  CReservoir::GetControlOutflow    (const int i) const { return _aQstruct[i]; }
+
+//////////////////////////////////////////////////////////////////
 /// \returns outflow integrated over timestep [m3/d]
 //
 double  CReservoir::GetIntegratedOutflow(const double& tstep) const
@@ -384,6 +399,13 @@ double  CReservoir::GetIntegratedOutflow(const double& tstep) const
   return 0.5*(_DAscale*_Qout+_DAscale_last*_Qout_last)*(tstep*SEC_PER_DAY); //integrated
 }
 
+//////////////////////////////////////////////////////////////////
+/// \returns control structure outflow integrated over timestep [m3/d]
+//
+double  CReservoir::GetIntegratedControlOutflow(const int i, const double& tstep) const
+{
+  return 0.5*(_aQstruct[i]+_aQstruct_last[i])*(tstep*SEC_PER_DAY); //integrated
+}
 //////////////////////////////////////////////////////////////////
 /// \returns previous storage [m3]
 //
@@ -419,6 +441,14 @@ int CReservoir::GetHRUIndex() const
   return _pHRU->GetGlobalIndex();
 }
 //////////////////////////////////////////////////////////////////
+/// \returns number of control structures
+//
+int CReservoir::GetNumControlStructures() const
+{
+  return _nControlStructures;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \returns crest width, in meters
 //
 double CReservoir::GetCrestWidth() const
@@ -449,6 +479,25 @@ void CReservoir::MultiplyFlow(const double &mult)
   for(int i=0;i<_Np;i++) {
       _aQ[i]*=mult;
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns current active regime name 
+/// \param i [in] control structure index (must be in range from 0...nControlStructures)
+/// \param tt [in] current time structure
+/// returns current active regime name (or "NONE" if none active)
+//
+string CReservoir::GetRegimeName(const int i,const time_struct &tt) const
+{
+  return _pControlStructures[i]->GetCurrentRegimeName(tt);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns subbasin ID of recipient of control structure i's outflow 
+/// \param i [in] control structure index (must be in range from 0...nControlStructures)
+//
+long   CReservoir::GetControlFlowTarget(const int i) const 
+{
+  return _pControlStructures[i]->GetTargetBasinID();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -512,6 +561,12 @@ void CReservoir::Initialize(const optStruct &Options)
   if(_pQdownTS!=NULL)
   {
     _pQdownTS->Initialize(model_start_day,model_start_yr,model_duration,timestep,false,Options.calendar);
+  }
+
+  _aQstruct     =new double [_nControlStructures];
+  _aQstruct_last=new double [_nControlStructures];
+  for (int i = 0; i < _nControlStructures; i++) {
+    _aQstruct[i]=_aQstruct_last[i]=0.0;
   }
 }
 
@@ -657,6 +712,16 @@ void  CReservoir::AddDownstreamDemand(const CSubBasin *pSB,const double pct, con
     ExitGracefully("CReservoir::AddDownstreamDemand: adding NULL source",RUNTIME_ERR);
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Adds control structure outlet to Reservoir
+/// \param pCS [in] pointer to valid control structure object
+//
+void  CReservoir::AddControlStructure(const CControlStructure* pCS) 
+{
+  if (!DynArrayAppend((void**&)_pControlStructures, (void*)pCS, _nControlStructures)) {
+    ExitGracefully("CReservoir::AddControlStructure: adding null control structure",BAD_DATA_WARN);
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief links reservoir to HRU
@@ -696,17 +761,17 @@ void  CReservoir::SetMaxCapacity(const double &max_cap)
 string CReservoir::GetCurrentConstraint() const {
   switch(_constraint)
   {
-  case(RC_MAX_STAGE):         {return "MAX_STAGE"; break;}
-  case(RC_MIN_STAGE):         {return "RC_MIN_STAGE"; break;}
-  case(RC_NATURAL):           {return "RC_NATURAL"; break;}
-  case(RC_TARGET):            {return "RC_TARGET"; break;}
-  case(RC_DOWNSTREAM_FLOW):   {return "RC_DOWNSTREAM_FLOW"; break;}
-  case(RC_MAX_FLOW_INCREASE): {return "RC_MAX_FLOW_INCREASE"; break;}
-  case(RC_MIN_FLOW):          {return "RC_MIN_FLOW"; break;}
-  case(RC_MAX_FLOW):          {return "RC_MAX_FLOW"; break;}
-  case(RC_OVERRIDE_FLOW):     {return "RC_OVERRIDE_FLOW"; break;}
-  case(RC_DRY_RESERVOIR):     {return "RC_DRY_RESERVOIR"; break;}
-  default:                    {return ""; break;}
+  case(RC_MAX_STAGE):         {return "MAX_STAGE"; }
+  case(RC_MIN_STAGE):         {return "RC_MIN_STAGE"; }
+  case(RC_NATURAL):           {return "RC_NATURAL"; }
+  case(RC_TARGET):            {return "RC_TARGET"; }
+  case(RC_DOWNSTREAM_FLOW):   {return "RC_DOWNSTREAM_FLOW"; }
+  case(RC_MAX_FLOW_INCREASE): {return "RC_MAX_FLOW_INCREASE"; }
+  case(RC_MIN_FLOW):          {return "RC_MIN_FLOW"; }
+  case(RC_MAX_FLOW):          {return "RC_MAX_FLOW"; }
+  case(RC_OVERRIDE_FLOW):     {return "RC_OVERRIDE_FLOW"; }
+  case(RC_DRY_RESERVOIR):     {return "RC_DRY_RESERVOIR"; }
+  default:                    {return ""; }
   };
 }
 //////////////////////////////////////////////////////////////////
@@ -860,16 +925,23 @@ double CReservoir::ScaleFlow(const double& scale,const bool overriding, const do
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief updates state variable "stage" at end of computational time step
+/// \brief updates state variable "stage" and other reservoir auxiliary variables at end of computational time step
 /// \param new_stage [in] calculated stage at end of time step
 //
-void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,const res_constraint &constr,const optStruct &Options,const time_struct &tt)
+void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,const res_constraint &constr,const double *aQstruct_new,const optStruct &Options,const time_struct &tt)
 {
   _stage_last=_stage;
   _stage     =new_stage;
+
   _constraint=constr;
+  
   _Qout_last =_Qout;
   _Qout      =res_outflow;
+  for (int i = 0; i < _nControlStructures; i++) {
+    _aQstruct_last[i]=_aQstruct[i];
+    _aQstruct[i]=aQstruct_new[i];
+  }
+  
   _DAscale_last=_DAscale;
   _DAscale   =1.0;
 }
@@ -947,7 +1019,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
 /// \param initQ [in] initial inflow
 /// \note - ignores extraction and PET ; won't work for initQ=0, which could be non-uniquely linked to stage
 //
-void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const double &t)
+void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const time_struct &tt)
 {
   if(initQ!=initQlast) {//reading from .rvc file
     _Qout=initQ;
@@ -961,7 +1033,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
 
   double weir_adj=0.0;
   if(_pWeirHeightTS!=NULL){ 
-    weir_adj=_pWeirHeightTS->GetValue(t); 
+    weir_adj=_pWeirHeightTS->GetValue(tt.model_time); 
   }
 
   for (int i=0;i<_Np;i++)
@@ -970,12 +1042,18 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
   }
   int    iter=0;
   double change=0;
-  double Q,dQdh;
+  double Q,dQdh,Qi;
+
   do //Newton's method with discrete approximation of dQ/dh
   {
     //if(_pDZTR==NULL) {
       Q    =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       dQdh=(GetWeirOutflow(h_guess+dh,weir_adj)-Q)/dh;
+      for (int i = 0; i < _nControlStructures; i++) {
+        Qi=_pControlStructures[i]->GetOutflow(h_guess,_aQstruct_last[i],tt); //TMP DEBUG -need to include control structure outflow
+        Q+=Qi;
+        dQdh+=(_pControlStructures[i]->GetOutflow(h_guess,_aQstruct_last[i],tt)-Qi)/dh;
+      }
     //}
     //else if(_pDZTR!=NULL) {
     //  Q =GetDZTROutflow(GetVolume(h_guess),initQ,tt,Options);
@@ -996,10 +1074,11 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
   }
 
   _stage=h_guess;
-  _Qout=GetWeirOutflow(_stage,weir_adj);
-
   //if(_pDZTR==NULL) {
-  //  _Qout=GetWeirOutflow(_stage,weir_adj);
+  _Qout=GetWeirOutflow(_stage,weir_adj);
+  for (int i = 0; i < _nControlStructures; i++) {
+    _aQstruct[i]=_pControlStructures[i]->GetOutflow(_stage,_aQstruct_last[i],tt); 
+  }
   //}
   //else if(_pDZTR!=NULL) {
   //  _Qout=GetDZTROutflow(GetVolume(_stage),initQ,tt,Options);
@@ -1008,15 +1087,30 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
   _stage_last=_stage;
   _Qout_last =_Qout;
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief sets flow rates of control structure i
+/// \param i [in] control structure index (assumed between 0...nControlStructures)
+/// \param Q [in] initial flow rate [m3/s]
+/// \param Qlast [in] flow rate [m3/s] at start of time step 
+//
+void CReservoir::SetControlFlow(const int i, const double& Q, const double& Qlast) 
+{
+   //assumes we are reading from .rvc file
+  _aQstruct[i]=Q;
+  _aQstruct_last[i]=Qlast;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief sets initial stage
 /// \param ht [in] reservoir stage elevation
 //
-void  CReservoir::SetInitialStage(const double &ht,const double &ht_last)
+void  CReservoir::SetReservoirStage(const double &ht,const double &ht_last)
 {
   _stage_last=ht_last;
   _stage     =ht;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief sets minimum stage
 /// \param min_z [in] minimum elevation with respect to arbitrary datum
@@ -1025,6 +1119,7 @@ void  CReservoir::SetMinStage(const double &min_z)
 {
   _min_stage=min_z;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Routes water through reservoir
 /// \param Qin_old [in] inflow at start of timestep
@@ -1033,7 +1128,7 @@ void  CReservoir::SetMinStage(const double &min_z)
 /// \param res_ouflow [out] outflow at end of timestep
 /// \returns estimate of new stage at end of timestep
 //
-double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const optStruct &Options, const time_struct &tt, double &res_outflow,res_constraint &constraint) const
+double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const optStruct &Options, const time_struct &tt, double &res_outflow,res_constraint &constraint, double *aQstruct) const
 {
   const double RES_TOLERANCE=0.0001; //[m]
   const int    RES_MAXITER  =100;
@@ -1143,10 +1238,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if     (_pDZTR==NULL) {
       out =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       out2=GetWeirOutflow(h_guess+dh,weir_adj);//[m3/s]
-      /*for(int i=0; i<_nControlStructures; i++) {
-        out +=_pControlStructures[i]->GetWeirOutflow(out, _Qout,h_guess);
-        out2+=_pControlStructures[i]->GetWeirOutflow(out2,_Qout,h_guess+dh);
-      }*/
+      for(int i=0; i<_nControlStructures; i++) {
+        out +=_pControlStructures[i]->GetOutflow(h_guess   , _aQstruct_last[i],tt);
+        out2+=_pControlStructures[i]->GetOutflow(h_guess+dh, _aQstruct_last[i],tt);
+      }
     }
     else if(_pDZTR!=NULL) {
       out =GetDZTROutflow(GetVolume(h_guess   ),Qin_old,tt,Options);
@@ -1182,10 +1277,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   //---------------------------------------------------------------------------------------------
   if(_pDZTR==NULL) {
     res_outflow=GetWeirOutflow(stage_new,weir_adj);
-    /*for(int i=0; i<_nControlStructures; i++) {
-      Qstruct[i]=_pControlStructures[i]->GetWeirOutflow(out, _Qout,stage_new);
-      res_outflow +=Qstruct[i];  
-    }*/
+    for(int i=0; i<_nControlStructures; i++) {
+      aQstruct[i]=_pControlStructures[i]->GetOutflow(stage_new,_aQstruct_last[i],tt);
+      res_outflow +=aQstruct[i];  
+    }
     constraint =RC_NATURAL;
   }
   else if(_pDZTR!=NULL) {
@@ -1301,14 +1396,17 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   }
   // ======================================================================================
   
-  /*
+  
   double total_outflow=res_outflow;
-  for(int i=0; i<_nControlStructures; i++) {
-    Qstruct[i]*=(total_outflow/outflow_nat); //correct for applied reservoir rules; assumes fractions unchanged -doesn't really work for stage constraints.
-    if (_pControlStructures[i]->GetTargetBasin()!=pBasin->GetDownstreamID()){
-      res_outflow-=Qstruct[i]; //adjust main outflow for diversions elsewhere
+  int downID=DOESNT_EXIST;
+  if (_pQdownSB!=NULL){downID=_pQdownSB->GetID();}
+  for(int i=0; i<_nControlStructures; i++) 
+  {
+    aQstruct[i]*=(total_outflow/outflow_nat); //correct for applied reservoir rules; assumes fractions unchanged -doesn't really work for stage constraints.
+    if (_pControlStructures[i]->GetTargetBasinID()!=downID){
+      res_outflow-=aQstruct[i]; //adjust main outflow for diversions elsewhere
     }
-  }*/
+  }
 
   return stage_new;
 }
@@ -1322,6 +1420,9 @@ void CReservoir::WriteToSolutionFile (ofstream &RVC) const
   RVC<<"    :ResStage, "<<_stage<<","<<_stage_last<<endl;
   if(_DAscale_last!=1.0) {
     RVC<<"    :ResDAscale, "<<_DAscale<<","<<_DAscale_last<<endl;
+  }
+  for (int i = 0; i < _nControlStructures; i++) {
+    RVC<<"    :ControlFlow, "<<i<<","<<_aQstruct[i]<<","<<_aQstruct_last[i]<<endl;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -1359,7 +1460,6 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
 /// \brief interpolates the volume from the volume-stage rating curve
 /// \param ht [in] reservoir stage
 /// \returns reservoir volume [m3] corresponding to stage ht
-/// \note assumes regular spacing between min and max stage
 //
 double     CReservoir::GetVolume(const double &ht) const
 {
@@ -1369,7 +1469,6 @@ double     CReservoir::GetVolume(const double &ht) const
 /// \brief interpolates the surface area from the area-stage rating curve
 /// \param ht [in] reservoir stage
 /// \returns reservoir surface area [m2] corresponding to stage ht
-/// \note assumes regular spacing between min and max stage
 //
 double     CReservoir::GetArea  (const double &ht) const
 {

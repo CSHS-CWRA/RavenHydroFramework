@@ -307,6 +307,10 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         else                             { name=_pSubBasins[p]->GetName(); }
         RES_MB<<","   <<name<<" inflow [m3]";
         RES_MB<<","   <<name<<" outflow [m3]";
+        for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
+          RES_MB<<","   <<name<<" ctrl outflow "<<i<<" [m3]";
+          RES_MB<<","   <<name<<" ctrl regime";
+        }
         RES_MB<<","   <<name<<" volume [m3]";
         RES_MB<<","   <<name<<" losses [m3]";
         RES_MB<<","   <<name<<" MB error [m3]";
@@ -905,13 +909,18 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
             in            =pSB->GetIntegratedReservoirInflow(Options.timestep);//m3
             out           =pSB->GetIntegratedOutflow        (Options.timestep);//m3
+            RES_MB<<","<<in<<","<<out;
+            for (int i = 0; i < pSB->GetReservoir()->GetNumControlStructures(); i++) {
+              RES_MB<<","<<pSB->GetReservoir()->GetIntegratedControlOutflow(i,Options.timestep);//m3
+              RES_MB<<","<<pSB->GetReservoir()->GetRegimeName(i,tt)<<endl;
+            }
             stor          =pSB->GetReservoir()->GetStorage          ();//m3
             oldstor       =pSB->GetReservoir()->GetOldStorage       ();//m3
             loss          =pSB->GetReservoir()->GetReservoirLosses  (Options.timestep);//m3
             constraint_str=pSB->GetReservoir()->GetCurrentConstraint();
             if(tt.model_time==0.0){ in=0.0; }
 
-            RES_MB<<","<<in<<","<<out<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor)<<","<<constraint_str;
+            RES_MB<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor)<<","<<constraint_str;
           }
         }
         RES_MB<<endl;

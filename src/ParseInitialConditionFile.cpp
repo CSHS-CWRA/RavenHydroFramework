@@ -26,6 +26,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   bool        ended(false);
   bool        in_ifmode_statement=false;
 
+  time_struct tt;
+  JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+
   ifstream    IC;
   IC.open(Options.rvc_filename.c_str());
   if (IC.fail()){
@@ -65,7 +68,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     pModel->GetSubBasin(p)->SetChannelStorage(0.0);
     pModel->GetSubBasin(p)->SetRivuletStorage(0.0);
     if(pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
-      pModel->GetSubBasin(p)->GetReservoir()->SetInitialStage(0.0,0.0);
+      pModel->GetSubBasin(p)->GetReservoir()->SetReservoirStage(0.0,0.0);
     }
   }
 
@@ -539,13 +542,19 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if (!strcmp(s[0],":ResStage"))
         {
           if (Len>=3){
-            pBasin->SetInitialReservoirStage(s_to_d(s[1]),s_to_d(s[2]));
+            pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[1]),s_to_d(s[2]));
           }
         }
         else if(!strcmp(s[0],":ResFlow"))
         {
           if(Len>=3) {
-            pBasin->SetReservoirFlow(s_to_d(s[1]),s_to_d(s[2]),0.0);
+            pBasin->GetReservoir()->SetInitialFlow(s_to_d(s[1]),s_to_d(s[2]),tt);
+          }
+        }
+        else if (!strcmp(s[0], ":ControlFlow"))
+        {
+          if (Len >= 4) {
+            pBasin->GetReservoir()->SetControlFlow(s_to_i(s[1]),s_to_d(s[2]),s_to_d(s[3]));
           }
         }
         else if(!strcmp(s[0],":ResDAscale"))
@@ -571,7 +580,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       time_struct tt;
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pBasin->GetReservoir()->UpdateReservoir(tt,Options); //ensures correct discharge rating curve is used to calculate flow
-      pBasin->SetReservoirFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),0.0);
+      pBasin->GetReservoir()->SetInitialFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),tt);
       break;
     }
     case(8):  //----------------------------------------------
@@ -581,7 +590,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
       ExitGracefullyIf(pBasin==NULL,
                        "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
-      pBasin->SetInitialReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
+      pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
       break;
     }
     case(10):  //----------------------------------------------

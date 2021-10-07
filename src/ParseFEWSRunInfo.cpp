@@ -547,7 +547,7 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
           if (SBIDs[p] != DOESNT_EXIST) 
           {
             if      (i==0){pModel->GetSubBasinByID(SBIDs[p])->SetQout(state_vec[index]);}
-            else if (i==1){pModel->GetSubBasinByID(SBIDs[p])->GetReservoir()->SetInitialStage(state_vec[index],state_vec[index]);}
+            else if (i==1){pModel->GetSubBasinByID(SBIDs[p])->GetReservoir()->SetReservoirStage(state_vec[index],state_vec[index]);}
           }
         }
         else {

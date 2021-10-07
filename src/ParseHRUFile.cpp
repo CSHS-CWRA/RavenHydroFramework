@@ -7,8 +7,9 @@
 #include "StateVariables.h"
 #include "HydroUnits.h"
 #include "ParseLib.h"
+#include "ControlStructures.h"
 
-CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Options);
+CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUID,const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses HRU properties file
@@ -317,12 +318,12 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           :EndOutflowHeightRelation
           ...
         :EndReservoir
-        (and other formats - see ParseReservoir code)
+        (and other formats - see ReservoirParse code)
       */
       if (Options.noisy) {cout <<":Reservoir"<<endl;}
       CReservoir *pRes;
       int HRUID;
-      pRes=ReservoirParse(pp,s[1],HRUID,Options);
+      pRes=ReservoirParse(pp,s[1],pModel,HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
       pRes->SetHRU(pModel->GetHRUByID(HRUID));
       if (pSB!=NULL){pSB->AddReservoir(pRes);}
@@ -867,9 +868,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 /// \note the first line (:Reservoir [name]) has already been read in
 /// \param p [in] parser (likely points to .rvh file)
 /// \param name [in] name of reservoir
+/// \param pModel [in] pointer to model 
 /// \param Options [in] model options structure
 //
-CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Options)
+CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUID,const optStruct &Options)
 {
 
   /*Examples:
@@ -929,7 +931,52 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
     :AbsoluteCrestHeight 365 # absolute minimum weir crest height m.a.s.l. (optional)
   :EndReservoir
 
-
+  :Reservoir ExampleReservoir # 'multiple control structure format'
+    :SubBasinID [ID]
+    :HRUID [ID]
+    :Type RESROUTE_STANDARD 
+    :StageRelations
+      # these provide the base stage-storage-area-discharge curves for reservoir. 
+      # The ‘main outflow’ is still controlled as before and can only drain to the downstream basin. 
+      # all flow can be routed through control structures instead if we set Q=0 in this base stage relation
+    :EndStageRelations
+    :OutflowControlStructure [name]
+      :TargetBasin 37 # output can be directed anywhere in model
+      :StageDischargeTable C1 #one gate open
+         N
+         [h,Q]xN
+      :EndStageDischargeTable
+      :StageDischargeTable C2 #both gates open
+         N
+         [h,Q]xN
+      :EndStageDischargeCurve
+      :BasicWeir C3 [elev] [crestwidth] [coeff]
+      
+      # we can have as many of these curves as we care to
+      :OperatingRegime A
+        :UseCurve C1
+        :Condition DATE IS_BETWEEN 2010-10-01 2011-05-01
+        :Condition STAGE IS_GREATER_THAN 400
+        :Condition STAGE IS_LESS_THAN 402.3
+        #--
+        :Constraint FLOW IS_LESS_THAN 630 
+        :Constraint FLOW_RAMPING IS_BETWEEN 0 45
+      :EndOperatingRegime
+      :OperatingRegime B
+        :UseCurve C2
+        :Condition DAY_OF_YEAR IS_BETWEEN 173 250 #probably more useful than DATE
+        :Condition YEAR IS_GREATER_THAN 2010
+        :Condition STAGE IS_LESS_THAN 400
+        :Condition STAGE IS_LESS_THAN 373.3 IN_BASIN 29 #can point to flow/stage in other basins
+        #--
+        :Constraint STAGE IS_LESS_THAN 402.3
+      :EndOperatingRegime
+      #likewise, we could add 30 different operating regimes if we were feeling saucy
+    :EndOutflowControlStructure
+    :OutflowControlStructure [name]
+      # we can add as many control structures as we’d like.
+    :EndOutflowControlStructure
+  :EndReservoir
   */
   char *s[MAXINPUTITEMS];
   int    Len;
@@ -962,6 +1009,13 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
   type=CURVE_POWERLAW;
 
   CReservoir *pRes=NULL;
+  CControlStructure *pContStruct=NULL;
+
+  CControlStructure          **pCSs=NULL;
+  int                          nCSs=0;
+  CStageDischargeRelationABC **pSDs=NULL;
+  int                          nSDs=0;
+
   HRUID=DOESNT_EXIST;
 
   while(!p->Tokenize(s,Len))
@@ -1252,7 +1306,7 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
       }
       p->Tokenize(s,Len); //:EndVaryingStageRelations
     }
-
+    //----------------------------------------------------------------------------------------------
     else if(!strcmp(s[0],":DZTRResservoirModel"))
     {/*:DZTRResservoirModel
        :MaximumStorage           Vmax(m3)
@@ -1304,7 +1358,144 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
 
       break;
     }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":OutflowControlStructure")) {
+      if (pContStruct != NULL) {
+        ExitGracefully("ReservoirParse: new control structure started before finishing earlier one with :EndOutflowControlStructure",BAD_DATA_WARN);
+      }
+      pContStruct=new CControlStructure(s[1],SBID);//assumes SBID appears first
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":EndOutflowControlStructure")) {
+      DynArrayAppend((void**&)pCSs,(void*)pContStruct,nCSs); //Add to list, set cs structure pointer to NULL
+      pContStruct= NULL;
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":TargetSubbasin")) {
+      if (pContStruct == NULL) {
+        ExitGracefully(":TargetSubbasin command must be in :OutflowControlStructure block",BAD_DATA_WARN);
+      }
+      pContStruct->SetTargetBasin(s_to_l(s[1]));
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":StageDischargeTable")) {
+      /*
+      :StageDischargeTable C1 #one gate open
+         N
+         [h,Q]xN
+      :EndStageDischargeTable
+      */
+      p->Tokenize(s,Len);
+      if(Len >= 1) { NQ = s_to_i(s[0]); }
+      aQ    = new double[NQ];
+      aQ_ht = new double[NQ];
+      for(int i = 0; i < NV; i++) {
+        p->Tokenize(s,Len);
+        if(IsComment(s[0],Len)) { i--; }
+        else {
+          aQ_ht[i] = s_to_d(s[0]);
+          aQ   [i] = s_to_d(s[1]);
+        }
+      }
+      p->Tokenize(s,Len); //:EndStageDischargeTable
 
+      CStageDischargeTable *pCurve=new CStageDischargeTable(name,aQ_ht,aQ,NQ);
+      DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
+      delete [] aQ;
+      delete [] aQ_ht;
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":BasicWeir")) {
+      //:BasicWeir C3 [elev] [crestwidth] [coeff]    
+      CBasicWeir *pCurve=new CBasicWeir(name,s_to_d(s[1]),s_to_d(s[2]),s_to_d(s[3]));
+      DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
+
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":OperatingRegime")) {
+      //sift through until :EndOperatingRegime
+      COutflowRegime *pRegime=new COutflowRegime(pModel,s[1]);
+      
+      p->Tokenize(s,Len);
+      while(!p->Tokenize(s,Len))
+      {
+        if (Options.noisy) { cout << "-->reading line " << p->GetLineNumber() << ": "; }
+        if (Len == 0) {}//Do nothing
+        else if(IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
+
+        else if(!strcmp(s[0],":UseCurve"))//=======================================
+        {
+          bool found=false;
+          if(Options.noisy) { cout << ":UseCurve" << endl; }
+          for (int i=0;i<nSDs;i++){
+            if (pSDs[i]->GetName()==s[1]){
+              pRegime->SetCurve(pSDs[i]);
+              found=true;
+            }
+          }
+          ExitGracefullyIf(!found,"ReservoirParse: unrecognized curve name in :UseCurve command.",BAD_DATA_WARN);
+        }
+        else if(!strcmp(s[0],":Condition"))//=======================================
+        {
+          RegimeCondition *R=new RegimeCondition;
+          R->basinID=SBID; //default - THIS basin
+          R->variable=s[1];
+          if (Len < 4) {
+            WriteWarning(":Condition syntax incorrect (insufficient length) in :Reservoir command. Will be ignored.",Options.noisy);
+          }
+          else{
+            if      (!strcmp(s[2],"IS_BETWEEN"     )){R->compare=COMPARE_BETWEEN;}
+            else if (!strcmp(s[2],"IS_GREATER_THAN")){R->compare=COMPARE_GREATERTHAN;}
+            else if (!strcmp(s[2],"IS_LESS_THAN"   )){R->compare=COMPARE_LESSTHAN;}
+            else{WriteWarning("unrecognized comparison string in :Condition command",Options.noisy);}
+
+            R->compare_val1=s_to_d(s[3]);
+            if ((R->compare==COMPARE_BETWEEN) && (Len>5)) {R->compare_val2=s_to_d(s[4]);}
+
+            if (R->variable=="DATE"){
+              time_struct t1=DateStringToTimeStruct(s[3],"00:00:00",Options.calendar);
+              R->compare_val1=TimeDifference(t1.julian_day,t1.year,Options.julian_start_day,Options.julian_start_year,Options.calendar);
+              if ((R->compare==COMPARE_BETWEEN) && (Len>5)){
+                t1=DateStringToTimeStruct(s[4],"00:00:00",Options.calendar);
+                R->compare_val2=TimeDifference(t1.julian_day,t1.year,Options.julian_start_day,Options.julian_start_year,Options.calendar);
+              }
+            }
+          
+            if (Len > 6) {
+              if (!strcmp(s[4], "IN_BASIN")) {R->basinID=s_to_l(s[5]);}
+            }
+            if(Len>7){
+              if (!strcmp(s[5], "IN_BASIN")) {R->basinID=s_to_l(s[6]);}
+            }
+
+            pRegime->AddRegimeCondition(R);
+          }
+        }
+        else if(!strcmp(s[0],":Constraint"))//=======================================
+        {
+          RegimeConstraint *C=new RegimeConstraint;
+          C->variable=s[1];
+          if (Len < 4) {
+            WriteWarning(":Constraint syntax incorrect (insufficient length) in :Reservoir command. Will be ignored.",Options.noisy);
+          }
+          else{
+            if      (!strcmp(s[2],"IS_BETWEEN"     )){C->compare_typ=COMPARE_BETWEEN;}
+            else if (!strcmp(s[2],"IS_GREATER_THAN")){C->compare_typ=COMPARE_GREATERTHAN;}
+            else if (!strcmp(s[2],"IS_LESS_THAN"   )){C->compare_typ=COMPARE_LESSTHAN;}
+            else{WriteWarning("unrecognized comparison string in :Condition command",Options.noisy);}
+
+            C->compare_val1=s_to_d(s[3]);
+            if ((C->compare_typ==COMPARE_BETWEEN) && (Len>5)) {C->compare_val2=s_to_d(s[4]);}
+
+            pRegime->AddRegimeConstraint(C);
+          }
+        }
+        else if (!strcmp(s[0], ":EndOperatingRegime")) //=======================================
+        {
+          break;
+        }
+      }
+    }
     //----------------------------------------------------------------------------------------------
     else if(!strcmp(s[0],":EndReservoir")) {
       if(Options.noisy) { cout << ":EndReservoir" << endl; }
@@ -1369,7 +1560,11 @@ CReservoir *ReservoirParse(CParser *p,string name,int &HRUID,const optStruct &Op
   if(demand_mult!=1.0) {
     pRes->SetDemandMultiplier(demand_mult);
   }
-  
+
+  for (int i = 0; i < nCSs; i++) {
+    pRes->AddControlStructure(pCSs[i]);
+  }
+
   for(int i = 0; i < nDates; i++) { delete[] aQQ[i]; }delete[] aQQ;
   delete[] aQ;
   delete[] aQ_ht;

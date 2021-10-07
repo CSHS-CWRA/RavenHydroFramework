@@ -2000,11 +2000,6 @@ double CForcingGrid::GetChunkIndexFromModelTimeStep(const optStruct &Options,
                                                     const double    global_model_time  // current model time step in [days]
                                                     ) const
 {
-  double model_timestep;
-
-  // delta t of model
-  model_timestep  = Options.timestep;
-
   // overall un-chunked index in NetCDF file starting from very first entry in NetCDF file
   double idx_NC = (_t_corr + global_model_time) / _interval ;
   double delta  = (_t_corr + global_model_time) / _interval - floor(idx_NC); // difference from integer index
@@ -2029,11 +2024,6 @@ double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
                                                        const double    global_model_time  // current model time step in [days]
                                                        ) const
 {
-  double model_timestep;
-
-  // delta t of model
-  model_timestep  = Options.timestep;
-
   // overall un-chunked index in NetCDF file starting from very first entry in NetCDF file
   double idx_NC = (_t_corr + global_model_time) / _interval ;
 

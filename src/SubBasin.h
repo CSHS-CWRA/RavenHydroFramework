@@ -239,8 +239,6 @@ public:/*-------------------------------------------------------*/
 
   // reservoir manipulators
   void            ResetReferenceFlow       (const double &Qreference);
-  void            SetReservoirFlow         (const double &Q,const double &Qlast,const double &t);
-  void            SetInitialReservoirStage (const double &h,const double &hlast);
 
   void            SetChannelStorage        (const double &V);
   void            SetRivuletStorage        (const double &V);
@@ -264,6 +262,7 @@ public:/*-------------------------------------------------------*/
                                             const double &res_ht,
                                             const double &res_outflow,
                                             const res_constraint &constraint,
+                                            const double    *res_qstruct,
                                             const optStruct &Options,
                                             const time_struct &tt,
                                             bool  initialize);//[m3/s]
@@ -275,6 +274,7 @@ public:/*-------------------------------------------------------*/
                                                   double      &res_ht,
                                                   double      &res_outflow,
                                                res_constraint &constraint,
+                                                  double      *res_Qstruct,
                                             const optStruct   &Options,
                                             const time_struct &tt) const;
   double          ChannelLosses            (const double      &reach_volume,

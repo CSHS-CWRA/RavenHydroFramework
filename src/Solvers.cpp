@@ -444,7 +444,8 @@ void MassEnergyBalance( CModel            *pModel,
   double down_Q,gw_Q,irr_Q,div_Q, Qwithdrawn;
   int    pDivert;
   res_constraint res_const;
-
+  const int MAX_CONTROL_STRUCTURES=10;
+  double *res_Qstruct=new double [MAX_CONTROL_STRUCTURES];
   //determine total outflow from HRUs into respective basins (aRouted[p])
   for (p=0;p<NB;p++)
   {
@@ -466,6 +467,7 @@ void MassEnergyBalance( CModel            *pModel,
   // Identify magnitude of flow diversions, calculate inflows  
   for(p=0;p<NB;p++)
   {
+    //Regular Diversions
     pBasin=pModel->GetSubBasin(p);
     for(int i=0; i<pBasin->GetNumDiversions();i++) {
       div_Q=pBasin->GetDiversionFlow(i,pBasin->GetOutflowRate(),Options,tt,pDivert); //diversions based upon flows at start of timestep
@@ -475,7 +477,23 @@ void MassEnergyBalance( CModel            *pModel,
       }
       else {
         // \todo[funct] - must handle this in mass balance - should go to cumulative output
-	    //Qdivloss+=div_Q;
+	      //Qdivloss+=div_Q;
+      }
+    }
+    //Diversions from reservoir control structures
+    CReservoir *pRes=pBasin->GetReservoir();
+    if (pRes != NULL) {
+      for (int i = 0; i < pRes->GetNumControlStructures(); i++) {
+        if (pRes->GetControlFlowTarget(i) != pBasin->GetDownstreamID()) {
+          pDivert=pRes->GetControlFlowTarget(i);
+          if (pDivert!=DOESNT_EXIST){
+            aQinnew[pDivert]+=pRes->GetControlOutflow(i);
+          }
+          else {
+            //\todo[funct] - must handle this in mass balance - should go to cumulative output
+	          //Qdivloss+=div_Q;
+          }
+        }
       }
     }
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
@@ -503,7 +521,7 @@ void MassEnergyBalance( CModel            *pModel,
 
       pBasin->SetLateralInflow((aRouted[p]+gw_Q)/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 
-      pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,Options,tt);      //Where everything happens!
+      pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,res_Qstruct,Options,tt);      //Where everything happens!
 
       Qwithdrawn=0;
       irr_Q=pBasin->ApplyIrrigationDemand(t+tstep,aQoutnew[pBasin->GetNumSegments()-1]);
@@ -514,7 +532,7 @@ void MassEnergyBalance( CModel            *pModel,
         Qwithdrawn+=div_Q;
       }
 
-      pBasin->UpdateOutflows(aQoutnew,irr_Q,res_ht,res_outflow,res_const,Options,tt,false);//actually updates flow values here
+      pBasin->UpdateOutflows(aQoutnew,irr_Q,res_ht,res_outflow,res_const,res_Qstruct,Options,tt,false);//actually updates flow values here
 
       pModel->AssimilationOverride(p,Options,tt); //modifies flows using assimilation, if needed
 
@@ -529,6 +547,7 @@ void MassEnergyBalance( CModel            *pModel,
       }
     }
   }//end for pp...
+  delete [] res_Qstruct;
 
   //-----------------------------------------------------------------
   //      CONSTITUENT (MASS OR ENERGY) ROUTING

@@ -39,27 +39,27 @@ string CDiagnostic::GetName() const
 {
   switch (_type)
   {
-  case(DIAG_NASH_SUTCLIFFE):    {return "DIAG_NASH_SUTCLIFFE"; break;}
-  case(DIAG_DAILY_NSE):         {return "DIAG_DAILY_NSE"; break;}
-  case(DIAG_RMSE):              {return "DIAG_RMSE";break;}
-  case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";break;}
-  case(DIAG_ABSERR):            {return "DIAG_ABSERR";break;}
-  case(DIAG_ABSMAX):            {return "DIAG_ABSMAX";break;}
-  case(DIAG_PDIFF):             {return "DIAG_PDIFF";break;}
-  case(DIAG_TMVOL):             {return "DIAG_TMVOL";break;}
-  case(DIAG_RCOEF):             {return "DIAG_RCOEF"; break;}
-  case(DIAG_NSC):               {return "DIAG_NSC";break;}
-  case(DIAG_RSR):               {return "DIAG_RSR";break;}
-  case(DIAG_R2):                {return "DIAG_R2";break;}
-  case(DIAG_CUMUL_FLOW):        {return "DIAG_CUMUL_FLOW";break;}
-  case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";break;}
-  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";break;}
-  case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; break;}
-  case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; break;}
-  case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; break;}
-  case(DIAG_NASH_SUTCLIFFE_RUN):{return "DIAG_NASH_SUTCLIFFE_RUN"; break;}
-  case(DIAG_MBF):               {return "DIAG_MBF"; break;}
-  default:                      {return "";break;}
+  case(DIAG_NASH_SUTCLIFFE):    {return "DIAG_NASH_SUTCLIFFE"; }
+  case(DIAG_DAILY_NSE):         {return "DIAG_DAILY_NSE"; }
+  case(DIAG_RMSE):              {return "DIAG_RMSE";}
+  case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";}
+  case(DIAG_ABSERR):            {return "DIAG_ABSERR";}
+  case(DIAG_ABSMAX):            {return "DIAG_ABSMAX";}
+  case(DIAG_PDIFF):             {return "DIAG_PDIFF";}
+  case(DIAG_TMVOL):             {return "DIAG_TMVOL";}
+  case(DIAG_RCOEF):             {return "DIAG_RCOEF"; }
+  case(DIAG_NSC):               {return "DIAG_NSC";}
+  case(DIAG_RSR):               {return "DIAG_RSR";}
+  case(DIAG_R2):                {return "DIAG_R2";}
+  case(DIAG_CUMUL_FLOW):        {return "DIAG_CUMUL_FLOW";}
+  case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";}
+  case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
+  case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }
+  case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; }
+  case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; }
+  case(DIAG_NASH_SUTCLIFFE_RUN):{return "DIAG_NASH_SUTCLIFFE_RUN"; }
+  case(DIAG_MBF):               {return "DIAG_MBF"; }
+  default:                      {return "";}
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -84,7 +84,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   int nn;
   double N=0;
   string filename =pTSObs->GetSourceFile();
-  int    nVals    =pTSObs->GetNumSampledValues();
   double obsval,modval;
   double weight=1;
 

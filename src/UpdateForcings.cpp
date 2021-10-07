@@ -141,22 +141,22 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   double ref_measurement_ht; //m above land surface
   for (k = 0; k < _nHydroUnits; k++)
   {
+    elev  = _pHydroUnits[k]->GetElevation();
+    slope = _pHydroUnits[k]->GetSlope();
+
+    ZeroOutForcings(F);
+    ref_elev_temp=ref_elev_precip=0.0;
+    ref_measurement_ht=0.0;
+
+    //not gauge-based
+    if(tt.day_changed)
+    {
+      F.day_angle  = CRadiation::DayAngle(mid_day,yr,Options.calendar);
+      F.day_length = CRadiation::DayLength(_pHydroUnits[k]->GetLatRad(),CRadiation::SolarDeclination(F.day_angle));
+    }
+
     if(_pHydroUnits[k]->IsEnabled())
     {
-      elev  = _pHydroUnits[k]->GetElevation();
-      slope = _pHydroUnits[k]->GetSlope();
-
-      ZeroOutForcings(F);
-      ref_elev_temp=ref_elev_precip=0.0;
-      ref_measurement_ht=0.0;
-
-      //not gauge-based
-      if(tt.day_changed)
-      {
-        F.day_angle  = CRadiation::DayAngle(mid_day,yr,Options.calendar);
-        F.day_length = CRadiation::DayLength(_pHydroUnits[k]->GetLatRad(),CRadiation::SolarDeclination(F.day_angle));
-      }
-
       //interpolate forcing values from gauges
       //-------------------------------------------------------------------
       for(g = 0; g < _nGauges; g++)
@@ -476,14 +476,14 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         if(F.precip-reduce>0.0) { F.snow_frac=1.0-(F.precip*(1.0-F.snow_frac)-reduce)/(F.precip-reduce); }
         F.precip-=reduce;
         F.PET   -=reduce;
-      }
-
-      //-------------------------------------------------------------------
-      // Update
-      //-------------------------------------------------------------------
-      _pHydroUnits[k]->UpdateForcingFunctions(F);
-
+      }  
     }//end if (!_pHydroUnits[k]->IsDisabled())
+
+    //-------------------------------------------------------------------
+    // Update
+    //-------------------------------------------------------------------
+    _pHydroUnits[k]->UpdateForcingFunctions(F);
+
   }//end for k=0; k<nHRUs...
 
    //delete static arrays (only called once)=========================

@@ -14,6 +14,8 @@
 #include "HydroUnits.h"
 #include "TimeSeries.h"
 #include "SubBasin.h"
+#include "ControlStructures.h"
+
 class CSubBasin;
 enum curve_function{
   CURVE_LINEAR,      ///< y =a*x
@@ -40,6 +42,7 @@ struct down_demand {
   int    julian_end;          ///< julian end day of demand (wraps, such that if julian_end < julian_start, demand in winter)
 };
 class CSubBasin;
+class CControlStructure;
 /*****************************************************************
    Class CReservoir
 ------------------------------------------------------------------
@@ -95,9 +98,10 @@ private:/*-------------------------------------------------------*/
   double       _MB_losses;           ///< losses over current time step [m3]
   double       _AET;                 ///< losses through AET only [m3]
   double       _GW_seepage;          ///< losses to GW only [m3] (negative for GW gains)
+  double      *_aQstruct;            ///< array of flows from control structures at end of time step [m3/s]
+  double      *_aQstruct_last;       ///< array of flows from control structures at start of time step [m3/s]
 
-  res_constraint _constraint;          ///< current constraint type
-
+  res_constraint _constraint;        ///< current constraint type
 
   //rating curve characteristics :
   double       _min_stage;           ///< reference elevation [m] (below which, no volume; flow can be zero)
@@ -116,6 +120,9 @@ private:/*-------------------------------------------------------*/
   double     **_aQ_back;             ///< Rating curve for flow rates for different times [m3/s]
   int         *_aDates;              ///< Array of Julian days at which aQ changes [days after Jan 1]
   int          _nDates;              ///< size of aDates
+
+  int                 _nControlStructures; ///< number of outflow control structures
+  CControlStructure **_pControlStructures; ///< Array of pointer to outflow control structures
 
   //GW information :
   double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)  
@@ -153,27 +160,34 @@ public:/*-------------------------------------------------------*/
 
   //Accessors
   long              GetSubbasinID            () const;
+
   double            GetStorage               () const; //[m3]
-  double            GetOutflowRate           () const; //[m3/d]
+  double            GetOutflowRate           () const; //[m3/s]
+  double            GetOldOutflowRate        () const; //[m3/s]
+  double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
+  double            GetControlOutflow        (const int i) const; //[m3]
+  double            GetIntegratedControlOutflow(const int i, const double& tstep) const; //[m3]
   double            GetReservoirLosses       (const double &tstep) const; //[m3]
   double            GetReservoirEvapLosses   (const double &tstep) const; //[m3]
   double            GetReservoirGWLosses     (const double &tstep) const; //[m3]
-  double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
   double            GetResStage              () const; //[m]
-  double            GetOldOutflowRate        () const; //[m3/d]
   double            GetOldStorage            () const; //[m3]
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
   string            GetCurrentConstraint     () const;
   double            GetDemandMultiplier      () const;
   double            GetCrestWidth            () const;
+  int               GetNumControlStructures  () const;
+  string            GetRegimeName            (const int i, const time_struct &tt) const;
+  long              GetControlFlowTarget     (const int i) const;
 
   //Manipulators
   void              SetMinStage              (const double &min_z);
   void              SetMaxCapacity           (const double &max_cap);
   void              Initialize               (const optStruct &Options);
-  void              SetInitialFlow           (const double &Q,const double &Qlast,const double &t);
-  void              SetInitialStage          (const double &ht, const double &ht_last);
+  void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt);
+  void              SetReservoirStage        (const double &ht, const double &ht_last);
+  void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
   void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);
   void              SetAreaStageCurve        (const double *a_ht,const double *a_A,const int nPoints);
   void              SetGWParameters          (const double &coeff, const double &h_ref);
@@ -196,6 +210,7 @@ public:/*-------------------------------------------------------*/
   void              AddDownstreamTargetQ     (CTimeSeries *pQ, const CSubBasin *pSB, const double &range);
 
   void              AddDownstreamDemand      (const CSubBasin *pSB,const double pct, const int julian_start, const int julian_end);
+  void              AddControlStructure      (const CControlStructure *pCS);
 
   void              SetDZTRModel             (const double Qmc, const double Smax, 
                                               const double Sci[12], const double Sni[12],const double Smi[12],
@@ -212,10 +227,12 @@ public:/*-------------------------------------------------------*/
                                               const optStruct   &Options,
                                               const time_struct &tt,
                                                     double      &res_outflow,
-                                                 res_constraint &constraint) const;
+                                                 res_constraint &constraint,
+                                                    double      *aQstruct) const;
   void              UpdateStage              (const double      &new_stage,
                                               const double      &new_ouflow, 
                                               const res_constraint &constraint,
+                                              const double      *new_struct_flows,
                                               const optStruct   &Options,
                                               const time_struct &tt);
   void              WriteToSolutionFile      (ofstream &OUT) const;

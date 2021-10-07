@@ -1,0 +1,113 @@
+/*----------------------------------------------------------------
+  Raven Library Source Code
+  Copyright (c) 2008-2021 the Raven Development Team
+  ----------------------------------------------------------------
+  ControlStructures.h
+  ------------------------------------------------------------------
+  defines abstract control structures, flow regimes, and regime conditions
+  ----------------------------------------------------------------*/
+#ifndef CONTROL_STRUCTURES_H
+#define CONTROL_STRUCTURES_H
+
+#include "RavenInclude.h"
+#include "StageDischargeRelations.h"
+
+/*****************************************************************   
+ RegimeCondition: defines single condition under which regime applies
+*****************************************************************/
+struct RegimeCondition
+{
+  string     variable;     ///<  one of {DATE, DOY, STAGE, FLOW, ...}
+  long       basinID;      ///< defaults to -1 (this basin)
+  comparison compare;      ///< e.g., greater than, between, etc.
+  double     compare_val1; ///< primary comparison value
+  double     compare_val2; ///< secondary comparison value (used for between)
+};
+//example :Condition DATE BETWEEN 2010-07-01 2012-06-31 (converted to model time in compare_vals)
+//example :Condition DOY BETWEEN 213 320
+//example :Condition STAGE GREATER_THAN 340
+
+/*****************************************************************   
+ RegimeConstraint: defines single constraint to be applied to outflow
+*****************************************************************/
+struct RegimeConstraint
+{
+  string     variable; // one of {FLOW, FLOW_RAMPING,...}
+  comparison compare_typ;
+  double     compare_val1;
+  double     compare_val2;
+};
+//example :Constraint FLOW LESS_THAN 4000
+//example :Constraint FLOW_RAMPING BETWEEN 30 40 [m3/s/d]
+
+class CModel;
+/*****************************************************************
+    Class COutflowRegime
+------------------------------------------------------------------
+    Data Abstraction for flow regime that defines conditions for operating in this regime
+  ******************************************************************/
+class COutflowRegime
+{
+private:
+  string             _name;
+
+  const CModel      *_pModel;              ///< pointer to access model for querying flows
+
+  CStageDischargeRelationABC *_pCurve;      ///< pointer to stage discharge curve (or other Q=f(h) relation)
+
+  RegimeCondition  **_pConditions;         ///< conditions for operation *e.g., date range, etc., ALL conditions must be met     
+  int                _nConditions;         ///< number of conditions for operation under this regime
+
+  RegimeConstraint **_pConstraints;        ///< constraints on operation, sorted by priority
+  int                _nConstraints;        ///< number of constraints   
+
+  bool IsConditionMet(int i) const;
+
+public:/*-------------------------------------------------------*/
+  //Constructors:
+  COutflowRegime(const CModel *pMod, const string name);
+  ~COutflowRegime();
+
+  string             GetName() const;
+  void    CheckConditionsAndConstraints() const;
+
+  void              SetCurve(CStageDischargeRelationABC *pCurv);
+  void    AddRegimeCondition(RegimeCondition  *pCond);
+  void   AddRegimeConstraint(RegimeConstraint *pCond);
+
+  bool      AreConditionsMet(const time_struct &tt) const;
+  double          GetOutflow(const double &h, const double &Q_start) const;
+};
+
+
+/*****************************************************************
+    Class CControlStructure
+------------------------------------------------------------------
+    Data Abstraction for reservoir outflow control structure
+  ******************************************************************/
+class CControlStructure
+{
+private:/*-------------------------------------------------------*/
+  string           _name;                ///< structure name
+  long             _SBID;                ///< subbasin ID
+  long             _target_SBID;         ///< outflow directed to this subbasin ID
+
+  int              _nRegimes;            ///< number of flow regimes
+  COutflowRegime **_aRegimes;            ///< array of pointers to flow regimes with unique Q=f(h,Q,...)  
+
+public:/*-------------------------------------------------------*/
+  //Constructors:
+  CControlStructure(const string name,const long SBID);
+  ~CControlStructure();
+
+  void   AddRegime       (COutflowRegime *pRegime);
+  void   SetTargetBasin  (const long SBID);
+
+  string GetName         () const;
+  long   GetTargetBasinID() const;
+  
+  double GetOutflow(const double &stage,const double &Q_start,const time_struct &tt) const;
+  
+  string GetCurrentRegimeName(const time_struct &tt) const;
+};
+#endif

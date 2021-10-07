@@ -319,6 +319,7 @@ double CSubBasin::GetAvgStateVar (const int i) const
       sum+=_pHydroUnits[k]->GetStateVarValue(i)*_pHydroUnits[k]->GetArea();
     }
   }
+  if (_basin_area==0.0){return 0.0;}
   return sum/_basin_area;
 }
 //////////////////////////////////////////////////////////////////
@@ -339,6 +340,7 @@ double CSubBasin::GetAvgConcentration(const int i) const
       sum+=_pHydroUnits[k]->GetConcentration(i)*_pHydroUnits[k]->GetArea();
     }
   }
+  if (_basin_area==0.0){return 0.0;}
   return sum/_basin_area;
 }
 //////////////////////////////////////////////////////////////////
@@ -356,6 +358,7 @@ double CSubBasin::GetAvgForcing (const string &forcing_string) const
       sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
     }
   }
+  if (_basin_area==0.0){return 0.0;}
   return sum/_basin_area;
 }
 //////////////////////////////////////////////////////////////////
@@ -376,6 +379,7 @@ double CSubBasin::GetAvgCumulFlux(const int i,const bool to) const
       sum    +=_pHydroUnits[k]->GetCumulFlux(i,to)*_pHydroUnits[k]->GetArea();
     }
   }
+  if (_basin_area==0.0){return 0.0;}
   return sum/_basin_area;
 }
 //////////////////////////////////////////////////////////////////
@@ -396,6 +400,7 @@ double CSubBasin::GetAvgCumulFluxBet(const int iFrom,const int iTo) const
       sum    +=_pHydroUnits[k]->GetCumulFluxBet(iFrom,iTo)*_pHydroUnits[k]->GetArea();
     }
   }
+  if (_basin_area==0.0){return 0.0;}
   return sum/_basin_area;
 }
 //////////////////////////////////////////////////////////////////
@@ -516,8 +521,8 @@ int CSubBasin::GetNumDiversions() const {
 //
 double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &p_Divert) const
 {
-  if (_pDiversions[i]==NULL) { p_Divert=DOESNT_EXIST; return 0.0; } //no diversion
   if ((i<0) || (i>=_nDiversions)){ExitGracefully("CSubBasin::GetDiversionFlow",RUNTIME_ERR); }
+  if (_pDiversions[i]==NULL) { p_Divert=DOESNT_EXIST; return 0.0; } //no diversion
 
   p_Divert=_pDiversions[i]->target_p;
 
@@ -969,31 +974,6 @@ void    CSubBasin::AddEnviroMinFlow(CTimeSeries *pMinFlow)
   ExitGracefullyIf(_pEnviroMinFlow!=NULL,
     "CSubBasin::AddEnviroMinFlow: only one environmental minimum flow time series may be specified per basin",BAD_DATA);
   _pEnviroMinFlow=pMinFlow;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief sets (usually initial) reservoir flow rate & stage
-/// \param Q [in] flow rate [m3/s]
-/// \param t [in] model time [d]
-//
-void    CSubBasin::SetReservoirFlow(const double &Q,const double &Qlast,const double &t)
-{
-  if (_pReservoir==NULL){
-    WriteWarning("CSubBasin::SetReservoirFlow: trying to set flow for non-existent reservoir.",false);return;
-  }
-  _pReservoir->SetInitialFlow(Q,Qlast,t);
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief sets reservoir stage (and recalculates flow rate)
-/// \param stage [m]
-//
-void    CSubBasin::SetInitialReservoirStage(const double &stage, const double &stage_last)
-{
-  if (_pReservoir==NULL){
-    WriteWarning("CSubBasin::SetInitialReservoirStage: trying to set stage for non-existent reservoir.",false);return;
-  }
-  _pReservoir->SetInitialStage(stage,stage_last);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1696,6 +1676,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double &res_ht, //[m]
                                   const double &res_outflow, //[m3/s]
                                   const res_constraint &constraint,
+                                  const double *res_Qstruct,
                                   const optStruct &Options,
                                   const time_struct &tt,
                                   bool initialize)
@@ -1718,7 +1699,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   _Qirr    =irr_Q;
 
   if (_pReservoir!=NULL){
-    _pReservoir->UpdateStage(res_ht,res_outflow,constraint,Options,tt);
+    _pReservoir->UpdateStage(res_ht,res_outflow,constraint,res_Qstruct,Options,tt);
     _pReservoir->UpdateMassBalance(tt,Options.timestep);
   }
 
@@ -1928,6 +1909,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            double &res_ht, //[m]
                            double &res_outflow, //[m3/s]
                            res_constraint &res_const,
+                           double *aResQstruct, //[m3/s]
                            const optStruct &Options,
                            const time_struct &tt) const
 {
@@ -2210,7 +2192,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],Options,tt,res_outflow,res_const);
+    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],Options,tt,res_outflow,res_const,aResQstruct);
   }
   else
   {
