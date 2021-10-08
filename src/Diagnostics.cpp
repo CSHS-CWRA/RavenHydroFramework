@@ -61,7 +61,7 @@ string CDiagnostic::GetName() const
   case(DIAG_MBF):               {return "DIAG_MBF"; }
   case(DIAG_R4MS4E):            {return "DIAG_R4MS4E"; }
   case(DIAG_RTRMSE):            {return "DIAG_RTRMSE"; }
-  case(DIAG_RABSERR):           {return "DIAG_RABSERR"; 
+  case(DIAG_RABSERR):           {return "DIAG_RABSERR"; }
   case(DIAG_PERSINDEX):         {return "DIAG_PERSINDEX"; }
   case(DIAG_NSE4):              {return "DIAG_NSE4"; }
   default:                      {return "";}
