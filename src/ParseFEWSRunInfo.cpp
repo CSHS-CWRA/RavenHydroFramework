@@ -87,7 +87,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   }
 
   // Ingest working directory=====================================================================
-  int varid_workdir;
+  /*int varid_workdir;
   retval = nc_inq_varid(ncid,"work_dir",&varid_workdir);
   if(retval!= NC_ENOTATT) 
   {
@@ -96,10 +96,10 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
     char *workdir=new char[255];
     retval=nc_get_var(ncid,varid_workdir,workdir);
 
-    Options.output_dir=to_string(workdir);
+    Options.output_dir=to_string(workdir)+"/";
     if(Options.noisy) { cout<<"ParseRunInfoFile: read variable work_dir from NetCDF: "<<Options.output_dir<<endl; }
     delete [] workdir;
-  }
+  }*/
 
   // Ingest properties      =====================================================================
   int varid_props;
@@ -697,7 +697,7 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
     cout<<endl;
   }
 
-  retval = nc_close(ncid);
+  retval = nc_close(ncid);   HandleNetCDFErrors(retval);
 
 #endif
   return true;

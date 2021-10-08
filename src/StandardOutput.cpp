@@ -115,7 +115,7 @@ string FilenamePrepare(string filebase, const optStruct &Options)
 void CModel::CloseOutputStreams()
 {
   for (int c=0;c<_nCustomOutputs;c++){
-    _pCustomOutputs[c]->CloseFiles();
+    _pCustomOutputs[c]->CloseFiles(*_pOptStruct);
   }
   _pTransModel->CloseOutputFiles();
   if ( _STORAGE.is_open()){ _STORAGE.close();}
@@ -126,7 +126,6 @@ void CModel::CloseOutputStreams()
 
 #ifdef _RVNETCDF_
 
-  /* close netcdfs */
   int    retval;      // error value for NetCDF routines
   if (_HYDRO_ncid != -9)    {retval = nc_close(_HYDRO_ncid);    HandleNetCDFErrors(retval); }
   _HYDRO_ncid    = -9;
@@ -136,7 +135,7 @@ void CModel::CloseOutputStreams()
   _FORCINGS_ncid = -9;
   if(_RESSTAGE_ncid != -9) { retval = nc_close(_RESSTAGE_ncid); HandleNetCDFErrors(retval); }
   _RESSTAGE_ncid = -9;
-
+  
 #endif   // end compilation if NetCDF library is available
 }
 

@@ -198,7 +198,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 CCustomOutput::~CCustomOutput()
 {
   delete [] data; data=NULL;
-  CloseFiles();
+  CloseFiles(*pModel->GetOptStruct());
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1000,9 +1000,15 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output stream after all information written to file
 //
-void CCustomOutput::CloseFiles()
+void CCustomOutput::CloseFiles(const optStruct& Options)
 {
   if (_CUSTOM.is_open()){_CUSTOM.close();}
+  if(Options.output_format==OUTPUT_NETCDF) {
+#ifdef _RVNETCDF_
+    int retval;
+    if(_netcdf_ID!=-9) { retval=nc_close(_netcdf_ID); HandleNetCDFErrors(retval); }
+#endif
+  }
 }
 
 int  ParseSVTypeIndex(string s,CModel *&pModel);

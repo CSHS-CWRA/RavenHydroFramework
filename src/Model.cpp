@@ -56,6 +56,7 @@ CModel::CModel(const int        nsoillayers,
   _HYDRO_ncid   =-9; 
   _STORAGE_ncid =-9;
   _FORCINGS_ncid=-9; 
+  _RESSTAGE_ncid=-9;
 
   ExitGracefullyIf(nsoillayers<1,
                    "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);

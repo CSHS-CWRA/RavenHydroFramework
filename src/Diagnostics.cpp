@@ -59,6 +59,11 @@ string CDiagnostic::GetName() const
   case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; }
   case(DIAG_NASH_SUTCLIFFE_RUN):{return "DIAG_NASH_SUTCLIFFE_RUN"; }
   case(DIAG_MBF):               {return "DIAG_MBF"; }
+  case(DIAG_R4MS4E):            {return "DIAG_R4MS4E"; }
+  case(DIAG_RTRMSE):            {return "DIAG_RTRMSE"; }
+  case(DIAG_RABSERR):           {return "DIAG_RABSERR"; 
+  case(DIAG_PERSINDEX):         {return "DIAG_PERSINDEX"; }
+  case(DIAG_NSE4):              {return "DIAG_NSE4"; }
   default:                      {return "";}
   }
 }
@@ -1191,6 +1196,207 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
        return -ALMOST_INF;
      }
      break;
+  }
+  case(DIAG_R4MS4E)://----------------------------------------------------
+  {
+    double sum=0.0;
+    N=0;
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=1.0;
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
+      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
+  
+      sum+=weight*pow(obsval-modval,4);
+      N  +=weight;
+    }
+    if(N>0.0) {
+      return pow( (sum/N), 0.25); 
+    }
+    else
+    {
+      string warn = "DIAG_R4MS4E not not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+    break;
+  }
+  case(DIAG_RTRMSE)://----------------------------------------------------
+  {
+    double sum=0.0;
+    N=0;
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=1.0;
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
+      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
+  
+      sum+=weight*pow( sqrt(obsval)-sqrt(modval), 2);
+      N  +=weight;
+    }
+    if(N>0.0) {
+      return sqrt(sum / N);
+    }
+    else
+    {
+      string warn = "DIAG_RTRMSE not not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+    break;
+  }
+  case(DIAG_RABSERR) ://----------------------------------------------------
+  {
+    double avgobs=0.0;
+    N=0;
+
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=1.0;
+      obsval = pTSObs->GetSampledValue(nn);
+      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
+      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
+      avgobs+=weight*obsval;
+      N     +=weight;
+    }
+    if(N>0.0) { avgobs/=N; }      
+      
+    double sum1(0.0),sum2(0.0);
+    N = 0;
+   
+    for (nn = nnstart; nn < nnend; nn++)
+    {
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+      weight=1.0;
+      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
+
+      sum1 += weight*fabs(obsval - modval);
+      sum2 += weight*fabs(avgobs - modval);
+      N   += weight;
+    }
+    if (N>0.0)
+    {
+      return (sum1 / sum2);
+    }
+    else
+    {
+      string warn = "DIAG_RABSERR not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    break;
+  }
+  case(DIAG_PERSINDEX)://----------------------------------------------------
+  {
+    bool ValidObs = false;
+    bool ValidMod = false;
+    bool ValidWeight = false;
+
+    double sum1(0.0),sum2(0.0);
+    N=0;
+    double N1(0.0),N2(0.0);
+
+    for(nn=nnstart+1; nn<nnend; nn++)
+    {
+      double prvmodval = pTSMod->GetSampledValue(nn - 1);
+      double prvweight=1;
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+      weight=1.0;
+      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); prvweight = pTSWeights->GetSampledValue(nn - 1); }
+
+      if (obsval != RAV_BLANK_DATA) { ValidObs = true; }
+      if (modval != RAV_BLANK_DATA && prvmodval != RAV_BLANK_DATA) { ValidMod = true; }
+      if (weight != 0 && prvweight != 0) { ValidWeight = true; }
+
+      if (obsval != RAV_BLANK_DATA && modval != RAV_BLANK_DATA && prvmodval != RAV_BLANK_DATA && weight != 0 && prvweight != 0)
+      {
+        sum1 +=weight*(pow( modval-obsval, 2));
+        sum2 +=prvweight*(pow( modval-prvmodval, 2));
+        ++N;
+        // consider alternative weighting N scheme
+        // sum1 +=weight*(pow( modval-obsval, 2);
+        // sum2 +=prvweight*(pow( modval-prvmodval, 2);
+        // N1 += weight
+        // N2 += 0.5*(prvweight+weight)
+      }
+    }
+    
+    if(N>0.0) {
+      if (ValidObs && ValidMod && ValidWeight)
+      {
+        return 1 - (sum1 / sum2);
+        // return 1 - ( (sum1/N1) / (sum2/N2) )
+      }
+      else
+      {
+        string p1 = "OBSERVED_DATA  "+filename;
+        string p2 = "MODELED_DATA  ";
+        string p3 = "WEIGHTS ";
+        if (ValidObs) { p1 = ""; }
+        if (ValidMod) { p2 = ""; }
+        if (ValidWeight) { p3 = ""; }
+
+        string warn = "DIAG_PERSINDEX not performed correctly. Check " + p1 + p2 + p3;
+        WriteWarning(warn, Options.noisy);
+        return -ALMOST_INF;
+      }
+    break;
+    }
+    else
+    {
+      string warn = "DIAG_PERSINDEX not not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+    break;
+  }
+  case(DIAG_NSE4)://----------------------------------------------------
+  {
+    double avgobs=0.0;
+    N=0;
+
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=1.0;
+      obsval = pTSObs->GetSampledValue(nn);
+      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
+      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
+      avgobs+=weight*obsval;
+      N     +=weight;
+    }
+    if(N>0.0) { avgobs/=N; }
+
+    double sum1(0.0),sum2(0.0);
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=1.0;
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
+      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
+
+      sum1 += weight*pow(obsval - modval,4);
+      sum2 += weight*pow(obsval - avgobs,4);
+    }
+
+    if(N>0)
+    {
+      return 1.0 - (sum1 / sum2);
+    }
+    else
+    {
+      string warn = "DIAG_NSE4 not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+    break;
   }
   default:
   {

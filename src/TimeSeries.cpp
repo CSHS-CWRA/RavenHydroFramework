@@ -1257,9 +1257,9 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // (1) open NetCDF read-only (get ncid)
   // -------------------------------
   if (Options.noisy){ cout<<"Start reading time series for "<< VarNameNC << " from NetCDF file "<< FileNameNC << endl; }
-  retval = nc_open(FileNameNC.c_str(), NC_NOWRITE, &ncid);   HandleNetCDFErrors(retval);
+  retval = nc_open(FileNameNC.c_str(), NC_NOWRITE, &ncid);  
   if (retval != NC_NOERR) {
-    string warn="ReadTimeSeriesFromNetCDF : unable to open file "+FileNameNC;
+    string warn="ReadTimeSeriesFromNetCDF : unable to open file "+FileNameNC +" (NetCDF error: "+to_string(nc_strerror(retval))+")";
     ExitGracefully(warn.c_str(),BAD_DATA);
   }
   retval = nc_inq_varid(ncid,VarNameNC.c_str(),&varid_f);     
