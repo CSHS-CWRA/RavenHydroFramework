@@ -1807,10 +1807,12 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
 /// \param &ctype [in] parameter class type 
 /// \param &pname [in] valid parameter name
 /// \param &cname [in] valid parameter class name (or SBID as string for CLASS_SUBBASIN or gauge ID as string for CLASS_GAUGE)
-/// \param &value [in] updated parameter value
+/// \param &value [in] updated parameter value (or -1.2345, which is ignored)
 //
 void CModel::UpdateParameter(const class_type &ctype,const string pname,const string cname,const double &value)
 {
+  if (value==RAV_BLANK_DATA) { return; }
+
   if (ctype==CLASS_SOIL)
   {
     CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);

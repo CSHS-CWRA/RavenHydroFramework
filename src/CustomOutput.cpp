@@ -1006,7 +1006,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
   if(Options.output_format==OUTPUT_NETCDF) {
 #ifdef _RVNETCDF_
     int retval;
-    if(_netcdf_ID!=-9) { retval=nc_close(_netcdf_ID); HandleNetCDFErrors(retval); }
+    if(_netcdf_ID!=-9) { retval=nc_close(_netcdf_ID); HandleNetCDFErrors(retval); } _netcdf_ID=-9;
 #endif
   }
 }

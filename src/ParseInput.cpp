@@ -37,10 +37,10 @@ bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
 bool ParseGWFile               (CModel *&pModel, const optStruct &Options);
-bool ParseNetCDFRunInfoFile    (CModel*& pModel, optStruct& Options);
-bool ParseNetCDFStateFile      (CModel*& pModel, optStruct& Options);
-bool ParseNetCDFParamFile      (CModel*& pModel, optStruct& Options);
-
+bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options);
+bool ParseNetCDFStateFile      (CModel *&pModel, optStruct &Options);
+bool ParseNetCDFParamFile      (CModel *&pModel, optStruct &Options);
+bool ParseNetCDFFlowStateFile  (CModel *&pModel, optStruct &Options);
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
@@ -113,7 +113,9 @@ bool ParseInputFiles (CModel      *&pModel,
   if (!ParseNetCDFStateFile(pModel, Options)) {
     ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;
   }
-    
+  if(!ParseNetCDFFlowStateFile(pModel,Options)) {
+    ExitGracefully("Cannot find or read NetCDF flow state file",BAD_DATA); return false;
+  }
   // Time series input file (.rvt)
   //--------------------------------------------------------------------------------
   if (!ParseTimeSeriesFile       (pModel,Options)){
@@ -436,7 +438,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":ChunkSize"                 )){code=109;}
     else if  (!strcmp(s[0],":FEWSStateInfoFile"         )){code=110;}
     else if  (!strcmp(s[0],":FEWSParamInfoFile"         )){code=111;}
-    else if  (!strcmp(s[0],":FEWSFlowStateInfoFile"     )){code=112;}
+    else if  (!strcmp(s[0],":FEWSBasinStateInfoFile"    )){code=112;}
 
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
@@ -1743,7 +1745,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(112):  //
-    {/*:FEWSFlowStateInfoFile [filename.nc]*/
+    {/*:FEWSBasinStateInfoFile [filename.nc]*/
       if (Options.noisy) { cout << "FEWS flow state update file" << endl; }
       Options.flowinfo_filename = CorrectForRelativePath(s[1], Options.rvi_filename);//with .nc extension!
       break;

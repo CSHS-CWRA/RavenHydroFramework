@@ -51,8 +51,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
     //if (time_zone!=0.0){ExitGracefully("ParseRunInfoFile: does not yet support time zone shifts",BAD_DATA_WARN); }
 
     if(Options.noisy) { cout<<"ParseRunInfoFile: read variable start_time from NetCDF: start day: "<<Options.julian_start_day<<" yr: "<< Options.julian_start_year<<endl; }
-    cout << "[RUNINFO]: " << " start day:" << Options.julian_start_day << " start year: "<<Options.julian_start_year<<endl;  
-  
+    
     delete [] unit_t;
   }
 
@@ -119,7 +118,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       Options.run_name=runname;
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:RunName from NetCDF: "<<Options.run_name<<endl; }
-      cout << "[RUNINFO]: " << " run name: " << Options.run_name <<endl;
       delete[] runname;
     }
 
@@ -134,7 +132,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       g_suppress_warnings=(boolean=="true");
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenWarnings from NetCDF: "<<g_suppress_warnings<<endl; }
-      cout << "[RUNINFO]: " << " block warnings: " << g_suppress_warnings <<endl;
       delete[] boolean;
     }
 
@@ -152,7 +149,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
       }
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(boolean=="true")<<endl; }
       delete[] boolean;
-      cout << "[RUNINFO]: " << " block customout: " << (boolean=="true") <<endl;
     }
 
     //NoisyMode
@@ -168,7 +164,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;
-      cout << "[RUNINFO]: " << " noisymode: " << (boolean=="true") <<endl;
     }
 
     //SilentMode
@@ -185,7 +180,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
       
       if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;
-      cout << "[RUNINFO]: " << " silentmode: " << (boolean=="true") <<endl;
     }
 
     // Mode
@@ -200,7 +194,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       if(Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
       delete[] mode;
-      cout << "[RUNINFO]: " << " mode: " <<Options.run_mode <<endl;
     }
 
     // AssimilateStreamflow
@@ -216,7 +209,6 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
 
       if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;
-      cout << "[RUNINFO]: " << " AssimilateStreamflow: " << (boolean=="true") <<endl;
     }
   }
   else {
@@ -272,18 +264,17 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 
   // Get information from time vector
   //====================================================================
-  cout<<"[STATEFILE]: Reading time array..."<<endl;
   GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
-
-  //start_time_index = 1;  //TMP DEBUG!!
 
   if ((start_time_index < 0) || (start_time_index >= ntime))
   {
     time_struct tt;
     JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
-    string warn = "ParseNetCDFStateFile: Model start time ("+tt.date_string+" "+ DecDaysToHours(Options.julian_start_day)+") does not occur during time window provided in NetCDF state update file";
-    ExitGracefully(warn.c_str(), BAD_DATA);
-    return false;
+    string warn = "ParseNetCDFStateFile: Model start time ("+tt.date_string+" "+ DecDaysToHours(Options.julian_start_day)+") does not occur during time window provided in NetCDF state update file. State update file will be ignored.";
+    WriteWarning(warn,Options.noisy);
+    return true;
+    //ExitGracefully(warn.c_str(), BAD_DATA);
+    //return false;
   }
 
   // Get vector of HRUIDs 
@@ -295,12 +286,13 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 
   GetNetCDFStationArray(ncid, statefile,HRUdimID,HRUvecID, HRUIDs, nHRUsLocal); 
   
-  cout << "[STATEFILE]: " << " station id found:" << HRUvecID << endl;  
-  cout << "[STATEFILE]: " << " station dimid found:" << HRUdimID << endl;  
-  cout << "[STATEFILE]: " << " time vector size:" << ntime << endl;
-  cout << "[STATEFILE]: " << " nHRUs=" << nHRUsLocal << endl;
-  cout << "[STATEFILE]: Check"<<endl;
-  
+  if(Options.noisy) {
+    cout << "[STATEFILE]: " << " station id found:" << HRUvecID << endl;
+    cout << "[STATEFILE]: " << " station dimid found:" << HRUdimID << endl;
+    cout << "[STATEFILE]: " << " time vector size:" << ntime << endl;
+    cout << "[STATEFILE]: " << " nHRUs=" << nHRUsLocal << endl;
+  }
+
   //check that valid (integer) HRUIDs exist in Raven Model
   // ===============================================================================
   for (int k = 0; k < nHRUsLocal; k++) {
@@ -308,8 +300,6 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
       ExitGracefully("ParseNetCDFStateFile: invalid HRU ID found in FEWS state update file. ", BAD_DATA);
     }
   }
-  
-  cout<<"[STATEFILE]: Parse arrays"<<endl;
  
   //Parse arrays of states   (look for all state variables in model)
   // ===============================================================================
@@ -359,15 +349,15 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
       for (int k = 0; k < nHRUsLocal; k++) 
       {
         int index = start_time_index * nHRUsLocal + k;
-        if ((state_vec[index] != NETCDF_BLANK_VALUE) && (state_vec[index] != fillval))
+        if ((state_vec[index] != NETCDF_BLANK_VALUE) && (state_vec[index] != fillval) && (state_vec[index]!=RAV_BLANK_DATA))
         {
-          cout << "[STATEFILE]: " <<aSV_names[i]<<" ["<< k<<"]: "<< state_vec[index] << endl;
+          //cout << "[STATEFILE]: OVERRIDING:" <<aSV_names[i]<<" ["<< k<<"]: "<< state_vec[index] << endl;
           if (HRUIDs[k] != DOESNT_EXIST) {
             pModel->GetHRUByID(HRUIDs[k])->SetStateVarValue(i, state_vec[index]);
           }
         }
         else {
-          cout << "[STATEFILE]: " << aSV_names[i] << " [" << k << "]: NULL"  << endl;
+          //cout << "[STATEFILE]: " << aSV_names[i] << " [" << k << "]: NULL"  << endl;
         }
       }
 
@@ -376,7 +366,6 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
       //state variable not found in NetCDF file; do nothing
     }
   }
-  cout<<"[STATEFILE]: closing"<<endl;
   delete[] state_vec;
   delete[] aSV_names;
 
@@ -387,7 +376,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   // check quality of initial state variables
   //======================================================================
   CHydroUnit* pHRU;
-  double* v = new double[pModel->GetNumStateVars()];
+  double *v = new double[pModel->GetNumStateVars()];
   for (int k = 0; k < pModel->GetNumHRUs(); k++)
   {
     pHRU = pModel->GetHydroUnit(k);
@@ -411,7 +400,6 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
     }
   }
   delete[] v;
-  cout<<"[STATEFILE]: done reading state file."<<endl;
   return true;
 #else
   ExitGracefully("ParseNetCDFStateFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
@@ -457,7 +445,6 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
 
   // Get information from time vector
   //====================================================================
-  cout<<"[FLOWFILE]: Reading time array..."<<endl;
   GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
 
   if ((start_time_index < 0) || (start_time_index >= ntime))
@@ -478,12 +465,14 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
 
   GetNetCDFStationArray(ncid, statefile,SBdimID,SBvecID, SBIDs, nSBsLocal); 
   
-  cout << "[FLOWFILE]: " << " station id found:" << SBvecID << endl;  
-  cout << "[FLOWFILE]: " << " station dimid found:" << SBdimID << endl;  
-  cout << "[FLOWFILE]: " << " time vector size:" << ntime << endl;
-  cout << "[FLOWFILE]: " << " nSBs=" << nSBsLocal << endl;
-  cout << "[FLOWFILE]: Check"<<endl;
-  
+  if(Options.noisy) {
+    cout << "[FLOWFILE]: " << " station id found:" << SBvecID << endl;
+    cout << "[FLOWFILE]: " << " station dimid found:" << SBdimID << endl;
+    cout << "[FLOWFILE]: " << " time vector size:" << ntime << endl;
+    cout << "[FLOWFILE]: " << " nSBs=" << nSBsLocal << endl;
+    cout << "[FLOWFILE]: Check"<<endl;
+  }
+
   //check that valid (integer) SBIDs exist in Raven Model
   // ===============================================================================
   for (int p = 0; p < nSBsLocal; p++) {
@@ -491,14 +480,12 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
       ExitGracefully("ParseNetCDFStateFile: invalid SB ID found in FEWS state update file. ", BAD_DATA);
     }
   }
-  
-  cout<<"[FLOWFILE]: Parse arrays"<<endl;
  
   //Parse arrays of states   (look for all state variables in model)
   // ===============================================================================
   string* aSV_names = new string[2];
-  aSV_names[0]="QOUT";
-  aSV_names[1]="STAGE";
+  aSV_names[0]="BASIN_INFLOW";
+  aSV_names[1]="RESERVOIR_STAGE";
  
   int       SVID;
   double*   state_vec;
@@ -543,7 +530,7 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
         int index = start_time_index * nSBsLocal + p;
         if ((state_vec[index] != NETCDF_BLANK_VALUE) && (state_vec[index] != fillval))
         {
-          cout << "[FLOWFILE]: " <<aSV_names[i]<<" ["<< p<<"]: "<< state_vec[index] << endl;
+          //cout << "[FLOWFILE]: OVERRIDING" <<aSV_names[i]<<" ["<< p<<"]: "<< state_vec[index] << endl;
           if (SBIDs[p] != DOESNT_EXIST) 
           {
             if      (i==0){pModel->GetSubBasinByID(SBIDs[p])->SetQout(state_vec[index]);}
@@ -551,7 +538,7 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
           }
         }
         else {
-          cout << "[FLOWFILE]: " << aSV_names[i] << " [" << p << "]: NULL"  << endl;
+          //cout << "[FLOWFILE]: " << aSV_names[i] << " [" << p << "]: NULL"  << endl;
         }
       }
 
@@ -560,7 +547,6 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
       //state variable not found in NetCDF file; do nothing
     }
   }
-  cout<<"[FLOWFILE]: closing"<<endl;
   delete[] state_vec;
   delete[] aSV_names;
 
@@ -568,7 +554,6 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
   //====================================================================
   retval = nc_close(ncid);         HandleNetCDFErrors(retval);
 
-  cout<<"[FLOWFILE]: done reading flow state file."<<endl;
   return true;
 #else
   ExitGracefully("ParseNetCDFFlowStateFile: Deltares FEWS State Update file can only be read using NetCDF version of Raven",BAD_DATA_WARN);
@@ -601,8 +586,6 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
   if(Options.noisy) { cout<<"Opening FEWS parameter info file "<<paramfile<<endl; }
   retval = nc_open(paramfile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
 
-  cout<<"[PARAMFILE]: "<<" OPEN"<<endl;
-
   //Get information from time vector
   //====================================================================
   int ntime;
@@ -610,9 +593,8 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
   int start_time_index=0;
   GetNetCDFTimeInfo(ncid,time_dimid,ntime,start_time_index,Options);
 
-  cout<<"[PARAMFILE]: "<<" start time index="<<start_time_index<<endl;
-
-  start_time_index = 1;  //TMP DEBUG!!
+  //cout<<"[PARAMFILE]: "<<" start time index="<<start_time_index<<endl;
+  //start_time_index = 1;  //TMP DEBUG!!
 
   if ((start_time_index < 0) || (start_time_index >= ntime))
   {
@@ -633,8 +615,6 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
   int *varids=new int[nVars];
   retval=nc_inq_varids(ncid,nvars,varids);            HandleNetCDFErrors(retval);
 
-  cout<<"[PARAMFILE]: "<<" nVars="<<nVars<<endl;
-
   string namestr;
   string param_str;
   string class_str;
@@ -642,7 +622,7 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
   for (int j = 0; j < nVars; j++) 
   {
     retval=nc_inq_varname(ncid,varids[j],varname);    HandleNetCDFErrors(retval);
-    cout<<"[PARAMFILE]: "<<" var="<<varname<<" ";
+    //cout<<"[PARAMFILE]: "<<" var="<<varname<<" ";
     namestr=varname;
     if (namestr.find("_in_")!=string::npos) 
     {
@@ -677,11 +657,11 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
           nc_get_vars_float(ncid,varids[j],start,count,stridep,ip);    HandleNetCDFErrors(retval); 
       
           double pval=ip[start_time_index];
-          cout<<" * ";
+          /*cout<<" * ";
           cout<<" |"<<param_str<<"| ";
           cout<<" |"<<class_str<<"| ";
           cout<<" CLASS: "<<pclass<<" ";
-          cout<<" val: "<<pval;
+          cout<<" val: "<<pval;*/
           delete [] ip;
 
           // update parameter value
@@ -694,7 +674,7 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
         WriteWarning(warn.c_str(),Options.noisy);
       }
     }
-    cout<<endl;
+    //cout<<endl;
   }
 
   retval = nc_close(ncid);   HandleNetCDFErrors(retval);
@@ -747,7 +727,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
   start_time_index = (int)(round(delta_t / Options.timestep));
 
   //TMP DEBUG - only for debugging below
-  time_struct tt;
+  /*time_struct tt;
   JulianConvert(0, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
   cout << "[FEWS FILE]: " << " TIME ARRAY :" << endl;
   for (int i = 0; i < ntime; i++) {
@@ -755,7 +735,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
   }
   cout << "[FEWS FILE]: " << " ref day, year: " << ref_day << ", " << ref_year << endl;
   cout << "[FEWS FILE]: " << " time starts "<< start_time_index <<" timesteps after model start ("<<tt.date_string<<")"<< endl;
-  //END TMP DEBUG
+  */ //END TMP DEBUG
 
   delete[] timearr;
   delete[] unitstr;

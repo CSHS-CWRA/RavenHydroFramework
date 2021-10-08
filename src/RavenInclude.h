@@ -786,7 +786,7 @@ enum sv_type
   DEPRESSION,              ///< [mm] depression/surface storage
   SNOW,                    ///< [mm] frozen snow depth (mm SWE : snow water equivalent)
   NEW_SNOW,                ///< [mm] new snowfall waiting to be handled by snow balance (as SWE)
-  SNOW_LIQ,                ///< [mm] liquid snow cover
+  SNOW_LIQ,                ///< [mm] liquid water content of snowpack
   WETLAND,                 ///< [mm] deep wetland depression storage
   GLACIER,                 ///< [mm] Glacier melt/reservoir storage
   GLACIER_ICE,             ///< [mm] Glacier ice - typically assumed to be infinite reservoir.
