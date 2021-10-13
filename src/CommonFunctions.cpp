@@ -758,7 +758,7 @@ bool IsValidDateString(const string sDate)
 ////////////////////////////////////////////////////// /////////////////////
 /// \brief Get the current system date/time
 /// \return "now" as an ISO formatted string
-string GetCurrentTime(void)
+string GetCurrentMachineTime(void)
 {
   // Get the current wall clock time
   time_t now;

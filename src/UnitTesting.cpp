@@ -486,15 +486,15 @@ void ShortwaveGenerator()
   double day_angle,Mopt,t_sol,TIR,albedo, dew_pt;
   double day_length, solar_noon;
   int year;
-  ifstream IN;
+  ifstream SHIN;
   ofstream SHORT;
 
-  IN.open   ("ShortwaveInput.csv");
+  SHIN.open   ("ShortwaveInput.csv");
   SHORT.open("ShortwaveGenerator.csv");
   SHORT<<"day[d], year, lat[dec],slope,aspect,declin[rad],ecc[rad],solar_time[d],albedo,dew_pt,Mopt[-],Ketp[MJ/m2/d],Ket[MJ/m2/d],Kcs[MJ/m2/d]"<<endl;
   int   Len,line(0);double ET_rad;
   char *s[MAXINPUTITEMS];
-  CParser *p=new CParser(IN,line);
+  CParser *p=new CParser(SHIN,line);
   p->Tokenize(s,Len);
   int NumLines=s_to_i(s[0]);
   double tstep=s_to_d(s[1]);
@@ -537,7 +537,7 @@ void ShortwaveGenerator()
     SHORT<<albedo<<","<<dew_pt<<","<<Mopt<<","<<Ketp<<","<<Ket<<","<<TIR<<endl;
   }
   cout<<"100% - done"<<endl;
-  IN.close();
+  SHIN.close();
   SHORT.close();
   ExitGracefully("ShortwaveGenerator",SIMULATION_DONE);
 }

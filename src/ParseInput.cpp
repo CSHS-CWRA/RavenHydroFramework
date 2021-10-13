@@ -1134,11 +1134,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       evap_method *methods=new evap_method[N];
       for (int i = 0; i < N; i++) {
         methods[i] = ParseEvapMethod(s[2*i+1]);
-        wts    [i]=s_to_d(s[2*i+2]);
+        wts    [i] =s_to_d(s[2*i+2]);
         sum+=wts[i];
       }
       if (fabs(sum - 1.0) < 0.05) {
-        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}
+        for (int i = 0; i < N; i++) {wts[i]/=sum;}
       }//ensure weights add exactly to 1
       else {
         WriteWarning("ParseInput: :BlendedPETWeights do not add to 1.0",Options.noisy);
@@ -1146,6 +1146,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.evaporation != PET_BLENDED) {
         WriteWarning("Parse Input: :BlendedPETWeights provided, but PET method is not PET_BLENDED",Options.noisy);
       }
+      ExitGracefullyIf(pModel==NULL,"Parse Input: :BlendedPETWeights command must appear after :SoilModel command in .rvi file",BAD_DATA_WARN);
       pModel->SetPETBlendValues(N,methods,wts);
       delete [] wts; 
       delete [] methods;
@@ -1198,6 +1199,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.pot_melt != POTMELT_BLENDED) {
         WriteWarning("Parse Input: :BlendedPotMeltWeights provided, but potential melt method is not POTMELT_BLENDED",Options.noisy);
       }
+      ExitGracefullyIf(pModel==NULL,"Parse Input: :BlendedPotMeltWeights command must appear after :SoilModel command in .rvi file",BAD_DATA_WARN);
       pModel->SetPotMeltBlendValues(N,methods,wts);
       delete [] wts; 
       delete [] methods;
@@ -3264,6 +3266,7 @@ evap_method ParseEvapMethod(const string s)
   else if (!strcmp(tmp.c_str(),"PET_MOHYSE"            )){return PET_MOHYSE;}
   else if (!strcmp(tmp.c_str(),"PET_OUDIN"             )){return PET_OUDIN;}
   else if (!strcmp(tmp.c_str(),"PET_LINACRE"           )){return PET_LINACRE; }
+  else if (!strcmp(tmp.c_str(),"PET_BLENDED"           )){return PET_BLENDED; }
   else{
     return PET_UNKNOWN;
   }
@@ -3287,6 +3290,7 @@ potmelt_method ParsePotMeltMethod(const string s)
   else if (!strcmp(tmp.c_str(),"POTMELT_USACE"     )){return POTMELT_USACE;}
   else if (!strcmp(tmp.c_str(),"POTMELT_CRHM_EBSM" )){return POTMELT_CRHM_EBSM; }
   else if (!strcmp(tmp.c_str(),"POTMELT_HMETS"     )){return POTMELT_HMETS; }
+  else if (!strcmp(tmp.c_str(),"POTMELT_BLENDED"   )){return POTMELT_BLENDED; }
   else if (!strcmp(tmp.c_str(),"POTMELT_NONE"      )){return POTMELT_NONE; }
   else                                               {return POTMELT_UNKNOWN;}
 }

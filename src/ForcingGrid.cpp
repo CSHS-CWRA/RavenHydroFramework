@@ -1788,7 +1788,7 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
 #endif 
 
-  int nSteps = (int)(max(1.0,round(tstep/_interval)));//# of intervals in time step
+  int nSteps = max(1,(int)(round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
   double snow; double rain;
   for (int i=0;i<_nWeights[k];i++)

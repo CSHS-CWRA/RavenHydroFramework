@@ -713,7 +713,6 @@ void  CConstituentModel::ApplyConvolutionRouting(const int p,const double *aRout
 void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options) 
 {
   string filename;
-  ofstream OUT;
 
   int iCumPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
 
@@ -829,7 +828,6 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
 void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
 {
   string filename;
-  ofstream OUT;
 
   int iCumPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
 
@@ -862,7 +860,7 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
   _OUTPUT<<":Application   Raven"<<endl;
   if(!Options.benchmarking) {
     _OUTPUT<<":Version       "<<Options.version<<endl;
-    _OUTPUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    _OUTPUT<<":CreationDate  "<<GetCurrentMachineTime()<<endl;
   }
   _OUTPUT<<"#"<<endl;
   _OUTPUT<<"#------------------------------------------------------------------------"<<endl;
@@ -933,7 +931,7 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
   _POLLUT<<":Application   Raven"<<endl;
   if(!Options.benchmarking) {
     _POLLUT<<":Version       "<<Options.version<<endl;
-    _POLLUT<<":CreationDate  "<<GetCurrentTime()<<endl;
+    _POLLUT<<":CreationDate  "<<GetCurrentMachineTime()<<endl;
   }
   _POLLUT<<"#"<<endl;
   _POLLUT<<"#------------------------------------------------------------------------"<<endl;

@@ -1236,7 +1236,7 @@ void        AddTime               (const double      jul_day1,
                                          double      &jul_day_out,
                                          int         &year_out);
 int         StringToCalendar      (      string      cal_chars);
-string      GetCurrentTime        ();
+string      GetCurrentMachineTime ();
 double      FixTimestep           (      double      tstep);
 bool        IsValidDateString     (const string      sDate);
 double      RoundToNearestMinute  (const double& t);

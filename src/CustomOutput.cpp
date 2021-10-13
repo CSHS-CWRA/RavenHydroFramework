@@ -279,11 +279,11 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
   {
   case OUTPUT_STANDARD:
   default:
-    WriteCSVFileHeader();           return; break;
+    WriteCSVFileHeader();           return;
   case OUTPUT_ENSIM: 
-    WriteEnSimFileHeader(Options);  return; break;
+    WriteEnSimFileHeader(Options);  return; 
   case OUTPUT_NETCDF:
-    WriteNetCDFFileHeader(Options); return; break;
+    WriteNetCDFFileHeader(Options); return;
   }
 }
 
@@ -371,7 +371,7 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
   _CUSTOM<<":Application   Raven"<<endl;
   if(!Options.benchmarking){
     _CUSTOM<<":Version       "<<Options.version <<endl;
-    _CUSTOM<<":CreationDate  "<<GetCurrentTime()<<endl;
+    _CUSTOM<<":CreationDate  "<<GetCurrentMachineTime()<<endl;
   }
   _CUSTOM<<"#"<<endl;
   _CUSTOM<<"#------------------------------------------------------------------------"<<endl;

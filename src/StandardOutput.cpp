@@ -1432,7 +1432,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
     _STORAGE << ":Application   Raven" << endl;
     if(!Options.benchmarking){
       _STORAGE << ":Version       " << Options.version << endl;
-      _STORAGE << ":CreationDate  " << GetCurrentTime() << endl;
+      _STORAGE << ":CreationDate  " << GetCurrentMachineTime() << endl;
     }
     _STORAGE << "#" << endl;
     _STORAGE << "#------------------------------------------------------------------------" << endl;
@@ -1494,7 +1494,7 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
   _HYDRO << ":Application   Raven" << endl;
   if(!Options.benchmarking){
     _HYDRO << ":Version       " << Options.version << endl;
-    _HYDRO << ":CreationDate  " << GetCurrentTime() << endl;
+    _HYDRO << ":CreationDate  " << GetCurrentMachineTime() << endl;
   }
   _HYDRO << "#" << endl;
   _HYDRO << "#------------------------------------------------------------------------" << endl;

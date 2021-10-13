@@ -118,9 +118,9 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
 
         INPUT2.open(filename.c_str()); 
         if (INPUT2.fail()){
-          ostrstream FILENAME;
-          FILENAME<<":RedirectToFile: Cannot find file "<<filename<<ends;
-          ExitGracefully(FILENAME.str() ,BAD_DATA); 
+          string warn;
+          warn=":RedirectToFile: Cannot find file "+filename;
+          ExitGracefully(warn.c_str() ,BAD_DATA); 
         }
         else{
           pMainParser=p;    //save pointer to primary parser
@@ -145,9 +145,9 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
         //-- Ensure Name File exists (easier to deal with here than within Fortran)
         MFUSG.open(filename.c_str());
         if (MFUSG.fail()){
-          ostrstream FILENAME;
-          FILENAME << "ParseGWFile: Cannot find Modflow Name file " << filename << ends;
-          ExitGracefully(FILENAME.str(), BAD_DATA);
+          string warn;
+          warn= "ParseGWFile: Cannot find Modflow Name file " +filename;
+          ExitGracefully(warn.c_str(), BAD_DATA);
         }
         MFUSG.clear();
         MFUSG.close();

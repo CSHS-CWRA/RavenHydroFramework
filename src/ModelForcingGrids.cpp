@@ -337,7 +337,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   pTave_daily->Initialize(Options);//  needed for correct mapping from time series to model time
 
   double interval = pTave_daily->GetInterval();
-  int       nVals = (int)ceil(pTave_daily->GetChunkSize()); // number of subdaily values (input resolution) - should be 1
+  int       nVals = (int)ceil((float)(pTave_daily->GetChunkSize())); // number of subdaily values (input resolution) - should be 1
   
   pTmin_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MIN,interval,nVals);
   pTmax_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MAX,interval,nVals);
