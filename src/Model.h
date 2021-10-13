@@ -69,13 +69,10 @@ private:/*------------------------------------------------------*/
   int         _aStateVarIndices[MAX_STATE_VAR_TYPES][MAX_SV_LAYERS]; ///< lookup table for state variable indices; the index of SOIL[1] in a state_var[] array may be returned by aStateVarIndices[(int)(SOIL)][1]
 
   int                _nSoilVars;  ///< number of soil layer storage units
-  int           _nAquiferLayers;  ///< number of aquifer layer storage units
-  int              _nSnowLayers;  ///< number of snow layer storage units (default: 1)
 
   int               _nProcesses;  ///< number of hydrological processes that move water, mass, or energy from one storage unit to another
   CHydroProcessABC**_pProcesses;  ///< Array of pointers to hydrological processes
-
-  bool   **_aShouldApplyProcess; ///< array of flags for whether or not each process applies to each HRU [_nProcesses][_nHydroUnits]
+  bool   **_aShouldApplyProcess;  ///< array of flags for whether or not each process applies to each HRU [_nProcesses][_nHydroUnits]
 
   int                  _nGauges;  ///< number of precip/temp gauges for forcing interpolation
   CGauge             **_pGauges;  ///< array of pointers to gauges which store time series info [size:_nGauges]
@@ -128,7 +125,6 @@ private:/*------------------------------------------------------*/
   double    *_aCumulativeLatBal;  ///< cumulative amount of flowthrough [mm-m2 or MJ or mg] for each lateral process connection [j**]
   double          *_aFlowLatBal;  ///< current time step flowthrough [mm-m2 or MJ or mg] for each lateral process connection [j**]
   int     _nTotalLatConnections;  ///< total number of between-HRU connections in model
-
   double            _CumulInput;  ///< cumulative water added to watershed (precipitation, basin inflows, etc.) [mm]
   double           _CumulOutput;  ///< cumulative outflow of water from system [mm]
   double             _initWater;  ///< initial water in system [mm]
@@ -151,6 +147,14 @@ private:/*------------------------------------------------------*/
   const CHRUGroup *_pOutputGroup; ///< pointer to HRU group for which storage histories are written to file (or NULL)
 
   const optStruct   *_pOptStruct; ///< pointer to model options information
+
+  //Blended PET/potential melt members
+  int              _PETBlends_N;       ///< Not the best place to store these rarely used members
+  evap_method     *_PETBlends_type;
+  double          *_PETBlends_wts; 
+  int              _PotMeltBlends_N;
+  potmelt_method  *_PotMeltBlends_type;
+  double          *_PotMeltBlends_wts;
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -207,7 +211,7 @@ private:/*------------------------------------------------------*/
                                       const CHydroUnit   *pHRU,
                                       const force_struct &F,
                                       const double       &wind_measurement_ht);
-  double         EstimateCloudCover  (const optStruct    &Options,
+  double           EstimateCloudCover(const optStruct    &Options,
                                       const force_struct &F,
                                       const int           k);
   double  CalculateSubDailyCorrection(const force_struct &F,
@@ -267,7 +271,6 @@ public:/*-------------------------------------------------------*/
   double            GetAvgCumulFluxBet (const int iFrom, const int iTo) const;
 
   int               GetNumSoilLayers   () const;
-  int               GetNumAquiferLayers() const;
   int               GetLakeStorageIndex() const; 
 
   /*--below are only available to global routines--*/
@@ -356,6 +359,9 @@ public:/*-------------------------------------------------------*/
 
   void    OverrideStreamflow        (const long SBID);
   void    SetEnsembleMode           (CEnsemble *pEnsemble);
+
+  void    SetPETBlendValues         (const int N, const evap_method    *aET, const double *wts);
+  void    SetPotMeltBlendValues     (const int N, const potmelt_method *aPM, const double *wts);
 
   void    DeleteCustomOutputs       ();
 

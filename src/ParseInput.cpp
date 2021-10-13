@@ -46,6 +46,8 @@ void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
 void AddNetCDFAttribute        (optStruct &Options,const string att,const string &val);
 
+evap_method    ParseEvapMethod   (const string s);
+potmelt_method ParsePotMeltMethod(const string s); 
 //////////////////////////////////////////////////////////////////
 /// \brief This method is the primary Raven input routine that parses input files, called by main
 ///
@@ -139,7 +141,8 @@ bool ParseInputFiles (CModel      *&pModel,
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief This local method (called by ParseInputFiles) reads an input .rvi file and generates a new model with all options and processes created.
+/// \brief This local method (called by ParseInputFiles) reads an input .rvi file and generates 
+/// a new model with all options and processes created.
 ///
 /// \remark Custom output must be AFTER processes are specified.
 ///
@@ -381,11 +384,11 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LakeStorage"               )){code=38; }//AFTER SoilModel Commmand
     else if  (!strcmp(s[0],":MultilayerSnow"            )){code=39; }//AFTER :SoilModel Commmand
     else if  (!strcmp(s[0],":RetainUBCWMBugs"           )){code=40; }
-    
+    else if  (!strcmp(s[0],":BlendedPETWeights"         )){code=41; }
     else if  (!strcmp(s[0],":RechargeMethod"            )){code=42; }
     else if  (!strcmp(s[0],":NetSWRadMethod"            )){code=43; }
     else if  (!strcmp(s[0],":DirectEvaporation"         )){code=44; }
-
+    else if  (!strcmp(s[0],":BlendedPotMeltWeights"     )){code=45; }
     else if  (!strcmp(s[0],":SnowCoverDepletion"        )){code=46; }
     else if  (!strcmp(s[0],":EnsembleMode"              )){code=47; }
     else if  (!strcmp(s[0],":SuppressCompetitiveET"     )){code=48; }
@@ -757,62 +760,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:Evaporation [string method] */
       if (Options.noisy) {cout <<"Potential Evapotranspiration Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":Evaporation",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"CONSTANT"              )){Options.evaporation =PET_CONSTANT;}
-      else if (!strcmp(s[1],"DATA"                  )){Options.evaporation =PET_DATA;}
-      else if (!strcmp(s[1],"FROM_MONTHLY"          )){Options.evaporation =PET_FROMMONTHLY;}
-      else if (!strcmp(s[1],"PENMAN_MONTEITH"       )){Options.evaporation =PET_PENMAN_MONTEITH;}
-      else if (!strcmp(s[1],"PENMAN_COMBINATION"    )){Options.evaporation =PET_PENMAN_COMBINATION;}
-      else if (!strcmp(s[1],"HAMON"                 )){Options.evaporation =PET_HAMON;}
-      else if (!strcmp(s[1],"HARGREAVES"            )){Options.evaporation =PET_HARGREAVES;}
-      else if (!strcmp(s[1],"HARGREAVES_1985"       )){Options.evaporation =PET_HARGREAVES_1985;}
-      else if (!strcmp(s[1],"TURC_1961"             )){Options.evaporation =PET_TURC_1961;}
-      else if (!strcmp(s[1],"MAKKINK_1957"          )){Options.evaporation =PET_MAKKINK_1957;}
-      else if (!strcmp(s[1],"PRIESTLEY_TAYLOR"      )){Options.evaporation =PET_PRIESTLEY_TAYLOR;}
-      else if (!strcmp(s[1],"MONTHLY_FACTOR"        )){Options.evaporation =PET_MONTHLY_FACTOR;}
-      else if (!strcmp(s[1],"PET_CONSTANT"          )){Options.evaporation =PET_CONSTANT;}
-      else if (!strcmp(s[1],"PET_DATA"              )){Options.evaporation =PET_DATA;}
-      else if (!strcmp(s[1],"PET_FROMMONTHLY"       )){Options.evaporation =PET_FROMMONTHLY;}
-      else if (!strcmp(s[1],"PET_PENMAN_MONTEITH"   )){Options.evaporation =PET_PENMAN_MONTEITH;}
-      else if (!strcmp(s[1],"PET_PENMAN_COMBINATION")){Options.evaporation =PET_PENMAN_COMBINATION;}
-      else if (!strcmp(s[1],"PET_HAMON"             )){Options.evaporation =PET_HAMON;}
-      else if (!strcmp(s[1],"PET_HARGREAVES"        )){Options.evaporation =PET_HARGREAVES;}
-      else if (!strcmp(s[1],"PET_HARGREAVES_1985"   )){Options.evaporation =PET_HARGREAVES_1985;}
-      else if (!strcmp(s[1],"PET_TURC_1961"         )){Options.evaporation =PET_TURC_1961;}
-      else if (!strcmp(s[1],"PET_MAKKINK_1957"      )){Options.evaporation =PET_MAKKINK_1957;}
-      else if (!strcmp(s[1],"PET_PRIESTLEY_TAYLOR"  )){Options.evaporation =PET_PRIESTLEY_TAYLOR;}
-      else if (!strcmp(s[1],"PET_MONTHLY_FACTOR"    )){Options.evaporation =PET_MONTHLY_FACTOR;}
-      else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.evaporation =PET_PENMAN_SIMPLE33;}
-      else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.evaporation =PET_PENMAN_SIMPLE39;}
-      else if (!strcmp(s[1],"PET_GRANGERGRAY"       )){Options.evaporation =PET_GRANGERGRAY;}
-      else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.evaporation =PET_MOHYSE;}
-      else if (!strcmp(s[1],"PET_OUDIN"             )){Options.evaporation =PET_OUDIN;}
-      else if (!strcmp(s[1],"PET_LINACRE"           )){Options.evaporation =PET_LINACRE; }
-
-      else{
-        ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
+      Options.evaporation =ParseEvapMethod(s[1]);
+      if (Options.evaporation==PET_UNKNOWN){
+        ExitGracefully("ParseMainInputFile: Unrecognized OW PET calculation method",BAD_DATA_WARN);
       }
+
       bool notspecified=true;
       if((Len>=3) && (Options.evaporation==PET_DATA))
       {
         notspecified=false;
-        if      (!strcmp(s[2],"PET_CONSTANT"          )) { Options.evap_infill =PET_CONSTANT; }
-        else if (!strcmp(s[2],"PET_FROMMONTHLY"       )) { Options.evap_infill =PET_FROMMONTHLY; }
-        else if (!strcmp(s[2],"PET_PENMAN_MONTEITH"   )) { Options.evap_infill =PET_PENMAN_MONTEITH; }
-        else if (!strcmp(s[2],"PET_PENMAN_COMBINATION")) { Options.evap_infill =PET_PENMAN_COMBINATION; }
-        else if (!strcmp(s[2],"PET_HAMON"             )) { Options.evap_infill =PET_HAMON; }
-        else if (!strcmp(s[2],"PET_HARGREAVES"        )) { Options.evap_infill =PET_HARGREAVES; }
-        else if (!strcmp(s[2],"PET_HARGREAVES_1985"   )) { Options.evap_infill =PET_HARGREAVES_1985; }
-        else if (!strcmp(s[2],"PET_TURC_1961"         )) { Options.evap_infill =PET_TURC_1961; }
-        else if (!strcmp(s[2],"PET_MAKKINK_1957"      )) { Options.evap_infill =PET_MAKKINK_1957; }
-        else if (!strcmp(s[2],"PET_PRIESTLEY_TAYLOR"  )) { Options.evap_infill =PET_PRIESTLEY_TAYLOR; }
-        else if (!strcmp(s[2],"PET_MONTHLY_FACTOR"    )) { Options.evap_infill =PET_MONTHLY_FACTOR; }
-        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE33"   )) { Options.evap_infill =PET_PENMAN_SIMPLE33;}
-        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE39"   )) { Options.evap_infill =PET_PENMAN_SIMPLE39;}
-        else if (!strcmp(s[2],"PET_GRANGERGRAY"       )) { Options.evap_infill =PET_GRANGERGRAY;}
-        else if (!strcmp(s[2],"PET_MOHYSE"            )) { Options.evap_infill =PET_MOHYSE;}
-        else if (!strcmp(s[2],"PET_OUDIN"             )) { Options.evap_infill =PET_OUDIN;}
-        else if (!strcmp(s[2],"PET_LINACRE"           )) { Options.evap_infill =PET_LINACRE; }
-        else { notspecified=true; }
+        Options.evap_infill =ParseEvapMethod(s[2]);
+        if (Options.evap_infill==PET_UNKNOWN) { notspecified=true; }
       }
       if((Options.evaporation==PET_DATA) && (notspecified)) {
         string warning="PET_DATA was chosen, but no infilling method was specified. Blank PET data will be infilled using PET_HARGREAVES_1985";
@@ -825,58 +783,17 @@ bool ParseMainInputFile (CModel     *&pModel,
        string ":OW_Evaporation", string method  {optional infill method}*/
       if (Options.noisy) {cout <<"Open Water Potential Evapotranspiration Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":OW_Evaporation",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"CONSTANT"              )){Options.ow_evaporation =PET_CONSTANT;}
-      else if (!strcmp(s[1],"FROM_FILE"             )){Options.ow_evaporation =PET_DATA;}
-      else if (!strcmp(s[1],"FROM_MONTHLY"          )){Options.ow_evaporation =PET_FROMMONTHLY;}
-      else if (!strcmp(s[1],"PENMAN_MONTEITH"       )){Options.ow_evaporation =PET_PENMAN_MONTEITH;}
-      else if (!strcmp(s[1],"PENMAN_COMBINATION"    )){Options.ow_evaporation =PET_PENMAN_COMBINATION;}
-      else if (!strcmp(s[1],"PRIESTLEY_TAYLOR"      )){Options.ow_evaporation =PET_PRIESTLEY_TAYLOR;}
-      else if (!strcmp(s[1],"HARGREAVES"            )){Options.ow_evaporation =PET_HARGREAVES;}
-      else if (!strcmp(s[1],"HARGREAVES_1985"       )){Options.ow_evaporation =PET_HARGREAVES_1985;}
-      else if (!strcmp(s[1],"MONTHLY_FACTOR"        )){Options.ow_evaporation =PET_MONTHLY_FACTOR;}
-      else if (!strcmp(s[1],"PET_CONSTANT"          )){Options.ow_evaporation =PET_CONSTANT;}
-      else if (!strcmp(s[1],"PET_DATA"              )){Options.ow_evaporation =PET_DATA;}
-      else if (!strcmp(s[1],"PET_FROMMONTHLY"       )){Options.ow_evaporation =PET_FROMMONTHLY;}
-      else if (!strcmp(s[1],"PET_PENMAN_MONTEITH"   )){Options.ow_evaporation =PET_PENMAN_MONTEITH;}
-      else if (!strcmp(s[1],"PET_PENMAN_COMBINATION")){Options.ow_evaporation =PET_PENMAN_COMBINATION;}
-      else if (!strcmp(s[1],"PET_HAMON"             )){Options.ow_evaporation =PET_HAMON;}
-      else if (!strcmp(s[1],"PET_HARGREAVES"        )){Options.ow_evaporation =PET_HARGREAVES;}
-      else if (!strcmp(s[1],"PET_HARGREAVES_1985"   )){Options.ow_evaporation =PET_HARGREAVES_1985;}
-      else if (!strcmp(s[1],"PET_TURC_1961"         )){Options.ow_evaporation =PET_TURC_1961;}
-      else if (!strcmp(s[1],"PET_MAKKINK_1957"      )){Options.ow_evaporation =PET_MAKKINK_1957;}
-      else if (!strcmp(s[1],"PET_PRIESTLEY_TAYLOR"  )){Options.ow_evaporation =PET_PRIESTLEY_TAYLOR;}
-      else if (!strcmp(s[1],"PET_MONTHLY_FACTOR"    )){Options.ow_evaporation =PET_MONTHLY_FACTOR;}
-      else if (!strcmp(s[1],"PET_PENMAN_SIMPLE33"   )){Options.ow_evaporation =PET_PENMAN_SIMPLE33;}
-      else if (!strcmp(s[1],"PET_PENMAN_SIMPLE39"   )){Options.ow_evaporation =PET_PENMAN_SIMPLE39;}
-      else if (!strcmp(s[1],"PET_GRANGERGRAY"       )){Options.ow_evaporation =PET_GRANGERGRAY;}
-      else if (!strcmp(s[1],"PET_MOHYSE"            )){Options.ow_evaporation =PET_MOHYSE;}
-      else if (!strcmp(s[1],"PET_OUDIN"             )){Options.ow_evaporation =PET_OUDIN;}
-      else if (!strcmp(s[1],"PET_LINACRE"           )){Options.ow_evaporation =PET_LINACRE; }
-      else{
-        ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
+
+      Options.ow_evaporation  =ParseEvapMethod(s[1]);
+      if (Options.ow_evaporation==PET_UNKNOWN){
+        ExitGracefully("ParseMainInputFile: Unrecognized OW PET calculation method",BAD_DATA_WARN);
       }
       bool notspecified=true;
       if((Len>=3) && (Options.ow_evaporation==PET_DATA))
       {
         notspecified=false;
-        if      (!strcmp(s[2],"PET_CONSTANT"          )) { Options.ow_evap_infill =PET_CONSTANT; }
-        else if (!strcmp(s[2],"PET_FROMMONTHLY"       )) { Options.ow_evap_infill =PET_FROMMONTHLY; }
-        else if (!strcmp(s[2],"PET_PENMAN_MONTEITH"   )) { Options.ow_evap_infill =PET_PENMAN_MONTEITH; }
-        else if (!strcmp(s[2],"PET_PENMAN_COMBINATION")) { Options.ow_evap_infill =PET_PENMAN_COMBINATION; }
-        else if (!strcmp(s[2],"PET_HAMON"             )) { Options.ow_evap_infill =PET_HAMON; }
-        else if (!strcmp(s[2],"PET_HARGREAVES"        )) { Options.ow_evap_infill =PET_HARGREAVES; }
-        else if (!strcmp(s[2],"PET_HARGREAVES_1985"   )) { Options.ow_evap_infill =PET_HARGREAVES_1985; }
-        else if (!strcmp(s[2],"PET_TURC_1961"         )) { Options.ow_evap_infill =PET_TURC_1961; }
-        else if (!strcmp(s[2],"PET_MAKKINK_1957"      )) { Options.ow_evap_infill =PET_MAKKINK_1957; }
-        else if (!strcmp(s[2],"PET_PRIESTLEY_TAYLOR"  )) { Options.ow_evap_infill =PET_PRIESTLEY_TAYLOR; }
-        else if (!strcmp(s[2],"PET_MONTHLY_FACTOR"    )) { Options.ow_evap_infill =PET_MONTHLY_FACTOR; }
-        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE33"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE33;}
-        else if (!strcmp(s[2],"PET_PENMAN_SIMPLE39"   )) { Options.ow_evap_infill =PET_PENMAN_SIMPLE39;}
-        else if (!strcmp(s[2],"PET_GRANGERGRAY"       )) { Options.ow_evap_infill =PET_GRANGERGRAY;}
-        else if (!strcmp(s[2],"PET_MOHYSE"            )) { Options.ow_evap_infill =PET_MOHYSE;}
-        else if (!strcmp(s[2],"PET_OUDIN"             )) { Options.ow_evap_infill =PET_OUDIN;}
-        else if (!strcmp(s[1],"PET_LINACRE"           )) { Options.ow_evap_infill =PET_LINACRE; }
-        else{notspecified=true;}
+        Options.ow_evap_infill =ParseEvapMethod(s[2]);
+        if (Options.ow_evap_infill==PET_UNKNOWN){notspecified=true;}
       }
       if ((Options.ow_evaporation==PET_DATA) && (notspecified)) {
         string warning="PET_DATA was chosen, but no infilling method was specified. Blank OW PET data will be infilled using PET_HARGREAVES_1985";
@@ -1134,21 +1051,10 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:PotentialMeltMethod [string method] */
       if (Options.noisy) {cout <<"Potential Melt Calculation Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":PotentialMeltMethod",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"POTMELT_DEGREE_DAY")){Options.pot_melt=POTMELT_DEGREE_DAY;}
-      else if (!strcmp(s[1],"POTMELT_EB"        )){Options.pot_melt=POTMELT_EB;}
-      else if (!strcmp(s[1],"POTMELT_RESTRICTED")){Options.pot_melt=POTMELT_RESTRICTED;}
-      else if (!strcmp(s[1],"POTMELT_DD_RAIN"   )){Options.pot_melt=POTMELT_DD_RAIN;}
-      else if (!strcmp(s[1],"POTMELT_UBCWM"     )){Options.pot_melt=POTMELT_UBCWM;}
-      else if (!strcmp(s[1],"POTMELT_HBV"       )){Options.pot_melt=POTMELT_HBV;}
-      else if (!strcmp(s[1],"POTMELT_HBV_ROS"   )){Options.pot_melt=POTMELT_HBV_ROS; }
-      else if (!strcmp(s[1],"POTMELT_DATA"      )){Options.pot_melt=POTMELT_DATA;}
-      else if (!strcmp(s[1],"UBC"               )){Options.pot_melt=POTMELT_UBCWM;}
-      else if (!strcmp(s[1],"HBV"               )){Options.pot_melt=POTMELT_HBV;}
-      else if (!strcmp(s[1],"POTMELT_USACE"     )){Options.pot_melt=POTMELT_USACE;}
-      else if (!strcmp(s[1],"POTMELT_CRHM_EBSM" )){Options.pot_melt=POTMELT_CRHM_EBSM; }
-      else if (!strcmp(s[1],"POTMELT_HMETS"     )){Options.pot_melt=POTMELT_HMETS; }
-      else if (!strcmp(s[1],"POTMELT_NONE"      )){Options.pot_melt=POTMELT_NONE; }
-      else {ExitGracefully("ParseInput:PotentialMelt: Unrecognized method",BAD_DATA_WARN);}
+      Options.pot_melt=ParsePotMeltMethod(s[1]);
+      if (Options.pot_melt==POTMELT_UNKNOWN){
+        ExitGracefully("ParseInput:PotentialMelt: Unrecognized method",BAD_DATA_WARN);
+      }
       break;
     }
     case(35): //----------------------------------------------
@@ -1219,7 +1125,30 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(41):  //--------------------------------------------
-    {
+    {/*:BlendedPETWeights [PET method 1] [wt1] [PET method 2] [wt2]...*/
+      if (Options.noisy){cout<<":BlendedPETWeights"<<endl; }
+      // should check for even number of entries, Len
+      int N=(Len-1)/2;
+      double       sum    =0.0;
+      double      *wts    =new double     [N];
+      evap_method *methods=new evap_method[N];
+      for (int i = 0; i < N; i++) {
+        methods[i] = ParseEvapMethod(s[2*i+1]);
+        wts    [i]=s_to_d(s[2*i+2]);
+        sum+=wts[i];
+      }
+      if (fabs(sum - 1.0) < 0.05) {
+        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}
+      }//ensure weights add exactly to 1
+      else {
+        WriteWarning("ParseInput: :BlendedPETWeights do not add to 1.0",Options.noisy);
+      }
+      if (Options.evaporation != PET_BLENDED) {
+        WriteWarning("Parse Input: :BlendedPETWeights provided, but PET method is not PET_BLENDED",Options.noisy);
+      }
+      pModel->SetPETBlendValues(N,methods,wts);
+      delete [] wts; 
+      delete [] methods;
       break;
     }
     case(42)://----------------------------------------------
@@ -1248,7 +1177,30 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(45)://----------------------------------------------
-    {
+    {/*:BlendedPotMeltWeights [Potmelt method 1] [wt1] [Potmelt method 2] [wt2]...*/
+      if (Options.noisy){cout<<":BlendedPotMeltWeights"<<endl; }
+      // should check for even number of entries, Len
+      int N=(Len-1)/2;
+      double       sum    =0.0;
+      double      *wts    =new double     [N];
+      potmelt_method *methods=new potmelt_method[N];
+      for (int i = 0; i < N; i++) {
+        methods[i] = ParsePotMeltMethod(s[2*i+1]);
+        wts    [i]=s_to_d(s[2*i+2]);
+        sum+=wts[i];
+      }
+      if (fabs(sum - 1.0) < 0.05) {
+        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}
+      }//ensure weights add exactly to 1
+      else {
+        WriteWarning("ParseInput: :BlendedPETWeights do not add to 1.0",Options.noisy);
+      }
+      if (Options.pot_melt != POTMELT_BLENDED) {
+        WriteWarning("Parse Input: :BlendedPotMeltWeights provided, but potential melt method is not POTMELT_BLENDED",Options.noisy);
+      }
+      pModel->SetPotMeltBlendValues(N,methods,wts);
+      delete [] wts; 
+      delete [] methods;
       break;
     }
     case(46)://----------------------------------------------
@@ -2857,7 +2809,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       AddProcess(pModel,pMover,pProcGroup);
 
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
-        int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
+        //\todo [funct] implement this by default
+        //int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
         //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_TEMP);
       }
       break;
@@ -3276,4 +3229,64 @@ void AddNetCDFAttribute(optStruct &Options,const string att,const string &val)
   delete[]Options.aNetCDFattribs;
   Options.aNetCDFattribs=&aTmp[0];
   Options.nNetCDFattribs++;
+}
+
+///////////////////////////////////////////////////////////////////
+/// \brief returns corresponding evaporation method from string name
+//
+evap_method ParseEvapMethod(const string s) 
+{
+  string tmp=StringToUppercase(s);
+  if      (!strcmp(tmp.c_str(),"CONSTANT"              )){return PET_CONSTANT;}
+  else if (!strcmp(tmp.c_str(),"FROM_FILE"             )){return PET_DATA;}
+  else if (!strcmp(tmp.c_str(),"FROM_MONTHLY"          )){return PET_FROMMONTHLY;}
+  else if (!strcmp(tmp.c_str(),"PENMAN_MONTEITH"       )){return PET_PENMAN_MONTEITH;}
+  else if (!strcmp(tmp.c_str(),"PENMAN_COMBINATION"    )){return PET_PENMAN_COMBINATION;}
+  else if (!strcmp(tmp.c_str(),"PRIESTLEY_TAYLOR"      )){return PET_PRIESTLEY_TAYLOR;}
+  else if (!strcmp(tmp.c_str(),"HARGREAVES"            )){return PET_HARGREAVES;}
+  else if (!strcmp(tmp.c_str(),"HARGREAVES_1985"       )){return PET_HARGREAVES_1985;}
+  else if (!strcmp(tmp.c_str(),"MONTHLY_FACTOR"        )){return PET_MONTHLY_FACTOR;}
+  else if (!strcmp(tmp.c_str(),"PET_CONSTANT"          )){return PET_CONSTANT;}
+  else if (!strcmp(tmp.c_str(),"PET_DATA"              )){return PET_DATA;}
+  else if (!strcmp(tmp.c_str(),"PET_FROMMONTHLY"       )){return PET_FROMMONTHLY;}
+  else if (!strcmp(tmp.c_str(),"PET_PENMAN_MONTEITH"   )){return PET_PENMAN_MONTEITH;}
+  else if (!strcmp(tmp.c_str(),"PET_PENMAN_COMBINATION")){return PET_PENMAN_COMBINATION;}
+  else if (!strcmp(tmp.c_str(),"PET_HAMON"             )){return PET_HAMON;}
+  else if (!strcmp(tmp.c_str(),"PET_HARGREAVES"        )){return PET_HARGREAVES;}
+  else if (!strcmp(tmp.c_str(),"PET_HARGREAVES_1985"   )){return PET_HARGREAVES_1985;}
+  else if (!strcmp(tmp.c_str(),"PET_TURC_1961"         )){return PET_TURC_1961;}
+  else if (!strcmp(tmp.c_str(),"PET_MAKKINK_1957"      )){return PET_MAKKINK_1957;}
+  else if (!strcmp(tmp.c_str(),"PET_PRIESTLEY_TAYLOR"  )){return PET_PRIESTLEY_TAYLOR;}
+  else if (!strcmp(tmp.c_str(),"PET_MONTHLY_FACTOR"    )){return PET_MONTHLY_FACTOR;}
+  else if (!strcmp(tmp.c_str(),"PET_PENMAN_SIMPLE33"   )){return PET_PENMAN_SIMPLE33;}
+  else if (!strcmp(tmp.c_str(),"PET_PENMAN_SIMPLE39"   )){return PET_PENMAN_SIMPLE39;}
+  else if (!strcmp(tmp.c_str(),"PET_GRANGERGRAY"       )){return PET_GRANGERGRAY;}
+  else if (!strcmp(tmp.c_str(),"PET_MOHYSE"            )){return PET_MOHYSE;}
+  else if (!strcmp(tmp.c_str(),"PET_OUDIN"             )){return PET_OUDIN;}
+  else if (!strcmp(tmp.c_str(),"PET_LINACRE"           )){return PET_LINACRE; }
+  else{
+    return PET_UNKNOWN;
+  }
+}
+///////////////////////////////////////////////////////////////////
+/// \brief returns corresponding potential melt method from string name
+//
+potmelt_method ParsePotMeltMethod(const string s) 
+{
+  string tmp=StringToUppercase(s);
+  if      (!strcmp(tmp.c_str(),"POTMELT_DEGREE_DAY")){return POTMELT_DEGREE_DAY;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_EB"        )){return POTMELT_EB;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_RESTRICTED")){return POTMELT_RESTRICTED;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_DD_RAIN"   )){return POTMELT_DD_RAIN;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_UBCWM"     )){return POTMELT_UBCWM;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_HBV"       )){return POTMELT_HBV;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_HBV_ROS"   )){return POTMELT_HBV_ROS; }
+  else if (!strcmp(tmp.c_str(),"POTMELT_DATA"      )){return POTMELT_DATA;}
+  else if (!strcmp(tmp.c_str(),"UBC"               )){return POTMELT_UBCWM;}
+  else if (!strcmp(tmp.c_str(),"HBV"               )){return POTMELT_HBV;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_USACE"     )){return POTMELT_USACE;}
+  else if (!strcmp(tmp.c_str(),"POTMELT_CRHM_EBSM" )){return POTMELT_CRHM_EBSM; }
+  else if (!strcmp(tmp.c_str(),"POTMELT_HMETS"     )){return POTMELT_HMETS; }
+  else if (!strcmp(tmp.c_str(),"POTMELT_NONE"      )){return POTMELT_NONE; }
+  else                                               {return POTMELT_UNKNOWN;}
 }

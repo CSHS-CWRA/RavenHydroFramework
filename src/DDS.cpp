@@ -151,7 +151,7 @@ void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 {
   ExitGracefullyIf(e>=_nMembers,"CDDSEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
 
-  int iters_remaining=_nMembers-e;
+  //int iters_remaining=_nMembers-e;
   double u;
 
   //- update output file/ run names ----------------------------

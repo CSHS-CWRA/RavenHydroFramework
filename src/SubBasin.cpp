@@ -452,7 +452,8 @@ double CSubBasin::GetDownstreamIrrDemand(const double &t) const
   double Qirr;
   if(_pIrrigDemand==NULL) { Qirr=0.0; }
   else                    { Qirr= _pIrrigDemand->GetValue(t);}
-  ExitGracefully("CSubBasin::GetDownstreamIrrDemand",STUB); return 0;
+  // \todo[funct]: properly calculate downstream irrigation demand - problem is no access to downstream subbasin from here
+  ExitGracefully("CSubBasin::GetDownstreamIrrDemand",STUB); return 0; 
   //if (_downstream_ID==DOESNT_EXIST)){ return Qirr; }
   //else                              { return _pDownstreamSB->GetDownstreamIrrDemand(t)+Qirr; }
 }
@@ -1892,7 +1893,6 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
     _aRouteHydro[0]=1.0-travel_time/tstep;
     _aRouteHydro[1]=travel_time/tstep;
     for(int n=2;n<_nQinHist;n++) { _aRouteHydro[n]=0.0; }
-    cout<<"HERE"<<endl;
   }
 }
 
@@ -1994,15 +1994,12 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     ///< As interpreted from Williams, 1969/Kim and Lee, HP 2010 \cite williams1969flood
     double ttime;                                       //[d] reach segment travel time
     double storage_coeff;
-    double area;                                        //[m3] volume of water in reach at end of timestep
     double c1,c2,c3;
 
     double Qin_new=_aQinHist[0];
     double Qin    =_aQinHist[1];
     for (seg=0;seg<_nSegments;seg++)
     {
-      area=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n);
-
       ttime=GetMuskingumK(dx)*seg_fraction;// K=representative travel time for the reach segment (else storagecoeff changes and mass flows not preserved)
       storage_coeff = min(1.0 / (ttime/tstep + 0.5),1.0);
 
@@ -2224,12 +2221,12 @@ double CSubBasin::ChannelLosses( const double &reach_volume,//[m3]-representativ
 {
   double Tloss;       //[m3/day] Transmission losses during timestep
   double Eloss;       //[m3/day] Evaporation losses during timestep
-  double perim;       //[m]
+  //double perim;       //[m]
   double top_width;   //[m]
 
   ExitGracefullyIf(_pChannel==NULL,"CSubBasin::ChannelLosses: NULL channel",BAD_DATA);
 
-  perim                 =_pChannel->GetWettedPerim(_aQout[_nSegments-1],_slope,_mannings_n);
+  //perim                 =_pChannel->GetWettedPerim(_aQout[_nSegments-1],_slope,_mannings_n);
   top_width             =_pChannel->GetTopWidth   (_aQout[_nSegments-1],_slope,_mannings_n);
 
   // calculate transmission loss rate from channel

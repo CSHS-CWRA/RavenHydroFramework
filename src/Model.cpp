@@ -58,6 +58,13 @@ CModel::CModel(const int        nsoillayers,
   _FORCINGS_ncid=-9; 
   _RESSTAGE_ncid=-9;
 
+  _PETBlends_N=0;
+  _PETBlends_type=NULL;
+  _PETBlends_wts=NULL; 
+  _PotMeltBlends_N=0;
+  _PotMeltBlends_type=NULL;
+  _PotMeltBlends_wts=NULL;
+
   ExitGracefullyIf(nsoillayers<1,
                    "CModel constructor::improper number of soil layers. SoilModel not specified?",BAD_DATA);
 
@@ -74,8 +81,6 @@ CModel::CModel(const int        nsoillayers,
   _aStateVarType =new sv_type [_nStateVars];
   _aStateVarLayer=new int     [_nStateVars];
   _nSoilVars     =nsoillayers;
-  _nAquiferLayers=0;  //initially
-  _nSnowLayers   =0;  //initially
 
   _aStateVarType[0]=SURFACE_WATER; _aStateVarLayer[0]=DOESNT_EXIST; _aStateVarIndices[(int)(SURFACE_WATER)][0]=0;
   _aStateVarType[1]=ATMOSPHERE;    _aStateVarLayer[1]=DOESNT_EXIST; _aStateVarIndices[(int)(ATMOSPHERE   )][0]=1;
@@ -195,6 +200,11 @@ CModel::~CModel()
   delete _pTransModel;
   delete _pEnsemble;
   delete _pGWModel;
+
+  delete [] _PETBlends_type;
+  delete [] _PETBlends_wts;
+  delete [] _PotMeltBlends_type;
+  delete [] _PotMeltBlends_wts;
 }
 /*****************************************************************
    Accessors
@@ -256,13 +266,6 @@ int CModel::GetNumStateVars   () const{return _nStateVars;}
 /// \return Integer number of soil layers
 //
 int CModel::GetNumSoilLayers  () const{return _nSoilVars;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns number of aquifer layers
-///
-/// \return Integer number of aquifer layers
-//
-int CModel::GetNumAquiferLayers  () const{return _nAquiferLayers;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of hydrologic processes simulated by model
@@ -1495,6 +1498,32 @@ void CModel::SetOutputGroup(const CHRUGroup *pOut){
 //
 void CModel::SetEnsembleMode(CEnsemble *pEnsemble) {
   _pEnsemble=pEnsemble;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets PET blend values
+//
+void    CModel::SetPETBlendValues(const int N, const evap_method* aEv, const double* wts) {
+  _PETBlends_N=N;
+  _PETBlends_type=new evap_method [N];
+  _PETBlends_wts =new double      [N];
+  for (int i = 0; i < N; i++) {
+    _PETBlends_type[i]=aEv[i];
+    _PETBlends_wts [i]=wts[i];   
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Sets PotMelt blend values
+//
+void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, const double* wts) 
+{
+  _PotMeltBlends_N=N;
+  _PotMeltBlends_type=new potmelt_method [N];
+  _PotMeltBlends_wts =new double      [N];
+  for (int i = 0; i < N; i++) {
+    _PotMeltBlends_type[i]=aPM[i];
+    _PotMeltBlends_wts [i]=wts[i];   
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Deletes all custom outputs (For FEWS override)

@@ -18,7 +18,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 /// \param one_value [in] Constant value of time series
 //
 CTimeSeries::CTimeSeries(string Name, long loc_ID, double one_value)
-  :CTimeSeriesABC(TS_REGULAR,Name,loc_ID)
+  :CTimeSeriesABC(TS_REGULAR,Name,loc_ID,"")
 {
   _start_day=0.0;
   _start_year=1900;

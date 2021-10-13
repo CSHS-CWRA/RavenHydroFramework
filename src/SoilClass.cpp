@@ -453,6 +453,10 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   bad=SetSpecifiedValue(_Soil.exchange_flow,Stmp.exchange_flow,Sdefault.exchange_flow,needed,"EXCHANGE_FLOW");
   bad=SetSpecifiedValue(_Soil.baseflow_coeff2,Stmp.baseflow_coeff2,Sdefault.baseflow_coeff2,needed,"BASEFLOW_COEFF2");
   bad=SetSpecifiedValue(_Soil.storage_threshold,Stmp.storage_threshold,Sdefault.storage_threshold,needed,"STORAGE_THRESHOLD");
+
+  if(bad) {
+    //do something...
+  }
 }
 
 //////////////////////////////////////////////////////////////////

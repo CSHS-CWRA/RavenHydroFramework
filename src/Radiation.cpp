@@ -34,13 +34,11 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
   case(SW_RAD_NONE):
   {
     return 0.0;
-    break;
   }
   //--------------------------------------------------------
   case(SW_RAD_DATA):
   {
     return F->SW_radia;
-    break;
   }
   //--------------------------------------------------------
   case(SW_RAD_DEFAULT):
@@ -55,7 +53,6 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
                                   F->day_angle, F->day_length,
                                   solar_noon, dew_pt, ET_rad,(Options.timestep>=1.0));
 
-    break;
   }
   //--------------------------------------------------------
   case(SW_RAD_UBCWM):
@@ -77,8 +74,6 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     {
       return F->SW_radia_unc;
     }
-
-    break;
   }
   //--------------------------------------------------------
   case(SW_RAD_VALIANTZAS) :
@@ -88,7 +83,6 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     double ecc = EccentricityCorr(F->day_angle);
     ET_rad = 37.59*ecc*(ws*sin(latrad)*sin(declin) + sin(ws)*cos(latrad)*cos(declin)); //Extraterrestrial radiation
     return  min(0.75+0.00002*pHRU->GetElevation(),1.0)*ET_rad;
-    break;
   }
 
   }
@@ -147,13 +141,11 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   case(LW_RAD_DATA):
   {
     return F->LW_radia_net;
-    break;
   }
   //--------------------------------------------------------
   case(LW_RAD_NONE):
   {
     return 0.0;
-    break;
   }
   //--------------------------------------------------------
   case(LW_RAD_DEFAULT):
@@ -181,7 +173,6 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 
     LW_incoming=STEFAN_BOLTZ*emissivity*eps_at*pow(Tair,4);
     return STEFAN_BOLTZ*emissivity*(eps_at*pow(Tair,4)-pow(Tsurf,4));
-    break;
   }
   //--------------------------------------------------------
   case (LW_RAD_UBCWM):
@@ -197,8 +188,6 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double Fc=pHRU->GetSurfaceProps()->forest_coverage;
     
     return tmp*((1.0-Fc)*LW_open+(Fc)*LW_forest);
-
-    break;
   }
   //--------------------------------------------------------
   case (LW_RAD_HSPF):
@@ -212,7 +201,6 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 
     LW*=HR_PER_DAY*MJ_PER_M2_LANGLEY;//convert Langleys/hr->MH/m2/day
     return LW;
-    break;
   }
   //--------------------------------------------------------
   case(LW_RAD_VALIANTZAS):
@@ -227,7 +215,6 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     eps= 0.34 - 0.14*sqrt(ea);                   //net emissivity Valiantzas (2006) eqn 41 
 
     return -f*eps*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0);
-    break;
   }
   //--------------------------------------------------------
   /*case (LW_RAD_UNFAO):
@@ -299,12 +286,10 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
   {
     double POCAST = CGlobalParams::GetParams()->UBC_cloud_penet;
     return 1.0 -(1.0 - POCAST) * F->cloud_cover;
-    break;
   }
   case(SW_CLOUD_CORR_DINGMAN): // Dingman (2008) Eq. 5-30 (does not require parameters)
   {
     return 0.355 + 0.68 * (1 - F->cloud_cover);
-    break;
   }
   case(SW_CLOUD_CORR_ANNANDALE): 
   // Annandale et al (2002), Software for missing data error analysis of Penman-Monteith 
@@ -315,12 +300,10 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
       return kRs*(1.0 + 2.7E-5*elev)*sqrt(F->temp_daily_max>F->temp_daily_min);
     }
     else {return 0.0;}
-    break;
   }
   default: // apply no cloud cover correction (default)
   {
     return 1.0;
-    break;
   }
   }
 }
@@ -350,7 +333,6 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
     double extinction = pHRU->GetVegetationProps()->svf_extinction;
 
     return (1.0-Fc)*1.0+Fc*exp(-extinction*(LAI+SAI)); // Dingman (2008) Eq. 5-33
-    break;
   }
   case(SW_CANOPY_CORR_UBCWM):  // A simple factor that switches on when forest cover is greater than zero
   {
@@ -358,22 +340,19 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
     double UBC_correction_fact = CGlobalParams::GetParams()->UBC_exposure_fact; //Sun exposure factor of forested areas
     shortwave_corr*=((Fc)*UBC_correction_fact+(1.0-Fc)*1.0);
     return shortwave_corr;
-    break;
   }
   case(SW_CANOPY_CORR_DYNAMIC):  // stub for Jost and Moore (2010) equations
   {
     ExitGracefully("SWCanopyCorrection::SW_CANOPY_CORR_DYNAMIC",STUB);
-    break;
+    return 0.0;
   }
   case(SW_CANOPY_CORR_NONE):
   {
     return 1.0;
-    break;
   }
   default: // apply no correction for canopy (default)
   {
     return 1.0;
-    break;
   }
   }
   return 1.0;

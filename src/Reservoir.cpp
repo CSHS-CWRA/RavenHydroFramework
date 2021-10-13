@@ -1200,7 +1200,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double f,dfdh,out,out2;
   double ET      (0.0);               //[m/s]
   double ext_old (0.0),ext_new (0.0); //[m3/s]
-  double seep_old(0.0),seep_new(0.0);
+  double seep_old(0.0);
   double outflow_nat,stage_nat;       //[m],[m3/s]
 
   if(_pHRU!=NULL)

@@ -220,6 +220,38 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
     }
     _HYDRO<<endl;
+
+    //ReservoirStages.csv
+    //--------------------------------------------------------------
+    if(Options.write_reservoir) 
+    {
+      tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
+      _RESSTAGE.open(tmpFilename.c_str());
+      if(_RESSTAGE.fail()) {
+        ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+      }
+
+      _RESSTAGE<<"time,date,hour";
+      _RESSTAGE<<",precip [mm/day]";
+      for(p=0;p<_nSubBasins;p++)
+      {
+        if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+          if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
+          else { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
+        }
+
+        for(i = 0; i < _nObservedTS; i++) {
+          if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
+          {
+            if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m]"; }
+            else { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m]"; }
+          }
+        }
+
+      }
+      _RESSTAGE<<endl;
+    }
+
   }
   else if (Options.output_format==OUTPUT_ENSIM)
   {
@@ -230,36 +262,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     WriteNetcdfStandardHeaders(Options);  // creates NetCDF files, writes dimensions and creates variables (without writing actual values)
   }
 
-  //ReservoirStages.csv
-  //--------------------------------------------------------------
-  if((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
-  {
-    tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
-    _RESSTAGE.open(tmpFilename.c_str());
-    if(_RESSTAGE.fail()){
-      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-
-    _RESSTAGE<<"time,date,hour";
-    _RESSTAGE<<",precip [mm/day]";
-    for(p=0;p<_nSubBasins;p++)
-    {
-      if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
-        if(_pSubBasins[p]->GetName()=="")  { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
-        else                               { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
-      }
-      
-      for(i = 0; i < _nObservedTS; i++){
-        if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
-        {
-          if(_pSubBasins[p]->GetName()==""){ _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m]"; }
-          else                             { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m]"; }
-        }
-      }
-      
-    }
-    _RESSTAGE<<endl;
-  }
 
   //Demands.csv
   //--------------------------------------------------------------
@@ -477,7 +479,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   //ForcingFunctions.csv
   //--------------------------------------------------------------
-  if (Options.write_forcings)
+  if((Options.write_forcings) && (Options.output_format==OUTPUT_STANDARD))
   {
     tmpFilename=FilenamePrepare("ForcingFunctions.csv",Options);
     _FORCINGS.open(tmpFilename.c_str());
@@ -1017,7 +1019,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     // ForcingFunctions.csv
     //----------------------------------------------------------------
-    if (Options.write_forcings)
+    if ((Options.write_forcings) && (Options.output_format==OUTPUT_STANDARD))
     {
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
@@ -1660,8 +1662,8 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   delete [] current_basin_name[0];
 
   //====================================================================
- //  ReservoirStages.nc
- //====================================================================
+  //  ReservoirStages.nc
+  //====================================================================
   if(Options.write_reservoir)
   {
     // Create the file.
@@ -1688,7 +1690,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     retval = nc_put_att_text(_RESSTAGE_ncid,varid_time,"standard_name",strlen("time"),"time");      HandleNetCDFErrors(retval);
 
     // define precipitation variable
-    varid_pre= NetCDFAddMetadata(_HYDRO_ncid,time_dimid,"precip","Precipitation","mm d**-1");
+    varid_pre= NetCDFAddMetadata(_RESSTAGE_ncid,time_dimid,"precip","Precipitation","mm d**-1");
 
     // ----------------------------------------------------------
     // simulated/observed stages
@@ -1716,6 +1718,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
       varid_qsim= NetCDFAddMetadata2D(_RESSTAGE_ncid,time_dimid,nbasins_dimid,"h_sim","Simulated stage","m");
       varid_qobs= NetCDFAddMetadata2D(_RESSTAGE_ncid,time_dimid,nbasins_dimid,"h_obs","Observed stage","m");
+
     }// end if nSim>0
 
     // End define mode. This tells netCDF we are done defining metadata.
@@ -2361,9 +2364,10 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript)
 {
   ExitGracefullyIf(out_ncid==-9,"WriteNetCDFGlobalAttributes: netCDF file not open",RUNTIME_ERR);
-  int retval(0);
-  string att,val;
+  
 #ifdef _RVNETCDF_
+  string att,val;
+  int retval(0);
   retval = nc_put_att_text(out_ncid, NC_GLOBAL, "Conventions", strlen("CF-1.6"),          "CF-1.6");           HandleNetCDFErrors(retval);
   retval = nc_put_att_text(out_ncid, NC_GLOBAL, "featureType", strlen("timeSeries"),      "timeSeries");       HandleNetCDFErrors(retval);
   retval = nc_put_att_text(out_ncid, NC_GLOBAL, "history",     strlen("Created by Raven"),"Created by Raven"); HandleNetCDFErrors(retval);
@@ -2386,14 +2390,15 @@ void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,con
 //
 void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const size_t time_index,const double &value)
 {
+#ifdef _RVNETCDF_
   static size_t count1[1]; //static for speed of execution
   static size_t time_ind[1];
   static double val[1];
-  int var_id(0),retval(0);
   time_ind[0]=time_index;
-  count1[0]=1;
-  val[0]=value;
-#ifdef _RVNETCDF_
+  count1  [0]=1;
+  val     [0]=value;
+  int var_id(0);
+  int retval(0);
   retval = nc_inq_varid      (out_ncid,shortname.c_str(),&var_id);      HandleNetCDFErrors(retval);
   retval = nc_put_vara_double(out_ncid,var_id,time_ind,count1,&val[0]); HandleNetCDFErrors(retval);
 #endif

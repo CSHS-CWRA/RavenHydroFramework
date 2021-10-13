@@ -27,9 +27,10 @@ struct diversion
   double  percentage;     //percentage of flow above minimum which is diverted
 
   int     nPoints;        //number of points in flow-diversion lookup table
-  double *aQsource=NULL;  //array of discharges [m3/s] in flow diversion lookup table
-  double *aQdivert=NULL;  //array of diversion flow rates [m3/s] correspionding to discharges in flow diversion lookup table
+  double *aQsource;       //array of discharges [m3/s] in flow diversion lookup table
+  double *aQdivert;       //array of diversion flow rates [m3/s] correspionding to discharges in flow diversion lookup table
   
+  diversion()  {aQsource=NULL; aQdivert=NULL;}
   ~diversion() {delete [] aQsource; delete [] aQdivert;}
 };
 

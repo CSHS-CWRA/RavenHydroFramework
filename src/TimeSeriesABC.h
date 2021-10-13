@@ -30,7 +30,7 @@ public:/*-------------------------------------------------------*/
   CTimeSeriesABC(ts_type type,
                  string  name,
                  long    loc_ID,
-                 string filename="");
+                 string filename);
   CTimeSeriesABC(string name,
                  const CTimeSeriesABC &t);
   virtual ~CTimeSeriesABC();

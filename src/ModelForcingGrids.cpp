@@ -25,12 +25,10 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
                                         const double &interval, 
                                         const int nVals)
 {
-  bool is_new;
   static CForcingGrid *pTout;
   if (GetForcingGridIndexFromType(typ) == DOESNT_EXIST )
   { // for the first chunk, the derived grid does not exist and has to be added to the model
     // all weights, etc., are copied from the base grid 
-    is_new=true;
 
     pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrixes are deep copies
 
@@ -48,7 +46,6 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
   else
   {
     // for all latter chunks the the grid already exists and values will be just overwritten
-    is_new=false;
     pTout=GetForcingGrid(typ);
   }
 
@@ -68,8 +65,6 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
 void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 {
   CForcingGrid * pGrid_pre  = NULL;
-  CForcingGrid * pGrid_rain = NULL;
-  CForcingGrid * pGrid_snow = NULL;
 
   // see if gridded forcing is read from a NetCDF
   bool pre_gridded   = ForcingGridIsInput(F_PRECIP);
@@ -78,8 +73,6 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 
   // find the correct grid
   if(pre_gridded)  { pGrid_pre   = GetForcingGrid((F_PRECIP)); }
-  if(rain_gridded) { pGrid_rain  = GetForcingGrid((F_RAINFALL)); }
-  if(snow_gridded) { pGrid_snow  = GetForcingGrid((F_SNOWFALL)); }
 
   // Minimum requirements of forcing grids: must have precip or rain
   ExitGracefullyIf(!pre_gridded && !rain_gridded,"CModel::InitializeForcingGrids: No precipitation forcing found",BAD_DATA);
@@ -137,8 +130,6 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
 void CModel::GenerateGriddedTempVars(const optStruct &Options)
 {
   CForcingGrid * pGrid_tave       = NULL;
-  CForcingGrid * pGrid_daily_tmin = NULL;
-  CForcingGrid * pGrid_daily_tmax = NULL;
   CForcingGrid * pGrid_daily_tave = NULL;
 
   // see if gridded forcing is read from a NetCDF
@@ -149,8 +140,6 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
 
   // find the correct grid
   if(temp_ave_gridded      ) { pGrid_tave       = GetForcingGrid((F_TEMP_AVE)); }
-  if(temp_daily_min_gridded) { pGrid_daily_tmin = GetForcingGrid((F_TEMP_DAILY_MIN)); }
-  if(temp_daily_max_gridded) { pGrid_daily_tmax = GetForcingGrid((F_TEMP_DAILY_MAX)); }
   if(temp_daily_ave_gridded) { pGrid_daily_tave = GetForcingGrid((F_TEMP_DAILY_AVE)); }
 
   // Temperature min/max grids must be both available

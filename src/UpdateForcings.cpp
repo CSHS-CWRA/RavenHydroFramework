@@ -32,7 +32,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
   force_struct        F;
   static force_struct *Fg=NULL; 
-  double              elev,slope;
+  double              elev;
   int                 mo,yr;
   int                 k,g,nn;
   double              mid_day,model_day, time_shift;
@@ -142,7 +142,6 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   for (k = 0; k < _nHydroUnits; k++)
   {
     elev  = _pHydroUnits[k]->GetElevation();
-    slope = _pHydroUnits[k]->GetSlope();
 
     ZeroOutForcings(F);
     ref_elev_temp=ref_elev_precip=0.0;

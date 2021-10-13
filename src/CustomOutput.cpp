@@ -683,7 +683,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   //each custom output gets values of vals data[nHRUs] (max size)
   double val=0;
   double dday;//,jul_day;
-  int    dmon,dyr;
+  int    dmon;
   string thisdate, thishour, yesterday;
   bool   reset;
 
@@ -696,7 +696,6 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   thisdate=tt.date_string;
   dday    =tt.day_of_month;
   dmon    =tt.month;
-  dyr     =tt.year;
 
   thishour =DecDaysToHours(tt.julian_day);
 

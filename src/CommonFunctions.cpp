@@ -404,11 +404,11 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
 {
 
   static time_struct tt;
-  if (sDate.length()!=10){
+  if (sDate.length()!=(size_t)(10)){
     string errString = "DateStringToTimeStruct: Invalid date format used: "+sDate;
     ExitGracefully(errString.c_str(),BAD_DATA);
   }
-  if (sTime.length()<7)  {
+  if (sTime.length()<(size_t)(7))  {
     string errString = "DateStringToTimeStruct: Invalid time format used (hourstamp): "+sTime;
     ExitGracefully(errString.c_str(),BAD_DATA);
   }
@@ -513,7 +513,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
     if(!strstr(tmp.substr(start+16,1).c_str(),":")) { tmp.insert(start+14,"0"); } // second colon in time - fixes 11:0:00 (?)
   }
   else {
-    if(strlen(tmp.c_str())==start+9) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 
+    if(strlen(tmp.c_str())==(size_t)(start+9)) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 
   }
   string sTime,sDate;
   sDate = tmp.substr(start,10); //YYYY-MM-DD
@@ -522,7 +522,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   //cout<<"sTime"<<sTime<<" sDate"<< sDate<<" "<<unit_t_str<<" "<<date_only<<" "<<tmp<<endl;
 
   timezone=0;
-  if((strlen(tmp.c_str())-start)==26) {
+  if((strlen(tmp.c_str())-start)==(size_t)(26)) {
     if(!strcmp(tmp.substr(start+22,1).c_str(),"+")) {
       timezone=(double)(s_to_i(tmp.substr(start+23,4).c_str()))/HR_PER_DAY/100; //time zone, in days
     }

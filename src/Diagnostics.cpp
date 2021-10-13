@@ -208,9 +208,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 		nnend -= _width;
 		nnstart  += _width;
 		
-    bool ValidObs = false;
-    bool ValidMod = false;
-    bool ValidWeight = false;
     double avg=0;
     N=0;
 
@@ -234,8 +231,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
 			modval = modavg / _width;
 			obsval = obsavg / _width;
-		
-      if (weight != 0) { ValidWeight = true; }
 
       if ((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && weight != 0) {
         avg+=obsval*weight;
@@ -278,11 +273,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
         if(pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k); }
       }
 
-      if(validtrack_obs == _width) { ValidObs = true; }
-      else { weight = 0; }
-      if(validtrack_mod == _width) { ValidMod = true; }
-      else { weight = 0; }
-      if(weight != 0) { ValidWeight = true; }
+      if(validtrack_obs != _width) { weight = 0; }
+      if(validtrack_mod != _width) { weight = 0; }
     
       sum1 += pow(obsval - modval,2)*weight;
       sum2 += pow(obsval - avg   ,2)*weight;

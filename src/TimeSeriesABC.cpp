@@ -19,7 +19,7 @@
 CTimeSeriesABC::CTimeSeriesABC(ts_type type,
                                string  Name,
                                long    loc_ID,
-                               string  filename)
+                               string  filename="")
 {
   _type       =type;
   _name       =Name;

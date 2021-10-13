@@ -103,7 +103,8 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     }
     case(-4):  //----------------------------------------------
     {/*:End*/
-      if(Options.noisy) { cout <<"EOF"<<endl; } ended=true; break;
+      if(Options.noisy) { cout <<"EOF"<<endl; } ended=true; 
+      break;
     }
     case(1):  //----------------------------------------------
     {/*:OutputDirectoryFormat*/

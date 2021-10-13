@@ -315,6 +315,16 @@ double CModel::EstimatePET(const force_struct &F,
     break;//calculated direct from Gauge
   }
   //-------------------------------------------------------------------------------------
+  case(PET_BLENDED):
+  {
+    for(int i=0; i<_PETBlends_N;i++) {
+      evap_method etyp=_PETBlends_type[i];
+      double        wt=_PETBlends_wts[i];
+      PET+=wt*EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,etyp,Options,tt,true);
+    }
+    break;
+  }
+  //-------------------------------------------------------------------------------------
   case(PET_FROMMONTHLY):
   {
     double peRatio=1.0+HBV_PET_TEMP_CORR*(F.temp_ave_unc-F.temp_month_ave);

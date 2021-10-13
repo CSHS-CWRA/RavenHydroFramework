@@ -34,7 +34,6 @@ public:/*-------------------------------------------------------*/
   virtual double      GetCumulFluxBetween(const int k,const int iFrom,const int iTo) const=0;
 
   virtual int         GetNumSoilLayers   () const=0;
-  virtual int         GetNumAquiferLayers() const=0;
 
   virtual double      GetAvgStateVar     (const int i) const=0;
   virtual double      GetAvgConcentration(const int i) const=0;

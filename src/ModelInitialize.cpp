@@ -53,8 +53,6 @@ void CModel::Initialize(const optStruct &Options)
       if ((k!=kk) && (_pHydroUnits[k]->GetID()==_pHydroUnits[kk]->GetID())){
         ExitGracefully("CModel::Initialize: non-unique HRU identifier found",BAD_DATA);}}}
 
-  if ((_nSnowLayers==0) && (StateVarExists(SNOW))){_nSnowLayers=1;}
-
   // initialize process algorithms, initialize water/energy balance arrays to zero
   //--------------------------------------------------------------
   _nTotalConnections=0;

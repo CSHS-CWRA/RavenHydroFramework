@@ -51,10 +51,6 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     //annual variation
     Ma=Ma_min+(Ma-Ma_min)*0.5*(1.0-cos(F->day_angle-WINTER_SOLSTICE_ANG));
 
-    //Below code to replicate bug in HBV-EC
-    //double OCT_1=(365.0-31-30-31-(136))/365.0*2.0*PI;//no idea what the 136 correction is, but it is needed
-    //Ma=Ma_min+(Ma-Ma_min)*0.5*(1.0-cos(2.0*(F->day_angle-OCT_1)-WINTER_SOLSTICE_ANG));//TMP DEBUG: Northern hemisphere only (2 is temporary to match HBV!)
-
     //forest correction
     Ma*=((1.0-Fc)*1.0+(Fc)*MRF);
 
@@ -70,7 +66,20 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
       rain_energy=ROS_mult*SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*(F->precip*(1.0-F->snow_frac)); //[mm/d]
     }
 
-    return Ma*(F->temp_daily_ave-melt_temp);
+    return Ma*(F->temp_daily_ave-melt_temp)+rain_energy;
+  }
+  //-------------------------------------------------------------------------------------
+  else if (Options.pot_melt==POTMELT_BLENDED)
+  {
+    ExitGracefullyIf(_PotMeltBlends_N==0,
+      "EstimatePotentialMelt: POTMELT_BLENDED specified, but no weights were provided using :BlendedPotMeltWeights command",BAD_DATA);
+    double melt=0;
+    for(int i=0; i<_PotMeltBlends_N;i++) {
+      potmelt_method etyp=_PotMeltBlends_type[i];
+      double           wt=_PotMeltBlends_wts[i];
+      melt+=wt*EstimatePotentialMelt(F,Options,pHRU,tt);
+    }
+    return melt;
   }
   //----------------------------------------------------------
   else if (Options.pot_melt==POTMELT_EB)
@@ -222,7 +231,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   double CONVM,CONDM,RAINMELT,potential_melt;
   double SHORM,ONGWMO;
   double pressure,vel,RI,RM;
-  double Fc,orient;
+  double Fc;
 
   const double P0CONV= pHRU->GetSurfaceProps()->conv_melt_mult; //convection melt multiplier
   const double P0COND= pHRU->GetSurfaceProps()->cond_melt_mult;  //condensation melt multiplier
@@ -238,7 +247,6 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   }
 
   Fc    =pHRU->GetSurfaceProps()->forest_coverage;
-  orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
 
   //calculate shortwave energy component.
   SHORM=(1.0-albedo)*F.SW_radia_subcan;            //[MJ/m2/d] //Uses subcanopy correction

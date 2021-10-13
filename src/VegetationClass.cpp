@@ -316,6 +316,9 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   bad=SetSpecifiedValue(V.veg_diam,Vtmp.veg_diam,Vdefault.veg_diam,needed,"VEG_DIAM");
   bad=SetSpecifiedValue(V.veg_mBeta,Vtmp.veg_mBeta,Vdefault.veg_mBeta,needed,"VEG_MBETA");
   bad=SetSpecifiedValue(V.veg_conv_coeff,Vtmp.veg_conv_coeff,Vdefault.veg_conv_coeff,needed,"VEG_CONV_COEFF");
+  if(bad) {
+    //do something.
+  }
 }
 
 //////////////////////////////////////////////////////////////////

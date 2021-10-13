@@ -253,7 +253,7 @@ const double  TIME_CORRECTION         =0.0001;                                  
 const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km]     very large maximum reach length (defaults to single segment per reach)
 
 //Special symbols
-const char  DEG_SYMBOL              ='\370';                                    ///< degree symbol, °
+const char  DEG_SYMBOL                ='\370';                                  ///< degree symbol, °
 
 //*****************************************************************
 //Exit Strategies
@@ -398,7 +398,7 @@ enum interp_method
 enum evap_method
 {
   PET_CONSTANT,                 ///< constant uniform PET
-  PET_DATA,                     ///< read PET from time series files (not currently implemented)
+  PET_DATA,                     ///< read PET from time series file
   PET_FROMMONTHLY,              ///< PET estimated from specified monthly averages and daily temperature
   PET_MONTHLY_FACTOR,           ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
   PET_PENMAN_MONTEITH,          ///< Penman-Monteith equation
@@ -416,7 +416,9 @@ enum evap_method
   PET_GRANGERGRAY,              ///< Granger  Gray PET from CRHM (Granger and Gray, 1989)
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
   PET_OUDIN,                    ///< Simple PET from Oudin et. al., 2005
-  PET_LINACRE                   ///< From Linacre, Agricultural Meteorology, 1977
+  PET_LINACRE,                  ///< From Linacre, Agricultural Meteorology, 1977
+  PET_BLENDED,                  ///< a blended combination of 2 or more of the methods above 
+  PET_UNKNOWN                   ///< special PET type for unrecognized commands
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -623,7 +625,9 @@ enum potmelt_method
   POTMELT_USACE,            ///< US Army Corps of Engineers Snow Melt
   POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM) (Pomeroy, 2007)
   POTMELT_HMETS,            ///< From HMETS model (Martel et al., 2017)
-  POTMELT_NONE              ///< Potential melt not calculated
+  POTMELT_BLENDED,          ///< weighted average of multiple methods
+  POTMELT_NONE,             ///< Potential melt not calculated
+  POTMELT_UNKNOWN           ///< special case - can't recognize melt method in input
 };
 
 ////////////////////////////////////////////////////////////////////

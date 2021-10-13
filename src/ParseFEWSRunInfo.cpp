@@ -483,9 +483,10 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
  
   //Parse arrays of states   (look for all state variables in model)
   // ===============================================================================
-  string* aSV_names = new string[2];
-  aSV_names[0]="BASIN_INFLOW";
+  string* aSV_names = new string[3];
+  aSV_names[0]="BASIN_OUTFLOW";
   aSV_names[1]="RESERVOIR_STAGE";
+  aSV_names[2]="BASIN_INFLOW";
  
   int       SVID;
   double*   state_vec;
@@ -533,8 +534,21 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
           //cout << "[FLOWFILE]: OVERRIDING" <<aSV_names[i]<<" ["<< p<<"]: "<< state_vec[index] << endl;
           if (SBIDs[p] != DOESNT_EXIST) 
           {
-            if      (i==0){pModel->GetSubBasinByID(SBIDs[p])->SetQout(state_vec[index]);}
-            else if (i==1){pModel->GetSubBasinByID(SBIDs[p])->GetReservoir()->SetReservoirStage(state_vec[index],state_vec[index]);}
+            CSubBasin *pSB=pModel->GetSubBasinByID(SBIDs[p]);
+            if      (i==0){//"BASIN_OUTFLOW"
+              pSB->SetQout(state_vec[index]);
+            }
+            else if (i==1){//"RESERVOIR_STAGE"
+              pSB->GetReservoir()->SetReservoirStage(state_vec[index],state_vec[index]);
+            }
+            else if (i==2){//"BASIN_INFLOW"
+              int N=pSB->GetInflowHistorySize();
+              double *Qin=new double [N];
+              for(int i=0;i<N;i++) { Qin[i]=pSB->GetInflowHistory()[i]; }
+              Qin[0]=state_vec[index]; //overwrite Qin for this time step
+              pSB->SetQinHist(N,Qin);
+              delete [] Qin;
+            }
           }
         }
         else {

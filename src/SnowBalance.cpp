@@ -46,9 +46,8 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
   }
   else if (type==SNOBAL_HBV)
   {
-    int iSnowLiq,iSnowDepth,iSoil;
+    int iSnowLiq,iSoil;
     iSnowLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
-    iSnowDepth=pModel->GetStateVarIndex(SNOW_DEPTH);
     iSoil     =pModel->GetStateVarIndex(SOIL,0);
 
     CHydroProcessABC::DynamicSpecifyConnections(3); //nConnections=2
@@ -1139,7 +1138,6 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
   double snow_liqAP = POR * snow_depth * SWI;           // liquid water holding capactiy of snowpack [mm]
 
   double RAIN_IN_1 = 0;                      // Rain to snow_liq
-  double RAIN_IN_2 = 0;                      // Rain to Runoff
   double MELT_1 = 0;                         // Melt to snow_liq
   double MELT_2 = 0;                         // Melt to Runoff
   double EXCESS_snow_liq = 0;                     // Excess snow_liq to runoff
@@ -1158,7 +1156,6 @@ void CmvSnowBalance::GawserBalance( const double      *state_vars,
   {
     EXCESS_snow_liq = snow_liq2 - snow_liqAP;
     MELT_2 = min(MELTP, SWC);
-    RAIN_IN_2 = rainthru;
   }
   else {
     MELT_1 = min(MELTP,SWC);
@@ -1238,7 +1235,7 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
   double snowmelt0(0.0),snowmelt1(0.0),snowmelt2(0.0);
 
 
-  double Tmin=Umin/HCP_WATER/DENSITY_WATER/(SWE/MM_PER_METER); //Min cold content -> min snowpack mean temperature
+  //double Tmin=Umin/HCP_WATER/DENSITY_WATER/(SWE/MM_PER_METER); //Min cold content -> min snowpack mean temperature
   //cout<<Umin<<" "<<Tmin<<" "<<T_min<<endl;;
   snow_energy += pot_melt;
   snow_energy = max(Umin,snow_energy);

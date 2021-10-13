@@ -54,7 +54,6 @@ void CmvLatFlush::Initialize()
   string toHRUGrp  =_pModel->GetHRUGroup(  _kk_to)->GetName();
   int q=0;
   int k;
-  bool fromfound=false;
 
   if(_constrain_to_SBs)
   {
@@ -82,7 +81,6 @@ void CmvLatFlush::Initialize()
         if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
           kFrom[q]=k;
           kTo[q]=kToSB;
-          fromfound=true;
           q++;
         }
       }
@@ -110,7 +108,6 @@ void CmvLatFlush::Initialize()
       if(_pModel->IsInHRUGroup(k,fromHRUGrp) && (kToSB!=DOESNT_EXIST)) {
         kFrom[q]=k;
         kTo[q]=kToSB;
-        fromfound=true;
         q++;
       }
     }
@@ -120,6 +117,7 @@ void CmvLatFlush::Initialize()
       WriteWarning(warning,true);
     }
   }
+
   DynamicSpecifyLatConnections(nConn);
   for(q=0;q<_nLatConnections;q++){
     _kFrom   [q]    =kFrom[q];

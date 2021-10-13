@@ -649,8 +649,8 @@ void CmvPrairieBlowingSnow::GetLateralExchange( const double * const     *state_
 
   //model inputs/outputs
   int iDrift     =pModel->GetStateVarIndex(SNOW_DRIFT);
-  int iDriftTemp =pModel->GetStateVarIndex(SNODRIFT_TEMP);
-  int iSnowTemp  =pModel->GetStateVarIndex(SNOW_TEMP);
+  //int iDriftTemp =pModel->GetStateVarIndex(SNODRIFT_TEMP);
+  //int iSnowTemp  =pModel->GetStateVarIndex(SNOW_TEMP);
   int iSnowDepth =pModel->GetStateVarIndex(SNOW_DEPTH);
   int iSWE       =pModel->GetStateVarIndex(SNOW);
   int iSnowLiq   =pModel->GetStateVarIndex(SNOW_LIQ);
@@ -714,7 +714,7 @@ void CmvPrairieBlowingSnow::GetLateralExchange( const double * const     *state_
 
       double delta_snow_temp =wt_average(snow_temp,drift_tempSB,snow_depth*HCPS,added*(DENSITY_WATER/DRIFT_DENS)*DRIFT_HCP)-snow_temp;
       double delta_snow_depth=added*(DENSITY_WATER/DRIFT_DENS);
-      double delta_SWE       =added;
+      //double delta_SWE       =added;
       RemainingDrift-=added*area_frac;   // remove drift used from total available [mm SWE]
       
       //double new_energy,old_energy;
@@ -725,7 +725,7 @@ void CmvPrairieBlowingSnow::GetLateralExchange( const double * const     *state_
       for(int nn=0;nn<pBasin->GetNumHRUs();nn++)
       {
         int kk=pBasin->GetHRU(nn)->GetGlobalIndex();
-        exchange_rates[q]=(state_vars[k][iDrift]*area_k/Options.timestep)*dist_k; //rate of loss from kk Drift to k SWE, mm-m2/d - should sub to added
+        exchange_rates[q]=(state_vars[kk][iDrift]*area_k/Options.timestep)*dist_k; //rate of loss from kk Drift to k SWE, mm-m2/d - should sub to added
         q++;
       }
       exchange_rates[_nDriftConnections      +k]=delta_snow_temp *area_k/Options.timestep; //self-transfer C-m2/d
