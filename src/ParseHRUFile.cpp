@@ -1387,22 +1387,22 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       */
       p->Tokenize(s,Len);
       if(Len >= 1) { NQ = s_to_i(s[0]); }
-      aQ    = new double[NQ];
-      aQ_ht = new double[NQ];
-      for(int i = 0; i < NV; i++) {
+      double *aQQ    = new double[NQ];
+      double *aQQ_ht = new double[NQ];
+      for(int i = 0; i < NQ; i++) {
         p->Tokenize(s,Len);
         if(IsComment(s[0],Len)) { i--; }
         else {
-          aQ_ht[i] = s_to_d(s[0]);
-          aQ   [i] = s_to_d(s[1]);
+          aQQ_ht[i] = s_to_d(s[0]);
+          aQQ   [i] = s_to_d(s[1]);
         }
       }
       p->Tokenize(s,Len); //:EndStageDischargeTable
 
-      CStageDischargeTable *pCurve=new CStageDischargeTable(name,aQ_ht,aQ,NQ);
+      CStageDischargeTable *pCurve=new CStageDischargeTable(name,aQQ_ht,aQQ,NQ);
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
-      delete [] aQ;
-      delete [] aQ_ht;
+      delete [] aQQ;     
+      delete [] aQQ_ht;  
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":BasicWeir")) {

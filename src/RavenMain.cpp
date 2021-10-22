@@ -51,7 +51,7 @@ static string RavenBuildDate(__DATE__);
 int main(int argc, char* argv[])
 {
   double      t;
-  clock_t     t0, t1, t2;          //computational time markers
+  clock_t     t0, t1;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
   
@@ -105,8 +105,7 @@ int main(int argc, char* argv[])
     CheckForErrorWarnings(false);
 
     nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
-    t2=clock();
-
+    
     for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
     {
       pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
@@ -129,7 +128,6 @@ int main(int argc, char* argv[])
       //Solve water/energy balance over time--------------------------------
       t1=clock();
       int step=0;
-      int nsteps=(int)ceil(Options.duration/Options.timestep);
 
       for(t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
       {

@@ -37,7 +37,7 @@ bool ParseTimeSeriesFile       (CModel *&pModel, const optStruct &Options);
 bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
 bool ParseGWFile               (CModel *&pModel, const optStruct &Options);
-bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options);
+bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options,bool runname_overridden,bool mode_overridden);
 bool ParseNetCDFStateFile      (CModel *&pModel, optStruct &Options);
 bool ParseNetCDFParamFile      (CModel *&pModel, optStruct &Options);
 bool ParseNetCDFFlowStateFile  (CModel *&pModel, optStruct &Options);
@@ -69,16 +69,19 @@ bool ParseInputFiles (CModel      *&pModel,
 {
   string filename;
   bool   terr_reqd;
-
+  bool   runname_overridden(false);
+  bool   runmode_overridden(false);
   // Main input file (.rvi)
   //--------------------------------------------------------------------------------
+  if(Options.run_name!="" ) { runname_overridden=true; }
+  if(Options.run_mode!=' ') { runmode_overridden=true; }
   if (!ParseMainInputFile        (pModel,Options)){
     if(Options.rvi_filename.compare("nomodel.rvi")==0){
       ExitGracefully("A model input file name must be supplied as an argument to the Raven executable.",BAD_DATA);return false;
     }
     ExitGracefully("Cannot find or read .rvi file",BAD_DATA);return false;
   }
-  if (!ParseNetCDFRunInfoFile(pModel, Options)){
+  if (!ParseNetCDFRunInfoFile(pModel, Options, runname_overridden,runmode_overridden)){
     ExitGracefully("Cannot find or read NetCDF runinfo file", BAD_DATA); return false;
   }
 
@@ -1256,8 +1259,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(52): //----------------------------------------------
-    {/*Write to output files every x timesteps
-      :OutputInterval [double interval in days] */
+    {/*:OutputInterval [double interval in days] (Write to output files every x timesteps)*/
       if(Options.noisy) { cout <<"Output File Interval"<<endl; }
       if(Len<2) { ImproperFormatWarning(":OutputInterval",p,Options.noisy);  break; }
       Options.output_interval = s_to_d(s[1]);
@@ -1432,6 +1434,11 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
         else if (!strcmp(s[i],"MBF"                )){pDiag=new CDiagnostic(DIAG_MBF); }
+        else if (!strcmp(s[i],"R4MS4E"             )){pDiag=new CDiagnostic(DIAG_R4MS4E);}
+        else if (!strcmp(s[i],"RTRMSE"             )){pDiag=new CDiagnostic(DIAG_RTRMSE);}
+        else if (!strcmp(s[i],"RABSERR"            )){pDiag=new CDiagnostic(DIAG_RABSERR);}
+        else if (!strcmp(s[i],"PERSINDEX"          )){pDiag=new CDiagnostic(DIAG_PERSINDEX);}
+        else if (!strcmp(s[i],"NSE4"               )){pDiag=new CDiagnostic(DIAG_NSE4);}
         else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
         else   {invalid=true;}
         if (!invalid){

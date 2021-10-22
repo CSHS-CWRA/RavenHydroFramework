@@ -1456,6 +1456,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
         if (aStations[i]==loc_ID){StationIdx=i+1;}
       }
       delete [] aStations;
+      if(StationIdx==-1) {
+        string warn="ReadTimeSeriesFromNetCDF: :StationIdx FROM_STATION_VAR - can't find station with SubBasin or HRU ID="+to_string(loc_ID);
+        ExitGracefully(warn.c_str(),BAD_DATA);
+        return NULL;
+      }
     }
 
     size_t    nc_start [2];

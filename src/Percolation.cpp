@@ -214,12 +214,10 @@ void   CmvPercolation::GetRatesOfChange( const double                   *state_v
     double field_cap, max_rate;//mm/d
     field_cap = pHRU->GetSoilProps(m)->field_capacity*max_stor; //moisture content at fc [mm]
     max_rate  = pHRU->GetSoilProps(m)->max_perc_rate;
-
-    rates[0] = max_rate*max(stor-field_cap,0.0)/(max_stor-field_cap);
-
-    if (rates[0] > (stor - field_cap)/Options.timestep)
-    {
-      rates[0] = (stor - field_cap)/Options.timestep; //only percolates when storage>fc
+    rates[0]=0.0;
+    if(stor>field_cap) {
+      rates[0] = max_rate*max(stor-field_cap,0.0)/(max_stor-field_cap);
+      rates[0]=min(rates[0],(stor - field_cap)/Options.timestep);
     }
   }
   //-----------------------------------------------------------------

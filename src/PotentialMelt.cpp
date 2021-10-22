@@ -18,25 +18,26 @@ double UBC_DailyPotentialMelt( const optStruct &Options,
 /// \return double potential melt rate [mm/d]
 //
 double CModel::EstimatePotentialMelt(const force_struct *F,
+                                     const potmelt_method method,
                                      const optStruct &Options,
                                      const CHydroUnit *pHRU,
                                      const time_struct &tt)
 {
 
   //----------------------------------------------------------
-  if (Options.pot_melt==POTMELT_DATA)
+  if (method==POTMELT_DATA)
   {
     return F->potential_melt; //already read into gauge time series & interpolated
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_DEGREE_DAY)
+  else if (method==POTMELT_DEGREE_DAY)
   {
     double Ma=pHRU->GetSurfaceProps()->melt_factor;
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
     return Ma*(F->temp_daily_ave-melt_temp);
   }
   //----------------------------------------------------------
-  else if ((Options.pot_melt==POTMELT_HBV) || (Options.pot_melt==POTMELT_HBV_ROS))
+  else if ((method==POTMELT_HBV) || (method==POTMELT_HBV_ROS))
   {
     const surface_struct *surf=pHRU->GetSurfaceProps();
 
@@ -61,7 +62,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     Ma*=max(1.0-AM*slope_corr*cos(pHRU->GetAspect()),0.0);//north facing slopes (aspect=0) have lower melt rates
 
     double rain_energy(0.0);
-    if(Options.pot_melt==POTMELT_HBV_ROS) {
+    if(method==POTMELT_HBV_ROS) {
       double ROS_mult= pHRU->GetSurfaceProps()->rain_melt_mult;  //rain melt multiplier
       rain_energy=ROS_mult*SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*(F->precip*(1.0-F->snow_frac)); //[mm/d]
     }
@@ -69,7 +70,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return Ma*(F->temp_daily_ave-melt_temp)+rain_energy;
   }
   //-------------------------------------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_BLENDED)
+  else if (method==POTMELT_BLENDED)
   {
     ExitGracefullyIf(_PotMeltBlends_N==0,
       "EstimatePotentialMelt: POTMELT_BLENDED specified, but no weights were provided using :BlendedPotMeltWeights command",BAD_DATA);
@@ -77,12 +78,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     for(int i=0; i<_PotMeltBlends_N;i++) {
       potmelt_method etyp=_PotMeltBlends_type[i];
       double           wt=_PotMeltBlends_wts[i];
-      melt+=wt*EstimatePotentialMelt(F,Options,pHRU,tt);
+      melt+=wt*EstimatePotentialMelt(F,etyp,Options,pHRU,tt);
     }
     return melt;
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_EB)
+  else if (method==POTMELT_EB)
   {
     double rainfall  = F->precip*(1-F->snow_frac);
     double air_temp  = F->temp_ave;
@@ -105,7 +106,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return S;
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_RESTRICTED)
+  else if (method==POTMELT_RESTRICTED)
   {
     double rad,convert;
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
@@ -118,7 +119,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return tmp_rate+ threshPositive(rad*convert);
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_DD_RAIN)
+  else if (method==POTMELT_DD_RAIN)
   {
     //degree-day with rain-on-snow correction
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
@@ -128,12 +129,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return Ma*(F->temp_daily_ave-melt_temp)+adv_melt;
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt==POTMELT_UBCWM)
+  else if (method==POTMELT_UBCWM)
   {
     return UBC_DailyPotentialMelt(Options,*F,pHRU,tt);
   }
   //----------------------------------------------------------
-  else if (Options.pot_melt == POTMELT_USACE)
+  else if (method == POTMELT_USACE)
   {
     // Potential Melt
     double Ma;
@@ -178,7 +179,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return Ma;
   }
   //----------------------------------------------------------
-  else if(Options.pot_melt == POTMELT_CRHM_EBSM)
+  else if(method == POTMELT_CRHM_EBSM)
   {
     double Qn_ebsm=(F->SW_radia_net+F->LW_radia_net);
     double Qh_ebsm=(-0.92+0.076*F->wind_vel+0.19*F->temp_daily_max);
@@ -187,7 +188,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return  (Qn_ebsm + Qh_ebsm + Qp_ebsm)/LH_FUSION/DENSITY_WATER*MM_PER_METER; //[MJ/m2/d]->[mm/d]
   }
   //----------------------------------------------------------
-  else if(Options.pot_melt == POTMELT_HMETS)
+  else if(method == POTMELT_HMETS)
   {
     double Ma;
     double Ma_min   =pHRU->GetSurfaceProps()->min_melt_factor;
@@ -204,7 +205,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return Ma*(F->temp_daily_ave-melt_temp);
   }
   //----------------------------------------------------------
-  else if(Options.pot_melt == POTMELT_NONE)
+  else if(method == POTMELT_NONE)
   {
     return 0.0;
   }

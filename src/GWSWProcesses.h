@@ -93,7 +93,7 @@ public:/*-------------------------------------------------------*/
 	~CGWDrain();
 
 	// HydroProcess inherited functions
-	void        Initialize(int nDrains);
+	void        InitializeDrainClass        (int nDrains);
 	void        GetRatesOfChange            (const double		  *state_vars, 
 		                                       const CHydroUnit  *pHRU, 
 		                                       const optStruct	  &Options,
@@ -150,7 +150,7 @@ public:/*-------------------------------------------------------*/
   ~CGWRecharge();
 
   // HydroProcess inherited functions
-  void Initialize(int nNodes);
+  void InitializeRechargeClass(int nNodes);
   void GetRatesOfChange(const double		  *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct	  &Options,

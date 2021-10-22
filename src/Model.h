@@ -221,6 +221,7 @@ private:/*------------------------------------------------------*/
                                       const time_struct  &tt,
                                       const int          k);
   double        EstimatePotentialMelt(const force_struct *F,
+                                      const potmelt_method method,
                                       const optStruct    &Options,
                                       const CHydroUnit   *pHRU,
                                       const time_struct  &tt);

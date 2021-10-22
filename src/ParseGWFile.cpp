@@ -299,7 +299,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           else if (!strcmp(s[0], ":EndRecharge")) {} //done
           else if (!strcmp(s[0], ":NumNodes")) {
             if (Len >= 2) {
-              pGWRecharge->Initialize(s_to_i(s[1]));
+              pGWRecharge->InitializeRechargeClass(s_to_i(s[1]));
               rech_type = pGWRecharge->getRechargeType();
             }
           }
@@ -401,7 +401,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           else if (!strcmp(s[0], ":Units")) {}//ignored by Raven - needed for GUIs
           else if (!strcmp(s[0], ":EndDrains")) {}//done
           else if (!strcmp(s[0], ":NumDrains")) {
-            if (Len >= 2) { pDrain->Initialize(s_to_i(s[1])); }
+            if (Len >= 2) { pDrain->InitializeDrainClass(s_to_i(s[1])); }
           }
           else if (Len >= 3)
           {

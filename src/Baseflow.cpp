@@ -88,12 +88,6 @@ void CmvBaseflow::GetParticipatingParamList(string *aP, class_type *aPC, int &nP
     aP[1]="BASEFLOW_N";        aPC[1]=CLASS_SOIL;
     aP[2]="TOPMODEL_LAMBDA";   aPC[2]=CLASS_TERRAIN;
   }
-  else if (type==BASE_SACRAMENTO)
-  {
-    nP=0;
-    /// \todo: [QA/QC] Add ParticipatingParamList entry
-    // algorithm not completed
-  }
   else if (type==BASE_GR4J)
   {
     nP=1;
@@ -145,8 +139,6 @@ void CmvBaseflow::GetParticipatingStateVarList(baseflow_type  btype,sv_type *aSV
 ///             <ul> <li> flow is proportional to saturation to a power </ul>
 /// if type==BASE_TOPMODEL
 ///             <ul> <li> flow is calculated using TOPMODEL baseflow method \cite Beven [mm/d] </ul>
-/// if type==BASE_SACRAMENTO
-///             <ul> <li> flow is calculated using Sacremento baseflow methods [mm/d] \cite Clark2008WRR  </ul> \n
 ///
 /// \param *storage [in] Array of state variable values for this HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -250,12 +242,6 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
     rates[0]=stor*(1.0-pow(1.0+pow(max(stor/x3,0.0),4),-0.25))/Options.timestep;
   }
   //-----------------------------------------------------------------
-  else if (type==BASE_SACRAMENTO)
-  {
-    ExitGracefully("CmvBaseflow::GetRatesOfChange: BASE_SACRAMENTO",STUB);
-    //******* Need two reservoirs to work ********
-  }
-  //-----------------------------------------------------------------
   else if (type==BASE_THRESH_POWER)
   {
 
@@ -267,7 +253,10 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
     double sat=stor / max_stor;
 
     rates[0]=0.0;
-    if (sat>tsat){ rates[0] = K*pow((sat - tsat) / (1.0-tsat),n); }
+    if (sat>tsat){ 
+      rates[0] = K*pow((sat - tsat) / (1.0-tsat),n); 
+      rates[0] = min(rates[0],max_stor*(sat-tsat)/Options.timestep);
+    }
 
   }
   //-----------------------------------------------------------------

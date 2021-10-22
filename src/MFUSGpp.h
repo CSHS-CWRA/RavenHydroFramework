@@ -1,6 +1,6 @@
 #ifndef MFUSGPP_H
 #define MFUSGPP_H
-
+#ifdef _MODFLOW_USG_
 using namespace std;
 
 /* MODFLOW-USG Basic Model Interface (BMI) Fortran-imported functions
@@ -38,8 +38,8 @@ namespace MFUSG
 		// Routines to work with MFUSG data
 		void   mask_iunit            (int *export_iunit); // See Extern.f90 in MFUSGLib for iunit/package table (CUNIT)
 		void   add_to_flow_eq        (int *node, double *AMAT_change, double *RHS_change);
-	  void   add_to_flow_budget    (int *nnodes, int *rvn_nodes, double *rates, char *pckg_name);
-    void   first_active_below    (int *node);
+	    void   add_to_flow_budget    (int *nnodes, int *rvn_nodes, double *rates, char *pckg_name);
+        void   first_active_below    (int *node);
 		void   set_irvncb            (int *unit_no);
 		void   set_nrchop            (int *new_NRCHOP);
 
@@ -57,4 +57,5 @@ namespace MFUSG
 	}
 
 }
+#endif
 #endif

@@ -253,7 +253,7 @@ double threshMin(const double &v1, const double &v2, const double &smooth_coeff)
 double RoundToNearestMinute(const double &t)
 {
   const double MIN_PER_HOUR=60;
-  return floor(t+TIME_CORRECTION)+(round((t-floor(t+TIME_CORRECTION))*MIN_PER_HOUR))/MIN_PER_HOUR;
+  return floor(t+TIME_CORRECTION)+(rvn_round((t-floor(t+TIME_CORRECTION))*MIN_PER_HOUR))/MIN_PER_HOUR;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -740,7 +740,7 @@ int StringToCalendar(string cal_chars)
 /// \return improved timestep
 double    FixTimestep(double tstep)
 {
-  double tmp = round(1.0/tstep);
+  double tmp = rvn_round(1.0/tstep);
   ExitGracefullyIf(fabs(tstep*tmp-1.0)>0.1,
                    "CommonFunctions::FixTimestep: timesteps and time intervals must evenly divide into one day",BAD_DATA);
   return 1.0/tmp;
@@ -1093,8 +1093,7 @@ double TemperatureEnthalpyDerivative(const double &hv)
   double hvt=(g_freeze_temp*SPH_ICE-LH_FUSION)*DENSITY_WATER; //transition enthalpy [MJ/m3 water]
 
   //double alpha=0.05; //smoothing factor
-  //return 0.5*erfc(alpha*(hv-hvt))*1.0/SPH_ICE/DENSITY_ICE+0.5*erfc(alpha*(-hv))*1.0/SPH_WATER/DENSITY_WATER;
-
+  //return 0.5*rvn_erfc(alpha*(hv-hvt))*1.0/SPH_ICE/DENSITY_ICE+0.5*erfc(alpha*(-hv))*1.0/SPH_WATER/DENSITY_WATER;
 
   //derivative of temperature with respect to volumetric enthalpy
   if      (hv>0  ){ return 1.0/SPH_WATER/DENSITY_WATER;}
@@ -1387,6 +1386,38 @@ double rvn_erf(const double &x)
 {
   return 1-rvn_erfc(x);
 }
+//////////////////////////////////////////////////////////////////
+/// local versions of math functiosn trunc, floor, round, and isnan 
+/// - not available for standard BORLAND C compiler
+//
+double rvn_trunc(const double& x) {
+#ifdef __BORLANDC__
+  return pdMath_trunc(x);
+#else
+  return trunc(x);
+#endif
+}
+double rvn_round(const double& x) {
+#ifdef __BORLANDC__
+  return pdMath_round(x);
+#else
+  return round(x);
+#endif
+}
+double rvn_floor(const double& x) {
+#ifdef __BORLANDC__
+  return pdMath_floor(x);
+#else
+  return floor(x);
+#endif
+}
+bool rvn_isnan(const double& x) {
+#ifdef __BORLANDC__
+  return (bool)(pdMath_isnan(x));
+#else
+  return isnan(x);
+#endif
+}
 ////////////////////////////////////////////////////////////////////
 /// \brief Returns the value of the lognormal distribution function f_x(x) for the specified value x
 /// \param &x [in] Double whose lognormal probability distribution value is to be returned
@@ -1606,9 +1637,9 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
   double F=0;
   if (t<=0){return 0.0;}
   if(L < 500*(D/v)) {
-    F=0.5*(exp((v*L)/D)*erfc((L+v*t)/sqrt(4.0*D*t)));
+    F=0.5*(exp((v*L)/D)*rvn_erfc((L+v*t)/sqrt(4.0*D*t)));
   }
-  F+=0.5*(erfc((L-v*t)/sqrt(4.0*D*t)));
+  F+=0.5*(rvn_erfc((L-v*t)/sqrt(4.0*D*t)));
   return F;
 }
 //////////////////////////////////////////////////////////////////
@@ -1635,9 +1666,9 @@ double TimeVaryingADRCumDist(const double &t,const double &L,const double *v, in
   double F=0;
   if (t<=0){return 0.0;}
   if(L < 500*(D/v[0])) {
-    F=0.5*(exp((v[0]*L)/D)*erfc((L+v[0]*tstar)/sqrt(4.0*D*tstar)));
+    F=0.5*(exp((v[0]*L)/D)*rvn_erfc((L+v[0]*tstar)/sqrt(4.0*D*tstar)));
   }
-  F+=0.5*(erfc((L-v[0]*tstar)/sqrt(4.0*D*tstar)));
+  F+=0.5*(rvn_erfc((L-v[0]*tstar)/sqrt(4.0*D*tstar)));
   return F;
 }
 //////////////////////////////////////////////////////////////////
@@ -1717,7 +1748,7 @@ int SmartIntervalSearch(const double &x,const double *ax,const int N,const int i
   if((x>=ax[i]) && (x<ax[i+1])) { return i; }
 
   int plus,plus2;
-  for(int d=1;d<(int)(trunc(N/2)+1);d++)
+  for(int d=1;d<(int)(rvn_trunc(N/2)+1);d++)
   {
     plus =i+d;    if(plus >N-1) { plus -=N; } //wrap
     plus2=i+d+1;  if(plus2>N-1) { plus2-=N; } //wrap

@@ -405,7 +405,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   double time_zone=0;
   GetTimeInfoFromNetCDF(unit_t,calendar,my_time,ntime,_filename,_interval,_start_day,_start_year,time_zone);
-  _steps_per_day=(int)(round(1.0/_interval)); //pre-calculate for speed.
+  _steps_per_day=(int)(rvn_round(1.0/_interval)); //pre-calculate for speed.
   delete[] unit_t;
 
   /*
@@ -1259,13 +1259,13 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   int CHUNK_MEMORY=Options.NetCDF_chunk_mem;
 
   _ChunkSize = int(max(min((CHUNK_MEMORY *1024 * 1024) / BytesPerTimestep,ntime),1));  // number of timesteps per chunk - 10MB chunks
-  // _ChunkSize = max(int(round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read
+  // _ChunkSize = max(int(rvn_round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read
 
   if(!Options.deltaresFEWS) {
     _ChunkSize = int(int(_ChunkSize*_interval)/_interval);
   }  // make sure chunks are complete days (have to relax for FEWS)
   
-  _ChunkSize = max(int(round(1./_interval)),_ChunkSize);                                // make sure  at least one day is read
+  _ChunkSize = max(int(rvn_round(1./_interval)),_ChunkSize);                                // make sure  at least one day is read
                                                                                         //support larger chunk if model duration is small
   double partday=Options.julian_start_day-floor(Options.julian_start_day);
   _ChunkSize = min(_ChunkSize,(int) ceil(ceil(Options.duration+partday)/_interval));    //ensures goes to midnight of last day
@@ -1308,7 +1308,7 @@ void CForcingGrid::SetChunkSize(const int    ChunkSize)
 void CForcingGrid::SetInterval(const double interval)
 {
   _interval=interval;
-  _steps_per_day=(int)(round(1.0/_interval));
+  _steps_per_day=(int)(rvn_round(1.0/_interval));
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1734,7 +1734,7 @@ int CForcingGrid::GetnHydroUnits() const{return _nHydroUnits;}
 //
 int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 {
-  return int(( t) * round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
+  return int(( t) *rvn_round(1.0/_interval)+0.5*tstep)  % _ChunkSize;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1747,7 +1747,7 @@ int CForcingGrid::GetTimeIndex(const double &t, const double &tstep) const
 double CForcingGrid::GetWeightedValue(const int k,const double &t,const double &tstep) const
 {
   int idx_new = GetTimeIndex(t,tstep);
-  int nSteps = max(1,(int)(round(tstep/_interval)));//# of intervals in time step
+  int nSteps = max(1,(int)(rvn_round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
   for(int i = 0;i <_nWeights[k]; i++)
   {
@@ -1788,7 +1788,7 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
 #endif 
 
-  int nSteps = max(1,(int)(round(tstep/_interval)));//# of intervals in time step
+  int nSteps = max(1,(int)(rvn_round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
   double snow; double rain;
   for (int i=0;i<_nWeights[k];i++)

@@ -39,8 +39,10 @@ CGroundwaterModel *CGWSWProcessABC::pGWModel=NULL;
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes process, generates Node-HRU maps
 /// \details _inodes, _nnodes must be populated already when this runs
+//
 void CGWSWProcessABC::Initialize()
 {
+  CHydroProcessABC::Initialize();
   int nodeid;
   vector<int> HRUs;
   //-- Need to populate NodesByHRU map
@@ -68,7 +70,6 @@ char *CGWSWProcessABC::getProcName() { return(_pProcName); }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns set of nodes, for the given HRU, that have the GW SW Process
-/// \details Use for (auto n : HRU_nodes) {...} to loop over
 /// \return Set of nodes to iterate over, empty if none in specified HRU
 /// 
 /// \param HRUid [in] HRU identifier

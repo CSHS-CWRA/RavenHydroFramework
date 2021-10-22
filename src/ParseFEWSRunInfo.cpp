@@ -16,7 +16,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
 /// \param &Options [out] Global model options information
 /// \return True if operation is successful
 //
-bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
+bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_overridden, bool mode_overridden)
 {
   if (Options.runinfo_filename==""){return true;}
 
@@ -26,7 +26,13 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
   size_t att_len;    //character string length
   
   if(Options.noisy) { cout<<"Opening FEWS runinfo file "<<Options.runinfo_filename<<endl; }
-  retval = nc_open(Options.runinfo_filename.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+  retval = nc_open(Options.runinfo_filename.c_str(),NC_NOWRITE,&ncid);          
+  if(retval != 0) {
+    string warn = "ParseNetCDFRunInfoFile: :FEWSRunInfoFile command: Cannot find file "+ Options.runinfo_filename;
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    return false;
+  }
+  HandleNetCDFErrors(retval);
 
   // Ingest start time=============================================================================
   int varid_startt;
@@ -115,8 +121,12 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options)
       char *runname=new char[att_len+1];
       retval = nc_get_att_text(ncid,varid_props,"RunName",runname);                   HandleNetCDFErrors(retval);// read attribute text
       runname[att_len] = '\0';// add string determining character
-
-      Options.run_name=runname;
+      if(!runname_overridden) {
+        Options.run_name=runname;
+      }
+      else {
+        WriteWarning("ParseRunInfoFile: when run_name is specified from command line, it cannot be overridden in the runinfo file. RunName attribute ignored.",Options.noisy);
+      }
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:RunName from NetCDF: "<<Options.run_name<<endl; }
       delete[] runname;
     }
@@ -260,7 +270,13 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   string statefile=Options.stateinfo_filename;
 
   if(Options.noisy) { cout<<"Opening state info file "<<statefile<<endl; }
-  retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+  retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);         
+  if(retval != 0) {
+    string warn = "ParseNetCDFStateFile: :FEWSStateInfoFile command: Cannot find file "+ statefile;
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    return false;
+  }
+  HandleNetCDFErrors(retval);
 
   // Get information from time vector
   //====================================================================
@@ -441,7 +457,13 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
   string statefile=Options.flowinfo_filename;
 
   if(Options.noisy) { cout<<"Opening flow state info file "<<statefile<<endl; }
-  retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+  retval = nc_open(statefile.c_str(),NC_NOWRITE,&ncid);          
+  if(retval != 0) {
+    string warn = "ParseNetCDFStateFile: :FEWSBasinStateInfoFile command: Cannot find file "+ statefile;
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    return false;
+  }
+  HandleNetCDFErrors(retval);
 
   // Get information from time vector
   //====================================================================
@@ -598,7 +620,13 @@ bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
   string paramfile=Options.paraminfo_filename;
 
   if(Options.noisy) { cout<<"Opening FEWS parameter info file "<<paramfile<<endl; }
-  retval = nc_open(paramfile.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+  retval = nc_open(paramfile.c_str(),NC_NOWRITE,&ncid);          
+  if(retval != 0) {
+    string warn = "ParseNetCDFParamFile: :FEWSParamInfoFile command: Cannot find file "+ paramfile;
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    return false;
+  }
+  HandleNetCDFErrors(retval);
 
   //Get information from time vector
   //====================================================================
@@ -738,7 +766,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
   GetJulianDateFromNetCDFTime(unit_t, Options.calendar, timearr[0], ref_day, ref_year);
 
   delta_t=TimeDifference(Options.julian_start_day, Options.julian_start_year, ref_day, ref_year, Options.calendar);
-  start_time_index = (int)(round(delta_t / Options.timestep));
+  start_time_index = (int)(rvn_round(delta_t / Options.timestep));
 
   //TMP DEBUG - only for debugging below
   /*time_struct tt;

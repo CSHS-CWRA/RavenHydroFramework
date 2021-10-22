@@ -37,7 +37,6 @@ enum baseflow_type
   BASE_LINEAR_ANALYTIC, ///< simple bucket model, analytical sol'n over timestep
   BASE_VIC,             ///< VIC baseflow method
   BASE_TOPMODEL,        ///< TOPMODEL Baseflow method
-  BASE_SACRAMENTO,      ///< Sacramento Baseflow method
   BASE_POWER_LAW,       ///< Power Law saturation
   BASE_GR4J,            ///< GR4J Baseflow method
   BASE_THRESH_POWER,    ///< power law saturation above threshold

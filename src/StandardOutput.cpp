@@ -1947,8 +1947,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   current_time[0] = tt.model_time*HR_PER_DAY;
   current_time[0]=RoundToNearestMinute(current_time[0]); 
 
-  time_index [0] = int(round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
-  time_ind2       =int(round(tt.model_time/Options.timestep));
+  time_index [0] = int(rvn_round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
+  time_ind2       =int(rvn_round(tt.model_time/Options.timestep));
   count1[0] = 1;                                                 // writes exactly one time step
 
   //====================================================================
@@ -2037,7 +2037,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
   // write simulated outflow/obs outflow/obs inflow values
   if (nSim > 0){
-    start2[0] = int(round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
+    start2[0] = int(rvn_round(tt.model_time/Options.timestep)); // element of NetCDF array that will be written
     start2[1] = 0;                                              // element of NetCDF array that will be written
     count2[0] = 1;      // writes exactly one time step
     count2[1] = nSim;   // writes exactly nSim elements
@@ -2109,7 +2109,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
     // write simulated stage/obs stage values
     if(nSim > 0) {
-      start2[0] = int(round(tt.model_time/Options.timestep));     // element of NetCDF array that will be written
+      start2[0] = int(rvn_round(tt.model_time/Options.timestep)); // element of NetCDF array that will be written
       start2[1] = 0;                                              // element of NetCDF array that will be written
       count2[0] = 1;      // writes exactly one time step
       count2[1] = nSim;   // writes exactly nSim elements

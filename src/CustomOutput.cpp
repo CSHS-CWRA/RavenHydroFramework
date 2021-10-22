@@ -765,7 +765,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       }
       current_time[0]=RoundToNearestMinute(current_time[0]*HR_PER_DAY); //convert to hours
 
-      //start1[0] = int(round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
+      //start1[0] = int(rvn_round(current_time[0]/Options.timestep));   // element of NetCDF array that will be written
       start1[0]=_time_index;
       count1[0] = 1;                                              // writes exactly one time step
 

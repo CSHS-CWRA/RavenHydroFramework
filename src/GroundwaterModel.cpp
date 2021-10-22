@@ -359,7 +359,7 @@ void CGroundwaterModel::UpdateProcessBudgets(const double &timestep)
     HRUnodes = GetNodesByHRU(HRUID);
     hru_overlap_area = 0;
 
-    for (auto n : HRUnodes) {
+    for (int n=0; n< HRUnodes.size(); n++) {
       // Get top active node - Raven Flux (recharge) is delivered to water table
       topnode = GetTopActiveNode(n);
 
@@ -546,11 +546,12 @@ double CGroundwaterModel::GetNodeArea(int n)
 /// 
 void CGroundwaterModel::SetOverlapWeight(const int HRUID, const int node, const double weight, const optStruct& Options)
 {
+#ifdef _MODFLOW_USG_
   bool newConnection = true;
   //-- Check if already exists (Should this be moved to the parser?)
   if (_mOverlapWeights.find({ HRUID, node }) != _mOverlapWeights.end())
   {
-    bool newConnection = false;
+    newConnection = false;
     string warn = "GroundwaterModel: Overlap Weight for Cell " + to_string(node) + " with HRU " + to_string(HRUID) + "defined multiple times.";
     WriteWarning(warn, Options.noisy);
   }
@@ -563,7 +564,7 @@ void CGroundwaterModel::SetOverlapWeight(const int HRUID, const int node, const 
     _mHRUsByNode[node].push_back(HRUID);
     _mNodesByHRU[HRUID].push_back(node);
   }
-
+#endif
 };
 
 //////////////////////////////////////////////////////////////////
@@ -725,7 +726,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 
   //-- This flux should never be below zero, right? Something to think about [checking for]
   //-- Distribute flow among HRU cells
-  for (auto n : HRUnodes) 
+  for (int n=0; n< HRUnodes.size(); n++) 
   {
     // Correct to topmost active node
     int active_node = n;           // To avoid changing what we're looping over

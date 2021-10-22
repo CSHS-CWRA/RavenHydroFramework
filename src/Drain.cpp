@@ -45,7 +45,7 @@ CGWDrain::~CGWDrain()
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes arrays
 //
-void CGWDrain::Initialize(int nDrains)
+void CGWDrain::InitializeDrainClass(int nDrains)
 {
   _nnodes        = nDrains;
   _inodes        = new int   [nDrains];
@@ -107,6 +107,7 @@ void CGWDrain::GetRatesOfChange (const double		   *state_vars,
                                        double      *rates) const
 {
   if (pHRU->GetHRUType() != HRU_STANDARD) { return; } // CHECK
+#ifdef _MODFLOW_USG_
   set<int> HRU_nodes;
   int      index;
   double   head, area;
@@ -117,10 +118,12 @@ void CGWDrain::GetRatesOfChange (const double		   *state_vars,
   int HRUid = pHRU->GetID();
   rates[0] = 0.0;
 
+
   //-- Loop over drain nodes in HRU
   HRU_nodes = getHRUnodes(HRUid);
 
-  for (auto n : HRU_nodes) {
+  for (int n=0; n< HRU_nodes.size(); n++) 
+  {
     index = _mNodeIndex.at(n);  // location of node in arrays
 
     // Replicating MFUSG GWF2DRN7U1FM subroutine
@@ -153,6 +156,7 @@ void CGWDrain::GetRatesOfChange (const double		   *state_vars,
   }
   // Important for not double-counting fluxes added to GWSV
   SendRateToFluxTracker(pHRU->GetGlobalIndex(), rates);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////
@@ -232,7 +236,7 @@ void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
   //-- Loop over drain nodes in HRU
   HRU_nodes = getHRUnodes(HRUid);
 
-  for (auto n : HRU_nodes)
+  for (int n=0; n< HRU_nodes.size(); n++) 
   {
     index = _mNodeIndex.at(n);  // location of node in arrays
 

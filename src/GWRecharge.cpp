@@ -44,7 +44,7 @@ CGWRecharge::~CGWRecharge()
 ///
 /// \param nNodes [in] number of nodes the recharge process is moving water to
 //
-void CGWRecharge::Initialize(int nNodes)
+void CGWRecharge::InitializeRechargeClass(int nNodes)
 {
   _nnodes        = nNodes;
   _inodes        = new int[nNodes];
@@ -117,6 +117,7 @@ void CGWRecharge::GetRatesOfChange(const double		   *state_vars,
                                    const time_struct &tt,
                                    double      *rates) const
 {
+#ifdef _MODFLOW_USG_
   if (pHRU->GetHRUType() == HRU_STANDARD) 
   {
     set<int> HRU_nodes;
@@ -176,6 +177,7 @@ void CGWRecharge::GetRatesOfChange(const double		   *state_vars,
   }
   // Important for not double-counting fluxes added to GWSV
   SendRateToFluxTracker(pHRU->GetGlobalIndex(), rates);
+  #endif
 }
 
 //////////////////////////////////////////////////////////////////

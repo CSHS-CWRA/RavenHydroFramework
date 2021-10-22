@@ -451,7 +451,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  Potential Melt Rate
       //-------------------------------------------------------------------
 
-      F.potential_melt=EstimatePotentialMelt(&F,Options,_pHydroUnits[k],tt);
+      F.potential_melt=EstimatePotentialMelt(&F,Options.pot_melt,Options,_pHydroUnits[k],tt);
 
       //-------------------------------------------------------------------
       //  PET Calculations

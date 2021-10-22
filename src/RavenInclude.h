@@ -242,7 +242,7 @@ const double  NOT_NEEDED              =-66666.6;                                
 const double  NOT_NEEDED_AUTO         =-77777.7;                                ///< arbitrary value indicating that a autogeneratable parameter is not needed for the current model configuration
 const double  NETCDF_BLANK_VALUE      =-9999.0;                                 ///< NetCDF flag for blank value
 const double  RAV_BLANK_DATA          =-1.2345;                                 ///< double corresponding to blank/void data item (also used in input files)
-const double  DIRICHLET_TEMP          =-9999;                                   ///< dirichlet concentration flag corresponding to air temperature   
+const double  DIRICHLET_TEMP          =-9999.0;                                 ///< dirichlet concentration flag corresponding to air temperature   
 
 //Decision constants
 const double  HUGE_RESIST             =1e20;                                    ///< [d/mm]   essentially infinite resistance
@@ -250,7 +250,7 @@ const double  SMALL_ROOT_DENS         =0.00001;                                 
 const double  SMALL_ROOT_LENGTH       =0.1;                                     ///< [m]      essentially negligible root length
 const double  SMALL_FLOWRATE          =0.0001;                                  ///< [m3/s]   essentially negligible flow rate
 const double  TIME_CORRECTION         =0.0001;                                  ///< [d]      offset for time series min/max functions
-const double  DEFAULT_MAX_REACHLENGTH =10000;                                   ///< [km]     very large maximum reach length (defaults to single segment per reach)
+const double  DEFAULT_MAX_REACHLENGTH =10000.0;                                 ///< [km]     very large maximum reach length (defaults to single segment per reach)
 
 //Special symbols
 const char  DEG_SYMBOL                ='\370';                                  ///< degree symbol, °
@@ -460,7 +460,7 @@ enum cloudcov_method
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods correting shortwave radiation for cloud cover
-//      \a stub that defaults to SW_CLOUD_CORR_UBCWM
+//     
 enum SW_cloudcover_corr
 {
   SW_CLOUD_CORR_NONE,     ///< Cloud cover corrections not used (e.g, when shortwave is measured by radiometer)
@@ -1522,6 +1522,10 @@ double DefaultParameterValue   (bool is_template, bool is_computable);
 //defined in CommonFunctions.cpp
 double rvn_erfc         (const double &x);
 double rvn_erf          (const double &x);
+double rvn_trunc        (const double &x);
+double rvn_floor        (const double &x);
+double rvn_round        (const double &x);
+bool   rvn_isnan        (const double &x);
 double log_pdf          (const double &x, const double &mu, const double &sig);
 double LambertN         (const double &x, const int N);
 double GammaCumDist     (const double &t, const double &a, const double &b);

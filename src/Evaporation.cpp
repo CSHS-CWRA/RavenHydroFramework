@@ -320,7 +320,7 @@ double CModel::EstimatePET(const force_struct &F,
     for(int i=0; i<_PETBlends_N;i++) {
       evap_method etyp=_PETBlends_type[i];
       double        wt=_PETBlends_wts[i];
-      PET+=wt*EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,etyp,Options,tt,true);
+      PET+=wt*EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,etyp,Options,tt,open_water);
     }
     break;
   }
@@ -443,6 +443,7 @@ double CModel::EstimatePET(const force_struct &F,
     double rel_hum=F.rel_humidity; //[0..1]
 
     PET = 0.047*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.09*(Tave + 20)*(1-rel_hum);
+    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -454,6 +455,7 @@ double CModel::EstimatePET(const force_struct &F,
     double rel_hum=F.rel_humidity; //[0..1]
 
     PET = 0.038*Rs*sqrt(Tave + 9.5) - 2.4*pow(Rs / R_et, 2.0) + 0.075*(Tave + 20)*(1-rel_hum);
+    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -464,6 +466,7 @@ double CModel::EstimatePET(const force_struct &F,
     double cpet=CGlobalParams::GetParams()->MOHYSE_PET_coeff;
 
     PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
+    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
@@ -484,6 +487,7 @@ double CModel::EstimatePET(const force_struct &F,
     else {
       PET= (500* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
     }
+    PET=max(PET,0.0);
     break;
   }
   //-------------------------------------------------------------------------------------
