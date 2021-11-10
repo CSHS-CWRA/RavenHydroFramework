@@ -1334,7 +1334,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       {
         for (int j=0;j<nParamStrings-1;j++)
         {
-          //CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
           CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,*parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
         }
       }

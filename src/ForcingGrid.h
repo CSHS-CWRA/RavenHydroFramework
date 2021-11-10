@@ -41,9 +41,6 @@ private:/*------------------------------------------------------*/
 
   int          _nHydroUnits;                 ///< number of HRUs (important for weights)
 
-
-
-
   int          _dim_order;                   ///< code (1-6) for different dimension orders  
   //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
   //                                         ///< (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
@@ -238,7 +235,8 @@ public:/*------------------------------------------------------*/
   double       GetMonthlyAvePET (const int month)                 const; ///< Average PET over month
   double       DailyTempCorrection(const double t)                const; ///< Daily temperature correction [C]
   int          GetTimeIndex(const double &t, const double &tstep) const; ///< get time index corresponding to t+tstep/2
-  
+  string       GetFilename()                                      const; ///< return forcing filename
+
   double       GetCellLatitude       (const int l) const;        ///< returns Latitude of cell l (or 0, if not available)
   double       GetCellLongitude      (const int l) const;        ///< returns Longitude of cell l (or 0, if not available)
   double       GetRefElevation       (const int k) const;        ///< returns representative elevation of forcing data in HRU k (or 0, if not available)

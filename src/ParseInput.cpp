@@ -19,6 +19,7 @@
 #include "OpenWaterEvap.h"
 #include "ParseLib.h"
 #include "Advection.h"
+#include "MassLoading.h"
 #include "Convolution.h"
 #include "Diagnostics.h"
 #include "CustomOutput.h"
@@ -45,6 +46,7 @@ int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
 void AddNetCDFAttribute        (optStruct &Options,const string att,const string &val);
+void CalcWeightsFromUniformNums(const double *aVals, double *aWeights, int N);
 
 evap_method    ParseEvapMethod   (const string s);
 potmelt_method ParsePotMeltMethod(const string s); 
@@ -166,6 +168,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   bool              transprepared(false);
   bool              runname_overridden(false);
   bool              runmode_overridden(false);
+  bool              rundir_overridden(false);
   int               num_ensemble_members=1;
   unsigned int      random_seed=0; //actually random
   ifstream          INPUT;
@@ -200,8 +203,9 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
   // Set Default Option Values
   //===============================================================================================
-  if(Options.run_name!="" ){runname_overridden=true;}
-  if(Options.run_mode!=' '){runmode_overridden=true;}
+  if(Options.run_name!=""  ){runname_overridden=true;}
+  if(Options.run_mode!=' ' ){runmode_overridden=true;}
+  if(Options.output_dir!=""){rundir_overridden =true;}
   Options.julian_start_day        =0;//Jan 1
   Options.julian_start_year       =1666;
   Options.duration                =365;
@@ -765,7 +769,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<2){ImproperFormatWarning(":Evaporation",p,Options.noisy); break;}
       Options.evaporation =ParseEvapMethod(s[1]);
       if (Options.evaporation==PET_UNKNOWN){
-        ExitGracefully("ParseMainInputFile: Unrecognized OW PET calculation method",BAD_DATA_WARN);
+        ExitGracefully("ParseMainInputFile: Unrecognized PET calculation method",BAD_DATA_WARN);
       }
 
       bool notspecified=true;
@@ -1128,22 +1132,55 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(41):  //--------------------------------------------
-    {/*:BlendedPETWeights [PET method 1] [wt1] [PET method 2] [wt2]...*/
+    {/*:BlendedPETWeights [PET method 1] [wt1] [PET method 2] [wt2]... OR
+       :BlendedPETWeights [PET method 1] [rn1] [PET method 2] [rn2] ... [PET method N-1] [rn-1] [PET method N] */
       if (Options.noisy){cout<<":BlendedPETWeights"<<endl; }
       // should check for even number of entries, Len
-      int N=(Len-1)/2;
+
+      bool directweights;
+      int N;
+
+      // check if using directweights or pieshare based on the number of entries
+      if ((Len-1) % 2 == 0) {
+        directweights=true;
+        N =(Len-1)/2;
+      } else {
+        directweights=false;
+        N= (int)floor(((Len-1)/2))+1;
+      }
+
+      double *uniform_nums =new double [N-1];
       double       sum    =0.0;
       double      *wts    =new double     [N];
       evap_method *methods=new evap_method[N];
-      for (int i = 0; i < N; i++) {
-        methods[i] = ParseEvapMethod(s[2*i+1]);
-        wts    [i] =s_to_d(s[2*i+2]);
-        sum+=wts[i];
+
+      if (directweights==true) {
+        for (int i = 0; i < N; i++) {
+          methods[i] = ParseEvapMethod(s[2*i+1]);
+          wts    [i] =s_to_d(s[2*i+2]);
+          sum+=wts[i];
+        }
+      } else {
+        // calculate weights, treat provided values as uniform seeds
+        for (int i = 0; i < N; i++) {
+          methods[i] = ParseEvapMethod(s[2*i+1]);
+          if (i < (N-1)) {
+            uniform_nums[i] = s_to_d(s[2*i+2]);
+          }
+        }
+        // calculate weights based on pieshare algorithm
+        CalcWeightsFromUniformNums(uniform_nums, wts, N);
+        // debug weights - otherwise can set as 1.0
+        for  (int i = 0; i < N; i++) {
+          sum+=wts[i];
+        }
+        delete [] uniform_nums;
       }
+
+      //ensure weights add exactly to 1
       if (fabs(sum - 1.0) < 0.05) {
         for (int i = 0; i < N; i++) {wts[i]/=sum;}
-      }//ensure weights add exactly to 1
-      else {
+      } else {
         WriteWarning("ParseInput: :BlendedPETWeights do not add to 1.0",Options.noisy);
       }
       if (Options.evaporation != PET_BLENDED) {
@@ -1181,23 +1218,57 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(45)://----------------------------------------------
-    {/*:BlendedPotMeltWeights [Potmelt method 1] [wt1] [Potmelt method 2] [wt2]...*/
+    {/*:BlendedPotMeltWeights [Potmelt method 1] [wt1] [Potmelt method 2] [wt2]...OR
+       :BlendedPotMeltWeights [Potmelt method 1] [rn1] [Potmelt method 2] [rn2] ... [Potmelt method N-1] [rn-1] [Potmelt method N] */
       if (Options.noisy){cout<<":BlendedPotMeltWeights"<<endl; }
       // should check for even number of entries, Len
-      int N=(Len-1)/2;
+
+      bool directweights;
+      int N;
+
+      // check if using directweights or pieshare based on the number of entries
+      if ((Len-1) % 2 == 0) {
+        directweights=true;
+        N =(Len-1)/2;
+      } else {
+        directweights=false;
+        N= (int)floor(((Len-1)/2))+1;
+      }
+
+      double *uniform_nums =new double [N-1];
       double       sum    =0.0;
       double      *wts    =new double     [N];
       potmelt_method *methods=new potmelt_method[N];
-      for (int i = 0; i < N; i++) {
-        methods[i] = ParsePotMeltMethod(s[2*i+1]);
-        wts    [i]=s_to_d(s[2*i+2]);
-        sum+=wts[i];
+
+      if (directweights==true) {
+        for (int i = 0; i < N; i++) {
+          methods[i] = ParsePotMeltMethod(s[2*i+1]);
+          wts    [i] =s_to_d(s[2*i+2]);
+          sum+=wts[i];
+        }
+      } 
+	  else {
+        // calculate weights, treat provided values as uniform seeds
+        for (int i = 0; i < N; i++) {
+          methods[i] = ParsePotMeltMethod(s[2*i+1]);
+          if (i < (N-1)) {
+            uniform_nums[i] = s_to_d(s[2*i+2]);
+          }
+        }
+        // calculate weights based on pieshare algorithm
+        CalcWeightsFromUniformNums(uniform_nums, wts, N);
+        for  (int i = 0; i < N; i++) {
+          sum+=wts[i];
+        }
+        delete [] uniform_nums;
       }
+
+      //ensure weights add exactly to 1
       if (fabs(sum - 1.0) < 0.05) {
-        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}
-      }//ensure weights add exactly to 1
-      else {
-        WriteWarning("ParseInput: :BlendedPETWeights do not add to 1.0",Options.noisy);
+        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}        
+      } 
+	  else {
+        WriteWarning("ParseInput: :BlendedPotMeltWeights do not add to 1.0",Options.noisy);
       }
       if (Options.pot_melt != POTMELT_BLENDED) {
         WriteWarning("Parse Input: :BlendedPotMeltWeights provided, but potential melt method is not POTMELT_BLENDED",Options.noisy);
@@ -1324,8 +1395,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(60):  //--------------------------------------------
     {/*:RunName [run name]*/
-      if(Options.noisy) { cout <<"Using Run Name: "<<s[1]<<endl; }
       if(!runname_overridden) {
+        if(Options.noisy) { cout <<"Using Run Name: "<<s[1]<<endl; }
         Options.run_name=s[1];
       }
       else {
@@ -1342,16 +1413,22 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(63):  //--------------------------------------------
     {/*:OutputDirectory [dir]*/
       if (Options.noisy) {cout <<"Output directory: "<<s[1]<<"/"<<endl;}
-      Options.output_dir="";
-      for (int i=1;i<Len-1;i++){
-        Options.output_dir+=to_string(s[i])+" ";   //if spaces in folder name
-      }
-      Options.output_dir+=to_string(s[Len-1])+"/";  // append backslash to make sure it's a folder
-      Options.main_output_dir=Options.output_dir;
-      PrepareOutputdirectory(Options);
+      if (!rundir_overridden)
+      {
+        Options.output_dir="";
+        for (int i=1;i<Len-1;i++){
+          Options.output_dir+=to_string(s[i])+" ";   //if spaces in folder name
+        }
+        Options.output_dir+=to_string(s[Len-1])+"/";  // append backslash to make sure it's a folder
+        Options.main_output_dir=Options.output_dir;
+        PrepareOutputdirectory(Options);
 
-      ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
-      WARNINGS.close();
+        ofstream WARNINGS((Options.main_output_dir+"Raven_errors.txt").c_str());
+        WARNINGS.close();
+      }
+      else {
+        WriteWarning("ParseMainInputFile: :OutputDirectory command was ignored because directory was specified from command line.",Options.noisy);
+      }
       break;
     }
     case(64):  //--------------------------------------------
@@ -1433,7 +1510,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-        else if (!strcmp(s[i],"MBF"                )){pDiag=new CDiagnostic(DIAG_MBF); }
+        else if (!strcmp(s[i],"MBF"                )){pDiag=new CDiagnostic(DIAG_MBF);}
         else if (!strcmp(s[i],"R4MS4E"             )){pDiag=new CDiagnostic(DIAG_R4MS4E);}
         else if (!strcmp(s[i],"RTRMSE"             )){pDiag=new CDiagnostic(DIAG_RTRMSE);}
         else if (!strcmp(s[i],"RABSERR"            )){pDiag=new CDiagnostic(DIAG_RABSERR);}
@@ -2817,6 +2894,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
 
+      pMover=new CmvMassLoading(s[1],pModel->GetTransportModel());
+      AddProcess(pModel,pMover,pProcGroup);
+
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
         //\todo [funct] implement this by default
         //int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
@@ -3238,6 +3318,22 @@ void AddNetCDFAttribute(optStruct &Options,const string att,const string &val)
   delete[]Options.aNetCDFattribs;
   Options.aNetCDFattribs=&aTmp[0];
   Options.nNetCDFattribs++;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief calculates N process weights from N-1 numbers ranging from 0 to 1
+///
+/// \param *aVals [in/out] array of weight seeds (uniform numbers) between 0 and 1
+/// \param *aWeights [in/out] array of weights between 0 and 1
+/// \param N [in] size of aWeights to use (expect aVals to be of size N-1)
+//
+void CalcWeightsFromUniformNums(const double *aVals, double *aWeights, int N)
+{
+  double sum=0.0;
+  for(int q=0; q<(N-1);q++) {
+    aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q-1)));
+    sum+=aWeights[q];
+  }
+  aWeights[N-1]=1.0-sum;
 }
 
 ///////////////////////////////////////////////////////////////////

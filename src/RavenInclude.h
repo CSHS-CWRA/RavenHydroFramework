@@ -253,7 +253,7 @@ const double  TIME_CORRECTION         =0.0001;                                  
 const double  DEFAULT_MAX_REACHLENGTH =10000.0;                                 ///< [km]     very large maximum reach length (defaults to single segment per reach)
 
 //Special symbols
-const char  DEG_SYMBOL                ='\370';                                  ///< degree symbol, °
+const char  DEG_SYMBOL                ='°';                                     ///< degree symbol, ° (or \0xB0)
 
 //*****************************************************************
 //Exit Strategies
@@ -899,8 +899,8 @@ enum process_type
   //in DepressionProcesses.h
   ABSTRACTION, DEPRESSION_OVERFLOW, SEEPAGE, LAKE_RELEASE,
 
-  //in Advection.h
-  ADVECTION, LAT_ADVECTION,
+  //in Advection.h, MassLoading.h
+  ADVECTION, LAT_ADVECTION, MASS_LOADING,
 
   //in Decay.h
   DECAY, TRANSFORMATION,

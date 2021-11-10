@@ -847,6 +847,17 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   }
   }
 
+  //Override weights where specified
+  for (k = 0; k < _nHydroUnits; k++) {
+    if (_pHydroUnits[k]->GetSpecifiedGaugeIndex() != DOESNT_EXIST) {
+      for (g=0;g<_nGauges;g++){
+        aWts[k][g]=0.0;
+      }
+      g=_pHydroUnits[k]->GetSpecifiedGaugeIndex();
+      aWts[k][g]=1.0;
+    }
+  }
+  
   //check quality - weights for each HRU should add to 1
   double sum;
   for (k=0;k<_nHydroUnits;k++){

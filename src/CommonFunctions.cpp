@@ -68,6 +68,7 @@ string GetProcessName(process_type p)
   case(LAT_ADVECTION):      {name="Lateral Advection";        break;}
   case(LAT_FLUSH):          {name="Lateral Flush";            break;}
   case(LAT_EQUIL):          {name="Lateral Equilibrate";      break;}
+  case(MASS_LOADING):       {name="Mass Loading";             break;}
   case(DECAY):              {name="Decay";                    break;}
   case(TRANSFORMATION):     {name="Transformation";           break;}
 

@@ -148,9 +148,9 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
                                          const time_struct   &tt,
                                                double        *rates) const
 {
-  double ponded=state_vars[iFrom[0]];
-  double depression=state_vars[iTo[0]];
-
+  double ponded    =state_vars[iFrom[0]]; //[mm]
+  double depression=state_vars[iTo  [0]]; //[mm]
+  
   //----------------------------------------------------------------------------
   if      (_type==ABST_PERCENTAGE)
   {
@@ -218,18 +218,18 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     rates[0]=(       abstracted)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]
     rates[1]=(ponded-abstracted)/Options.timestep; //runoff rate [PONDED->SURFACE_WATER]
   }
-  else if(_type==ABST_UWFS) 
+  //----------------------------------------------------------------------------
+  else if(_type==ABST_UWFS)
   {
     double runoff;     //[mm] total runoff amount, <O_1> (averaged over HRU)
     double P=ponded;   //[mm] total "preciptiation" (averaged over HRU)
     double deltaDmin=0;//[mm] change in Dmin (in wetland; not averaged over HRU)
 
-    double alpha=1.0;  //runoff ratio - here assume infiltration already applied, alpha=1.0 - all runs off
+    double alpha = 1 ;//runoff ratio - here assume infiltration already applied, alpha=1.0 - all runs off
     double b       =pHRU->GetSurfaceProps()->uwfs_b;
     double beta_min=pHRU->GetSurfaceProps()->uwfs_betamin;
     double depfrac =pHRU->GetSurfaceProps()->max_dep_area_frac; //percentage of landscape covered in depressions
     double depmax  =pHRU->GetSurfaceProps()->dep_max;           //[mm] maximum total depression storage on landscape (averaged over HRU)
-
     if (depfrac==0){runoff=ponded;} //no abstraction, all will run off
     else 
     {
@@ -238,31 +238,47 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
       double Pf=0.0;                           //Fraction full
       double d;                                //[-] deficit distribution parameter 
       double beta_ave=beta_min+1/b;            //<beta>
-      double a=b/P;
-      double Pstar=beta_min*P-Dmin;
-
-      if(Dmin<0) { //partially full
-        Pf=-Dmin;
-        Dmin=0.0; 
+      double a    = b/(P+0.0001);
+      double mult = alpha / (beta_ave - 1.0 + alpha);
+     
+      if (Dmin < 0.0) { //partially full
+         Pf =-Dmin;
       }
-      //backcalculate d from Dmin (or Pf) and Davg
-      d=min((1.0-Pf)/(Davg-Dmin),1000.0);
+     
+      double Pstar=beta_min*P-Dmin;
       
+      //backcalculate d from Dmin (or Pf) and Davg
+      
+      d = min((1.0-Pf) / (Davg - Dmin + 0.00001)+ 0.0001, 1000.0);
       //Calculate net runoff (in mm averaged over basin)
-      double mult=alpha/(beta_ave-1.0-alpha);
+      
       if(Pstar>0.0) {
-        runoff =mult*a*d/(a+d)*(1-Pf)*((d*Pstar-1+exp(d*Pstar))/d/d+(a*Pstar+1)/a/a);
-        runoff+=mult*          (Pf)*(Pstar-1.0/a);
+        runoff =mult*a*d/(a+d)*((1-Pf)*((d*Pstar-1+exp(-d*Pstar))/d/d)+(1-Pf)*(a*Pstar+1)/a/a+ (Pf) * (Pstar + 1.0 / a));
       }
       else {
         runoff=mult*a*d/(a+d)*(exp(a*Pstar)/a/a);
       }
-    
-      //[unfinished] - calculate Dmin (or Pf) after the runoff event
-      deltaDmin=beta_min*P; //THis is wrong except in case where runoff~0.0 //Mahkameh -figure out how to update Dmin
-                            //deltaDmin=Dmin (after runoff)- Dmin (before runoff)
-                            // note that Dmin =-Pf if Pf at end is non-zero
-      ExitGracefully("ABST_UWFS",STUB);
+
+      if (runoff > 0.001) 
+      {
+        if (Pstar > 0.0)
+        {         
+          Pf = 1 - (a / (a +d) * exp(-d*Pstar)) * (1 - Pf);
+        }
+        else 
+        {
+          Pf = 1 - (a / (a + d) * (1 - Pf) + (d / (a + d)*(1 - Pf) + Pf) * (1 - exp(a * Pstar)));
+        }  
+        deltaDmin = (-Pf) -Dmin;
+        Dmin = 0;// Dmin after runoff will be zero means that at least some of the depressions are full
+      }
+      else
+      {
+        deltaDmin = -min(beta_ave * P,Dmin); //THis is wrong except in case where runoff~0.0 //Mahkameh -figure out how to update Dmin (done!)
+                           //deltaDmin=Dmin (after runoff)- Dmin (before runoff)
+                           // note that Dmin =-Pf if Pf at end is non-zero}
+        Pf = 0.0; // with positive Dmin Of should be zero
+      }
     }
 
     rates[0]=(ponded- runoff)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]

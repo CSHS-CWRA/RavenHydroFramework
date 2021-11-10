@@ -6,6 +6,158 @@ Copyright (c) 2008-2021 the Raven Development Team
 #include "Properties.h"
 
 //////////////////////////////////////////////////////////////////
+/// \brief Increments participating parameter list for PET algorithms. Included as a function for recursive calls with PET blending or single call otherwise
+///
+/// \param *aP [out] array of parameter names needed by all forcing algorithms
+/// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
+/// \param &nP [out] Number of parameters required (size of aP[] and aPC[])
+/// \param evaporation evaporation method
+/// \param SW_radia_net shortwave radiation method, used to include some additional parameters based on the PET method selected in tandem with SW radiation
+//
+void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_method &evaporation, const netSWRad_method &SW_radia_net) const
+{
+  // cout<<"evaporation is "<<to_string(evaporation)<<" and netSWRad_method is "<<to_string(SW_radia_net)<<endl;
+  
+  if(evaporation==PET_DATA)
+  {
+    // timeseries at gauge
+  }
+  else if(evaporation==PET_FROMMONTHLY)
+  {
+    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    //aP[nP]=":MonthlyAveEvaporation"; aPC[nP]=CLASS_; nP++;
+    //aP[nP]=":MonthlyAveTemperature"; aPC[nP]=CLASS_; nP++;
+  }
+  else if(evaporation==PET_MONTHLY_FACTOR)
+  {
+    aP[nP]="FOREST_PET_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    //aP[nP]=":MonthlyEvapFactor";   aPC[nP]=CLASS_; nP++;
+  }
+  else if(evaporation==PET_PENMAN_MONTEITH)
+  {
+    aP[nP]="MAX_HEIGHT";    aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="RELATIVE_HT";   aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; //JRCFLAG
+    aP[nP]="RELATIVE_LAI";  aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="MAX_LEAF_COND"; aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="ROUGHNESS";     aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(evaporation==PET_PENMAN_COMBINATION)
+  {
+    aP[nP]="MAX_HEIGHT";  aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="RELATIVE_HT"; aPC[nP]=CLASS_VEGETATION; nP++;
+  }
+  else if(evaporation==PET_HARGREAVES)
+  {
+    // Need Max and Min Monthly Temp
+    //aP[nP]="TEMP_MONTH_MAX";  aPC[nP]=CLASS_; nP++;
+    //aP[nP]="TEMP_MONTH_MIN";  aPC[nP]=CLASS_; nP++;
+  }
+  else if(evaporation==PET_MOHYSE)
+  {
+    aP[nP]="MOHYSE_PET_COEFF"; aPC[nP]=CLASS_GLOBAL; nP++;
+  }
+  else if(evaporation==PET_PRIESTLEY_TAYLOR)
+  {
+    aP[nP]="PRIESTLEYTAYLOR_COEFF";  aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+
+  //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
+  if((evaporation==PET_PRIESTLEY_TAYLOR) || (evaporation==PET_SHUTTLEWORTH_WALLACE) ||
+    (evaporation==PET_PENMAN_MONTEITH)  || (evaporation==PET_PENMAN_COMBINATION) ||
+    (evaporation==PET_JENSEN_HAISE) || (evaporation==PET_GRANGERGRAY))
+  {
+    if(SW_radia_net == NETSWRAD_CALC) {
+      aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
+      aP[nP]="SVF_EXTINCTION";    aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Increments participating parameter list for POTMELT algorithms. Included as a function for recursive calls with POTMELT blending or single call otherwise
+///
+/// \param *aP [out] array of parameter names needed by all forcing algorithms
+/// \param *aPC [out] Class type (soil, vegetation, landuse or terrain) corresponding to each parameter
+/// \param &nP [out] Number of parameters required (size of aP[] and aPC[])
+/// \param pot_melt potential melt method
+//
+void CModel::AddFromPotMeltParamList(string *aP,class_type *aPC,int &nP,const potmelt_method &pot_melt) const
+{
+
+  if(pot_melt == POTMELT_DATA)
+    {
+      //none
+    }
+    else if(pot_melt == POTMELT_DEGREE_DAY)
+    {
+      aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
+    }
+    else if(pot_melt==POTMELT_RESTRICTED)
+    {
+      aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
+    }
+    else if(pot_melt==POTMELT_HBV)
+    {
+      aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    }
+    else if(pot_melt==POTMELT_HBV_ROS)
+    {
+      aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="RAIN_MELT_MULT";    aPC[nP]=CLASS_LANDUSE; nP++;
+    }
+    else if(pot_melt==POTMELT_UBCWM)
+    {
+      aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
+      aP[nP]="RAIN_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="CONV_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="COND_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+
+      aP[nP]="MIN_SNOW_ALBEDO";     aPC[nP]=CLASS_GLOBAL; nP++;
+      aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
+      aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
+    }
+    else if(pot_melt==POTMELT_USACE)
+    {
+      aP[nP]="WIND_EXPOSURE";       aPC[nP]=CLASS_LANDUSE; nP++;
+    }
+    else if(pot_melt==POTMELT_EB)
+    {
+      aP[nP]="MAX_HEIGHT";       aPC[nP]=CLASS_VEGETATION; nP++;
+      aP[nP]="RELATIVE_HT";      aPC[nP]=CLASS_VEGETATION; nP++;
+      aP[nP]="ROUGHNESS";        aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="SNOW_TEMPERATURE"; aPC[nP]=CLASS_GLOBAL; nP++;
+    }
+    else if(pot_melt==POTMELT_CRHM_EBSM)
+    {
+    }
+    else if(pot_melt==POTMELT_NONE)
+    {
+    }
+    else if(pot_melt==POTMELT_HMETS)
+    {
+      aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="MAX_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+      aP[nP]="DD_AGGRADATION";    aPC[nP]=CLASS_LANDUSE; nP++;
+    }
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list for all forcing estimation/correction algorithms
 ///
 /// \param *aP [out] array of parameter names needed by all forcing algorithms
@@ -88,66 +240,23 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   // Evaporation algorithms parameters
   //----------------------------------------------------------------------
 
-  // Evaporation Method
-  if(Options.evaporation==PET_DATA)
+  // Evaporation Method  
+  if (Options.evaporation==PET_BLENDED) 
   {
-    // timeseries at gauge
-  }
-  else if(Options.evaporation==PET_FROMMONTHLY)
-  {
-    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
-    //aP[nP]=":MonthlyAveEvaporation"; aPC[nP]=CLASS_; nP++;
-    //aP[nP]=":MonthlyAveTemperature"; aPC[nP]=CLASS_; nP++;
-  }
-  else if(Options.evaporation==PET_MONTHLY_FACTOR)
-  {
-    aP[nP]="FOREST_PET_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
-    //aP[nP]=":MonthlyEvapFactor";   aPC[nP]=CLASS_; nP++;
-  }
-  else if(Options.evaporation==PET_PENMAN_MONTEITH)
-  {
-    aP[nP]="MAX_HEIGHT";    aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="RELATIVE_HT";   aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="MAX_LAI";       aPC[nP]=CLASS_VEGETATION; nP++; //JRCFLAG
-    aP[nP]="RELATIVE_LAI";  aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="MAX_LEAF_COND"; aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="FOREST_SPARSENESS";    aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="ROUGHNESS";     aPC[nP]=CLASS_LANDUSE; nP++;
-  }
-  else if(Options.evaporation==PET_PENMAN_COMBINATION)
-  {
-    aP[nP]="MAX_HEIGHT";  aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="RELATIVE_HT"; aPC[nP]=CLASS_VEGETATION; nP++;
-  }
-  else if(Options.evaporation==PET_HARGREAVES)
-  {
-    // Need Max and Min Monthly Temp
-    //aP[nP]="TEMP_MONTH_MAX";  aPC[nP]=CLASS_; nP++;
-    //aP[nP]="TEMP_MONTH_MIN";  aPC[nP]=CLASS_; nP++;
-  }
-  else if(Options.evaporation==PET_MOHYSE)
-  {
-    aP[nP]="MOHYSE_PET_COEFF"; aPC[nP]=CLASS_GLOBAL; nP++;
-  }
-  else if(Options.evaporation==PET_PRIESTLEY_TAYLOR)
-  {
-    aP[nP]="PRIESTLEYTAYLOR_COEFF";  aPC[nP]=CLASS_LANDUSE; nP++;
-  }
-
-  //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
-  if((Options.evaporation==PET_PRIESTLEY_TAYLOR) || (Options.evaporation==PET_SHUTTLEWORTH_WALLACE) ||
-    (Options.evaporation==PET_PENMAN_MONTEITH)  || (Options.evaporation==PET_PENMAN_COMBINATION) ||
-    (Options.evaporation==PET_JENSEN_HAISE) || (Options.evaporation==PET_GRANGERGRAY))
-  {
-    if(Options.SW_radia_net == NETSWRAD_CALC) {
-      aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
-      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
-      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
-      aP[nP]="SVF_EXTINCTION";    aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
+    // provide recursive call for number of options if blended
+    netSWRad_method sw_method = Options.SW_radia_net;
+    for(int i=0; i<_PETBlends_N;i++) 
+    {
+      AddFromPETParamList(aP,aPC,nP,_PETBlends_type[i],sw_method);
     }
+  }  
+  else 
+  {
+   
+    AddFromPETParamList(aP,aPC,nP,Options.evaporation,Options.SW_radia_net);
   }
-
+  
+  
   // OW_Evaporation Method
   //----------------------------------------------------------------------
   if(Options.ow_evaporation==PET_DATA)
@@ -368,72 +477,19 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   // Energy algorithms parameters
   //----------------------------------------------------------------------
   // Potential Melt Method
-  if(Options.pot_melt == POTMELT_DATA)
+  if (Options.pot_melt==POTMELT_BLENDED) 
   {
-    //none
-  }
-  else if(Options.pot_melt == POTMELT_DEGREE_DAY)
+    // provide recursive call for number of options if blended
+    for(int i=0; i<_PotMeltBlends_N;i++) 
+    {
+      AddFromPotMeltParamList(aP,aPC,nP,_PotMeltBlends_type[i]);
+    }
+  }  
+  else 
   {
-    aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
+    AddFromPotMeltParamList(aP,aPC,nP,Options.pot_melt);
   }
-  else if(Options.pot_melt==POTMELT_RESTRICTED)
-  {
-    aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
-  }
-  else if(Options.pot_melt==POTMELT_HBV)
-  {
-    aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-  }
-  else if(Options.pot_melt==POTMELT_HBV_ROS)
-  {
-    aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="RAIN_MELT_MULT";    aPC[nP]=CLASS_LANDUSE; nP++;
-  }
-  else if(Options.pot_melt==POTMELT_UBCWM)
-  {
-    aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
-    aP[nP]="RAIN_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="CONV_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="COND_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
-
-    aP[nP]="MIN_SNOW_ALBEDO";     aPC[nP]=CLASS_GLOBAL; nP++;
-    aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
-    aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
-  }
-  else if(Options.pot_melt==POTMELT_USACE)
-  {
-    aP[nP]="WIND_EXPOSURE";       aPC[nP]=CLASS_LANDUSE; nP++;
-  }
-  else if(Options.pot_melt==POTMELT_EB)
-  {
-    aP[nP]="MAX_HEIGHT";       aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="RELATIVE_HT";      aPC[nP]=CLASS_VEGETATION; nP++;
-    aP[nP]="ROUGHNESS";        aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="SNOW_TEMPERATURE"; aPC[nP]=CLASS_GLOBAL; nP++;
-  }
-  else if(Options.pot_melt==POTMELT_CRHM_EBSM)
-  {
-  }
-  else if(Options.pot_melt==POTMELT_NONE)
-  {
-  }
-  else if(Options.pot_melt==POTMELT_HMETS)
-  {
-    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="MAX_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="DD_AGGRADATION";    aPC[nP]=CLASS_LANDUSE; nP++;
-  }
+  
   // Sub Daily Method
   //----------------------------------------------------------------------
   if((Options.subdaily==SUBDAILY_NONE) || (Options.subdaily==SUBDAILY_SIMPLE) || (Options.subdaily==SUBDAILY_UBC))

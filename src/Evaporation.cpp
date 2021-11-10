@@ -49,7 +49,7 @@ double Makkink1957Evap(const force_struct *F)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates PET using Turc 1961 method \cite Lu2005JotAWRA
-/// \ref From Turc, L., 1961. Evaluation de besoins en eau d’irrigation, ET potentielle, Ann. Agron. 12:13-49. \cite turc1961AA
+/// \ref From Turc, L., 1961. Evaluation de besoins en eau d'irrigation, ET potentielle, Ann. Agron. 12:13-49. \cite turc1961AA
 /// as defined in "A comparison of six potential 
 /// evapotranspiration methods for regional use in the southeastern
 /// united states", American Water Resources Association, 2005.
@@ -317,10 +317,18 @@ double CModel::EstimatePET(const force_struct &F,
   //-------------------------------------------------------------------------------------
   case(PET_BLENDED):
   {
+    ExitGracefullyIf(_PETBlends_N==0,
+      "EstimatePET: PET_BLENDED specified, but no weights were provided using :BlendedPETWeights command",BAD_DATA);
+
     for(int i=0; i<_PETBlends_N;i++) {
       evap_method etyp=_PETBlends_type[i];
       double        wt=_PETBlends_wts[i];
       PET+=wt*EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,etyp,Options,tt,open_water);
+
+      if(isnan(PET)) {
+        ExitGracefully("EstimatePET: NaN value produced in PET_BLENDED calculation by one or more PET routines",RUNTIME_ERR);return 0.0;
+      }
+
     }
     break;
   }

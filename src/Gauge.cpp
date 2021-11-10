@@ -206,7 +206,20 @@ void CGauge::Initialize(const optStruct   &Options,
       WriteWarning("CGauge::Initialize: blank PET data in PET time series; will infill via infill ET estimation method",Options.noisy);
     }
   }
-
+  //Positive non-blank wind velocity
+  index=_aTSindex[(int)(F_WIND_VEL)];
+  if (index!=DOESNT_EXIST){
+    for (int nn=0;nn<nSamples; nn++)
+    {
+      val=_pTimeSeries[index]->GetSampledValue (nn);
+      if(val==RAV_BLANK_DATA) {
+        ExitGracefully("CGauge::Initialize: blank wind speed reported at gauge",BAD_DATA);
+      }
+      else if (val<-REAL_SMALL){
+        ExitGracefully("CGauge::Initialize: negative wind speed reported at gauge",BAD_DATA);
+      }
+    }
+  }
 
   WarnAboutForcing(Options.SW_radiation  ==SW_RAD_DATA,   F_SW_RADIA);
   WarnAboutForcing(Options.SW_radia_net  ==NETSWRAD_DATA, F_SW_RADIA_NET);

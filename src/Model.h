@@ -243,6 +243,10 @@ private:/*------------------------------------------------------*/
   bool         ForcingGridIsAvailable                   (const forcing_type &ftype) const;
   double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
+  void              AddFromPETParamList                 (string *aP,class_type *aPC,int &nP,
+                                                         const evap_method &evaporation, const netSWRad_method &SW_radia_net) const;
+  void              AddFromPotMeltParamList             (string *aP,class_type *aPC,int &nP,
+                                                         const potmelt_method &pot_melt) const;
 
 public:/*-------------------------------------------------------*/
 
@@ -327,7 +331,7 @@ public:/*-------------------------------------------------------*/
                                                        int &nP,
                                                        const optStruct &Options) const;
   class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
-
+                                                       
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );
   void    AddHRU                    (        CHydroUnit        *pHRU            );

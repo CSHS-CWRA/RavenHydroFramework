@@ -154,8 +154,8 @@ protected:
   const CTransportModel *_pTransModel;
   
   string                     _name;  ///< constituent name (e.g., "Nitrogen")
-  int               _constit_index;  ///< master constituent index of this constituent 
-  constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], or TRACER [-]
+  int               _constit_index;  ///< master constituent index, c,  of this constituent 
+  constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], ISOTOPE [mg/mg] or TRACER [-]
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
   transport_params *_pConstitParams; ///< pointer to constituent parameters 
@@ -218,10 +218,10 @@ public:/*-------------------------------------------------------*/
   virtual double GetOutflowConcentration(const int p) const;
   double GetIntegratedMassOutflow(const int p,const double &tstep) const;
 
-  bool   IsDirichlet         (const int i_stor,const int k,const time_struct &tt,double &Cs) const;
-  double GetSpecifiedMassFlux(const int i_stor,const int k,const time_struct &tt) const;
+  bool   IsDirichlet             (const int i_stor,const int k,const time_struct &tt,double &Cs) const;
+  double GetSpecifiedMassFlux    (const int i_stor,const int k,const time_struct &tt) const;
 
-  double GetDecayCoefficient (const CHydroUnit *pHRU,const int iStorWater) const;
+  double GetDecayCoefficient     (const CHydroUnit *pHRU,const int iStorWater) const;
   virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
 
   virtual double CalculateConcentration(const double &M,const double &V) const;

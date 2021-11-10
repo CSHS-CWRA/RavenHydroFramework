@@ -10,6 +10,7 @@
 
 void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long SBID, long SBIDres,double pct_met,int jul_start,int jul_end);
 bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long SBID);
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, int &nStations); 
 //////////////////////////////////////////////////////////////////
 /// \brief Parse input time series file, model.rvt
 /// 
@@ -30,6 +31,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   double monthdata[12];
   string warn;
   bool   in_ifmode_statement=false;
+  int    ncid=-9;
 
   bool ended            = false;
   bool has_irrig        = false;
@@ -119,6 +121,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     //-----------------CONTROLS ---------------------------------
     else if  (!strcmp(s[0],":OverrideStreamflow"          )){code=100;}
     else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
+    else if  (!strcmp(s[0],":SpecifyGaugeForHRU"          )){code=102;}
     //-----------------TRANSPORT--------------------------------
     else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300;}
     else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}
@@ -144,8 +147,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":StationElevationsByAttribute")){code=415;}
     else if  (!strcmp(s[0],":StationIDNameNC"             )){code=416;}
     else if  (!strcmp(s[0],":StationElevationsByIdx"      )){code=417;}
+    else if  (!strcmp(s[0],":MapStationsTo"               )){code=418;}//Alternate to :GridWeights for :StationForcing command
+
     //---------STATION DATA INPUT AS NETCDF (stations,time)------
-    //             code 401-405 & 407-409 are shared between
+    //             code 401-405 & 407-414 are shared between
     //             GriddedForcing and StationForcing
     else if  (!strcmp(s[0],":StationForcing"              )){code=500;}
     else if  (!strcmp(s[0],":EndStationForcing"           )){code=506;}
@@ -1034,7 +1039,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGage->SetMonthlyMaxTemps(monthdata);
       break;
     }
-    case(100):
+    case(100)://----------------------------------------------
     {/*:OverrideStreamflow  [SBID]*/
       if (Options.noisy){cout <<"Override streamflow"<<endl;}
       long SBID=s_to_l(s[1]);
@@ -1045,7 +1050,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pModel->OverrideStreamflow(SBID);
       break;
     }
-    case(101):
+    case(101)://----------------------------------------------
     {/*:AssimilateStreamflow  [SBID]*/
       if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }
       long SBID=s_to_l(s[1]);
@@ -1067,6 +1072,22 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeriesFile::AssimilateStreamflow: no observation time series associated with subbasin "+to_string(SBID)+". Cannot assimilate flow in this subbasin.";
         WriteWarning(warn.c_str(),Options.noisy);
       }
+      break;
+    }
+    case(102)://----------------------------------------------
+    {/*:SpecifyGaugeForHRU [HRUID] [GaugeName]*/
+      if (Options.noisy){cout <<"Specify gauge for HRU"<<endl;}
+      int HRUID=s_to_i(s[1]);
+      if (pModel->GetHRUByID(HRUID)==NULL){
+        WriteWarning("ParseTimeSeries::invalid HRU ID in :SpecifyGaugeForHRU command: "+to_string(HRUID),Options.noisy);
+        break;
+      }
+      int g=pModel->GetGaugeIndexFromName(s[2]);
+      if (g==DOESNT_EXIST){
+        WriteWarning("ParseTimeSeries: invalid gauge name in :SpecifyGaugeForHRU command ("+to_string(s[2])+")",Options.noisy);
+        break;
+      }
+      pModel->GetHRUByID(HRUID)->SetSpecifiedGaugeIndex(g);
       break;
     }
     case (300)://----------------------------------------------
@@ -1337,13 +1358,13 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
 
       // check for existence
-      int    ncid;                  // file unit
+      
       int    retval;                // error value for NetCDF routines
       retval = nc_open(filename.c_str(),NC_NOWRITE,&ncid);
       if (retval != 0){
-	    string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
-	    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
-	    break;
+	      string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
+	      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+	      break;
       }
       HandleNetCDFErrors(retval);
 
@@ -1551,7 +1572,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     case (416)://----------------------------------------------
     {/*:StationIDNameNC  [variablename]*/
       if(Options.noisy) { cout <<"   :StationIDNameNC"<<endl; }
-      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :StationIDNameNC command must be within a StationForcing block",BAD_DATA);
+      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :StationIDNameNC command must be within a :StationForcing block",BAD_DATA);
       pGrid->SetAttributeVarName("StationIDs",s[1]);
       break;
     }
@@ -1714,18 +1735,101 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       } // end while
       break;
     }
+    case (418)://----------------------------------------------
+    {/*:MapStationsTo [SUBBASINS or HRUS]*/
+      //Alternate to :GridWeights - used if station forcings map 1:1 with subbasins or HRUs
+      //requires array attribute stations in same NetCDF file as forcing data
+
+      if(Options.noisy) { cout <<"   :MapStationsTo command"<<endl; }
+      ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :MapStationsTo command must be within a :StationForcing block",BAD_DATA);
+      
+      bool sb_command;
+      if      (!strcmp(s[1],"SUBBASINS")){sb_command=true;}
+      else if (!strcmp(s[1],"HRUS"     )){sb_command=false;}
+
+      // Get vector of station IDs 
+      //====================================================================
+      int   StatVecID;         // attribute ID of station vector
+      int   StatDimID;         // nstations dimension ID
+      long* StatIDs    =NULL;  // vector of Subbasin or HRU IDs
+      int   nStations=0;       // size of station Vector
+      if (ncid == -9) {
+        ExitGracefully(":FileNameNC command must precede :MapStationsTo command in :StationForcings block",BAD_DATA);
+      }
+      GetNetCDFStationArray(ncid, pGrid->GetFilename(),StatDimID,StatVecID, StatIDs, nStations); 
+      if ((sb_command) && (nStations!=pModel->GetNumSubBasins())){
+        ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file not the same as the number of model subbasins",BAD_DATA);
+      }
+      if ((!sb_command) && (nStations!=pModel->GetNumHRUs())){
+        ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file not the same as the number of model HRUs",BAD_DATA);
+      }
+      /*cout<<":MapTo command: "<<endl;
+      for (int i=0;i<nStations;i++){
+        cout<<" "<<StatIDs[i]<<endl;
+      }*/
+      // grid weights preparation
+      //====================================================================
+      if (!grid_initialized) { //must initialize grid prior to adding grid weights
+        grid_initialized = true; 
+        pGrid->ForcingGridInit(Options);
+      }
+      pGrid->SetnHydroUnits     (pModel->GetNumHRUs());
+      pGrid->AllocateWeightArray(pModel->GetNumHRUs(),nStations);
+      
+      // generate grid weights
+      //====================================================================
+      int StationID=DOESNT_EXIST;
+      for (int k=0;k<pModel->GetNumHRUs();k++)
+      {
+        if (sb_command){ //SUBBASINS
+          StationID=DOESNT_EXIST;
+          int p=pModel->GetHydroUnit(k)->GetSubBasinIndex();
+          long SBID=pModel->GetSubBasin(p)->GetID();
+          for (int i=0;i<nStations;i++){
+            if (SBID==StatIDs[i]){
+              StationID=i; break;
+            }
+          }
+        }
+        else { //HRUS
+          StationID=DOESNT_EXIST;
+          for (int i=0;i<nStations;i++){
+            if (pModel->GetHydroUnit(k)->GetID()==StatIDs[i]){
+              StationID=i; break;
+            }
+          }
+        }
+        int p=pModel->GetHydroUnit(k)->GetSubBasinIndex();
+        //cout<<"SETTING WEIGHT "<<k<<" "<<StationID<<" "<<pModel->GetSubBasin(p)->GetID()<<endl;
+        pGrid->SetWeightVal(k,StationID,1.0);
+      }
+      // check that weightings sum up to one per HRU
+      bool WeightArrayOK = pGrid->CheckWeightArray(pModel->GetNumHRUs(),nStations,pModel);
+      ExitGracefullyIf(!WeightArrayOK,
+                       "ParseTimeSeriesFile: Check of weights for gridded forcing in :MapToStations command failed. Sum of gridweights for ALL enabled HRUs must be 1.0.",BAD_DATA);
+
+      // store (sorted) station ids with non-zero weight in array
+      pGrid->SetIdxNonZeroGridCells(pModel->GetNumHRUs(),nStations,Options);
+
+      break;
+    }
     case (500)://----------------------------------------------
     {/*:StationForcing
          :ForcingType PRECIP
          :FileNameNC  [filename.nc]
          :VarNameNC   pre
          :DimNamesNC  nstations ntime
+
          :GridWeights
            :NumberHRUs [#HRUs]
            :NumberStations [#STATIONS]
            [HRUID] [STATION#] [w_lk]
            ....
          :EndGridWeights
+         #OR 
+         :MapStationsToHRUs
+         #OR
+         :MapStationsToSubBasins
        :EndStationForcing
      */
       if (Options.noisy){cout <<":StationForcing"<<endl;}
@@ -1757,6 +1861,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(!grid_initialized) { pGrid->ForcingGridInit(Options);grid_initialized = true; }
       pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
       pGrid=NULL;
+      ncid=-9;
       break;
     }
     

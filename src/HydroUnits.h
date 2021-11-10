@@ -49,6 +49,7 @@ private:/*------------------------------------------------------*/
   double                   _SolarNoon;  ///< effective solar noon correction for slope [days]
 
   double                  _PrecipMult;  ///< HRU-specific precipitation correction factor
+  int              _SpecifiedGaugeIdx;  ///< index of met gauge to be used regardless of interpolation scheme (or DOESNT_EXIST, by default)
 
   const soil_struct           *_pSoil[MAX_SOILLAYERS];     ///< array of pointers to structures with profile soil properties
 
@@ -79,7 +80,6 @@ public:/*-------------------------------------------------------*/
              const double            aspect,           //[rad counterclockwise from north]
              const HRU_type          type,
              const CSoilProfile     *soil_profile,     //soil profile
-             //const CAquiferStack    *aquifer_system,   //aquifer system profile //GWMIGRATE
              const CVegetationClass *veg_class,        //vegetation class
              const void             *PLACEHOLDER,      //old aquifer class
              const CTerrainClass    *terrain_class,    //terrain class
@@ -110,6 +110,7 @@ public:/*-------------------------------------------------------*/
   double                 GetSolarNoon    () const;//[days]
 
   double                 GetPrecipMultiplier() const;
+  int                    GetSpecifiedGaugeIndex() const;
 
   soil_struct     const *GetSoilProps       (const int m) const;
   double                 GetSoilThickness   (const int m) const;//[mm]
@@ -157,6 +158,7 @@ public:/*-------------------------------------------------------*/
   void          UpdateForcingFunctions  (const force_struct &Fnew);
   void          CopyDailyForcings       (force_struct &F);
   void          SetPrecipMultiplier     (const double factor);
+  void          SetSpecifiedGaugeIndex  (const int g);
   void          ChangeLandUse           (const CLandUseClass    *lult_class);
   void          ChangeVegetation        (const CVegetationClass *veg_class);
   void          ChangeHRUType           (const HRU_type typ);

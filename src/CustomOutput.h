@@ -116,6 +116,8 @@ private:/*------------------------------------------------------*/
 
   const CModel *pModel;   ///< Reference to model
 
+  void DetermineCustomFilename(const optStruct& Options); 
+
 public:/*------------------------------------------------------*/
 
   CCustomOutput(const diagnostic    variable,

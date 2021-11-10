@@ -13,8 +13,7 @@
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Advection constructor
-/// \param constituent [in] name of contaminant beign tracked
-/// \param pFlow [in] flow process which drives advection (this acts as a wrapper for said process)
+/// \param constit_name [in] name of constituent being tracked
 /// \param pModel [in] Model object
 //
 CmvAdvection::CmvAdvection(string constit_name,
@@ -24,8 +23,7 @@ CmvAdvection::CmvAdvection(string constit_name,
   pTransModel=pTransportModel;
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);
 
-  int nAdvConnections=pTransModel->GetNumAdvConnections();
-
+  int nAdvConnections    =pTransModel->GetNumAdvConnections();
   CHydroProcessABC::DynamicSpecifyConnections(3*nAdvConnections+1);//+2 once GW added
 
   for (int q=0;q<nAdvConnections;q++) //for regular advection
@@ -33,7 +31,7 @@ CmvAdvection::CmvAdvection(string constit_name,
     iFrom[q]=pTransModel->GetFromIndex(_constit_ind,q);
     iTo  [q]=pTransModel->GetToIndex  (_constit_ind,q);
   }
-  for (int q=0;q<nAdvConnections;q++)//for Dirichlet/Neumann source correction (from)
+  for (int q=0;q<nAdvConnections;q++)//for Dirichlet source correction (from)
   {
     iFrom[nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     iTo  [nAdvConnections+q]=iFrom[q];
@@ -43,7 +41,6 @@ CmvAdvection::CmvAdvection(string constit_name,
     iFrom[2*nAdvConnections+q]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     iTo  [2*nAdvConnections+q]=iTo[q];
   }
-  
   //advection into surface water
   int iSW=pModel->GetStateVarIndex(SURFACE_WATER);
   int   m=pTransModel->GetLayerIndex(_constit_ind,iSW);
@@ -240,15 +237,6 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     }
 
   } //ends "for (q=0;q<nAdvConnections;q++).."
-
-  //Handle Neumann influx conditions, if present
-  //-------------------------------------------------------
-  /*for (q = 0; q < nAdvConnections; q++)
-  {
-    rates[q] = 0.0;
-    int iFromWater = pTransModel->GetFromWaterIndex(q);
-    rates[nAdvConnections + q] += pTransModel->GetSpecifiedMassFlux(iToWater, constit_ind, k, tt); //[mg/m2/d]
-  }*/
 
   //delete static memory during last timestep
   if(tt.model_time>=Options.duration-Options.timestep/2)

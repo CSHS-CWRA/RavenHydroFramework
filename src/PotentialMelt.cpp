@@ -79,6 +79,10 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
       potmelt_method etyp=_PotMeltBlends_type[i];
       double           wt=_PotMeltBlends_wts[i];
       melt+=wt*EstimatePotentialMelt(F,etyp,Options,pHRU,tt);
+
+      if(isnan(melt)) {
+        ExitGracefully("EstimatePotentialMelt: NaN value produced in POTMELT_BLENDED calculation by one or more POTMELT routines",RUNTIME_ERR);return false;
+      }
     }
     return melt;
   }
@@ -92,7 +96,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double wind_vel  = F->wind_vel;
 
     double ref_ht    = 2.0; // [m];
-    double roughness = pHRU->GetVegVarProps()->roughness ;
+    double roughness = pHRU->GetSurfaceProps()->roughness ;
     double surf_temp = pHRU->GetSnowTemperature();
 
     double K = F->SW_radia_net;   //net short wave radiation to snowpack [MJ/m2/d]

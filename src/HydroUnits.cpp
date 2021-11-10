@@ -37,7 +37,6 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
                        const double            aspect,//[rad counterclock from N]
                        const HRU_type          typ,
                        const CSoilProfile     *soil_profile,
-                       //const CAquiferStack  *aquifer_system, //GWMIGRATE - aquifer stacks should likely become obsolete
                        const CVegetationClass *veg_class,
                        const void             *PLACEHOLDER,
                        const CTerrainClass    *terrain_class,
@@ -106,6 +105,7 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   _pTerrain  =terrain_class->GetTerrainStruct();
   
   _PrecipMult = 1.0;
+  _SpecifiedGaugeIdx=DOESNT_EXIST;
 
   soil_profile->AllocateSoilLayers(_pModel->GetNumSoilLayers(),_pSoil,aThickness);
 }
@@ -179,6 +179,13 @@ double    CHydroUnit::GetSolarNoon                      () const {return _SolarN
 /// \return double precipitation correction factor
 //
 double    CHydroUnit::GetPrecipMultiplier               () const {return _PrecipMult;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the HRU-specific gauge index if interpolation is to be overriden (or DOESNT_EXIST, if base interpolation scheme is to be used)
+///
+/// \return int gauge ID
+//
+int       CHydroUnit::GetSpecifiedGaugeIndex            () const {return _SpecifiedGaugeIdx;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Checks if HRU is linked to reservoir
@@ -425,12 +432,19 @@ void CHydroUnit::CopyDailyForcings(force_struct &F)
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the HRU-specific precipitation correction factor
 ///
-/// \return double precipitation correction factor
 //
-void      CHydroUnit::SetPrecipMultiplier                        (const double factor)
+void      CHydroUnit::SetPrecipMultiplier     (const double factor)
 {
   _PrecipMult = factor;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Sets the HRU-specific  specified gauge index to override interpolation weights
+///
+//
+void     CHydroUnit::SetSpecifiedGaugeIndex(const int g) 
+{
+  _SpecifiedGaugeIdx=g;
+ }
 //////////////////////////////////////////////////////////////////
 /// \brief Changes the land use class mid-simulation
 //

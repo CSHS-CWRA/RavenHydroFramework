@@ -63,8 +63,9 @@ void CmvSublimation::GetParticipatingParamList(string *aP, class_type *aPC, int 
 {
   if (type==SUBLIM_SVERDRUP)
   {
-    nP=1;
+    nP=2;
     aP[0]="SNOW_ROUGHNESS";   aPC[0]=CLASS_GLOBAL;
+    aP[1]="SNOW_TEMPERATURE"; aPC[1]=CLASS_GLOBAL;
   }
   else if (type==SUBLIM_PBSM)
   {
@@ -112,10 +113,11 @@ double  SublimationRate  (const double      *state_vars,
 
     double es          = GetSaturatedVaporPressure(Tsnow);     // [kPa]
     double ea          = GetSaturatedVaporPressure(Ta)*rel_hum;// [kPa]
-
+    
     double C_E=VON_KARMAN*VON_KARMAN/(log(8.0/roughness))/(log(8.0/roughness));//ref ht =8 m
-
-    return air_density * C_E*wind_vel *  0.623 * (es - ea)/air_pres*SEC_PER_DAY/DENSITY_WATER*MM_PER_METER; //[mm/d]
+    double sublim=air_density*C_E*wind_vel *  0.623 * (es - ea)/air_pres*SEC_PER_DAY/DENSITY_WATER*MM_PER_METER; //[mm/d]
+    //[kg/m3]*[m/s]*[s/d]/[kg/m3]*[mm/m]=[mm/d]
+    return sublim;
   }
   //-----------------------------------------------------------------
   else if(type==SUBLIM_KUZMIN)

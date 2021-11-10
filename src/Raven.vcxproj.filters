@@ -369,9 +369,6 @@
     <ClCompile Include="MassRouting.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="EnergyTransport.cpp">
-      <Filter>Source Files\Transport Processes</Filter>
-    </ClCompile>
     <ClCompile Include="ConstituentModel.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
@@ -416,6 +413,21 @@
     </ClCompile>
     <ClCompile Include="ParseGWFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ControlStructures.cpp">
+      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
+    </ClCompile>
+    <ClCompile Include="StageDischargeRelations.cpp">
+      <Filter>Source Files\Profiles/XSects/Reservoirs</Filter>
+    </ClCompile>
+    <ClCompile Include="MassLoading.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -583,6 +595,12 @@
     </ClInclude>
     <ClInclude Include="RiverReach.h">
       <Filter>Header Files\Groundwater</Filter>
+    </ClInclude>
+    <ClInclude Include="ControlStructures.h">
+      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+    </ClInclude>
+    <ClInclude Include="MassLoading.h">
+      <Filter>Header Files\Transport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

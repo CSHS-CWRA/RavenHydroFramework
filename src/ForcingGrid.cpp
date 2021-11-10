@@ -1910,6 +1910,11 @@ double CForcingGrid::GetValue_max(const int ic, const double &t, const int nstep
 }
 
 ///////////////////////////////////////////////////////////////////
+/// \brief Returns grid filename
+//
+string CForcingGrid::GetFilename() const {return _filename; }
+
+///////////////////////////////////////////////////////////////////
 /// \brief Returns snowfall correction factor
 /// \param None
 /// \return Snowfall correction factor

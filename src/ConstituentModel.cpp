@@ -106,13 +106,24 @@ double CConstituentModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const in
 {
   return 1.0;
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns decay coefficient for constituent c
+/// \param c [in] constituent index
+/// \param iStorWater [in] index of water storage state variable
+//
+double CConstituentModel::GetDecayCoefficient(const CHydroUnit *pHRU,const int iStorWater) const
+{
+  return _pConstitParams->decay_coeff;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns advection correction factor for nutrient constituent
 /// being transported from storage compartment iFromWater to storage compartment iToWater
 /// \param pHRU [in] pointer to HRU of interest
 /// \param iFromWater [in] index of "from" water storage state variable
 /// \param iToWater [in] index of "to" water storage state variable
-/// \param Cs [in] RAW constituent concentration (mg/L or MJ/L or L/L, not mg/L or C or o/oo)
+/// \param Cs [in] RAW constituent concentration (mg/L)
 //
 double CNutrientModel::GetAdvectionCorrection(const CHydroUnit *pHRU,const int iFromWater,const int iToWater, const double &Cs) const
 {
@@ -133,15 +144,16 @@ double CNutrientModel::GetAdvectionCorrection(const CHydroUnit *pHRU,const int i
   }
   return 1.0;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns decay coefficient for constituent c
 /// \param c [in] constituent index
 /// \param iStorWater [in] index of water storage state variable
 //
-double CConstituentModel::GetDecayCoefficient(const CHydroUnit *pHRU,const int iStorWater) const
+double CNutrientModel::GetDecayCoefficient(const CHydroUnit *pHRU,const int iStorWater) const
 {
   sv_type storType;
-  double decay_coeff = _pConstitParams->decay_coeff;
+  double decay_coeff = CConstituentModel::GetDecayCoefficient(pHRU,iStorWater);
 
   storType=_pModel->GetStateVarType(iStorWater);
 
@@ -159,7 +171,6 @@ double CConstituentModel::GetDecayCoefficient(const CHydroUnit *pHRU,const int i
   }
   return decay_coeff;
 }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total rivulet storage distributed over watershed [mg] or [MJ]
 /// \return Total rivulet storage distributed over watershed  [mg] or [MJ]
@@ -209,34 +220,7 @@ double CConstituentModel::GetNetReachLosses(const int p) const
 bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs) const
 {
   Cs=0.0;
-  // \todo[optim] : should replace with a precalculated _aDirichletConc[i_source][k] generated each timestep
-  // this will speed up checking whether k is in HRU group and greatly reduce calls to pTS->GetValue()
-  
-  /*for(int i=0;i<_nSources; i++) 
-  {
-    Cs=_pSources[i]->concentration;
-    bool transient=false;
-    if (Cs==DOESNT_EXIST){
-      Cs=_pSources[i]->pTS->GetValue(tt.model_time);
-      transient=true;
-    }
-    if ((tt.model_time==0.0) || (transient))
-    {
-      if((!_pSources[i]->dirichlet) || (_pSources[i]->kk!=DOESNT_EXIST))  {Cs=DOESNT_EXIST;}
-      
-      for(int k=0;k<_pModel->GetNumHRUs();k++) {
-        _aDirichletConc[i][k]=Cs;
-      }
-      if(_pSources[i]->kk!=DOESNT_EXIST){ {
-        for(int k=0;k<_pModel->GetHRUGroup(_pSources[i_source]->kk)->GetNumHRUs();k++) {
-          k=_pModel->GetHRUGroup(_pSources[i_source]->kk)->GetHRU(k)->GetGlobalIndex();
-          _aDirichletConc[i][k]=Cs;
-        }
-      }
-    }
-  }*/
   int i_source=_aSourceIndices[i_stor][k];
-  //if (_aDiricihletConc[k][i_source]!=DOESNT_EXIST){Cs= _aDiricihletConc[k][i_source]; return true;}
   if(i_source==DOESNT_EXIST)          { return false; }
   if(!_pSources[i_source]->dirichlet) { return false; }
   Cs = _pSources[i_source]->concentration;
@@ -245,29 +229,7 @@ bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_str
   else {//time series
     Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
     return true;
-  }
-
-  /*if(_pSources[i_source]->kk==DOESNT_EXIST)
-  { //Not tied to HRU Group
-    if(Cs != DOESNT_EXIST) { return true; }
-    else {//time series
-      Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
-      return true;
-    }
-  }
-  else
-  { //Tied to HRU Group - Check if we are in HRU Group
-    if(_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k))
-    {
-      cout<<"Is in Group "<<_pSources[i_source]->kk<<" CS: "<<Cs<<" isource: "<<i_source<<endl;
-      if(Cs != DOESNT_EXIST) { return true; }
-      else {//time series
-        Cs = _pSources[i_source]->pTS->GetValue(tt.model_time);
-        return true;
-      }
-    }
-  }*/
- // return false;
+  } 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns specified mass flux for given constitutent and water storage unit at time tt
@@ -284,24 +246,11 @@ double  CConstituentModel::GetSpecifiedMassFlux(const int i_stor,const int k,con
   if(_pSources[i_source]->dirichlet) { return 0.0; }
 
   double flux;
-  bool retrieve=false;
-  retrieve=true;
-  /*if(_pSources[i_source]->kk==DOESNT_EXIST)//not tied to HRU group
-  {
-    retrieve=true;
+  flux=_pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
+  if(flux == DOESNT_EXIST) {//get from time series
+    flux=_pSources[i_source]->pTS->GetValue(tt.model_time);
   }
-  else { //Check if we are in HRU Group
-    retrieve=_pModel->GetHRUGroup(_pSources[i_source]->kk)->IsInGroup(k);
-  }*/
-  if(retrieve)
-  {
-    flux=_pSources[i_source]->concentration; //'concentration' stores mass flux [mg/m2/d] if this is a flux-source
-    if(flux == DOESNT_EXIST) {//get from time series
-      flux=_pSources[i_source]->pTS->GetValue(tt.model_time);
-    }
-    return flux;
-  }
-  else { return 0.0; }
+  return flux;
 }
 
 
@@ -690,7 +639,6 @@ void CConstituentModel::IncrementCumulOutput(const optStruct &Options)
   }
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief calculates mass outflow using convoluition
 /// \details This parent version is simple, child versions may calculate decay, etc. in channel
@@ -820,6 +768,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   }
   _POLLUT<<endl;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Write transport output file headers in .tb0 format
 /// \details Called prior to simulation (but after initialization) from CModel::Initialize()
@@ -1133,6 +1082,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
   _POLLUT<<endl;
   
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Writes minor transport output to ensim formatted file at the end of each timestep (or multiple thereof)
 /// \note only thing this modifies should be output streams; called from CModel::WriteMinorOutput()
@@ -1224,6 +1174,7 @@ void CConstituentModel::CloseOutputFiles()
   _OUTPUT.close();
   _POLLUT.close();
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Writes state variables to RVC file
 //

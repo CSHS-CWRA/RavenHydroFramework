@@ -413,7 +413,7 @@ const CEnthalpyModel *CTransportModel::GetEnthalpyModel() const
   return _pEnthalpyModel;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns concentration (or temperature) in HRU k corresponding to transport state variable with i=sv_index
+/// \brief returns concentration (or temperature, or isotopic composition) in HRU k corresponding to transport state variable with i=sv_index
 /// \param k - global HRU index of interest
 /// \param sv_index - state variable index (i) 
 //
@@ -463,7 +463,7 @@ void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_pass
 
   //Add corresponding constituent storage state variables to model
   sv_type *aSV =new sv_type[_nWaterCompartments];
-  int     *aLev=new int[_nWaterCompartments];
+  int     *aLev=new int    [_nWaterCompartments];
   for(int j=0;j<_nWaterCompartments; j++)
   {
     int m=j+c*_nWaterCompartments;
@@ -484,16 +484,6 @@ void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_pass
   aSV[0]=CONSTITUENT_SW;
   aLev[0]=c;
   pModel->AddStateVariables(aSV,aLev,1);
-
-  //Parameter initialization
-  /*transport_params *pP = new transport_params;
-  InitializeConstitParams(pP);
-  int junk = _nConstituents - 1;
-
-  //add to master list of constituent parameters
-  if(!DynArrayAppend((void**&)(_pConstitParams),(void*)(pP),junk)) {
-    ExitGracefully(" CTransportModel::AddConstituent: adding NULL constituent parameter set",BAD_DATA);
-  }*/
 
   delete[] aSV;
   delete[] aLev;
@@ -713,14 +703,12 @@ void   CTransportModel::SetGlobalParameter(const string const_name,const string 
     WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized constituent name",noisy);
   }
 
-  string ustr=StringToUppercase(param_name);
+  //_pConstitModels[constit_ind]->SetConstitParameter(param_name,value,noisy);
+ 
+  /*string ustr=StringToUppercase(param_name);
   if(ustr=="DECAY_COEFF") {
-    
-    
     // REFACTOR ISSUE:
-
-
-    //_pConstitModels[constit_ind]->GetConstituentParams()->decay_coeff=value;
+     //_pConstitModels[constit_ind]->GetConstituentParams()->decay_coeff=value;
     //_pConstitParams[constit_ind]->decay_coeff=value;
     ExitGracefullyIf(value<0.0," CTransportModel::SetGlobalParameter: decay coefficient cannot be negative",BAD_DATA_WARN);
   }
@@ -729,7 +717,7 @@ void   CTransportModel::SetGlobalParameter(const string const_name,const string 
   //}
   else {
     WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized parameter name",noisy);
-  }
+  }*/
 }
 
 //////////////////////////////////////////////////////////////////
@@ -739,8 +727,7 @@ void   CTransportModel::SetGlobalParameter(const string const_name,const string 
 //
 void CTransportModel::Initialize(const optStruct &Options)
 {
-  for(int c=0;c<_nConstituents;c++)
-  {
+  for(int c=0;c<_nConstituents;c++){
     _pConstitModels[c]->Initialize(Options);
   }
   CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
@@ -750,7 +737,8 @@ void CTransportModel::Initialize(const optStruct &Options)
 /// \param Options [in] Global model options structure
 /// \param tt [in] time structure
 //
-void   CTransportModel::IncrementCumulInput(const optStruct &Options,const time_struct &tt) {
+void   CTransportModel::IncrementCumulInput(const optStruct &Options,const time_struct &tt) 
+{
   for(int c=0;c<_nConstituents; c++) {
     _pConstitModels[c]->IncrementCumulInput(Options,tt);
   }
@@ -759,7 +747,8 @@ void   CTransportModel::IncrementCumulInput(const optStruct &Options,const time_
 /// \brief Increment cumulative mass/energy lost from watershed
 /// \param Options [in] Global model options structure
 //
-void   CTransportModel::IncrementCumulOutput(const optStruct &Options) {
+void   CTransportModel::IncrementCumulOutput(const optStruct &Options) 
+{
   for(int c=0;c<_nConstituents; c++) {
     _pConstitModels[c]->IncrementCumulOutput(Options);
   }
@@ -771,8 +760,7 @@ void   CTransportModel::IncrementCumulOutput(const optStruct &Options) {
 //
 void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
 {
-  for(int c=0;c<_nConstituents;c++)
-  {
+  for(int c=0;c<_nConstituents;c++) {
     _pConstitModels[c]->WriteOutputFileHeaders(Options);
   }
 }
@@ -800,18 +788,18 @@ void   CTransportModel::WriteEnsimMinorOutput(const optStruct &Options,const tim
      _pConstitModels[c]->WriteEnsimMinorOutput(Options,tt);
   }
 }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Close transport output files
 //
 void CTransportModel::CloseOutputFiles() const
 {
-  for(int c=0;c<_nConstituents;c++)
-  {
+  for(int c=0;c<_nConstituents;c++){
     _pConstitModels[c]->CloseOutputFiles();
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Write major output
+//
 void  CTransportModel::WriteMajorOutput(ofstream &RVC) const 
 {
   for(int c=0;c<_nConstituents;c++) {

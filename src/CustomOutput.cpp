@@ -21,6 +21,7 @@ void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,con
 /// \param stat              [in] Time aggregate statistic (average, maximum, range, etc.)
 /// \param time_aggregation  [in] How frequently data is aggregated (monthly, daily, hourly, etc.)
 /// \param space_aggregation [in] How data is spatially aggregated (by HRU, by basin, etc.)
+/// \param filename_spec     [in] specified filename (or "" if none)
 /// \param *pMod             [in] Pointer to model
 /// \param &Options          [in] Global model options information
 //
@@ -59,6 +60,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _timeAggStr     ="UNKNOWN";
   _statStr        ="UNKNOWN";
   _spaceAggStr    ="UNKNOWN";
+  _filename       =filename_spec;
 
   num_data      =1;
   data          =NULL;  // pointer to data storage for aggregation
@@ -75,11 +77,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
                    "CCustomOutput Constructor: invalid HRU group index for Select HRU Aggregation. Undefined HRU group?",BAD_DATA);
   _time_index=0;
 
-  //-------------------------------------------------------------
-  // figure out filename
-  ostrstream sFILENAME;
-  if (Options.run_name!=""){sFILENAME<<Options.output_dir<<Options.run_name<<"_";}
-  else                     {sFILENAME<<Options.output_dir;                       }
+
       
   // Get the variable name (either the state variable name of the forcing variable name) and the units
   switch(_var)
@@ -136,8 +134,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     break;
   }
   }
-  sFILENAME<<_varName<<"_";
-
+ 
 // temporal aggregation
   switch(_timeAgg)
   {
@@ -148,7 +145,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case EVERY_NDAYS:               _timeAggStr="Every"+to_string(int(Options.custom_interval))+"days";break;
   case EVERY_TSTEP:               _timeAggStr="Continuous"; break;
   }
-  sFILENAME<<_timeAggStr<<"_";
+
 
 // statistic
   switch(_aggstat)
@@ -162,7 +159,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case AGG_QUARTILES:             _statStr="Quartiles"; break;
   case AGG_HISTOGRAM:             _statStr="Histogram"; break;
   }
-  sFILENAME<<_statStr<<"_";
+
 
 // spatial aggregation
   switch(_spaceAgg)
@@ -174,22 +171,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case BY_SB_GROUP:               _spaceAggStr="BySubbasinGroup"; break;
   case BY_SELECT_HRUS:            _spaceAggStr="ByHRU"; break;
   }
-  sFILENAME<<_spaceAggStr;
 
-  // filename extension
-  switch(Options.output_format)
-  {
-  case OUTPUT_ENSIM:      sFILENAME<<".tb0"<<ends; break;
-  case OUTPUT_NETCDF:     sFILENAME<<".nc" <<ends; break;
-  case OUTPUT_STANDARD:
-  default:                sFILENAME<<".csv"<<ends; break;
-  }
-
-  if (filename_spec==""){_filename=sFILENAME.str();}
-  else                  {
-    if (Options.run_name!=""){_filename=Options.output_dir+Options.run_name+"_"+filename_spec;}
-    else                     {_filename=Options.output_dir+filename_spec; } // \todo [QA/QC]: should check for proper extension of filename_spec
-  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -259,12 +241,41 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
     for (int a=0;a<num_store;a++){data[k][a]=0.0;}
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Open a stream to the file and write header info
+//
+void CCustomOutput::DetermineCustomFilename(const optStruct& Options) 
+{
+  ostrstream sFILENAME;
+  if (Options.run_name!=""){sFILENAME<<Options.output_dir<<Options.run_name<<"_";}
+  else                     {sFILENAME<<Options.output_dir;                       }
+  sFILENAME<<_varName<<"_";
+  sFILENAME<<_timeAggStr<<"_";
+  sFILENAME<<_statStr<<"_";
+  sFILENAME<<_spaceAggStr;
 
+  // filename extension
+  switch(Options.output_format)
+  {
+  case OUTPUT_ENSIM:      sFILENAME<<".tb0"<<ends; break;
+  case OUTPUT_NETCDF:     sFILENAME<<".nc" <<ends; break;
+  case OUTPUT_STANDARD:
+  default:                sFILENAME<<".csv"<<ends; break;
+  }
+
+  if (_filename==""){_filename=sFILENAME.str();} //_filename wasn't overriden by user
+  else                  {
+    if (Options.run_name!=""){_filename=Options.output_dir+Options.run_name+"_"+_filename;}
+    else                     {_filename=Options.output_dir+_filename; } // \todo [QA/QC]: should check for proper extension of specified filename
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Open a stream to the file and write header info
 //
 void CCustomOutput::WriteFileHeader(const optStruct &Options)
 {
+  DetermineCustomFilename(Options);
+
   _CUSTOM.open(_filename.c_str());
   if (_CUSTOM.fail()){
     WriteWarning("CCustomOutput::WriteFileHeader: Unable to create file "+_filename,true);
@@ -1154,6 +1165,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   int start=5;
   if ((sa==BY_SELECT_HRUS) && (Len>=7) && (string(s[5])=="ONLY")){start=7;}
   else if ((Len>=8) && (stat==AGG_HISTOGRAM))                    {start=8;}
+
   string filename="";
   if (Len>start){for (int i=start;i<Len;i++){filename=filename+to_string(s[i]);}}
 
