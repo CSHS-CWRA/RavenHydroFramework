@@ -33,7 +33,7 @@ CStageDischargeTable::~CStageDischargeTable()
 //
 double CStageDischargeTable::GetDischarge(const double& h) const 
 {
-  return Interpolate2(h,_aStage,_aQ,_Np,true);
+  return InterpolateCurve(h,_aStage,_aQ,_Np,true);
 }
 
 

@@ -1235,7 +1235,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if ((ptype!=CLASS_GLOBAL) && (Len>=4)){class_name=(string)(s[3]);}
 
       CTimeSeries     *pTimeSer=NULL;
-      pTimeSer=CTimeSeries::Parse(p,true,param_name+"_"+s[2]+"_"+s[3],DOESNT_EXIST,Options);
+      pTimeSer=CTimeSeries::Parse(p,true,param_name+"_"+s[2]+"_"+s[3],DOESNT_EXIST,"none",Options);
       if (pTimeSer!=NULL)
       {
         CTransientParam *pTransParam=NULL;

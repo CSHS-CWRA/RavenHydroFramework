@@ -160,17 +160,17 @@ double CIrregularTimeSeries::GetValue(const int n)const{return _aVal[n];}
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns index corresponding to time _aTimes[n]<t_mod<_aTimes[n+1]
 /// \param t_mod [in] model time 
-/// \return index n
+/// \return sample index nn, where nn=n-_indexCorr (nn=0 for first data in model duration)
 //
 int    CIrregularTimeSeries::GetTimeIndexFromModelTime(const double &t_mod) const {
   int n;
-  if (t_mod<_aTimes[1]){return 0;}
-  for(n = 0; n < _nVals-1; n++)
+  if (t_mod<_aTimes[_indexCorr+1]){return 0;}
+  for(n = _indexCorr; n < _nVals-1; n++)
   {
     if(_aTimes[n+1]>=t_mod) { break; } //\todo[optimize]
   }
-  if (t_mod>_aTimes[_nVals-1]){return _nVals-1;}
-  return n;
+  if (t_mod>_aTimes[_nVals-1]){return _nVals-1-_indexCorr;}
+  return n-_indexCorr;
 }
 
 ///////////////////////////////////////////////////////////////////

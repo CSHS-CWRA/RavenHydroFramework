@@ -927,7 +927,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     :WeirCoefficient 0.6
     :CrestWidth 10
     :MaxDepth 5.5 # relative to minimum weir crest elevation
-    :LakeArea 10.5
+    :LakeArea 100000
     :AbsoluteCrestHeight 365 # absolute minimum weir crest height m.a.s.l. (optional)
   :EndReservoir
 

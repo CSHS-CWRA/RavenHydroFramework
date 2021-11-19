@@ -97,6 +97,7 @@ private:/*-------------------------------------------------------*/
   double       _Qout_last;           ///< outflow at beginning of current time step [m3/s]
   double       _MB_losses;           ///< losses over current time step [m3]
   double       _AET;                 ///< losses through AET only [m3]
+  double       _Precip;              ///< gains through precipitation [m3]
   double       _GW_seepage;          ///< losses to GW only [m3] (negative for GW gains)
   double      *_aQstruct;            ///< array of flows from control structures at end of time step [m3/s]
   double      *_aQstruct_last;       ///< array of flows from control structures at start of time step [m3/s]
@@ -170,6 +171,7 @@ public:/*-------------------------------------------------------*/
   double            GetReservoirLosses       (const double &tstep) const; //[m3]
   double            GetReservoirEvapLosses   (const double &tstep) const; //[m3]
   double            GetReservoirGWLosses     (const double &tstep) const; //[m3]
+  double            GetReservoirPrecipGains  (const double &tstep) const; //[m3]
   double            GetResStage              () const; //[m]
   double            GetOldStorage            () const; //[m3]
   int               GetHRUIndex              () const;
@@ -194,6 +196,7 @@ public:/*-------------------------------------------------------*/
   void              SetCrestWidth            (const double &width);
   void              SetDataAssimFactors      (const double &da_scale, const double &da_scale_last);
   void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
+  void              SetPrecip                (const double &precip_m3);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);

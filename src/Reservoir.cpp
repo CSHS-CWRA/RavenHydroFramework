@@ -24,6 +24,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _Qout_last =0.0;
   _MB_losses =0.0;
   _AET		   =0.0;
+  _Precip    =0.0;
   _GW_seepage=0.0;
   _aQstruct=NULL;
   _aQstruct_last=NULL;
@@ -183,6 +184,8 @@ CReservoir::CReservoir(const string Name, const long SubID,
     _aVolume[i]=a_V[i];
     if(a_Qund==NULL){ _aQunder[i]=0.0; }
     else            { _aQunder[i]=a_Qund[i];   }
+
+    // QA/QC: 
     if ((i > 0) && ((_aStage[i]-_aStage[i-1])<0)){
       warn = "CReservoir::constructor: stage relations must be specified in order of increasing stage. [bad reservoir: " + _name + " "+to_string(SubID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -426,6 +429,13 @@ double  CReservoir::GetReservoirEvapLosses(const double &tstep) const
 	return _AET;
 }
 //////////////////////////////////////////////////////////////////
+/// \returns evaporative losses only integrated over previous timestep [m3]
+//
+double  CReservoir::GetReservoirPrecipGains(const double& tstep) const
+{
+  return _Precip;
+}
+//////////////////////////////////////////////////////////////////
 /// \returns seepage losses only integrated over previous timestep [m3]
 //
 double  CReservoir::GetReservoirGWLosses(const double &tstep) const
@@ -447,7 +457,6 @@ int CReservoir::GetNumControlStructures() const
 {
   return _nControlStructures;
 }
-
 //////////////////////////////////////////////////////////////////
 /// \returns crest width, in meters
 //
@@ -753,6 +762,14 @@ void  CReservoir::SetMaxCapacity(const double &max_cap)
 {
   _max_capacity=max_cap;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief sets total incoming precip volume, in m3, for timestep
+/// \param precip_m3: precip, in m3
+//
+void  CReservoir::SetPrecip(const double& precip_m3)
+{
+  _Precip=precip_m3;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief gets current constraint name
@@ -785,7 +802,7 @@ void CReservoir::SetVolumeStageCurve(const double *a_ht,const double *a_V,const 
 {
   for(int i=0;i<_Np;i++)
   {
-    _aVolume[i]=Interpolate2(_aStage[i],a_ht,a_V,nPoints,false);
+    _aVolume[i]=InterpolateCurve(_aStage[i],a_ht,a_V,nPoints,false);
     if((i > 0) && ((_aVolume[i] - _aVolume[i-1]) <= -REAL_SMALL)) {
       string warn = "CReservoir::SetVolumeStageCurve: volume-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -803,7 +820,7 @@ void CReservoir::SetAreaStageCurve(const double *a_ht,const double *a_A,const in
 {
   for(int i=0;i<_Np;i++)
   {
-    _aArea[i]=Interpolate2(_aStage[i],a_ht,a_A,nPoints,false);
+    _aArea[i]=InterpolateCurve(_aStage[i],a_ht,a_A,nPoints,false);
     if((i > 0) && ((_aArea[i] - _aArea[i-1]) <= -REAL_SMALL)) {
       string warn = "CReservoir::SetAreaStageCurve: area-stage relationships must be monotonically increasing for all stages. [bad reservoir: " + _name + " "+to_string(_SBID)+"]";
       ExitGracefully(warn.c_str(),BAD_DATA_WARN);
@@ -960,6 +977,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
     }
     _AET      = Evap* 0.5*(GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep; //m3
     _MB_losses+=_AET;
+    _MB_losses-=_Precip;
   }
   if(_seepage_const>0) {
     _GW_seepage=_seepage_const*(0.5*(_stage+_stage_last)-_local_GW_head)*SEC_PER_DAY*tstep;
@@ -1151,19 +1169,20 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 
   int nn=(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
 
-  if(_pWeirHeightTS!=NULL)  { weir_adj   =_pWeirHeightTS->  GetSampledValue(nn);}
-  if(_pMaxStageTS!=NULL)    { stage_limit=_pMaxStageTS->    GetSampledValue(nn);}
-  if(_pOverrideQ!=NULL)     { Qoverride  =_pOverrideQ->     GetSampledValue(nn);}
-  if(_pMinStageTS!=NULL)    { min_stage  =_pMinStageTS->    GetSampledValue(nn);}    
+  if(_pWeirHeightTS  !=NULL){ weir_adj   =_pWeirHeightTS->  GetSampledValue(nn);}
+  if(_pMaxStageTS    !=NULL){ stage_limit=_pMaxStageTS->    GetSampledValue(nn);}
+  if(_pOverrideQ     !=NULL){ Qoverride  =_pOverrideQ->     GetSampledValue(nn);}
+  if(_pMinStageTS    !=NULL){ min_stage  =_pMinStageTS->    GetSampledValue(nn);}    
   if(_pMinStageFlowTS!=NULL){ Qminstage  =_pMinStageFlowTS->GetSampledValue(nn);}  
-  if(_pTargetStageTS!=NULL) { htarget    =_pTargetStageTS-> GetSampledValue(nn);}
+  if(_pTargetStageTS !=NULL){ htarget    =_pTargetStageTS-> GetSampledValue(nn);}
   if(_pMaxQIncreaseTS!=NULL){ Qdelta     =_pMaxQIncreaseTS->GetSampledValue(nn);}
   if(_pMaxQDecreaseTS!=NULL){ Qdelta_dec =_pMaxQDecreaseTS->GetSampledValue(nn);}
-  if(_pQminTS!=NULL)        { Qmin       =_pQminTS->        GetSampledValue(nn);}
-  if(_pQmaxTS!=NULL)        { Qmax       =_pQmaxTS->        GetSampledValue(nn);}
+  if(_pQminTS        !=NULL){ Qmin       =_pQminTS->        GetSampledValue(nn);}
+  if(_pQmaxTS        !=NULL){ Qmax       =_pQmaxTS->        GetSampledValue(nn);}
 
   // Downstream flow targets 
-  if(_pQdownTS!=NULL)       { 
+  if(_pQdownTS!=NULL)       
+  { 
     double Qdown_targ      =_pQdownTS->GetSampledValue(nn);
     double Qdown_act       =_pQdownSB->GetOutflowRate();
     //Qshift=max(min((Qdown_targ-Qdown_act)/(_QdownRange*0.5),1.0),-1.0)*(Qdown_targ-Qdown_act);
@@ -1183,11 +1202,10 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     }
   }
 
-
   // ======================================================================================
   // Mass balance on reservoir over time step:
   //
-  // dV(h)/dt=(Q_in(n)+Q_in(n+1))/2-(Q_out(n)+Q_out(n+1)(h))/2-ET*(A(n)+A(n+1))/2 -> solve for h_(n+1)
+  // dV(h)/dt=(Q_in(n)+Q_in(n+1))/2-(Q_out(n)+Q_out(n+1)(h))/2+Precip-ET*(A(n)+A(n+1))/2 -> solve for h_(n+1)
   //   non-linear w.r.t., h : rewritten as f(h)-gamma=0 for Newton's method solution
   //
   // ======================================================================================
@@ -1199,19 +1217,23 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   double change    =0;
   double f,dfdh,out,out2;
   double ET      (0.0);               //[m/s]
+  double precip  (0.0);               //[m3/s]
   double ext_old (0.0),ext_new (0.0); //[m3/s]
   double seep_old(0.0);
   double outflow_nat,stage_nat;       //[m],[m3/s]
 
+  //if HRU is NULL, precip shows up as runoff from HRUs, ET calculated from open water evap from HRUs (or neglected if no such process exists)
+  //Otherwise, these processes are handled as seen here
   if(_pHRU!=NULL)
   {
     ET=_pHRU->GetForcingFunctions()->OW_PET/SEC_PER_DAY/MM_PER_METER; //average for timestep, in m/s
     if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
       ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     }
+    precip=_Precip/Options.timestep/SEC_PER_DAY; //[m3]->[m3/s]
   }
   if(_seepage_const>0) {
-    seep_old=_seepage_const*(_stage-_local_GW_head); //m3/s
+    seep_old=_seepage_const*(_stage-_local_GW_head); //[m3/s]
   }
   if(_pExtractTS!=NULL)
   {
@@ -1219,7 +1241,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     ext_new=_pExtractTS->GetSampledValue(nn); //steady rate over time step
   }
 
-  double gamma=V_old+((Qin_old+Qin_new)-_Qout-ET*A_old-seep_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
+  double gamma=V_old+((Qin_old+Qin_new)-_Qout+2.0*precip-ET*A_old-seep_old-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY);//[m3]
   if(gamma<0)
   {//reservoir dried out; no solution available. (f is always >0, so gamma must be as well)
    //only remaining filling action is via seepage, which is likely not enough, and Q_out_new can't be negative
@@ -1298,7 +1320,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double V_targ=GetVolume(htarget);
     double A_targ=GetArea(htarget);
     double seep_targ = _seepage_const*(htarget-_local_GW_head);
-    Qtarget = -2 * (V_targ - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_targ) - (seep_old+seep_targ) - (ext_old + ext_new));//[m3/s]
+    Qtarget = -2 * (V_targ - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) +2.0*precip - ET*(A_old + A_targ) - (seep_old+seep_targ) - (ext_old + ext_new));//[m3/s]
     Qtarget=max(Qtarget,Qminstage);
     if(Qtarget>_Qout) {
       Qtarget = w*Qtarget+(1-w)*_Qout; //softer move towards goal - helps with stage undershoot -you can always remove more...
@@ -1363,13 +1385,13 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       double A_last,V_new;
       double seep_guess = seep_old;
       do {
-        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)-ET*(A_old+A_guess)-(seep_old+seep_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
+        V_new= V_old+((Qin_old+Qin_new)-(_Qout+res_outflow)+2.0*precip-ET*(A_old+A_guess)-(seep_old+seep_guess)-(ext_old+ext_new))/2.0*(tstep*SEC_PER_DAY); 
         if(V_new<0) {
           V_new=0;
           constraint=RC_DRY_RESERVOIR; //drying out reservoir
-          res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
+          res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + 2.0*precip + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
         }
-        stage_new=Interpolate2(V_new,_aVolume,_aStage,_Np,false);
+        stage_new=InterpolateCurve(V_new,_aVolume,_aStage,_Np,false);
         A_last     = A_guess;
         A_guess    = GetArea(stage_new);
         seep_guess = _seepage_const*(stage_new-_local_GW_head);
@@ -1386,7 +1408,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double V_limit =GetVolume(stage_limit);
     double A_limit =GetArea(stage_limit);
     double seep_lim=_seepage_const*(stage_limit-_local_GW_head);
-    res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) - ET*(A_old + A_limit) - (seep_old+seep_lim) - (ext_old + ext_new));//[m3/s]
+    res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) + 2.0*precip - ET*(A_old + A_limit) - (seep_old+seep_lim) - (ext_old + ext_new));//[m3/s]
   }
 
   //other option - returns to stage-discharge curve once max stage exceeded
@@ -1435,7 +1457,7 @@ void CReservoir::WriteToSolutionFile (ofstream &RVC) const
 /// \returns y value corresponding to interpolation point
 /// \note assumes regular spacing between min and max x value
 //
-double Interpolate(double x, double xmin, double xmax, double *y, int N, bool extrapbottom)
+/*double Interpolate(double x,double xmin,double xmax,double* y,int N,bool extrapbottom)
 {
   //assumes N *evenly-spaced* points in x from xmin to xmax
   double dx=((xmax-xmin)/(N-1));
@@ -1454,8 +1476,7 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
     return y[i]+(y[i+1]-y[i])*(val-floor(val));
   }
 }
-
-
+*/
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates the volume from the volume-stage rating curve
 /// \param ht [in] reservoir stage
@@ -1463,7 +1484,7 @@ double Interpolate(double x, double xmin, double xmax, double *y, int N, bool ex
 //
 double     CReservoir::GetVolume(const double &ht) const
 {
-  return Interpolate2(ht,_aStage,_aVolume,_Np,true);
+  return InterpolateCurve(ht,_aStage,_aVolume,_Np,true);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates the surface area from the area-stage rating curve
@@ -1472,7 +1493,7 @@ double     CReservoir::GetVolume(const double &ht) const
 //
 double     CReservoir::GetArea  (const double &ht) const
 {
-  return Interpolate2(ht,_aStage,_aArea,_Np,false);
+  return InterpolateCurve(ht,_aStage,_aArea,_Np,false);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates the discharge from the outflow-stage rating curve
@@ -1482,8 +1503,8 @@ double     CReservoir::GetArea  (const double &ht) const
 //
 double     CReservoir::GetWeirOutflow(const double &ht, const double &adj) const
 {
-  double underflow=Interpolate2(ht,_aStage,_aQunder,_Np,false); //no adjustments
-  return Interpolate2(ht-adj,_aStage,_aQ,_Np,false)+underflow;
+  double underflow=InterpolateCurve(ht,_aStage,_aQunder,_Np,false); //no adjustments
+  return InterpolateCurve(ht-adj,_aStage,_aQ,_Np,false)+underflow;
 }
 
 

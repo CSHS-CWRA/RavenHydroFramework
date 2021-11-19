@@ -209,6 +209,21 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     return Ma*(F->temp_daily_ave-melt_temp);
   }
   //----------------------------------------------------------
+  else if(method == POTMELT_RILEY)
+  {
+    //From Riley, J.P., E.K. Israelsen, and K.O. Eggleston, some approaches to snowmelt prediction, 
+    //Actes du Colloque de Banff sur le role de la niege et de la glace en hydrologie, AISH Pub, Vol 2, no 107, p956-971, 1972
+    //As documented in HYDROTEL 2.1 manual
+    double Ma       =pHRU->GetSurfaceProps()->melt_factor;
+    double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
+    double rainfall =F->precip*(1.0-F->snow_frac);
+    double slope_fact=F->ET_radia/F->ET_radia_flat;
+    double snoalb  = pHRU->GetSnowAlbedo(); // Average snow surface albedo
+    double adv_melt= SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*rainfall; //[mm/d]
+
+    return Ma*slope_fact*(F->temp_ave-melt_temp)*(1.0-snoalb)+adv_melt;
+  }
+  //----------------------------------------------------------
   else if(method == POTMELT_NONE)
   {
     return 0.0;

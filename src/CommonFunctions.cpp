@@ -1099,7 +1099,7 @@ double TemperatureEnthalpyDerivative(const double &hv)
   //derivative of temperature with respect to volumetric enthalpy
   if      (hv>0  ){ return 1.0/SPH_WATER/DENSITY_WATER;}
   else if (hv>hvt){ return g_freeze_temp/hvt;}
-  else            { return 1.0/SPH_ICE/DENSITY_ICE; }   
+  else            { return 1.0/SPH_ICE/DENSITY_ICE; }   //JRC: NOTE - since all water is in SWE, not ice volume [mm], shouldnt this be DENSITY_WATER?? I think so.
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1119,7 +1119,7 @@ double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctf
   if     ((g_freeze_temp==0.0) && (fabs(T)<REAL_SMALL)){ return pctfroz*hvt; } //along zero line
   else if(T>0)                                         { return T*SPH_WATER*DENSITY_WATER; }
   else if((hvt<0.0) && (T>g_freeze_temp))              { return pctfroz*hvt; }
-  else                                                 { return T*SPH_ICE  *DENSITY_ICE+hvt; }
+  else                                                 { return T*SPH_ICE  *DENSITY_ICE+hvt; } //JRC: NOTE - since all water is in SWE, not ice volume [mm], shouldnt this be DENSITY_WATER?? I think so.
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1773,7 +1773,7 @@ int SmartIntervalSearch(const double &x,const double *ax,const int N,const int i
 /// \note if below minimum xx, either extrapolates (if extrapbottom=true), or uses minimum value
 /// \note if above maximum xx, always extrapolates
 //
-double Interpolate2(const double x,const double *xx,const double *y,int N,bool extrapbottom)
+double InterpolateCurve(const double x,const double *xx,const double *y,int N,bool extrapbottom)
 {
   static int ilast=0;
   if(x<=xx[0])
@@ -1791,7 +1791,7 @@ double Interpolate2(const double x,const double *xx,const double *y,int N,bool e
     //int i=0; while ((x>xx[i+1]) && (i<(N-2))){i++;}//Dumb Search
     int i=SmartIntervalSearch(x,xx,N,ilast);
     if(i==DOESNT_EXIST) { return 0.0; }
-    ExitGracefullyIf(i==DOESNT_EXIST,"Interpolate2::mis-ordered list or infinite x",RUNTIME_ERR);
+    ExitGracefullyIf(i==DOESNT_EXIST,"InterpolateCurve::mis-ordered list or infinite x",RUNTIME_ERR);
     ilast=i;
     return y[i]+(y[i+1]-y[i])/(xx[i+1]-xx[i])*(x-xx[i]);
   }

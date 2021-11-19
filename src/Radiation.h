@@ -83,12 +83,13 @@ public:/*------------------------------------------------------*/
                                            const double &solar_noon,	//[days]
                                            const double &dew_pt,			//dew point temp, [C]
                                            double &ET_radia,			  //ET radiation [MJ/m2/d]
+                                           double &ET_radia_flat, //ET radiation without slope correction [MJ/m2/d]
                                            const bool   avg_daily);	//true if average daily is to be computed
   static double EstimateShortwaveRadiation(const optStruct &Options,
                                            const force_struct *F,
                                            const CHydroUnit *pHRU,
                                            const time_struct  &tt,
-                                           double       &ET_rad);
+                                           double       &ET_rad,double &ET_rad_flat);
 
   static double SWCloudCoverCorrection    (const optStruct &Options,
                                            const force_struct *F,

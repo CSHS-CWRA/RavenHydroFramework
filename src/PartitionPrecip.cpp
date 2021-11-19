@@ -41,7 +41,7 @@ void CmvPrecipitation::Initialize()
   iFrom[6]=iAtmos; iTo[6]=pModel->GetStateVarIndex(SNOW_LIQ);
   iFrom[7]=iAtmos; iTo[7]=pModel->GetStateVarIndex(SNOW_DEFICIT); //???
   iFrom[8]=iAtmos; iTo[8]=pModel->GetStateVarIndex(NEW_SNOW);
-  iFrom[9]=iAtmos; iTo[9]=pModel->GetLakeStorageIndex();
+  iFrom[9]=iAtmos; iTo[9]=pModel->GetLakeStorageIndex(); //Lake handling
   
   iFrom[10]=iTo[10]=pModel->GetStateVarIndex(COLD_CONTENT);
   iFrom[11]=iTo[11]=pModel->GetStateVarIndex(SNOW_DEPTH);
@@ -60,9 +60,9 @@ void CmvPrecipitation::Initialize()
 //
 void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
-  int iCan=pModel->GetStateVarIndex(CANOPY);
-  bool canopy_exists = (iCan != DOESNT_EXIST);
+  int iCan     = pModel->GetStateVarIndex(CANOPY);
   int iSnowCan = pModel->GetStateVarIndex(CANOPY);
+  bool canopy_exists  = (iCan     != DOESNT_EXIST);
   bool cansnow_exists = (iSnowCan != DOESNT_EXIST);
 
   nP=0;
@@ -156,7 +156,6 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   iCan    =pModel->GetStateVarIndex(CANOPY);
   iSCan   =pModel->GetStateVarIndex(CANOPY_SNOW);
   iSnLiq  =pModel->GetStateVarIndex(SNOW_LIQ);
-  
   iLake   =pModel->GetLakeStorageIndex();
 
   //connection indices (hard-coded in Initialize())

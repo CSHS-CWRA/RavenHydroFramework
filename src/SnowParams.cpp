@@ -161,6 +161,9 @@ double CalcFreshSnowDensity(const double &air_temp)
     return min((119.17+20.0*(air_temp-FREEZING_TEMP)),200.0);
   }
 
+  //From Hydrotel 2.1 documentation, eqn 3.1
+  //return max(50.0,min(151.0,151+10.63*air_temp+0.2767*air_temp*air_temp)); 
+
   ///< or (Anderson, 1976 -CLM manual eqn 7.18) \cite anderson1976
   /*if (air_temp>FREEZING_TEMP+2){
     return 169.15;

@@ -23,6 +23,7 @@ void CConstituentModel::InitializeRoutingVars()
   _aMlat_last     =new double  [nSB];
   _aMout_res      =new double  [nSB];
   _aMout_res_last =new double  [nSB];
+  _aMresRain      =new double  [nSB];
   _channel_storage=new double  [nSB];
   _rivulet_storage=new double  [nSB];
 
@@ -46,6 +47,7 @@ void CConstituentModel::InitializeRoutingVars()
     _aMlat_last     [p]=0.0;
     _aMout_res      [p]=0.0;
     _aMout_res_last [p]=0.0;
+    _aMresRain      [p]=0.0;
     _channel_storage[p]=0.0;
     _rivulet_storage[p]=0.0;
     
@@ -72,6 +74,7 @@ void CConstituentModel::DeleteRoutingVars()
     delete[] _aMlat_last;      _aMlat_last=NULL;
     delete[] _aMout_res;       _aMout_res =NULL;
     delete[] _aMout_res_last;  _aMout_res_last =NULL;
+    delete[] _aMresRain;       _aMresRain =NULL;
     delete[] _channel_storage; _channel_storage=NULL;
     delete[] _rivulet_storage; _rivulet_storage=NULL;
     delete[] _aMout_last;      _aMout_last     =NULL;
@@ -267,16 +270,17 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
     double V_old=pRes->GetOldStorage();
     double Q_new=pRes->GetOutflowRate()   *SEC_PER_DAY;
     double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
-
+    
     decay_coeff=0.0;
     if(pHRU!=NULL) { decay_coeff =GetDecayCoefficient(pHRU,iSW)*Res_mass; }
 
     //Explicit solution of Crank-nicolson problem
     //dM/dt=QC_in-QC_out-lambda*M
-    //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))-0.5*lambda*(C^(n+1)+C^n)/V
+    //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
 
     tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff));
     tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1]+_aMout[p][nSegments-1]);//inflow is outflow from channel
+    tmp+=_aMresRain[p]*Options.timestep;
     tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
     Res_mass=tmp;
 

@@ -24,7 +24,8 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
                                               const force_struct *F,
                                               const CHydroUnit   *pHRU,
                                               const time_struct  &tt,
-                                              double       &ET_rad)
+                                              double             &ET_rad,
+                                              double             &ET_rad_flat)
 {
   double latrad=pHRU->GetLatRad();
   double lateq =pHRU->GetLatEq();
@@ -51,7 +52,7 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     return ClearSkySolarRadiation(tt.julian_day, Options.timestep,
                                   latrad, lateq, slope, aspect,
                                   F->day_angle, F->day_length,
-                                  solar_noon, dew_pt, ET_rad,(Options.timestep>=1.0));
+                                  solar_noon, dew_pt, ET_rad,ET_rad_flat,(Options.timestep>=1.0));
 
   }
   //--------------------------------------------------------
@@ -62,12 +63,12 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
       double solar_rad;
       double elev=pHRU->GetElevation();
       solar_rad= UBC_SolarRadiation(latrad,elev,F->day_angle, F->day_length,ET_rad);
-
+      ET_rad_flat=ET_rad;
       double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
       double shortwave_corr_S=InterpolateMo(CGlobalParams::GetParams()->UBC_s_corr,tt,Options);
       double shortwave_corr_N=InterpolateMo(CGlobalParams::GetParams()->UBC_n_corr,tt,Options);
       double shortwave_corr=((orient)* shortwave_corr_S + (1.0-orient)*shortwave_corr_N);
-
+      ET_rad*=shortwave_corr;
       return solar_rad * shortwave_corr;
     }
     else
@@ -82,6 +83,7 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     double ws = acos(-tan(latrad)*tan(declin));
     double ecc = EccentricityCorr(F->day_angle);
     ET_rad = 37.59*ecc*(ws*sin(latrad)*sin(declin) + sin(ws)*cos(latrad)*cos(declin)); //Extraterrestrial radiation
+    ET_rad_flat=ET_rad; //no slope correction in this method
     return  min(0.75+0.00002*pHRU->GetElevation(),1.0)*ET_rad;
   }
 
@@ -944,7 +946,8 @@ double CRadiation::ClearSkySolarRadiation(const double &julian_day,
                                           const double &day_length,
                                           const double &solar_noon,//[days]
                                           const double &dew_pt,    //dew point temp, [C]
-                                                double &ET_radia, //Extraterrestrial radiation [MJ/m2/d]
+                                                double &ET_radia, //Extraterrestrial radiation on slope[MJ/m2/d]
+                                                double &ET_radia_flat, //ET radiation on flat ground [MJ/m2/d]
                                           const bool    avg_daily) //true if average daily is to be computed
 {
   double Ket,Ketp;          //daily solar radiation with (Ket) and without (Ketp) slope correction, [MJ/m2/d]
@@ -973,6 +976,7 @@ double CRadiation::ClearSkySolarRadiation(const double &julian_day,
   Ket  =CalcETRadiation2(latrad,aspect,declin,ecc,0.0  ,t_sol,t_sol2,avg_daily);
 
   ET_radia=Ketp;
+  ET_radia_flat=Ket;
 
   //DingmanE-26 (from E-8,E-14,E-19,E-20)
   return tau *Ketp+                               //direct solar radiation on surface

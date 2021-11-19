@@ -7,7 +7,7 @@ Copyright (c) 2008-2021 the Raven Development Team
 #include "SoilAndLandClasses.h"
 
 void GetNetCDFTimeInfo(const int ncid, int &time_dimid,int &ntime, int &start_time_index, const optStruct &Options);
-void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, int &nStations);
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations,  string *&aStat_string,int &nStations);
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Deltares FEWS RunInfo file
@@ -298,9 +298,10 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   int   HRUvecID;         //attribute ID of HRU vector
   int   HRUdimID;         // nstations dimension ID
   long* HRUIDs    =NULL;  // vector of HRUIDs
+  string *junk=NULL;
   int   nHRUsLocal=0;     // size of HRU Vector
 
-  GetNetCDFStationArray(ncid, statefile,HRUdimID,HRUvecID, HRUIDs, nHRUsLocal); 
+  GetNetCDFStationArray(ncid, statefile,HRUdimID,HRUvecID, HRUIDs, junk, nHRUsLocal); 
   
   if(Options.noisy) {
     cout << "[STATEFILE]: " << " station id found:" << HRUvecID << endl;
@@ -384,6 +385,8 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
   }
   delete[] state_vec;
   delete[] aSV_names;
+  delete[] HRUIDs;
+  delete[] junk;
 
   //close file
   //====================================================================
@@ -482,10 +485,11 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
   //====================================================================
   int   SBvecID;         //attribute ID of SB vector
   int   SBdimID;         // nstations dimension ID
-  long* SBIDs    =NULL;  // vector of Subbasin IDs
+  long* SBIDs    =NULL;  // vector of Subbasin IDs (allocated in GetNetCDFStationArray)
+  string *junk  =NULL;
   int   nSBsLocal=0;     // size of subbasin Vector
 
-  GetNetCDFStationArray(ncid, statefile,SBdimID,SBvecID, SBIDs, nSBsLocal); 
+  GetNetCDFStationArray(ncid, statefile,SBdimID,SBvecID, SBIDs,junk, nSBsLocal); 
   
   if(Options.noisy) {
     cout << "[FLOWFILE]: " << " station id found:" << SBvecID << endl;
@@ -585,6 +589,8 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
   }
   delete[] state_vec;
   delete[] aSV_names;
+  delete[]SBIDs;
+  delete[]junk;
 
   //close file
   //====================================================================
@@ -794,7 +800,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
 /// \param aStations [out] array of station IDs, as long (this vector is created here, and aStations should be deleted outside this routine)
 /// \param nStations [out] size of aStations array
 //
-void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, int &nStations) 
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, string *&aStat_string, int &nStations) 
 {
 #ifdef _RVNETCDF_
   int retval;
@@ -833,6 +839,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
   stat_dimid=station_dimid[0];
   nStations=(int)(dimlens[0]);
   aStations= new long [nStations]; 
+  aStat_string = new string [nStations];
 
   // parse and store vector of station IDs
   // ===============================================================================
@@ -859,6 +866,7 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
     }
     //cout << endl;
     aStations[k] = s_to_l(str.c_str());
+    aStat_string[k]=str;
     if (aStations[k] == 0) { aStations[k] = DOESNT_EXIST;}
     //cout << "[STATION_ID]: " << " ID["<<k<<"]="<< aStations[k] <<endl;
   }

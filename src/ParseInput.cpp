@@ -3392,6 +3392,7 @@ potmelt_method ParsePotMeltMethod(const string s)
   else if (!strcmp(tmp.c_str(),"HBV"               )){return POTMELT_HBV;}
   else if (!strcmp(tmp.c_str(),"POTMELT_USACE"     )){return POTMELT_USACE;}
   else if (!strcmp(tmp.c_str(),"POTMELT_CRHM_EBSM" )){return POTMELT_CRHM_EBSM; }
+  else if (!strcmp(tmp.c_str(),"POTMELT_RILEY"     )){return POTMELT_RILEY; }
   else if (!strcmp(tmp.c_str(),"POTMELT_HMETS"     )){return POTMELT_HMETS; }
   else if (!strcmp(tmp.c_str(),"POTMELT_BLENDED"   )){return POTMELT_BLENDED; }
   else if (!strcmp(tmp.c_str(),"POTMELT_NONE"      )){return POTMELT_NONE; }

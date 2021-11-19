@@ -1007,6 +1007,7 @@ force_struct CModel::GetAverageForcings() const
 
       Fave.cloud_cover    +=area_wt*pF_hru->cloud_cover;
       Fave.ET_radia       +=area_wt*pF_hru->ET_radia;
+      Fave.ET_radia_flat  +=area_wt*pF_hru->ET_radia_flat;
       Fave.SW_radia       +=area_wt*pF_hru->SW_radia;
       Fave.SW_radia_unc   +=area_wt*pF_hru->SW_radia_unc;
       Fave.SW_radia_net   +=area_wt*pF_hru->SW_radia_net;
@@ -1991,13 +1992,14 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       value=0;
     }
 
-    _pModeledTS[i]->SetValue       (n,value);
+    _pModeledTS[i]->SetValue(n,value);
     _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
-
+    
     obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
+    if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR) {obsTime+=Options.timestep;}//JRC: Not the most elegant fix, but Diagnostics are updated prior to Solver
 
     //if model time is such that next unprocessed observation has occurred, update modeled
-    while ((tt.model_time >= obsTime + _pObservedTS[i]->GetSampledInterval()) &&  
+    while ((tt.model_time >= obsTime+ _pObservedTS[i]->GetSampledInterval()) &&  
 			     (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
       value=RAV_BLANK_DATA; 
@@ -2009,6 +2011,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       _pModeledTS[i]->SetSampledValue(_aObsIndex[i],value); //JRC : \todo[fix]: I'm not sure if this makes sense for irregular time series
       _aObsIndex[i]++;
       obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]);
+      if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR) {obsTime+=Options.timestep;}
     }
   }
 }

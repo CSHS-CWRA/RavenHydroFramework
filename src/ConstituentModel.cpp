@@ -462,8 +462,17 @@ void   CConstituentModel::SetMinHist(const int p,const int histsize,const double
 //
 void   CConstituentModel::SetInitialReservoirMass(const int p,const double res_mass,const double res_mass_last)
 {
-  _aMres[p]=res_mass;
+  _aMres     [p]=res_mass;
   _aMres_last[p]=res_mass_last;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Set reservoir rainfall input rate for this time step (called in Solver)
+/// \param p [in] global subbasin index
+/// \param precip_load_rate [in] reservoir mass/enthalpy input rate  [mg/d] or [MJ/d]
+//
+void   CConstituentModel::SetReservoirPrecipLoad(const int p,const double precip_load_rate) 
+{
+  _aMresRain[p]=precip_load_rate;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Set reservoir initial mass flow conditions
@@ -473,7 +482,7 @@ void   CConstituentModel::SetInitialReservoirMass(const int p,const double res_m
 //
 void   CConstituentModel::SetReservoirMassOutflow(const int p,const double Mout,const double MoutLast)
 {
-  _aMout_res[p]=Mout;
+  _aMout_res     [p]=Mout;
   _aMout_res_last[p]=MoutLast;
 }
 //////////////////////////////////////////////////////////////////

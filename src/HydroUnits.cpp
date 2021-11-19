@@ -425,6 +425,7 @@ void CHydroUnit::CopyDailyForcings(force_struct &F)
 
   F.SW_radia_unc  = _Forcings.SW_radia_unc;
   F.ET_radia      = _Forcings.ET_radia;
+  F.ET_radia_flat = _Forcings.ET_radia_flat;
 
   F.PET_month_ave = _Forcings.PET_month_ave;
 }

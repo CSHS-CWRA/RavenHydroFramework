@@ -312,6 +312,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
           RES_MB<<","   <<name<<" ctrl outflow "<<i<<" [m3]";
           RES_MB<<","   <<name<<" ctrl regime";
         }
+        RES_MB<<","   <<name<<" precip [m3]";
+        RES_MB<<","   <<name<<" evap [m3]";
+        RES_MB<<","   <<name<<" seepage [m3]";
         RES_MB<<","   <<name<<" volume [m3]";
         RES_MB<<","   <<name<<" losses [m3]";
         RES_MB<<","   <<name<<" MB error [m3]";
@@ -898,7 +901,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
 
         RES_MB<< usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
-        double in,out,loss,stor,oldstor;
+        double in,out,loss,stor,oldstor,precip,evap,seepage;
         for(int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
@@ -915,12 +918,15 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
               RES_MB<<","<<pSB->GetReservoir()->GetIntegratedControlOutflow(i,Options.timestep);//m3
               RES_MB<<","<<pSB->GetReservoir()->GetRegimeName(i,tt)<<endl;
             }
-            stor          =pSB->GetReservoir()->GetStorage          ();//m3
-            oldstor       =pSB->GetReservoir()->GetOldStorage       ();//m3
-            loss          =pSB->GetReservoir()->GetReservoirLosses  (Options.timestep);//m3
-            constraint_str=pSB->GetReservoir()->GetCurrentConstraint();
+            stor          =pSB->GetReservoir()->GetStorage             ();//m3
+            oldstor       =pSB->GetReservoir()->GetOldStorage          ();//m3
+            loss          =pSB->GetReservoir()->GetReservoirLosses     (Options.timestep);//m3 = GW+ET-P
+            precip        =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep);//m3
+            evap          =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep);//m3
+            seepage       =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep);//m3
+            constraint_str=pSB->GetReservoir()->GetCurrentConstraint   ();
             if(tt.model_time==0.0){ in=0.0; }
-
+            RES_MB<<","<<precip<<","<<evap<<","<<seepage;
             RES_MB<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor)<<","<<constraint_str;
           }
         }

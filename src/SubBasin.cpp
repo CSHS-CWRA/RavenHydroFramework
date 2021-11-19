@@ -536,7 +536,7 @@ double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct
       }
     }
     else { //uses lookup table
-      return Interpolate2(Q,_pDiversions[i]->aQsource,_pDiversions[i]->aQdivert,_pDiversions[i]->nPoints,false);
+      return InterpolateCurve(Q,_pDiversions[i]->aQsource,_pDiversions[i]->aQdivert,_pDiversions[i]->nPoints,false);
     }
   }
 

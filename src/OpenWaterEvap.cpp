@@ -109,10 +109,10 @@ void CmvOWEvaporation::GetParticipatingStateVarList(owevap_type owtype, sv_type 
 /// \param *rates [out] rates[0] is rate of loss from open water to atmosphere [mm/day]
 //
 void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
-    const CHydroUnit* pHRU,
-    const optStruct& Options,
-    const time_struct& tt,
-    double* rates) const
+                                        const CHydroUnit* pHRU,
+                                        const optStruct& Options,
+                                        const time_struct& tt,
+                                        double* rates) const
 {
     double OWPET;
     OWPET = pHRU->GetForcingFunctions()->OW_PET;            //open water PET rate [mm/d]
@@ -131,16 +131,19 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
         OWPET = max(OWPET, 0.0);
     }
 
-    if (_type == OPEN_WATER_EVAP)//-------------------------------------
+    //-------------------------------------------------------------------
+    if (_type == OPEN_WATER_EVAP)
     {
         rates[0] = pHRU->GetSurfaceProps()->ow_PET_corr * OWPET;
     }
-    else if (_type == OPEN_WATER_RIPARIAN)//-----------------------------
+    //-------------------------------------------------------------------
+    else if (_type == OPEN_WATER_RIPARIAN)
     {
         double Fstream = pHRU->GetSurfaceProps()->stream_fraction;
         rates[0] = pHRU->GetSurfaceProps()->ow_PET_corr * Fstream * OWPET;
     }
-    else if (_type == OPEN_WATER_UWFS)//---------------------------------
+    //-------------------------------------------------------------------
+    else if (_type == OPEN_WATER_UWFS)
     {
       double Dmin = state_vars[iFrom[1]];        //=Dmin [mm] if positive,=-Pf if negative
 
@@ -156,6 +159,8 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
         rates[1] = (Dminnew - state_vars[iFrom[1]]) / Options.timestep;
       }
     }
+    //-------------------------------------------------------------------
+
     rates[_nConnections-1]=rates[0]; //handles AET
 }
 

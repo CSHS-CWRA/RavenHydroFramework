@@ -99,6 +99,7 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="REL_HUMIDITY"     ){return F_REL_HUMIDITY;}
 
   else if (f=="ET_RADIA"         ){return F_ET_RADIA;}
+  else if (f=="ET_RADIA_FLAT"    ){return F_ET_RADIA_FLAT;}
   else if (f=="SW_RADIA"         ){return F_SW_RADIA;}
   else if (f=="SHORTWAVE"        ){return F_SW_RADIA;}//alias
   else if (f=="SW_RADIA_NET"     ){return F_SW_RADIA_NET;}
@@ -171,6 +172,7 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
 
   else if (ftype==F_CLOUD_COVER     ){return f.cloud_cover;}
   else if (ftype==F_ET_RADIA        ){return f.ET_radia;}
+  else if (ftype==F_ET_RADIA_FLAT   ){return f.ET_radia_flat; }
   else if (ftype==F_SW_RADIA        ){return f.SW_radia;}
   else if (ftype==F_SW_RADIA_UNC    ){return f.SW_radia_unc;}
   else if (ftype==F_SW_RADIA_SUBCAN ){return f.SW_radia_subcan;}
@@ -238,6 +240,7 @@ string GetForcingTypeUnits(forcing_type ftype)
 
   case F_CLOUD_COVER:     {units="0-1"; break;}
   case F_ET_RADIA:        {units="MJ/m2/d"; break;}
+  case F_ET_RADIA_FLAT:   {units="MJ/m2/d"; break;}
   case F_SW_RADIA:        {units="MJ/m2/d"; break;}
   case F_SW_RADIA_UNC:    {units="MJ/m2/d"; break;}
   case F_SW_RADIA_SUBCAN: {units="MJ/m2/d"; break;}
@@ -301,6 +304,7 @@ string ForcingToString(const forcing_type ftype)
 
   case F_CLOUD_COVER:     {fstring="CLOUD_COVER"; break;}
   case F_ET_RADIA:        {fstring="ET_RADIA"; break;}
+  case F_ET_RADIA_FLAT:   {fstring="ET_RADIA_FLAT";break;}
   case F_SW_RADIA:        {fstring="SW_RADIA"; break;}
   case F_SW_RADIA_UNC:    {fstring="SW_RADIA_UNC"; break;}
   case F_SW_RADIA_SUBCAN: {fstring="SW_RADIA_SUBCAN"; break;}

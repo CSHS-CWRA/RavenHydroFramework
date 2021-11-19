@@ -171,6 +171,7 @@ protected:
   double              *_aMres_last;  ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins]
   double               *_aMout_res;  ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins]
   double          *_aMout_res_last;  ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins]
+  double               *_aMresRain;  ///< array storing reservoir rain inputs [mg/d] or enthalpy input [MJ/d] [size: nSubBasins]
 
   // Mass balance tracking variables
   double         *_channel_storage;  ///< array storing channel storage [mg] or [MJ] [size: nSubBasins] 
@@ -240,6 +241,7 @@ public:/*-------------------------------------------------------*/
   void   SetMlatHist             (const int p,const int histsize,const double *aMlat,const double MlatLast);
   void   SetMinHist              (const int p,const int histsize,const double *aMin);
   void   SetInitialReservoirMass (const int p,const double res_mass,const double res_mass_last);
+  void   SetReservoirPrecipLoad  (const int p,const double precip_load_rate);
   void   SetReservoirMassOutflow (const int p,const double Mout,    const double MoutLast);
   
           void   Prepare              (const optStruct &Options);

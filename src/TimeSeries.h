@@ -113,7 +113,7 @@ public:/*-------------------------------------------------------*/
   bool   IsPulseType()  const;
 
   static CTimeSeries  *Sum          (CTimeSeries *pTS1, CTimeSeries *pTS2, string name);
-  static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, long loc_ID, const optStruct &Options, bool shift_to_per_ending=false);
+  static CTimeSeries  *Parse        (CParser *p, bool is_pulse, string name, long loc_ID, string gauge_name,const optStruct &Options, bool shift_to_per_ending=false);
   static CTimeSeries **ParseMultiple(CParser *p, int &nTS, forcing_type *aType, bool is_pulse, const optStruct &Options);
   static CTimeSeries **ParseEnsimTb0(string filename, int &nTS, forcing_type *aType, const optStruct &Options);
 
@@ -127,6 +127,7 @@ public:/*-------------------------------------------------------*/
   static CTimeSeries *ReadTimeSeriesFromNetCDF(const optStruct &Options,    // model options (such as simulation period)
                                                string name,                 // forcing type
                                                long   loc_ID,               // critical information about timeseries, e.g. subbasin ID or HRU ID
+                                               string gauge_name,           // gauge name if gauge-linked data ("none" otherwise)
                                                bool   shift_to_per_ending,  // true if data are period starting and need to be shifted (HYDROGRAPH?)
                                                bool   shift_from_per_ending,// true if data are period-ending and need to be shifted 
                                                string FileNameNC,           // file name of NetCDF

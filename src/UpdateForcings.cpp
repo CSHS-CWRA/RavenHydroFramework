@@ -119,6 +119,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].LW_incoming     =_pGauges[g]->GetForcingValue    (F_LW_INCOMING,nn);
     Fg[g].ET_radia        =_pGauges[g]->GetForcingValue    (F_ET_RADIA,nn);
     Fg[g].SW_radia_unc    =Fg[g].SW_radia;
+    Fg[g].ET_radia_flat   =Fg[g].ET_radia; 
 
     Fg[g].PET             =_pGauges[g]->GetForcingValue    (F_PET,nn);
     Fg[g].OW_PET          =_pGauges[g]->GetForcingValue    (F_OW_PET,nn);
@@ -433,7 +434,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  Radiation Calculations
       //-------------------------------------------------------------------
 
-      F.SW_radia = CRadiation::EstimateShortwaveRadiation(Options,&F,_pHydroUnits[k],tt,F.ET_radia);
+      F.SW_radia = CRadiation::EstimateShortwaveRadiation(Options,&F,_pHydroUnits[k],tt,F.ET_radia,F.ET_radia_flat);
       F.SW_radia_unc = F.SW_radia;
       F.SW_radia *= CRadiation::SWCloudCoverCorrection(Options,&F,elev);
 

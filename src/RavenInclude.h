@@ -243,6 +243,7 @@ const double  NOT_NEEDED_AUTO         =-77777.7;                                
 const double  NETCDF_BLANK_VALUE      =-9999.0;                                 ///< NetCDF flag for blank value
 const double  RAV_BLANK_DATA          =-1.2345;                                 ///< double corresponding to blank/void data item (also used in input files)
 const double  DIRICHLET_TEMP          =-9999.0;                                 ///< dirichlet concentration flag corresponding to air temperature   
+const int     FROM_STATION_VAR        =-55;                                     ///< special flag indicating that NetCDF indices should be looked up from station attribute table
 
 //Decision constants
 const double  HUGE_RESIST             =1e20;                                    ///< [d/mm]   essentially infinite resistance
@@ -625,6 +626,7 @@ enum potmelt_method
   POTMELT_USACE,            ///< US Army Corps of Engineers Snow Melt
   POTMELT_CRHM_EBSM,        ///< Energy balance snow model from the Cold Regions Hydrology Model (CRHM) (Pomeroy, 2007)
   POTMELT_HMETS,            ///< From HMETS model (Martel et al., 2017)
+  POTMELT_RILEY,            ///< From Riley et al., 1972, as reported in HYDROTEL 2.1 manual
   POTMELT_BLENDED,          ///< weighted average of multiple methods
   POTMELT_NONE,             ///< Potential melt not calculated
   POTMELT_UNKNOWN           ///< special case - can't recognize melt method in input
@@ -1132,7 +1134,7 @@ enum forcing_type
   F_TEMP_MONTH_MAX, F_TEMP_MONTH_MIN,   F_TEMP_MONTH_AVE,
   F_TEMP_AVE_UNC,   F_TEMP_MIN_UNC,     F_TEMP_MAX_UNC,
   F_AIR_PRES,       F_AIR_DENS,         F_REL_HUMIDITY,
-  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA_NET,   F_ET_RADIA,  F_SW_RADIA_NET, F_SW_RADIA_UNC, F_LW_INCOMING, F_SW_RADIA_SUBCAN,
+  F_CLOUD_COVER,    F_SW_RADIA,         F_LW_RADIA_NET,   F_ET_RADIA, F_ET_RADIA_FLAT, F_SW_RADIA_NET, F_SW_RADIA_UNC, F_LW_INCOMING, F_SW_RADIA_SUBCAN,
   F_DAY_LENGTH,     F_DAY_ANGLE,        F_WIND_VEL,
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
@@ -1167,8 +1169,9 @@ struct force_struct
   double rel_humidity;        ///< relative humidity [0..1]
 
   double cloud_cover;         ///< Cloud cover [0..1]
-  double ET_radia;            ///< uncorrected extraterrestrial shortwave radiation [MJ/m2/d]
-  double SW_radia_unc;        ///< uncorrected shortwave radiation (before cloud and canopy corrections)[MJ/m2/d]
+  double ET_radia;            ///< uncorrected extraterrestrial shortwave radiation, after slope correction [MJ/m2/d]
+  double ET_radia_flat;       ///< uncorrected extraterrestrial shortwave radiation on horizontal surface [MJ/m2/d]
+  double SW_radia_unc;        ///< uncorrected shortwave radiation (before cloud and canopy corrections, after slope)[MJ/m2/d]
   double SW_radia;            ///< Incoming shortwave radiation (slope/air mass/horizon/cloud cover/canopy corrections applied, uncorrected for albedo) [MJ/m2/d]
   double SW_radia_net;        ///< Net shortwave radiation at canopy top (albedo corrected) [MJ/m2/d]
   double SW_radia_subcan;     ///< Shortwave incoming radiation at ground beneath canopy [MJ/m2/d]
@@ -1538,7 +1541,7 @@ double TimeVaryingADRCumDist(const double &t,const double &L,const double *v,int
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
 void   quickSort        (double arr[], int left, int right) ;
-double Interpolate2     (const double x,const double *xx,const double *y,int N,bool extrapbottom);
+double InterpolateCurve     (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp

@@ -90,71 +90,74 @@ void CModel::AddFromPotMeltParamList(string *aP,class_type *aPC,int &nP,const po
 {
 
   if(pot_melt == POTMELT_DATA)
-    {
-      //none
-    }
-    else if(pot_melt == POTMELT_DEGREE_DAY)
-    {
-      aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
-    }
-    else if(pot_melt==POTMELT_RESTRICTED)
-    {
-      aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
-    }
-    else if(pot_melt==POTMELT_HBV)
-    {
-      aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    }
-    else if(pot_melt==POTMELT_HBV_ROS)
-    {
-      aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="RAIN_MELT_MULT";    aPC[nP]=CLASS_LANDUSE; nP++;
-    }
-    else if(pot_melt==POTMELT_UBCWM)
-    {
-      aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
-      aP[nP]="RAIN_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="CONV_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="COND_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+  {
+    //none
+  }
+  else if(pot_melt == POTMELT_DEGREE_DAY)
+  {
+    aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(pot_melt==POTMELT_RESTRICTED)
+  {
+    aP[nP]="MELT_FACTOR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(pot_melt==POTMELT_HBV)
+  {
+    aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(pot_melt==POTMELT_HBV_ROS)
+  {
+    aP[nP]="MELT_FACTOR";       aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="HBV_MELT_ASP_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="HBV_MELT_FOR_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="RAIN_MELT_MULT";    aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(pot_melt==POTMELT_UBCWM)
+  {
+    aP[nP]="FOREST_COVERAGE";     aPC[nP]=CLASS_LANDUSE; nP++; //JRCFLAG
+    aP[nP]="RAIN_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="CONV_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="COND_MELT_MULT";      aPC[nP]=CLASS_LANDUSE; nP++;
 
-      aP[nP]="MIN_SNOW_ALBEDO";     aPC[nP]=CLASS_GLOBAL; nP++;
-      aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
-      aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
-    }
-    else if(pot_melt==POTMELT_USACE)
-    {
-      aP[nP]="WIND_EXPOSURE";       aPC[nP]=CLASS_LANDUSE; nP++;
-    }
-    else if(pot_melt==POTMELT_EB)
-    {
-      aP[nP]="MAX_HEIGHT";       aPC[nP]=CLASS_VEGETATION; nP++;
-      aP[nP]="RELATIVE_HT";      aPC[nP]=CLASS_VEGETATION; nP++;
-      aP[nP]="ROUGHNESS";        aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="SNOW_TEMPERATURE"; aPC[nP]=CLASS_GLOBAL; nP++;
-    }
-    else if(pot_melt==POTMELT_CRHM_EBSM)
-    {
-    }
-    else if(pot_melt==POTMELT_NONE)
-    {
-    }
-    else if(pot_melt==POTMELT_HMETS)
-    {
-      aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="MAX_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
-      aP[nP]="DD_AGGRADATION";    aPC[nP]=CLASS_LANDUSE; nP++;
-    }
+    aP[nP]="MIN_SNOW_ALBEDO";     aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="UBC_SW_S_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="UBC_SW_N_CORR";       aPC[nP]=CLASS_GLOBAL; nP++;
+  }
+  else if(pot_melt==POTMELT_USACE)
+  {
+    aP[nP]="WIND_EXPOSURE";       aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if(pot_melt==POTMELT_EB)
+  {
+    aP[nP]="MAX_HEIGHT";       aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="RELATIVE_HT";      aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="ROUGHNESS";        aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="SNOW_TEMPERATURE"; aPC[nP]=CLASS_GLOBAL; nP++;
+  }
+  else if(pot_melt==POTMELT_CRHM_EBSM)
+  {
+  }
+  else if(pot_melt==POTMELT_NONE)
+  {
+  }
+  else if(pot_melt==POTMELT_HMETS)
+  {
+    aP[nP]="MIN_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="MAX_MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_MELT_TEMP";      aPC[nP]=CLASS_LANDUSE; nP++;
+    aP[nP]="DD_AGGRADATION";    aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if (pot_melt == POTMELT_RILEY) {
+    aP[nP]="MELT_FACTOR";   aPC[nP]=CLASS_LANDUSE; nP++;
+  }
 }
 
 //////////////////////////////////////////////////////////////////
