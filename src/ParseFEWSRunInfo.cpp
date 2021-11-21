@@ -859,14 +859,15 @@ void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid
   for (int k = 0; k < nStations; k++) 
   {
     str="";
+	aStat_string[k]="";
     for (int j = 0; j < charsize; j++) {
       tmp = ID_chars[k * charsize + j];
       if (isdigit(tmp)) {str += tmp;} 
+      aStat_string[k]+=tmp;
       //if (isdigit(tmp)) { cout << tmp << " |"; }
     }
     //cout << endl;
     aStations[k] = s_to_l(str.c_str());
-    aStat_string[k]=str;
     if (aStations[k] == 0) { aStations[k] = DOESNT_EXIST;}
     //cout << "[STATION_ID]: " << " ID["<<k<<"]="<< aStations[k] <<endl;
   }

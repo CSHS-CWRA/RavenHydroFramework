@@ -657,6 +657,8 @@ CTimeSeries  *CTimeSeries::Sum(CTimeSeries *pTS1, CTimeSeries *pTS2, string name
 //    :VarNameNC Qobs
 //    :DimNamesNC stations time
 //    :StationIdx 11
+//    #OR 
+//    :StationIdx FROM_STATION_VAR
 //    :TimeShift 0.0
 //    :PeriodEndingNC
 //    :LinearTransform 1.0 0.0
@@ -774,7 +776,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
                                            VarNameNC,            // name of variable in NetCDF
                                            DimNamesNC_stations,  // name of station dimension (optional; default=None)
                                            DimNamesNC_time,      // name of time dimension (mandatory)
-                                           StationIdx,           // idx of station to be read (or -1 if to be determined from FEWS station_id variable)
+                                           StationIdx,           // idx of station to be read (or FROM_STATION_VAR if to be determined from FEWS station_id variable)
                                            //                    // (only used if DimNamesNC_stations not None)
                                            TimeShift,            // time shift of data (fractional day by which
                                            //                    // read data should be shifted)
@@ -1467,11 +1469,12 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       GetNetCDFStationArray(ncid, FileNameNC,stat_dimid,stat_varid, aStations,aStat_strings, nStations); 
       if (loc_ID!=DOESNT_EXIST) // Time series linked to SubBasin or HRU
       {
+        StationIdx=DOESNT_EXIST;
         for (int i = 0; i < nStations; i++) {
           if (aStations[i]==loc_ID){StationIdx=i+1;} 
         }
         
-        if(StationIdx==-1) {
+        if(StationIdx==DOESNT_EXIST) {
           string warn="ReadTimeSeriesFromNetCDF: :StationIdx FROM_STATION_VAR - can't find station with SubBasin or HRU ID="+to_string(loc_ID)+" for time series "+name;
           ExitGracefully(warn.c_str(),BAD_DATA);
           return NULL;
@@ -1479,22 +1482,20 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       }
       else if(gauge_name!="none") // Time Series linked to gauge
       {
+        StationIdx=DOESNT_EXIST;        
         for(int i = 0; i < nStations; i++) {
-          if(aStat_strings[i]==gauge_name) { StationIdx=i+1; }
+          if(!strcmp(aStat_strings[i].c_str(),gauge_name.c_str())) { StationIdx=i+1;}
         }
-
-        if(StationIdx==-1) {
+        if(StationIdx==DOESNT_EXIST) {
           string warn="ReadTimeSeriesFromNetCDF: :StationIdx FROM_STATION_VAR - can't find station with gauge name="+gauge_name;
           ExitGracefully(warn.c_str(),BAD_DATA);
           return NULL;
         }
       }
       else { //Time series not linked to HRU, subbasin, nor gauge
-        if(StationIdx==-1) {
-          string warn="ReadTimeSeriesFromNetCDF: :StationIdx FROM_STATION_VAR - can't be used when the time series is not linked to HRUs, SubBasins, or Gauges";
-          ExitGracefully(warn.c_str(),BAD_DATA);
-          return NULL;
-        }
+        string warn="ReadTimeSeriesFromNetCDF: :StationIdx FROM_STATION_VAR - can't be used when the time series is not linked to HRUs, SubBasins, or Gauges";
+        ExitGracefully(warn.c_str(),BAD_DATA);
+        return NULL;
       }
       delete[] aStations;
       delete[] aStat_strings;
