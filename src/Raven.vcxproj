@@ -568,7 +568,6 @@
     <ClCompile Include="NetCDFReading.cpp" />
     <ClCompile Include="ParseFEWSRunInfo.cpp" />
     <ClCompile Include="ConstituentModel.cpp" />
-    <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="MassRouting.cpp" />
     <ClCompile Include="ParseGWFile.cpp" />
     <ClCompile Include="RiverReach.cpp" />

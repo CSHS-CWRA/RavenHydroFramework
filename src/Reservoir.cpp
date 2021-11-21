@@ -301,9 +301,9 @@ CReservoir::CReservoir(const string Name,
    BaseConstructor(Name,SubID);
 
   _crest_width=crestw;
-  _crest_ht=crestht;
-  _min_stage =-depth+_crest_ht;
-  _max_stage=6.0+_crest_ht; //reasonable default?
+  _crest_ht   =crestht;
+  _min_stage  =-depth+_crest_ht;
+  _max_stage  =6.0+_crest_ht; //reasonable default?
   ExitGracefullyIf(depth<0,"CReservoir::Constructor (Lake): cannot have negative maximum lake depth",BAD_DATA_WARN);
   
   _Np=100;
@@ -969,7 +969,7 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
 //
 void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
-  _MB_losses=0.0;
+  _MB_losses=0.0; //all losses outside the system 
   if(_pHRU!=NULL) {
     double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
     if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
@@ -977,7 +977,6 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
     }
     _AET      = Evap* 0.5*(GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep; //m3
     _MB_losses+=_AET;
-    _MB_losses-=_Precip;
   }
   if(_seepage_const>0) {
     _GW_seepage=_seepage_const*(0.5*(_stage+_stage_last)-_local_GW_head)*SEC_PER_DAY*tstep;
@@ -1003,7 +1002,6 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
   for (int v = 0; v < _nDates; v++){
     if (tt.julian_day >= _aDates[v]){vv=v; }
   }
-  
   for (int i = 0; i < _Np; i++){
     _aQ[i] = _aQ_back[vv][i];
   }
@@ -1389,7 +1387,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
         if(V_new<0) {
           V_new=0;
           constraint=RC_DRY_RESERVOIR; //drying out reservoir
-          res_outflow = -2 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + 2.0*precip + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
+          res_outflow = -2.0 * (V_new - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + 2.0*precip + (Qin_old + Qin_new) - ET*(A_old + 0.0) - (ext_old + ext_new));//[m3/s] //dry it out
         }
         stage_new=InterpolateCurve(V_new,_aVolume,_aStage,_Np,false);
         A_last     = A_guess;
@@ -1408,7 +1406,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     double V_limit =GetVolume(stage_limit);
     double A_limit =GetArea(stage_limit);
     double seep_lim=_seepage_const*(stage_limit-_local_GW_head);
-    res_outflow = -2 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) + 2.0*precip - ET*(A_old + A_limit) - (seep_old+seep_lim) - (ext_old + ext_new));//[m3/s]
+    res_outflow = -2.0 * (V_limit - V_old) / (tstep*SEC_PER_DAY) + (-_Qout + (Qin_old + Qin_new) + 2.0*precip - ET*(A_old + A_limit) - (seep_old+seep_lim) - (ext_old + ext_new));//[m3/s]
   }
 
   //other option - returns to stage-discharge curve once max stage exceeded
@@ -1447,36 +1445,6 @@ void CReservoir::WriteToSolutionFile (ofstream &RVC) const
     RVC<<"    :ControlFlow, "<<i<<","<<_aQstruct[i]<<","<<_aQstruct_last[i]<<endl;
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief interpolates value from rating curve
-/// \param x [in] interpolation location
-/// \param xmin [in] lowest point in x range
-/// \param xmax [in] highest point in x range
-/// \param y [in] array (size:N)  of values corresponding to N evenly spaced points in x
-/// \param N size of array y
-/// \returns y value corresponding to interpolation point
-/// \note assumes regular spacing between min and max x value
-//
-/*double Interpolate(double x,double xmin,double xmax,double* y,int N,bool extrapbottom)
-{
-  //assumes N *evenly-spaced* points in x from xmin to xmax
-  double dx=((xmax-xmin)/(N-1));
-  if      (x<=xmin){
-    if (extrapbottom){return y[0]+(y[1]-y[0])/dx*(x-xmin);}
-    return y[0];
-  }
-  else if (x>=xmax){
-    return y[N-1]+(y[N-1]-y[N-2])/dx*(x-xmax);//extrapolation-may wish to revisit
-    //return y[N-1];
-  }
-  else
-  {
-    double val=(x-xmin)/dx;
-    int i=(int)(floor(val));
-    return y[i]+(y[i+1]-y[i])*(val-floor(val));
-  }
-}
-*/
 //////////////////////////////////////////////////////////////////
 /// \brief interpolates the volume from the volume-stage rating curve
 /// \param ht [in] reservoir stage

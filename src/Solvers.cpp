@@ -459,11 +459,11 @@ void MassEnergyBalance( CModel            *pModel,
     {
       p   =pHRU->GetSubBasinIndex();
 
-      /*if(pHRU->IsLinkedToReservoir()) { 
+      if(pHRU->IsLinkedToReservoir()) { 
         double Pvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3]
         pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(Pvol);
         aPhinew[k][iSW]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
-      }*/
+      }
       //surface water moved instantaneously from HRU to basin reach/channel storage
       aRouted[p]+=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//aRouted=[m3]
       aPhinew[k][iSW]=0.0;//zero out surface water storage
@@ -578,11 +578,11 @@ void MassEnergyBalance( CModel            *pModel,
         m       =pModel->GetTransportModel()->GetLayerIndex(c,iSW);
         iSWmass =pModel->GetStateVarIndex(CONSTITUENT,m);
         
-        /*if(pHRU->IsLinkedToReservoir()) {
+        if(pHRU->IsLinkedToReservoir()) {
           double Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2);//[mg/d]
           pConstitModel->SetReservoirPrecipLoad(p,Ploading);
           aPhinew[k][iSWmass]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
-        }*/
+        }
         aRoutedMass[p]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//[mg/d] or [MJ/d]
         aPhinew[k][iSWmass]=0.0; //empty out from landscape storage
       }

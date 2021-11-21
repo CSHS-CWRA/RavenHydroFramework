@@ -223,7 +223,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
 
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
-
+  
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
 
   double S(0.0);                            //source term [MJ/m3/d]
@@ -240,9 +240,6 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
     _aEnthalpySource[p][n]=_aEnthalpySource[p][n-1];
   }
   _aEnthalpySource[p][0]=S;
-
-  //cout<<" S terms: "<<(SW+LW)<<"|"<<AET*DENSITY_WATER*LH_VAPOR<<"|"<<Qf<<"|"<<hstar*temp_air<<"|"<<qmix*HCP_WATER*DENSITY_WATER*bed_ratio*temp_GW<<endl;
-  //cout<<"ENTH BETA: "<<_aEnthalpyBeta[p]<<" "<<hstar/HCP_WATER<<" "<< qmix*bed_ratio<<endl;
 }
 
 
@@ -576,10 +573,10 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour;
   _STREAMOUT<<","<<_pModel->GetAvgForcing("TEMP_AVE")<<",";
 
-   double mult=1.0; //TMP DEBUG - convert everything to MJ/m2/d 
+  double mult=1.0; //convert everything to MJ/m2/d 
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
-    //mult=1.0/_pModel->GetSubBasin(p)->GetReachLength()/_pModel->GetSubBasin(p)->GetTopWidth();
+    mult=1.0/_pModel->GetSubBasin(p)->GetReachLength()/_pModel->GetSubBasin(p)->GetTopWidth();
     if(_pModel->GetSubBasin(p)->IsGauged()) {
       GetEnergyLossesFromReach(p,Q_sens,Q_lat,Q_GW,Q_rad,Q_fric);
       _STREAMOUT<<0.5*mult*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<",";
