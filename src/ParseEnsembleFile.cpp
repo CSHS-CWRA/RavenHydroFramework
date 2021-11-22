@@ -197,6 +197,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       else if(!strcmp(s[2],"CUMUL_FLOW"        )) { diag=(DIAG_CUMUL_FLOW); }
       else if(!strcmp(s[2],"LOG_NASH"          )) { diag=(DIAG_LOG_NASH); }
       else if(!strcmp(s[2],"KLING_GUPTA"       )) { diag=(DIAG_KLING_GUPTA); }
+      else if(!strcmp(s[2],"KLING_GUPTA_DEVIATION")) { diag=(DIAG_KLING_GUPTA_DEVIATION); }
       else if(!strcmp(s[2],"NASH_SUTCLIFFE_DER")) { diag=(DIAG_NASH_SUTCLIFFE_DER); }
       else if(!strcmp(s[2],"RMSE_DER"          )) { diag=(DIAG_RMSE_DER); }
       else if(!strcmp(s[2],"KLING_GUPTA_DER"   )) { diag=(DIAG_KLING_GUPTA_DER); }

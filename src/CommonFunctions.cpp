@@ -296,7 +296,7 @@ bool IsLeapYear(const int year, const int calendar)
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Fills time structure tt
 /// \details Converts Julian decimal date to string and returns day of month, month,
-/// and year in time_struct. \n If dec_date >365/366, then year is incremented. Accounts for leap years
+/// and year in time_struct. If dec_date >365/366, then year is incremented. Accounts for leap years
 ///
 /// \param &model_time [in]  Time elapsed since start of simulation
 /// \param start_date  [in]  double simulation start date (Julian date)

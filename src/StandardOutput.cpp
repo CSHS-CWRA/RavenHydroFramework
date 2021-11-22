@@ -1203,25 +1203,39 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
 
   RVC.close();
 
+  // SubbasinProperties.csv
+  //--------------------------------------------------------------
+  if (Options.write_basinfile){
+    ofstream BAS;
+    tmpFilename=FilenamePrepare("SubbasinProperties.csv",Options);
+    BAS.open(tmpFilename.c_str());
+    if(BAS.fail()) {
+      WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
+    }
+    BAS<<"ID,reach_length[m],Qref[m3/s],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
+    for(int pp=0;pp<_nSubBasins;pp++) {
+      BAS<<_pSubBasins[pp]->GetID()<<",  "<<_pSubBasins[pp]->GetReferenceFlow();
+      BAS<<","<<_pSubBasins[pp]->GetReachLength();
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_CONC");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_TO_PEAK");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SHAPE");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SCALE");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("CELERITY");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("DIFFUSIVITY");
+      BAS<<","<<_pSubBasins[pp]->GetLatHistorySize();
+      for (int i = 0; i < _pSubBasins[pp]->GetLatHistorySize(); i++) {
+        BAS<<","<<_pSubBasins[pp]->GetUnitHydrograph()[i];
+      }
+      BAS<<endl;
+    }
+    BAS.close();
+  }
 
   if(Options.write_channels){
     CChannelXSect::WriteRatingCurves();
   }
 
-  if(Options.write_basinfile) {
-    ofstream BASIN;
-    tmpFilename=FilenamePrepare("SubbasinParams.csv",Options);
-    BASIN.open(tmpFilename.c_str());
-    if(BASIN.fail()) {
-      WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
-    }
-    BASIN<<"SBID,Reference Discharge [m3/s],Reach Length [m],Reach Celerity [m/s],Reach Diffusivity [m2/s]"<<endl;
-    for(int p=0;p<_nSubBasins;p++) {
-      BASIN<<_pSubBasins[p]->GetID()<<","<<_pSubBasins[p]->GetReferenceFlow()<<","<<_pSubBasins[p]->GetReachLength()<<",";
-      BASIN<<_pSubBasins[p]->GetReferenceCelerity()<<","<<_pSubBasins[p]->GetDiffusivity()<<endl;
-    }
-    BASIN.close();
-  }
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Writes simple output to file

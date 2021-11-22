@@ -57,6 +57,7 @@ string CDiagnostic::GetName() const
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }
   case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; }
   case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; }
+  case(DIAG_KLING_GUPTA_DEVIATION):   {return "DIAG_KLING_GUPTA_DEVIATION"; }                        
   case(DIAG_NASH_SUTCLIFFE_RUN):{return "DIAG_NASH_SUTCLIFFE_RUN"; }
   case(DIAG_MBF):               {return "DIAG_MBF"; }
   case(DIAG_R4MS4E):            {return "DIAG_R4MS4E"; }
@@ -873,6 +874,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     }
   }
   case(DIAG_KLING_GUPTA)://-----------------------------------------
+  case(DIAG_KLING_GUPTA_DEVIATION)://-------------------------------
   {
     double ObsAvg = 0;
     double ModAvg = 0;
@@ -919,8 +921,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double r     = Cov / ObsStd / ModStd; // pearson product-moment correlation coefficient
     double Beta  = ModAvg / ObsAvg;
     double Alpha = ModStd / ObsStd;
+    
+    if (_type==DIAG_KLING_GUPTA_DEVIATION){Beta=1.0;} //remove penalty for difference in means
 
-    if ((N>0) && (ObsAvg!=0.0) && (ObsStd!=0.0) && (ModStd!=0.0))
+    if ((N>0) && ((ObsAvg!=0.0) || (Beta==1.0)) && (ObsStd!=0.0) && (ModStd!=0.0))
     {
       return 1.0 - sqrt(pow((r - 1), 2) + pow((Alpha - 1), 2) + pow((Beta - 1), 2));
     }

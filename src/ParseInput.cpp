@@ -1510,6 +1510,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
         else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
         else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
+        else if (!strcmp(s[i],"KLING_GUPTA_DEVIATION")){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DEVIATION);}
         else if (!strcmp(s[i],"MBF"                )){pDiag=new CDiagnostic(DIAG_MBF);}
         else if (!strcmp(s[i],"R4MS4E"             )){pDiag=new CDiagnostic(DIAG_R4MS4E);}
         else if (!strcmp(s[i],"RTRMSE"             )){pDiag=new CDiagnostic(DIAG_RTRMSE);}

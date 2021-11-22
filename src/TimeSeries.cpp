@@ -778,8 +778,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
                                            DimNamesNC_time,      // name of time dimension (mandatory)
                                            StationIdx,           // idx of station to be read (or FROM_STATION_VAR if to be determined from FEWS station_id variable)
                                            //                    // (only used if DimNamesNC_stations not None)
-                                           TimeShift,            // time shift of data (fractional day by which
-                                           //                    // read data should be shifted)
+                                           TimeShift,            // time shift of data (fractional day by which read data should be shifted)
                                            LinTrans_a,           // linear transformation: a in new = a*data+b
                                            LinTrans_b            // linear transformation: b in new = a*data+b
                                            );
