@@ -55,6 +55,7 @@ private:/*------------------------------------------------------*/
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
   bool             _assimilate;   ///< true if observed data in this basin should be assimilated.
+  const CSubBasin    *_pDownSB;   ///< pointer to downstream subbasin instance
 
   //catchment routing properties
   double               _t_conc;   ///< basin time of concentration [d]
@@ -248,6 +249,7 @@ public:/*-------------------------------------------------------*/
   void            SetQlatHist              (const int N, const double *aQl, const double QlLast);
   void            SetQinHist               (const int N, const double *aQi);
   void            SetDownstreamID          (const long down_SBID);
+  void            SetDownstreamBasin       (const CSubBasin *pSB);
   void            Disable                  ();
   void            Enable                   ();
   double          ScaleAllFlows            (const double &scale_factor, const bool scale_last, const double &tstep, const double &t);
@@ -278,11 +280,7 @@ public:/*-------------------------------------------------------*/
                                                   double      *res_Qstruct,
                                             const optStruct   &Options,
                                             const time_struct &tt) const;
-  double          ChannelLosses            (const double      &reach_volume,
-                                            const double      &PET,
-                                            const optStruct   &Options) const;
 
-  void            WriteMinorOutput         (const time_struct &tt) const;
   void            WriteToSolutionFile      (ofstream &OUT) const;
 };
 

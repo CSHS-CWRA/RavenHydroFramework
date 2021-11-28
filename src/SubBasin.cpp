@@ -87,6 +87,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _gauged            =gaged;
   _disabled          =false;
 
+  _pDownSB           =NULL;
   _pChannel          =pChan; //Can be NULL
   _pReservoir        =NULL;
   _nHydroUnits       =0;
@@ -450,12 +451,10 @@ double CSubBasin::GetIrrigationRate() const
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const 
 {
   double Qirr;
-  if(_pIrrigDemand==NULL) { Qirr=0.0; }
-  else                    { Qirr= _pIrrigDemand->GetValue(t);}
-  // \todo[funct]: properly calculate downstream irrigation demand - problem is no access to downstream subbasin from here
-  ExitGracefully("CSubBasin::GetDownstreamIrrDemand",STUB); return 0; 
-  //if (_downstream_ID==DOESNT_EXIST)){ return Qirr; }
-  //else                              { return _pDownstreamSB->GetDownstreamIrrDemand(t)+Qirr; }
+  if(_pIrrigDemand==NULL)          { Qirr=0.0; }
+  else                             { Qirr= _pIrrigDemand->GetValue(t);}
+  if (_downstream_ID==DOESNT_EXIST){ return Qirr; }
+  else                             { return _pDownSB->GetDownstreamIrrDemand(t)+Qirr; }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specified environmental minimum flow at subbasin outlet at time t
@@ -1147,11 +1146,18 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
   return va;
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Sets Downstream ID (use sparingly!)
+/// \brief Sets (i.e., overrides initial) Downstream ID (use sparingly!)
 /// \param down_SBID [in] ID of downstream subbasin
 //
 void CSubBasin::SetDownstreamID(const long down_SBID){
   _downstream_ID=down_SBID;
+}
+/////////////////////////////////////////////////////////////////
+/// \brief Sets Downstream subbasin (performed by model during routing initialization)
+/// \param pSB [in] pointer to downstream subbasin
+//
+void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB) {
+  _pDownSB=pSB;
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets basin as disabled
@@ -1191,8 +1197,6 @@ double    CSubBasin::CalculateBasinArea()
       _basin_area+=_pHydroUnits[k]->GetArea();
     }
   }
-  ExitGracefullyIf(_nHydroUnits==0,
-                   "CSubBasin::CalculateBasinArea: one or more subbasins has zero constituent HRUs", BAD_DATA);
   ExitGracefullyIf(_basin_area<0.0,
                    "CSubBasin::CalculateBasinArea: negative subbasin area!", BAD_DATA);
 
@@ -1219,12 +1223,15 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
                            const optStruct &Options)
 {
   int seg;
-
-  ExitGracefullyIf(_nHydroUnits==0,
-                   "CSubBasin::Initialize: a SubBasin with no HRUs has been found", BAD_DATA);
-  ExitGracefullyIf((_pChannel==NULL) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL) ,
-                   "CSubBasin::Initialize: channel profile for basin may only be 'NONE' if Routing=ROUTE_NONE or ROUTE_EXTERNAL",BAD_DATA);
-
+  string warn;
+  if (_nHydroUnits==0){
+    warn="CSubBasin::Initialize: subbasin "+to_string(_ID)+" has no constituent HRUs and therefore zero area";
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+  }
+  if((_pChannel==NULL) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL)){
+    warn="CSubBasin::Initialize: channel profile for basin "+to_string(_ID)+" may only be 'NONE' if Routing=ROUTE_NONE or ROUTE_EXTERNAL";
+    ExitGracefully(warn.c_str(),BAD_DATA);
+  }
   if (_pInflowHydro != NULL){_is_headwater=false;}
 
   _drainage_area=total_drain_area;
@@ -1552,7 +1559,7 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   }
   else if (Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION)
   {
-    _nQlatHist=(int)(ceil(4.5*pow(_gamma_shape,0.6)/_gamma_scale/tstep))+1;
+    _nQlatHist=(int)(ceil(4.5*pow(_gamma_shape,0.6)/_gamma_scale/tstep))+1; //empirical estimate of tail of gamma distribution
   }
   else if (Options.catchment_routing==ROUTE_DELAYED_FIRST_ORDER)
   {
@@ -2208,50 +2215,6 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     }*/
 
   return;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns water loss [m^3/d] due to transmission losses, evaporation losses
-//
-/// \param &reach_volume [in] Representative reach volume overt tsep [m^3]
-/// \param &PET [in] Potential evapotranspiration [mm/d]
-/// \param &Options [in] Global model options information
-/// \return Double to represent water loss over time stemp [m^3/d]
-//
-double CSubBasin::ChannelLosses( const double &reach_volume,//[m3]-representative reach volume over tstep
-                                 const double &PET,
-                                 const optStruct &Options) const
-{
-  double Tloss;       //[m3/day] Transmission losses during timestep
-  double Eloss;       //[m3/day] Evaporation losses during timestep
-  //double perim;       //[m]
-  double top_width;   //[m]
-
-  ExitGracefullyIf(_pChannel==NULL,"CSubBasin::ChannelLosses: NULL channel",BAD_DATA);
-
-  //perim                 =_pChannel->GetWettedPerim(_aQout[_nSegments-1],_slope,_mannings_n);
-  top_width             =_pChannel->GetTopWidth   (_aQout[_nSegments-1],_slope,_mannings_n);
-
-  // calculate transmission loss rate from channel
-  //--------------------------------------------------------------
-  Tloss = 0.0;//_pChannel->GetChannelConductivity() * _reach_length * perim; /// \todo [add funct]: link channel conductivity to channel structure
-
-  // calculate evaporation loss rate from channel
-  //--------------------------------------------------------------
-  Eloss = PET * _reach_length * top_width;
-
-  //returns water loss over timestep [m3/day]
-  return threshMin(Eloss + Tloss,reach_volume/Options.timestep,0.0);
-
-}
-
-/////////////////////////////////////////////////////////////////
-/// \brief Write minor output
-/// \note currently unused
-/// \param &tt [in] time_structure during which minor output is to be written
-//
-void CSubBasin::WriteMinorOutput(const time_struct &tt) const
-{
 }
 
 /////////////////////////////////////////////////////////////////

@@ -340,6 +340,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("LATERAL_EXCHANGE")){typ=LATERAL_EXCHANGE;}
 
   else if (!tmp.compare("AET"             )){typ=AET; }
+  else if (!tmp.compare("MULTIPLE"        )){typ=MULTIPLE_SVTYPE;}
 
   else if (!tmp.compare("CONSTITUENT"     )){typ=CONSTITUENT;}
   else if (!tmp.compare("CONSTITUENT_SRC" )){typ=CONSTITUENT_SRC;}
@@ -432,6 +433,8 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(LATERAL_EXCHANGE):   {name="LATERAL_EXCHANGE";         break;}
 
     case(AET):                {name="AET";                      break;}
+
+    case(MULTIPLE_SVTYPE):    {name="MULTIPLE";                 break;}
 
     //Transport variables
     case(CONSTITUENT):    {

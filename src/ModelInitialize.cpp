@@ -526,9 +526,16 @@ void CModel::InitializeRoutingNetwork()
 
   for (p = 0; p < _nSubBasins; p++)
   {
+    // identify headwater basins
     if (_aSubBasinOrder[p] != _maxSubBasinOrder){
       _pSubBasins[p]->SetAsNonHeadwater();
     }
+    // set subbasin pointers to their downstream subbasins 
+    pTo=_aDownstreamInds[p];
+    if (pTo!=DOESNT_EXIST){
+      _pSubBasins[p]->SetDownstreamBasin(_pSubBasins[pTo]);
+    }
+
     for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) {
       int pdown=_pSubBasins[p]->GetDiversionTargetIndex(i);
       if((pdown!=DOESNT_EXIST) && (pdown>0) && (pdown<_nSubBasins)) {

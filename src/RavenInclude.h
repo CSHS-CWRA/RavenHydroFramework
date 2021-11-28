@@ -848,8 +848,10 @@ enum sv_type
   //Lateral exchange
   LATERAL_EXCHANGE,        ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
 
-  //Special
-  UNRECOGNIZED_SVTYPE      ///< Unrecognized type of state variable
+  //Special - internal flags
+  UNRECOGNIZED_SVTYPE,     ///< Unrecognized type of state variable
+  MULTIPLE_SVTYPE,         ///< Multiple State variables (for parsing)
+  USERSPEC_SVTYPE          ///< User specified state variable type (for parsing)
 };
 
 ////////////////////////////////////////////////////////////////////

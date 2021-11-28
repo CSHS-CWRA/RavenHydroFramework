@@ -99,7 +99,6 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
   //calculate corrected solar noon for given slope/aspect
   _SolarNoon =CRadiation::CalculateSolarNoon(_LatRad,slope,aspect);
 
-  pVegetation=veg_class;
   _pVeg      =veg_class    ->GetVegetationStruct();
   _pSurface  =lult_class   ->GetSurfaceStruct();
   _pTerrain  =terrain_class->GetTerrainStruct();
@@ -413,21 +412,7 @@ void CHydroUnit::UpdateForcingFunctions(const force_struct &Fnew)
 //
 void CHydroUnit::CopyDailyForcings(force_struct &F)
 {
-  F.temp_daily_min = _Forcings.temp_daily_min;
-  F.temp_daily_max = _Forcings.temp_daily_max;
-  F.temp_daily_ave = _Forcings.temp_daily_ave;
-  F.temp_month_max = _Forcings.temp_month_max;
-  F.temp_month_min = _Forcings.temp_month_min;
-  F.temp_month_ave = _Forcings.temp_month_ave;
-
-  F.day_length = _Forcings.day_length;
-  F.day_angle  = _Forcings.day_angle;
-
-  F.SW_radia_unc  = _Forcings.SW_radia_unc;
-  F.ET_radia      = _Forcings.ET_radia;
-  F.ET_radia_flat = _Forcings.ET_radia_flat;
-
-  F.PET_month_ave = _Forcings.PET_month_ave;
+  CopyDailyForcingItems(_Forcings,F);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -483,53 +468,40 @@ double        CHydroUnit::GetStateVarMax(const int      i,
                                          const double  *curr_state_var,
                                          const optStruct &Options,
                                          const bool ignorevar) const
-
 {
   double max_var=ALMOST_INF;
   switch (_pModel->GetStateVarType(i))
   {
     case(SOIL):         {
-      int m=_pModel->GetStateVarLayer(i);
-      max_var=GetSoilCapacity(m);
-      break;
+      max_var=GetSoilCapacity(_pModel->GetStateVarLayer(i));  break;
     }
     case(CANOPY):       {
-      if(!ignorevar) { max_var=_VegVar.capacity; }
-      break;
+      if(!ignorevar) { max_var=_VegVar.capacity; }            break;
     }
     case(CANOPY_SNOW):  {
-      if(!ignorevar) {max_var=_VegVar.snow_capacity;}
-      break;
+      if(!ignorevar) {max_var=_VegVar.snow_capacity;}         break;
     }
     case(GROUNDWATER):  {
-      if(Options.modeltype == MODELTYPE_SURFACE){max_var=ALMOST_INF;}
-      else                                      {max_var=ALMOST_INF;}//GetAquiferHeadCapacity(0,HRUid);}        //GWMIGRATE - HRUid k not accesible from here yet
-      break;
+      if(Options.modeltype != MODELTYPE_SURFACE){}            break; //GetAquiferHeadCapacity(0,HRUid);} //GWMIGRATE - HRUid k not accesible from here yet
     }
     case(DEPRESSION):   {
-      if (_pSurface->dep_max>=0){max_var=_pSurface->dep_max;}
-      else                      {max_var=ALMOST_INF;}
-      break;
+      if (_pSurface->dep_max>=0){max_var=_pSurface->dep_max;} break;
+    }
+    case(SNOW_COVER):   {
+      max_var=1.0;                                            break;
     }
     case(SNOW_LIQ):
     {
-      int iSNO=_pModel->GetStateVarIndex(SNOW);
-      double snow_depth;
-      double SWE       =curr_state_var[iSNO];
-      snow_depth=GetSnowDepth();
       if(!ignorevar) {
-        max_var=CalculateSnowLiquidCapacity(SWE,snow_depth,Options);
+        int iSNO  =_pModel->GetStateVarIndex(SNOW);
+        double SWE=curr_state_var[iSNO];
+        max_var=CalculateSnowLiquidCapacity(SWE,GetSnowDepth(),Options);
       }
-      break;
-    }
-    case(SNOW_COVER):     
-    {
-      max_var=1.0;       
       break;
     }
     default:{
       max_var=ALMOST_INF;break;
-    } //infinite storage (default)
+    } 
   }/* end switch*/
   return max_var;
 }
@@ -675,7 +647,7 @@ double  CHydroUnit::GetTotalAlbedo() const
     else if(_HRUType==HRU_WETLAND){
       land_albedo=0.15;//WETLAND_ALBEDO
     }
-    land_albedo =(snow_cover  )*snow_albedo             +(1.0-snow_cover  )*land_albedo;
+    land_albedo =(snow_cover  )*snow_albedo+(1.0-snow_cover  )*land_albedo;
     //correction for urban surfaces?
 
     veg_albedo    =_pVeg->albedo; //correction for wetness?

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 
@@ -14,4 +14,5 @@ string                ForcingToString(const forcing_type ftype);
 double           GetForcingFromString(const string &forcing_string, const force_struct &f);
 string            GetForcingTypeUnits(      forcing_type ftype);
 void                  ZeroOutForcings(force_struct &F);
+void            CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto); 
 #endif

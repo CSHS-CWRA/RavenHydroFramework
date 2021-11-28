@@ -54,7 +54,6 @@ private:/*------------------------------------------------------*/
   const soil_struct           *_pSoil[MAX_SOILLAYERS];     ///< array of pointers to structures with profile soil properties
 
   const veg_struct             *_pVeg;  ///< pointer to structure with vegetation properties
-  const CVegetationClass *pVegetation;  ///< pointer to corresponding vegetation class (not currently used)
   const surface_struct     *_pSurface;  ///< pointer to structure with land use/land type properties
   const terrain_struct     *_pTerrain;  ///< pointer to structure with terrain properties
 

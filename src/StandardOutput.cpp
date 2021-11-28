@@ -920,14 +920,14 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             }
             stor          =pSB->GetReservoir()->GetStorage             ();//m3
             oldstor       =pSB->GetReservoir()->GetOldStorage          ();//m3
-            loss          =pSB->GetReservoir()->GetReservoirLosses     (Options.timestep);//m3 = GW+ET-P
+            loss          =pSB->GetReservoir()->GetReservoirLosses     (Options.timestep);//m3 = GW+ET
             precip        =pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep);//m3
             evap          =pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep);//m3
             seepage       =pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep);//m3
             constraint_str=pSB->GetReservoir()->GetCurrentConstraint   ();
             if(tt.model_time==0.0){ in=0.0; }
             RES_MB<<","<<precip<<","<<evap<<","<<seepage;
-            RES_MB<<","<<stor<<","<<loss<<","<<in-out-loss-(stor-oldstor)<<","<<constraint_str;
+            RES_MB<<","<<stor<<","<<loss<<","<<in-out-loss+precip-(stor-oldstor)<<","<<constraint_str;
           }
         }
         RES_MB<<endl;

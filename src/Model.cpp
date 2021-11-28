@@ -1594,6 +1594,7 @@ void CModel::OverrideStreamflow   (const long SBID)
         //add as inflow hydrograph to downstream
         GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
         GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
+        GetSubBasinByID(SBID)->SetDownstreamBasin(NULL);
         return;
       }
       else{

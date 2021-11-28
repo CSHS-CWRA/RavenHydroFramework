@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -46,8 +46,10 @@ string CSoilProfile::GetTag() const{return tag;}
 //
 const soil_struct *CSoilProfile::GetSoilStruct(const int m) const
 {
+#ifdef _STRICTCHECK_
   ExitGracefullyIf((m<0) || (m>=nHorizons),
                    "CSoilProfile::GetSoilStruct: bad soil horizon index",BAD_DATA);
+#endif
   return pSoilClasses[m]->GetSoilStruct();
 }
 
@@ -58,8 +60,10 @@ const soil_struct *CSoilProfile::GetSoilStruct(const int m) const
 //
 double CSoilProfile::GetThickness (const int m) const
 {
+#ifdef _STRICTCHECK_
   ExitGracefullyIf((m<0) || (m>=nHorizons),
                    "CSoilProfile::GetSoilStruct: bad soil horizon index",BAD_DATA);
+#endif
   return thicknesses[m];
 }
 

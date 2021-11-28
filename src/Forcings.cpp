@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2021 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -62,7 +62,28 @@ void ZeroOutForcings(force_struct &F)
 
   F.subdaily_corr=0.0;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Copys only the forcings that are constant over the course of a day from stcuture Ffrom to structure Fto
+///
+//
+void CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto) 
+{
+  Fto.temp_daily_min = Ffrom.temp_daily_min;
+  Fto.temp_daily_max = Ffrom.temp_daily_max;
+  Fto.temp_daily_ave = Ffrom.temp_daily_ave;
+  Fto.temp_month_max = Ffrom.temp_month_max;
+  Fto.temp_month_min = Ffrom.temp_month_min;
+  Fto.temp_month_ave = Ffrom.temp_month_ave;
 
+  Fto.day_length     = Ffrom.day_length;
+  Fto.day_angle      = Ffrom.day_angle;
+
+  //Fto.SW_radia_unc   = Ffrom.SW_radia_unc;
+  //Fto.ET_radia       = Ffrom.ET_radia;
+  //Fto.ET_radia_flat  = Ffrom.ET_radia_flat;
+
+  Fto.PET_month_ave  = Ffrom.PET_month_ave;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns enumerated forcing type from corresponding string
 ///

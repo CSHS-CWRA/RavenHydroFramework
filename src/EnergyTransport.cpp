@@ -314,23 +314,25 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   //calculate integral term I_m^n [degC*d] (see paper)
   double hin;
-  double beta=_aEnthalpyBeta[p];
+  double beta=_aEnthalpyBeta[p];//[1/d] 
   beta=max(beta,1e-9); //to avoid divide by zero error
   double gamma=(1.0-exp(-beta*tstep));
   Ik[0]=0.0;
   for(int m=1;m<nMinHist;m++)
   {
-    hin=(_aMinHist[p][m-1]/aQin[m-1]);
+    hin=(_aMinHist[p][m-1]/(aQin[m-1]*SEC_PER_DAY)); //[MJ/d]/[m3/d]->[MJ/m3]
     if(_aMinHist[p][m-1]<PRETTY_SMALL) { hin=0.0; }
 
-    Ik[m]=hin/beta*gamma*exp(-beta*(m-1)*tstep);
+    Ik[m]=hin/beta*gamma*exp(-beta*(m-1)*tstep); //[MJ/m3]*[d]
     for(int j=1;j<m;j++)
     {
       Ik[m]+=gamma*gamma/beta/beta*_aEnthalpySource[p][j]*exp(-beta*(m-j-1)*tstep);
     }
     Ik[m]+=(tstep/beta-gamma/beta/beta)*_aEnthalpySource[p][0];
 
-    Ik[m]*=1.0/HCP_WATER/DENSITY_WATER;// /tstep;
+    Ik[m]*=1.0/HCP_WATER/tstep;// [MJ-d/m3] /[MJ/m3/K] /[d] = [degC];
+    //double tmp=(tstep/beta-gamma/beta/beta)* _aEnthalpySource[p][0]/HCP_WATER;
+    //cout<<"Tk["<<m<<"]="<<Ik[m]<<" Tin="<<hin/HCP_WATER<<" src term="<<tmp<<endl;
   }
 
   Q_sens = Q_lat = Q_GW = Q_rad = Q_fric =0.0; //incoming radiation [MJ/d]
@@ -339,11 +341,11 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   for(int m=1;m<nMinHist;m++)
   {
-    Q_sens+=zk[m]*(hstar/dbar)*(temp_air*tstep-Ik[m]);   //[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
+    Q_sens+=zk[m]*(hstar/dbar)*(temp_air-Ik[m])*tstep;   //[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
 
     //cout<<"Ik term: "<<temp_air<<" "<<Ik[m]/tstep<<" beta: "<<beta<<" "<<gamma<<endl;
 
-    Q_GW  +=zk[m]*kprime      *(temp_GW *tstep-Ik[m]);
+    Q_GW  +=zk[m]*kprime      *(temp_GW-Ik[m])*tstep;
 
     Q_rad +=zk[m]*(SW+LW)/dbar*tstep;                    //[m3/d]*[MJ/m2/d]*[1/m]*[d]=[MJ/d]
 
@@ -541,12 +543,24 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
     ExitGracefully(("CEnthalpyModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
 
-  _STREAMOUT<<"time[d],date,hour,air temp.["+to_string(DEG_SYMBOL)+"C]"<<",";
+  string name;
+  _STREAMOUT<<"time[d],date,hour,air temp.["+to_string(DEG_SYMBOL)+"C]"<<", net rad [MJ/m2/d],";
   for(int p=0;p<_pModel->GetNumSubBasins();p++)
-  {
-    if(_pModel->GetSubBasin(p)->IsGauged()) {
-      _STREAMOUT<<"Ein[MJ/d],Eout[MJ/d],";
-      _STREAMOUT<<"Q_sens[MJ/d],Q_lat[MJ/d],Q_GW[MJ/d],Q_rad[MJ/d],Q_fric[MJ/d],channel storage[MJ],";
+  { 
+    CSubBasin *pSB=_pModel->GetSubBasin(p);
+    if(pSB->GetName()=="") { name=to_string(pSB->GetID())+"="+to_string(pSB->GetID()); }
+    else                   { name=pSB->GetName(); }
+
+    if((pSB->IsGauged()) && (pSB->IsEnabled())) {
+      //_STREAMOUT<<name<<" TMP NET RAD [MJ/m2/d],";
+      _STREAMOUT<<name<<" Ein[MJ/m2/d],";
+      _STREAMOUT<<name<<" Eout[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_sens[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_lat[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_GW[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_rad[MJ/m2/d],";
+      _STREAMOUT<<name<<" Q_fric[MJ/m2/d],";
+      _STREAMOUT<<name<<" channel storage[MJ/m2],";
     }
   }
   _STREAMOUT<<endl;
@@ -570,19 +584,24 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   string thisdate=tt.date_string;
   string thishour=DecDaysToHours(tt.julian_day);
 
-  _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour;
-  _STREAMOUT<<","<<_pModel->GetAvgForcing("TEMP_AVE")<<",";
+  _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour<<",";
+  _STREAMOUT<<_pModel->GetAvgForcing("TEMP_AVE")<<",";
+  _STREAMOUT<<_pModel->GetAvgForcing("SW_RADIA_NET")+_pModel->GetAvgForcing("LW_RADIA_NET")<<",";
 
   double mult=1.0; //convert everything to MJ/m2/d 
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
     mult=1.0/_pModel->GetSubBasin(p)->GetReachLength()/_pModel->GetSubBasin(p)->GetTopWidth();
-    if(_pModel->GetSubBasin(p)->IsGauged()) {
+    if ((_pModel->GetSubBasin(p)->IsGauged()) && (_pModel->GetSubBasin(p)->IsEnabled())) {
       GetEnergyLossesFromReach(p,Q_sens,Q_lat,Q_GW,Q_rad,Q_fric);
-      _STREAMOUT<<0.5*mult*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<",";
-      _STREAMOUT<<0.5*mult*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1])<<",";
+      //const CHydroUnit* pHRU=_pModel->GetHydroUnit(_pModel->GetSubBasin(p)->GetReachHRUIndex());
+      //double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
+      //double LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
+      //_STREAMOUT<<SW+LW<<","; //TMP DEBUG
+      _STREAMOUT<<0.5*mult*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<","; //Ein
+      _STREAMOUT<<0.5*mult*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1])<<","; //Eout
       _STREAMOUT<<mult*Q_sens<<","<<mult*Q_lat<<","<<mult*Q_GW<<","<<mult*Q_rad<<","<<mult*Q_fric<<",";
-      _STREAMOUT<<_channel_storage[p]<<","; 
+      _STREAMOUT<<mult*_channel_storage[p]<<","; 
     }
   }
   _STREAMOUT<<endl;
