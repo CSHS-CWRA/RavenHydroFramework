@@ -314,21 +314,15 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   // SW Radiation Method
   if(Options.SW_radiation==SW_RAD_UBCWM)
   {
-    // currently hardcoded
-    // Parameters are located in the RVH file, and there's no checking routine for that file yet.
-    //aP[nP]="HORIZON_CORR"; aPC[nP]=CLASS_; nP++;
-    //aP[nP]="RES_CONSTANT"; aPC[nP]=CLASS_; nP++;
     aP[nP]="UBC_EXPOSURE_FACT"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_SW_S_CORR";     aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_SW_N_CORR";     aPC[nP]=CLASS_GLOBAL; nP++;
   }
   else if(Options.SW_radiation==SW_RAD_DEFAULT)
   {
-    // SLOPE and ASPECT are requried, but a check is unnecessary
   }
   else if(Options.SW_radiation==SW_RAD_DATA)
   {
-    // timeseries at gauge
   }
   else if(Options.SW_radiation==SW_RAD_NONE)
   {

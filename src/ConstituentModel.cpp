@@ -14,7 +14,11 @@ coordinates information about constituent storage
 
 string FilenamePrepare(string filebase,const optStruct &Options); //Defined in StandardOutput.cpp
 bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID,const int c); //Defined in StandardOutput.cpp
-
+void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
+int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
+int  NetCDFAddMetadata2D   (const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
+void WriteNetCDFBasinList  (const int ncid,const int varid,const CModel* pModel,const optStruct& Options);
+void AddSingleValueToNetCDF(const int out_ncid,const string &label,const size_t time_index,const double &value);
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport constructor
 /// \param pModel [in] Model object
@@ -53,6 +57,9 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
   //Parameter initialization
   _pConstitParams= new transport_params;
   InitializeConstitParams(_pConstitParams);
+
+  _CONC_ncid    = -9;
+  _POLLUT_ncid  = -9;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport destructor
@@ -949,6 +956,195 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Write transport output file headers in NetCDF format
+/// \details Called prior to simulation (but after initialization) from CModel::Initialize()
+/// \param &Options [in] Global model options information
+//
+void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
+{
+#ifdef _RVNETCDF_
+  string kg,mgL,kgd;
+  string filename;
+
+  int iCumPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
+
+  //units names
+  kg="[kg]"; kgd="[kg/d]"; mgL="[mg/l]";
+  if(Options.write_constitmass) {
+    kg="[mg/m2]"; kgd="[mg/m2/d]"; mgL="[mg/m2]";
+  }
+  if(_type==TRACER) {
+    kg="[-]"; kgd="[-]"; mgL="[-]";
+  }
+  else if(_type==ENTHALPY) {
+    kg="[MJ]"; kgd="[MJ/d]"; mgL="["+to_string(DEG_SYMBOL)+"C]";
+    if(Options.write_constitmass) {
+      kg="[MJ/m2]"; kgd="[MJ/m2/d]"; mgL="[MJ/m2]";
+    }
+  }
+  else if(_type==ISOTOPE) {
+    kg="[kg-L]"; kgd="[kg-L/d]"; mgL="[o/oo]";
+    if(Options.write_constitmass) {
+      kg="[1/m2]"; kgd="[1/m2/d]"; mgL="[1/m2]"; //very hard to interpret these units
+    }
+  }
+
+  time_struct tt;                       // start time structure
+  int         time_dimid,varid_time;    // dimension ID (holds number of time steps) and variable ID (holds time values) for time
+  const int   ndims1 = 1;
+  const int   ndims2 = 2;
+  int         dimids1[ndims1];          // array which will contain all dimension ids for a variable
+  int         retval,ncid;
+
+  //converts start day into "hours since YYYY-MM-DD HH:MM:SS"  (model start time)
+  char  starttime[200]; // start time string in format 'hours since YYY-MM-DD HH:MM:SS'
+  JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+  strcpy(starttime,"hours since ");
+  strcat(starttime,tt.date_string.c_str());
+  strcat(starttime," ");
+  strcat(starttime,DecDaysToHours(tt.julian_day,true).c_str());
+  if(Options.time_zone!=0) { strcat(starttime,TimeZoneToString(Options.time_zone).c_str()); }
+
+  // initialize all potential file IDs with -9 == "not existing and hence not opened"
+  _CONC_ncid    = -9;
+  _POLLUT_ncid  = -9;
+
+  //Concentrations or Temperatures file
+  //--------------------------------------------------------------------
+  if(Options.write_constitmass) {
+    if(_type!=ENTHALPY) { filename=_name+"Mass.nc"; }
+    else                { filename="Enthalpy.nc"; }
+  }
+  else {
+    if(_type!=ENTHALPY) { filename=_name+"Concentrations.nc"; }
+    else                { filename="Temperatures.nc"; }
+  }
+  filename=FilenamePrepare(filename,Options);
+  retval = nc_create(filename.c_str(),NC_CLOBBER|NC_NETCDF4,&ncid);  HandleNetCDFErrors(retval);
+  _CONC_ncid = ncid;
+
+  // ----------------------------------------------------------
+  // global attributes
+  // ----------------------------------------------------------
+  WriteNetCDFGlobalAttributes(_CONC_ncid,Options,"Concentration/Temperature Output");
+
+  // ----------------------------------------------------------
+  // time vector
+  // ----------------------------------------------------------
+  // Define the DIMENSIONS. NetCDF will hand back an ID
+  retval = nc_def_dim(_CONC_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
+
+  /// Define the time variable.
+  dimids1[0] = time_dimid;
+  retval = nc_def_var(_CONC_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_CONC_ncid,varid_time,"units",strlen(starttime),starttime);   HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_CONC_ncid,varid_time,"calendar",strlen("gregorian"),"gregorian"); HandleNetCDFErrors(retval);
+
+
+  int varid;
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"influx","influx",kgd);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"channel_storage","Channel Storage",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"rivulet_storage","Rivulet Storage",kg);
+  if(_type==ENTHALPY) {
+    varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"air_temp","Air Temp",mgL);
+  }
+  for(int ii=0;ii<_pTransModel->GetNumWaterCompartments();ii++)
+  {
+    if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
+    {
+      string sname=CStateVariable::SVTypeToString    (_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string name=CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,sname,name,mgL);
+    }
+  }
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"total","total",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"cum_loading","cumulative loading",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"cum_loss","cumulative loss",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"MB_error","mass/energy balance error",kg);
+
+  // End define mode. This tells netCDF we are done defining metadata.
+  retval = nc_enddef(_CONC_ncid);  HandleNetCDFErrors(retval);
+
+  //Pollutograph / stream temperatures file
+  //--------------------------------------------------------------------
+  if(_type!=ENTHALPY) { filename=_name+"Pollutographs.nc"; }
+  else                { filename="StreamTemperatures.nc"; }
+
+  filename=FilenamePrepare(filename,Options);
+  retval = nc_create(filename.c_str(),NC_CLOBBER|NC_NETCDF4,&ncid);  HandleNetCDFErrors(retval);
+  _POLLUT_ncid = ncid;
+
+  // ----------------------------------------------------------
+  // global attributes
+  // ----------------------------------------------------------
+  WriteNetCDFGlobalAttributes(_POLLUT_ncid,Options,"Pollutograph/StreamTemperature Output");
+
+  // ----------------------------------------------------------
+  // time vector
+  // ----------------------------------------------------------
+  // Define the DIMENSIONS. NetCDF will hand back an ID
+  retval = nc_def_dim(_POLLUT_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
+
+  /// Define the time variable.
+  dimids1[0] = time_dimid;
+  retval = nc_def_var     (_POLLUT_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time); HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_POLLUT_ncid,varid_time,"units",strlen(starttime),starttime);   HandleNetCDFErrors(retval);
+  retval = nc_put_att_text(_POLLUT_ncid,varid_time,"calendar",strlen("gregorian"),"gregorian"); HandleNetCDFErrors(retval);
+
+  // (a) count number of simulated outflows "nSim"
+  string      tmp,tmp2,tmp3;
+  int nbasins_dimid;
+  int varid_bsim;
+  int varid_Csim,varid_Cobs,varid_pctfroz;
+  int nSim = 0;
+  for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+    if(_pModel->GetSubBasin(p)->IsGauged()  && (_pModel->GetSubBasin(p)->IsEnabled())) { nSim++; }
+  }
+
+  if(nSim > 0)
+  {
+    // (b) create dimension "nbasins"
+    retval = nc_def_dim(_POLLUT_ncid,"nbasins",nSim,&nbasins_dimid);                             HandleNetCDFErrors(retval);
+
+    // (c) create variable  and set attributes for"basin_name"
+    dimids1[0] = nbasins_dimid;
+    retval = nc_def_var(_POLLUT_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);       HandleNetCDFErrors(retval);
+    tmp ="Name/ID of sub-basins with simulated concentrations";
+    tmp2="timeseries_id";
+    tmp3="1";
+    retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"long_name",tmp.length(),tmp.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"cf_role",tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_POLLUT_ncid,varid_bsim,"units",tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+    // (d) create 2D pollutograph arrays [nbasins x ntime]
+    if(_type!=ENTHALPY) {
+      varid_Csim    = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"C_sim","Simulated concentrations",mgL);
+      varid_Cobs    = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"C_obs","Observed concentrations",mgL);
+    }
+    else {
+      varid_Csim    = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"T_sim","Simulated temperatures",mgL);
+      varid_Cobs    = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"T_obs","Observed temperatures",mgL);
+      varid_pctfroz = NetCDFAddMetadata2D(_POLLUT_ncid,time_dimid,nbasins_dimid,"pct_froz","Percent frozen","0..1");
+    }
+  }// end if nSim>0
+
+  if(_type==ENTHALPY) {
+    varid= NetCDFAddMetadata(_POLLUT_ncid,time_dimid,"air_temp","Air Temp",mgL);
+  }
+
+  // End define mode. This tells netCDF we are done defining metadata.
+  retval = nc_enddef(_POLLUT_ncid);  HandleNetCDFErrors(retval);
+
+  // write values to NetCDF
+  if(nSim > 0)
+  {
+    WriteNetCDFBasinList(_POLLUT_ncid,varid_bsim,_pModel,Options);
+  }
+#endif
+}
+
+
+//////////////////////////////////////////////////////////////////
 /// \brief Writes minor transport output to file at the end of each timestep (or multiple thereof)
 /// \note only thing this modifies should be output streams; called from CModel::WriteMinorOutput()
 /// \param &Options [in] Global model options information
@@ -1174,7 +1370,185 @@ void CConstituentModel::WriteEnsimMinorOutput(const optStruct &Options,const tim
   }
   _POLLUT<<endl;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Writes minor transport output to NetCDF file at the end of each timestep (or multiple thereof)
+/// \param &Options [in] Global model options information
+/// \param &tt [in] Local (model) time at the end of the pertinent time step
+//
+void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const time_struct& tt)
+{
+#ifdef _RVNETCDF_
+  int    retval;                   // error value for NetCDF routines
+  int    time_id;                  // variable id in NetCDF for time
+  size_t time_index[1],count1[1];  // determines where and how much will be written to NetCDF; 1D variable (pre, time)
+  size_t start2[2],count2[2];  // determines where and how much will be written to NetCDF; 2D variable (qsim, qobs, qin)
+  double current_time[1];          // current time in hours since start time
+  count1[0] = 1;                    // writes exactly one time step
 
+  size_t time_ind2;
+  current_time[0] = tt.model_time*HR_PER_DAY;
+  current_time[0]=RoundToNearestMinute(current_time[0]);
+  time_index[0] = int(rvn_round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
+  time_ind2      =int(rvn_round(tt.model_time/Options.timestep));
+
+  //====================================================================
+  //  Concentrations.nc / Temperatures.nc
+  //====================================================================
+  double currentMass,initMass; //[kg] or [MJ]
+  double CumInflux,CumOutflux;
+  double M; //[mg/m2] or [MJ/m2]
+  double V; //[mm] 
+  double concentration; //[mg/L] or [C]
+  double area      =_pModel->GetWatershedArea(); //[km2]
+  int    iCumPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
+
+  CEnthalpyModel *pEnthalpyModel=NULL; //Necessary evil to reduce code duplication rather than having an entirely separate WriteMinorOutput for Enthalpy
+  if (_type==ENTHALPY){
+    CEnthalpyModel *pEnthalpyModel=(CEnthalpyModel*)(this);
+  }
+
+  if((Options.suppressICs) && (tt.model_time==0.0)) { return; }
+  
+  double convert;
+  convert=1.0/MG_PER_KG; //[mg->kg]
+  if(_type==ENTHALPY)               { convert=1.0;                   } //[MJ]->[MJ]
+  if(Options.write_constitmass)     { convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2] [MJ->MJ/m2]
+
+  double atmos_prec  =0;//[mg] or [MJ] energy/mass advected in with snow/rain (calculated below)
+  double influx      =0;//GetAverageInflux(c)*(area*M2_PER_KM2)*Options.timestep;//[mg] or [MJ] 
+  double channel_stor=GetTotalChannelConstituentStorage();//[mg] or [MJ]
+  double rivulet_stor=GetTotalRivuletConstituentStorage();//[mg] or [MJ]
+  double sink        = _pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_index))*(area*M2_PER_KM2);//[mg]  or [MJ] 
+  double source      =-_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT_SRC, _constit_index))*(area*M2_PER_KM2);//[mg]  or [MJ] 
+
+  if(_type==ENTHALPY) {
+    AddSingleValueToNetCDF(_CONC_ncid,"air_temp"  ,time_ind2,_pModel->GetAvgForcing("TEMP_AVE"));
+  }
+
+  double inf=influx*convert;
+  if (tt.model_time==0.0){inf=NETCDF_BLANK_VALUE;}
+  AddSingleValueToNetCDF(_CONC_ncid,"influx"           ,time_ind2,inf);
+  AddSingleValueToNetCDF(_CONC_ncid,"channel_storage"  ,time_ind2,channel_stor*convert);
+  AddSingleValueToNetCDF(_CONC_ncid,"rivulet_storage"  ,time_ind2,rivulet_stor*convert);
+
+  currentMass=0.0;
+  for(int ii=0;ii<_pTransModel->GetNumWaterCompartments();ii++)
+  {
+    //Get constituent concentration
+    int m=(_constit_index*_pTransModel->GetNumWaterCompartments())+ii;
+    M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2 or enthalpy - MJ/m2
+    V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
+
+    concentration=CalculateConcentration(M,V); // [mg/L] or [C] or [o/oo]
+    if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2] or [1/m2]
+
+    if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
+    {
+      string name=CStateVariable::SVTypeToString(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      AddSingleValueToNetCDF(_CONC_ncid, name.c_str(),time_ind2,concentration);
+      currentMass+=M*(area*M2_PER_KM2); //[mg]  or [MJ]  //increment total mass in system
+    }
+    else {
+      atmos_prec-=M*(area*M2_PER_KM2);  //[mg]  or [MJ] //this M is always negative (loss from atmos.)
+    }
+  }
+  currentMass+=channel_stor+rivulet_stor;  //[mg]  or [MJ] 
+  initMass  =_initial_mass;
+  CumInflux =source+atmos_prec+_cumul_input;        //[mg] or [MJ] 
+  CumOutflux=sink  +_cumul_output;//outflow from system [mg] or [MJ] 
+
+  AddSingleValueToNetCDF(_CONC_ncid,"total"      ,time_ind2,currentMass*convert);
+  AddSingleValueToNetCDF(_CONC_ncid,"cum_loading",time_ind2,CumInflux  *convert);
+  AddSingleValueToNetCDF(_CONC_ncid,"cum_loss"   ,time_ind2,CumOutflux *convert);
+  AddSingleValueToNetCDF(_CONC_ncid,"MB_error"   ,time_ind2,((currentMass-initMass)+(CumOutflux-CumInflux))*convert);
+
+  //====================================================================
+  //  Pollutographs.nc / StreamTemperatures.nc
+  //====================================================================
+  // (a) count how many values need to be written for q_obs, q_sim, q_in
+  int nSim=0; //total # of sub-basins with simulated outflows
+  for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+    if(_pModel->GetSubBasin(p)->IsGauged()  && (_pModel->GetSubBasin(p)->IsEnabled())) { nSim++; }
+  }
+
+  // (b) allocate memory if necessary
+  double* C_obs  =NULL;   
+  double* C_sim  =NULL;   
+  double* pctfroz=NULL;    
+  if(nSim>0) {
+    C_obs  =new double[nSim];
+    C_sim  =new double[nSim];
+    pctfroz=new double[nSim];
+  }
+
+  // write new time step
+  retval = nc_inq_varid(_POLLUT_ncid,"time",&time_id);                            HandleNetCDFErrors(retval);
+  retval = nc_put_vara_double(_POLLUT_ncid,time_id,time_index,count1,&current_time[0]); HandleNetCDFErrors(retval);
+
+  // write air temperature values
+  if(_type==ENTHALPY) {
+    int    temp_id;               // variable id in NetCDF for air temp
+    double current_temp[1];
+    current_temp[0]=_pModel->GetAvgForcing("TEMP_AVE");
+
+    retval = nc_inq_varid(_POLLUT_ncid,"air_temp",&temp_id);                                HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_POLLUT_ncid,temp_id,time_index,count1,&current_temp[0]);   HandleNetCDFErrors(retval);
+  }
+
+  // get simulated conc/obs conc/pct froz values
+  int iSim=0;
+  for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+    CSubBasin* pBasin=_pModel->GetSubBasin(p);
+    if(pBasin->IsGauged() && (pBasin->IsEnabled()))
+    {
+      C_sim[iSim]=GetOutflowConcentration(p);
+      if(_type==ENTHALPY) {
+        pctfroz[iSim]=pEnthalpyModel->GetOutflowIceFraction(p);
+      }
+      C_obs[iSim]=NETCDF_BLANK_VALUE;
+      for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
+        if(IsContinuousConcObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
+        {
+          double val = _pModel->GetObservedTS(i)->GetAvgValue(tt.model_time,Options.timestep);
+          if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { C_obs[iSim]=val; }
+        }
+      }
+      iSim++;
+    }
+  }
+  // write simulated conc/obs conc/pct froz values to file
+  int    Csim_id;               // variable id in NetCDF for simulated concentration
+  int    Cobs_id;               // variable id in NetCDF for observed concentration
+  if(nSim > 0) {
+    start2[0] = int(rvn_round(tt.model_time/Options.timestep)); // element of NetCDF array that will be written
+    start2[1] = 0;                                              // element of NetCDF array that will be written
+    count2[0] = 1;      // writes exactly one time step
+    count2[1] = nSim;   // writes exactly nSim elements
+
+    if(_type!=ENTHALPY) {
+      retval = nc_inq_varid(_POLLUT_ncid,"C_sim",&Csim_id);                              HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_POLLUT_ncid,"C_obs",&Cobs_id);                              HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_POLLUT_ncid,Csim_id,start2,count2,&C_sim[0]);         HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_POLLUT_ncid,Cobs_id,start2,count2,&C_obs[0]);         HandleNetCDFErrors(retval);
+    }
+    else if(_type==ENTHALPY) 
+    {
+      retval = nc_inq_varid(_POLLUT_ncid,"T_sim",&Csim_id);                              HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_POLLUT_ncid,"T_obs",&Cobs_id);                              HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_POLLUT_ncid,Csim_id,start2,count2,&C_sim[0]);         HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_POLLUT_ncid,Cobs_id,start2,count2,&C_obs[0]);         HandleNetCDFErrors(retval);
+      int pctfroz_id;
+      retval = nc_inq_varid(_POLLUT_ncid,"pct_froz",&pctfroz_id);                        HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_POLLUT_ncid,pctfroz_id,start2,count2,&pctfroz[0]);    HandleNetCDFErrors(retval);
+    }
+  }
+
+  delete[] C_obs;
+  delete[] C_sim;
+  delete[] pctfroz;
+
+#endif
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Close transport output files
 //
@@ -1182,6 +1556,14 @@ void CConstituentModel::CloseOutputFiles()
 {
   _OUTPUT.close();
   _POLLUT.close();
+
+  #ifdef _RVNETCDF_
+  int    retval;      // error value for NetCDF routines
+  if (_CONC_ncid != -9)    {retval = nc_close(_CONC_ncid);    HandleNetCDFErrors(retval); }
+  _CONC_ncid    = -9;
+  if (_POLLUT_ncid != -9)  {retval = nc_close(_POLLUT_ncid);  HandleNetCDFErrors(retval); }
+  _POLLUT_ncid  = -9;
+  #endif
 }
 
 //////////////////////////////////////////////////////////////////

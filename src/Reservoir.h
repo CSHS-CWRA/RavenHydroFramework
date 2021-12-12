@@ -187,7 +187,7 @@ public:/*-------------------------------------------------------*/
   void              SetMinStage              (const double &min_z);
   void              SetMaxCapacity           (const double &max_cap);
   void              Initialize               (const optStruct &Options);
-  void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt);
+  void              SetInitialFlow           (const double &Q,const double &Qlast,const time_struct &tt, const optStruct &Options);
   void              SetReservoirStage        (const double &ht, const double &ht_last);
   void              SetControlFlow           (const int i, const double &Q, const double &Qlast);
   void              SetVolumeStageCurve      (const double *a_ht,const double *a_V,const int nPoints);

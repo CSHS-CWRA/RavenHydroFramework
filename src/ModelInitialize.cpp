@@ -46,12 +46,12 @@ void CModel::Initialize(const optStruct &Options)
   for (p=0;p<_nSubBasins;p++){
     for (pp=0;pp<p;pp++){
       if (_pSubBasins[p]->GetID()==_pSubBasins[pp]->GetID()){
-        ExitGracefully("CModel::Initialize: non-unique basin identifier found",BAD_DATA);}}}
+        ExitGracefully("CModel::Initialize: non-unique (repeated) basin identifier found",BAD_DATA);}}}
 
   for (k=0;k<_nHydroUnits;k++){
     for (kk=0;kk<p;kk++){
       if ((k!=kk) && (_pHydroUnits[k]->GetID()==_pHydroUnits[kk]->GetID())){
-        ExitGracefully("CModel::Initialize: non-unique HRU identifier found",BAD_DATA);}}}
+        ExitGracefully("CModel::Initialize: non-unique (repeated) HRU identifier found",BAD_DATA);}}}
 
   // initialize process algorithms, initialize water/energy balance arrays to zero
   //--------------------------------------------------------------
@@ -127,7 +127,7 @@ void CModel::Initialize(const optStruct &Options)
   for (pp=0;pp<_nSBGroups; pp++){_pSBGroups   [pp]->Initialize(); } //disables SBs and HRUs
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
-  // Check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
+  // QA/QC Check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
   //---------------------------------------------------------------
   string disbasins="\n";
   bool anydisabled=false;

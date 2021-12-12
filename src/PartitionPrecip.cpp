@@ -39,7 +39,7 @@ void CmvPrecipitation::Initialize()
   iFrom[4]=iAtmos; iTo[4]=pModel->GetStateVarIndex(ATMOSPHERE);
   iFrom[5]=iAtmos; iTo[5]=pModel->GetStateVarIndex(SNOW);
   iFrom[6]=iAtmos; iTo[6]=pModel->GetStateVarIndex(SNOW_LIQ);
-  iFrom[7]=iAtmos; iTo[7]=pModel->GetStateVarIndex(SNOW_DEFICIT); //???
+  iFrom[7]=iAtmos; iTo[7]=pModel->GetStateVarIndex(SNOW_DEFICIT);
   iFrom[8]=iAtmos; iTo[8]=pModel->GetStateVarIndex(NEW_SNOW);
   iFrom[9]=iAtmos; iTo[9]=pModel->GetLakeStorageIndex(); //Lake handling
   
@@ -77,17 +77,17 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
   }
 	else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_LAI)
   {
-	  aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++;   
+	  aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++;   
     aP[nP] = "RAIN_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
     aP[nP] = "SNOW_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
   }
   else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_EXPLAI)
   {
-    aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++; 
+    aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++; 
   }
   else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_HEDSTROM)
   {
-    aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++; 
+    aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++; 
   }
   else if(pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_NONE)
   {
@@ -95,10 +95,9 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
 
   if (canopy_exists)
   {
-    aP[nP] = "MAX_CAPACITY";  aPC[nP] = CLASS_VEGETATION; nP++;
-		aP[nP] = "RELATIVE_LAI";  aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "MAX_CAPACITY";      aPC[nP] = CLASS_VEGETATION; nP++;
+    aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++;
   }
-	
   if (cansnow_exists)
   {
     aP[nP] = "MAX_SNOW_CAPACITY"; aPC[nP] = CLASS_VEGETATION; nP++;

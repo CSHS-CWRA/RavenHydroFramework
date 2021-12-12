@@ -590,7 +590,8 @@ double CGroundwaterModel::GetOverlapWeight(const int HRUID, const int node)
   double weight = 0.0;
 
   //-- Use map.find() to get iterator to the element
-  weight_iter = _mOverlapWeights.find({ HRUID, node });
+  pair<int,int> p(HRUID,node);
+  weight_iter = _mOverlapWeights.find(p);
 
   //-- Get weight if exists, otherwise return default (0.0)
   if (weight_iter != _mOverlapWeights.end()) {
@@ -618,7 +619,7 @@ map<pair<int, int>, double> *CGroundwaterModel::GetOverlapWeights()
 /// 
 vector<int> CGroundwaterModel::GetHRUsByNode(const int node)
 {
-  vector<int> HRUs = {};
+  vector<int> HRUs;
   //-- Obtain vector of HRUIDs for given cell
   map<int, vector<int> >::iterator map_query;
   map_query = _mHRUsByNode.find(node);
@@ -639,7 +640,7 @@ vector<int> CGroundwaterModel::GetHRUsByNode(const int node)
 /// 
 vector<int> CGroundwaterModel::GetNodesByHRU(const int HRUID)
 {
-  vector<int> Cells = {};
+  vector<int> Cells;
   //-- Obtain vector of nodes given HRU
   map<int, vector<int> >::iterator map_query;
   map_query = _mNodesByHRU.find(HRUID);

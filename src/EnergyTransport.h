@@ -58,10 +58,10 @@ public:/*-------------------------------------------------------*/
                             const time_struct &tt,
                                   bool         initialize);
 
-  void   WriteOutputFileHeaders     (const optStruct& Options);
-  void   WriteMinorOutput           (const optStruct& Options,const time_struct& tt);
-  void   WriteEnsimOutputFileHeaders(const optStruct &Options);
-  void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
-  void   CloseOutputFiles           ();
+  void   WriteOutputFileHeaders      (const optStruct& Options);
+  void   WriteMinorOutput            (const optStruct& Options,const time_struct& tt);
+  void   WriteEnsimOutputFileHeaders (const optStruct &Options);
+  void   WriteEnsimMinorOutput       (const optStruct &Options,const time_struct &tt);
+  void   CloseOutputFiles            ();
 };
 #endif

@@ -28,6 +28,7 @@ int  NetCDFAddMetadata  (const int fileid,const int time_dimid,                 
 int  NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript);
 void AddSingleValueToNetCDF     (const int out_ncid,const string &label,const size_t time_index,const double &value);
+void WriteNetCDFBasinList       (const int ncid,const int varid,const CModel* pModel,const optStruct &Options);
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the flow series for subbasin SBID
 /// \param pObs [in] observation time series
@@ -310,7 +311,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         RES_MB<<","   <<name<<" outflow [m3]";
         for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
           RES_MB<<","   <<name<<" ctrl outflow "<<i<<" [m3]";
-          RES_MB<<","   <<name<<" ctrl regime";
+          RES_MB<<","   <<name<<" ctrl regime "<<i;
         }
         RES_MB<<","   <<name<<" precip [m3]";
         RES_MB<<","   <<name<<" evap [m3]";
@@ -535,14 +536,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
   // Transport output files
   //--------------------------------------------------------------
-  if (Options.output_format==OUTPUT_STANDARD)
-  {
-    _pTransModel->WriteOutputFileHeaders(Options);
-  }
-  else if (Options.output_format==OUTPUT_ENSIM)
-  {
-    _pTransModel->WriteEnsimOutputFileHeaders(Options);
-  }
+  _pTransModel->WriteOutputFileHeaders(Options);
 
   //raven_debug.csv
   //--------------------------------------------------------------
@@ -916,7 +910,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             RES_MB<<","<<in<<","<<out;
             for (int i = 0; i < pSB->GetReservoir()->GetNumControlStructures(); i++) {
               RES_MB<<","<<pSB->GetReservoir()->GetIntegratedControlOutflow(i,Options.timestep);//m3
-              RES_MB<<","<<pSB->GetReservoir()->GetRegimeName(i,tt)<<endl;
+              RES_MB<<","<<pSB->GetReservoir()->GetRegimeName(i,tt);
             }
             stor          =pSB->GetReservoir()->GetStorage             ();//m3
             oldstor       =pSB->GetReservoir()->GetOldStorage          ();//m3
@@ -1063,14 +1057,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     // Transport output files
     //--------------------------------------------------------------
-    if (Options.output_format==OUTPUT_STANDARD)
-    {
-      _pTransModel->WriteMinorOutput(Options,tt);
-    }
-    else if (Options.output_format==OUTPUT_ENSIM)
-    {
-      _pTransModel->WriteEnsimMinorOutput(Options,tt);
-    }
+    _pTransModel->WriteMinorOutput(Options,tt);
 
     // raven_debug.csv
     //--------------------------------------------------------------
@@ -1582,8 +1569,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
   int         retval;                                // error value for NetCDF routines
   string      tmpFilename;
-  int         ibasin, p;                             // loop over all sub-basins
-  size_t      start[1], count[1];                    // determines where and how much will be written to NetCDF
+  int         p;                                     // loop over all sub-basins
   string      tmp,tmp2,tmp3;
 
   // initialize all potential file IDs with -9 == "not existing and hence not opened"
@@ -1662,24 +1648,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   // End define mode. This tells netCDF we are done defining metadata.
   retval = nc_enddef(_HYDRO_ncid);  HandleNetCDFErrors(retval);
 
-  // write values to NetCDF
   // (a) write gauged basin names/IDs to variable "basin_name"
-  ibasin = 0;
-  char* current_basin_name[1];                       // current name of basin
-  current_basin_name[0]=new char[200];
-  for(p=0;p<_nSubBasins;p++){
-    if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled())){
-      string bname;
-      if ((_pSubBasins[p]->GetName()=="") || (Options.deltaresFEWS)){ bname = to_string(_pSubBasins[p]->GetID()); }
-      else                                                          { bname = _pSubBasins[p]->GetName(); }
-      start[0] = ibasin;
-      count[0] = 1;
-      strcpy(current_basin_name[0],bname.c_str());
-      retval = nc_put_vara_string(_HYDRO_ncid,varid_bsim,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
-      ibasin++;
-    }
-  }
-  delete [] current_basin_name[0];
+  WriteNetCDFBasinList(_HYDRO_ncid,varid_bsim,this,Options);
+
 
   //====================================================================
   //  ReservoirStages.nc
@@ -1746,22 +1717,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
     // write values to NetCDF
     // (a) write gauged reservoir basin names/IDs to variable "basin_name"
-    ibasin = 0;
-    char* current_basin_name[1];                       // current name of basin
-    current_basin_name[0]=new char[200];
-    for(p=0;p<_nSubBasins;p++) {
-      if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
-        string bname;
-        if((_pSubBasins[p]->GetName()=="") || (Options.deltaresFEWS)) { bname = to_string(_pSubBasins[p]->GetID()); }
-        else                                                          { bname = _pSubBasins[p]->GetName(); }
-        start[0] = ibasin;
-        count[0] = 1;
-        strcpy(current_basin_name[0],bname.c_str());
-        retval = nc_put_vara_string(_RESSTAGE_ncid,varid_bsim,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
-        ibasin++;
-      }
-    }
-    delete[] current_basin_name[0];
+    WriteNetCDFBasinList(_RESSTAGE_ncid,varid_bsim,this,Options);
   }
 
   //====================================================================
@@ -2170,15 +2126,15 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     double S;string short_name;
     int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
     for (int i=0;i<GetNumStateVars();i++)
-      {
-	if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
+    {
+      if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
 	  {
 	    S=FormatDouble(GetAvgStateVar(i));
 	    short_name=CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
 	    AddSingleValueToNetCDF(_STORAGE_ncid, short_name.c_str(),time_ind2,S);
 	    currentWater+=S;
 	  }
-      }
+    }
 
     currentWater+=channel_stor+rivulet_stor+reservoir_stor;
     if(tt.model_time==0){
@@ -2423,6 +2379,34 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
   retval = nc_put_vara_double(out_ncid,var_id,time_ind,count1,&val[0]); HandleNetCDFErrors(retval);
 #endif
 }
+//////////////////////////////////////////////////////////////////
+/// \brief writes list of Basin IDs to NetCDF file
+/// used for hydrographs.nc, reservoirstages.nc, pollutographs.nc
+/// \param ncid [in] NetCDF file identifier
+/// \param varid [in] ID of existing basin attribute
+//
+void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,const optStruct& Options) 
+{
+  int ibasin = 0;
+  int retval;
+  size_t      start[1],count[1];                    // determines where and how much will be written to NetCDF
+  char* current_basin_name[1];                       // current name of basin
+  current_basin_name[0]=new char[200];
+  for(int p=0;p<pModel->GetNumSubBasins();p++) {
+    if(pModel->GetSubBasin(p)->IsGauged()  && (pModel->GetSubBasin(p)->IsEnabled())) {
+      string bname;
+      if((pModel->GetSubBasin(p)->GetName()=="") || (Options.deltaresFEWS)) { bname = to_string(pModel->GetSubBasin(p)->GetID()); }
+      else                                                                  { bname = pModel->GetSubBasin(p)->GetName(); }
+      start[0] = ibasin;
+      count[0] = 1;
+      strcpy(current_basin_name[0],bname.c_str());
+      retval = nc_put_vara_string(ncid,varid,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
+      ibasin++;
+    }
+  }
+  delete[] current_basin_name[0];
+}
+
 
 //JRC \todo[clean] - find a best place to put this. Might eventually require separate file?
 //////////////////////////////////////////////////////////////////

@@ -257,9 +257,9 @@ public:/*-------------------------------------------------------*/
   void            IncludeInAssimilation    ();
 
   //called during model operation:
-  void            SetInflow                (const double &Qin );//[m3/s]
-  void            SetLateralInflow         (const double &Qlat);//[m3/s]
-  void            UpdateSubBasin          (const time_struct &tt, const optStruct &Options);
+  void            UpdateInflow             (const double &Qin );//[m3/s]
+  void            UpdateLateralInflow      (const double &Qlat);//[m3/s]
+  void            UpdateSubBasin           (const time_struct &tt, const optStruct &Options);
   void            UpdateOutflows           (const double *Qout_new,
                                             const double &Qirr,
                                             const double &res_ht,
@@ -297,7 +297,6 @@ private:/*------------------------------------------------------*/
   int             _global_pp;  ///< index of group in master Subbasin Group array (in CModel)
   bool            _disabled;   ///< true if all Subbasins in group are disabled
 
-  
 public:/*-------------------------------------------------------*/
   //Constructors:
   CSubbasinGroup(string tag,int global_ind);

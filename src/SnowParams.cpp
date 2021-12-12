@@ -9,7 +9,6 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Returns thermal conductivity of snow [MJ/d/m/K]
 /// \ref from Jordan (1991)/CLM 3.0 eqn 6.65 \cite Jordan1991
-///
 /// \param &sno_dens [in] Snow density [kg/m^3]
 /// \return Thermal conductivity of snow [MJ/d/m/K]
 //
@@ -26,9 +25,7 @@ double GetSnowThermCond(const double &sno_dens)
   if(rho < 0.156){return WATT_TO_MJ_PER_D*(0.023 + 0.234*rho*rho);}
   else           {return WATT_TO_MJ_PER_D*(0.138-1.01*rho+3.233*rho*rho);}
   */
-
 }
-
 
 //////////////////////////////////////////////////////////////////
 /// \brief Estimates fraction of precipitation that is snow based temperature over timestep
@@ -43,8 +40,6 @@ double EstimateSnowFraction( const rainsnow_method method,
                              const force_struct       *F,
                              const optStruct       &Options)
 {
-
-
   //-----------------------------------------------------------
   if (method==RAINSNOW_DATA)
   {
@@ -91,7 +86,6 @@ double EstimateSnowFraction( const rainsnow_method method,
 
     if (F->temp_ave<snowtemp){return 1.0;}
     else                     {return 0.0;}
-
   }
   //-----------------------------------------------------------
   else if(method==RAINSNOW_HARDER) // From Harder & Pomeroy 2013, Ported from CRHM (Pomeroy, 2007)
@@ -165,14 +159,9 @@ double CalcFreshSnowDensity(const double &air_temp)
   //return max(50.0,min(151.0,151+10.63*air_temp+0.2767*air_temp*air_temp)); 
 
   ///< or (Anderson, 1976 -CLM manual eqn 7.18) \cite anderson1976
-  /*if (air_temp>FREEZING_TEMP+2){
-    return 169.15;
-    }
-    else if (air_temp<FREEZING_TEMP-15){
-    return 50;
-    }
-    else{
-    return 50+1.7*pow(air_temp-FREEZING_TEMP+15,1.5)
+  /*if      (air_temp>+2.0 ){return 169.15;}
+    else if (air_temp<-15.0){return 50.0;}
+    else                    {return 50+1.7*pow(air_temp+15,1.5)
     }*/
 }
 
@@ -249,7 +238,7 @@ double GetSensibleHeatSnow(const double &air_temp, //[C]
 /// \param &air_temp [in] Air temperature [C]
 /// \param &surf_temp [in] Surface temperature [C]
 /// \param &rel_humid [in] Relative humidity [0..1]
-/// \param &V [in] Velocity [m/s]
+/// \param &V [in] wind speed [m/s]
 /// \param ref_ht [in] Reference height [m]
 /// \param &rough Roughness coefficient [m]
 /// \return Latent heat exchange with atmosphere from snow [MJ/m^2/d]

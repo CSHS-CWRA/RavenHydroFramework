@@ -57,17 +57,13 @@ int CmvConvolution::_nConv=-1;
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes convolution object
 //
-void   CmvConvolution::Initialize()
-{
-
-
-}
+void   CmvConvolution::Initialize(){}
 //////////////////////////////////////////////////////////////////
 /// \brief unit S-hydrograph (cumulative hydrograph) for GR4J #2
 //
 double GR4J_SH2(const double &t, const double &x4)
 {
-  if (t/x4<1.0)     {return 0.5*pow(t/x4,2.5);}
+  if      (t/x4<1.0){return 0.5*pow(t/x4,2.5);}
   else if (t/x4<2.0){return 1.0-0.5*pow(2-t/x4,2.5);}
   else              {return 1.0;}
 }
@@ -128,7 +124,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   }
   else if(_type==CONVOL_GAMMA)
   {
-    double beta=pHRU->GetSurfaceProps()->gamma_scale;
+    double beta =pHRU->GetSurfaceProps()->gamma_scale;
     double alpha=pHRU->GetSurfaceProps()->gamma_shape;
     double sum=0;
     for (int n=0;n<N;n++)
@@ -138,7 +134,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
     }
   }
   else if(_type==CONVOL_GAMMA_2){
-    double beta=pHRU->GetSurfaceProps()->gamma_scale2;
+    double beta =pHRU->GetSurfaceProps()->gamma_scale2;
     double alpha=pHRU->GetSurfaceProps()->gamma_shape2;
     double sum=0;
     for (int n=0;n<N;n++)
@@ -238,9 +234,7 @@ void   CmvConvolution::GetRatesOfChange( const double                   *state_v
     sum+=S[i];
   }
   S[0]=TS_old-sum; //amount of water added this time step to convol stores
-  //cout<<TS_old<<" "<<sum<<endl;
-  //cout<<"** ";for (int i=0;i<N;i++){cout<<S[i]<<" ";} cout<<endl;
-
+  
   //outflow from convolution storage
   double orig_storage;
   double sumrem=1.0;
@@ -252,9 +246,7 @@ void   CmvConvolution::GetRatesOfChange( const double                   *state_v
     S[i]-=rates[i]*tstep;
     sumrem-=aUnitHydro[i];
   }//sumrem should ==0 at end, so should S[N-1]
-  //cout<<sumrem<<endl;
-  //cout<<"** ";for (int i=0;i<N;i++){cout<<S[i]<<" ";} cout<<endl;
-
+  
   //time shift convolution history
   double move;
   for (i=N-2; i>=0; i--)
@@ -264,15 +256,11 @@ void   CmvConvolution::GetRatesOfChange( const double                   *state_v
     S[i  ]-=move;
     S[i+1]+=move;
   }
-  //cout<<"*> ";for (int i=0;i<N;i++){cout<<S[i]<<" ";} cout<<endl;
-
+  
   //update total convolution storage:
   double TS_new=0;
   for (i=1; i<N; i++){TS_new+=S[i];}
   rates[2*MAX_CONVOL_STORES-1]=(TS_new-TS_old)/tstep;
-  //cout<<TS_old<<" "<<TS_new<<endl;
-  //cout<<"* ----------------------"<<endl;
-
 }
 
 //////////////////////////////////////////////////////////////////
@@ -291,5 +279,5 @@ void   CmvConvolution::ApplyConstraints(const double             *state_vars,
                                         const time_struct &tt,
                                         double     *rates) const
 {
-//no constraints?
+  //no constraints.
 }

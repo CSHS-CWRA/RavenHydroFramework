@@ -136,12 +136,10 @@ public:/*-------------------------------------------------------*/
 
   void   SetGlobalParameter(const string const_name,const string param_name,const double &value,bool noisy);
 
-  void   WriteOutputFileHeaders     (const optStruct &Options) const;
-  void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt) const;
-  void   WriteMajorOutput           (ofstream &RVC) const;
-  void   WriteEnsimOutputFileHeaders(const optStruct &Options) const;
-  void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt) const;
-  void   CloseOutputFiles           () const;
+  void   WriteOutputFileHeaders      (const optStruct &Options) const;
+  void   WriteMinorOutput            (const optStruct &Options,const time_struct &tt) const;
+  void   WriteMajorOutput            (ofstream& RVC) const;
+  void   CloseOutputFiles            () const;
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Class for coordinating transport simulation for specific constituent
@@ -193,6 +191,8 @@ protected:
 
   ofstream                 _OUTPUT;  ///< output stream for Concentrations.csv/Temperatures.csv
   ofstream                 _POLLUT;  ///< output stream for Pollutograph.csv/StreamTemperatures.csv
+  int                   _CONC_ncid;  ///< NetCDF id for Concentrations.nc/Temperatures.nc
+  int                 _POLLUT_ncid;  ///< NetCDF id for Pollutograph.nc/StreamTemperatures.nc
 
   // private member funcctions
   void   DeleteRoutingVars();
@@ -258,12 +258,14 @@ public:/*-------------------------------------------------------*/
           void   RouteMass                (const int p,double *aMoutnew,double &ResMass,const optStruct &Options,const time_struct &tt) const;
   virtual void   UpdateMassOutflows       (const int p,double *aMoutnew,double &ResMass,double &ResMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize);
 
-  virtual void   WriteOutputFileHeaders     (const optStruct &Options);
-  virtual void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt);
-          void   WriteMajorOutput           (ofstream &RVC) const;
-  virtual void   WriteEnsimOutputFileHeaders(const optStruct &Options);
-  virtual void   WriteEnsimMinorOutput      (const optStruct &Options,const time_struct &tt);
-  virtual void   CloseOutputFiles();
+  virtual void   WriteOutputFileHeaders      (const optStruct &Options);
+  virtual void   WriteMinorOutput            (const optStruct &Options,const time_struct &tt);
+  virtual void   WriteEnsimOutputFileHeaders (const optStruct &Options);
+  virtual void   WriteEnsimMinorOutput       (const optStruct &Options,const time_struct &tt);
+  virtual void   WriteNetCDFOutputFileHeaders(const optStruct &Options);
+  virtual void   WriteNetCDFMinorOutput      (const optStruct &Options,const time_struct& tt);
+          void   WriteMajorOutput            (ofstream& RVC) const;
+  virtual void   CloseOutputFiles            ();
 };
 
 ///////////////////////////////////////////////////////////////////

@@ -1035,7 +1035,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
 /// \param initQ [in] initial inflow
 /// \note - ignores extraction and PET ; won't work for initQ=0, which could be non-uniquely linked to stage
 //
-void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const time_struct &tt)
+void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,const time_struct &tt,const optStruct& Options)
 {
   if(initQ!=initQlast) {//reading from .rvc file
     _Qout=initQ;
@@ -1062,19 +1062,19 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
 
   do //Newton's method with discrete approximation of dQ/dh
   {
-    //if(_pDZTR==NULL) {
+    if(_pDZTR==NULL) {
       Q    =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       dQdh=(GetWeirOutflow(h_guess+dh,weir_adj)-Q)/dh;
       for (int i = 0; i < _nControlStructures; i++) {
         Qi=_pControlStructures[i]->GetOutflow(h_guess,_aQstruct_last[i],tt); //TMP DEBUG -need to include control structure outflow
         Q+=Qi;
-        dQdh+=(_pControlStructures[i]->GetOutflow(h_guess,_aQstruct_last[i],tt)-Qi)/dh;
+        dQdh+=(_pControlStructures[i]->GetOutflow(h_guess+dh,_aQstruct_last[i],tt)-Qi)/dh;
       }
-    //}
-    //else if(_pDZTR!=NULL) {
-    //  Q =GetDZTROutflow(GetVolume(h_guess),initQ,tt,Options);
-    //  dQdh=(GetDZTROutflow(GetVolume(h_guess+dh),initQ,tt,Options)-Q)/dh;
-    //}
+    }
+    else if(_pDZTR!=NULL) {
+      Q =GetDZTROutflow(GetVolume(h_guess),initQ,tt,Options);
+      dQdh=(GetDZTROutflow(GetVolume(h_guess+dh),initQ,tt,Options)-Q)/dh;
+    }
 
     change=-(Q-initQ)/dQdh;//[m]
     if (dh==0.0){change=1e-7;}
@@ -1422,7 +1422,9 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if (_pQdownSB!=NULL){downID=_pQdownSB->GetID();}
   for(int i=0; i<_nControlStructures; i++) 
   {
-    aQstruct[i]*=(total_outflow/outflow_nat); //correct for applied reservoir rules; assumes fractions unchanged -doesn't really work for stage constraints.
+    if(outflow_nat!=0) {
+      aQstruct[i]*=(total_outflow/outflow_nat); //correct for applied reservoir rules; assumes fractions unchanged -doesn't really work for stage constraints.
+    }
     if (_pControlStructures[i]->GetTargetBasinID()!=downID){
       res_outflow-=aQstruct[i]; //adjust main outflow for diversions elsewhere
     }

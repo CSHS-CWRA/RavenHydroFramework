@@ -548,7 +548,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else if(!strcmp(s[0],":ResFlow"))
         {
           if(Len>=3) {
-            pBasin->GetReservoir()->SetInitialFlow(s_to_d(s[1]),s_to_d(s[2]),tt);
+            pBasin->GetReservoir()->SetInitialFlow(s_to_d(s[1]),s_to_d(s[2]),tt,Options);
           }
         }
         else if (!strcmp(s[0], ":ControlFlow"))
@@ -575,12 +575,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       //:InitialReservoirFlow [SBID] [flow in m3/s]
       int SBID=s_to_l(s[1]);
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
-      ExitGracefullyIf(pBasin==NULL,
-                       "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
+      if(pBasin==NULL) {
+        ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA_WARN);break;
+      }
       time_struct tt;
       JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pBasin->GetReservoir()->UpdateReservoir(tt,Options); //ensures correct discharge rating curve is used to calculate flow
-      pBasin->GetReservoir()->SetInitialFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),tt);
+      pBasin->GetReservoir()->SetInitialFlow(AutoOrDouble(s[2]),AutoOrDouble(s[2]),tt,Options);
       break;
     }
     case(8):  //----------------------------------------------
@@ -588,8 +589,12 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       //:InitialReservoirStage [SBID] [stage]
       int SBID=s_to_l(s[1]);
       CSubBasin *pBasin=pModel->GetSubBasinByID(SBID);
-      ExitGracefullyIf(pBasin==NULL,
-                       "ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA);
+      if(pBasin==NULL) {
+        ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirFlow command (.rvc file)",BAD_DATA_WARN); break;
+      }
+      if(pBasin->GetReservoir()==NULL) {
+        ExitGracefully("ParseInitialConditionsFile: bad basin index in :InitialReservoirStage command (.rvc file), no reservoir exists in specified basin",BAD_DATA_WARN);break;
+      }
       pBasin->GetReservoir()->SetReservoirStage(s_to_d(s[2]),s_to_d(s[2]));
       break;
     }

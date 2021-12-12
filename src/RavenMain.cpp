@@ -173,7 +173,10 @@ int main(int argc, char* argv[])
         }
         cout <<"======================================================"<<endl;
       }
-
+      if (Options.benchmarking) {
+        cout <<"                              "<< pModel->GetNumHRUs()*(Options.duration/Options.timestep)/(float(clock()-t1)/CLOCKS_PER_SEC)<<" HRU-time steps/second"<<endl;
+      }
+     
     }/* end ensemble loop*/
   }
   else

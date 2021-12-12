@@ -512,9 +512,9 @@ void MassEnergyBalance( CModel            *pModel,
     pBasin=pModel->GetSubBasin(p);
     if(pBasin->IsEnabled())
     {
-      pBasin->UpdateSubBasin(tt,Options);           //also used to assimilate lake levels and update routing hydrograph for timestep
+      pBasin->UpdateSubBasin(tt,Options);            //also used to assimilate lake levels and update routing hydrograph for timestep
       
-      pBasin->SetInflow(aQinnew[p]);                 // from upstream, diversions, and specified flows
+      pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
       down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
 
@@ -524,7 +524,7 @@ void MassEnergyBalance( CModel            *pModel,
         gw_Q = pGW2River->CalcRiverFlowBySB(p);      // [m3/d]
       }
 
-      pBasin->SetLateralInflow((aRouted[p]+gw_Q)/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
+      pBasin->UpdateLateralInflow((aRouted[p]+gw_Q)/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 
       pBasin->RouteWater    (aQoutnew,res_ht,res_outflow,res_const,res_Qstruct,Options,tt);      //Where everything happens!
 

@@ -119,7 +119,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _nDiversions   =0;
   _pDiversions   =NULL;
 
-  //initialized in SetInflowHydrograph
+  //initialized in AddInflowHydrograph, similar
   _pInflowHydro  =NULL;
   _pInflowHydro2 =NULL;
   _pIrrigDemand  =NULL;
@@ -638,7 +638,7 @@ double CSubBasin::GetHyporheicFlux() const {
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel storage [m^3]
-/// \note Should only be called after _aQinHist has been updated by calling SetInflow
+/// \note Should only be called after _aQinHist has been updated by calling UpdateInflow
 /// \return Channel storage [m^3]
 //
 double CSubBasin::GetChannelStorage () const
@@ -647,7 +647,7 @@ double CSubBasin::GetChannelStorage () const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel storage [m^3]
-/// \note Should only be called after _aQinHist has been updated by calling SetInflow
+/// \note Should only be called after _aQinHist has been updated by calling UpdateInflow
 /// \return Channel storage [m^3]
 //
 double CSubBasin::GetReservoirStorage () const
@@ -659,7 +659,7 @@ double CSubBasin::GetReservoirStorage () const
 /// \brief Returns rivulet storage [m^3]
 /// \details Returns uphill tributary storage [m^3] obtained from convoltuion
 /// of inflow history with unit hydrograph
-/// \note Should only be called after _aQlatHist has been updated by calling SetLateralInflow
+/// \note Should only be called after _aQlatHist has been updated by calling UpdateLateralInflow
 ///
 /// \return Current Rivulet (non-main channel) surface water storage
 //
@@ -1066,7 +1066,7 @@ void CSubBasin::SetQinHist          (const int N, const double *aQi)
 ///
 /// \param &Qin [in] New flow [m^3/s]
 //
-void CSubBasin::SetInflow    (const double &Qin)//[m3/s]
+void CSubBasin::UpdateInflow    (const double &Qin)//[m3/s]
 {
   for (int n=_nQinHist-1;n>0;n--){
     _aQinHist[n]=_aQinHist[n-1];
@@ -1082,7 +1082,7 @@ void CSubBasin::SetInflow    (const double &Qin)//[m3/s]
 ///
 /// \param &Qlat [in] New lateral inflow [m^3/s]
 //
-void CSubBasin::SetLateralInflow    (const double &Qlat)//[m3/s]
+void CSubBasin::UpdateLateralInflow    (const double &Qlat)//[m3/s]
 {
   for (int n=_nQlatHist-1;n>0;n--){
     _aQlatHist[n]=_aQlatHist[n-1];

@@ -760,14 +760,20 @@ void   CTransportModel::IncrementCumulOutput(const optStruct &Options)
 //
 void CTransportModel::WriteOutputFileHeaders(const optStruct &Options) const
 {
-  for(int c=0;c<_nConstituents;c++) {
-    _pConstitModels[c]->WriteOutputFileHeaders(Options);
+  if (Options.output_format==OUTPUT_STANDARD){
+    for(int c=0;c<_nConstituents;c++) {
+      _pConstitModels[c]->WriteOutputFileHeaders(Options);
+    }
   }
-}
-void   CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) const 
-{
-  for(int c=0;c<_nConstituents;c++) {
-     _pConstitModels[c]->WriteEnsimOutputFileHeaders(Options);
+  else if (Options.output_format == OUTPUT_ENSIM) {
+    for(int c=0;c<_nConstituents;c++) {
+       _pConstitModels[c]->WriteEnsimOutputFileHeaders(Options);
+    }
+  }
+  else if (Options.output_format == OUTPUT_NETCDF) {
+    for(int c=0;c<_nConstituents;c++) {
+       _pConstitModels[c]->WriteNetCDFOutputFileHeaders(Options);
+    }
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -778,16 +784,23 @@ void   CTransportModel::WriteEnsimOutputFileHeaders(const optStruct &Options) co
 //
 void CTransportModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt) const
 {
-  for(int c=0;c<_nConstituents;c++) {
-    _pConstitModels[c]->WriteMinorOutput(Options,tt);
+  if (Options.output_format==OUTPUT_STANDARD){
+    for(int c=0;c<_nConstituents;c++) {
+      _pConstitModels[c]->WriteMinorOutput(Options,tt);
+    }
+  }
+  else if (Options.output_format == OUTPUT_ENSIM) {
+    for(int c=0;c<_nConstituents;c++) {
+       _pConstitModels[c]->WriteEnsimMinorOutput(Options,tt);
+    }
+  }
+  else if (Options.output_format == OUTPUT_NETCDF) {
+    for(int c=0;c<_nConstituents;c++) {
+       _pConstitModels[c]->WriteNetCDFMinorOutput(Options,tt);
+    }
   }
 }
-void   CTransportModel::WriteEnsimMinorOutput(const optStruct &Options,const time_struct &tt) const 
-{
-  for(int c=0;c<_nConstituents;c++) {
-     _pConstitModels[c]->WriteEnsimMinorOutput(Options,tt);
-  }
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Close transport output files
 //
