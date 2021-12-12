@@ -9,15 +9,12 @@
 
 // Function Declarations------------------------------------------
 //Defined in ParseInput.cpp
-bool ParseInputFiles  (CModel           *&pModel,
-                       optStruct         &Options);
+bool ParseInputFiles       (CModel*&pModel,        optStruct &Options);
+bool ParseInitialConditions(CModel*& pModel, const optStruct &Options);
+
 //Defined in Solvers.cpp
-void MassEnergyBalance(CModel            *pModel,
-                       const optStruct   &Options,
-                       const time_struct &tt);        
-void ParseLiveFile    (CModel           *&pModel,
-                       const optStruct   &Options,
-                       const time_struct &tt);
+void MassEnergyBalance     (CModel *pModel,const optStruct   &Options,const time_struct &tt);        
+void ParseLiveFile         (CModel*&pModel,const optStruct   &Options, const time_struct &tt);
 
 //Local functions defined below main()
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
@@ -98,9 +95,11 @@ int main(int argc, char* argv[])
       cout <<"======================================================"<<endl;
       cout <<"Initializing Model..."<<endl;
     }
-    pModel->Initialize       (Options);
-    pModel->SummarizeToScreen(Options);
-    pModel->GetEnsemble()->Initialize(Options);
+    pModel->Initialize                  (Options);
+    ParseInitialConditions              (pModel, Options);
+    pModel->CalculateInitialWaterStorage(Options);
+    pModel->SummarizeToScreen           (Options);
+    pModel->GetEnsemble()->Initialize   (Options);
 
     CheckForErrorWarnings(false);
 

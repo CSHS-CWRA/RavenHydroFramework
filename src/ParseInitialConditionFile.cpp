@@ -47,31 +47,35 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     cout <<"======================================================"<<endl;
   }
 
+  
   //Initialize everything to zero (required for ensemble simulation)
   //--------------------------------------------------------------------------
-  for (int i=0;i<pModel->GetNumStateVars();i++)
-  {
-    sv_type typ      =pModel->GetStateVarType(i);
-    int     layer_ind=pModel->GetStateVarLayer(i);
-    for(k=0;k<pModel->GetNumHRUs();k++) {
-      SetInitialStateVar(pModel,i,typ,layer_ind,k,0.0);
+  //ISSUE: THIS ALSO OVERRIDES AUTOCALCULATION OF FLOWS FROM InitializeBasinFlows 
+  if (pModel->GetEnsemble()->GetNumMembers()>1){
+    //pModel->InitalizeBasinFlows(); // \todo [funct]
+    for (int i=0;i<pModel->GetNumStateVars();i++)
+    {
+      sv_type typ      =pModel->GetStateVarType(i);
+      int     layer_ind=pModel->GetStateVarLayer(i);
+      for(k=0;k<pModel->GetNumHRUs();k++) {
+        SetInitialStateVar(pModel,i,typ,layer_ind,k,0.0);
+      }
+    }
+    for(int p=0;p<pModel->GetNumSubBasins();p++) {
+      pModel->GetSubBasin(p)->SetBasinProperties("Q_REFERENCE",AUTO_COMPUTE);
+      double *aQo=new double [pModel->GetSubBasin(p)->GetNumSegments()];
+      for(int i=0;i<pModel->GetSubBasin(p)->GetNumSegments();i++) {
+        aQo[i]=AUTO_COMPUTE;
+      }
+      //pModel->GetSubBasin(p)->SetQoutArray(pModel->GetSubBasin(p)->GetNumSegments(),aQo,AUTO_COMPUTE); //seems to cause issues
+      delete [] aQo;
+      pModel->GetSubBasin(p)->SetChannelStorage(0.0);
+      pModel->GetSubBasin(p)->SetRivuletStorage(0.0);
+      if(pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
+        pModel->GetSubBasin(p)->GetReservoir()->SetReservoirStage(0.0,0.0);
+      }
     }
   }
-  for(int p=0;p<pModel->GetNumSubBasins();p++) {
-    pModel->GetSubBasin(p)->SetBasinProperties("Q_REFERENCE",AUTO_COMPUTE);
-    double *aQo=new double [pModel->GetSubBasin(p)->GetNumSegments()];
-    for(int i=0;i<pModel->GetSubBasin(p)->GetNumSegments();i++) {
-      aQo[i]=AUTO_COMPUTE;
-    }
-    //pModel->GetSubBasin(p)->SetQoutArray(pModel->GetSubBasin(p)->GetNumSegments(),aQo,AUTO_COMPUTE); //seems to cause issues
-    delete [] aQo;
-    pModel->GetSubBasin(p)->SetChannelStorage(0.0);
-    pModel->GetSubBasin(p)->SetRivuletStorage(0.0);
-    if(pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
-      pModel->GetSubBasin(p)->GetReservoir()->SetReservoirStage(0.0,0.0);
-    }
-  }
-
   //--Sift through file-----------------------------------------------
   bool end_of_file=pp->Tokenize(s,Len);
   while (!end_of_file)
@@ -290,8 +294,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       {
         int     layer_ind(DOESNT_EXIST);
         sv_type typ;
+        
         typ=CStateVariable::StringToSVType(s[i+1],layer_ind,false);
-
+        
         if (typ==UNRECOGNIZED_SVTYPE){
           WriteWarning(":HRUStateVariableTable: unrecognized state variable type "+to_string(s[i+1]),Options.noisy);
           SVinds[i]=DOESNT_EXIST;
@@ -317,12 +322,14 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
 
           ///  zero out concentrations/temperatures linked to atmos_precip, atmosphere, and glacier ice
           if(typ==CONSTITUENT) {
-            i=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(layer_ind);
-            sv_type wattyp=pModel->GetStateVarType(i);
-            if((wattyp==ATMOS_PRECIP) || (wattyp==ATMOSPHERE) || (wattyp==GLACIER_ICE)) {//initial concentrations conditions of cumulative precip, evap, and glacier loss ignored, left at zero
-              SVinds[i]=DOESNT_EXIST;
+            int ii=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(layer_ind);
+            if (ii!=DOESNT_EXIST){
+              sv_type wattyp=pModel->GetStateVarType(ii);
+              if((wattyp==ATMOS_PRECIP) || (wattyp==ATMOSPHERE) || (wattyp==GLACIER_ICE)) {//initial concentrations conditions of cumulative precip, evap, and glacier loss ignored, left at zero
+                SVinds[i]=DOESNT_EXIST;
+              }
             }
-          } //CODE UNCHECKED
+          } 
         }
       }
       
@@ -674,9 +681,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       }
       CConstituentModel *pConstit=pModel->GetTransportModel()->GetConstituentModel(c);
       
-
       int p=-1;
-      if(Options.noisy) { cout <<"   Reading Basin Transport Variables"<<endl; }
+      if(Options.noisy) { cout <<"   Reading Basin Transport Variables for constituent "<<pConstit->GetName()<<endl; }
       bool done=false;
       CSubBasin *pBasin=NULL;
       int SBID=DOESNT_EXIST;

@@ -1149,35 +1149,41 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
   RVC<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
 
   //Header--------------------------
-  RVC<<":HRUStateVariableTable"<<endl;
-  RVC<<"  :Attributes,";
-  for (i=0;i<GetNumStateVars();i++)
-  {
-    RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
-    if (i!=GetNumStateVars()-1){RVC<<",";}
-  }
-  RVC<<endl;
-  RVC<<"  :Units,";
-  for (i=0;i<GetNumStateVars();i++)
-  {
-    RVC<<CStateVariable::GetStateVarUnits(_aStateVarType[i]);
-    if (i!=GetNumStateVars()-1){RVC<<",";}
-  }
-  RVC<<endl;
-  //Data----------------------------
-  for (k=0;k<_nHydroUnits;k++)
-  {
-    RVC<<std::fixed; RVC.precision(5);
-    RVC<<"  "<<_pHydroUnits[k]->GetID()<<",";
-    for (i=0;i<GetNumStateVars();i++)
+  //write in blocks of 80 state variables
+  int mini,maxi;
+  int M=80;
+  for (int j=0; j<ceil(GetNumStateVars()/(double)(M)); j++){
+    mini=j*M;
+    maxi=min(GetNumStateVars(),(j+1)*M);
+    RVC<<":HRUStateVariableTable"<<endl;
+    RVC<<"  :Attributes,";
+    for (i=mini;i<maxi;i++)
     {
-      RVC<<_pHydroUnits[k]->GetStateVarValue(i);
+      RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
       if (i!=GetNumStateVars()-1){RVC<<",";}
     }
     RVC<<endl;
+    RVC<<"  :Units,";
+    for (i=mini;i<maxi;i++)
+    {
+      RVC<<CStateVariable::GetStateVarUnits(_aStateVarType[i]);
+      if (i!=GetNumStateVars()-1){RVC<<",";}
+    }
+    RVC<<endl;
+    //Data----------------------------
+    for (k=0;k<_nHydroUnits;k++)
+    {
+      RVC<<std::fixed; RVC.precision(5);
+      RVC<<"  "<<_pHydroUnits[k]->GetID()<<",";
+      for (i=mini;i<maxi;i++)
+      {
+        RVC<<_pHydroUnits[k]->GetStateVarValue(i);
+        if (i!=GetNumStateVars()-1){RVC<<",";}
+      }
+      RVC<<endl;
+    }
+    RVC<<":EndHRUStateVariableTable"<<endl;
   }
-  RVC<<":EndHRUStateVariableTable"<<endl;
-
   //By basin------------------------
   RVC<<":BasinStateVariables"<<endl;
   for (int p=0;p<_nSubBasins;p++){

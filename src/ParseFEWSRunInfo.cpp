@@ -252,7 +252,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
 //  The state variable corresponding to the model start time will be used for initialization; all other values in the time vector are ignored
 //  Note : this ONLY looks for state variables that are in model, all other state variable arrays will be ignored
 //
-bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
+bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
 {
   if(Options.stateinfo_filename=="") { return true; }
 
@@ -443,7 +443,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,optStruct &Options)
 // .The state variable corresponding to the model start time will be used for initialization of flow/stage; all other values in the time vector are ignored
 //  The naming convention of this attribute is one of: {QOUT, STAGE,  }
 //
-bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
+bool ParseNetCDFFlowStateFile(CModel*& pModel,const optStruct& Options) {
   if(Options.flowinfo_filename=="") { return true; }
 
 #ifdef _RVNETCDF_
@@ -615,7 +615,7 @@ bool ParseNetCDFFlowStateFile(CModel*& pModel,optStruct& Options) {
 // 2) Vectors of size (ntime) with parameter time series; these are named PARAM_in_CLASS where
 //    PARAM is a valid parameter name and CLASS is a valid soil class, veg class, land use class, or GLOBALS 
 //
-bool ParseNetCDFParamFile(CModel*&pModel, optStruct &Options)
+bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
 {
   if (Options.paraminfo_filename == "") { return true; }
 

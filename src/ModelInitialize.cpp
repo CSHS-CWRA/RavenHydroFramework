@@ -209,30 +209,6 @@ void CModel::Initialize(const optStruct &Options)
   if (!Options.silent){cout<<"  Initializing Basins, calculating watershed area, setting initial flow conditions..."<<endl;}
   InitializeBasinFlows(Options);
 
-  // Calculate initial system water storage
-  //--------------------------------------------------------------
-  if (!Options.silent){cout<<"  Calculating initial system water storage..."<<endl;}
-  _initWater=0.0;
-  double S=0;
-  for (i=0;i<_nStateVars;i++)
-  {
-    if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
-      S=GetAvgStateVar(i);
-      _initWater+=S;
-    }
-  }
-  _initWater+=GetTotalChannelStorage();
-  _initWater+=GetTotalReservoirStorage();
-  _initWater+=GetTotalRivuletStorage();
-  // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
-  // I think somehow this is being double counted in the delta V calculations in the first timestep
-  for(int p=0;p<_nSubBasins;p++){
-    if(_pSubBasins[p]->GetReservoir()!=NULL){
-      _initWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-      _initWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
-    }
-  }
-
   // Initialize Data Assimilation
   //--------------------------------------------------------------
   InitializeDataAssimilation(Options);
@@ -375,7 +351,35 @@ void CModel::Initialize(const optStruct &Options)
     WriteAdvisory("                  It is suggested to either (a) use forcings which start on or prior to 00:00 of the model start date or (b) avoid algorithms which require these daily temperature inputs",Options.noisy);
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates initial total system water storage, updates _initWater
+///
+/// \param &Options [in] Global model options information
+//
+void CModel::CalculateInitialWaterStorage(const optStruct &Options) 
+{
+  if (!Options.silent){cout<<"  Calculating initial system water storage..."<<endl;}
+  _initWater=0.0;
+  double S=0;
+  for (int i=0;i<_nStateVars;i++)
+  {
+    if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
+      S=GetAvgStateVar(i);
+      _initWater+=S;
+    }
+  }
+  _initWater+=GetTotalChannelStorage();
+  _initWater+=GetTotalReservoirStorage();
+  _initWater+=GetTotalRivuletStorage();
+  // \todo [fix]: this fixes a mass balance bug in reservoir simulations, but there is certainly a more proper way to do it
+  // I think somehow this is being double counted in the delta V calculations in the first timestep
+  for(int p=0;p<_nSubBasins;p++){
+    if(_pSubBasins[p]->GetReservoir()!=NULL){
+      _initWater+=_pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+      _initWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
+    }
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes observation time series
 /// \details Initializes _pObservedTS, _pModeledTS and _pObsWeightTS

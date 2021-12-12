@@ -193,11 +193,12 @@ string CTransportModel::GetConstituentShortName(const int m) const
 
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns global sv index of water storage unit corresponding to CONSTITUENT[m]
+/// \brief returns global sv index of water storage unit corresponding to CONSTITUENT[m], or DOESNT_EXIST if layer index is invalid
 //
 int CTransportModel::GetWaterStorIndexFromLayer(const int m) const
 {
   int c,j;
+  if (m>_nConstituents*_nWaterCompartments){return DOESNT_EXIST;}
   m_to_cj(m,c,j);
   return _iWaterStorage[j];
 }

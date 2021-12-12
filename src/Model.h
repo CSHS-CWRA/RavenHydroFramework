@@ -416,6 +416,7 @@ public:/*-------------------------------------------------------*/
   void         PrepareAssimilation       (const optStruct &Options, const time_struct &tt);
 
   //water/energy/mass balance routines
+  void   CalculateInitialWaterStorage (const optStruct   &Options);
   void        IncrementBalance        (const int q_star,
                                        const int k,
                                        const double moved);//[mm] or [MJ/m2] or [mg]

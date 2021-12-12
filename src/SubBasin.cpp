@@ -1026,14 +1026,11 @@ void CSubBasin::SetQout(const double &Q)
 //
 void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
 {
-  if (_aQlatHist!=NULL){
-    ExitGracefully("CSubBasin::SetQlatHist: should not overwrite existing history array. Improper use.",RUNTIME_ERR);
+  if (N != _nQlatHist) {
+    WriteWarning("CSubBasin::SetQlatHist: size of lateral flow history differs between current model and initial conditions file. Array will be truncated",false);
   }
-  _nQlatHist=N;
   if(N==0) { return; }
-  _aQlatHist=new double [_nQlatHist];
-  ExitGracefullyIf(_aQlatHist==NULL,"CSubBasin::SetQlatHist",OUT_OF_MEMORY);
-  for (int i=0;i<_nQlatHist;i++){_aQlatHist[i]=aQl[i];}
+  for (int i=0;i<min(_nQlatHist,N);i++){_aQlatHist[i]=aQl[i];}
   _QlatLast=QlLast;
 }
 
@@ -1045,14 +1042,11 @@ void CSubBasin::SetQlatHist(const int N, const double *aQl, const double QlLast)
 //
 void CSubBasin::SetQinHist          (const int N, const double *aQi)
 {
-  if (_aQinHist!=NULL){
-    ExitGracefully("CSubBasin::SetQinHist: should not overwrite existing history array. Improper use.",RUNTIME_ERR);
+  if (N != _nQinHist) {
+    WriteWarning("CSubBasin::SetQinHist: size of inflow history differs between current model and initial conditions file. Array will be truncated",false);
   }
-  _nQinHist=N;
   if(N==0) { return; }
-  _aQinHist=new double [_nQinHist];
-  ExitGracefullyIf(_aQinHist==NULL,"CSubBasin::SetQinHist",OUT_OF_MEMORY);
-  for (int i=0;i<_nQinHist;i++){_aQinHist[i]=aQi[i];}
+  for (int i=0;i<min(_nQinHist,N);i++){_aQinHist[i]=aQi[i];}
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1290,7 +1284,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       //}
     }
     if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION ){_t_peak=AUTO_COMPUTE;}
-    if(Options.catchment_routing==ROUTE_DUMP){_t_peak=AUTO_COMPUTE;}
+    if(Options.catchment_routing==ROUTE_DUMP              ){_t_peak=AUTO_COMPUTE;}
 
     if (_t_peak     ==AUTO_COMPUTE){_t_peak=0.3*_t_conc; }/// \todo [fix hack] better means of determining needed
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
@@ -1316,7 +1310,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
         _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
       }
     }
-    
+
     //generate catchment & routing hydrograph weights
     //reserves memory and populates _aQinHist,_aQlatHist,_aRouteHydro
     //------------------------------------------------------------------------
@@ -1448,21 +1442,9 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     _nQinHist=20;
   }
 
-  bool bad_initcond=((_nQinHist!=OldnQinHist) && (OldnQinHist!=0));
-
-  if (bad_initcond){
-    //cout<<_nQinHist<<" "<<OldnQinHist<<endl;
-    string warn = "CSubBasin::GenerateRoutingHydrograph: size of inflow history array differs between initial conditions file and calculated size in basin " + to_string(_ID) + ". Initial conditions will be overwritten";
-    WriteWarning(warn,Options.noisy);
-    delete [] _aQinHist;
-  }
-
   //reserve memory, initialize
-  if ((_aQinHist==NULL) || (bad_initcond)) //may have been previously read from file
-  {
-    _aQinHist   =new double [_nQinHist+1 ];
-    for (n=0;n<_nQinHist;n++){_aQinHist[n]=Qin_avg; }
-  }
+  _aQinHist   =new double [_nQinHist+1 ];
+  for (n=0;n<_nQinHist;n++){_aQinHist[n]=Qin_avg; }
 
   _aRouteHydro=new double [_nQinHist+1 ];
   for (n=0;n<_nQinHist;n++){_aRouteHydro[n]=0.0;}
@@ -1582,18 +1564,9 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
     ExitGracefully(warn.c_str(),RUNTIME_ERR);
   }
 
-  bool bad_initcond=((OldnQlatHist!=_nQlatHist) && (OldnQlatHist!=0));
-
-  if (bad_initcond){
-    WriteWarning("CSubBasin::GenerateCatchmentHydrograph: size of lateral inflow history array differs between initial conditions file and calculated size. Initial conditions will be overwritten",Options.noisy);
-    delete [] _aQlatHist;
-  }
-
   //reserve memory, initialize
-  if ((_aQlatHist==NULL) || (bad_initcond)){ //may have been read from file
-    _aQlatHist  =new double [_nQlatHist];
-    for (n=0;n<_nQlatHist;n++){_aQlatHist [n]=Qlat_avg;}//set to initial (steady-state) conditions
-  }
+  _aQlatHist  =new double [_nQlatHist];
+  for (n=0;n<_nQlatHist;n++){_aQlatHist [n]=Qlat_avg;}//set to initial (steady-state) conditions
 
   _aUnitHydro =new double [_nQlatHist];
   for (n=0;n<_nQlatHist;n++){_aUnitHydro[n]=0.0;}

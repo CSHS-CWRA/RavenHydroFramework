@@ -39,9 +39,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options);
 bool ParseEnsembleFile         (CModel *&pModel, const optStruct &Options);
 bool ParseGWFile               (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options,bool runname_overridden,bool mode_overridden);
-bool ParseNetCDFStateFile      (CModel *&pModel, optStruct &Options);
-bool ParseNetCDFParamFile      (CModel *&pModel, optStruct &Options);
-bool ParseNetCDFFlowStateFile  (CModel *&pModel, optStruct &Options);
+bool ParseNetCDFStateFile      (CModel *&pModel, const optStruct &Options);
+bool ParseNetCDFParamFile      (CModel *&pModel, const optStruct &Options);
+bool ParseNetCDFFlowStateFile  (CModel *&pModel, const optStruct &Options);
 int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
@@ -52,6 +52,24 @@ void FromToErrorCheck          (string cmd,string sFrom,string sTo,sv_type tFrom
 
 evap_method    ParseEvapMethod   (const string s);
 potmelt_method ParsePotMeltMethod(const string s); 
+
+//////////////////////////////////////////////////////////////////
+/// \brief This method parses the .rvc and other initialization file, called by main
+/// must be called AFTER model initialization
+///
+bool ParseInitialConditions(CModel*& pModel, const optStruct& Options) 
+{
+  if (!ParseInitialConditionsFile(pModel,Options)){
+    ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
+  }
+  if (!ParseNetCDFStateFile(pModel, Options)) {
+    ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;
+  }
+  if(!ParseNetCDFFlowStateFile(pModel,Options)) {
+    ExitGracefully("Cannot find or read NetCDF flow state file",BAD_DATA); return false;
+  }
+  return true;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief This method is the primary Raven input routine that parses input files, called by main
 ///
@@ -114,17 +132,6 @@ bool ParseInputFiles (CModel      *&pModel,
     if(pModel->GetSubBasin(pp)->GetReservoir()!=NULL) { Options.write_reservoir=true; }
   }
   
-  // Initial Conditions input file (.rvc)
-  //--------------------------------------------------------------------------------
-  if (!ParseInitialConditionsFile(pModel,Options)){
-    ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
-  }
-  if (!ParseNetCDFStateFile(pModel, Options)) {
-    ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;
-  }
-  if(!ParseNetCDFFlowStateFile(pModel,Options)) {
-    ExitGracefully("Cannot find or read NetCDF flow state file",BAD_DATA); return false;
-  }
   // Time series input file (.rvt)
   //--------------------------------------------------------------------------------
   if (!ParseTimeSeriesFile       (pModel,Options)){
