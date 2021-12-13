@@ -19,8 +19,19 @@ CStageDischargeTable::CStageDischargeTable(const string name, const double *h, c
   _aQ=NULL;
   _aStage=new double [_Np];
   _aQ    =new double [_Np];
-  ExitGracefullyIf(_aQ=NULL,"CStageDischargeTable constructor",OUT_OF_MEMORY);
-
+  ExitGracefullyIf(_aQ==NULL,"CStageDischargeTable constructor",OUT_OF_MEMORY);
+  for (int i = 0; i < _Np; i++) {
+    _aStage[i]=h[i];
+    _aQ    [i]=Q[i];
+  }
+  for (int i = 1; i < _Np; i++) {
+    if ((_aStage[i] - _aStage[i-1]) <= 0.0) {
+      ExitGracefully("CStageDischargeTable constructor: (stage,discharge) pairs must be ordered by increasing stage",BAD_DATA);
+    }
+    if ((_aQ[i] - _aQ[i-1]) < 0.0) {
+      ExitGracefully("CStageDischargeTable constructor: discharge must monotonically increase with stage",BAD_DATA);
+    }
+  }
 }
 CStageDischargeTable::~CStageDischargeTable() 
 {

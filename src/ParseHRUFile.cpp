@@ -1021,7 +1021,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
   while(!p->Tokenize(s,Len))
   {
     if(Options.noisy) { cout << "-->reading line " << p->GetLineNumber() << ": "; }
-    if(Len == 0) {}//Do nothing
+    if     (Len == 0)            { if(Options.noisy) { cout << "#" << endl; } }//Do nothing
     else if(IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
     else if(!strcmp(s[0],":SubBasinID"))
     {
@@ -1360,6 +1360,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":OutflowControlStructure")) {
+      if(Options.noisy) { cout << ":OutflowControlStructure" << endl; } 
       if (pContStruct != NULL) {
         ExitGracefully("ReservoirParse: new control structure started before finishing earlier one with :EndOutflowControlStructure",BAD_DATA_WARN);
       }
@@ -1367,11 +1368,13 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":EndOutflowControlStructure")) {
+      if(Options.noisy) { cout << ":EndOutflowControlStructure" << endl; } 
       DynArrayAppend((void**&)pCSs,(void*)pContStruct,nCSs); //Add to list, set cs structure pointer to NULL
       pContStruct= NULL;
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":TargetSubbasin")) {
+      if(Options.noisy) { cout << ":TargetSubbasin" << endl; } 
       if (pContStruct == NULL) {
         ExitGracefully(":TargetSubbasin command must be in :OutflowControlStructure block",BAD_DATA_WARN);
       }
@@ -1385,6 +1388,8 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
          [h,Q]xN
       :EndStageDischargeTable
       */
+      if(Options.noisy) { cout << ":StageDischargeTable" << endl; }
+      name=s[1];
       p->Tokenize(s,Len);
       if(Len >= 1) { NQ = s_to_i(s[0]); }
       double *aQQ    = new double[NQ];
@@ -1407,6 +1412,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":BasicWeir")) {
       //:BasicWeir C3 [elev] [crestwidth] [coeff]    
+      if(Options.noisy) { cout << ":BasicWeir" << endl; }
       CBasicWeir *pCurve=new CBasicWeir(name,s_to_d(s[1]),s_to_d(s[2]),s_to_d(s[3]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
 
@@ -1415,12 +1421,11 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     else if (!strcmp(s[0], ":OperatingRegime")) {
       //sift through until :EndOperatingRegime
       COutflowRegime *pRegime=new COutflowRegime(pModel,s[1]);
-      
-      p->Tokenize(s,Len);
+      if(Options.noisy) { cout << ":OperatingRegime" << endl; }
       while(!p->Tokenize(s,Len))
       {
         if (Options.noisy) { cout << "-->reading line " << p->GetLineNumber() << ": "; }
-        if (Len == 0) {}//Do nothing
+        if (Len == 0)                { if(Options.noisy) { cout << "#" << endl; } }//Do nothing
         else if(IsComment(s[0],Len)) { if(Options.noisy) { cout << "#" << endl; } }
 
         else if(!strcmp(s[0],":UseCurve"))//=======================================
@@ -1437,9 +1442,11 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         }
         else if(!strcmp(s[0],":Condition"))//=======================================
         {
+          if(Options.noisy) { cout << ":Condition" << endl; }
           RegimeCondition *R=new RegimeCondition;
           R->basinID=SBID; //default - THIS basin
           R->variable=s[1];
+          R->compare_val2=0.0;
           if (Len < 4) {
             WriteWarning(":Condition syntax incorrect (insufficient length) in :Reservoir command. Will be ignored.",Options.noisy);
           }
@@ -1450,7 +1457,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
             else{WriteWarning("unrecognized comparison string in :Condition command",Options.noisy);}
 
             R->compare_val1=s_to_d(s[3]);
-            if ((R->compare==COMPARE_BETWEEN) && (Len>5)) {R->compare_val2=s_to_d(s[4]);}
+            if ((R->compare==COMPARE_BETWEEN) && (Len>=5)) {R->compare_val2=s_to_d(s[4]);}
 
             if (R->variable=="DATE"){
               time_struct t1=DateStringToTimeStruct(s[3],"00:00:00",Options.calendar);
@@ -1474,6 +1481,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         else if(!strcmp(s[0],":Constraint"))//=======================================
         {
           RegimeConstraint *C=new RegimeConstraint;
+          if(Options.noisy) { cout << ":Constraint" << endl; }
           C->variable=s[1];
           if (Len < 4) {
             WriteWarning(":Constraint syntax incorrect (insufficient length) in :Reservoir command. Will be ignored.",Options.noisy);
@@ -1492,6 +1500,14 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         }
         else if (!strcmp(s[0], ":EndOperatingRegime")) //=======================================
         {
+          if(Options.noisy) { cout << ":EndOperatingRegime" << endl; }
+          if (pContStruct == NULL) {
+            ExitGracefully("ParseHRUFile: :OperatingRegime block defined outside of :ControlStructure block. ",BAD_DATA);
+          }
+          if (pRegime->GetCurve() == NULL) {
+              ExitGracefully("ParseHRUFile: :OperatingRegime command is missing :UseCurve command. ",BAD_DATA_WARN);
+          }
+          pContStruct->AddRegime(pRegime);
           break;
         }
       }

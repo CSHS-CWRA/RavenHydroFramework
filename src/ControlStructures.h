@@ -70,6 +70,7 @@ public:/*-------------------------------------------------------*/
 
   string             GetName() const;
   void    CheckConditionsAndConstraints() const;
+  const CStageDischargeRelationABC *GetCurve() const;
 
   void              SetCurve(CStageDischargeRelationABC *pCurv);
   void    AddRegimeCondition(RegimeCondition  *pCond);

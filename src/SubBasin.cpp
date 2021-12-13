@@ -1152,6 +1152,7 @@ void CSubBasin::SetDownstreamID(const long down_SBID){
 //
 void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB) {
   _pDownSB=pSB;
+  if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Sets basin as disabled

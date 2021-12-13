@@ -770,7 +770,12 @@ void  CReservoir::SetPrecip(const double& precip_m3)
 {
   _Precip=precip_m3;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief sets subbasin to which flows from main outlet go
+//
+void  CReservoir::SetDownstreamBasin(const CSubBasin* pDownBasin) {
+  _pDownSB=pDownBasin;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief gets current constraint name
 /// \returns current constraint applied to estimate stage/flow
@@ -1419,7 +1424,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   
   double total_outflow=res_outflow;
   int downID=DOESNT_EXIST;
-  if (_pQdownSB!=NULL){downID=_pQdownSB->GetID();}
+  if (_pDownSB!=NULL){downID=_pDownSB->GetID();}
   for(int i=0; i<_nControlStructures; i++) 
   {
     if(outflow_nat!=0) {

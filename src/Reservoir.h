@@ -73,7 +73,8 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pQdownTS;            ///< Time series of downstream flow soft target [m3/s] (or NULL for none)
   double       _QdownRange;          ///< range of acceptable target flows from Qdown [m3/s] (or zero for hard target)
   
-  const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin (or NULL for none)
+  const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin for diversions (or NULL for none)
+  const CSubBasin *_pDownSB;         ///< pointer to downstream subbasin
 
   down_demand**_aDemands;            ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
   int          _nDemands;            ///< size of downstream demand location array  
@@ -197,6 +198,7 @@ public:/*-------------------------------------------------------*/
   void              SetDataAssimFactors      (const double &da_scale, const double &da_scale_last);
   void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
   void              SetPrecip                (const double &precip_m3);
+  void              SetDownstreamBasin       (const CSubBasin *pDownBasin);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);

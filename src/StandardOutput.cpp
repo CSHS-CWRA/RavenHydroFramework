@@ -307,8 +307,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
         if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
         else                             { name=_pSubBasins[p]->GetName(); }
+        RES_MB<<","   <<name<<" stage [m]";
         RES_MB<<","   <<name<<" inflow [m3]";
-        RES_MB<<","   <<name<<" outflow [m3]";
+        RES_MB<<","   <<name<<" outflow [m3]"; //from main outlet
         for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
           RES_MB<<","   <<name<<" ctrl outflow "<<i<<" [m3]";
           RES_MB<<","   <<name<<" ctrl regime "<<i;
@@ -895,7 +896,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         }
 
         RES_MB<< usetime<<","<<usedate<<","<<usehour<<","<<GetAveragePrecip();
-        double in,out,loss,stor,oldstor,precip,evap,seepage;
+        double in,out,loss,stor,oldstor,precip,evap,seepage,stage;
         for(int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
@@ -905,12 +906,16 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             if(pSB->GetName()==""){ name=to_string(pSB->GetID()); }
             else                  { name=pSB->GetName(); }
 
+            stage         =pSB->GetReservoir()->GetResStage();//m
             in            =pSB->GetIntegratedReservoirInflow(Options.timestep);//m3
             out           =pSB->GetIntegratedOutflow        (Options.timestep);//m3
+            RES_MB<<","<<stage;
             RES_MB<<","<<in<<","<<out;
             for (int i = 0; i < pSB->GetReservoir()->GetNumControlStructures(); i++) {
-              RES_MB<<","<<pSB->GetReservoir()->GetIntegratedControlOutflow(i,Options.timestep);//m3
-              RES_MB<<","<<pSB->GetReservoir()->GetRegimeName(i,tt);
+              double Qc=pSB->GetReservoir()->GetIntegratedControlOutflow(i,Options.timestep);
+              RES_MB<<","<<Qc;//m3
+              RES_MB<<","<<pSB->GetReservoir()->GetRegimeName(i,prev);//evaluated at start of timestep
+              if (pSB->GetReservoir()->GetControlFlowTarget(i)!=pSB->GetDownstreamID()){out+=Qc;}
             }
             stor          =pSB->GetReservoir()->GetStorage             ();//m3
             oldstor       =pSB->GetReservoir()->GetOldStorage          ();//m3

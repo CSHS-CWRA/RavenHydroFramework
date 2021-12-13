@@ -76,6 +76,7 @@ string CControlStructure::GetCurrentRegimeName(const time_struct &tt) const {
 //////////////////////////////////////////////////////////////////
 /// \brief returns outflow from control structure at end of timestep
 /// \notes deterimines which regime is applicable AND applies regime flow constraints
+/// the priority goes from first operating  regime to last - the first whose conditions are satisfied
 /// \param stage   [in] - reservoir stage at end of timestep
 /// \param Q_start [in] - total reservoir outflow at end of timestep
 /// \param Q_end   [in] - current best estimate of total resevoir outflow at end of timestep
@@ -128,7 +129,13 @@ string COutflowRegime::GetName() const
 {
   return _name;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief get stage discharge relation
+/// \returns stage discharge relation
+// 
+const CStageDischargeRelationABC* COutflowRegime::GetCurve() const {
+  return _pCurve;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief checks all conditions and constraints, issues errors and warnings as needed
 // 
@@ -211,7 +218,7 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
     if      (var == "DATE") {
       if (!EvaluateCondition(comp, tt.model_time, v1, v2)) {return false;}
     }
-    else if (var == "DOY") {
+    else if ((var == "DOY") || (var=="DAY_OF_YEAR")) {
       if (comp!=COMPARE_BETWEEN){
         if (!EvaluateCondition(comp, tt.julian_day, v1, v2)) {return false;}
       }
@@ -232,6 +239,10 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
     else if (var == "FLOW") {
       double Q=_pModel->GetSubBasinByID(SBID)->GetOutflowRate();
       if (!EvaluateCondition(comp, Q, v1, v2)) {return false;}
+    }
+    else {
+      string warn="COutflowRegime::AreConditionsMet: unrecognized condition variable "+var+" in :Condition command";
+      ExitGracefully(warn.c_str(),BAD_DATA);
     }
   }
   return true; //only reach here if all conditions met
@@ -259,6 +270,7 @@ double          COutflowRegime::GetOutflow(const double& h, const double& Q_star
     double       v2=_pConstraints[j]->compare_val2;
 
     if      (var== "FLOW") {
+      
       if      (comp == COMPARE_GREATERTHAN) {if (Q<=v1){Q=v1;}}
       else if (comp == COMPARE_LESSTHAN   ) {if (Q>=v1){Q=v1;}}
       else if (comp == COMPARE_BETWEEN    ) {if (Q<=v1){Q=v1;} if (Q>=v2){Q=v2;}}
@@ -269,6 +281,9 @@ double          COutflowRegime::GetOutflow(const double& h, const double& Q_star
       else if (comp == COMPARE_LESSTHAN   ) {if (dQdt>=v1){dQdt=v1;}}
       else if (comp == COMPARE_BETWEEN    ) {if (dQdt<=v1){dQdt=v1;} if (dQdt>=v2){dQdt=v2;}}
       Q=Q_start+dQdt*tstep;
+    }
+    else{
+      ExitGracefully("COutflowRegime::GetOutflow: invalid state in constraint (should be FLOW or FLOW_RAMPING)",BAD_DATA);
     }
   }
   return Q;
