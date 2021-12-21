@@ -192,9 +192,14 @@ void MassEnergyBalance( CModel            *pModel,
 #endif
             for(q=0;q<nConnections;q++)//each process may have multiple connections
             {
+              sv_type typ=pModel->GetStateVarType(iFrom[q]);
               if(iTo[q]!=iFrom[q]) {
                 aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
                 aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+              }
+              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){
+                rates_of_change[q]=0.0;
+                aPhinew[k][iTo  [q]]+=0.0; //likely from redirect - water moves back to itself
               }
               else {
                 aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
@@ -242,9 +247,14 @@ void MassEnergyBalance( CModel            *pModel,
 #endif
           for (q=0;q<nConnections;q++)//each process may have multiple connections
           {
+            sv_type typ=pModel->GetStateVarType(iFrom[q]);
             if (iTo[q]!=iFrom[q]){
               aPhinew[k][iFrom[q]]-=rates_of_change[q]*tstep;//mass/energy balance maintained
               aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//change is an exchange of energy or mass, which must be preserved
+            }
+            else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){
+              rates_of_change[q]=0.0;
+              aPhinew[k][iTo  [q]]+=0.0; //likely from redirect - water moves back to itself
             }
             else{
               aPhinew[k][iTo  [q]]+=rates_of_change[q]*tstep;//for state vars that are not storage compartments
@@ -309,6 +319,7 @@ void MassEnergyBalance( CModel            *pModel,
 
             for (q=0;q<nConnections;q++)//each process may have multiple connections
             {
+              sv_type typ=pModel->GetStateVarType(iFrom[q]);
               rate_guess[j][q] = 0.5*(rate1[q] + rate2[q]);
 
               if(iFrom[q]==iAtm){               //check if water is coming from precipitation
@@ -318,6 +329,10 @@ void MassEnergyBalance( CModel            *pModel,
               if (iTo[q]!=iFrom[q]){
                 aPhinew[k][iFrom[q]]  -= rate_guess[j][q]*tstep;//mass/energy balance maintained
                 aPhinew[k][iTo  [q]]  += rate_guess[j][q]*tstep;//change is an exchange of energy or mass, which must be preserved
+              }
+              else if (CStateVariable::IsWaterStorage(typ) && (typ!=CONVOLUTION)){
+                rates_of_change[q]=0.0;
+                aPhinew[k][iTo  [q]]+=0.0; //likely from redirect - water moves back to itself
               }
               else{   //correction for state vars that are not storage compartments
                 aPhinew[k][iTo  [q]]  += rate_guess[j][q]*tstep;

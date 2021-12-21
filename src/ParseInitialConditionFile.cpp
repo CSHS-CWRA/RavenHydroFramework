@@ -100,26 +100,32 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     //-------------------MODEL INITIAL CONDITIONS----------------
     else if  (!strcmp(s[0],":BasinInitialConditions"      )){code=1;  }
-    else if  (!strcmp(s[0],":HRUInitialConditions"        )){code=2;  }//UNUSED
-    else if  (!strcmp(s[0],":EndHRUInitialConditions"     )){code=-2; }//UNUSED
-    else if  (!strcmp(s[0],":ALL"                         )){code=3;  }
-    else if  (!strcmp(s[0],":UniformInitialConditions"    )){code=3;  }
+
+    else if  (!strcmp(s[0],":UniformInitialConditions"    )){code=2;  }
+    else if  (!strcmp(s[0],":UniformInitialConcentration" )){code=3; concname=s[1];}
+    else if  (!strcmp(s[0],":UniformInitialTemperature"   )){code=3; concname="TEMPERATURE";}
+    
     else if  (!strcmp(s[0],":HRUStateVariableTable"       )){code=4; concname="";}
-    else if  (!strcmp(s[0],":InitialTemperatureTable"     )){code=4; concname="TEMPERATURE";}
-    else if  (!strcmp(s[0],":InitialConcentrationTable"   )){code=4; concname=s[1]; }
     else if  (!strcmp(s[0],":EndHRUStateVariableTable"    )){code=-2; }
-    else if  (!strcmp(s[0],":EndInitialTemperatureTable"  )){code=-2;}
+    else if  (!strcmp(s[0],":InitialConcentrationTable"   )){code=4; concname=s[1]; }
     else if  (!strcmp(s[0],":EndInitialConcentrationTable")){code=-2;}
-    else if  (!strcmp(s[0],":InitialConditions"           )){code=5;  }//OBSOLETE
-    else if  (!strcmp(s[0],":EndInitialConditions"        )){code=-2; }//OBSOLETE
+    else if  (!strcmp(s[0],":InitialTemperatureTable"     )){code=4; concname="TEMPERATURE";}
+    else if  (!strcmp(s[0],":EndInitialTemperatureTable"  )){code=-2;}
+    
     else if  (!strcmp(s[0],":BasinStateVariables"         )){code=6;  }
     else if  (!strcmp(s[0],":EndBasinStateVariables"      )){code=-2; }
+    else if  (!strcmp(s[0],":BasinTransportVariables"     )){code=12; concname=s[1];}
+    else if  (!strcmp(s[0],":EndBasinTransportVariables"  )){code=-2; }    
+    
     else if  (!strcmp(s[0],":InitialReservoirFlow"        )){code=7;  }
     else if  (!strcmp(s[0],":InitialReservoirStage"       )){code=8;  }
+
+    //else if  (!strcmp(s[0],":InitialReservoirConcentration"       )){code=9;  concname=s[1];  }
+    //else if  (!strcmp(s[0],":InitialReservoirTemperature"         )){code=9;  concname="TEMPERATURE"; }
+
     else if  (!strcmp(s[0],":TimeStamp"                   )){code=10; }
     else if  (!strcmp(s[0],":Nudge"                       )){code=11; }
-    else if  (!strcmp(s[0],":BasinTransportVariables"     )){code=12; concname=s[1];}
-    else if  (!strcmp(s[0],":EndBasinTransportVariables"  )){code=-2; }
+
     
 
 
@@ -208,13 +214,6 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case(2):  //----------------------------------------------
-    { /* :HRUInitialConditions
-       */
-      if (Options.noisy) {cout <<"   Reading HRU Initial Conditions..."<<endl;}
-      //does nothing, just an input file placeholder
-      break;
-    }
-    case(3):  //----------------------------------------------
     { /* :UniformInitialConditions [svtype] [svval]
          -sets blanket IC values for a single state variable across all HRUs
          -only needed if IC not equal to zero
@@ -245,6 +244,53 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
       }
       else{
+        pp->ImproperFormat(s);
+      }
+      break;
+    }
+    case(3):  //----------------------------------------------
+    { /* 
+      :UniformInitialConcentration [constit_name] [svtype] [value]
+          or
+      :UniformInitialTemperature [svtype] [value]
+       specify uniform initial conditions in mg/L (or o/oo for isotopes) (or degrees C for temperature)
+      */
+      int shift=0;
+      if(concname!="TEMPERATURE") { if(Options.noisy) { cout <<"Initial Concentrations (Uniform)"<<endl; }}
+      else                        { if(Options.noisy) { cout <<"Initial Temperatures (Uniform)"<<endl;   } shift=1;}
+
+      int c=DOESNT_EXIST;
+      c=pModel->GetTransportModel()->GetConstituentIndex(concname);
+      if(c==DOESNT_EXIST) {
+        ExitGracefully("Invalid constituent name in :UniformInitialConcentration or :UniformInitialTemperature",BAD_DATA);
+      }
+
+      if(Len>=3)
+      {
+        int     layer_ind(-1);
+        int     SVind;
+        sv_type typ;
+
+        typ=CStateVariable::StringToSVType(s[1+shift],layer_ind,false); //water state var
+        if(typ==UNRECOGNIZED_SVTYPE) {
+          WriteWarning(":UniformInitialConcentration: unrecognized state variable type "+to_string(s[1+shift]),Options.noisy);
+          break;
+        }
+
+        SVind=pModel->GetStateVarIndex(typ,layer_ind); //water storage SVIND
+        if(SVind==DOESNT_EXIST) {
+          WriteWarning("Uniform initial conditions specified for water storage state variable not in model ("+to_string(s[1+shift])+")",Options.noisy);
+          break;
+        }
+
+        int m=pModel->GetTransportModel()->GetLayerIndex(c,SVind);  //constituent layer 
+        SVind=pModel->GetStateVarIndex(CONSTITUENT,m); //constituent SVIND
+        
+        for(k=0;k<pModel->GetNumHRUs();k++) {
+          SetInitialStateVar(pModel,SVind,CONSTITUENT,m,k,s_to_d(s[2+shift]));
+        }
+      }
+      else {
         pp->ImproperFormat(s);
       }
       break;
@@ -386,79 +432,6 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         WriteWarning("Parse: :HRUStateVariableTable: number of HRUs in .rvc file not equal to that in model",Options.noisy);
       }
       delete [] SVinds;
-      break;
-    }
-    case(5):  //----------------------------------------------
-    { /* \todo[clean]: make this command obsolete
-        ":InitialConditions" {SV_NAME}
-        {v1,v2,v3,v4} x nHRUs
-        :EndInitialConditions
-      */
-      if (Len<2){pp->ImproperFormat(s);}
-      else{
-        if (Options.noisy) {cout <<"   Reading Initial Conditions for "<<s[1]<<endl;}
-        string stateVariable= s[1];
-        sv_type SVtype;
-        int     SVlayer=0;
-        SVtype=CStateVariable::StringToSVType(s[1],SVlayer,false);
-        if (SVtype==UNRECOGNIZED_SVTYPE){
-          WriteWarning("Unrecognized State Variable type " + string(s[1]) +" in :InitialConditions command",Options.noisy);
-          break;
-        }
-        int nHRUs=pModel->GetNumHRUs();
-        double *v=new double [nHRUs];
-        int count =0;
-        while (count<pModel->GetNumHRUs())
-        {
-          if(!strcmp(s[0],":EndInitialConditions"))
-          { break; }
-          else
-          {
-            pp->Tokenize(s,Len);
-            if      (IsComment(s[0], Len)){}//comment line
-            else if (!strcmp(s[0],":EndInitialConditions")){}//done
-            else
-            {
-              for (int i=0;i<Len;i++)
-              {
-                if (count<nHRUs){
-                  v[count]=s_to_d(s[i]);
-                }
-                count++;
-              }
-            }
-          }
-
-          int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
-          if (iSV!=DOESNT_EXIST){
-            if ((SVtype!=ATMOS_PRECIP) && (SVtype!=ATMOSPHERE)){//initial conditions of cumulative precip & evap ignored, left at zero
-              for (int k=0;k<pModel->GetNumHRUs();k++){
-                pModel->GetHydroUnit(k)->SetStateVarValue(iSV,v[k]);
-              }
-            }
-          }
-        }/*end while*/
-        if (count!=nHRUs)
-        {
-          WriteWarning("Initial condition count is incorrect for state variable \""+(stateVariable)+"\"",Options.noisy);
-          //zero out rest 
-          int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
-          if(iSV!=DOESNT_EXIST){
-            if((SVtype!=ATMOS_PRECIP) && (SVtype!=ATMOSPHERE)){//initial conditions of cumulative precip & evap ignored, left at zero
-              for(int k=count;k<pModel->GetNumHRUs();k++){
-                pModel->GetHydroUnit(k)->SetStateVarValue(iSV,0);
-              }
-            }
-          }
-          //cout<<"       NumHRUs="<<pModel->GetNumHRUs()<<" values found="<<count<<endl;
-        }
-        delete [] v;
-        int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
-        if (iSV==DOESNT_EXIST){
-          WriteWarning("Unused state Variable " + string(s[1]) +" in :InitialConditions command will be ignored",Options.noisy);
-        }
-      }
-
       break;
     }
     case(6):  //----------------------------------------------

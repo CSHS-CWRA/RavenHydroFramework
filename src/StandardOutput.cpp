@@ -2398,6 +2398,7 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
 //
 void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,const optStruct& Options) 
 {
+#ifdef _RVNETCDF_
   int ibasin = 0;
   int retval;
   size_t      start[1],count[1];                    // determines where and how much will be written to NetCDF
@@ -2416,6 +2417,8 @@ void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,co
     }
   }
   delete[] current_basin_name[0];
+#endif
+
 }
 
 

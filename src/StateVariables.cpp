@@ -120,8 +120,9 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(LATERAL_EXCHANGE):   {name="Lateral exchange storage";   break;}
   case(SNOW_DRIFT):         {name="Blowing Snow";               break;}
   case(LAKE_STORAGE):       {name="Net Lake Storage";           break;}
+  case(MIN_DEP_DEFICIT):    {name="Minimum depression deficit"; break;}
 
-    //Temperature/Energy storage
+  //Temperature/Energy storage
   case(ENERGY_LOSSES):      {name="Energy Losses";              break;}
   case(SURFACE_WATER_TEMP): {name="Surface Water Temperature";  break;}
   case(SNOW_TEMP):          {name="Temperature of snow";        break;}
@@ -225,6 +226,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(LATERAL_EXCHANGE): {units="mm"; break;}
   case(SNOW_DRIFT):       {units="mm"; break;}
   case(LAKE_STORAGE):     {units="mm"; break;}
+  case(MIN_DEP_DEFICIT):  {units="mm"; break;}
 
     //Temperature/Energy storage [C] or [MJ/m^2]
   case(ENERGY_LOSSES):    {units="MJ/m2"; break;}
@@ -319,6 +321,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("WETLAND"         )){typ=WETLAND;}
   else if (!tmp.compare("DEPRESSION"      )){typ=DEPRESSION;}
   else if (!tmp.compare("LAKE_STORAGE"    )){typ=LAKE_STORAGE;}
+  else if (!tmp.compare("MIN_DEP_DEFICIT" )){typ=MIN_DEP_DEFICIT;}
   else if (!tmp.compare("ENERGY_LOSSES"   )){typ=ENERGY_LOSSES;}
   else if (!tmp.compare("SNOW_COVER"      )){typ=SNOW_COVER;}
   else if (!tmp.compare("SNOW_DEFICIT"    )){typ=SNOW_DEFICIT;}
@@ -398,6 +401,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(GA_MOISTURE_INIT):   {name="GA_MOISTURE_INIT";         break;}
     case(SNOW_DRIFT):         {name="SNOW_DRIFT";               break;}
     case(LAKE_STORAGE):       {name="LAKE_STORAGE";             break;}
+    case(MIN_DEP_DEFICIT):    {name="MIN_DEP_DEFICIT";          break;}
 
     //Temperature/Energy storage
     case(ENERGY_LOSSES):      {name="ENERGY_LOSSES";            break;}
