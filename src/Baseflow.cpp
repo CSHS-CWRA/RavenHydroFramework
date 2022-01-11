@@ -231,7 +231,7 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
     double K,n,lambda;
     K      = pSoil->max_baseflow_rate; //baseflow rate constant [mm/d]
     n      = pSoil->baseflow_n;        //baseflow exponent [unitless]
-    lambda = pHRU ->GetTerrainProps()->lambda;         //mean of the power-transformed topographic index [m]
+    lambda = pHRU ->GetTerrainProps()->topmodel_lambda;         //mean of the power-transformed topographic index [m]
 
     rates[0] = K * (max_stor / n * pow(lambda,-n)) * pow(stor/max_stor,n);    // baseflow rate [mm/d]
   }

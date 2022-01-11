@@ -966,7 +966,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           parsed_terrs[num_parsed_terrs].hillslope_length =s_to_d(s[1]); 
           parsed_terrs[num_parsed_terrs].drainage_density =s_to_d(s[2]); 
           if (Len==4)
-            parsed_terrs[num_parsed_terrs].lambda =s_to_d(s[3]);
+            parsed_terrs[num_parsed_terrs].topmodel_lambda =s_to_d(s[3]);
           num_parsed_terrs++;
         }
         else{

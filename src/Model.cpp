@@ -123,6 +123,10 @@ CModel::CModel(const int        nsoillayers,
   _pTransModel=new CTransportModel(this);
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
 
+#ifdef _MODFLOW_USG_
+  _pGWModel = new CGroundwaterModel(this);  
+#endif
+
   _pEnsemble = NULL;
 }
 
@@ -1808,28 +1812,23 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   surface_struct L;
   global_struct  G;
   pval=CSoilClass::GetSoilProperty(S,param_str,false);
-  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SOIL;}
+  if (pval!=INDEX_NOT_FOUND){return CLASS_SOIL;}
   pval=CVegetationClass::GetVegetationProperty(V,param_str,false);
-  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_VEGETATION;}
+  if (pval!=INDEX_NOT_FOUND){return CLASS_VEGETATION;}
   pval=CLandUseClass::GetSurfaceProperty(L,param_str,false);
-  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_LANDUSE;}
+  if (pval!=INDEX_NOT_FOUND){return CLASS_LANDUSE;}
   pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
-  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_GLOBAL;}
+  if (pval!=INDEX_NOT_FOUND){return CLASS_GLOBAL;}
   if(_nGauges>0) {
     pval=_pGauges[0]->GetGaugeProperty(param_str);
-    if(pval!=INDEX_NOT_FOUND) { pclass=CLASS_GAUGE; }
+    if(pval!=INDEX_NOT_FOUND) {return CLASS_GAUGE; }
   }
 
-  long SBID=s_to_l(class_name.c_str());
-  if( (strlen(class_name.c_str())>8) && //also accept SUBBASIN32 instead of 32
-      (!strcmp(class_name.substr(0,8).c_str(),"SUBBASIN")) ) {
-    SBID=s_to_l(class_name.substr(8,strlen(class_name.c_str())-8).c_str());
-  }
-  CSubBasin *pSB=GetSubBasinByID(SBID);
-  if (pSB != NULL) {
-    pval=pSB->GetBasinProperties(param_str);
-    if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SUBBASIN;}
-  }
+  CSubBasin *pSB=new CSubBasin(0,"",this,-1,NULL,0,AUTO_COMPUTE,false); //fake basin (basins not yet created)
+  pval=pSB->GetBasinProperties(param_str);
+  if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SUBBASIN;}
+  delete pSB;
+
   return pclass;
 }
 //////////////////////////////////////////////////////////////////
@@ -1876,7 +1875,15 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_SUBBASIN)
   {
+    if (_nSubBasins == 0) {
+      ExitGracefully("UpdateParameter: should not call before subbasins are created",RUNTIME_ERR);
+    }
     long SBID=s_to_l(cname.c_str()); //class name should be SBID in this case
+    if( (strlen(cname.c_str())>8) && //also accept SUBBASIN32 instead of 32
+        (!strcmp(cname.substr(0,8).c_str(),"SUBBASIN")) ) {
+      SBID=s_to_l(cname.substr(8,strlen(cname.c_str())-8).c_str());
+    }
+
     CSubBasin *pSB=GetSubBasinByID(SBID);
     if (pSB != NULL) {
       pSB->SetBasinProperties(pname,value);

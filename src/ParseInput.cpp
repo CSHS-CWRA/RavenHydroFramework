@@ -112,13 +112,15 @@ bool ParseInputFiles (CModel      *&pModel,
   if (!ParseClassPropertiesFile  (pModel,Options,terr_reqd)){
     ExitGracefully("Cannot find or read .rvp file",BAD_DATA);return false;
   }
-  if (!ParseNetCDFParamFile(pModel, Options)) {
-    ExitGracefully("Cannot find or read NetCDF parameter update file", BAD_DATA); return false;
-  }
+
   //HRU Property file (.rvh)
   //--------------------------------------------------------------------------------
   if (!ParseHRUPropsFile         (pModel,Options,terr_reqd)){
     ExitGracefully("Cannot find or read .rvh file",BAD_DATA);return false;
+  }
+  if (!ParseNetCDFParamFile(pModel, Options)) {
+    //note: called after .rvh read so it can update class AND subbasin properties
+    ExitGracefully("Cannot find or read NetCDF parameter update file", BAD_DATA); return false;
   }
 
   //Groundwater file (.rvg)
@@ -535,7 +537,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LakeRelease"               )){code=236;}
     else if  (!strcmp(s[0],":SoilBalance"               )){code=237;}
     else if  (!strcmp(s[0],":LateralEquilibrate"        )){code=238;}
-    else if  (!strcmp(s[0],":Drain"                     )){code=252;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -1501,7 +1502,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         invalid=false;pDiag=NULL;
         int width = DOESNT_EXIST;
-        string tmp = CStateVariable::SVStringBreak(s[i], width);
+        string tmp = CStateVariable::SVStringBreak(s[i], width); //using other routine to grab width
         if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
         else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
         else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
@@ -2078,7 +2079,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized percolation process representation",BAD_DATA_WARN); break;
       }
 
-      FromToErrorCheck(":Percolation",s[2],s[3],SOIL,SOIL);
+      FromToErrorCheck(":Percolation",s[2],s[3],SOIL,USERSPEC_SVTYPE);
 
       CmvPercolation::GetParticipatingStateVarList(p_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);

@@ -303,10 +303,10 @@ CReservoir::CReservoir(const string Name,
   _crest_width=crestw;
   _crest_ht   =crestht;
   _min_stage  =-depth+_crest_ht;
-  _max_stage  =6.0+_crest_ht; //reasonable default?
+  _max_stage  =5.0+_crest_ht; //reasonable default?
   ExitGracefullyIf(depth<0,"CReservoir::Constructor (Lake): cannot have negative maximum lake depth",BAD_DATA_WARN);
   
-  _Np=100;
+  _Np=102;
   _aStage =new double [_Np];
   _aQ     =new double [_Np];
   _aQunder=new double [_Np];
@@ -316,15 +316,15 @@ CReservoir::CReservoir(const string Name,
   
   double dh;
   string warn;
-  dh=(_max_stage-_min_stage)/(_Np-1);
-  for (int i=0;i<_Np;i++) // - Edited by KL to reference crest height properly
+  dh=(_max_stage-_crest_ht)/(_Np-2); //spacing = 0.05m
+  _aStage [0]=_min_stage; //first point is for dry reservoir, linear interpolation of volume between this and crest height 
+  _aQunder[0]=0.0;
+  _aArea  [0]=A;
+  _aVolume[0]=0.0;
+  for (int i=1;i<_Np;i++) // - Edited by KL to reference crest height properly
   {
-    _aStage [i]=_min_stage+i*dh;
-    if((_min_stage+(i-1)*dh-_crest_ht)*(_min_stage+i*dh-_crest_ht)<0.0){_aStage[i]=_crest_ht;} //ensures zero point is included
-    if(_aStage[i]<_crest_ht){_aQ[i]=0.0;}
-    else{
-      _aQ[i]=2.0/3.0*weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
-    }
+    _aStage [i]=_crest_ht+(i-1)*dh;
+    _aQ[i]=2.0/3.0*weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
     _aQunder[i]=0.0;
     _aArea  [i]=A;
     _aVolume[i]=A*(_aStage[i]-_min_stage);

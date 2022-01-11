@@ -321,7 +321,7 @@ struct terrain_struct
   double drainage_density;  ///< [km/km2] length of *all* rivers in a basin divided by the area of the drainage basin
   double hillslope_length;  ///< [m]      representative hillslope length within the watershed
 
-  double lambda;            ///< [m]      TOPMODEL mean of the log-transformed topographic index (between 5.0 - 10.0)
+  double topmodel_lambda;   ///< [m]      TOPMODEL mean of the log-transformed topographic index (between 5.0 - 10.0)
 };
 
 ////////////////////////////////////////////////////////////////////

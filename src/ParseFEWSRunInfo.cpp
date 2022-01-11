@@ -704,7 +704,7 @@ bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
 
           nc_get_vars_float(ncid,varids[j],start,count,stridep,ip);    HandleNetCDFErrors(retval); 
       
-          double pval=ip[start_time_index];
+          double pval=(double)ip[start_time_index];
           /*cout<<" * ";
           cout<<" |"<<param_str<<"| ";
           cout<<" |"<<class_str<<"| ";

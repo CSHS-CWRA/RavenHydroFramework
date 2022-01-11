@@ -23,7 +23,7 @@ namespace MFUSG
 		void   init_stress_period    (int *export_kper);
 		void   init_time_step        (int *export_kstp, int *export_IDOFLOW);
 		void   formulate_boundaries  (int *export_kiter);
-		void   solve_matrix          (int *export_ibflag, int *export_icnvg);
+		void   solve_matrix          (int *export_ibflag, bool *export_icnvg);
 		void   post_solution_updates ();
 		void   calc_boundary_budgets ();
 		void   print_save_data       ();

@@ -23,10 +23,10 @@ CGroundwaterModel::CGroundwaterModel(CModel *pModel)
   _aStressPeriodLength = NULL;
   _aNumSteps = NULL;
 
-  _maxiter = NULL;
-  _niunit = NULL;
+  _maxiter = 0;
+  _niunit = 0;
   _Converged = false;
-  _doSolve = NULL;
+  _doSolve = 0;
 
   _iStressPeriod = 0;
   _iStep = -1;
@@ -549,7 +549,8 @@ void CGroundwaterModel::SetOverlapWeight(const int HRUID, const int node, const 
 #ifdef _MODFLOW_USG_
   bool newConnection = true;
   //-- Check if already exists (Should this be moved to the parser?)
-  if (_mOverlapWeights.find({ HRUID, node }) != _mOverlapWeights.end())
+  pair<int,int> p(HRUID,node);
+  if (_mOverlapWeights.find(p) != _mOverlapWeights.end())
   {
     newConnection = false;
     string warn = "GroundwaterModel: Overlap Weight for Cell " + to_string(node) + " with HRU " + to_string(HRUID) + "defined multiple times.";

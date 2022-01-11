@@ -190,6 +190,7 @@ void CGWRecharge::GetRatesOfChange(const double		   *state_vars,
 //
 void CGWRecharge::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
 {
+#ifdef _MODFLOW_USG_
   int n, topnode;
   double weight, area;
   vector<int> nodeHRUs;
@@ -220,6 +221,7 @@ void CGWRecharge::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
       rates[i] += _aFluxes[i] * area; // m/d to m3/d
     }
   }
+#endif
 }
 
 //////////////////////////////////////////////////////////////////

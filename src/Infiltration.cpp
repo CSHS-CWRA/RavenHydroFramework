@@ -415,7 +415,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   else if (type==INF_TOPMODEL)
   {
     double sat_area;                                                                                 //saturated area [-] fraction
-    //double lambda               = pHRU->GetTerrainProps()->lambda ;      //mean of the log-transformed topographical index [m]
+    //double lambda    = pHRU->GetTerrainProps()->topmodel_lambda ;      //mean of the log-transformed topographical index [m]
     // double stor     = state_vars[iTopSoil];
     // double max_stor = pHRU->GetSoilCapacity(0);                //maximum storage of soil layer [mm]
 

@@ -352,9 +352,6 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             aParamStrings[i]=s[i];
           }
           nParamStrings=Len;
-        }
-        else if (!strcmp(s[0],":Units")){
-          //Do nothing with units for now
           done=true;
         }
         else {pp->ImproperFormat(s); break;}
@@ -369,6 +366,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           ExitGracefully("Parse HRU File: :RedirectToFile cannot be inside at :SubBasinProperties block.",BAD_DATA_WARN);
         }//done
         else if (!strcmp(s[0],":EndSubBasinProperties")){}//done
+        else if (!strcmp(s[0],":Units")){}//do nothing
         else
         {
           ExitGracefullyIf(Len<nParamStrings,

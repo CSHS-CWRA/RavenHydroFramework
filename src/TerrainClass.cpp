@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -130,12 +130,12 @@ void CTerrainClass::AutoCalculateTerrainProps(const terrain_struct &Ttmp,
   /*autocalc=SetCalculableValue(T.lambda,Ttmp.lambda,Tdefault.lambda);
     if (autocalc)
     {
-    T.lambda=0.0;
+    T.topmodel_lambda=0.0;
     }*/
 
   //Model-specific terrain properties - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
-  SetSpecifiedValue(T.lambda,Ttmp.lambda,Tdefault.lambda,false,"LAMBDA");
+  SetSpecifiedValue(T.topmodel_lambda,Ttmp.topmodel_lambda,Tdefault.topmodel_lambda,false,"TOPMODEL_LAMBDA");
 }
 
 //////////////////////////////////////////////////////////////////
@@ -148,9 +148,9 @@ void CTerrainClass::InitializeTerrainProperties(terrain_struct &T, bool is_templ
   //required parameters
   T.hillslope_length=100;//[m]
   T.drainage_density=1.0;//[?]
-  T.lambda          =7.5;//[m]needs reasonable estimate
+  T.topmodel_lambda =7.5;//[m]needs reasonable estimate
 
-  //T.lambda =DefaultParameterValue(is_template,true);
+  //T.topmodel_lambda =DefaultParameterValue(is_template,true);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the terrain property corresponding to param_name
@@ -177,8 +177,7 @@ void  CTerrainClass::SetTerrainProperty(terrain_struct &T,
 
   if      (!name.compare("HILLSLOPE_LENGTH"  )){T.hillslope_length=value;}
   else if (!name.compare("DRAINAGE_DENSITY"  )){T.drainage_density=value;}
-  else if (!name.compare("LAMBDA"            )){T.lambda=value;}
-  else if (!name.compare("TOPMODEL_LAMBDA"   )){T.lambda=value; }
+  else if (!name.compare("TOPMODEL_LAMBDA"   )){T.topmodel_lambda=value; }
   else{
     WriteWarning("CTerrainClass::SetTerrainProperty: Unrecognized/invalid terrain parameter name ("+name+") in .rvp file",false);
   }
@@ -206,8 +205,7 @@ double CTerrainClass::GetTerrainProperty(const terrain_struct &T, string param_n
 
   if      (!name.compare("HILLSLOPE_LENGTH"       )){return T.hillslope_length;}
   else if (!name.compare("DRAINAGE_DENSITY"       )){return T.drainage_density;}
-  else if (!name.compare("LAMBDA"                 )){return T.lambda;}
-  else if (!name.compare("TOPMODEL_LAMBDA"        )){return T.lambda; }
+  else if (!name.compare("TOPMODEL_LAMBDA"        )){return T.topmodel_lambda; }
   else{
     string msg="CTerrainClass::GetTerrainProperty: Unrecognized/invalid terrain parameter name in .rvp file: "+name;
     ExitGracefully(msg.c_str(),BAD_DATA_WARN);

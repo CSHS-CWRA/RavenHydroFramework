@@ -652,7 +652,7 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
         }
       }
     }
-    else
+    else //new version
     {
       if (SWE < REAL_SMALL){
         snow_d=0.0;
@@ -673,7 +673,6 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
       }
     }
 
-    //cum_melt+=-(SWE-state_var[iFrom[2]]-transfer);
     cum_melt+=-(SWE-state_var[iFrom[0]]);
     //Calculate snow coverage (this should be compared to AF1 which is the area fraction of snow cover, and non-linear)
     if (snowpatch_limit!=0.0){

@@ -58,7 +58,7 @@ private:/*----------------------------------------------------*/
   int                                _maxiter;  ///< Maximum outer interations for GW Solver
   int                                 _niunit;  ///< Number of items in the Modflow IUNIT array
   int                                _doSolve;  ///< Equivalent to MFUSG var "idoflow" - 0 means don't solve (Steady state or transport step).
-  bool                             _Converged;  ///< Model Convergence success (from MFUSG) 
+  bool                             _Converged;  ///< Model Convergence success (from MFUSG)
 
   int                             _nProcesses;  ///< GW-SW Processes in Raven
   map<process_type,
