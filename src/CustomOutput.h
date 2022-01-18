@@ -39,8 +39,8 @@ enum time_agg
   YEARLY,      ///< Aggregate by year
   WATER_YEARLY,///< Aggregate by water year
   EVERY_NDAYS, ///< Aggregate by N-day intervals
-  EVERY_TSTEP, ///< Aggregate by time-step
-  ENTIRE_SIM   ///< Aggregate over entire simulation (not currently implemented)
+  EVERY_TSTEP  ///< Aggregate by time-step
+  //ENTIRE_SIM   ///< Aggregate over entire simulation (not currently implemented)
 };
 
 ////////////////////////////////////////////////////////////////////

@@ -177,7 +177,7 @@ void CGauge::Initialize(const optStruct   &Options,
       for(int nn=0;nn<nSamples; nn++)
       {
         val=_pTimeSeries[index]->GetSampledValue(nn);
-	if (val==RAV_BLANK_DATA && !(derivedAveTemp)){
+	      if (val==RAV_BLANK_DATA && !(derivedAveTemp)){
           string warning;
           warning ="CGauge::Initialize: Raven cannot have blank data in daily temperature time series (Gauge: "+_name+", n="+to_string(nn)+")";
           ExitGracefully(warning.c_str(),BAD_DATA);

@@ -889,7 +889,7 @@ void CReservoir::SetDZTRModel(const double Qmc,const double Smax,
 //////////////////////////////////////////////////////////////////
 /// \brief gets flows from DZTR model of Yassin et al., 2019
 /// Yassin et al., Representation and improved parameterization of reservoir operation in hydrological and land-surface models
-/// Hydrol. Earth Syst. Sci., 23, 3735–3764, 2019 https://doi.org/10.5194/hess-23-3735-2019
+/// Hydrol. Earth Syst. Sci., 23, 3735-3764, 2019 https://doi.org/10.5194/hess-23-3735-2019
 //
 double CReservoir::GetDZTROutflow(const double &V, const double &Qin, const time_struct &tt, const optStruct &Options) const
 {
@@ -1071,9 +1071,9 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
       Q    =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       dQdh=(GetWeirOutflow(h_guess+dh,weir_adj)-Q)/dh;
       for (int i = 0; i < _nControlStructures; i++) {
-        Qi=_pControlStructures[i]->GetOutflow(h_guess,_aQstruct_last[i],tt); //TMP DEBUG -need to include control structure outflow
+        Qi=_pControlStructures[i]->GetOutflow(h_guess,h_guess,_aQstruct_last[i],tt); 
         Q+=Qi;
-        dQdh+=(_pControlStructures[i]->GetOutflow(h_guess+dh,_aQstruct_last[i],tt)-Qi)/dh;
+        dQdh+=(_pControlStructures[i]->GetOutflow(h_guess+dh,h_guess+dh,_aQstruct_last[i],tt)-Qi)/dh;
       }
     }
     else if(_pDZTR!=NULL) {
@@ -1098,7 +1098,7 @@ void  CReservoir::SetInitialFlow(const double &initQ,const double &initQlast,con
   //if(_pDZTR==NULL) {
   _Qout=GetWeirOutflow(_stage,weir_adj);
   for (int i = 0; i < _nControlStructures; i++) {
-    _aQstruct[i]=_pControlStructures[i]->GetOutflow(_stage,_aQstruct_last[i],tt); 
+    _aQstruct[i]=_pControlStructures[i]->GetOutflow(_stage,_stage,_aQstruct_last[i],tt); 
   }
   //}
   //else if(_pDZTR!=NULL) {
@@ -1264,8 +1264,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       out =GetWeirOutflow(h_guess,   weir_adj);//[m3/s]
       out2=GetWeirOutflow(h_guess+dh,weir_adj);//[m3/s]
       for(int i=0; i<_nControlStructures; i++) {
-        out +=_pControlStructures[i]->GetOutflow(h_guess   , _aQstruct_last[i],tt);
-        out2+=_pControlStructures[i]->GetOutflow(h_guess+dh, _aQstruct_last[i],tt);
+        out +=_pControlStructures[i]->GetOutflow(h_guess   ,_stage_last, _aQstruct_last[i],tt);
+        out2+=_pControlStructures[i]->GetOutflow(h_guess+dh,_stage_last, _aQstruct_last[i],tt);
       }
     }
     else if(_pDZTR!=NULL) {
@@ -1303,7 +1303,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pDZTR==NULL) {
     res_outflow=GetWeirOutflow(stage_new,weir_adj);
     for(int i=0; i<_nControlStructures; i++) {
-      aQstruct[i]=_pControlStructures[i]->GetOutflow(stage_new,_aQstruct_last[i],tt);
+      aQstruct[i]=_pControlStructures[i]->GetOutflow(stage_new,_stage_last,_aQstruct_last[i],tt);
       res_outflow +=aQstruct[i];  
     }
     constraint =RC_NATURAL;

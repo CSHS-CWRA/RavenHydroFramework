@@ -28,7 +28,8 @@ protected:
 
 public:
   string         GetName     ()                      {return _name;}
-  virtual double GetDischarge(const double &h) const {return 0.0;}
+  // virtual double GetDischarge(const double &h) const {return 0.0;}
+  virtual double GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const {return 0.0;};
 };
 
 /*****************************************************************
@@ -47,7 +48,7 @@ public:
   CStageDischargeTable(const string name, const double *h, const double *Q, const int N);
   ~CStageDischargeTable();
 
-  double GetDischarge(const double &h) const;
+  double GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const;
 };
 
 /*****************************************************************
@@ -66,7 +67,66 @@ public:
   CBasicWeir(const string name, const double elev, const double width, const double coeff);
   ~CBasicWeir();
 
-  double GetDischarge(const double &h) const;
+  double GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const;
+};
 
+/*****************************************************************
+    Class CSluiceGate
+------------------------------------------------------------------
+    Data Abstraction for sluice gate
+  ******************************************************************/
+class CSluiceGate : public CStageDischargeRelationABC
+{
+public:
+  double _bottom_elev;        ///< bottom elevation of crest [m]
+  double _gatewidth;          ///< width of gate [m] 
+  double _gateheight;         ///< height of gate when raised [m] 
+  double _gate_coeff;         ///< gate coefficient [-]
+  int    _num_gates;          ///< number of parallel (identical) gates [-]
+
+public:
+  CSluiceGate(const string name, const double elev, const double width, const double height, const double coeff, int numgates);
+  ~CSluiceGate();
+
+  double GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const;
+};
+
+/*****************************************************************
+    Class COrifice
+------------------------------------------------------------------
+    Data Abstraction for orifice (submerged opening, assumed circular)
+  ******************************************************************/
+class COrifice : public CStageDischargeRelationABC
+{
+public:
+  double _bottom_elev;        ///< bottom elevation of orifice [m]
+  double _diameter;           ///< diameter of circular orifice [m]
+  double _coeff;              ///< discharge coefficient [-]
+  int    _num_openings;       ///< number of identical openings [-]
+
+public:
+  COrifice(const string name, const double elev, const double diameter, const double coeff, int numopenings);
+  ~COrifice();
+
+  double GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const;
+};
+
+/*****************************************************************
+    Class CBasicPump
+------------------------------------------------------------------
+    Data Abstraction for basic pump
+  ******************************************************************/
+class CBasicPump : public CStageDischargeRelationABC
+{
+public:
+  double _flow;           ///< fixed flow for pump [cms]
+  double _on_elev;        ///< diameter of circular orifice [m]
+  double _off_elev;       ///< discharge coefficient [-]
+
+public:
+  CBasicPump(const string name, const double flow, const double on_elev, const double off_elev);
+  ~CBasicPump();
+
+  double GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const;
 };
 #endif

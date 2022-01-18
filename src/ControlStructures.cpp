@@ -8,12 +8,14 @@
 /// \brief control structure constructor, creates empty featureless outflow control structure
 /// \param name [in] structure name
 /// \param SBID [in] subbasin ID of reservoir
+/// \param downID [in] downstream subbasin 
 /// \notes assumes SBID basin has valid reservoir
 // 
-CControlStructure::CControlStructure(string name, const long SBID) {
+CControlStructure::CControlStructure(string name, const long SBID,const long downID) {
   _name=name;
   _SBID=SBID;
-  _target_SBID=SBID;
+  _target_SBID=downID;
+  _dRefElev=0.0;
   _nRegimes=0;
   _aRegimes=NULL;
 }
@@ -44,6 +46,15 @@ long   CControlStructure::GetTargetBasinID() const {return _target_SBID;}
 void   CControlStructure::SetTargetBasin(const long SBID)
 {
   _target_SBID=SBID;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief sets downstream reference elevation for control structure
+/// \param dRefElev [in] - downstream reference elevation [m]
+//
+void   CControlStructure::SetDownstreamRefElevation(const double dRefElev)
+{
+  _dRefElev=dRefElev;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -83,13 +94,13 @@ string CControlStructure::GetCurrentRegimeName(const time_struct &tt) const {
 /// \param tt      [in] - time structure corresponding to END of current timestep
 /// \returns outflow from control structure at end of timestep
 //
-double CControlStructure::GetOutflow(const double& stage, const double& Q_start, const time_struct& tt) const 
+double CControlStructure::GetOutflow(const double& stage, const double& stage_start, const double& Q_start, const time_struct& tt) const 
 {
   for (int i = 0; i < _nRegimes; i++) 
   {
     if (_aRegimes[i]->AreConditionsMet(tt)) 
     {
-      return _aRegimes[i]->GetOutflow(stage,Q_start);
+      return _aRegimes[i]->GetOutflow(stage,stage_start,Q_start,_target_SBID,_dRefElev); 
     }
   }
   return 0.0; //no regime active, no flow
@@ -141,12 +152,19 @@ const CStageDischargeRelationABC* COutflowRegime::GetCurve() const {
 // 
 void    COutflowRegime::CheckConditionsAndConstraints() const 
 {
-  //TMP DEBUG - QA/QC checks on all regime conditions
+  string warn;
   for (int i = 0; i < _nConditions; i++) {
 
   }
   for (int j = 0; j < _nConstraints; j++) {
-
+    string      var=_pConstraints[j]->variable; 
+    if ((var=="FLOW") && (_pConstraints[j]->compare_val1<=0)){
+        WriteWarning("COutflowRegime::CheckConditionsAndConstraints: FLOW Constraints must be greater than zero",false);
+    }
+    if (!((var=="FLOW_DELTA") || (var=="FLOW"))){
+        warn="COutflowRegime::CheckConditionsAndConstraints: unrecognized constraint "+var;
+        ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+    }
   }  
 }
 
@@ -258,12 +276,13 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
 /// \param Q_start [in] outflow at start of timestep [m3/s]
 /// \returns outflow, in [m3/s]
 // 
-double          COutflowRegime::GetOutflow(const double& h, const double& Q_start) const 
+double          COutflowRegime::GetOutflow(const double &h, const double &h_start, const double &Q_start, const long &target_SBID, const double &drefelev) const 
 {
-  double tstep=_pModel->GetOptStruct()->timestep;
-  
-  double Q   =_pCurve->GetDischarge(h); //unconstrained flow from curve
-  double dQdt=(Q-Q_start)/tstep;
+  double tstep    = _pModel->GetOptStruct()->timestep;
+  double rivdepth = _pModel->GetSubBasinByID(target_SBID)->GetRiverDepth();
+
+  double Q = _pCurve->GetDischarge(h, h_start, Q_start, rivdepth, drefelev);
+  double dQdt = (Q-Q_start)/tstep;
 
   //apply constraints here
   for (int j = _nConstraints-1; j >=0; j--) //priority from first to last 
@@ -280,14 +299,14 @@ double          COutflowRegime::GetOutflow(const double& h, const double& Q_star
       else if (comp == COMPARE_BETWEEN    ) {if (Q<=v1){Q=v1;} if (Q>=v2){Q=v2;}}
       dQdt=(Q-Q_start)/tstep;
     }
-    else if (var == "FLOW_RAMPING") {
+    else if (var == "FLOW_DELTA") {
       if      (comp == COMPARE_GREATERTHAN) {if (dQdt<=v1){dQdt=v1;}}
       else if (comp == COMPARE_LESSTHAN   ) {if (dQdt>=v1){dQdt=v1;}}
       else if (comp == COMPARE_BETWEEN    ) {if (dQdt<=v1){dQdt=v1;} if (dQdt>=v2){dQdt=v2;}}
       Q=Q_start+dQdt*tstep;
     }
     else{
-      ExitGracefully("COutflowRegime::GetOutflow: invalid state in constraint (should be FLOW or FLOW_RAMPING)",BAD_DATA);
+      ExitGracefully("COutflowRegime::GetOutflow: invalid state in constraint (should be FLOW or FLOW_DELTA)",BAD_DATA);
     }
   }
   return Q;

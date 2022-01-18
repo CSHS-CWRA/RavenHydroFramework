@@ -523,7 +523,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (50): //---------------------------------------------
-    {/*:BasinInflowHydrograph {long Basincode}
+    {/*:BasinInflowHydrograph {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Qin} x nMeasurements [m3/s]
        :EndBasinInflowHydrograph

@@ -23,22 +23,22 @@ struct RegimeCondition
   double     compare_val1; ///< primary comparison value
   double     compare_val2; ///< secondary comparison value (used for between)
 };
-//example :Condition DATE BETWEEN 2010-07-01 2012-06-31 (converted to model time in compare_vals)
-//example :Condition DOY BETWEEN 213 320
-//example :Condition STAGE GREATER_THAN 340
+//example :Condition DATE IS_BETWEEN 2010-07-01 2012-06-31 (converted to model time in compare_vals)
+//example :Condition DOY IS_BETWEEN 213 320
+//example :Condition STAGE IS_GREATER_THAN 340
 
 /*****************************************************************   
  RegimeConstraint: defines single constraint to be applied to outflow
 *****************************************************************/
 struct RegimeConstraint
 {
-  string     variable; // one of {FLOW, FLOW_RAMPING,...}
+  string     variable; // one of {FLOW, FLOW_DELTA,...}
   comparison compare_typ;
   double     compare_val1;
   double     compare_val2;
 };
 //example :Constraint FLOW LESS_THAN 4000
-//example :Constraint FLOW_RAMPING BETWEEN 30 40 [m3/s/d]
+//example :Constraint FLOW_DELTA BETWEEN 30 40 [m3/s/d]
 
 class CModel;
 /*****************************************************************
@@ -77,7 +77,7 @@ public:/*-------------------------------------------------------*/
   void   AddRegimeConstraint(RegimeConstraint *pCond);
 
   bool      AreConditionsMet(const time_struct &tt) const;
-  double          GetOutflow(const double &h, const double &Q_start) const;
+  double          GetOutflow(const double &h, const double &Qstart, const double &hstart, const long &target_SBID, const double &drefelev) const; 
 };
 
 
@@ -92,22 +92,25 @@ private:/*-------------------------------------------------------*/
   string           _name;                ///< structure name
   long             _SBID;                ///< subbasin ID
   long             _target_SBID;         ///< outflow directed to this subbasin ID
+  double           _dRefElev;            ///< downstream reference elevation [m] (used in some structures for backwater, limiting flow, etc.)
 
   int              _nRegimes;            ///< number of flow regimes
   COutflowRegime **_aRegimes;            ///< array of pointers to flow regimes with unique Q=f(h,Q,...)  
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CControlStructure(const string name,const long SBID);
+  CControlStructure(const string name,const long SBID, const long downID);
   ~CControlStructure();
 
   void   AddRegime       (COutflowRegime *pRegime);
   void   SetTargetBasin  (const long SBID);
+  
+  void   SetDownstreamRefElevation (const double dRefElev);
 
   string GetName         () const;
   long   GetTargetBasinID() const;
   
-  double GetOutflow(const double &stage,const double &Q_start,const time_struct &tt) const;
+  double GetOutflow(const double &stage,const double &stage_start,const double &Q_start,const time_struct &tt) const;
   
   string GetCurrentRegimeName(const time_struct &tt) const;
 };

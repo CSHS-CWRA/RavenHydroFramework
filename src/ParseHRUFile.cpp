@@ -935,7 +935,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     :Type RESROUTE_STANDARD 
     :StageRelations
       # these provide the base stage-storage-area-discharge curves for reservoir. 
-      # The ‘main outflow’ is still controlled as before and can only drain to the downstream basin. 
+      # The 'main outflow' is still controlled as before and can only drain to the downstream basin. 
       # all flow can be routed through control structures instead if we set Q=0 in this base stage relation
     :EndStageRelations
     :OutflowControlStructure [name]
@@ -958,7 +958,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         :Condition STAGE IS_LESS_THAN 402.3
         #--
         :Constraint FLOW IS_LESS_THAN 630 
-        :Constraint FLOW_RAMPING IS_BETWEEN 0 45
+        :Constraint FLOW_DELTA IS_BETWEEN 0 45
       :EndOperatingRegime
       :OperatingRegime B
         :UseCurve C2
@@ -972,7 +972,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       #likewise, we could add 30 different operating regimes if we were feeling saucy
     :EndOutflowControlStructure
     :OutflowControlStructure [name]
-      # we can add as many control structures as we’d like.
+      # we can add as many control structures as we'd like.
     :EndOutflowControlStructure
   :EndReservoir
   */
@@ -1362,7 +1362,8 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       if (pContStruct != NULL) {
         ExitGracefully("ReservoirParse: new control structure started before finishing earlier one with :EndOutflowControlStructure",BAD_DATA_WARN);
       }
-      pContStruct=new CControlStructure(s[1],SBID);//assumes SBID appears first
+      long downID=pModel->GetSubBasinByID(SBID)->GetDownstreamID(); //default target basin 
+      pContStruct=new CControlStructure(s[1],SBID,downID);//assumes SBID appears first
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":EndOutflowControlStructure")) {
@@ -1377,6 +1378,14 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         ExitGracefully(":TargetSubbasin command must be in :OutflowControlStructure block",BAD_DATA_WARN);
       }
       pContStruct->SetTargetBasin(s_to_l(s[1]));
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":DownstreamReferenceElevation")) {
+      if(Options.noisy) { cout << ":DownstreamReferenceElevation" << endl; } 
+      if (pContStruct == NULL) {
+        ExitGracefully(":DownstreamReferenceElevation command must be in :OutflowControlStructure block",BAD_DATA_WARN);
+      }
+      pContStruct->SetDownstreamRefElevation(s_to_d(s[1]));
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":StageDischargeTable")) {
@@ -1409,11 +1418,39 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":BasicWeir")) {
-      //:BasicWeir C3 [elev] [crestwidth] [coeff]    
+      //:BasicWeir C3 [elev] [crestwidth] [coeff]  
       if(Options.noisy) { cout << ":BasicWeir" << endl; }
-      CBasicWeir *pCurve=new CBasicWeir(name,s_to_d(s[1]),s_to_d(s[2]),s_to_d(s[3]));
+      name=s[1]; 
+      CBasicWeir *pCurve=new CBasicWeir(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]));
+      DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":SluiceGate")) {
+      //:SluiceGate [name] [bottomelev] [width] [raisedheight] [coeff] [numgates]
+      if(Options.noisy) { cout << ":SluiceGate" << endl; }
+      name=s[1]; 
+      CSluiceGate *pCurve=new CSluiceGate(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]),s_to_d(s[6]));
+      DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":Orifice")) {
+      //:Orifice [name] [bottomelev] [diameter] [coeff] [numopenings]
+      if(Options.noisy) { cout << ":Orifice" << endl; }
+      name=s[1]; 
+      COrifice *pCurve=new COrifice(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
 
+      cout << " Orifice updated, nSDs is " << to_string(nSDs) << " and pCurve->GetName())" << to_string(pCurve->GetName()) << endl; // xxx
+
+    }
+    //----------------------------------------------------------------------------------------------
+    else if (!strcmp(s[0], ":BasicPump")) {
+      //:BasicPump [name] [flow] [on_elev] [off_elev]
+      if(Options.noisy) { cout << ":BasicPump" << endl; }
+      name=s[1]; 
+      ExitGracefullyIf(s_to_d(s[3]) < s_to_d(s[4]),"ReservoirParse: with BasicPump, on_elev must be >= off_elev.",BAD_DATA_WARN);
+      CBasicPump *pCurve=new CBasicPump(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]));
+      DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":OperatingRegime")) {
@@ -1428,6 +1465,15 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
 
         else if(!strcmp(s[0],":UseCurve"))//=======================================
         {
+          for (int i=0;i<nSDs;i++){
+            for (int j=0;j<i;j++){
+              if (pSDs[i]->GetName()==pSDs[j]->GetName()){
+                string warn="ReservoirParse: duplicate outflow relation name "+pSDs[i]->GetName()+" found";
+                ExitGracefully(warn.c_str(),BAD_DATA_WARN); break;
+              }
+            }
+          }
+
           bool found=false;
           if(Options.noisy) { cout << ":UseCurve" << endl; }
           for (int i=0;i<nSDs;i++){

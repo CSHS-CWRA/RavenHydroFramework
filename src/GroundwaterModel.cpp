@@ -2,6 +2,7 @@
 Raven Library Source Code
 Copyright © 2008-2021 the Raven Development Team, Leland Scantlebury
 ------------------------------------------------------------------*/
+#include "RavenInclude.h"
 #include "MFUSGpp.h"
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
@@ -105,7 +106,7 @@ void CGroundwaterModel::InitMFUSG(string namefile)
   strcpy(cnamefile, namefile.c_str());
 
   // Run Modflow USG initialize routines
-  MFUSG::init_mfusg(cnamefile, &fileLen, &_nNodes, &_nLay, &_nStressPeriods, &_maxiter, &_niunit);
+  MFUSG::init_mfusg(cnamefile, &fileLen, &_nNodes, &_nLayers, &_nStressPeriods, &_maxiter, &_niunit);
   delete [] cnamefile;
 
   // Set default Recharge setting values
@@ -122,14 +123,13 @@ void CGroundwaterModel::InitMFUSG(string namefile)
     _aNodesPerLayer[i] =  _aNodesPerLayer[i]- _aNodesPerLayer[i - 1]; //deaccumulate array
   }
 
-  _nLay1Nodes = _aNodesPerLayer[0];
 
   // Initialize recharge GW-SW process if HRU-data
   // Needs to know how many nodes (All in layer 1)
   // (unsure if I like this being here -LS)
   CGWRecharge* pRecharge = dynamic_cast<CGWRecharge*>(GetProcess(GWRECHARGE));
   if ((pRecharge != NULL) && (pRecharge->getRechargeType()==RECHARGE_HRU_DATA)){
-    pRecharge->Initialize(_aNodesPerLayer[0]);
+    pRecharge->Initialize(); 
   }
 #else
   ExitGracefully("CGroundwaterModel::InitMFUSG: cannot initialize ModflowUSG unless using Raven w/USG support", RUNTIME_ERR);
@@ -289,11 +289,11 @@ void CGroundwaterModel::Solve(const double &t)
     // Add in Raven "Packages" contribution to MFUSG LHS/RHS
     InsertProcessesAsPackages();
 
-    MFUSG::solve_matrix(&ibflag, &_icnvg);
+    MFUSG::solve_matrix(&ibflag, &_Converged);
     // Check for backtracking
     if (ibflag == 1) { continue; }
     // Check for convergence
-    if (!Converged) { break; }
+    if (_Converged) { break; }
     // No convergence, no backtracking = next iteration
     iter++;
   }
@@ -336,7 +336,7 @@ void CGroundwaterModel::UpdateProcessBudgets(const double &timestep)
 {
 #ifdef _MODFLOW_USG_
   // Initialize variables to be filled by processes in loop
-  int     HRUID, ibound, proc_nnodes,topnode;
+  int     HRUID, ibound, proc_nnodes, topnode, n;
   int    *proc_nodes;
   double *rates;
   double  hru_overlap_area, flow = 0.0;
@@ -359,7 +359,8 @@ void CGroundwaterModel::UpdateProcessBudgets(const double &timestep)
     HRUnodes = GetNodesByHRU(HRUID);
     hru_overlap_area = 0;
 
-    for (int n=0; n< HRUnodes.size(); n++) {
+    for (int j=0; j < HRUnodes.size(); j++) {
+      n = HRUnodes[j];
       // Get top active node - Raven Flux (recharge) is delivered to water table
       topnode = GetTopActiveNode(n);
 
@@ -557,7 +558,7 @@ void CGroundwaterModel::SetOverlapWeight(const int HRUID, const int node, const 
     WriteWarning(warn, Options.noisy);
   }
   //-- Overlap Weight Matrix currently implemented using maps(!)
-  _mOverlapWeights[{HRUID, node}] = weight;
+  _mOverlapWeights[p] = weight;
 
   //-- Also add to HRUsByNode and NodeByHRU maps (if new!)
   if (newConnection)
@@ -717,6 +718,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 {
   int         HRUID, k;
   double      flux, weight, area, node_rech;
+  int         n,active_node;
   vector<int> HRUnodes;
 
   k               = pHRU->GetGlobalIndex();
@@ -728,10 +730,10 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 
   //-- This flux should never be below zero, right? Something to think about [checking for]
   //-- Distribute flow among HRU cells
-  for (int n=0; n< HRUnodes.size(); n++) 
+  for (int j=0; j< HRUnodes.size(); j++) 
   {
     // Correct to topmost active node
-    int active_node = n;           // To avoid changing what we're looping over
+    n           = HRUnodes[j];
     active_node = GetTopActiveNode(n);
     weight      = GetOverlapWeight(HRUID, n);
     area        = GetNodeArea(n);
