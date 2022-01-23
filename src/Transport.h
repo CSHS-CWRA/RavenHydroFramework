@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef TRANSPORTMODEL_H
@@ -23,6 +23,7 @@ struct constit_source
   int    i_stor;          ///< index of water storage compartment
   int    kk;              ///< index of HRU group to which source is applied (default is all for DOESNT_EXIST)
   double concentration;   ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] (or DOESNT_EXIST=-1 if time series should be used)
+  double concentration2;  ///< fixed concentration [mg/m2] or enthalpy [MJ/m2] for blend-type condition
   double flux;            ///< fixed mass flux [mg/m2/d] or heat flux [MJ/m2/d] (or DOESNT_EXIST=-1 if time series should be used)
   const  CTimeSeries *pTS; ///< time series of fixed concentration or mass/heat flux (or NULL if fixed should be used)
 };
@@ -219,16 +220,17 @@ public:/*-------------------------------------------------------*/
   virtual double GetOutflowConcentration(const int p) const;
   double GetIntegratedMassOutflow(const int p,const double &tstep) const;
 
-  bool   IsDirichlet             (const int i_stor,const int k,const time_struct &tt,double &Cs) const;
+  bool   IsDirichlet             (const int i_stor,const int k,const time_struct &tt,double &Cs, const double blend=1.0) const;
   double GetSpecifiedMassFlux    (const int i_stor,const int k,const time_struct &tt) const;
 
   double GetDecayCoefficient     (const CHydroUnit *pHRU,const int iStorWater) const;
   virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
 
-  virtual double CalculateConcentration(const double &M,const double &V) const;
+  virtual double CalculateReportingConcentration(const double &M,const double &V) const;
+  virtual double ConvertConcentration  (const double &Cs) const; //converts T->MJ/mm/m2 or C->mg/mm/m2 or Ciso->mg/mm/m2
 
   // Manipulators
-  void   AddDirichletCompartment (const int i_stor,const int kk,const double Cs);
+  void   AddDirichletCompartment (const int i_stor,const int kk,const double Cs, const double Cs2);
   void   AddDirichletTimeSeries  (const int i_stor,const int kk,const CTimeSeries *pTS);
   void   AddInfluxSource         (const int i_stor,const int kk,const double flux);
   void   AddInfluxTimeSeries     (const int i_stor,const int kk,const CTimeSeries *pTS);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ISOTOPE_TRANSPORT_H
@@ -37,10 +37,12 @@ private:
   double CompositionToConc  (const double &d   ) const;
 
 public:/*-------------------------------------------------------*/
-  CIsotopeModel(CModel *pMod,CTransportModel *pTMod,string name,const int c, const iso_type iso);
+  CIsotopeModel(CModel *pMod,CTransportModel *pTMod,string name,const int c);
   ~CIsotopeModel();
 
-  double GetConcentration(const double &mass, const double &vol); //returns [o/oo]
+  double CalculateReportingConcentration(const double &mass, const double &vol) const; //returns [o/oo]
+  double ConvertConcentration(const double &Cs) const; 
+  double GetOutflowConcentration(const int p) const;
 
   double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double &C) const;
 

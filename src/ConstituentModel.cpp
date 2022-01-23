@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------
 Constituent Transport/Tracer Model class
 coordinates information about constituent storage
@@ -223,14 +223,16 @@ double CConstituentModel::GetNetReachLosses(const int p) const
 /// \param k [in] global HRU index
 /// \param tt [in] current time structure
 /// \param Cs [out] Dirichlet source concentration
+/// \param blend=1.0 [optional in] - if !=1, dirichlet is blend of conc and conc2 (used e.g., for rain/snow distinction in isotope condition)
 //
-bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs) const
+bool  CConstituentModel::IsDirichlet(const int i_stor,const int k,const time_struct &tt,double &Cs,const double blend) const
 {
   Cs=0.0;
   int i_source=_aSourceIndices[i_stor][k];
   if(i_source==DOESNT_EXIST)          { return false; }
   if(!_pSources[i_source]->dirichlet) { return false; }
   Cs = _pSources[i_source]->concentration;
+  if (blend!=1.0){Cs=Cs*blend+(1-blend)*_pSources[i_source]->concentration2;}
 
   if(Cs != DOESNT_EXIST) { return true; }
   else {//time series
@@ -268,18 +270,19 @@ double  CConstituentModel::GetSpecifiedMassFlux(const int i_stor,const int k,con
 /// \param kk [in] HRU group index (or -1 if this applies to all HRUs)
 /// \param Cs [in] Dirichlet source concentration [mg/L] or temperature [C]
 //
-void   CConstituentModel::AddDirichletCompartment(const int i_stor,const int kk,const double Cs)
+void   CConstituentModel::AddDirichletCompartment(const int i_stor,const int kk,const double Cs, const double Cs2)
 {
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
 
   pSource->constit_index=_constit_index; // REFACTOR - this is really no longer needed
-  pSource->concentration=Cs;
-  pSource->flux         =0.0;
-  pSource->dirichlet    =true;
-  pSource->i_stor       =i_stor;
-  pSource->kk           =kk;
-  pSource->pTS          =NULL;
+  pSource->concentration =Cs;
+  pSource->concentration2=Cs2;
+  pSource->flux          =0.0;
+  pSource->dirichlet     =true;
+  pSource->i_stor        =i_stor;
+  pSource->kk            =kk;
+  pSource->pTS           =NULL;
 
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletCompartment: invalid storage compartment index",BAD_DATA_WARN);
 
@@ -301,13 +304,14 @@ void   CConstituentModel::AddDirichletTimeSeries(const int i_stor,const int kk,c
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
 
-  pSource->constit_index=_constit_index;
-  pSource->dirichlet    =true;
+  pSource->constit_index =_constit_index;
+  pSource->dirichlet     =true;
   pSource->concentration=DOESNT_EXIST;
-  pSource->flux         =0.0;
-  pSource->i_stor       =i_stor;
-  pSource->kk           =kk;
-  pSource->pTS          =pTS;
+  pSource->concentration2=DOESNT_EXIST;
+  pSource->flux          =0.0;
+  pSource->i_stor        =i_stor;
+  pSource->kk            =kk;
+  pSource->pTS           =pTS;
 
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
 
@@ -330,13 +334,14 @@ void   CConstituentModel::AddInfluxSource(const int i_stor,const int kk,const do
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
 
-  pSource->constit_index=_constit_index;
-  pSource->dirichlet    =false;
-  pSource->concentration=0.0;
-  pSource->flux         =flux;
-  pSource->i_stor       =i_stor;
-  pSource->kk           =kk;
-  pSource->pTS          =NULL;
+  pSource->constit_index =_constit_index;
+  pSource->dirichlet     =false;
+  pSource->concentration =0.0;
+  pSource->concentration2=0.0;
+  pSource->flux          =flux;
+  pSource->i_stor        =i_stor;
+  pSource->kk            =kk;
+  pSource->pTS           =NULL;
 
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddInfluxSource: invalid storage compartment index",BAD_DATA_WARN);
 
@@ -358,13 +363,14 @@ void   CConstituentModel::AddInfluxTimeSeries(const int i_stor,const int kk,cons
   static constit_source *pLast;
   constit_source *pSource=new constit_source();
 
-  pSource->constit_index=_constit_index;
-  pSource->dirichlet    =false;
-  pSource->concentration=0.0;
-  pSource->flux         =DOESNT_EXIST;
-  pSource->i_stor       =i_stor;
-  pSource->kk           =kk;
-  pSource->pTS          =pTS;
+  pSource->constit_index =_constit_index;
+  pSource->dirichlet     =false;
+  pSource->concentration =0.0;
+  pSource->concentration2=0.0;
+  pSource->flux          =DOESNT_EXIST;
+  pSource->i_stor        =i_stor;
+  pSource->kk            =kk;
+  pSource->pTS           =pTS;
 
   ExitGracefullyIf(pSource->i_stor       ==DOESNT_EXIST,"AddDirichletTimeSeries: invalid storage compartment index",BAD_DATA_WARN);
 
@@ -618,14 +624,23 @@ void CConstituentModel::Prepare(const optStruct &Options)
 /// \param M [in] mass [mg/m2] 
 /// \param V [in] volume [mm]
 //
-double CConstituentModel::CalculateConcentration(const double &M, const double &V) const
+double CConstituentModel::CalculateReportingConcentration(const double &M, const double &V) const
 {
   if(fabs(V)>1e-6) {
       return M/V*MM_PER_METER/LITER_PER_M3; //[mg/mm/m2]->[mg/L]
   }
   return 0.0;// JRC: should this default to zero? or NA?
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Converts basic concentration units [mg/L] to [mg/mm/m2] 
+/// \param pHRU [in] pointer to HRU (not used for parent instance)
+/// \param C [in] concentration, in mg/L
+/// \returns concentration, in mg/mm/m2
+//
+double CConstituentModel::ConvertConcentration(const double &C) const
+{
+  return C*LITER_PER_M3/MM_PER_METER; //[mg/L]->[mg/mm-m2]
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Increment cumulative input of mass to watershed.
 /// \note called within solver to track mass balance
@@ -739,7 +754,8 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
 
   if(_type!=ENTHALPY) {
     _OUTPUT<<", Total Mass "<<kg<<", Cum. Loading "<<kg<<", Cum. Mass Lost "<<kg<<", MB Error "<<kg;
-    _OUTPUT<<", atmos "<<kg<<", sink"<<kg<<endl;//TMP DEBUG
+    //_OUTPUT<<", atmos "<<kg<<", sink"<<kg;//TMP DEBUG
+    _OUTPUT<<endl;
   }
   else {
     _OUTPUT<<", Total Energy "<<kg<<", Cum. Loading "<<kg<<", Cum. Energy Lost "<<kg<<", EB Error "<<kg;
@@ -1222,7 +1238,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
     M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2 or enthalpy - MJ/m2
     V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
 
-    concentration=CalculateConcentration(M,V); // [mg/L] or [C] or [o/oo]
+    concentration=CalculateReportingConcentration(M,V); // [mg/L] or [C] or [o/oo]
     if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2] or [1/m2]
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
@@ -1332,7 +1348,7 @@ void CConstituentModel::WriteEnsimMinorOutput(const optStruct &Options,const tim
     int m=ii+_constit_index*_pTransModel->GetNumWaterCompartments();
     M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mg/m2
     V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
-    concentration=CalculateConcentration(M,V);
+    concentration=CalculateReportingConcentration(M,V);
     if(Options.write_constitmass) { concentration=M;}//[mg/m2]
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
@@ -1439,7 +1455,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
     M=_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT,m)); //mass- mg/m2 or enthalpy - MJ/m2
     V=_pModel->GetAvgStateVar(_pTransModel->GetStorWaterIndex(ii)); //mm
 
-    concentration=CalculateConcentration(M,V); // [mg/L] or [C] or [o/oo]
+    concentration=CalculateReportingConcentration(M,V); // [mg/L] or [C] or [o/oo]
     if(Options.write_constitmass) { concentration=M; }//[mg/m2] or [MJ/m2] or [1/m2]
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)

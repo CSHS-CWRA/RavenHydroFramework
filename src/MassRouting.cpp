@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ------------------------------------------------------------------
 routing of mass/energy in catchment and channel
 ----------------------------------------------------------------*/
@@ -121,6 +121,8 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
       C=_pSpecFlowConcs[i]->GetValue(t); //mg/L or C
       if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
       else                { C*=LITER_PER_M3; } //mg/m3
+      ExitGracefullyIf(_type==ISOTOPE,"ApplySpecifiedMassInflows: cannot handle isotopes",BAD_DATA);
+
       Minnew=Q*C;  //[m3/d]*[mg/m3] or [m3/d]*[MJ/m3] 
     }
   }
@@ -158,6 +160,8 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
     C=_pSpecFlowConcs[i]->GetValue(t+tstep);                             //mg/L or C
     if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
     else                { C*=LITER_PER_M3; } //mg/m3
+    //TMP DEBUG - DOES NOT HANDLE ISOTOPES PROPERLY !!!
+    ExitGracefullyIf(_type==ISOTOPE,"GetMassAddedFromInflowSources: cannot handle isotopes",BAD_DATA);
     mass+=0.5*Q*C*tstep;  //[mg] or [MJ]
 
     if(t>0) {

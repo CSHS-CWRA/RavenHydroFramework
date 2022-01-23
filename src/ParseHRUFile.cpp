@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -1429,7 +1429,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       //:SluiceGate [name] [bottomelev] [width] [raisedheight] [coeff] [numgates]
       if(Options.noisy) { cout << ":SluiceGate" << endl; }
       name=s[1]; 
-      CSluiceGate *pCurve=new CSluiceGate(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]),s_to_d(s[6]));
+      CSluiceGate *pCurve=new CSluiceGate(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]),s_to_i(s[6]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
     }
     //----------------------------------------------------------------------------------------------
@@ -1437,11 +1437,8 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       //:Orifice [name] [bottomelev] [diameter] [coeff] [numopenings]
       if(Options.noisy) { cout << ":Orifice" << endl; }
       name=s[1]; 
-      COrifice *pCurve=new COrifice(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]));
+      COrifice *pCurve=new COrifice(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_i(s[5]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
-
-      cout << " Orifice updated, nSDs is " << to_string(nSDs) << " and pCurve->GetName())" << to_string(pCurve->GetName()) << endl; // xxx
-
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":BasicPump")) {

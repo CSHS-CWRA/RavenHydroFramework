@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -1110,8 +1110,7 @@ struct time_struct
 //
 enum calendars
 {
-  CALENDAR_STANDARD,
-  CALENDAR_GREGORIAN,
+  CALENDAR_GREGORIAN, //same as STANDARD
   CALENDAR_PROLEPTIC_GREGORIAN,
   CALENDAR_365_DAY, //=NO_LEAP
   CALENDAR_360_DAY,

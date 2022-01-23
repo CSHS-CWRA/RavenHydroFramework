@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ForcingGrid.h"
@@ -305,7 +305,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
     // dimension t = number of time steps in NetCDF file
     retval = nc_inq_dimid(ncid,_DimNames[2].c_str(),&dimid_t);   HandleNetCDFErrors(retval);
-    retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval);
+    retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval); //this should also be able to handle UNLIMITED time dimension
     _GridDims[2] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
   }
   else {
@@ -1272,6 +1272,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
 
   _nChunk    = int(ceil((Options.duration/_interval)/_ChunkSize));                      // total number of chunks
   
+  if (Options.noisy){cout<<"Finished SetIdxNonZeroGridCells routine, # of non-zero weighted cells: "<<_nNonZeroWeightedGridCells<<endl;}
   /*cout<<"ntime: "<<ntime<<endl;
   cout <<"NON-ZERO: "<<_nNonZeroWeightedGridCells<<endl;
   cout<<"CHUNK SIZE: "<<_ChunkSize<<endl;
@@ -1570,9 +1571,9 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief sets one entry of _aElevation[CellID] 
-///
-/// \param stat_ID [in] cell ID/stationID in NetCDF (from 0 to _nNonZeroWeightedGridCells-1)
-/// \param weight [in] elevation of cell in NetCDF
+//
+/// \param cellID [in] cell ID/stationID in NetCDF (from 0 to ncells-1)
+/// \param elev [in] elevation of cell in NetCDF
 
 void   CForcingGrid::SetStationElevation(const int CellID,const double &elev) 
 {
@@ -1581,14 +1582,15 @@ void   CForcingGrid::SetStationElevation(const int CellID,const double &elev)
   else       { ncells = _GridDims[0]; }
 
   if((CellID<0) || (CellID>=ncells)) {
-    ExitGracefully("CForcingGrid: SetStationElevation: invalid cell/station identifier (likely in :StationElevationsByAttribute command)",BAD_DATA);
+    ExitGracefully("CForcingGrid: SetStationElevation: invalid cell/station identifier (likely in :StationElevationsByAttribute or ByIdx command)",BAD_DATA);
   }
-  if(_aElevation==NULL) {
+  if(_aElevation==NULL) { 
     _aElevation=new double[_nNonZeroWeightedGridCells];
     for(int i=0;i<_nNonZeroWeightedGridCells;i++) { _aElevation[i]=0.0; }
   }
-  
-  _aElevation[_CellIDToIdx[CellID]]=elev;
+  if (_CellIDToIdx[CellID]!=DOESNT_EXIST){ // only assign elevations to cells used by model (i.e., ones with non-zero weights)
+    _aElevation[_CellIDToIdx[CellID]]=elev;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////

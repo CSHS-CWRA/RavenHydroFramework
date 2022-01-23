@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------
 Master Transport/Tracer class
 coordinates information about constituent storage
@@ -11,6 +11,7 @@ coordinates information about constituent storage
 #include "Transport.h"
 #include "HeatConduction.h"
 #include "EnergyTransport.h"
+#include "IsotopeTransport.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport constructor
@@ -427,7 +428,7 @@ double CTransportModel::GetConcentration(const int k,const int sv_index) const
   int       c,j;
   m_to_cj(m,c,j);
 
-  return _pConstitModels[c]->CalculateConcentration(mass,vol);
+  return _pConstitModels[c]->CalculateReportingConcentration(mass,vol);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
@@ -451,6 +452,9 @@ void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_pass
   if (typ==ENTHALPY){
     _pEnthalpyModel=new CEnthalpyModel(pModel,_pTransModel,name,_nConstituents);
     pConstitModel=_pEnthalpyModel;
+  }
+  else if (typ == ISOTOPE) {
+    pConstitModel=new CIsotopeModel(pModel,_pTransModel,name,_nConstituents);
   }
   else {
     pConstitModel=new CConstituentModel(pModel,_pTransModel,name,typ,is_passive,_nConstituents);

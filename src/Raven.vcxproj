@@ -800,6 +800,7 @@
     <ClInclude Include="MFUSGpp.h" />
     <ClInclude Include="RiverReach.h" />
     <ClInclude Include="RobinInterface.h" />
+    <ClInclude Include="StageDischargeRelations.h" />
     <ClInclude Include="SurfaceEnergyExchange.h" />
     <ClInclude Include="ForcingGrid.h" />
     <ClInclude Include="Forcings.h" />

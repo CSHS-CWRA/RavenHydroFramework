@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  Copyright (c) 2008-2021 the Raven Development Team
+///  Copyright (c) 2008-2022 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -280,12 +280,10 @@ bool IsLeapYear(const int year, const int calendar)
 
     // other calendars 
     if ((calendar == CALENDAR_JULIAN ||
-         calendar == CALENDAR_STANDARD ||
          calendar == CALENDAR_GREGORIAN ) &&
         (year % 4 == 0)) {
       leap = true;
-      if ((calendar == CALENDAR_STANDARD ||
-	         calendar == CALENDAR_GREGORIAN) &&
+      if ((calendar == CALENDAR_GREGORIAN) &&
 	         (year % 100 == 0) && (year % 400 != 0) && (year > 1583)) {
 	      leap = false;
       }
@@ -673,7 +671,7 @@ void AddTime(const double jul_day1,const int year1,const double &daysadded,const
   // while the final time is after, one has to add additional 10 days
   // because in this calendar the day following 4 October 1582 is 15 October 1582 (there are 10 days missing)
   // --> THIS is why people usually use the Proleptic Gregorian calendar :)
-  if ((calendar == CALENDAR_STANDARD || calendar == CALENDAR_GREGORIAN) &&
+  if ((calendar == CALENDAR_GREGORIAN) &&
       ((year1 == 1582 && jul_day1 <= 277) || (year1 < 1582)) &&
       ((year_out > 1582) || ((year_out == 1582) && (jul_day_out >= 278)))) {
 
@@ -701,7 +699,7 @@ int StringToCalendar(string cal_chars)
 {
   string str=StringToUppercase(cal_chars);
   if (strcmp("STANDARD", str.c_str()) == 0) {
-    return CALENDAR_STANDARD;
+    return CALENDAR_GREGORIAN;
   }
   else if (strcmp("GREGORIAN", str.c_str()) == 0) {
     return CALENDAR_GREGORIAN;

@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------
 CIsotopeModel routines related to isotope transport
 ----------------------------------------------------------------*/
@@ -12,10 +12,15 @@ string FilenamePrepare(string filebase,const optStruct& Options); //Defined in S
 //////////////////////////////////////////////////////////////////
 /// \brief isotope model constructor
 //
-CIsotopeModel::CIsotopeModel(CModel* pMod,CTransportModel* pTMod,string name,const int c, const iso_type iso)
+CIsotopeModel::CIsotopeModel(CModel* pMod,CTransportModel* pTMod,string name,const int c)
   :CConstituentModel(pMod,pTMod,name,ISOTOPE,false,c)
 {
-  _isotope=iso;
+  _isotope=ISO_O18;
+  if      (name=="18O"){_isotope=ISO_O18;}
+  else if (name=="2H" ){_isotope=ISO_H2;}
+  else {
+    ExitGracefully("CIsotopeModel constructor: Invalid isotope name",BAD_DATA_WARN);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -37,11 +42,33 @@ void CIsotopeModel::Initialize(const optStruct& Options)
 /// \param M [in] mass [mg/m2] 
 /// \param V [in] volume [mm]
 //
-double CIsotopeModel::GetConcentration(const double& mass,const double& vol)
+double CIsotopeModel::CalculateReportingConcentration(const double& mass,const double& vol) const
 {
-  double C=CConstituentModel::CalculateConcentration(mass,vol);
-  return ConcToComposition(C);
+  if(fabs(vol)<1e-6) {return 0;}
+  double C=CConstituentModel::CalculateReportingConcentration(mass,vol); //mg/L
+  return ConcToComposition(C); //mg/L-> o/oo
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns outflow composition of isotope in subbasin p at current point in time
+/// \notes only used for reporting; calculations exclusively in terms of mass/energy
+/// \param p [in] subbasin index 
+//
+double CIsotopeModel::GetOutflowConcentration(const int p) const
+{
+  double C=CConstituentModel::GetOutflowConcentration(p); //mg/L
+  if (C==0.0){return 0.0;}
+  return ConcToComposition(C); //mg/L-> o/oo
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Converts basic composition units [o/oo] to [mg/mm/m2] 
+/// \param C [in] composition, in o/oo
+/// \returns concentration, in mg/mm/m2
+//
+double CIsotopeModel::ConvertConcentration(const double &C) const
+{
+  return CompositionToConc(C)*LITER_PER_M3/MM_PER_METER; //[o/oo]->[mg/mm-m2]
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns advection correction factor for isotope
 /// handles enrichment factor for evaporating waters 
@@ -52,8 +79,14 @@ double CIsotopeModel::GetConcentration(const double& mass,const double& vol)
 /// 
 double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& Cs) const
 {  
-  sv_type fromType=_pModel->GetStateVarType(iFromWater);
-  sv_type toType  =_pModel->GetStateVarType(iToWater);
+  sv_type fromType,toType;
+
+  fromType=_pModel->GetStateVarType(iFromWater);
+  toType  =_pModel->GetStateVarType(iToWater);
+
+  if (iFromWater==DOESNT_EXIST){ //special flag for reservoir->atmosphere exchange
+
+  }
 
   if(toType==ATMOSPHERE) // handles all enrichment due to evaporation
   {
@@ -68,6 +101,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     double T=pHRU->GetForcingFunctions()->temp_ave+ZERO_CELSIUS; //[K]
     
     //TMP DEBUG - this should not be this hard. Should have a _pTransModel->GetConcentration(k,c,ATMOS_PRECIP,m=0);
+    //ATMOS_PRECIP should be a dirichlet condition!
     int iAtmPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
     int m         =_pTransModel->GetLayerIndex(_constit_index,iAtmPrecip);
     int i         =_pModel->GetStateVarIndex(CONSTITUENT,m);
@@ -113,6 +147,10 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
 
     double C_E=CompositionToConc(dE);
     double C_L=CompositionToConc(dL);
+
+    //cout <<"C_E, C_L"<< C_E<<" "<<C_L<<endl;
+    //return 1.0; //TMP DEBUG
+    if (C_L==0.0){return 1.0;} 
     return min(C_E/C_L,1.0);
   }
 

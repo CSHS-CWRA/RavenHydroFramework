@@ -2943,6 +2943,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (is_tracer){ctype=TRACER;}
       else          {ctype=AQUEOUS;}
       if(!strcmp(s[1],"TEMPERATURE")) { ctype=ENTHALPY; }
+      if(!strcmp(s[1],"18O")        ) { ctype=ISOTOPE;  }
+      if(!strcmp(s[1],"2H")         ) { ctype=ISOTOPE;  }
       pModel->GetTransportModel()->AddConstituent(s[1],ctype,is_passive);
 
       pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
@@ -2980,22 +2982,28 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);
       if (i_stor != DOESNT_EXIST){
-        int kk = DOESNT_EXIST;
-        if (Len > 4){
-          CHRUGroup *pSourceGrp;
-          pSourceGrp = pModel->GetHRUGroup(s[4]);
-          if (pSourceGrp == NULL){
-            ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration/:FixedTemperature command in .rvi file", BAD_DATA_WARN);
-            break;
-          }
-          else{
-            kk = pSourceGrp->GetGlobalIndex();
-          }
-        }
-
         int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        int add=0;
+        if (pModel->GetTransportModel()->GetConstituentModel(c)->GetType()==ISOTOPE){
+          add=1;
+        }
         if(c!=DOESNT_EXIST) {
-          pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,s_to_d(s[3]));
+          int kk = DOESNT_EXIST;
+          if (Len > 4+add){
+            CHRUGroup *pSourceGrp;
+            pSourceGrp = pModel->GetHRUGroup(s[4+add]);
+            if (pSourceGrp == NULL){
+              ExitGracefully("Invalid HRU Group name supplied in :FixedConcentration/:FixedTemperature command in .rvi file", BAD_DATA_WARN);
+              break;
+            }
+            else{
+              kk = pSourceGrp->GetGlobalIndex();
+            }
+          }
+        
+          double C2=s_to_d(s[3]);
+          if ((add==1) && (Len>=5)){C2=s_to_d(s[4]);} // for isotope
+          pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,s_to_d(s[3]),C2);
         }
         else {
           ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentration/:FixedTemperature command in .rvi file",BAD_DATA_WARN);

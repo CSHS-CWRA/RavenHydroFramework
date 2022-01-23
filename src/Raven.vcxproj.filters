@@ -602,6 +602,9 @@
     <ClInclude Include="MassLoading.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
+    <ClInclude Include="StageDischargeRelations.h">
+      <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc">

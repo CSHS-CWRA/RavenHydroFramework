@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   
-  Options.version="3.1.5";
+  Options.version="3.5";
 #ifdef _NETCDF_ 
   Options.version+=" w/ netCDF";
 #endif

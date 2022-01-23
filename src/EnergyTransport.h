@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ENERGY_TRANSPORT_H
@@ -28,8 +28,9 @@ public:/*-------------------------------------------------------*/
   CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,const int c);
   ~CEnthalpyModel();
 
-  double CalculateConcentration(const double &M,const double &V) const;
-  double GetOutflowConcentration(const int p) const;
+  double CalculateReportingConcentration(const double &M,const double &V) const;
+  double GetOutflowConcentration        (const int p) const;
+  double ConvertConcentration           (const double &Cs) const; 
 
   //Accessors specific to Enthalpy Transport
   double GetIceContent           (const double *state_vars, const int iWater) const;

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------
 CEnthalpyModel routines related to energy/enthalpy transport
 ----------------------------------------------------------------*/
@@ -33,12 +33,24 @@ CEnthalpyModel::~CEnthalpyModel()
 /// \param M [in] energy in [MJ/m2]
 /// \param V [in] volume in mm
 //
-double CEnthalpyModel::CalculateConcentration(const double &M,const double &V) const 
+double CEnthalpyModel::CalculateReportingConcentration(const double &M,const double &V) const 
 {
   if(fabs(V)>1e-6) {     
     return ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER);  //[MJ/m3]->[C]
   }
   return 0.0;// JRC: should this default to zero? or NA?
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Converts basic energy units [deg C] to [mJ/mm/m2] 
+/// \param C [in] composition, in o/oo
+/// \returns concentration, in mJ/mm/m2
+//
+double CEnthalpyModel::ConvertConcentration(const double &T) const
+{
+    //specified in C, convert to MJ/m2
+    double pctfroz=0.0;
+    if (T<0.0){pctfroz=1.0;} //treats all 0 degree water as unfrozen
+    return ConvertTemperatureToVolumetricEnthalpy(T,pctfroz)/MM_PER_METER; //[C]->[MJ/m3]*[M/mm]=[MJ/mm-m2]
 }
 
 //////////////////////////////////////////////////////////////////
@@ -140,15 +152,15 @@ double CEnthalpyModel::GetIceContent(const double* state_vars,const int iWater) 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculate volumetric enthalpy for Dirichlet condition in storage compartment 
 /// \param pHRU - pointer to the HRU of interest
-/// \param Cs - dirichlet temperature (or special flag -9999)
+/// \param T - dirichlet temperature (or special flag -9999)
 //  \returns volumetric enthalpy, h, in MJ/mm-m2
 //
-double CEnthalpyModel::GetDirichletEnthalpy(const CHydroUnit* pHRU,const double& Cs) const
+double CEnthalpyModel::GetDirichletEnthalpy(const CHydroUnit* pHRU,const double& T) const
 {
-  if(Cs!=DIRICHLET_TEMP) 
+  if(T!=DIRICHLET_TEMP) 
   {
     double pctFroz=0.0; //assumes liquid water for flows (reasonable)
-    return ConvertTemperatureToVolumetricEnthalpy(Cs,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
+    return ConvertTemperatureToVolumetricEnthalpy(T,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
   }
   else // Special temperature condition - forces temp=air temp 
   { 

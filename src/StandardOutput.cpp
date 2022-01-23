@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
 
   Includes CModel routines for writing output headers and contents:
     CModel::CloseOutputStreams()
@@ -491,13 +491,13 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     if (_FORCINGS.fail()){
       ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
     }
-    _FORCINGS<<"time [d],date,hour,day_angle,";
+    _FORCINGS<<"time [d], date, hour, day_angle,";
     _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
-    _FORCINGS<<" air dens. [kg/m3], air pres. [KPa], rel hum. [-],";
-    _FORCINGS<<" cloud cover [-],";
-    _FORCINGS<<" ET radiation [MJ/m2/d], SW radiation [MJ/m2/d], net SW radiation [MJ/m2/d], LW radiation [MJ/m2/d], wind vel. [m/s],";
-    _FORCINGS<<" PET [mm/d], OW PET [mm/d],";
-    _FORCINGS<<" daily correction [-], potential melt [mm/d]";
+    _FORCINGS<<" air_density [kg/m3], air_pressure [KPa], rel_humidity [-],";
+    _FORCINGS<<" cloud_cover [-],";
+    _FORCINGS<<" ET_radiation [MJ/m2/d], SW_radiation [MJ/m2/d], net_SW_radiation [MJ/m2/d], LW_radiation [MJ/m2/d], wind_speed [m/s],";
+    _FORCINGS<<" PET [mm/d], OW_PET [mm/d],";
+    _FORCINGS<<" daily_correction [-], potential_melt [mm/d]";
     _FORCINGS<<endl;
   }
 

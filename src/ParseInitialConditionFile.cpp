@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -299,7 +299,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     { /* :HRUStateVariableTable (formerly :IntialConditionsTable)
            :Attributes {list of state variables}
            :Units {list of units}
-           {HRUID, SV1,SV2,SV3} x nHRUs
+           {HRUID, SV1,SV2,SV3,...} x (<=)nHRUs
+           OR
+           {HRUGroup, SV1,SV2,SV3,...}
          :EndHRUStateVariableTable
          - sets unique IC values for different HRUs and one or multiple state variables
 
@@ -308,14 +310,18 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
          :InitialTemperatureTable
            :Attributes {list of WATER state variables}
            :Units {list of units}
-           {HRUID, T1,T2,T3} x nHRUs
+           {HRUID, T1,T2,T3,...} x (<=)nHRUs
+           OR
+           {HRUGroup, T1,T2,T3,...}
          :EndInitialTemperatureTable
 
          or 
          :InitialConcentrationTable [constituent name]
            :Attributes {list of WATER state variables}
            :Units {list of units}
-           {HRUID, T1,T2,T3} x nHRUs
+           {HRUID, C1,C2,C3,...} x (<=)nHRUs
+            OR
+           {HRUGroup, C1,C2,C3,...}
          :EndInitialConcentrationTable
       */
       if      ((concname==""           ) && (Options.noisy)) {cout <<"   Reading HRU Initial Condition Table..."<<endl;}
@@ -380,9 +386,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       }
       
       // Read body of Table -----------------------------------------------------
-      int parsedHRUs=0;
       int HRUID;
       CHydroUnit *pHRU;
+      CHRUGroup *pHRUGrp;
       while ( (Len==0) || 
               ((strcmp(s[0],":EndHRUStateVariableTable")) && 
                (strcmp(s[0],":EndInitialTemperatureTable")) &&
@@ -398,39 +404,48 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         else //row in SV table
         {
           ExitGracefullyIf(Len!=(nSV+1),
-            "Parse :HRUStateVariableTable: incorrect number of columns in HRU State Variable Table row (.rvc file)",BAD_DATA);
+            "Parse :HRUStateVariableTable: incorrect number of columns in initial conditions table row (.rvc file)",BAD_DATA);
 
-          ExitGracefullyIf(parsedHRUs>=pModel->GetNumHRUs(),
-            "Parse: :HRUStateVariableTable: # of rows more than # of HRUs (.rvc file)",BAD_DATA_WARN);
+          pHRUGrp=pModel->GetHRUGroup(s[0]);
 
           HRUID=s_to_i(s[0]);
           pHRU=pModel->GetHRUByID(HRUID);
-          if(pHRU==NULL){
-            string warn="HRU ID ["+to_string(HRUID)+"] in .rvc file not found in model";
+          
+          if((pHRU==NULL) && (pHRUGrp==NULL)){
+            string warn="HRU ID or HRU Group ["+to_string(HRUID)+"] in .rvc initial conditions table not found in model";
             WriteWarning(warn,Options.noisy);
           }
           else{
             for(i=0;i<nSV;i++){
               if(SVinds[i]!=DOESNT_EXIST){
-                if(c==DOESNT_EXIST) {
-                  pHRU->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
+                if(c==DOESNT_EXIST) { //not concentration/temperature
+                  if (pHRU!=NULL){
+                    pHRU->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
+                  }
+                  else {
+                    for (int kl = 0; kl < pHRUGrp->GetNumHRUs(); kl++) {
+                      pHRUGrp->GetHRU(kl)->SetStateVarValue(SVinds[i],s_to_d(s[i+1]));
+                    }
+                  }
                 }
-                else{
-                  int      k=pHRU->GetGlobalIndex();
+                else{ //concentration/temperature
                   double val=s_to_d(s[i+1]);
                   int      m=pModel->GetStateVarLayer(SVinds[i]);
-                  //cout<<" i, SVind, c, m:"<<i<<","<<SVinds[i]<<"," <<c<<","<<m<<endl;
-                  SetInitialStateVar(pModel,SVinds[i],CONSTITUENT,m,k,val);
+                  if (pHRU != NULL) {
+                    SetInitialStateVar(pModel,SVinds[i],CONSTITUENT,m,pHRU->GetGlobalIndex(),val);                    
+                  }
+                  else{
+                    for (int kl = 0; kl < pHRUGrp->GetNumHRUs(); kl++) {
+                      SetInitialStateVar(pModel,SVinds[i],CONSTITUENT,m,pHRUGrp->GetHRU(kl)->GetGlobalIndex(),val);
+                    }
+                  }
                 }
               }
             }
-            parsedHRUs++;
           }
         }//if Iscomment...
       }//end while 
-      if(parsedHRUs!=pModel->GetNumHRUs()){
-        WriteWarning("Parse: :HRUStateVariableTable: number of HRUs in .rvc file not equal to that in model",Options.noisy);
-      }
+      
       delete [] SVinds;
       break;
     }
@@ -844,19 +859,13 @@ void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const 
     int   iStor=pModel->GetTransportModel()->GetWaterStorIndexFromLayer(m);
     double  vol=pModel->GetHydroUnit(k)->GetStateVarValue(iStor); //[mm] Assumes this has already been initialized (this will be true for .rvc file)
     
-    if(pModel->GetTransportModel()->GetConstituentModel(c)->GetType()==ENTHALPY) 
-    {
-      //specified in C, convert to MJ/m2
-      double pctfroz=0.0;
-      if (val<0.0){pctfroz=1.0;} //treats all 0 degree water as unfrozen
-      double energy=ConvertTemperatureToVolumetricEnthalpy(val,pctfroz)*vol/MM_PER_METER; //[C]->[MJ/m3]*[m]=[MJ/m2]
-      pModel->GetHydroUnit(k)->SetStateVarValue(SVind,energy);
-    }
-    else 
-    {
-      //specified in mg/L, convert to mg/m2
-      double mass=val*LITER_PER_M3*vol/MM_PER_METER; //[mg/L]->[mg/L]*[L/m3]*[mm]/[mm/m]=[mg/m2]
-      pModel->GetHydroUnit(k)->SetStateVarValue(SVind,mass);
-    }
+    double conc=pModel->GetTransportModel()->GetConstituentModel(c)->ConvertConcentration(val); //(mg/L or o/oo or C) -> mg/mm-m2 or MJ/mm-m2
+    double mass=conc*vol; //mg/mm-m2*mm ->mg/m2
+    //specified in mg/L, convert to mg/m2
+    // OR
+    // specified in o/oo, convert to mg/m2
+    // OR
+    // specified in degC, convert to mJ/m2
+    pModel->GetHydroUnit(k)->SetStateVarValue(SVind,mass);
   }
 }
