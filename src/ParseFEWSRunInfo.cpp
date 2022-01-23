@@ -140,7 +140,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       retval = nc_get_att_text(ncid,varid_props,"BlockRavenWarnings",boolean);       HandleNetCDFErrors(retval);// read attribute text
       boolean[att_len] = '\0';// add string determining character
 
-      g_suppress_warnings=(boolean=="true");
+      g_suppress_warnings=(!strcmp(boolean,"true"));
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenWarnings from NetCDF: "<<g_suppress_warnings<<endl; }
       delete[] boolean;
     }
@@ -154,7 +154,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       retval = nc_get_att_text(ncid,varid_props,"BlockRavenCustomOutput",boolean);       HandleNetCDFErrors(retval);// read attribute text
       boolean[att_len] = '\0';// add string determining character
 
-      if (boolean=="true") {
+      if (!strcmp(boolean,"true")) {      
         pModel->DeleteCustomOutputs();
       }
       if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(boolean=="true")<<endl; }
@@ -170,7 +170,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       retval = nc_get_att_text(ncid, varid_props, "NoisyMode", boolean);       HandleNetCDFErrors(retval);// read attribute text
       boolean[att_len] = '\0';// add string determining character
 
-      Options.noisy = (boolean == "true");
+      Options.noisy = (!strcmp(boolean,"true"));
 
       if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;
@@ -185,7 +185,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       retval = nc_get_att_text(ncid, varid_props, "SilentMode", boolean);       HandleNetCDFErrors(retval);// read attribute text
       boolean[att_len] = '\0';// add string determining character
 
-      Options.silent = (boolean == "true");
+      Options.silent = (!strcmp(boolean,"true"));
       if (Options.silent) { Options.noisy = false; }
       
       if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (boolean == "true") << endl; }
@@ -215,7 +215,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       retval = nc_get_att_text(ncid,varid_props,"AssimilateStreamflow",boolean);       HandleNetCDFErrors(retval);// read attribute text
       boolean[att_len] = '\0';// add string determining character
 
-      Options.assimilate_flow = (boolean == "true");
+      Options.assimilate_flow = (!strcmp(boolean,"true"));
 
       if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (boolean == "true") << endl; }
       delete[] boolean;

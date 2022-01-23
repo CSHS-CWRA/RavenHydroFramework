@@ -254,7 +254,7 @@ const double  TIME_CORRECTION         =0.0001;                                  
 const double  DEFAULT_MAX_REACHLENGTH =10000.0;                                 ///< [km]     very large maximum reach length (defaults to single segment per reach)
 
 //Special symbols
-const char  DEG_SYMBOL                ='°';                                     ///< degree symbol, ° (or \0xB0)
+const char  DEG_SYMBOL                ='o';                                     ///< degree symbol, ° (or \0xB0)
 
 //*****************************************************************
 //Exit Strategies

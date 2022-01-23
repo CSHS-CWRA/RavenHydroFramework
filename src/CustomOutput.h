@@ -55,8 +55,8 @@ enum agg_stat
   AGG_RANGE,     ///< Range of data set
   AGG_95CI,      ///< 5% and 95% quantiles of data set
   AGG_QUARTILES, ///< Quartiles of data set
-  AGG_HISTOGRAM, ///< Full histogram of data set
-  AGG_INT_AVG_DAY///< Average of julian day values  (not currently implemented)
+  AGG_HISTOGRAM  ///< Full histogram of data set
+  //AGG_INT_AVG_DAY///< Average of julian day values  (not currently implemented)
 };
 
 ///////////////////////////////////////////////////////////////////////

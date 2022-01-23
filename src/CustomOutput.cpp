@@ -158,6 +158,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case AGG_95CI:                  _statStr="95%"; break;
   case AGG_QUARTILES:             _statStr="Quartiles"; break;
   case AGG_HISTOGRAM:             _statStr="Histogram"; break;
+    
   }
 
 

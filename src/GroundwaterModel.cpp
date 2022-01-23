@@ -730,7 +730,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 
   //-- This flux should never be below zero, right? Something to think about [checking for]
   //-- Distribute flow among HRU cells
-  for (int j=0; j< HRUnodes.size(); j++) 
+  for (unsigned int j=0; j< HRUnodes.size(); j++) 
   {
     // Correct to topmost active node
     n           = HRUnodes[j];

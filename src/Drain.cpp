@@ -236,7 +236,7 @@ void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
   //-- Loop over drain nodes in HRU
   HRU_nodes = getHRUnodes(HRUid);
 
-  for (int n=0; n< HRU_nodes.size(); n++) 
+  for (unsigned int n=0; n< HRU_nodes.size(); n++) 
   {
     index = _mNodeIndex.at(n);  // location of node in arrays
 
