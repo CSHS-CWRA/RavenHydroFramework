@@ -108,10 +108,11 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":HRUStateVariableTable"       )){code=4; concname="";}
     else if  (!strcmp(s[0],":EndHRUStateVariableTable"    )){code=-2; }
     else if  (!strcmp(s[0],":InitialConcentrationTable"   )){code=4; concname=s[1]; }
-    else if  (!strcmp(s[0],":EndInitialConcentrationTable")){code=-2;}
+    else if  (!strcmp(s[0],":EndInitialConcentrationTable")){code=-2; }
     else if  (!strcmp(s[0],":InitialTemperatureTable"     )){code=4; concname="TEMPERATURE";}
-    else if  (!strcmp(s[0],":EndInitialTemperatureTable"  )){code=-2;}
-    
+    else if  (!strcmp(s[0],":EndInitialTemperatureTable"  )){code=-2; }
+    else if  (!strcmp(s[0],":InitialConditions"           )){code=5;  }//TO DEPRECATE
+    else if  (!strcmp(s[0],":EndInitialConditions"        )){code=-2; }//TO DEPRECATE
     else if  (!strcmp(s[0],":BasinStateVariables"         )){code=6;  }
     else if  (!strcmp(s[0],":EndBasinStateVariables"      )){code=-2; }
     else if  (!strcmp(s[0],":BasinTransportVariables"     )){code=12; concname=s[1];}
@@ -447,6 +448,78 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       }//end while 
       
       delete [] SVinds;
+      break;
+    }
+    case(5):  //----------------------------------------------
+    { /* \todo[clean]: make this command obsolete - retained SOLELY for backward compatibility
+        ":InitialConditions" {SV_NAME}
+        {v1,v2,v3,v4} x nHRUs
+        :EndInitialConditions
+      */
+	    WriteWarning(":InitialConditions command: this command will be deprecated. Please use :HRUStateVariableTable instead.",Options.noisy);
+      if (Len<2){pp->ImproperFormat(s);}
+      else{
+        if (Options.noisy) {cout <<"   Reading Initial Conditions for "<<s[1]<<endl;}
+        string stateVariable= s[1];
+        sv_type SVtype;
+        int     SVlayer=0;
+        SVtype=CStateVariable::StringToSVType(s[1],SVlayer,false);
+        if (SVtype==UNRECOGNIZED_SVTYPE){
+          WriteWarning("Unrecognized State Variable type " + string(s[1]) +" in :InitialConditions command",Options.noisy);
+          break;
+        }
+        int nHRUs=pModel->GetNumHRUs();
+        double *v=new double [nHRUs];
+        int count =0;
+        while (count<pModel->GetNumHRUs())
+        {
+          if(!strcmp(s[0],":EndInitialConditions"))
+          { break; }
+          else
+          {
+            pp->Tokenize(s,Len);
+            if      (IsComment(s[0], Len)){}//comment line
+            else if (!strcmp(s[0],":EndInitialConditions")){}//done
+            else
+            {
+              for (int i=0;i<Len;i++)
+              {
+                if (count<nHRUs){
+                  v[count]=s_to_d(s[i]);
+                }
+                count++;
+              }
+            }
+          }
+
+          int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
+          if (iSV!=DOESNT_EXIST){
+            if ((SVtype!=ATMOS_PRECIP) && (SVtype!=ATMOSPHERE)){//initial conditions of cumulative precip & evap ignored, left at zero
+              for (int k=0;k<pModel->GetNumHRUs();k++){
+                pModel->GetHydroUnit(k)->SetStateVarValue(iSV,v[k]);
+              }
+            }
+          }
+        }/*end while*/
+        if (count!=nHRUs)
+        {
+          WriteWarning("Initial condition count is incorrect for state variable \""+(stateVariable)+"\"",Options.noisy);
+          //zero out rest 
+          int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
+          if(iSV!=DOESNT_EXIST){
+            if((SVtype!=ATMOS_PRECIP) && (SVtype!=ATMOSPHERE)){//initial conditions of cumulative precip & evap ignored, left at zero
+              for(int k=count;k<pModel->GetNumHRUs();k++){
+                pModel->GetHydroUnit(k)->SetStateVarValue(iSV,0);
+              }
+            }
+          }
+        }
+        delete [] v;
+        int iSV=pModel->GetStateVarIndex(SVtype,SVlayer);
+        if (iSV==DOESNT_EXIST){
+          WriteWarning("Unused state Variable " + string(s[1]) +" in :InitialConditions command will be ignored",Options.noisy);
+        }
+      }
       break;
     }
     case(6):  //----------------------------------------------
