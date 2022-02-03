@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -298,6 +298,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_demandfile        =false;
   Options.write_simpleout         =false;
   Options.write_constitmass       =false;
+  Options.write_waterlevels       =false;
   Options.suppressICs             =false;
   Options.period_ending           =false;
   Options.period_starting         =false;
@@ -486,6 +487,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":HRUStorageOutput"          )){code=180;}//After corresponding DefineHRUGroup(s) command
     else if  (!strcmp(s[0],":WriteHRUStorageOutput"     )){code=180;}//After corresponding DefineHRUGroup(s) command
     else if  (!strcmp(s[0],":WriteSimpleOutput"         )){code=181;}
+    else if  (!strcmp(s[0],":WriteWaterLevels"          )){code=182;}
     //...
     //--------------------SYSTEM OPTIONS -----------------------
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
@@ -1503,33 +1505,9 @@ bool ParseMainInputFile (CModel     *&pModel,
         invalid=false;pDiag=NULL;
         int width = DOESNT_EXIST;
         string tmp = CStateVariable::SVStringBreak(s[i], width); //using other routine to grab width
-        if      (!strcmp(s[i],"NASH_SUTCLIFFE"     )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE);}
-        else if (!strcmp(s[i],"RMSE"               )){pDiag=new CDiagnostic(DIAG_RMSE);}
-        else if (!strcmp(s[i],"PCT_BIAS"           )){pDiag=new CDiagnostic(DIAG_PCT_BIAS);}
-        else if (!strcmp(s[i],"ABSERR"             )){pDiag=new CDiagnostic(DIAG_ABSERR);}
-        else if (!strcmp(s[i],"ABSMAX"             )){pDiag=new CDiagnostic(DIAG_ABSMAX);}
-        else if (!strcmp(s[i],"PDIFF"              )){pDiag=new CDiagnostic(DIAG_PDIFF);}
-        else if (!strcmp(s[i],"TMVOL"              )){pDiag=new CDiagnostic(DIAG_TMVOL);}
-        else if (!strcmp(s[i],"RCOEF"              )){pDiag=new CDiagnostic(DIAG_RCOEF);}
-        else if (!strcmp(s[i],"NSC"                )){pDiag=new CDiagnostic(DIAG_NSC);}
-        else if (!strcmp(s[i],"RSR"                )){pDiag=new CDiagnostic(DIAG_RSR);}
-        else if (!strcmp(s[i],"R2"                 )){pDiag=new CDiagnostic(DIAG_R2);}
-        else if (!strcmp(s[i],"CUMUL_FLOW"         )){pDiag=new CDiagnostic(DIAG_CUMUL_FLOW);}
-        else if (!strcmp(s[i],"LOG_NASH"           )){pDiag=new CDiagnostic(DIAG_LOG_NASH);}
-        else if (!strcmp(s[i],"KLING_GUPTA"        )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA);}
-        else if (!strcmp(s[i],"NASH_SUTCLIFFE_DER" )){pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_DER);}
-        else if (!strcmp(s[i],"RMSE_DER"           )){pDiag=new CDiagnostic(DIAG_RMSE_DER);}
-        else if (!strcmp(s[i],"KLING_GUPTA_DER"    )){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DER);}
-        else if (!strcmp(s[i],"KLING_GUPTA_DEVIATION")){pDiag=new CDiagnostic(DIAG_KLING_GUPTA_DEVIATION);}
-        else if (!strcmp(s[i],"MBF"                )){pDiag=new CDiagnostic(DIAG_MBF);}
-        else if (!strcmp(s[i],"R4MS4E"             )){pDiag=new CDiagnostic(DIAG_R4MS4E);}
-        else if (!strcmp(s[i],"RTRMSE"             )){pDiag=new CDiagnostic(DIAG_RTRMSE);}
-        else if (!strcmp(s[i],"RABSERR"            )){pDiag=new CDiagnostic(DIAG_RABSERR);}
-        else if (!strcmp(s[i],"PERSINDEX"          )){pDiag=new CDiagnostic(DIAG_PERSINDEX);}
-        else if (!strcmp(s[i],"NSE4"               )){pDiag=new CDiagnostic(DIAG_NSE4);}
-        else if (!tmp.compare("NASH_SUTCLIFFE_RUN")) {pDiag=new CDiagnostic(DIAG_NASH_SUTCLIFFE_RUN, width); }
-        else   {invalid=true;}
-        if (!invalid){
+        diag_type diag=StringToDiagnostic(tmp);
+        if (diag != DIAG_UNRECOGNIZED) {
+          pDiag=new CDiagnostic(diag,width);
           pModel->AddDiagnostic(pDiag);
         }
         else{
@@ -1916,6 +1894,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:WriteSimpleOutput*/
       if(Options.noisy) { cout << "Write Simple Output" << endl; }
       Options.write_simpleout=true;
+      break;
+    }
+    case(182):  //--------------------------------------------
+    {/*:WriteWaterLevels*/
+      if(Options.noisy) { cout << "Write Water Levels" << endl; }
+      Options.write_waterlevels=true;
       break;
     }
     case(199):  //--------------------------------------------

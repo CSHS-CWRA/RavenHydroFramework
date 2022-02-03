@@ -882,7 +882,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
   if (n!=nMeasurements){
     cout<<p->GetFilename()<<endl;
     cout << " n | nMeasurements " << n << " "<<nMeasurements<<endl;
-    ExitGracefully("CTimeSeries::Parse: Bad number of time series points",BAD_DATA);}
+    ExitGracefully("CTimeSeries::Parse: Insufficient number of time series points",BAD_DATA);}
 
   p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
   if(string(s[0]).substr(0,4)!=":End"){

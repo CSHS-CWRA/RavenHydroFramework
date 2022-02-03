@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -54,6 +54,7 @@ private:/*------------------------------------------------------*/
   long          _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
+  bool             _is_conduit;   ///< true if basin is 'conduit' basin, and shouldn't have HRUs
   bool             _assimilate;   ///< true if observed data in this basin should be assimilated.
   const CSubBasin    *_pDownSB;   ///< pointer to downstream subbasin instance
 
@@ -150,7 +151,8 @@ public:/*-------------------------------------------------------*/
             const CChannelXSect *pChan,         //Channel
             const double         reach_len,     //reach length [m]
             const double         Qreference,    //reference flow [m3/s]
-            const bool           gauged);       //if true, hydrographs are generated
+            const bool           gauged,        //if true, hydrographs are generated
+            const bool           is_conduit);   //to tag subbasin as conduit    
   ~CSubBasin();
 
   //Accessor functions
@@ -179,6 +181,7 @@ public:/*-------------------------------------------------------*/
   double               GetSnowCorrection    () const;
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
+  double               GetWaterLevel        () const;
   double               GetHyporheicFlux     () const;
   double               GetConvectionCoeff   () const;
   double               GetBedslope          () const;

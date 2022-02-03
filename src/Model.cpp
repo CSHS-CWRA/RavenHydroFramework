@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "EnergyTransport.h"
@@ -1824,7 +1824,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
     if(pval!=INDEX_NOT_FOUND) {return CLASS_GAUGE; }
   }
 
-  CSubBasin *pSB=new CSubBasin(0,"",this,-1,NULL,0,AUTO_COMPUTE,false); //fake basin (basins not yet created)
+  CSubBasin *pSB=new CSubBasin(0,"",this,-1,NULL,0,AUTO_COMPUTE,false,false); //fake basin (basins not yet created)
   pval=pSB->GetBasinProperties(param_str);
   if (pval!=INDEX_NOT_FOUND){pclass=CLASS_SUBBASIN;}
   delete pSB;
@@ -1981,6 +1981,11 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       int c=_pObservedTS[i]->GetConstitInd();
       int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
       value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
+    }
+    else if(datatype == "WATER_LEVEL")//=======================================
+    {
+      pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
+      value = pBasin->GetWaterLevel();
     }
     else if (svtyp!=UNRECOGNIZED_SVTYPE)//==========================================
     { //State variable

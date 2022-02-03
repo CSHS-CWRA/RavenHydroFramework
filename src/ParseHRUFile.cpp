@@ -31,6 +31,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   CSubBasin  *pSB;
   bool        ended=false;
   bool        in_ifmode_statement=false;
+  bool        is_conduit=false;
 
   ifstream    HRU;
   HRU.open(Options.rvh_filename.c_str());
@@ -49,7 +50,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
   if (Options.noisy){
     cout <<"======================================================"<<endl;
-    cout <<"Parsing HRU Input File "<< Options.rvh_filename <<"..."<<endl;
+    cout <<"Parsing RVH Input File "<< Options.rvh_filename <<"..."<<endl;
     cout <<"======================================================"<<endl;
   }
 
@@ -76,7 +77,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (in_ifmode_statement)                       {code=-6; }
     else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
-    else if  (!strcmp(s[0],":SubBasins"                )){code=1;  }
+    else if  (!strcmp(s[0],":SubBasins"                )){code=1;  is_conduit=false;}
+    else if  (!strcmp(s[0],":Conduits"                 )){code=1;  is_conduit=true;}
     else if  (!strcmp(s[0],":HRUs"                     )){code=2;  }
     else if  (!strcmp(s[0],":Reservoir"                )){code=3;  }
     else if  (!strcmp(s[0],":SubBasinProperties"       )){code=7;  }
@@ -145,22 +147,25 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(1):  //----------------------------------------------
     { /*
-        ":SubBasins"
+        ":SubBasins" or ":Conduits"
         {int ID , string (no spaces) name, int down_ID, string profile, double length [km], bool gauged,{optional double Qref}}x nSubBasins
         :EndSubBasins
-        -down_ID=-1 for basins not draining into other modeled basins
+        -down_ID=-1 for basins/conduits not draining into other modeled basins
         -profile can be 'NONE' for ROUTE_NONE or ROUTE_EXTERNAL option, but must be linked to actual profile otherwise
       */
-      if (Options.noisy) {cout <<"Subbasin data..."<<endl;}
+      if (Options.noisy) {cout <<"Subbasin or conduit data..."<<endl;}
+      bool done=false;
       if (Len!=1){pp->ImproperFormat(s);}
       else{
-        while (((Len==0) || (strcmp(s[0],":EndSubBasins"))) && (!end_of_file))
+        //while (((Len==0) || (strcmp(s[0],":EndSubBasins"))) && (!end_of_file))
+        while ( (!done) && (!end_of_file) )
         {
           end_of_file=pp->Tokenize(s,Len);
           if      (IsComment(s[0],Len))          {}//comment line
           else if (!strcmp(s[0],":Attributes"  )){}//ignored by Raven - needed for GUIs
           else if (!strcmp(s[0],":Units"       )){}//ignored by Raven - needed for GUIs
-          else if (!strcmp(s[0],":EndSubBasins")){}//done
+          else if (!strcmp(s[0],":EndSubBasins")){done=true;}
+          else if (!strcmp(s[0],":EndConduits" )){done=true;}
           else
           {
             if (Len<6){pp->ImproperFormat(s);}
@@ -168,20 +173,22 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             CChannelXSect const *pChan=NULL;
             pChan=CChannelXSect::StringToChannelXSect(string(s[3]));
             string error,error2;
-            error="Parse HRU File: Unrecognized Channel profile code ("+string(s[3])+") in SubBasins command";
-            error2="Parse HRU File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE or ROUTE_EXTERNAL";
+            error="Parse RVH File: Unrecognized Channel profile code ("+string(s[3])+") in :SubBasins or :Conduits command";
+            error2="Parse RVH File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE or ROUTE_EXTERNAL";
             ExitGracefullyIf((pChan==NULL) && (string(s[3])!="NONE") && (Options.routing!=ROUTE_NONE),error.c_str() ,BAD_DATA_WARN);
             ExitGracefullyIf((pChan==NULL) && (string(s[3])=="NONE") && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),error2.c_str(),BAD_DATA_WARN);
 
             if(!StringIsLong(s[0])){
-              error="Parse HRU File: Subbasin ID \""+string(s[0])+"\" must be unique integer or long integer";
+              error="Parse RVH File: Subbasin ID \""+string(s[0])+"\" must be unique integer or long integer";
               ExitGracefully(error.c_str(),BAD_DATA_WARN);
             }
            
             double length;
             length=AutoOrDouble(s[4]);
-            ExitGracefullyIf(length>2000,
-              "ParseHRUPropsFile: length of river greater than 1000km in :SubBasin command block. Units issue? Reach length should be provided in km.",BAD_DATA_WARN);
+            ExitGracefullyIf((length>2000) && (!is_conduit),
+              "ParseHRUPropsFile: length of river greater than 2000km in :SubBasins command block. Units issue? Reach length should be provided in km.",BAD_DATA_WARN);
+            ExitGracefullyIf((length>2000) && (!is_conduit),
+              "ParseHRUPropsFile: length of conduit greater than 2000km in :Conduits command block. Units issue? Conduit length should be provided in km.",BAD_DATA_WARN);
             if (length!=AUTO_COMPUTE){length*=M_PER_KM;}//convert to m from km
 
             bool gaged;
@@ -192,7 +199,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             else       {Qref=AUTO_COMPUTE;}
 
             pSB=NULL;
-            pSB=new CSubBasin(s_to_l(s[0]),s[1], pModel,s_to_l(s[2]),pChan,length,Qref,gaged);
+            pSB=new CSubBasin(s_to_l(s[0]),s[1], pModel,s_to_l(s[2]),pChan,length,Qref,gaged,is_conduit);
             ExitGracefullyIf(pSB==NULL,"ParseHRUPropsFile",OUT_OF_MEMORY);
             pModel->AddSubBasin(pSB);
           }
@@ -456,7 +463,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 }
               }
               if ((!found) && (ind2-ind1>1)){gaps=true;}
-              if((!found) && (ind2==ind2)) {
+              if((!found) && (ind1==ind2)) {
                 string warn="HRU ID "+to_string(ii)+" specified in :HRUGroup command for group "+pHRUGrp->GetName()+ " does not exist";
                 WriteWarning(warn.c_str(),Options.noisy);
               }

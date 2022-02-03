@@ -1043,10 +1043,11 @@ struct optStruct
   double           custom_interval;           ///< custom output interval (i.e., for generating 10-day interval outputs) 
   bool             write_forcings;            ///< true if ForcingFunctions.csv is written
   bool             write_mass_bal;            ///< true if WatershedMassEnergyBalance.csv is written
-  bool             write_gwhead;      		  ///< true if GWHead.csv is written
-  bool             write_gwflow;      		  ///< true if GWFlow.csv is written
+  bool             write_gwhead;      		    ///< true if GWHead.csv is written
+  bool             write_gwflow;      		    ///< true if GWFlow.csv is written
   bool             write_reservoir;           ///< true if ReservoirStages.csv is written
   bool             write_reservoirMB;         ///< true if ReservoirMassBalance.csv is written
+  bool             write_waterlevels;         ///< true if WaterLevels.csv is written
   bool             ave_hydrograph;            ///< true if average flows over timestep are reported in hydrograph output
   bool             write_exhaustiveMB;        ///< true if exhaustive mass balance diagnostics are written
   int              write_group_mb;            ///< index (kk) of HRU Group for MB writing, DOESNT_EXIST if not to be written

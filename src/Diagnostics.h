@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef _DIAGNOSTICS_H
 #define _DIAGNOSTICS_H
@@ -34,9 +34,12 @@ enum diag_type {
   DIAG_RTRMSE,
   DIAG_RABSERR,
   DIAG_PERSINDEX,
-  DIAG_NSE4
+  DIAG_NSE4,
+  DIAG_YEARS_OF_RECORD,
+  DIAG_UNRECOGNIZED
 };
 
+diag_type StringToDiagnostic(string distring);
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for time series comparison diagnostics

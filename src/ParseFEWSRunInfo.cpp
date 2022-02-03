@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -157,7 +157,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       if (!strcmp(boolean,"true")) {      
         pModel->DeleteCustomOutputs();
       }
-      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(boolean=="true")<<endl; }
+      if(Options.noisy) { cout<<"ParseRunInfoFile: read properties:BlockRavenCustomOutput from NetCDF: "<<(!strcmp(boolean,"true")) <<endl; }
       delete[] boolean;
     }
 
@@ -172,7 +172,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
 
       Options.noisy = (!strcmp(boolean,"true"));
 
-      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (boolean == "true") << endl; }
+      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:NoisyMode from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
       delete[] boolean;
     }
 
@@ -188,7 +188,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
       Options.silent = (!strcmp(boolean,"true"));
       if (Options.silent) { Options.noisy = false; }
       
-      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (boolean == "true") << endl; }
+      if (Options.noisy) { cout << "ParseRunInfoFile: read properties:SilentMode from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
       delete[] boolean;
     }
 
@@ -217,7 +217,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
 
       Options.assimilate_flow = (!strcmp(boolean,"true"));
 
-      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (boolean == "true") << endl; }
+      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:AssimilateStreamflow from NetCDF: " << (!strcmp(boolean,"true"))  << endl; }
       delete[] boolean;
     }
   }

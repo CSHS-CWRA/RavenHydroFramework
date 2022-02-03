@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -69,7 +69,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":RunNameFormat"))               { code=2; }
     else if(!strcmp(s[0],":ParameterDistributions"))      { code=10; }
     else if(!strcmp(s[0],":ObjectiveFunction"))           { code=11; }
-
+    //else if(!strcmp(s[0],":ForcingPerturbations"))       { code=12; }
 
     switch(code)
     {
@@ -182,27 +182,11 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       /*ObjectiveFunction READFROMFILE [filename] //LATER! */
       if(Options.noisy) { cout <<":ObjectiveFunction"<<endl; }
 
-      diag_type diag=DIAG_NASH_SUTCLIFFE;
-      if     (!strcmp(s[2],"NASH_SUTCLIFFE"    )) { diag=DIAG_NASH_SUTCLIFFE; }
-      else if(!strcmp(s[2],"RMSE"              )) { diag=(DIAG_RMSE); }
-      else if(!strcmp(s[2],"PCT_BIAS"          )) { diag=(DIAG_PCT_BIAS); }
-      else if(!strcmp(s[2],"ABSERR"            )) { diag=(DIAG_ABSERR); }
-      else if(!strcmp(s[2],"ABSMAX"            )) { diag=(DIAG_ABSMAX); }
-      else if(!strcmp(s[2],"PDIFF"             )) { diag=(DIAG_PDIFF); }
-      else if(!strcmp(s[2],"TMVOL"             )) { diag=(DIAG_TMVOL); }
-      else if(!strcmp(s[2],"RCOEF"             )) { diag=(DIAG_RCOEF); }
-      else if(!strcmp(s[2],"NSC"               )) { diag=(DIAG_NSC); }
-      else if(!strcmp(s[2],"RSR"               )) { diag=(DIAG_RSR); }
-      else if(!strcmp(s[2],"R2"                )) { diag=(DIAG_R2); }
-      else if(!strcmp(s[2],"CUMUL_FLOW"        )) { diag=(DIAG_CUMUL_FLOW); }
-      else if(!strcmp(s[2],"LOG_NASH"          )) { diag=(DIAG_LOG_NASH); }
-      else if(!strcmp(s[2],"KLING_GUPTA"       )) { diag=(DIAG_KLING_GUPTA); }
-      else if(!strcmp(s[2],"KLING_GUPTA_DEVIATION")) { diag=(DIAG_KLING_GUPTA_DEVIATION); }
-      else if(!strcmp(s[2],"NASH_SUTCLIFFE_DER")) { diag=(DIAG_NASH_SUTCLIFFE_DER); }
-      else if(!strcmp(s[2],"RMSE_DER"          )) { diag=(DIAG_RMSE_DER); }
-      else if(!strcmp(s[2],"KLING_GUPTA_DER"   )) { diag=(DIAG_KLING_GUPTA_DER); }
-      else if(!strcmp(s[2],"MBF"               )) { diag=(DIAG_MBF); }
-      else {
+      int width=DOESNT_EXIST;
+      string tmp = CStateVariable::SVStringBreak(s[2], width); //using other routine to grab width
+      diag_type diag=StringToDiagnostic(tmp);
+      
+      if (diag==DIAG_UNRECOGNIZED) {
         ExitGracefully("ParseEnsembleFile::unknown diagnostic in :ObjectiveFunction command.",BAD_DATA_WARN);
       }
       string per_string="ALL";

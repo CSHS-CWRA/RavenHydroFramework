@@ -47,6 +47,19 @@ bool IsContinuousFlowObs(const CTimeSeriesABC *pObs,long SBID)
 /// \param pObs [in] observation time series
 /// \param SBID [in] subbasin ID
 //
+bool IsContinuousLevelObs(const CTimeSeriesABC *pObs,long SBID)
+{
+ // clears up  terribly ugly repeated if statements
+  if (pObs==NULL)                                   { return false; }
+  if (pObs->GetLocID() != SBID)                     { return false; }
+  if (pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
+  return (!strcmp(pObs->GetName().c_str(),"WATER_LEVEL")); //name ="WATER_LEVEL"
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if specified observation time series is the flow series for subbasin SBID
+/// \param pObs [in] observation time series
+/// \param SBID [in] subbasin ID
+//
 bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID, const int c)
 {
  // clears up  terribly ugly repeated if statements
@@ -124,6 +137,7 @@ void CModel::CloseOutputStreams()
   if (_FORCINGS.is_open()){_FORCINGS.close();}
   if (_RESSTAGE.is_open()){_RESSTAGE.close();}
   if ( _DEMANDS.is_open()){ _DEMANDS.close();}
+  if (  _LEVELS.is_open()){  _LEVELS.close();}
 
 #ifdef _RVNETCDF_
 
@@ -221,6 +235,38 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       }
     }
     _HYDRO<<endl;
+
+    //WaterLevels.csv
+    //--------------------------------------------------------------
+    if (Options.write_waterlevels){
+      tmpFilename=FilenamePrepare("WaterLevels.csv",Options);
+      _LEVELS.open(tmpFilename.c_str());
+      if (_LEVELS.fail()){
+        ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+      }
+
+      CSubBasin *pSB;
+      _LEVELS<<"time,date,hour";
+      _LEVELS<<",precip [mm/day]";
+      for (p=0;p<_nSubBasins;p++)
+      {
+        pSB=_pSubBasins[p];
+        if (pSB->IsGauged() && pSB->IsEnabled())
+        {
+          if (pSB->GetName()=="")      {_LEVELS<<",ID="<<pSB->GetID()  <<" [m3/s]";}
+          else                         {_LEVELS<<","   <<pSB->GetName()<<" [m3/s]";}
+
+          for (i = 0; i < _nObservedTS; i++){
+            if (IsContinuousLevelObs(_pObservedTS[i],pSB->GetID()))
+            {
+              if (pSB->GetName()=="")  {_LEVELS<<",ID="<<pSB->GetID()  <<" (observed) [m3/s]";}
+              else                     {_LEVELS<<","   <<pSB->GetName()<<" (observed) [m3/s]";}
+            }
+          }
+        }
+      }
+      _LEVELS<<endl;
+    }
 
     //ReservoirStages.csv
     //--------------------------------------------------------------
@@ -828,6 +874,41 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       }
     }
 
+    //WaterLevels.csv
+    // 
+    // 
+         //Write hydrographs for gauged watersheds (ALWAYS DONE)
+      //----------------------------------------------------------------
+    if (Options.write_waterlevels)
+    {
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      else{
+        _LEVELS<<t<<","<<thisdate<<","<<thishour;
+        if(t!=0){ _LEVELS<<","<<GetAveragePrecip(); }//watershed-wide precip
+        else    { _LEVELS<<",---";                  }
+        for(int p=0;p<_nSubBasins;p++)
+        {
+          pSB=_pSubBasins[p];
+          if(pSB->IsGauged()  && (pSB->IsEnabled()))
+          {
+            _LEVELS<<","<<pSB->GetWaterLevel();
+
+            for(i = 0; i < _nObservedTS; i++){
+              if(IsContinuousLevelObs(_pObservedTS[i],pSB->GetID()))
+              {
+                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+                if((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _LEVELS << "," << val; }
+                else                                            { _LEVELS << ","; }
+              }
+            }
+          }
+        }
+        _LEVELS<<endl;
+      }
+    }
+    
+
+
     //ReservoirStages.csv
     //--------------------------------------------------------------
     if ((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
@@ -1377,7 +1458,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
     ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
   }
   //header
-  DIAG<<"observed data series,filename,";
+  DIAG<<"observed_data_series,filename,";
   for(int j=0; j<_nDiagnostics;j++) {
     DIAG<<_pDiagnostics[j]->GetName()<<",";
   }
@@ -1392,7 +1473,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       skip=false;
       string datatype=_pObservedTS[i]->GetName();
       if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE") ||
-         (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NET_INFLOW") ||
+         (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NET_INFLOW") || (datatype=="WATER_LEVEL") ||
          (datatype=="STREAM_CONCENTRATION") || (datatype=="STREAM_TEMPERATURE"))
       {
         CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
@@ -1400,7 +1481,8 @@ void CModel::RunDiagnostics(const optStruct &Options)
       }
       if (!skip)
       {
-        DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<","<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility
+
+        DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<"["<<_pObservedTS[d]->GetLocID()<<"],"<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility
         for(int j=0; j<_nDiagnostics;j++) {
           DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
         }

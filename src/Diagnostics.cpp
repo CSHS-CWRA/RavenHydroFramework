@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2022 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -65,6 +65,7 @@ string CDiagnostic::GetName() const
   case(DIAG_RABSERR):           {return "DIAG_RABSERR"; }
   case(DIAG_PERSINDEX):         {return "DIAG_PERSINDEX"; }
   case(DIAG_NSE4):              {return "DIAG_NSE4"; }
+  case(DIAG_YEARS_OF_RECORD):   {return "DIAG_YEARS_OF_RECORD";}
   default:                      {return "";}
   }
 }
@@ -1155,6 +1156,19 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       return -ALMOST_INF;
     }
   }
+  case(DIAG_YEARS_OF_RECORD): //----------------------------------------
+  {
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      weight=1.0;
+      obsval = pTSObs->GetSampledValue(nn);
+      if(pTSWeights != NULL)     { weight=pTSWeights->GetSampledValue(nn); }
+      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
+      if (weight>0.0){weight=1.0;}
+      N     +=weight;
+    }
+    return N/DAYS_PER_YEAR;
+  }
   case(DIAG_NSE4)://----------------------------------------------------
   {
     double avgobs=0.0;
@@ -1235,3 +1249,34 @@ CDiagPeriod::~CDiagPeriod() {}
 string   CDiagPeriod::GetName()      const{return _name;}
 double   CDiagPeriod::GetStartTime() const{return _t_start;}
 double   CDiagPeriod::GetEndTime()   const{return _t_end;}
+
+diag_type StringToDiagnostic(string distring) 
+{
+  if      (!distring.compare("NASH_SUTCLIFFE"       )){return DIAG_NASH_SUTCLIFFE;}
+  else if (!distring.compare("RMSE"                 )){return DIAG_RMSE;}
+  else if (!distring.compare("PCT_BIAS"             )){return DIAG_PCT_BIAS;}
+  else if (!distring.compare("ABSERR"               )){return DIAG_ABSERR;}
+  else if (!distring.compare("ABSMAX"               )){return DIAG_ABSMAX;}
+  else if (!distring.compare("PDIFF"                )){return DIAG_PDIFF;}
+  else if (!distring.compare("TMVOL"                )){return DIAG_TMVOL;}
+  else if (!distring.compare("RCOEF"                )){return DIAG_RCOEF;}
+  else if (!distring.compare("NSC"                  )){return DIAG_NSC;}
+  else if (!distring.compare("RSR"                  )){return DIAG_RSR;}
+  else if (!distring.compare("R2"                   )){return DIAG_R2;}
+  else if (!distring.compare("CUMUL_FLOW"           )){return DIAG_CUMUL_FLOW;}
+  else if (!distring.compare("LOG_NASH"             )){return DIAG_LOG_NASH;}
+  else if (!distring.compare("KLING_GUPTA"          )){return DIAG_KLING_GUPTA;}
+  else if (!distring.compare("NASH_SUTCLIFFE_DER"   )){return DIAG_NASH_SUTCLIFFE_DER;}
+  else if (!distring.compare("RMSE_DER"             )){return DIAG_RMSE_DER;}
+  else if (!distring.compare("KLING_GUPTA_DER"      )){return DIAG_KLING_GUPTA_DER;}
+  else if (!distring.compare("KLING_GUPTA_DEVIATION")){return DIAG_KLING_GUPTA_DEVIATION;}
+  else if (!distring.compare("MBF"                  )){return DIAG_MBF;}
+  else if (!distring.compare("R4MS4E"               )){return DIAG_R4MS4E;}
+  else if (!distring.compare("RTRMSE"               )){return DIAG_RTRMSE;}
+  else if (!distring.compare("RABSERR"              )){return DIAG_RABSERR;}
+  else if (!distring.compare("PERSINDEX"            )){return DIAG_PERSINDEX;}
+  else if (!distring.compare("NSE4"                 )){return DIAG_NSE4;}
+  else if (!distring.compare("YEARS_OF_RECORD"      )){return DIAG_YEARS_OF_RECORD; }
+  else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
+  else                                                {return DIAG_UNRECOGNIZED;}
+}

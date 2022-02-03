@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -20,6 +20,7 @@
 /// \param reach_len  [in] Reach length [m]
 /// \param Qreference [in] Reference flow [m^3/s] [or AUTO_COMPUTE]
 /// \param gaged      [in] If true, hydrographs are generated
+/// \param is_conduit [in] if true, this is a conduit 
 //
 CSubBasin::CSubBasin( const long           Identifier,
                       const string         Name,
@@ -28,7 +29,8 @@ CSubBasin::CSubBasin( const long           Identifier,
                       const CChannelXSect *pChan,       //Channel
                       const double         reach_len,   //reach length [m]
                       const double         Qreference,  //reference flow, m3/s [or AUTO_COMPUTE]
-                      const bool           gaged)       //if true, hydrographs are generated
+                      const bool           gaged,
+                      const bool           is_conduit)       
 {
   ExitGracefullyIf(pMod==NULL,
     "CSubBasin:Constructor: NULL model",BAD_DATA);
@@ -39,6 +41,7 @@ CSubBasin::CSubBasin( const long           Identifier,
 
   _ID                =Identifier;
   _name              =Name;
+  _is_conduit        =is_conduit;
 
   _basin_area        =0.0;
   _drainage_area     =0.0;
@@ -767,7 +770,8 @@ double CSubBasin::GetReferenceCelerity() const {
 /// \brief Returns reference diffusivity [m2/s]
 /// \return  reference diffusivity [m2/s] or AUTO_COMPUTE if not yet calculated
 //
-double CSubBasin::GetDiffusivity() const {
+double CSubBasin::GetDiffusivity() const 
+{
   if((_pChannel!=NULL) && (_diffusivity==AUTO_COMPUTE)){
     return _pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n);
   }
@@ -777,14 +781,25 @@ double CSubBasin::GetDiffusivity() const {
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel depth, in meters
-/// \return  reference channel depth [m], with minimum depth of 5cm
+/// \return  reference channel depth [m], with minimum depth of 1cm
 //
-double CSubBasin::GetRiverDepth() const {
+double CSubBasin::GetRiverDepth() const 
+{
   if (_pChannel==NULL){return ALMOST_INF;}
   const double MIN_CHANNEL_DEPTH=0.01;
   return max(_pChannel->GetDepth(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_DEPTH);
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns water surface elevation, in meters
+/// \return  reference water surface elevation [m]
+//
+double CSubBasin::GetWaterLevel() const 
+{
+  if (_pChannel==NULL){return ALMOST_INF;}
+  const double MIN_CHANNEL_DEPTH=0.01;
+  return _pChannel->GetStageElev(_aQout[_nSegments-1],_slope,_mannings_n);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reach bedslope
 /// \return  reference reach bedslope [m/m]
@@ -1219,8 +1234,12 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 {
   int seg;
   string warn;
-  if (_nHydroUnits==0){
+  if ((_nHydroUnits==0) && (!_is_conduit)){ //allowed if conduit
     warn="CSubBasin::Initialize: subbasin "+to_string(_ID)+" has no constituent HRUs and therefore zero area";
+    ExitGracefully(warn.c_str(),BAD_DATA_WARN);
+  }
+  if ((_nHydroUnits>0) && (_is_conduit)){ 
+    warn="CSubBasin::Initialize: conduit "+to_string(_ID)+" has constituent HRUs. HRUs should not be linked to conduits";
     ExitGracefully(warn.c_str(),BAD_DATA_WARN);
   }
   if((_pChannel==NULL) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL)){
@@ -1279,7 +1298,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     {
       //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
       _t_conc=0.76*pow(_basin_area,0.38)/HR_PER_DAY;// [d] \ref Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)] 
-      _t_conc*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
+      _t_conc*=CGlobalParams::GetParams()->TOC_multiplier;
       //if (Options.catchment_routing!=ROUTE_NONE){
       //  WriteAdvisory("Time of concentration has been estimated as "+to_string(_t_conc)+" days for basin "+to_string(_ID),false);
       //}

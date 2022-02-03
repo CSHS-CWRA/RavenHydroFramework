@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -137,6 +137,7 @@ private:/*------------------------------------------------------*/
   ofstream             _FORCINGS; ///< output file stream for ForcingFunctions.csv
   ofstream             _RESSTAGE; ///< output file stream for ReservoirStages.csv
   ofstream              _DEMANDS; ///< output file stream for Demands.csv
+  ofstream               _LEVELS; ///< output file stream for WaterLevels.csv
   int                _HYDRO_ncid; ///< output file ID  for Hydrographs.nc;     
   int             _RESSTAGE_ncid; ///< output file ID  for ReservoirStages.nc;  
   int              _STORAGE_ncid; ///< output file ID  for WatershedStorage.nc; 

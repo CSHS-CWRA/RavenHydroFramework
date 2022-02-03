@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   ChannelXSect.h
   ------------------------------------------------------------------
@@ -20,25 +20,25 @@
 class CChannelXSect
 {
 private:/*-------------------------------------------------------*/
-  string       _name;                 /// <nickname for XSect
+  string       _name;               /// <nickname for XSect
 
   double       _bedslope;           /// <slope of river channel
-  //double     conductivity;        /// <conductivity of channel bottom sediments [m/d]
+  //double     _conductivity;       /// <conductivity of channel bottom sediments [m/d]
 
-  int          nSurveyPts;          /// <# of survey points
+  int          _nSurveyPts;         /// <# of survey points
   /// <nSurveyPts=0 if rating curve not generated from surveyed data
-  double      *aX;                  /// <survey points in local coordinates [m]
-  double      *aElev;               /// <bottom channel elevation at survey pts (size nSurveyPts)[m above arbitrary datum]
+  double      *_aX;                 /// <survey points in local coordinates [m]
+  double      *_aElev;              /// <bottom channel elevation at survey pts (size nSurveyPts)[m above arbitrary datum]
   double      *_aMann;              /// <Mannings roughness for each segment (between aX[i] and aX[i+1]) (size: nSurveyPts-1)
   double       _min_mannings;       /// <minimum roughness coefficient for all segments
   double       _min_stage_elev;     /// <minimum elevation of channel profile
 
-  int          N;                   /// <number of points on rating curves
-  double      *aQ;                  /// <Rating curve for flow rates [m3/s]
-  double      *aStage;              /// <Rating curve for stage elevation [m]
-  double      *aTopWidth;           /// <Rating curve for top width [m]
-  double      *aXArea;              /// <Rating curve for X-sectional area [m2]
-  double      *aPerim;              /// <Rating curve for wetted perimeter [m]
+  int          _nPoints;            /// <number of points on rating curves
+  double      *_aQ;                 /// <Rating curve for flow rates [m3/s]
+  double      *_aStage;             /// <Rating curve for stage elevation [m]
+  double      *_aTopWidth;          /// <Rating curve for top width [m]
+  double      *_aXArea;             /// <Rating curve for X-sectional area [m2]
+  double      *_aPerim;             /// <Rating curve for wetted perimeter [m]
 
   static CChannelXSect **pAllChannelXSects;
   static int             NumChannelXSects;
@@ -47,8 +47,7 @@ private:/*-------------------------------------------------------*/
   void GenerateRatingCurvesFromProfile  ();
   void GenerateRatingCurvesFromPowerLaw ();
 
-  void Interpolate        (const double &Q,
-                           double &interp, int &i) const;
+  //void Interpolate        (const double &Q,double &interp, int &i) const;
   void GetPropsFromProfile(const double &elev,
                            double &Q,   double &width,
                            double &A,   double &P);
@@ -57,13 +56,13 @@ private:/*-------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CChannelXSect( const string  name,
+  CChannelXSect( const string  name,          //constructor from profile points 
                  const int     NumSurveyPts,
                  const double *X,
                  const double *Elev,
                  const double *ManningsN,
                  const double  bedslope);
-  CChannelXSect( const string  name,
+  CChannelXSect( const string  name,          //constructor from raw data
                  const int     array_size,
                  const double *flow,
                  const double *stage,
@@ -71,18 +70,14 @@ public:/*-------------------------------------------------------*/
                  const double *area,
                  const double *perim,
                  const double  bedslope);
-  CChannelXSect (const string  name,          //constructor for power law
-                 const double  slope,
-                 const double  mannings,
-                 const double  a1,
-                 const double  b1,
-                 const double  a2,
-                 const double  b2,
-                 const double  a3,
-                 const double  b3);
   CChannelXSect( const string  name,          //constructor for trapezoid
                  const double  bottom_w,
                  const double  sidewall_angle,
+                 const double  bottom_elev,
+                 const double  mannings_n,
+                 const double  bedslope);
+  CChannelXSect( const string  name,         //constructor for pipe (of course, not really a channel)
+                 const double  diameter,
                  const double  bottom_elev,
                  const double  mannings_n,
                  const double  bedslope);

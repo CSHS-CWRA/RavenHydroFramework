@@ -262,6 +262,10 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
       double h=_pModel->GetSubBasinByID(SBID)->GetRiverDepth();
       if (!EvaluateCondition(comp, h, v1, v2)) {return false;}
     }
+    else if (var == "WATER_LEVEL") {
+      double h=_pModel->GetSubBasinByID(SBID)->GetWaterLevel();
+      if (!EvaluateCondition(comp, h, v1, v2)) {return false;}
+    }
     else {
       string warn="COutflowRegime::AreConditionsMet: unrecognized condition variable "+var+" in :Condition command";
       ExitGracefully(warn.c_str(),BAD_DATA);

@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -405,6 +405,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
       bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
+      bool islevel    =!strcmp(s[1], "WATER_LEVEL");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
         
       bool period_ending =ishyd; 
@@ -442,6 +443,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
+      if(islevel && invalidSB){
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed water level time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy);  break;
+      }
       pModel->AddObservedTimeSeries(pTimeSer);
       break;
     }
@@ -472,6 +477,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool isnetinflow=!strcmp(s[1], "RESERVOIR_NETINFLOW");
       bool isconc     =!strcmp(s[1], "STREAM_CONCENTRATION");
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
+      bool islevel    =!strcmp(s[1], "WATER_LEVEL");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
 
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),"none",Options);
@@ -506,7 +512,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         warn="ParseTimeSeries:: Invalid subbasin ID in observed reservoir net inflow weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
         WriteWarning(warn.c_str(),Options.noisy);  break;
       }
-
+      if(islevel && invalidSB){
+        warn="ParseTimeSeries:: Invalid subbasin ID in observed water level weights time series ["+pTimeSer->GetSourceFile()+"]. Will be ignored";
+        WriteWarning(warn.c_str(),Options.noisy);  break;
+      }
       pModel->AddObservedWeightsTS(pTimeSer);
       break;
     }

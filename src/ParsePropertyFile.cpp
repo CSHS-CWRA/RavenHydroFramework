@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Properties.h"
@@ -287,6 +287,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     //--------------------RIVER CHANNEL PARAMS -------------------
     else if  (!strcmp(s[0],":ChannelProfile"         )){code=500;}
     else if  (!strcmp(s[0],":ChannelRatingCurves"    )){code=501;}
+    else if  (!strcmp(s[0],":TrapezoidalChannel"     )){code=502;}
+    else if  (!strcmp(s[0],":CircularConduit"        )){code=503;}
     //--------------------TERRAIN PARAMS -----------------------
     else if  (!strcmp(s[0],":TerrainClasses"         )){code=600;}//REQUIRED
     else if  (!strcmp(s[0],":TerrainParameterList"   )){code=601;}
@@ -869,13 +871,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     case(501):  //----------------------------------------------
     {/*ChannelRatingCurves
        :ChannelRatingCurves [optional string name]
-       :Bedslope {double slope}
-       :SurveyPoints
-       {double x double bed_elev}x num survey points
-       :EndSurveyPoints
-       :RoughnessZones
-       {double x_z double mannings_n}xnum roughness zones
-       :EndRoughnessZones
+         :Bedslope {double slope}
+           :SurveyPoints
+           {double x double bed_elev}x num survey points
+         :EndSurveyPoints
+         :RoughnessZones
+           {double x_z double mannings_n}xnum roughness zones
+         :EndRoughnessZones
        :EndChannelProfile*/
       string tag;
       double slope=0.0;
@@ -937,6 +939,20 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       pChannel=new CChannelXSect(tag,count,Q,st,W,A,P,slope); 
 
       delete [] st; delete [] A; delete [] W; delete [] Q;
+      break;
+    }
+    case(502):  //----------------------------------------------
+    { //:TrapezoidalChannel [name] [bot_width] [bot_elev] [incline] [mannings_n] [bedslope]
+      if (Len<7){ImproperFormatWarning(":TrapezoidalChannel",p,Options.noisy); break;} 
+      CChannelXSect *pChannel=NULL;
+      pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[4]),s_to_d(s[3]),s_to_d(s[5]),s_to_d(s[6]));
+      break;
+    }
+    case(503):  //----------------------------------------------
+    { //:CircularConduit [name] [diameter] [bot_elev] [mannings_n] [bedslope]
+      if (Len<7){ImproperFormatWarning(":CircularConduit",p,Options.noisy); break;} 
+      CChannelXSect *pChannel=NULL;
+      pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]));
       break;
     }
     //==========================================================
