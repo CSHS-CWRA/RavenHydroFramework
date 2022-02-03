@@ -15,6 +15,7 @@ void CChannelXSect::Construct(const string name)
   _aX   =NULL;
   _aElev=NULL;
   _aMann=NULL;
+  _is_closed_channel=false;
   
   if (!DynArrayAppend((void**&)(pAllChannelXSects),(void*)(this),NumChannelXSects)){
     ExitGracefully("CChannelXSect::Constructor: creating NULL channel profile",BAD_DATA_WARN);
@@ -204,9 +205,14 @@ CChannelXSect::CChannelXSect( const string  name,         //constructor for pipe
     _aXArea   [i]=r*r*(theta-sin(theta))/2.0;
     _aPerim   [i]=r*theta;
     _aQ       [i]=sqrt(_bedslope)*_aXArea[i]*pow(_aXArea[i]/_aPerim[i],2.0/3.0)/_min_mannings;
-
+    if (_aPerim[i]==0){_aQ[i]=0.0;}
+    /*cout<<"Conduit: "<<_aStage[i]<<" "<<_aTopWidth[i]<<" "<<_aXArea[i]<<" "<<_aPerim[i]<<" "<<_aQ[i]<<endl;
+    if ((i > 0) && (_aQ[i] < _aQ[i-1])) {
+      ExitGracefully("Circular Conduit constructor: decreasing flow rate",RUNTIME_ERR);
+    }*/ //TO BE EXPECTED - BUT CAUSES CELERITY CALCULATION ISSUES
   }
   _min_stage_elev = bottom_elev;
+  _is_closed_channel=true;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the destructor
@@ -252,30 +258,6 @@ double      CChannelXSect::GetBedslope()         const { return _bedslope;}
    Rating Curve Interpolation functions
 ------------------------------------------------------------------
 *****************************************************************/
-
-//////////////////////////////////////////////////////////////////
-/// \brief Interpolate value between discrete points on rating curve
-/// \todo [optimize] CChannelXSect::Interpolate: This needs optimization
-///
-/// \param &Q [in] Flow rate [m3/s]
-/// \param &interp [out] Interpolation weight between _aQ[i] and _aQ[i+1]
-/// \param &i [out] index of _aQ array corresponding to value just less than Q
-//
-/*void CChannelXSect::Interpolate(const double &Q, double &interp, int &i) const
-{
-  //This needs OPTIMIZATION!
-  static int ilast;
-  if (Q<0){interp= 0.0;i=0;ilast=i;return;}
-  ExitGracefullyIf(_aQ==NULL,
-                   "CChannelXSect::Interpolate: Rating curves not yet generated",RUNTIME_ERR);
-
-  //standard version-unoptimized
-  //should start out assuming current Q close to or same as old Q
-  i=0; while ((Q>_aQ[i+1]) && (i<(_nPoints-2))){i++;}//Dumb Search
-  //SmartIntervalSearch(Q,_aQ,N,i,ilast);
-  interp=(Q-_aQ[i])/(_aQ[i+1]-_aQ[i]); //1<, >0, unless i=N-1, then >1
-  ilast=i;
-}*/
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Top width of channel [m]
@@ -367,6 +349,10 @@ double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,co
   //returns dQ/dA|_Qref ~ wave celerity in reach at given reference flow Qref
   //interpolated from rating curves
 
+  if ((_is_closed_channel) && (Qref > _aQ[_nPoints-1])) {
+    ExitGracefully("CChannelXSect::GetCelerity: reference flowrate exceeds closed channel maximum. Conduit area is too small",BAD_DATA);
+  }
+
   ExitGracefullyIf(_aQ==NULL,"CChannelXSect::GetCelerity: Rating curves not yet generated",RUNTIME_ERR);
   double Q_mult;
   double junk;//unused output
@@ -374,7 +360,6 @@ double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,co
 
   if (Qref/Q_mult<0){return 0.0;}
   int i=0; while ((Qref/Q_mult>_aQ[i+1]) && (i<(_nPoints-2))){i++;}
-
   return (_aQ[i+1]-_aQ[i])/(_aXArea[i+1]-_aXArea[i]);
 }
 

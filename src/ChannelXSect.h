@@ -24,6 +24,7 @@ private:/*-------------------------------------------------------*/
 
   double       _bedslope;           /// <slope of river channel
   //double     _conductivity;       /// <conductivity of channel bottom sediments [m/d]
+  bool         _is_closed_channel;  /// <true for closed channels/conduits 
 
   int          _nSurveyPts;         /// <# of survey points
   /// <nSurveyPts=0 if rating curve not generated from surveyed data

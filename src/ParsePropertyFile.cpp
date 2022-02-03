@@ -950,7 +950,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     case(503):  //----------------------------------------------
     { //:CircularConduit [name] [diameter] [bot_elev] [mannings_n] [bedslope]
-      if (Len<7){ImproperFormatWarning(":CircularConduit",p,Options.noisy); break;} 
+      if (Len<6){ImproperFormatWarning(":CircularConduit",p,Options.noisy); break;} 
       CChannelXSect *pChannel=NULL;
       pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]));
       break;
