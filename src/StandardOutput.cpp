@@ -28,7 +28,7 @@ int  NetCDFAddMetadata  (const int fileid,const int time_dimid,                 
 int  NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript);
 void AddSingleValueToNetCDF     (const int out_ncid,const string &label,const size_t time_index,const double &value);
-void WriteNetCDFBasinList       (const int ncid,const int varid,const CModel* pModel,const optStruct &Options);
+void WriteNetCDFBasinList       (const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct &Options);
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if specified observation time series is the flow series for subbasin SBID
 /// \param pObs [in] observation time series
@@ -1473,7 +1473,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       skip=false;
       string datatype=_pObservedTS[i]->GetName();
       if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE") ||
-         (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NET_INFLOW") || (datatype=="WATER_LEVEL") ||
+         (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NETINFLOW") || (datatype=="WATER_LEVEL") ||
          (datatype=="STREAM_CONCENTRATION") || (datatype=="STREAM_TEMPERATURE"))
       {
         CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
@@ -1482,14 +1482,40 @@ void CModel::RunDiagnostics(const optStruct &Options)
       if (!skip)
       {
 
-        DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<"["<<_pObservedTS[d]->GetLocID()<<"],"<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility
+        DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<"["<<_pObservedTS[i]->GetLocID()<<"],"<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility
         for(int j=0; j<_nDiagnostics;j++) {
           DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
         }
         DIAG<<endl;
       }
     }
+    //compute aggregate diagnostics
+    for (int ii = 0; ii < _nAggDiagnostics; ii++) 
+    {
+      int            kk  =_pAggDiagnostics[ii]->kk;
+      string agg_datatype=_pAggDiagnostics[ii]->datatype;
+
+      string name="";//"Average_HYDROGRAPH_GroupX"
+      switch(_pAggDiagnostics[ii]->aggtype)
+      {
+        case AGG_AVERAGE:               name+="Average"; break;
+        case AGG_MAXIMUM:               name+="Maximum"; break;
+        case AGG_MINIMUM:               name+="Minimum"; break;
+        case AGG_MEDIAN:                name+="Median";  break;
+      }
+      //name+=AggStatToString(_pAggDiagnostics[ii]->aggtype);
+      name+="_"+agg_datatype; 
+      if (kk!=DOESNT_EXIST){
+        if (agg_datatype=="HYDROGRAPH"){name+="_"+_pSBGroups[kk]->GetName();} // \todo[funct]- handle more datatypes
+      }
+
+      DIAG<<name<<",[multiple],";
+      for(int j=0; j<_nDiagnostics;j++) {
+        DIAG<<CalculateAggDiagnostic(ii,j,starttime,endtime,Options)<<",";
+      }
+    }
   }
+ 
   DIAG.close();
 
   //reset for ensemble mode
@@ -1499,6 +1525,58 @@ void CModel::RunDiagnostics(const optStruct &Options)
   }
 }
 
+ 
+//////////////////////////////////////////////////////////////////
+/// \brief run model diagnostics (at end of simulation)
+///
+/// \param &Options [in] global model options
+//
+double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &starttime, const double &endtime, const optStruct &Options) 
+{
+  bool skip;
+  double val;
+  double stat=0;
+  int N=0;
+  agg_stat       type=_pAggDiagnostics[ii]->aggtype;
+  int            kk  =_pAggDiagnostics[ii]->kk;
+  string agg_datatype=_pAggDiagnostics[ii]->datatype;
+
+  double *data=new double [_nObservedTS]; //maximum number of diagnostics that could be considered
+  for(int i=0;i<_nObservedTS;i++)
+  {
+    data[i]=0;
+    skip=false;
+    string datatype=_pObservedTS[i]->GetName();
+    if (datatype!=agg_datatype){skip=true;}
+    else if((datatype=="HYDROGRAPH"          ) || (datatype=="RESERVOIR_STAGE") ||
+            (datatype=="RESERVOIR_INFLOW"    ) || (datatype=="RESERVOIR_NETINFLOW") || (datatype=="WATER_LEVEL") ||
+            (datatype=="STREAM_CONCENTRATION") || (datatype=="STREAM_TEMPERATURE")) //subbasin-linked metrics
+    {
+      CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
+      if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}
+      if ((kk!=DOESNT_EXIST) && (!IsInSubBasinGroup(pBasin->GetID(),_pSBGroups[kk]->GetName()))){skip=true;}
+    }
+    else{ //HRU-linked
+      if ((kk!=DOESNT_EXIST) && (!IsInHRUGroup(_pObservedTS[i]->GetLocID(),_pHRUGroups[kk]->GetName()))){skip=true;}
+    }
+    
+    if (!skip)
+    {
+      val=_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options);
+      
+      if      (type==AGG_AVERAGE){stat+=val; N++;}
+      else if (type==AGG_MAXIMUM){upperswap(stat,val);N++;}
+      else if (type==AGG_MAXIMUM){lowerswap(stat,val);N++;}
+      else if (type==AGG_MEDIAN ){data[N]=val; N++;}
+    }
+  }
+  if (N==0){return -ALMOST_INF;}
+  if       (type==AGG_AVERAGE){stat/=N;}
+  else if ((type==AGG_MEDIAN ) && (N%2==1)){stat=data[(int)rvn_floor((double)(N)/2.0)];}
+  else if ((type==AGG_MEDIAN ) && (N%2==0)){stat=0.5*(data[int(N/2)]+data[int(N/2)-1]);}
+  delete [] data;
+  return stat;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Writes output headers for WatershedStorage.tb0 and Hydrographs.tb0
@@ -1742,8 +1820,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   retval = nc_enddef(_HYDRO_ncid);  HandleNetCDFErrors(retval);
 
   // (a) write gauged basin names/IDs to variable "basin_name"
-  WriteNetCDFBasinList(_HYDRO_ncid,varid_bsim,this,Options);
-
+  if (nSim>0){
+    WriteNetCDFBasinList(_HYDRO_ncid,varid_bsim,this,false,Options);
+  }
 
   //====================================================================
   //  ReservoirStages.nc
@@ -1810,7 +1889,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
     // write values to NetCDF
     // (a) write gauged reservoir basin names/IDs to variable "basin_name"
-    WriteNetCDFBasinList(_RESSTAGE_ncid,varid_bsim,this,Options);
+    if (nSim>0){
+      WriteNetCDFBasinList(_RESSTAGE_ncid,varid_bsim,this,true,Options);
+    }
   }
 
   //====================================================================
@@ -2477,8 +2558,9 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
 /// used for hydrographs.nc, reservoirstages.nc, pollutographs.nc
 /// \param ncid [in] NetCDF file identifier
 /// \param varid [in] ID of existing basin attribute
+/// \param is_res [in] true if this is a reservoir file and only reservoir basins should be included
 //
-void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,const optStruct& Options) 
+void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct& Options) 
 {
 #ifdef _RVNETCDF_
   int ibasin = 0;
@@ -2488,14 +2570,16 @@ void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,co
   current_basin_name[0]=new char[200];
   for(int p=0;p<pModel->GetNumSubBasins();p++) {
     if(pModel->GetSubBasin(p)->IsGauged()  && (pModel->GetSubBasin(p)->IsEnabled())) {
-      string bname;
-      if((pModel->GetSubBasin(p)->GetName()=="") || (Options.deltaresFEWS)) { bname = to_string(pModel->GetSubBasin(p)->GetID()); }
-      else                                                                  { bname = pModel->GetSubBasin(p)->GetName(); }
-      start[0] = ibasin;
-      count[0] = 1;
-      strcpy(current_basin_name[0],bname.c_str());
-      retval = nc_put_vara_string(ncid,varid,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
-      ibasin++;
+      if (!( (is_res) && (pModel->GetSubBasin(p)->GetReservoir()==NULL))){
+        string bname;
+        if((pModel->GetSubBasin(p)->GetName()=="") || (Options.deltaresFEWS)) { bname = to_string(pModel->GetSubBasin(p)->GetID()); }
+        else                                                                  { bname = pModel->GetSubBasin(p)->GetName(); }
+        start[0] = ibasin;
+        count[0] = 1;
+        strcpy(current_basin_name[0],bname.c_str());
+        retval = nc_put_vara_string(ncid,varid,start,count,(const char**)current_basin_name);  HandleNetCDFErrors(retval);
+        ibasin++;
+      }
     }
   }
   delete[] current_basin_name[0];

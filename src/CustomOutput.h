@@ -43,22 +43,6 @@ enum time_agg
   //ENTIRE_SIM   ///< Aggregate over entire simulation (not currently implemented)
 };
 
-////////////////////////////////////////////////////////////////////
-/// \brief Statistics of an aggregation
-//
-enum agg_stat
-{
-  AGG_AVERAGE,   ///< Average of data set
-  AGG_MAXIMUM,   ///< Maximum of data set
-  AGG_MINIMUM,   ///< Minimum of data set
-  AGG_MEDIAN,    ///< Median of data set
-  AGG_RANGE,     ///< Range of data set
-  AGG_95CI,      ///< 5% and 95% quantiles of data set
-  AGG_QUARTILES, ///< Quartiles of data set
-  AGG_HISTOGRAM  ///< Full histogram of data set
-  //AGG_INT_AVG_DAY///< Average of julian day values  (not currently implemented)
-};
-
 ///////////////////////////////////////////////////////////////////////
 /// \brief
 /// \docminor This enumerated list and its values need to be described

@@ -34,6 +34,7 @@ CModel::CModel(const int        nsoillayers,
   _nObsWeightTS =0; _pObsWeightTS=NULL;
   _nDiagnostics=0;  _pDiagnostics=NULL;
   _nDiagPeriods=0;  _pDiagPeriods=NULL;
+  _nAggDiagnostics=0;_pAggDiagnostics=NULL;
   
   _nTotalConnections=0;
   _nTotalLatConnections=0;
@@ -153,6 +154,7 @@ CModel::~CModel()
   for (i=0;i<_nObsWeightTS;  i++){delete _pObsWeightTS  [i];} delete [] _pObsWeightTS;  _pObsWeightTS=NULL;
   for (j=0;j<_nDiagnostics;  j++){delete _pDiagnostics  [j];} delete [] _pDiagnostics;  _pDiagnostics=NULL;
   for (j=0;j<_nDiagPeriods;  j++){delete _pDiagPeriods  [j];} delete [] _pDiagPeriods;  _pDiagPeriods=NULL;
+  for (j=0;j<_nAggDiagnostics; j++){delete _pAggDiagnostics[j];} delete [] _pAggDiagnostics; _pAggDiagnostics=NULL;
 
   if (_aCumulativeBal!=NULL){
     for (k=0;k<_nHydroUnits;   k++){delete [] _aCumulativeBal[k];} delete [] _aCumulativeBal; _aCumulativeBal=NULL;
@@ -1337,6 +1339,21 @@ void CModel::AddDiagnostic(CDiagnostic       *pDiag)
 {
   if (!DynArrayAppend((void**&)(_pDiagnostics),(void*)(pDiag),_nDiagnostics)){
     ExitGracefully("CModel::AddDiagnostic: adding NULL diagnostic",BAD_DATA);}
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Adds aggregate diagnostic to model
+///
+/// \param *pDiag [in] (valid) pointer to diagnostic to be added to model
+//
+void CModel::AddAggregateDiagnostic(agg_stat stat, string datatype, int group_ind)
+{
+  agg_diag *agg=new agg_diag();
+  agg->aggtype=stat;
+  agg->datatype=datatype;
+  agg->kk=group_ind;
+
+  if (!DynArrayAppend((void**&)(_pAggDiagnostics),(void*)(agg),_nAggDiagnostics)){
+    ExitGracefully("CModel::AddAggregateDiagnostic: adding NULL diagnostic",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds diagnostic period to model

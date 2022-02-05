@@ -109,6 +109,8 @@ private:/*------------------------------------------------------*/
   int             _nDiagnostics;  ///< number of diagnostics to be calculated comparing obs. vs modeled
   CDiagPeriod   **_pDiagPeriods;  ///< array of pointers to diagnostic periods [size _nDiagPeriods]
   int             _nDiagPeriods;  ///< number of diagnostic periods 
+  agg_diag   **_pAggDiagnostics;  ///< array of pointers to aggregate diagnostic structures [size: _nAggDiagnostics]
+  int          _nAggDiagnostics;  ///< number of aggregated diagnostics
 
   //Data Assimilation 
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
@@ -227,6 +229,9 @@ private:/*------------------------------------------------------*/
                                       const CHydroUnit   *pHRU,
                                       const time_struct  &tt);
 
+  double       CalculateAggDiagnostic(const int ii, const int j,
+                                      const double &starttime, const double &endtime, 
+                                      const optStruct &Options);
 
   //Routines for deriving missing data based on gridded data provided
 
@@ -355,6 +360,7 @@ public:/*-------------------------------------------------------*/
   void    AddObservedWeightsTS      (        CTimeSeriesABC    *pTS             );
   void    AddDiagnostic             (        CDiagnostic       *pDiag           );
   void    AddDiagnosticPeriod       (        CDiagPeriod       *pDiagPer        );
+  void    AddAggregateDiagnostic    (agg_stat stat, string datatype, int group_ind);
 
   void    AddModelOutputTime        (const time_struct       &tt_out,
                                      const optStruct         &Options           );

@@ -684,6 +684,18 @@ bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
       
       if (pclass!=CLASS_UNKNOWN)
       {
+         // find "_FillValue" of attribute, if present
+        // -------------------------------
+        double fillval;  
+        size_t  att_len;       // length of the attribute's text
+        nc_type att_type;      // type of attribute
+        fillval = NETCDF_BLANK_VALUE; //Default
+        retval = nc_inq_att(ncid, varids[j], "_FillValue", &att_type, &att_len);      
+        if (retval != NC_ENOTATT) {
+          HandleNetCDFErrors(retval);
+          retval = nc_get_att_double(ncid, varids[j], "_FillValue", &fillval);       HandleNetCDFErrors(retval);// read attribute value
+        }
+
         // check for valid class name
         bool bad=false;
         if      (pclass==CLASS_SOIL      ){if (CSoilClass      ::StringToSoilClass(class_str)==NULL){bad=true;}}
@@ -709,11 +721,15 @@ bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
           cout<<" |"<<param_str<<"| ";
           cout<<" |"<<class_str<<"| ";
           cout<<" CLASS: "<<pclass<<" ";
-          cout<<" val: "<<pval;*/
+          cout<<" val: "<<pval<<endl;*/
           delete [] ip;
 
-          // update parameter value
-          pModel->UpdateParameter(pclass,param_str,class_str,pval);
+          if ((pval!=NETCDF_BLANK_VALUE) && (pval!=fillval))
+          {
+            
+            if (Options.noisy) {cout<<"  ParseNetCDFParamFile: Updating "<<param_str<<" in "<<class_str<<" value: "<<pval<<endl;}
+            pModel->UpdateParameter(pclass,param_str,class_str,pval);// update parameter value
+          }
         }
       }
       else {

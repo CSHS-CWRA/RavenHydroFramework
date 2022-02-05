@@ -443,6 +443,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
     else if  (!strcmp(s[0],":DisableHRUGroup"           )){code=82; }
+    else if  (!strcmp(s[0],":AggregateDiagnostic"       )){code=83; }
     else if  (!strcmp(s[0],":OutputConstituentMass"     )){code=89; }
     else if  (!strcmp(s[0],":NetCDFAttribute"           )){code=90; }
     else if  (!strcmp(s[0],":AssimilationStartTime"     )){code=92; }
@@ -1621,6 +1622,26 @@ bool ParseMainInputFile (CModel     *&pModel,
       else{
         pHRUGrp->DisableGroup();
       }
+      break;
+    }
+    case(83):  //--------------------------------------------
+    {/*:AggregateDiagnostic [agg stat] [obs_type] {HRU Group}*/
+      if(Options.noisy) { cout << "Aggregate Diagnostic" << endl; }
+      if(Len<3) { ImproperFormatWarning(":AggregateDiagnostic",p,Options.noisy); break; }
+      int group_ind=DOESNT_EXIST;
+      agg_stat stat;
+      if      (!strcmp(s[1],"AVERAGE"         )){stat=AGG_AVERAGE;}
+      else if (!strcmp(s[1],"MAXIMUM"         )){stat=AGG_MAXIMUM;}
+      else if (!strcmp(s[1],"MINIMUM"         )){stat=AGG_MINIMUM;}
+      else if (!strcmp(s[1],"MEDIAN"          )){stat=AGG_MEDIAN;}
+      if (Len>3){
+       CHRUGroup *pHGrp=pModel->GetHRUGroup(s[3]);
+       if (pHGrp == NULL) {
+          WriteWarning("Invalid HRU Group in :AggregateDiagnostic command. Must declare group before using. This will be ignored",Options.noisy);break;
+       }
+       group_ind=pHGrp->GetGlobalIndex();
+      }
+      pModel->AddAggregateDiagnostic(stat,s[2],group_ind);
       break;
     }
     case(89):  //--------------------------------------------

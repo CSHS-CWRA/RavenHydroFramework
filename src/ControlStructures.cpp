@@ -271,7 +271,7 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
       ExitGracefully(warn.c_str(),BAD_DATA);
     }
   }
-  return true; //only reach here if all conditions met
+  return true; //only reach here if all conditions met (or if zero conditions)
 }
 
 //////////////////////////////////////////////////////////////////

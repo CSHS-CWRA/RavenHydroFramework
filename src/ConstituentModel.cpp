@@ -17,7 +17,7 @@ bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID,const int c)
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
 int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
 int  NetCDFAddMetadata2D   (const int fileid,const int time_dimid,int nbasins_dimid,string shortname,string longname,string units);
-void WriteNetCDFBasinList  (const int ncid,const int varid,const CModel* pModel,const optStruct& Options);
+void WriteNetCDFBasinList  (const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct& Options);
 void AddSingleValueToNetCDF(const int out_ncid,const string &label,const size_t time_index,const double &value);
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport constructor
@@ -1154,7 +1154,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   // write values to NetCDF
   if(nSim > 0)
   {
-    WriteNetCDFBasinList(_POLLUT_ncid,varid_bsim,_pModel,Options);
+    WriteNetCDFBasinList(_POLLUT_ncid,varid_bsim,_pModel,false,Options);
   }
 #endif
 }

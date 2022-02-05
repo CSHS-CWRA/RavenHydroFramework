@@ -321,7 +321,7 @@ double  CChannelXSect::GetWettedPerim(const double &Q,const double &SB_slope,con
 /// \brief Returns correction terms for subbasin-specific slope and manning's n
 /// \param &SB_slope - subbasin local slope (or AUTO_COMPUTE if channel slope should be used) [-]
 /// \param &SB_n - subbasin local Manning's n (or AUTO_COMPUTE if channel n should be used) [-]
-/// \return &slope_mult - correction multiplier for slope (S_actual = mult * Q_channel) [-]
+/// \return &slope_mult - correction multiplier for slope (S_actual = mult * S_channel) [-]
 /// \return &Q_mult - correction multiplier for flow (Q_actual = mult * Q_channel) [-]
 //
 void CChannelXSect::GetFlowCorrections(const double &SB_slope,
@@ -340,7 +340,7 @@ void CChannelXSect::GetFlowCorrections(const double &SB_slope,
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns celerity of channel [m/s]
+/// \brief Returns celerity of channel at reference flow [m/s]
 /// \param &Qref [in] Reference flowrate [m3/s]
 /// \return Celerity of channel corresponding to reference flowrate [m/s]
 //
@@ -349,18 +349,16 @@ double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,co
   //returns dQ/dA|_Qref ~ wave celerity in reach at given reference flow Qref
   //interpolated from rating curves
 
-  if ((_is_closed_channel) && (Qref > _aQ[_nPoints-1])) {
+  ExitGracefullyIf(_aQ==NULL,"CChannelXSect::GetCelerity: Rating curves not yet generated",RUNTIME_ERR);
+
+  double junk,Q_mult;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+  if ((_is_closed_channel) && (Qref > Q_mult*_aQ[_nPoints-1])) {
     ExitGracefully("CChannelXSect::GetCelerity: reference flowrate exceeds closed channel maximum. Conduit area is too small",BAD_DATA);
   }
-
-  ExitGracefullyIf(_aQ==NULL,"CChannelXSect::GetCelerity: Rating curves not yet generated",RUNTIME_ERR);
-  double Q_mult;
-  double junk;//unused output
-  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
-
-  if (Qref/Q_mult<0){return 0.0;}
-  int i=0; while ((Qref/Q_mult>_aQ[i+1]) && (i<(_nPoints-2))){i++;}
-  return (_aQ[i+1]-_aQ[i])/(_aXArea[i+1]-_aXArea[i]);
+  if (Qref<0){return 0.0;}
+  int i=0; while ((Qref>Q_mult*_aQ[i+1]) && (i<(_nPoints-2))){i++;}
+  return Q_mult*(_aQ[i+1]-_aQ[i])/(_aXArea[i+1]-_aXArea[i]);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -371,10 +369,11 @@ double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,co
 //
 double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const
 {
-  ExitGracefullyIf(Q<=0,"CChannelXSect::Invalid channel flowrate",BAD_DATA);
+  ExitGracefullyIf(Q<=0,"CChannelXSect::GetDiffusivity: Invalid channel flowrate",BAD_DATA);
+ 
   ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering \cite Roberson1998
   double slope_mult=1.0;
-  double Q_mult=1.0;
+  double Q_mult    =1.0;
   GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);
   return 0.5*(Q)/GetTopWidth(Q,SB_slope,SB_n)/(slope_mult*_bedslope);
 }

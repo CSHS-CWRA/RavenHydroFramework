@@ -1320,6 +1320,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     ExitGracefullyIf(_gamma_shape<=0,"CSubBasin::Initialize: gamma shape parameter must be greater than zero",BAD_DATA);
     ExitGracefullyIf(_gamma_scale<=0,"CSubBasin::Initialize: gamma scale parameter must be greater than zero",BAD_DATA);
 
+    _diffusivity=GetDiffusivity();
+    
     //Calculate Initial Channel Storage from flowrate
     //------------------------------------------------------------------------
     _channel_storage=0.0;

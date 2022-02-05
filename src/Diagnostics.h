@@ -38,7 +38,12 @@ enum diag_type {
   DIAG_YEARS_OF_RECORD,
   DIAG_UNRECOGNIZED
 };
-
+struct agg_diag 
+{
+  agg_stat aggtype;  //aggregation type (supports AVERAGE/MEDIAN/MIN/MAX) 
+  string   datatype; //observation datatype string e.g., "HYDROGRAPH"
+  int      kk;       //< group index (or DOESNT_EXIST, if applied to all)
+};
 diag_type StringToDiagnostic(string distring);
 
 ///////////////////////////////////////////////////////////////////
