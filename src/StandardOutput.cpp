@@ -253,14 +253,14 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         pSB=_pSubBasins[p];
         if (pSB->IsGauged() && pSB->IsEnabled())
         {
-          if (pSB->GetName()=="")      {_LEVELS<<",ID="<<pSB->GetID()  <<" [m3/s]";}
-          else                         {_LEVELS<<","   <<pSB->GetName()<<" [m3/s]";}
+          if (pSB->GetName()=="")      {_LEVELS<<",ID="<<pSB->GetID()  <<" [m]";}
+          else                         {_LEVELS<<","   <<pSB->GetName()<<" [m]";}
 
           for (i = 0; i < _nObservedTS; i++){
             if (IsContinuousLevelObs(_pObservedTS[i],pSB->GetID()))
             {
-              if (pSB->GetName()=="")  {_LEVELS<<",ID="<<pSB->GetID()  <<" (observed) [m3/s]";}
-              else                     {_LEVELS<<","   <<pSB->GetName()<<" (observed) [m3/s]";}
+              if (pSB->GetName()=="")  {_LEVELS<<",ID="<<pSB->GetID()  <<" (observed) [m]";}
+              else                     {_LEVELS<<","   <<pSB->GetName()<<" (observed) [m]";}
             }
           }
         }
