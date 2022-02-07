@@ -16,6 +16,8 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _name=Name;
   _SBID=SubID;
 
+  _pDownSB=NULL;
+
   _stage     =0.0;
   _stage_last=0.0;
   _min_stage =0.0;
@@ -1420,7 +1422,6 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     stage_new  =stage_nat;
   }
   // ======================================================================================
-  
   
   double total_outflow=res_outflow;
   int downID=DOESNT_EXIST;
