@@ -848,7 +848,7 @@ void CSubBasin::AddHRU(CHydroUnit *pHRU)
 void CSubBasin::AddReservoir(CReservoir *pRes)
 {
   ExitGracefullyIf(_pReservoir!=NULL,
-                   "CSubBasin::AddReservoir: only one inflow reservoir may be specified per basin",BAD_DATA);
+                   "CSubBasin::AddReservoir: only one reservoir may be specified per basin",BAD_DATA);
   if(_res_disabled) {
     delete pRes;
     _reach_length=_reach_length2;

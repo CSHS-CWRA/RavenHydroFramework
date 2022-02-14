@@ -505,13 +505,13 @@ void MassEnergyBalance( CModel            *pModel,
     if (pRes != NULL) {
       for (int i = 0; i < pRes->GetNumControlStructures(); i++) {
         if (pRes->GetControlFlowTarget(i) != pBasin->GetDownstreamID()) {
-          pDivert=pRes->GetControlFlowTarget(i);
+          pDivert=pModel->GetSubBasinIndex(pRes->GetControlFlowTarget(i)); //p, not SBID
           if (pDivert!=DOESNT_EXIST){
             aQinnew[pDivert]+=pRes->GetControlOutflow(i);
           }
           else {
             //\todo[funct] - must handle this in mass balance - should go to cumulative output
-	          //Qdivloss+=div_Q;
+	          //Qdivloss+=pRes->GetControlOutflow(i);
           }
         }
       }

@@ -101,6 +101,35 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   int nnstart=pTSObs->GetTimeIndexFromModelTime(starttime+1.0)+skip; //works for avg. hydrographs - unclear why 1.0 is neccessary
   int nnend  =pTSObs->GetTimeIndexFromModelTime(endtime  +1.0)+1; //+1 is just because below loops expressed w.r.t N, not N-1
 
+
+  // Modify weights for thresholds/blank observation data
+  //----------------------------------------------------------
+  double max_obsval=-ALMOST_INF;
+  for(nn=nnstart;nn<nnend;nn++)
+  {
+    obsval=pTSObs->GetSampledValue(nn);
+    if (obsval!=RAV_BLANK_DATA){upperswap(max_obsval,obsval);}
+  }
+  double *baseweight=new double [nnend]; //array stores base weights for each observation point 
+  for(nn=nnstart;nn<nnend;nn++)
+  { 
+    baseweight[nn]=1.0;
+    if(pTSWeights != NULL) {
+      baseweight[nn]=pTSWeights->GetSampledValue(nn);
+    }
+    obsval=pTSObs->GetSampledValue(nn);
+    modval=pTSObs->GetSampledValue(nn);
+    if(obsval==RAV_BLANK_DATA) {
+      baseweight[nn]=0.0;
+    }
+    if(modval==RAV_BLANK_DATA) {//not clear why this would happen
+      baseweight[nn]=0.0;
+    }
+    if(obsval<Options.diag_min_percent*max_obsval) { 
+      baseweight[nn]=0.0;
+    }
+  }
+
   switch (_type)
   {
   case(DIAG_NASH_SUTCLIFFE)://----------------------------------------------------
@@ -110,10 +139,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
-      obsval = pTSObs->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
+      weight=baseweight[nn];
+      obsval =pTSObs->GetSampledValue(nn);
       avgobs+=weight*obsval;
       N     +=weight;
     }
@@ -122,11 +149,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double sum1(0.0),sum2(0.0);
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight=baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
 
       sum1 += weight*pow(obsval - modval,2);
       sum2 += weight*pow(obsval - avgobs,2);
@@ -152,12 +177,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight=baseweight[nn+1]*baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       obsval2= pTSObs->GetSampledValue(nn+1);
-      if(pTSWeights != NULL) { weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn)); }
-      if((obsval == RAV_BLANK_DATA) || (obsval2 == RAV_BLANK_DATA)) { weight=0.0; }
-     
       avg+= weight*(obsval2-obsval)/dt;
       N  += weight;
     }
@@ -167,14 +189,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double sum1(0.0),sum2(0.0);
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight=baseweight[nn+1]*baseweight[nn];
       obsval2 = pTSObs->GetSampledValue(nn+1);
       obsval  = pTSObs->GetSampledValue(nn);
       modval2 = pTSMod->GetSampledValue(nn+1);
       modval  = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=0.5*(pTSWeights->GetSampledValue(nn+1))+(pTSWeights->GetSampledValue(nn)); }
-
-      if ((obsval==RAV_BLANK_DATA) || (obsval2==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA) || (modval2==RAV_BLANK_DATA)){weight=0.0;}
         
       sum1 += weight*pow((obsval2-obsval)/dt - (modval2-modval)/dt,2);
       sum2 += weight*pow((obsval2-obsval)/dt - avg,2);
@@ -194,48 +213,45 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   case(DIAG_NASH_SUTCLIFFE_RUN)://----------------------------------------------------
   {
     if (_width < 2)
-		{
-			string warn = "Provide average _width greater than 1 in format: DIAG_NASH_SUTCLIFFE_RUN[n]";
-			WriteWarning(warn, Options.noisy);
-			return -ALMOST_INF;
-		}
-		if (_width * 2 > nnend)
-		{
-			string warn = "Not enough sample values. Check width and timeseries";
-			WriteWarning(warn, Options.noisy);
-			return -ALMOST_INF;
-		}
-		nnend -= _width;
-		nnstart  += _width;
-		
+    {
+      string warn = "Provide average _width greater than 1 in format: DIAG_NASH_SUTCLIFFE_RUN[n]";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    if (_width * 2 > nnend)
+    {
+      string warn = "Not enough sample values. Check width and timeseries";
+      WriteWarning(warn, Options.noisy);
+      return -ALMOST_INF;
+    }
+    nnend    -= _width;
+    nnstart  += _width;
+    
     double avg=0;
     N=0;
 
     for (nn=nnstart;nn<nnend;nn++)
     {
-    	int front = 0;
-			int back = 0;
-			double modavg = 0.0;
-			double obsavg = 0.0;
-			weight = 1.0;
+      int front = 0;
+      int back = 0;
+      double modavg = 0.0;
+      double obsavg = 0.0;
+      weight =baseweight[nn];
       front = (int)(floor(_width / 2));
-			if (_width % 2 == 1) { back = front;  }
-			else                 { back = front-1;}
+      if (_width % 2 == 1) { back = front;  }
+      else                 { back = front-1;}
 
-			for (int k = nn - front; k <= nn + back; k++)
-			{
-				modavg += pTSMod->GetSampledValue(k);
-				obsavg += pTSObs->GetSampledValue(k);
-				if (pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k); }
-			}
-
-			modval = modavg / _width;
-			obsval = obsavg / _width;
-
-      if ((obsval != RAV_BLANK_DATA) && (modval != RAV_BLANK_DATA) && weight != 0) {
-        avg+=obsval*weight;
-        N  += weight;
+      for (int k = nn - front; k <= nn + back; k++)
+      {
+        modavg += pTSMod->GetSampledValue(k);
+        obsavg += pTSObs->GetSampledValue(k);
+        weight *= baseweight[k]; 
       }
+
+      obsval = obsavg / _width;
+
+      avg+=obsval*weight;
+      N  += weight;
     }
     avg/=N;
 
@@ -246,7 +262,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       int back = 0;
       double modavg = 0.0;
       double obsavg = 0.0;
-      weight = 1.0;
+      weight = baseweight[nn];
 
       front = (int)floor(_width / 2);
       if(_width % 2 == 1) {back = front;}
@@ -256,25 +272,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       {
         modavg += pTSMod->GetSampledValue(k);
         obsavg += pTSObs->GetSampledValue(k);
-        if(pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k); }
+        weight *= baseweight[k];
       }
 
       modval = modavg / _width;
       obsval = obsavg / _width;
-
-      // Track that all values in width are valid to be used in calculation
-      int validtrack_obs = 0;
-      int validtrack_mod = 0;
-
-      for(int k = nn - front; k <= nn + back; k++)
-      {
-        if(pTSObs->GetSampledValue(k) != RAV_BLANK_DATA) { validtrack_obs += 1; }
-        if(pTSMod->GetSampledValue(k) != RAV_BLANK_DATA) { validtrack_mod += 1; }
-        if(pTSWeights != NULL) { weight *= pTSWeights->GetSampledValue(k); }
-      }
-
-      if(validtrack_obs != _width) { weight = 0; }
-      if(validtrack_mod != _width) { weight = 0; }
     
       sum1 += pow(obsval - modval,2)*weight;
       sum2 += pow(obsval - avg   ,2)*weight;
@@ -305,10 +307,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observation value
     {
-      weight=1.0;
+      weight=baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
-      if(pTSWeights != NULL)    { weight=pTSWeights->GetSampledValue(nn); }
-      if(obsval==RAV_BLANK_DATA){ weight=0.0; }
       avgobs+=weight*obsval;
       N     +=weight;
     }
@@ -317,11 +317,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double sum1(0.0),sum2(0.0);
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate numerator and denominator of NSE term
     {
-      weight=1.0;
+      weight=baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
       
       obsdaily+=weight*obsval;
       moddaily+=weight*modval;
@@ -354,11 +352,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight=baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
   
       sum+=weight*pow(obsval-modval,2);
       N  +=weight;
@@ -381,21 +377,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for (nn=nnstart;nn<nnend;nn++)
     {
-
-      weight=1.0;
+      weight =baseweight[nn]*baseweight[nn+1];
       obsval = pTSObs->GetSampledValue(nn+1) - pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn+1) - pTSMod->GetSampledValue(nn);
       obsval /= dt;
       modval /= dt;
-
-      // both values at current timestep and next time step need to be valid
-      if(pTSWeights != NULL){ weight=(pTSWeights->GetSampledValue(nn+1))*(pTSWeights->GetSampledValue(nn));}
-
-      if (pTSObs->GetSampledValue(nn) != RAV_BLANK_DATA && pTSObs->GetSampledValue(nn+1) != RAV_BLANK_DATA) { }
-      else {weight = 0;}
-
-      if (pTSMod->GetSampledValue(nn) != RAV_BLANK_DATA && pTSMod->GetSampledValue(nn+1) != RAV_BLANK_DATA) { }
-      else {weight = 0;}
 
       sum+=weight*pow(obsval-modval,2);
       N  +=weight;
@@ -416,11 +402,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     for (nn=nnstart;nn<nnend;nn++)
     {
+      weight =baseweight[nn];
       obsval=pTSObs->GetSampledValue(nn);
       modval=pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
 
       sum1+=weight*(modval-obsval);
       sum2+=weight*obsval;
@@ -444,12 +428,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
    
     for (nn = nnstart; nn < nnend; nn++)
     {
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
-
+     
       sum += weight*fabs(obsval - modval);
       N   += weight;
     }
@@ -473,9 +455,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if(pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
+      weight =baseweight[nn];
 
       if(weight > 0.0) {
         if(fabs(obsval - modval) > maxerr) {
@@ -505,9 +485,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
+      weight =baseweight[nn];
 
       if (weight> 0) {
         if (obsval > maxObs) {maxObs = obsval;}
@@ -539,13 +517,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
+      weight =baseweight[nn];
       
       if (weight != 0)
       {
-		    JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
+        JulianConvert(nn, Options.julian_start_day, Options.julian_start_year, Options.calendar, tt);
         mon = tt.month;
         break;
       }
@@ -556,9 +532,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
+      weight =baseweight[nn];
       
       if (weight != 0)
       {
@@ -604,10 +578,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       obsval    = pTSObs->GetSampledValue(nn);
       modval    = pTSMod->GetSampledValue(nn);
       
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if((   obsval==RAV_BLANK_DATA) || (   modval==RAV_BLANK_DATA)) { weight=0.0; }
-      if((nxtobsval==RAV_BLANK_DATA) || (nxtmodval==RAV_BLANK_DATA)) { weight=0.0; }
+      weight =baseweight[nn]*baseweight[nn+1];
       
       ModSum += weight*modval;
       ObsSum += weight*obsval;
@@ -626,10 +597,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       obsval    = pTSObs->GetSampledValue(nn);
       modval    = pTSMod->GetSampledValue(nn);
 
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn);}
-      if((   obsval==RAV_BLANK_DATA) || (   modval==RAV_BLANK_DATA)) {    weight=0.0; }
-      if((nxtobsval==RAV_BLANK_DATA) || (nxtmodval==RAV_BLANK_DATA)) {    weight=0.0; }
+      weight =baseweight[nn]*baseweight[nn+1];
       
       TopSum += weight*(nxtmodval - nxtobsval) * (modval - obsval);
       ModDiffSum += weight*pow((modval - ModAvg), 2);
@@ -658,15 +626,12 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double N=0;
     for (nn = nnstart; nn < nnend - 1; nn++)
     {
-
       nxtobsval = pTSObs->GetSampledValue(nn + 1);
       nxtmodval = pTSMod->GetSampledValue(nn + 1);
       obsval    = pTSObs->GetSampledValue(nn);
       modval    = pTSMod->GetSampledValue(nn);
-      double nxtweight=1.0;
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); nxtweight = pTSWeights->GetSampledValue(nn + 1); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA) || (nxtobsval==RAV_BLANK_DATA) || (nxtmodval==RAV_BLANK_DATA) || (nxtweight==0.0)) { weight=0.0; }
+      
+      weight =baseweight[nn]*baseweight[nn+1];
 
       if (weight>0.0)
       {
@@ -696,11 +661,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-
-      if (obsval==RAV_BLANK_DATA){weight=0.0;}
-      if (modval==RAV_BLANK_DATA){weight=0.0;}
+      weight =baseweight[nn];
       
       ObsSum += obsval*weight;
       N+=weight;
@@ -713,11 +674,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-
-      if (obsval==RAV_BLANK_DATA){weight=0.0;}
-      if (modval==RAV_BLANK_DATA){weight=0.0;}
+      weight =baseweight[nn];
 
       TopSum += pow((obsval - modval),2)*weight;
       BotSum += pow((obsval - ObsAvg),2)*weight;
@@ -746,10 +703,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if (obsval==RAV_BLANK_DATA){weight=0.0;}
-      if (modval==RAV_BLANK_DATA){weight=0.0;}
+      weight =baseweight[nn];
 
       ObsSum += obsval*weight;
       ModSum += modval*weight;
@@ -763,11 +717,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-
-      if (obsval==RAV_BLANK_DATA){weight=0.0;}
-      if (modval==RAV_BLANK_DATA){weight=0.0;}
+      weight =baseweight[nn];
 
       CovXY += weight*(modval-ModAvg)*(obsval-ObsAvg);
       CovXX += weight*(modval-ModAvg)*(modval-ModAvg);
@@ -797,8 +747,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
+      weight =baseweight[nn];
 
       //log transformation
       if ((obsval <= 0.0) || (obsval==RAV_BLANK_DATA)){obsval=RAV_BLANK_DATA;} //negative values treated as invalid observations/modeled
@@ -818,8 +767,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval=pTSObs->GetSampledValue(nn);
       modval=pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if(pTSWeights != NULL){ weight=pTSWeights->GetSampledValue(nn);}
+      weight =baseweight[nn];
 
       //log transformation
       if ((obsval <= 0.0) || (obsval==RAV_BLANK_DATA)){obsval=RAV_BLANK_DATA;} //negative values treated as invalid observations/modeled
@@ -853,10 +801,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if (obsval==RAV_BLANK_DATA){weight=0.0;}
-      if (modval==RAV_BLANK_DATA){weight=0.0;}
+      weight =baseweight[nn];
 
       sumobs+=obsval*weight;
       summod+=modval*weight;
@@ -887,12 +832,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N = 0;
     for (nn = nnstart; nn < nnend; nn++)
     {
-      weight = 1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if (obsval == RAV_BLANK_DATA) { weight = 0; }
-      if (modval == RAV_BLANK_DATA) { weight = 0; }
       
       ObsSum += obsval*weight;
       ModSum += modval*weight;
@@ -903,12 +845,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for (nn = nnstart; nn < nnend; nn++)
     {
-      weight = 1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if (obsval == RAV_BLANK_DATA) { weight = 0; }
-      if (modval == RAV_BLANK_DATA) { weight = 0; }
       
       ObsStd += pow((obsval - ObsAvg), 2)*weight;
       ModStd += pow((modval - ModAvg), 2)*weight;
@@ -949,15 +888,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N = 0;
     for (nn = nnstart; nn < nnend; nn++)
     {
-      weight = 1.0;
+      weight =baseweight[nn]*baseweight[nn+1];
       // obsval and modval becomes (dS(n+1)-dS(n))/dt
       obsval = (pTSObs->GetSampledValue(nn + 1) - pTSObs->GetSampledValue(nn))/dt;
       modval = (pTSMod->GetSampledValue(nn + 1) - pTSMod->GetSampledValue(nn))/dt;
-      
-      // both values at current timestep and next time step need to be valid (this may cause strange behaviour with non-zero/one weights)
-      if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
-      if ((pTSObs->GetSampledValue(nn)==RAV_BLANK_DATA) || (pTSObs->GetSampledValue(nn + 1)==RAV_BLANK_DATA)){weight=0.0;} 
-      if ((pTSMod->GetSampledValue(nn)==RAV_BLANK_DATA) || (pTSMod->GetSampledValue(nn + 1)==RAV_BLANK_DATA)){weight=0.0;}
       
       ObsSum += obsval*weight;
       ModSum += modval*weight;
@@ -969,15 +903,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     for (nn = nnstart; nn < nnend; nn++)
     {
       // obsval and modval becomes (dS(n+1)-dS(n))/dt
-      weight = 1.0;
+      weight =baseweight[nn]*baseweight[nn+1];
       obsval = (pTSObs->GetSampledValue(nn + 1) - pTSObs->GetSampledValue(nn))/dt;
       modval = (pTSMod->GetSampledValue(nn + 1) - pTSMod->GetSampledValue(nn))/dt;
-      
-      // both values at current timestep and next time step need to be valid
-      if (pTSWeights != NULL) { weight = (pTSWeights->GetSampledValue(nn + 1))*(pTSWeights->GetSampledValue(nn)); }
-      if ((pTSObs->GetSampledValue(nn)==RAV_BLANK_DATA) || (pTSObs->GetSampledValue(nn + 1)==RAV_BLANK_DATA)){weight=0.0;} 
-      if ((pTSMod->GetSampledValue(nn)==RAV_BLANK_DATA) || (pTSMod->GetSampledValue(nn + 1)==RAV_BLANK_DATA)){weight=0.0;}
-      
+            
       ObsStd += pow((obsval - ObsAvg), 2)*weight;
       ModStd += pow((modval - ModAvg), 2)*weight;
       Cov += (obsval - ObsAvg) * (modval - ModAvg)*weight;
@@ -1010,11 +939,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if(pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-
-      if (obsval==RAV_BLANK_DATA){weight=0.0;}
-      if (modval==RAV_BLANK_DATA){weight=0.0;}
+      weight =baseweight[nn];
 
       sum += weight / (1.0 + pow(((modval-obsval) / (2.0*obsval)),2));
       N+=weight;
@@ -1037,11 +962,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
   
       sum+=weight*pow(obsval-modval,4);
       N  +=weight;
@@ -1062,11 +985,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if ((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)){weight=0.0;}
   
       sum+=weight*pow( sqrt(obsval)-sqrt(modval), 2);
       N  +=weight;
@@ -1088,10 +1009,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
       avgobs+=weight*obsval;
       N     +=weight;
     }
@@ -1104,9 +1023,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     {
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
+      weight =baseweight[nn];
 
       sum1 += weight*fabs(obsval - modval);
       sum2 += weight*fabs(avgobs - modval);
@@ -1136,10 +1053,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       prvmodval = pTSMod->GetSampledValue(nn - 1);
       obsval    = pTSObs->GetSampledValue(nn);
       modval    = pTSMod->GetSampledValue(nn);
-      
-      weight=1.0;
-      if (pTSWeights != NULL) { weight = pTSWeights->GetSampledValue(nn); }
-      if ((obsval == RAV_BLANK_DATA) || (modval == RAV_BLANK_DATA)){weight=0.0;}
+      weight =baseweight[nn]*baseweight[nn-1];
 
       sum1 +=   weight*(pow( modval-   obsval, 2));
       sum2 +=   weight*(pow( modval-prvmodval, 2));
@@ -1160,14 +1074,12 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
-      if(pTSWeights != NULL)     { weight=pTSWeights->GetSampledValue(nn); }
-      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
       if (weight>0.0){weight=1.0;}
       N     +=weight;
     }
-    return N/DAYS_PER_YEAR;
+    return N/365/Options.timestep;
   }
   case(DIAG_NSE4)://----------------------------------------------------
   {
@@ -1176,10 +1088,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if(obsval==RAV_BLANK_DATA) { weight=0.0; }
       avgobs+=weight*obsval;
       N     +=weight;
     }
@@ -1188,11 +1098,9 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double sum1(0.0),sum2(0.0);
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight=1.0;
+      weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      if(pTSWeights != NULL) { weight=pTSWeights->GetSampledValue(nn); }
-      if((obsval==RAV_BLANK_DATA) || (modval==RAV_BLANK_DATA)) { weight=0.0; }
 
       sum1 += weight*pow(obsval - modval,4);
       sum2 += weight*pow(obsval - avgobs,4);
@@ -1215,7 +1123,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   }
   }//end switch
 
-
+  delete [] baseweight;
 }
 /*****************************************************************
 Constructor/Destructor

@@ -510,6 +510,14 @@ long   CReservoir::GetControlFlowTarget(const int i) const
 {
   return _pControlStructures[i]->GetTargetBasinID();
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns name of  control structure i
+/// \param i [in] control structure index (must be in range from 0...nControlStructures)
+//
+string CReservoir::GetControlName(const int i) const
+{
+  return _pControlStructures[i]->GetName();
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief initializes reservoir variables
@@ -748,7 +756,7 @@ void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
 void CReservoir::SetCrestWidth(const double& width)
 {
   if(_crest_width==DOESNT_EXIST) {
-    ExitGracefully("CReservoir::SetCrestWidth - trying to change crest width of non-lake reservoir",BAD_DATA_WARN);
+    WriteWarning("CReservoir::SetCrestWidth: - trying to change crest width of non-lake reservoir",true);
     return;
   }
   else {

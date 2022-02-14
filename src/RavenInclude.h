@@ -724,7 +724,7 @@ enum comparison
 {
   COMPARE_IS_EQUAL,      ///< Compared entities are equal
   COMPARE_NOT_EQUAL,     ///< Compared entities are not equal
-  COMPARE_GREATERTHAN,   ///< Entity 1 greater than Entit 2
+  COMPARE_GREATERTHAN,   ///< Entity 1 greater than entity 2
   COMPARE_LESSTHAN,      ///< Entity 1 less than entity 2
   COMPARE_BETWEEN        ///< Entity 1 within range 
 };
@@ -1085,6 +1085,7 @@ struct optStruct
   // Diagnostic options
   double           diag_start_time;           ///< Model time to start diagnostics
   double           diag_end_time;             ///< Model time to start diagnostics
+  double           diag_min_percent;          ///< threshold percentage of max below which observations should have zero weight (default -1e99)
 
   // Other
   bool             assimilate_flow;           ///< turn on streamflow assimilation

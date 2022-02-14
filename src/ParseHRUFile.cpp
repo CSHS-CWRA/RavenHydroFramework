@@ -917,7 +917,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     :VaryingStageRelations
       21 # number of points
       [jul day1] [jul day2] [jul day3] ...
-      0.09 0 0 0.0 0.0 (h [m], Q [m3/s], A [m2], V [m3])
+      0.09 0 0 0.0 0.0 (h [m], Q [m3/s], A [m2], V [m3] Q2 [m3/s], Q3 [m3/s]... )
       0.1 2 43 0.2 0.3
       ...
       3.0 20000 3500 200 25000
@@ -974,7 +974,6 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         :Condition STAGE IS_LESS_THAN 400
         :Condition STAGE IS_LESS_THAN 373.3 IN_BASIN 29 #can point to flow/stage in other basins
         #--
-        :Constraint STAGE IS_LESS_THAN 402.3
       :EndOperatingRegime
       #likewise, we could add 30 different operating regimes if we were feeling saucy
     :EndOutflowControlStructure

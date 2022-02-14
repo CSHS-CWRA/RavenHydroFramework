@@ -284,14 +284,14 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       {
         if((_pSubBasins[p]->IsGauged()) && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) {
           if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" "; }
-          else { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
+          else                              { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" "; }
         }
 
         for(i = 0; i < _nObservedTS; i++) {
           if(IsContinuousStageObs(_pObservedTS[i],_pSubBasins[p]->GetID()))
           {
             if(_pSubBasins[p]->GetName()=="") { _RESSTAGE<<",ID="<<_pSubBasins[p]->GetID()  <<" (observed) [m]"; }
-            else { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m]"; }
+            else                              { _RESSTAGE<<","   <<_pSubBasins[p]->GetName()<<" (observed) [m]"; }
           }
         }
 
@@ -357,8 +357,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         RES_MB<<","   <<name<<" inflow [m3]";
         RES_MB<<","   <<name<<" outflow [m3]"; //from main outlet
         for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
-          RES_MB<<","   <<name<<" ctrl outflow "<<i<<" [m3]";
-          RES_MB<<","   <<name<<" ctrl regime "<<i;
+          string name=_pSubBasins[p]->GetReservoir()->GetControlName(i);
+          RES_MB<<","   <<name<<" ctrl outflow "<<name<<" [m3]";
+          RES_MB<<","   <<name<<" ctrl regime "<<name;
         }
         RES_MB<<","   <<name<<" precip [m3]";
         RES_MB<<","   <<name<<" evap [m3]";
@@ -1225,6 +1226,8 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
   int i,k;
   string tmpFilename;
 
+  if (Options.output_format==OUTPUT_NONE){return;} //:SuppressOutput is on
+
   // WRITE {RunName}_solution.rvc - final state variables file
   ofstream RVC;
   tmpFilename=FilenamePrepare(solfile+".rvc",Options);
@@ -1479,6 +1482,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
         CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
         if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}
       }
+      
       if (!skip)
       {
 

@@ -183,6 +183,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumControlStructures  () const;
   string            GetRegimeName            (const int i, const time_struct &tt) const;
   long              GetControlFlowTarget     (const int i) const;
+  string            GetControlName           (const int i) const;
 
   //Manipulators
   void              SetMinStage              (const double &min_z);

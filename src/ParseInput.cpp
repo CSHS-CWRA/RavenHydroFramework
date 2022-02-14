@@ -305,6 +305,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_group_mb          =DOESNT_EXIST;
   Options.diag_start_time         =-ALMOST_INF;
   Options.diag_end_time           = ALMOST_INF;
+  Options.diag_min_percent        =-ALMOST_INF;
   Options.wateryr_mo              =10; //October
   Options.create_rvp_template     =false;
   Options.nNetCDFattribs          =0;
@@ -436,6 +437,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EvaluationMetrics"         )){code=71; }
     else if  (!strcmp(s[0],":EvaluationTime"            )){code=72; }//After StartDate or JulianStartDay and JulianStartYear commands
     else if  (!strcmp(s[0],":EvaluationPeriod"          )){code=73; } 
+	else if  (!strcmp(s[0],":EvaluationThreshold"       )){code=74; }
     else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=75; }
     else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
     else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; } 
@@ -1542,6 +1544,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Len>=4) {
         pDP=new CDiagPeriod(s[1],s[2],s[3],Options);
         pModel->AddDiagnosticPeriod(pDP);
+      }
+      break;
+    }
+    case(74):  //--------------------------------------------
+    {/*:EvaluationThreshold [percent]*/
+      if(Options.noisy) { cout << ":EvaluationThreshold" << endl; }
+      Options.diag_min_percent=max(min(s_to_d(s[1]),1.0),0.0);  
+      if(s_to_d(s[1])>1.0) {
+        WriteWarning(":EvaluationThreshold should be between 0 and 1",Options.noisy);
       }
       break;
     }
