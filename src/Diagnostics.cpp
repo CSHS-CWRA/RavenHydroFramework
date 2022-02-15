@@ -97,21 +97,30 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   double weight=1;
 
   int    skip  =0;
-  if (!strcmp(pTSObs->GetName().c_str(), "HYDROGRAPH") && (Options.ave_hydrograph == true)){ skip = 1; }//skips first point (initial conditions)
+  if (!strcmp(pTSObs->GetName().c_str(), "HYDROGRAPH") && (Options.ave_hydrograph == true)){ skip = 1; }
   double dt = Options.timestep;
 
-  int nnstart=pTSObs->GetTimeIndexFromModelTime(starttime+1.0)+skip; //works for avg. hydrographs - unclear why 1.0 is neccessary
-  int nnend  =pTSObs->GetTimeIndexFromModelTime(endtime  +1.0)+1; //+1 is just because below loops expressed w.r.t N, not N-1
+  int nnstart=pTSObs->GetTimeIndexFromModelTime(starttime)+skip; //works for avg. hydrographs 
+  int nnend  =pTSObs->GetTimeIndexFromModelTime(endtime  )+1; //+1 is just because below loops expressed w.r.t N, not N-1
 
+  threshold=max(min(threshold,1.0),0.0);
 
   // Modify weights for thresholds/blank observation data
   //----------------------------------------------------------
-  double max_obsval=-ALMOST_INF;
+  double *allvals=new double [nnend];
+  double thresh_obsval=0;
+  int Nobs=0;
   for(nn=nnstart;nn<nnend;nn++)
   {
     obsval=pTSObs->GetSampledValue(nn);
-    if (obsval!=RAV_BLANK_DATA){upperswap(max_obsval,obsval);}
+    if (obsval!=RAV_BLANK_DATA){allvals[Nobs]=obsval;Nobs++;  }
   }
+  if(Nobs>0) {
+    quickSort(allvals,0,Nobs-1);
+    thresh_obsval=allvals[(int)rvn_floor(threshold*Nobs)];
+  }
+  delete[] allvals;
+
   double *baseweight=new double [nnend]; //array stores base weights for each observation point 
   for(nn=nnstart;nn<nnend;nn++)
   { 
@@ -132,16 +141,13 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       baseweight[nn]=0.0;
     }*/
     if(compare==COMPARE_GREATERTHAN) {
-      if(obsval<threshold*max_obsval) {
-        baseweight[nn]=0.0;
-      }
+      if(obsval<thresh_obsval) {baseweight[nn]=0.0;}
     }
     else if(compare==COMPARE_LESSTHAN) {
-      if(obsval>threshold*max_obsval) {
-        baseweight[nn]=0.0;
-      }
+      if(obsval>thresh_obsval) {baseweight[nn]=0.0;}
     }
   }
+
 
   switch (_type)
   {
@@ -313,6 +319,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     
     int shift=(int)(1.0- Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION))*freq; //no. of timesteps nnstartped at start of simulation (starts on first full day)
     if (nnstart>skip){shift=0;}//using diagnostic period always midnight to midnight, no shift required
+    if(freq==1) { shift=0; }
     double moddaily=0.0;
     double obsdaily=0.0;
     double dailyN  =0.0;
@@ -337,7 +344,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       obsdaily+=weight*obsval;
       moddaily+=weight*modval;
       dailyN  +=weight;
-      if(((nn-nnstart+shift)%freq)==(freq-1)) { //last timestep of day
+      if(((nn-(nnstart+shift))%freq)==(freq-1)) { //last timestep of day
         if(dailyN>0) {
           obsdaily/=dailyN;
           moddaily/=dailyN;
@@ -1158,7 +1165,7 @@ CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,comparison 
   time_struct tt;
   tt=DateStringToTimeStruct(startdate,"00:00:00",Options.calendar);
   _t_start = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
-  _t_start = max(_t_start,-1.0);
+  _t_start = max(_t_start,0.0);
 
   tt=DateStringToTimeStruct(enddate  ,"00:00:00",Options.calendar);
   _t_end   = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
@@ -1179,6 +1186,7 @@ double     CDiagPeriod::GetThreshold() const { return _thresh; }
 diag_type StringToDiagnostic(string distring) 
 {
   if      (!distring.compare("NASH_SUTCLIFFE"       )){return DIAG_NASH_SUTCLIFFE;}
+  else if (!distring.compare("DAILY_NSE"            )){return DIAG_DAILY_NSE; }
   else if (!distring.compare("RMSE"                 )){return DIAG_RMSE;}
   else if (!distring.compare("PCT_BIAS"             )){return DIAG_PCT_BIAS;}
   else if (!distring.compare("ABSERR"               )){return DIAG_ABSERR;}
