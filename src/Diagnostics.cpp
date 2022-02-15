@@ -86,6 +86,8 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
                                         CTimeSeriesABC  *pTSWeights,
                                         const double    &starttime,
                                         const double    &endtime,
+                                        comparison       compare,
+                                        double           threshold,
                                         const optStruct &Options) const
 {
   int nn;
@@ -125,8 +127,19 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     if(modval==RAV_BLANK_DATA) {//not clear why this would happen
       baseweight[nn]=0.0;
     }
-    if(obsval<Options.diag_min_percent*max_obsval) { 
+    /*double junk;
+    if(!EvaluateCondition(compare,obsval,threshold*max_obsval,junk)) {
       baseweight[nn]=0.0;
+    }*/
+    if(compare==COMPARE_GREATERTHAN) {
+      if(obsval<threshold*max_obsval) {
+        baseweight[nn]=0.0;
+      }
+    }
+    else if(compare==COMPARE_LESSTHAN) {
+      if(obsval>threshold*max_obsval) {
+        baseweight[nn]=0.0;
+      }
     }
   }
 
@@ -1136,9 +1149,12 @@ Constructor/Destructor
 /// \param enddate [in] string date of period ending "yyyy-mm-dd" format
 /// \param Options [in] options structure
 //
-CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,const optStruct &Options)
+CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,comparison compare,double thresh,const optStruct &Options)
 {
   _name=name;
+  _comp=compare;
+  _thresh=thresh;
+
   time_struct tt;
   tt=DateStringToTimeStruct(startdate,"00:00:00",Options.calendar);
   _t_start = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
@@ -1154,9 +1170,11 @@ CDiagPeriod::~CDiagPeriod() {}
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the CDiagnosticPeriod accessors
 //
-string   CDiagPeriod::GetName()      const{return _name;}
-double   CDiagPeriod::GetStartTime() const{return _t_start;}
-double   CDiagPeriod::GetEndTime()   const{return _t_end;}
+string     CDiagPeriod::GetName()      const { return _name;}
+double     CDiagPeriod::GetStartTime() const { return _t_start;}
+double     CDiagPeriod::GetEndTime()   const { return _t_end;}
+comparison CDiagPeriod::GetComparison()const { return _comp; }
+double     CDiagPeriod::GetThreshold() const { return _thresh; }
 
 diag_type StringToDiagnostic(string distring) 
 {

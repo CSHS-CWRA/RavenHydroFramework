@@ -231,6 +231,7 @@ private:/*------------------------------------------------------*/
 
   double       CalculateAggDiagnostic(const int ii, const int j,
                                       const double &starttime, const double &endtime, 
+                                      const comparison compare,const double &thresh,
                                       const optStruct &Options);
 
   //Routines for deriving missing data based on gridded data provided

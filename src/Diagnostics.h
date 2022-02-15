@@ -69,6 +69,8 @@ public:/*------------------------------------------------------*/
                              CTimeSeriesABC  *pTSWeights, 
                              const double    &starttime,
                              const double    &endtime,
+                             comparison       compare,
+                             double           threshold,
                              const optStruct &Options) const;
 };
 
@@ -78,17 +80,21 @@ class CDiagPeriod
 {
 private:/*------------------------------------------------------*/
 
-  string    _name;    ///< period name (e.g., "CALIBRATION")
-  double    _t_start; ///< starttime (in local model time)
-  double    _t_end;   ///< endtime (in local model time)
+  string     _name;    ///< period name (e.g., "CALIBRATION")
+  double     _t_start; ///< starttime (in local model time)
+  double     _t_end;   ///< endtime (in local model time)
+  comparison _comp;    ///< comparison criterion (> or <)
+  double     _thresh;  ///< threshold percentage
 
 public:/*------------------------------------------------------*/
 
-  CDiagPeriod(string name, string startdate, string enddate, const optStruct &Options);
+  CDiagPeriod(string name, string startdate, string enddate, comparison compare, double thresh, const optStruct &Options);
   ~CDiagPeriod();
 
-  string   GetName()      const;
-  double   GetStartTime() const;
-  double   GetEndTime()   const;
+  string     GetName()       const;
+  double     GetStartTime()  const;
+  double     GetEndTime()    const;
+  comparison GetComparison() const;
+  double     GetThreshold()  const;
 };
 #endif

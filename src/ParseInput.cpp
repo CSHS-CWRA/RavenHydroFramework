@@ -305,7 +305,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_group_mb          =DOESNT_EXIST;
   Options.diag_start_time         =-ALMOST_INF;
   Options.diag_end_time           = ALMOST_INF;
-  Options.diag_min_percent        =-ALMOST_INF;
   Options.wateryr_mo              =10; //October
   Options.create_rvp_template     =false;
   Options.nNetCDFattribs          =0;
@@ -437,7 +436,6 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":EvaluationMetrics"         )){code=71; }
     else if  (!strcmp(s[0],":EvaluationTime"            )){code=72; }//After StartDate or JulianStartDay and JulianStartYear commands
     else if  (!strcmp(s[0],":EvaluationPeriod"          )){code=73; } 
-	else if  (!strcmp(s[0],":EvaluationThreshold"       )){code=74; }
     else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=75; }
     else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
     else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; } 
@@ -1535,24 +1533,24 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(73):  //--------------------------------------------
-    {/*:EvaluationPeriod [period_name] [start yyyy-mm-dd] [end yyyy-mm-dd]*/
+    {/*:EvaluationPeriod [period_name] [start yyyy-mm-dd] [end yyyy-mm-dd] {condition} {thresh 0..1}*/
       if(Options.noisy) { cout << ":EvaluationPeriod" << endl; }
       CDiagPeriod *pDP=NULL;
       if(pModel==NULL) {
         WriteWarning(":EvaluationPeriod command must be after the :SoilModel command in the .rvi file. This command will be ignored.",Options.noisy); break;
       }
       if(Len>=4) {
-        pDP=new CDiagPeriod(s[1],s[2],s[3],Options);
+        comparison compare=COMPARE_GREATERTHAN;
+        double     comp_val=-ALMOST_INF;
+        if (Len>=6){
+          if      (!strcmp(s[4],"IS_BETWEEN"     )){compare=COMPARE_BETWEEN;}
+          else if (!strcmp(s[4],"IS_GREATER_THAN")){compare=COMPARE_GREATERTHAN;}
+          else if (!strcmp(s[4],"IS_LESS_THAN"   )){compare=COMPARE_LESSTHAN;}
+          else{WriteWarning("unrecognized comparison string in :Condition command",Options.noisy);}
+          comp_val=s_to_d(s[5]);
+        }
+        pDP=new CDiagPeriod(s[1],s[2],s[3],compare, comp_val,Options);
         pModel->AddDiagnosticPeriod(pDP);
-      }
-      break;
-    }
-    case(74):  //--------------------------------------------
-    {/*:EvaluationThreshold [percent]*/
-      if(Options.noisy) { cout << ":EvaluationThreshold" << endl; }
-      Options.diag_min_percent=max(min(s_to_d(s[1]),1.0),0.0);  
-      if(s_to_d(s[1])>1.0) {
-        WriteWarning(":EvaluationThreshold should be between 0 and 1",Options.noisy);
       }
       break;
     }
@@ -1645,12 +1643,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"MAXIMUM"         )){stat=AGG_MAXIMUM;}
       else if (!strcmp(s[1],"MINIMUM"         )){stat=AGG_MINIMUM;}
       else if (!strcmp(s[1],"MEDIAN"          )){stat=AGG_MEDIAN;}
+      else {
+        WriteWarning("Unrecognized aggregation statistic in :AggregateDiagnostic command.",Options.noisy); break;
+      }
       if (Len>3){
-       CHRUGroup *pHGrp=pModel->GetHRUGroup(s[3]);
-       if (pHGrp == NULL) {
+        CHRUGroup *pHGrp=pModel->GetHRUGroup(s[3]);
+        if (pHGrp == NULL) {
           WriteWarning("Invalid HRU Group in :AggregateDiagnostic command. Must declare group before using. This will be ignored",Options.noisy);break;
-       }
-       group_ind=pHGrp->GetGlobalIndex();
+        }
+        group_ind=pHGrp->GetGlobalIndex();
       }
       pModel->AddAggregateDiagnostic(stat,s[2],group_ind);
       break;

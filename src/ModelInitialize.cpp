@@ -267,9 +267,9 @@ void CModel::Initialize(const optStruct &Options)
 
   // Generate default diagnostic period - entire simulation 
   //--------------------------------------------------------------
-  CDiagPeriod *pDP=new CDiagPeriod("ALL","0001-01-01","9999-12-31",Options);
+  CDiagPeriod *pDP=new CDiagPeriod("ALL","0001-01-01","9999-12-31",COMPARE_GREATERTHAN,-ALMOST_INF,Options);
   AddDiagnosticPeriod(pDP);
-
+  
   //General QA/QC
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),

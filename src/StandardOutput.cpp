@@ -1469,8 +1469,10 @@ void CModel::RunDiagnostics(const optStruct &Options)
   //body
   bool skip;
   for (int d=0; d<_nDiagPeriods; d++){
-    double starttime=_pDiagPeriods[d]->GetStartTime();
-    double endtime  =_pDiagPeriods[d]->GetEndTime();
+    double starttime   = _pDiagPeriods[d]->GetStartTime();
+    double endtime     = _pDiagPeriods[d]->GetEndTime();
+    comparison compare = _pDiagPeriods[d]->GetComparison();
+    double     thresh  = _pDiagPeriods[d]->GetThreshold();
     for(int i=0;i<_nObservedTS;i++)
     {
       skip=false;
@@ -1488,7 +1490,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
 
         DIAG<<_pObservedTS[i]->GetName()<<"_"<<_pDiagPeriods[d]->GetName()<<"["<<_pObservedTS[i]->GetLocID()<<"],"<<_pObservedTS[i]->GetSourceFile() <<",";//append to end of name for backward compatibility
         for(int j=0; j<_nDiagnostics;j++) {
-          DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options)<<",";
+          DIAG<<_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,compare,thresh,Options)<<",";
         }
         DIAG<<endl;
       }
@@ -1507,16 +1509,18 @@ void CModel::RunDiagnostics(const optStruct &Options)
         case AGG_MINIMUM:               name+="Minimum"; break;
         case AGG_MEDIAN:                name+="Median";  break;
       }
-      //name+=AggStatToString(_pAggDiagnostics[ii]->aggtype);
+      //name+=AggStatToString(_pAggDiagnostics[ii]->aggtype); //replace above with this
       name+="_"+agg_datatype; 
+      name+="_"+_pDiagPeriods[d]->GetName();
       if (kk!=DOESNT_EXIST){
         if (agg_datatype=="HYDROGRAPH"){name+="_"+_pSBGroups[kk]->GetName();} // \todo[funct]- handle more datatypes
       }
 
       DIAG<<name<<",[multiple],";
       for(int j=0; j<_nDiagnostics;j++) {
-        DIAG<<CalculateAggDiagnostic(ii,j,starttime,endtime,Options)<<",";
+        DIAG<<CalculateAggDiagnostic(ii,j,starttime,endtime,compare,thresh,Options)<<",";
       }
+      DIAG<<endl;
     }
   }
  
@@ -1535,7 +1539,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
 ///
 /// \param &Options [in] global model options
 //
-double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &starttime, const double &endtime, const optStruct &Options) 
+double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &starttime, const double &endtime, const comparison compare,const double &thresh, const optStruct &Options) 
 {
   bool skip;
   double val;
@@ -1546,6 +1550,11 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
   string agg_datatype=_pAggDiagnostics[ii]->datatype;
 
   double *data=new double [_nObservedTS]; //maximum number of diagnostics that could be considered
+
+  if     (type==AGG_AVERAGE) { stat=0; }
+  else if(type==AGG_MAXIMUM) { stat=-ALMOST_INF; }
+  else if(type==AGG_MINIMUM) { stat=ALMOST_INF; }
+  else if(type==AGG_MEDIAN ) { stat=0; }
   for(int i=0;i<_nObservedTS;i++)
   {
     data[i]=0;
@@ -1566,11 +1575,11 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
     
     if (!skip)
     {
-      val=_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,Options);
+      val=_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,compare, thresh,Options);
       
       if      (type==AGG_AVERAGE){stat+=val; N++;}
       else if (type==AGG_MAXIMUM){upperswap(stat,val);N++;}
-      else if (type==AGG_MAXIMUM){lowerswap(stat,val);N++;}
+      else if (type==AGG_MINIMUM){lowerswap(stat,val);N++;}
       else if (type==AGG_MEDIAN ){data[N]=val; N++;}
     }
   }
@@ -2603,6 +2612,8 @@ double CModel::GetObjFuncVal(long calib_SBID,diag_type calib_Obj, const string c
 {
   double starttime=0.0;
   double endtime  =0.0;
+  comparison compare=COMPARE_GREATERTHAN;
+  double thresh=-ALMOST_INF;
   double objval;
   int ii=DOESNT_EXIST; // observation index
   int jj=DOESNT_EXIST; // diagnostic measure
@@ -2612,6 +2623,8 @@ double CModel::GetObjFuncVal(long calib_SBID,diag_type calib_Obj, const string c
     if(_pDiagPeriods[d]->GetName()==calib_period) {
       starttime=_pDiagPeriods[d]->GetStartTime();
       endtime  =_pDiagPeriods[d]->GetEndTime();
+      compare  =_pDiagPeriods[d]->GetComparison();
+      thresh   =_pDiagPeriods[d]->GetThreshold();
     }
   }
 
@@ -2627,7 +2640,7 @@ double CModel::GetObjFuncVal(long calib_SBID,diag_type calib_Obj, const string c
   ExitGracefullyIf(endtime==0.0,    "GetObjFuncVal: unable to find calibration period with this name ",BAD_DATA);
 
   //- Calculate objective function -----------------------------------
-  objval=_pDiagnostics[jj]->CalculateDiagnostic(_pModeledTS[ii],_pObservedTS[ii],_pObsWeightTS[ii],starttime,endtime,*_pOptStruct);
+  objval=_pDiagnostics[jj]->CalculateDiagnostic(_pModeledTS[ii],_pObservedTS[ii],_pObsWeightTS[ii],starttime,endtime,compare,thresh,*_pOptStruct);
 
   if((calib_Obj==DIAG_NASH_SUTCLIFFE) ||
      (calib_Obj==DIAG_KLING_GUPTA))
