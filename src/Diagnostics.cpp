@@ -115,9 +115,11 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     obsval=pTSObs->GetSampledValue(nn);
     if (obsval!=RAV_BLANK_DATA){allvals[Nobs]=obsval;Nobs++;  }
   }
-  if(Nobs>0) {
+  if(Nobs>1) {
+    int corr=0;
+    if(compare==COMPARE_LESSTHAN) { corr=-1; } //shifts threshold comparator
     quickSort(allvals,0,Nobs-1);
-    thresh_obsval=allvals[(int)rvn_floor(threshold*Nobs)];
+    thresh_obsval=allvals[(int)rvn_floor(threshold*Nobs)+corr];
   }
   delete[] allvals;
 
