@@ -161,6 +161,7 @@ public:/*-------------------------------------------------------*/
   void          ChangeLandUse           (const CLandUseClass    *lult_class);
   void          ChangeVegetation        (const CVegetationClass *veg_class);
   void          ChangeHRUType           (const HRU_type typ);
+  void          AdjustHRUForcing        (const forcing_type Ftyp,const double& epsilon); //ADDITIVE OR MULTIPLICATIVE
 
   //will be removed with landscape elements:
   void          RecalculateDerivedParams(const optStruct    &Options,

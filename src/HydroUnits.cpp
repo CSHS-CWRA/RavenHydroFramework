@@ -101,8 +101,8 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
 
   _pVeg      =veg_class    ->GetVegetationStruct();
   _pSurface  =lult_class   ->GetSurfaceStruct();
-  _pTerrain  =terrain_class->GetTerrainStruct();
-  
+  if (_pTerrain!=NULL){ _pTerrain  =terrain_class->GetTerrainStruct();}
+  else                { _pTerrain=NULL;}
   _PrecipMult = 1.0;
   _SpecifiedGaugeIdx=DOESNT_EXIST;
 
@@ -452,7 +452,15 @@ void CHydroUnit:: ChangeHRUType(const HRU_type typ)
 {
   _HRUType=typ;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Adjust HRU Forcing values mid-simulation
+//
+void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon) //ADDITIVE OR MULTIPLICATIVE
+{ 
+  if(Ftyp==F_PRECIP) { _Forcings.precip+=epsilon; upperswap(_Forcings.precip,0.0);}
+  //AdjustForcing(_Forcings,Ftyp,value,true);
+  //AdjustForcings(force_struct F, forcing_type typ, double value, bool additive);
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns maximum allowable value of state variable in model
 /// \todo [re-org] This might not be the best place for this routine

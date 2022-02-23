@@ -78,7 +78,7 @@ void CDDSEnsemble::SetCalibrationTarget(const long SBID,const diag_type object_d
 /// \brief initializes DDS caliobration run
 /// \param &Options [out] Global model options information
 //
-void CDDSEnsemble::Initialize(const optStruct &Options)
+void CDDSEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 {
   // QA/QC
   //-----------------------------------------------

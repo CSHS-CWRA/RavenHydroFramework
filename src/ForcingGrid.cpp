@@ -1018,9 +1018,9 @@ void CForcingGrid::Initialize( const optStruct &Options )
   double duration               = (double)(_nPulses)*_interval;
   double local_simulation_start = _t_corr;
   double local_simulation_end   = _t_corr + model_duration;
-  if ((local_simulation_start<0) && (local_simulation_start>-TIME_CORRECTION)){ local_simulation_start=0.0; }
 
   if(Options.deltaresFEWS) { local_simulation_start-=_interval; }//first timestep in FEWS netCDF output is noise
+  if ((local_simulation_start<0) && (local_simulation_start>-TIME_CORRECTION)){ local_simulation_start=0.0; }//correct for floating point errors
 
   if (Options.noisy){ cout << endl; }
   if (duration < local_simulation_start)  //out of data before simulation starts!

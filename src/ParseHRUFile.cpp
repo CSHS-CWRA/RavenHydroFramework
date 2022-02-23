@@ -75,6 +75,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":End"                      )){code=-4; }//stop reading
     else if  (!strcmp(s[0],":IfModeEquals"             )){code=-5; }
     else if  (in_ifmode_statement)                       {code=-6; }
+    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode 
     else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],":SubBasins"                )){code=1;  is_conduit=false;}
@@ -1515,10 +1516,10 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
               }
             }
           
-            if (Len > 6) {
+            if (Len>=6) {
               if (!strcmp(s[4], "IN_BASIN")) {R->basinID=s_to_l(s[5]);}
             }
-            if(Len>7){
+            if(Len>=7){
               if (!strcmp(s[5], "IN_BASIN")) {R->basinID=s_to_l(s[6]);}
             }
 

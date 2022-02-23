@@ -1020,6 +1020,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
     if(_netcdf_ID!=-9) { retval=nc_close(_netcdf_ID); HandleNetCDFErrors(retval); } _netcdf_ID=-9;
 #endif
   }
+  _filename=""; //so works in ensemble mode
 }
 
 int  ParseSVTypeIndex(string s,CModel *&pModel);

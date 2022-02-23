@@ -357,9 +357,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
         RES_MB<<","   <<name<<" inflow [m3]";
         RES_MB<<","   <<name<<" outflow [m3]"; //from main outlet
         for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
-          string name=_pSubBasins[p]->GetReservoir()->GetControlName(i);
-          RES_MB<<","   <<name<<" ctrl outflow "<<name<<" [m3]";
-          RES_MB<<","   <<name<<" ctrl regime "<<name;
+          string name2=_pSubBasins[p]->GetReservoir()->GetControlName(i);
+          RES_MB<<","   <<name<<" ctrl outflow "<<name2<<" [m3]";
+          RES_MB<<","   <<name<<" ctrl regime "<<name2;
         }
         RES_MB<<","   <<name<<" precip [m3]";
         RES_MB<<","   <<name<<" evap [m3]";

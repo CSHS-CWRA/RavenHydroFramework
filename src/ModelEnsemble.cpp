@@ -47,7 +47,7 @@ CEnsemble::CEnsemble(const int num_members,const optStruct &Options)
   _aRunNames=new string[_nMembers];
   ExitGracefullyIf(_aRunNames==NULL,"CEnsemble constructor (2)",OUT_OF_MEMORY);
 
-  for(int e=0;e<_nMembers;e++) 
+  for(int e=0;e<_nMembers;e++) //default - everything runs in same directory
   {
     _aOutputDirs[e]=Options.main_output_dir;
     _aRunNames  [e]=Options.run_name;
@@ -65,15 +65,22 @@ CEnsemble::~CEnsemble()
 /// \brief Accessor - gets number of ensemble members
 /// \return number of ensemble members
 //
-int CEnsemble::GetNumMembers() {
+int CEnsemble::GetNumMembers() const {
   return _nMembers;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Accessor - gets ensemble type
 /// \return ensemble type
 //
-ensemble_type CEnsemble::GetType() {
+ensemble_type CEnsemble::GetType() const {
   return _type;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Accessor - gets ensemble type
+/// \return ensemble type
+//
+double CEnsemble::GetStartTime(const int e) const {
+  return 0.0;
 }
 
 //Manipulator Functions
@@ -119,7 +126,7 @@ void CEnsemble::SetRunNames(const string RunNameString)
 /// \brief initializes ensemble
 /// \param &Options [out] Global model options information
 //
-void CEnsemble::Initialize(const optStruct &Options) {
+void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options) {
   //default does nothing - abstract base class
 }
 
@@ -174,9 +181,9 @@ void CMonteCarloEnsemble::AddParamDist(const param_dist *dist)
 /// \brief initializes ensemble
 /// \param &Options [out] Global model options information
 //
-void CMonteCarloEnsemble::Initialize(const optStruct &Options)
+void CMonteCarloEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 {
-  CEnsemble::Initialize(Options);
+  CEnsemble::Initialize(pModel,Options);
   ofstream MCOUT;
   string filename=Options.main_output_dir+"MonteCarloOutput.csv";
   MCOUT.open(filename.c_str());
@@ -211,7 +218,7 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
   double val;
   for(int i=0;i<_nParamDists;i++) 
   {
-    val=SampleFromDistribution(_pParamDists[i]);
+    val=SampleFromDistribution(_pParamDists[i]->distribution,_pParamDists[i]->distpar);
     pModel->UpdateParameter(_pParamDists[i]->param_class,
                             _pParamDists[i]->param_name,
                             _pParamDists[i]->class_group,
@@ -232,23 +239,23 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 //
-double SampleFromDistribution(param_dist *dist) 
+double SampleFromDistribution(disttype distribution, double distpar[3]) 
 {
   double value=0;
 
   //std::mt19937 generator;
 
-  if(dist->distribution==DIST_UNIFORM) 
+  if(distribution==DIST_UNIFORM) 
   {
     //std::uniform_real_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
     //value=distribution(generator);
-    value=dist->distpar[0]+(dist->distpar[1]-dist->distpar[0])*UniformRandom();
+    value=distpar[0]+(distpar[1]-distpar[0])*UniformRandom();
   }
-  else if(dist->distribution==DIST_NORMAL) 
+  else if(distribution==DIST_NORMAL) 
   {  
     //std::normal_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
     //value = distribution(generator);
-    value=dist->distpar[0]+(dist->distpar[1]*GaussRandom());
+    value=distpar[0]+(distpar[1]*GaussRandom());
   }
   return value;
 }

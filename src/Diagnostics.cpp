@@ -139,7 +139,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       baseweight[nn]=0.0;
     }
     /*double junk;
-    if(!EvaluateCondition(compare,obsval,threshold*max_obsval,junk)) {
+    if(!EvaluateCondition(compare,obsval,thresh_obsval,junk)) {
       baseweight[nn]=0.0;
     }*/
     if(compare==COMPARE_GREATERTHAN) {

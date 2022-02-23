@@ -357,6 +357,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":End"                       )){code=-3; }//premature end of file
     else if  (!strcmp(s[0],":IfModeEquals"              )){code=-5; }
     else if  (in_ifmode_statement)                        {code=-6; }
+    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode 
     else if  (!strcmp(s[0],":RedirectToFile"            )){code=-4; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],"?? "                        )){code=1;  }
@@ -1308,6 +1309,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if      (!strcmp(s[1],"ENSEMBLE_NONE"      )) { Options.ensemble=ENSEMBLE_NONE; }
       else if (!strcmp(s[1],"ENSEMBLE_DDS"       )) { Options.ensemble=ENSEMBLE_DDS; }
       else if (!strcmp(s[1],"ENSEMBLE_MONTECARLO")) { Options.ensemble=ENSEMBLE_MONTECARLO; }
+      else if (!strcmp(s[1],"ENSEMBLE_ENKF"      )) { Options.ensemble=ENSEMBLE_ENKF; }
       else { ExitGracefully("ParseInput:EnsembleMode: Unrecognized ensemble simulation mode",BAD_DATA_WARN); }
       num_ensemble_members=s_to_i(s[2]);
       break;
@@ -3314,6 +3316,10 @@ bool ParseMainInputFile (CModel     *&pModel,
   
   if(Options.SW_radiation==SW_RAD_NONE) {
     WriteAdvisory("The shortwave radiation calculation method is SW_RAD_NONE. This may impact some snowmelt and PET algorithms which require radiation.",Options.noisy);
+  }
+  if((Options.ensemble==ENSEMBLE_ENKF) && (Options.assimilate_flow)) {
+    WriteWarning("Both direct insertion and EnKF assimilation options were enabled. Direct insertion will be turned off.",Options.noisy);
+    Options.assimilate_flow=false;
   }
 
   //===============================================================================================

@@ -714,7 +714,8 @@ enum ensemble_type
 {
   ENSEMBLE_NONE,         ///< standard single model run
   ENSEMBLE_MONTECARLO,   ///< basic Monte Carlo simulation
-  ENSEMBLE_DDS           ///< DDS optimization run
+  ENSEMBLE_DDS,          ///< DDS optimization run
+  ENSEMBLE_ENKF          ///< Ensemble Kalman Filter data assimilation run
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -864,6 +865,7 @@ enum sv_type
   LATERAL_EXCHANGE,        ///< [mm] water storage in transit from HRU awaiting lateral transfer to other HRUs
 
   //Special - internal flags
+  STREAMFLOW,              ///< only used for referencing in data assimilation
   UNRECOGNIZED_SVTYPE,     ///< Unrecognized type of state variable
   MULTIPLE_SVTYPE,         ///< Multiple State variables (for parsing)
   USERSPEC_SVTYPE          ///< User specified state variable type (for parsing)

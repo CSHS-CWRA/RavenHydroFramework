@@ -611,7 +611,6 @@ void  CSubBasin::AddFlowDiversion(const int jul_start,const int jul_end,const in
   for(int i=0;i<NQ;i++) {
     div->aQsource[i]=aQ1[i];
     div->aQdivert[i]=aQ2[i];
-    cout<<"FD!: "<<aQ1[i]<<" "<<aQ2[i]<<endl;
   }
 
   if(!DynArrayAppend((void**&)(_pDiversions),(void*)(div),_nDiversions)) {

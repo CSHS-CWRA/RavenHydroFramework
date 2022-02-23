@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
     ParseInitialConditions              (pModel, Options);
     pModel->CalculateInitialWaterStorage(Options);
     pModel->SummarizeToScreen           (Options);
-    pModel->GetEnsemble()->Initialize   (Options);
+    pModel->GetEnsemble()->Initialize   (pModel,Options);
 
     CheckForErrorWarnings(false);
 
@@ -117,8 +117,11 @@ int main(int argc, char* argv[])
       }
       if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; }
 
+      double t_start=0.0;
+      t_start=pModel->GetEnsemble()->GetStartTime(e);
+      
       //Write initial conditions-------------------------------------
-      JulianConvert(0.0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+      JulianConvert(t_start,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
       pModel->UpdateHRUForcingFunctions  (Options,tt);
       pModel->UpdateDiagnostics          (Options,tt);
@@ -127,8 +130,8 @@ int main(int argc, char* argv[])
       //Solve water/energy balance over time--------------------------------
       t1=clock();
       int step=0;
-
-      for(t=0; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
+      
+      for(t=t_start; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
       {
         pModel->UpdateTransientParams      (Options,tt);
         pModel->RecalculateHRUDerivedParams(Options,tt);
@@ -136,6 +139,7 @@ int main(int argc, char* argv[])
         pModel->UpdateDiagnostics          (Options,tt);
         pModel->PrepareAssimilation        (Options,tt);
         pModel->WriteSimpleOutput          (Options,tt);
+        pModel->GetEnsemble()->PerturbModel(pModel,Options,tt,e);
         CallExternalScript                 (Options,tt);
         ParseLiveFile                      (pModel,Options,tt);
 

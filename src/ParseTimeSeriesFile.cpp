@@ -69,6 +69,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":End"                         )){code=-4; }//premature end of file
     else if  (!strcmp(s[0],":IfModeEquals"                )){code=-5; }
     else if  (in_ifmode_statement)                          {code=-6; }
+    else if  (!strcmp(s[0],":EndIfModeEquals"             )){code=-2; }//treat as comment - unused mode 
     else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     //--------------------GAUGE BASIC DATA- --------------------
     else if  (!strcmp(s[0],":Gauge"                       )){code=1;  }

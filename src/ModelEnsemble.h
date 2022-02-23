@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 #ifndef ENSEMBLE_H
 #define ENSEMBLE_H
@@ -11,7 +11,8 @@ Copyright (c) 2008-2021 the Raven Development Team
 
 enum disttype {
   DIST_UNIFORM,     ///< Uniform distribution
-  DIST_NORMAL       ///< Gaussian (normal) distribution
+  DIST_NORMAL,      ///< Gaussian (normal) distribution
+  DIST_GAMMA        ///< Gamma distribution
 };
 struct param_dist 
 {
@@ -24,10 +25,11 @@ struct param_dist
   double       distpar[3];   ///< distribution parameters 
   //                         //   for DIST_UNIFORM, distpar[0]=min, distpar[1]=max
   //                         //   for DIST_NORMAL, distpar[0]=mean, distpar[1]=std_dev
+  //                         //   for DIST_GAMMA, distpar[0]=shape, distpar[1]=scale
   //transformation trans; e.g., log transform
         
 };
-double SampleFromDistribution(param_dist *dist);
+double SampleFromDistribution(disttype distribution,double distpar[3]);
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for model ensemble run
@@ -50,16 +52,19 @@ public:/*-------------------------------------------------------*/
   ~CEnsemble();
 
   //Acessor Function
-  int           GetNumMembers();
-  ensemble_type GetType();
+  int            GetNumMembers() const;
+  ensemble_type  GetType() const;
+
+  virtual double GetStartTime(const int e) const;
 
   //Manipulator Functions
   void SetRandomSeed     (const unsigned int seed);
   void SetOutputDirectory(const string OutDirString);
   void SetRunNames       (const string RunNames);
 
-  virtual void Initialize(const optStruct &Options);
-  virtual void UpdateModel(CModel *pModel,optStruct &Options,const int e);
+  virtual void Initialize       (const CModel* pModel,const optStruct &Options);
+  virtual void UpdateModel      (CModel *pModel,optStruct &Options,const int e);
+  virtual void PerturbModel     (CModel* pModel,optStruct& Options,const time_struct& tt,const int e) {}
   virtual void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e) {}
 };
 
@@ -78,10 +83,9 @@ public:
   CMonteCarloEnsemble(const int num_members,const optStruct &Options);
   ~CMonteCarloEnsemble();
 
-
   void AddParamDist(const param_dist *dist);
 
-  void Initialize(const optStruct &Options);
+  void Initialize(const CModel* pModel,const optStruct &Options);
   void UpdateModel(CModel *pModel,optStruct &Options, const int e);
 };
 
@@ -117,7 +121,7 @@ public:
   void SetCalibrationTarget(const long SBID, const diag_type object_diag, const string period);
   void AddParamDist(const param_dist *dist);
 
-  void Initialize(const optStruct &Options);
+  void Initialize(const CModel* pModel,const optStruct &Options);
   void UpdateModel(CModel *pModel,optStruct &Options,const int e);
   void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e);
 };

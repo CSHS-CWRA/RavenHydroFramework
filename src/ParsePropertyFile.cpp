@@ -262,6 +262,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":End"                    )){code=-4; }//stop reading
     else if  (!strcmp(s[0],":IfModeEquals"           )){code=-5; }
     else if  (in_ifmode_statement)                     {code=-6; }
+    else if  (!strcmp(s[0],":EndIfModeEquals"        )){code=-2; }//treat as comment - unused mode 
     else if  (!strcmp(s[0],":RedirectToFile"         )){code=-3; }//redirect to secondary file
     //--------------------SOIL PARAMS --------------------------
     else if  (!strcmp(s[0],":SoilClasses"            )){code=1;  }//REQUIRED
@@ -547,7 +548,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         if      (IsComment(s[0], Len)){}//comment line
         else if (!strcmp(s[0],":Attributes")){}//columns are explicit within Raven - useful for GUIs
         else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
-        else if (Len>=2)
+        else if ((Len==3) || (Len==4))
         {
           if (num_parsed_lult>=MAX_LULT_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}

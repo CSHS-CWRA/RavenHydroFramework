@@ -107,7 +107,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(1):  //----------------------------------------------
-    {/*:OutputDirectoryFormat*/
+    {/*:OutputDirectoryFormat [dirname with * for ensemble ID[*/
       if(Options.noisy) { cout <<"OutputDirectoryFormat"<<endl; } 
       string outdir="";
       for (i=1;i<Len;i++){outdir=outdir+to_string(s[i]); }
@@ -160,6 +160,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
 
           if     (!strcmp(s[4],"DIST_UNIFORM")) { dist->distribution=DIST_UNIFORM; }
           else if(!strcmp(s[4],"DIST_NORMAL" )) { dist->distribution=DIST_NORMAL; }
+          else if(!strcmp(s[4],"DIST_GAMMA"  )) { dist->distribution=DIST_GAMMA; }
           else {
             ExitGracefully("ParseEnsembleFile: invalid distribution type in :ParameterDistributions command",BAD_DATA);
           }
