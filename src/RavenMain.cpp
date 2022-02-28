@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   
-  Options.version="3.5";
+  Options.version="3.6";
 #ifdef _NETCDF_ 
   Options.version+=" w/ netCDF";
 #endif
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
         pModel->UpdateDiagnostics          (Options,tt);
         pModel->PrepareAssimilation        (Options,tt);
         pModel->WriteSimpleOutput          (Options,tt);
-        pModel->GetEnsemble()->PerturbModel(pModel,Options,tt,e);
+        pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
         CallExternalScript                 (Options,tt);
         ParseLiveFile                      (pModel,Options,tt);
 
@@ -152,6 +152,7 @@ int main(int argc, char* argv[])
 
         pModel->WriteMinorOutput           (Options,tt);
         pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
+        pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
         if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
         step++;

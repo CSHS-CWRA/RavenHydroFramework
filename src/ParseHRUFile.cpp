@@ -857,12 +857,14 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
   // Check if terrain class is needed but not specified
   //--------------------------------------------------------------------------
+  bool bad=false;
   if(terrain_required) { //this is determined at start of .rvp file read
     for(int k=0;k<pModel->GetNumHRUs(); k++) {
-      if(pModel->GetHydroUnit(k)->GetTerrainProps()==NULL) {
-        ExitGracefully("ParseHRUFile:: At least one model process requires terrain parameters. Cannot have NULL ([NONE]) Terrain class in :HRUs block",BAD_DATA_WARN);
-      }
+      if(pModel->GetHydroUnit(k)->GetTerrainProps()==NULL) {bad=true;}
     }
+  }
+  if (bad) {
+        ExitGracefully("ParseHRUFile:: At least one model process requires terrain parameters. Cannot have NULL ([NONE]) Terrain class in :HRUs block",BAD_DATA_WARN);
   }
 
   delete pp;

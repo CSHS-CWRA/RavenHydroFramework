@@ -8,7 +8,8 @@ Copyright (c) 2008-2022 the Raven Development Team
 #include "HydroUnits.h"
 #include "ParseLib.h"
 #include "ModelEnsemble.h"
-
+#include "EnKF.h"
+bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long SBID);
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Ensemble Model file
 /// \details model.rve: input file that defines ensemble member details for MC, calibration, etc.
@@ -69,7 +70,12 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":RunNameFormat"))               { code=2; }
     else if(!strcmp(s[0],":ParameterDistributions"))      { code=10; }
     else if(!strcmp(s[0],":ObjectiveFunction"))           { code=11; }
-    //else if(!strcmp(s[0],":ForcingPerturbations"))       { code=12; }
+    else if(!strcmp(s[0],":ForcingPerturbation"))         { code=12; }
+    else if(!strcmp(s[0],":AssimilatedState"))            { code=13; }
+    else if(!strcmp(s[0],":WarmEnsemble"))                { code=14; }
+    else if(!strcmp(s[0],":DataHorizon"))                 { code=15; } 
+    else if(!strcmp(s[0],":ObservationErrorModel"))       { code=16; }
+    else if(!strcmp(s[0],":AssimilateStreamflow"))        { code=101; }
 
     switch(code)
     {
@@ -202,6 +208,169 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       }
       else {
         WriteWarning(":ObjectiveFunction command will be ignored; no calibration method specified.",Options.noisy);
+      }
+      break;
+    }
+    case(12):  //----------------------------------------------
+    { //:ForcingPerturbation [forcingtype] [distrib] [dist param1] [dist param2] [adj_type] {HRU_Group}
+      //:ForcingPerturbation RAINFALL DIST_GAMMA [dist param1] [dist param2] [adj_type] {HRU_Group}
+      if(Options.noisy) { cout <<":ForcingPerturbation"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        
+        forcing_type ftyp=GetForcingTypeFromString(s[1]);
+        disttype distrib=DIST_NORMAL;
+        if     (!strcmp(s[2],"DIST_UNIFORM")) { distrib=DIST_UNIFORM; }
+        else if(!strcmp(s[2],"DIST_NORMAL" )) { distrib=DIST_NORMAL; }
+        else if(!strcmp(s[2],"DIST_GAMMA"  )) { distrib=DIST_GAMMA; }
+        else {
+          ExitGracefully("ParseEnsembleFile: invalid distribution type in :ForcingPerturbation command",BAD_DATA);
+        }
+        double distpars[3];
+        adjustment adj=ADJ_ADDITIVE;
+        distpars[0]=s_to_d(s[3]);
+        distpars[1]=s_to_d(s[4]);
+        distpars[2]=0.0;
+        int kk=DOESNT_EXIST;
+        if     (!strcmp(s[5],"ADDITIVE"       )) { adj=ADJ_ADDITIVE; }
+        else if(!strcmp(s[5],"MULTIPLICATIVE" )) { adj=ADJ_MULTIPLICATIVE; }
+        else {
+          ExitGracefully("ParseEnsembleFile: invalid perturbation adjustment type in :ForcingPerturbation command",BAD_DATA);
+        }
+        if(Len>=7) {
+          kk=pModel->GetHRUGroup(s[6])->GetGlobalIndex();
+        }
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        pEnKF->AddPerturbation(ftyp,distrib,distpars,kk, adj);
+      }
+      else {
+        WriteWarning(":ForcingPerturbation command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    case(13):  //----------------------------------------------
+    { //:AssimilatedState STREAMFLOW [SubBasinGroup] # only STREAMFLOW to be supported initially
+      //:AssimilatedState SNOW       [HRUGroup]
+      if(Options.noisy) { cout <<":ForcingPerturbation"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        sv_type sv;
+        int lay;
+        sv=CStateVariable::StringToSVType(s[1],lay,true);
+        int kk=DOESNT_EXIST;
+
+        int i=pModel->GetStateVarIndex(sv,lay);
+        if ((i == DOESNT_EXIST) && (sv!=STREAMFLOW)){
+          string warn="State variable "+to_string(s[1])+" does not exist in this model and will be ignored in the :AssimilatedState command";
+          WriteWarning(warn,Options.noisy);
+          break;
+        }
+        if (sv==STREAMFLOW){
+          if(pModel->GetSubBasinGroup(s[2])==NULL) {
+            ExitGracefully("ParseEnsembleFile: :AssimilatedState subbasin/HRU group does not exist",BAD_DATA_WARN);
+            break;
+          }
+          kk=pModel->GetSubBasinGroup(s[2])->GetGlobalIndex();
+        }
+        else {
+          if(pModel->GetHRUGroup(s[2])==NULL) {
+            ExitGracefully("ParseEnsembleFile: :AssimilatedState subbasin/HRU group does not exist",BAD_DATA_WARN);
+            break;
+          }
+          kk=pModel->GetHRUGroup(s[2])->GetGlobalIndex();
+        }
+        
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        pEnKF->AddAssimilationState(sv,lay,kk);
+      }
+      else {
+        WriteWarning(":AssimilatedState command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    case(14):  //----------------------------------------------
+    {/*:WarmEnsemble {runname}*/
+      if(Options.noisy) { cout <<":WarmEnsemble"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        string runname=Options.run_name; //default
+        if (Len>1){runname=to_string(s[1]); }
+        pEnKF->SetToWarmEnsemble(runname); 
+      }
+      else {
+        WriteWarning(":WarmEnsemble command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    case(15):  //----------------------------------------------
+    {/*:DataHorizon*/
+      if(Options.noisy) { cout <<":DataHorizon"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        pEnKF->SetDataHorizon(s_to_i(s[1])); 
+      }
+      else {
+        WriteWarning(":DataHorizon command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    case(16):  //----------------------------------------------
+    { //:ObservationErrorModel [statetype] [distrib] [dist param1] [dist param2] [adj_type]
+      //:ObservationErrorModel STREAMFLOW DIST_NORMAL 1 0.07 MULTIPLICATIVE
+      if(Options.noisy) { cout <<":ObservationErrorModel"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        
+        sv_type sv;
+        int lay;
+        sv=CStateVariable::StringToSVType(s[1],lay,true);
+
+        disttype distrib=DIST_NORMAL;
+        if     (!strcmp(s[2],"DIST_UNIFORM")) { distrib=DIST_UNIFORM; }
+        else if(!strcmp(s[2],"DIST_NORMAL" )) { distrib=DIST_NORMAL; }
+        else if(!strcmp(s[2],"DIST_GAMMA"  )) { distrib=DIST_GAMMA; }
+        else {
+          ExitGracefully("ParseEnsembleFile: invalid distribution type in :ObservationErrorModel command",BAD_DATA);
+        }
+
+        double distpars[3];
+        distpars[0]=s_to_d(s[3]);
+        distpars[1]=s_to_d(s[4]);
+        distpars[2]=0.0;
+
+        adjustment adj=ADJ_ADDITIVE;
+        if     (!strcmp(s[5],"ADDITIVE"       )) { adj=ADJ_ADDITIVE; }
+        else if(!strcmp(s[5],"MULTIPLICATIVE" )) { adj=ADJ_MULTIPLICATIVE; }
+        else {
+          ExitGracefully("ParseEnsembleFile: invalid perturbation adjustment type in :ObservationErrorModel command",BAD_DATA);
+        }
+
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        pEnKF->AddObsPerturbation(sv,distrib,distpars,adj);
+      }
+      else {
+        WriteWarning(":ObservationErrorModel command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    case(101)://----------------------------------------------
+    {/*:AssimilateStreamflow  [SBID]*/
+      if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }
+      long SBID=s_to_l(s[1]);
+      if(pModel->GetSubBasinByID(SBID)==NULL) {
+        WriteWarning("ParseTimeSeries::Trying to assimilate streamflow at non-existent subbasin "+to_string(SBID),Options.noisy);
+        break;
+      }
+      bool ObsExists=false;
+      for(int i=0; i<pModel->GetNumObservedTS(); i++) {
+        if(IsContinuousFlowObs2(pModel->GetObservedTS(i),SBID)) {
+          ObsExists=true;
+          break;
+        }
+      }
+      if(ObsExists) {
+        pModel->GetSubBasinByID(SBID)->IncludeInAssimilation();
+      }
+      else {
+        string warn="ParseEnsembleSeriesFile::AssimilateStreamflow: no observation time series associated with subbasin "+to_string(SBID)+". Cannot assimilate flow in this subbasin.";
+        WriteWarning(warn.c_str(),Options.noisy);
       }
       break;
     }

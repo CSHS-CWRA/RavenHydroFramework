@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -161,7 +161,7 @@ public:/*-------------------------------------------------------*/
   void          ChangeLandUse           (const CLandUseClass    *lult_class);
   void          ChangeVegetation        (const CVegetationClass *veg_class);
   void          ChangeHRUType           (const HRU_type typ);
-  void          AdjustHRUForcing        (const forcing_type Ftyp,const double& epsilon); //ADDITIVE OR MULTIPLICATIVE
+  void          AdjustHRUForcing        (const forcing_type Ftyp,const double& epsilon, const adjustment adj); 
 
   //will be removed with landscape elements:
   void          RecalculateDerivedParams(const optStruct    &Options,

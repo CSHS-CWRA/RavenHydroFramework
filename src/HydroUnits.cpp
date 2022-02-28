@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -101,8 +101,8 @@ CHydroUnit::CHydroUnit(const CModelABC        *pMod,
 
   _pVeg      =veg_class    ->GetVegetationStruct();
   _pSurface  =lult_class   ->GetSurfaceStruct();
-  if (_pTerrain!=NULL){ _pTerrain  =terrain_class->GetTerrainStruct();}
-  else                { _pTerrain=NULL;}
+  if (terrain_class!=NULL){ _pTerrain  =terrain_class->GetTerrainStruct();}
+  else                    { _pTerrain=NULL;}
   _PrecipMult = 1.0;
   _SpecifiedGaugeIdx=DOESNT_EXIST;
 
@@ -455,11 +455,15 @@ void CHydroUnit:: ChangeHRUType(const HRU_type typ)
 //////////////////////////////////////////////////////////////////
 /// \brief Adjust HRU Forcing values mid-simulation
 //
-void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon) //ADDITIVE OR MULTIPLICATIVE
+void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon, const adjustment adj) 
 { 
-  if(Ftyp==F_PRECIP) { _Forcings.precip+=epsilon; upperswap(_Forcings.precip,0.0);}
-  //AdjustForcing(_Forcings,Ftyp,value,true);
-  //AdjustForcings(force_struct F, forcing_type typ, double value, bool additive);
+  if(Ftyp==F_PRECIP) { 
+    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip*=epsilon;}
+    else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon;}
+    upperswap(_Forcings.precip,0.0);
+  }
+  //AdjustForcing(_Forcings,Ftyp,value,adj);
+  //AdjustForcings(force_struct F, forcing_type typ, double value, adjustment adj);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns maximum allowable value of state variable in model

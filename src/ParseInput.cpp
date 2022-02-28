@@ -30,6 +30,7 @@
 #include "GWSWProcesses.h"
 #include "HeatConduction.h"
 #include "SurfaceEnergyExchange.h"
+#include "EnKF.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
 bool ParseClassPropertiesFile  (CModel *&pModel, const optStruct &Options, bool &terrain_required);
@@ -3329,6 +3330,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   if     (Options.ensemble==ENSEMBLE_NONE      ) {pEnsemble=new CEnsemble(1,Options);}
   else if(Options.ensemble==ENSEMBLE_MONTECARLO) {pEnsemble=new CMonteCarloEnsemble(num_ensemble_members,Options);}
   else if(Options.ensemble==ENSEMBLE_DDS)        {pEnsemble=new CDDSEnsemble(num_ensemble_members,Options); }
+  else if(Options.ensemble==ENSEMBLE_ENKF      ) {pEnsemble=new CEnKFEnsemble(num_ensemble_members,Options); Options.assimilate_flow=false;}
+
   pModel->SetEnsembleMode(pEnsemble);
   pEnsemble->SetRandomSeed(random_seed);
   //===============================================================================================

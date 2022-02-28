@@ -740,7 +740,13 @@ struct condition
   comparison      compare_method; ///< type of condition (equal or not equal)
   string          data;           ///< conditional data (thing to which basis is compared)
 };
-
+////////////////////////////////////////////////////////////////////
+/// \brief perturbation adjustment - adding or multiplying
+//
+enum adjustment {
+  ADJ_ADDITIVE,
+  ADJ_MULTIPLICATIVE
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Desired output format
 //

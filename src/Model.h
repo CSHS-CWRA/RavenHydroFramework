@@ -325,6 +325,7 @@ public:/*-------------------------------------------------------*/
 
   int                   GetNumObservedTS              () const;
   const CTimeSeriesABC *GetObservedTS                 (const int i) const;
+  const CTimeSeriesABC* GetSimulatedTS                (const int i) const;
 
   double            GetObjFuncVal                     (long calib_SBID,diag_type calib_Obj, const string calib_period) const;
 

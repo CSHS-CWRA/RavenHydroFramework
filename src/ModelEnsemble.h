@@ -62,10 +62,11 @@ public:/*-------------------------------------------------------*/
   void SetOutputDirectory(const string OutDirString);
   void SetRunNames       (const string RunNames);
 
-  virtual void Initialize       (const CModel* pModel,const optStruct &Options);
-  virtual void UpdateModel      (CModel *pModel,optStruct &Options,const int e);
-  virtual void PerturbModel     (CModel* pModel,optStruct& Options,const time_struct& tt,const int e) {}
-  virtual void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e) {}
+  virtual void Initialize       (const CModel* pModel,const optStruct &Options); //called prior to ALL ensemble runs
+  virtual void UpdateModel      (CModel *pModel,optStruct &Options,const int e); //called prior to each ensemble run
+  virtual void StartTimeStepOps (CModel* pModel,optStruct& Options,const time_struct& tt,const int e) {} //called at start of every timestep
+  virtual void CloseTimeStepOps (CModel* pModel,optStruct& Options,const time_struct& tt,const int e) {} //called at end of each timestep
+  virtual void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e) {} //called after all ensembles run
 };
 
 ////////////////////////////////////////////////////////////////////

@@ -302,6 +302,14 @@ int    CModel::GetNumObservedTS() const { return _nObservedTS; }
 const CTimeSeriesABC *CModel::GetObservedTS(const int i) const {
   return _pObservedTS[i];
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns simulated equivalent of observation time series i
+/// \param i [in] index of observation time series
+/// \return pointer to simulated equivalent of observation time series i
+//
+const CTimeSeriesABC* CModel::GetSimulatedTS(const int i) const {
+  return _pModeledTS[i];
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns specific hydrologic process denoted by parameter

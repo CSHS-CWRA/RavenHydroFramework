@@ -429,6 +429,12 @@
     <ClCompile Include="MassLoading.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="EnKF.cpp">
+      <Filter>Source Files\_Driver\Ensemble Methods</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -604,6 +610,12 @@
     </ClInclude>
     <ClInclude Include="StageDischargeRelations.h">
       <Filter>Header Files\Profiles/XSects/Reservoirs</Filter>
+    </ClInclude>
+    <ClInclude Include="EnKF.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
