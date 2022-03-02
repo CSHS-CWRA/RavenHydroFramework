@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
@@ -1490,5 +1490,26 @@ double     CReservoir::GetWeirOutflow(const double &ht, const double &adj) const
   double underflow=InterpolateCurve(ht,_aStage,_aQunder,_Np,false); //no adjustments
   return InterpolateCurve(ht-adj,_aStage,_aQ,_Np,false)+underflow;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief clears all time series data for re-read of .rvt file
+/// \remark Called only in ensemble mode
+///
+/// \param &Options [in] Global model options information
+//
+void CReservoir::ClearTimeSeriesData(const optStruct& Options)
+{
+  delete _pExtractTS;_pExtractTS=NULL;
+  delete _pWeirHeightTS;_pWeirHeightTS=NULL;
+  delete _pMaxStageTS;_pMaxStageTS=NULL;
+  delete _pOverrideQ;_pOverrideQ=NULL;
+  delete _pMinStageTS;_pMinStageTS=NULL;     
+  delete _pMinStageFlowTS;_pMinStageFlowTS=NULL;  
+  delete _pTargetStageTS;_pTargetStageTS=NULL;
+  delete _pMaxQIncreaseTS;_pMaxQIncreaseTS=NULL; 
+  delete _pMaxQDecreaseTS;_pMaxQDecreaseTS=NULL; 
+  delete _pDroughtLineTS; _pDroughtLineTS=NULL;
+  delete _pQminTS; _pQminTS=NULL;
+  delete _pQmaxTS; _pQmaxTS=NULL;
+  delete _pQdownTS; _pQdownTS=NULL;
+}
 

@@ -45,7 +45,6 @@ CSubBasin::CSubBasin( const long           Identifier,
 
   _basin_area        =0.0;
   _drainage_area     =0.0;
-  _avg_ann_flow      =0.0;
   _reach_length      =reach_len;
   _reach_length2     =reach_len;
   _is_headwater      =true;
@@ -188,12 +187,6 @@ double                  CSubBasin::GetBasinArea        () const {return _basin_a
 /// \return SB drainage area [km^2]
 //
 double                  CSubBasin::GetDrainageArea     () const {return _drainage_area; }//[km2]
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns average annual flowrate within reach [m^3/s]
-/// \return Average annual flowrate within reach [m^3/s]
-//
-double                  CSubBasin::GetAvgAnnualFlow    () const {return _avg_ann_flow;  }//[m3/s]
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns ID of downstream subbasin
@@ -1249,10 +1242,9 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
   _drainage_area=total_drain_area;
 
-  //cout <<" basin "<< _ID<<" disabled="<<boolalpha<<(_disabled)<<endl;
-  //set reference flow in non-headwater basins
-  //------------------------------------------------------------------------
   if(!_disabled){
+    //Estimate reference flow in non-headwater basins from annual average runoff
+    //------------------------------------------------------------------------
     if(_Q_ref==AUTO_COMPUTE)
     {
       if(((Qin_avg + Qlat_avg) <= 0) && (!_is_headwater) && (!_disabled)){//reference flow only matters for non-headwater basins
@@ -1267,6 +1259,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       ResetReferenceFlow(_Q_ref);
     }
     
+    //Estimate reach length from area if not provided
+    //------------------------------------------------------------------------
     if (_reach_length==AUTO_COMPUTE)
     {
       _reach_length =pow(_basin_area,0.67)*M_PER_KM;//[m] // \ref from Grand river data, JRC 2010
@@ -1274,24 +1268,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       WriteAdvisory(advice,false);
     }
 
-    //estimate avg annual flow due to rainfall in this basin & upstream flows
+    // Estimate reach routing params: t_peak, t_conc, gamma shape/scale
     //------------------------------------------------------------------------
-    _avg_ann_flow=Qin_avg+Qlat_avg;
-
-    //Set initial conditions for flow history variables (if they weren't set in .rvc file)
-    //------------------------------------------------------------------------
-    for (seg=0;seg<_nSegments;seg++){
-      if (_aQout[seg]==AUTO_COMPUTE){
-        _aQout[seg]=Qin_avg+Qlat_avg*(double)(seg+1)/(double)(_nSegments);
-      }
-    }
-    if (_QoutLast==AUTO_COMPUTE){
-      _QoutLast    =_aQout[_nSegments-1];
-    }
-    if (_QlatLast==AUTO_COMPUTE){
-      _QlatLast    =Qlat_avg;
-    }
-
     ///< \ref from Williams (1922), as cited in Handbook of Hydrology, eqn. 9.4.3 \cite williams1922
     if (_t_conc==AUTO_COMPUTE)
     {
@@ -1320,17 +1298,6 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     ExitGracefullyIf(_gamma_scale<=0,"CSubBasin::Initialize: gamma scale parameter must be greater than zero",BAD_DATA);
 
     _diffusivity=GetDiffusivity();
-    
-    //Calculate Initial Channel Storage from flowrate
-    //------------------------------------------------------------------------
-    _channel_storage=0.0;
-    if ((Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL))
-    {
-      for (seg=0;seg<_nSegments;seg++)
-      {
-        _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
-      }
-    }
 
     //generate catchment & routing hydrograph weights
     //reserves memory and populates _aQinHist,_aQlatHist,_aRouteHydro
@@ -1339,14 +1306,9 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
     GenerateRoutingHydrograph  (Qin_avg, Options);
 
-    //initialize rivulet storage
+    //Initialize flow states aQo, channel_storage, rivulet storage
     //------------------------------------------------------------------------
-    double sum(0.0);
-    for (int n=0;n<_nQlatHist;n++)
-    {
-      sum+=(n+1)*_aUnitHydro[n];
-    }
-    _rivulet_storage=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
+    InitializeFlowStates(Qin_avg,Qlat_avg,Options);
 
   } //end if disabled
 
@@ -1394,7 +1356,47 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     }
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Initializes channel flows, channel storage, rivulet storage from estimated mean inflows
+/// \details called from base initialization, but also when re-booting .rvc file
+///
+/// \param &Qin_avg [in] Average inflow from upstream [m^3/s]
+/// \param &Qlat_avg [in] Average lateral inflow [m^3/s]
+/// \param &Options [in] Global model options information
+//
+void CSubBasin::InitializeFlowStates(const double& Qin_avg,const double& Qlat_avg,const optStruct &Options)
+{
+  if(!_disabled) {
+    int seg;
+    //Set initial conditions for flow history variables (may later be overwritten by .rvc file)
+    //------------------------------------------------------------------------
+    for(seg=0;seg<_nSegments;seg++) {
+      _aQout[seg]=Qin_avg+Qlat_avg*(double)(seg+1)/(double)(_nSegments);
+    }
+    _QoutLast    =_aQout[_nSegments-1];
+    _QlatLast    =Qlat_avg;
 
+    //Calculate Initial Channel Storage from flowrate
+    //------------------------------------------------------------------------
+    _channel_storage=0.0;
+    if((Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL))
+    {
+      for(seg=0;seg<_nSegments;seg++)
+      {
+        _channel_storage+=_pChannel->GetArea(_aQout[seg],_slope,_mannings_n)*(_reach_length/_nSegments); //[m3]
+      }
+    }
+
+    //initialize rivulet storage
+    //------------------------------------------------------------------------
+    double sum(0.0);
+    for(int n=0;n<_nQlatHist;n++)
+    {
+      sum+=(n+1)*_aUnitHydro[n];
+    }
+    _rivulet_storage=sum*Qlat_avg*(Options.timestep*SEC_PER_DAY);//[m3];
+  } //end if disabled
+}
 /////////////////////////////////////////////////////////////////
 /// \brief Resets reference flow
 /// \details Resets celerity and channel top width at reference flow based on reference flow
@@ -2226,4 +2228,18 @@ void CSubBasin::WriteToSolutionFile (ofstream &RVC) const
   if (_pReservoir!=NULL){
     _pReservoir->WriteToSolutionFile(RVC);
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief clears all time series data for re-read of .rvt file
+/// \remark Called only in ensemble mode
+///
+/// \param &Options [in] Global model options information
+//
+void CSubBasin::ClearTimeSeriesData(const optStruct& Options) 
+{
+  delete _pInflowHydro;  _pInflowHydro=NULL;
+  delete _pInflowHydro2; _pInflowHydro2=NULL;
+  delete _pIrrigDemand;  _pIrrigDemand=NULL;
+  delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
+  _pReservoir->ClearTimeSeriesData(Options);
 }

@@ -7,9 +7,9 @@ Copyright (c) 2008-2022 the Raven Development Team
 #define MATRIX
 #include "RavenInclude.h"
 
-typedef const double* Unchangeable1DArray; //unchangeable but movable
-typedef       double* const         Writeable1DArray;    //unmoveable but changeble
-typedef const double* const         Ironclad1DArray;     //unmodifiable
+typedef const double*        Unchangeable1DArray; //unchangeable but movable
+typedef       double* const  Writeable1DArray;    //unmoveable but changeble
+typedef const double* const  Ironclad1DArray;     //unmodifiable
 
 typedef const double* const* Unchangeable2DArray;
 typedef       double** const Writeable2DArray;

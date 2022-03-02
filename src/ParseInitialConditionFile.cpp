@@ -52,7 +52,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   //--------------------------------------------------------------------------
   //ISSUE: THIS ALSO OVERRIDES AUTOCALCULATION OF FLOWS FROM InitializeBasinFlows 
   if (pModel->GetEnsemble()->GetNumMembers()>1){
-    //pModel->InitalizeBasinFlows(); // \todo [funct]
+    
+    // does not matter in EnKF/forecasting context, as it will get overwritten with .rvc state
     for (int i=0;i<pModel->GetNumStateVars();i++)
     {
       sv_type typ      =pModel->GetStateVarType(i);
@@ -61,16 +62,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         SetInitialStateVar(pModel,i,typ,layer_ind,k,0.0);
       }
     }
+    pModel->InitializeBasins(Options,true); //resets all flow rates to autocalc version
     for(int p=0;p<pModel->GetNumSubBasins();p++) {
-      pModel->GetSubBasin(p)->SetBasinProperties("Q_REFERENCE",AUTO_COMPUTE);
-      double *aQo=new double [pModel->GetSubBasin(p)->GetNumSegments()];
-      for(int i=0;i<pModel->GetSubBasin(p)->GetNumSegments();i++) {
-        aQo[i]=AUTO_COMPUTE;
-      }
-      //pModel->GetSubBasin(p)->SetQoutArray(pModel->GetSubBasin(p)->GetNumSegments(),aQo,AUTO_COMPUTE); //seems to cause issues
-      delete [] aQo;
-      pModel->GetSubBasin(p)->SetChannelStorage(0.0);
-      pModel->GetSubBasin(p)->SetRivuletStorage(0.0);
       if(pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
         pModel->GetSubBasin(p)->GetReservoir()->SetReservoirStage(0.0,0.0);
       }

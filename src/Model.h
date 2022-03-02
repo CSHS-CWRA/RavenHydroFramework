@@ -162,7 +162,6 @@ private:/*------------------------------------------------------*/
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
   void       InitializeRoutingNetwork ();
-  void           InitializeBasinFlows (const optStruct 	 &Options);
   void         InitializeObservations (const optStruct 	 &Options);
   void     InitializeDataAssimilation (const optStruct   &Options);
 
@@ -382,9 +381,11 @@ public:/*-------------------------------------------------------*/
   /*--Other Functions: mostly called by Solver--*/
   //called only once prior to simulation:
   void        Initialize                 (const optStruct &Options);
+  void        InitializeBasins           (const optStruct &Options,const bool re_init);
   void        WriteOutputFileHeaders     (const optStruct &Options);
   void        GenerateGriddedPrecipVars  (const optStruct &Options);
   void        GenerateGriddedTempVars    (const optStruct &Options);
+  void        ClearTimeSeriesData        (const optStruct &Options);
 
   //called during simulation:
   void        UpdateParameter            (const class_type  &ctype,

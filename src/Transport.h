@@ -246,6 +246,8 @@ public:/*-------------------------------------------------------*/
   void   SetReservoirPrecipLoad  (const int p,const double precip_load_rate);
   void   SetReservoirMassOutflow (const int p,const double Mout,    const double MoutLast);
   
+  void   ClearTimeSeriesData     (const optStruct& Options);
+
           void   Prepare              (const optStruct &Options);
   virtual void   Initialize           (const optStruct& Options);
           void   InitializeRoutingVars();

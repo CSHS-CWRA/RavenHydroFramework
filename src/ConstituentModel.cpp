@@ -1606,3 +1606,22 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
   }
   RVC<<":EndBasinTransportVariables"<<endl;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief clears all time series data for re-read of .rvt file
+/// \remark Called only in ensemble mode
+///
+/// \param &Options [in] Global model options information
+//
+void  CConstituentModel::ClearTimeSeriesData(const optStruct& Options) 
+{
+  delete[] _pSpecFlowConcs; _pSpecFlowConcs=NULL;
+  delete[] _pMassLoadingTS; _pMassLoadingTS=NULL;
+
+  for(int i=0;i<_nSources;i++) { 
+    if(_pSources[i]->pTS!=NULL) { //just convert to zero-mass flux source rather than re-building array
+      _pSources[i]->flux=0.0;
+      _pSources[i]->dirichlet=false;
+      delete _pSources[i]->pTS; _pSources[i]->pTS=NULL;
+    }
+  }      
+}

@@ -73,8 +73,9 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":ForcingPerturbation"))         { code=12; }
     else if(!strcmp(s[0],":AssimilatedState"))            { code=13; }
     else if(!strcmp(s[0],":WarmEnsemble"))                { code=14; }
-    else if(!strcmp(s[0],":DataHorizon"))                 { code=15; } 
+    else if(!strcmp(s[0],":WindowSize"))                  { code=15; } 
     else if(!strcmp(s[0],":ObservationErrorModel"))       { code=16; }
+    else if(!strcmp(s[0],":ForecastRVTFilename"))         { code=17; }
     else if(!strcmp(s[0],":AssimilateStreamflow"))        { code=101; }
 
     switch(code)
@@ -301,14 +302,14 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(15):  //----------------------------------------------
-    {/*:DataHorizon*/
-      if(Options.noisy) { cout <<":DataHorizon"<<endl; }
+    {/*:WindowSize [# of timesteps]*/
+      if(Options.noisy) { cout <<":WindowSize"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
-        pEnKF->SetDataHorizon(s_to_i(s[1])); 
+        pEnKF->SetWindowSize(s_to_i(s[1])); 
       }
       else {
-        WriteWarning(":DataHorizon command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+        WriteWarning(":WindowSize command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
       }
       break;
     }
@@ -350,6 +351,20 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
+    case(17):  //----------------------------------------------
+    {/*:ForecastRVTFilename [filename.rvt]*/
+      if(Options.noisy) { cout <<":ForecastRVTFilename"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        string file=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension!
+        pEnKF->SetForecastRVTFile(file);
+      }
+      else {
+        WriteWarning(":ForecastRVTFilename command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    
     case(101)://----------------------------------------------
     {/*:AssimilateStreamflow  [SBID]*/
       if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }

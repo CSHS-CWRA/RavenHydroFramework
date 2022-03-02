@@ -8,6 +8,7 @@ Copyright (c) 2008-2022 the Raven Development Team
 
 bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long SBID);
 bool ParseInitialConditionsFile(CModel*& pModel,const optStruct& Options);
+bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 //step 1) get perturbations working - run in ensemble mode [DONE]
 //step 2) Get order working - must write soln at t0 and reboot e>N ensembles at t0 with this soln (to avoid duplicating perturbations) [DONE]
 //step 3) get assimilation matrix calcs running [DONE]
@@ -65,13 +66,14 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
 
   _warm_ensemble=false;
   _warm_runname="";
+  _forecast_rvt="";
 
   _obs_matrix=NULL;
   _output_matrix=NULL;
   _noise_matrix=NULL;
   _nObsDatapoints=0;
 
-  _data_horizon=1;
+  _window_size=1;
   _nTimeSteps=0;
 }
 //////////////////////////////////////////////////////////////////
@@ -179,7 +181,12 @@ void CEnKFEnsemble::SetToWarmEnsemble(string runname){_warm_ensemble=true;_warm_
 //////////////////////////////////////////////////////////////////
 /// \brief set value of data horizon
 //
-void CEnKFEnsemble::SetDataHorizon(const int nTimesteps){_data_horizon=nTimesteps;}
+void CEnKFEnsemble::SetWindowSize(const int nTimesteps){ _window_size=nTimesteps;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief set forecast RVT filename
+//
+void CEnKFEnsemble::SetForecastRVTFile(string filename){_forecast_rvt=filename;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Accessor - gets ensemble start time (in local model time)
@@ -257,7 +264,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   //determine total number of observations 
   //-----------------------------------------------
   _nTimeSteps=(int)(rvn_floor((_t_assim_start+TIME_CORRECTION)/Options.timestep));
-  _data_horizon=min(_data_horizon,_nTimeSteps);
+  _window_size=min(_window_size,_nTimeSteps);
 
   bool good;
   double obsval=0;
@@ -275,7 +282,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
     {
       _aObsIndices[_nObs]=i;
       _nObs++;
-      for(int nn=_nTimeSteps-_data_horizon;nn<_nTimeSteps;nn++) {
+      for(int nn=_nTimeSteps-_window_size;nn<_nTimeSteps;nn++) {
         obsval=pTSObs->GetSampledValue(nn);
         if(obsval!=RAV_BLANK_DATA) { _nObsDatapoints++; }
       }
@@ -320,7 +327,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         if (_pObsPerturbations[p]->state==sv){pPerturb=_pObsPerturbations[p];}
       }
 
-      for(int nn=_nTimeSteps-_data_horizon;nn<_nTimeSteps;nn++) 
+      for(int nn=_nTimeSteps-_window_size;nn<_nTimeSteps;nn++)
       {
         obsval=pTSObs->GetSampledValue(nn);
         if(obsval!=RAV_BLANK_DATA) {
@@ -390,14 +397,14 @@ void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const tim
     //----------------------------------------------------------
     int curr_nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
 
-    if (curr_nn<_nTimeSteps-_data_horizon){return;} // haven't reached the data availability period yet
+    if (curr_nn<_nTimeSteps-_window_size){return;} // haven't reached the data availability period yet
 
     int j=0;
     double obsval;
     for(int ii=0;ii<_nObs;ii++) { //messy that we have to go through whole loop like this
       const CTimeSeriesABC* pTSObs=pModel->GetObservedTS (_aObsIndices[ii]);
       const CTimeSeriesABC* pTSMod=pModel->GetSimulatedTS(_aObsIndices[ii]);
-      for(int nn=_nTimeSteps-_data_horizon;nn<_nTimeSteps;nn++) {
+      for(int nn=_nTimeSteps-_window_size;nn<_nTimeSteps;nn++) {
         obsval=pTSObs->GetSampledValue(nn);
         if(obsval!=RAV_BLANK_DATA) {
           if(nn==curr_nn) {
@@ -650,6 +657,13 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 
     Options.rvc_filename=_aOutputDirs[e+_nEnKFMembers]+solfile;
     ParseInitialConditionsFile(pModel,Options);
+  }
+
+  //- read forecast .rvt file if required
+  if((e==_nEnKFMembers) && (_forecast_rvt!="")) {
+    pModel->ClearTimeSeriesData(Options); //wipes out everything read pre-forecast
+    Options.rvt_filename=_forecast_rvt;
+    ParseTimeSeriesFile(pModel,Options);
   }
 
   if(e>=_nEnKFMembers) {

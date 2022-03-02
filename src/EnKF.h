@@ -52,11 +52,13 @@ private:
 
   double         _t_assim_start;    //< assimilation start time 
 
-  int            _data_horizon;     //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
+  int            _window_size;     //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
   int            _nTimeSteps;       //< number of timesteps in hindcast period (prior to t0)
 
   bool           _warm_ensemble;    //< true if initial conditions should be read from previous ensemble run (default: false)
   string         _warm_runname;     //< run name of warm solution files (e.g., run1_solution.rvc)
+
+  string         _forecast_rvt;     //< name of forecast .rvt file (or "" if base .rvt is to be used)
 
   int           *_aObsIndices;      //< indices of CModel::pObsTS array corresponding to assimilation time series [size:_nObs]
   int            _nObs;             //< number of time series to be assimilated
@@ -72,10 +74,11 @@ public:
 
   double GetStartTime(const int e) const;
 
-  void SetToWarmEnsemble(string runname);
-  void SetDataHorizon(const int nTimesteps);
-  void AddPerturbation   (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
-  void AddObsPerturbation(sv_type      type, disttype distrib, double *distpars, adjustment adj);
+  void SetToWarmEnsemble   (string runname);
+  void SetWindowSize       (const int nTimesteps);
+  void SetForecastRVTFile  (string filename);
+  void AddPerturbation     (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
+  void AddObsPerturbation  (sv_type      type, disttype distrib, double *distpars, adjustment adj);
   void AddAssimilationState(sv_type sv, int layer, int assim_groupID);
 
   void Initialize       (const CModel* pModel,const optStruct &Options);

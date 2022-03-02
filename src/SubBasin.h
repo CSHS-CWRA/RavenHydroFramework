@@ -50,7 +50,6 @@ private:/*------------------------------------------------------*/
   //basin properties
   double           _basin_area;   ///< contributing surface area for subbasin [km2]
   double        _drainage_area;   ///< total upstream drainage area [km2] (includes subbasin area)
-  double         _avg_ann_flow;   ///< average annual flowrate [m3/s] (averaged along reach)
   long          _downstream_ID;   ///< ID of downstream subbasin; if <0, then this outflows outside the model domain
   bool                 _gauged;   ///< if true, hydrographs are generated for downstream flows
   bool           _is_headwater;   ///< true if no subbasins drain into this one and _pInflowHydro==NULL
@@ -160,7 +159,6 @@ public:/*-------------------------------------------------------*/
   string               GetName              () const;
   double               GetBasinArea         () const;
   double               GetDrainageArea      () const;
-  double               GetAvgAnnualFlow     () const;
   double               GetAvgStateVar       (const int i) const;
   double               GetAvgConcentration  (const int i) const;
   double               GetAvgForcing        (const string &forcing_string) const;
@@ -235,12 +233,14 @@ public:/*-------------------------------------------------------*/
                                             const double    &Qlat_avg,         //[m3/s]
                                             const double    &total_drain_area, //[km2]
                                             const optStruct &Options);
+  void            InitializeFlowStates     (const double& Qin_avg,const double& Qlat_avg,const optStruct &Options);
   void            AddInflowHydrograph      (CTimeSeries *pInflow);
   void            AddDownstreamInflow      (CTimeSeries *pInflow);
   void            AddIrrigationDemand      (CTimeSeries *pOutflow);
   void            AddEnviroMinFlow         (CTimeSeries *pMinFlow);
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double min_flow, const double pct);
   void            AddFlowDiversion         (const int jul_start, const int jul_end, const int target_p, const double *aQ1, const double *aQ2, const int NQ);
+  void            ClearTimeSeriesData      (const optStruct& Options);
 
   // reservoir manipulators
   void            ResetReferenceFlow       (const double &Qreference);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -226,6 +226,7 @@ public:/*-------------------------------------------------------*/
 
   void              SetHRU                   (const CHydroUnit *pHRU);
   void              DisableOutflow           ();
+  void              ClearTimeSeriesData      (const optStruct& Options);
 
   //Called during simulation:
   double            RouteWater               (const double      &Qin_old,
