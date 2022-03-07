@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -121,13 +121,13 @@ void CSoilProfile::AddHorizon(double thickness, //[m]
 /// \param **pSoil [out] Reference to soil properties
 /// \param *thickness [in & out] Reference to array of layer thicknesses [m]
 //
-void CSoilProfile::AllocateSoilLayers(const int                                         nSoilLayers,
+void CSoilProfile::AllocateSoilLayers(const int           nSoilLayers,
                                       const soil_struct  **pSoil,
-                                      double                                                    *thickness) const
+                                      double              *thickness) const
 {
   static soil_struct blank_soil_struct;
 
-  CSoilClass::InitializeSoilProperties(blank_soil_struct, false);
+  CSoilClass::InitializeSoilProperties(blank_soil_struct, false,0);
   blank_soil_struct.porosity =0;
   blank_soil_struct.hydraul_cond=0;
   //A problem if nSoilLayers<nHorizons!!-average layers!?

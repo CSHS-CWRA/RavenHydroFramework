@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   Class CSoilClass
   Class CVegetationClass
@@ -28,6 +28,7 @@ enum class_type{
   CLASS_GLOBAL,     ///< Global parameter class
   CLASS_SUBBASIN,   ///< Subbasin parameter class
   CLASS_GAUGE,      ///< Gauge parameter class
+  CLASS_SOIL_TRANSPORT, ///< Soil transport class
   CLASS_HRUTYPE,    ///< special flag to handle HRU type changes; not assoc. with parameters
   CLASS_UNKNOWN
 };
@@ -47,7 +48,7 @@ protected:/*----------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CSoilClass(const string name);
+  CSoilClass(const string name, const int nConstits);
   ~CSoilClass();
 
   //Accessors
@@ -59,7 +60,7 @@ public:/*-------------------------------------------------------*/
   void                     SetSoilTransportProperty(int constit_ind, string &param_name, const double &value);
 
   //routines
-  void AutoCalculateSoilProps(const soil_struct &Stmp,const soil_struct &Sdefault);
+  void AutoCalculateSoilProps(const soil_struct &Stmp,const soil_struct &Sdefault,const int nConstit);
 
   static int               GetNumClasses();
   static const CSoilClass *GetSoilClass(int c);
@@ -69,7 +70,7 @@ public:/*-------------------------------------------------------*/
   static void              SetSoilTransportProperty(int constit_ind, int constit_ind2,soil_struct &S, string param_name, const double value);
   static double            GetSoilProperty         (const soil_struct &S, string param_name, const bool strict=true);
   static double            GetSoilTransportProperty(const int constit_ind, const soil_struct &S, string param_name);
-  static void              InitializeSoilProperties(soil_struct &S, bool is_template);
+  static void              InitializeSoilProperties(soil_struct &S, bool is_template,int nConstits);
 
   static double            CalcSoilResistance(const double &psi,const soil_struct &S);
   static double            CalcSoilHydCond   (const double      &sat_liq,

@@ -71,10 +71,6 @@ double CEnthalpyModel::GetOutflowConcentration(const int p) const
     if(flow<=0) { return 0.0; }
 
     return ConvertVolumetricEnthalpyToTemperature(hv); //[C]
-
-    //if (T<0){cout<<"     Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<" ***************"<<endl;}
-    //else {   cout<<" NOT Weird: "<<MJ_per_d<<" "<<flow<<" "<<T<<endl;}
-    //return T;
   }
   else {
     return ConvertVolumetricEnthalpyToTemperature(_aMres[p]/pRes->GetStorage()); 
@@ -180,7 +176,6 @@ double CEnthalpyModel::GetDirichletEnthalpy(const CHydroUnit* pHRU,const double&
 double CEnthalpyModel::GetAvgLatentHeatFlux() const
 {
   double area=_pModel->GetWatershedArea()*M2_PER_KM2;
-
   int    iAET=_pModel->GetStateVarIndex(AET);
   double  AET=_pModel->GetAvgStateVar(iAET)/MM_PER_METER;
 
@@ -195,10 +190,10 @@ double CEnthalpyModel::GetAvgLatentHeatFlux() const
 /// \param Q     [in] flow rate [m3/s]
 /// \param slope [in] bed slope [m/m]
 /// \param perim [in] wetted perimeter [m]
+/// from Theurer et al 1984, US Fish and Wildlife Serviec FWS/OBS-85/15, as reported in MacDonald, Boon, and Byrne 2014
 //
 double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const
 {
-  //from Theurer et al 1984, US Fish and Wildlife Serviec FWS/OBS-85/15, as reported in MacDonald, Boon, and Byrne 2014
   if (perim<PRETTY_SMALL){return 0.0;}
   return 9805*Q/perim*slope*WATT_TO_MJ_PER_D;
 }
@@ -219,10 +214,8 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
 
   const CHydroUnit  *pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
   int                iAET=_pModel->GetStateVarIndex(AET);
-
-  int    mHypo    =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
-  int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);  
-  double temp_GW  =pBasin->GetAvgConcentration(iGW); 
+  int    mHypo           =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
+  int    iGW             =_pModel->GetStateVarIndex(SOIL,mHypo);  
   
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
   double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
@@ -230,12 +223,13 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
 
+  double temp_GW  =pBasin->GetAvgConcentration(iGW);
   double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-
+  double cel_corr =pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
-  
+
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
 
   double S(0.0);                            //source term [MJ/m3/d]
@@ -245,13 +239,13 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   S+=hstar*temp_air/dbar;                   //convection with atmosphere
   S+=qmix*HCP_WATER*bed_ratio*temp_GW/dbar; //hyporheic mixing
 
-  _aEnthalpyBeta[p]=(hstar/dbar + qmix/dbar*HCP_WATER*bed_ratio)/HCP_WATER;
+  _aEnthalpyBeta[p]=(hstar/dbar + qmix/dbar*HCP_WATER*bed_ratio)/HCP_WATER*cel_corr;
 
   int nMinHist=_pModel->GetSubBasin(p)->GetInflowHistorySize();
   for(int n=nMinHist-1;n>0;n--) {
     _aEnthalpySource[p][n]=_aEnthalpySource[p][n-1];
   }
-  _aEnthalpySource[p][0]=S;
+  _aEnthalpySource[p][0]=S*cel_corr;
 }
 
 
@@ -279,24 +273,22 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   }
 
   const CHydroUnit* pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
-  int                iAET=_pModel->GetStateVarIndex(AET);
-
-  int    mHypo    =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
-  int    iGW      =_pModel->GetStateVarIndex(SOIL,mHypo);  
-  double temp_GW  =pBasin->GetAvgConcentration(iGW); 
+  int               iAET=_pModel->GetStateVarIndex(AET);
+  int    mHypo          =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
+  int    iGW            =_pModel->GetStateVarIndex(SOIL,mHypo);  
 
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
   double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
   double LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
   //double LW       =STEFAN_BOLTZ*EMISS*pow(T-Ta,4); T=GetOutflowConcentration(p);
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
-  
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
 
+  double temp_GW  =pBasin->GetAvgConcentration(iGW);
   double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-
+  double cel_corr =pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
 
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
@@ -321,14 +313,14 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
     for(int i=k;i<nMinHist;i++) {
       zk[k]+=aQin[k]*aRouteHydro[i]*(tr_mean/i/tstep)*SEC_PER_DAY; // [m3/d]
     }
-    zsum+=zk[k];
+    zsum+=zk[k]*cel_corr;
   }
 
   //calculate integral term I_m^n [degC*d] (see paper)
-  double hin;
-  double beta=_aEnthalpyBeta[p];//[1/d] 
-  beta=max(beta,1e-9); //to avoid divide by zero error
-  double gamma=(1.0-exp(-beta*tstep));
+  double hin,beta,gamma;
+  beta =_aEnthalpyBeta[p];//[1/d] 
+  beta =max(beta,1e-9); //to avoid divide by zero error
+  gamma=(1.0-exp(-beta*tstep));
   Ik[0]=0.0;
   for(int m=1;m<nMinHist;m++)
   {
@@ -342,7 +334,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
     }
     Ik[m]+=(tstep/beta-gamma/beta/beta)*_aEnthalpySource[p][0];
 
-    Ik[m]*=1.0/HCP_WATER/tstep;// [MJ-d/m3] /[MJ/m3/K] /[d] = [degC];
+    Ik[m]*=1.0/HCP_WATER/tstep/cel_corr;// [MJ-d/m3] /[MJ/m3/K] /[d] = [degC];
     //double tmp=(tstep/beta-gamma/beta/beta)* _aEnthalpySource[p][0]/HCP_WATER;
     //cout<<"Tk["<<m<<"]="<<Ik[m]<<" Tin="<<hin/HCP_WATER<<" src term="<<tmp<<endl;
   }
@@ -355,8 +347,6 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   {
     Q_sens+=zk[m]*(hstar/dbar)*(temp_air-Ik[m])*tstep;   //[m3/d]*[MJ/m2/d/K]*[1/m]*[K]*[d]=[MJ/d]
 
-    //cout<<"Ik term: "<<temp_air<<" "<<Ik[m]/tstep<<" beta: "<<beta<<" "<<gamma<<endl;
-
     Q_GW  +=zk[m]*kprime      *(temp_GW-Ik[m])*tstep;
 
     Q_rad +=zk[m]*(SW+LW)/dbar*tstep;                    //[m3/d]*[MJ/m2/d]*[1/m]*[d]=[MJ/d]
@@ -365,10 +355,11 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
     Q_fric+=zk[m]*Qf/dbar*tstep;
 
+   // cout<<"Ik term: "<<temp_air<<" "<<Ik[m]/tstep<<" beta: "<<beta<<" "<<gamma<<endl; 
    // cout<<" Losses: "<<k<<": "<<Q_sens<<" "<<Q_GW<<" "<<Q_rad<<" "<<Q_lat<<" "<<Q_fric<< " "<<zk[k]*kprime*(temp_GW*tstep-Ik[k])<<" "<<Ik[k]<<" "<<zk[k]<<endl;
    // cout<<"mean res time: "<<tr_mean<<endl;
    // cout<<" "<<hstar<<" "<< dbar<<" "<<temp_air*tstep<<" "<<zk[k]<<endl;
-   //  cout<<"z["<<k<<"]: "<<zk[k]/SEC_PER_DAY<<"("<<zk[k]<<") "<<aQin[k]<<" "<<aRouteHydro[k]<<endl;
+   // cout<<"z["<<k<<"]: "<<zk[k]/SEC_PER_DAY<<"("<<zk[k]<<") "<<aQin[k]<<" "<<aRouteHydro[k]<<endl;
   }
 
   delete[] Ik;
@@ -563,8 +554,8 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
     if(pSB->GetName()=="") { name=to_string(pSB->GetID())+"="+to_string(pSB->GetID()); }
     else                   { name=pSB->GetName(); }
 
-    if((pSB->IsGauged()) && (pSB->IsEnabled())) {
-      //_STREAMOUT<<name<<" TMP NET RAD [MJ/m2/d],";
+    if((pSB->IsGauged()) && (pSB->IsEnabled())) 
+    {
       _STREAMOUT<<name<<" Ein[MJ/m2/d],";
       _STREAMOUT<<name<<" Eout[MJ/m2/d],";
       _STREAMOUT<<name<<" Q_sens[MJ/m2/d],";
@@ -601,19 +592,20 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   _STREAMOUT<<_pModel->GetAvgForcing("SW_RADIA_NET")+_pModel->GetAvgForcing("LW_RADIA_NET")<<",";
 
   double mult=1.0; //convert everything to MJ/m2/d 
+  double Ein,Eout;
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
     mult=1.0/_pModel->GetSubBasin(p)->GetReachLength()/_pModel->GetSubBasin(p)->GetTopWidth();
-    if ((_pModel->GetSubBasin(p)->IsGauged()) && (_pModel->GetSubBasin(p)->IsEnabled())) {
+    if ((_pModel->GetSubBasin(p)->IsGauged()) && (_pModel->GetSubBasin(p)->IsEnabled())) 
+    {
+      Ein =0.5*(_aMinHist[p][0]+_aMinHist[p][1]);
+      Eout=0.5*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1]);
       GetEnergyLossesFromReach(p,Q_sens,Q_lat,Q_GW,Q_rad,Q_fric);
-      //const CHydroUnit* pHRU=_pModel->GetHydroUnit(_pModel->GetSubBasin(p)->GetReachHRUIndex());
-      //double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
-      //double LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
-      //_STREAMOUT<<SW+LW<<","; //TMP DEBUG
-      _STREAMOUT<<0.5*mult*(_aMinHist[p][0]+_aMinHist[p][1])                                       <<","; //Ein
-      _STREAMOUT<<0.5*mult*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1])<<","; //Eout
-      _STREAMOUT<<mult*Q_sens<<","<<mult*Q_lat<<","<<mult*Q_GW<<","<<mult*Q_rad<<","<<mult*Q_fric<<",";
-      _STREAMOUT<<mult*_channel_storage[p]<<","; 
+
+      _STREAMOUT<<mult*Ein   <<","<<mult*Eout <<","; 
+      _STREAMOUT<<mult*Q_sens<<","<<mult*Q_lat<<",";
+      _STREAMOUT<<mult*Q_GW  <<","<<mult*Q_rad<<",";
+      _STREAMOUT<<mult*Q_fric<<","<<mult*_channel_storage[p]<<",";
     }
   }
   _STREAMOUT<<endl;
@@ -640,14 +632,14 @@ void TestEnthalpyTempConvert()
   TEST.open("EnthalpyTest.csv");
   TEST<<"h,T,Fi,h_reverse"<<endl;
   for(double h=-500; h<0.0; h+=10) {
-    double T=ConvertVolumetricEnthalpyToTemperature(h);
+    double T =ConvertVolumetricEnthalpyToTemperature(h);
     double Fi=ConvertVolumetricEnthalpyToIceContent(h);
     double hr=ConvertTemperatureToVolumetricEnthalpy(T,Fi);
     double dTdh=TemperatureEnthalpyDerivative(h);
     TEST<<h<<","<<T<<","<<Fi<<","<<dTdh<<","<<hr<<endl;
   }
   for(double h=0; h<=150; h+=15) {
-    double T=ConvertVolumetricEnthalpyToTemperature(h);
+    double T =ConvertVolumetricEnthalpyToTemperature(h);
     double Fi=ConvertVolumetricEnthalpyToIceContent(h);
     double hr=ConvertTemperatureToVolumetricEnthalpy(T,Fi);
     double dTdh=TemperatureEnthalpyDerivative(h);

@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "ChannelXSect.h"
 void TestManningsInfluence(const CChannelXSect *pChan,const double &Qref);
+string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
 //////////////////////////////////////////////////////////////////
 /// \brief Utility method to assign parameter name to cross section "nickname", add to static array of all x-sections
 /// \param name [in] Nickname for cross section
@@ -145,7 +146,7 @@ CChannelXSect::CChannelXSect(const string  name,          //constructor for trap
   ExitGracefullyIf(_min_mannings<=0.0,
                   "CChannelXSect Constructor: Manning's n must be greater than zero",BAD_DATA_WARN);
 
-  _nPoints  =30;
+  _nPoints  =50;
   _aQ       =new double [_nPoints];
   _aStage   =new double [_nPoints];
   _aTopWidth=new double [_nPoints];
@@ -341,23 +342,23 @@ void CChannelXSect::GetFlowCorrections(const double &SB_slope,
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns celerity of channel at reference flow [m/s]
-/// \param &Qref [in] Reference flowrate [m3/s]
-/// \return Celerity of channel corresponding to reference flowrate [m/s]
+/// \param &Q [in]  flowrate [m3/s]
+/// \return Celerity of channel corresponding to flowrate [m/s]
 //
-double  CChannelXSect::GetCelerity(const double &Qref, const double &SB_slope,const double &SB_n) const//Qref in m3/s, celerity in m/s
+double  CChannelXSect::GetCelerity(const double &Q, const double &SB_slope,const double &SB_n) const
 {
-  //returns dQ/dA|_Qref ~ wave celerity in reach at given reference flow Qref
+  //returns dQ/dA|_Qref ~ wave celerity in reach at given flow Q
   //interpolated from rating curves
 
   ExitGracefullyIf(_aQ==NULL,"CChannelXSect::GetCelerity: Rating curves not yet generated",RUNTIME_ERR);
 
   double junk,Q_mult;
   GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
-  if ((_is_closed_channel) && (Qref > Q_mult*_aQ[_nPoints-1])) {
+  if ((_is_closed_channel) && (Q > Q_mult*_aQ[_nPoints-1])) {
     ExitGracefully("CChannelXSect::GetCelerity: reference flowrate exceeds closed channel maximum. Conduit area is too small",BAD_DATA);
   }
-  if (Qref<0){return 0.0;}
-  int i=0; while ((Qref>Q_mult*_aQ[i+1]) && (i<(_nPoints-2))){i++;}
+  if (Q<0){return 0.0;}
+  int i=0; while ((Q>Q_mult*_aQ[i+1]) && (i<(_nPoints-2))){i++;}
   return Q_mult*(_aQ[i+1]-_aQ[i])/(_aXArea[i+1]-_aXArea[i]);
 }
 
@@ -376,6 +377,24 @@ double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, co
   double Q_mult    =1.0;
   GetFlowCorrections(SB_slope,SB_n,slope_mult,Q_mult);
   return 0.5*(Q)/GetTopWidth(Q,SB_slope,SB_n)/(slope_mult*_bedslope);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief checks to see if reference flow is in excess of channel maximum; throws warning if it is
+/// \param &Qref [in] Reference flowrate [m3/s]
+/// \param SB_slope [in] subbasin slope (or AUTO_COMPUTE, if channel slope to be used)
+/// \param SB_n [in] subbasin mannings  (or AUTO_COMPUTE, if channel mannings to be used)
+/// \param SBID [in] subbasin identifier
+//
+void  CChannelXSect::CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long SBID) const
+{
+  string warn;
+  double junk,Q_mult;
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
+  if((Qref > Q_mult*_aQ[_nPoints-1])) {
+    warn="CChannelXSect::CheckReferenceFlow: reference flow exceeds channel maximum flow in subbasin "+to_string(SBID)+". Need to specify larger range of stages in channel profile.";
+    WriteWarning(warn.c_str(),BAD_DATA);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -522,14 +541,33 @@ void CChannelXSect::SummarizeToScreen         ()
     cout<<"           slope: " <<pAllChannelXSects[p]->_bedslope <<endl;
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Check for duplicate channel names
+//
+void CChannelXSect::CheckForDuplicates(const optStruct &Options)
+{
+  for(int p=0; p<NumChannelXSects;p++)
+  {
+    for(int pp=0; pp<p;pp++)
+    {
+      if(pAllChannelXSects[p]->GetName()==pAllChannelXSects[pp]->GetName()) {
+        string warn=" CChannelXSect::CheckForDuplicates: found duplicated channel name: "+pAllChannelXSects[p]->GetName();
+        WriteWarning(warn.c_str(),Options.noisy);
+      }
+    }
+  }
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Write rating curves to file rating_curves.csv
 //
-void CChannelXSect::WriteRatingCurves()
+void CChannelXSect::WriteRatingCurves(const optStruct& Options)
 {
   ofstream CURVES;
-  CURVES.open("rating_curves.csv");
+  string tmpFilename=FilenamePrepare("rating_curves.csv",Options);
+  CURVES.open(tmpFilename.c_str());
+
+
   if (CURVES.fail()){
     ExitGracefully("CChannelXSect::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.",FILE_OPEN_ERR);
   }

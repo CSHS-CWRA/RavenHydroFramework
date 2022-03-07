@@ -50,9 +50,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
   
   //Initialize everything to zero (required for ensemble simulation)
   //--------------------------------------------------------------------------
-  //ISSUE: THIS ALSO OVERRIDES AUTOCALCULATION OF FLOWS FROM InitializeBasinFlows 
-  if (pModel->GetEnsemble()->GetNumMembers()>1){
-    
+  if (pModel->GetEnsemble()->GetNumMembers()>1)
+  {  
     // does not matter in EnKF/forecasting context, as it will get overwritten with .rvc state
     for (int i=0;i<pModel->GetNumStateVars();i++)
     {

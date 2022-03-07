@@ -146,7 +146,7 @@ double CNutrientModel::GetAdvectionCorrection(const CHydroUnit *pHRU,const int i
     ExitGracefullyIf(m==DOESNT_EXIST,"GetAdvectionCorrection:invalid iFromWater",RUNTIME_ERR);
 #endif
 
-    if(toType!=ATMOSPHERE) { return 1.0/pHRU->GetSoilProps(m)->retardation[_constit_index]; }
+    if(toType!=ATMOSPHERE) { return 1.0/pHRU->GetSoilProps(m)->trans_params[_constit_index].retardation; }
     else                   { return pHRU->GetVegetationProps()->uptake_moderator[_constit_index]; }
   }
   return 1.0;
@@ -173,8 +173,8 @@ double CNutrientModel::GetDecayCoefficient(const CHydroUnit *pHRU,const int iSto
     ExitGracefullyIf((c<0) || (c>MAX_CONSTITUENTS),"GetDecayCoefficient:invalid constit",RUNTIME_ERR);
 #endif
 
-    decay_coeff += pHRU->GetSoilProps(m)->mineraliz_rate[_constit_index];
-    decay_coeff += pHRU->GetSoilProps(m)->loss_rate[_constit_index];//e.g., denitrification
+    decay_coeff += pHRU->GetSoilProps(m)->trans_params[_constit_index].mineraliz_rate;
+    decay_coeff += pHRU->GetSoilProps(m)->trans_params[_constit_index].loss_rate;//e.g., denitrification
   }
   return decay_coeff;
 }

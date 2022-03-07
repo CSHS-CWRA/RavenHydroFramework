@@ -96,11 +96,14 @@ public:/*-------------------------------------------------------*/
   double              GetCelerity   (const double &Qref, const double &SB_slope,const double &SB_n) const;
   double              GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const;
 
+  void                CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long SBID) const;
+
   //static accessors, destructor
   static int                 GetNumChannelXSects       ();
   static const CChannelXSect*StringToChannelXSect      (const string s);
+  static void                CheckForDuplicates        (const optStruct& Options);
   static void                DestroyAllChannelXSections();
   static void                SummarizeToScreen         ();
-  static void                WriteRatingCurves         ();
+  static void                WriteRatingCurves         (const optStruct& Options);
 };
 #endif

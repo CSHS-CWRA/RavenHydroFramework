@@ -1294,7 +1294,7 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
     if(BAS.fail()) {
       WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
     }
-    BAS<<"ID,reach_length[m],Qref[m3/s],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
+    BAS<<"ID,Qref[m3/s],reach_length[m],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
     for(int pp=0;pp<_nSubBasins;pp++) {
       BAS<<_pSubBasins[pp]->GetID()<<",  "<<_pSubBasins[pp]->GetReferenceFlow();
       BAS<<","<<_pSubBasins[pp]->GetReachLength();
@@ -1312,9 +1312,11 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
     }
     BAS.close();
   }
-
+  
+  // rating_curves.csv
+  //--------------------------------------------------------------
   if(Options.write_channels){
-    CChannelXSect::WriteRatingCurves();
+    CChannelXSect::WriteRatingCurves(Options);
   }
 
 

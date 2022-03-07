@@ -166,6 +166,7 @@ public:/*-------------------------------------------------------*/
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
   double               GetReferenceCelerity () const;
+  double               GetCelerity          () const;
   double               GetDiffusivity       () const;
   long                 GetDownstreamID      () const;
   int                  GetNumHRUs           () const;

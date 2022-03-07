@@ -759,6 +759,19 @@ double CSubBasin::GetReferenceCelerity() const {
   return _c_ref;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns current celerity [m/s]
+/// \return  reference celerity [m/s] 
+/// 
+double CSubBasin::GetCelerity() const 
+{
+  if(_pChannel!=NULL) {
+    return _pChannel->GetCelerity(_aQout[_nSegments-1],_slope,_mannings_n);
+  }
+  else {
+    return 0.0;
+  }
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns reference diffusivity [m2/s]
 /// \return  reference diffusivity [m2/s] or AUTO_COMPUTE if not yet calculated
 //
@@ -1224,7 +1237,6 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
                            const double    &total_drain_area, //[km2]
                            const optStruct &Options)
 {
-  int seg;
   string warn;
   if ((_nHydroUnits==0) && (!_is_conduit)){ //allowed if conduit
     warn="CSubBasin::Initialize: subbasin "+to_string(_ID)+" has no constituent HRUs and therefore zero area";
@@ -1251,6 +1263,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
         string warn="CSubBasin::Initialize: negative or zero average flow specified in initialization (basin "+to_string(_ID)+")";
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
+      
       ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
       //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AnnualAvgRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
       //WriteAdvisory(advice,false);
@@ -1259,6 +1272,10 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       ResetReferenceFlow(_Q_ref);
     }
     
+    if(_pChannel!=NULL) {
+      _pChannel->CheckReferenceFlow(_Q_ref,_slope,_mannings_n,_ID);
+    }
+
     //Estimate reach length from area if not provided
     //------------------------------------------------------------------------
     if (_reach_length==AUTO_COMPUTE)

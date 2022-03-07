@@ -32,7 +32,7 @@ void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStru
 void  ImproperFormatWarning(string command,CParser *p,bool noisy);
 void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int       &nPm, 
                               const string  *aP , const class_type *aPC , const int &nP); 
-void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_soils,string *&soiltags,int &num_parsed_soils, const string name, bool isdefault);
+void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_soils,string *&soiltags,int &num_parsed_soils,int nConstits,const string name, bool isdefault);
 
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the class properties .rvp file
@@ -98,7 +98,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   vegtags    [0]="[DEFAULT]";
   num_parsed_veg++;
 
-  AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,"[DEFAULT]",true);//zero-index soil is template
+  AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,pModel->GetTransportModel()->GetNumConstituents(),"[DEFAULT]",true);//zero-index soil is template
 
   CLandUseClass::InitializeSurfaceProperties("[DEFAULT]",parsed_surf[0],true);//zero-index LULT is template
   lulttags    [0]="[DEFAULT]";
@@ -176,6 +176,16 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
       else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
       CSoilClass::SetSoilProperty    (*parsed_soils[0],aPmaster[p],val);
+    }
+    else if(aPCmaster[p]==CLASS_SOIL_TRANSPORT)
+    {
+      for (int c=0;c<pModel->GetTransportModel()->GetNumConstituents();c++)
+      { 
+        val=CSoilClass::GetSoilTransportProperty(c,*parsed_soils[0],aPmaster[p]);
+        if(val==NOT_NEEDED_AUTO) { val=AUTO_COMPUTE; }
+        else if(val==NOT_NEEDED) { val=NOT_SPECIFIED; }
+        CSoilClass::SetSoilTransportProperty(c,0,*parsed_soils[0],aPmaster[p],val);
+      }
     }
     else if (aPCmaster[p]==CLASS_VEGETATION)
     {
@@ -394,7 +404,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
         else if (Len >= 1)
         {
-          AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,s[0],false);
+          AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,pModel->GetTransportModel()->GetNumConstituents(),s[0],false);
 
           //default - common for conceptual models
           parsed_soils[num_parsed_soils-1]->sand_con = 0.4111111; //special code for autogeneration of soil params
@@ -1411,7 +1421,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     pVegClasses [c-1]->AutoCalculateVegetationProps (parsed_veg[c],parsed_veg[0]); 
   }
   for (int c=1;c<num_parsed_soils;c++){
-    pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0]); 
+    pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents()); 
   }
   for (int c=1;c<num_parsed_lult;c++){
     pLUClasses  [c-1]->AutoCalculateLandUseProps    (parsed_surf[c],parsed_surf[0]); 
@@ -1468,6 +1478,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   
   ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),
                    "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
+
+
+  CChannelXSect::CheckForDuplicates(Options);
+
   delete [] indices;
   for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
 
@@ -1642,12 +1656,13 @@ void  AddNewSoilClass(CSoilClass **&pSoilClasses,
                       soil_struct **&parsed_soils,
                       string *&soiltags,
                       int &num_parsed_soils,
+                      int nConstits,
                       const string name, bool isdefault)
 {
   //cout<<"ADDING NEW SOIL CLASS ! "<<num_parsed_soils<<" : "<<name<<endl;
   //create new soil class, dynamically add to array
   CSoilClass *pSC;
-  pSC=new CSoilClass(name);
+  pSC=new CSoilClass(name,nConstits);
   int tmp=num_parsed_soils;
   if (!DynArrayAppend((void**&)(pSoilClasses),(void*)(pSC),tmp)){
     ExitGracefully("AddNewSoilClass: creating NULL soil class",BAD_DATA);}
@@ -1659,7 +1674,7 @@ void  AddNewSoilClass(CSoilClass **&pSoilClasses,
   if (!DynArrayAppend((void**&)(parsed_soils),(void*)(pSS),tmp)){
     ExitGracefully("AddNewSoilClass: creating NULL soil class",BAD_DATA);}
 
-  CSoilClass::InitializeSoilProperties(*parsed_soils[num_parsed_soils], isdefault);
+  CSoilClass::InitializeSoilProperties(*parsed_soils[num_parsed_soils], isdefault,nConstits);
 
   //create new soil name, dynamically add to array
   string *tmpSoil=new string[num_parsed_soils+1];

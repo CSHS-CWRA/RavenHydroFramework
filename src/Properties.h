@@ -23,6 +23,17 @@
 
 #include "RavenInclude.h"
 struct force_struct;
+///////////////////////////////////////////////////////////////////
+/// \brief structure which defines set of soil-related transport parameters
+//
+struct soil_trans_params
+{
+  double retardation;                     ///< [-]   soil-specific retardation factor
+  double mineraliz_rate;                  ///< [1/d] soil-specific mineralization rate 
+  double loss_rate;                       ///< [1/d] soil-specific unspecified linear loss rate
+  double transf_coeff[MAX_CONSTITUENTS];  ///< [1/d] linear transformation coefficients (one per species-species combination) 
+  double stoichio_coeff[MAX_CONSTITUENTS];///< [1/d] linear transformation coefficients (one per species-species combination) 
+};
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Structure that, when instantiated, contains defining information that reflects a specific soil type.
@@ -112,20 +123,15 @@ struct soil_struct
 
   double exchange_flow;     ///< [mm/d]    exchange flow rate with mixing zone (greater than 0)
 
-  //Transport parameters (all per soil/constituent combination) //TMP DEBUG - will move.
-  double retardation   [MAX_CONSTITUENTS]; ///< [-] soil-specific retardation factor
-  double mineraliz_rate[MAX_CONSTITUENTS]; ///< [1/d] soil-specific mineralization rate 
-  double loss_rate     [MAX_CONSTITUENTS]; ///> [1/d] soil-specific unspecified linear loss rate
-  double transf_coeff  [MAX_CONSTITUENTS][MAX_CONSTITUENTS]; ///< [1/d] linear transformation coefficients (one per species-species combination) 
-  double stoichio_coeff[MAX_CONSTITUENTS][MAX_CONSTITUENTS]; ///< [1/d] linear transformation coefficients (one per species-species combination) 
-  
+  soil_trans_params *trans_params; //<array of transport params [size: _nConstituents]
 };
+
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Structure that, when instantiated, contains defining information that reflects a specific type of vegetation
 /// \details Contains vegetation properties calculated from vegetation class
 /// \note If additional properties are added, default values/formulae for values need to be
-/// specified in CVegetationClass::AutoCalculateSoilProps
+/// specified in CVegetationClass::AutoCalculateVegProps
 //
 struct veg_struct
 {

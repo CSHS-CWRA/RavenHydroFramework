@@ -1872,6 +1872,11 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   {
     CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
   }
+  else if(ctype==CLASS_SOIL_TRANSPORT)
+  {
+    ExitGracefully("UpdateParameter::CLASS_SOIL_TRANSPORT",STUB);
+    //CSoilClass::StringToSoilClass(cname)->SetSoilTransportProperty(constit,pname,value);
+  }
   else if(ctype==CLASS_VEGETATION)
   {
     CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
