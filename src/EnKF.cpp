@@ -24,7 +24,8 @@ bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 // 
 // in .rve file:
 //  :DataHorizon 1 # no. of timesteps (1 for standard EnKF or huge if all data since sim start is used; 2+ for variational approach)
-//  #:WarmEnsemble # used if ICs should be read from ensemble solution.rvc file
+//  :WarmEnsemble # used if ICs should be read from ensemble solution.rvc file
+//  :ForecastRVTFilename ./meteo/model_forecast.rvt 
 // 
 //  :ForcingPerturbation RAINFALL GAMMA_DIST [dist param1] [dist param2] {HRU_Group}
 //  :ForcingPerturbation TEMP_AVE NORMAL_DIST [mean=0] [std dev] {HRU_Group}
@@ -34,8 +35,7 @@ bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 //  :AssimilatedState SNOW       {HRUGroup}
 //     
 //  //plus, uses streamflow locations tagged for assimilation 
-//  in .rvt file:
-//  :AssimilateStreamflow [SBID1] # also now in .rve file
+//  :AssimilateStreamflow [SBID1] # (optionally in .rvt file)
 //  :AssimilateStreamflow [SBID2]
 //   later:
 //  :AssimilateHRUState SNOW [HRU1] 

@@ -227,7 +227,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-  double cel_corr =pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
+  double cel_corr =1.0;//pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
 
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
@@ -288,7 +288,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
-  double cel_corr =pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
+  double cel_corr =1.0;//pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
 
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  

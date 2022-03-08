@@ -61,11 +61,12 @@ void CmvSublimation::Initialize(){}
 //
 void CmvSublimation::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
+  nP=1;
+  aP[0]="SNOW_TEMPERATURE"; aPC[0]=CLASS_GLOBAL;
   if (type==SUBLIM_SVERDRUP)
   {
-    nP=2;
-    aP[0]="SNOW_ROUGHNESS";   aPC[0]=CLASS_GLOBAL;
-    aP[1]="SNOW_TEMPERATURE"; aPC[1]=CLASS_GLOBAL;
+    nP+=1;
+    aP[1]="SNOW_ROUGHNESS";   aPC[1]=CLASS_GLOBAL;
   }
   else if (type==SUBLIM_PBSM)
   {
@@ -146,7 +147,8 @@ double  SublimationRate  (const double      *state_vars,
   //-----------------------------------------------------------------
   else if(type==SUBLIM_BULK_AERO)
   { ///bulk aerodynamix flux formulation described in Hock & Holmgren [2005]
-    //Hock, R., & Holmgren, B. (2005). A distributed surface energy-balance model for complex topography and its application to Storglaciären, Sweden. Journal of Glaciology, 51(172), 25-36. doi:10.3189/172756505781829566
+    //Hock, R., & Holmgren, B. (2005). A distributed surface energy-balance model for complex topography and
+    //its application to Storglaciären, Sweden. Journal of Glaciology, 51(172), 25-36. doi:10.3189/172756505781829566
     double air_pres=pHRU->GetForcingFunctions()->air_pres; //air pressure [kPa]
     double air_dens=pHRU->GetForcingFunctions()->air_dens;
     double Tsnow   =pHRU->GetSnowTemperature();

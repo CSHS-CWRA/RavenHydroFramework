@@ -556,7 +556,11 @@ double CHydroUnit::GetSnowDepth() const
 double CHydroUnit::GetSnowTemperature() const
 {
   int    iSnTemp=_pModel->GetStateVarIndex(SNOW_TEMP);
-  if     (iSnTemp==DOESNT_EXIST){return CGlobalParams::GetParams()->snow_temperature;}
+  if     (iSnTemp==DOESNT_EXIST){
+    double sntmp=CGlobalParams::GetParams()->snow_temperature;
+    if (sntmp==NOT_NEEDED_AUTO){return 0.0;}
+    return sntmp;
+  }
   else                          {return this->GetStateVarValue(iSnTemp);}
 }
 //////////////////////////////////////////////////////////////////

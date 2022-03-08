@@ -857,7 +857,7 @@ double GetSaturatedVaporPressure(const double &T)//[C]
 
   //0.61115*exp(22.452*T/(T+ZERO_CELSIUS)); //MESH
 
-  if (T>=0){return A1*exp(A2*T/(T+A3));}  // Dingman/Brook90 version (Murray, 1967)
+  if (T>=0){return A1*exp(A2*T/(T+A3));}  // Dingman/Brook90 version (Tetens equation, 1930)
   else     {return A1*exp(A4*T/(T+A5));}
 }
 
