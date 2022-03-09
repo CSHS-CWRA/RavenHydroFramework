@@ -384,15 +384,16 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Precip Corrections
       //-------------------------------------------------------------------
+      double rc,sc;
+      int p=_pHydroUnits[k]->GetSubBasinIndex();
+      rc=_pSubBasins[p]->GetRainCorrection();
+      sc=_pSubBasins[p]->GetSnowCorrection();
 
       //--Gauge Corrections------------------------------------------------
       if(!(pre_gridded || snow_gridded || rain_gridded)) //Gauge Data
       {
-        double gauge_corr; double rc,sc;
+        double gauge_corr; 
         F.precip=F.precip_5day=F.precip_daily_ave=0.0;
-        int p=_pHydroUnits[k]->GetSubBasinIndex();
-        rc=_pSubBasins[p]->GetRainCorrection();
-        sc=_pSubBasins[p]->GetSnowCorrection();
         for(g=0; g<_nGauges; g++)
         {
           gauge_corr= F.snow_frac*sc*_pGauges[g]->GetSnowfallCorr() + (1.0-F.snow_frac)*rc*_pGauges[g]->GetRainfallCorr();
@@ -408,7 +409,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         double grid_corr;
         double rain_corr=pGrid_pre->GetRainfallCorr();
         double snow_corr=pGrid_pre->GetSnowfallCorr();
-        grid_corr= F.snow_frac*snow_corr + (1.0-F.snow_frac)*rain_corr;
+        grid_corr= F.snow_frac*sc*snow_corr + (1.0-F.snow_frac)*rc*rain_corr;
 
         F.precip          *=grid_corr;
         F.precip_daily_ave*=grid_corr;
