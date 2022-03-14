@@ -724,7 +724,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         _STORAGE<<endl;
       }
 
-      //Write hydrographs for gauged watersheds (ALWAYS DONE)
+      //Write hydrographs for gauged watersheds to Hydrographs.csv (ALWAYS DONE)
       //----------------------------------------------------------------
       if (Options.ave_hydrograph)
       {

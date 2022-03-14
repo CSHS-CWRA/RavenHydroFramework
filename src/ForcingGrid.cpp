@@ -2058,7 +2058,7 @@ bool CForcingGrid::ShouldDeaccumulate()      const{return _deaccumulate;}
 //
 forcing_type CForcingGrid::GetForcingType  () const{return _ForcingType;}
 
-void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,const int nrows, const int ncols,double *values) 
+void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, const int ncols,const int nrows,double *values)
 {
   // -------------------------------
   // Open NetCDF file, Get the lat long elev information
@@ -2072,11 +2072,11 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,co
     size_t    nc_start[2];
     size_t    nc_length[2];
     ptrdiff_t nc_stride[2];
-    nc_start[0]  = 0; nc_stride[0]=1;
-    nc_start[1]  = 0; nc_stride[1]=1;
+    nc_start[0]  = 0;  nc_stride[0]=1;  nc_length[0]=ncols;
+    nc_start[1]  = 0;  nc_stride[1]=1;  nc_length[1]=nrows;
 
-    if(_is_3D) { nCells = nrows*ncols; }
-    else       { nCells = nrows; }
+    if(_is_3D) { nCells = ncols*nrows; }
+    else       { nCells = ncols; }
     
     delete [] values; //re-read if buffered
     values=new double [_nNonZeroWeightedGridCells]; //allocate memory
@@ -2097,19 +2097,20 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,co
     if(_is_3D) 
     {
       double  **aTmp2D=NULL; //stores pointers to rows/columns of 2D data
-      aTmp2D=new double *[nrows];
-      for(int row=0;row<nrows;row++) {
-        aTmp2D[row]=&aVec[row*ncols]; //points to correct location in aVec data storage
+      aTmp2D=new double *[ncols];
+      ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadAttGridFromNetCDF",OUT_OF_MEMORY);
+      for(int icol=0;icol<ncols;icol++) {
+        aTmp2D[icol]=&aVec[icol*nrows]; //points to correct location in aVec data storage
       }
 
       retval=nc_get_vars_double(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-        values[ic]=aTmp2D[irow][icol];
+        values[ic]=aTmp2D[icol][irow];
       }
 
-      for(int i=0;i<nrows;i++) { delete[] aTmp2D[i]; } delete[] aTmp2D;
+      for(int icol=0;icol<ncols;icol++) { delete[] aTmp2D[icol]; } delete[] aTmp2D;
     }
     else 
     {
@@ -2117,15 +2118,15 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname,co
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-        values[ic]=aVec[irow];
+        values[ic]=aVec[icol];
       }
     }
     delete[] aVec;
   }
 #endif
-
 }
 // same as above but for string information
+// Note this needs to be fixed by switching nrows/ncols as in above routine
 /*void CForcingGrid::ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values)
 {
   // -------------------------------

@@ -321,6 +321,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
   Options.flowinfo_filename       ="";
+  Options.warm_ensemble_run       ="";
+  Options.forecast_shift          =0.0;
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -616,13 +618,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(-5):  //----------------------------------------------
-    {/*:IfModeEquals*/
+    {/*:IfModeEquals [mode] {mode2} {mode3}*/
       if(Len>1) {
         if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
-        char testmode=s[1][0];
-        if(testmode!=Options.run_mode) {
-          in_ifmode_statement=true;
+        bool mode_match=false;
+        for(int i=1; i<Len; i++) {
+          if(s[i][0]==Options.run_mode) { mode_match=true; }
         }
+        if(!mode_match) {in_ifmode_statement=true;}
       }
       break;
     }
@@ -709,6 +712,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
       Options.julian_start_day =tt.julian_day;
       Options.julian_start_year=tt.year;
+      if(Options.forecast_shift!=0) {
+        AddTime(Options.julian_start_day,Options.julian_start_year,Options.forecast_shift,Options.calendar,Options.julian_start_day,Options.julian_start_year);
+      }
       break;
     }
     case(8):  //--------------------------------------------
@@ -719,6 +725,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       time_struct tt;
       tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
       Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+      if(Options.forecast_shift!=0) { Options.duration+=Options.forecast_shift; }
       ExitGracefullyIf(Options.duration<=0,"ParseInput: :EndDate must be later than :StartDate.",BAD_DATA_WARN);
       break;
     }
@@ -1682,7 +1689,10 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       time_struct tt;
       tt = DateStringToTimeStruct(s[1],s[2],Options.calendar);
+
       Options.assimilation_start=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
+
+      if(Options.forecast_shift!=0) { Options.assimilation_start+=Options.forecast_shift; }
 
       if(Options.assimilation_start>Options.duration) {
         string warn="Data assimilation start date is after model simulation end. No data assimilation will be applied.";

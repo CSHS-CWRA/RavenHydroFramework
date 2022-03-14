@@ -190,13 +190,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
     }
     case(-5):  //----------------------------------------------
-    {/*:IfModeEquals*/
+    {/*:IfModeEquals [mode] {mode2} {mode3}*/
       if(Len>1) {
         if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
-        char testmode=s[1][0];
-        if(testmode!=Options.run_mode) {
-          in_ifmode_statement=true;
+        bool mode_match=false;
+        for(int i=1; i<Len; i++) {
+          if(s[i][0]==Options.run_mode) { mode_match=true; }
         }
+        if(!mode_match) { in_ifmode_statement=true; }
       }
       break;
     }

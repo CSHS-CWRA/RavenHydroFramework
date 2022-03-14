@@ -20,11 +20,12 @@ bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 // in .rvi file:
 //  :EnsembleMode ENSEMBLE_ENKF [double #members]
 //  :AssimilationStartTime 2022-10-02 00:13:00
+//  :WarmEnsemble fc2 # used if ICs should be read from ensemble solution.rvc file
 //  :SilentMode # useful
 // 
 // in .rve file:
 //  :DataHorizon 1 # no. of timesteps (1 for standard EnKF or huge if all data since sim start is used; 2+ for variational approach)
-//  :WarmEnsemble # used if ICs should be read from ensemble solution.rvc file
+//
 //  :ForecastRVTFilename ./meteo/model_forecast.rvt 
 // 
 //  :ForcingPerturbation RAINFALL GAMMA_DIST [dist param1] [dist param2] {HRU_Group}
@@ -641,8 +642,7 @@ void CEnKFEnsemble::AddToStateMatrix(CModel* pModel,optStruct& Options,const int
 void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 {
   string solfile;
-  if(Options.run_name=="") { solfile="solution_t0.rvc"; }
-  else                     { solfile=Options.run_name+"_"+"solution_t0.rvc"; }
+
 
   ExitGracefullyIf(e>=_nMembers,"CEnKFEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
 
@@ -656,8 +656,9 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
     else                  { solfile=_warm_runname+"_"+"solution_t0.rvc"; }
 
     Options.rvc_filename=_aOutputDirs[e+_nEnKFMembers]+solfile;
-    ParseInitialConditionsFile(pModel,Options);
   }
+  ParseInitialConditionsFile(pModel,Options);
+
 
   //- read forecast .rvt file if required
   if((e==_nEnKFMembers) && (_forecast_rvt!="")) {
@@ -668,6 +669,8 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 
   if(e>=_nEnKFMembers) {
     //For EnKF forecasts, read solution from hindcast ensembles 
+    if(Options.run_name=="") { solfile="solution_t0.rvc"; }
+    else                     { solfile=Options.run_name+"_"+"solution_t0.rvc"; }
     Options.rvc_filename=_aOutputDirs[e-_nEnKFMembers]+solfile;
     ParseInitialConditionsFile(pModel,Options);
 

@@ -1167,13 +1167,17 @@ CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,comparison 
   time_struct tt;
   tt=DateStringToTimeStruct(startdate,"00:00:00",Options.calendar);
   _t_start = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
-  _t_start = max(_t_start,0.0);
-
+  
   tt=DateStringToTimeStruct(enddate  ,"00:00:00",Options.calendar);
   _t_end   = TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
-  _t_end   = min(_t_end,Options.duration);
+  if (_t_end<=_t_start){
+    string warn;
+    warn="CDiagPeriod: :EvaluationPeriod "+_name+": startdate after enddate. ("+to_string(_t_start)+">="+to_string(_t_end);
+    WriteWarning(warn.c_str(),Options.noisy);
+  }
 
-  if (_t_end<=_t_start){WriteWarning("CDiagPeriod: :EvaluationPeriod startdate after enddate.",Options.noisy); }
+  _t_start = max(min(_t_start,Options.duration),0.0);
+  _t_end   = max(min(_t_end  ,Options.duration),0.0);
 }
 CDiagPeriod::~CDiagPeriod() {}
 //////////////////////////////////////////////////////////////////

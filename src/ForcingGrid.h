@@ -110,7 +110,7 @@ private:/*------------------------------------------------------*/
                          int              &row,
                          int              &column) const;             ///< returns row and column index of cell ID
 
-  void   ReadAttGridFromNetCDF (const int ncid,const string varname,const int nrows,const int ncols,double *values);
+  void   ReadAttGridFromNetCDF (const int ncid,const string varname,const int ncols,const int nrows,double *values);
  // void   ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values);
 
 public:/*------------------------------------------------------*/

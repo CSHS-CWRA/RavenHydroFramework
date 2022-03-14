@@ -22,6 +22,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
 {
   int         i;              //counters
   bool        ended(false);
+  bool        in_ifmode_statement=false;
 
   ifstream    ENS;
   ENS.open(Options.rve_filename.c_str());
@@ -64,7 +65,10 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(IsComment(s[0],Len))                          { code=-2; }//comment
     else if(!strcmp(s[0],":RedirectToFile"))              { code=-3; }//redirect to secondary file
     else if(!strcmp(s[0],":End"))                         { code=-4; }//stop reading
-    
+    else if(!strcmp(s[0],":IfModeEquals"                )){ code=-5; }
+    else if(in_ifmode_statement)                          { code=-6; }
+    else if(!strcmp(s[0],":EndIfModeEquals"             )){ code=-2; }//treat as comment - unused mode 
+
     //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":OutputDirectoryFormat"))       { code=1; }
     else if(!strcmp(s[0],":RunNameFormat"))               { code=2; }
@@ -111,6 +115,27 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     case(-4):  //----------------------------------------------
     {/*:End*/
       if(Options.noisy) { cout <<"EOF"<<endl; } ended=true; 
+      break;
+    }
+    case(-5):  //----------------------------------------------
+    {/*:IfModeEquals [mode] {mode2} {mode3}*/
+      if(Len>1) {
+        if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
+        bool mode_match=false;
+        for(int i=1; i<Len; i++) {
+          if(s[i][0]==Options.run_mode) { mode_match=true; }
+        }
+        if(!mode_match) { in_ifmode_statement=true; }
+      }
+      break;
+    }
+    case(-6):  //----------------------------------------------
+    {/*in_ifmode_statement*/
+      if(!strcmp(s[0],":EndIfModeEquals"))
+      {
+        if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
+        in_ifmode_statement=false;
+      }
       break;
     }
     case(1):  //----------------------------------------------
@@ -294,6 +319,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
         string runname=Options.run_name; //default
         if (Len>1){runname=to_string(s[1]); }
+        if (Options.warm_ensemble_run!=""){ runname= Options.warm_ensemble_run;} //overwritten if handed in via command line
         pEnKF->SetToWarmEnsemble(runname); 
       }
       else {
@@ -302,7 +328,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(15):  //----------------------------------------------
-    {/*:WindowSize [# of timesteps]*/
+    {/*:WindowSize [# of timesteps][*/
       if(Options.noisy) { cout <<":WindowSize"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));

@@ -975,6 +975,7 @@ struct optStruct
   int              calendar;                  ///< enum int that specifies calendar of all dates used,
   //                                          ///< e.g., 2 = "CALENDAR_PROLEPTIC_GREGORIAN"
   int              time_zone;                 ///< int that specifies time zone relative to GMT for writing to NetCDF output
+  double           forecast_shift;            ///< amount for start date/assimilation date/end date to be adjusted by from command line
 
   numerical_method sol_method;                ///< numerical solution method
   double           convergence_crit;          ///< convergence criteria
@@ -1007,6 +1008,7 @@ struct optStruct
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
   string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS
   string           paraminfo_filename;        ///< fully qualified filename of param_mods.nc file from FEWS
+  string           warm_ensemble_run;         ///< run name prefix in warm ensemble solution files
 
   string           main_output_dir;           ///< primary output directory (RavenErrors.txt, =output_dir for non-ensemble)
   string           output_dir;                ///< output directory (can change during ensemble run)

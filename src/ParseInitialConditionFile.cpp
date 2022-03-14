@@ -157,21 +157,22 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"EOF"<<endl;} ended=true; break;
     }
     case(-5):  //----------------------------------------------
-    {/*:IfModeEquals*/
+    {/*:IfModeEquals [mode] {mode2} {mode3}*/
       if(Len>1) {
         if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
-        char testmode=s[1][0];
-        if(testmode!=Options.run_mode) {
-          in_ifmode_statement=true;
+        bool mode_match=false;
+        for(int i=1; i<Len; i++) {
+          if(s[i][0]==Options.run_mode) { mode_match=true; }
         }
+        if(!mode_match) { in_ifmode_statement=true; }
       }
       break;
     }
     case(-6):  //----------------------------------------------
     {/*in_ifmode_statement*/
-      if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
       if(!strcmp(s[0],":EndIfModeEquals"))
       {
+        if(Options.noisy) { cout <<"...Mode statement end"<<endl; }
         in_ifmode_statement=false;
       }
       break;
@@ -544,7 +545,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           pBasin=pModel->GetSubBasinByID(SBID);
           ExitGracefullyIf(pBasin==NULL,
                            "ParseInitialConditionsFile: bad basin index in .rvc file",BAD_DATA);
-          if (Options.noisy) {cout <<"     Reading Basin "<<pBasin->GetID()<<": "<<pBasin->GetName()<<endl;}
+          //if (Options.noisy) {cout <<"     Reading Basin "<<pBasin->GetID()<<": "<<pBasin->GetName()<<endl;}
         }
         else if (!strcmp(s[0],":ChannelStorage"))
         {
@@ -661,9 +662,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
     }
     case(10):  //----------------------------------------------
     {
-      /*
-        ":TimeStamp" [date] [hr]
-      */
+      //:TimeStamp [yyyy-mm-dd] [00:00:00]
       //purely QA/QC check
       if (Len<3){break;}
       time_struct tt;

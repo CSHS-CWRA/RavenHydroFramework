@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
         cout <<"======================================================"<<endl;
         cout <<"Simulation Start..."<<endl;
       }
-      if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; }
+      if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; g_suppress_warnings=true;}
 
       double t_start=0.0;
       t_start=pModel->GetEnsemble()->GetStartTime(e);
@@ -230,7 +230,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       word=to_string(argv[i]);
     }
     if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || 
-        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") || (i==argc))
+        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") || 
+        (word=="-we")|| (word=="-tt")|| (i==argc))
     {
       if      (mode==0){
         Options.rvi_filename=argument+".rvi";
@@ -244,16 +245,18 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         argument="";
         mode=10;
       }
-      else if (mode==1){Options.rvp_filename=argument; argument="";}
-      else if (mode==2){Options.rvh_filename=argument; argument="";}
-      else if (mode==3){Options.rvt_filename=argument; argument="";}
-      else if (mode==4){Options.rvc_filename=argument; argument="";}
-      else if (mode==5){Options.output_dir  =argument; argument="";}
-      else if (mode==6){Options.run_name    =argument; argument="";}
-      else if (mode==7){Options.rve_filename=argument; argument="";}
-      else if (mode==8){Options.rvg_filename=argument; argument="";}
-      else if (mode==9){Options.rvl_filename=argument; argument="";}
-      else if (mode==11){Options.run_mode=argument[0]; argument="";}
+      else if (mode==1 ){Options.rvp_filename=argument; argument="";}
+      else if (mode==2 ){Options.rvh_filename=argument; argument="";}
+      else if (mode==3 ){Options.rvt_filename=argument; argument="";}
+      else if (mode==4 ){Options.rvc_filename=argument; argument="";}
+      else if (mode==5 ){Options.output_dir  =argument; argument="";}
+      else if (mode==6 ){Options.run_name    =argument; argument="";}
+      else if (mode==7 ){Options.rve_filename=argument; argument="";}
+      else if (mode==8 ){Options.rvg_filename=argument; argument="";}
+      else if (mode==9 ){Options.rvl_filename=argument; argument="";}
+      else if (mode==11){Options.run_mode =argument[0]; argument="";}
+      else if (mode==12){Options.forecast_shift=s_to_d(argument.c_str()); argument=""; }
+      else if (mode==13){Options.warm_ensemble_run=argument; argument=""; }
 
       if      (word=="-p"){mode=1; }
       else if (word=="-h"){mode=2; }
@@ -267,6 +270,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-g"){mode=8; }	  
       else if (word=="-l"){mode=9; }
       else if (word=="-m"){mode=11;}
+      else if (word=="-tt"){mode=12; }
+      else if (word=="-we"){mode=13; }
       else if (word=="-v"){Options.pause=false; version_announce=true; mode=10;} //For PAVICS
     }
     else{
@@ -288,6 +293,9 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 
   // make sure that output dir has trailing '/' if not empty
   if ((Options.output_dir.compare("") != 0) && (Options.output_dir.back()!='/')){ Options.output_dir=Options.output_dir+"/"; }
+
+  //convert to days 
+  Options.forecast_shift/=HR_PER_DAY;
 
   char cCurrentPath[FILENAME_MAX];
   if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))){
