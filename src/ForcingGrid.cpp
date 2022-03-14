@@ -269,7 +269,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   if(_DimNames[0]=="NONE") {
     ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :DimNamesNC command",BAD_DATA);
   }
-  if(_aElevation==NULL) {
+  if(_AttVarNames[2]=="NONE") {
     if (((_ForcingType==F_TEMP_DAILY_MIN) && (Options.orocorr_temp  ==OROCORR_NONE)) ||
         ((_ForcingType==F_TEMP_DAILY_MAX) && (Options.orocorr_temp  ==OROCORR_NONE)) ||
         ((_ForcingType==F_TEMP_AVE      ) && (Options.orocorr_temp  ==OROCORR_NONE)) ||
@@ -280,7 +280,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
       //warning not needed
     }
     else {
-      string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations or :StationElevationsByIdx command is present.";
+      string warning="Since no elevation data are in NetCDF file "+_filename+", all orographic corrections for "+ForcingToString(_ForcingType)+" will be disabled unless :StationElevations or :StationElevationsByIdx command is present. (or :ElevationVarNameNC is after grid weights command in .rvt file)";
       WriteAdvisory(warning,Options.noisy);
     }
   }
@@ -2058,7 +2058,7 @@ bool CForcingGrid::ShouldDeaccumulate()      const{return _deaccumulate;}
 //
 forcing_type CForcingGrid::GetForcingType  () const{return _ForcingType;}
 
-void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, const int ncols,const int nrows,double *values)
+void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, const int ncols,const int nrows,double *&values)
 {
   // -------------------------------
   // Open NetCDF file, Get the lat long elev information

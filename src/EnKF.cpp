@@ -651,14 +651,15 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   Options.run_name  =_aRunNames  [e];
 
   //if :WarmEnsemble, re-read initial conditions from state-adjusted solution_t0.rvc
-  if((_warm_ensemble) && (e<_nEnKFMembers)){
-    if(_warm_runname=="") { solfile="solution_t0.rvc"; }
-    else                  { solfile=_warm_runname+"_"+"solution_t0.rvc"; }
-
-    Options.rvc_filename=_aOutputDirs[e+_nEnKFMembers]+solfile;
+  // otherwise uses the base model .rvc file for all members
+  if(e<_nEnKFMembers) {
+    if(_warm_ensemble) {
+      if(_warm_runname=="") { solfile="solution_t0.rvc"; }
+      else                  { solfile=_warm_runname+"_"+"solution_t0.rvc"; }
+      Options.rvc_filename=_aOutputDirs[e+_nEnKFMembers]+solfile;
+    }
+    ParseInitialConditionsFile(pModel,Options);
   }
-  ParseInitialConditionsFile(pModel,Options);
-
 
   //- read forecast .rvt file if required
   if((e==_nEnKFMembers) && (_forecast_rvt!="")) {

@@ -1585,10 +1585,13 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
       else if (type==AGG_MEDIAN ){data[N]=val; N++;}
     }
   }
+  int n;
+  if(type==AGG_MEDIAN){quickSort(data,0,N);n=(int)rvn_floor((double)(N)/2.0+REAL_SMALL);}
+
   if (N==0){return -ALMOST_INF;}
   if       (type==AGG_AVERAGE){stat/=N;}
-  else if ((type==AGG_MEDIAN ) && (N%2==1)){stat=data[(int)rvn_floor((double)(N)/2.0)];}
-  else if ((type==AGG_MEDIAN ) && (N%2==0)){stat=0.5*(data[int(N/2)]+data[int(N/2)-1]);}
+  else if ((type==AGG_MEDIAN ) && (N%2==1)){stat=data[n];} //odd N
+  else if ((type==AGG_MEDIAN ) && (N%2==0)){stat=0.5*(data[n]+data[n-1]);} //even N
   delete [] data;
   return stat;
 }
