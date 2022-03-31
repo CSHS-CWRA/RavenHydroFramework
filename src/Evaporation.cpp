@@ -40,7 +40,7 @@ double Makkink1957Evap(const force_struct *F)
   sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
-  gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma    =GetPsychrometricConstant (F->air_pres,LH_vapor);
 
   PET=0.61*(de_dT/(de_dT+gamma))*F->SW_radia*23.8846/58.5-0.12;
 
@@ -94,7 +94,7 @@ double PenmanMonteithEvap(const force_struct     *F,
   sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
-  gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma    =GetPsychrometricConstant (F->air_pres,LH_vapor);
   vapor_def=sat_vap*(1.0-F->rel_humidity);
 
   //Calculate evaporation - Dingman eqn 7-56
@@ -130,7 +130,7 @@ double PenmanCombinationEvap(const force_struct *F,
   sat_vap               =GetSaturatedVaporPressure(F->temp_ave);
   de_dT                 =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor              =GetLatentHeatVaporization(F->temp_ave);
-  gamma                 =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma                 =GetPsychrometricConstant (F->air_pres,LH_vapor);
 
   vapor_def   =sat_vap*(1.0-(F->rel_humidity));
 
@@ -162,7 +162,7 @@ double PriestleyTaylorEvap(const force_struct *F, const double &PT_coeff)
   sat_vap =GetSaturatedVaporPressure(F->temp_ave);
   de_dT   =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor=GetLatentHeatVaporization(F->temp_ave);
-  gamma   =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma   =GetPsychrometricConstant (F->air_pres,LH_vapor);
 
   return PT_coeff * (de_dT/(de_dT+gamma))*max(F->SW_radia_net+F->LW_radia_net,0.0)/LH_vapor/DENSITY_WATER*MM_PER_METER;
 }
@@ -621,7 +621,7 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
   sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
-  gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma    =GetPsychrometricConstant (F->air_pres,LH_vapor);
   vapor_def=sat_vap*(1.0-(F->rel_humidity));
 
   double AE; //Availabale energy at canopy top, [MJ/d/m2]
@@ -725,7 +725,7 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
   sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
-  gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma    =GetPsychrometricConstant (F->air_pres,LH_vapor);
   vapor_def=sat_vap*(1.0-(F->rel_humidity));
 
   double trans=actual_transpiration*DENSITY_WATER*LH_vapor; //[mm/d]->[MJ/m2/d]
@@ -768,7 +768,7 @@ double SnowEvaporation(const force_struct   *F,
 
   sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
   LH_vapor =GetLatentHeatVaporization(F->temp_ave);
-  gamma    =GetPsychometricConstant  (F->air_pres,LH_vapor);
+  gamma    =GetPsychrometricConstant (F->air_pres,LH_vapor);
 
   double esnow=0.61;//kPa
   if (F->temp_ave<-0.1){
@@ -831,9 +831,9 @@ double EvapGrangerGray(const force_struct *F,const CHydroUnit *pHRU)
   if(Rnet > 0.0)
   {
     sat_vap  =GetSaturatedVaporPressure(F->temp_ave);
-    de_dT    =GetSatVapSlope(F->temp_ave,sat_vap);
+    de_dT    =GetSatVapSlope           (F->temp_ave,sat_vap);
     LH_vapor =GetLatentHeatVaporization(F->temp_ave);
-    gamma    =GetPsychometricConstant(F->air_pres,LH_vapor);
+    gamma    =GetPsychrometricConstant (F->air_pres,LH_vapor);
 
     double veg_ht=pHRU->GetVegVarProps()->height;
     double ea_mod=GetDryingPower(F->wind_vel,veg_ht)*(sat_vap*(1.0-F->rel_humidity));

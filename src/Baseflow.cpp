@@ -128,7 +128,7 @@ void CmvBaseflow::GetParticipatingStateVarList(baseflow_type  btype,sv_type *aSV
 
 //////////////////////////////////////////////////////////////////
 /// \brief Finds baseflow rate of change
-/// \details returns  of loss from soil or aquifer to surface water [mm/d] \n \n
+/// \details returns  of loss from soil or aquifer to surface water [mm/d] 
 /// if type==BASE_LINEAR (bucket model) or BASE_LINEAR_ANALYTIC (analytical solution over tstep for bucket model)
 ///     <ul> <li> flow is linearly  proportional to soil/lumped landform storage [mm] used in PRMS/HBV models, amongst others \cite Hamon1961 </ul>
 /// if type==BASE_POWER_LAW

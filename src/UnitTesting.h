@@ -22,4 +22,5 @@ void TestInversion();
 void TestEnthalpyTempConvert();
 void TestConvectionSolution();
 void ADRCumDistTest();
+void TestGammaSampling();
 #endif

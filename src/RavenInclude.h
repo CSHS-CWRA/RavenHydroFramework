@@ -1583,7 +1583,7 @@ void LatLonToUTMXY (const double lat, //latitude, in decimal degrees
 double GetSaturatedVaporPressure(const double &T);
 double GetSatVapSlope           (const double &T, const double &satvap);
 double GetLatentHeatVaporization(const double &T);
-double GetPsychometricConstant  (const double &P, const double &LH_vapor);
+double GetPsychrometricConstant  (const double &P, const double &LH_vapor);
 double GetAirDensity            (const double &T, const double &P);
 double GetSpecificHumidity      (const double &rel_hum,const double &air_press,const double &T);
 double GetVerticalTransportEfficiency     (const double &P,   //[kPa]

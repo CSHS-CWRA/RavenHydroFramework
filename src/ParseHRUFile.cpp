@@ -754,20 +754,29 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             ExitGracefully(":PopulateSubBasinGroup: invalid SB group reference used in command",BAD_DATA_WARN);
           }
           else {
+            int iter=0;
             for(int p=0;p<pModel->GetNumSubBasins();p++)
             {
-              if(!pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) { pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); }
+              if(!pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) { 
+                pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); 
+                advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
+                iter++;
+                if(iter%40==0) { advice=advice+"\n"; }
+              }
             }
           }
         }
         else if(!strcmp(s[4],"UPSTREAM_OF")) 
         {
           int SBID=s_to_l(s[5]);
+          int iter=0;
           for(int p=0;p<pModel->GetNumSubBasins();p++)
           {
             if(pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) { 
               pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
               advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
+              iter++;
+              if(iter%40==0) { advice=advice+"\n"; }
             }
           }
         }
@@ -784,6 +793,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               pSBGroup->AddSubbasin(pBasin);
               advice=advice+to_string(pBasin->GetID())+" ";
               iter++;
+              if(iter%40==0){advice=advice+"\n"; }
             }
             if(iter==1000) {
               ExitGracefully(":PopulateSubBasinGroup: cyclical downstream references in :SubBasins list",BAD_DATA_WARN);
@@ -791,7 +801,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           }
         }
       }
-	  WriteAdvisory(advice,Options.noisy);
+    WriteAdvisory(advice,Options.noisy);
       break;
     }
     default://------------------------------------------------

@@ -898,14 +898,14 @@ double GetLatentHeatVaporization(const double &T)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Returns latent psychometric constant  [kPa/K] \cite Brunt1952
+/// \brief Returns latent psychrometric constant  [kPa/K] \cite Brunt1952
 /// \remark Uses Dingman eqn. 7-13 \cite Dingman1994, SWAT 1:2.3.7\cite Neitsch2005 (Brunt, 1952)
 ///
 /// \param &P [in] Atmospheric pressure [kPa]
 /// \param &LH_vapor [in] Latent heat of vaporization [MJ/kg]
-/// \return Psychometric constant  [kPa/K]
+/// \return Psychrometric 'constant'  [kPa/K] (~0.07)
 //
-double GetPsychometricConstant  (const double &P,const double &LH_vapor)
+double GetPsychrometricConstant  (const double &P,const double &LH_vapor)
 {
   return SPH_AIR/AIR_H20_MW_RAT*P/LH_vapor;//[kPa/K];
 }
@@ -1524,7 +1524,7 @@ double IncompleteGamma(const double &x, const double &a)
 
 /////////////////////////////////////////////////////////////////
 /// \brief returns value of Gamma distribution for argument x, with parameters alpha and beta
-/// gamma(x,a,b)=b^a/Gamma(x)*x^(a-1)*exp(-b*x)
+/// gamma(x,a,b)=b^a/Gamma(a)*x^(a-1)*exp(-b*x)
 ///
 /// \param &x [in] Argument x whose Gamma distribution value will be determined
 /// \param &alpha [in] shape parameter

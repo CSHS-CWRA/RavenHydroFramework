@@ -234,6 +234,42 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
 
   MCOUT.close();
 }
+double SampleFromGamma(const double& shape,const double& scale) 
+{
+  //From Cheng 1977 as documented in Devroye, L. Non-uniform random variate generation, Springer-Verlag, New York, 1986 (chap 9)
+  double a=shape;
+  double b=a-log(4);
+  double c=a+sqrt(2*a-1.0);
+  double U,V,X,Y,Z,R;
+  int iter=0;
+  bool accept=false;
+  do {
+    iter++;
+     U=UniformRandom();
+     V=UniformRandom();
+     X=a*exp(V);
+     Y=a*log(V/(1-V));
+     Z=U*V*V;
+     R=b+c*Y-X;
+     if(iter>1000) {
+       cout<<"Bad sampling! "<<shape<<" "<<scale<<endl;
+     }
+     accept=(R>=9/2*Z-(1.0+log(9/2)));
+     if (!accept){accept=(R>=log(Z)); }
+  } while (!accept);
+  return scale*X;
+}
+void TestGammaSampling()
+{
+  ofstream GOUT;
+  GOUT.open("gamma_sample.csv");
+  GOUT<<"(3-1),(1-0.5),(0.5-2),(5-1.0)"<<endl;
+  for(int i=0;i<5000; i++) {
+    cout<<i<<endl;
+    GOUT<<SampleFromGamma(3,1)<<" "<<SampleFromGamma(1,0.5)<<" "<<SampleFromGamma(0.5,2)<<" "<<SampleFromGamma(5,1.0)<<endl;
+  }
+  GOUT.close();
+}
 //////////////////////////////////////////////////////////////////
 /// \brief updates model - called prior to each model ensemble run 
 /// \param pModel [out] pointer to global model instance
