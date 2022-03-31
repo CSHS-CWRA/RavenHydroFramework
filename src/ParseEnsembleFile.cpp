@@ -54,7 +54,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
 
     /*assign code for switch statement
     ------------------------------------------------------------------
-    <100         : ignored/special
+    <0           : ignored/special
     0   thru 100 : All other
     ------------------------------------------------------------------
     */
@@ -80,6 +80,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":WindowSize"))                  { code=15; } 
     else if(!strcmp(s[0],":ObservationErrorModel"))       { code=16; }
     else if(!strcmp(s[0],":ForecastRVTFilename"))         { code=17; }
+    else if(!strcmp(s[0],":TruncateHindcasts"))           { code=18; }
     else if(!strcmp(s[0],":AssimilateStreamflow"))        { code=101; }
 
     switch(code)
@@ -390,7 +391,18 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       }
       break;
     }
-    
+    case(18):  //----------------------------------------------
+    {/*:TruncateHindcasts */
+      if(Options.noisy) { cout <<":TruncateHindcasts"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        pEnKF->TruncateHindcasts();
+      }
+      else {
+        WriteWarning(":TruncateHindcasts command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
     case(101)://----------------------------------------------
     {/*:AssimilateStreamflow  [SBID]*/
       if(Options.noisy) { cout <<"Assimilate streamflow"<<endl; }

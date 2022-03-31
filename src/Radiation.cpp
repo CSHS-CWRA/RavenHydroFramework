@@ -61,10 +61,11 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     if (tt.day_changed) //no need to do calculations every timestep
     {
       double solar_rad;
-      double elev=pHRU->GetElevation();
+      double elev=pHRU->GetElevation();    
       solar_rad= UBC_SolarRadiation(latrad,elev,F->day_angle, F->day_length,ET_rad);
       ET_rad_flat=ET_rad;
       double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
+      if(pHRU->GetLatRad()<0.0) { orient=1.0-orient; }//southern hemisphere phase shift
       double shortwave_corr_S=InterpolateMo(CGlobalParams::GetParams()->UBC_s_corr,tt,Options);
       double shortwave_corr_N=InterpolateMo(CGlobalParams::GetParams()->UBC_n_corr,tt,Options);
       double shortwave_corr=((orient)* shortwave_corr_S + (1.0-orient)*shortwave_corr_N);

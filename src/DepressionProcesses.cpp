@@ -375,12 +375,12 @@ void CmvLakeRelease::GetRatesOfChange(const double      *state_vars,
 {
   if (!pHRU->IsLake()){return;}
 
-  if(pHRU->IsLinkedToReservoir()){rates[0]= iFrom[0]/Options.timestep;}//reservoir-linked HRUs release directly to surface water
+  if(pHRU->IsLinkedToReservoir()){rates[0]= state_vars[iFrom[0]]/Options.timestep;}//reservoir-linked HRUs release directly to surface water
 
   if (_type==LAKEREL_LINEAR)//-------------------------------------
   {
     double K=pHRU->GetSurfaceProps()->lake_rel_coeff;
-    rates[0]= iFrom[0]*(1-exp(-K*Options.timestep))/Options.timestep; // analytical formulation
+    rates[0]=state_vars[iFrom[0]]*(1-exp(-K*Options.timestep))/Options.timestep; // analytical formulation
     //rate can be positive or negative
   }
 }

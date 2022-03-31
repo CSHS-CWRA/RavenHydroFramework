@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 double UBC_DailyPotentialMelt( const optStruct &Options,
@@ -50,7 +50,9 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double slope_corr;
 
     //annual variation
-    Ma=Ma_min+(Ma-Ma_min)*0.5*(1.0-cos(F->day_angle-WINTER_SOLSTICE_ANG));
+    double adj=0;
+    if (pHRU->GetLatRad()<0.0){adj=PI;}//southern hemisphere phase shift
+    Ma=Ma_min+(Ma-Ma_min)*0.5*(1.0-cos(F->day_angle-WINTER_SOLSTICE_ANG-adj));
 
     //forest correction
     Ma*=((1.0-Fc)*1.0+(Fc)*MRF);
@@ -59,7 +61,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     slope_corr=((1.0-Fc)*1.0+(Fc)*sin(pHRU->GetSlope()));
 
     //aspect corrections
-    Ma*=max(1.0-AM*slope_corr*cos(pHRU->GetAspect()),0.0);//north facing slopes (aspect=0) have lower melt rates
+    Ma*=max(1.0-AM*slope_corr*cos(pHRU->GetAspect()-adj),0.0);//north facing slopes (aspect=0) have lower melt rates
 
     double rain_energy(0.0);
     if(method==POTMELT_HBV_ROS) {

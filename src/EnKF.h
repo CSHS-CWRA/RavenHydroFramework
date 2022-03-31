@@ -52,7 +52,10 @@ private:
 
   double         _t_assim_start;    //< assimilation start time 
 
-  int            _window_size;     //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
+  bool           _truncate_hind;    //< true if hindcasts should be truncated to t_0+Delta t rather than run to end of model [default:false]
+  double         _duration_stored;  //< stored simulation duration to revert to after hindcast stage
+
+  int            _window_size;      //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
   int            _nTimeSteps;       //< number of timesteps in hindcast period (prior to t0)
 
   bool           _warm_ensemble;    //< true if initial conditions should be read from previous ensemble run (default: false)
@@ -74,6 +77,7 @@ public:
 
   double GetStartTime(const int e) const;
 
+  void TruncateHindcasts   ();
   void SetToWarmEnsemble   (string runname);
   void SetWindowSize       (const int nTimesteps);
   void SetForecastRVTFile  (string filename);

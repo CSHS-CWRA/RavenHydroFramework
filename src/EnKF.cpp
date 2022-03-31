@@ -76,6 +76,9 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
 
   _window_size=1;
   _nTimeSteps=0;
+
+  _truncate_hind=false;
+  _duration_stored=Options.duration;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief EnKF Ensemble Destrucutor 
@@ -178,6 +181,11 @@ void CEnKFEnsemble::AddAssimilationState(sv_type sv, int lay, int assim_groupID)
 /// \brief turns on use of warm ensemble
 //
 void CEnKFEnsemble::SetToWarmEnsemble(string runname){_warm_ensemble=true;_warm_runname=runname;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief truncates hindcasts 
+//
+void CEnKFEnsemble::TruncateHindcasts() { _truncate_hind=true; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief set value of data horizon
@@ -369,6 +377,8 @@ void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const tim
 {
   //Write EnKF-adjusted and unadjusted solutions immediately after state update
   //Update model state matrix
+  //MOVE TO CLOSETIMESTEP OPS SO WRITTEN EVEN IF end==t_assim_start 
+  //YOU CANT DO THIS BECAUSE ASSIMILATION HANDLED AFTER SIMULATION IS PAST T_0
   if(fabs(tt.model_time-_t_assim_start)<TIME_CORRECTION) 
   {
     pModel->WriteMajorOutput(Options,tt,"solution_t0",false);
@@ -559,9 +569,14 @@ void CEnKFEnsemble::UpdateStates(CModel* pModel,optStruct& Options,const int e)
          CSubBasin *pBasin=pModel->GetSubBasinGroup(kk)->GetSubBasin(pp);
          //cout<<"   updating basin "<<pBasin->GetID()<<endl;
          N=pBasin->GetInflowHistorySize();
+         const double *U=pBasin->GetRoutingHydrograph();
+         const double *Qi=pBasin->GetInflowHistory();
          double *aQi=new double [N];
+         double sum=0;
          for(int j=0;j<N;j++) {
-           aQi[j]=_state_matrix[e-_nEnKFMembers][ii+j]; ii++;
+           sum+=U[j];
+           //aQi[j]=sum*Qi[j]+_state_matrix[e-_nEnKFMembers][ii+j]; //only adjusts portion of flows not already lost from reach (sum*Qi)
+           aQi[j]=max(_state_matrix[e-_nEnKFMembers][ii+j],0.0); ii++;
          }
          pBasin->SetQinHist(N,aQi);
          delete [] aQi;
@@ -569,9 +584,9 @@ void CEnKFEnsemble::UpdateStates(CModel* pModel,optStruct& Options,const int e)
          N=pBasin->GetNumSegments();
          double* aQo=new double[N];
          for(int j=0;j<N;j++) {
-           aQo[j]=_state_matrix[e-_nEnKFMembers][ii+j]; ii++;
+           aQo[j]=max(_state_matrix[e-_nEnKFMembers][ii+j],0.0); ii++;
          }
-         double QoLast=_state_matrix[e-_nEnKFMembers][ii]; ii++;
+         double QoLast=max(_state_matrix[e-_nEnKFMembers][ii],0.0); ii++;
          pBasin->SetQoutArray(N,aQo,QoLast);
          delete [] aQo;
 
@@ -611,7 +626,12 @@ void CEnKFEnsemble::AddToStateMatrix(CModel* pModel,optStruct& Options,const int
         CSubBasin* pBasin=pModel->GetSubBasinGroup(kk)->GetSubBasin(pp);
 
         const double* aQi=pBasin->GetInflowHistory();
+        const double*   U=pBasin->GetRoutingHydrograph();
+        const double*  Qi=pBasin->GetInflowHistory();
+        double sum=0;
         for(int j=0;j<pBasin->GetInflowHistorySize();j++) {
+          sum+=U[j];
+          //_state_matrix[e][ii+j]=(1-sum)*aQi[j]; ii++;
           _state_matrix[e][ii+j]=aQi[j]; ii++;
         }
 
@@ -661,6 +681,12 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
     ParseInitialConditionsFile(pModel,Options);
   }
 
+  //truncates all hindcasts so they don't run all the way to forecast horizon
+  if(_truncate_hind) {
+    if(e<_nEnKFMembers) { Options.duration=_t_assim_start+Options.timestep; }
+    else                { Options.duration=_duration_stored;                }
+  }
+  
   //- read forecast .rvt file if required
   if((e==_nEnKFMembers) && (_forecast_rvt!="")) {
     pModel->ClearTimeSeriesData(Options); //wipes out everything read pre-forecast
@@ -671,16 +697,12 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   if(e>=_nEnKFMembers) {
     //For EnKF forecasts, read solution from hindcast ensembles 
     if(Options.run_name=="") { solfile="solution_t0.rvc"; }
-    else                     { solfile=Options.run_name+"_"+"solution_t0.rvc"; }
+    else { solfile=Options.run_name+"_"+"solution_t0.rvc"; }
     Options.rvc_filename=_aOutputDirs[e-_nEnKFMembers]+solfile;
     ParseInitialConditionsFile(pModel,Options);
+  }
 
-    if(e==_nEnKFMembers) //Prior to first forecast run - generates updated state vector 
-    {
-      cout<<"PERFORMING ASSIMILATION CALCULATIONS..."<<endl;
-      AssimilationCalcs();
-    }
-
+  if(e>=_nEnKFMembers) {
     //Update state vector in model 
     UpdateStates(pModel,Options,e);
   }
@@ -694,6 +716,26 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 //
 void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e)
 {
+  if(e==_nEnKFMembers-1) //Just prior to first forecast run - generates updated state vector 
+  {
+    _ENKFOUT<<"PRE-ASSIMILATION STATE MATRIX:"<<endl;
+    for(int e=0;e<_nEnKFMembers;e++) {
+      for(int i=0;i<_nStateVars;i++) {
+        _ENKFOUT<<_state_matrix[e][i]<<",";
+      }
+      _ENKFOUT<<endl;
+    }
+    cout<<"PERFORMING ASSIMILATION CALCULATIONS..."<<endl;
+    AssimilationCalcs();
+
+    _ENKFOUT<<"POST-ASSIMILATION STATE MATRIX:"<<endl;
+    for(int e=0;e<_nEnKFMembers;e++) {
+      for(int i=0;i<_nStateVars;i++) {
+        _ENKFOUT<<_state_matrix[e][i]<<",";
+      }
+      _ENKFOUT<<endl;
+    }
+  }
   if(e==_nMembers-1)
   {
     _ENKFOUT.close();

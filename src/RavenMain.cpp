@@ -222,6 +222,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.silent=false;
   Options.noisy =false;
   Options.pause =true;
+  Options.forecast_shift=0.0;
+  Options.warm_ensemble_run="";
 
   //Parse argument list
   while (i<=argc)

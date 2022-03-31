@@ -321,8 +321,6 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.stateinfo_filename      ="";
   Options.paraminfo_filename      ="";
   Options.flowinfo_filename       ="";
-  Options.warm_ensemble_run       ="";
-  Options.forecast_shift          =0.0;
 
   Options.NetCDF_chunk_mem        =10; //MB
 
@@ -668,6 +666,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         }
       }
       Options.duration =s_to_d(s[1])+partday;
+      if(Options.forecast_shift!=0) { Options.duration+=Options.forecast_shift; }
       break;
     }
     case(5):  //----------------------------------------------
