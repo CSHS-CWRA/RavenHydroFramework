@@ -1676,7 +1676,7 @@ double TimeVaryingADRCumDist(const double &t,const double &L,const double *v, in
 ///
 /// \param arr[] [in & out] Unordered array of doubles to be sorted
 /// \param left [in] Left bound of sort
-/// \param right [in] Right bound of sort
+/// \param right [in] Right bound of sort (should be ==[size of array-1] outside of recursion call)
 //
 void quickSort(double arr[], int left, int right)
 {

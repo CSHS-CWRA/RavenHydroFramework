@@ -647,7 +647,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       if(Len>=4) {
         pSBGrp=pModel->GetSubBasinGroup(s[1]);
         if(pSBGrp==NULL) {
-          WriteWarning(":SBGroupPropertyMultiplier: invalid subbasin group specified",Options.noisy);
+          WriteWarning(":SBGroupPropertyMultiplier: invalid subbasin group ("+to_string(s[1])+") specified",Options.noisy);
           break;
         }
         for(int p=0;p<pSBGrp->GetNumSubbasins();p++) {
@@ -670,7 +670,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       if(Len>=4) {
         pSBGrp=pModel->GetSubBasinGroup(s[1]);
         if(pSBGrp==NULL) {
-          WriteWarning(":SBGroupPropertyOverride: invalid subbasin group specified",Options.noisy);
+          WriteWarning(":SBGroupPropertyOverride: invalid subbasin group ("+to_string(s[1])+") specified",Options.noisy);
           break;
         }
         for(int p=0;p<pSBGrp->GetNumSubbasins();p++) {

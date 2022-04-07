@@ -117,13 +117,7 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
     double OWPET;
     OWPET = pHRU->GetForcingFunctions()->OW_PET;            //open water PET rate [mm/d]
 
-    if(pHRU->IsLinkedToReservoir()) {//reservoir-linked HRUs handle ET via reservoir MB
-      if(pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-        OWPET*=pHRU->GetSurfaceProps()->lake_PET_corr;
-      }
-      rates[_nConnections-1]=OWPET; //only AET is adjusted
-      return;
-    }
+    if(pHRU->IsLinkedToReservoir()) { return; }//reservoir-linked HRUs handle ET via reservoir MB
 
     if (!Options.suppressCompetitiveET) {
         //competitive ET - reduce PET by AET 
@@ -272,16 +266,11 @@ void CmvLakeEvaporation::GetRatesOfChange(const double                  *state_v
     return;
   } //only works for lakes OR special storage units designated using :LakeStorage (the latter is to support HBV)
   
+  if(pHRU->IsLinkedToReservoir()) { return; }//reservoir-linked HRUs handle ET via reservoir MB
+
   double OWPET;
   OWPET = pHRU->GetForcingFunctions()->OW_PET;          //calls PET rate [mm/d]
 
-  if(pHRU->IsLinkedToReservoir()) {//reservoir-linked HRUs handle ET via reservoir MB
-    OWPET*=pHRU->GetSurfaceProps()->lake_PET_corr;
-    rates[0]=0.0;
-    rates[_nConnections-1]=OWPET; //only AET is adjusted
-    return;
-  }
- 
   if (type==LAKE_EVAP_BASIC)//-------------------------------------
   {
     rates[0]= pHRU->GetSurfaceProps()->lake_PET_corr*OWPET;

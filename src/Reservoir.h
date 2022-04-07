@@ -181,6 +181,7 @@ public:/*-------------------------------------------------------*/
   double            GetDemandMultiplier      () const;
   double            GetCrestWidth            () const;
   int               GetNumControlStructures  () const;
+  double            GetAET                   () const; //[mm/d]
   string            GetRegimeName            (const int i, const time_struct &tt) const;
   long              GetControlFlowTarget     (const int i) const;
   string            GetControlName           (const int i) const;

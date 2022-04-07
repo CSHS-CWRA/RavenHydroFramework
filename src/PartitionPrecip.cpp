@@ -60,8 +60,8 @@ void CmvPrecipitation::Initialize()
 //
 void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const
 {
-  int iCan     = pModel->GetStateVarIndex(CANOPY);
-  int iSnowCan = pModel->GetStateVarIndex(CANOPY);
+  int iCan     = pModel->GetStateVarIndex(CANOPY     );
+  int iSnowCan = pModel->GetStateVarIndex(CANOPY_SNOW);
   bool canopy_exists  = (iCan     != DOESNT_EXIST);
   bool cansnow_exists = (iSnowCan != DOESNT_EXIST);
 
@@ -70,29 +70,7 @@ void CmvPrecipitation::GetParticipatingParamList(string *aP, class_type *aPC, in
   aP[nP]="FOREST_SPARSENESS"; aPC[nP]=CLASS_LANDUSE;    nP++; //reasonable defaults
   aP[nP]="MAX_LAI";           aPC[nP]=CLASS_VEGETATION; nP++;
 
-  if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_USER)
-  {
-    aP[nP] = "RAIN_ICEPT_PCT";    aPC[nP] = CLASS_VEGETATION; nP++;
-    aP[nP] = "SNOW_ICEPT_PCT";    aPC[nP] = CLASS_VEGETATION; nP++;
-  }
-	else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_LAI)
-  {
-	  aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++;   
-    aP[nP] = "RAIN_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
-    aP[nP] = "SNOW_ICEPT_FACT";   aPC[nP] = CLASS_VEGETATION; nP++;
-  }
-  else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_EXPLAI)
-  {
-    aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++; 
-  }
-  else if (pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_HEDSTROM)
-  {
-    aP[nP] = "RELATIVE_LAI";      aPC[nP] = CLASS_VEGETATION; nP++; 
-  }
-  else if(pModel->GetOptStruct()->interception_factor == PRECIP_ICEPT_NONE)
-  {
-  }
-
+  //Interception factor parameters identified in CModel::GetParticipatingParamList()
   if (canopy_exists)
   {
     aP[nP] = "MAX_CAPACITY";      aPC[nP] = CLASS_VEGETATION; nP++;

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2022 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Properties.h"
@@ -567,6 +567,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   else if (Options.interception_factor == PRECIP_ICEPT_HEDSTROM) {
     aP[nP] = "MAX_SNOW_CAPACITY"; aPC[nP] = CLASS_VEGETATION; nP++;
     aP[nP] = "MAX_SNOW_LOAD";     aPC[nP] = CLASS_VEGETATION; nP++;
+  }
+  else if(Options.interception_factor == PRECIP_ICEPT_STICKY) {
+    aP[nP] = "MAX_SNOW_CAPACITY"; aPC[nP] = CLASS_VEGETATION; nP++;
   }
   else if ((Options.interception_factor == PRECIP_ICEPT_EXPLAI) ||
     (Options.interception_factor == PRECIP_ICEPT_NONE)) {

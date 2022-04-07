@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -135,6 +135,11 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
   //------------------------------------------------------------
   VV.skyview_fact=exp(-extinction*(VV.LAI+VV.SAI)); //sky view factor (percentage of ground that recieves sunlight)
 
+  //riparian skyview factor (from Moore, Leach, and Knudson 2014 with symmetric sides)
+  //double D=pHRU->GetSurfaceProps()->streamwidth;
+  //double H=VV.height;
+  //VV.skyview_fact*=1/D*(sqrt(H*H+D*D)-sqrt(H*H));
+
   //Rain/Snow interception factors
   //------------------------------------------------------------
   if (Options.interception_factor==PRECIP_ICEPT_LAI)
@@ -156,33 +161,50 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
     VV.rain_icept_pct=VV.snow_icept_pct=0.0;
   }
 
+  int iCanSnow = pModel->GetStateVarIndex(CANOPY_SNOW);
+
   if (Options.interception_factor == PRECIP_ICEPT_HEDSTROM)
   {
-    int iCanSnow = pModel->GetStateVarIndex(CANOPY_SNOW);
-   
-    if (iCanSnow == DOESNT_EXIST){
-      VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
-      VV.snow_icept_pct = 0.0;
-    }
-    else
-    {///< \ref from Hedstrom & Pomeroy, 1998
-      double max_snow_load=pHRU->GetVegetationProps()->max_snow_load; //[kg/m2] ~5.9-6.6
-      double rho_s = CalcFreshSnowDensity(pHRU->GetForcingFunctions()->temp_ave);
-      VV.snow_capacity = VV.LAI * max_snow_load * (0.27 + 46 / rho_s);
+    VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
+    if(iCanSnow != DOESNT_EXIST)
+    { ///< \ref from Hedstrom & Pomeroy, 1998
+      double max_snow_load= pHRU->GetVegetationProps()->max_snow_load; //[kg/m2] ~5.9-6.6
+      double max_cap      = pHRU->GetVegetationProps()->max_snow_capacity;
+      double rho_s        = CalcFreshSnowDensity(pHRU->GetForcingFunctions()->temp_ave);
+      
+      VV.snow_capacity = VV.LAI * max_snow_load *(MM_PER_METER/ DENSITY_WATER) * (0.27 + 46 / rho_s); //kg/m2*m3/kg->mm 
 
-      //storage capacity override for floppy trees [M. Chernos]
-      double max_cap = pHRU->GetVegetationProps()->max_snow_capacity;
       if (max_cap > 0.0) {
-       lowerswap(VV.snow_capacity, max_cap);
+       lowerswap(VV.snow_capacity, max_cap);//storage capacity override for floppy trees [M. Chernos]
       }
 
       double P       =pHRU->GetForcingFunctions()->snow_frac*pHRU->GetForcingFunctions()->precip* Options.timestep; //[mm]
       double stor    =pHRU->GetStateVarValue(iCanSnow);//[mm]
       double max_stor=VV.snow_capacity;//[mm]
 
-      VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
       VV.snow_icept_pct = max(min(((max_stor-stor)/P) * (1 - exp(-(1.0-sparseness)* (P/max_stor))),1.0),0.0);
     }
+    else { VV.snow_icept_pct = 0.0; }
+  }
+  else if(Options.interception_factor == PRECIP_ICEPT_STICKY) 
+  {
+    VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
+
+    if(iCanSnow != DOESNT_EXIST) 
+    {///< \ref from SUMMA
+      double gamma;
+      double max_snow_load=pHRU->GetVegetationProps()->max_snow_load; //kg/m2 leaf
+      double stor         =pHRU->GetStateVarValue(iCanSnow);//[mm]
+      double Tave         =pHRU->GetForcingFunctions()->temp_ave;
+
+      if      (Tave>-1.0){gamma=4.0;}
+      else if (Tave>-3.0){gamma=1.5*Tave+5.5;}
+      else               {gamma=1.0;}
+
+      VV.snow_capacity =VV.LAI*max_snow_load*(MM_PER_METER/ DENSITY_WATER) *gamma;
+      VV.snow_icept_pct=1.0-min(stor/VV.snow_capacity,1.0);
+    }
+    else{ VV.snow_icept_pct = 0.0; }
   }
 
   if ((Options.orocorr_precip==OROCORR_UBCWM) || (Options.orocorr_precip==OROCORR_UBCWM2))

@@ -749,6 +749,7 @@ void  CReservoir::AddControlStructure(const CControlStructure* pCS)
 void  CReservoir::SetHRU(const CHydroUnit *pHRUpointer)
 {
   _pHRU=pHRUpointer;
+  ExitGracefullyIf(_pHRU->GetArea()<=0,"CReservoir::SetHRU: reservoir cannot be linked to a zero-area HRU.",BAD_DATA_WARN);
 }
 //////////////////////////////////////////////////////////////////
 /// sets crest width, in meters
@@ -978,6 +979,22 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
   _DAscale   =1.0;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief returns AET, meant to be called at end of time step
+//
+double CReservoir::GetAET() const
+{
+  if(_pHRU!=NULL) {
+    double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
+    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
+      Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
+      return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/_pHRU->GetArea(); //normalized to HRU area 
+    }
+  }
+  else {
+    return 0.0;
+  }
+}
+//////////////////////////////////////////////////////////////////
 /// \brief updates current mass balance (called at end of time step)
 /// \param tt [in] current time step information
 /// \param tstep [in] time step, in days
@@ -985,14 +1002,10 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
 void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0; //all losses outside the system 
-  if(_pHRU!=NULL) {
-    double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
-    _AET      = Evap* 0.5*(GetArea(_stage)+GetArea(_stage_last)) / MM_PER_METER*tstep; //m3
-    _MB_losses+=_AET;
-  }
+
+  _AET = GetAET()*_pHRU->GetArea()/MM_PER_METER*tstep; //m3;
+  _MB_losses+=_AET;
+
   if(_seepage_const>0) {
     _GW_seepage=_seepage_const*(0.5*(_stage+_stage_last)-_local_GW_head)*SEC_PER_DAY*tstep;
     _MB_losses+=_GW_seepage;
@@ -1001,6 +1014,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
     int nn        =(int)((tt.model_time+TIME_CORRECTION)/tstep);//current timestep index
     _MB_losses+=_pExtractTS->GetSampledValue(nn)*SEC_PER_DAY*tstep;
   }
+  
 }
 
 //////////////////////////////////////////////////////////////////

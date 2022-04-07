@@ -607,7 +607,8 @@ enum precip_icept_method
   PRECIP_ICEPT_USER,        ///< pct of precip captured by canopy is user specified (TFRAIN,TFSNOW)
   PRECIP_ICEPT_LAI,         ///< pct of precip captured by canopy is linearly proportional to LAI (Dingman)
   PRECIP_ICEPT_EXPLAI,      ///< pct of precip captured by canopy is proportional to exp(LAI) (CLM)
-  PRECIP_ICEPT_HEDSTROM     ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
+  PRECIP_ICEPT_HEDSTROM,    ///< pct of snow captured by canopy is proportional to LAI & snowfall rate (Hedstrom & Pomeroy 1998)
+  PRECIP_ICEPT_STICKY       ///< pct of snow captured by canopy is function of temperature (SUMMA-like)
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -701,6 +702,7 @@ enum agg_stat
   AGG_MAXIMUM,   ///< Maximum of data set
   AGG_MINIMUM,   ///< Minimum of data set
   AGG_MEDIAN,    ///< Median of data set
+  AGG_CUMULSUM,  ///< Cumulative sum of data set (of rates)
   AGG_RANGE,     ///< Range of data set
   AGG_95CI,      ///< 5% and 95% quantiles of data set
   AGG_QUARTILES, ///< Quartiles of data set

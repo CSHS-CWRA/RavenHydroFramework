@@ -239,10 +239,10 @@ string GetForcingTypeUnits(forcing_type ftype)
   {
   case F_PRECIP:          {units="mm/d"; break;}
   case F_PRECIP_DAILY_AVE:{units="mm/d"; break; }
-  case F_PRECIP_5DAY:     {units="mm"; break;}
-  case F_SNOW_FRAC:       {units="0-1"; break;}
-  case F_SNOWFALL:        {units="mm"; break;}
-  case F_RAINFALL:        {units="mm"; break;}
+  case F_PRECIP_5DAY:     {units="mm";   break;}
+  case F_SNOW_FRAC:       {units="0-1";  break;}
+  case F_SNOWFALL:        {units="mm/d"; break;}
+  case F_RAINFALL:        {units="mm/d"; break;}
 
   case F_TEMP_AVE:        {units="C"; break;}
   case F_TEMP_DAILY_MIN:  {units="C"; break;}

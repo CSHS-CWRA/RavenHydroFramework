@@ -138,10 +138,10 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 // temporal aggregation
   switch(_timeAgg)
   {
-  case YEARLY:                    _timeAggStr="Yearly"; break;
-  case MONTHLY:                   _timeAggStr="Monthly"; break;
-  case DAILY:                     _timeAggStr="Daily"; break;
-  case WATER_YEARLY:              _timeAggStr="WYearly";break;
+  case YEARLY:                    _timeAggStr="Yearly";     break;
+  case MONTHLY:                   _timeAggStr="Monthly";    break;
+  case DAILY:                     _timeAggStr="Daily";      break;
+  case WATER_YEARLY:              _timeAggStr="WYearly";    break;
   case EVERY_NDAYS:               _timeAggStr="Every"+to_string(int(Options.custom_interval))+"days";break;
   case EVERY_TSTEP:               _timeAggStr="Continuous"; break;
   }
@@ -150,17 +150,20 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 // statistic
   switch(_aggstat)
   {
-  case AGG_AVERAGE:               _statStr="Average"; break;
-  case AGG_MAXIMUM:               _statStr="Maximum"; break;
-  case AGG_MINIMUM:               _statStr="Minimum"; break;
-  case AGG_RANGE:                 _statStr="Range"; break;
-  case AGG_MEDIAN:                _statStr="Median"; break;
-  case AGG_95CI:                  _statStr="95%"; break;
+  case AGG_AVERAGE:               _statStr="Average";   break;
+  case AGG_MAXIMUM:               _statStr="Maximum";   break;
+  case AGG_MINIMUM:               _statStr="Minimum";   break;
+  case AGG_RANGE:                 _statStr="Range";     break;
+  case AGG_MEDIAN:                _statStr="Median";    break;
+  case AGG_CUMULSUM:              _statStr="CumulSum";  break;
+  case AGG_95CI:                  _statStr="95%";       break;
   case AGG_QUARTILES:             _statStr="Quartiles"; break;
   case AGG_HISTOGRAM:             _statStr="Histogram"; break;
-    
   }
-
+  if(_aggstat==AGG_CUMULSUM) {
+    if(_varUnits.substr(_varUnits.length()-2,2)=="/d") { _varUnits=_varUnits.substr(0,_varUnits.length()-2); }//remove trailing /d
+    else                                               { _varUnits=_varUnits+"-d";} 
+  } //e.g., mm-->mm-d or //mm/d-->mm
 
 // spatial aggregation
   switch(_spaceAgg)
@@ -212,10 +215,11 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
   else if (_spaceAgg==BY_SB_GROUP   ){num_data=pModel->GetNumSubBasinGroups(); }
   else if (_spaceAgg==BY_SELECT_HRUS){num_data=pModel->GetHRUGroup(kk_only)->GetNumHRUs();}
 
-  if      (_aggstat==AGG_AVERAGE){num_store=1;}
-  else if (_aggstat==AGG_MAXIMUM){num_store=1;}
-  else if (_aggstat==AGG_MINIMUM){num_store=1;}
-  else if (_aggstat==AGG_RANGE)  {num_store=2;}
+  if      (_aggstat==AGG_AVERAGE ){num_store=1;}
+  else if (_aggstat==AGG_MAXIMUM ){num_store=1;}
+  else if (_aggstat==AGG_MINIMUM ){num_store=1;}
+  else if (_aggstat==AGG_CUMULSUM){num_store=1;}
+  else if (_aggstat==AGG_RANGE   ){num_store=2;}
   else if ((_aggstat==AGG_MEDIAN   ) ||
            (_aggstat==AGG_95CI     ) ||
            (_aggstat==AGG_QUARTILES) ||
@@ -360,6 +364,7 @@ void CCustomOutput::WriteCSVFileHeader(void)
     else if (_aggstat==AGG_MINIMUM  ){_CUSTOM<<"minimum,";}
     else if (_aggstat==AGG_RANGE    ){_CUSTOM<<"minimum,maximum,";}
     else if (_aggstat==AGG_MEDIAN   ){_CUSTOM<<"median,";}
+    else if (_aggstat==AGG_CUMULSUM ){_CUSTOM<<"cumulsum,";}
     else if (_aggstat==AGG_95CI     ){_CUSTOM<<"5% quantile,95% quantile,";}
     else if (_aggstat==AGG_QUARTILES){_CUSTOM<<"25% quartile,50% quartile,75% quartile,";}
     else if (_aggstat==AGG_HISTOGRAM){
@@ -443,11 +448,12 @@ void CCustomOutput::WriteEnSimFileHeader(const optStruct &Options)
 
     switch(_aggstat)
     {
-    case AGG_AVERAGE:               _CUSTOM<<title<<"_mean "; dataColumnCount++; break;
-    case AGG_MAXIMUM:               _CUSTOM<<title<<"_max "; dataColumnCount++; break;
-    case AGG_MINIMUM:               _CUSTOM<<title<<"_min "; dataColumnCount++; break;
+    case AGG_AVERAGE:               _CUSTOM<<title<<"_mean ";    dataColumnCount++; break;
+    case AGG_MAXIMUM:               _CUSTOM<<title<<"_max ";     dataColumnCount++; break;
+    case AGG_MINIMUM:               _CUSTOM<<title<<"_min ";     dataColumnCount++; break;
+    case AGG_CUMULSUM:              _CUSTOM<<title<<"_cumulsum ";dataColumnCount++; break;
     case AGG_RANGE:                 _CUSTOM<<title<<"_min "<<title<<"_max "; dataColumnCount+=2; break;
-    case AGG_MEDIAN:                _CUSTOM<<title<<"_median "; dataColumnCount++; break;
+    case AGG_MEDIAN:                _CUSTOM<<title<<"_median ";  dataColumnCount++; break;
     case AGG_95CI:                  _CUSTOM<<title<<"_5%_quantile "<<title<<"_95%_quantile "; dataColumnCount+=2; break;
     case AGG_QUARTILES:             _CUSTOM<<title<<"_25%_quartile "<<title<<"_50%_quartile "<<title<<"_75%_quartile "; dataColumnCount+=3; break;
     case AGG_HISTOGRAM:
@@ -867,6 +873,10 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     {
       lowerswap(data[k][0],val);
     }
+    else if(_aggstat==AGG_CUMULSUM)
+    {
+      data[k][0]+=val*Options.timestep;
+    }
     else if (_aggstat==AGG_RANGE)
     {
       lowerswap(data[k][0],val);
@@ -894,10 +904,11 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
         string sep=",";
         if(Options.output_format==OUTPUT_ENSIM){ sep=" "; }//space separated
         //write to .csv or .tb0 file
-        if     (_aggstat==AGG_AVERAGE){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_MAXIMUM){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_MINIMUM){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
-        else if(_aggstat==AGG_RANGE  ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep<<FormatDouble(data[k][1])<<sep; }
+        if     (_aggstat==AGG_AVERAGE ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_MAXIMUM ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_MINIMUM ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_CUMULSUM){ _CUSTOM<<FormatDouble(data[k][0])      <<sep; }
+        else if(_aggstat==AGG_RANGE   ){ _CUSTOM<<FormatDouble(data[k][0])      <<sep<<FormatDouble(data[k][1])<<sep; }
         else if(_aggstat==AGG_MEDIAN)
         {
           double Q1,Q2,Q3;
@@ -943,9 +954,10 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 #ifdef _RVNETCDF_
         // Collect Data 
         double out=0.0;
-        if     (_aggstat==AGG_AVERAGE){ out=data[k][0]; }
-        else if(_aggstat==AGG_MAXIMUM){ out=data[k][0]; }
-        else if(_aggstat==AGG_MINIMUM){ out=data[k][0]; }
+        if     (_aggstat==AGG_AVERAGE ){ out=data[k][0]; }
+        else if(_aggstat==AGG_MAXIMUM ){ out=data[k][0]; }
+        else if(_aggstat==AGG_MINIMUM ){ out=data[k][0]; }
+        else if(_aggstat==AGG_CUMULSUM){ out=data[k][0]; }
         else if(_aggstat==AGG_MEDIAN)
         {
           double Q1,Q2,Q3;
@@ -959,10 +971,11 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
 
       //-reset to initial conditions
       //-----------------------------------------------------------------------
-      if      (_aggstat==AGG_AVERAGE){data[k][0]= 0.0;}
-      else if (_aggstat==AGG_MAXIMUM){data[k][0]=-ALMOST_INF;}
-      else if (_aggstat==AGG_MINIMUM){data[k][0]= ALMOST_INF;}
-      else if (_aggstat==AGG_RANGE  )
+      if      (_aggstat==AGG_AVERAGE ){data[k][0]= 0.0;}
+      else if (_aggstat==AGG_MAXIMUM ){data[k][0]=-ALMOST_INF;}
+      else if (_aggstat==AGG_MINIMUM ){data[k][0]= ALMOST_INF;}
+      else if (_aggstat==AGG_CUMULSUM){data[k][0]= 0.0;}
+      else if (_aggstat==AGG_RANGE   )
       {
         data[k][0]= ALMOST_INF;
         data[k][1]=-ALMOST_INF;
@@ -1036,13 +1049,13 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   agg_stat    stat;
   string force_str="";
 
-  if      (!strcmp(s[1],"DAILY"          )){ta=DAILY;}
-  else if (!strcmp(s[1],"MONTHLY"        )){ta=MONTHLY;}
-  else if (!strcmp(s[1],"YEARLY"         )){ta=YEARLY;}
-  else if (!strcmp(s[1],"ANNUAL"         )){ta=YEARLY;}
+  if      (!strcmp(s[1],"DAILY"          )){ta=DAILY;       }
+  else if (!strcmp(s[1],"MONTHLY"        )){ta=MONTHLY;     }
+  else if (!strcmp(s[1],"YEARLY"         )){ta=YEARLY;      }
+  else if (!strcmp(s[1],"ANNUAL"         )){ta=YEARLY;      }
   else if (!strcmp(s[1],"WATER_YEARLY"   )){ta=WATER_YEARLY;}
   else if (!strcmp(s[1],"EVERY_NDAYS"    )){ta=EVERY_NDAYS; }
-  else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP;}
+  else if (!strcmp(s[1],"CONTINUOUS"     )){ta=EVERY_TSTEP; }
   else{
     ta=DAILY;
     ExitGracefully(":CustomOutput command: Unrecognized custom output temporal aggregation method",BAD_DATA);
@@ -1052,14 +1065,16 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   }
 
   //these statistics are always in time
-  if      (!strcmp(s[2],"AVERAGE"         )){stat=AGG_AVERAGE;}
-  else if (!strcmp(s[2],"MAXIMUM"         )){stat=AGG_MAXIMUM;}
-  else if (!strcmp(s[2],"MINIMUM"         )){stat=AGG_MINIMUM;}
-  else if (!strcmp(s[2],"MEDIAN"          )){stat=AGG_MEDIAN;}
-  else if (!strcmp(s[2],"RANGE"           )){stat=AGG_RANGE;}
+  if      (!strcmp(s[2],"AVERAGE"         )){stat=AGG_AVERAGE;  }
+  else if (!strcmp(s[2],"MAXIMUM"         )){stat=AGG_MAXIMUM;  }
+  else if (!strcmp(s[2],"MINIMUM"         )){stat=AGG_MINIMUM;  }
+  else if (!strcmp(s[2],"MEDIAN"          )){stat=AGG_MEDIAN;   }
+  else if (!strcmp(s[2],"CUMULSUM"        )){stat=AGG_CUMULSUM; }
+  else if (!strcmp(s[2],"INTEGRAL"        )){stat=AGG_CUMULSUM; }
+  else if (!strcmp(s[2],"RANGE"           )){stat=AGG_RANGE;    }
   else if (!strcmp(s[2],"HISTOGRAM"       )){stat=AGG_HISTOGRAM;}
   else if (!strcmp(s[2],"QUARTILES"       )){stat=AGG_QUARTILES;}
-  else if (!strcmp(s[2],"95CI"            )){stat=AGG_95CI;}
+  else if (!strcmp(s[2],"95CI"            )){stat=AGG_95CI;     }
   //
   else{
     stat=AGG_AVERAGE;
@@ -1140,11 +1155,11 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   }
 
 
-  if      (!strcmp(s[4],"BY_HRU"          )){sa=BY_HRU;}
-  else if (!strcmp(s[4],"BY_BASIN"        )){sa=BY_BASIN;}
-  else if (!strcmp(s[4],"BY_SUBBASIN"     )){sa=BY_BASIN;}
-  else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;}
-  else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;}
+  if      (!strcmp(s[4],"BY_HRU"          )){sa=BY_HRU;      }
+  else if (!strcmp(s[4],"BY_BASIN"        )){sa=BY_BASIN;    }
+  else if (!strcmp(s[4],"BY_SUBBASIN"     )){sa=BY_BASIN;    }
+  else if (!strcmp(s[4],"ENTIRE_WATERSHED")){sa=BY_WSHED;    }
+  else if (!strcmp(s[4],"BY_WATERSHED"    )){sa=BY_WSHED;    }
   else if (!strcmp(s[4],"BY_HRU_GROUP"    )){sa=BY_HRU_GROUP;}
   else if (!strcmp(s[4],"BY_SB_GROUP"     )){sa=BY_SB_GROUP; }
   else{

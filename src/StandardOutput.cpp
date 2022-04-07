@@ -1586,7 +1586,7 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
     }
   }
   int n;
-  if(type==AGG_MEDIAN){quickSort(data,0,N);n=(int)rvn_floor((double)(N)/2.0+REAL_SMALL);}
+  if(type==AGG_MEDIAN){quickSort(data,0,N-1);n=(int)rvn_floor((double)(N)/2.0+0.01);}
 
   if (N==0){return -ALMOST_INF;}
   if       (type==AGG_AVERAGE){stat/=N;}

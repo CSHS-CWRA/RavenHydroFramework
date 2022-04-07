@@ -19,26 +19,26 @@ void MassEnergyBalance( CModel            *pModel,
                         const optStruct   &Options,
                         const time_struct &tt)
 {
-  int         i,j,k,p,pp,pTo,q,qs,c;                 //counters
-  int         NS,NB,nHRUs,nConnections=0,nProcesses; //array sizes (local copies)
-  int         nConstituents;                         //
-  int         iSW, iAtm, iAET, iGW;                  //Surface water, atmospheric precip, used PET indices
+  int i,j,k,p,pp,pTo,q,qs,c;                   //counters
+  int NS,NB,nHRUs,nConnections=0,nProcesses;   //array sizes (local copies)
+  int nConstituents;                           //
+  int iSW, iAtm, iAET, iGW;                    //Surface water, atmospheric precip, used PET indices
 
-  int         iFrom[MAX_CONNECTIONS];                //arrays used to pass values through GetRatesOfChange routines
-  int         iTo  [MAX_CONNECTIONS];
-  double      rates_of_change[MAX_CONNECTIONS];
+  int                iFrom          [MAX_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
+  int                iTo            [MAX_CONNECTIONS];
+  double             rates_of_change[MAX_CONNECTIONS];
 
-  double      tstep;              //[day] timestep
-  double      t;                  //model time
-  time_struct tt_end;             //time at end of timestep
+  double             tstep;       //[d] timestep
+  double             t;           //[d] model time
+  time_struct        tt_end;      //time at end of timestep
   
-  CHydroUnit *pHRU;               //pointer to current HRU
-  CSubBasin  *pBasin;             //pointer to current SubBasin
-  CGroundwaterModel  *pGWModel;   //pointer to GW model
-  CGWRiverConnection *pGW2River;  //pointer to GW model river connection
+  CHydroUnit        *pHRU;        //pointer to current HRU
+  CSubBasin         *pBasin;      //pointer to current SubBasin
+  CGroundwaterModel *pGWModel;    //pointer to GW model
+  CGWRiverConnection*pGW2River;   //pointer to GW model river connection
 
-  static double    **aPhi=NULL;   //[mm;C] state variable arrays at initial, intermediate times;
-  static double    **aPhinew;     //[mm;C] state variable arrays at end of timestep; value after convergence
+  static double    **aPhi=NULL;   //[mm;C;mg/m2;MJ/m2] state variable arrays at initial, intermediate times;
+  static double    **aPhinew;     //[mm;C;mg/m2;MJ/m2] state variable arrays at end of timestep; value after convergence
   static double    **aPhiPrevIter;
 
   static double     *aQinnew;     //[m3/s] inflow rate to subbasin reach p at t+dt [size=_nSubBasins]
@@ -535,7 +535,7 @@ void MassEnergyBalance( CModel            *pModel,
       down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
 
       if (Options.modeltype == MODELTYPE_COUPLED)
-	  {
+	    {
         aRouted[p]+= pGW2River->CalcRiverFlowBySB(p)*tstep;      // [m3]
       }
 
@@ -565,15 +565,25 @@ void MassEnergyBalance( CModel            *pModel,
         //still need to remove Qwithdrawn from somewhere if downstream outflow doesn't exist!
         //Qdivloss+=Qwithdrawn;
       }
+
+      if(pBasin->GetReservoir()!=NULL) {//update AET for reservoir-linked HRUs
+        k=pBasin->GetReservoir()->GetHRUIndex();
+        if ((k!=DOESNT_EXIST) && (iAET!=DOESNT_EXIST)){
+          double AET=pBasin->GetReservoir()->GetAET();//[mm/d]
+          pModel->GetHydroUnit(k)->SetStateVarValue(iAET,AET); 
+        }
+      }
     }
   }//end for pp...
   delete [] res_Qstruct;
+
+
 
   //-----------------------------------------------------------------
   //      CONSTITUENT (MASS OR ENERGY) ROUTING
   //-----------------------------------------------------------------
    //determine total mass/energy loading from HRUs into respective basins (aRoutedMass[p])
-  double ResMass=0;
+  double ResMass    =0;
   double MassOutflow=0;
   int    iSWmass,m;
   CConstituentModel *pConstitModel;
@@ -582,7 +592,7 @@ void MassEnergyBalance( CModel            *pModel,
     pConstitModel=pModel->GetTransportModel()->GetConstituentModel(c);
     for(p=0;p<NB;p++) {
       aRoutedMass[p]=0.0;
-      aMinnew[p]=0.0;
+      aMinnew    [p]=0.0;
     }
     for(k=0;k<nHRUs;k++)
     {

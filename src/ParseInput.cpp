@@ -864,7 +864,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"NONE"            )){Options.orocorr_PET=OROCORR_NONE;}
       else if (!strcmp(s[1],"OROCORR_HBV"     )){Options.orocorr_PET=OROCORR_HBV;}
       else if (!strcmp(s[1],"OROCORR_PRMS"    )){Options.orocorr_PET=OROCORR_PRMS;}
-      else if (!strcmp(s[1],"OROCORR_UBCWM"   )){Options.orocorr_PET=OROCORR_UBCWM;}
+      //else if (!strcmp(s[1],"OROCORR_UBCWM"   )){Options.orocorr_PET=OROCORR_UBCWM;}
       else if (!strcmp(s[1],"OROCORR_NONE"    )){Options.orocorr_PET=OROCORR_NONE;}
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized Orographic PET Correction Method",BAD_DATA_WARN);
@@ -1038,6 +1038,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"PRECIP_ICEPT_LAI"     )){Options.interception_factor=PRECIP_ICEPT_LAI;}
       else if (!strcmp(s[1],"PRECIP_ICEPT_EXPLAI"  )){Options.interception_factor=PRECIP_ICEPT_EXPLAI;}
       else if (!strcmp(s[1],"PRECIP_ICEPT_HEDSTROM")){Options.interception_factor=PRECIP_ICEPT_HEDSTROM;}
+      else if (!strcmp(s[1],"PRECIP_ICEPT_STICKY"  )){Options.interception_factor=PRECIP_ICEPT_STICKY; }
+
       else {ExitGracefully("ParseInput:PrecipIceptFract: Unrecognized method",BAD_DATA_WARN);}
       break;
     }
