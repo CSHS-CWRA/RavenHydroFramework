@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ------------------------------------------------------------------
   Decay of soluble contaminant/tracer/nutrient
   ----------------------------------------------------------------*/
@@ -18,24 +18,37 @@
 //
 CmvDecay::CmvDecay(string           constit_name,
                    decay_type       dtyp,
+                   int              proc_ind,
+                   int              iWatStor,
                    CTransportModel *pTransportModel)
   :CHydroProcessABC(DECAY)
 {
   _dtype=dtyp;
   _pTransModel=pTransportModel;
   _constit_ind=_pTransModel->GetConstituentIndex(constit_name);
+  _process_ind=proc_ind;
   ExitGracefullyIf(_constit_ind==-1,
                    "CmvDecay constructor: invalid constituent name in :Decay command",BAD_DATA_WARN);
 
   int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  int m;
+  _iWaterStore=iWatStor;
+  if(_iWaterStore==DOESNT_EXIST) { //decay occurs in all water storage compartments
 
-  CHydroProcessABC::DynamicSpecifyConnections(nWaterCompartments);
-
-  //decay occurs in all water storage compartments
-  for (int ii=0;ii<nWaterCompartments;ii++)
-  {
-    iFrom[ii]=_pTransModel->GetStorIndex(_constit_ind,ii); //mass in water compartment
-    iTo  [ii]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind); //'loss/sink' storage (for MB accounting)
+    CHydroProcessABC::DynamicSpecifyConnections(nWaterCompartments);
+    for(int ii=0;ii<nWaterCompartments;ii++)
+    {
+      int iWat=_pTransModel->GetStorWaterIndex(ii);
+      m =_pTransModel->GetLayerIndex(_constit_ind,iWat);
+      iFrom[ii]=pModel->GetStateVarIndex(CONSTITUENT,m); //mass in water compartment
+      iTo  [ii]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind); //'loss/sink' storage (for MB accounting)
+    }
+  }
+  else {
+    CHydroProcessABC::DynamicSpecifyConnections(1);
+    m =_pTransModel->GetLayerIndex(_constit_ind,_iWaterStore);
+    iFrom[0]=pModel->GetStateVarIndex(CONSTITUENT,m); //mass in water compartment
+    iTo  [0]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind); //'loss/sink' storage (for MB accounting)
   }
 }
 
@@ -76,31 +89,56 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
                                   const time_struct &tt,
                                   double            *rates) const
 {
-  int    k=pHRU->GetGlobalIndex();
-  double junk,mass;
-  int iStor,iConstit;
-  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
-  double decay_coeff;
+  int     k=pHRU->GetGlobalIndex();
+  double  junk,mass;
+  double  decay_coeff;
+  int     iStor;
+  int     q=0;
+  int     nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  int     ii_active          = _pTransModel->GetWaterStorIndexFromSVIndex(_iWaterStore);
 
   for (int ii = 0; ii < nWaterCompartments; ii++)
   {
     iStor   =_pTransModel->GetStorWaterIndex(ii);
-    iConstit=_pTransModel->GetStorIndex     (_constit_ind,ii);   //global state variable index of this constituent in this water storage
+    
+    if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment 
+    if(_pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
+    
+    decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
+    if (decay_coeff==NOT_SPECIFIED){ continue;}
 
-    mass=state_vars[iConstit];
+    mass=state_vars[iFrom[q]];
 
-    decay_coeff = _pTransModel->GetConstituentModel2(_constit_ind)->GetDecayCoefficient(pHRU,iStor);
-    if(_pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) {} //don't modify dirichlet source zones
-    else {
-      if (_dtype==DECAY_BASIC)
-      {
-        rates[ii]= -decay_coeff*mass; //[mg/m2/d]=[1/d]*[mg/m2]
-      }
-      else if (_dtype==DECAY_ANALYTIC)//analytical approach - definitely preferred - solution to dm/dt=-km integrated from t to t+dt
-      {
-        rates[ii] = mass * (1 - exp(-decay_coeff*Options.timestep))/Options.timestep; 
-      }
+    //------------------------------------------------------------------
+    if (_dtype==DECAY_BASIC)
+    {
+      rates[q]= decay_coeff*mass; //[mg/m2/d]=[1/d]*[mg/m2]
     }
+    //------------------------------------------------------------------
+    else if (_dtype==DECAY_LINEAR) //analytical approach - preferred - solution to dm/dt=-km integrated from t to t+dt
+    {
+      rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep; 
+      //cout<<" DECAY: "<<mass<<" "<<rates[q]<<" "<<decay_coeff*mass<<" "<<
+      //CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iStor),pModel->GetStateVarLayer(iStor))<<endl;
+    }
+    //------------------------------------------------------------------
+    else if(_dtype==DECAY_DENITRIF) 
+    {
+      double temp=pHRU->GetForcingFunctions()->temp_ave;
+      double c1     =1.0;
+      double vol    =state_vars[iStor];
+      double vol_max=pHRU->GetStateVarMax(iStor,state_vars,Options);
+
+      if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
+      else if ((temp>=10) && (temp<=30)) { c1=1.0; }
+      else if (temp< 10)                 { c1=(temp-5.0 )/(10.0-5.0 );}
+      else if (temp> 30)                 { c1=(30.0-temp)/(30.0-50.0);}
+      
+      decay_coeff *= c1 * min(vol/vol_max,1.0);
+
+      rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
+    }
+    q++;
   }
 }
 

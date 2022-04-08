@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ------------------------------------------------------------------
   Transformation of soluble contaminant/tracer/nutrient into another constituent
   ----------------------------------------------------------------*/
@@ -15,33 +15,55 @@
 /// \param constit_name [in] name of reactant constituent
 /// \param constit_name [in] name of product constituent
 /// \param ttyp [in] transformation process type
+/// \param iWatStor [in] state variable index of water storage compartment 
 /// \param pTransportModel [in] transport Model object
 //
 CmvTransformation::CmvTransformation(string           constit_name,
                                      string           constit_name2,
                                      transformation_type   ttyp,
+                                     int              proc_ind,
+                                     int              iWatStor,
                                      CTransportModel *pTransportModel)
   :CHydroProcessABC(TRANSFORMATION)
 {
-  _ttype=ttyp;
-  _pTransModel=pTransportModel;
+  _ttype        =ttyp;
+  _pTransModel  =pTransportModel;
+  _process_ind  =proc_ind;
+  _iWaterStore  =iWatStor;
   _constit_ind1 =_pTransModel->GetConstituentIndex(constit_name);
-  _constit_ind2=_pTransModel->GetConstituentIndex(constit_name2);
+  _constit_ind2 =_pTransModel->GetConstituentIndex(constit_name2);
   ExitGracefullyIf(_constit_ind1==DOESNT_EXIST,
                    "CmvTransformation constructor: invalid constituent name in :Transformation command",BAD_DATA_WARN);
   ExitGracefullyIf(_constit_ind2==DOESNT_EXIST,
                    "CmvTransformation constructor: invalid second constituent name in :Transformation command",BAD_DATA_WARN);
 
-  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
-  CHydroProcessABC::DynamicSpecifyConnections(2*nWaterCompartments);
+  int m,m2,iWat;
+  if(_iWaterStore==DOESNT_EXIST) { //occurs everywhere 
+    int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+    CHydroProcessABC::DynamicSpecifyConnections(2*nWaterCompartments);
 
-  //transformation occurs in all water storage compartments
-  for (int ii=0;ii<nWaterCompartments;ii++)
-  {
-    iFrom[ii                   ]=_pTransModel->GetStorIndex(_constit_ind1,ii); //mass in water compartment
-    iTo  [ii                   ]=_pTransModel->GetStorIndex(_constit_ind2,ii); //mass in water compartment
-    iFrom[ii+nWaterCompartments]=_pTransModel->GetStorIndex(_constit_ind1,ii); //mass in water compartment
-    iTo  [ii+nWaterCompartments]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind1); //'loss/sink' storage (for MB accounting)
+    //transformation occurs in all water storage compartments
+    for(int ii=0;ii<nWaterCompartments;ii++)
+    {
+      iWat=_pTransModel->GetStorWaterIndex(ii);
+      m =_pTransModel->GetLayerIndex(_constit_ind1,iWat);
+      m2=_pTransModel->GetLayerIndex(_constit_ind2,iWat);
+
+      iFrom[ii                   ]=pModel->GetStateVarIndex(CONSTITUENT,m);//mass in water compartment
+      iTo  [ii                   ]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind1); //'loss/sink' storage (for MB accounting)
+      iFrom[ii+nWaterCompartments]=pModel->GetStateVarIndex(CONSTITUENT_SRC ,_constit_ind1); //'loss/sink' storage (for MB accounting)
+      iTo  [ii+nWaterCompartments]=pModel->GetStateVarIndex(CONSTITUENT,m2);//mass in water compartment
+    }
+  }
+  else { //only occurs in one water storage unit 
+    CHydroProcessABC::DynamicSpecifyConnections(2);
+
+    m =_pTransModel->GetLayerIndex(_constit_ind1,_iWaterStore);
+    m2=_pTransModel->GetLayerIndex(_constit_ind2,_iWaterStore);
+    iFrom[0]=pModel->GetStateVarIndex(CONSTITUENT,m);                 //mass in water compartment
+    iTo  [0]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind1); //'loss/sink' storage (for MB accounting)
+    iFrom[1]=pModel->GetStateVarIndex(CONSTITUENT_SINK,_constit_ind1);//'loss/sink' storage (for MB accounting)
+    iTo  [1]=pModel->GetStateVarIndex(CONSTITUENT,m2);                //mass in water compartment
   }
 }
 
@@ -65,6 +87,10 @@ void   CmvTransformation::Initialize(){}
 void CmvTransformation::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) const
 {
   nP=0;
+
+  if(_ttype==TRANS_LINEAR)
+  {
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -83,80 +109,71 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
                                             double            *rates) const
 {
   int     k=pHRU->GetGlobalIndex();
-  double  junk,mass1,mass2,vol1;
-  int     iStor,iConstit1,iConstit2;
+  double  junk,mass1,vol1;
+  int     iStor;
   
   double  transf_coeff;
   double  stoich_coeff; //stoichiometric coefficient, i.e., 1*A->alpha*B
-  double  n;
-  
+
   int     nWaterCompartments = _pTransModel->GetNumWaterCompartments();
-  for (int ii = 0; ii < nWaterCompartments; ii++)
+  int     ii_active          = _pTransModel->GetWaterStorIndexFromSVIndex(_iWaterStore);
+
+  int     shift =nWaterCompartments;
+  if(_iWaterStore!=DOESNT_EXIST) { shift=1; }
+
+  int     q=0; //connection index
+  for(int ii = 0; ii < nWaterCompartments; ii++)
   {
     iStor    =_pTransModel->GetStorWaterIndex(ii);
-    iConstit1=_pTransModel->GetStorIndex     (_constit_ind1,ii);   //global state variable index of reactant constituent in this water storage
-    iConstit2=_pTransModel->GetStorIndex     (_constit_ind2,ii);   //global state variable index of product constituent in this water storage
+    
+    //cout<<"IS "<<_iWaterStore<<" "<<ii<<" "<<ii_active<<" "<<nWaterCompartments<<endl;
+    if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment 
+    
+    if(_pTransModel->GetConstituentModel2(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
 
-    mass1=state_vars[iConstit1];
-    mass2=state_vars[iConstit2];
-    vol1 =state_vars[ii];
+    mass1=state_vars[iFrom[q]]; //mg/m2
+    vol1 =state_vars[iStor   ]; //mm
+   
+    transf_coeff = _pTransModel->GetGeochemParam(PAR_TRANSFORM_COEFF,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
+    if(transf_coeff==NOT_SPECIFIED) { continue; }
 
+    stoich_coeff = _pTransModel->GetStoichioCoeff(_constit_ind1,_constit_ind2);
+    
+    // for each reaction, 
+    // dA/dt      = - k * A
+    // dsink/dt   = + k * A
+    // dB/dt      = + k * A * s
+    // dsource/dt = - k * A * s 
 
-    CNutrientModel *pNModel=NULL;//=_pTransModel->GetNutrientModel();
-    ExitGracefully("TRANSPORT_REFACTOR",STUB);
-    transf_coeff = 1.0;//pNModel->GetTransformCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
-    stoich_coeff = 1.0;//pNModel->GetStoichioCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
-    n            = 1.01;// _pTransModel->GetTransformPower      (_constit_ind1,_constit_ind2,pHRU,iStor);
+    //-------------------------------------------------------------------------------
+    if (_ttype==TRANS_LINEAR)//analytical approach -  solution to dm/dt=-km integrated from t to t+dt
+    {
+      
+      rates[q] = mass1 * (1 - exp(-transf_coeff*Options.timestep))/Options.timestep; 
 
-    if(_pTransModel->GetConstituentModel2(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) {} //don't reduce dirichlet source zones
-
-    else {
-      if (_ttype==TRANSFORM_LINEAR)
-      {
-        rates[ii]= -transf_coeff*stoich_coeff*mass1; 
-        rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
-
-        // dA/dt = - k * A
-        // dB/dt = + k * A * s
-        // dsink/dt = + k * A * (1-s) = dB/dt *(1-s)/s
-      }
-      else if (_ttype==TRANSFORM_LINEAR_ANALYTIC)//analytical approach - definitely preferred - solution to dm/dt=-km integrated from t to t+dt
-      {
-        rates[ii] = mass1*stoich_coeff * (1 - exp(-transf_coeff*Options.timestep))/Options.timestep; 
-        rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
-      }
-      else if (_ttype==TRANSFORM_NONLINEAR)
-      {
-        rates[ii] = -transf_coeff*stoich_coeff *pow(mass1/vol1,n)*vol1; 
-        rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
-        ExitGracefully("TRANSFORM_NONLINEAR - need way of storing n",STUB);
-      }
-      else if (_ttype==TRANSFORM_NONLIN_ANALYTIC)//analytical approach - definitely preferred - solution to dm/dt=-km integrated from t to t+dt
-      {
-        double C0=mass1/vol1;
-        rates[ii] = stoich_coeff *(C0- pow(pow(C0,1.0-n)+(n-1)*transf_coeff*Options.timestep,1.0/(1.0-n)))/Options.timestep*vol1; 
-        rates[ii+nWaterCompartments]=rates[ii]*(1-stoich_coeff)/stoich_coeff; //mass transformed to something else (sink)
-        ExitGracefully("TRANSFORM_NONLINEAR - need way of storing n",STUB);
-      }
-      else if(_ttype==TRANSFORM_MINERALIZATION)
-      {
-        double temp=pHRU->GetForcingFunctions()->temp_ave;
-        double c1=1.0;
-        double sat=1.0;
-        double ks;
-        if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
-        else if ((temp>=10) && (temp<=30)) { c1=1.0; }
-        else if (temp< 10)                 { c1=(temp-5.0)/(10.0-5.0);}
-        else if (temp> 30)                 { c1=(30-temp)/(30-50); }
-        double vol_max=pHRU->GetStateVarMax(ii,state_vars,Options);
-
-        sat=min(vol1/vol_max,1.0);
-        double rn_min =10;// = _pTransModel->GetMineralizationCoefficient(_constit_ind1,_constit_ind2,pHRU,iStor);
-        ks = rn_min * c1 * sat;
-        ExitGracefully("TRANSFORM_MINERALIZATION - need way of storing mineralization coeff",STUB);
-        rates[ii] = mass1*(1 - exp(-ks*Options.timestep))/Options.timestep;
-      }
+      // cout<<"CALCULATING RATE "<< rates[q]<<" "<<mass1<<endl;
+      //numerically robust equiv to 
+      //rates[q]= transf_coeff*mass1; 
     }
+    //-------------------------------------------------------------------------------
+    else if (_ttype==TRANS_NONLINEAR)//analytical approach -  solution to dm/dt=-km integrated from t to t+dt
+    {
+      double C0=mass1/vol1; //mg/m2/mm 
+      C0=C0*MM_PER_METER/LITER_PER_M3; //mg/m2/mm-->mg/L
+
+      double n = _pTransModel->GetGeochemParam(PAR_TRANSFORM_N,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
+      if(n==NOT_SPECIFIED) { n=1.001; }
+
+      rates[q] = (C0- pow(pow(C0,1.0-n)+(n-1)*transf_coeff*Options.timestep,1.0/(1.0-n)))/Options.timestep; //mg/L/d
+      rates[q] *=vol1*LITER_PER_M3/MM_PER_METER; //mg/L/d->mg/m2/d
+
+      //numerically robust equiv to 
+      //rates[q] = transf_coeff *pow(mass1/vol1,n)*vol1;
+    }
+
+    rates[q+shift]=stoich_coeff*rates[q]; //handles proper accounting 
+     
+    q++;
   }
 }
 
@@ -175,12 +192,25 @@ void   CmvTransformation::ApplyConstraints( const double      *state_vars,
                                             const time_struct &tt,
                                             double            *rates) const
 {
+  
   int iConstit1;
   int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  double stoich_coeff    = _pTransModel->GetStoichioCoeff(_constit_ind1,_constit_ind2);
+  int ii_active          = _pTransModel->GetWaterStorIndexFromSVIndex(_iWaterStore);
+  
+  int shift =nWaterCompartments;
+  if(_iWaterStore!=DOESNT_EXIST) {shift=1;}
+
+  int q=0;
   for (int ii = 0; ii < nWaterCompartments; ii++)
   {
+    if(_iWaterStore!=DOESNT_EXIST) { //only apply to one water compartment 
+      if(ii!=ii_active) { break; }
+    }
     iConstit1=_pTransModel->GetStorIndex(_constit_ind1,ii);
-    rates[ii] = min(rates[ii],state_vars[iConstit1]/Options.timestep);//cannot remove more mass than is there
+    rates[q] = min(rates[q],state_vars[iConstit1]/Options.timestep);//cannot remove more mass than is there
+    rates[q+shift]=-stoich_coeff*rates[q]; //handles proper accounting 
+    q++;
   }
 }
 

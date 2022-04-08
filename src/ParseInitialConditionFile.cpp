@@ -251,8 +251,8 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
        specify uniform initial conditions in mg/L (or o/oo for isotopes) (or degrees C for temperature)
       */
       int shift=0;
-      if(concname!="TEMPERATURE") { if(Options.noisy) { cout <<"Initial Concentrations (Uniform)"<<endl; }}
-      else                        { if(Options.noisy) { cout <<"Initial Temperatures (Uniform)"<<endl;   } shift=1;}
+      if(concname!="TEMPERATURE") { if(Options.noisy) { cout <<"Initial Concentrations (Uniform)"<<endl; } shift=1;}
+      else                        { if(Options.noisy) { cout <<"Initial Temperatures (Uniform)"<<endl;   } }
 
       int c=DOESNT_EXIST;
       c=pModel->GetTransportModel()->GetConstituentIndex(concname);

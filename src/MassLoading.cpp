@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ------------------------------------------------------------------
   Mass loading of soluble constituent
   ----------------------------------------------------------------*/
@@ -24,9 +24,12 @@ CmvMassLoading::CmvMassLoading(string constit_name,
   int nWaterCompartments =pTransModel->GetNumWaterCompartments();
   CHydroProcessABC::DynamicSpecifyConnections(nWaterCompartments);
 
+
   for (int ii = 0; ii < nWaterCompartments; ii++) { //Neumann sources
     iFrom[ii]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
-    iTo  [ii]=pTransModel->GetStorWaterIndex(ii);
+    int m=pTransModel->GetLayerIndex(_constit_ind,pTransModel->GetStorWaterIndex(ii));
+    iTo  [ii]=pModel->GetStateVarIndex(CONSTITUENT,m);
+    
   }
 }
 
@@ -64,10 +67,10 @@ void CmvMassLoading::GetParticipatingParamList(string  *aP, class_type *aPC, int
 /// \param *rates [out] rates of change due to both associated flow process and advective transport
 //
 void   CmvMassLoading::GetRatesOfChange(const double      *state_vars,
-                                      const CHydroUnit  *pHRU,
-                                      const optStruct   &Options,
-                                      const time_struct &tt,
-                                      double            *rates) const
+                                        const CHydroUnit  *pHRU,
+                                        const optStruct   &Options,
+                                        const time_struct &tt,
+                                        double            *rates) const
 {
   int    k=pHRU->GetGlobalIndex();
   
@@ -77,7 +80,7 @@ void   CmvMassLoading::GetRatesOfChange(const double      *state_vars,
   for (int ii = 0; ii < pTransModel->GetNumWaterCompartments(); ii++)
   {
     iTo=pTransModel->GetStorWaterIndex(ii);
-    rates[ii] += pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iTo, k, tt); //[mg/m2/d] or [MJ/m2/d]
+    rates[ii] = pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iTo, k, tt); //[mg/m2/d] or [MJ/m2/d]
   }
 
 }

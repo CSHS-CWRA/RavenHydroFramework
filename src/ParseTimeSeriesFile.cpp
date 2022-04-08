@@ -1187,15 +1187,17 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
             kk=pSourceGrp->GetGlobalIndex();
           }
         }
+        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+
         CTimeSeries *pTS;
         pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),DOESNT_EXIST,"none",Options);//name=constitutent name
 
-        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         if(c!=DOESNT_EXIST) {
           pModel->GetTransportModel()->GetConstituentModel(c)->AddInfluxTimeSeries(i_stor,kk,pTS);
           pTS->SetConstitInd(c);
         }
         else {
+          cout<<"Bad constituent: "<< s[1]<<endl;
           ExitGracefully("ParseTimeSeriesInputFile: invalid constiuent in :MassFluxTimeSeries command in .rvt file",BAD_DATA_WARN);
         }
       }

@@ -2978,12 +2978,13 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(!strcmp(s[1],"2H")         ) { ctype=ISOTOPE;  }
       pModel->GetTransportModel()->AddConstituent(s[1],ctype,is_passive);
 
-      pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
+      if(!is_passive) {
+        pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
+        AddProcess(pModel,pMover,pProcGroup);
 
-      pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
-
+        pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
+        AddProcess(pModel,pMover,pProcGroup);
+      }
       pMover=new CmvMassLoading(s[1],pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
 
@@ -3105,18 +3106,24 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case (305)://----------------------------------------------
     {/*:Decay
-       :Decay [ALGORITHM] [Constituent]
+       :Decay [ALGORITHM] [process name] [Constituent] {water store}
      */
       if (Options.noisy){cout <<"Decay Process"<<endl;}
-      decay_type dec_type=DECAY_BASIC;
-      if (Len<3){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
+      int iWat=DOESNT_EXIST;
+      decay_type dec_type=DECAY_LINEAR;
+      if (Len<4){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
       if      (!strcmp(s[1],"DECAY_BASIC"    )){dec_type=DECAY_BASIC;}
-      else if (!strcmp(s[1],"DECAY_ANALYTIC" )){dec_type=DECAY_ANALYTIC;}
+      else if (!strcmp(s[1],"DECAY_LINEAR"   )){dec_type=DECAY_LINEAR;}
+      else if (!strcmp(s[1],"DECAY_DENITRIF" )){dec_type=DECAY_DENITRIF;}
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized decay process representation",BAD_DATA_WARN); break;
       }
-      pMover=new CmvDecay(s[2],dec_type,pModel->GetTransportModel());
+      pModel->GetTransportModel()->AddProcessName(s[2]);
+      int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
+      if(Len>=5) { iWat=ParseSVTypeIndex(s[4],pModel); }
+
+      pMover=new CmvDecay(s[3],dec_type,proc_ind,iWat,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -3129,21 +3136,27 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case (307)://----------------------------------------------
     {/*:Transformation
-       :Transformation [algorithm] [constituent1] [constituent2]
+       :Transformation [algorithm] [process name] [constituent1] [constituent2] [water store]
      */
       if (Options.noisy){cout <<"Transformation process"<<endl;}
-      ExitGracefully(":Transformation input command",STUB);
-      
-      transformation_type t_type=TRANSFORM_LINEAR_ANALYTIC;
-      if (Len<3){ImproperFormatWarning(":Decay",p,Options.noisy); break;}
-      if      (!strcmp(s[1],"TRANSFORM_LINEAR"          )){t_type=TRANSFORM_LINEAR;}
-      else if (!strcmp(s[1],"TRANSFORM_LINEAR_ANALYTIC" )){t_type=TRANSFORM_LINEAR_ANALYTIC;}
-      else if (!strcmp(s[1],"TRANSFORM_MINERALIZATION"  )){t_type=TRANSFORM_MINERALIZATION; }
+      int iWat=DOESNT_EXIST;
+      transformation_type t_type=TRANS_LINEAR;
+      if (Len<5){ImproperFormatWarning(":Transformation",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"TRANS_LINEAR"      )){t_type=TRANS_LINEAR;}
+      else if (!strcmp(s[1],"TRANS_NONLINEAR"   )){t_type=TRANS_NONLINEAR; }
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized transformation process representation",BAD_DATA_WARN); break;
       }
-      pMover=new CmvTransformation(s[2],s[3],t_type,pModel->GetTransportModel());
+      cout<<"ADDING PROCESS NAME"<<endl;
+      pModel->GetTransportModel()->AddProcessName(s[2]);
+      cout<<"GETTING PROCESS NAME"<<endl;
+      int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
+
+      if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel); }
+      cout<<"HERE"<<endl;
+      pMover=new CmvTransformation(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
+      cout<<"HERE"<<endl;
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -3347,6 +3360,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   pEnsemble->SetRandomSeed(random_seed);
   //===============================================================================================
 
+  pModel->GetTransportModel()->InitializeParams(Options);
+
   delete p; p=NULL;
   delete [] tmpS;
   delete [] tmpLev;
@@ -3354,7 +3369,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief This local method checks that the passes string includes either integer of state variable of variable string
+/// \brief This local method checks that the passed string includes either integer of state variable of variable string
 ///
 /// \param *s [in] String state variable name
 /// \param *&pModel [in] Input model object

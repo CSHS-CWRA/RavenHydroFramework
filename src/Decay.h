@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvDecay
@@ -16,7 +16,8 @@
 enum decay_type
 {
   DECAY_BASIC,    /// < basic decay, calculated as -k*C
-  DECAY_ANALYTIC  /// < analytic treatment of decay over finite time step
+  DECAY_LINEAR,   /// < analytic treatment of decay over finite time step
+  DECAY_DENITRIF  /// < adds temperature/saturation correction factor to decay rate
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -28,11 +29,14 @@ private:/*------------------------------------------------------*/
   const CTransportModel* _pTransModel;
 
   decay_type _dtype;              ///< decay algorithm type
-  int _constit_ind;              ///< index of constituent which is decaying
+  int        _constit_ind;        ///< index, c, of constituent which is decaying
+
+  int        _process_ind;        ///< index of transport process name
+  int        _iWaterStore;        ///< index ii of water store (or DOESNT_EXIST if this should occur in all water compartments)
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvDecay(string constit_name, decay_type dtyp, CTransportModel *pTransportModel);
+  CmvDecay(string constit_name, decay_type dtyp,int proc_ind,int iWatStor,CTransportModel *pTransportModel);
   ~CmvDecay();
 
   //inherited functions
@@ -54,14 +58,11 @@ public:/*-------------------------------------------------------*/
 
 enum transformation_type
 {
-  TRANSFORM_LINEAR,            /// < basic linear transformation, calculated as dC/dt=-k*C; dA/dt=+k*C
-  TRANSFORM_LINEAR_ANALYTIC,   /// < analytic treatment of decay over finite time step
-  TRANSFORM_NONLINEAR,         /// < basic power law transformation, calculated as dC/dt=-k*C^n; dA/dt=+k*C^n
-  TRANSFORM_NONLIN_ANALYTIC,   /// < analytic treatment of nonlinear transformation over finite time step
-  TRANSFORM_MINERALIZATION     /// < Nitrate mineralization 
+  TRANS_LINEAR,            /// < analytic treatment of decay over finite time step, dC/dt=-k*C dA/dt=+s*k*C
+  TRANS_NONLINEAR         /// < basic power law transformation, analytic treatment  calculated as dC/dt=-k*C^n; dA/dt=+s*k*C^n
 };
 ////////////////////////////////////////////////////////////////////
-/// \brief Calculates the decay of a substance
+/// \brief Calculates the decay of a substance in a particular water store
 //
 class CmvTransformation: public CHydroProcessABC
 {
@@ -71,10 +72,12 @@ private:/*------------------------------------------------------*/
   transformation_type _ttype;  ///< transformation algorithm type
   int _constit_ind1;           ///< index of reactant constituent 
   int _constit_ind2;           ///< index of product constituent 
+  int _process_ind;            ///< index of transport process name
+  int _iWaterStore;            ///< index of water store (or DOESNT_EXIST if this should occur in all water compartments)
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvTransformation(string reactant_name, string product_name, transformation_type ttyp, CTransportModel *pTransportModel);
+  CmvTransformation(string reactant_name, string product_name, transformation_type ttyp,int proc_ind,int iWatStor, CTransportModel *pTransportModel);
   ~CmvTransformation();
 
   //inherited functions

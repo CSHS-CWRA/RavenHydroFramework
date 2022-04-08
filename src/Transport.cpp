@@ -40,8 +40,15 @@ CTransportModel::CTransportModel(CModel *pMod)
   _pConstitModels=NULL;
   _pEnthalpyModel=NULL;
 
+  _stoichio=NULL;
+  _pGeochemParams=NULL;
+  _nGeochemParams=0;
+
   _aIndexMapping=NULL; _nIndexMapping=0;
   
+  _aProcessNames=NULL;
+  _nProcessNames=0;
+
   _pTransModel=this;
 }
 //////////////////////////////////////////////////////////////////
@@ -59,6 +66,11 @@ CTransportModel::~CTransportModel()
   delete[] _iWaterStorage;  _iWaterStorage=NULL;
   delete[] _pConstitModels; _pConstitModels=NULL;
   delete[] _aIndexMapping;  _aIndexMapping=NULL;
+  if(_stoichio!=NULL) { for(int c=0;c<_nConstituents;c++) { delete[] _stoichio[c]; } delete[] _stoichio; }
+  if(_pGeochemParams!=NULL) {
+    for(int i=0;i<_nGeochemParams;i++) { delete _pGeochemParams[i]; } delete[] _pGeochemParams;
+  }
+  delete[] _aProcessNames;  _aProcessNames=NULL;
 }
 
 //Static declaration
@@ -192,7 +204,6 @@ string CTransportModel::GetConstituentShortName(const int m) const
   return "!"+_pConstitModels[c]->GetName()+"|"+CStateVariable::SVTypeToString(typ,ind);
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief returns global sv index of water storage unit corresponding to CONSTITUENT[m], or DOESNT_EXIST if layer index is invalid
 //
@@ -203,6 +214,7 @@ int CTransportModel::GetWaterStorIndexFromLayer(const int m) const
   m_to_cj(m,c,j);
   return _iWaterStorage[j];
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of water compartments in model
 //
@@ -211,7 +223,7 @@ int    CTransportModel::GetNumWaterCompartments() const { return _nWaterCompartm
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of water transport connections in model
 //
-int    CTransportModel::GetNumAdvConnections() const { return _nAdvConnections; }
+int    CTransportModel::GetNumAdvConnections() const    { return _nAdvConnections; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of lateral water transport connections in model
@@ -221,18 +233,9 @@ int    CTransportModel::GetNumLatAdvConnections() const { return _nLatConnection
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of constituents transported in model
 //
-int    CTransportModel::GetNumConstituents() const { return _nConstituents; }
+int    CTransportModel::GetNumConstituents() const      { return _nConstituents; }
 
-//////////////////////////////////////////////////////////////////
-/// \brief returns constituent c in model
-//
-const transport_params *CTransportModel::GetConstituentParams(const int c) const
-{
-#ifdef _STRICTCHECK_
-  ExitGracefullyIf((c<0) || (c >= _nConstituents),"CTransportModel::GetConstituent: invalid index",BAD_DATA);
-#endif
-  return _pConstitModels[c]->GetConstituentParams();
-}
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns constituent model c in model
 //
@@ -243,6 +246,7 @@ CConstituentModel *CTransportModel::GetConstituentModel(const int c)
 #endif
   return _pConstitModels[c];
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns constituent model c in model (const version)
 //
@@ -253,6 +257,7 @@ CConstituentModel *CTransportModel::GetConstituentModel2(const int c) const
 #endif
   return _pConstitModels[c];
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns index c of constituents transported in model
 //
@@ -322,6 +327,19 @@ int    CTransportModel::GetStorIndex(const int c,const int ii) const
 {
   int j=_aIndexMapping[_iWaterStorage[ii]];
   return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns global state variable index of  constituent mass compartment
+/// \param i [in] global index of water storage 
+/// \returns ii, local index of water storage unit 
+//
+int    CTransportModel::GetWaterStorIndexFromSVIndex(const int i) const
+{
+  for(int ii=0;ii<_nWaterCompartments;ii++) {
+    if(_iWaterStorage[ii]==i) { return ii; }
+  }
+  return DOESNT_EXIST;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -430,6 +448,7 @@ double CTransportModel::GetConcentration(const int k,const int sv_index) const
 
   return _pConstitModels[c]->CalculateReportingConcentration(mass,vol);
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
 /// \note adds corresponding state variables to model
@@ -439,6 +458,60 @@ double CTransportModel::GetConcentration(const int k,const int sv_index) const
 double CTransportModel::GetAdvectionCorrection(const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const
 {
   return _pConstitModels[c]->GetAdvectionCorrection(pHRU,iFromWater,iToWater,C);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Get stoichiometric coefficient for c1->c2
+//
+double   CTransportModel::GetStoichioCoeff(const int c1,const int c2) const {
+  return _stoichio[c1][c2];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return index of process, or DOESNT_EXIST if name not found in process list
+//
+int   CTransportModel::GetProcessIndex(const string name) const 
+{
+  for(int i=0;i<_nProcessNames;i++) {
+    if (StringToUppercase(_aProcessNames[i])==StringToUppercase(name)){return i;}
+  }
+  return DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns geochemical parameter value
+/// \notes needs optimization! - perhaps hand in iguess?
+/// note - if procind==DOESNT_EXIST, first value of parameter regardless of process name is used (means that (e.g.) global decay rate should be specified before local decay rates in .rvp file)
+/// This could be a problem when we have dozens of geochemistry parameters 
+/// other solution - make 2D array of parameters _pGeochemParams[gtyp][i] with size _nGeochemParams[gtyp]
+//
+double CTransportModel::GetGeochemParam(const gparam_type gtyp, const int c,const int ii,const int procind,const CHydroUnit* pHRU) const 
+{
+  //cout<<" GEOCHEM PAR 1"<<_nGeochemParams<<endl;
+  for(int i=0;i<_nGeochemParams;i++) {
+    if (_pGeochemParams[i]->type!=gtyp){ continue;}
+    if ((_pGeochemParams[i]->ii_water_stor!=DOESNT_EXIST) && (_pGeochemParams[i]->ii_water_stor!=ii)) { continue;}
+    if ((procind!=DOESNT_EXIST) && (_pGeochemParams[i]->process_ind!=procind)) { continue; }
+    if (_pGeochemParams[i]->constit_ind!=c){ continue;}
+    //TODO - handle soil type 
+    return _pGeochemParams[i]->value;
+  }
+  return NOT_SPECIFIED;
+}
+double CTransportModel::GetGeochemParam(const gparam_type gtyp,const int c,const int c2,const int ii,const int procind,const CHydroUnit* pHRU) const
+{
+  //cout<<" GEOCHEM PAR "<<_nGeochemParams<<endl;
+  for(int i=0;i<_nGeochemParams;i++) {
+    geochem_param *p=_pGeochemParams[i];
+    //cout<<" GEOCHEM PAR "<<p->type<<" "<<p->constit_ind<<" "<<p->constit_ind2<<" "<<p->ii_water_stor<<" "<<p->value<<endl;
+    if(_pGeochemParams[i]->type!=gtyp) { continue; }
+    if((_pGeochemParams[i]->ii_water_stor!=DOESNT_EXIST) && (_pGeochemParams[i]->ii_water_stor!=ii)) { continue; }
+    if((procind!=DOESNT_EXIST) && (_pGeochemParams[i]->process_ind!=procind)) { continue; }
+    if(_pGeochemParams[i]->constit_ind!=c) { continue; }
+    if(_pGeochemParams[i]->constit_ind2!=c2) { continue; }
+    //TODO - handle soil type 
+    return _pGeochemParams[i]->value;
+  }
+  return NOT_SPECIFIED;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds new transportable constituent to model
@@ -696,35 +769,58 @@ void   CTransportModel::CalculateLateralConnections()
     }
   }
 }
-
 //////////////////////////////////////////////////////////////////
-/// \brief Set transport parameter value for specified constituent
+/// \brief Set stoichiometric coefficient for c1->c2
 //
-void   CTransportModel::SetGlobalParameter(const string const_name,const string param_name,const double &value,bool noisy)
+void   CTransportModel::SetStoichioCoeff(const int c1,const int c2,const double& val) {
+  _stoichio[c1][c2]=val;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Add geochem parameter
+/// \param typ [in] geochemical parameter type
+/// \param constit_name [in] name of constitutent 
+/// \param constit_name2 [in] name of 2nd constituent (or "" if not relevant)
+/// \param procname [in] process name
+/// \param watcompart [in] SV index i of water compartment state variable (or DOESNT_EXIST if parameter not linked to compartment)
+/// \param pclass [in] parameter class name string (or "" if parameter not linked to class)
+/// \param value [in] parameter value
+//
+void   CTransportModel::AddGeochemParam(const gparam_type typ,const string constit_name,const string constit_name2,
+                                        const string procname,const int watcompart,const string pclass,const double& value)
 {
+  AddProcessName(procname);
 
-  int constit_ind=GetConstituentIndex(const_name);
-  if(constit_ind==DOESNT_EXIST) {
-    WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized constituent name",noisy);
+  geochem_param* par=new geochem_param(typ);
+  par->value=value;
+  par->constit_ind=GetConstituentIndex(constit_name);
+  if (constit_name2!=""){ par->constit_ind2=GetConstituentIndex(constit_name2); }
+  par->class_name =pclass;
+  par->process_ind=GetProcessIndex(procname);
+  if(watcompart!=DOESNT_EXIST) {
+    par->ii_water_stor= GetWaterStorIndexFromSVIndex(watcompart);
   }
+  ExitGracefullyIf(par->constit_ind==DOESNT_EXIST,"AddGeochemParam: invalid constituent name in :GeochemParameter command",BAD_DATA_WARN);
 
-  //_pConstitModels[constit_ind]->SetConstitParameter(param_name,value,noisy);
- 
-  /*string ustr=StringToUppercase(param_name);
-  if(ustr=="DECAY_COEFF") {
-    // REFACTOR ISSUE:
-     //_pConstitModels[constit_ind]->GetConstituentParams()->decay_coeff=value;
-    //_pConstitParams[constit_ind]->decay_coeff=value;
-    ExitGracefullyIf(value<0.0," CTransportModel::SetGlobalParameter: decay coefficient cannot be negative",BAD_DATA_WARN);
-  }
-  //else if (ustr=="OTHER PARAM"){
-  //...
-  //}
-  else {
-    WriteWarning("CTransportModel::SetGlobalParameter: Unrecognized parameter name",noisy);
-  }*/
+  DynArrayAppend((void**&)(_pGeochemParams),(void*)(par),_nGeochemParams);
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief add process name to process list
+/// \param name [in] name of process
+//
+void   CTransportModel::AddProcessName(string name) 
+{
+  if (GetProcessIndex(name)!=DOESNT_EXIST){return;}//name on list already
+
+  string *tmp=new string[_nProcessNames+1];
+  for(int i=0;i<_nProcessNames;i++) {
+    tmp[i]=_aProcessNames[i];
+  }
+  tmp[_nProcessNames]=name;
+  delete [] _aProcessNames;
+  _aProcessNames=tmp;
+  _nProcessNames++;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization of all transport variables
 /// \note determines initial conditions for all constituents, initializes routing variables
@@ -737,6 +833,23 @@ void CTransportModel::Initialize(const optStruct &Options)
   }
   CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Initialization of all transport parameter variables
+/// \note  called after all constituents have been added by CModel::Initialize but BEFORE .rvp file read
+//
+void CTransportModel::InitializeParams(const optStruct& Options)
+{
+  //generate stoichiometric table 
+  _stoichio=new double* [_nConstituents];
+  for(int c=0;c<_nConstituents;c++) {
+    _stoichio[c]=new double [_nConstituents];
+    for(int c2=0;c2<_nConstituents;c2++) {
+      _stoichio[c][c2]=1.0;
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Increment cumulative mass/energy added to watershed
 /// \param Options [in] Global model options structure

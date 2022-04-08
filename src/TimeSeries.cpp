@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -791,7 +791,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
     return pTimeSeries;
   }
   
-  if (Len<4){p->ImproperFormat(s); cout <<"Length:" <<Len<<endl;}
+  
   
   // ANNUALCYCLE FORMAT ==========================================================
   if(!strcmp(s[0],":AnnualCycle"))
@@ -816,11 +816,59 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
     return pTimeSeries;
   }
 
+  // ANNUALEVENTS FORMAT =========================================================
+  if(!strcmp(s[0],":AnnualEvents"))
+  {
+    int    *days=new int    [(int)(DAYS_PER_YEAR)];
+    double *vals=new double [(int)(DAYS_PER_YEAR)];
+    int nEvents=0;
+   
+    p->Tokenize(s,Len);
+    bool done=false;
+    while(!done)
+    {
+      if   (IsComment(s[0],Len)) {}//comment line
+      else if(Len==2) { 
+        days[nEvents]=s_to_i(s[0])-1; //convert from integer julian days to Raven 0-indexed julian days
+        vals[nEvents]=s_to_d(s[1]);
+        nEvents++; 
+      }
+      else            { p->ImproperFormat(s); break; }
+      bool eof=p->Tokenize(s,Len);
+      if (eof){done=true;}
+      if(!strcmp(s[0],":EndAnnualEvents")) { done=true; }
+    }
+
+    double* aVal;
+    int nVals=int(Options.duration)+1;
+    aVal =new double[nVals];
+    time_struct tt;
+    
+    for(int n=0;n<nVals;n++) {
+      JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+      aVal[n]=0;
+      for(int i=0;i<nEvents;i++) {
+        if(tt.julian_day==days[i]){aVal[n]=vals[i]; cout<<"ANNUAL EVENT "<<tt.date_string<<endl; }
+      }
+    }
+
+    pTimeSeries=new CTimeSeries(name,loc_ID,p->GetFilename(),Options.julian_start_day,Options.julian_start_year,1.0,aVal,nVals,is_pulse);
+    delete[] aVal; aVal=NULL;
+    delete[] days; days=NULL;
+    delete[] vals; vals=NULL;
+
+    p->Tokenize(s,Len);//read closing term (e.g., ":EndData")
+    if(string(s[0]).substr(0,4)!=":End") {
+      ExitGracefully("CTimeSeries: Parse: no :EndData command (or similar :End* command) used with :AnnualEvents command ",BAD_DATA);
+    }
+    return pTimeSeries;
+  }
+
   // REGULAR FORMAT ==============================================================
+  if(Len<4) { p->ImproperFormat(s); cout <<"Length:" <<Len<<endl; }
   if(IsValidDateString(s[0]))
   { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
     time_struct tt;
-
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]),Options.calendar);
     start_day=tt.julian_day;
     start_yr =tt.year;

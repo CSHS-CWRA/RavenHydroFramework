@@ -149,19 +149,19 @@ double CalcFreshSnowDensity(const double &air_temp)
 
   // \ref WATCLASS , also USACE (1956) (from Hedstrom & Pomeroy)
   if (air_temp<=FREEZING_TEMP) {
-    return 67.92+51.25*exp((air_temp-FREEZING_TEMP)/2.59);
+    return 67.92+51.25*exp((air_temp-FREEZING_TEMP)/2.59); //range: 67.92-119.17
   }
   else{
-    return min((119.17+20.0*(air_temp-FREEZING_TEMP)),200.0);
+    return min((119.17+20.0*(air_temp-FREEZING_TEMP)),200.0); //range: 119.18-200
   }
 
   //From Hydrotel 2.1 documentation, eqn 3.1
-  //return max(50.0,min(151.0,151+10.63*air_temp+0.2767*air_temp*air_temp)); 
+  //return max(50.0,min(151.0,151+10.63*air_temp+0.2767*air_temp*air_temp)); //range: 50 to 151
 
   ///< or (Anderson, 1976 -CLM manual eqn 7.18) \cite anderson1976
   /*if      (air_temp>+2.0 ){return 169.15;}
     else if (air_temp<-15.0){return 50.0;}
-    else                    {return 50+1.7*pow(air_temp+15,1.5)
+    else                    {return 50+1.7*pow(air_temp+15,1.5) //range: 50-169.15
     }*/
 }
 

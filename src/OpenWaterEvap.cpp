@@ -100,7 +100,6 @@ void CmvOWEvaporation::GetParticipatingStateVarList(owevap_type owtype, sv_type 
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rate of loss of water from open water to atmosphere [mm/d]
-/// \details if type==OPEN_WATER_EVAP, evaporation is calculated using fraction of PET method
 ///
 /// \param *state_vars [in] Current array of state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU

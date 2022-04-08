@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ------------------------------------------------------------------
   Flush (abstract move of all water from one compartment to another)
   Split (move water to two compartments)
@@ -281,14 +281,17 @@ void   CmvOverflow::ApplyConstraints(const double                *state_var,
 /// \param In_index [in] Index of the main storage compartment
 /// \param Out_index [in] Index of the mixing storage compartment
 //
-CmvExchangeFlow::CmvExchangeFlow(int                                    In_index,                       //soil water storage
-                                 int                                      Out_index)//soil water storage
+CmvExchangeFlow::CmvExchangeFlow(int   In_index,                       //soil water storage
+                                 int   Out_index)//soil water storage
   :CHydroProcessABC(EXCHANGE_FLOW,In_index,Out_index)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
                    "CmvOverflow Constructor: invalid 'to' compartment specified",BAD_DATA);
+  CHydroProcessABC::DynamicSpecifyConnections(2);
+  iFrom[0]=In_index;  iTo[0]=Out_index;
+  iFrom[1]=Out_index; iTo[1]=In_index;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -345,7 +348,7 @@ void   CmvExchangeFlow::GetRatesOfChange( const double                  *state_v
                                           const time_struct &tt,
                                           double     *rates) const
 {
-  int m   = pModel->GetStateVarLayer(iTo[0]); //uses mixing layer property
+  int m   = pModel->GetStateVarLayer(iFrom[0]); //uses mixing layer property
   rates[0] = pHRU->GetSoilProps(m)->exchange_flow;
   rates[1] = pHRU->GetSoilProps(m)->exchange_flow;
 }

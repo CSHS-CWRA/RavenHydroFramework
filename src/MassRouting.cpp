@@ -276,13 +276,16 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
     double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
     
     decay_coeff=0.0;
-    if(pHRU!=NULL) { decay_coeff =GetDecayCoefficient(pHRU,iSW)*Res_mass; }
+    if(pHRU!=NULL) { 
+      int     ii  = _pTransModel->GetWaterStorIndexFromSVIndex(iSW);
+      decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_index,ii,DOESNT_EXIST,pHRU);
+    }
 
     //Explicit solution of Crank-nicolson problem
     //dM/dt=QC_in-QC_out-lambda*M
     //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
 
-    tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff));
+    tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff*Res_mass));
     tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1]+_aMout[p][nSegments-1]);//inflow is outflow from channel
     tmp+=_aMresRain[p]*Options.timestep;
     tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));

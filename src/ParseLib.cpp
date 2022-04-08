@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ParseLib.h"
@@ -98,7 +98,7 @@ bool CParser::Tokenize(char **out, int &numwords){
 void   CParser::ImproperFormat(char **s)
 {
   cout <<"line "<< l << " in file "<<filename<< " is wrong length"<<endl; //FOR NOW
-  cout <<"line "<< l << ": "<<s<<endl;
+  cout <<"line "<< l << ": "<<s[0]<<endl;
 }
 /*----------------------------------------------------------------*/
 void CParser::SkipLine()

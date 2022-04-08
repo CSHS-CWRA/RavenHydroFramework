@@ -989,6 +989,7 @@ double CReservoir::GetAET() const
       Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
       return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/_pHRU->GetArea(); //normalized to HRU area 
     }
+    return 0.0;
   }
   else {
     return 0.0;

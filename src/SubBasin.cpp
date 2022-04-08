@@ -1265,7 +1265,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       }
       
       ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
-      //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AnnualAvgRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
+      //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AvgAnnualRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
       //WriteAdvisory(advice,false);
     }
     else{

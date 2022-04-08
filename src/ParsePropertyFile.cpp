@@ -326,7 +326,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":UBCSouthSWCorr"         )){code=751;}  //TEMP
     else if  (!strcmp(s[0],":GlobalParameter"        )){code=720;}
     //--------------------TRANSPORT-------------------------------
-    else if  (!strcmp(s[0],":GlobalTransportParam"   )){code=900;}
+    else if  (!strcmp(s[0],":GeochemParameter"       )){code=900;}
     else if  (!strcmp(s[0],":SoilTransportParamList" )){code=901;}
     else if  (!strcmp(s[0],":SoilTransportParameterList" )){code=901;}
     //--------------------OTHER ------- ------------------------
@@ -1300,11 +1300,34 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       }
     }
     case(900):  //----------------------------------------------
-    {/*:GlobalTransportParam [NAME] [constit_name] [value]*/
-      if (Options.noisy){cout <<"GlobalTransportParam"<<endl;}
-      if (Len<4){p->ImproperFormat(s); break;}
+    {/*:GeochemParameter [param_name] [constit] {constit2} [process] {compartment} {class} [value]*/
+      if (Options.noisy){cout <<"GeochemParameter"<<endl;}
+      if (Len<5){p->ImproperFormat(s); break;}
+      int    shift =0;
+      int    iComp =DOESNT_EXIST;
+      string pClass="";
+      gparam_type typ;
+      if     (!strcmp(s[1],"DECAY_COEFF"    )) { typ=PAR_DECAY_COEFF; }
+      else if(!strcmp(s[1],"UPTAKE_COEFF"   )) { typ=PAR_UPTAKE_COEFF; }
+      else if(!strcmp(s[1],"TRANSFORM_COEFF")) { typ=PAR_TRANSFORM_COEFF; shift=1;}
+      
+      if(Len>=6+shift) { 
+        int layer_ind;
+        sv_type typ=CStateVariable::StringToSVType(s[4+shift],layer_ind,false);
+        if(typ==UNRECOGNIZED_SVTYPE) {
+          WriteWarning(":GeochemParameter command: unrecognized storage variable name: "+to_string(s[6]),Options.noisy);
+          break;
+        }
+        iComp=pModel->GetStateVarIndex(typ,layer_ind);
+      }
+      if(Len>=7+shift) {
+        pClass=s[5+shift];
+      }
+      
       if (pModel->GetTransportModel()!=NULL){
-        pModel->GetTransportModel()->SetGlobalParameter(s[2],s[1],s_to_d(s[3]),Options.noisy);
+        string const2="";
+        if (shift==1){const2=s[3];}
+        pModel->GetTransportModel()->AddGeochemParam(typ,s[2],const2,s[3+shift],iComp,pClass,s_to_d(s[Len-1]));
       }
       break;
     }

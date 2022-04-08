@@ -1,10 +1,11 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   Canopy Evaporation
   Canopy Snow Sublimation
   Canopy Drip
+  Canopy Snow Melt
   ----------------------------------------------------------------*/
 
 #include "HydroProcessABC.h"
@@ -135,23 +136,23 @@ void CmvCanopyEvap::GetRatesOfChange( const double      *state_vars,
     rates[0]=(1.0-Ft)*Fc*PET*(stor/(cap*Fc));
     PETused=rates[0];
   }
-  else if (type==CANEVP_MAXIMUM)//----------------------------------
+  else if (type==CANEVP_MAXIMUM)//-------------------------------
   {
     rates[0]=Fc*PET;
     PETused=rates[0];
   }
-  else if (type==CANEVP_ALL)//----------------------------------
+  else if (type==CANEVP_ALL)//-----------------------------------
   {
     //all canopy mass evaporates 'instantaneously'
     rates[0]=state_vars[iFrom[0]]/Options.timestep;
     PETused=rates[0];
   }
-  else//--------------------------------------------------------
+  else//---------------------------------------------------------
   {
     ExitGracefully("CmvCanopyEvap: this process not coded yet",STUB);
   }
 
-   rates[1]=PETused;
+  rates[1]=PETused;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -191,7 +192,7 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 //*****************************************************************************************
 
 /*****************************************************************
-   Canopy Snow Evaporation Constructor/Destructor
+   Canopy Snow Sublimation Constructor/Destructor
 ------------------------------------------------------------------
 *****************************************************************/
 

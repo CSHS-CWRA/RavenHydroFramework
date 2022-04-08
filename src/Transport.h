@@ -28,9 +28,32 @@ struct constit_source
   const  CTimeSeries *pTS; ///< time series of fixed concentration or mass/heat flux (or NULL if fixed should be used)
 };
 
-struct transport_params
+enum gparam_type 
 {
-  double decay_coeff;     ///< constituent base linear decay coefficient [1/d]
+  PAR_DECAY_COEFF,        ///< linear decay coefficient  [1/d]
+  PAR_TRANSFORM_COEFF,    ///< linear transformation coeff [1/d for n=1, (mg/L)^-n /d for n!=1] 
+  PAR_UPTAKE_COEFF,       ///< uptake coefficeint [-]
+  PAR_TRANSFORM_N         ///< transformation exponent [-]
+};
+struct geochem_param 
+{
+  gparam_type type;         ///< parameter type 
+  double      value;        ///< parameter value (units determined by type)
+  int         constit_ind;  ///< constituent index 
+  int         constit_ind2; ///< 2nd constituent index (for reactions/transformations)
+  int         process_ind;  ///< process index
+  string      class_name;   ///< soil/veg/LU class name
+  int         ii_water_stor; ///< water storage compartment index ii
+
+  geochem_param(gparam_type ty) { //default constructor
+    type         =ty;
+    value        =0.0;
+    constit_ind  =0;
+    constit_ind2 =DOESNT_EXIST;
+    process_ind  =DOESNT_EXIST;
+    ii_water_stor=DOESNT_EXIST;
+    class_name   ="";
+  }
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -47,22 +70,30 @@ private:/*------------------------------------------------------*/
   CModel *pModel;                    ///< pointer to model object
 
   int  _nAdvConnections;             ///< number of advective/dispersive transport connections between water storage units
-  int *_iFromWater;                  ///< state variable indices of water compartment source [size: nAdvConnections]
+  int *_iFromWater;                  ///< state variable indices of water compartment source      [size: nAdvConnections]
   int *_iToWater;                    ///< state variable indices of water compartment destination [size: nAdvConnections]
-  int *_js_indices;                  ///< process index (j*) of connection [size: nAdvConnections]
+  int *_js_indices;                  ///< process index (j*) of connection                        [size: nAdvConnections]
 
   int  _nLatConnections;             ///< number of lateral advective transport connections between water storage units
-  int  *_iLatFromWater;              ///< state variable indices of water compartment source [size: _nLatConnections]
+  int  *_iLatFromWater;              ///< state variable indices of water compartment source      [size: _nLatConnections]
   int  *_iLatToWater;                ///< state variable indices of water compartment destination [size: _nLatConnections]
-  int  *_iLatFromHRU;                ///< state variable indices of water compartment source [size: _nLatConnections]
+  int  *_iLatFromHRU;                ///< state variable indices of water compartment source      [size: _nLatConnections]
   int  *_iLatToHRU;                  ///< state variable indices of water compartment destination [size: _nLatConnections]
-  int  *_latqss_indices;             ///< process index (q**) of connection [size: nLatConnections]
+  int  *_latqss_indices;             ///< process index (q**) of connection                       [size: _nLatConnections]
 
   int  _nWaterCompartments;          ///< number of water storage compartments which may contain constituent
   int *_iWaterStorage;               ///< state variable indices of water storage compartments which may contain constituent [size: _nWaterCompartments]
-  int *_aIndexMapping;               ///< lookup table to convert state variable index i to local water storage index [size: pModel::_nStateVars prior to transport variables being included]
-                                     ///< basically inverse of iWaterStorage
+  int *_aIndexMapping;               ///< lookup table to convert global state variable index i to local water storage index ii [size: pModel::_nStateVars prior to transport variables being included]
+                                     ///< basically inverse of _iWaterStorage
   int  _nIndexMapping;               ///< size of index mapping array [=pModel::_nStateVars prior to transport variables being included]
+
+  string         *_aProcessNames;    ///< list of recognized geochemical process names  [size: _nProcessNames]
+  int             _nProcessNames;    ///< size of process name list 
+
+  geochem_param **_pGeochemParams;   ///< array of pointers to geochem parameter structures [size: _nTransParams]
+  int             _nGeochemParams;   ///< number of geochemistry paramers 
+
+  double        **_stoichio;         ///< stoichiometry table relating conversion of one type to other [size: _nConstituents*_nConstitutents]
 
   int                 _nConstituents;  ///< number of transported constituents [c=0.._nConstituents-1]
   CConstituentModel **_pConstitModels; ///< array of pointers to constituent models [size:_nConstituents]
@@ -88,7 +119,6 @@ public:/*-------------------------------------------------------*/
   string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
 
   int    GetNumConstituents() const;
-  const transport_params *GetConstituentParams(const int c) const;
   int    GetConstituentIndex(const string name) const;
 
   CConstituentModel *GetConstituentModel(const int c);
@@ -115,8 +145,13 @@ public:/*-------------------------------------------------------*/
 
   int    GetStorWaterIndex(const int ii) const;
   int    GetWaterStorIndexFromLayer(const int m) const;
+  int    GetWaterStorIndexFromSVIndex(const int i) const;
 
   int    GetLayerIndex(const int c,const int i_stor) const;
+
+  double GetStoichioCoeff   (const int c, const int c2) const;
+  double GetGeochemParam    (const gparam_type gtyp, const int c, const int ii, const int procind, const CHydroUnit *pHRU) const;
+  double GetGeochemParam    (const gparam_type gtyp, const int c, const int c2, const int ii,const int procind,const CHydroUnit* pHRU) const;
 
   const CEnthalpyModel *GetEnthalpyModel() const;
 
@@ -124,23 +159,28 @@ public:/*-------------------------------------------------------*/
 
   double GetAdvectionCorrection     (const int c,const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
 
+  int    GetProcessIndex            (const string name) const;
 
   //Manipulators
+  void   SetStoichioCoeff           (const int c1, const int c2, const double &val);
   void   AddConstituent             (string name,constit_type type,bool is_passive);
-  //
+  void   AddProcessName             (string name);
+  void   AddGeochemParam            (const gparam_type typ,const string constit_name,const string constit_name2,
+                                     const string procname,const int watcompart, const string pclass, const double &value);
+
+  //Routines called during model execution
   void   Prepare                    (const optStruct &Options);
   void   Initialize                 (const optStruct& Options);
+  void   InitializeParams           (const optStruct& Options); //called at end of .rvi file read
   void   CalculateLateralConnections();
 
   void   IncrementCumulInput        (const optStruct &Options,const time_struct &tt);
   void   IncrementCumulOutput       (const optStruct &Options);
 
-  void   SetGlobalParameter(const string const_name,const string param_name,const double &value,bool noisy);
-
-  void   WriteOutputFileHeaders      (const optStruct &Options) const;
-  void   WriteMinorOutput            (const optStruct &Options,const time_struct &tt) const;
-  void   WriteMajorOutput            (ofstream& RVC) const;
-  void   CloseOutputFiles            () const;
+  void   WriteOutputFileHeaders     (const optStruct &Options) const;
+  void   WriteMinorOutput           (const optStruct &Options,const time_struct &tt) const;
+  void   WriteMajorOutput           (ofstream& RVC) const;
+  void   CloseOutputFiles           () const;
 };
 ///////////////////////////////////////////////////////////////////
 /// \brief Class for coordinating transport simulation for specific constituent
@@ -156,8 +196,6 @@ protected:
   int               _constit_index;  ///< master constituent index, c,  of this constituent 
   constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], ISOTOPE [mg/mg] or TRACER [-]
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
-
-  transport_params *_pConstitParams; ///< pointer to constituent parameters 
 
   // Routing/state var storage
   double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x nMinhist(p)]
@@ -197,7 +235,6 @@ protected:
 
   // private member funcctions
   void   DeleteRoutingVars();
-  void   InitializeConstitParams(transport_params *P);
 
   // mass balance routines
   double GetTotalRivuletConstituentStorage() const;
@@ -212,7 +249,6 @@ public:/*-------------------------------------------------------*/
   ~CConstituentModel();
 
   // Accessors
-  const transport_params *GetConstituentParams() const;
   constit_type            GetType() const;
   string                  GetName() const;
   bool                    IsPassive() const;
@@ -223,7 +259,6 @@ public:/*-------------------------------------------------------*/
   bool   IsDirichlet             (const int i_stor,const int k,const time_struct &tt,double &Cs, const double blend=1.0) const;
   double GetSpecifiedMassFlux    (const int i_stor,const int k,const time_struct &tt) const;
 
-  double GetDecayCoefficient     (const CHydroUnit *pHRU,const int iStorWater) const;
   virtual double GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& C) const;
 
   virtual double CalculateReportingConcentration(const double &M,const double &V) const;

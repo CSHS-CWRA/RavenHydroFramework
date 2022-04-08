@@ -7,7 +7,7 @@
   CmvSoilEvap
   CmvInterflow
   CmvPercolation
-  CmvCappilaryRise
+  CmvCapillaryRise
   CmvDrain
   CmvRecharge
   CmvSoilBalance
