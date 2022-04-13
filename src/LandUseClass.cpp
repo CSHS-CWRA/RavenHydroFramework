@@ -343,6 +343,9 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.uwfs_b,Stmp.uwfs_b,Sdefault.uwfs_b,needed,"UWFS_B");
   SetSpecifiedValue(S.uwfs_betamin,Stmp.uwfs_betamin,Sdefault.uwfs_betamin,needed,"UWFS_BETAMIN");
   SetSpecifiedValue(S.bf_loss_fraction,Stmp.bf_loss_fraction,Sdefault.bf_loss_fraction,needed,"BF_LOSS_FRACTION");
+  SetSpecifiedValue(S.AWBM_areafrac1,Stmp.AWBM_areafrac1,Sdefault.AWBM_areafrac1,needed,"AWBM_AREAFRAC1");
+  SetSpecifiedValue(S.AWBM_areafrac2,Stmp.AWBM_areafrac2,Sdefault.AWBM_areafrac2,needed,"AWBM_AREAFRAC2");
+  SetSpecifiedValue(S.AWBM_bflow_index,Stmp.AWBM_bflow_index,Sdefault.AWBM_bflow_index,needed,"AWBM_BFLOW_INDEX");
   SetSpecifiedValue(S.lake_rel_coeff,Stmp.lake_rel_coeff,Sdefault.lake_rel_coeff,needed,"LAKE_REL_COEFF");
   SetSpecifiedValue(S.abst_percent,Stmp.abst_percent,Sdefault.abst_percent,needed,"ABST_PERCENT");
   SetSpecifiedValue(S.HBV_glacier_Kmin,Stmp.HBV_glacier_Kmin,Sdefault.HBV_glacier_Kmin,needed,"HBV_GLACIER_KMIN");
@@ -427,6 +430,9 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.uwfs_b            =DefaultParameterValue(is_template,false);//~1-10     //[-]
   S.uwfs_betamin      =DefaultParameterValue(is_template,false);//1+        //[-]
   S.bf_loss_fraction  =DefaultParameterValue(is_template,false);//0.0       //[0..1]
+  S.AWBM_areafrac1    =DefaultParameterValue(is_template,false);//0.134     //[0..1]
+  S.AWBM_areafrac2    =DefaultParameterValue(is_template,false);//0.433     //[0..1]
+  S.AWBM_bflow_index  =DefaultParameterValue(is_template,false);//0.3       //[0..1]
 
   S.dep_threshhold    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.lake_rel_coeff    =DefaultParameterValue(is_template,false);//0.3;      //[1/d]
@@ -521,6 +527,9 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("UWFS_B"                 )){S.uwfs_b =value; }
   else if (!name.compare("UWFS_BETAMIN"           )){S.uwfs_betamin =value; }
   else if (!name.compare("BF_LOSS_FRACTION"       )){S.bf_loss_fraction =value; }
+  else if (!name.compare("AWBM_AREAFRAC1"         )){S.AWBM_areafrac1 =value; }
+  else if (!name.compare("AWBM_AREAFRAC2"         )){S.AWBM_areafrac2 =value; }
+  else if (!name.compare("AWBM_BFLOW_INDEX"       )){S.AWBM_bflow_index =value; }
   else if (!name.compare("LAKE_REL_COEFF"         )){S.lake_rel_coeff =value;}
   else if (!name.compare("DEP_K"                  )){S.dep_k =value;}
   else if (!name.compare("DEP_SEEP_K"             )){S.dep_seep_k =value;}
@@ -618,6 +627,9 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("UWFS_B"                 )){return S.uwfs_b; }
   else if (!name.compare("UWFS_BETAMIN"           )){return S.uwfs_betamin; }
   else if (!name.compare("BF_LOSS_FRACTION"       )){return S.bf_loss_fraction; }
+  else if (!name.compare("AWBM_AREAFRAC1"         )){return S.AWBM_areafrac1; }
+  else if (!name.compare("AWBM_AREAFRAC2"         )){return S.AWBM_areafrac2; }
+  else if (!name.compare("AWBM_BFLOW_INDEX"       )){return S.AWBM_bflow_index; }
   else if (!name.compare("LAKE_REL_COEFF"         )){return S.lake_rel_coeff;}
   else if (!name.compare("ABST_PERCENT"           )){return S.abst_percent;}
   else if (!name.compare("OW_PET_CORR"            )){return S.ow_PET_corr;}

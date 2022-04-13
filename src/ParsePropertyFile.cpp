@@ -177,16 +177,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
       CSoilClass::SetSoilProperty    (*parsed_soils[0],aPmaster[p],val);
     }
-    else if(aPCmaster[p]==CLASS_SOIL_TRANSPORT)
-    {
-      for (int c=0;c<pModel->GetTransportModel()->GetNumConstituents();c++)
-      { 
-        val=CSoilClass::GetSoilTransportProperty(c,*parsed_soils[0],aPmaster[p]);
-        if(val==NOT_NEEDED_AUTO) { val=AUTO_COMPUTE; }
-        else if(val==NOT_NEEDED) { val=NOT_SPECIFIED; }
-        CSoilClass::SetSoilTransportProperty(c,0,*parsed_soils[0],aPmaster[p],val);
-      }
-    }
     else if (aPCmaster[p]==CLASS_VEGETATION)
     {
       val=CVegetationClass::GetVegetationProperty(parsed_veg[0],aPmaster[p]);
@@ -276,14 +266,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":RedirectToFile"         )){code=-3; }//redirect to secondary file
     //--------------------SOIL PARAMS --------------------------
     else if  (!strcmp(s[0],":SoilClasses"            )){code=1;  }//REQUIRED
-    else if  (!strcmp(s[0],":SoilProperties"         )){code=2;  }
     else if  (!strcmp(s[0],":SoilProfiles"           )){code=6;  }//REQUIRED
     else if  (!strcmp(s[0],":SoilParameterList"      )){code=57; }
     //--------------------LU/LT PARAMS -------------------------
     else if  (!strcmp(s[0],":LandUseClasses"         )){code=100;}//REQUIRED
     else if  (!strcmp(s[0],":LandUseParameterList"   )){code=101;}
     else if  (!strcmp(s[0],":SnowParameterList"      )){code=101;}// \todo TO BECOME OBSOLETE
-    else if  (!strcmp(s[0],":GlacierParameterList"   )){code=101;}// \todo TO BECOME OBSOLETE
     else if  (!strcmp(s[0],":LandUseChange"          )){code=102;}
     //--------------------VEGETATION PARAMS --------------------
     else if  (!strcmp(s[0],":VegetationClasses"      )){code=200;}//REQUIRED
@@ -322,13 +310,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":AirSnowCoeff"           )){code=716;}
     else if  (!strcmp(s[0],":AvgAnnualSnow"          )){code=717;}
     else if  (!strcmp(s[0],":AvgAnnualRunoff"        )){code=718;}
+
+    else if  (!strcmp(s[0],":GlobalParameter"        )){code=720;}
+
     else if  (!strcmp(s[0],":UBCNorthSWCorr"         )){code=750;}  //TEMP
     else if  (!strcmp(s[0],":UBCSouthSWCorr"         )){code=751;}  //TEMP
-    else if  (!strcmp(s[0],":GlobalParameter"        )){code=720;}
+
     //--------------------TRANSPORT-------------------------------
     else if  (!strcmp(s[0],":GeochemParameter"       )){code=900;}
-    else if  (!strcmp(s[0],":SoilTransportParamList" )){code=901;}
-    else if  (!strcmp(s[0],":SoilTransportParameterList" )){code=901;}
     //--------------------OTHER ------- ------------------------
     else if  (!strcmp(s[0],":TransientParameter"     )){code=800;}
     else if  (!strcmp(s[0],":HRUTypeChange"          )){code=801;} 
@@ -428,24 +417,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         p->Tokenize(s,Len);
         if (!strcmp(s[0],":EndSoilClasses")){done=true;}
       }
-      break;
-    }
-    case(2):  //----------------------------------------------
-    {/*SoilProperties
-       :SoilProperties 
-       {string soil_tag, double porosity,double stone_frac,double rho_bulk}x<=NumSoilClasses
-       :EndSoilProperties*/
-      if (Options.noisy) {cout <<"Soil Properties"<<endl;}
-
-      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,4,num_parsed_soils,aAliases,nAliases);
-      ExitGracefullyIf(invalid_index,
-                       "ParseClassPropertiesFile: Invalid soiltype code in SoilProperties command",BAD_DATA);
-      for (int i=0;i<num_read;i++)
-      {
-        parsed_soils[indices[i]]->porosity    =properties[i][0]; 
-        parsed_soils[indices[i]]->stone_frac  =properties[i][1];
-        parsed_soils[indices[i]]->bulk_density=properties[i][2];
-      } 
       break;
     }
     case(6):  //----------------------------------------------
@@ -1328,65 +1299,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         string const2="";
         if (shift==1){const2=s[3];}
         pModel->GetTransportModel()->AddGeochemParam(typ,s[2],const2,s[3+shift],iComp,pClass,s_to_d(s[Len-1]));
-      }
-      break;
-    }
-    case(901)://----------------------------------------------
-    {/*:SoilTransportParameterList
-       string ":SoilTransportParameterList" [constit_name] {optional constit_name2}
-       :Parameters, NAME_1,NAME_2,...,NAME_N
-       :Units,      unit_1,unit_2,...,unit_N
-       {string soil_tag, double param_1, param_2, ... ,param_3}x<=NumSoilClasses
-       :EndSoilTransportParameterList*/
-      if (Options.noisy) {cout <<"Soil Transport Parameter List"<<endl;}
-      
-      if (Len<2){p->ImproperFormat(s); break;}
-
-      int constit_ind=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
-      if (constit_ind==DOESNT_EXIST)
-      {
-        ExitGracefully("Parsing property file: invalid constituent name in :SoilTransportParameterList command",BAD_DATA_WARN); break;
-      }
-
-      int constit_ind2=DOESNT_EXIST;
-      if(Len>=3){
-        constit_ind2=pModel->GetTransportModel()->GetConstituentIndex(s[2]);
-        if (constit_ind2==DOESNT_EXIST) {
-          ExitGracefully("Parsing property file: invalid second constituent name in :SoilTransportParameterList command",BAD_DATA_WARN); break;
-        }
-      }
-
-      done=false;
-      nParamStrings=0;
-      while (!done)
-      {
-        p->Tokenize(s,Len);
-        if      (IsComment(s[0], Len)){}//comment line
-        else if (!strcmp(s[0],":Parameters")){
-          for (int i=0;i<Len;i++){
-            aParamStrings[i]=s[i];
-          }
-          nParamStrings=Len;
-          //done=true;
-        }
-        else if (!strcmp(s[0],":Units")){
-          //Do nothing with units for now
-          done=true;
-        }
-        else {p->ImproperFormat(s); break;} 
-      }
-      invalid_index=ParsePropArray(p,indices,properties,num_read,soiltags,nParamStrings,num_parsed_soils,aAliases,nAliases);
-      ExitGracefullyIf(invalid_index,
-                       "ParseClassPropertiesFile: Invalid soiltype code in SoilTransportParameterList command",BAD_DATA);
-      if (Options.noisy){
-        for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
-      }
-      for (int i=0;i<num_read;i++)
-      {
-        for (int j=0;j<nParamStrings-1;j++)
-        {
-          CSoilClass::SetSoilTransportProperty(constit_ind,constit_ind2,*parsed_soils[indices[i]],aParamStrings[j+1],properties[i][j]); 
-        }
       }
       break;
     }

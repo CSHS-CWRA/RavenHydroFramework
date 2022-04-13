@@ -23,17 +23,7 @@
 
 #include "RavenInclude.h"
 struct force_struct;
-///////////////////////////////////////////////////////////////////
-/// \brief structure which defines set of soil-related transport parameters
-//
-struct soil_trans_params
-{
-  double retardation;                     ///< [-]   soil-specific retardation factor
-  double mineraliz_rate;                  ///< [1/d] soil-specific mineralization rate 
-  double loss_rate;                       ///< [1/d] soil-specific unspecified linear loss rate
-  double transf_coeff[MAX_CONSTITUENTS];  ///< [1/d] linear transformation coefficients (one per species-species combination) 
-  double stoichio_coeff[MAX_CONSTITUENTS];///< [1/d] linear transformation coefficients (one per species-species combination) 
-};
+
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Structure that, when instantiated, contains defining information that reflects a specific soil type.
@@ -122,8 +112,6 @@ struct soil_struct
   double GR4J_x3;           ///< [mm]      GR4J reference storage for baseflow/GW exchange
 
   double exchange_flow;     ///< [mm/d]    exchange flow rate with mixing zone (greater than 0)
-
-  soil_trans_params *trans_params; //<array of transport params [size: _nConstituents]
 };
 
 
@@ -297,6 +285,9 @@ struct surface_struct
   double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area
   double uwfs_betamin;      ///< [-]       upscaled wetland fill and spill betamin parameter, defined distribution of contributing area
   double bf_loss_fraction;  ///< [0..1]    fraction of baseflow which never reaches stream (in SAC-SMA) =1-1/(1+side)
+  double AWBM_areafrac1;    ///< [0..1]    fraction of infiltration to smallest landscape store in AWBM model (nonzero)
+  double AWBM_areafrac2;    ///< [0..1]    fraction of infiltration to medium landscape store in AWBM model (nonzero)
+  double AWBM_bflow_index;  ///< [0..1]    fraction of excess going to groundwater in AWBM model
 
   double ow_PET_corr;       ///< [-]       fraction of PET to apply to open water evaporation
   double lake_PET_corr;     ///< [-]       fraction of PET to apply to lake evaporation

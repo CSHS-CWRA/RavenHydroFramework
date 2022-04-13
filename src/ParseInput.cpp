@@ -24,6 +24,7 @@
 #include "Diagnostics.h"
 #include "CustomOutput.h"
 #include "Decay.h"
+#include "ChemEquilibrium.h"
 #include "LatAdvection.h"
 #include "PrairieSnow.h"
 #include "ProcessGroup.h"
@@ -560,7 +561,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Decay"                     )){code=305;}
     else if  (!strcmp(s[0],":Advection"                 )){code=306;}
     else if  (!strcmp(s[0],":Transformation"            )){code=307;}
-    else if  (!strcmp(s[0],":Mineralization"            )){code=308;}
+    else if  (!strcmp(s[0],":Equilibrium"               )){code=308;}
     //...
     //--------------------ENERGY PROCESSES -------------------
     else if  (!strcmp(s[0],":HeatConduction"            )){code=350;}
@@ -2074,7 +2075,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"INF_ALL_INFILTRATES"  )){itype=INF_ALL_INFILTRATES; }
       else if (!strcmp(s[1],"INF_XINANXIANG"       )){itype=INF_XINANXIANG; }
       else if (!strcmp(s[1],"INF_PDM"              )){itype=INF_PDM; }
-      
+      else if (!strcmp(s[1],"INF_AWBM"             )){itype=INF_AWBM; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
       }
@@ -2168,6 +2169,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_GR4J"         )){se_type=SOILEVAP_GR4J;}
       else if (!strcmp(s[1],"SOILEVAP_LINEAR"       )){se_type=SOILEVAP_LINEAR;}
       else if (!strcmp(s[1],"SOILEVAP_SACSMA"       )){se_type=SOILEVAP_SACSMA;}
+      else if (!strcmp(s[1],"SOILEVAP_AWBM"         )){se_type=SOILEVAP_AWBM;}
       else if (!strcmp(s[1],"SOILEVAP_ALL"          )){se_type=SOILEVAP_ALL;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
@@ -2956,23 +2958,19 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case (300)://----------------------------------------------
     {/*:Transport
-       :Transport [string constituent_name] {PASSIVE} {TRACER}*/
+       :Transport [string constituent_name] {PASSIVE/TRACER/SORBED}*/
       if (Options.noisy){cout <<"Transport constituent"<<endl;}
 
       ExitGracefullyIf(!transprepared,
                        ":Transport command must be after :EndHydrologicProcesses command in .rvi file", BAD_DATA);
       bool is_passive(false),is_tracer(false);
+      constit_type ctype=AQUEOUS;
       if(Len>=3) {
         if(!strcmp(s[2],"PASSIVE")) { is_passive=true; }
-        if(!strcmp(s[2],"TRACER" )) { is_tracer =true; }
+        if(!strcmp(s[2],"SORBED" )) { is_passive=true; ctype=SORBED; }
+        if(!strcmp(s[2],"TRACER"))  { is_tracer =true; ctype=TRACER; }
       }
-      if(Len>=4) {
-        if(!strcmp(s[3],"PASSIVE")) { is_passive=true; }
-        if(!strcmp(s[3],"TRACER" )) { is_tracer =true; }
-      }
-      constit_type ctype;
-      if (is_tracer){ctype=TRACER;}
-      else          {ctype=AQUEOUS;}
+      
       if(!strcmp(s[1],"TEMPERATURE")) { ctype=ENTHALPY; }
       if(!strcmp(s[1],"18O")        ) { ctype=ISOTOPE;  }
       if(!strcmp(s[1],"2H")         ) { ctype=ISOTOPE;  }
@@ -3148,15 +3146,33 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized transformation process representation",BAD_DATA_WARN); break;
       }
-      cout<<"ADDING PROCESS NAME"<<endl;
       pModel->GetTransportModel()->AddProcessName(s[2]);
-      cout<<"GETTING PROCESS NAME"<<endl;
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
 
       if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel); }
-      cout<<"HERE"<<endl;
       pMover=new CmvTransformation(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
-      cout<<"HERE"<<endl;
+      AddProcess(pModel,pMover,pProcGroup);
+      break;
+    }
+    case (308)://----------------------------------------------
+    {/*:Equilibrium [algorithm] [process name] [constituent1] [constituent2] [water store]
+     */
+      if(Options.noisy) { cout <<"Equilibrium process"<<endl; }
+      int iWat=DOESNT_EXIST;
+      chem_equil_type t_type=EQUIL_FIXED_RATIO;
+      if(Len<5) { ImproperFormatWarning(":Equilibrium",p,Options.noisy); break; }
+      if      (!strcmp(s[1],"EQUIL_FIXED_RATIO"    )) { t_type=EQUIL_FIXED_RATIO; }
+      else if (!strcmp(s[1],"EQUIL_LINEAR"         )) { t_type=EQUIL_LINEAR; }
+      else if (!strcmp(s[1],"EQUIL_LINEAR_SORPTION")) { t_type=EQUIL_LINEAR_SORPTION; }
+      else
+      {
+        ExitGracefully("ParseMainInputFile: Unrecognized equilibrium process representation",BAD_DATA_WARN); break;
+      }
+      pModel->GetTransportModel()->AddProcessName(s[2]);
+      int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
+
+      if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel); }
+      pMover=new CmvChemEquil(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }

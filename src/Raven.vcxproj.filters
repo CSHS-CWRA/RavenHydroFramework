@@ -435,6 +435,9 @@
     <ClCompile Include="Matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ChemEquilibrium.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -616,6 +619,9 @@
     </ClInclude>
     <ClInclude Include="Matrix.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChemEquilibrium.h">
+      <Filter>Header Files\Transport</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

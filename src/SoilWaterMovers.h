@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvBaseflow
@@ -97,6 +97,7 @@ enum soilevap_type
   SOILEVAP_GR4J,          ///< GR4J model approach (Perrin et al., 2003)
   SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
   SOILEVAP_SACSMA,        ///< Sacramento Soil Moisture Accounting algorithm (should only be used with SOILBAL_SACSMA)
+  SOILEVAP_AWBM,          ///< Australia Water Balance Model of Boughton (1993)
   SOILEVAP_ALL            ///< AET==PET
 };
 ////////////////////////////////////////////////////////////////////

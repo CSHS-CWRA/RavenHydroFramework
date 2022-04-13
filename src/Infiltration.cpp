@@ -55,6 +55,14 @@ CmvInfiltration::CmvInfiltration(infil_type  itype)
     iFrom[3]=pModel->GetStateVarIndex(SOIL,0);          iTo[3]=pModel->GetStateVarIndex(SOIL,1);
     iFrom[4]=pModel->GetStateVarIndex(SOIL,1);          iTo[4]=pModel->GetStateVarIndex(SURFACE_WATER);
   }
+  else if(type==INF_AWBM) {
+    CHydroProcessABC::DynamicSpecifyConnections(5);
+    iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[0]=pModel->GetStateVarIndex(SOIL,0);
+    iFrom[1]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[1]=pModel->GetStateVarIndex(SOIL,1);
+    iFrom[2]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[2]=pModel->GetStateVarIndex(SOIL,2);
+    iFrom[3]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[3]=pModel->GetStateVarIndex(SURFACE_WATER);
+    iFrom[4]=pModel->GetStateVarIndex(PONDED_WATER);    iTo[4]=pModel->GetStateVarIndex(SOIL,3);
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -202,6 +210,13 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
     aP[0]="IMPERMEABLE_FRAC";      aPC[0]=CLASS_LANDUSE;
     aP[1]="PDM_B";                 aPC[1]=CLASS_LANDUSE;
     aP[2]="POROSITY";              aPC[2]=CLASS_SOIL;
+  }
+  else if(type==INF_AWBM)
+  {
+    nP=3;
+    aP[0]="AWBM_AREAFRAC1";        aPC[0]=CLASS_LANDUSE;
+    aP[1]="AWBM_AREAFRAC2";        aPC[1]=CLASS_LANDUSE;
+    aP[2]="AWBM_BFLOW_INDEX";      aPC[2]=CLASS_LANDUSE;
   }
   else
   {
@@ -547,6 +562,36 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
 
     rates[0]=infil;          //PONDED->SOIL[0]
     rates[1]=rainthru-infil; //PONDED->SW 
+  }
+  //----------------------------------------------------------------------------
+  else if(type==INF_AWBM)
+  { //uses Australia Water Balance algorithm from Boughton (2004)
+    double infil1,infil2,infil3,runoff1,runoff2,runoff3,excess,to_GW;
+    double def1,def2,def3; //[mm]
+    double a1 =pHRU->GetSurfaceProps()->AWBM_areafrac1;
+    double a2 =pHRU->GetSurfaceProps()->AWBM_areafrac2;
+    double a3=1.0-a1-a2;
+    double BFI=pHRU->GetSurfaceProps()->AWBM_bflow_index;
+
+    def1=max(a1*pHRU->GetSoilCapacity(0)-state_vars[iFrom[0]],0.0); // deficit averaged over domain
+    def2=max(a2*pHRU->GetSoilCapacity(1)-state_vars[iFrom[1]],0.0); 
+    def3=max(a3*pHRU->GetSoilCapacity(2)-state_vars[iFrom[2]],0.0);
+
+    runoff1=max(a1*ponded_water-def1,0.0);
+    runoff2=max(a2*ponded_water-def2,0.0);
+    runoff3=max(a3*ponded_water-def3,0.0);
+    infil1=a1*ponded_water-runoff1;
+    infil2=a2*ponded_water-runoff2;
+    infil3=a3*ponded_water-runoff3;
+
+    excess=(1.0-BFI)*(runoff1+runoff2+runoff3);
+    to_GW =(    BFI)*(runoff1+runoff2+runoff3);
+
+    rates[0]=   infil1/Options.timestep;   //PONDED->SOIL[0]
+    rates[1]=   infil2/Options.timestep;   //PONDED->SOIL[1]
+    rates[2]=   infil3/Options.timestep;   //PONDED->SOIL[2]
+    rates[3]=   excess/Options.timestep;   //PONDED->SURFACE_WATER
+    rates[4]=   to_GW/Options.timestep;    //PONDED->SOIL[3]
   }
 }
 

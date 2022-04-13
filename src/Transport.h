@@ -11,6 +11,7 @@ Copyright (c) 2008-2022 the Raven Development Team
 
 enum constit_type {
   AQUEOUS,
+  SORBED,
   ENTHALPY,
   ISOTOPE,
   TRACER
@@ -33,7 +34,10 @@ enum gparam_type
   PAR_DECAY_COEFF,        ///< linear decay coefficient  [1/d]
   PAR_TRANSFORM_COEFF,    ///< linear transformation coeff [1/d for n=1, (mg/L)^-n /d for n!=1] 
   PAR_UPTAKE_COEFF,       ///< uptake coefficeint [-]
-  PAR_TRANSFORM_N         ///< transformation exponent [-]
+  PAR_TRANSFORM_N,        ///< transformation exponent [-]
+  PAR_EQFIXED_RATIO,      ///< fixed equilibrium coefficient [-] (B=cc*A)
+  PAR_EQUIL_COEFF,        ///< linear equilibrium coefficient [1/d] k*(B-cc*A)
+  PAR_SORPT_COEFF         ///< sorption coefficient [l/kg]
 };
 struct geochem_param 
 {
@@ -283,12 +287,13 @@ public:/*-------------------------------------------------------*/
   
   void   ClearTimeSeriesData     (const optStruct& Options);
 
-          void   Prepare              (const optStruct &Options);
-  virtual void   Initialize           (const optStruct& Options);
-          void   InitializeRoutingVars();
+          void   Prepare                    (const optStruct &Options);
+  virtual void   Initialize                 (const optStruct& Options);
+          void   InitializeRoutingVars      ();
+          void   CalculateInitialMassStorage(const optStruct& Options);
 
-          void   IncrementCumulInput  (const optStruct &Options,const time_struct &tt);
-          void   IncrementCumulOutput (const optStruct &Options);
+          void   IncrementCumulInput        (const optStruct &Options,const time_struct &tt);
+          void   IncrementCumulOutput       (const optStruct &Options);
 
   virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist,const double *aMinHist,const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
           void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
@@ -307,18 +312,4 @@ public:/*-------------------------------------------------------*/
   virtual void   CloseOutputFiles            ();
 };
 
-///////////////////////////////////////////////////////////////////
-/// \brief Class for coordinating transport simulation for nutrients (child of ConstituentModel)
-/// \details Implemented in NutrientTransport.cpp
-//
-class CNutrientModel:public CConstituentModel
-{
-public:/*-------------------------------------------------------*/
-  //Accessors specific to Nutrient/Contaminant Transport
-  double GetDecayCoefficient   (const CHydroUnit *pHRU,const int iStorWater) const;
-  double GetAdvectionCorrection(const CHydroUnit *pHRU,const int iFromWater,const int iToWater, const double &C) const;
-
-  //double GetTransformCoefficient(const int c,const int c2,const CHydroUnit *pHRU,const int iStorWater) const;
-  //double GetStoichioCoefficient(const int c,const int c2,const CHydroUnit *pHRU,const int iStorWater) const;
-};
 #endif

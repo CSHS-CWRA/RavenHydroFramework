@@ -380,6 +380,11 @@ void CModel::CalculateInitialWaterStorage(const optStruct &Options)
       _initWater-=_pSubBasins[p]->GetIntegratedOutflow        (Options.timestep)/2.0/_WatershedArea*MM_PER_METER/M2_PER_KM2;
     }
   }
+  if(_pTransModel!=NULL) {
+    for(int c=0;c<_pTransModel->GetNumConstituents();c++) {
+      _pTransModel->GetConstituentModel(c)->CalculateInitialMassStorage(Options);
+    }
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes observation time series

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -18,8 +18,6 @@ CSoilClass::CSoilClass(const string name,const int nConstit)
   _tag=name;
   if (!DynArrayAppend((void**&)(_pAllSoilClasses),(void*)(this),_nAllSoilClasses)){
     ExitGracefully("CSoilClass::Constructor: creating NULL soil class",BAD_DATA);};
-
-  _Soil.trans_params=new soil_trans_params[nConstit];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -27,8 +25,6 @@ CSoilClass::CSoilClass(const string name,const int nConstit)
 //
 CSoilClass::~CSoilClass(){
   if (DESTRUCTOR_DEBUG){cout<<"  DELETING SOIL CLASS "<<endl;}
-
-  delete [] _Soil.trans_params;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -394,40 +390,6 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
     if (chatty){WriteAdvisory(warn,false);}
   }
 
-  // Transport Parameters (default to zero)
-  //----------------------------------------------------------------------------
-  for (int c=0; c<nConstit;c++){
-    autocalc=SetCalculableValue(_Soil.trans_params[c].retardation,Stmp.trans_params[c].retardation,Sdefault.trans_params[c].retardation);
-    if (autocalc)
-    {
-      _Soil.trans_params[c].retardation=1.0; //reasonable default
-    }
-    autocalc=SetCalculableValue(_Soil.trans_params[c].mineraliz_rate,Stmp.trans_params[c].mineraliz_rate,Sdefault.trans_params[c].mineraliz_rate);
-    if (autocalc)
-    {
-      _Soil.trans_params[c].mineraliz_rate=0.0; //reasonable default
-    }
-    autocalc=SetCalculableValue(_Soil.trans_params[c].loss_rate,Stmp.trans_params[c].loss_rate,Sdefault.trans_params[c].loss_rate);
-    if (autocalc)
-    {
-      _Soil.trans_params[c].loss_rate=0.0; //reasonable default
-    }
-    for(int cc=0;cc<MAX_CONSTITUENTS;cc++){
-      autocalc=SetCalculableValue(_Soil.trans_params[c].transf_coeff[cc],Stmp.trans_params[c].transf_coeff[cc],Sdefault.trans_params[c].transf_coeff[cc]);
-      if(autocalc)
-      {
-        _Soil.trans_params[c].transf_coeff[cc]=0.0; //reasonable default
-      }
-    }
-    for(int cc=0;cc<MAX_CONSTITUENTS;cc++){
-      autocalc=SetCalculableValue(_Soil.trans_params[c].stoichio_coeff[cc],Stmp.trans_params[c].stoichio_coeff[cc],Sdefault.trans_params[c].stoichio_coeff[cc]);
-      if(autocalc)
-      {
-        _Soil.trans_params[c].stoichio_coeff[cc]=1.0; //reasonable default
-      }
-    }  
-  }
-
   //Model-specific soil properties - cannot be autocomputed, must be specified by user
   //----------------------------------------------------------------------------
   bool needed=false;
@@ -498,19 +460,6 @@ void CSoilClass::InitializeSoilProperties(soil_struct &S, bool is_template,int n
 
   S.albedo_wet                             =DefaultParameterValue(is_template,true);
   S.albedo_dry                             =DefaultParameterValue(is_template,true);
-
-
-  //No autocalculation here (OR SUFFICIENT WARNING IF PARAMETER NOT SPECIFIED) \todo [funct]
-  S.trans_params=new soil_trans_params[nConstituents];
-  for (int c=0;c<nConstituents;c++ ){
-    S.trans_params[c].retardation          =1.0; 
-    S.trans_params[c].mineraliz_rate       =0.0;
-    S.trans_params[c].loss_rate            =0.0; 
-    for(int cc=0;cc<MAX_CONSTITUENTS;cc++){
-      S.trans_params[c].transf_coeff  [cc] =0.0; 
-      S.trans_params[c].stoichio_coeff[cc] =0.0; 
-    }
-  }
 
   //Conceptual parameters
   //-----------------------------------------------------
@@ -626,48 +575,6 @@ void  CSoilClass::SetSoilProperty(soil_struct &S,
     WriteWarning("CSoilClass::SetSoilProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file",false);
   }
 }
-//////////////////////////////////////////////////////////////////
-/// \brief Sets the value of the soil property corresponding to param_name
-/// \note This is declared as a static member because soil class
-/// is not instantiated prior to read of .rvp file
-/// \param constit_ind [in] consitutent index, c
-/// \param constit_ind [in] constituent index of second constituent (optional - needed for some parameters)
-/// \param &S [out] Soil properties class
-/// \param param_name [in] Parameter identifier
-/// \param value [in] Value of parameter to be set
-//
-void  CSoilClass::SetSoilTransportProperty( int          constit_ind,
-                                            int          constit_ind2,
-                                            soil_struct &S,
-                                            string       param_name,
-                                            const double value)
-{
-  string name;
-  name = StringToUppercase(param_name);
-  int c=constit_ind;
-  if      (!name.compare("RETARDATION"             )){S.trans_params[c].retardation   =value;}
-  else if (!name.compare("MINERALIZ_RATE"          )){S.trans_params[c].mineraliz_rate=value;}
-  else if (!name.compare("LOSS_RATE"               )){S.trans_params[c].loss_rate     =value;}
-  else if (!name.compare("TRANSF_COEFF"            )){
-    if(constit_ind2==DOESNT_EXIST){
-      ExitGracefully("CSoilClass::SetSoilTransportProperty: invalid second constituent index",BAD_DATA_WARN);
-    }
-    else{
-      S.trans_params[c].transf_coeff[constit_ind2]=value;
-    }
-  }
-  else if (!name.compare("STOICHIO_COEFF"            )){
-    if(constit_ind2==DOESNT_EXIST){
-      ExitGracefully("CSoilClass::SetSoilTransportProperty: invalid second constituent index",BAD_DATA_WARN);
-    }
-    else{
-      S.trans_params[c].stoichio_coeff[constit_ind2]=value;
-    }
-  }
-  else{
-    WriteWarning("CSoilClass::SetSoilTransportProperty: Unrecognized/invalid soil parameter name ("+name+") in .rvp file",false);
-  }
-}
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Returns soil property value corresponding to param_name
 /// \param param_name [in] Parameter name
@@ -676,16 +583,6 @@ void  CSoilClass::SetSoilTransportProperty( int          constit_ind,
 double CSoilClass::GetSoilProperty(string &param_name) const
 {
   return GetSoilProperty(_Soil,param_name);
-}
-///////////////////////////////////////////////////////////////////////////
-/// \brief Returns soil transport property value corresponding to param_name
-/// \param constit_ind [in] constituent index, c
-/// \param param_name [in] Parameter name
-/// \return Soil propertie corresponding to parameter name
-//
-double CSoilClass::GetSoilTransportProperty(int constit_ind, string &param_name) const
-{
-  return GetSoilTransportProperty(constit_ind,_Soil,param_name);
 }
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Returns soil property value corresponding to param_name from structure provided
@@ -765,26 +662,5 @@ double CSoilClass::GetSoilProperty(const soil_struct &S, string param_name,  con
       return INDEX_NOT_FOUND;
     }
 
-  }
-}
-///////////////////////////////////////////////////////////////////////////
-/// \brief Returns soil transport property value corresponding to param_name from structure provided
-/// \param constit_ind [in] constituent index c
-/// \param soil_struct [in] Soil structure
-/// \param param_name [in] Parameter name
-/// \return Soil propertie corresponding to parameter name
-//
-double CSoilClass::GetSoilTransportProperty(const int constit_ind, const soil_struct &S, string param_name)
-{
-  string name;
-  name = StringToUppercase(param_name);
-
-  //\todo[clean] - is this even used anywhere???
-
-  if      (!name.compare("RETARDATION"         )){return S.trans_params[constit_ind].retardation;}
-  else{
-    string msg="CSoilClass::GetSoilTransportProperty: Unrecognized/invalid soil parameter name  ("+name+") in .rvp file: "+name;
-    ExitGracefully(msg.c_str(),BAD_DATA);
-    return 0.0;
   }
 }

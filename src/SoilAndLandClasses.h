@@ -28,7 +28,6 @@ enum class_type{
   CLASS_GLOBAL,     ///< Global parameter class
   CLASS_SUBBASIN,   ///< Subbasin parameter class
   CLASS_GAUGE,      ///< Gauge parameter class
-  CLASS_SOIL_TRANSPORT, ///< Soil transport class
   CLASS_HRUTYPE,    ///< special flag to handle HRU type changes; not assoc. with parameters
   CLASS_UNKNOWN
 };
@@ -56,8 +55,6 @@ public:/*-------------------------------------------------------*/
   const soil_struct       *GetSoilStruct() const;
   double                   GetSoilProperty(string &param_name) const;
   void                     SetSoilProperty(string param_name, const double &value);
-  double                   GetSoilTransportProperty(int constit_ind, string &param_name) const;
-  void                     SetSoilTransportProperty(int constit_ind, string &param_name, const double &value);
 
   //routines
   void AutoCalculateSoilProps(const soil_struct &Stmp,const soil_struct &Sdefault,const int nConstit);
@@ -67,9 +64,7 @@ public:/*-------------------------------------------------------*/
   static       CSoilClass *StringToSoilClass(const string s);
   static void              DestroyAllSoilClasses();
   static void              SetSoilProperty         (soil_struct &S, string param_name, const double value);
-  static void              SetSoilTransportProperty(int constit_ind, int constit_ind2,soil_struct &S, string param_name, const double value);
   static double            GetSoilProperty         (const soil_struct &S, string param_name, const bool strict=true);
-  static double            GetSoilTransportProperty(const int constit_ind, const soil_struct &S, string param_name);
   static void              InitializeSoilProperties(soil_struct &S, bool is_template,int nConstits);
 
   static double            CalcSoilResistance(const double &psi,const soil_struct &S);

@@ -536,6 +536,7 @@
     <ClCompile Include="Abstraction.cpp" />
     <ClCompile Include="Advection.cpp" />
     <ClCompile Include="CapillaryRise.cpp" />
+    <ClCompile Include="ChemEquilibrium.cpp" />
     <ClCompile Include="CommonFunctions.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug NetCDF|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -787,6 +788,7 @@
   <ItemGroup>
     <ClInclude Include="Advection.h" />
     <ClInclude Include="Albedo.h" />
+    <ClInclude Include="ChemEquilibrium.h" />
     <ClInclude Include="ControlStructures.h" />
     <ClInclude Include="Convolution.h" />
     <ClInclude Include="CropGrowth.h" />

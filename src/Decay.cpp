@@ -126,15 +126,15 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     {
       double temp=pHRU->GetForcingFunctions()->temp_ave;
       double c1     =1.0;
-      double vol    =state_vars[iStor];
-      double vol_max=pHRU->GetStateVarMax(iStor,state_vars,Options);
+      double stor    =state_vars[iStor];
+      double stor_max=pHRU->GetStateVarMax(iStor,state_vars,Options);
 
       if      ((temp<=5 ) || (temp>=50)) { c1=0.0; }
       else if ((temp>=10) && (temp<=30)) { c1=1.0; }
       else if (temp< 10)                 { c1=(temp-5.0 )/(10.0-5.0 );}
       else if (temp> 30)                 { c1=(30.0-temp)/(30.0-50.0);}
       
-      decay_coeff *= c1 * min(vol/vol_max,1.0);
+      decay_coeff *= c1 * min(stor/stor_max,1.0);
 
       rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
     }

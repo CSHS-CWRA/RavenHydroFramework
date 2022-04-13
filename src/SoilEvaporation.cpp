@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------
   Soil Evaporation
   ----------------------------------------------------------------*/
@@ -90,6 +90,13 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
     iFrom[5]=pModel->GetStateVarIndex(SOIL,5);     iTo[5]=iAtmos;
 
     iFrom[6]=pModel->GetStateVarIndex(AET);   iTo[6]=iFrom[6];
+  }
+  else if(type==SOILEVAP_AWBM) {
+    CHydroProcessABC::DynamicSpecifyConnections(4);
+    iFrom[0]=pModel->GetStateVarIndex(SOIL,0);     iTo[0]=iAtmos;
+    iFrom[1]=pModel->GetStateVarIndex(SOIL,1);     iTo[1]=iAtmos;
+    iFrom[2]=pModel->GetStateVarIndex(SOIL,2);     iTo[2]=iAtmos;
+    iFrom[3]=pModel->GetStateVarIndex(AET);   iTo[3]=iFrom[3];
   }
 }
 
@@ -215,6 +222,12 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     aP[1]="IMPERMEABLE_FRAC";        aPC[1]=CLASS_LANDUSE;
     aP[2]="UNAVAIL_FRAC";            aPC[2]=CLASS_SOIL;
   }
+  else if(type==SOILEVAP_AWBM)
+  {
+    nP=2;
+    aP[0]="AWBM_AREAFRAC1";        aPC[0]=CLASS_LANDUSE;
+    aP[1]="AWBM_AREAFRAC2";        aPC[1]=CLASS_LANDUSE;
+  }
   else
   {
     ExitGracefully("CmvSoilEvap::GetParticipatingParamList: undefined soil evaporation algorithm",BAD_DATA);
@@ -287,6 +300,14 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
       aSV[m]=SOIL; aLev[m]=m;
     }
     aSV[6]=ATMOSPHERE; aLev[6]=DOESNT_EXIST;
+  }
+  else if(se_type==SOILEVAP_AWBM)
+  {
+    nSV=4;
+    for(int m=0;m<3;m++) {
+      aSV[m]=SOIL; aLev[m]=m;
+    }
+    aSV[3]=ATMOSPHERE; aLev[3]=DOESNT_EXIST;
   }
   nSV++;
   aSV[nSV-1]=AET;
@@ -671,6 +692,19 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     rates[5]=e5*Adimp/Options.timestep;     //ADIMC (SOIL[5])->ATMOS
   
     PETused=(e1+e2+e3)*Aperv+e5*Adimp;
+  }
+  //------------------------------------------------------------
+  else if(type==SOILEVAP_AWBM)
+  {//Boughton2004
+    double a1 =pHRU->GetSurfaceProps()->AWBM_areafrac1;
+    double a2 =pHRU->GetSurfaceProps()->AWBM_areafrac2;
+    double a3=1.0-a1-a2;
+
+    rates[0] =min(a1*PET,state_vars[iFrom[0]]/Options.timestep);
+    rates[1] =min(a2*PET,state_vars[iFrom[1]]/Options.timestep);
+    rates[2] =min(a3*PET,state_vars[iFrom[2]]/Options.timestep);
+
+    PETused=rates[0]+rates[1]+rates[2];
   }
   else
   {

@@ -542,24 +542,24 @@ void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_pass
   //Add corresponding constituent storage state variables to model
   sv_type *aSV =new sv_type[_nWaterCompartments];
   int     *aLev=new int    [_nWaterCompartments];
-  for(int j=0;j<_nWaterCompartments; j++)
+  for(int ii=0;ii<_nWaterCompartments; ii++)
   {
-    int m=j+c*_nWaterCompartments;
-    aSV[j]=CONSTITUENT;
-    aLev[j]=m;
+    int m=ii+c*_nWaterCompartments;
+    aSV [ii]=CONSTITUENT;
+    aLev[ii]=m;
   }
   pModel->AddStateVariables(aSV,aLev,_nWaterCompartments);
 
   //Add corresponding constituent source & sink state variables to model
-  aSV[0]=CONSTITUENT_SRC;
+  aSV [0]=CONSTITUENT_SRC;
   aLev[0]=c;
   pModel->AddStateVariables(aSV,aLev,1);
 
-  aSV[0]=CONSTITUENT_SINK;
+  aSV [0]=CONSTITUENT_SINK;
   aLev[0]=c;
   pModel->AddStateVariables(aSV,aLev,1);
 
-  aSV[0]=CONSTITUENT_SW;
+  aSV [0]=CONSTITUENT_SW;
   aLev[0]=c;
   pModel->AddStateVariables(aSV,aLev,1);
 
@@ -616,7 +616,7 @@ void CTransportModel::Prepare(const optStruct &Options)
       if((iF!=iT) && (CStateVariable::IsWaterStorage(typF)) && (CStateVariable::IsWaterStorage(typT)))
       { //This is a process that may advect a constituent
         _iFromWater[qq]=iF;
-        _iToWater[qq]=iT;
+        _iToWater  [qq]=iT;
         _js_indices[qq]=js;
         qq++;
       }
@@ -756,10 +756,10 @@ void   CTransportModel::CalculateLateralConnections()
       sv_type typT=pModel->GetStateVarType(iT);
       if((iF!=iT) && (CStateVariable::IsWaterStorage(typF)) && (CStateVariable::IsWaterStorage(typT)))
       { //This is a process that may advect a constituent
-        _iLatFromWater[qq]=iF;
-        _iLatToWater[qq]=iT;
-        _iLatToHRU[qq]=kT;
-        _iLatFromHRU[qq]=kF;
+        _iLatFromWater [qq]=iF;
+        _iLatToWater   [qq]=iT;
+        _iLatToHRU     [qq]=kT;
+        _iLatFromHRU   [qq]=kF;
         _latqss_indices[qq]=qss;
         //cout<<"CalculateLateralConnections: ADDED CONNECTION (iF,iT): ("<<iF<<","<<iT<<") (kF,kT): ("<<kF<<","<<kT<<") qss:"<<qss<<endl;
         qq++;
