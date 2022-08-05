@@ -90,7 +90,16 @@ void CmvTransformation::GetParticipatingParamList(string  *aP, class_type *aPC, 
 
   if(_ttype==TRANS_LINEAR)
   {
+    aP[0]="TRANSFORM_COEFF"; aPC[0]=CLASS_TRANSPORT; nP++;
+    aP[1]="STOICHIO_RATIO";  aPC[1]=CLASS_TRANSPORT; nP++;
   }
+  else if(_ttype==TRANS_NONLINEAR)
+  {
+    aP[0]="TRANSFORM_COEFF"; aPC[0]=CLASS_TRANSPORT; nP++;
+    aP[1]="STOICHIO_RATIO";  aPC[1]=CLASS_TRANSPORT; nP++;
+    aP[2]="TRANSFORM_N";     aPC[2]=CLASS_TRANSPORT; nP++;
+  }
+  
 }
 
 //////////////////////////////////////////////////////////////////
@@ -113,7 +122,7 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
   int     iStor;
   
   double  transf_coeff;
-  double  stoich_coeff; //stoichiometric coefficient, i.e., 1*A->alpha*B
+  double  stoich_ratio; //stoichiometric coefficient, i.e., 1*A->alpha*B
 
   int     nWaterCompartments = _pTransModel->GetNumWaterCompartments();
   int     ii_active          = _pTransModel->GetWaterStorIndexFromSVIndex(_iWaterStore);
@@ -126,7 +135,6 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
   {
     iStor    =_pTransModel->GetStorWaterIndex(ii);
     
-    //cout<<"IS "<<_iWaterStore<<" "<<ii<<" "<<ii_active<<" "<<nWaterCompartments<<endl;
     if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment 
     
     if(_pTransModel->GetConstituentModel2(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
@@ -137,7 +145,8 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
     transf_coeff = _pTransModel->GetGeochemParam(PAR_TRANSFORM_COEFF,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
     if(transf_coeff==NOT_SPECIFIED) { continue; }
 
-    stoich_coeff = _pTransModel->GetStoichioCoeff(_constit_ind1,_constit_ind2);
+    stoich_ratio = _pTransModel->GetGeochemParam(PAR_STOICHIO_RATIO,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
+    if(stoich_ratio==NOT_SPECIFIED) { continue; }
     
     // for each reaction, 
     // dA/dt      = - k * A
@@ -147,13 +156,10 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
 
     //-------------------------------------------------------------------------------
     if (_ttype==TRANS_LINEAR)//analytical approach -  solution to dm/dt=-km integrated from t to t+dt
-    {
+    {                        //numerically robust equiv to rates[q]= transf_coeff*mass1; 
       
       rates[q] = mass1 * (1 - exp(-transf_coeff*Options.timestep))/Options.timestep; 
 
-      // cout<<"CALCULATING RATE "<< rates[q]<<" "<<mass1<<endl;
-      //numerically robust equiv to 
-      //rates[q]= transf_coeff*mass1; 
     }
     //-------------------------------------------------------------------------------
     else if (_ttype==TRANS_NONLINEAR)//analytical approach -  solution to dm/dt=-km integrated from t to t+dt
@@ -171,7 +177,7 @@ void   CmvTransformation::GetRatesOfChange( const double      *state_vars,
       //rates[q] = transf_coeff *pow(mass1/vol1,n)*vol1;
     }
 
-    rates[q+shift]=stoich_coeff*rates[q]; //handles proper accounting 
+    rates[q+shift]=stoich_ratio*rates[q]; //handles proper accounting 
      
     q++;
   }
@@ -195,7 +201,6 @@ void   CmvTransformation::ApplyConstraints( const double      *state_vars,
   
   int iConstit1;
   int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
-  double stoich_coeff    = _pTransModel->GetStoichioCoeff(_constit_ind1,_constit_ind2);
   int ii_active          = _pTransModel->GetWaterStorIndexFromSVIndex(_iWaterStore);
   
   int shift =nWaterCompartments;
@@ -207,9 +212,11 @@ void   CmvTransformation::ApplyConstraints( const double      *state_vars,
     if(_iWaterStore!=DOESNT_EXIST) { //only apply to one water compartment 
       if(ii!=ii_active) { break; }
     }
+    double stoich_ratio = _pTransModel->GetGeochemParam(PAR_STOICHIO_RATIO,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
+
     iConstit1=_pTransModel->GetStorIndex(_constit_ind1,ii);
     rates[q] = min(rates[q],state_vars[iConstit1]/Options.timestep);//cannot remove more mass than is there
-    rates[q+shift]=-stoich_coeff*rates[q]; //handles proper accounting 
+    rates[q+shift]=-stoich_ratio*rates[q]; //handles proper accounting 
     q++;
   }
 }

@@ -40,7 +40,6 @@ CTransportModel::CTransportModel(CModel *pMod)
   _pConstitModels=NULL;
   _pEnthalpyModel=NULL;
 
-  _stoichio=NULL;
   _pGeochemParams=NULL;
   _nGeochemParams=0;
 
@@ -66,7 +65,6 @@ CTransportModel::~CTransportModel()
   delete[] _iWaterStorage;  _iWaterStorage=NULL;
   delete[] _pConstitModels; _pConstitModels=NULL;
   delete[] _aIndexMapping;  _aIndexMapping=NULL;
-  if(_stoichio!=NULL) { for(int c=0;c<_nConstituents;c++) { delete[] _stoichio[c]; } delete[] _stoichio; }
   if(_pGeochemParams!=NULL) {
     for(int i=0;i<_nGeochemParams;i++) { delete _pGeochemParams[i]; } delete[] _pGeochemParams;
   }
@@ -461,13 +459,6 @@ double CTransportModel::GetAdvectionCorrection(const int c,const CHydroUnit* pHR
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Get stoichiometric coefficient for c1->c2
-//
-double   CTransportModel::GetStoichioCoeff(const int c1,const int c2) const {
-  return _stoichio[c1][c2];
-}
-
-//////////////////////////////////////////////////////////////////
 /// \brief Return index of process, or DOESNT_EXIST if name not found in process list
 //
 int   CTransportModel::GetProcessIndex(const string name) const 
@@ -770,12 +761,6 @@ void   CTransportModel::CalculateLateralConnections()
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Set stoichiometric coefficient for c1->c2
-//
-void   CTransportModel::SetStoichioCoeff(const int c1,const int c2,const double& val) {
-  _stoichio[c1][c2]=val;
-}
-//////////////////////////////////////////////////////////////////
 /// \brief Add geochem parameter
 /// \param typ [in] geochemical parameter type
 /// \param constit_name [in] name of constitutent 
@@ -840,14 +825,7 @@ void CTransportModel::Initialize(const optStruct &Options)
 //
 void CTransportModel::InitializeParams(const optStruct& Options)
 {
-  //generate stoichiometric table 
-  _stoichio=new double* [_nConstituents];
-  for(int c=0;c<_nConstituents;c++) {
-    _stoichio[c]=new double [_nConstituents];
-    for(int c2=0;c2<_nConstituents;c2++) {
-      _stoichio[c][c2]=1.0;
-    }
-  }
+
 }
 
 //////////////////////////////////////////////////////////////////

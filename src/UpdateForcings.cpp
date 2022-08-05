@@ -57,6 +57,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_snow       = NULL;
   CForcingGrid *pGrid_pet        = NULL;
   CForcingGrid *pGrid_owpet      = NULL;
+  CForcingGrid *pGrid_windspeed  = NULL;  
+  CForcingGrid *pGrid_relhum     = NULL;
+  CForcingGrid *pGrid_SW_net     = NULL;
   CForcingGrid *pGrid_tave       = NULL;
   CForcingGrid *pGrid_daily_tmin = NULL;
   CForcingGrid *pGrid_daily_tmax = NULL;
@@ -70,6 +73,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool snow_gridded           = ForcingGridIsInput(F_SNOWFALL)       ;
   bool pet_gridded            = ForcingGridIsInput(F_PET)            ;
   bool owpet_gridded          = ForcingGridIsInput(F_OW_PET)         ;
+  bool windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL)       ;  
+  bool relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY)   ;
+  bool SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET)   ;
   bool temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE)       ;
   bool temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN) ;
   bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX) ;
@@ -224,6 +230,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       snow_gridded           = ForcingGridIsInput(F_SNOWFALL);
       pet_gridded            = ForcingGridIsInput(F_PET);
       owpet_gridded          = ForcingGridIsInput(F_OW_PET);
+      windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL);
+      relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY);
+      SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET);
       temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE);
       temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN);
       temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
@@ -237,6 +246,9 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(snow_gridded)            { pGrid_snow        = GetForcingGrid(F_SNOWFALL); }
       if(pet_gridded)             { pGrid_pet         = GetForcingGrid(F_PET); }
       if(owpet_gridded)           { pGrid_owpet       = GetForcingGrid(F_OW_PET); }
+      if(windspeed_gridded)       { pGrid_windspeed   = GetForcingGrid(F_WIND_VEL); }
+      if(relhum_gridded)          { pGrid_relhum      = GetForcingGrid(F_REL_HUMIDITY); }
+      if(SWnet_gridded)           { pGrid_SW_net      = GetForcingGrid(F_SW_RADIA_NET); }
       if(temp_ave_gridded)        { pGrid_tave        = GetForcingGrid(F_TEMP_AVE); }
       if(temp_daily_min_gridded)  { pGrid_daily_tmin  = GetForcingGrid(F_TEMP_DAILY_MIN); }
       if(temp_daily_max_gridded)  { pGrid_daily_tmax  = GetForcingGrid(F_TEMP_DAILY_MAX); }
@@ -330,7 +342,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.precip_temp   = pGrid_precip_temp->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
       // ---------------------
-      // (5) read gridded PET
+      // (5) read gridded PET, Others
       // ---------------------
       if(pet_gridded)
       {
@@ -343,7 +355,21 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_owpet-> ReadData(Options,tt.model_time);
         F.OW_PET   = pGrid_owpet->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
-
+      if (windspeed_gridded) {
+        pGrid_windspeed = GetForcingGrid(F_WIND_VEL);
+        pGrid_windspeed->ReadData(Options, tt.model_time);
+        F.wind_vel = pGrid_windspeed->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (relhum_gridded) {
+        pGrid_relhum = GetForcingGrid(F_REL_HUMIDITY);
+        pGrid_relhum->ReadData(Options, tt.model_time);
+        F.rel_humidity = pGrid_relhum->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (SWnet_gridded) {
+        pGrid_SW_net = GetForcingGrid(F_SW_RADIA_NET);
+        pGrid_SW_net->ReadData(Options, tt.model_time);
+        F.SW_radia_net = pGrid_SW_net->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
       //-------------------------------------------------------------------
       //  Temperature Corrections
       //-------------------------------------------------------------------
@@ -441,7 +467,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       F.SW_radia_subcan = F.SW_radia * CRadiation::SWCanopyCorrection(Options,_pHydroUnits[k]);
       
-      if(Options.SW_radia_net == NETSWRAD_CALC)
+      if(Options.SW_radia_net == NETSWRAD_CALC) //(default)
       {
         F.SW_radia_net        = F.SW_radia       *(1-_pHydroUnits[k]->GetTotalAlbedo());
 //      F.SW_radia_subcan_net = F.SW_radia_subcan*(1-_pHydroUnits[k]->GetLandAlbedo());

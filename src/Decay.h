@@ -16,8 +16,10 @@
 enum decay_type
 {
   DECAY_BASIC,    /// < basic decay, calculated as -k*C
-  DECAY_LINEAR,   /// < analytic treatment of decay over finite time step
-  DECAY_DENITRIF  /// < adds temperature/saturation correction factor to decay rate
+  DECAY_LINEAR,   /// < analytic treatment of first-order decay/loss over finite time step
+  DECAY_ZEROORDER,/// < analytic treatment of zeroth-order decay/loss over finite time step
+  DECAY_DENITRIF, /// < adds temperature/saturation correction factor to decay rate
+  DECAY_HOOKESLAW /// < exchange with atmosphere 
 };
 
 ////////////////////////////////////////////////////////////////////

@@ -72,6 +72,7 @@ void   CmvDecay::Initialize(){}
 void CmvDecay::GetParticipatingParamList(string  *aP, class_type *aPC, int &nP) const
 {
   nP=0;
+  aP[0]="DECAY_COEFF"; aPC[0]=CLASS_TRANSPORT; nP++;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -91,7 +92,6 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
 {
   int     k=pHRU->GetGlobalIndex();
   double  junk,mass;
-  double  decay_coeff;
   int     iStor;
   int     q=0;
   int     nWaterCompartments = _pTransModel->GetNumWaterCompartments();
@@ -104,19 +104,33 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment 
     if(_pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
     
-    decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
-    if (decay_coeff==NOT_SPECIFIED){ continue;}
-
     mass=state_vars[iFrom[q]];
 
     //------------------------------------------------------------------
-    if (_dtype==DECAY_BASIC)
+    if      (_dtype==DECAY_BASIC)
     {
-      rates[q]= decay_coeff*mass; //[mg/m2/d]=[1/d]*[mg/m2]
+      //dm/dt=-km
+      double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
+      if(decay_coeff==NOT_SPECIFIED) { continue; }
+
+      rates[q]= decay_coeff*mass; 
+    }
+    //------------------------------------------------------------------
+    else if (_dtype==DECAY_ZEROORDER)
+    {
+      //dm/dt=-J
+      double loss_rate = _pTransModel->GetGeochemParam(PAR_MASS_LOSS_RATE,_constit_ind,ii,_process_ind,pHRU);
+      if(loss_rate==NOT_SPECIFIED) { continue; }
+
+      rates[q]= min(loss_rate,mass/Options.timestep);
     }
     //------------------------------------------------------------------
     else if (_dtype==DECAY_LINEAR) //analytical approach - preferred - solution to dm/dt=-km integrated from t to t+dt
     {
+      //dm/dt=-km
+      double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
+      if(decay_coeff==NOT_SPECIFIED) { continue; }
+
       rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep; 
       //cout<<" DECAY: "<<mass<<" "<<rates[q]<<" "<<decay_coeff*mass<<" "<<
       //CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iStor),pModel->GetStateVarLayer(iStor))<<endl;
@@ -124,6 +138,9 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
     //------------------------------------------------------------------
     else if(_dtype==DECAY_DENITRIF) 
     {
+      double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
+      if(decay_coeff==NOT_SPECIFIED) { continue; }
+
       double temp=pHRU->GetForcingFunctions()->temp_ave;
       double c1     =1.0;
       double stor    =state_vars[iStor];
@@ -138,6 +155,25 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
 
       rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
     }
+    //------------------------------------------------------------------
+    /*else if(_dtype==DECAY_O2EXCHANGE)
+    {
+      //exchange of constituent (e.g., O2) with atmosphere
+      //depression storage/surface water only
+      double temp=pHRU->GetForcingFunctions()->temp_ave;
+      sv_type typ=pModel->GetStateVarType(iStor);
+
+      if((typ==SURFACE_WATER) || (typ==DEPRESSION) || (typ==PONDED_WATER)) {
+        double C_sat = 10; //mg/l (should be function of temperature)
+        C_sat*=LITER_PER_M3; //mg/m3
+
+        double exch_coeff = _pTransModel->GetGeochemParam(PAR_O2_EXCHANGE,_constit_ind,ii,_process_ind,pHRU);
+        if(exch_coeff==NOT_SPECIFIED) { continue; } //should be function of depth
+
+        double vol=state_vars[iStor]/MM_PER_METER;
+        rates[q] = (mass-C_sat*vol) * (1.0 - exp(-exch_coeff*Options.timestep))/Options.timestep;
+      }
+    }*/
     q++;
   }
 }

@@ -306,8 +306,13 @@ CReservoir::CReservoir(const string Name,
   _crest_ht   =crestht;
   _min_stage  =-depth+_crest_ht;
   _max_stage  =5.0+_crest_ht; //reasonable default?
-  ExitGracefullyIf(depth<0,"CReservoir::Constructor (Lake): cannot have negative maximum lake depth",BAD_DATA_WARN);
-  
+  ExitGracefullyIf(depth <=0, "CReservoir::Constructor (Lake): cannot have negative maximum lake depth",BAD_DATA_WARN);
+  ExitGracefullyIf(A     <=0, "CReservoir::Constructor (Lake): cannot have negative or zero lake area", BAD_DATA_WARN);
+  ExitGracefullyIf(crestw<=0, "CReservoir::Constructor (Lake): cannot have negative or zero crest width", BAD_DATA_WARN);
+  ExitGracefullyIf(weircoeff <= 0, "CReservoir::Constructor (Lake): cannot have negative or zero weir discharge coefficient", BAD_DATA_WARN);
+  if (weircoeff>1.0){
+    WriteWarning( "CReservoir::Constructor (Lake): weir discharge coefficient should be less than 1.0", true);
+  }
   _Np=102;
   _aStage =new double [_Np];
   _aQ     =new double [_Np];

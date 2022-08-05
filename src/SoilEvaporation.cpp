@@ -110,7 +110,9 @@ CmvSoilEvap::~CmvSoilEvap()
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes soil evaporation
 //
-void CmvSoilEvap::Initialize(){}
+void CmvSoilEvap::Initialize(){
+
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns participating parameter list
@@ -280,8 +282,9 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
   else if ((se_type==SOILEVAP_SEQUEN) || (se_type==SOILEVAP_ROOT) || (se_type==SOILEVAP_ROOT_CONSTRAIN))
   {
     nSV=3;
-    aSV [0]=SOIL;  aSV [1]=SOIL; aSV [2]=ATMOSPHERE;
-    aLev[0]=0;     aLev[1]=1;    aLev[2]=DOESNT_EXIST;
+    aSV [0]=SOIL;       aLev[0]=0;  
+    aSV [1]=SOIL;       aLev[1]=1;
+    aSV [2]=ATMOSPHERE; aLev[2]=DOESNT_EXIST;
   }
   else if ((se_type==SOILEVAP_ROOTFRAC) || (se_type==SOILEVAP_FEDERER))
   {
@@ -557,16 +560,21 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     double rootfrac_u,rootfrac_l;               //relative root fraction soil layers [unitless]
 
     rootfrac_u  = 0.7;//pRootVar->rootfrac;
+    rootfrac_l  = 1.0 - rootfrac_u;
+
     stor_u      = state_vars[iFrom[0]];
     tens_stor_u = pHRU->GetSoilTensionStorageCapacity(0);
+    ExitGracefullyIf(tens_stor_u<=0,"SOILEVAP_ROOT: one or more soil class has field capacity less than or equal to zero.",BAD_DATA);
 
     rates[0] = PET * rootfrac_u * min(stor_u/tens_stor_u,1.0);  //upper layer evaporation rate [mm/d]
 
-    rootfrac_l  = 1.0 - rootfrac_u;
     stor_l      = state_vars[iFrom[1]];
     tens_stor_l = pHRU->GetSoilTensionStorageCapacity(1);
+    ExitGracefullyIf(tens_stor_l<=0,"SOILEVAP_ROOT: one or more soil class has field capacity less than or equal to zero.",BAD_DATA);
 
     rates[1] = PET * rootfrac_l * min(stor_l/tens_stor_l,1.0);  //upper layer evaporation rate [mm/d]
+
+    //cout<<rates[0]<<" "<<rates[1]<<" "<<PET<<" "<<stor_u<<" "<<" "<<tens_stor_u<<" "<<stor_l<<" "<<" "<<tens_stor_l<<endl;
     PETused=rates[0]+rates[1];
     //fix calculation of lower and upper - ITS WRONG SOMEWHERE (either ridiculously high or ridiculously low)!!!!
     //cout<<"PET: "<<PET<<"  root_frac: "<<rel_rootfrac_upper<<"  tension_stor: "<<tension_stor_upper<<"  max_ten: "<<max_tension_stor_upper<<endl;
@@ -578,16 +586,18 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     double stor_u, stor_l;              //soil layer storage [mm]
     double tens_stor_u, tens_stor_l;    //maximum layer tension storage [mm]
     double rootfrac_u, rootfrac_l;      //relative root fraction soil layers [unitless]
+    double stor_wilt;
 
     rootfrac_u  = 0.7;//pRootVar->rootfrac;
     stor_u      = state_vars[iFrom[0]];
     tens_stor_u = pHRU->GetSoilTensionStorageCapacity(0);
+    stor_wilt   = pHRU->GetSoilProps(0)->sat_wilt*pHRU->GetSoilCapacity(0);
 
     rates[0] = PET * rootfrac_u * min(stor_u / tens_stor_u, 1.0);  //upper layer evaporation rate [mm/d]
 
-    if (rates[0] > max(stor_u - (pHRU->GetSoilProps(0)->sat_wilt*pHRU->GetSoilCapacity(0)), 0.0))
+    if (rates[0] > max(stor_u - stor_wilt, 0.0))
     {
-      rates[0] = max(stor_u - (pHRU->GetSoilProps(0)->sat_wilt*pHRU->GetSoilCapacity(0)), 0.0);
+      rates[0] = max(stor_u - stor_wilt, 0.0);
     }
 
     rootfrac_l = 1.0 - rootfrac_u;

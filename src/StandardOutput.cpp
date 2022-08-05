@@ -912,9 +912,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
     //ReservoirStages.csv
     //--------------------------------------------------------------
-    if ((Options.write_reservoir) && (Options.output_format!=OUTPUT_NONE))
+    if ((Options.write_reservoir) && (Options.output_format==OUTPUT_STANDARD))
     {
-			if((Options.period_starting) && (t==0)){}//don't write anything at time zero
+      if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
 	      _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
 	      for (int p=0;p<_nSubBasins;p++)

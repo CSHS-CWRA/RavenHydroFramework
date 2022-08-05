@@ -304,7 +304,6 @@ const int     MAX_VEG_CLASSES     =200;         ///< Max number of vegetation cl
 const int     MAX_LULT_CLASSES    =200;         ///< Max number of lult classes
 const int     MAX_TERRAIN_CLASSES =50;          ///< Max number of terrain classes
 const int     MAX_SURVEY_PTS      =50;          ///< Max number of survey points
-const int     MAX_GAUGES_IN_LIST  =250;         ///< Max number of gauges in :GaugeList command
 const int     MAX_CONSTITUENTS    =10;          ///< Max number of transported constituents
 const int     MAX_RIVER_SEGS      =50;          ///< Max number of river segments
 const int     MAX_FILENAME_LENGTH =256;         ///< Max filename length
@@ -551,7 +550,7 @@ enum HRU_type
   HRU_LAKE,                 ///< Lake HRU
   HRU_GLACIER,              ///< Glacier HRU
   HRU_WETLAND,              ///< Wetland HRU
-  HRU_ROCK,                 ///< Open Rock HRUs
+  HRU_ROCK,                 ///< Open Rock or Pavement (impermeable) HRUs
   HRU_INVALID_TYPE          ///< returned if type is invalid
 };
 
@@ -1083,8 +1082,9 @@ struct optStruct
   bool             write_constitmass;         ///< true if constituent mass [mg/m2] is written instead of concentration [mg/L] in output files
   bool             write_basinfile;           ///< true if subbasins params are written to SubbasinParams.csv
   bool             write_interp_wts;          ///< true if interpolation weights are written to InterpolationWeights.csv
-  bool             write_demandfile;          ///< true if demands.csv file is written
-  bool             write_simpleout;           ///< true if simple_out.csv file is written (for scripting)
+  bool             write_demandfile;          ///< true if demands.csv file is to be written
+  bool             write_simpleout;           ///< true if simple_out.csv file is to be written (for scripting)
+  bool             write_massloading;         ///< true if MassLoadings.csv file is to be written
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files

@@ -299,6 +299,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_interp_wts        =false;
   Options.write_demandfile        =false;
   Options.write_simpleout         =false;
+  Options.write_massloading       =false;
   Options.write_constitmass       =false;
   Options.write_waterlevels       =false;
   Options.suppressICs             =false;
@@ -492,6 +493,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteHRUStorageOutput"     )){code=180;}//After corresponding DefineHRUGroup(s) command
     else if  (!strcmp(s[0],":WriteSimpleOutput"         )){code=181;}
     else if  (!strcmp(s[0],":WriteWaterLevels"          )){code=182;}
+    else if  (!strcmp(s[0],":WriteMassLoadings"         )){code=183;}
     //...
     //--------------------SYSTEM OPTIONS -----------------------
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
@@ -1946,10 +1948,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(182):  //--------------------------------------------
     {/*:WriteWaterLevels*/
-      if(Options.noisy) { cout << "Write Water Levels" << endl; }
+      if(Options.noisy) { cout << "Write Water Levels file" << endl; }
       Options.write_waterlevels=true;
       break;
     }
+    case(183):  //--------------------------------------------
+    {/*:WriteMassLoadings*/
+      if(Options.noisy) { cout << "Write Mass Loadings file" << endl; }
+      Options.write_massloading=true;
+      break;
+    }
+      
     case(199):  //--------------------------------------------
     {/*:AggregatedVariable [SV_TAG] {optional HRU_Group}*/
 

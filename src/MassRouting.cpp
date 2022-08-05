@@ -20,6 +20,8 @@ void CConstituentModel::InitializeRoutingVars()
   _aMout_last     =new double  [nSB];
   _aMres          =new double  [nSB];
   _aMres_last     =new double  [nSB];
+  _aMsed          =new double  [nSB];
+  _aMsed_last     =new double  [nSB];
   _aMlat_last     =new double  [nSB];
   _aMout_res      =new double  [nSB];
   _aMout_res_last =new double  [nSB];
@@ -44,6 +46,8 @@ void CConstituentModel::InitializeRoutingVars()
     _aMout_last     [p]=0.0;
     _aMres          [p]=0.0;
     _aMres_last     [p]=0.0;
+    _aMsed          [p]=0.0;
+    _aMsed_last     [p]=0.0;
     _aMlat_last     [p]=0.0;
     _aMout_res      [p]=0.0;
     _aMout_res_last [p]=0.0;
@@ -71,6 +75,8 @@ void CConstituentModel::DeleteRoutingVars()
     delete[] _aMout;           _aMout     =NULL;
     delete[] _aMres;           _aMres     =NULL;
     delete[] _aMres_last;      _aMres_last=NULL;
+    delete[] _aMsed;           _aMsed = NULL;
+    delete[] _aMsed_last;      _aMsed_last = NULL;
     delete[] _aMlat_last;      _aMlat_last=NULL;
     delete[] _aMout_res;       _aMout_res =NULL;
     delete[] _aMout_res_last;  _aMout_res_last =NULL;
@@ -205,13 +211,17 @@ void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 /// lateral flow Qlat (e.g., runoff, interflow, or baseflow) is routed as part of channel routing routine otherwise,
 /// lateral flow is all routed to most downstream outflow segment . Assumes uniform time step
 ///
-/// \param p    subbasin index
-/// \param aMout_new[] Array of mass outflows at downstream end of each segment at end of current timestep [mg/d] [size: nsegs]
-/// \param &Options [in] Global model options information
+/// \param p           [in]  subbasin index
+/// \param aMout_new[] [out] Array of mass outflows at downstream end of each segment at end of current timestep [mg/d] [size: nsegs]
+/// \param Res_mass    [out] calculated reservoir mass at end of time step
+/// \param ResSedMass [out] calculated reservoir mass in sediment at end of time step
+/// \param &Options    [in]  Global model options information
+/// \param tt          [in]  Time structure
 //
-void   CConstituentModel::RouteMass(const int          p,         // SB index
-                                    double            *aMout_new, // [mg/d][size: nsegs ]
-                                    double            &Res_mass, // [mg]
+void   CConstituentModel::RouteMass(const int          p,          // SB index
+                                    double            *aMout_new,  // [mg/d][size: nsegs ]
+                                    double            &Res_mass,   // [mg]
+                                    double            &ResSedMass, // [mg]
                                     const optStruct   &Options,
                                     const time_struct &tt) const
 {
@@ -260,43 +270,65 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
   //all fluxes from catchment are routed directly to basin outlet
   aMout_new[nSegments-1]+=Mlat_new;
 
-  //Reservoir Routing
+  //Mass removal at basin outlet (Mass removal point)
   //-----------------------------------------------------------------
+  //_M_loss_rate = reduction_rate * aMout_new[nSegments - 1];
+  //aMout_new[nSegments - 1] -= _M_loss_rate;
+
+  //Reservoir Routing - calculate Res_mass, Res_sed_mass
+  //-----------------------------------------------------------------
+  Res_mass  =0.0;
+  ResSedMass=0.0;
   CReservoir *pRes=_pModel->GetSubBasin(p)->GetReservoir();
   if(pRes!=NULL)
   {
-    double decay_coeff(0.0);
-    int iSW=_pModel->GetStateVarIndex(SURFACE_WATER);
-    CHydroUnit *pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
+    RouteMassInReservoir(p,aMout_new,Res_mass,ResSedMass,Options,tt);    
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates Res_mass and ResSedMass in basin with reservoir at end of time step
+///
+/// \param p           [in]  subbasin index
+/// \param aMout_new[] [in] Array of mass outflows at downstream end of each segment at end of current timestep [mg/d] [size: nsegs]
+/// \param Res_mass    [out] calculated reservoir mass at end of time step
+/// \param ResSedMass [out] calculated reservoir mass in sediment at end of time step
+/// \param &Options    [in]  Global model options information
+/// \param tt          [in]  Time structure
+//
+void   CConstituentModel::RouteMassInReservoir(const int          p,          // SB index
+                                               const double      *aMout_new,  // [mg/d][size: nsegs ]
+                                                     double      &Res_mass,   // [mg]
+                                                     double      &ResSedMass, // [mg]
+                                               const optStruct   &Options,
+                                               const time_struct &tt) const
+{
+  CReservoir* pRes = _pModel->GetSubBasin(p)->GetReservoir();
+  int nSegments    = _pModel->GetSubBasin(p)->GetNumSegments();
 
-    double tmp;
-    double V_new=pRes->GetStorage();
-    double V_old=pRes->GetOldStorage();
-    double Q_new=pRes->GetOutflowRate()   *SEC_PER_DAY;
-    double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
+  double V_new=pRes->GetStorage       ();
+  double V_old=pRes->GetOldStorage    ();
+  double Q_new=pRes->GetOutflowRate   ()*SEC_PER_DAY;
+  double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
     
-    decay_coeff=0.0;
-    if(pHRU!=NULL) { 
-      int     ii  = _pTransModel->GetWaterStorIndexFromSVIndex(iSW);
-      decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_index,ii,DOESNT_EXIST,pHRU);
-    }
-
-    //Explicit solution of Crank-nicolson problem
-    //dM/dt=QC_in-QC_out-lambda*M
-    //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
-
-    tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff*Res_mass));
-    tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1]+_aMout[p][nSegments-1]);//inflow is outflow from channel
-    tmp+=_aMresRain[p]*Options.timestep;
-    tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
-    Res_mass=tmp;
-
-    if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=0.0; } //handles dried out reservoir/lake
+  double decay_coeff=0.0;
+  CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
+  if(pHRU!=NULL) { 
+    int     iSW = _pModel->GetStateVarIndex(SURFACE_WATER);
+    int     ii  = _pTransModel->GetWaterStorIndexFromSVIndex(iSW);
+    decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_index,ii,DOESNT_EXIST,pHRU);
   }
-  else
-  {
-    Res_mass=0.0; 
-  }
+
+  //Explicit solution of Crank-nicolson problem
+  //dM/dt=QC_in-QC_out-lambda*M
+  //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
+  double tmp;
+  tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff*Res_mass));
+  tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1]+_aMout[p][nSegments-1]);//inflow is outflow from channel
+  tmp+=_aMresRain[p]*Options.timestep;
+  tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
+  Res_mass=tmp;
+
+  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=0.0; } //handles dried out reservoir/lake
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets mass outflow from primary channel and updates flow history
@@ -305,13 +337,15 @@ void   CConstituentModel::RouteMass(const int          p,         // SB index
 /// the mass outflow rates for this basin
 ///
 /// \param **aMoutnew     [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
-/// \param *aResMass      [in] Array of new reservoir masses [mg] [size:  _nConstituents]
-/// \param *aMassOutflow [out] Array of new mass outflows [mg/d] from last segment or reservoir [size:  _nConstituents]
+/// \param ResMass       [in] new reservoir mass [mg] 
+/// \param ResMass       [in] new reservoir sediment mass [mg] 
+/// \param MassOutflow   [out] new mass outflow [mg/d] from last segment or reservoir 
 /// \param &Options       [in] Global model options information
 /// \param initialize     [in] Flag to indicate if flows are to only be initialized
 //
 void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
                                               double &ResMass,
+                                              double &ResSedMass,
                                               double &MassOutflow,
                                               const optStruct &Options,
                                               const time_struct &tt,
@@ -336,8 +370,12 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
   {
     _aMres_last    [p]=_aMres[p];
     _aMres         [p]=ResMass;
+
     _aMout_res_last[p]=_aMout_res[p];
     _aMout_res     [p]=(pRes->GetOutflowRate()*SEC_PER_DAY/pRes->GetStorage())*_aMres[p]; //mg/d or MJ/d
+
+    _aMsed_last    [p]=_aMsed[p];
+    _aMsed         [p]=ResSedMass;
 
     MassOutflow=_aMout_res[p];
 

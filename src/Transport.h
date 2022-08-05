@@ -32,7 +32,9 @@ struct constit_source
 enum gparam_type 
 {
   PAR_DECAY_COEFF,        ///< linear decay coefficient  [1/d]
+  PAR_MASS_LOSS_RATE,     ///< zero-order decay or loss [mg/m2/d]
   PAR_TRANSFORM_COEFF,    ///< linear transformation coeff [1/d for n=1, (mg/L)^-n /d for n!=1] 
+  PAR_STOICHIO_RATIO,     ///< ratio of mass reactant to mass product [mg/mg]
   PAR_UPTAKE_COEFF,       ///< uptake coefficeint [-]
   PAR_TRANSFORM_N,        ///< transformation exponent [-]
   PAR_EQFIXED_RATIO,      ///< fixed equilibrium coefficient [-] (B=cc*A)
@@ -97,8 +99,6 @@ private:/*------------------------------------------------------*/
   geochem_param **_pGeochemParams;   ///< array of pointers to geochem parameter structures [size: _nTransParams]
   int             _nGeochemParams;   ///< number of geochemistry paramers 
 
-  double        **_stoichio;         ///< stoichiometry table relating conversion of one type to other [size: _nConstituents*_nConstitutents]
-
   int                 _nConstituents;  ///< number of transported constituents [c=0.._nConstituents-1]
   CConstituentModel **_pConstitModels; ///< array of pointers to constituent models [size:_nConstituents]
   CEnthalpyModel     *_pEnthalpyModel; ///< special pointer to enthalpy constituent, if present (or NULL if not)
@@ -153,7 +153,6 @@ public:/*-------------------------------------------------------*/
 
   int    GetLayerIndex(const int c,const int i_stor) const;
 
-  double GetStoichioCoeff   (const int c, const int c2) const;
   double GetGeochemParam    (const gparam_type gtyp, const int c, const int ii, const int procind, const CHydroUnit *pHRU) const;
   double GetGeochemParam    (const gparam_type gtyp, const int c, const int c2, const int ii,const int procind,const CHydroUnit* pHRU) const;
 
@@ -166,7 +165,6 @@ public:/*-------------------------------------------------------*/
   int    GetProcessIndex            (const string name) const;
 
   //Manipulators
-  void   SetStoichioCoeff           (const int c1, const int c2, const double &val);
   void   AddConstituent             (string name,constit_type type,bool is_passive);
   void   AddProcessName             (string name);
   void   AddGeochemParam            (const gparam_type typ,const string constit_name,const string constit_name2,
@@ -210,6 +208,8 @@ protected:
 
   double                   *_aMres;  ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins]
   double              *_aMres_last;  ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins]
+  double                   *_aMsed;  ///< array storing reservoir sediment mass [mg] [size: nSubBasins]
+  double             * _aMsed_last;  ///< array storing reservoir sediment mass [mg] at start of timestep [size: nSubBasins]
   double               *_aMout_res;  ///< array storing reservoir mass outflow [mg/d] or heat loss [MJ/d] [size: nSubBasins]
   double          *_aMout_res_last;  ///< array storing reservoir mass outflow [mg/d] or enthalpy outflow  [MJ/d] at start of timestep  [size: nSubBasins]
   double               *_aMresRain;  ///< array storing reservoir rain inputs [mg/d] or enthalpy input [MJ/d] [size: nSubBasins]
@@ -234,8 +234,10 @@ protected:
 
   ofstream                 _OUTPUT;  ///< output stream for Concentrations.csv/Temperatures.csv
   ofstream                 _POLLUT;  ///< output stream for Pollutograph.csv/StreamTemperatures.csv
+  ofstream                _LOADING;  ///< output stream for MassLoadings.csv
   int                   _CONC_ncid;  ///< NetCDF id for Concentrations.nc/Temperatures.nc
   int                 _POLLUT_ncid;  ///< NetCDF id for Pollutograph.nc/StreamTemperatures.nc
+  int                _LOADING_ncid;  ///< NetCDF id for MassLoadings.nc
 
   // private member funcctions
   void   DeleteRoutingVars();
@@ -299,8 +301,9 @@ public:/*-------------------------------------------------------*/
           void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
           void   SetMassInflows           (const int p,const double Minnew);
           void   SetLateralInfluxes       (const int p,const double RoutedMass);
-          void   RouteMass                (const int p,double *aMoutnew,double &ResMass,const optStruct &Options,const time_struct &tt) const;
-  virtual void   UpdateMassOutflows       (const int p,double *aMoutnew,double &ResMass,double &ResMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize);
+          void   RouteMass                (const int p,      double *aMoutnew,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
+  virtual void   RouteMassInReservoir     (const int p,const double *aMoutnew,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
+  virtual void   UpdateMassOutflows       (const int p,      double *aMoutnew,double &ResMass,double &ResSedMass, double &ResMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize);
 
   virtual void   WriteOutputFileHeaders      (const optStruct &Options);
   virtual void   WriteMinorOutput            (const optStruct &Options,const time_struct &tt);

@@ -54,6 +54,7 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
 
   _CONC_ncid    = -9;
   _POLLUT_ncid  = -9;
+  _LOADING_ncid = -9;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport destructor
@@ -140,6 +141,7 @@ double CConstituentModel::GetTotalChannelConstituentStorage() const
 //
 double CConstituentModel::GetNetReachLosses(const int p) const
 {
+  //return _M_loss_rate * Options.timestep;
   return 0.0;//default -assumes conservative transport in streams (more interesting for child classes)
 }
 //////////////////////////////////////////////////////////////////
@@ -675,7 +677,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   else {
     _OUTPUT<<", Total Energy "<<kg<<", Cum. Loading "<<kg<<", Cum. Energy Lost "<<kg<<", EB Error "<<kg;
     _OUTPUT<<", sink "<<kg<<", source "<<kg<<", atmos "<<kg<<", latent "<<kg;//TMP DEBUG
-    _OUTPUT<<", sensible (r) "<<kg<<", latent (r) "<<kg<<", GW mixing (r) "<<kg<<", radiant (r) "<<kg<<", friction (r)"<<kg<< endl;//TMP DEBUG
+    _OUTPUT<<", sensible (r) "<<kg<<", conductive (r) " << kg << ", latent (r) "<<kg<<", GW mixing (r) "<<kg<<", radiant (r) "<<kg<<", friction (r)"<<kg<< endl;//TMP DEBUG
   }
 
   //Pollutograph / stream temperatures file
@@ -694,27 +696,59 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
     if(_type==ENTHALPY) {
       _POLLUT<<",air temp.";
     }
-	  const CSubBasin *pBasin;
-	  for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-		  pBasin=_pModel->GetSubBasin(p);
-		  if(pBasin->IsGauged() && (pBasin->IsEnabled())) {
-		    string name;
-		    if(pBasin->GetName()=="")   { _POLLUT<<",ID="<<pBasin->GetID()  <<" "<<mgL; }
-		    else                        { _POLLUT<<","   <<pBasin->GetName()<<" "<<mgL; }
-		    if(_type==ENTHALPY) {
-		      if(pBasin->GetName()=="") { _POLLUT<<",ID="<<pBasin->GetID()  <<" pct froz."; }
-		      else                      { _POLLUT<<","   <<pBasin->GetName()<<" pct froz."; }
-		    }
-		    for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
-		      if(IsContinuousConcObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
-		      {
-		        if(pBasin->GetName()=="") { _POLLUT<<",ID="<<pBasin->GetID()  <<" (observed) "<<mgL; }
-		        else                      { _POLLUT<<","   <<pBasin->GetName()<<" (observed) "<<mgL; }
-		      }
-		    }
-		  }
-	  }
+    const CSubBasin *pBasin;
+    for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+      pBasin=_pModel->GetSubBasin(p);
+      if(pBasin->IsGauged() && (pBasin->IsEnabled())) {
+        string name=pBasin->GetName();
+            if(name=="")   {name="ID="+to_string(pBasin->GetID()); }
+
+        _POLLUT<<"," <<name<<" "<<mgL; 
+        if(_type==ENTHALPY) {
+        _POLLUT<<"," <<name<<" pct froz."; 
+        }
+        for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
+          if(IsContinuousConcObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
+          {
+             _POLLUT<<","   <<name<<" (observed) "<<mgL; 
+          }
+        }
+      }
+    }
     _POLLUT<<endl;
+  }
+
+  // Mass Loadings file
+  //--------------------------------------------------------------------
+  if((Options.write_massloading) && (!_is_passive) && (_type!=ENTHALPY) && (_type!=ISOTOPE))
+  {
+    filename=FilenamePrepare(_name+"MassLoadings.csv",Options);
+    _LOADING.open(filename.c_str());
+    if(_LOADING.fail()) {
+      ExitGracefully(("CConstituentModel::WriteOutputFileHeaders: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
+    }
+
+    _LOADING<<"time[d],date,hour";
+    const CSubBasin *pBasin;
+    string units=kgd;
+    if(_type==TRACER) { units="m3/s"; }
+    for(int p=0;p<_pModel->GetNumSubBasins();p++) 
+    {
+      pBasin=_pModel->GetSubBasin(p);
+      if(pBasin->IsGauged() && (pBasin->IsEnabled())) {
+        string name=pBasin->GetName();
+        if(name=="") { name="ID="+to_string(pBasin->GetID()); }
+
+         _LOADING<<","   <<name<<" "<<units; 
+            /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
+          if(IsContinuousLoadingObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
+          {
+            _LOADING <<","   <<name<<" (observed) "<<units; 
+          }
+        }*/
+      }
+    }
+    _LOADING<<endl;
   }
 }
 
@@ -923,6 +957,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   // initialize all potential file IDs with -9 == "not existing and hence not opened"
   _CONC_ncid    = -9;
   _POLLUT_ncid  = -9;
+  _LOADING_ncid = -9;
 
   //Concentrations or Temperatures file
   //--------------------------------------------------------------------
@@ -972,10 +1007,10 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,sname,name,mgL);
     }
   }
-  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"total","total",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"total",      "total",kg);
   varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"cum_loading","cumulative loading",kg);
-  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"cum_loss","cumulative loss",kg);
-  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"MB_error","mass/energy balance error",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"cum_loss",   "cumulative loss",kg);
+  varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,"MB_error",   "mass/energy balance error",kg);
 
   // End define mode. This tells netCDF we are done defining metadata.
   retval = nc_enddef(_CONC_ncid);  HandleNetCDFErrors(retval);
@@ -1057,6 +1092,75 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
       WriteNetCDFBasinList(_POLLUT_ncid,varid_bsim,_pModel,false,Options);
     }
   }
+
+  // Mass Loadings file
+  //--------------------------------------------------------------------
+  if((Options.write_massloading) && (!_is_passive) && (_type!=ENTHALPY) && (_type!=ISOTOPE))
+  {
+    filename=FilenamePrepare(_name+"MassLoadings.nc",Options);
+    retval = nc_create(filename.c_str(),NC_CLOBBER|NC_NETCDF4,&ncid);  HandleNetCDFErrors(retval);
+    _LOADING_ncid = ncid;
+
+    // ----------------------------------------------------------
+    // global attributes
+    // ----------------------------------------------------------
+    WriteNetCDFGlobalAttributes(_LOADING_ncid,Options,"Mass Loading Output");
+
+    // ----------------------------------------------------------
+    // time vector
+    // ----------------------------------------------------------
+    // Define the DIMENSIONS. NetCDF will hand back an ID
+    retval = nc_def_dim(_LOADING_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
+
+    /// Define the time variable.
+    dimids1[0] = time_dimid;
+    retval = nc_def_var(_LOADING_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time); HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_LOADING_ncid,varid_time,"units",strlen(starttime),starttime);   HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_LOADING_ncid,varid_time,"calendar",strlen("gregorian"),"gregorian"); HandleNetCDFErrors(retval);
+
+    // (a) count number of simulated outflows "nSim"
+    string      tmp,tmp2,tmp3;
+    int nbasins_dimid;
+    int varid_bsim;
+    int varid_Csim,varid_Cobs;
+    int nSim = 0;
+    for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+      if(_pModel->GetSubBasin(p)->IsGauged()  && (_pModel->GetSubBasin(p)->IsEnabled())) { nSim++; }
+    }
+
+    if(nSim > 0)
+    {
+      // (b) create dimension "nbasins"
+      retval = nc_def_dim(_LOADING_ncid,"nbasins",nSim,&nbasins_dimid);                             HandleNetCDFErrors(retval);
+
+      // (c) create variable  and set attributes for"basin_name"
+      dimids1[0] = nbasins_dimid;
+      retval = nc_def_var(_LOADING_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);       HandleNetCDFErrors(retval);
+      tmp ="Name/ID of sub-basins with simulated mass loadings";
+      tmp2="timeseries_id";
+      tmp3="1";
+      retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"cf_role"  ,tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_LOADING_ncid,varid_bsim,"units"    ,tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+      // (d) create 2D pollutograph arrays [nbasins x ntime]
+      string units=kgd;
+      if(_type==TRACER) { units="m3/s"; }
+
+      varid_Csim    = NetCDFAddMetadata2D(_LOADING_ncid,time_dimid,nbasins_dimid,"M_sim","Simulated mass loadings",units);
+      varid_Cobs    = NetCDFAddMetadata2D(_LOADING_ncid,time_dimid,nbasins_dimid,"M_obs","Observed mass loadings",units);
+
+    }// end if nSim>0
+
+    // End define mode. This tells netCDF we are done defining metadata.
+    retval = nc_enddef(_LOADING_ncid);  HandleNetCDFErrors(retval);
+
+    // write values to NetCDF
+    if(nSim > 0)
+    {
+      WriteNetCDFBasinList(_LOADING_ncid,varid_bsim,_pModel,false,Options);
+    }
+  }
 #endif
 }
 
@@ -1102,16 +1206,16 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
   //double net_influx =//GetAverageInflux(c)*(area*M2_PER_KM2)*Options.timestep; // [MJ] 
  
   double latent_flux=0;
-  double Q_sens(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Ql,Qg,Qr,Qf;
+  double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
+  double Qs,Qc,Ql,Qg,Qr,Qf;
   if(_type==ENTHALPY) 
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
     
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Ql,Qg,Qr,Qf);
-      Q_sens+=Qs;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr; Q_fric+=Qf;
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qf);
+      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr; Q_fric+=Qf;
     }
   }
   double channel_stor=GetTotalChannelConstituentStorage();//[mg] or [MJ]
@@ -1172,6 +1276,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
     _OUTPUT<<","<<atmos_prec *convert;  // atmospheric inputs 
     _OUTPUT<<","<<latent_flux*convert;  // latent heat
     _OUTPUT<<","<<Q_sens     *convert;  // reach sensible
+    _OUTPUT<<","<<Q_cond     *convert;  // reach conduction with bed
     _OUTPUT<<","<<Q_lat      *convert;  // reach latent
     _OUTPUT<<","<<Q_GW       *convert;  // reach groundwater
     _OUTPUT<<","<<Q_rad      *convert;  // reach radiation
@@ -1186,7 +1291,8 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
     if(_type==ENTHALPY) {
       _POLLUT<<","<<_pModel->GetAvgForcing("TEMP_AVE"); //Air temperature
     }
-    for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+    for(int p=0;p<_pModel->GetNumSubBasins();p++) 
+    {
       CSubBasin* pBasin=_pModel->GetSubBasin(p);
       if(pBasin->IsGauged() && (pBasin->IsEnabled()))
       {
@@ -1199,12 +1305,42 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
           {
             double val = _pModel->GetObservedTS(i)->GetAvgValue(tt.model_time,Options.timestep);
             if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _POLLUT << "," << val; }
-            else { _POLLUT << ","; }
+            else                                             { _POLLUT << ","; }
           }
         }
       }
     }
     _POLLUT<<endl;
+  }
+
+  // MassLoadings.csv 
+  //----------------------------------------------------------------
+  if((Options.write_massloading) && (!_is_passive) && (_type!=ENTHALPY) && (_type!=ISOTOPE))
+  {
+    _LOADING<<tt.model_time<<","<<thisdate<<","<<thishour;
+
+    for(int p=0;p<_pModel->GetNumSubBasins();p++) {
+      CSubBasin* pBasin=_pModel->GetSubBasin(p);
+      if(pBasin->IsGauged() && (pBasin->IsEnabled()))
+      {
+        double Q=_pModel->GetSubBasin(p)->GetOutflowRate();
+        double C=GetOutflowConcentration(p);
+        double conv=(SEC_PER_DAY*LITER_PER_M3/MG_PER_KG);
+        if (_type==TRACER){conv=1.0;} //reports Q [m3/s]
+       
+        _LOADING<<","<<(Q*C);
+
+        /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
+          if(IsContinuousLoadingObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
+          {
+            double val = _pModel->GetObservedTS(i)->GetAvgValue(tt.model_time,Options.timestep);
+            if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _LOADING << "," << val; }
+            else                                             { _LOADING << ","; }
+          }
+        }*/
+      }
+    }
+    _LOADING<<endl;
   }
 }
 
@@ -1241,7 +1377,7 @@ void CConstituentModel::WriteEnsimMinorOutput(const optStruct &Options,const tim
   double rivulet_stor=GetTotalRivuletConstituentStorage();//[mg]
 
   if(tt.model_time!=0) { _OUTPUT<<" "<<influx*convert; }
-  else { _OUTPUT<<" 0.0"; }
+  else                 { _OUTPUT<<" 0.0"; }
   _OUTPUT<<" "<<channel_stor*convert<<" "<<rivulet_stor*convert;
 
   currentMass=0.0;
@@ -1482,6 +1618,7 @@ void CConstituentModel::CloseOutputFiles()
 {
   _OUTPUT.close();
   _POLLUT.close();
+  _LOADING.close();
 
   #ifdef _RVNETCDF_
   int    retval;      // error value for NetCDF routines
@@ -1489,6 +1626,8 @@ void CConstituentModel::CloseOutputFiles()
   _CONC_ncid    = -9;
   if (_POLLUT_ncid != -9)  {retval = nc_close(_POLLUT_ncid);  HandleNetCDFErrors(retval); }
   _POLLUT_ncid  = -9;
+  if(_LOADING_ncid != -9) { retval = nc_close(_LOADING_ncid);  HandleNetCDFErrors(retval); }
+  _LOADING_ncid  = -9;
   #endif
 }
 
@@ -1512,6 +1651,7 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
     if(_pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
       RVC<<"    :ResMassOut, "<<_aMout_res[p]<<","<<_aMout_res_last[p]<<endl;
       RVC<<"    :ResMass, "   <<_aMres    [p]<<","<<_aMres_last    [p]<<endl;
+      RVC<<"    :ResSedMass, "<<_aMsed    [p]<<","<<_aMsed_last    [p]<<endl;
     }
   }
   RVC<<":EndBasinTransportVariables"<<endl;

@@ -446,9 +446,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
                            "ParseClassPropertiesFile:  :SoilProfiles invalid command length",BAD_DATA);   
           bool is_special=((!string(s[0]).compare("LAKE")) ||
                            (!string(s[0]).compare("GLACIER")) ||
+                           (!string(s[0]).compare("PAVEMENT")) ||
                            (!string(s[0]).compare("ROCK")));
           ExitGracefullyIf((nhoriz==0) && (!is_special),
-                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,GLACIER, or ROCK) can have zero horizons",BAD_DATA);   
+                           "ParseClassPropertiesFile:  only special soil profiles (LAKE,GLACIER,PAVEMENT, or ROCK) can have zero horizons",BAD_DATA);   
               
           for (int m=0;m<nhoriz;m++)
           {
@@ -1281,7 +1282,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if     (!strcmp(s[1],"DECAY_COEFF"    )) { typ=PAR_DECAY_COEFF; }
       else if(!strcmp(s[1],"UPTAKE_COEFF"   )) { typ=PAR_UPTAKE_COEFF; }
       else if(!strcmp(s[1],"TRANSFORM_COEFF")) { typ=PAR_TRANSFORM_COEFF; shift=1;}
-      
+      else if(!strcmp(s[1],"TRANSFORM_N"    )) { typ=PAR_TRANSFORM_N;     shift=1; }
+      else if(!strcmp(s[1],"STOICHIO_RATIO" )) { typ=PAR_STOICHIO_RATIO;  shift=1; }
+      else if(!strcmp(s[1],"SORPT_COEFF"    )) { typ=PAR_SORPT_COEFF;     shift=1; }
+      else if(!strcmp(s[1],"EQFIXED_RATIO"  )) { typ=PAR_EQFIXED_RATIO;   shift=1; }
+      else if(!strcmp(s[1],"EQUIL_COEFF"    )) { typ=PAR_EQUIL_COEFF;     shift=1; }
+
       if(Len>=6+shift) { 
         int layer_ind;
         sv_type typ=CStateVariable::StringToSVType(s[4+shift],layer_ind,false);
@@ -1703,6 +1709,7 @@ void  CreateRVPTemplate(string *aP,class_type *aPC,int &nP,const optStruct &Opti
   TEMPLATE<<":SoilProfiles"<<endl;
   TEMPLATE<<"         LAKE, 0"<<endl;
   TEMPLATE<<"         ROCK, 0"<<endl;
+  TEMPLATE<<"     PAVEMENT, 0"<<endl;
   TEMPLATE<<"  *PROFILE_1*, "<<Options.num_soillayers<<", ";
   for(int i=0;i<Options.num_soillayers;i++){
     TEMPLATE<<"*SOILTYPE*, *THICKNESS (in m)*, ";

@@ -283,10 +283,11 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           }
 
           HRU_type HRUtype=HRU_STANDARD;
-          if (!pSoilProfile->GetTag().substr(0,4).compare("LAKE"   )){HRUtype=HRU_LAKE;   }
-          if (!pSoilProfile->GetTag().substr(0,7).compare("GLACIER")){HRUtype=HRU_GLACIER;}
-          if (!pSoilProfile->GetTag().substr(0,4).compare("ROCK"   )){HRUtype=HRU_ROCK;   }
-          if (!pSoilProfile->GetTag().substr(0,7).compare("WETLAND")){HRUtype=HRU_WETLAND;}
+          if (!pSoilProfile->GetTag().substr(0,4).compare("LAKE"    )){HRUtype=HRU_LAKE;   }
+          if (!pSoilProfile->GetTag().substr(0,7).compare("GLACIER" )){HRUtype=HRU_GLACIER;}
+          if (!pSoilProfile->GetTag().substr(0,4).compare("ROCK"    )){HRUtype=HRU_ROCK;   }
+          if (!pSoilProfile->GetTag().substr(0,8).compare("PAVEMENT")){HRUtype=HRU_ROCK;   }
+          if (!pSoilProfile->GetTag().substr(0,7).compare("WETLAND" )){HRUtype=HRU_WETLAND;}
           pHRU=new CHydroUnit( pModel,
                                s_to_i(s[0]),//ID
                                pModel->GetNumHRUs(),//k - global model index
@@ -583,6 +584,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           for(k=0;k<pModel->GetNumHRUs();k++)
           {
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_ROCK) && (!strcmp(s[4],"ROCK"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_ROCK) && (!strcmp(s[4],"PAVEMENT"))) { pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_GLACIER) && (!strcmp(s[4],"GLACIER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_LAKE) && (!strcmp(s[4],"LAKE"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
           }
@@ -591,6 +593,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           for(k=0;k<pModel->GetNumHRUs();k++)
           {
             if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_ROCK) && (!strcmp(s[4],"ROCK"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
+            if((pModel->GetHydroUnit(k)->GetHRUType()==HRU_ROCK) && (!strcmp(s[4],"PAVEMENT"))) { pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_GLACIER) && (!strcmp(s[4],"GLACIER"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
             if((pModel->GetHydroUnit(k)->GetHRUType()!=HRU_LAKE) && (!strcmp(s[4],"LAKE"))){ pHRUGrp->AddHRU(pModel->GetHydroUnit(k)); }
           }

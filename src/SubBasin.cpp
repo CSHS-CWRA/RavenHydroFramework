@@ -51,6 +51,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
   _convect_coeff     =2.0; //default 
+  _bed_conductance   =0.0;
+  _bed_thickness     =0.5; //m
 
   _t_conc            =AUTO_COMPUTE;
   _t_peak            =AUTO_COMPUTE;
@@ -632,6 +634,20 @@ double CSubBasin::GetHyporheicFlux() const {
   return _hyporheic_flux;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns reach bed conductance
+/// \return reach hyporheic bed conductance
+//
+double CSubBasin::GetBedConductance() const {
+  return _bed_conductance;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns reach bed thickness
+/// \return reach bed thickness
+//
+double CSubBasin::GetBedThickness() const {
+  return _bed_thickness;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns channel storage [m^3]
 /// \note Should only be called after _aQinHist has been updated by calling UpdateInflow
 /// \return Channel storage [m^3]
@@ -892,7 +908,9 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }  
   else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }  
-  
+  else if (!label_n.compare("BED_CONDUCTANCE")) { _bed_conductance = value; }
+  else if (!label_n.compare("BED_THICKNESS" ))  { _bed_thickness = value; }
+
   else if (!label_n.compare("RESERVOIR_DISABLED")) { _res_disabled=(bool)(value); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { _reach_length2=value; }
 
@@ -1353,12 +1371,12 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   {
     double dx=_reach_length/(double)(_nSegments);
     double K=GetMuskingumK(dx);
-    double X=GetMuskingumK(dx);
+    double X=GetMuskingumX(dx);
     if ((Options.timestep<2*K*X) || (Options.timestep>2*K*(1-X)))
     {
       string warn;
       if (Options.timestep<2*K*X){
-        warn ="CSubBasin::Initialize: inappropriate global time step for Muskingum routing in subbasin "+_name+" timestep too small, must increase # of reach segments";
+        warn ="CSubBasin::Initialize: inappropriate global time step for Muskingum routing in subbasin "+_name+" timestep too small, must decrease size of reach segments";
       }
       else{
         warn="CSubBasin::Initialize: inappropriate global time step for Muskingum routing in subbasin "+_name+": local timestepping will be used";
@@ -1366,7 +1384,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       WriteWarning(warn,Options.noisy);
       if (Options.noisy){
         cout<<warn<<endl;
-        cout<<"   For stability, the following condition should hold:"<<endl;
+        cout<<"   For Muskingum stability, the following condition should hold:"<<endl;
         cout<<"   2KX < dt < 2K(1-X): "<< 2*K*X<<" < "<<Options.timestep<< " < " << 2*K*(1-X)<<endl;
         cout<<"   where K="<<K<<" X="<<X<<" dt="<<Options.timestep<<endl<<endl;
       }

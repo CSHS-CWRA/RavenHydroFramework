@@ -584,6 +584,7 @@ void MassEnergyBalance( CModel            *pModel,
   //-----------------------------------------------------------------
    //determine total mass/energy loading from HRUs into respective basins (aRoutedMass[p])
   double ResMass    =0;
+  double ResSedMass =0;
   double MassOutflow=0;
   int    iSWmass,m;
   CConstituentModel *pConstitModel;
@@ -604,7 +605,7 @@ void MassEnergyBalance( CModel            *pModel,
         iSWmass =pModel->GetStateVarIndex(CONSTITUENT,m);
         
         if(pHRU->IsLinkedToReservoir()) {
-          double Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2);//[mg/d]
+          double Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2);//[mg/d] or [MJ/d]
           pConstitModel->SetReservoirPrecipLoad(p,Ploading);
           aPhinew[k][iSWmass]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
         }
@@ -626,8 +627,8 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->SetMassInflows    (p,aMinnew[p]);
         pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
-        pConstitModel->RouteMass         (p,aMoutnew,ResMass,Options,tt);  //Where everything happens!
-        pConstitModel->UpdateMassOutflows(p,aMoutnew,ResMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
+        pConstitModel->RouteMass         (p,aMoutnew,ResMass,ResSedMass,Options,tt);  //Where everything happens!
+        pConstitModel->UpdateMassOutflows(p,aMoutnew,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)

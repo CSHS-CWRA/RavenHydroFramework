@@ -32,6 +32,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
   string warn;
   bool   in_ifmode_statement=false;
   int    ncid=-9;
+  string const_name;
 
   bool ended            = false;
   bool has_irrig        = false;
@@ -124,7 +125,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":AssimilateStreamflow"        )){code=101;}
     else if  (!strcmp(s[0],":SpecifyGaugeForHRU"          )){code=102;}
     //-----------------TRANSPORT--------------------------------
-    else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300;}
+    else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300; const_name=s[1];}
+    else if  (!strcmp(s[0],":FixedTemperatureTimeSeries"  )){code=300; const_name="TEMPERATURE";}
     else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}
     else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302;}  
     else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303;}
@@ -1113,13 +1115,19 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
          {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
          {double concentration values} x nMeasurements
        :EndFixedConcentrationTimeSeries
+       or 
+       :FixedTemperatureTimeSeries [string state_var (storage compartment)] {optional HRU Group name}
+         {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
+         {double temperature values} x nMeasurements
+       :EndFixedConcentrationTimeSeries
      */
-      if (Options.noisy){cout <<"Fixed concentration time series"<<endl;}
+      if (Options.noisy){cout <<"Fixed concentration/temperature time series"<<endl;}
 
       int layer_ind;
       int i_stor;
-      string const_name = to_string(s[1]);
-      sv_type typ=CStateVariable::StringToSVType(s[2],layer_ind,false);
+      int shift=0;
+      if(const_name=="TEMPERATURE") { shift=-1; }
+      sv_type typ=CStateVariable::StringToSVType(s[2+shift],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":ConcentrationTimeSeries command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -1127,11 +1135,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       i_stor=pModel->GetStateVarIndex(typ,layer_ind);
       if (i_stor!=DOESNT_EXIST){
         int kk=DOESNT_EXIST;
-        if (Len>3){
+        if (Len>3+shift){
           CHRUGroup *pSourceGrp;
-          pSourceGrp=pModel->GetHRUGroup(s[3]);
+          pSourceGrp=pModel->GetHRUGroup(s[3+shift]);
           if (pSourceGrp==NULL){
-            ExitGracefully("Invalid HRU Group name supplied in :FixedConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
+            ExitGracefully("Invalid HRU Group name supplied in :FixedConcentrationTimeSeries or :FixedTemperatureTimeSeries command in .rvt file",BAD_DATA_WARN);
             break;
           }
           else{
@@ -1139,19 +1147,19 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
           }
         }
         CTimeSeries *pTS;
-        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2]),DOESNT_EXIST,"none",Options);//name=constitutent name+storage name
+        pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2+shift]),DOESNT_EXIST,"none",Options);//name=constitutent name+storage name
         
-        int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
+        int c=pModel->GetTransportModel()->GetConstituentIndex(const_name);
         if(c!=DOESNT_EXIST) {
           pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletTimeSeries(i_stor,kk,pTS);
           pTS->SetConstitInd(c);
         }
         else {
-          ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentrationTimeSeries command in .rvt file",BAD_DATA_WARN);
+          ExitGracefully("ParseMainInputFile: invalid constiuent in :FixedConcentrationTimeSeries or :FixedTemperatureTimeSeries command in .rvt file",BAD_DATA_WARN);
         }
       }
       else{
-        ExitGracefully(":ConcentrationTimeSeries command: invalid state variable name",BAD_DATA_WARN);
+        ExitGracefully(":FixedConcentrationTimeSeries or :FixedTemperatureTimeSeries command: invalid state variable name",BAD_DATA_WARN);
       }
       break;
     }
