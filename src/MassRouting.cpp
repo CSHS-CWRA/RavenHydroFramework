@@ -321,14 +321,15 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
   //Explicit solution of Crank-nicolson problem
   //dM/dt=QC_in-QC_out-lambda*M
   //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
+  double Min= 0.5 * Options.timestep * (aMout_new[nSegments - 1] + _aMout[p][nSegments - 1]);
   double tmp;
   tmp=_aMres[p]*(1.0-0.5*Options.timestep*(Q_old/V_old+decay_coeff*Res_mass));
-  tmp+=+0.5*Options.timestep*(aMout_new[nSegments-1]+_aMout[p][nSegments-1]);//inflow is outflow from channel
+  tmp+=Min;
   tmp+=_aMresRain[p]*Options.timestep;
   tmp/=(1.0+0.5*Options.timestep*(Q_new/V_new+decay_coeff));
   Res_mass=tmp;
 
-  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=0.0; } //handles dried out reservoir/lake
+  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass= ResSedMass = 0.0; } //handles dried out reservoir/lake
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets mass outflow from primary channel and updates flow history

@@ -351,6 +351,11 @@ void CModel::Initialize(const optStruct &Options)
     WriteAdvisory("CModelInitialize: if non-midnight start time is used and temperature forcings begin after midnight, average/max/min daily temperature forcings will be incorrect on the first (and often last) day of simulation.",Options.noisy);
     WriteAdvisory("                  It is suggested to either (a) use forcings which start on or prior to 00:00 of the model start date or (b) avoid algorithms which require these daily temperature inputs",Options.noisy);
   }
+  //--Check for non-midnight start time 
+  double rem_tsteps= (1.0 - floor(Options.julian_start_day + TIME_CORRECTION))/ Options.timestep;
+  if ((floor(rem_tsteps + TIME_CORRECTION)-rem_tsteps)>REAL_SMALL){
+    WriteWarning("CModelInitialize: the model time step and model start time is such that midnight does not correspond to a time step ending. This will cause issues with use of daily temperature forcings (and potentially other errors) throughout the simulation.", Options.noisy);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates initial total system water storage, updates _initWater

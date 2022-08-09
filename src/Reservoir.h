@@ -55,6 +55,9 @@ private:/*-------------------------------------------------------*/
   long         _SBID;                ///< subbasin ID
   double       _max_capacity;        ///< maximum reservoir capacity [m3]
 
+  double       _lakebed_thick;       ///< lakebed thickness [m]
+  double       _lakebed_cond;        ///< lakebed thermal conductivity [MJ/m/K/d]
+
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
   CTimeSeries *_pExtractTS;          ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
@@ -164,6 +167,7 @@ public:/*-------------------------------------------------------*/
   long              GetSubbasinID            () const;
 
   double            GetStorage               () const; //[m3]
+  double            GetOldStorage            () const; //[m3]
   double            GetOutflowRate           () const; //[m3/s]
   double            GetOldOutflowRate        () const; //[m3/s]
   double            GetIntegratedOutflow     (const double &tstep) const; //[m3]
@@ -174,7 +178,11 @@ public:/*-------------------------------------------------------*/
   double            GetReservoirGWLosses     (const double &tstep) const; //[m3]
   double            GetReservoirPrecipGains  (const double &tstep) const; //[m3]
   double            GetResStage              () const; //[m]
-  double            GetOldStorage            () const; //[m3]
+  double            GetSurfaceArea           () const; //[m2]
+  double            GetOldSurfaceArea        () const; //[m2]
+  double            GetLakebedThickness      () const; //[m]
+  double            GetLakebedConductivity   () const; //[MJ/m/K/d]
+
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
   string            GetCurrentConstraint     () const;
@@ -201,6 +209,8 @@ public:/*-------------------------------------------------------*/
   void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
   void              SetPrecip                (const double &precip_m3);
   void              SetDownstreamBasin       (const CSubBasin *pDownBasin);
+  void              SetLakebedThickness      (const double &thick); 
+  void              SetLakebedConductivity   (const double &cond); 
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);

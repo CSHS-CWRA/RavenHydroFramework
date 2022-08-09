@@ -21,6 +21,9 @@ class CEnthalpyModel :public CConstituentModel
   double         *_aBedTemp;   ///< array of riverbed temperatures [C] [size: nSubBasins]
 
   ofstream       _STREAMOUT;   ///< Output stream for StreamReachEnergyBalances.csv
+  ofstream         _LAKEOUT;   ///< Output stream for LakeEnergyBalances.csv
+
+  bool      _anyGaugedLakes;   ///< true if any gauged lakes/reservoirs exist for writing LakeEnergyBalances.csv
 
   double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
   void   UpdateReachEnergySourceTerms(const int p);
@@ -40,6 +43,7 @@ public:/*-------------------------------------------------------*/
   double GetWaterTemperature     (const double *state_vars, const int iWater) const;
 
   double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const;
+  double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad, double &Q_rain) const;
   double GetOutflowIceFraction   (const int p) const;
   double GetAvgLatentHeatFlux    () const;
   double GetDirichletEnthalpy    (const CHydroUnit *pHRU, const double &Cs) const;

@@ -69,7 +69,7 @@ private:/*------------------------------------------------------*/
 
   double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]  
   double        _convect_coeff;   ///< convection coefficient [MJ/m2/d/K]
-  double      _bed_conductance;   ///< bed conductance coefficient [MJ/m2/d/K]
+  double     _bed_conductivity;   ///< bed thermal conductivity [MJ/m/d/K]
   double        _bed_thickness;   ///< mean thickness of stream bed [m]
 
   //River/stream  channel data:
@@ -185,8 +185,8 @@ public:/*-------------------------------------------------------*/
   double               GetWaterLevel        () const;
   double               GetHyporheicFlux     () const;
   double               GetConvectionCoeff   () const;
-  double               GetBedConductance    () const;
-  double               GetBedThickness      () const;
+  double               GetRiverbedConductivity() const;
+  double               GetRiverbedThickness () const;
   double               GetBedslope          () const;
   double               GetWettedPerimeter   () const;
   double               GetTopWidth          () const;

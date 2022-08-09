@@ -17,6 +17,7 @@ CEnthalpyModel::CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,c
 {
   _aEnthalpyBeta=NULL;
   _aEnthalpySource=NULL;
+  _anyGaugedLakes=false;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -238,8 +239,8 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
   double cel_corr =1.0;//pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
-  double dbed     =pBasin->GetBedThickness(); //[m]
-  double kbed     =pBasin->GetBedConductance(); //
+  double dbed     =pBasin->GetRiverbedThickness(); //[m]
+  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K] 
 
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
 
@@ -305,8 +306,8 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
   double cel_corr =1.0;//pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
-  double dbed     = pBasin->GetBedThickness(); //[m]
-  double kbed     = pBasin->GetBedConductance(); //
+  double dbed     = pBasin->GetRiverbedThickness(); //[m]
+  double kbed     = pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]  
 
   double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
 
@@ -386,7 +387,61 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   return -(Q_sens+Q_cond+Q_GW+Q_rad+tstep*Q_lat+Q_fric)*tstep; //total energy lost [MJ] //TMP DEBUG - WHY IS THE tstep needed HERE before Q_lat!!?? Is it the water lost from the system??
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Calculates individual energy gain terms from lake/reservoir over current time step
+/// \param p    subbasin index
+/// \param Q_sens [out] energy gain from convective/sensible heating [MJ/d]
+/// \param Q_cond [out] energy gain from conductive exchange with bed [MJ/d]
+/// \param Q_lat  [out] energy gain from latent heat exchange [MJ/d]
+/// \param Q_rad  [out] energy gain from radiation of surface [MJ/d]
+/// \param Q_rain [out] energy gain from precip inputs [MJ/d]
+/// \returns total energy lost from reach over current time step [MJ]
+//
+double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, double &Q_cond, double &Q_lat, double &Q_rad, double &Q_rain) const
+{
+  double tstep = _pModel->GetOptStruct()->timestep;
 
+  CSubBasin  *pBasin = _pModel->GetSubBasin(p);
+  CReservoir *pRes   = _pModel->GetSubBasin(p)->GetReservoir();
+  if (pRes==NULL){return 0.0;}
+
+  double V_new = pRes->GetStorage();
+  double V_old = pRes->GetOldStorage();
+  double Q_new = pRes->GetOutflowRate() * SEC_PER_DAY;
+  double Q_old = pRes->GetOldOutflowRate() * SEC_PER_DAY;
+  double A_new = pRes->GetSurfaceArea();
+  double A_old = pRes->GetOldSurfaceArea();
+  double A_avg = 0.5 * (A_new + A_old);
+
+  CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
+  int           iAET=_pModel->GetStateVarIndex(AET);
+
+  double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
+  double hstar(0),ksed(0),Vsed=0.001;
+  if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
+    temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
+    SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
+    LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
+    LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
+    AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
+
+    hstar = pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  //May need a special hstar for open water
+    Vsed  = pRes->GetLakebedThickness() * pHRU->GetArea();
+    ksed  = pRes->GetLakebedConductivity() / 0.5 / pRes->GetLakebedThickness();//[MJ/m2/d/K]  
+  }
+  double T_new =ConvertVolumetricEnthalpyToTemperature(_aMres[p]      / V_new);
+  double T_old =ConvertVolumetricEnthalpyToTemperature(_aMres_last[p] / V_old);
+  double Ts_new=ConvertVolumetricEnthalpyToTemperature(_aMsed[p]      / Vsed );
+  double Ts_old=ConvertVolumetricEnthalpyToTemperature(_aMsed_last[p] / Vsed );
+  
+  Q_sens=hstar* A_avg * (temp_air -0.5*(T_new+T_old));
+  Q_cond=ksed * A_avg * (0.5*(Ts_new+Ts_old)- 0.5 * (T_new + T_old));
+  Q_rad =(SW+LW)*A_avg;
+  Q_lat =-(AET * DENSITY_WATER * LH_VAPOR)*A_avg;
+  Q_rain=_aMresRain[p];
+
+  return -(Q_sens + Q_cond  + Q_rad +  Q_lat + Q_rain) * tstep; //[MJ]
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates Res_mass and ResSedMass in basin with reservoir at end of time step
 ///
@@ -404,6 +459,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
                                                const optStruct   &Options,
                                                const time_struct &tt) const
 {
+  CSubBasin *pBasin= _pModel->GetSubBasin(p);
   CReservoir* pRes = _pModel->GetSubBasin(p)->GetReservoir();
   int nSegments    = _pModel->GetSubBasin(p)->GetNumSegments();
 
@@ -411,32 +467,57 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   double V_old=pRes->GetOldStorage    ();
   double Q_new=pRes->GetOutflowRate   ()*SEC_PER_DAY;
   double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
-    
+  double A_new=pRes->GetSurfaceArea();
+  double A_old=pRes->GetOldSurfaceArea();
+  double A_avg=0.5*(A_new+A_old);
   double tstep=Options.timestep;
 
-  double decay_coeff=0.0;
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
   int           iAET=_pModel->GetStateVarIndex(AET);
-  if(pHRU!=NULL) { 
-    double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
-    double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
-    double LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
-    double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
-    double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
+
+  double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
+  double hstar(0),ksed(0),Vsed=0.001;
+  if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
+    temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
+    SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
+    LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
+    LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
+    AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
+
+    Vsed  = pRes->GetLakebedThickness() * pHRU->GetArea();
+    hstar = pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  //May need a special hstar for open water
+    ksed  = pRes->GetLakebedConductivity()/0.5/ pRes->GetLakebedThickness();//[MJ/m2/d/K]  
   }
 
-  //Explicit solution of Crank-nicolson problem
-  //dM/dt=QC_in-QC_out-lambda*M
-  //dM/dt=0.5(QC_in^(n+1)-QC_in^(n))-0.5(Q_outC^(n+1)-Q_outC^(n))+M_rain-0.5*lambda*(C^(n+1)+C^n)/V
+  //Explicit solution of Crank-nicolson problem as set of two non-linear algebraic equations
+  //dE   /dt=Qh_in-Qh_out+(Rnet*A+P*hrain*A)-ET*rho*LH*A+k*(Tair-T(E))*A+ksed*(Tsed-T(E))*A     //[MJ/d]
+  //dEsed/dt=                                                           -ksed*(Tsed-T(E))*A     //[MJ/d]
+  // 
+  double J = 0.5 * tstep * (ksed * A_avg  / HCP_WATER) / Vsed ;
+  double JJ= 0.5 * tstep * (ksed * A_avg  / HCP_WATER);
+  double RHS;
+  RHS =0.5*(aMout_new[nSegments-1]+_aMout[p][nSegments-1])*tstep; // inflow [MJ]
+  RHS+=_aMresRain[p]*tstep;                                       // rainfall inputs [MJ]
+  RHS+= A_avg *(SW+LW+LW_in)*tstep;                               // net radiation [MJ]
+  RHS-= A_avg *(AET*DENSITY_WATER*LH_VAPOR)*tstep;                // latent heat [MJ]
+  RHS+= A_avg *(hstar*temp_air)*tstep;                            // sensible heat exhange [MJ]
 
-  double tmp;
-  tmp=_aMres[p]*(1.0-0.5* tstep *(Q_old/V_old+decay_coeff*Res_mass));
-  tmp+=+0.5* tstep *(aMout_new[nSegments-1]+_aMout[p][nSegments-1]);//inflow is outflow from channel
-  tmp+=_aMresRain[p]* tstep;
-  tmp/=(1.0+0.5* tstep *(Q_new/V_new+decay_coeff));
-  Res_mass=tmp;
+  RHS+=(1.0-0.5*tstep/V_old*(Q_old+hstar*A_old/HCP_WATER+ksed*A_avg/HCP_WATER))*_aMres_last[p];  
+  RHS+=(J                                                                     )*_aMsed_last[p];
 
-  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=0.0; } //handles dried out reservoir/lake
+  //solution to |a b||x|=|e|
+  //            |c d||y| |f|
+  double a=1.0+0.5*tstep/V_new*(Q_new-hstar*A_new/HCP_WATER-ksed*A_avg/HCP_WATER);  //[MJ/m2/d/K]*[m2]/[MJ/m3/K] = [m3/d]  
+  double b=-J;
+  double c=-JJ/V_new;
+  double d=(1+J);
+  double e=RHS;
+  double f=(1-J)*_aMsed_last[p]+(JJ/V_old)*_aMres_last[p];
+
+  Res_mass  =(b*f-e*d)/(b*c-a*d);
+  ResSedMass=(e*c-a*f)/(b*c-a*d);
+
+  if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=ResSedMass=0.0; } //handles dried out reservoir/lake
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns total energy lost from subbasin reach over current time step [MJ]
@@ -622,7 +703,7 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
   for(int p=0;p<_pModel->GetNumSubBasins();p++)
   { 
     CSubBasin *pSB=_pModel->GetSubBasin(p);
-    if(pSB->GetName()=="") { name=to_string(pSB->GetID())+"="+to_string(pSB->GetID()); }
+    if(pSB->GetName()=="") { name=to_string(pSB->GetID()); }
     else                   { name=pSB->GetName(); }
 
     if((pSB->IsGauged()) && (pSB->IsEnabled())) 
@@ -639,6 +720,53 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
     }
   }
   _STREAMOUT<<endl;
+
+  //LakeEnergyBalances.csv
+  //--------------------------------------------------------------------
+  _anyGaugedLakes=false;
+  for (int p = 0; p < _pModel->GetNumSubBasins(); p++)
+  {
+    CSubBasin* pSB = _pModel->GetSubBasin(p);
+    if ((pSB->IsGauged()) && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL) && (pSB->GetReservoir()->GetHRUIndex() != DOESNT_EXIST)) { _anyGaugedLakes = true; }
+  }
+  
+  if (_anyGaugedLakes){
+    string filename = "LakeEnergyBalances.csv";
+    filename = FilenamePrepare(filename, Options);
+
+    _LAKEOUT.open(filename.c_str());
+    if (_LAKEOUT.fail()) {
+      ExitGracefully(("CEnthalpyModel::WriteOutputFileHeaders: Unable to open output file " + filename + " for writing.").c_str(), FILE_OPEN_ERR);
+    }
+
+    string name;
+    _LAKEOUT << "time[d],date,hour,air temp.[" + to_string(DEG_SYMBOL) + "C]" << ", net rad [MJ/m2/d],";
+    for (int p = 0; p < _pModel->GetNumSubBasins(); p++)
+    {
+      CSubBasin *pSB = _pModel->GetSubBasin(p);
+      if (pSB->GetName() == "") { name = to_string(pSB->GetID()); }
+      else                      { name = pSB->GetName(); }
+
+      if ((pSB->IsGauged()) && (pSB->IsEnabled()))
+      {
+        CReservoir* pRes = _pModel->GetSubBasin(p)->GetReservoir();
+        if ((pRes != NULL) && (pRes->GetHRUIndex() != DOESNT_EXIST))
+        {
+          _LAKEOUT << name << " Ein[MJ/m2/d],";
+          _LAKEOUT << name << " Eout[MJ/m2/d],";
+          _LAKEOUT << name << " Q_rain[MJ/m2/d]";
+          _LAKEOUT << name << " Q_sens[MJ/m2/d],";
+          _LAKEOUT << name << " Q_cond[MJ/m2/d],";
+          _LAKEOUT << name << " Q_lat[MJ/m2/d],";
+          _LAKEOUT << name << " Q_rad[MJ/m2/d],";
+          _LAKEOUT << name << " lake storage[MJ/m2],";
+          _LAKEOUT << name << " lake temp [C],";
+          _LAKEOUT << name << " lake sed temp [C],";
+        }
+      }
+    }
+    _LAKEOUT << endl;
+  }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -653,9 +781,12 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
 
   if(tt.model_time==0.0) { return; }
 
+  //StreamReachEnergyBalances.csv
+  //--------------------------------------------------------------------
   int    p;
-  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad,Q_fric;
-  
+  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad,Q_fric,Q_rain;
+  double Ein,Eout;
+
   string thisdate=tt.date_string;
   string thishour=DecDaysToHours(tt.julian_day);
 
@@ -664,24 +795,64 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   _STREAMOUT<<_pModel->GetAvgForcing("SW_RADIA_NET")+_pModel->GetAvgForcing("LW_RADIA_NET")<<",";
 
   double mult=1.0; //convert everything to MJ/m2/d 
-  double Ein,Eout;
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
-    mult=1.0/_pModel->GetSubBasin(p)->GetReachLength()/_pModel->GetSubBasin(p)->GetTopWidth();
-    if ((_pModel->GetSubBasin(p)->IsGauged()) && (_pModel->GetSubBasin(p)->IsEnabled())) 
+    mult = 1.0 / _pModel->GetSubBasin(p)->GetReachLength() / _pModel->GetSubBasin(p)->GetTopWidth();
+    if ((_pModel->GetSubBasin(p)->IsGauged()) && (_pModel->GetSubBasin(p)->IsEnabled()))
     {
-      Ein =0.5*(_aMinHist[p][0]+_aMinHist[p][1]);
-      Eout=0.5*(_aMout_last[p] +_aMout[p][_pModel->GetSubBasin(p)->GetNumSegments()-1]);
-      GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad,Q_fric);
+      Ein = 0.5 * (_aMinHist[p][0] + _aMinHist[p][1]);
+      Eout = 0.5 * (_aMout_last[p] + _aMout[p][_pModel->GetSubBasin(p)->GetNumSegments() - 1]);
+      GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_rad, Q_fric);
 
-      _STREAMOUT<<mult*Ein   <<","<<mult*Eout <<","; 
-      _STREAMOUT<<mult*Q_sens<<","<<mult*Q_cond<<","<<mult*Q_lat<<",";
-      _STREAMOUT<<mult*Q_GW  <<","<<mult*Q_rad<<",";
-      _STREAMOUT<<mult*Q_fric<<","<<mult*_channel_storage[p]<<",";
+      _STREAMOUT << mult * Ein << "," << mult * Eout << ",";
+      _STREAMOUT << mult * Q_sens << "," << mult * Q_cond << "," << mult * Q_lat << ",";
+      _STREAMOUT << mult * Q_GW << "," << mult * Q_rad << ",";
+      _STREAMOUT << mult * Q_fric << "," << mult * _channel_storage[p] << ",";
     }
   }
   _STREAMOUT<<endl;
 
+  //LakeEnergyBalances.csv
+  //--------------------------------------------------------------------
+  if (_anyGaugedLakes){
+
+    _LAKEOUT << tt.model_time << "," << thisdate << "," << thishour << ",";
+    _LAKEOUT << _pModel->GetAvgForcing("TEMP_AVE") << ",";
+    _LAKEOUT << _pModel->GetAvgForcing("SW_RADIA_NET") + _pModel->GetAvgForcing("LW_RADIA_NET") << ",";
+
+    for (p = 0; p < _pModel->GetNumSubBasins(); p++)
+    {
+      if ((_pModel->GetSubBasin(p)->IsGauged()) && (_pModel->GetSubBasin(p)->IsEnabled()))
+      {
+        CReservoir* pRes = _pModel->GetSubBasin(p)->GetReservoir();
+
+        if ((pRes != NULL) && (pRes->GetHRUIndex() != DOESNT_EXIST)) 
+        {
+          double HRUarea= _pModel->GetHydroUnit(pRes->GetHRUIndex())->GetArea();
+          double V_sed  = pRes->GetLakebedThickness() * HRUarea;
+          double V_new  = pRes->GetStorage();
+
+          mult = 1.0 / HRUarea;
+
+          Ein  = 0.5 * (_aMout_last[p] + _aMout[p][_pModel->GetSubBasin(p)->GetNumSegments() - 1]);
+          Eout = 0.5 * (_aMout_res[p] + _aMout_res_last[p]);
+          
+          GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_rad,Q_rain);
+          
+          double lakeTemp= ConvertVolumetricEnthalpyToTemperature(_aMres[p] / V_new);
+          double sedTemp = ConvertVolumetricEnthalpyToTemperature(_aMres[p] / V_sed);
+
+
+          _LAKEOUT << mult * Ein    << "," << mult * Eout      << ",";
+          _LAKEOUT << mult * Q_rain << "," << mult * Q_sens    << ",";
+          _LAKEOUT << mult * Q_cond << "," << mult * Q_lat     << ",";
+          _LAKEOUT << mult * Q_rad  << "," << mult * _aMres[p] << ",";
+          _LAKEOUT << lakeTemp      << "," << sedTemp          << ",";
+        }
+      }
+    }
+    _LAKEOUT << endl;
+  }
 }
 
 //////////////////////////////////////////////////////////////////

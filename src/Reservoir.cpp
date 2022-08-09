@@ -18,6 +18,9 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
 
   _pDownSB=NULL;
 
+  _lakebed_thick=1.0;
+  _lakebed_cond =0.0;
+
   _stage     =0.0;
   _stage_last=0.0;
   _min_stage =0.0;
@@ -385,6 +388,26 @@ double  CReservoir::GetStorage           () const { return GetVolume(_stage); }
 /// \returns current stage [m]
 //
 double  CReservoir::GetResStage          () const { return _stage; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns current surface area [m2]
+//
+double  CReservoir::GetSurfaceArea       () const { return GetArea(_stage); }
+
+//////////////////////////////////////////////////////////////////
+/// \returns start-of-timestep surface area [m2]
+//
+double  CReservoir::GetOldSurfaceArea    () const { return GetArea(_stage_last); }
+
+//////////////////////////////////////////////////////////////////
+/// \returns lakebed thickness [m]
+//
+double  CReservoir::GetLakebedThickness() const { return _lakebed_thick; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns lakebed thermal conductivity [MJ/m/K/d]
+//
+double  CReservoir::GetLakebedConductivity() const { return _lakebed_cond; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate [m3/s]
@@ -791,6 +814,18 @@ void  CReservoir::SetPrecip(const double& precip_m3)
 //
 void  CReservoir::SetDownstreamBasin(const CSubBasin* pDownBasin) {
   _pDownSB=pDownBasin;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief sets lakebed thickness
+//
+void CReservoir::SetLakebedThickness(const double& thick){
+  _lakebed_thick=thick;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief sets lakebed thermal conductivity
+//
+void CReservoir::SetLakebedConductivity(const double& cond) {
+  _lakebed_cond=cond;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief gets current constraint name

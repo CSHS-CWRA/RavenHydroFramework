@@ -51,7 +51,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
   _convect_coeff     =2.0; //default 
-  _bed_conductance   =0.0;
+  _bed_conductivity  =0.0;
   _bed_thickness     =0.5; //m
 
   _t_conc            =AUTO_COMPUTE;
@@ -637,14 +637,14 @@ double CSubBasin::GetHyporheicFlux() const {
 /// \brief Returns reach bed conductance
 /// \return reach hyporheic bed conductance
 //
-double CSubBasin::GetBedConductance() const {
-  return _bed_conductance;
+double CSubBasin::GetRiverbedConductivity() const {
+  return _bed_conductivity;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reach bed thickness
 /// \return reach bed thickness
 //
-double CSubBasin::GetBedThickness() const {
+double CSubBasin::GetRiverbedThickness() const {
   return _bed_thickness;
 }
 //////////////////////////////////////////////////////////////////
@@ -908,12 +908,21 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }  
   else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }  
-  else if (!label_n.compare("BED_CONDUCTANCE")) { _bed_conductance = value; }
-  else if (!label_n.compare("BED_THICKNESS" ))  { _bed_thickness = value; }
 
-  else if (!label_n.compare("RESERVOIR_DISABLED")) { _res_disabled=(bool)(value); }
-  else if (!label_n.compare("CORR_REACH_LENGTH"))  { _reach_length2=value; }
-
+  else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ _bed_conductivity = value; }
+  else if (!label_n.compare("RIVERBED_THICKNESS"   )){ _bed_thickness = value; }
+  else if (!label_n.compare("RESERVOIR_DISABLED"  )) { _res_disabled=(bool)(value); }
+  else if (!label_n.compare("CORR_REACH_LENGTH"   )) { _reach_length2=value; }
+  else if (!label_n.compare("LAKEBED_CONDUCTIVITY")) {
+    if (_pReservoir != NULL) {
+      _pReservoir->SetLakebedConductivity(value);
+    }
+  }
+  else if (!label_n.compare("LAKEBED_THICKNESS")) {
+    if (_pReservoir != NULL) {
+      _pReservoir->SetLakebedThickness(value);
+    }
+  }
   else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) { 
     if(_pReservoir!=NULL) {
       _pReservoir->SetCrestWidth(value);
