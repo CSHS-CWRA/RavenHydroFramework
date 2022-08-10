@@ -564,13 +564,13 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     stor_u      = state_vars[iFrom[0]];
     tens_stor_u = pHRU->GetSoilTensionStorageCapacity(0);
-    ExitGracefullyIf(tens_stor_u<=0,"SOILEVAP_ROOT: one or more soil class has field capacity less than or equal to zero.",BAD_DATA);
+    tens_stor_u=max(0.0001,tens_stor_u);
 
     rates[0] = PET * rootfrac_u * min(stor_u/tens_stor_u,1.0);  //upper layer evaporation rate [mm/d]
 
     stor_l      = state_vars[iFrom[1]];
     tens_stor_l = pHRU->GetSoilTensionStorageCapacity(1);
-    ExitGracefullyIf(tens_stor_l<=0,"SOILEVAP_ROOT: one or more soil class has field capacity less than or equal to zero.",BAD_DATA);
+    tens_stor_l=max(0.0001,tens_stor_l);
 
     rates[1] = PET * rootfrac_l * min(stor_l/tens_stor_l,1.0);  //upper layer evaporation rate [mm/d]
 
