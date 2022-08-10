@@ -174,7 +174,8 @@ void  CmvOWEvaporation::ApplyConstraints( const double            *state_vars,
                                           double      *rates) const
 {
   if (rates[0]<0)             {rates[0]=0.0;}//positivity constraint
-  //can't remove more than is there (with exception of surface water in reach HRU)
+
+  //can't remove more than is there (with exception of surface water in reach or lake HRU)
   if(iFrom[0]!=pModel->GetStateVarIndex(SURFACE_WATER)) {
     rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
     if(state_vars[iFrom[0]]<=0) { rates[0]=0.0; }//reality check
@@ -293,8 +294,8 @@ void  CmvLakeEvaporation::ApplyConstraints( const double                *state_v
                                             const time_struct &t,
                                             double      *rates) const
 {
-  if (state_vars[iFrom[0]]<=0){rates[0]=0.0; return;}//reality check
-  if (rates[0]<0)             {rates[0]=0.0; return;}//positivity constraint
+  if (state_vars[iFrom[0]]<=0){rates[0]=0.0; }//reality check
+  if (rates[0]<0)             {rates[0]=0.0; }//positivity constraint
 
   //can't remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);

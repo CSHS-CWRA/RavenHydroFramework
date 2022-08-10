@@ -284,6 +284,7 @@ public:/*-------------------------------------------------------*/
   void   SetMlatHist             (const int p,const int histsize,const double *aMlat,const double MlatLast);
   void   SetMinHist              (const int p,const int histsize,const double *aMin);
   void   SetInitialReservoirMass (const int p,const double res_mass,const double res_mass_last);
+  void   SetInitReservoirSedMass (const int p, const double res_mass, const double res_mass_last);
   void   SetReservoirPrecipLoad  (const int p,const double precip_load_rate);
   void   SetReservoirMassOutflow (const int p,const double Mout,    const double MoutLast);
   

@@ -475,7 +475,7 @@ void MassEnergyBalance( CModel            *pModel,
       p   =pHRU->GetSubBasinIndex();
 
       if(pHRU->IsLinkedToReservoir()) { 
-        double Pvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3]
+        double Pvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3] [iSW is ALL precip on reservoir]
         pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(Pvol);
         aPhinew[k][iSW]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
       }
@@ -569,15 +569,12 @@ void MassEnergyBalance( CModel            *pModel,
       if(pBasin->GetReservoir()!=NULL) {//update AET for reservoir-linked HRUs
         k=pBasin->GetReservoir()->GetHRUIndex();
         if ((k!=DOESNT_EXIST) && (iAET!=DOESNT_EXIST)){
-          double AET=pBasin->GetReservoir()->GetAET();//[mm/d]
-          pModel->GetHydroUnit(k)->SetStateVarValue(iAET,AET); 
+          aPhinew[k][iAET]=pBasin->GetReservoir()->GetAET();//[mm/d]
         }
       }
     }
   }//end for pp...
   delete [] res_Qstruct;
-
-
 
   //-----------------------------------------------------------------
   //      CONSTITUENT (MASS OR ENERGY) ROUTING
@@ -605,7 +602,7 @@ void MassEnergyBalance( CModel            *pModel,
         iSWmass =pModel->GetStateVarIndex(CONSTITUENT,m);
         
         if(pHRU->IsLinkedToReservoir()) {
-          double Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2);//[mg/d] or [MJ/d]
+          double Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2);//[mg/d] or [MJ/d] [iSWmass is ALL precip mass/energy on reservoir]
           pConstitModel->SetReservoirPrecipLoad(p,Ploading);
           aPhinew[k][iSWmass]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
         }

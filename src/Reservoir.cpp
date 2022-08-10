@@ -20,6 +20,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
 
   _lakebed_thick=1.0;
   _lakebed_cond =0.0;
+  _lake_convcoeff=0.0;
 
   _stage     =0.0;
   _stage_last=0.0;
@@ -408,6 +409,11 @@ double  CReservoir::GetLakebedThickness() const { return _lakebed_thick; }
 /// \returns lakebed thermal conductivity [MJ/m/K/d]
 //
 double  CReservoir::GetLakebedConductivity() const { return _lakebed_cond; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns lake thermal convection coefficient [MJ/m2/d/K]  
+//
+double  CReservoir::GetLakeConvectionCoeff() const { return _lake_convcoeff; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns current outflow rate [m3/s]
@@ -828,6 +834,12 @@ void CReservoir::SetLakebedConductivity(const double& cond) {
   _lakebed_cond=cond;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief sets lake convection coeff
+//
+void CReservoir::SetLakeConvectionCoeff(const double& conv) {
+  _lake_convcoeff=conv;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief gets current constraint name
 /// \returns current constraint applied to estimate stage/flow
 //
@@ -1019,7 +1031,7 @@ void  CReservoir::UpdateStage(const double &new_stage,const double &res_outflow,
   _DAscale   =1.0;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns AET, meant to be called at end of time step
+/// \brief returns AET [mm/d], meant to be called at end of time step
 //
 double CReservoir::GetAET() const
 {
@@ -1027,7 +1039,7 @@ double CReservoir::GetAET() const
     double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
     if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
       Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-      return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/_pHRU->GetArea(); //normalized to HRU area 
+      return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/(_pHRU->GetArea()*M2_PER_KM2); //normalized to HRU area 
     }
     return 0.0;
   }
@@ -1044,7 +1056,7 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0; //all losses outside the system 
 
-  _AET = GetAET()*_pHRU->GetArea()/MM_PER_METER*tstep; //m3;
+  _AET = GetAET()*(_pHRU->GetArea()*M2_PER_KM2)/ MM_PER_METER * tstep; //m3;
   _MB_losses+=_AET;
 
   if(_seepage_const>0) {

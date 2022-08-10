@@ -57,7 +57,8 @@ private:/*-------------------------------------------------------*/
 
   double       _lakebed_thick;       ///< lakebed thickness [m]
   double       _lakebed_cond;        ///< lakebed thermal conductivity [MJ/m/K/d]
-
+  double       _lake_convcoeff;      ///< lake surface thermal convection coefficient [MJ/m2/d/K]
+ 
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
   CTimeSeries *_pExtractTS;          ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
@@ -182,6 +183,7 @@ public:/*-------------------------------------------------------*/
   double            GetOldSurfaceArea        () const; //[m2]
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
+  double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]  
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -211,6 +213,7 @@ public:/*-------------------------------------------------------*/
   void              SetDownstreamBasin       (const CSubBasin *pDownBasin);
   void              SetLakebedThickness      (const double &thick); 
   void              SetLakebedConductivity   (const double &cond); 
+  void              SetLakeConvectionCoeff   (const double &conv);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
   void              AddWeirHeightTS          (CTimeSeries *pWeirHt);

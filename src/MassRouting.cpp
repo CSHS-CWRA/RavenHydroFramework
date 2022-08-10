@@ -373,8 +373,8 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
     _aMres         [p]=ResMass;
 
     _aMout_res_last[p]=_aMout_res[p];
-    _aMout_res     [p]=(pRes->GetOutflowRate()*SEC_PER_DAY/pRes->GetStorage())*_aMres[p]; //mg/d or MJ/d
-
+    _aMout_res     [p]=((pRes->GetOutflowRate()*SEC_PER_DAY)/pRes->GetStorage())*_aMres[p]; //mg/d or MJ/d
+    
     _aMsed_last    [p]=_aMsed[p];
     _aMsed         [p]=ResSedMass;
 

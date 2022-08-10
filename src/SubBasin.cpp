@@ -914,19 +914,16 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("RESERVOIR_DISABLED"  )) { _res_disabled=(bool)(value); }
   else if (!label_n.compare("CORR_REACH_LENGTH"   )) { _reach_length2=value; }
   else if (!label_n.compare("LAKEBED_CONDUCTIVITY")) {
-    if (_pReservoir != NULL) {
-      _pReservoir->SetLakebedConductivity(value);
-    }
+    if (_pReservoir != NULL) {_pReservoir->SetLakebedConductivity(value); }
   }
   else if (!label_n.compare("LAKEBED_THICKNESS")) {
-    if (_pReservoir != NULL) {
-      _pReservoir->SetLakebedThickness(value);
-    }
+    if (_pReservoir != NULL) {_pReservoir->SetLakebedThickness(value);}
+  }
+  else if (!label_n.compare("LAKE_CONVECT_COEFF")) {
+    if (_pReservoir != NULL) {_pReservoir->SetLakeConvectionCoeff(value);}
   }
   else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) { 
-    if(_pReservoir!=NULL) {
-      _pReservoir->SetCrestWidth(value);
-    }
+    if (_pReservoir != NULL) { _pReservoir->SetCrestWidth(value);}
   }
   else{
     return false;//bad string

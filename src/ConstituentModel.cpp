@@ -410,6 +410,18 @@ void   CConstituentModel::SetInitialReservoirMass(const int p,const double res_m
   _aMres_last[p]=res_mass_last;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Set reservoir initial sediment mass conditions
+/// \param p [in] global subbasin index
+/// \param Mout [in] reservoir sed mass or energy [mg or MJ]
+/// \param MoutLast [in] reservoir mass/energy from previous timestep [mg or MJ]
+//
+void   CConstituentModel::SetInitReservoirSedMass(const int p, const double res_mass, const double res_mass_last)
+{
+  _aMsed     [p] = res_mass;
+  _aMsed_last[p] = res_mass_last;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Set reservoir rainfall input rate for this time step (called in Solver)
 /// \param p [in] global subbasin index
 /// \param precip_load_rate [in] reservoir mass/enthalpy input rate  [mg/d] or [MJ/d]

@@ -723,6 +723,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           :Min  [nQinHist]  [aMinHist  x nQinHist ]
           {:ResMassOut [Mout_res] [last_Mout_res]}
           {:ResMass [mass] [last mass]}
+          {:ResSedMass [sed mass] [sed last mass]}
         :BasinIndex ID
         ...
       :EndBasinTransportVariables
@@ -818,6 +819,12 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         {
           if(Len>=3) {
             pConstit->SetReservoirMassOutflow(p,s_to_d(s[1]),s_to_d(s[2]));
+          }
+        }
+        else if (!strcmp(s[0], ":ResSedMass"))
+        {
+          if (Len >= 3) {
+            pConstit->SetInitReservoirSedMass(p, s_to_d(s[1]), s_to_d(s[2]));
           }
         }
         else if(!strcmp(s[0],":EndBasinTransportVariables"))

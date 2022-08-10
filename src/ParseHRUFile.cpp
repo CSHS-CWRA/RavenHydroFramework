@@ -1025,6 +1025,9 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
   bool dztr=false;
   bool minstageDom=false;
   double demand_mult=1.0;
+  double lakebedthick=-1.0;
+  double lakebedcond =-1.0;
+  double lakeconvcoeff=-1.0;
 
   curve_function type;
   type=CURVE_POWERLAW;
@@ -1113,6 +1116,21 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     {
       if(Options.noisy) { cout << ":DemandMultiplier" << endl; }
       demand_mult=s_to_d(s[1]);
+    }
+    else if (!strcmp(s[0], ":LakebedThickness"))
+    {
+      if (Options.noisy) { cout << ":LakebedThickness" << endl; }
+      lakebedthick = s_to_d(s[1]);
+    }
+    else if (!strcmp(s[0], ":LakebedThermalConductivity"))
+    {
+      if (Options.noisy) { cout << ":LakebedThermalConductivity" << endl; }
+      lakebedcond = s_to_d(s[1]);
+    }
+    else if (!strcmp(s[0], ":LakeConvectionCoeff"))
+    {
+      if (Options.noisy) { cout << ":LakeConvectionCoeff" << endl; }
+      lakeconvcoeff = s_to_d(s[1]);
     }
     //----------------------------------------------------------------------------------------------
     else if(!strcmp(s[0],":VolumeStageRelation"))
@@ -1643,6 +1661,17 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
 
   for (int i = 0; i < nCSs; i++) {
     pRes->AddControlStructure(pCSs[i]);
+  }
+  //Thermal properties
+  //----------------------------------------------
+  if (lakebedcond > 0) {
+    pRes->SetLakebedConductivity(lakebedcond);
+  }
+  if (lakebedthick > 0) {
+    pRes->SetLakebedThickness(lakebedthick);
+  }
+  if (lakeconvcoeff > 0) {
+    pRes->SetLakeConvectionCoeff(lakeconvcoeff);
   }
 
   for(int i = 0; i < nDates; i++) { delete[] aQQ[i]; }delete[] aQQ;
