@@ -16,6 +16,7 @@ appname := Raven.exe
 
 CXX      := g++
 CXXFLAGS := -Wno-deprecated
+CXXFLAGS += -c++11
 
 srcfiles := $(shell find . -name "*.cpp")
 objects  := $(patsubst %.cpp, %.o, $(srcfiles))

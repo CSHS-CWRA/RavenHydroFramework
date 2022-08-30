@@ -209,6 +209,17 @@ double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Set bed temperature 
+/// \param p     [in] subbasin index
+/// \param val   [in] bed temperature (C)
+//
+void CEnthalpyModel::SetBedTemperature(const int p,const double &val) 
+{
+  _aBedTemp[p]=val;
+}
+
+
+//////////////////////////////////////////////////////////////////
 /// \brief Updates source terms for energy balance on subbasin reaches each time step
 /// \details both _aEnthalpyBeta and _aEnthalpySource (and its history) are generated here
 /// \param p  subbasin index

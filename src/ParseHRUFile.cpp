@@ -741,7 +741,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       CSubbasinGroup *pSBGroup=NULL;
       pSBGroup=pModel->GetSubBasinGroup(s[1]);
 
-      string advice="SubBasinGroup "+to_string(s[1])+" was populated with these basins :";
+      string advice="SubBasinGroup "+to_string(s[1])+" was populated with these basins: ";
 
       if(pSBGroup==NULL) {//group not yet defined
         pSBGroup=new CSubbasinGroup(s[1],pModel->GetNumSubBasinGroups());

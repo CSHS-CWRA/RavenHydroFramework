@@ -7,6 +7,7 @@
 #include "StateVariables.h"
 #include "HydroUnits.h"
 #include "ParseLib.h"
+#include "EnergyTransport.h"
 
 void SetInitialStateVar(CModel *&pModel,const int SVind,const sv_type typ,const int m,const int k,const double &val);
 //////////////////////////////////////////////////////////////////
@@ -724,6 +725,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
           {:ResMassOut [Mout_res] [last_Mout_res]}
           {:ResMass [mass] [last mass]}
           {:ResSedMass [sed mass] [sed last mass]}
+          {:BedTemperature [bed temp]}
         :BasinIndex ID
         ...
       :EndBasinTransportVariables
@@ -825,6 +827,13 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         {
           if (Len >= 3) {
             pConstit->SetInitReservoirSedMass(p, s_to_d(s[1]), s_to_d(s[2]));
+          }
+        }
+        else if (!strcmp(s[0], ":BedTemperature"))
+        {
+          if (Len >= 3) {
+            CEnthalpyModel *pEnth=(CEnthalpyModel*)(pConstit);
+            pEnth->SetBedTemperature (p,s_to_d(s[1]));
           }
         }
         else if(!strcmp(s[0],":EndBasinTransportVariables"))

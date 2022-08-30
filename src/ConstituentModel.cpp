@@ -1203,6 +1203,9 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   if((Options.suppressICs) && (tt.model_time==0.0)) { return; }
 
+  if ((_pModel->GetEnsemble() != NULL) && (_pModel->GetEnsemble() ->DontWriteOutput())) { return; }
+
+
   convert=1.0/MG_PER_KG; //[mg->kg]
   if(_type==ENTHALPY)               { convert=1.0;                   } //[MJ]->[MJ]
   if(Options.write_constitmass)     { convert=1.0/(area*M2_PER_KM2); } //[mg->mg/m2] [MJ->MJ/m2]
@@ -1481,6 +1484,9 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
 
   if((Options.suppressICs) && (tt.model_time==0.0)) { return; }
   
+  if ((_pModel->GetEnsemble() != NULL) && (_pModel->GetEnsemble() ->DontWriteOutput())) { return; }
+
+
   double convert;
   convert=1.0/MG_PER_KG; //[mg->kg]
   if(_type==ENTHALPY)               { convert=1.0;                   } //[MJ]->[MJ]
@@ -1664,6 +1670,10 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
       RVC<<"    :ResMassOut, "<<_aMout_res[p]<<","<<_aMout_res_last[p]<<endl;
       RVC<<"    :ResMass, "   <<_aMres    [p]<<","<<_aMres_last    [p]<<endl;
       RVC<<"    :ResSedMass, "<<_aMsed    [p]<<","<<_aMsed_last    [p]<<endl;
+    }
+    if (_type == ENTHALPY) {
+      CEnthalpyModel *pEnth=(CEnthalpyModel*)(this);
+      RVC<<"     :RiverbedTemp, "<<pEnth->GetBedTemperature(p)<<endl;
     }
   }
   RVC<<":EndBasinTransportVariables"<<endl;

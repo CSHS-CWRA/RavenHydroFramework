@@ -52,6 +52,8 @@ CEnsemble::CEnsemble(const int num_members,const optStruct &Options)
     _aOutputDirs[e]=Options.main_output_dir;
     _aRunNames  [e]=Options.run_name;
   }
+
+  _disable_output=false;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Ensemble Default Destructor
@@ -82,6 +84,14 @@ ensemble_type CEnsemble::GetType() const {
 double CEnsemble::GetStartTime(const int e) const {
   return 0.0;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief returns true if output is to be disabled (for a subset of time or ensemble members, usually)
+/// \return true if output is to be disabled
+//
+bool   CEnsemble::DontWriteOutput() const {
+  return _disable_output;
+}
+
 
 //Manipulator Functions
 //////////////////////////////////////////////////////////////////

@@ -9,6 +9,9 @@ Copyright (c) 2008-2022 the Raven Development Team
 bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long SBID);
 bool ParseInitialConditionsFile(CModel*& pModel,const optStruct& Options);
 bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
+
+string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
+
 //step 1) get perturbations working - run in ensemble mode [DONE]
 //step 2) Get order working - must write soln at t0 and reboot e>N ensembles at t0 with this soln (to avoid duplicating perturbations) [DONE]
 //step 3) get assimilation matrix calcs running [DONE]
@@ -77,7 +80,7 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
   _window_size=1;
   _nTimeSteps=0;
 
-  _truncate_hind=false;
+  _truncate_hind=true; //default behaviour - hindcasts stop at t0
   _duration_stored=Options.duration;
 }
 //////////////////////////////////////////////////////////////////
@@ -185,7 +188,7 @@ void CEnKFEnsemble::SetToWarmEnsemble(string runname){_warm_ensemble=true;_warm_
 //////////////////////////////////////////////////////////////////
 /// \brief truncates hindcasts 
 //
-void CEnKFEnsemble::TruncateHindcasts() { _truncate_hind=true; }
+void CEnKFEnsemble::DontTruncateHindcasts() { _truncate_hind=false; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief set value of data horizon
@@ -232,6 +235,9 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   }
   if(Options.assimilation_start>Options.duration) {
     ExitGracefully("CEnKFEnsemble::Initialize: assimilation start time after simulation has ended.",BAD_DATA_WARN);
+  }
+  if(Options.assimilation_start<0.0) {
+    ExitGracefully("CEnKFEnsemble::Initialize: assimilation start time before start time of simulation.",BAD_DATA_WARN);
   }
   _t_assim_start=Options.assimilation_start;
 
@@ -363,7 +369,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 
   // Create and open EnKFOutput file
   //-----------------------------------------------
-  string filename=Options.main_output_dir+"EnKFOutput.csv";
+  string filename= FilenamePrepare("EnKFOutput.csv",Options);
   _ENKFOUT.open(filename.c_str());
 }
 //////////////////////////////////////////////////////////////////
@@ -377,14 +383,18 @@ void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const tim
 {
   //Write EnKF-adjusted and unadjusted solutions immediately after state update
   //Update model state matrix
-  //MOVE TO CLOSETIMESTEP OPS SO WRITTEN EVEN IF end==t_assim_start 
+  //WANTED TO MOVE TO CLOSETIMESTEP OPS SO WRITTEN EVEN IF end==t_assim_start 
   //YOU CANT DO THIS BECAUSE ASSIMILATION HANDLED AFTER SIMULATION IS PAST T_0
-  if(fabs(tt.model_time-_t_assim_start)<TIME_CORRECTION) 
+  if(fabs(tt.model_time-_t_assim_start)<0.1*Options.timestep) 
   {
     pModel->WriteMajorOutput(Options,tt,"solution_t0",false);
   
     if(e<_nEnKFMembers) {
       AddToStateMatrix(pModel,Options,e);
+    }
+
+    if (_truncate_hind){
+      _disable_output=true; //so output is not written for single time step after assimilation
     }
   }
 
@@ -467,6 +477,7 @@ void CEnKFEnsemble::AssimilationCalcs()
   double** X_delta;
   double* ans =new double[Nobs];
   double* diff=new double[Nobs];
+
   AllocateMatrix(M,N,A);     
   AllocateMatrix(Nobs,N,HA); 
   AllocateMatrix(N,Nobs,HAT);
@@ -497,7 +508,7 @@ void CEnKFEnsemble::AssimilationCalcs()
       A[k][i]=X[i][k]-Xmean; // M x N
     }
   }
-  cout<<"  -calculated HA, A matrices"<<endl;
+  //cout<<"  -calculated HA, A matrices"<<endl;
 
   //P=1/(N-1)*HA*(HA)'+1/(N-1)*(eQ*eQ');
   // 1st term is covariance matrix of simulated output states
@@ -517,14 +528,15 @@ void CEnKFEnsemble::AssimilationCalcs()
     SVD(P,diff,ans,Nobs,svd_tol);
     for(j=0;j<Nobs;j++) { MM[j][i]=ans[j]; } //MM is Nobs x N
   }
-  MatMult(HAT,MM,N,Nobs,N,Z);          //Z is N x N
+  MatMult(HAT,MM,N,Nobs,N,Z);           //Z is N x N
 
-  //Xa=X + 1/(N-1)*A*Z;
-  MatMult(A,Z,M,N,N,X_deltaT);         //X_deltaT is M x N
+  //X_delta = 1/(N-1)*A*Z;
+  MatMult(A,Z,M,N,N,X_deltaT);          //X_deltaT is M x N
   ScalarMatMult(X_deltaT,1.0/(N-1),M,N,X_deltaT);
-  TransposeMat(X_deltaT,M,N,X_delta);  //X_delta is N x M
+  TransposeMat (X_deltaT,M,N,X_delta);  //X_delta is N x M
 
-  MatAdd(_state_matrix,X_delta,N,M,_state_matrix);   //update state matrix
+  //update state matrix Xa=X+X_delta
+  MatAdd(_state_matrix,X_delta,N,M,_state_matrix);   
 
   /*cout<<"X_delta[][]"<<endl;
   for(int i=0;i<N;i++) {
@@ -682,6 +694,7 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   }
 
   //truncates all hindcasts so they don't run all the way to forecast horizon
+  // they must run at least one time step past 
   if(_truncate_hind) {
     if(e<_nEnKFMembers) { Options.duration=_t_assim_start+Options.timestep; }
     else                { Options.duration=_duration_stored;                }

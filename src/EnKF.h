@@ -52,7 +52,7 @@ private:
 
   double         _t_assim_start;    //< assimilation start time 
 
-  bool           _truncate_hind;    //< true if hindcasts should be truncated to t_0+Delta t rather than run to end of model [default:false]
+  bool           _truncate_hind;    //< true if hindcasts should be truncated to t_0(+Delta t) rather than run to end of model [default:false]
   double         _duration_stored;  //< stored simulation duration to revert to after hindcast stage
 
   int            _window_size;      //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
@@ -77,19 +77,19 @@ public:
 
   double GetStartTime(const int e) const;
 
-  void TruncateHindcasts   ();
-  void SetToWarmEnsemble   (string runname);
-  void SetWindowSize       (const int nTimesteps);
-  void SetForecastRVTFile  (string filename);
-  void AddPerturbation     (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
-  void AddObsPerturbation  (sv_type      type, disttype distrib, double *distpars, adjustment adj);
-  void AddAssimilationState(sv_type sv, int layer, int assim_groupID);
+  void DontTruncateHindcasts();
+  void SetToWarmEnsemble    (string runname);
+  void SetWindowSize        (const int nTimesteps);
+  void SetForecastRVTFile   (string filename);
+  void AddPerturbation      (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
+  void AddObsPerturbation   (sv_type      type, disttype distrib, double *distpars, adjustment adj);
+  void AddAssimilationState (sv_type sv, int layer, int assim_groupID);
 
-  void Initialize       (const CModel* pModel,const optStruct &Options);
-  void UpdateModel      (CModel *pModel,optStruct &Options,const int e);
-  void StartTimeStepOps (CModel* pModel,optStruct& Options,const time_struct &tt,const int e);
-  void CloseTimeStepOps (CModel* pModel,optStruct& Options,const time_struct& tt,const int e); //called at end of each timestep
-  void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e);
+  void Initialize           (const CModel* pModel,const optStruct &Options);
+  void UpdateModel          (CModel *pModel,optStruct &Options,const int e);
+  void StartTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct &tt,const int e);
+  void CloseTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct& tt,const int e); //called at end of each timestep
+  void FinishEnsembleRun    (CModel *pModel,optStruct &Options,const int e);
 };
 #endif
 

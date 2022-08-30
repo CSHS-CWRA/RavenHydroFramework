@@ -640,6 +640,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   if ((tt.model_time==0) && (Options.suppressICs)){return;}
 
+  if ((_pEnsemble != NULL) && (_pEnsemble->DontWriteOutput())){return;}
+
   //converts the 'write every x timesteps' into a 'write at time y' value
   output_int = Options.output_interval * Options.timestep;
   mod_final  = ffmod(tt.model_time,output_int);
@@ -2036,6 +2038,8 @@ void  CModel::WriteEnsimMinorOutput (const optStruct &Options,
   double rivulet_stor  =GetTotalRivuletStorage();
 
   if ((tt.model_time==0) && (Options.suppressICs==true) && (Options.period_ending)){return;}
+
+  if ((_pEnsemble != NULL) && (_pEnsemble->DontWriteOutput())){return;}
 
   //----------------------------------------------------------------
   // write watershed state variables  (WatershedStorage.tb0)

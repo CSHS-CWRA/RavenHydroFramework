@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team, Ayman Khedr
+  Copyright (c) 2008-2022 the Raven Development Team, Ayman Khedr
   ----------------------------------------------------------------*/
 
 #include "CustomOutput.h"
@@ -899,6 +899,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     //-----------------------------------------------------------------------
     if (reset)
     {
+      if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { return; }
+
       if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
       {  
         string sep=",";
@@ -995,6 +997,8 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   }//end for (k=0;...
 
   if (reset){
+    if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { return; }
+
   	if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
     { 
       _CUSTOM<<endl;//valid for ensim or .csv format

@@ -347,7 +347,7 @@ void CGauge::AddTimeSeries      (CTimeSeries *pTS, forcing_type ftype)
   if (index!=DOESNT_EXIST)//overwriting existing time series
   {
     cout <<"ftype : "<<ftype<<" Forcing: "<<ForcingToString(ftype)<<endl;
-    string warn="CGauge::AddTimeSeries: a time series of data has been overwritten at  gauge "+_name;
+    string warn="CGauge::AddTimeSeries: a time series of data has been overwritten at gauge "+_name;
     WriteWarning(warn,true);
     delete _pTimeSeries[index]; _pTimeSeries[index]=pTS;
   }

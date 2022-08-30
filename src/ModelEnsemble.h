@@ -47,6 +47,8 @@ protected:/*------------------------------------------------------*/
 
   int           _rand_seed;   ///< random seed 
 
+  bool          _disable_output; ///< true if output from ensemble should be turned off (default: false)
+
 public:/*-------------------------------------------------------*/
   CEnsemble(const int num_members, const optStruct &Options);
   ~CEnsemble();
@@ -56,6 +58,8 @@ public:/*-------------------------------------------------------*/
   ensemble_type  GetType() const;
 
   virtual double GetStartTime(const int e) const;
+
+  bool           DontWriteOutput() const;
 
   //Manipulator Functions
   void SetRandomSeed     (const unsigned int seed);

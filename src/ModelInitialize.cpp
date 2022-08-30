@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "IrregularTimeSeries.h"
@@ -728,6 +728,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
     has_data[g]=_pGauges[g]->TimeSeriesExists(forcing);
     if(has_data[g]){ nGaugesWithData++; }
   }
+
   //handle the case that weights are allowed to sum to zero -netCDF is available
   //still need to allocate all zeros
   if (ForcingGridIsAvailable(forcing)){ return; }

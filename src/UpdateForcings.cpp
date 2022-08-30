@@ -60,6 +60,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_windspeed  = NULL;  
   CForcingGrid *pGrid_relhum     = NULL;
   CForcingGrid *pGrid_SW_net     = NULL;
+  CForcingGrid *pGrid_LW_inc     = NULL;
+  CForcingGrid *pGrid_SW         = NULL;
   CForcingGrid *pGrid_tave       = NULL;
   CForcingGrid *pGrid_daily_tmin = NULL;
   CForcingGrid *pGrid_daily_tmax = NULL;
@@ -71,17 +73,20 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
   bool rain_gridded           = ForcingGridIsInput(F_RAINFALL)       ;
   bool snow_gridded           = ForcingGridIsInput(F_SNOWFALL)       ;
-  bool pet_gridded            = ForcingGridIsInput(F_PET)            ;
-  bool owpet_gridded          = ForcingGridIsInput(F_OW_PET)         ;
-  bool windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL)       ;  
-  bool relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY)   ;
-  bool SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET)   ;
   bool temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE)       ;
   bool temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN) ;
   bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX) ;
   bool temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE) ;
-  bool recharge_gridded       = ForcingGridIsInput(F_RECHARGE)       ;
   bool precip_temp_gridded    = ForcingGridIsInput(F_PRECIP_TEMP)    ;
+
+  bool pet_gridded            = ForcingGridIsInput(F_PET)            && (Options.evaporation   ==PET_DATA);
+  bool owpet_gridded          = ForcingGridIsInput(F_OW_PET)         && (Options.ow_evaporation==PET_DATA);
+  bool windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL)       && (Options.wind_velocity ==WINDVEL_DATA); 
+  bool relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY)   && (Options.rel_humidity  ==RELHUM_DATA); 
+  bool SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET)   && (Options.SW_radia_net  ==NETSWRAD_DATA); 
+  bool LWinc_gridded          = ForcingGridIsInput(F_LW_INCOMING)    && (Options.LW_incoming   ==LW_INC_DATA);
+  bool SW_gridded             = ForcingGridIsInput(F_SW_RADIA)       && (Options.SW_radiation  ==SW_RAD_DATA);
+  bool recharge_gridded       = ForcingGridIsInput(F_RECHARGE)       && (Options.recharge      ==RECHARGE_DATA);
 
   //Extract data from gauge time series
   for (g=0;g<_nGauges;g++)
@@ -233,6 +238,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       windspeed_gridded      = ForcingGridIsInput(F_WIND_VEL);
       relhum_gridded         = ForcingGridIsInput(F_REL_HUMIDITY);
       SWnet_gridded          = ForcingGridIsInput(F_SW_RADIA_NET);
+      LWinc_gridded          = ForcingGridIsInput(F_LW_INCOMING);
+      SW_gridded             = ForcingGridIsInput(F_SW_RADIA);
       temp_ave_gridded       = ForcingGridIsInput(F_TEMP_AVE);
       temp_daily_min_gridded = ForcingGridIsInput(F_TEMP_DAILY_MIN);
       temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX);
@@ -249,6 +256,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(windspeed_gridded)       { pGrid_windspeed   = GetForcingGrid(F_WIND_VEL); }
       if(relhum_gridded)          { pGrid_relhum      = GetForcingGrid(F_REL_HUMIDITY); }
       if(SWnet_gridded)           { pGrid_SW_net      = GetForcingGrid(F_SW_RADIA_NET); }
+      if(LWinc_gridded)           { pGrid_LW_inc      = GetForcingGrid(F_LW_INCOMING); }
+      if(SW_gridded)              { pGrid_SW          = GetForcingGrid(F_SW_RADIA); }
       if(temp_ave_gridded)        { pGrid_tave        = GetForcingGrid(F_TEMP_AVE); }
       if(temp_daily_min_gridded)  { pGrid_daily_tmin  = GetForcingGrid(F_TEMP_DAILY_MIN); }
       if(temp_daily_max_gridded)  { pGrid_daily_tmax  = GetForcingGrid(F_TEMP_DAILY_MAX); }
@@ -349,6 +358,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_pet   = GetForcingGrid(F_PET);
         pGrid_pet-> ReadData(Options,tt.model_time);
         F.PET   = pGrid_pet->GetWeightedValue(k,tt.model_time,Options.timestep);
+        cout<<"reading gridded PET"<<endl;
       }
       if(owpet_gridded) {
         pGrid_owpet   = GetForcingGrid(F_OW_PET);
@@ -370,6 +380,17 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_SW_net->ReadData(Options, tt.model_time);
         F.SW_radia_net = pGrid_SW_net->GetWeightedValue(k, tt.model_time, Options.timestep);
       }
+      if (LWinc_gridded) {
+        pGrid_LW_inc = GetForcingGrid(F_LW_INCOMING);
+        pGrid_LW_inc->ReadData(Options, tt.model_time);
+        F.LW_incoming = pGrid_LW_inc->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+      if (SW_gridded) {
+        pGrid_SW = GetForcingGrid(F_SW_RADIA);
+        pGrid_SW->ReadData(Options, tt.model_time);
+        F.SW_radia = pGrid_SW->GetWeightedValue(k, tt.model_time, Options.timestep);
+      }
+
       //-------------------------------------------------------------------
       //  Temperature Corrections
       //-------------------------------------------------------------------

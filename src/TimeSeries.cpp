@@ -1476,11 +1476,11 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // (8) Initialize data array (data type that is needed by NetCDF library)
   // -------------------------------
   double *aVec=new double[dim1*dim2];//stores actual data
+  ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
   for(int i=0; i<dim1*dim2; i++) {
     aVec[i]=NETCDF_BLANK_VALUE;
   }
-  ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
-    
+  
   double **aTmp2D=NULL; //stores pointers to rows/columns of 2D data (ntime x nstations)
   double  *aTmp1D=NULL; //stores pointers to rows/columns of 1D data (ntime)
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
