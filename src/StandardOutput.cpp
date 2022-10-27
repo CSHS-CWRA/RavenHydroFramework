@@ -1296,10 +1296,12 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
     if(BAS.fail()) {
       WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
     }
-    BAS<<"ID,Qref[m3/s],reach_length[m],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
+    BAS<<"ID,Qref[m3/s],reach_length[m],area[km2],drainage_area[km2],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
     for(int pp=0;pp<_nSubBasins;pp++) {
       BAS<<_pSubBasins[pp]->GetID()<<",  "<<_pSubBasins[pp]->GetReferenceFlow();
       BAS<<","<<_pSubBasins[pp]->GetReachLength();
+      BAS<<","<<_pSubBasins[pp]->GetBasinArea();
+      BAS<<","<<_pSubBasins[pp]->GetDrainageArea();
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_CONC");
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_TO_PEAK");
       BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SHAPE");

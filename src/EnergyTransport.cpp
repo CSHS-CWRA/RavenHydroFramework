@@ -567,11 +567,10 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
     }
 
     //J_ij=A_ij+E*dA_ij/dE = Jacobian
-    double tryit=0.0;
-    J[0][0]=A[0][0]+0.5*tstep*(hstar*A_new+ksed*A_avg) * (TemperatureEnthalpyDerivative(E_guess /V_new)/ V_new-tryit*T_guess /E_guess);
-    J[0][1]=A[0][1]-0.5*tstep*(            ksed*A_avg) * (TemperatureEnthalpyDerivative(Es_guess/Vsed )/ Vsed -tryit*Ts_guess/Es_guess);
-    J[1][0]=A[1][0]-0.5*tstep*(            ksed*A_avg) * (TemperatureEnthalpyDerivative(E_guess /V_new)/ V_new-tryit*T_guess /E_guess);
-    J[1][1]=A[1][1]+0.5*tstep*(            ksed*A_avg) * (TemperatureEnthalpyDerivative(Es_guess/Vsed )/ Vsed -tryit*Ts_guess/Es_guess);
+    J[0][0]=A[0][0]+0.5*tstep*(hstar*A_new+ksed*A_avg) * (TemperatureEnthalpyDerivative(E_guess /V_new)/ V_new);
+    J[0][1]=A[0][1]-0.5*tstep*(            ksed*A_avg) * (TemperatureEnthalpyDerivative(Es_guess/Vsed )/ Vsed );
+    J[1][0]=A[1][0]-0.5*tstep*(            ksed*A_avg) * (TemperatureEnthalpyDerivative(E_guess /V_new)/ V_new);
+    J[1][1]=A[1][1]+0.5*tstep*(            ksed*A_avg) * (TemperatureEnthalpyDerivative(Es_guess/Vsed )/ Vsed );
 
     R[0]   =-A[0][0]*E_guess-A[0][1]*Es_guess+B[0];
     R[1]   =-A[1][0]*E_guess-A[1][1]*Es_guess+B[1];

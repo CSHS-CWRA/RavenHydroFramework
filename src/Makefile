@@ -16,6 +16,7 @@ appname := Raven.exe
 
 CXX      := g++
 CXXFLAGS := -Wno-deprecated
+# some compilers require the c++11 flag, some may not
 CXXFLAGS += -c++11
 
 srcfiles := $(shell find . -name "*.cpp")
