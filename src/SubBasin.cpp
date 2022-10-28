@@ -2263,9 +2263,9 @@ void CSubBasin::WriteToSolutionFile (ofstream &RVC) const
   RVC<<_name<<endl;
   RVC<<"    :ChannelStorage, "<<_channel_storage<<endl;
   RVC<<"    :RivuletStorage, "<<_rivulet_storage<<endl;
-  RVC<<"    :Qout,"<<_nSegments  ;for (int i=0;i<_nSegments;i++){RVC<<","<<_aQout    [i];}RVC<<","<<_QoutLast<<endl;
-  RVC<<"    :Qlat,"<<_nQlatHist  ;for (int i=0;i<_nQlatHist;i++){RVC<<","<<_aQlatHist[i];}RVC<<","<<_QlatLast<<endl;
-  RVC<<"    :Qin ,"<<_nQinHist   ;for (int i=0;i<_nQinHist; i++){RVC<<","<<_aQinHist [i];}RVC<<endl;
+  RVC<<"    :Qout,"<<_nSegments  ;for (int i=0;i<_nSegments;i++){RVC<<","<<_aQout    [i]; if (i%200==199){RVC<<endl<<"    ";}}RVC<<","<< _QoutLast << endl;
+  RVC<<"    :Qlat,"<<_nQlatHist  ;for (int i=0;i<_nQlatHist;i++){RVC<<","<<_aQlatHist[i]; if (i%200==199){RVC<<endl<<"    ";}}RVC<<","<< _QlatLast << endl;
+  RVC<<"    :Qin ,"<<_nQinHist   ;for (int i=0;i<_nQinHist; i++){RVC<<","<<_aQinHist [i]; if (i%200==199){RVC<<endl<<"    ";}}RVC<<endl;
   if (_pReservoir!=NULL){
     _pReservoir->WriteToSolutionFile(RVC);
   }

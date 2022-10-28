@@ -562,44 +562,51 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         }
         else if (!strcmp(s[0],":Qout"))
         {
-          if (Len>2){
+          if (Len>2){ 
             int nsegs=s_to_i(s[1]);
-            if (Len>=nsegs+3){
-              double *aQout=new double [nsegs+1];
-              for (int i=0;i<=nsegs;i++){
-                aQout[i]=s_to_d(s[i+2]);
-              }
-              pBasin->SetQoutArray(nsegs,aQout,aQout[nsegs]);
-              delete [] aQout;
-            }
+            double *aQout=new double [nsegs+1];
+            int i=2;
+            int j=0;
+            do {
+              aQout[j]=s_to_d(s[i]);
+              i++; j++;
+              if ((i==Len) && (j<nsegs+1)) { end_of_file = pp->Tokenize(s, Len); i = 0; }
+            } while ((j<=nsegs) && (!end_of_file));
+            pBasin->SetQoutArray(nsegs,aQout,aQout[nsegs]);
+            delete [] aQout;
           }
         }
         else if (!strcmp(s[0],":Qlat"))
         {
           if (Len>2){
             int histsize=s_to_i(s[1]);
-            if (Len>=histsize+3){
-              double *aQlat=new double [histsize+1];
-              for (int i=0;i<=histsize;i++){
-                aQlat[i]=s_to_d(s[i+2]);
-              }
-              pBasin->SetQlatHist(histsize,aQlat,aQlat[histsize]);
-              delete [] aQlat;
-            }
+            double *aQlat=new double [histsize+1];
+            int i=2;
+            int j=0;
+            do {
+              aQlat[j]=s_to_d(s[i]);
+              i++; j++;
+              if ((i==Len) && (j<histsize+1)){end_of_file=pp->Tokenize(s,Len); i=0;}
+            } while ((j<=histsize) && (!end_of_file));
+            pBasin->SetQlatHist(histsize,aQlat,aQlat[histsize]);
+            delete [] aQlat;
           }
         }
         else if (!strcmp(s[0],":Qin"))
         {
           if (Len>2){
             int histsize=s_to_i(s[1]);
-            if (Len>=histsize+2){
-              double *aQin=new double [histsize];
-              for (int i=0;i<histsize;i++){
-                aQin[i]=s_to_d(s[i+2]);
-              }
-              pBasin->SetQinHist(histsize,aQin);
-              delete [] aQin;
-            }
+            double *aQin=new double [histsize];
+            int i=2;
+            int j=0;
+            do {
+              aQin[j]=s_to_d(s[i]);
+              i++; j++;
+              if ((i==Len) && (j<histsize)){end_of_file=pp->Tokenize(s,Len); i=0;}
+            } while ((j<histsize) && (!end_of_file));
+            
+            pBasin->SetQinHist(histsize,aQin);
+            delete [] aQin;
           }
         }
         else if (!strcmp(s[0],":ResStage"))
