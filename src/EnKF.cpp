@@ -694,10 +694,10 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   }
 
   //truncates all hindcasts so they don't run all the way to forecast horizon
-  // they must run at least one time step past 
+  // they must run at least one time step past t0
   if(_truncate_hind) {
-    if(e<_nEnKFMembers) { Options.duration=_t_assim_start+Options.timestep; }
-    else                { Options.duration=_duration_stored;                }
+    if(e<_nEnKFMembers) { Options.duration=_t_assim_start+ Options.timestep; }
+    else                { Options.duration=max(_duration_stored,_t_assim_start + Options.timestep); }
   }
   
   //- read forecast .rvt file if required
