@@ -883,8 +883,8 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   string thishour=DecDaysToHours(tt.julian_day);
 
   _STREAMOUT<<tt.model_time <<","<<thisdate<<","<<thishour<<",";
-  _STREAMOUT<<_pModel->GetAvgForcing("TEMP_AVE")<<",";
-  _STREAMOUT<<_pModel->GetAvgForcing("SW_RADIA_NET")+_pModel->GetAvgForcing("LW_RADIA_NET")<<",";
+  _STREAMOUT << _pModel->GetAvgForcing(F_TEMP_AVE) << ",";
+  _STREAMOUT << _pModel->GetAvgForcing(F_SW_RADIA_NET) + _pModel->GetAvgForcing(F_LW_RADIA_NET) << ",";
 
   double mult=1.0; //convert everything to MJ/m2/d 
   for(p=0;p<_pModel->GetNumSubBasins();p++)
@@ -909,8 +909,9 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   if (_anyGaugedLakes)
   {
     _LAKEOUT << tt.model_time << "," << thisdate << "," << thishour << ",";
-    _LAKEOUT << _pModel->GetAvgForcing("TEMP_AVE") << ",";
-    _LAKEOUT << _pModel->GetAvgForcing("SW_RADIA_NET") + _pModel->GetAvgForcing("LW_RADIA_NET") << ",";
+    _LAKEOUT << _pModel->GetAvgForcing(F_TEMP_AVE) << ",";
+    _LAKEOUT << _pModel->GetAvgForcing(F_SW_RADIA_NET) + _pModel->GetAvgForcing(F_LW_RADIA_NET) << ",";
+
 
     for (p = 0; p < _pModel->GetNumSubBasins(); p++)
     {

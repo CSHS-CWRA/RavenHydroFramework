@@ -277,7 +277,7 @@ public:/*-------------------------------------------------------*/
 
   double            GetAvgStateVar     (const int i) const;
   double            GetAvgConcentration(const int i) const;
-  double            GetAvgForcing      (const string &forcing_string) const;
+  double            GetAvgForcing      (const forcing_type &ftype) const;
   double            GetAvgCumulFlux    (const int i, const bool to) const;
   double            GetAvgCumulFluxBet (const int iFrom, const int iTo) const;
 

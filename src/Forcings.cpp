@@ -154,19 +154,15 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   }
   return F_UNRECOGNIZED;
 }
-
 /////////////////////////////////////////////////////////////////////
 /// \brief Return double value of forcing function specified by passed string parameter of force structure f
 ///
-/// \param &forcing_string [in] String value of forcing function
+/// \param &ftype [in] forcing function as enumerateed type
 /// \param &f [out] HRU forcing functions structure
-/// \return Double forcing function value corresponding to &forcing_string
+/// \return Double forcing function value corresponding to ftype
 //
-double GetForcingFromString(const string &forcing_string, const force_struct &f)
+double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
 {
-  forcing_type ftype;
-  ftype=GetForcingTypeFromString(forcing_string);
-
   if      (ftype==F_PRECIP          ){return f.precip;}
   else if (ftype==F_PRECIP_DAILY_AVE){return f.precip_daily_ave;}
   else if (ftype==F_PRECIP_5DAY     ){return f.precip_5day;}
@@ -221,9 +217,22 @@ double GetForcingFromString(const string &forcing_string, const force_struct &f)
 
   else
   {
-    ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
+    ExitGracefully("GetForcingFromType: invalid forcing type",RUNTIME_ERR);
   }
   return 0.0;
+}
+/////////////////////////////////////////////////////////////////////
+/// \brief Return double value of forcing function specified by passed string parameter of force structure f
+///
+/// \param &forcing_string [in] String value of forcing function
+/// \param &f [out] HRU forcing functions structure
+/// \return Double forcing function value corresponding to &forcing_string
+//
+double GetForcingFromString(const string &forcing_string, const force_struct &f)
+{
+  forcing_type ftype;
+  ftype=GetForcingTypeFromString(forcing_string);
+  return GetForcingFromType(ftype,f);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -285,7 +294,7 @@ string GetForcingTypeUnits(forcing_type ftype)
 
   case F_SUBDAILY_CORR:   {units="none"; break;}
   default:
-    //ExitGracefully("GetForcingFromString: invalid forcing string",RUNTIME_ERR);
+    //ExitGracefully("GetForcingTypeUnits: invalid forcing string",RUNTIME_ERR);
     break;
   }
   return units;

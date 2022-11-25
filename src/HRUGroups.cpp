@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2022 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 
@@ -139,11 +139,11 @@ double CHRUGroup::GetAvgConcentration(const int i) const
   return sum/areasum;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns average value of a forcing function specified by forcing_string over the total area covered by the HRU group
-/// \param &forcing_string [in] Index corresponding to the state variable whose average will be calculated
-/// \return Average of forcing function with identifier forcing_string, across all HRUs in group, per unit area coverage of group
+/// \brief Returns average value of a forcing function over the total area covered by the HRU group
+/// \param &ftype [in] eneumerated type corresponding to the forcing whose average will be calculated
+/// \return Average of forcing function across all HRUs in group, per unit area coverage of group
 //
-double CHRUGroup::GetAvgForcing (const string &forcing_string) const
+double CHRUGroup::GetAvgForcing (const forcing_type &ftype) const
 {
   double sum=0.0;
   double areasum=0.0;
@@ -152,7 +152,7 @@ double CHRUGroup::GetAvgForcing (const string &forcing_string) const
   {
     if(_pHRUs[k]->IsEnabled()){
       area    =_pHRUs[k]->GetArea();
-      sum    +=_pHRUs[k]->GetForcing(forcing_string)*area;
+      sum    +=_pHRUs[k]->GetForcing(ftype)*area;
       areasum+=area;
     }
   }

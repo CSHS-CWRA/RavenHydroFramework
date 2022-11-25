@@ -71,6 +71,7 @@ private:/*------------------------------------------------------*/
   int          _svind;     ///< state variable index (if output var is a SV or flux)
   int          _svind2;    ///< target state variable index (if output var is a flux between two compartments)
   string       _force_str; ///< forcing function name (if output var is a forcing function)
+  forcing_type _ftype;     ///< forcing function type (if output var is a forcing function)
 
   agg_stat     _aggstat;   ///< time aggregation statistic(average, max, min, etc.) (spatial average is always used)
   time_agg     _timeAgg;   ///< how aggregated (monthly, daily, hourly, etc.)

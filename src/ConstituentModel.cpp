@@ -1240,7 +1240,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   _OUTPUT<<tt.model_time <<","<<thisdate<<","<<thishour;
   if(_type==ENTHALPY) {
-    _OUTPUT<<","<<_pModel->GetAvgForcing("TEMP_AVE");
+    _OUTPUT<<","<<_pModel->GetAvgForcing(F_TEMP_AVE);
   }
 
   if(tt.model_time!=0.0) { _OUTPUT<<","<<influx*convert;}
@@ -1304,7 +1304,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
   if(!_is_passive) {
     _POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;
     if(_type==ENTHALPY) {
-      _POLLUT<<","<<_pModel->GetAvgForcing("TEMP_AVE"); //Air temperature
+      _POLLUT<<","<<_pModel->GetAvgForcing(F_TEMP_AVE); //Air temperature
     }
     for(int p=0;p<_pModel->GetNumSubBasins();p++) 
     {
@@ -1500,7 +1500,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
   double source      =-_pModel->GetAvgStateVar(_pModel->GetStateVarIndex(CONSTITUENT_SRC, _constit_index))*(area*M2_PER_KM2);//[mg]  or [MJ] 
 
   if(_type==ENTHALPY) {
-    AddSingleValueToNetCDF(_CONC_ncid,"air_temp"  ,time_ind2,_pModel->GetAvgForcing("TEMP_AVE"));
+    AddSingleValueToNetCDF(_CONC_ncid,"air_temp"  ,time_ind2,_pModel->GetAvgForcing(F_TEMP_AVE));
   }
 
   double inf=influx*convert;
@@ -1569,7 +1569,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
     if(_type==ENTHALPY) {
       int    temp_id;               // variable id in NetCDF for air temp
       double current_temp[1];
-      current_temp[0]=_pModel->GetAvgForcing("TEMP_AVE");
+      current_temp[0]=_pModel->GetAvgForcing(F_TEMP_AVE);
 
       retval = nc_inq_varid(_POLLUT_ncid,"air_temp",&temp_id);                                HandleNetCDFErrors(retval);
       retval = nc_put_vara_double(_POLLUT_ncid,temp_id,time_index,count1,&current_temp[0]);   HandleNetCDFErrors(retval);

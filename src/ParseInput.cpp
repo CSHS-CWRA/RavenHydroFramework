@@ -2323,7 +2323,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized snow refreeze process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":Interflow",s[2],s[3],SNOW_LIQ,SNOW);
+      FromToErrorCheck(":SnowRefreeze",s[2],s[3],SNOW_LIQ,SNOW);
 
       CmvSnowRefreeze::GetParticipatingStateVarList(rtype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);

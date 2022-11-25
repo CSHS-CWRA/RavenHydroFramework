@@ -343,18 +343,18 @@ double CSubBasin::GetAvgConcentration(const int i) const
   return sum/_basin_area;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns area-weighted average value of forcing function with identifier forcing_string over entire subbasin
-/// \param &forcing_string [in] Identifier corresponding to a forcing function
-/// \return area-weighted average value of forcing function with identifier forcing_string over entire subbasin
+/// \brief Returns area-weighted average value of forcing function over entire subbasin
+/// \param &ftype [in] forcing type identifier corresponding to a forcing function
+/// \return area-weighted average value of forcing function over entire subbasin
 //
-double CSubBasin::GetAvgForcing (const string &forcing_string) const
+double CSubBasin::GetAvgForcing (const forcing_type &ftype) const
 {
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
     if(_pHydroUnits[k]->IsEnabled())
     {
-      sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+      sum    +=_pHydroUnits[k]->GetForcing(ftype)*_pHydroUnits[k]->GetArea();
     }
   }
   if (_basin_area==0.0){return 0.0;}

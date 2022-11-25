@@ -94,10 +94,10 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   case (VAR_FORCING_FUNCTION):
   {
     _varName = _force_str;
-    forcing_type typ=GetForcingTypeFromString(_force_str);
-    ExitGracefullyIf(typ==F_UNRECOGNIZED,
+     _ftype=GetForcingTypeFromString(_force_str);
+    ExitGracefullyIf(_ftype==F_UNRECOGNIZED,
                      "CCustomOutput Constructor: invalid forcing type string",BAD_DATA);
-    _varUnits = GetForcingTypeUnits(typ);
+    _varUnits = GetForcingTypeUnits(_ftype);
     break;
   }
   case (VAR_TO_FLUX) : //cumulative flux
@@ -819,12 +819,12 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup(kk_only)->GetHRU(k)->GetStateVarValue(_svind);}
     }
     else if (_var==VAR_FORCING_FUNCTION){
-      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetForcing   (_force_str);}
-      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgForcing(_force_str);}
-      else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgForcing(_force_str);}
-      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgForcing(_force_str);}
-      else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgForcing(_force_str);}
-      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_force_str);}
+      if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetForcing   (_ftype);}
+      else if (_spaceAgg==BY_BASIN      ){val=pModel->GetSubBasin      (k)->GetAvgForcing(_ftype);}
+      else if (_spaceAgg==BY_WSHED      ){val=pModel->                      GetAvgForcing(_ftype);}
+      else if (_spaceAgg==BY_HRU_GROUP  ){val=pModel->GetHRUGroup      (k)->GetAvgForcing(_ftype);}
+      else if (_spaceAgg==BY_SB_GROUP   ){val=pModel->GetSubBasinGroup (k)->GetAvgForcing(_ftype);}
+      else if (_spaceAgg==BY_SELECT_HRUS){val=pModel->GetHRUGroup (kk_only)->GetHRU(k)->GetForcing(_ftype);}
     }
     else if (_var == VAR_TO_FLUX){
       if      (_spaceAgg==BY_HRU        ){val=pModel->GetHydroUnit     (k)->GetCumulFlux   (_svind,true);}

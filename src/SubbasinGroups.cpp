@@ -146,7 +146,7 @@ double CSubbasinGroup::GetAvgConcentration(const int i) const
 /// \param &forcing_string [in] Index corresponding to the state variable whose average will be calculated
 /// \return Average of forcing function with identifier forcing_string, across all HRUs in group, per unit area coverage of group
 //
-double CSubbasinGroup::GetAvgForcing (const string &forcing_string) const
+double CSubbasinGroup::GetAvgForcing (const forcing_type &ftype) const
 {
   double sum=0.0;
   double areasum=0.0;
@@ -154,7 +154,7 @@ double CSubbasinGroup::GetAvgForcing (const string &forcing_string) const
   for(int p=0;p<_nSubbasins;p++)
   {
     area    =_pSubbasins[p]->GetBasinArea();
-    sum    +=_pSubbasins[p]->GetAvgForcing(forcing_string)*area;
+    sum    +=_pSubbasins[p]->GetAvgForcing(ftype)*area;
     areasum+=area;
   }
   return sum/areasum;

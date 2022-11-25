@@ -294,14 +294,13 @@ force_struct     const *CHydroUnit::GetForcingFunctions () const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns forcing function value for this HRU according to string input
 ///
-/// \param &forcing_string [in] String name of forcing function (e.g. "PRECIP")
+/// \param &ftype [in] enum of forcing function (e.g. F_PRECIP)
 /// \return Double specified forcing function value
 //
-double CHydroUnit::GetForcing(const string &forcing_string) const
+double CHydroUnit::GetForcing(const forcing_type &ftype) const
 {
-  return GetForcingFromString(forcing_string,_Forcings);
+  return GetForcingFromType(ftype,_Forcings);
 }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Returns area-weighted average of specified cumulative flux over HRU group
 ///

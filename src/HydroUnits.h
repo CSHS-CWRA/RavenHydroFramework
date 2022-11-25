@@ -124,7 +124,7 @@ public:/*-------------------------------------------------------*/
   terrain_struct  const *GetTerrainProps    () const;
 
   force_struct    const *GetForcingFunctions() const;
-  double                 GetForcing         (const string &forcing_string) const;
+  double                 GetForcing         (const forcing_type &ftype) const;
 
   double                 GetCumulFlux       (const int i, const bool to) const;
   double                 GetCumulFluxBet    (const int iFrom, const int iTo) const;
@@ -196,9 +196,9 @@ public:/*-------------------------------------------------------*/
   CHydroUnit       *GetHRU             (const int k_local) const;
   double            GetAvgStateVar     (const int i) const;
   double            GetAvgConcentration(const int i) const;
-  double            GetAvgForcing      (const string &forcing_string) const;
+  double            GetAvgForcing      (const forcing_type &ftype) const;
   double            GetAvgCumulFlux    (const int i, const bool to) const;
-  double            GetAvgCumulFluxBet(const int iFrom, const int iTo) const;
+  double            GetAvgCumulFluxBet (const int iFrom, const int iTo) const;
   bool              IsInGroup          (const int k) const;
 };
 #endif

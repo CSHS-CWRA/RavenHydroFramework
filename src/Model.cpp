@@ -1095,10 +1095,10 @@ double CModel::GetAvgConcentration(const int i) const
 //////////////////////////////////////////////////////////////////
 /// \brief Returns area-weighted average of specified forcing function over watershed
 ///
-/// \param &forcing_string [in] string identifier of forcing function to assess
+/// \param &ftype [in] enum identifier of forcing function to assess
 /// \return Area-weighted average of specified forcing function
 //
-double CModel::GetAvgForcing (const string &forcing_string) const
+double CModel::GetAvgForcing (const forcing_type &ftype) const
 {
   //Area-weighted average
   double sum=0.0;
@@ -1106,12 +1106,11 @@ double CModel::GetAvgForcing (const string &forcing_string) const
   {
     if (_pHydroUnits[k]->IsEnabled())
     {
-      sum    +=_pHydroUnits[k]->GetForcing(forcing_string)*_pHydroUnits[k]->GetArea();
+      sum    +=_pHydroUnits[k]->GetForcing(ftype)*_pHydroUnits[k]->GetArea();
     }
   }
   return sum/_WatershedArea;
 }
-
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total channel storage [mm]
 /// \return Total channel storage in all of watershed [mm]
@@ -1995,7 +1994,7 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
       double avg_area=0.0;
       if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
       
-      double tem_precip1 = pBasin->GetAvgForcing("PRECIP") / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
+      double tem_precip1 = pBasin->GetAvgForcing(F_PRECIP) / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
       double losses      = pRes->GetReservoirEvapLosses        (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       losses            += pRes->GetReservoirGWLosses          (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;

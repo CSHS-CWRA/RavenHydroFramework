@@ -163,7 +163,7 @@ public:/*-------------------------------------------------------*/
   double               GetDrainageArea      () const;
   double               GetAvgStateVar       (const int i) const;
   double               GetAvgConcentration  (const int i) const;
-  double               GetAvgForcing        (const string &forcing_string) const;
+  double               GetAvgForcing        (const forcing_type &ftype) const;
   double               GetAvgCumulFlux      (const int i, const bool to) const;
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
@@ -320,7 +320,7 @@ public:/*-------------------------------------------------------*/
   CSubBasin        *GetSubBasin        (const int p_local) const;
   double            GetAvgStateVar     (const int i) const;
   double            GetAvgConcentration(const int i) const;
-  double            GetAvgForcing      (const string &forcing_string) const;
+  double            GetAvgForcing      (const forcing_type &ftype) const;
   double            GetAvgCumulFlux    (const int i,const bool to) const;
   double            GetAvgCumulFluxBet (const int iFrom,const int iTo) const;
   bool              IsInGroup          (const long SBID) const;

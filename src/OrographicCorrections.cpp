@@ -221,7 +221,7 @@ void CModel::CorrectPrecip(const optStruct     &Options,
     if(tt.day_changed)
     {
       //Current cheat on temp (assumes first HRU is in band 1)
-      double band1_temp=_pHydroUnits[0]->GetForcing("TEMP_DAILY_AVE");
+      double band1_temp=_pHydroUnits[0]->GetForcing(F_TEMP_DAILY_AVE);
       //if(!Options.keepUBCWMbugs) {
       //  double band1_temp=F.temp_daily_ave; //More desirable?
       // }

@@ -1151,7 +1151,7 @@ enum calendars
 /// \note if an additional forcing function is added, the following routines must be revised: \n
 /// - CModel::UpdateHRUForcingFunctions \n
 /// - CModel::GetAverageForcings() \n
-/// - GetForcingTypeFromString, GetForcingTypeUnits,ZeroOutForcings,GetForcingFromString, ForcingToString in Forcings.cpp\n
+/// - GetForcingTypeUnits,ZeroOutForcings,GetForcingFromType, ForcingToString in Forcings.cpp\n
 //
 const int MAX_FORCING_TYPES=50;
 enum forcing_type

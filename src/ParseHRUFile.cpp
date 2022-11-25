@@ -708,7 +708,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(14):  //----------------------------------------------
     { /*
-      :DisableSubBasinGroup [HRUGROUP]
+      :DisableSubBasinGroup [SB_GROUP]
       */
       if(Options.noisy) { cout <<"Disabling HRU Group"<<endl; }
       if(Len>=2) {
