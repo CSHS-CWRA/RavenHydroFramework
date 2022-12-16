@@ -16,7 +16,7 @@ bool ParseInitialConditions(CModel*& pModel, const optStruct &Options);
 void MassEnergyBalance     (CModel *pModel,const optStruct   &Options,const time_struct &tt);        
 void ParseLiveFile         (CModel*&pModel,const optStruct   &Options, const time_struct &tt);
 
-//Local functions defined below main()
+//Local functions defined below main() in RavenMain.cpp
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
 void CheckForErrorWarnings     (bool quiet);
 bool CheckForStopfile          (const int step, const time_struct &tt);
@@ -87,106 +87,103 @@ int main(int argc, char* argv[])
   CStateVariable::Initialize();
 
   //Read input files, create model, set model options
-  if (ParseInputFiles(pModel, Options))
-  {
-    CheckForErrorWarnings(true);
+  if (!ParseInputFiles(pModel, Options)){
+    ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
+   
+  CheckForErrorWarnings(true);
 
-    if (!Options.silent){
-      cout <<"======================================================"<<endl;
-      cout <<"Initializing Model..."<<endl;
-    }
-    pModel->Initialize                  (Options);
-    ParseInitialConditions              (pModel, Options);
-    pModel->CalculateInitialWaterStorage(Options);
-    pModel->SummarizeToScreen           (Options);
-    pModel->GetEnsemble()->Initialize   (pModel,Options);
+  if (!Options.silent){
+    cout <<"======================================================"<<endl;
+    cout <<"Initializing Model..."<<endl;
+  }
+  pModel->Initialize                  (Options);
+  ParseInitialConditions              (pModel, Options);
+  pModel->CalculateInitialWaterStorage(Options);
+  pModel->SummarizeToScreen           (Options);
+  pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-    CheckForErrorWarnings(false);
+  CheckForErrorWarnings(false);
 
-    nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
+  nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
     
-    for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
-    {
-      pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
-      PrepareOutputdirectory(Options); //adds new output folders, if needed
-      pModel->WriteOutputFileHeaders(Options);
+  for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
+  {
+    pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
+    PrepareOutputdirectory(Options); //adds new output folders, if needed
+    pModel->WriteOutputFileHeaders(Options);
       
-      if(!Options.silent) {
-        cout <<"======================================================"<<endl;
-        cout <<"Simulation Start..."<<endl;
-      }
-      if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; g_suppress_warnings=true;}
+    if(!Options.silent) {
+      cout <<"======================================================"<<endl;
+      cout <<"Simulation Start..."<<endl;
+    }
+    if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; g_suppress_warnings=true;}
 
-      double t_start=0.0;
-      t_start=pModel->GetEnsemble()->GetStartTime(e);
+    double t_start=0.0;
+    t_start=pModel->GetEnsemble()->GetStartTime(e);
       
-      //Write initial conditions-------------------------------------
-      JulianConvert(t_start,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+    //Write initial conditions-------------------------------------
+    JulianConvert(t_start,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+    pModel->RecalculateHRUDerivedParams(Options,tt);
+    pModel->UpdateHRUForcingFunctions  (Options,tt);
+    pModel->UpdateDiagnostics          (Options,tt);
+    pModel->WriteMinorOutput           (Options,tt);
+
+    //Solve water/energy balance over time--------------------------------
+    t1=clock();
+    int step=0;
+      
+    for(t=t_start; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
+    {
+      pModel->UpdateTransientParams      (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
       pModel->UpdateHRUForcingFunctions  (Options,tt);
       pModel->UpdateDiagnostics          (Options,tt);
+      pModel->PrepareAssimilation        (Options,tt);
+      pModel->WriteSimpleOutput          (Options,tt);
+      pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
+      CallExternalScript                 (Options,tt);
+      ParseLiveFile                      (pModel,Options,tt);
+
+      MassEnergyBalance(pModel,Options,tt); //where the magic happens!
+
+      pModel->IncrementCumulInput        (Options,tt);
+      pModel->IncrementCumOutflow        (Options,tt);
+
+      JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
+
       pModel->WriteMinorOutput           (Options,tt);
+      pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
+      pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
-      //Solve water/energy balance over time--------------------------------
-      t1=clock();
-      int step=0;
-      
-      for(t=t_start; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
-      {
-        pModel->UpdateTransientParams      (Options,tt);
-        pModel->RecalculateHRUDerivedParams(Options,tt);
-        pModel->UpdateHRUForcingFunctions  (Options,tt);
-        pModel->UpdateDiagnostics          (Options,tt);
-        pModel->PrepareAssimilation        (Options,tt);
-        pModel->WriteSimpleOutput          (Options,tt);
-        pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
-        CallExternalScript                 (Options,tt);
-        ParseLiveFile                      (pModel,Options,tt);
+      if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
+      step++;
+    }
 
-        MassEnergyBalance(pModel,Options,tt); //where the magic happens!
+    //Finished Solving----------------------------------------------------
+    pModel->UpdateDiagnostics (Options,tt);
+    pModel->RunDiagnostics    (Options);
+    pModel->WriteMajorOutput  (Options,tt,"solution",true);
+    pModel->CloseOutputStreams();
 
-        pModel->IncrementCumulInput        (Options,tt);
-        pModel->IncrementCumOutflow        (Options,tt);
+    pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,e);
 
-        JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
-
-        pModel->WriteMinorOutput           (Options,tt);
-        pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
-        pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
-
-        if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
-        step++;
+    if(!Options.silent) 
+    {
+      cout <<"======================================================"<<endl;
+      cout <<"...Raven Simulation Complete: "<<Options.run_name<<endl;
+      cout <<"    Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+      cout <<"                  Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
+      if(Options.output_dir!="") {
+        cout <<"  Output written to "        << Options.output_dir                                       <<endl;
       }
-
-      //Finished Solving----------------------------------------------------
-      pModel->UpdateDiagnostics (Options,tt);
-      pModel->RunDiagnostics    (Options);
-      pModel->WriteMajorOutput  (Options,tt,"solution",true);
-      pModel->CloseOutputStreams();
-
-      pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,e);
-
-      if(!Options.silent) 
-      {
-        cout <<"======================================================"<<endl;
-        cout <<"...Raven Simulation Complete: "<<Options.run_name<<endl;
-        cout <<"    Parsing & initialization: "<< float(t1     -t0)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-        cout <<"                  Simulation: "<< float(clock()-t1)/CLOCKS_PER_SEC << " seconds elapsed . "<<endl;
-        if(Options.output_dir!="") {
-          cout <<"  Output written to "        << Options.output_dir                                       <<endl;
-        }
-        cout <<"======================================================"<<endl;
-      }
-      if (Options.benchmarking) {
-        cout <<"                              "<< pModel->GetNumHRUs()*(Options.duration/Options.timestep)/(float(clock()-t1)/CLOCKS_PER_SEC)<<" HRU-time steps/second"<<endl;
-      }
+      cout <<"======================================================"<<endl;
+    }
+    if (Options.benchmarking) {
+      cout <<"                              "<< pModel->GetNumHRUs()*(Options.duration/Options.timestep)/(float(clock()-t1)/CLOCKS_PER_SEC)<<" HRU-time steps/second"<<endl;
+    }
      
-    }/* end ensemble loop*/
-  }
-  else
-  {
-    ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);
-  }
+  }/* end ensemble loop*/
+
 
   ExitGracefully("Successful Simulation",SIMULATION_DONE);
   return 0;

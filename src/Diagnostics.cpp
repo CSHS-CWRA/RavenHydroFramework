@@ -1176,6 +1176,12 @@ CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,comparison 
     WriteWarning(warn.c_str(),Options.noisy);
   }
 
+  if ((_t_start < 0) || (_t_end >= Options.duration)) {
+    string warn;
+    warn="CDiagPeriod: :EvaluationPeriod "+_name+": the evaluation period is only partially covered by the simulation period. Diagnostics will not indicate performance over entire evaluation period specified.";
+    WriteAdvisory(warn.c_str(),Options.noisy);
+  }
+
   _t_start = max(min(_t_start,Options.duration),0.0);
   _t_end   = max(min(_t_end  ,Options.duration),0.0);
 }

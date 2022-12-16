@@ -119,11 +119,13 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   double corr;               // advective correction (e.g.,1/retardation factor)
   
   double tstep=Options.timestep;
-  int    nAdvConnections=pTransModel->GetNumAdvConnections();
-  bool   isEnthalpy=(pTransModel->GetConstituentModel2(_constit_ind)->GetType()==ENTHALPY);
-  bool   isIsotope =(pTransModel->GetConstituentModel2(_constit_ind)->GetType()==ISOTOPE);
+  int    nAdvConnections     =pTransModel->GetNumAdvConnections();
+  CConstituentModel *pConstit=pTransModel->GetConstituentModel2(_constit_ind);
+
+  bool   isEnthalpy=(pConstit->GetType()==ENTHALPY);
+  bool   isIsotope =(pConstit->GetType()==ISOTOPE);
   int    k=pHRU->GetGlobalIndex();
-  
+
   static double *Q =NULL; 
   static double *sv=NULL;
   if(Q==NULL){
@@ -150,6 +152,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
 
   //Calculate advective mass fluxes
   //-------------------------------------------------------------------------
+  int iF,iT;
   for (q=0;q<nAdvConnections;q++)
   {
     rates[q]=0.0;
@@ -157,8 +160,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     iToWater  =pTransModel->GetToWaterIndex  (q);
     //Advection rate calculation rates[q]=dm/dt=Q*C or dE/dt=Q*h
     mass=0;vol=1;
-    int iF=iFromWater;
-    int iT=iToWater;
+    iF=iFromWater;
+    iT=iToWater;
     if      (Q[q]>0)
     {
       mass=sv[iFrom[q]];   //[mg/m2] or [MJ/m2]
@@ -184,12 +187,11 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     
     //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
     //----------------------------------------------------------------------
-    double snow_frac=pHRU->GetForcingFunctions()->snow_frac;
-    if((pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) &&
-      (pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iFromWater,k,tt,Cs,1.0-snow_frac)))
+    if((pModel->GetStateVarType(iF)==ATMOS_PRECIP) &&
+      (pConstit->IsDirichlet(iF,k,tt,Cs,1.0-pHRU->GetForcingFunctions()->snow_frac)))
     {
       if(!isEnthalpy) {
-        Cs=pTransModel->GetConstituentModel2(_constit_ind)->ConvertConcentration(Cs);
+        Cs=pConstit->ConvertConcentration(Cs);
       }
       else {
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
@@ -208,10 +210,10 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
     // two cases: contributor (iFromWater) or recipient (iToWater) water compartment is Dirichlet condition
     //----------------------------------------------------------------------
     double dirichlet_mass;
-    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iFromWater,k,tt,Cs))
+    if(pConstit->IsDirichlet(iFromWater,k,tt,Cs))
     {
       if(!isEnthalpy) {
-        Cs=pTransModel->GetConstituentModel2(_constit_ind)->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2]
+        Cs=pConstit->ConvertConcentration(Cs);//[mg/L]->[mg/mm-m2]
       }
       else{
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
@@ -223,10 +225,10 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
       sv[iFrom[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }
 
-    if(pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iToWater,k,tt,Cs))
+    if(pConstit->IsDirichlet(iToWater,k,tt,Cs))
     {
       if(!isEnthalpy) {
-        Cs=pTransModel->GetConstituentModel2(_constit_ind)->ConvertConcentration(Cs);
+        Cs=pConstit->ConvertConcentration(Cs);
       }
       else{
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
