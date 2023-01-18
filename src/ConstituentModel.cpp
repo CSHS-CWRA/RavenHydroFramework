@@ -1343,7 +1343,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
         double conv=(SEC_PER_DAY*LITER_PER_M3/MG_PER_KG);
         if (_type==TRACER){conv=1.0;} //reports Q [m3/s]
        
-        _LOADING<<","<<(Q*C);
+        _LOADING<<","<<(Q*C)*conv;
 
         /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
           if(IsContinuousLoadingObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))

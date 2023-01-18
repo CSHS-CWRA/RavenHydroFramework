@@ -123,9 +123,13 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           ExitGracefully(warn.c_str() ,BAD_DATA); 
         }
         else{
+          if (pMainParser != NULL) {
+            ExitGracefully("ParseGWFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+          }
           pMainParser=p;    //save pointer to primary parser
           p=new CParser(INPUT2,filename,line);//open new parser
         }
+
         break;
       }
       case(-4):  //----------------------------------------------

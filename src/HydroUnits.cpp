@@ -459,6 +459,7 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon,
   if(Ftyp==F_PRECIP) { 
     if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip*=epsilon;}
     else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon;}
+    else if (adj==ADJ_REPLACE       ){_Forcings.precip =epsilon;}
     upperswap(_Forcings.precip,0.0);
   }
   //AdjustForcing(_Forcings,Ftyp,value,adj);

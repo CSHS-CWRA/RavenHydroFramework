@@ -1176,7 +1176,7 @@ CDiagPeriod::CDiagPeriod(string name,string startdate,string enddate,comparison 
     WriteWarning(warn.c_str(),Options.noisy);
   }
 
-  if ((_t_start < 0) || (_t_end >= Options.duration)) {
+  if (((_t_start < 0) || (_t_end >= Options.duration)) && (DateStringToTimeStruct(enddate  ,"00:00:00",Options.calendar).year!=9999)) { //final case is default where entire simulation is used- no desire to throw warning
     string warn;
     warn="CDiagPeriod: :EvaluationPeriod "+_name+": the evaluation period is only partially covered by the simulation period. Diagnostics will not indicate performance over entire evaluation period specified.";
     WriteAdvisory(warn.c_str(),Options.noisy);

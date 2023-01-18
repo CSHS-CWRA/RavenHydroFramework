@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
 
@@ -20,7 +20,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
 
   _lakebed_thick=1.0;
   _lakebed_cond =0.0;
-  _lake_convcoeff=0.0;
+  _lake_convcoeff=2.0;
 
   _stage     =0.0;
   _stage_last=0.0;
@@ -389,6 +389,11 @@ double  CReservoir::GetStorage           () const { return GetVolume(_stage); }
 /// \returns current stage [m]
 //
 double  CReservoir::GetResStage          () const { return _stage; }
+
+//////////////////////////////////////////////////////////////////
+/// \returns previous stage [m]
+//
+double  CReservoir::GetOldStage          () const { return _stage_last; }
 
 //////////////////////////////////////////////////////////////////
 /// \returns current surface area [m2]

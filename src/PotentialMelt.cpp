@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 double UBC_DailyPotentialMelt( const optStruct &Options,
@@ -34,7 +34,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   {
     double Ma=pHRU->GetSurfaceProps()->melt_factor;
     double melt_temp=pHRU->GetSurfaceProps()->DD_melt_temp;
-    return Ma*(F->temp_daily_ave-melt_temp);
+    return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
   }
   //----------------------------------------------------------
   else if ((method==POTMELT_HBV) || (method==POTMELT_HBV_ROS))
@@ -69,7 +69,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
       rain_energy=ROS_mult*SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*(F->precip*(1.0-F->snow_frac)); //[mm/d]
     }
 
-    return Ma*(F->temp_daily_ave-melt_temp)+rain_energy;
+    return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr+rain_energy;
   }
   //-------------------------------------------------------------------------------------
   else if (method==POTMELT_BLENDED)
@@ -122,7 +122,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     rad     = (F->SW_radia_net+F->LW_radia_net);//[MJ/m2/d]
     convert = MM_PER_METER/DENSITY_WATER/LH_FUSION;//for converting radiation to mm/d [mm/m]/[kg/m3]/[MJ/kg] = [mm-m2/MJ]
 
-    return tmp_rate+ threshPositive(rad*convert);
+    return tmp_rate*F->subdaily_corr+ threshPositive(rad*convert);
   }
   //----------------------------------------------------------
   else if (method==POTMELT_DD_RAIN)
@@ -132,12 +132,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double Ma       =pHRU->GetSurfaceProps()->melt_factor;
     double rainfall=F->precip*(1-F->snow_frac);
     double adv_melt= SPH_WATER/LH_FUSION*max(F->temp_ave,0.0)*rainfall; //[mm/d]
-    return Ma*(F->temp_daily_ave-melt_temp)+adv_melt;
+    return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr+adv_melt;
   }
   //----------------------------------------------------------
   else if (method==POTMELT_UBCWM)
   {
-    return UBC_DailyPotentialMelt(Options,*F,pHRU,tt);
+    return UBC_DailyPotentialMelt(Options,*F,pHRU,tt)*F->subdaily_corr;
   }
   //----------------------------------------------------------
   else if (method == POTMELT_USACE)
@@ -182,7 +182,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
       else if (SF >= 0.1){ Ma = kP*(1 - SF)*(2.43*I)*(1 - a) + k2*(0.239*v)*(0.22*TaP + 0.78*TdP) + SF*(1.33*TaP);}// Partly Forested (10 - 60 %)
       else               { Ma = kP*(1 - SF)*(3.08*I)*(1 - a) + (1 - N)*(0.969*TaP - 21.34)+N*(1.33*TcP) + k2*(0.239*v)*(0.22*TaP + 0.78*TdP);}// Open (< 10%)
     }
-    return Ma;
+    return Ma*F->subdaily_corr;
   }
   //----------------------------------------------------------
   else if(method == POTMELT_CRHM_EBSM)
@@ -208,7 +208,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
 
     Ma=min(Ma_max,Ma_min*(1+Kcum*cum_melt));
 
-    return Ma*(F->temp_daily_ave-melt_temp);
+    return Ma*(F->temp_daily_ave-melt_temp)*F->subdaily_corr;
   }
   //----------------------------------------------------------
   else if(method == POTMELT_RILEY)

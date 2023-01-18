@@ -613,6 +613,9 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else {
+        if (pMainParser != NULL) {
+          ExitGracefully("ParseMainInputFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+        }
         pMainParser=p;    //save pointer to primary parser
         p=new CParser(INPUT2,filename,line);//open new parser
       }

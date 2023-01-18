@@ -148,6 +148,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else{
+        if (pMainParser != NULL) {
+          ExitGracefully("ParseInitialConditionsFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+        }
         pMainParser=pp;   //save pointer to primary parser
         pp=new CParser(INPUT2,filename,line);//open new parser
       }

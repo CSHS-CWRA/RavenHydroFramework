@@ -266,6 +266,12 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
       double h=_pModel->GetSubBasinByID(SBID)->GetWaterLevel();
       if (!EvaluateCondition(comp, h, v1, v2)) {return false;}
     }
+    else if (var == "STAGE_CHANGE") {
+      double h     =_pModel->GetSubBasinByID(SBID)->GetReservoir()->GetResStage();
+      double h_last=_pModel->GetSubBasinByID(SBID)->GetReservoir()->GetOldStage();
+      double r=(h-h_last)/_pModel->GetOptStruct()->timestep;
+      if (!EvaluateCondition(comp, r, v1, v2)) {return false;}
+    }
     else {
       string warn="COutflowRegime::AreConditionsMet: unrecognized condition variable "+var+" in :Condition command";
       ExitGracefully(warn.c_str(),BAD_DATA);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -746,7 +746,8 @@ struct condition
 //
 enum adjustment {
   ADJ_ADDITIVE,
-  ADJ_MULTIPLICATIVE
+  ADJ_MULTIPLICATIVE,
+  ADJ_REPLACE
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Desired output format

@@ -116,6 +116,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
       else{
+        if (pMainParser != NULL) {
+          ExitGracefully("ParseHRUPropsFile::nested :RedirectToFile commands (in already redirected files) are not allowed.",BAD_DATA);
+        }
         pMainParser=pp;   //save pointer to primary parser
         pp=new CParser(INPUT2,filename,line);//open new parser
       }
@@ -373,7 +376,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         pp->Tokenize(s,Len);
         if      (IsComment(s[0],Len))          {}//comment line
         else if (!strcmp(s[0],":RedirectToFile")){
-          ExitGracefully("Parse HRU File: :RedirectToFile cannot be inside at :SubBasinProperties block.",BAD_DATA_WARN);
+          ExitGracefully("Parse HRU File: :RedirectToFile cannot be inside a :SubBasinProperties block.",BAD_DATA_WARN);
         }//done
         else if (!strcmp(s[0],":EndSubBasinProperties")){}//done
         else if (!strcmp(s[0],":Units")){}//do nothing

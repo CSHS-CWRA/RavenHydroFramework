@@ -179,6 +179,7 @@ public:/*-------------------------------------------------------*/
   double            GetReservoirGWLosses     (const double &tstep) const; //[m3]
   double            GetReservoirPrecipGains  (const double &tstep) const; //[m3]
   double            GetResStage              () const; //[m]
+  double            GetOldStage              () const; //[m]
   double            GetSurfaceArea           () const; //[m2]
   double            GetOldSurfaceArea        () const; //[m2]
   double            GetLakebedThickness      () const; //[m]
