@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ForcingGrid.h"
@@ -980,6 +980,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     ReadAttGridFromNetCDF(ncid,_AttVarNames[2],dim1,dim2,_aElevation);
     //ReadAttGridFromNetCDF2(ncid,_AttVarNames[3],dim1,dim2,_aStationIDs);
 
+    for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {
+      ExitGracefullyIf(_Is_nan(_aElevation[ic]),"CForcingGrid::ReadData - NaN elevation found in NetCDF elevation grid with non-zero HRU weight",BAD_DATA);
+    }
+
     // -------------------------------
     // Close NetCDF file
     // -------------------------------
@@ -1521,8 +1525,8 @@ void   CForcingGrid::AllocateWeightArray(const int nHydroUnits, const int nGridC
 ///                         5 6 7 8 9 \n
 ///                         ...
 /// \param weight [in] weight[k][l] is fraction of forcing for HRUID k is from grid cell l=(i,j)
-///                    and grid cell index l is derived by l = (i-1) * NC + j
-///                    where i and j are the row and column of cell l respectively and
+///                    and zero-based grid cell index l is derived by l = j * NC + i
+///                    where i and j are the column and row of cell l respectively and
 ///                    NC is the total number of columns.
 ///                    Following contraint must be satisfied:
 ///                        sum(w_kl, {l=1,NC*NR}) = 1.0 for all HRUs k
@@ -2088,7 +2092,7 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
     //get the varid for this attribute
     retval = nc_inq_varid(ncid,varname.c_str(),&varid); 
     if(retval==NC_ENOTVAR) {
-      string warning="Variable "+varname+" not found in NetCDF file "+_filename;
+      string warning="Variable \""+varname+"\" not found in NetCDF file "+_filename;
       ExitGracefully(warning.c_str(),BAD_DATA); retval=0;
     }
     HandleNetCDFErrors(retval);
@@ -2097,20 +2101,20 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
     if(_is_3D) 
     {
       double  **aTmp2D=NULL; //stores pointers to rows/columns of 2D data
-      aTmp2D=new double *[ncols];
+      aTmp2D = new double* [nrows];
       ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadAttGridFromNetCDF",OUT_OF_MEMORY);
-      for(int icol=0;icol<ncols;icol++) {
-        aTmp2D[icol]=&aVec[icol*nrows]; //points to correct location in aVec data storage
+      for(int irow=0;irow<nrows;irow++) {
+        aTmp2D[irow]=&aVec[irow*ncols]; //points to correct location in aVec data storage
       }
 
       retval=nc_get_vars_double(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-        values[ic]=aTmp2D[icol][irow];
+        values[ic]=aTmp2D[irow][icol];
       }
 
-      for(int icol=0;icol<ncols;icol++) { delete[] aTmp2D[icol]; } delete[] aTmp2D;
+      delete[] aTmp2D;
     }
     else 
     {
@@ -2122,6 +2126,27 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
       }
     }
     delete[] aVec;
+    
+    //TMP DEBUG - plot gridded elevations/lat/long - retain this code 
+    /*bool found;
+    double val;
+    cout<<" #non-zero: "<<_nNonZeroWeightedGridCells<<endl;
+    for (int j = 0; j < nrows; j++) {
+      for (int i = 0; i < ncols; i++) {
+        int l=j*ncols+i;
+        found=false; val=-1;
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) { 
+          if (_IdxNonZeroGridCells[ic]==l){ 
+            found=true;
+            val=values[ic];
+          }
+        }
+        if (!found){l=-1;}
+        cout<<std::setw(3)<<l<<" "; //report cell ID
+        //cout<<std::setw(8)<<val<<" "; //report elevation/lat/long
+      }
+      cout<<endl;
+    }*/
   }
 #endif
 }

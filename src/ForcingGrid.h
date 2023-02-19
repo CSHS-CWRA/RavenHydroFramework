@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef FORCINGGRID_H
 #define FORCINGGRID_H
@@ -66,11 +66,11 @@ private:/*------------------------------------------------------*/
   double     **_GridWeight;                  ///< Sparse array of weights for each HRU for a list of cells    
   //                                         ///< Dimensions : [_nHydroUnits][_nWeights[k]] (variable)
   //                                         ///< _GridWeight[k][i] is fraction of forcing for HRU k is from grid cell _GridWtCellIDs[k][i]
-  //                                         ///< where grid cell index l=_GridWtCellIDs[k][i] is derived by l = (j-1) * dim_cols + i
-  ///                                        ///< where i and j are the row and column of cell l respectively and
+  //                                         ///< where grid cell index l=_GridWtCellIDs[k][i] is derived by l = j * dim_cols + i
+  ///                                        ///< where i and j are the zero-indexed column and row of cell l respectively and
   ///                                        ///< dim_cols is the total number of columns.
   ///                                        ///< Following contraint must be satisfied:
-  ///                                        ///<      sum(_GridWeight[k][i], {i=0,_nWeights[k]-1}) = 1.0 for all HRUs k=1,...,_nHydroUnits
+  ///                                        ///<      sum(_GridWeight[k][i], {i=0,_nWeights[k]-1}) = 1.0 for all HRUs k=0,...,_nHydroUnits-1
   int        **_GridWtCellIDs;               ///< cell IDs for all non-zero grid weights for HRU k size=[_nHydroUnits][_nWeights[k]] (variable)
   int         *_CellIDToIdx;                 ///< local cell index ic (ranging from 0 to _nNonZeroWeightedGridCells-1)) corresponding to cell ID [size: ncells]
   int         *_nWeights;                    ///< number of weights for each HRU k (size=_nHydroUnits) (each entry greater or equal to 1)

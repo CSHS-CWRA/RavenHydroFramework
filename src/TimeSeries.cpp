@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeries.h"
 #include "ParseLib.h"
@@ -1601,7 +1601,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
     for (int it=0;it<dim1;it++){
       for (int ir=0;ir<dim2;ir++){
-        if (aTmp2D[it][ir] != missval) {
+        if ((aTmp2D[it][ir]!=fillval)  && (aTmp2D[it][ir] != missval)) {
            aTmp2D[it][ir] = aTmp2D[it][ir] * scale_factor + add_offset;
         }
       }
@@ -1609,7 +1609,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
   else {
     for (int it=0;it<dim1;it++){
-      if (aTmp1D[it] != missval) {
+      if ((aTmp1D[it]!=fillval)  && (aTmp1D[it] != missval)) {
         aTmp1D[it] = aTmp1D[it] * scale_factor + add_offset;
       }
     }

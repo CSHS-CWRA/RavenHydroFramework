@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2019 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Fully coupled snow balance routines
   ----------------------------------------------------------------*/
@@ -891,6 +891,8 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   double snowT    = state_vars[iFrom[8]]; //snow surface temperature [C]
   double cum_melt = state_vars[iFrom[9]]; //cumulative melt [mm]
 
+  double gross_melt=0;
+
   if (Swe <= REAL_SMALL && newSnow <= REAL_SMALL) { return; } //no snow to balance
 
   //parameters
@@ -916,12 +918,12 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //reset cumulative melt to zero in October
   //------------------------------------------------------------------------
-  if ((pHRU->GetCentroid().latitude < 0) && (tt.month == 4) && (tt.day_of_month == 1)) {//southern hemisphere (April)
+  /*if ((pHRU->GetCentroid().latitude < 0) && (tt.month == 4) && (tt.day_of_month == 1)) {//southern hemisphere (April)
     cum_melt = 0.0;
   }
   else if ((tt.month == 10) && (tt.day_of_month == 1)) {//northern hemisphere
     cum_melt = 0.0;
-  }
+  }*/
 
   //reconstruct two layer snowpack
   //------------------------------------------------------------------------
@@ -991,11 +993,11 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     {
       posMf    -= SlwcSurf;
       meltSurf -= SlwcSurf;
-      CcSurf = posMf * LH_FUSION  * DENSITY_ICE / MM_PER_METER; // leftover energy is new CC
+      CcSurf = posMf * LH_FUSION  * DENSITY_WATER / MM_PER_METER; // leftover energy is new CC ; this has to be water density since posMF is mmSWE
 
       if (SweSurf < 50.0) //dont cool below gruTa when Swe is below 50 mm (need this for stable run, otherwise CC and Tsnow start to fluctuate...)
       {
-        CcSurf = min(CcSurf, -Ta * SweSurf * HCP_ICE/MM_PER_METER);
+        CcSurf = min(CcSurf, -Ta * (SweSurf/MM_PER_METER) * HCP_ICE);
         CcSurf = max(CcSurf, 0.0);
       }
     }
@@ -1007,10 +1009,12 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
     if (SweSurf < Mf) // All snow melts
     {
       meltSurf += SweSurf;
+      gross_melt+=SweSurf;
     }
     else
     {
-      meltSurf += Mf;
+      meltSurf  += Mf;
+      gross_melt +=Mf;
     }
   }
   SweSurf -= meltSurf; //new SWE after melt/freeze
@@ -1033,7 +1037,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
 
   //re-freeze liquid water in snowpack layer
   //------------------------------------------------------------------------
-  double ccLwcPack_eq=SlwcPack * LH_FUSION* DENSITY_ICE / MM_PER_METER; //[MJ/m2]
+  double ccLwcPack_eq=SlwcPack * LH_FUSION* DENSITY_WATER / MM_PER_METER; //[MJ/m2]
   if (CcPack > ccLwcPack_eq) //snow pack layer cold content not fully satisfied -freeze all water
   {
     CcPack     -= ccLwcPack_eq;  
@@ -1041,7 +1045,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   }
   else //freeze only part of water
   {
-    freezePack += CcPack / LH_FUSION / DENSITY_ICE * MM_PER_METER;      
+    freezePack += CcPack / LH_FUSION / DENSITY_WATER * MM_PER_METER;      
     CcPack = 0.0;
   }
 
@@ -1064,7 +1068,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
   //            //     This correction puts snowT close to the air temperature.
   //            // \todo [bug] - identify source of this issue.
 
-  cum_melt += meltSurf;
+  cum_melt += gross_melt;
 
   rates[0] = newSnow     / Options.timestep;  // SNOWFALL -> SNOW [mm/d]
   rates[1] = rainthru    / Options.timestep;  // PONDEDWATER -> SNOW_LIQ surface [mm/d]
