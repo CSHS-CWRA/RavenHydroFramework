@@ -109,11 +109,13 @@ void CEnsemble::SetRandomSeed(const unsigned int seed)
 void CEnsemble::SetOutputDirectory(const string OutDirString) 
 {
   size_t pos=OutDirString.find("*");
-
+  int ee;
   for(int e=0;e<_nMembers;e++)
   {
+    ee=e;
+    if ((_type==ENSEMBLE_ENKF) && (e>=_nMembers/2)){ee-=_nMembers/2;}
     _aOutputDirs[e]=OutDirString;
-    if(pos!=string::npos){ _aOutputDirs[e].replace(pos,1,to_string(e+1)); }
+    if(pos!=string::npos){ _aOutputDirs[e].replace(pos,1,to_string(ee+1)); }
     _aOutputDirs[e]=_aOutputDirs[e]+"/"; //add trailing backslash
   }
 }
@@ -124,11 +126,16 @@ void CEnsemble::SetOutputDirectory(const string OutDirString)
 void CEnsemble::SetRunNames(const string RunNameString) 
 {
   size_t pos=RunNameString.find("*");
-
+  int ee;
+  string ename;
   for(int e=0;e<_nMembers;e++)
   {
+    ee=e;
+    if ((_type==ENSEMBLE_ENKF) && (e>=_nMembers/2)){ee-=_nMembers/2;}
+    ename=to_string(ee+1);
+    if ((_type==ENSEMBLE_ENKF) && (e>=_nMembers/2)){ename+="b";}
     _aRunNames[e]=RunNameString;
-    if(pos!=string::npos) { _aRunNames[e].replace(pos,1,to_string(e+1)); }
+    if(pos!=string::npos) { _aRunNames[e].replace(pos,1,to_string(ee+1)); }
   }
 }
 
@@ -136,7 +143,8 @@ void CEnsemble::SetRunNames(const string RunNameString)
 /// \brief initializes ensemble
 /// \param &Options [out] Global model options information
 //
-void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options) {
+void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options) 
+{
   //default does nothing - abstract base class
 }
 
@@ -145,7 +153,8 @@ void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options) {
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 //
-void CEnsemble::UpdateModel(CModel *pModel,optStruct &Options, int e) {
+void CEnsemble::UpdateModel(CModel *pModel,optStruct &Options, int e) 
+{
   //default does nothing - abstract base class
 }
 

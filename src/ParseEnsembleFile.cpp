@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -144,7 +144,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(1):  //----------------------------------------------
-    {/*:OutputDirectoryFormat [dirname with * for ensemble ID[*/
+    {/*:OutputDirectoryFormat [dirname with * for ensemble ID]*/
       if(Options.noisy) { cout <<"OutputDirectoryFormat"<<endl; } 
       string outdir="";
       for (i=1;i<Len;i++){outdir=outdir+to_string(s[i]); }
@@ -153,7 +153,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(2):  //----------------------------------------------
-    {/*:RunNameFormat*/
+    {/*:RunNameFormat [runn name, with * for ensemble number locale] */
       if(Options.noisy) { cout <<"RunNameFormat"<<endl; } 
       pEnsemble->SetRunNames(s[1]); //No spaces!
       break;
@@ -404,6 +404,19 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       }
       else {
         WriteWarning(":DontTruncateHindcasts command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
+      break;
+    }
+    case(19):  //----------------------------------------------
+    {/*:ExtraRVTFilename [filename.rvt]*/
+      if(Options.noisy) { cout <<":ExtraRVTFilename"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        string file=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension!
+        pEnKF->SetExtraRVTFile(file);
+      }
+      else {
+        WriteWarning(":ExtraRVTFilename command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
       }
       break;
     }

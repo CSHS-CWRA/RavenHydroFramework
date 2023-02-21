@@ -1437,9 +1437,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
        :NumberGridCells  22
        # [HRU ID] [Cell #] [w_kl]
        #     where w_kl is fraction of forcing for HRU k is from grid cell l=(i,j)
-       #     and grid cell index l is derived by l = (i-1) * NC + j
-       #     where i and j are the row and column of cell l respectively and
+       #     and grid cell index l is derived by l = j * NC + i
+       #     where i and j are the zero-indexed column and row of cell l respectively and
        #     NC is the total number of columns.
+       #     minimum Cell # is 0, max is nrow*ncol-1
        #     Following contraint must be satisfied:
        #         sum(w_kl, {l=1,NC*NR}) = 1.0 for all HRUs k
        # [HRUID] [CELL#] [w_kl]

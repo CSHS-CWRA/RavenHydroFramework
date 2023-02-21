@@ -38,7 +38,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   int varid_startt;
   double start_time;
   retval = nc_inq_varid   (ncid,"start_time",&varid_startt);
-  if(retval != NC_ENOTATT) 
+  if(retval != NC_ENOTVAR) 
   {
     HandleNetCDFErrors(retval);
     retval = nc_inq_attlen (ncid,varid_startt,"units",&att_len);                  HandleNetCDFErrors(retval);
@@ -67,7 +67,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   double end_day;
   int end_year;
   retval = nc_inq_varid(ncid,"end_time",&varid_endt);
-  if(retval != NC_ENOTATT) {
+  if(retval != NC_ENOTVAR) {
     HandleNetCDFErrors(retval);
     retval = nc_inq_attlen(ncid,varid_endt,"units",&att_len);                 HandleNetCDFErrors(retval);
     char *unit_t=new char[att_len+1];
@@ -91,10 +91,40 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
     delete[] unit_t;
   }
 
+  // Ingest assimilation start time=============================================================================
+  int varid_asst;
+  double assim_time;
+  double assim_day;
+  int    assim_year;
+  retval = nc_inq_varid(ncid,"assimilation_time",&varid_asst);
+  if(retval != NC_ENOTVAR) {
+    cout<<retval<<endl;
+    HandleNetCDFErrors(retval);
+    retval = nc_inq_attlen(ncid,varid_asst,"units",&att_len);                 HandleNetCDFErrors(retval);
+    char *unit_t=new char[att_len+1];
+    retval = nc_get_att_text(ncid,varid_asst,"units",unit_t);                 HandleNetCDFErrors(retval);// read attribute text
+    unit_t[att_len] = '\0';// add string determining character
+
+    if(!IsValidNetCDFTimeString(unit_t))
+    {
+      cout<<"time unit string: "<<unit_t<<endl;
+      ExitGracefully("ParseRunInfoFile: end_time time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
+    }
+    
+    retval=nc_get_var_double(ncid,varid_asst,&assim_time);
+    GetJulianDateFromNetCDFTime(unit_t,Options.calendar,assim_time,assim_day,assim_year);
+
+    Options.assimilation_start=TimeDifference(Options.julian_start_day,Options.julian_start_year,assim_day,assim_year,Options.calendar); //model time 
+
+    if(Options.noisy) { cout<<"ParseRunInfoFile: read variable assimilation_time from NetCDF: day: "<<assim_day<<" yr: "<< assim_year<<endl; }
+
+    delete[] unit_t;
+  }
+
   // Ingest working directory=====================================================================
   /*int varid_workdir;
   retval = nc_inq_varid(ncid,"work_dir",&varid_workdir);
-  if(retval!= NC_ENOTATT) 
+  if(retval!= NC_ENOTVAR) 
   {
     HandleNetCDFErrors(retval);
 
@@ -109,7 +139,7 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   // Ingest properties      =====================================================================
   int varid_props;
   retval = nc_inq_varid(ncid,"properties",&varid_props);
-  if(retval != NC_ENOTATT) 
+  if(retval != NC_ENOTVAR) 
   {
     HandleNetCDFErrors(retval);
     

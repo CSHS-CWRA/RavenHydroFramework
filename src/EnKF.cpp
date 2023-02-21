@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #include "EnKF.h"
@@ -11,14 +11,6 @@ bool ParseInitialConditionsFile(CModel*& pModel,const optStruct& Options);
 bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 
 string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-
-//step 1) get perturbations working - run in ensemble mode [DONE]
-//step 2) Get order working - must write soln at t0 and reboot e>N ensembles at t0 with this soln (to avoid duplicating perturbations) [DONE]
-//step 3) get assimilation matrix calcs running [DONE]
-//step 4) build .R visualization post processor [DONE]
-//step 5) Implement observation perturbations (eQ treatment) [DONE]
-//step 6) Test 
-//step 7) Documentation 
 
 // in .rvi file:
 //  :EnsembleMode ENSEMBLE_ENKF [double #members]
@@ -59,26 +51,27 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
   _nPerturbations=0;
   _pObsPerturbations=NULL;
   _nObsPerturbations=0;
-  _aAssimStates=NULL;
-  _aAssimLayers=NULL;
+  _aAssimStates =NULL;
+  _aAssimLayers =NULL;
   _aAssimGroupID=NULL;
   _nAssimStates=0;
   _t_assim_start=-1.0;
 
-  _state_matrix=NULL; //Built in ::Initialize
+  _state_matrix =NULL; //Built in ::Initialize
   _nStateVars=0;
 
   _warm_ensemble=false;
   _warm_runname="";
   _forecast_rvt="";
+  _extra_rvt="";
 
-  _obs_matrix=NULL;
+  _obs_matrix   =NULL;
   _output_matrix=NULL;
-  _noise_matrix=NULL;
+  _noise_matrix =NULL;
   _nObsDatapoints=0;
 
   _window_size=1;
-  _nTimeSteps=0;
+  _nTimeSteps =0;
 
   _truncate_hind=true; //default behaviour - hindcasts stop at t0
   _duration_stored=Options.duration;
@@ -99,7 +92,7 @@ CEnKFEnsemble::~CEnKFEnsemble()
   delete [] _output_matrix;
   delete [] _noise_matrix;
 
-  for (int i=0;i<_nPerturbations;   i++){delete _pPerturbations[i];   } delete [] _pPerturbations;
+  for (int i=0;i<_nPerturbations;   i++){delete _pPerturbations   [i];} delete [] _pPerturbations;
   for (int i=0;i<_nObsPerturbations;i++){delete _pObsPerturbations[i];} delete [] _pObsPerturbations;
   
   delete [] _aAssimStates;
@@ -118,13 +111,13 @@ CEnKFEnsemble::~CEnKFEnsemble()
 void CEnKFEnsemble::AddPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj) 
 {
   force_perturb *pFP=new force_perturb();
-  pFP->forcing=type;
+  pFP->forcing     =type;
   pFP->distribution=distrib;
+  pFP->kk          =group_index;
+  pFP->adj_type    =adj;
   for (int i = 0; i < 3; i++) {
     pFP->distpar[i]=distpars[i];
   }
-  pFP->kk=group_index;
-  pFP->adj_type=adj;
 
   if (!DynArrayAppend((void**&)(_pPerturbations),(void*)(pFP),_nPerturbations)){
     ExitGracefully("CEnKFEnsemble::AddPerturbation: creating NULL perturbation",BAD_DATA_WARN);
@@ -140,14 +133,14 @@ void CEnKFEnsemble::AddPerturbation(forcing_type type, disttype distrib, double*
 void CEnKFEnsemble::AddObsPerturbation(sv_type type, disttype distrib, double* distpars, adjustment adj) 
 {
   obs_perturb *pOP=new obs_perturb();
-  pOP->state=type;
+  pOP->state       =type;
   pOP->distribution=distrib;
+  pOP->kk          =DOESNT_EXIST;
+  //pOP->kk        =group_index;
+  pOP->adj_type    =adj;
   for (int i = 0; i < 3; i++) {
     pOP->distpar[i]=distpars[i];
   }
-  pOP->kk=DOESNT_EXIST;
-  //pOP->kk=group_index;
-  pOP->adj_type=adj;
 
   if (!DynArrayAppend((void**&)(_pObsPerturbations),(void*)(pOP),_nObsPerturbations)){
     ExitGracefully("CEnKFEnsemble::AddObsPerturbation: creating NULL observation perturbation",BAD_DATA_WARN);
@@ -166,16 +159,16 @@ void CEnKFEnsemble::AddAssimilationState(sv_type sv, int lay, int assim_groupID)
   int     *tmp2=new     int[_nAssimStates];
   int     *tmp3=new     int[_nAssimStates];
   for (int i = 0; i < _nAssimStates - 1; i++) {
-    tmp [i]=_aAssimStates[i];
+    tmp [i]=_aAssimStates [i];
     tmp2[i]=_aAssimGroupID[i];
-    tmp3[i]=_aAssimLayers[i];
+    tmp3[i]=_aAssimLayers [i];
   }
   delete [] _aAssimStates;
   delete [] _aAssimGroupID;
   delete [] _aAssimLayers;
-  _aAssimStates=tmp;
+  _aAssimStates =tmp;
   _aAssimGroupID=tmp2;
-  _aAssimLayers=tmp3;
+  _aAssimLayers =tmp3;
   _aAssimStates [_nAssimStates-1]=sv;
   _aAssimGroupID[_nAssimStates-1]=assim_groupID;
   _aAssimLayers [_nAssimStates-1]=lay;
@@ -201,14 +194,20 @@ void CEnKFEnsemble::SetWindowSize(const int nTimesteps){ _window_size=nTimesteps
 void CEnKFEnsemble::SetForecastRVTFile(string filename){_forecast_rvt=filename;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief set extra RVT filename
+//
+void CEnKFEnsemble::SetExtraRVTFile(string filename){_extra_rvt=filename;}
+
+
+//////////////////////////////////////////////////////////////////
 /// \brief Accessor - gets ensemble start time (in local model time)
 /// \param e [in] ensemble index
 /// \return ensemble start time (in local model time)
 //
 double CEnKFEnsemble::GetStartTime(const int e) const 
 {
-  if(e<_nEnKFMembers) { return 0.0; } //uncorrected members
-  return  _t_assim_start; //members post-state update - only forecasting
+  if(e<_nEnKFMembers) { return 0.0; }             //uncorrected/hindcast members
+  else                { return  _t_assim_start; } //members post-state update - only forecasting
 }
 
 //////////////////////////////////////////////////////////////////
@@ -256,7 +255,9 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         _nStateVars++; //Qlast
       }
     }
-    else {
+    //else if(_aAssimStates[i]==RESERVOIR_STAGE) {
+    //}
+    else { //HRU state variable
       _nStateVars+=pModel->GetHRUGroup(kk)->GetNumHRUs();
     }
   }
@@ -304,8 +305,14 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
     }
   }
   ExitGracefullyIf(_nObs==0          ,"EnKF::Initialize : no observations available for assimilation. Use :AssimilateStreamflow command to indicate enabled observation time series",BAD_DATA);
-  ExitGracefullyIf(_nObsDatapoints==0,"EnKF::Initialize : no observations available for assimilation. Blank data during simulation period?",BAD_DATA);
-  cout<<"ENKF found "<<_nObsDatapoints<<" valid observation data points for assimilation. Observation matrices built."<<endl;
+
+  if (_nObsDatapoints==0){//DELTARES_REV - if no obs found, just skip assimilation 
+    WriteWarning("EnKF::Initialize : no observations were available for assimilation. EnKF assimilation was not performed.",Options.noisy);
+    //return;??
+  }
+  else{
+    cout<<"ENKF found "<<_nObsDatapoints<<" valid observation data points for assimilation. Observation matrices built."<<endl;
+  }
 
   //allocate _output_matrix and _noise_matrix
   //-----------------------------------------------
@@ -383,9 +390,11 @@ void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const tim
 {
   //Write EnKF-adjusted and unadjusted solutions immediately after state update
   //Update model state matrix
+  // 
   //WANTED TO MOVE TO CLOSETIMESTEP OPS SO WRITTEN EVEN IF end==t_assim_start 
   //YOU CANT DO THIS BECAUSE ASSIMILATION HANDLED AFTER SIMULATION IS PAST T_0
-  if(fabs(tt.model_time-_t_assim_start)<0.1*Options.timestep) 
+
+  if(fabs(tt.model_time-_t_assim_start)<0.1*Options.timestep) //model time==assimilation starttime
   {
     pModel->WriteMajorOutput(Options,tt,"solution_t0",false);
   
@@ -605,7 +614,10 @@ void CEnKFEnsemble::UpdateStates(CModel* pModel,optStruct& Options,const int e)
          ExitGracefullyIf(ii>_nStateVars,"UpdateStates: bad calc",RUNTIME_ERR);
        }
     }
-    else {
+    //else if(_aAssimStates[i]==RESERVOIR_STAGE) 
+    //{
+    //}
+    else { //Assimilated states are HRU state variables
        for (int k=0;k<pModel->GetHRUGroup(kk)->GetNumHRUs();k++)
        {
           CHydroUnit *pHRU=pModel->GetHRUGroup(kk)->GetHRU(k);
@@ -656,7 +668,10 @@ void CEnKFEnsemble::AddToStateMatrix(CModel* pModel,optStruct& Options,const int
         ExitGracefullyIf(ii>_nStateVars,"AddToStateMatrix: bad calc",RUNTIME_ERR);
       }
     }
-    else {
+    //else if(_aAssimStates[i]==RESERVOIR_STAGE) 
+    //{
+    //}
+    else {//Assimilated states are HRU state variables
       for (int k=0;k<pModel->GetHRUGroup(kk)->GetNumHRUs();k++)
       {
         CHydroUnit *pHRU=pModel->GetHRUGroup(kk)->GetHRU(k);
@@ -674,7 +689,6 @@ void CEnKFEnsemble::AddToStateMatrix(CModel* pModel,optStruct& Options,const int
 void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 {
   string solfile;
-
 
   ExitGracefullyIf(e>=_nMembers,"CEnKFEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
 
@@ -704,6 +718,12 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   if((e==_nEnKFMembers) && (_forecast_rvt!="")) {
     pModel->ClearTimeSeriesData(Options); //wipes out everything read pre-forecast
     Options.rvt_filename=_forecast_rvt;
+    ParseTimeSeriesFile(pModel,Options);
+  }
+
+  // read ensemble-member specific time series (e.g., upstream flows in model cascade), if present
+  if (_extra_rvt != "") {
+    Options.rvt_filename=_extra_rvt;
     ParseTimeSeriesFile(pModel,Options);
   }
 

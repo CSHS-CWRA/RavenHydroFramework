@@ -1791,7 +1791,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     case(105):  //--------------------------------------------
     {/*:RandomSeed [seed]*/
       if(Options.noisy) { cout <<"Random seed "<<endl; }
-      random_seed=(unsigned int)(s_to_i(s[1]));
+      int timestamp_corr=Options.julian_start_year+int(round(Options.julian_start_day*48)); //ensures that random seed is same only for same starting date
+      random_seed=(unsigned int)(s_to_i(s[1])+timestamp_corr);
       break;
     }
     case(106):  //--------------------------------------------

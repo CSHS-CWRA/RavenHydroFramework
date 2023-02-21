@@ -40,7 +40,7 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
     pTout->SetForcingType(typ);
     pTout->SetInterval(interval);            
     pTout->SetGridDims(GridDims);
-    pTout->SetChunkSize(nVals);        
+    pTout->SetChunkSize(pGrid->GetChunkSize());        
     pTout->ReallocateArraysInForcingGrid();
   }
   else

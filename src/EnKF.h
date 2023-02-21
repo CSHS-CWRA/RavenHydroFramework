@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #ifndef ENKF_H
 #define ENKF_H
@@ -62,6 +62,7 @@ private:
   string         _warm_runname;     //< run name of warm solution files (e.g., run1_solution.rvc)
 
   string         _forecast_rvt;     //< name of forecast .rvt file (or "" if base .rvt is to be used)
+  string         _extra_rvt;        //< name of extra-data .rvt file for ensemble member-specific time series 
 
   int           *_aObsIndices;      //< indices of CModel::pObsTS array corresponding to assimilation time series [size:_nObs]
   int            _nObs;             //< number of time series to be assimilated
@@ -81,6 +82,7 @@ public:
   void SetToWarmEnsemble    (string runname);
   void SetWindowSize        (const int nTimesteps);
   void SetForecastRVTFile   (string filename);
+  void SetExtraRVTFile      (string filename);
   void AddPerturbation      (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
   void AddObsPerturbation   (sv_type      type, disttype distrib, double *distpars, adjustment adj);
   void AddAssimilationState (sv_type sv, int layer, int assim_groupID);
