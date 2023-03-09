@@ -212,6 +212,7 @@ public:/*------------------------------------------------------*/
                                            const double aVal);                      ///< set _aVal              of class
   void         SetAttributeVarName(        const string var, const string varname); ///< set elevation, lat, or long var name
   void         SetStationElevation(        const int idx, const double &elev);      ///< set elevation of station idx
+  void         SetIsDerived               (const bool is_derived);
 
   // get class variables
   double       GetInterval()                                      const; ///< data interval (in days)

@@ -171,6 +171,7 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
     AddForcingGrid(pGrid_daily_tave,F_TEMP_DAILY_AVE);
     temp_ave_gridded=false;
     temp_daily_ave_gridded=true;
+    pGrid_daily_tave->SetIsDerived(false); //treat as if it were input directly
   }
   if(temp_ave_gridded)                                                // (B) Sub-daily temperature data provided
   {
@@ -215,7 +216,6 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // ----------------------------------------------------
   // Generate daily average grid, if it doesnt exist
   // ----------------------------------------------------
-  //JRC: I Think this is ALWAYS handled in CModel::GenerateGriddedTempVars() 
   if(!ForcingGridIsInput(F_TEMP_DAILY_AVE)) 
   {
     int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());

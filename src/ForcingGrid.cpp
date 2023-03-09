@@ -1704,6 +1704,11 @@ double  CForcingGrid::GetInterval() const{return _interval;}
 bool   CForcingGrid::GetIsDerived() const{return _is_derived;}
 
 ///////////////////////////////////////////////////////////////////
+/// \brief changes _is_derived member of ForcingGrid
+//
+void   CForcingGrid::SetIsDerived(const bool is_derived){_is_derived=is_derived;}
+
+///////////////////////////////////////////////////////////////////
 /// \brief Returns _is_3D class variable.\n
 ///        True if NetCDF data are (lat,lon,time), false if data are (nstations,time).
 /// \return _is_derived class variable
