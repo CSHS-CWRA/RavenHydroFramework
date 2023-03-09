@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -22,7 +22,7 @@ void MassEnergyBalance( CModel            *pModel,
   int i,j,k,p,pp,pTo,q,qs,c;                   //counters
   int NS,NB,nHRUs,nConnections=0,nProcesses;   //array sizes (local copies)
   int nConstituents;                           //
-  int iSW, iAtm, iAET, iGW;                    //Surface water, atmospheric precip, used PET indices
+  int iSW, iAtm, iAET, iGW, iRO;               //Surface water, atmospheric precip, used PET, runoff indices
 
   int                iFrom          [MAX_CONNECTIONS]; //arrays used to pass values through GetRatesOfChange routines
   int                iTo            [MAX_CONNECTIONS];
@@ -146,14 +146,23 @@ void MassEnergyBalance( CModel            *pModel,
   iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
   iAtm =pModel->GetStateVarIndex(ATMOS_PRECIP);
 
-  // Used PET reboots to zero every timestep=========================
+  // Used PET and runoff reboots to zero every timestep=========================
   iAET=pModel->GetStateVarIndex(AET);
+  iRO =pModel->GetStateVarIndex(RUNOFF);
   if(iAET!=DOESNT_EXIST) {
     for(k=0;k<nHRUs;k++)
     {
       aPhi        [k][iAET]=0.0;
       aPhinew     [k][iAET]=0.0;
       aPhiPrevIter[k][iAET]=0.0;
+    }
+  }
+  if(iRO!=DOESNT_EXIST) {
+    for(k=0;k<nHRUs;k++)
+    {
+      aPhi        [k][iRO ]=0.0;
+      aPhinew     [k][iRO ]=0.0;
+      aPhiPrevIter[k][iRO ]=0.0;
     }
   }
 
@@ -481,6 +490,7 @@ void MassEnergyBalance( CModel            *pModel,
       }
       //surface water moved instantaneously from HRU to basin reach/channel storage
       aRouted[p]+=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//aRouted=[m3]
+      aPhinew[k][iRO]=aPhinew[k][iSW]; //track net runoff [mm]
       aPhinew[k][iSW]=0.0;//zero out surface water storage
     }
   }

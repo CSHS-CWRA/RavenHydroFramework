@@ -994,7 +994,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
     if (_aElevation!=NULL){
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {
-        ExitGracefullyIf(_Is_nan(_aElevation[ic]),"CForcingGrid::ReadData - NaN elevation found in NetCDF elevation grid with non-zero HRU weight",BAD_DATA);
+        ExitGracefullyIf(rvn_isnan(_aElevation[ic]),"CForcingGrid::ReadData - NaN elevation found in NetCDF elevation grid with non-zero HRU weight",BAD_DATA);
       }
     }
 

@@ -833,6 +833,7 @@ enum sv_type
   GA_MOISTURE_INIT,        ///< [mm] Initial topsoil moisture content for Green Ampt infiltration
   CUM_SNOWMELT,            ///< [mm] Cumulative snowmelt as SWE
   AET,                     ///< [mm] PET used up in given time step (diagnostic variable)
+  RUNOFF,                  ///< [mm] net release of water to surface water in given times step (diagnostic variable)
 
   //Temperature/Energy storage [C] or [MJ/m^2]
   ENERGY_LOSSES,           ///< [MJ/m2] general energy losses 

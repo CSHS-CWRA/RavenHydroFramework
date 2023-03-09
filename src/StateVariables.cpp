@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "StateVariables.h"
@@ -153,6 +153,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(CONV_STOR):          {name="Convolution Substorage";     break;}
 
   case(AET):                {name="Actual Evapotranspiration";  break;}
+  case(RUNOFF):             {name="Runoff";                     break;}
   case(STREAMFLOW):         {name="Streamflow";                 break;}
 
     //Transport variables
@@ -260,6 +261,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(CONV_STOR):        {units="mm";   break;}
 
   case(AET):              {units="mm";   break;}
+  case(RUNOFF):           {units="mm";   break;}
   case(STREAMFLOW):       {units="m3/s"; break;}
 
   case(CONSTITUENT):      {units="mg/m2"; break;}
@@ -345,6 +347,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("LATERAL_EXCHANGE")){typ=LATERAL_EXCHANGE;}
 
   else if (!tmp.compare("AET"             )){typ=AET; }
+  else if (!tmp.compare("RUNOFF"          )){typ=RUNOFF; }
   else if (!tmp.compare("MULTIPLE"        )){typ=MULTIPLE_SVTYPE;}
   else if (!tmp.compare("STREAMFLOW"      )){typ=STREAMFLOW;}
 
@@ -440,6 +443,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(LATERAL_EXCHANGE):   {name="LATERAL_EXCHANGE";         break;}
 
     case(AET):                {name="AET";                      break;}
+    case(RUNOFF):             {name="RUNOFF";                   break;}
     case(STREAMFLOW):         {name="STREAMFLOW";               break;}
 
     case(MULTIPLE_SVTYPE):    {name="MULTIPLE";                 break;}

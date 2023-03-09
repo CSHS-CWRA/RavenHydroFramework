@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "EnergyTransport.h"
@@ -77,7 +77,7 @@ CModel::CModel(const int        nsoillayers,
   }
   //determine first group of state variables based upon soil model
   //SW, atmosphere, atmos_precip always present, one for each soil layer, and 1 for GW (unless lumped)
-  _nStateVars=4+nsoillayers;
+  _nStateVars=5+nsoillayers;
 
   _aStateVarType =new sv_type [_nStateVars];
   _aStateVarLayer=new int     [_nStateVars];
@@ -87,9 +87,10 @@ CModel::CModel(const int        nsoillayers,
   _aStateVarType[1]=ATMOSPHERE;    _aStateVarLayer[1]=DOESNT_EXIST; _aStateVarIndices[(int)(ATMOSPHERE   )][0]=1;
   _aStateVarType[2]=ATMOS_PRECIP;  _aStateVarLayer[2]=DOESNT_EXIST; _aStateVarIndices[(int)(ATMOS_PRECIP )][0]=2;
   _aStateVarType[3]=PONDED_WATER;  _aStateVarLayer[3]=DOESNT_EXIST; _aStateVarIndices[(int)(PONDED_WATER )][0]=3;
+  _aStateVarType[4]=RUNOFF;        _aStateVarLayer[4]=RUNOFF;       _aStateVarIndices[(int)(RUNOFF       )][0]=4;
 
   int count=0;
-  for (i=4;i<4+_nSoilVars;i++)
+  for (i=5;i<5+_nSoilVars;i++)
   {
     _aStateVarType [i]=SOIL;
     _aStateVarLayer[i]=count;

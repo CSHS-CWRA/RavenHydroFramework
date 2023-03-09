@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///  Raven Library Source Code
-///  Copyright (c) 2008-2022 the Raven Development Team
+///  Copyright (c) 2008-2023 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 
 #include <time.h>
@@ -1792,6 +1792,7 @@ double InterpolateCurve(const double x,const double *xx,const double *y,int N,bo
     if(i==DOESNT_EXIST) { return 0.0; }
     ExitGracefullyIf(i==DOESNT_EXIST,"InterpolateCurve::mis-ordered list or infinite x",RUNTIME_ERR);
     ilast=i;
+    if (fabs(xx[i+1]-xx[i]) < REAL_SMALL) { return (y[i]+y[i+1])/2; }  // x locations too close to each other
     return y[i]+(y[i+1]-y[i])/(xx[i+1]-xx[i])*(x-xx[i]);
   }
 }
