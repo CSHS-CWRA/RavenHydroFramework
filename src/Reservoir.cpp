@@ -329,13 +329,14 @@ CReservoir::CReservoir(const string Name,
   string warn;
   dh=(_max_stage-_crest_ht)/(_Np-2); //spacing = 0.05m
   _aStage [0]=_min_stage; //first point is for dry reservoir, linear interpolation of volume between this and crest height 
+  _aQ     [0]=0.0;
   _aQunder[0]=0.0;
   _aArea  [0]=A;
   _aVolume[0]=0.0;
   for (int i=1;i<_Np;i++) // - Edited by KL to reference crest height properly
   {
     _aStage [i]=_crest_ht+(i-1)*dh;
-    _aQ[i]=2.0/3.0*weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
+    _aQ     [i]=2.0/3.0*weircoeff*sqrt(2*GRAVITY)*crestw*pow((_aStage[i]-_crest_ht),1.5); //Overflow weir equation
     _aQunder[i]=0.0;
     _aArea  [i]=A;
     _aVolume[i]=A*(_aStage[i]-_min_stage);

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -90,7 +90,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":SBGroupPropertyOverride"  )){code=12; }
     else if  (!strcmp(s[0],":DisableHRUGroup"          )){code=13; }
     else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
-    else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15; } 
+    else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15; }
+    else if  (!strcmp(s[0],":IntersectHRUGroups"       )){code=16; }
     
     switch(code)
     {
@@ -807,7 +808,44 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           }
         }
       }
-    WriteAdvisory(advice,Options.noisy);
+      WriteAdvisory(advice,Options.noisy);
+      break;
+    }
+    case(16):  //----------------------------------------------
+    { /*
+        :IntersectHRUGroups {NewGroup} From {HRUGroup1} And {HRUGroup2}
+        e.g.,
+        :IntersectHRUGroups LowElevCrops From LowBand And Crops
+              */
+      if (Options.noisy) {cout <<"   Intersect HRU Groups..."<<endl;}
+      if (Len<6){pp->ImproperFormat(s);}
+
+      CHRUGroup *pHRUGrp=NULL;
+      CHRUGroup *pHRUGrp1=NULL;
+      CHRUGroup *pHRUGrp2=NULL;
+      pHRUGrp=pModel->GetHRUGroup(s[1]);
+
+      if (pHRUGrp==NULL){//group not yet defined
+        WriteWarning(":IntersectHRUGroups: HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file (2)",Options.noisy);
+        pHRUGrp=new CHRUGroup(s[1],pModel->GetNumHRUGroups());
+        pModel->AddHRUGroup(pHRUGrp);
+      }
+
+      pHRUGrp1=pModel->GetHRUGroup(s[3]);
+      pHRUGrp2=pModel->GetHRUGroup(s[3]);
+      if ((pHRUGrp1 == NULL) || (pHRUGrp2==NULL)){
+        WriteWarning("ParseHRUFile: Invalid HRU Group used in :IntersectHRUGroups command. Command ignored",Options.noisy);
+        break;
+      }
+      for(int k=0;k<pHRUGrp1->GetNumHRUs();k++){
+        for (int k2 = 0; k2 < pHRUGrp2->GetNumHRUs(); k2++) {
+          if (pHRUGrp1->GetHRU(k)->GetID() == pHRUGrp2->GetHRU(k2)->GetID()) {
+            pHRUGrp->AddHRU(pHRUGrp1->GetHRU(k));
+            break;
+          }
+        }
+      }
+
       break;
     }
     default://------------------------------------------------

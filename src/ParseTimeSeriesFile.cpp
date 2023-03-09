@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -1527,6 +1527,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       // store (sorted) grid cell ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,Options);
+      pGrid->CalculateChunkSize(Options);
       break;
     }
 
@@ -1699,6 +1700,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       // store (sorted) grid cell ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(nHydroUnits,nGridCells,Options);
+      pGrid->CalculateChunkSize(Options);
       break;
 
     }
@@ -1842,6 +1844,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       // store (sorted) station ids with non-zero weight in array
       pGrid->SetIdxNonZeroGridCells(pModel->GetNumHRUs(),nStations,Options);
+      pGrid->CalculateChunkSize(Options);
 
       delete [] StatIDs;
       delete [] junk;

@@ -235,7 +235,7 @@ private:/*------------------------------------------------------*/
 
   //Routines for deriving missing data based on gridded data provided
 
-  CForcingGrid *ForcingCopyCreate(const CForcingGrid *pGrid, const forcing_type typ, const double &interval, const int nVals);
+  CForcingGrid *ForcingCopyCreate(const CForcingGrid *pGrid, const forcing_type typ, const double &interval, const int nVals, const optStruct &Options);
 
 
   void         GenerateAveSubdailyTempFromMinMax        (const optStruct &Options);

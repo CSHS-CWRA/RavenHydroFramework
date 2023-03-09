@@ -194,6 +194,8 @@ public:/*------------------------------------------------------*/
   void         SetIdxNonZeroGridCells(     const int    nHydroUnits,
                                            const int    nGridCells, const optStruct &Options); 
                                                                                     ///< set _IdxNonZeroGridCells       of class
+  void         CalculateChunkSize         (const optStruct &Options);
+                                                                                    
   void         SetnHydroUnits(             const int    nHydroUnits);               ///< set _nHydroUnits               of class
   void         SetChunkSize(               const int    ChunkSize);                 ///< set _ChunkSize                 of class
   void         SetInterval(                const double interval);                  ///< set _interval                  of class

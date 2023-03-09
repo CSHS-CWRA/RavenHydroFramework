@@ -328,7 +328,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.temp_month_min   = NOT_SPECIFIED;
         F.temp_month_max   = NOT_SPECIFIED;
 
-        ref_elev_temp      = pGrid_pre->GetRefElevation(k);
+        ref_elev_temp      = pGrid_tave->GetRefElevation(k);
         if(ref_elev_temp==RAV_BLANK_DATA) { ref_elev_temp = _pHydroUnits[k]->GetElevation(); } //disabling orographic effects if no elevation given (warning in Forcing grid init)
       }
 

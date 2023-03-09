@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team, Ayman Khedr, Konhee Lee
+  Copyright (c) 2008-2023 the Raven Development Team, Ayman Khedr, Konhee Lee
   ----------------------------------------------------------------*/
 
 #include "TimeSeriesABC.h"
@@ -54,6 +54,7 @@ string CDiagnostic::GetName() const
   case(DIAG_CUMUL_FLOW):        {return "DIAG_CUMUL_FLOW";}
   case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";}
   case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
+  case(DIAG_DAILY_KGE):         {return "DIAG_DAILY_KGE";}
   case(DIAG_NASH_SUTCLIFFE_DER):{return "DIAG_NASH_SUTCLIFFE_DER"; }
   case(DIAG_RMSE_DER):          {return "DIAG_RMSE_DER"; }
   case(DIAG_KLING_GUPTA_DER):   {return "DIAG_KLING_GUPTA_DER"; }
@@ -318,10 +319,10 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
     double avgobs=0.0;
     int freq=(int)(rvn_round(1.0/Options.timestep));
-    
-    int shift=(int)(1.0- Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION))*freq; //no. of timesteps nnstartped at start of simulation (starts on first full day)
+    int shift=(int)((Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION))*freq); //no. of timesteps skipped at start of simulation (starts on first full day)
     if (nnstart>skip){shift=0;}//using diagnostic period always midnight to midnight, no shift required
-    if(freq==1) { shift=0; }
+    if (freq==1)     {shift=0;}
+
     double moddaily=0.0;
     double obsdaily=0.0;
     double dailyN  =0.0;
@@ -329,7 +330,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observation value
     {
-      weight=baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       avgobs+=weight*obsval;
       N     +=weight;
@@ -339,7 +340,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double sum1(0.0),sum2(0.0);
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate numerator and denominator of NSE term
     {
-      weight=baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
       
@@ -852,7 +853,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double ModStd = 0;
     double Cov = 0;
     N = 0;
-    for (nn = nnstart; nn < nnend; nn++)
+    for (nn = nnstart; nn < nnend; nn++) //mean
     {
       weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
@@ -865,7 +866,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     ObsAvg = ObsSum / N;
     ModAvg = ModSum / N;
 
-    for (nn = nnstart; nn < nnend; nn++)
+    for (nn = nnstart; nn < nnend; nn++) //std deviation
     {
       weight =baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
@@ -953,18 +954,85 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       return -ALMOST_INF;
     }
   }
+case(DIAG_DAILY_KGE)://----------------------------------------------------
+  {
+    int freq=(int)(rvn_round(1.0/Options.timestep));
+    int shift=(int)((Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION))*freq); //no. of timesteps skipped at start of simulation (starts on first full day)
+    if (nnstart>skip){shift=0;}//using diagnostic period always midnight to midnight, no shift required
+    if (freq==1)     {shift=0;}//daily timestep
+
+    double moddaily(0.0), obsdaily(0.0);
+    double avgobs  (0.0), avgmod  (0.0);
+    double obsstd  (0.0), modstd  (0.0);
+    double covar   =0.0;
+    double dailyN  =0.0;
+    double N=0;
+
+    for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observed/simulated value
+    {
+      weight=baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      avgobs+=weight*obsval;
+      avgmod+=weight*modval;
+      N     +=weight;
+    }
+    if(N>0.0) { avgobs/=N; avgmod/=N;}
+
+    for(nn=nnstart+shift;nn<nnend;nn++) //calculate std deviation of observed/simulated value
+    {
+      weight=baseweight[nn];
+      obsval = pTSObs->GetSampledValue(nn);
+      modval = pTSMod->GetSampledValue(nn);
+
+      obsdaily+=weight*obsval;
+      moddaily+=weight*modval;
+      dailyN  +=weight;
+
+      if(((nn-(nnstart+shift))%freq)==(freq-1)) { //last timestep of day
+        if(dailyN>0) {
+          obsdaily/=dailyN;
+          moddaily/=dailyN;
+          obsstd+=weight*(obsdaily - avgobs)*(obsdaily - avgobs);
+          modstd+=weight*(moddaily - avgmod)*(moddaily - avgmod);
+          covar +=weight*(obsdaily - avgobs)*(moddaily - avgmod);
+        }
+        dailyN=obsdaily=moddaily=0.0; //reset for next day
+      }
+    }
+    if(N>0.0) {
+      obsstd = sqrt(obsstd / N);   
+      modstd = sqrt(modstd / N);   
+      covar /= N;                    
+    }
+    double r     = covar / obsstd / modstd; // pearson product-moment correlation coefficient
+    double beta  = avgmod / avgobs;
+    double alpha = modstd / obsstd;
+
+    if ((N>0) && (avgobs!=0.0)  && (obsstd!=0.0) && (modstd!=0.0))
+    {
+      return 1.0 - sqrt(pow((r - 1), 2) + pow((alpha - 1), 2) + pow((beta - 1), 2));
+    }
+    else
+    {
+      string warn = "DIAG_DAILY_KGE not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+  }
   case(DIAG_MBF)://----------------------------------------------------
   {
     double sum=0.0;
     N = 0;
     for(nn = nnstart; nn < nnend; nn++)
     {
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight =baseweight[nn];
 
       sum += weight / (1.0 + pow(((modval-obsval) / (2.0*obsval)),2));
-      N+=weight;
+      N   +=weight;
     }
 
     if(N>0)
@@ -984,7 +1052,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight =baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
   
@@ -1007,7 +1075,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight =baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
   
@@ -1027,29 +1095,27 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   case(DIAG_RABSERR) ://----------------------------------------------------
   {
     double avgobs=0.0;
+    double sum1(0.0),sum2(0.0);
     N=0;
 
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight =baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       avgobs+=weight*obsval;
       N     +=weight;
     }
     if(N>0.0) { avgobs/=N; }      
       
-    double sum1(0.0),sum2(0.0);
-    N = 0;
-   
     for (nn = nnstart; nn < nnend; nn++)
     {
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
-      weight =baseweight[nn];
-
+      
       sum1 += weight*fabs(obsval - modval);
       sum2 += weight*fabs(avgobs - modval);
-      N   += weight;
+
     }
     if (N>0.0)
     {
@@ -1064,25 +1130,23 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   }
   case(DIAG_PERSINDEX)://----------------------------------------------------
   {
-
     double sum1(0.0),sum2(0.0);
-    double N1(0.0),N2(0.0);
     double prvmodval;
     N=0;
-
     for(nn=nnstart+1; nn<nnend; nn++)
     {
       prvmodval = pTSMod->GetSampledValue(nn - 1);
       obsval    = pTSObs->GetSampledValue(nn);
       modval    = pTSMod->GetSampledValue(nn);
-      weight =baseweight[nn]*baseweight[nn-1];
+      weight     =baseweight[nn]*baseweight[nn-1];
 
-      sum1 +=   weight*(pow( modval-   obsval, 2));
-      sum2 +=   weight*(pow( modval-prvmodval, 2));
-      N+=weight;
+      sum1 += weight*(pow( modval-   obsval, 2));
+      sum2 += weight*(pow( modval-prvmodval, 2));
+      N    += weight;
     }
     
-    if ((N>0.0) && (sum2!=0.0)) {
+    if ((N>0.0) && (sum2!=0.0)) 
+    {
       return 1 - (sum1 / sum2);
     }    
     else
@@ -1110,7 +1174,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
 
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight =baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       avgobs+=weight*obsval;
       N     +=weight;
@@ -1120,7 +1184,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double sum1(0.0),sum2(0.0);
     for(nn=nnstart;nn<nnend;nn++)
     {
-      weight =baseweight[nn];
+      weight = baseweight[nn];
       obsval = pTSObs->GetSampledValue(nn);
       modval = pTSMod->GetSampledValue(nn);
 
@@ -1212,6 +1276,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("CUMUL_FLOW"           )){return DIAG_CUMUL_FLOW;}
   else if (!distring.compare("LOG_NASH"             )){return DIAG_LOG_NASH;}
   else if (!distring.compare("KLING_GUPTA"          )){return DIAG_KLING_GUPTA;}
+  else if (!distring.compare("DAILY_KGE"            )){return DIAG_DAILY_KGE;}
   else if (!distring.compare("NASH_SUTCLIFFE_DER"   )){return DIAG_NASH_SUTCLIFFE_DER;}
   else if (!distring.compare("RMSE_DER"             )){return DIAG_RMSE_DER;}
   else if (!distring.compare("KLING_GUPTA_DER"      )){return DIAG_KLING_GUPTA_DER;}

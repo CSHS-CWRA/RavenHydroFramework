@@ -76,6 +76,8 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _nWeights            = NULL;
   _IdxNonZeroGridCells = NULL;
   _nNonZeroWeightedGridCells=0;
+
+  //initialized in CalculateChunkSize()
   _ChunkSize           =0;
   _nChunk              =1;
   _iChunk              = -1; // current chunk read (-1 = no chunk read, 0 = first chunk...)
@@ -529,14 +531,16 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
 ///////////////////////////////////////////////////////////////////
 /// \brief  Reallocate all arrays in class to (potentially updated) time grid dimensions
-//          mainly used when sub-daily grids have to be added to model
+//          mainly used when sub-daily grids have to be added to model using ForcingCopyCreate
 //
 void CForcingGrid::ReallocateArraysInForcingGrid( )
 {
   int ntime ;  // number of time steps
   
   ntime  = _GridDims[2]; //assumes _Is_3D
-
+  //if (_is_3D) {ntime = _GridDims[2];}
+  //else        {ntime = _GridDims[1];}
+  // 
   // -------------------------------
   // Initialize data array and set all entries to NODATA value
   // -------------------------------
@@ -1172,7 +1176,6 @@ void CForcingGrid::SetGridDims(const int GridDims[3])
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief allocated memory for and populates the _aLastNonZeroWt and _IdxNonZeroGridCells arrays, Calculates _nNonZeroWeightedGridCells
-/// Also calculates _ChunkSize and _nChunks
 /// called once after :GridWeights read in. 
 ///
 /// \param nHydroUnits number of HRUs
@@ -1256,12 +1259,25 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   }
   delete[] nonzero;
 
-  // -------------------------------
-  // Determine chunk size (_ChunkSize),
-  //           number of chunks read in total (_nChunk) and
-  // Set       id of current chunk (_iChunk)
-  // depending on size of grid (#cols x #rows x buffersize x 8byte <=  10 MB=10*1024*1024 byte)
-  // -------------------------------
+  if (Options.noisy){
+    cout<<"Finished SetIdxNonZeroGridCells routine, # of non-zero weighted cells: "<<_nNonZeroWeightedGridCells<<endl;
+  }
+}
+
+///////////////////////////////////////////////////////////////////
+/// \brief calculates _ChunkSize and total number of chunks to read _nChunks, sets the id of the current chunk 
+/// depending upon size of grid (_nNonZeroWeightedGridCells*buffersize*8byte <=  10 MB=10*1024*1024 byte)
+/// needs to be called after SetIdxNonZeroGridCells()
+///
+/// \param nHydroUnits number of HRUs
+/// \param nGridCells number of grid cells
+//
+void CForcingGrid::CalculateChunkSize(const optStruct& Options) 
+{  
+  if(_nNonZeroWeightedGridCells==0) { //Never called SetIdxNonZeroGridCells()
+    ExitGracefully("CalculateChunkSize: called at wrong location",RUNTIME_ERR);
+  }
+
   int ntime;
   if(_is_3D) { ntime = _GridDims[2]; }
   else       { ntime = _GridDims[1]; }
@@ -1270,36 +1286,33 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   if(_is_3D) { BytesPerTimestep = 8 * _WinLength[0] * _WinLength[1]; }
   else       { BytesPerTimestep = 8 * _WinLength[0]; }
 
-  int CHUNK_MEMORY=Options.NetCDF_chunk_mem;
+  //BytesPerTimestep = 8 * _nNonZeroWeightedGridCells; //?? amount actually stored in memory?
+
+  int CHUNK_MEMORY=Options.NetCDF_chunk_mem*1024 * 1024;
 
   int tmpChunkSize;
 
-  tmpChunkSize = int(max(min((CHUNK_MEMORY *1024 * 1024) / BytesPerTimestep,ntime),1));  // number of timesteps per chunk - 10MB chunks
-  // _ChunkSize = max(int(rvn_round(1./_interval)),int(int(_ChunkSize*_interval)/_interval));  // make sure complete days and at least one day is read
+  tmpChunkSize = (int)(max(min(CHUNK_MEMORY  / BytesPerTimestep,ntime),1));  // number of timesteps per chunk - 10MB chunks
 
   if(!Options.deltaresFEWS) {
-    tmpChunkSize = int(int(tmpChunkSize*_interval)/_interval);
-  }  // make sure chunks are complete days (have to relax for FEWS)
+    tmpChunkSize = (int)((int)(tmpChunkSize*_interval)/_interval);               // make sure chunks are complete days (have to relax for FEWS)
+  }  
   
-  tmpChunkSize = max(int(rvn_round(1./_interval)),tmpChunkSize);                        // make sure  at least one day is read
-                                                                                        //support larger chunk if model duration is small
+  tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);            // make sure  at least one day is read
+                                                                                 // support larger chunk if model duration is small
   double partday=Options.julian_start_day-floor(Options.julian_start_day);
-  tmpChunkSize = min(tmpChunkSize,(int) ceil(ceil(Options.duration+partday)/_interval));//ensures goes to midnight of last day
+  tmpChunkSize = min(tmpChunkSize,(int) ceil(ceil(Options.duration+partday)/_interval));//ensures goes to midnight of last day 
 
- SetChunkSize(tmpChunkSize);
+  SetChunkSize(tmpChunkSize);
 
   _nChunk    = int(ceil((Options.duration/_interval)/_ChunkSize));                      // total number of chunks
   
   if (Options.noisy){
-    cout<<"Finished SetIdxNonZeroGridCells routine, # of non-zero weighted cells: "<<_nNonZeroWeightedGridCells<<endl;
-    cout<<"                                         Chunk size:                   "<<_ChunkSize<<endl;
+    cout<<"Finished CalculateChunkSize routine,     # of time steps per chunk:    "<<_ChunkSize<<endl;
+    cout<<"                                         # of time chunks:             "<<_nChunk   <<endl;
   }
-  /*cout<<"ntime: "<<ntime<<endl;
-  cout<<"Duration constrained chunk size: "<<(int)ceil(Options.duration/_interval)<<endl;
-  cout<<"Adjusted Chunk size: "<<int(max(min((CHUNK_MEMORY *1024 * 1024) / (8 * _WinLength[0] * _WinLength[1]),ntime),1))<<endl;
-  cout<<"NUMBER OF TIME CHUNKS: "<<_nChunk<<endl;*/
+  /*cout<<"ntime: "<<ntime<<endl;*/
 }
-
 ///////////////////////////////////////////////////////////////////
 /// \brief sets the _nHydroUnits in class CForcingGrid
 ///
@@ -2157,8 +2170,8 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
           }
         }
         if (!found){l=-1;}
-        cout<<std::setw(3)<<l<<" "; //report cell ID
-        //cout<<std::setw(8)<<val<<" "; //report elevation/lat/long
+        //cout<<std::setw(3)<<l<<" "; //report cell ID
+        cout<<std::setw(8)<<val<<" "; //report elevation/lat/long
       }
       cout<<endl;
     }*/

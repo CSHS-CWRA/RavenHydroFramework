@@ -19,18 +19,19 @@
 /// \brief if forcing grid of type typ doesnt exist, creates full copy of pGrid 
 ///    but with potentially new time interval specified
 ///    otherwise just returns existing grid of type typ
+///    assume
 //
 CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
                                         const forcing_type typ,
                                         const double &interval, 
-                                        const int nVals)
+                                        const int nVals, const optStruct &Options)
 {
   static CForcingGrid *pTout;
   if (GetForcingGridIndexFromType(typ) == DOESNT_EXIST )
   { // for the first chunk, the derived grid does not exist and has to be added to the model
     // all weights, etc., are copied from the base grid 
 
-    pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrixes are deep copies
+    pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrices are deep copies
 
     //following values are overwritten:
     int    GridDims[3];
@@ -40,7 +41,9 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
     pTout->SetForcingType(typ);
     pTout->SetInterval(interval);            
     pTout->SetGridDims(GridDims);
-    pTout->SetChunkSize(pGrid->GetChunkSize());        
+
+    pTout->SetChunkSize(nVals); 
+    //pTout->CalculateChunkSize(Options);
     pTout->ReallocateArraysInForcingGrid();
   }
   else
@@ -154,9 +157,10 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
   string tmp[3];
   tmp[0] = "NONE";  tmp[1] = "NONE";  tmp[2] = "NONE";
 
-  if((temp_ave_gridded) && (fabs(pGrid_tave->GetInterval()-1.0)<REAL_SMALL)) // (A) daily temperature data provided, labeled as TEMP_AVE - >convert to temp_daily_ave_gridded
+  if ((temp_ave_gridded) && (fabs(pGrid_tave->GetInterval()-1.0)<REAL_SMALL)) // (A) daily temperature data provided, labeled as TEMP_AVE - >convert to temp_daily_ave_gridded
   {
-    pGrid_daily_tave = ForcingCopyCreate(pGrid_tave,F_TEMP_DAILY_AVE,pGrid_tave->GetInterval(),pGrid_tave->GetNumValues());
+
+    pGrid_daily_tave = ForcingCopyCreate(pGrid_tave,F_TEMP_DAILY_AVE,pGrid_tave->GetInterval(),pGrid_tave->GetChunkSize(),Options);
     int chunk_size =pGrid_tave->GetChunkSize();
     int nNonZero   =pGrid_tave->GetNumberNonZeroGridCells();
     for(int it=0; it<chunk_size; it++) {           // loop over time points in buffer
@@ -211,16 +215,17 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // ----------------------------------------------------
   // Generate daily average grid, if it doesnt exist
   // ----------------------------------------------------
+  //JRC: I Think this is ALWAYS handled in CModel::GenerateGriddedTempVars() 
   if(!ForcingGridIsInput(F_TEMP_DAILY_AVE)) 
   {
     int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());
     double Tave;
-    pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals);
+    pTave_daily = ForcingCopyCreate(pTmin,F_TEMP_DAILY_AVE,1.0,nVals,Options);
 
     double t=0.0;
     int chunk_size =pTave_daily->GetChunkSize();
     int nNonZero   =pTave_daily->GetNumberNonZeroGridCells();
-    for(int it=0; it<chunk_size; it++) {           // loop over time points in buffer
+    for(int it=0; it<chunk_size; it++) {            // loop over time points in buffer
       for(int ic=0; ic<nNonZero;ic++) {             // loop over non-zero grid cell indexes
         Tave=0.5*(pTmin->GetValue_avg(ic,t * nValsPerDay,nValsPerDay) +
                   pTmax->GetValue_avg(ic,t * nValsPerDay,nValsPerDay));
@@ -241,7 +246,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   {
     int    nVals     = (int)ceil(pTave_daily->GetChunkSize()/Options.timestep);
 
-    pTave = ForcingCopyCreate(pTmin,F_TEMP_AVE,Options.timestep,nVals);
+    pTave = ForcingCopyCreate(pTmin,F_TEMP_AVE,Options.timestep,nVals,Options);
 
     // set forcing values
     // Tmax       is with input time resolution
@@ -272,7 +277,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
     if(!ForcingGridIsInput(F_TEMP_AVE))
     {
       int    nVals     = pTave_daily->GetChunkSize();
-      pTave = ForcingCopyCreate(pTave_daily,F_TEMP_AVE,1.0,nVals);
+      pTave = ForcingCopyCreate(pTave_daily,F_TEMP_AVE,1.0,nVals,Options);
 
       int nNonZero  =pTave->GetNumberNonZeroGridCells();
       for(int it=0; it<nVals; it++) {                                 // loop over time points in buffer
@@ -299,9 +304,9 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   double interval = pTave->GetInterval();
   int    nVals    = (int)ceil(pTave->GetChunkSize()*interval); // number of daily values
 
-  pTmin_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_MIN,1.0,nVals);
-  pTmax_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_MAX,1.0,nVals);
-  pTave_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_AVE,1.0,nVals);
+  pTmin_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_MIN,1.0,nVals,Options);
+  pTmax_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_MAX,1.0,nVals,Options);
+  pTave_daily = ForcingCopyCreate(pTave,F_TEMP_DAILY_AVE,1.0,nVals,Options);
 
   double time;
   double time_shift=Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
@@ -337,10 +342,10 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   pTave_daily->Initialize(Options);//  needed for correct mapping from time series to model time
 
   double interval = pTave_daily->GetInterval();
-  int       nVals = (int)ceil((float)(pTave_daily->GetChunkSize())); // number of subdaily values (input resolution) - should be 1
+  int       nVals = pTave_daily->GetChunkSize(); // number of subdaily values (input resolution) - should be 1
   
-  pTmin_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MIN,interval,nVals);
-  pTmax_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MAX,interval,nVals);
+  pTmin_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MIN,interval,nVals,Options);
+  pTmax_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MAX,interval,nVals,Options);
   int chunksize=pTave_daily->GetChunkSize();
   int nNonZero =pTave_daily->GetNumberNonZeroGridCells();
   double daily_temp;
@@ -383,7 +388,7 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
 
   int nVals = pSnow->GetChunkSize();
 
-  pPre = ForcingCopyCreate(pSnow,F_PRECIP,interval_snow,nVals);
+  pPre = ForcingCopyCreate(pSnow,F_PRECIP,interval_snow,nVals,Options);
 
   int nNonZero  =pPre->GetNumberNonZeroGridCells();
   for (int it=0; it<nVals; it++) {     // loop over time points in buffer
@@ -408,7 +413,7 @@ void CModel::GenerateRainFromPrecip(const optStruct &Options)
 
   int nVals = pPre->GetChunkSize();
 
-  pRain = ForcingCopyCreate(pPre,F_RAINFALL,pPre->GetInterval(),nVals);
+  pRain = ForcingCopyCreate(pPre,F_RAINFALL,pPre->GetInterval(),nVals,Options);
 
   // set forcing values
   int nNonZero  =pRain->GetNumberNonZeroGridCells();
@@ -436,7 +441,7 @@ void CModel::GenerateZeroSnow(const optStruct &Options)
 
   int    nVals     = pPre->GetChunkSize();
 
-  pSnow = ForcingCopyCreate(pPre,F_SNOWFALL,pPre->GetInterval(),nVals);
+  pSnow = ForcingCopyCreate(pPre,F_SNOWFALL,pPre->GetInterval(),nVals,Options);
 
   int nNonZero  =pSnow->GetNumberNonZeroGridCells();
   for (int it=0; it<nVals; it++) {                   // loop over time points in buffer
