@@ -108,14 +108,14 @@ void MassEnergyBalance( CModel            *pModel,
 
     if(Options.sol_method==ITERATED_HEUN)
     {
-      rate_guess = new double *[nProcesses];      //need to set first array to numProcesses
+      rate_guess = new double *[nProcesses];    //need to set first array to numProcesses
       for (j=0;j<nProcesses;j++){
-        rate_guess[j]=new double [NS*NS]; //maximum number of connections possible
+        rate_guess[j]=new double [NS*NS];       //maximum number of connections possible
       }
     }
     //For lateral flow processes
-    kFrom         =new int[MAX_LAT_CONNECTIONS];
-    kTo           =new int[MAX_LAT_CONNECTIONS];
+    kFrom         =new int   [MAX_LAT_CONNECTIONS];
+    kTo           =new int   [MAX_LAT_CONNECTIONS];
     exchange_rates=new double[MAX_LAT_CONNECTIONS];
   }//end static memory if
 
@@ -146,7 +146,7 @@ void MassEnergyBalance( CModel            *pModel,
   iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
   iAtm =pModel->GetStateVarIndex(ATMOS_PRECIP);
 
-  // Used PET and runoff reboots to zero every timestep=========================
+  // Used PET and runoff reboots to zero every timestep==============
   iAET=pModel->GetStateVarIndex(AET);
   iRO =pModel->GetStateVarIndex(RUNOFF);
   if(iAET!=DOESNT_EXIST) {
@@ -465,7 +465,7 @@ void MassEnergyBalance( CModel            *pModel,
   //      ROUTING
   //-----------------------------------------------------------------
   double res_ht,res_outflow;
-  double down_Q,irr_Q,div_Q, Qwithdrawn;
+  double down_Q,irr_Q,div_Q, Qwithdrawn, SWvol;
   int    pDivert;
   res_constraint res_const;
   const int MAX_CONTROL_STRUCTURES=10;
@@ -482,16 +482,16 @@ void MassEnergyBalance( CModel            *pModel,
     if(pHRU->IsEnabled())
     {
       p   =pHRU->GetSubBasinIndex();
-
+      SWvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3] 
       if(pHRU->IsLinkedToReservoir()) { 
-        double Pvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3] [iSW is ALL precip on reservoir]
-        pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(Pvol);
-        aPhinew[k][iSW]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
+        pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(SWvol);//[SW is treated as precip on reservoir]
       }
-      //surface water moved instantaneously from HRU to basin reach/channel storage
-      aRouted[p]+=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//aRouted=[m3]
+      else{
+        //surface water moved instantaneously from HRU to basin reach/channel storage
+        aRouted[p]+=SWvol;
+      }
       aPhinew[k][iRO]=aPhinew[k][iSW]; //track net runoff [mm]
-      aPhinew[k][iSW]=0.0;//zero out surface water storage
+      aPhinew[k][iSW]=0.0;             //zero out surface water storage
     }
   }
   // Identify magnitude of flow diversions, calculate inflows  
@@ -530,6 +530,7 @@ void MassEnergyBalance( CModel            *pModel,
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
   }
   // Route water over timestep
+  // ----------------------------------------------------------------------------------------
   // calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
   for (pp=0;pp<NB;pp++)
   {
@@ -593,6 +594,7 @@ void MassEnergyBalance( CModel            *pModel,
   double ResMass    =0;
   double ResSedMass =0;
   double MassOutflow=0;
+  double Ploading;
   int    iSWmass,m;
   CConstituentModel *pConstitModel;
   for(c=0;c<nConstituents;c++)
@@ -611,12 +613,13 @@ void MassEnergyBalance( CModel            *pModel,
         m       =pModel->GetTransportModel()->GetLayerIndex(c,iSW);
         iSWmass =pModel->GetStateVarIndex(CONSTITUENT,m);
         
+        Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//[mg/d] or [MJ/d] [iSWmass is ALL precip mass/energy on HRU]
         if(pHRU->IsLinkedToReservoir()) {
-          double Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2);//[mg/d] or [MJ/d] [iSWmass is ALL precip mass/energy on reservoir]
           pConstitModel->SetReservoirPrecipLoad(p,Ploading);
-          aPhinew[k][iSWmass]=0; //precipitation handled in reservoir mass balance- doesn't pass through in-catchment storage
         }
-        aRoutedMass[p]+=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//[mg/d] or [MJ/d]
+        else{
+          aRoutedMass[p]+=Ploading;
+        }
         aPhinew[k][iSWmass]=0.0; //empty out from landscape storage
       }
     }
