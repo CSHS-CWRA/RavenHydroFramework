@@ -80,7 +80,6 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":WindowSize"))                  { code=15; } 
     else if(!strcmp(s[0],":ObservationErrorModel"))       { code=16; }
     else if(!strcmp(s[0],":ForecastRVTFilename"))         { code=17; }
-    else if(!strcmp(s[0],":DontTruncateHindcasts"))       { code=18; }
     else if(!strcmp(s[0],":AssimilateStreamflow"))        { code=101; }
 
     switch(code)
@@ -289,18 +288,19 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         int kk=DOESNT_EXIST;
 
         int i=pModel->GetStateVarIndex(sv,lay);
-        if ((i == DOESNT_EXIST) && (sv!=STREAMFLOW)){
+        if ((i == DOESNT_EXIST) && (sv!=STREAMFLOW) && (sv!=RESERVOIR_STAGE) ){
           string warn="State variable "+to_string(s[1])+" does not exist in this model and will be ignored in the :AssimilatedState command";
           WriteWarning(warn,Options.noisy);
           break;
         }
-        if (sv==STREAMFLOW){
+        if ((sv==STREAMFLOW) || (sv==RESERVOIR_STAGE)) {
           if(pModel->GetSubBasinGroup(s[2])==NULL) {
             ExitGracefully("ParseEnsembleFile: :AssimilatedState subbasin/HRU group does not exist",BAD_DATA_WARN);
             break;
           }
           kk=pModel->GetSubBasinGroup(s[2])->GetGlobalIndex();
         }
+
         else {
           if(pModel->GetHRUGroup(s[2])==NULL) {
             ExitGracefully("ParseEnsembleFile: :AssimilatedState subbasin/HRU group does not exist",BAD_DATA_WARN);
@@ -396,15 +396,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(18):  //----------------------------------------------
-    {/*:DontTruncateHindcasts */
-      if(Options.noisy) { cout <<":DontTruncateHindcasts"<<endl; }
-      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
-        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
-        pEnKF->DontTruncateHindcasts();
-      }
-      else {
-        WriteWarning(":DontTruncateHindcasts command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
-      }
+    {
       break;
     }
     case(19):  //----------------------------------------------

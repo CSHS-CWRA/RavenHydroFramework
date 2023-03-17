@@ -865,7 +865,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
   // REGULAR FORMAT ==============================================================
   if(Len<4) { p->ImproperFormat(s); cout <<"Length:" <<Len<<endl; }
   if(IsValidDateString(s[0]))
-  { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep] [nMeasurements]
+  { //in timestamp format [yyyy-mm-dd] [hh:mm:ss.0] [timestep (d or hh:mm:ss)] [nMeasurements]
     time_struct tt;
     tt=DateStringToTimeStruct(string(s[0]),string(s[1]),Options.calendar);
     start_day=tt.julian_day;

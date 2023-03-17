@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "ModelEnsemble.h"
 //#include <random>
@@ -113,7 +113,6 @@ void CEnsemble::SetOutputDirectory(const string OutDirString)
   for(int e=0;e<_nMembers;e++)
   {
     ee=e;
-    if ((_type==ENSEMBLE_ENKF) && (e>=_nMembers/2)){ee-=_nMembers/2;}
     _aOutputDirs[e]=OutDirString;
     if(pos!=string::npos){ _aOutputDirs[e].replace(pos,1,to_string(ee+1)); }
     _aOutputDirs[e]=_aOutputDirs[e]+"/"; //add trailing backslash
@@ -131,9 +130,7 @@ void CEnsemble::SetRunNames(const string RunNameString)
   for(int e=0;e<_nMembers;e++)
   {
     ee=e;
-    if ((_type==ENSEMBLE_ENKF) && (e>=_nMembers/2)){ee-=_nMembers/2;}
     ename=to_string(ee+1);
-    if ((_type==ENSEMBLE_ENKF) && (e>=_nMembers/2)){ename+="b";}
     _aRunNames[e]=RunNameString;
     if(pos!=string::npos) { _aRunNames[e].replace(pos,1,to_string(ee+1)); }
   }

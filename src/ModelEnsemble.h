@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #ifndef ENSEMBLE_H
 #define ENSEMBLE_H
@@ -68,9 +68,9 @@ public:/*-------------------------------------------------------*/
 
   virtual void Initialize       (const CModel* pModel,const optStruct &Options); //called prior to ALL ensemble runs
   virtual void UpdateModel      (CModel *pModel,optStruct &Options,const int e); //called prior to each ensemble run
-  virtual void StartTimeStepOps (CModel* pModel,optStruct& Options,const time_struct& tt,const int e) {} //called at start of every timestep
-  virtual void CloseTimeStepOps (CModel* pModel,optStruct& Options,const time_struct& tt,const int e) {} //called at end of each timestep
-  virtual void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e) {} //called after all ensembles run
+  virtual void StartTimeStepOps (CModel* pModel,optStruct &Options,const time_struct &tt,const int e) {} //called at start of every timestep
+  virtual void CloseTimeStepOps (CModel* pModel,optStruct &Options,const time_struct &tt,const int e) {} //called at end of each timestep
+  virtual void FinishEnsembleRun(CModel *pModel,optStruct &Options,const time_struct &tt,const int e) {} //called after all ensembles run
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -128,6 +128,6 @@ public:
 
   void Initialize(const CModel* pModel,const optStruct &Options);
   void UpdateModel(CModel *pModel,optStruct &Options,const int e);
-  void FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e);
+  void FinishEnsembleRun(CModel *pModel,optStruct &Options,const time_struct &tt,const int e);
 };
 #endif

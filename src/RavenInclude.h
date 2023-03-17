@@ -399,6 +399,7 @@ enum evap_method
 {
   PET_CONSTANT,                 ///< constant uniform PET
   PET_DATA,                     ///< read PET from time series file
+  PET_NONE,                     ///< all PET calculations disabled - PET==0 (for Routing only mode)
   PET_FROMMONTHLY,              ///< PET estimated from specified monthly averages and daily temperature
   PET_MONTHLY_FACTOR,           ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
   PET_PENMAN_MONTEITH,          ///< Penman-Monteith equation
@@ -875,6 +876,7 @@ enum sv_type
 
   //Special - internal flags
   STREAMFLOW,              ///< only used for referencing in data assimilation
+  RESERVOIR_STAGE,         ///< only used for referencing in data assimilation  
   UNRECOGNIZED_SVTYPE,     ///< Unrecognized type of state variable
   MULTIPLE_SVTYPE,         ///< Multiple State variables (for parsing)
   USERSPEC_SVTYPE          ///< User specified state variable type (for parsing)

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -257,6 +257,12 @@ const double        *CSubBasin::GetRoutingHydrograph () const{return _aRouteHydr
 const double        *CSubBasin::GetInflowHistory     () const{return _aQinHist;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief returns outflow array 
+/// \return outflow array as array pointer
+//
+const double        *CSubBasin::GetOutflowArray     () const {return _aQout;}
+
+//////////////////////////////////////////////////////////////////
 /// \brief returns number of timesteps stored in unit hydrograph history
 /// \return number of timesteps stored in unit hydrograph history
 //
@@ -267,6 +273,12 @@ int                  CSubBasin::GetLatHistorySize    () const{return _nQlatHist;
 /// \return number of timesteps stored in routing hydrograph history
 //
 int                  CSubBasin::GetInflowHistorySize () const{return _nQinHist;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns number of timesteps stored in routing hydrograph history
+/// \return number of timesteps stored in routing hydrograph history
+//
+int                  CSubBasin::GetOutflowArraySize () const{return _nSegments;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns true if subbasin outflow data should be used in assimilation

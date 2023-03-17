@@ -205,7 +205,7 @@ void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 /// \param &Options [out] Global model options information
 /// \param e [out] ensembe member index
 //
-void CDDSEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const int e)
+void CDDSEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const time_struct &tt,const int e)
 {
   double Ftest=pModel->GetObjFuncVal(_calib_SBID,_calib_Obj,_calib_Period);
 

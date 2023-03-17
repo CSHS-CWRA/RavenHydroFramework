@@ -50,11 +50,6 @@ private:
   int           *_aAssimGroupID;    ///< index (kk) of HRU group or SubBasin group  [size: _nAssimStates]
   int            _nAssimStates;     ///< number of assimilated state variable types (!= number of total state vars)
 
-  double         _t_assim_start;    //< assimilation start time 
-
-  bool           _truncate_hind;    //< true if hindcasts should be truncated to t_0(+Delta t) rather than run to end of model [default:false]
-  double         _duration_stored;  //< stored simulation duration to revert to after hindcast stage
-
   int            _window_size;      //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
   int            _nTimeSteps;       //< number of timesteps in hindcast period (prior to t0)
 
@@ -63,6 +58,7 @@ private:
 
   string         _forecast_rvt;     //< name of forecast .rvt file (or "" if base .rvt is to be used)
   string         _extra_rvt;        //< name of extra-data .rvt file for ensemble member-specific time series 
+  string         _orig_rvc_file;    //< original rvc filename (full path)
 
   int           *_aObsIndices;      //< indices of CModel::pObsTS array corresponding to assimilation time series [size:_nObs]
   int            _nObs;             //< number of time series to be assimilated
@@ -70,15 +66,14 @@ private:
   ofstream      _ENKFOUT;           ///< output file stream
 
   void AssimilationCalcs();         //< determines the final state matrix after assimilation
-  void UpdateStates    (CModel *pModel,optStruct& Options,const int e);
-  void AddToStateMatrix(CModel* pModel,optStruct& Options,const int e);
+  void UpdateFromStateMatrix(CModel *pModel,optStruct& Options,const int e);
+  void AddToStateMatrix     (CModel* pModel,optStruct& Options,const int e);
 public:
   CEnKFEnsemble(const int num_members,const optStruct &Options);
   ~CEnKFEnsemble();
 
   double GetStartTime(const int e) const;
 
-  void DontTruncateHindcasts();
   void SetToWarmEnsemble    (string runname);
   void SetWindowSize        (const int nTimesteps);
   void SetForecastRVTFile   (string filename);
@@ -90,8 +85,8 @@ public:
   void Initialize           (const CModel* pModel,const optStruct &Options);
   void UpdateModel          (CModel *pModel,optStruct &Options,const int e);
   void StartTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct &tt,const int e);
-  void CloseTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct& tt,const int e); //called at end of each timestep
-  void FinishEnsembleRun    (CModel *pModel,optStruct &Options,const int e);
+  void CloseTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct &tt,const int e); //called at end of each timestep
+  void FinishEnsembleRun    (CModel *pModel,optStruct &Options,const time_struct &tt,const int e);
 };
 #endif
 

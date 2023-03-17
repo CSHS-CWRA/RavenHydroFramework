@@ -3499,6 +3499,7 @@ evap_method ParseEvapMethod(const string s)
   else if (!strcmp(tmp.c_str(),"MONTHLY_FACTOR"        )){return PET_MONTHLY_FACTOR;}
   else if (!strcmp(tmp.c_str(),"PET_CONSTANT"          )){return PET_CONSTANT;}
   else if (!strcmp(tmp.c_str(),"PET_DATA"              )){return PET_DATA;}
+  else if (!strcmp(tmp.c_str(),"PET_NONE"              )){return PET_NONE;}
   else if (!strcmp(tmp.c_str(),"PET_FROMMONTHLY"       )){return PET_FROMMONTHLY;}
   else if (!strcmp(tmp.c_str(),"PET_PENMAN_MONTEITH"   )){return PET_PENMAN_MONTEITH;}
   else if (!strcmp(tmp.c_str(),"PET_PENMAN_COMBINATION")){return PET_PENMAN_COMBINATION;}

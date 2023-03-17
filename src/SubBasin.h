@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -196,8 +196,10 @@ public:/*-------------------------------------------------------*/
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
   const double   *GetInflowHistory         () const;
+  const double   *GetOutflowArray          () const;
   int             GetLatHistorySize        () const;
   int             GetInflowHistorySize     () const;
+  int             GetOutflowArraySize      () const;
   int             GetNumDiversions         () const;
 
   double          GetOutflowRate           () const;                   //[m3/s] from final segment, point in time

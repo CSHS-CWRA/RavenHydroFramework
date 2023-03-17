@@ -155,6 +155,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(AET):                {name="Actual Evapotranspiration";  break;}
   case(RUNOFF):             {name="Runoff";                     break;}
   case(STREAMFLOW):         {name="Streamflow";                 break;}
+  case(RESERVOIR_STAGE):    {name="Reservoir Stage";            break;}
 
     //Transport variables
   case(CONSTITUENT):        {name="Constituent";                break;}  //overwritten below
@@ -263,6 +264,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(AET):              {units="mm";   break;}
   case(RUNOFF):           {units="mm";   break;}
   case(STREAMFLOW):       {units="m3/s"; break;}
+  case(RESERVOIR_STAGE):  {units="m";    break;}
 
   case(CONSTITUENT):      {units="mg/m2"; break;}
   case(CONSTITUENT_SRC):  {units="mg/m2"; break;}
@@ -350,6 +352,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("RUNOFF"          )){typ=RUNOFF; }
   else if (!tmp.compare("MULTIPLE"        )){typ=MULTIPLE_SVTYPE;}
   else if (!tmp.compare("STREAMFLOW"      )){typ=STREAMFLOW;}
+  else if (!tmp.compare("RESERVOIR_STAGE" )){typ=RESERVOIR_STAGE;}
 
   else if (!tmp.compare("CONSTITUENT"     )){typ=CONSTITUENT;}
   else if (!tmp.compare("CONSTITUENT_SRC" )){typ=CONSTITUENT_SRC;}
@@ -445,6 +448,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(AET):                {name="AET";                      break;}
     case(RUNOFF):             {name="RUNOFF";                   break;}
     case(STREAMFLOW):         {name="STREAMFLOW";               break;}
+    case(RESERVOIR_STAGE):    {name="RESERVOIR_STAGE";          break;}
 
     case(MULTIPLE_SVTYPE):    {name="MULTIPLE";                 break;}
 

@@ -165,8 +165,6 @@ int main(int argc, char* argv[])
     pModel->WriteMajorOutput  (Options,tt,"solution",true);
     pModel->CloseOutputStreams();
 
-    pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,e);
-
     if(!Options.silent) 
     {
       cout <<"======================================================"<<endl;
@@ -181,7 +179,8 @@ int main(int argc, char* argv[])
     if (Options.benchmarking) {
       cout <<"                              "<< pModel->GetNumHRUs()*(Options.duration/Options.timestep)/(float(clock()-t1)/CLOCKS_PER_SEC)<<" HRU-time steps/second"<<endl;
     }
-     
+
+    pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,tt,e);
   }/* end ensemble loop*/
 
 
