@@ -407,6 +407,7 @@ struct global_struct
   double           TOC_multiplier;           ///< [mm] time of concentration multiplier
   double           TIME_TO_PEAK_multiplier;  ///< [0..1+] time to peak multiplier
   double           GAMMA_SHAPE_multiplier;   ///< [0..1+] Gamma shape multiplier
+  double           GAMMA_SCALE_multiplier;   ///< [0..1+] Gamma scale multiplier
   double           assimilation_fact;        ///< [0..1] assimilation factor (0=no assimilation to 1= full replacement)
   double           assim_upstream_decay;     ///< [1/km] assimilation upstream decay factor (0= overrides everything upstream, large- observation influence decays quickly with distance from gauge) [~0.01]
   double           assim_time_decay;         ///< [1/d] assimilation temporal decay factor (0=diminishes in future, 0.1 - diminshes in  3 days) [0.2]

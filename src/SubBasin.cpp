@@ -1345,7 +1345,10 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
       _gamma_shape=3.0;
       _gamma_shape*=CGlobalParams::GetParams()->GAMMA_SHAPE_multiplier;
     }
-    if (_gamma_scale==AUTO_COMPUTE){_gamma_scale=max((_gamma_shape-1.0)/_t_peak,0.01); } //only really should be used if _gamma_shape>1.0
+    if (_gamma_scale==AUTO_COMPUTE){
+      _gamma_scale=max((_gamma_shape-1.0)/_t_peak,0.01); //only really should be used if _gamma_shape>1.0
+      _gamma_scale*=CGlobalParams::GetParams()->GAMMA_SCALE_multiplier;
+    }
 
     if (_reservoir_constant==AUTO_COMPUTE){
       _reservoir_constant=-log(_t_conc/(1+_t_conc));

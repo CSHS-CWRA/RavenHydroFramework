@@ -404,6 +404,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 	      if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
 		in*=CGlobalParams::GetParameter("GAMMA_SHAPE_MULTIPLIER");
               }
+	      if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+		in*=CGlobalParams::GetParameter("GAMMA_SCALE_MULTIPLIER");
+              }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
                 if(pModel->GetHRUByID((int)in)!=NULL) {
                   in=pModel->GetHRUByID((int)in)->GetGlobalIndex(); //Convert ID to index

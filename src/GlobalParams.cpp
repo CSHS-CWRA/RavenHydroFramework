@@ -153,6 +153,11 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   {
     G.GAMMA_SHAPE_multiplier=1.0;//default=nothing (no warning needed)
   }
+  autocalc=SetCalculableValue(G.GAMMA_SCALE_multiplier,Gtmp.GAMMA_SCALE_multiplier,Gtemplate.GAMMA_SCALE_multiplier);
+  if (autocalc)
+  {
+    G.GAMMA_SCALE_multiplier=1.0;//default=nothing (no warning needed)
+  }
   autocalc=SetCalculableValue(G.adiabatic_lapse,Gtmp.adiabatic_lapse,Gtemplate.adiabatic_lapse);
   if (autocalc)
   {
@@ -385,6 +390,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.TOC_multiplier          =DefaultParameterValue(is_template,true);
   g.TIME_TO_PEAK_multiplier =DefaultParameterValue(is_template,true);
   g.GAMMA_SHAPE_multiplier  =DefaultParameterValue(is_template,true);
+  g.GAMMA_SCALE_multiplier  =DefaultParameterValue(is_template,true);
 
   //model-specific parameters
   g.avg_annual_snow     =DefaultParameterValue(is_template,false);
@@ -474,6 +480,7 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("TOC_MULTIPLIER"          )){G.TOC_multiplier=value;}
   else if (!name.compare("TIME_TO_PEAK_MULTIPLIER" )){G.TIME_TO_PEAK_multiplier=value;}
   else if (!name.compare("GAMMA_SHAPE_MULTIPLIER"  )){G.GAMMA_SHAPE_multiplier=value;}
+  else if (!name.compare("GAMMA_SCALE_MULTIPLIER"  )){G.GAMMA_SCALE_multiplier=value;}
 
   //WARNING: this sets *all* 12 SW correction parameters to "value".
   else if (!name.compare("UBC_SW_N_CORR"       )){for (int i=0;i<12;i++){G.UBC_n_corr[i]=value;}}
@@ -573,6 +580,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("TOC_MULTIPLIER"          )){return G.TOC_multiplier;}
   else if (!name.compare("TIME_TO_PEAK_MULTIPLIER" )){return G.TIME_TO_PEAK_multiplier;}
   else if (!name.compare("GAMMA_SHAPE_MULTIPLIER"  )){return G.GAMMA_SHAPE_multiplier;}
+  else if (!name.compare("GAMMA_SCALE_MULTIPLIER"  )){return G.GAMMA_SCALE_multiplier;}
 
   //WARNING: this get only returns the first (zero-index) element of the 12 SW correction parameters
   else if (!name.compare("UBC_SW_N_CORR"        )){return G.UBC_n_corr[0];}

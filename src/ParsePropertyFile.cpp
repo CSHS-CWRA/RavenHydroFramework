@@ -9,7 +9,6 @@
 #include "GlobalParams.h"
 #include "SoilAndLandClasses.h"
 #include <string>
-
 struct val_alias
 {
   string tag;
@@ -162,6 +161,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
 
   aP [0]="GAMMA_SHAPE_MULTIPLIER"; aPC[0]=CLASS_GLOBAL;
+  AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
+
+  aP [0]="GAMMA_SCALE_MULTIPLIER"; aPC[0]=CLASS_GLOBAL;
   AddToMasterParamList(aPmaster, aPCmaster,nPmaster, aP, aPC, 1);
 
   //Throw warning if NULL Terrain but terrain parameter is needed
