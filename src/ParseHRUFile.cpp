@@ -75,7 +75,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":End"                      )){code=-4; }//stop reading
     else if  (!strcmp(s[0],":IfModeEquals"             )){code=-5; }
     else if  (in_ifmode_statement)                       {code=-6; }
-    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode 
+    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode
     else if  (!strcmp(s[0],":RedirectToFile"           )){code=-3; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],":SubBasins"                )){code=1;  is_conduit=false;}
@@ -92,7 +92,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
     else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15; }
     else if  (!strcmp(s[0],":IntersectHRUGroups"       )){code=16; }
-    
+
     switch(code)
     {
     case(-1):  //----------------------------------------------
@@ -188,7 +188,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               error="Parse RVH File: Subbasin ID \""+string(s[0])+"\" must be unique integer or long integer";
               ExitGracefully(error.c_str(),BAD_DATA_WARN);
             }
-           
+
             double length;
             length=AutoOrDouble(s[4]);
             ExitGracefullyIf((length>2000) && (!is_conduit),
@@ -196,7 +196,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             ExitGracefullyIf((length>2000) && (!is_conduit),
               "ParseHRUPropsFile: length of conduit greater than 2000km in :Conduits command block. Units issue? Conduit length should be provided in km.",BAD_DATA_WARN);
             if (length!=AUTO_COMPUTE){length*=M_PER_KM;}//convert to m from km
-              
+
             bool gaged;
             gaged=s_to_b(s[5]);
 
@@ -398,7 +398,11 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("TIME_TO_PEAK") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-                in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
+                //in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");    // use to be this; but has its own multiplier now; maybe set default to TOC_MULTIPLIER??
+		in*=CGlobalParams::GetParameter("TIME_TO_PEAK_MULTIPLIER");
+              }
+	      if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+		in*=CGlobalParams::GetParameter("GAMMA_SHAPE_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
                 if(pModel->GetHRUByID((int)in)!=NULL) {
@@ -408,7 +412,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                   ExitGracefully("ParseHRUPropsFile::invalid REACH_HRU_ID in :SubBasinProperties command",BAD_DATA_WARN);
                 }
               }
-              //end special handling 
+              //end special handling
 
               good_string=pSB->SetBasinProperties(aParamStrings[i],in);
               if (!good_string)
@@ -488,7 +492,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
         ":PopulateHRUGroup" {name} "With" {conditionbase} {condition} {conditiondata}
         e.g.,
         :PopulateHRUGroup NotRock With HRUS NOTWITHIN RockHRUGroup
-        
+
         :PopulateHRUGroup LowBand With ELEVATION BETWEEN  0 500
         :PopulateHRUGroup CroplandHRUs With LANDUSE EQUALS CROPLAND
         :PopulateHRUGroup NonCroplandHRUs With LANDUSE NOTEQUALS CROPLAND
@@ -523,7 +527,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             }
           }
         }
-        else if (!strcmp(s[4],"WITHIN_SBGROUP")) 
+        else if (!strcmp(s[4],"WITHIN_SBGROUP"))
         {
           CSubbasinGroup *pSBGrp=NULL;
           pSBGrp=pModel->GetSubBasinGroup(s[5]);
@@ -648,7 +652,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(11):  //----------------------------------------------
     { /*
-      :SBGroupPropertyMultiplier [SBGROUP] [PROPERTY] [multiplier] 
+      :SBGroupPropertyMultiplier [SBGROUP] [PROPERTY] [multiplier]
       */
       CSubbasinGroup *pSBGrp;
       if(Len>=4) {
@@ -681,7 +685,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           break;
         }
         for(int p=0;p<pSBGrp->GetNumSubbasins();p++) {
-          pSBGrp->GetSubBasin(p)->SetBasinProperties(s[2],s_to_d(s[3]));          
+          pSBGrp->GetSubBasin(p)->SetBasinProperties(s[2],s_to_d(s[3]));
         }
       }
       else {
@@ -691,7 +695,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(13):  //----------------------------------------------
     { /*
-      :DisableHRUGroup [HRUGROUP] 
+      :DisableHRUGroup [HRUGROUP]
       */
       if(Options.noisy) { cout <<"Disabling HRU Group"<<endl; }
       if(Len>=2) {
@@ -753,7 +757,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       }
       if(!strcmp(s[3],"SUBBASINS"))
       {
-        if(!strcmp(s[4],"NOTWITHIN")) 
+        if(!strcmp(s[4],"NOTWITHIN"))
         {
           CSubbasinGroup *pSBGroup2=NULL;
           pSBGroup2=pModel->GetSubBasinGroup(s[5]);
@@ -764,8 +768,8 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             int iter=0;
             for(int p=0;p<pModel->GetNumSubBasins();p++)
             {
-              if(!pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) { 
-                pSBGroup->AddSubbasin(pModel->GetSubBasin(p)); 
+              if(!pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
                 advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
                 iter++;
                 if(iter%40==0) { advice=advice+"\n"; }
@@ -773,13 +777,13 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             }
           }
         }
-        else if(!strcmp(s[4],"UPSTREAM_OF")) 
+        else if(!strcmp(s[4],"UPSTREAM_OF"))
         {
           int SBID=s_to_l(s[5]);
           int iter=0;
           for(int p=0;p<pModel->GetNumSubBasins();p++)
           {
-            if(pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) { 
+            if(pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) {
               pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
               advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";
               iter++;
@@ -787,7 +791,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             }
           }
         }
-        else if(!strcmp(s[4],"DOWNSTREAM_OF")) 
+        else if(!strcmp(s[4],"DOWNSTREAM_OF"))
         {
           CSubBasin *pBasin=pModel->GetSubBasinByID(s_to_l(s[5]));
           if(pBasin==NULL) {
@@ -931,7 +935,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 /// \note the first line (:Reservoir [name]) has already been read in
 /// \param p [in] parser (likely points to .rvh file)
 /// \param name [in] name of reservoir
-/// \param pModel [in] pointer to model 
+/// \param pModel [in] pointer to model
 /// \param Options [in] model options structure
 //
 CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUID,const optStruct &Options)
@@ -997,10 +1001,10 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
   :Reservoir ExampleReservoir # 'multiple control structure format'
     :SubBasinID [ID]
     :HRUID [ID]
-    :Type RESROUTE_STANDARD 
+    :Type RESROUTE_STANDARD
     :StageRelations
-      # these provide the base stage-storage-area-discharge curves for reservoir. 
-      # The 'main outflow' is still controlled as before and can only drain to the downstream basin. 
+      # these provide the base stage-storage-area-discharge curves for reservoir.
+      # The 'main outflow' is still controlled as before and can only drain to the downstream basin.
       # all flow can be routed through control structures instead if we set Q=0 in this base stage relation
     :EndStageRelations
     :OutflowControlStructure [name]
@@ -1014,7 +1018,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
          [h,Q]xN
       :EndStageDischargeCurve
       :BasicWeir C3 [elev] [crestwidth] [coeff]
-      
+
       # we can have as many of these curves as we care to
       :OperatingRegime A
         :UseCurve C1
@@ -1022,7 +1026,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         :Condition STAGE IS_GREATER_THAN 400
         :Condition STAGE IS_LESS_THAN 402.3
         #--
-        :Constraint FLOW IS_LESS_THAN 630 
+        :Constraint FLOW IS_LESS_THAN 630
         :Constraint FLOW_DELTA IS_BETWEEN 0 45
       :EndOperatingRegime
       :OperatingRegime B
@@ -1193,7 +1197,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         }
         else if(!strcmp(s[1],"LOOKUP_TABLE"))
         {
-          if(type!=CURVE_LAKE) { type = CURVE_DATA; } //enables :VolumeStageRelation to be used with lake-type 
+          if(type!=CURVE_LAKE) { type = CURVE_DATA; } //enables :VolumeStageRelation to be used with lake-type
           p->Tokenize(s,Len);
           if(Len >= 1) { NV = s_to_i(s[0]); }
           aV    = new double[NV];
@@ -1403,7 +1407,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       if(Options.noisy) { cout <<"DZTR Reservoir Model"<<endl; }
 
       dztr=true;
-      
+
       p->Tokenize(s,Len);
       Smax=s_to_d(s[1]);
 
@@ -1433,29 +1437,29 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
       p->Tokenize(s,Len);
       if    (Len>=13) { for(int i=0;i<12;i++) { Qci[i]=s_to_d(s[i+1]); } }
       else if(Len>=2) { for(int i=0;i<12;i++) { Qci[i]=s_to_d(s[1]); } }
-      
+
       p->Tokenize(s,Len); //:EndDZTR
 
       break;
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":OutflowControlStructure")) {
-      if(Options.noisy) { cout << ":OutflowControlStructure" << endl; } 
+      if(Options.noisy) { cout << ":OutflowControlStructure" << endl; }
       if (pContStruct != NULL) {
         ExitGracefully("ReservoirParse: new control structure started before finishing earlier one with :EndOutflowControlStructure",BAD_DATA_WARN);
       }
-      long downID=pModel->GetSubBasinByID(SBID)->GetDownstreamID(); //default target basin 
+      long downID=pModel->GetSubBasinByID(SBID)->GetDownstreamID(); //default target basin
       pContStruct=new CControlStructure(s[1],SBID,downID);//assumes SBID appears first
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":EndOutflowControlStructure")) {
-      if(Options.noisy) { cout << ":EndOutflowControlStructure" << endl; } 
+      if(Options.noisy) { cout << ":EndOutflowControlStructure" << endl; }
       DynArrayAppend((void**&)pCSs,(void*)pContStruct,nCSs); //Add to list, set cs structure pointer to NULL
       pContStruct= NULL;
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":TargetSubbasin")) {
-      if(Options.noisy) { cout << ":TargetSubbasin" << endl; } 
+      if(Options.noisy) { cout << ":TargetSubbasin" << endl; }
       if (pContStruct == NULL) {
         ExitGracefully(":TargetSubbasin command must be in :OutflowControlStructure block",BAD_DATA_WARN);
       }
@@ -1463,7 +1467,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":DownstreamReferenceElevation")) {
-      if(Options.noisy) { cout << ":DownstreamReferenceElevation" << endl; } 
+      if(Options.noisy) { cout << ":DownstreamReferenceElevation" << endl; }
       if (pContStruct == NULL) {
         ExitGracefully(":DownstreamReferenceElevation command must be in :OutflowControlStructure block",BAD_DATA_WARN);
       }
@@ -1495,14 +1499,14 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
 
       CStageDischargeTable *pCurve=new CStageDischargeTable(name,aQQ_ht,aQQ,NQ);
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
-      delete [] aQQ;     
-      delete [] aQQ_ht;  
+      delete [] aQQ;
+      delete [] aQQ_ht;
     }
     //----------------------------------------------------------------------------------------------
     else if (!strcmp(s[0], ":BasicWeir")) {
-      //:BasicWeir C3 [elev] [crestwidth] [coeff]  
+      //:BasicWeir C3 [elev] [crestwidth] [coeff]
       if(Options.noisy) { cout << ":BasicWeir" << endl; }
-      name=s[1]; 
+      name=s[1];
       CBasicWeir *pCurve=new CBasicWeir(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
     }
@@ -1510,7 +1514,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     else if (!strcmp(s[0], ":SluiceGate")) {
       //:SluiceGate [name] [bottomelev] [width] [raisedheight] [coeff] [numgates]
       if(Options.noisy) { cout << ":SluiceGate" << endl; }
-      name=s[1]; 
+      name=s[1];
       CSluiceGate *pCurve=new CSluiceGate(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]),s_to_i(s[6]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
     }
@@ -1518,7 +1522,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     else if (!strcmp(s[0], ":Orifice")) {
       //:Orifice [name] [bottomelev] [diameter] [coeff] [numopenings]
       if(Options.noisy) { cout << ":Orifice" << endl; }
-      name=s[1]; 
+      name=s[1];
       COrifice *pCurve=new COrifice(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_i(s[5]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
     }
@@ -1526,7 +1530,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     else if (!strcmp(s[0], ":BasicPump")) {
       //:BasicPump [name] [flow] [on_elev] [off_elev]
       if(Options.noisy) { cout << ":BasicPump" << endl; }
-      name=s[1]; 
+      name=s[1];
       ExitGracefullyIf(s_to_d(s[3]) < s_to_d(s[4]),"ReservoirParse: with BasicPump, on_elev must be >= off_elev.",BAD_DATA_WARN);
       CBasicPump *pCurve=new CBasicPump(name,s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]));
       DynArrayAppend((void**&)pSDs,(void*)pCurve,nSDs);
@@ -1590,7 +1594,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
                 R->compare_val2=TimeDifference(t1.julian_day,t1.year,Options.julian_start_day,Options.julian_start_year,Options.calendar);
               }
             }
-          
+
             if (Len>=6) {
               if (!strcmp(s[4], "IN_BASIN")) {R->basinID=s_to_l(s[5]);}
             }
@@ -1672,15 +1676,15 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     ExitGracefully("CReservoir::Parse: only currently supporting linear, powerlaw, or data reservoir rules",STUB);
   }
 
-  if(max_capacity!=0) 
-  { 
+  if(max_capacity!=0)
+  {
     pRes->SetMaxCapacity(max_capacity); //overrides estimates (which will typically be too large)
   }
-  if(seep_coeff  !=RAV_BLANK_DATA) 
-  { 
-    pRes->SetGWParameters(seep_coeff,GW_stage); 
+  if(seep_coeff  !=RAV_BLANK_DATA)
+  {
+    pRes->SetGWParameters(seep_coeff,GW_stage);
   }
-  if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL)) 
+  if((type==CURVE_LAKE) && (aV!=NULL) && (aV_ht!=NULL))
   {
     pRes->SetVolumeStageCurve(aV_ht,aV,NV);//allows user to override prismatic lake assumption
   }
@@ -1692,7 +1696,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
   {
     pRes->SetDZTRModel(Qmax,Smax,Sci,Sni,Smi,Qci,Qni,Qmi);
   }
-  if(minstageDom) 
+  if(minstageDom)
   {
     pRes->SetMinStageDominant();
   }

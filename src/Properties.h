@@ -64,7 +64,7 @@ struct soil_struct
   double wilting_pressure;  ///< [-mm]     Wilting pressure
   double wetting_front_psi; ///< [-mm]     Wetting front matric potential (for GA model)
   double ksat_std_deviation;///< [-]       standard deviation in log(k_sat)
-  double unavail_frac;      ///< [-]       fraction of storage unavailable for transpiration 
+  double unavail_frac;      ///< [-]       fraction of storage unavailable for transpiration
 
   //evaporation parameters
   double evap_res_fc;       ///< [d/mm]     soil evaporation resistance at field capacity
@@ -158,7 +158,7 @@ struct veg_struct
 
   double veg_conv_coeff;    ///< [MJ/m2/d/K] vegetation convection coefficient (multiplied by LAI) =~2.0
 
-  double PET_veg_corr;      ///< [0..1]    vegetation-based PET correction (multiplicative)  
+  double PET_veg_corr;      ///< [0..1]    vegetation-based PET correction (multiplicative)
 
   //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
@@ -174,7 +174,7 @@ struct veg_struct
   double max_intercept_rate;///< [mm/d]    maximum rate of rainfall interception
   double CHU_maturity;      ///< [-]       crop heat unit maturity; level at which PET is maximized
 
-  //Transport parameters 
+  //Transport parameters
   double uptake_moderator   [MAX_CONSTITUENTS]; ///< [-] vegetation-specific uptake factor
 };
 
@@ -229,7 +229,7 @@ struct surface_struct
   double forest_sparseness; ///< [0..1]    sparseness of canopy in land covered by forest
   double UBC_icept_factor;  ///< [0..1]    effective forest cover for interception (C0TREE*C0CANY)
   double stream_fraction;   ///< [0..1]    fraction of land covered by streams/lakes/riparian vegetation
-  
+
   double wind_exposure;     ///< [0..1]    basin wind coefficient (1 for unforested areas)
   double min_wind_speed;    ///< [m/s]     minimum wind speed used in regression estimates of windspeed from T_min-T_max
   double max_wind_speed;    ///< [m/s]     maximum wind speed used in regression estimates of windspeed from T_min-T_max
@@ -242,7 +242,7 @@ struct surface_struct
   double DD_aggradation;    ///< [1/mm]    rate of increase of melt factor with cumulative snowmelt (Kcum in HMETS)
   double refreeze_factor;   ///< [mm/d/C]  maximum refreeze factor used in degree day and hybrid snowmelt models
   double DD_refreeze_temp;  ///< [C]       degree day refreeze temperature (refreeze base temperature)
-  double refreeze_exp;      ///< [-]       empirical exponent for DD freezing equation 
+  double refreeze_exp;      ///< [-]       empirical exponent for DD freezing equation
   double HBV_melt_for_corr; ///< [-]       HBV snowmelt forest correction (MRF in HBV-EC)
   double HBV_melt_asp_corr; ///< [-]       HBV snowmelt aspect correction (AM in HBV-EC)
   double snow_patch_limit;  ///< [mm]      SWE limit below which snow does not completely cover ground.  Used as a threshold for snow-patching algorithms (default=0.0).
@@ -250,7 +250,7 @@ struct surface_struct
   double conv_melt_mult;    ///< [-]       convection melt multiplier
   double cond_melt_mult;    ///< [-]       condensation melt multiplier
   double rain_melt_mult;    ///< [-]       rain melt multiplier
-  double bsnow_distrib;     ///< [-]       blowing snow distribution parameter 
+  double bsnow_distrib;     ///< [-]       blowing snow distribution parameter
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
@@ -278,9 +278,9 @@ struct surface_struct
   double dep_k;             ///< [1/d]     linear overflow coefficient Q=k*(h-dep_threshhold)
   double dep_seep_k;        ///< [1/d]     linear seepage coefficient Q=k*h
   double dep_crestratio;    ///<-[m/m]     ratio of crest width to square root of HRU area (0-5) ~1.5
-  double PDMROF_b;          ///< [-]       PDMROF Pareto distribution function exponent 
+  double PDMROF_b;          ///< [-]       PDMROF Pareto distribution function exponent
   double PDM_b;             ///< [-]       PDM (Moore, 1985) Pareto distribution function exponent
-  double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area 
+  double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area
   double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
   double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area
   double uwfs_betamin;      ///< [-]       upscaled wetland fill and spill betamin parameter, defined distribution of contributing area
@@ -295,7 +295,7 @@ struct surface_struct
   double AET_coeff;         ///< [-]       linear AET coefficient
   double priestleytaylor_coeff; ///< [-]   Priestley-Taylor coefficient (defaults to 1.28)
 
-  double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient 
+  double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient
 
   double GR4J_x4;           ///< [d]       GR4J time routing parameter
   double gamma_shape;       ///< [-]       gamma distribution shape parameter for convolution routing
@@ -362,58 +362,60 @@ struct UBC_snow_par{
 //
 struct global_struct
 {
-  double           adiabatic_lapse;     ///< [°C/km]
-  double           wet_adiabatic_lapse; ///< [°C/km]
-  double           precip_lapse;        ///< [mm/d/km] precipitation lapse rate for orographic correction
+  double           adiabatic_lapse;          ///< [°C/km]
+  double           wet_adiabatic_lapse;      ///< [°C/km]
+  double           precip_lapse;             ///< [mm/d/km] precipitation lapse rate for orographic correction
 
-  double           rainsnow_temp;       ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
-  double           rainsnow_delta;      ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
-  double           snow_SWI;            ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow 
-                                        //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
-  double           snow_SWI_min;        ///< [0..1] minimum irreducible sat fraction 
-  double           snow_SWI_max;        ///< [0..1] maximum irreducible sat fraction
-  double           SWI_reduct_coeff;    ///< [1/mm] SWI reduction factor with cumulative snowmelt 
-  double           snow_temperature;    ///< [°C]   default snow temperature if not explicitly modelled
-  double           snow_roughness;      ///< [m]  roughness height of snow
-  double           min_snow_albedo;     ///< [0..1] very old snow/glacier albedo (~0.3)
-  double           max_snow_albedo;     ///< [0..1] albedo of fresh snow  (~0.95)
-  double           alb_decay_cold;      ///< [1/d] 1st order albedo decay rate for cold conditions (~0.008/d)
-  double           alb_decay_melt;      ///< [1/d] albedo decay rate for melt conditions (~0.12/d)
-  double           bare_ground_albedo;  ///< [0..1] bare ground albedo (~0.1-0.4)
-  double           snowfall_albthresh;  ///< [mm/d] threshold snowfall rate to refresh albedo to fresh snow (~10 mm/d)
+  double           rainsnow_temp;            ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
+  double           rainsnow_delta;           ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
+  double           snow_SWI;                 ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow
+                                             //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
+  double           snow_SWI_min;             ///< [0..1] minimum irreducible sat fraction
+  double           snow_SWI_max;             ///< [0..1] maximum irreducible sat fraction
+  double           SWI_reduct_coeff;         ///< [1/mm] SWI reduction factor with cumulative snowmelt
+  double           snow_temperature;         ///< [°C]   default snow temperature if not explicitly modelled
+  double           snow_roughness;           ///< [m]  roughness height of snow
+  double           min_snow_albedo;          ///< [0..1] very old snow/glacier albedo (~0.3)
+  double           max_snow_albedo;          ///< [0..1] albedo of fresh snow  (~0.95)
+  double           alb_decay_cold;           ///< [1/d] 1st order albedo decay rate for cold conditions (~0.008/d)
+  double           alb_decay_melt;           ///< [1/d] albedo decay rate for melt conditions (~0.12/d)
+  double           bare_ground_albedo;       ///< [0..1] bare ground albedo (~0.1-0.4)
+  double           snowfall_albthresh;       ///< [mm/d] threshold snowfall rate to refresh albedo to fresh snow (~10 mm/d)
 
-  double           avg_annual_snow;     ///< [mm] avg annual snow as SWE
-  double           avg_annual_runoff;   ///< [mm] avg annual runoff from basin
+  double           avg_annual_snow;          ///< [mm] avg annual snow as SWE
+  double           avg_annual_runoff;        ///< [mm] avg annual runoff from basin
 
-  double           max_reach_seglength; ///< [km] maximum reach segment length
-  double           max_SWE_surface;     ///< [mm] maximum SWE in surface snow layer
+  double           max_reach_seglength;      ///< [km] maximum reach segment length
+  double           max_SWE_surface;          ///< [mm] maximum SWE in surface snow layer
 
-  UBC_lapse        UBC_lapse_params;    ///< parameters for orographic corrections
-  UBC_snow_par     UBC_snow_params;     ///< UBC snow parameters
-  double           UBC_s_corr[12];      ///< UBC solar radiation corrections
-  double           UBC_n_corr[12];      ///<
+  UBC_lapse        UBC_lapse_params;         ///< parameters for orographic corrections
+  UBC_snow_par     UBC_snow_params;          ///< UBC snow parameters
+  double           UBC_s_corr[12];           ///< UBC solar radiation corrections
+  double           UBC_n_corr[12];           ///<
 
-  double           UBC_GW_split;        ///< UBC GW Split parameter [0..1]
-  double           UBC_exposure_fact;   ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1]
-  double           UBC_cloud_penet;     ///< UBC Fraction of solar radiation penetrating cloud cover [0..1]
-  double           UBC_LW_forest_fact;  ///< UBC mulitplier of temperature to estimate LW radiation in forests (P0BLUE*P0LWVF) [mm/d/K]
-  double           UBC_flash_ponding;   ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
+  double           UBC_GW_split;             ///< UBC GW Split parameter [0..1]
+  double           UBC_exposure_fact;        ///< UBC Sun exposure factor of forested areas (F0ERGY) [0..1]
+  double           UBC_cloud_penet;          ///< UBC Fraction of solar radiation penetrating cloud cover [0..1]
+  double           UBC_LW_forest_fact;       ///< UBC mulitplier of temperature to estimate LW radiation in forests (P0BLUE*P0LWVF) [mm/d/K]
+  double           UBC_flash_ponding;        ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
 
-  double           airsnow_coeff;       ///< [1/d] air/snow heat transfer coefficient
+  double           airsnow_coeff;            ///< [1/d] air/snow heat transfer coefficient
 
-  double           MOHYSE_PET_coeff;    ///< [mm/d] MOHYSE PET constant (PET @ equinox when temperature is 10 degC)
+  double           MOHYSE_PET_coeff;         ///< [mm/d] MOHYSE PET constant (PET @ equinox when temperature is 10 degC)
 
-  double           reservoir_relax;     ///< [0..1] numerical relaxation parameter for overridden reservoir outflows/target stage [~0.4]
-  double           TOC_multiplier;      ///< [mm] time of concentration multiplier
-  double           assimilation_fact;   ///< [0..1] assimilation factor (0=no assimilation to 1= full replacement)
-  double           assim_upstream_decay;///< [1/km] assimilation upstream decay factor (0= overrides everything upstream, large- observation influence decays quickly with distance from gauge) [~0.01]
-  double           assim_time_decay;    ///< [1/d] assimilation temporal decay factor (0=diminishes in future, 0.1 - diminshes in  3 days) [0.2]
+  double           reservoir_relax;          ///< [0..1] numerical relaxation parameter for overridden reservoir outflows/target stage [~0.4]
+  double           TOC_multiplier;           ///< [mm] time of concentration multiplier
+  double           TIME_TO_PEAK_multiplier;  ///< [0..1+] time to peak multiplier
+  double           GAMMA_SHAPE_multiplier;   ///< [0..1+] Gamma shape multiplier
+  double           assimilation_fact;        ///< [0..1] assimilation factor (0=no assimilation to 1= full replacement)
+  double           assim_upstream_decay;     ///< [1/km] assimilation upstream decay factor (0= overrides everything upstream, large- observation influence decays quickly with distance from gauge) [~0.01]
+  double           assim_time_decay;         ///< [1/d] assimilation temporal decay factor (0=diminishes in future, 0.1 - diminshes in  3 days) [0.2]
 
-  double           reservoir_demand_mult;///< [0..1+] multiplier of irrigation demand to be met by upstream reservoirs 
+  double           reservoir_demand_mult     ;///< [0..1+] multiplier of irrigation demand to be met by upstream reservoirs
 
-  double           init_stream_temp;    ///< [C] intial stream temperature 
+  double           init_stream_temp;         ///< [C] intial stream temperature
 
-  double           windvel_icept;       ///< [m/s] intercept parameter for regression between wind vel. and F(T_max-T_min)
-  double           windvel_scale;       ///< [changes] slope parameter for regression between wind vel. and F(T_max-T_min)
+  double           windvel_icept;            ///< [m/s] intercept parameter for regression between wind vel. and F(T_max-T_min)
+  double           windvel_scale;            ///< [changes] slope parameter for regression between wind vel. and F(T_max-T_min)
 };
 #endif

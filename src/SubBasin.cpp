@@ -20,7 +20,7 @@
 /// \param reach_len  [in] Reach length [m]
 /// \param Qreference [in] Reference flow [m^3/s] [or AUTO_COMPUTE]
 /// \param gaged      [in] If true, hydrographs are generated
-/// \param is_conduit [in] if true, this is a conduit 
+/// \param is_conduit [in] if true, this is a conduit
 //
 CSubBasin::CSubBasin( const long           Identifier,
                       const string         Name,
@@ -30,7 +30,7 @@ CSubBasin::CSubBasin( const long           Identifier,
                       const double         reach_len,   //reach length [m]
                       const double         Qreference,  //reference flow, m3/s [or AUTO_COMPUTE]
                       const bool           gaged,
-                      const bool           is_conduit)       
+                      const bool           is_conduit)
 {
   ExitGracefullyIf(pMod==NULL,
     "CSubBasin:Constructor: NULL model",BAD_DATA);
@@ -50,7 +50,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _is_headwater      =true;
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
-  _convect_coeff     =2.0; //default 
+  _convect_coeff     =2.0; //default
   _bed_conductivity  =0.0;
   _bed_thickness     =0.5; //m
 
@@ -85,7 +85,7 @@ CSubBasin::CSubBasin( const long           Identifier,
 
   string warn="CSubBasin:Constructor: exceeded maximum river segments in basin " +to_string(_ID)+": MAX_REACH_SEGLENGTH may be too small";
   if(_nSegments>MAX_RIVER_SEGS){ WriteWarning(warn,true); _nSegments=MAX_RIVER_SEGS-1; }
-  
+
   _downstream_ID     =down_ID;
   if (_downstream_ID<0){_downstream_ID=DOESNT_EXIST;}//outflow basin
   _gauged            =gaged;
@@ -117,7 +117,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _aQinHist      =NULL;  _nQinHist      =0;
   _aUnitHydro    =NULL;
   _aRouteHydro   =NULL;
-  _c_hist        =NULL; 
+  _c_hist        =NULL;
 
   //Below are modified using AddDiversion()
   _nDiversions   =0;
@@ -257,7 +257,7 @@ const double        *CSubBasin::GetRoutingHydrograph () const{return _aRouteHydr
 const double        *CSubBasin::GetInflowHistory     () const{return _aQinHist;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns outflow array 
+/// \brief returns outflow array
 /// \return outflow array as array pointer
 //
 const double        *CSubBasin::GetOutflowArray     () const {return _aQout;}
@@ -321,7 +321,7 @@ double CSubBasin::GetAvgStateVar (const int i) const
 {
 #ifdef  _STRICTCHECK_
   ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAverageStateVar::improper index",BAD_DATA);
-#endif 
+#endif
   double sum=0.0;
   for (int k=0;k<_nHydroUnits;k++)
   {
@@ -342,7 +342,7 @@ double CSubBasin::GetAvgConcentration(const int i) const
 {
 #ifdef  _STRICTCHECK_
   ExitGracefullyIf((i<0) && (i>=_pModel->GetNumStateVars()),"CSubBasin:GetAvgConcentration::improper index",BAD_DATA);
-#endif 
+#endif
   double sum=0.0;
   for(int k=0;k<_nHydroUnits;k++)
   {
@@ -458,7 +458,7 @@ double CSubBasin::GetIrrigationRate() const
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified cumulative downstream demand (in [m3/s]) from subbasin at time t
 //
-double CSubBasin::GetDownstreamIrrDemand(const double &t) const 
+double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 {
   double Qirr;
   if(_pIrrigDemand==NULL)          { Qirr=0.0; }
@@ -471,21 +471,21 @@ double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 /// \param &t [in] Model time at which the environmental minimum flow is to be determined
 /// \return specified environmental minimum flow in subbasin at time t
 //
-double CSubBasin::GetEnviroMinFlow(const double &t) const 
+double CSubBasin::GetEnviroMinFlow(const double &t) const
 {
   if(_pEnviroMinFlow==NULL) { return 0.0; }
   double Qmin=_pEnviroMinFlow->GetValue(t); if(Qmin==RAV_BLANK_DATA) { Qmin=0; }
   return Qmin;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns subbasin index p of diversion target basin 
+/// \brief Returns subbasin index p of diversion target basin
 /// \return subbasin index p of diversion target basin
 //
-int CSubBasin::GetDiversionTargetIndex(const int i) const 
+int CSubBasin::GetDiversionTargetIndex(const int i) const
 {
 #if _STRICTCHECK_
   if ((i<0) || (i>=_nDiversions)){ExitGracefully("GetDiversionTargetIndex: bad index",RUNTIME_ERR);}
-#endif 
+#endif
   return _pDiversions[i]->target_p;
 }
 //////////////////////////////////////////////////////////////////
@@ -510,7 +510,7 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
   double Qmin   =GetEnviroMinFlow(t);
 
   Qirr=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
- 
+
   return Qirr;
 }
 //////////////////////////////////////////////////////////////////
@@ -536,7 +536,7 @@ double CSubBasin::GetDiversionFlow(const int i, const double &Q, const optStruct
 
   p_Divert=_pDiversions[i]->target_p;
 
-  if (IsInDateRange(tt.julian_day,_pDiversions[i]->julian_start,_pDiversions[i]->julian_end)) 
+  if (IsInDateRange(tt.julian_day,_pDiversions[i]->julian_start,_pDiversions[i]->julian_end))
   {
     if(_pDiversions[i]->aQdivert==NULL) {
       if(Q>_pDiversions[i]->min_flow)
@@ -766,7 +766,7 @@ double CSubBasin::GetIntegratedReservoirInflow(const double &tstep) const
 double CSubBasin::GetIntegratedSpecInflow(const double &t, const double &tstep) const//[m3]
 {
   //used in mass balance to estimate water gain from unmodeled upstream sources
-  double sum=0.0; 
+  double sum=0.0;
   sum+=0.5*(GetSpecifiedInflow(t) +GetSpecifiedInflow (t+tstep))*(tstep*SEC_PER_DAY); //integrated
   sum+=GetDownstreamInflow(t)*(tstep*SEC_PER_DAY);                   //integrated -period starting
   return sum;
@@ -788,9 +788,9 @@ double CSubBasin::GetReferenceCelerity() const {
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns current celerity [m/s]
-/// \return  reference celerity [m/s] 
-/// 
-double CSubBasin::GetCelerity() const 
+/// \return  reference celerity [m/s]
+///
+double CSubBasin::GetCelerity() const
 {
   if(_pChannel!=NULL) {
     return _pChannel->GetCelerity(_aQout[_nSegments-1],_slope,_mannings_n);
@@ -803,7 +803,7 @@ double CSubBasin::GetCelerity() const
 /// \brief Returns reference diffusivity [m2/s]
 /// \return  reference diffusivity [m2/s] or AUTO_COMPUTE if not yet calculated
 //
-double CSubBasin::GetDiffusivity() const 
+double CSubBasin::GetDiffusivity() const
 {
   if((_pChannel!=NULL) && (_diffusivity==AUTO_COMPUTE)){
     return _pChannel->GetDiffusivity(_Q_ref,_slope,_mannings_n);
@@ -816,7 +816,7 @@ double CSubBasin::GetDiffusivity() const
 /// \brief Returns channel depth, in meters
 /// \return  reference channel depth [m], with minimum depth of 1cm
 //
-double CSubBasin::GetRiverDepth() const 
+double CSubBasin::GetRiverDepth() const
 {
   if (_pChannel==NULL){return ALMOST_INF;}
   const double MIN_CHANNEL_DEPTH=0.01;
@@ -827,7 +827,7 @@ double CSubBasin::GetRiverDepth() const
 /// \brief Returns water surface elevation, in meters
 /// \return  reference water surface elevation [m]
 //
-double CSubBasin::GetWaterLevel() const 
+double CSubBasin::GetWaterLevel() const
 {
   if (_pChannel==NULL){return ALMOST_INF;}
   const double MIN_CHANNEL_DEPTH=0.01;
@@ -846,7 +846,7 @@ double CSubBasin::GetBedslope() const{
 /// \brief Returns current wetted perimeter of stream
 /// \return  wetted perimeter [m]
 //
-double CSubBasin::GetWettedPerimeter() const 
+double CSubBasin::GetWettedPerimeter() const
 {
   if(_pChannel==NULL) { return ALMOST_INF; }
   return _pChannel->GetWettedPerim(_aQout[_nSegments-1],_slope,_mannings_n);
@@ -885,7 +885,7 @@ void CSubBasin::AddReservoir(CReservoir *pRes)
   if(_res_disabled) {
     delete pRes;
     _reach_length=_reach_length2;
-    return; 
+    return;
   }
   _pReservoir=pRes;
 }
@@ -912,14 +912,14 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("MANNINGS_N"    ))  {_mannings_n=value;}
   else if (!label_n.compare("SLOPE"         ))  {_slope=value;}
   else if (!label_n.compare("DIFFUSIVITY"   ))  {_diffusivity=value; }
-  else if (!label_n.compare("CELERITY"      ))  {_c_ref=value; }  
+  else if (!label_n.compare("CELERITY"      ))  {_c_ref=value; }
 
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
-  else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }  
-  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }  
+  else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }
+  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }
 
   else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ _bed_conductivity = value; }
   else if (!label_n.compare("RIVERBED_THICKNESS"   )){ _bed_thickness = value; }
@@ -934,7 +934,7 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("LAKE_CONVECT_COEFF")) {
     if (_pReservoir != NULL) {_pReservoir->SetLakeConvectionCoeff(value);}
   }
-  else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) { 
+  else if (!label_n.compare("RESERVOIR_CREST_WIDTH")) {
     if (_pReservoir != NULL) { _pReservoir->SetCrestWidth(value);}
   }
   else{
@@ -1143,7 +1143,7 @@ void CSubBasin::UpdateLateralInflow    (const double &Qlat)//[m3/s]
 //////////////////////////////////////////////////////////////////
 /// \brief sets unusable flow percentatge
 //
-void CSubBasin::SetUnusableFlowPercentage(const double &val) 
+void CSubBasin::SetUnusableFlowPercentage(const double &val)
 {
   ExitGracefullyIf((val<0) || (val>1.0),
     "CSubBasin:SetUnusableFlowPercentage: invalid value for :UnusableFlowPercentage (must be between zero and one).",BAD_DATA_WARN);
@@ -1161,8 +1161,8 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
 {
   double va=0.0; //volume added [m3]
   double sf=(scale-1.0)/scale;
-  
-  if(!overriding) 
+
+  if(!overriding)
   {
     for(int n=0;n<_nQlatHist;n++) {
       _aQlatHist[n]*=scale;  upperswap(_aQlatHist[n],0.0);
@@ -1170,7 +1170,7 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
     }
     for(int n=0;n<_nQinHist; n++) {
       _aQinHist[n]*=scale; upperswap(_aQinHist[n],0.0);
-      va+=_aQinHist[n]*sf*tstep*SEC_PER_DAY; 
+      va+=_aQinHist[n]*sf*tstep*SEC_PER_DAY;
     }
     for(int i=0;i<_nSegments;i++) {
       _aQout[i]*=scale; upperswap(_aQout[i],0.0);
@@ -1180,7 +1180,7 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
 
   if((overriding) && (_pReservoir==NULL)) {
     for (int i=0;i<_nSegments;i++)
-    {  
+    {
       _aQout[i]*=scale;  upperswap(_aQout[i],0.0);
       va+=0.5*(_aQout[i]+_aQout[i+1])*sf*tstep*SEC_PER_DAY;
     }
@@ -1190,7 +1190,7 @@ double CSubBasin::ScaleAllFlows(const double &scale, const bool overriding, cons
     va+=_pReservoir->ScaleFlow(scale,overriding,tstep,t);
   }
 
-  //Estivate volume added through scaling 
+  //Estivate volume added through scaling
   _channel_storage*=scale; va+=_channel_storage*sf;
   _rivulet_storage*=scale; va+=_rivulet_storage*sf;
   return va;
@@ -1278,7 +1278,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     warn="CSubBasin::Initialize: subbasin "+to_string(_ID)+" has no constituent HRUs and therefore zero area";
     ExitGracefully(warn.c_str(),BAD_DATA_WARN);
   }
-  if ((_nHydroUnits>0) && (_is_conduit)){ 
+  if ((_nHydroUnits>0) && (_is_conduit)){
     warn="CSubBasin::Initialize: conduit "+to_string(_ID)+" has constituent HRUs. HRUs should not be linked to conduits";
     ExitGracefully(warn.c_str(),BAD_DATA_WARN);
   }
@@ -1299,7 +1299,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
         string warn="CSubBasin::Initialize: negative or zero average flow specified in initialization (basin "+to_string(_ID)+")";
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
-      
+
       ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
       //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AvgAnnualRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
       //WriteAdvisory(advice,false);
@@ -1307,7 +1307,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     else{
       ResetReferenceFlow(_Q_ref);
     }
-    
+
     if(_pChannel!=NULL) {
       _pChannel->CheckReferenceFlow(_Q_ref,_slope,_mannings_n,_ID);
     }
@@ -1327,7 +1327,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if (_t_conc==AUTO_COMPUTE)
     {
       //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
-      _t_conc=0.76*pow(max(_basin_area,0.001),0.38)/HR_PER_DAY;// [d] \ref Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)] 
+      _t_conc=0.76*pow(max(_basin_area,0.001),0.38)/HR_PER_DAY;// [d] \ref Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)]
       _t_conc*=CGlobalParams::GetParams()->TOC_multiplier;
       //if (Options.catchment_routing!=ROUTE_NONE){
       //  WriteAdvisory("Time of concentration has been estimated as "+to_string(_t_conc)+" days for basin "+to_string(_ID),false);
@@ -1336,9 +1336,15 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if(Options.catchment_routing==ROUTE_GAMMA_CONVOLUTION ){_t_peak=AUTO_COMPUTE;}
     if(Options.catchment_routing==ROUTE_DUMP              ){_t_peak=AUTO_COMPUTE;}
 
-    if (_t_peak     ==AUTO_COMPUTE){_t_peak=0.3*_t_conc; }/// \todo [fix hack] better means of determining needed
+    if (_t_peak     ==AUTO_COMPUTE){
+      _t_peak=0.3*_t_conc; /// \todo [fix hack] better means of determining needed
+      _t_peak*=CGlobalParams::GetParams()->TIME_TO_PEAK_multiplier;
+    }
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
-    if (_gamma_shape==AUTO_COMPUTE){_gamma_shape=3.0; }
+    if (_gamma_shape==AUTO_COMPUTE){
+      _gamma_shape=3.0;
+      _gamma_shape*=CGlobalParams::GetParams()->GAMMA_SHAPE_multiplier;
+    }
     if (_gamma_scale==AUTO_COMPUTE){_gamma_scale=max((_gamma_shape-1.0)/_t_peak,0.01); } //only really should be used if _gamma_shape>1.0
 
     if (_reservoir_constant==AUTO_COMPUTE){
@@ -1579,7 +1585,7 @@ void CSubBasin::GenerateRoutingHydrograph(const double &Qin_avg,
     for (n=0;n<_nQinHist;n++){_aRouteHydro[n  ]=0.0;} //should not be used
     _aRouteHydro[0]=1.0;
   }
- 
+
   //correct to ensure that sum _aRouteHydro[m]=1.0
   sum=0.0;
   for (n=0;n<_nQinHist;n++){sum+=_aRouteHydro[n];}
@@ -1654,11 +1660,11 @@ void CSubBasin::GenerateCatchmentHydrograph(const double    &Qlat_avg,
   {
     sum=0;
     double alpha= _gamma_shape;
-    double beta = _gamma_scale; 
+    double beta = _gamma_scale;
     for (n=0;n<_nQlatHist;n++)
     {
       t=n*tstep-_t_lag;
-      _aUnitHydro[n]=GammaCumDist(t+tstep,alpha, beta)-sum; 
+      _aUnitHydro[n]=GammaCumDist(t+tstep,alpha, beta)-sum;
 
       ExitGracefullyIf(!_finite(_aUnitHydro[n]),
                        "GenerateCatchmentHydrograph: issues with gamma distribution. Time to peak may be too small relative to timestep",RUNTIME_ERR);
@@ -1831,7 +1837,7 @@ double  CSubBasin::GetMuskingumX(const double &dx) const
   ExitGracefullyIf(_pChannel==NULL,"CSubBasin::GetMuskingumX",BAD_DATA);
   double bedslope=_slope;
   if(_slope==AUTO_COMPUTE){bedslope=_pChannel->GetBedslope(); }//overridden by channel
-  
+
   return max(0.0,0.5*(1.0-_Q_ref/bedslope/_w_ref/_c_ref/dx));//[m3/s]/([m]*[m/s]*[m])
 }
 
@@ -1853,7 +1859,7 @@ double CSubBasin::GetReachSegVolume(const double &Qin,  // [m3/s]
   double X =max(0.0,0.5*(1.0-Qin /bedslope/w_avg /c_avg /dx));//[-]
   return (K*X*Qin+K*(1-X)*Qout)*SEC_PER_DAY; //[m3]
   */
-	
+
 	double c_in =_pChannel->GetCelerity(Qin, _slope,_mannings_n);//[m/s]
   double w_in =_pChannel->GetTopWidth(Qin, _slope,_mannings_n);//[m]
   double c_out=_pChannel->GetCelerity(Qout,_slope,_mannings_n);//[m/s]
@@ -1902,7 +1908,7 @@ double CSubBasin::TVDTheta(double In_old,double In_new,double Out_old,double Out
 //////////////////////////////////////////////////////////////////
 /// \brief updates c history, _aRouteHydro for ROUTE_DIFFUSIVE_VARY method
 //
-void CSubBasin::UpdateRoutingHydro(const double &tstep) 
+void CSubBasin::UpdateRoutingHydro(const double &tstep)
 {
   int n;
   double Q=_aQinHist[0]; //Initial guess -we may have to revise this
@@ -1930,10 +1936,10 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
     cout<<" c_ref: "<<_c_ref<<" "<<_Q_ref<<endl;
   }
   for(n=_nQinHist; n>0; n--) {
-    _c_hist[n]=_c_hist[n-1]; 
+    _c_hist[n]=_c_hist[n-1];
   }
   _c_hist[0]=cc;
-  
+
   sum=0;
   double alpha=D_ref/2;
   for(n=0;n<_nQinHist;n++) {
@@ -2122,7 +2128,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     if (Q_guess<0){ cout << "Negative flow in basin "<<to_string(this->_ID)<<" Qoutold: "<<Qout_old<<" Qin: "<<Qin_new<<" "<<Qin_old<<endl; }
 
     if (iter==ROUTE_MAXITER){
-      string warn="CSubBasin::RouteWater did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+ 
+      string warn="CSubBasin::RouteWater did not converge after "+to_string(ROUTE_MAXITER)+"  iterations for basin "+to_string(_ID)+
                   " flow: " +to_string(Q_guess)+" stage: "+to_string(_pChannel->GetStageElev(Q_guess,_slope,_mannings_n));
       WriteWarning(warn,false);
       /*for (int i = 0; i < 20; i++){
@@ -2170,18 +2176,18 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
       df-=(1.0-th_in )*Qin_old +(th_in )*Qin_new;
       df+=(1.0-th_out)*Qout_old+(th_out)*(Q_guess+dQ);
       df-=f;
-      
+
       change=-f/(df/dQ);//[m3/s]
       if (df==0.0){change=1e-7;}
 
       Q_guess+=relax*change; //relaxation required for some tough cases
-      
+
       /*double minQ=min(min(Qin_old,Qin_new),Qout_old);
       if(Q_guess<minQ){ Q_guess+=0.98*(minQ-Q_guess); }*///cheat -introduces MB errors
 
       cout<<"Q_guess ["<<iter<<"]: "<< Q_guess<< " "<<f<<endl;
       if (Q_guess<0){Q_guess=REAL_SMALL; change=0.0;}
-      
+
       iter++;
       if (iter > 3){ relax = 0.9; }
       if (iter > 10){ relax = 0.7; }
@@ -2205,7 +2211,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //==============================================================
   else if ((route_method==ROUTE_PLUG_FLOW)
            || (route_method==ROUTE_DIFFUSIVE_WAVE))
-  {     
+  {
     //Simple convolution - segmentation unused
     aQout_new[_nSegments-1]=0.0;
     for (n=0;n<_nQinHist;n++){
@@ -2214,7 +2220,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   }
   //==============================================================
   else if (route_method==ROUTE_DIFFUSIVE_VARY)
-  {     
+  {
     aQout_new[_nSegments-1]=0.0;
     for(n=0;n<_nQinHist;n++) {
       aQout_new[_nSegments-1]+=_aRouteHydro[n]*_aQinHist[n];
@@ -2243,7 +2249,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
 
   //all fluxes from catchment are routed directly to basin outlet
   aQout_new[_nSegments-1]+=Qlat_new;
-  
+
   //Reservoir Routing
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
@@ -2288,7 +2294,7 @@ void CSubBasin::WriteToSolutionFile (ofstream &RVC) const
 ///
 /// \param &Options [in] Global model options information
 //
-void CSubBasin::ClearTimeSeriesData(const optStruct& Options) 
+void CSubBasin::ClearTimeSeriesData(const optStruct& Options)
 {
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
