@@ -399,13 +399,13 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
               }
               if(!aParamStrings[i].compare("TIME_TO_PEAK") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
                 //in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");    // use to be this; but has its own multiplier now; maybe set default to TOC_MULTIPLIER??
-		in*=CGlobalParams::GetParameter("TIME_TO_PEAK_MULTIPLIER");
+				in*=CGlobalParams::GetParameter("TIME_TO_PEAK_MULTIPLIER");
               }
-	      if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-		in*=CGlobalParams::GetParameter("GAMMA_SHAPE_MULTIPLIER");
+	      	  if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+			  	in*=CGlobalParams::GetParameter("GAMMA_SHAPE_MULTIPLIER");
               }
-	      if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-		in*=CGlobalParams::GetParameter("GAMMA_SCALE_MULTIPLIER");
+	      	  if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+				in*=CGlobalParams::GetParameter("GAMMA_SCALE_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
                 if(pModel->GetHRUByID((int)in)!=NULL) {

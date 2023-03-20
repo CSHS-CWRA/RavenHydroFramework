@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team, Ayman Khedr
+  Copyright (c) 2008-2023 the Raven Development Team, Ayman Khedr
   ----------------------------------------------------------------*/
 
 #include "CustomOutput.h"
@@ -77,7 +77,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
                    "CCustomOutput Constructor: invalid HRU group index for Select HRU Aggregation. Undefined HRU group?",BAD_DATA);
   _time_index=0;
 
-
+  _filename_user="";
       
   // Get the variable name (either the state variable name of the forcing variable name) and the units
   switch(_var)
@@ -267,9 +267,10 @@ void CCustomOutput::DetermineCustomFilename(const optStruct& Options)
   case OUTPUT_STANDARD:
   default:                sFILENAME<<".csv"<<ends; break;
   }
-
+  
   if (_filename==""){_filename=sFILENAME.str();} //_filename wasn't overriden by user
   else                  {
+    _filename_user=_filename;
     if (Options.run_name!=""){_filename=Options.output_dir+Options.run_name+"_"+_filename;}
     else                     {_filename=Options.output_dir+_filename; } // \todo [QA/QC]: should check for proper extension of specified filename
   }
@@ -1037,7 +1038,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
     if(_netcdf_ID!=-9) { retval=nc_close(_netcdf_ID); HandleNetCDFErrors(retval); } _netcdf_ID=-9;
 #endif
   }
-  _filename=""; //so works in ensemble mode
+  _filename=_filename_user; //so works in ensemble mode
 }
 
 int  ParseSVTypeIndex(string s,CModel *&pModel);

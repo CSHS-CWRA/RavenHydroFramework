@@ -90,6 +90,7 @@ extern bool   g_suppress_warnings;///< Had to be here to avoid passing Options s
 extern bool   g_suppress_zeros;   ///< converts all output numbers less than REAL_SMALL to zero
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code 
 extern double g_min_storage;      ///< minimum soil storage 
+extern int    g_current_e;        ///< current ensemble member index 
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -1525,6 +1526,7 @@ HRU_type StringToHRUType        (const string s);
 double   fast_s_to_d            (const char *s);
 double   FormatDouble           (const double &d);
 void     SubstringReplace       (string& str,const string& from,const string& to);
+
 
 //defined in NetCDFReading.cpp
 int  GetCalendarFromNetCDF      (const int ncid,int varid_t,const string filename,const optStruct &Options);

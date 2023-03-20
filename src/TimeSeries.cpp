@@ -1154,7 +1154,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
     {
       if (string(s[1]) == "PeriodEnding"){period_ending=true;}
     }
-    else if (!strcmp(s[0],":StartTime")      )
+    else if (!strcmp(s[0],":StartTime"))
     {
       if (noisy){cout<<"StartTime"<<endl;}
       if(IsValidDateString(s[1]))
@@ -1194,7 +1194,7 @@ CTimeSeries **CTimeSeries::ParseEnsimTb0(string filename, int &nTS, forcing_type
                          "CTimeSeries::ParseEnsimtb0 : unrecognized time series type in MultiData command",BAD_DATA);
       }
     }
-    else if (!strcmp(s[0],":EndHeader")         )
+    else if (!strcmp(s[0],":EndHeader"))
     { //Start reading data
       //need to peek to end of file to see how many items remain!
       if (noisy){cout<<"EndHeader. Reading data..."<<endl;}
@@ -1476,7 +1476,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   // (8) Initialize data array (data type that is needed by NetCDF library)
   // -------------------------------
   double *aVec=new double[dim1*dim2];//stores actual data
-  ExitGracefullyIf(aVec==NULL,"CForcingGrid::ReadData : aVec",OUT_OF_MEMORY);
+  ExitGracefullyIf(aVec==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF: aVec",OUT_OF_MEMORY);
   for(int i=0; i<dim1*dim2; i++) {
     aVec[i]=NETCDF_BLANK_VALUE;
   }
@@ -1485,17 +1485,15 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   double  *aTmp1D=NULL; //stores pointers to rows/columns of 1D data (ntime)
   if ( strcmp(DimNamesNC_stations.c_str(),"None") ) {
     aTmp2D=new double *[dim1];
-    ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadData : aTmp2D(0)",OUT_OF_MEMORY);
+    ExitGracefullyIf(aTmp2D==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF: aTmp2D(0)",OUT_OF_MEMORY);
     for(int it=0;it<dim1;it++){
       aTmp2D[it]=&aVec[it*dim2]; //points to correct location in aVec data storage
     }
   }
   else {
     aTmp1D=new double [dim1];
-    ExitGracefullyIf(aTmp1D==NULL,"CForcingGrid::ReadData : aTmp1D(0)",OUT_OF_MEMORY);
+    ExitGracefullyIf(aTmp1D==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF: aTmp1D(0)",OUT_OF_MEMORY);
   }
-
-
 
   // -------------------------------
   // (9) Read data

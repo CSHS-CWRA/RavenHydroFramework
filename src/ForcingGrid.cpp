@@ -289,7 +289,11 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 
   // open NetCDF read-only; ncid will be set
   if(Options.noisy) { cout<<"Initializing grid file "<<_filename<<endl; }
-  retval = nc_open(_filename.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
+
+  string filename_e=_filename;
+  SubstringReplace(filename_e,"*",to_string(g_current_e+1)); //replaces wildcard for ensemble runs
+
+  retval = nc_open(filename_e.c_str(),NC_NOWRITE,&ncid);          HandleNetCDFErrors(retval);
 
 
   // Get the id of dimensions based on its name; dimid will be set
@@ -323,7 +327,10 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   }
 
   // Get the id of the data variable based on its name; varid will be set
-  retval = nc_inq_varid(ncid,_varname.c_str(),&varid_f);         HandleNetCDFErrors(retval);
+  string varname_e=_varname;
+  SubstringReplace(varname_e,"*",to_string(g_current_e+1));//replaces wildcard for ensemble runs
+
+  retval = nc_inq_varid(ncid,varname_e.c_str(),&varid_f);         HandleNetCDFErrors(retval);
 
   // determine in which order the dimensions are in variable
   retval = nc_inq_vardimid(ncid,varid_f,dimids_var);             HandleNetCDFErrors(retval);
@@ -652,8 +659,15 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     
     // Open NetCDF file, Get the id of the forcing data, varid_f
     // -------------------------------
-    retval = nc_open(_filename.c_str(),NC_NOWRITE,&ncid);      HandleNetCDFErrors(retval);
-    retval = nc_inq_varid(ncid,_varname.c_str(),&varid_f);     HandleNetCDFErrors(retval);
+    string filename_e=_filename;
+    SubstringReplace(filename_e,"*",to_string(g_current_e+1)); //replaces wildcard for ensemble runs
+
+    retval = nc_open(filename_e.c_str(),NC_NOWRITE,&ncid);      HandleNetCDFErrors(retval);
+
+    string varname_e=_varname;
+    SubstringReplace(varname_e,"*",to_string(g_current_e+1)); //replaces wildcard for ensemble runs
+
+    retval = nc_inq_varid(ncid,varname_e.c_str(),&varid_f);     HandleNetCDFErrors(retval);
 
     // find "_FillValue" of forcing data
     // -------------------------------

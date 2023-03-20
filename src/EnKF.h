@@ -23,6 +23,14 @@ struct obs_perturb
   int          kk;           //< HRU group index (or DOESNT_EXIST if perturbation should apply everywhere)
   adjustment   adj_type;     //< additive or multiplicative adjustment
 };
+enum EnKF_mode
+{
+  ENKF_SPINUP,
+  ENKF_CLOSED_LOOP,
+  ENKF_OPEN_LOOP,
+  ENKF_FORECAST,
+  ENKF_OPEN_FORECAST
+};
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for EnKF model ensemble run
 //
@@ -30,6 +38,8 @@ class CEnKFEnsemble : public CEnsemble
 {
 private:
   int            _nEnKFMembers;     ///< number of members in ensemble (=1/2 of _nMembers, because pre/post runs are separate)
+
+  EnKF_mode      _EnKF_mode;        ///< run mode (spinup, closed-loop, or open-loop)
 
   double       **_state_matrix;     ///< current array of state vectors, X [size: _nEnKFMembers x_nStateVars]
   int            _nStateVars;       ///< total number of assimilated state variables
@@ -53,10 +63,8 @@ private:
   int            _window_size;      //< number of data points back in time to be used in assimilation (=1 for classic EnKF, more for variational methods)
   int            _nTimeSteps;       //< number of timesteps in hindcast period (prior to t0)
 
-  bool           _warm_ensemble;    //< true if initial conditions should be read from previous ensemble run (default: false)
-  string         _warm_runname;     //< run name of warm solution files (e.g., run1_solution.rvc)
+  string         _warm_runname;     //< run name of closed loop or open loop solution files (e.g., run1_solution.rvc)
 
-  string         _forecast_rvt;     //< name of forecast .rvt file (or "" if base .rvt is to be used)
   string         _extra_rvt;        //< name of extra-data .rvt file for ensemble member-specific time series 
   string         _orig_rvc_file;    //< original rvc filename (full path)
 
@@ -74,9 +82,9 @@ public:
 
   double GetStartTime(const int e) const;
 
-  void SetToWarmEnsemble    (string runname);
+  void SetEnKFMode          (EnKF_mode mode);
+  void SetWarmRunname       (string runname);
   void SetWindowSize        (const int nTimesteps);
-  void SetForecastRVTFile   (string filename);
   void SetExtraRVTFile      (string filename);
   void AddPerturbation      (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
   void AddObsPerturbation   (sv_type      type, disttype distrib, double *distpars, adjustment adj);

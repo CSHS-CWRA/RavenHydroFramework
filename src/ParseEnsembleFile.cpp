@@ -70,17 +70,18 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":EndIfModeEquals"             )){ code=-2; }//treat as comment - unused mode 
 
     //-------------------MODEL ENSEMBLE PARAMETERS----------------
-    else if(!strcmp(s[0],":OutputDirectoryFormat"))       { code=1; }
-    else if(!strcmp(s[0],":RunNameFormat"))               { code=2; }
+    else if(!strcmp(s[0],":OutputDirectoryFormat"))       { code=1;  }
+    else if(!strcmp(s[0],":RunNameFormat"))               { code=2;  }
     else if(!strcmp(s[0],":ParameterDistributions"))      { code=10; }
     else if(!strcmp(s[0],":ObjectiveFunction"))           { code=11; }
     else if(!strcmp(s[0],":ForcingPerturbation"))         { code=12; }
     else if(!strcmp(s[0],":AssimilatedState"))            { code=13; }
-    else if(!strcmp(s[0],":WarmEnsemble"))                { code=14; }
+    else if(!strcmp(s[0],":SolutionRunName"))             { code=14; }
     else if(!strcmp(s[0],":WindowSize"))                  { code=15; } 
     else if(!strcmp(s[0],":ObservationErrorModel"))       { code=16; }
-    else if(!strcmp(s[0],":ForecastRVTFilename"))         { code=17; }
-    else if(!strcmp(s[0],":AssimilateStreamflow"))        { code=101; }
+    else if(!strcmp(s[0],":EnKFMode"))                    { code=18; }
+    else if(!strcmp(s[0],":ExtraRVTFilename"))            { code=19; }
+    else if(!strcmp(s[0],":AssimilateStreamflow"))        { code=101;}
 
     switch(code)
     {
@@ -318,17 +319,17 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(14):  //----------------------------------------------
-    {/*:WarmEnsemble {runname}*/
-      if(Options.noisy) { cout <<":WarmEnsemble"<<endl; }
+    {/*:SolutionRunName {runname}*/
+      if(Options.noisy) { cout <<":SolutionRunName"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
         string runname=Options.run_name; //default
         if (Len>1){runname=to_string(s[1]); }
         if (Options.warm_ensemble_run!=""){ runname= Options.warm_ensemble_run;} //overwritten if handed in via command line
-        pEnKF->SetToWarmEnsemble(runname); 
+        pEnKF->SetWarmRunname(runname); 
       }
       else {
-        WriteWarning(":WarmEnsemble command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+        WriteWarning(":SolutionRunName command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
       }
       break;
     }
@@ -383,20 +384,33 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       break;
     }
     case(17):  //----------------------------------------------
-    {/*:ForecastRVTFilename [filename.rvt]*/
-      if(Options.noisy) { cout <<":ForecastRVTFilename"<<endl; }
-      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
-        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
-        string file=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension!
-        pEnKF->SetForecastRVTFile(file);
-      }
-      else {
-        WriteWarning(":ForecastRVTFilename command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
-      }
+    {
       break;
     }
     case(18):  //----------------------------------------------
-    {
+    {/*:EnKFMode [mode]*/
+      if(Options.noisy) { cout <<":EnKFMode"<<endl; }
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        EnKF_mode mode=ENKF_SPINUP;
+
+        if      (!strcmp(s[1],"ENKF_SPINUP"       )){mode=ENKF_SPINUP;}
+        else if (!strcmp(s[1],"ENKF_CLOSED_LOOP"  )){mode=ENKF_CLOSED_LOOP;}
+        else if (!strcmp(s[1],"ENKF_OPEN_LOOP"    )){mode=ENKF_OPEN_LOOP;}
+        else if (!strcmp(s[1],"ENKF_FORECAST"     )){mode=ENKF_FORECAST;}
+        else if (!strcmp(s[1],"ENKF_OPEN_FORECAST")){mode=ENKF_OPEN_FORECAST;}
+   
+        else if (!strcmp(s[1],"ENKF_CLOSEDLOOP"   )){mode=ENKF_CLOSED_LOOP;}
+        else if (!strcmp(s[1],"ENKF_OPENLOOP"     )){mode=ENKF_OPEN_LOOP;}
+        else {
+          cout<<s[1]<<endl;
+          ExitGracefully("ParseEnsembleFile: EnKFMode-  invalid mode specified",BAD_DATA_WARN);
+        }
+        pEnKF->SetEnKFMode(mode); 
+      }
+      else {
+        WriteWarning(":EnKFMode command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
+      }
       break;
     }
     case(19):  //----------------------------------------------
@@ -404,7 +418,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       if(Options.noisy) { cout <<":ExtraRVTFilename"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
-        string file=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension!
+        string file=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension! (may include * wildcard operator for filename)
         pEnKF->SetExtraRVTFile(file);
       }
       else {

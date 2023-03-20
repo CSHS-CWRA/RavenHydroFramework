@@ -1952,7 +1952,7 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
 void CModel::UpdateDiagnostics(const optStruct   &Options,
                                const time_struct &tt)
 {
-  if (_nDiagnostics==0){return;}
+  //if (_nDiagnostics==0){return;}
 
   int n=(int)(floor((tt.model_time+TIME_CORRECTION)/Options.timestep));//current timestep index
 

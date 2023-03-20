@@ -5,6 +5,7 @@ Copyright (c) 2008-2022 the Raven Development Team
 #include "RavenInclude.h"
 #include "Model.h"
 #include "SoilAndLandClasses.h"
+#include "EnKF.h"
 
 void GetNetCDFTimeInfo(const int ncid, int &time_dimid,int &ntime, int &start_time_index, const optStruct &Options);
 void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations,  string *&aStat_string,int &nStations);
@@ -67,7 +68,8 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   double end_day;
   int end_year;
   retval = nc_inq_varid(ncid,"end_time",&varid_endt);
-  if(retval != NC_ENOTVAR) {
+  if(retval != NC_ENOTVAR) 
+  {
     HandleNetCDFErrors(retval);
     retval = nc_inq_attlen(ncid,varid_endt,"units",&att_len);                 HandleNetCDFErrors(retval);
     char *unit_t=new char[att_len+1];
@@ -97,8 +99,8 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
   double assim_day;
   int    assim_year;
   retval = nc_inq_varid(ncid,"assimilation_time",&varid_asst);
-  if(retval != NC_ENOTVAR) {
-    cout<<retval<<endl;
+  if(retval != NC_ENOTVAR) 
+  {
     HandleNetCDFErrors(retval);
     retval = nc_inq_attlen(ncid,varid_asst,"units",&att_len);                 HandleNetCDFErrors(retval);
     char *unit_t=new char[att_len+1];
@@ -234,6 +236,33 @@ bool ParseNetCDFRunInfoFile(CModel *&pModel, optStruct &Options, bool runname_ov
 
       if(Options.noisy) { cout << "ParseRunInfoFile: read properties:Mode from NetCDF: " << Options.run_mode<< endl; }
       delete[] mode;
+    }
+    
+    // EnKFMode
+    retval = nc_inq_attlen(ncid, varid_props, "EnKFMode", &att_len);
+    if(retval != NC_ENOTATT)
+    {
+      HandleNetCDFErrors(retval);
+      char* modestr = new char[att_len];
+      retval = nc_get_att_text(ncid,varid_props,"EnKFMode",modestr);       HandleNetCDFErrors(retval);// read attribute text
+      CEnsemble *pEnsemble=pModel->GetEnsemble();
+      EnKF_mode mode=ENKF_SPINUP;
+      if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
+        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+       
+        if      (!strcmp(modestr,"ENKF_SPINUP"       )){mode=ENKF_SPINUP;}
+        else if (!strcmp(modestr,"ENKF_CLOSED_LOOP"  )){mode=ENKF_CLOSED_LOOP;}
+        else if (!strcmp(modestr,"ENKF_OPEN_LOOP"    )){mode=ENKF_OPEN_LOOP;}
+        else if (!strcmp(modestr,"ENKF_FORECAST"     )){mode=ENKF_FORECAST;}
+        else if (!strcmp(modestr,"ENKF_OPEN_FORECAST")){mode=ENKF_OPEN_FORECAST;}
+        else {
+          ExitGracefully("ParseEnsembleFile: EnKFMode-  invalid mode specified",BAD_DATA_WARN);
+        }
+        pEnKF->SetEnKFMode(mode); 
+      }
+
+      if(Options.noisy) { cout << "ParseRunInfoFile: read properties:EnKFMode from NetCDF: " << mode<< endl; }
+      delete[] modestr;
     }
 
     // AssimilateStreamflow

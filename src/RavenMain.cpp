@@ -33,7 +33,7 @@ bool   g_suppress_zeros   =false;
 double g_debug_vars[10];
 bool   g_disable_freezing =false;
 double g_min_storage      =0.0;
-
+int    g_current_e        =0;
 static string RavenBuildDate(__DATE__);
 
 //////////////////////////////////////////////////////////////////
@@ -108,16 +108,17 @@ int main(int argc, char* argv[])
     
   for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
   {
+    
     pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
     PrepareOutputdirectory(Options); //adds new output folders, if needed
     pModel->WriteOutputFileHeaders(Options);
       
     if(!Options.silent) {
-      cout <<"======================================================"<<endl;
+      cout <<endl<<"======================================================"<<endl;
+      if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<" "; g_suppress_warnings=true;}
       cout <<"Simulation Start..."<<endl;
     }
-    if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<endl; g_suppress_warnings=true;}
-
+    
     double t_start=0.0;
     t_start=pModel->GetEnsemble()->GetStartTime(e);
       
@@ -137,7 +138,6 @@ int main(int argc, char* argv[])
       pModel->UpdateTransientParams      (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
       pModel->UpdateHRUForcingFunctions  (Options,tt);
-      pModel->UpdateDiagnostics          (Options,tt);
       pModel->PrepareAssimilation        (Options,tt);
       pModel->WriteSimpleOutput          (Options,tt);
       pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
@@ -153,6 +153,7 @@ int main(int argc, char* argv[])
 
       pModel->WriteMinorOutput           (Options,tt);
       pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
+      pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!! 
       pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
       if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }

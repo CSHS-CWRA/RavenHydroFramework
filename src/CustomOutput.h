@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Custom output generation
   ----------------------------------------------------------------*/
@@ -62,44 +62,45 @@ class CCustomOutput
 {
 private:/*------------------------------------------------------*/
 
-  ofstream     _CUSTOM;    ///< output file stream
+  ofstream     _CUSTOM;     ///< output file stream
 
-  int          _netcdf_ID; ///< netCDF file identifier
+  int          _netcdf_ID;  ///< netCDF file identifier
 
-  diagnostic   _var;       ///< output variable identifier
-  sv_type      _svtype;    ///< state variable output type (if output var is a SV)
-  int          _svind;     ///< state variable index (if output var is a SV or flux)
-  int          _svind2;    ///< target state variable index (if output var is a flux between two compartments)
-  string       _force_str; ///< forcing function name (if output var is a forcing function)
-  forcing_type _ftype;     ///< forcing function type (if output var is a forcing function)
+  diagnostic   _var;        ///< output variable identifier
+  sv_type      _svtype;     ///< state variable output type (if output var is a SV)
+  int          _svind;      ///< state variable index (if output var is a SV or flux)
+  int          _svind2;     ///< target state variable index (if output var is a flux between two compartments)
+  string       _force_str;  ///< forcing function name (if output var is a forcing function)
+  forcing_type _ftype;      ///< forcing function type (if output var is a forcing function)
 
-  agg_stat     _aggstat;   ///< time aggregation statistic(average, max, min, etc.) (spatial average is always used)
-  time_agg     _timeAgg;   ///< how aggregated (monthly, daily, hourly, etc.)
-  spatial_agg  _spaceAgg;  ///< how aggregated (by HRU, by Basin, etc.)
+  agg_stat     _aggstat;    ///< time aggregation statistic(average, max, min, etc.) (spatial average is always used)
+  time_agg     _timeAgg;    ///< how aggregated (monthly, daily, hourly, etc.)
+  spatial_agg  _spaceAgg;   ///< how aggregated (by HRU, by Basin, etc.)
 
-  double       _hist_min;  ///< histogram min
-  double       _hist_max;  ///< Histogram max
-  int          _nBins;     ///< Histogram # of bins
+  double       _hist_min;   ///< histogram min
+  double       _hist_max;   ///< Histogram max
+  int          _nBins;      ///< Histogram # of bins
 
-  string       _filename;  ///< custom output filename (relative path, with extension)
+  string       _filename;   ///< custom output filename (relative path, with extension)
+  string       _filename_user; ///< custom output filename provided by user
 
-  string       _varName;   ///< forcing variable or state variable name
-  string       _varUnits;  ///< forcing variable or state variable units
-  string       _timeAggStr;///< temporal aggregation type string
-  string       _statStr;   ///< statistic type string
+  string       _varName;    ///< forcing variable or state variable name
+  string       _varUnits;   ///< forcing variable or state variable units
+  string       _timeAggStr; ///< temporal aggregation type string
+  string       _statStr;    ///< statistic type string
   string       _spaceAggStr;///< spatial aggregation type string
 
-  double     **data;      ///< stores accumulated data for each HRU,Basin, or WShed (size:[num_store][num_data])
-  int          num_data;  ///< number of data points
-  int          num_store; ///< number of data items needed for each HRU, Basin or WShed
-  //(e.g., =2 if max and min are both tracked)
-  int         _time_index;///< index tracking current output line (e.g., 3=3 years/months/days passed, dependent upon _timeAgg
+  double     **data;        ///< stores accumulated data for each HRU,Basin, or WShed (size:[num_store][num_data])
+  int          num_data;    ///< number of data points
+  int          num_store;   ///< number of data items needed for each HRU, Basin or WShed
+                            //(e.g., =2 if max and min are both tracked)
+  int         _time_index;  ///< index tracking current output line (e.g., 3=3 years/months/days passed, dependent upon _timeAgg
 
-  int          count;     ///< counts accumulated data (# of timesteps since last output dump)
+  int          count;       ///< counts accumulated data (# of timesteps since last output dump)
 
-  int          kk_only;   ///< index of HRUGroup for which output is generated when spaceAgg==BY_SELECT_HRUS
+  int          kk_only;     ///< index of HRUGroup for which output is generated when spaceAgg==BY_SELECT_HRUS
 
-  const CModel *pModel;   ///< Reference to model
+  const CModel *pModel;     ///< Reference to model
 
   void DetermineCustomFilename(const optStruct& Options); 
 

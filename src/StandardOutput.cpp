@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
 
   Includes CModel routines for writing output headers and contents:
     CModel::CloseOutputStreams()
@@ -165,7 +165,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   int i,j,p;
   string tmpFilename;
 
-  if(!Options.silent) { cout<<"  Writing Output File Headers..."<<endl; }
+  if(Options.noisy) { cout<<"  Writing Output File Headers..."<<endl; }
 
   if (Options.output_format==OUTPUT_STANDARD)
   {

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "ModelEnsemble.h"
 
@@ -149,6 +149,7 @@ double CDDSEnsemble::PerturbParam(const double &x_best, //current best decision 
 //
 void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 {
+  CEnsemble::UpdateModel(pModel,Options,e);
   ExitGracefullyIf(e>=_nMembers,"CDDSEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
 
   //int iters_remaining=_nMembers-e;

@@ -152,6 +152,7 @@ void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 //
 void CEnsemble::UpdateModel(CModel *pModel,optStruct &Options, int e) 
 {
+  g_current_e=e;
   //default does nothing - abstract base class
 }
 
@@ -219,6 +220,7 @@ void CMonteCarloEnsemble::Initialize(const CModel* pModel,const optStruct &Optio
 //
 void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const int e) 
 {
+  CEnsemble::UpdateModel(pModel,Options,e);
   ExitGracefullyIf(e>=_nMembers,"CMonteCarloEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
 
   //- update output file/ run names ----------------------------
