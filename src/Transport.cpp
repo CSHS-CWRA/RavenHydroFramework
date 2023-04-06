@@ -645,8 +645,19 @@ void CTransportModel::Prepare(const optStruct &Options)
   }
   _nIndexMapping=pModel->GetNumStateVars();
 
-  /// \todo [QA/QC]: check for two constituents with same name?
+  
   if(_nConstituents==0) { return; }/// all of the above work necessary even with no transport. Not sure why.
+
+  /// QA/QC
+  //----------------------------------------------------------------------------
+  // check for two constituents with same name
+  for (int c = 0; c < _nConstituents; c++) {
+    for (int cc = 0; cc < c; cc++) {
+      if (_pConstitModels[c]->GetName() == _pConstitModels[cc]->GetName()) {
+         ExitGracefully("CTransport::Prepare: a model cannot have two transported constituents with the same name",BAD_DATA_WARN);
+      }
+    }
+  }
 
   //Synopsis
   //----------------------------------------------------------------------------

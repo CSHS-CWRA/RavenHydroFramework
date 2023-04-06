@@ -1542,6 +1542,8 @@ void   PrepareOutputdirectory    (const optStruct &Options);
 string GetDirectoryName          (const string &fname);
 void   HandleNetCDFErrors        (int error_code);        ///< NetCDF error handling
 string CorrectForRelativePath    (const string filename, const string relfile);
+string GetFileExtension          (string filename);
+
 #ifdef _WIN32
 #include <direct.h>
 #define GetCurrentDir _getcwd

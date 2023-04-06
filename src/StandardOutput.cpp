@@ -879,10 +879,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     }
 
     //WaterLevels.csv
-    // 
-    // 
-         //Write hydrographs for gauged watersheds (ALWAYS DONE)
-      //----------------------------------------------------------------
+    //Write hydrographs for gauged watersheds (ALWAYS DONE)
+    //----------------------------------------------------------------
     if (Options.write_waterlevels)
     {
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
@@ -2424,6 +2422,18 @@ string GetDirectoryName(const string &fname)
   if (std::string::npos == pos){ return ""; }
   else                         { return fname.substr(0, pos);}
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns file extension given filename 
+///
+/// \param filename [in] , e.g., C:\temp\thisfile.txt returns txt
+//
+string GetFileExtension(string filename) 
+{
+  if (filename==""){return ""; }
+  return filename.substr(filename.find_last_of(".")+ 1);
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief returns directory path given filename and relative path
 ///

@@ -272,9 +272,18 @@ void CCustomOutput::DetermineCustomFilename(const optStruct& Options)
   else                  {
     _filename_user=_filename;
     if (Options.run_name!=""){_filename=Options.output_dir+Options.run_name+"_"+_filename;}
-    else                     {_filename=Options.output_dir+_filename; } // \todo [QA/QC]: should check for proper extension of specified filename
+    else                     {_filename=Options.output_dir+_filename; } 
+  }
+
+  //QA/QC
+  if ((GetFileExtension(_filename)=="nc") && (Options.output_format!=OUTPUT_NETCDF)){
+    WriteWarning("User-specified custom output supplied with .nc extension, but specified output format is not NetCDF",Options.noisy);
+  }
+  if ((GetFileExtension(_filename)=="csv") && (Options.output_format!=OUTPUT_STANDARD)){
+    WriteWarning("User-specified custom output supplied with .csv extension, but specified output format is not comma-delimited",Options.noisy);
   }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Open a stream to the file and write header info
 //

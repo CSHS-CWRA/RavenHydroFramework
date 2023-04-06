@@ -92,6 +92,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
     else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15; }
     else if  (!strcmp(s[0],":IntersectHRUGroups"       )){code=16; }
+    else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=17; }
 
     switch(code)
     {
@@ -855,6 +856,46 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
       break;
     }
+    case(17):  //----------------------------------------------
+    { /*
+        :MergeSubBasinGroups {NewGroup} From {SubBasinGroup1} {SubBasinGroup2} ... {SubBasinGroupN}
+        e.g.,
+        :MergeSubbasinGroups MainSubbasins From subGroup1 subGroup2 subGroup3
+              */
+        if (Options.noisy) { cout << "   Merge SubBasin Groups..." << endl; }
+
+        CSubbasinGroup* pSBGroup = NULL;
+        pSBGroup = pModel->GetSubBasinGroup(s[1]);
+
+        if (pSBGroup == NULL) {//group not yet defined
+            pSBGroup = new CSubbasinGroup(s[1], pModel->GetNumSubBasinGroups());
+            pModel->AddSubBasinGroup(pSBGroup);
+        }
+
+        CSubbasinGroup* pSBGroup2 = NULL;
+
+        // iterate string and add subbasins to new group
+        for (int striter = 3; striter < Len; striter++)
+        {
+            pSBGroup2 = pModel->GetSubBasinGroup(s[striter]);
+            if (pSBGroup2 == NULL) {
+                ExitGracefully(":MergeSubBasinGroups: invalid SB group reference used in command", BAD_DATA_WARN);
+            }
+            else {
+                for (int p = 0; p < pModel->GetNumSubBasins(); p++)
+                {
+                    // if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                    // account for possibility of duplication in subbasins in each group being merged
+                    if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID()) & !pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                        pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
+                    }
+                }
+            }
+        }
+        string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
+        WriteAdvisory(advice, Options.noisy);
+        break;
+    }
     default://------------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -913,7 +954,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
   //--------------------------------------------------------------------------
   if ((pModel->GetNumSubBasins()>1) && (CGlobalParams::GetParameter("AVG_ANNUAL_RUNOFF")<0))
   {
-    // \todo: reduce generalization- only really needed if routing method requires Q_REF
+    // \todo [QA/QC]: reduce generalization- only really needed if routing method requires Q_REF
     ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied (using :AvgAnnualRunoff command in .rvp file) if more than one basin is included in model",BAD_DATA_WARN);
   }
 

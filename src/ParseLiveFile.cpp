@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2020 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -46,17 +46,20 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
 
     code=0;
     //---------------------SPECIAL -----------------------------
-    if     (Len==0)                                { code=-1; }//blank line
-    else if(IsComment(s[0],Len))                   { code=-2; }//comment
+    if     (Len==0)                                 { code=-1; }//blank line
+    else if(IsComment(s[0],Len))                    { code=-2; }//comment
 
-    else if(!strcmp(s[0],":Echo"                )) { code=-3; }
+    else if(!strcmp(s[0],":Echo"                 )) { code=-3; }
    //-------------------MODEL ENSEMBLE PARAMETERS----------------
-    else if(!strcmp(s[0],":VegetationChange"    )) { code=1; }
-    else if(!strcmp(s[0],":LandUseChange"       )) { code=2; }
-    else if(!strcmp(s[0],":GroupLandUseChange"  )) { code=3; }
-    else if(!strcmp(s[0],":SetStreamflow"       )) { code=10; }
-    else if(!strcmp(s[0],":SetReservoirFlow"    )) { code=11; }
-    else if(!strcmp(s[0],":SetReservoirStage"   )) { code=12; }
+    else if(!strcmp(s[0],":VegetationChange"     )) { code=1;  }
+    else if(!strcmp(s[0],":LandUseChange"        )) { code=2;  }
+    else if(!strcmp(s[0],":GroupLandUseChange"   )) { code=3;  }
+    else if(!strcmp(s[0],":GroupVegetationChange")) { code=4;  }
+    else if(!strcmp(s[0],":HRUTypeChange"        )) { code=5;  }
+    else if(!strcmp(s[0],":GroupHRUTypeChange"   )) { code=6;  }
+    else if(!strcmp(s[0],":SetStreamflow"        )) { code=10; }
+    else if(!strcmp(s[0],":SetReservoirFlow"     )) { code=11; }
+    else if(!strcmp(s[0],":SetReservoirStage"    )) { code=12; }
 //    else if(!strcmp(s[0],":SetExtractionRate"     )) { code=13; }//set streamflow extraction
 //    else if(!strcmp(s[0],":DistributedIrrigation" )) { code=14; }//add irrigation water (mm/d) to landscape
 //    else if(!strcmp(s[0],":FlowDiversion"         )) { code=15; }//diverts flow from one basin to another
@@ -130,6 +133,61 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
       }
       else {
         WriteWarning("ParseLiveFile: invalid HRU Group name provided in :GroupLandUseChange command",Options.noisy);
+      }
+      break;
+    }
+    case(4):  //----------------------------------------------
+    {/*:GroupVegetationChange [HRU group] [new veg tag]*/
+      CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
+      if(pHRUGroup!=NULL) {
+        CVegetationClass *veg_class=CVegetationClass::StringToVegClass(s[2]);
+        if(veg_class!=NULL) {
+          for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
+            pHRUGroup->GetHRU(k)->ChangeVegetation(veg_class);
+          }
+        }
+        else {
+          WriteWarning("ParseLiveFile: invalid Land use tag provided in :GroupLandUseChange command",Options.noisy);
+        }
+      }
+      else {
+        WriteWarning("ParseLiveFile: invalid HRU Group name provided in :GroupLandUseChange command",Options.noisy);
+      }
+      break;
+    }
+    case(5):  //----------------------------------------------
+    {/*:HRUTypeChange [HRU ID] [new HRU Type]*/
+      pHRU=pModel->GetHRUByID(s_to_i(s[1]));
+      if(pHRU!=NULL) {
+        HRU_type hru_type=StringToHRUType(s[2]);
+        if(hru_type!=HRU_INVALID_TYPE) {
+          pHRU->ChangeHRUType(hru_type);
+        }
+        else {
+          WriteWarning("ParseLiveFile: invalid HRU type tag provided in :HRUTypeChange command",Options.noisy);
+        }
+      }
+      else {
+        WriteWarning("ParseLiveFile: invalid HRU ID provided in :HRUTypeChange command",Options.noisy);
+      }
+      break;
+    }
+    case(6):  //----------------------------------------------
+    {/*:GroupHRUTypeChange [HRU Group] [new HRU Type]*/
+      CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
+      if(pHRUGroup!=NULL) {
+        HRU_type hru_type=StringToHRUType(s[2]);
+        if(hru_type!=HRU_INVALID_TYPE) {
+          for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
+            pHRUGroup->GetHRU(k)->ChangeHRUType(hru_type);
+          }
+        }
+        else {
+          WriteWarning("ParseLiveFile: invalid HRU type tag provided in :HRUTypeChange command",Options.noisy);
+        }
+      }
+      else {
+        WriteWarning("ParseLiveFile: invalid HRU ID provided in :HRUTypeChange command",Options.noisy);
       }
       break;
     }

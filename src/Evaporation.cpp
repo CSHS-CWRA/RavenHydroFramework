@@ -195,6 +195,7 @@ double HargreavesEvap(const force_struct *F)//[C]
        CelsiusToFarenheit(F->temp_month_min);
 
   // \todo [optimize] - move this check to initialization routine
+  
   ExitGracefullyIf(F->temp_month_max==NOT_SPECIFIED,
                    "PET_HARGREAVES requires minimum and maximum monthly temperatures",BAD_DATA);
 
@@ -785,21 +786,6 @@ double SnowEvaporation(const force_struct   *F,
   return tmp*MJ_PER_J*SEC_PER_DAY;//=[m/d]
 }
 
-//////////////////////////////////////////////////////////////////
-/// \brief Calculates evaporation using Blaney-Criddle method
-/// \todo [add funct] Implement Blaney-Criddle evaporation
-/// \details from Blaney & Criddle, 1962 \cite Blaney1962
-/// \ref Added by GrahamStonebridge, Fall 2011
-/// \param *F [in] Model forcing functions
-/// \return Calculated PET [mm/d]
-//
-double Blaneycriddle(const force_struct *F)
-{
-  double rho;
-  rho=1.0;
-  ExitGracefully("Blaneycriddle",STUB);
-  return rho*(0.46*F->temp_month_ave+8);
-}
 //////////////////////////////////////////////////////////////////
 /// \brief calculates drying power modifier for wind thru canopy
 /// \details from Granger & Gray \cite GrangerGray1989
