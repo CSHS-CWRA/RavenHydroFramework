@@ -18,6 +18,7 @@ string FilenamePrepare(string filebase,const optStruct& Options); //Defined in S
 //  :SilentMode # useful
 // 
 // in .rve file:
+//  :EnKFMode ENKF_CLOSED_LOOP or ENKF_SPINUP or ENKF_CLOSED_FORECAST...
 //  :DataHorizon 1 # no. of timesteps (1 for standard EnKF or huge if all data since sim start is used; 2+ for variational approach)
 //
 //  :ForecastRVTFilename ./meteo/model_forecast.rvt 
@@ -44,7 +45,7 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
   :CEnsemble(num_members,Options) 
 {
   _type        =ENSEMBLE_ENKF;
-  _EnKF_mode   =ENKF_CLOSED_LOOP;
+  _EnKF_mode   =ENKF_UNSPECIFIED;
   _nEnKFMembers=num_members;
 
   _pPerturbations=NULL; //Specified during .rve file parse
@@ -201,6 +202,15 @@ void CEnKFEnsemble::SetExtraRVTFile(string filename){_extra_rvt=filename;}
 double CEnKFEnsemble::GetStartTime(const int e) const 
 {
   return 0.0; 
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Accessor - gets ensemble mode
+/// \return ensemble mode
+//
+EnKF_mode CEnKFEnsemble::GetEnKFMode() const 
+{
+  return _EnKF_mode; 
 }
 
 //////////////////////////////////////////////////////////////////
@@ -375,6 +385,10 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   //-----------------------------------------------
   string filename= FilenamePrepare("EnKFOutput.csv",Options);
   _ENKFOUT.open(filename.c_str());
+  if(_ENKFOUT.fail()) {
+    ExitGracefully(("CEnKFEnsemble::Initialize: Unable to open output file "+filename+" for writing.").c_str(),FILE_OPEN_ERR);
+  }
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief called at start of each time step
@@ -632,7 +646,7 @@ void CEnKFEnsemble::UpdateFromStateMatrix(CModel* pModel,optStruct& Options,cons
        for (int k=0;k<pModel->GetHRUGroup(kk)->GetNumHRUs();k++)
        {
           CHydroUnit *pHRU=pModel->GetHRUGroup(kk)->GetHRU(k);
-          int iii=pModel->GetStateVarIndex(_aAssimStates[i],_aAssimLayers[0]); 
+          int iii=pModel->GetStateVarIndex(_aAssimStates[i],_aAssimLayers[i]); 
           pHRU->SetStateVarValue(iii,_state_matrix[e][ii]); ii++;
        }
     }

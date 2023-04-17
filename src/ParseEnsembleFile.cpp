@@ -392,6 +392,8 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       if(Options.noisy) { cout <<":EnKFMode"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
+        if (pEnKF->GetEnKFMode()!=ENKF_UNSPECIFIED){break;} //set in run_info.nc, do not override
+
         EnKF_mode mode=ENKF_SPINUP;
 
         if      (!strcmp(s[1],"ENKF_SPINUP"       )){mode=ENKF_SPINUP;}

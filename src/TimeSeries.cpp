@@ -762,6 +762,10 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
      cout <<"DimNamesNC = "<<DimNamesNC_time<<endl;
      cout <<"StationIdx = "<<StationIdx<<endl;
      cout <<"TimeShift  = "<<TimeShift<<endl;  */
+    
+    //Handle ensemble wildcards in filenameNC or VarNameNC 
+    SubstringReplace(FileNameNC,"*",to_string(g_current_e+1));//replaces wildcard in filename 
+    SubstringReplace(VarNameNC ,"*",to_string(g_current_e+1));//replaces wildcard in variable name 
 
     // if DimNamesNC_stations == "None" then NetCDF variable is assumed to be 1D (only time)
     // if DimNamesNC_stations != "None" then StationIdx must be >= 1

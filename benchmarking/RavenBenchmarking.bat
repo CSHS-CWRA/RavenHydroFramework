@@ -4,7 +4,7 @@ Setlocal EnableDelayedExpansion
 cls
 
 REM Location of Working directory (no end slash)
-SET workingdir=C:\James\Software\Raven\BenchmarkProtocol
+SET workingdir=%~d0\James\Software\Raven\BenchmarkProtocol
 
 REM version name 
 SET ver_name=vTest
@@ -78,6 +78,22 @@ mkdir %workingdir%\out_%ver_name%\Salmon_MOHYSE\
 chdir %workingdir%\_InputFiles\Salmon_MOHYSE\
 %ravexe% raven-mohyse-salmon -o %workingdir%\out_%ver_name%\Salmon_MOHYSE\
 
+mkdir %workingdir%\out_%ver_name%\Salmon_Mixed\
+chdir %workingdir%\_InputFiles\Salmon_Mixed\
+%ravexe% raven_weighted_processes -o %workingdir%\out_%ver_name%\Salmon_Mixed\
+
+mkdir %workingdir%\out_%ver_name%\Salmon_HYMOD\
+chdir %workingdir%\_InputFiles\Salmon_HYMOD\
+%ravexe% raven-hymod-salmon -o %workingdir%\out_%ver_name%\Salmon_HYMOD\
+
+mkdir %workingdir%\out_%ver_name%\Salmon_SACSMA\
+chdir %workingdir%\_InputFiles\Salmon_SACSMA\
+%ravexe% raven-sacsma-salmon -o %workingdir%\out_%ver_name%\Salmon_SACSMA\
+
+mkdir %workingdir%\out_%ver_name%\Lievre\
+chdir %workingdir%\_InputFiles\Lievre\
+%ravexe% lievre -o %workingdir%\out_%ver_name%\Lievre\
+
 mkdir %workingdir%\out_%ver_name%\York_nc1\
 chdir %workingdir%\_InputFiles\York_nc\
 %ravexe% York -o %workingdir%\out_%ver_name%\York_nc1\
@@ -102,6 +118,37 @@ mkdir %workingdir%\out_%ver_name%\York_nc6\
 chdir %workingdir%\_InputFiles\York_nc\
 %ravexe% York_nongridded_m_subdaily_i_daily -o %workingdir%\out_%ver_name%\York_nc6\
 
+mkdir %workingdir%\out_%ver_name%\York_nc6\
+chdir %workingdir%\_InputFiles\York_nc\
+%ravexe% York_nongridded_m_subdaily_i_daily -o %workingdir%\out_%ver_name%\York_nc6\
+
+mkdir %workingdir%\out_%ver_name%\ElbowHistoric\
+chdir %workingdir%\_InputFiles\ElbowHistoric\
+%ravexe% elbow -o %workingdir%\out_%ver_name%\ElbowHistoric\
+
+mkdir %workingdir%\out_%ver_name%\ElbowHistoric_csv\
+chdir %workingdir%\_InputFiles\ElbowHistoric_csv\
+%ravexe% elbow -o %workingdir%\out_%ver_name%\ElbowHistoric_csv\
+
+mkdir %workingdir%\out_%ver_name%\ElbowForecast\
+chdir %workingdir%\_InputFiles\ElbowForecast\
+%ravexe% elbow -o %workingdir%\out_%ver_name%\ElbowForecast\
+
+mkdir %workingdir%\out_%ver_name%\Elbow-forecastrun\
+chdir %workingdir%\_InputFiles\Elbow-forecastrun\work\
+%ravexe% elbow -o %workingdir%\out_%ver_name%\Elbow-forecastrun\
+
+mkdir %workingdir%\out_%ver_name%\Elbow-historicrun\
+chdir %workingdir%\_InputFiles\Elbow-historicrun\work\
+%ravexe% elbow -o %workingdir%\out_%ver_name%\Elbow-historicrun\
+
+mkdir %workingdir%\out_%ver_name%\02EB011\
+chdir %workingdir%\_InputFiles\02EB011\
+%ravexe% raven-blended-02EB011 -o %workingdir%\out_%ver_name%\02EB011\
+
+
+"C:\Program Files\Beyond Compare 4\BCompare.exe" %workingdir%\out_%ver_name%\ %workingdir%\out_v406\
+ 
 echo -------------------------------------------
 echo ...BENCHMARKING DONE.
 echo -------------------------------------------

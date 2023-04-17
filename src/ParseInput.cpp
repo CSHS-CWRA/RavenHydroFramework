@@ -710,11 +710,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(7): //----------------------------------------------
-    {/*:StartDate [yyyy-mm-dd] [hh:mm:ss.00] */
+    {/*:StartDate [yyyy-mm-dd] [hh:mm:ss.00] 
+       or 
+       :StartDate [yyyy-mm-dd] 
+     */
       if(Options.noisy) { cout <<"Simulation Start Date"<<endl; }
-      if(Len<3) { ImproperFormatWarning(":StartDate",p,Options.noisy); break; }
+      if(Len<2) { ImproperFormatWarning(":StartDate",p,Options.noisy); break; }
       time_struct tt;
-      tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      if (Len==2){tt=DateStringToTimeStruct(s[1],"00:00:00",Options.calendar);}
+      else       {tt=DateStringToTimeStruct(s[1],s[2]      ,Options.calendar);}
       Options.julian_start_day =tt.julian_day;
       Options.julian_start_year=tt.year;
       if(Options.forecast_shift!=0) {
@@ -723,12 +727,16 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(8):  //--------------------------------------------
-    {/* :EndDate [yyyy-mm-dd] [hh:mm:ss.00] */
+    {/* :EndDate [yyyy-mm-dd] [hh:mm:ss.00] 
+       or
+       :EndDate [yyyy-mm-dd]
+     */
       if(Options.noisy) { cout<<":EndDate"<<endl; }
       ExitGracefullyIf(Options.julian_start_year==1666,":EndDate command must be after :StartDate command in .rvi file.",BAD_DATA_WARN);
-      if(Len<3) { ImproperFormatWarning(":EndDate",p,Options.noisy); break; }
+      if(Len<2) { ImproperFormatWarning(":EndDate",p,Options.noisy); break; }
       time_struct tt;
-      tt=DateStringToTimeStruct(s[1],s[2],Options.calendar);
+      if (Len==2){tt=DateStringToTimeStruct(s[1],"00:00:00",Options.calendar);}
+      else       {tt=DateStringToTimeStruct(s[1],s[2]      ,Options.calendar);}
       Options.duration=TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day,tt.year,Options.calendar);
       if(Options.forecast_shift!=0) { Options.duration+=Options.forecast_shift; }
       ExitGracefullyIf(Options.duration<=0,"ParseInput: :EndDate must be later than :StartDate.",BAD_DATA_WARN);
@@ -2421,7 +2429,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(219):  //----------------------------------------------
     {/*GlacierMelt
-       :GlacierMelt [string method] GLACIER_ICE GLACIER */
+       :GlacierMelt [string method] GLACIER_ICE GLACIER/MULTIPLE */
       if (Options.noisy){cout <<"Glacier Melt Process"<<endl;}
       if (Len<4){ImproperFormatWarning(":GlacierMelt",p,Options.noisy); break;}
       glacial_melt_type gm_type=GMELT_SIMPLE_MELT;
@@ -2435,7 +2443,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized Glacier Melt process representation",BAD_DATA_WARN); break;
       }
 
-      FromToErrorCheck(":GlacierMelt",s[2],s[3],GLACIER_ICE,GLACIER);
+      FromToErrorCheck(":GlacierMelt",s[2],s[3],GLACIER_ICE,USERSPEC_SVTYPE);
       
       CmvGlacierMelt::GetParticipatingStateVarList(gm_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);

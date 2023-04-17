@@ -29,7 +29,8 @@ enum EnKF_mode
   ENKF_CLOSED_LOOP,
   ENKF_OPEN_LOOP,
   ENKF_FORECAST,
-  ENKF_OPEN_FORECAST
+  ENKF_OPEN_FORECAST,
+  ENKF_UNSPECIFIED
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for EnKF model ensemble run
@@ -81,6 +82,7 @@ public:
   ~CEnKFEnsemble();
 
   double GetStartTime(const int e) const;
+  EnKF_mode GetEnKFMode() const; 
 
   void SetEnKFMode          (EnKF_mode mode);
   void SetWarmRunname       (string runname);

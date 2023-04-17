@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 #include "Forcings.h"
@@ -329,7 +329,6 @@ double CHydroUnit::GetCumulFluxBet(const int iFrom, const int iTo) const
 /*****************************************************************
    Manipulators
 *****************************************************************/
-/// \todo [re-org] should retain these in a manipulable child class accessible only to CModel
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets state variable value
@@ -462,12 +461,37 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon,
     else if (adj==ADJ_REPLACE       ){_Forcings.precip =epsilon;}
     upperswap(_Forcings.precip,0.0);
   }
+  else if(Ftyp==F_RAINFALL) { 
+    double sf=_Forcings.snow_frac;
+    double Po=_Forcings.precip;
+    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip+=Po*(1.0-sf)*(epsilon-1.0);}
+    else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon; }
+    else if (adj==ADJ_REPLACE       ){_Forcings.precip+=epsilon-(1-sf)*Po;}
+    upperswap(_Forcings.precip,0.0);
+    if (_Forcings.precip==0){_Forcings.snow_frac=0;}
+    else                    {_Forcings.snow_frac=_Forcings.snow_frac*Po/_Forcings.precip;}
+  }
+  else if(Ftyp==F_SNOWFALL) { 
+    double sf=_Forcings.snow_frac;
+    double Po=_Forcings.precip;
+    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip+=Po*(sf)*(epsilon-1.0);}
+    else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon; }
+    else if (adj==ADJ_REPLACE       ){_Forcings.precip+=epsilon-(sf)*Po;}
+    upperswap(_Forcings.precip,0.0);
+    if (_Forcings.precip==0){_Forcings.snow_frac=0;}
+    else                    {_Forcings.snow_frac=1.0-(1.0-_Forcings.snow_frac)*Po/_Forcings.precip;}
+  }
+  else if (Ftyp == F_TEMP_AVE) {
+    //some of these dont work with sub-daily time steps!!!
+    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.temp_ave*=epsilon; _Forcings.temp_daily_min*=epsilon; _Forcings.temp_daily_max*=epsilon;}
+    else if (adj==ADJ_ADDITIVE      ){_Forcings.temp_ave+=epsilon;_Forcings.temp_daily_min+=epsilon; _Forcings.temp_daily_max+=epsilon;}
+    else if (adj==ADJ_REPLACE       ){_Forcings.temp_daily_min+=(epsilon-_Forcings.temp_ave); _Forcings.temp_daily_max+=(epsilon-_Forcings.temp_ave); _Forcings.temp_ave =epsilon;} 
+  }
   //AdjustForcing(_Forcings,Ftyp,value,adj);
   //AdjustForcings(force_struct F, forcing_type typ, double value, adjustment adj);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns maximum allowable value of state variable in model
-/// \todo [re-org] This might not be the best place for this routine
 ///
 /// \param i [in] Integer index of state variable type
 /// \param *curr_state_var [in] Current array of state variables in HRU

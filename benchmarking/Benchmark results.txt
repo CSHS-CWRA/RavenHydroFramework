@@ -1,5 +1,3 @@
-
-
 v8->v56 changes [PASSED BENCHMARKING]
 -All UBCWM Models/Alouette2/Nith generate identical hydrographs
 -Shift in irondequoit peaks in 5 decimal point due to changes in convolution algorithm
@@ -23,7 +21,7 @@ v99->v100 (Dec 29, 2017)
 -something has minutely changed glacier and snowmelt modelling in UBCWM models, predominantly in 2nd digit and beyond in hydrograph. I cannot find the change!
 -there is nothing that should impact these model - changes were primarily to netCDF support and the addition of HRU disabling
 
-ADDED BENCHMARKING MODE TO AvOID SPURIOUS DATE_BASED COMPARISON ISSUES
+ADDED BENCHMARKING MODE TO AVOID SPURIOUS DATE_BASED COMPARISON ISSUES
 
 v100->v108 [PASSED BENCHMARKING](Feb 6, 2018)
 
@@ -69,4 +67,199 @@ v176->v185 [FAILED BENCHMARKING]
 -v183, v184- incorrect HCP_ICE led to issues with UBCWM models
 -v176-v182 - incorrect NetCDF support (failed York)
 
-v186 [PASSED BENCHMARKING] (May 3, 2019)
+v186 [PASSED BENCHMARKING - back on track] (May 3, 2019)
+
+v207 [PASSED BENCHMARKING] (Jun 25, 2019)
+
+v211 [PASSED BENCHMARKING] (Jul 11, 2019)
+MODIFIED BENCHMARK FILES - added Salmon_Mixed test case
+-minor differences in reported ATMOSPHERE storage due to modification/fixes to PartitionPrecip.cpp
+
+v212 [PASSED BENCHMARKING]
+-differences in solution.rvc file - intentionally removed trailing comma in Qin series 
+
+v215 [PASSED BENCHMARKING] (Jul 25, 2019)
+
+v216 [PASSED BENCHMARKING] (Jul 26, 2019)
+-minor differences in all York gridded simulations - due to properly turning off orographic corrections rather than using a reference elevation of zero
+
+v217 [PASSED BENCHMARKING] (Aug 9, 2019)
+Competitive ET introduced - backward compatibility issues expected
+-added AET to all solution.rvc files; 
+-impacts Nith fairly dramatically  
+-very minor pretty negligible) impact upon Alouette2, Salmon_HBV, though likely impacts 'perfect' HBV emulation?
+-NO impacts on UBCWM emulation models (good news)
+
+v218 [PASSED BENCHMARKING] (Sep 8, 2019)
+-modified results from Salmon_mixed due to SNOWBAL_GAWSER bug fix
+-added new warnings about infilling evaporation data to some RavenErrors.txt files
+
+v221 [PASSED BENCHMARKING] (Sep 19, 2019)
+
+v223 [FAILED BENCHMARKING] 
+-introduced error in RADIANS_TO_DEGREES 
+
+v224 [PASSED BENCHMARKING] (Sep 23, 2019)
+-full groundwater model integration
+-minor differences due to roundoff in RADIANS_TO_DEGREES/DEGREES_TO_RADIANS
+-for some reason, larger in UBCWM models, but still generally <<1% error
+
+v227 [PASSED BENCHMARKING] (Oct 2019)
+
+ADDED ELBOW HISTORIC AND FORECAST TO BENCHMARK SETUP
+
+v228 [FAILED BENCHMARKING] (Oct 17, 2019)
+-appeared to pass but introduced issues in York3 upon second check - indexing bug introduced in CForcingGrid (fixed in v229)
+
+v229 [PASSED BENCHMARKING] (Oct 20, 2019)
+
+v241 [PASSED BENCHMARKING] (Feb 26, 2020)
+
+v242 [PASSED BENCHMARKING] (Feb 26, 2020)
+-big bug fix leading to odd results for hourly models relying on min/max daily temperature - impacted York nc1,nc4,nc5,nc6
+
+v247 [PASSED BENCHMARKING] (Mar 17 2020)
+
+v249 [FAILED BENCHMARKING] issue with timestamp validation of Elbow model
+
+v250 [PASSED BENCHMARKING] (Mar 20 2020)
+
+v254 [PASSED BENCHMARKING] (Apr 25, 2020)
+
+v255 [PASSED BENCHMARKING] (May 5, 2020)
+
+v262 [PASSED BENCHMARKING] (May 15, 2020) - [VERSION 3.0]
+
+v264 [PASSED BENHCMARKING] (Jun 17, 2020) 
+-changes to Concentrations.tb0 files due to fixed calculation of rivulet/channel concentrations; MB error =0 
+-Salmon HBV seems really slow in benchmarking...
+
+v265 [PASSED BENCHMARKING] (Jul 22, 2020)
+
+v271 [PASSED BENCHMARKING] - [VERSION 3.0.1]
+
+v277 [PASSED BENCHMARKING] (Nov 19, 2020)
+-minor change to NSE only of Salmon-Mixed - hydrographs identical, all other NSE metrics on benchmark models identical. ???
+-text changes to RAvenErrors.txt for diagnostic missing data
+
+v278 [PASSED BENCHMARKING] (Nov 23, 2020)
+-added ALL to diagnostic titles 
+
+v289 [PASSED BENCHMARKING] (Dec 17, 2020)
+
+v290 [PASSED BENCHMARKING] MAJOR REFACTOR OF TRANSPORT CODE!! (Dec 19, 2020)
+
+v297 [PASSED BENCHMARKING] 
+-introdcuted competitive AET with :OpenWaterEvaporation 
+- necessitated suppressing competitive ET for LOTW, and York models (appropriate) BACKWARD COMPATIBILITY Issue Introduced
+-AET in .rvc file changes in york models
+-superficial changes in UBCWM snowmelt/glacier concentrations (0 -> -0)
+-NON TRIVIAL CHANGES TO LOTW Model 
+   - no idea what is new here - odd differences in Oct/Apr net SW (snow?)
+   - difference first manifests as difference in Canopy Snow Evaporation
+
+v298-303 [PASSED BENCHMARKING] (Feb 21, 2021)
+-added basin transport variables printed to solution.rvc file for UBCWM emulations
+
+v303-v308 [PASSED BENCHMARKING] (Mar 5, 2021)
+
+v313 [PASSED BENCHMARKING] (Mar 20, 2021)
+-very tiny numerical differences (e.g., -0 vs 0) in UBCWM models and seemed to fix numerical issue in York_nc1
+
+v325 [PASSED BENCHMARKING] (May 16, 2021)
+-changes to mass reporting in all Concentrations.tb0 results after units fix -everything (now correctly) multiplied by 1e6
+
+v327 [PASSED BENCHMARKING] (Jun 18, 2021)
+-non-trivial changes to LOTW; Likely due to repair of crest width calculation
+-similar diagnostics in lakes, identical diagnostics for rivers (w/o lakes)
+
+v330 [PASSED BENCHMARKING] (Jun 22, 2021)
+-minor changes to numbers ~1e-12 in concentration/storage files of UBCWM sims
+-suprisingly good performance after replacing :AggregatedVariale command
+
+v331 [PASSED BENCHMARKING] (Jun 28, 2021)
+-imported Leland's GW changes; no issues
+
+v333 [PASSED BENCHMARKING] (Aug 5, 2021) 
+
+v338 [PASSED BENCHMARKING] (Oct 1, 2021)
+-throwing new warnings for Elbow forecast (fixed in v343)
+-impact of new treatment of SW_radia_net (w/o canopy corrections) influencing LOWRL forcing functions only
+
+v343 [PASSED BENCHMARKING] (Oct 13, 2021)
+
+v345 [PASSED BENCHMARKING] (Oct 22, 2021)
+
+v346 [PASSED BENCHMARKING] (Nov 10, 2021)
+Alouette2- AET calcs now include lake evap
+Elbow Historic now sending output to right location.
+
+v347 [PASSED BENCHMARKING] (Nov 19, 2021)
+-precip mods to reservoir not ready for prime time; turned off in Solvers.cpp
+
+v348 [PASSED BENCHMARKING] (Nov 21, 2021)
+-fixed precip mods; changes to LOTW due to direct precip on lake w/o in-catchment routing 
+
+v351 [PASSED BENCHMARKING] (Nov 28, 2021)
+-very minor precision changes to Elbow Historic hydro/storage
+
+v353 [PASSED BENCHMARKING] (Dec 12, 2021)
+BIG CHANGE - re-ordered .rvc parse and model initialization.
+-changes to Elbow historical due to correctly reading channel storage from rvc file; was being overwritten before. No changes to states/flows.
+-Irond, Salmon GR4J, HMETS, Mixed - minor solution.rvc file difference - multiple tables now being (intentionally) written
+
+v356 [PASSED BENCHMARKING] (Jan 11, 2022)
+-changes to LOTW due to different interpolation of stage-discharge curve for natural lakes - hydrographs different, but diagnostics agree to 3 digits.
+
+v358 [PASSED BENCHMAARKING] (Jan 22, 2022)
+
+v362 [PASSED BENCHMARKING] (Feb 3, 2022)
+-cosmetic differences in Diagnostics.csv across the board due to including [SBID]. 
+-despite ChannelXSection changes, no hydrograph impacts.
+
+v364 [PASSED BENCHMARKING] (Feb 5, 2022)
+Fixed Lievre input files (was just running with errors as output because ??? from the tutorial was still there) 
+HOWEVER, CAUSES ISSUES WHEN MANNINGS_N is specified by file; BENCHMARK SUITE MISSES THIS
+
+v367 [PASSED BENCHMARKING] (Feb 14, 2022) 
+-faulty results for elbow in comparison to working v366/v371 - seems to be reconciled
+
+v368 [PASSED BENCHMARKING] (Feb 15, 2022)
+minor difference in Salmon_mixed diagnostics. Fixed off-by-one-timestep error in startdate of evaluation period for hydrographs
+
+v377 [PASSED BENCHMARKING] (Mar 14, 2022)
+no issues (multiple successful benchmarks between this and v368)
+
+v381 [PASSED BENCHMARKING] (April 7, 2022)
+units difference in RAINFALL/SNOWFALL custom output for .tb0 generating models
+fixed diagnostics in Nith 
+
+v387 [PASSED BENCHMARKING] (Aug 10, 2022)
+-fix to SOIL_EVAP_ROOT took care of internal errors with all York models (results were blowing up even if KGE was better)
+-MB error now at zero rather than -2000mm
+-AET reporting fix difference appears in 02EB011 model output and LOTW solution 
+-weir coeff>1 errors thrown in LOTW model 
+
+v388 [PASSED] (Aug 30, 2022)
+-some strange changes to LOTW model but I think it is something random in the reservoir convergence of something upstream of LakeOfTheWoods (subbasin 50 and 42 are the only ones changed) (resolved in v399)
+
+v391 [PASSED] (Oct 28, 2022)
+-similar random issues in LOTW, everything else is good (resolved in v399)
+
+v395 [PASSED] (Jan 18 2023) [VERSION 3.6]
+
+v395->v396 [PASSED] (Feb 21, 2023)
+-important bug fix to CForcingGrid::GetTimeIndex caused differences in 02EB011 blended RDRS model, Lievre model, and York_nc3 model; was causing incorrect read of netcdf input with non-daily input interval 
+ 
+v396-v401 [PASSED] (Mar 9, 2023)
+-Julies bug fix adjusts LOTW results to now no longer be random. (v399)
+-changes to solution file for all models with addition of RUNOFF variable (v401)
+-bug fixes to properly handle calculation of TEMP_AVE in gridded output in v400
+
+v402-v403 [PASSED BENCHMARKING] (Mar 17, 2023)
+
+v403->v405 [PASSED BENCHMARKING] (Mar 20, 2023)
+
+v406->v407 [PASSED] (April 6, 2023)
+
+v407->v408 [PASSED] (April 17, 2023)
