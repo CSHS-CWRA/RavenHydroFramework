@@ -331,7 +331,7 @@ double CModel::EstimatePET(const force_struct &F,
       double        wt=_PETBlends_wts[i];
       PET+=wt*EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,etyp,Options,tt,open_water);
 
-      if(isnan(PET)) {
+      if(rvn_isnan(PET)) {
         ExitGracefully("EstimatePET: NaN value produced in PET_BLENDED calculation by one or more PET routines",RUNTIME_ERR);return 0.0;
       }
 

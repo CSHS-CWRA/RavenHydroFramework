@@ -2927,6 +2927,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       delete[] aWts;
       pModel->AddProcess(pProcGroup);
+      pMover=pProcGroup;
       pProcGroup=NULL;
       if(pProcGroupOuter!=NULL) {
         pProcGroup=pProcGroupOuter;

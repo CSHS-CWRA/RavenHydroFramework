@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright © 2008-2021 the Raven Development Team
+Copyright (c) 2008-2021 the Raven Development Team
 ------------------------------------------------------------------
 */
 #include "GWSWProcesses.h"

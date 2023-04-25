@@ -970,9 +970,9 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
             val=aTmp2D[it][_IdxNonZeroGridCells[ic]];
-            if(val==missval) { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
-            if(val==fillval) { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
-            if(isnan(val))   { CheckValue2D(val,NAN,    it,_IdxNonZeroGridCells[ic]); }
+            if(val==missval)  { CheckValue2D(val,missval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "missing_value"
+            if(val==fillval)  { CheckValue2D(val,fillval,it,_IdxNonZeroGridCells[ic]); }  // throw error if value to read in equals "_FillValue"
+            if(rvn_isnan(val)){ CheckValue2D(val,NAN,    it,_IdxNonZeroGridCells[ic]); }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
@@ -1696,7 +1696,6 @@ double CForcingGrid::GetGridWeight(const int k,
   if ((CellID<0) || (CellID>=nCells  )){ExitGracefully("CForcingGrid::GetGridWeight: invalid CellID index",RUNTIME_ERR); }
   if (_GridWeight==NULL){ ExitGracefully("CForcingGrid::GetGridWeight: NULL Grid weight matrix",RUNTIME_ERR); }
 #endif
-  //  \todo[optimize] - could we send in i instead?
   for(int i=0; i<_nWeights[k];i++) 
   {
     if(_GridWtCellIDs[k][i]==CellID) { return _GridWeight[k][i]; }

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroUnits.h"
 
@@ -95,6 +95,14 @@ void CHRUGroup::Initialize()
 void CHRUGroup::DisableGroup()
 {
   _disabled=true;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief empties HRU Group
+//
+void CHRUGroup::EmptyGroup()
+{
+  _nHRUs=0;
+  delete [] _pHRUs; _pHRUs=NULL; //deletes pointers only
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns average value of a state variable specified by index i over the total area covered by the HRU group

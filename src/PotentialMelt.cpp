@@ -82,7 +82,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
       double           wt=_PotMeltBlends_wts[i];
       melt+=wt*EstimatePotentialMelt(F,etyp,Options,pHRU,tt);
 
-      if(isnan(melt)) {
+      if(rvn_isnan(melt)) {
         ExitGracefully("EstimatePotentialMelt: NaN value produced in POTMELT_BLENDED calculation by one or more POTMELT routines",RUNTIME_ERR);return false;
       }
     }

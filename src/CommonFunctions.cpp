@@ -199,7 +199,7 @@ From Kavetski & Kuczera, 2007
 
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Enforces positivity of input value \cite Kavetski2007WRR
-/// \todo [funct] Work needed here if smoothing is to be used
+/// \todo [funct] Work needed here if smoothing is to be used - should probably DELETE ENTIRELY
 ///
 /// \param &val [in] input value on which positivity is enforced
 /// \return Returns the value itself if it is greater than 0.0, otherwise returns 0.0.
@@ -1415,7 +1415,7 @@ bool rvn_isnan(const double& x) {
 #ifdef __BORLANDC__
   return (bool)(pdMath_isnan(x));
 #else
-  return isnan(x);
+  return std::isnan(x);
 #endif
 }
 ////////////////////////////////////////////////////////////////////

@@ -513,7 +513,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
   else if(type==INF_XINANXIANG) 
   {
     // from Jayawardena, AW and MC Zhou A modified spatial soil moisture storage capacity distribution curve for the Xinanjiang model. 
-    // Journal of Hydrology, 227(1-4), p93–113, 2000
+    // Journal of Hydrology, 227(1-4), p93-113, 2000
 
     double b=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_b;
     double c=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_shp; [-0.5<c<0.5]

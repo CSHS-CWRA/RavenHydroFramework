@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef HYDROUNITS_H
 #define HYDROUNITS_H
@@ -189,6 +189,7 @@ public:/*-------------------------------------------------------*/
   void AddHRU(CHydroUnit *pHRU);
   void DisableGroup();
   void Initialize();
+  void EmptyGroup();
 
   string            GetName            () const;
   int               GetNumHRUs         () const;

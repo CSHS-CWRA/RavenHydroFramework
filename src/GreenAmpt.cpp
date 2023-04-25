@@ -214,8 +214,8 @@ double epsilon (const double &t,
 /// spatially variable conductivity\n
 /// if eps_in:\n=0, then only linear approximation (eqn 10 from Craig et al)\n \cite Craig2010HP
 ///         =1, then use dirac approx of epsilon integral\n
-///                              =2, then use 2pt gauss integration of epsilon integral\n
-///                              =3, then numerically integrate epsilon integral
+///         =2, then use 2pt gauss integration of epsilon integral\n
+///         =3, then numerically integrate epsilon integral
 /// \ref Craig et al., 2010 \cite Craig2010HP
 /// \param &t [in] time since onset of rainfall
 /// \param &alpha [in] Alpha value
@@ -287,7 +287,7 @@ double Smooth_GA_k( const double &t,  //time since onset of rainfall
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates heterogeneous Green Ampt runoff
 /// \details Calculates runoff (mm/day) from rainfall (rainthru) using upscaled Green ampt infiltration method
-/// \ref Craig et al., 2010 Craig, J.R., G.Liu, and E.D. Soulis, Runoff-infiltration partitioning using an upscaled Green-Ampt solution, Hydrologic Processes, 24(16), p2328–2334, 2010 \cite Craig2010HP
+/// \ref Craig et al., 2010 Craig, J.R., G.Liu, and E.D. Soulis, Runoff-infiltration partitioning using an upscaled Green-Ampt solution, Hydrologic Processes, 24(16), p2328-2334, 2010 \cite Craig2010HP
 /// \param &rainthru [in] Rainthru [mm/d]
 /// \param *S [in] Pointer to soil properties
 /// \param thickness [in] Soil layer thickness [mm]

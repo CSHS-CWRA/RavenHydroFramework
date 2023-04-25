@@ -116,7 +116,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   {
     //Calculates incoming long-wave terrain emmission radiation using sky view factor
     //Sicart et al. (2005), Incoming longwave radiation to melting snow: observations, sensitivity and estimation in
-    //northern environments, Hydrological Processes, 20, 3697 – 3708 
+    //northern environments, Hydrological Processes, 20, 3697-3708 
     //Ported over from CRHM (Pomeroy et al., 2007)
     double Vf       =pHRU->GetSurfaceProps()->sky_view_factor;//0.7
     //double epsilon_s=pHRU->GetSurfaceProps()->surface_emissivity;
@@ -295,7 +295,7 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
   }
   case(SW_CLOUD_CORR_ANNANDALE): 
   // Annandale et al (2002), Software for missing data error analysis of Penman-Monteith 
-  // reference evapotranspiration, Irrigation Science 21(2),pp57–67
+  // reference evapotranspiration, Irrigation Science 21(2),pp57-67
   {
     double kRs=0.16;   // interior = ~0.16/coastal~=0.19
     if(F->temp_daily_max>F->temp_daily_min) {

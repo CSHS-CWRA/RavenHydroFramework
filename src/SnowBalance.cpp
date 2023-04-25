@@ -876,6 +876,7 @@ void CmvSnowBalance::TwoLayerBalance(const double   *state_vars,
                                      const time_struct &tt,
                                      double     *rates) const
 {
+  //two layer snow mass balance based upon that of Wigmosta et al.,A distributed hydrology-vegetation model for complex terrain,  1994
 
   //initialize storage varaibles
   //------------------------------------------------------------------------

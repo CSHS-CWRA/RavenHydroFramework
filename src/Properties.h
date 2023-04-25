@@ -328,12 +328,12 @@ struct terrain_struct
 struct UBC_lapse
 { //defined in UBCWM manual
   double A0STAB;  ///< [0..1] Precipitation gradient modification factor (default 0.01)
-  double A0TLXM;  ///< [°C / 1000 m] Lapse rate for maximum temperatures when  the station elevation is less than 2000 m (default 10)
-  double A0TLNM;  ///< [°C / 1000 m] Lapse rate for minimum temperatures when the station elevation is less than 2000 m (default 0.5)
-  double A0TLXH;  ///< [°C / 1000 m] Lapse rate for maximum temperatures when the station elevation is greater than 2000 m (default 6.4)
-  double A0TLNH;  ///< [°C / 1000 m] Lapse rate for minimum temperatures when the station elevation is greater than 2000 m (default 2.0)
-  double P0TEDL;  ///< [°C / 1000 m] Lapse rate of maximum temperature range for elevations below 2000 m (default 6.0)
-  double P0TEDU;  ///< [°C / 1000 m] Lapse rate of maximum temperature range for elevations above 2000 m (default 0.0)
+  double A0TLXM;  ///< [degC / 1000 m] Lapse rate for maximum temperatures when  the station elevation is less than 2000 m (default 10)
+  double A0TLNM;  ///< [degC / 1000 m] Lapse rate for minimum temperatures when the station elevation is less than 2000 m (default 0.5)
+  double A0TLXH;  ///< [degC / 1000 m] Lapse rate for maximum temperatures when the station elevation is greater than 2000 m (default 6.4)
+  double A0TLNH;  ///< [degC / 1000 m] Lapse rate for minimum temperatures when the station elevation is greater than 2000 m (default 2.0)
+  double P0TEDL;  ///< [degC / 1000 m] Lapse rate of maximum temperature range for elevations below 2000 m (default 6.0)
+  double P0TEDU;  ///< [degC / 1000 m] Lapse rate of maximum temperature range for elevations above 2000 m (default 0.0)
   double E0LLOW;  ///< [m] Reference elevation for precipitation gradient P0GRADL
   double E0LMID;  ///< [m] Elevation above which precipitation gradient P0GRADM applies. Set at approx. 1/2 barrier height
   double E0LHI;   ///< [m] Elevation above which the precipitation gradient P0GRADU applies.  Set at approx. 2/3 barrier height
@@ -341,7 +341,7 @@ struct UBC_lapse
   double P0GRADM; ///< [%, 0..20] Precipitation gradient factor for elevations below E0LHI (default 0)
   double P0GRADU; ///< [%, 0..20] Precipitation gradient factor for elevations above E0LHI (default 0)
   double A0PELA;  ///< [mm / 1000 m] Lapse rate of potential evapotranspiration factor A0EDDF (default 0.9)
-  double max_range_temp; ///< [°C] (A0TERM)
+  double max_range_temp; ///< [degC] (A0TERM)
   double A0PPTP;  ///< [mm/d] Threshold precipitation for temperature lapse rate (default 5.0)
 };
 
@@ -362,18 +362,18 @@ struct UBC_snow_par{
 //
 struct global_struct
 {
-  double           adiabatic_lapse;          ///< [°C/km]
-  double           wet_adiabatic_lapse;      ///< [°C/km]
+  double           adiabatic_lapse;          ///< [degC/km]
+  double           wet_adiabatic_lapse;      ///< [degC/km]
   double           precip_lapse;             ///< [mm/d/km] precipitation lapse rate for orographic correction
 
-  double           rainsnow_temp;            ///< [°C] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
-  double           rainsnow_delta;           ///< [°C] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
+  double           rainsnow_temp;            ///< [degC] rain/snow halfway transition temperature  (-0.15 for dingman, 0.0 for HBV, ~1 for UBC)
+  double           rainsnow_delta;           ///< [degC] range of rain-snow transition zone (around rainsnow_temp) (4.0 for HBV, 2.0 for UBC)
   double           snow_SWI;                 ///< [0..1] ~0.05, 0.07 irreducible water saturation fraction of snow
                                              //   =WHC in HBV-EC, WATCAP in UBCWM, SWI in GAWSER
   double           snow_SWI_min;             ///< [0..1] minimum irreducible sat fraction
   double           snow_SWI_max;             ///< [0..1] maximum irreducible sat fraction
   double           SWI_reduct_coeff;         ///< [1/mm] SWI reduction factor with cumulative snowmelt
-  double           snow_temperature;         ///< [°C]   default snow temperature if not explicitly modelled
+  double           snow_temperature;         ///< [degC]   default snow temperature if not explicitly modelled
   double           snow_roughness;           ///< [m]  roughness height of snow
   double           min_snow_albedo;          ///< [0..1] very old snow/glacier albedo (~0.3)
   double           max_snow_albedo;          ///< [0..1] albedo of fresh snow  (~0.95)

@@ -66,6 +66,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
 //    else if(!strcmp(s[0],":IrrigationDemand"      )) { code=16; }//removes flow from basin
 //    else if(!strcmp(s[0],":UpdateStateVariable"   )) { code=17; }
 //    else if(!strcmp(s[0],":UpdateParameter"       )) { code=18; }
+    else if(!strcmp(s[0],":RepopulateHRUGroup"  )) { code=20; }
     switch(code)
     {
     case(-1):  //----------------------------------------------
@@ -211,6 +212,56 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
       //pSB->GetReservoir()->OverrideFlow(s_to_d(s[2]));
       //JRC: add CReservoir member _overrideQ which takes priority over override Q time series 
       ExitGracefully("ParseLiveFile:SetReservoirFlow",STUB);
+      break;
+    }
+    case(20):  //----------------------------------------------
+    { /*:RepopulateHRUGroup [HRUGroup]
+      1, 8, 19, ..., 34
+      :EndRepopulateHRUGroup
+      */
+      if (Options.noisy) {cout <<"  Repopulate HRU Group..."<<endl;}
+      if (Len!=2){pp->ImproperFormat(s);}
+      CHRUGroup *pHRUGrp=NULL;
+      pHRUGrp=pModel->GetHRUGroup(s[1]);
+      if (pHRUGrp==NULL){//group not yet defined
+        ExitGracefully("ParseLiveFile: :RepopulateHRUGroup command: HRU Groups cannot be repopulated if they haven't been defined",BAD_DATA);
+      }
+      pHRUGrp->EmptyGroup();
+      while ((Len==0) || (strcmp(s[0],":EndRepopulateHRUGroup")))
+      {
+        pp->Tokenize(s,Len);
+        if      (IsComment(s[0], Len)){}//comment line
+        else if (!strcmp(s[0],":EndRepopulateHRUGroup")){}//done
+        else
+        {
+          int k;
+          int nHRUs=pModel->GetNumHRUs();
+          for (int i=0;i<Len;i++)
+          {
+            int ind1,ind2;
+            s_to_range(s[i],ind1,ind2);
+            bool found=false;
+            ExitGracefullyIf((ind2-ind1)>10000,"Parsing :RepopulateHRUGroup command: invalid range of HRU indices",BAD_DATA);
+            bool gaps(false);
+            for (int ii=ind1;ii<=ind2;ii++)
+            {
+              found=false;
+              for (k=0;k<nHRUs;k++)
+              {
+                if (pModel->GetHydroUnit(k)->GetID()==ii)
+                {
+                  pHRUGrp->AddHRU(pModel->GetHydroUnit(k));found=true; break;
+                }
+              }
+              if ((!found) && (ind2-ind1>1)){gaps=true;}
+              if((!found) && (ind1==ind2)) {
+                string warn="ParseLiveFile: HRU ID "+to_string(ii)+" specified in :RepopulateHRUGroup command for group "+pHRUGrp->GetName()+ " does not exist";
+                ExitGracefully(warn.c_str(),BAD_DATA);
+              }
+            }
+          }
+        }
+      }
       break;
     }
     default://------------------------------------------------
