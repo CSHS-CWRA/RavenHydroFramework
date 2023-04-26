@@ -438,8 +438,7 @@
     <ClCompile Include="ChemEquilibrium.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="Raven_BMI.cpp">
-      <Filter>Source Files\_Driver</Filter>
+
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -626,11 +625,7 @@
     <ClInclude Include="ChemEquilibrium.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
-    <ClInclude Include="Raven_BMI.h">
-      <Filter>Header Files\Model</Filter>
-    </ClInclude>
-    <ClInclude Include="BMI.h">
-      <Filter>Header Files\Model</Filter>
+
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

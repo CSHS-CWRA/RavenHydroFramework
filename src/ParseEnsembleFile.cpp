@@ -72,6 +72,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":OutputDirectoryFormat"))       { code=1;  }
     else if(!strcmp(s[0],":RunNameFormat"))               { code=2;  }
+    else if(!strcmp(s[0],":EnsembleRVCFormat"))           { code=3;  }
     else if(!strcmp(s[0],":ParameterDistributions"))      { code=10; }
     else if(!strcmp(s[0],":ObjectiveFunction"))           { code=11; }
     else if(!strcmp(s[0],":ForcingPerturbation"))         { code=12; }
@@ -156,6 +157,12 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     {/*:RunNameFormat [runn name, with * for ensemble number locale] */
       if(Options.noisy) { cout <<"RunNameFormat"<<endl; } 
       pEnsemble->SetRunNames(s[1]); //No spaces!
+      break;
+    }
+    case(3):  //----------------------------------------------
+    {/*:EnsembleRVCFormat [solution file names, with * for ensemble number locale] */
+      if(Options.noisy) { cout <<"Ensemble RVC Format"<<endl; } 
+      pEnsemble->SetSolutionFiles(s[1]); //No spaces!
       break;
     }
     case(10):  //----------------------------------------------

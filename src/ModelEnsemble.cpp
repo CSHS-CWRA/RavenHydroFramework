@@ -47,10 +47,15 @@ CEnsemble::CEnsemble(const int num_members,const optStruct &Options)
   _aRunNames=new string[_nMembers];
   ExitGracefullyIf(_aRunNames==NULL,"CEnsemble constructor (2)",OUT_OF_MEMORY);
 
+  _aSolutionFiles  =NULL;
+  _aSolutionFiles=new string[_nMembers];
+  ExitGracefullyIf(_aRunNames==NULL,"CEnsemble constructor (2)",OUT_OF_MEMORY);
+
   for(int e=0;e<_nMembers;e++) //default - everything runs in same directory
   {
     _aOutputDirs[e]=Options.main_output_dir;
     _aRunNames  [e]=Options.run_name;
+    _aSolutionFiles[e]=""; //default is that Raven finds solution files - either Options.rvc_filename OR EnKF output results 
   }
 
   _disable_output=false;
@@ -62,6 +67,7 @@ CEnsemble::~CEnsemble()
 {
   delete [] _aOutputDirs;
   delete [] _aRunNames;
+  delete [] _aSolutionFiles;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Accessor - gets number of ensemble members
@@ -108,13 +114,10 @@ void CEnsemble::SetRandomSeed(const unsigned int seed)
 //
 void CEnsemble::SetOutputDirectory(const string OutDirString) 
 {
-  size_t pos=OutDirString.find("*");
-  int ee;
   for(int e=0;e<_nMembers;e++)
   {
-    ee=e;
     _aOutputDirs[e]=OutDirString;
-    if(pos!=string::npos){ _aOutputDirs[e].replace(pos,1,to_string(ee+1)); }
+    SubstringReplace(_aOutputDirs[e],"*",to_string(e+1));
     _aOutputDirs[e]=_aOutputDirs[e]+"/"; //add trailing backslash
   }
 }
@@ -124,18 +127,24 @@ void CEnsemble::SetOutputDirectory(const string OutDirString)
 //
 void CEnsemble::SetRunNames(const string RunNameString) 
 {
-  size_t pos=RunNameString.find("*");
-  int ee;
-  string ename;
   for(int e=0;e<_nMembers;e++)
   {
-    ee=e;
-    ename=to_string(ee+1);
     _aRunNames[e]=RunNameString;
-    if(pos!=string::npos) { _aRunNames[e].replace(pos,1,to_string(ee+1)); }
+    SubstringReplace(_aRunNames[e],"*",to_string(e+1)); //replaces wildcard for ensemble runs
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief sets solution file names for each ensemble member
+/// \param SolFilesString [in] string with or without '*' random card. If * is present, will be replaced with ensemble ID
+//
+void CEnsemble::SetSolutionFiles(const string SolFilesString) 
+{
+  for(int e=0;e<_nMembers;e++)
+  {
+    _aSolutionFiles[e]=SolFilesString;
+    SubstringReplace(_aSolutionFiles[e],"*",to_string(e+1)); //replaces wildcards for ensemble runs
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief initializes ensemble
 /// \param &Options [out] Global model options information

@@ -741,7 +741,7 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
 
   //- update output file/ run names ----------------------------
   Options.output_dir=_aOutputDirs[e];
-  Options.run_name  =_aRunNames  [e];
+  Options.run_name  =_aRunNames  [e]; //typically fixed for EnKF
 
   //if closed-loop, re-read initial conditions from state-adjusted solution_EnKF.rvc
   //if open-loop, read initial conditions from unadjusted solution.rvc files 
@@ -751,11 +751,13 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
     if(_warm_runname=="") { solfile="solution_EnKF.rvc"; }
     else                  { solfile=_warm_runname+"_"+"solution_EnKF.rvc"; }
     Options.rvc_filename=_aOutputDirs[e]+solfile;
+    if (_aSolutionFiles[e] != ""){Options.rvc_filename=_aSolutionFiles[e]; } //Allows storage elsewhere -requires user to know whether these are EnKF or not
   }
   else if ((_EnKF_mode==ENKF_OPEN_LOOP) || (_EnKF_mode == ENKF_OPEN_FORECAST)) {
     if(_warm_runname=="") { solfile="solution.rvc"; }
     else                  { solfile=_warm_runname+"_"+"solution.rvc"; }
     Options.rvc_filename=_aOutputDirs[e]+solfile;
+    if (_aSolutionFiles[e] != ""){Options.rvc_filename=_aSolutionFiles[e]; } //Allows storage elsewhere -requires user to know whether these are EnKF or not
   }
   else {//if(_EnKF_mode==ENKF_SPINUP) 
     Options.rvc_filename=_orig_rvc_file;

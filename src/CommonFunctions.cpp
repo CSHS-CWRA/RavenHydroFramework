@@ -1260,7 +1260,7 @@ bool IsComment(const char *s, const int Len)
   return false;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief replaces all instances of substring 'from' with string 'to in string str
+/// \brief replaces all instances of substring 'from' with string 'to' in string str
 /// \param &str [in/out] string subjected to modification
 /// \param &from [in] substring to be replaced
 /// \param &to [in]  substring to replace it with
