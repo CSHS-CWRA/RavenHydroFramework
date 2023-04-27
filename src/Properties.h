@@ -294,6 +294,7 @@ struct surface_struct
   double forest_PET_corr;   ///< [-]       fraction of PET to apply to forest evapotranspiration
   double AET_coeff;         ///< [-]       linear AET coefficient
   double priestleytaylor_coeff; ///< [-]   Priestley-Taylor coefficient (defaults to 1.28)
+  double pet_lin_coeff;     ///< [mm/d/K]  linear PET relation with temperature ~(0.1-0.3)
 
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient
 

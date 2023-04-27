@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "RavenInclude.h"
@@ -3509,6 +3509,7 @@ evap_method ParseEvapMethod(const string s)
   else if (!strcmp(tmp.c_str(),"PET_OUDIN"             )){return PET_OUDIN;}
   else if (!strcmp(tmp.c_str(),"PET_LINACRE"           )){return PET_LINACRE; }
   else if (!strcmp(tmp.c_str(),"PET_BLENDED"           )){return PET_BLENDED; }
+  else if (!strcmp(tmp.c_str(),"PET_LINEAR_TEMP"       )){return PET_LINEAR_TEMP; }
   else{
     return PET_UNKNOWN;
   }

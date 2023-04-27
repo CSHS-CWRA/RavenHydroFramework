@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Properties.h"
@@ -21,6 +21,9 @@ void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_m
   if(evaporation==PET_DATA)
   {
     // timeseries at gauge
+  }
+  else if (evaporation == PET_LINEAR_TEMP) {
+    aP[nP]="PET_LIN_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
   }
   else if(evaporation==PET_FROMMONTHLY)
   {

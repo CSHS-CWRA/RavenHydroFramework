@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
 
   Routines for calculating PET:
   -Penman Monteith Equation
@@ -301,6 +301,13 @@ double CModel::EstimatePET(const force_struct &F,
   case(PET_NONE):
   {
     PET =0.0; break;
+  }
+  //-------------------------------------------------------------------------------------
+  case(PET_LINEAR_TEMP) :
+  { //used in MAC-HBV
+    double alpha=pHRU->GetSurfaceProps()->pet_lin_coeff; //[mm/d/C]
+    PET=alpha*max(F.temp_daily_ave,0.0);
+    break;
   }
   //-------------------------------------------------------------------------------------
   case(PET_DATA):

@@ -401,6 +401,7 @@ enum evap_method
   PET_CONSTANT,                 ///< constant uniform PET
   PET_DATA,                     ///< read PET from time series file
   PET_NONE,                     ///< all PET calculations disabled - PET==0 (for Routing only mode)
+  PET_LINEAR_TEMP,              ///< linearly proportional to temperature above zero
   PET_FROMMONTHLY,              ///< PET estimated from specified monthly averages and daily temperature
   PET_MONTHLY_FACTOR,           ///< PET estimated from specified monthly averages and daily temperature (UBCWM-style)
   PET_PENMAN_MONTEITH,          ///< Penman-Monteith equation
