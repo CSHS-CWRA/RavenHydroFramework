@@ -20,21 +20,22 @@ CModel::CModel(const int        nsoillayers,
                const optStruct &Options)
 {
   int i;
-  _nSubBasins=0;    _pSubBasins=NULL;
-  _nHydroUnits=0;   _pHydroUnits=NULL;
-  _nHRUGroups=0;    _pHRUGroups=NULL;
-  _nSBGroups=0;     _pSBGroups=NULL;
-  _nGauges=0;       _pGauges=NULL;
-  _nForcingGrids=0; _pForcingGrids=NULL;
-  _nProcesses=0;    _pProcesses=NULL;
-  _nCustomOutputs=0;_pCustomOutputs=NULL;
-  _nTransParams=0;  _pTransParams=NULL;
-  _nClassChanges=0; _pClassChanges=NULL;
-  _nObservedTS=0;   _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
-  _nObsWeightTS =0; _pObsWeightTS=NULL;
-  _nDiagnostics=0;  _pDiagnostics=NULL;
-  _nDiagPeriods=0;  _pDiagPeriods=NULL;
-  _nAggDiagnostics=0;_pAggDiagnostics=NULL;
+  _nSubBasins=0;      _pSubBasins=NULL;
+  _nHydroUnits=0;     _pHydroUnits=NULL;
+  _nHRUGroups=0;      _pHRUGroups=NULL;
+  _nSBGroups=0;       _pSBGroups=NULL;
+  _nGauges=0;         _pGauges=NULL;
+  _nForcingGrids=0;   _pForcingGrids=NULL;
+  _nProcesses=0;      _pProcesses=NULL;
+  _nCustomOutputs=0;  _pCustomOutputs=NULL;
+  _nTransParams=0;    _pTransParams=NULL;
+  _nClassChanges=0;   _pClassChanges=NULL;
+  _nParamOverrides=0; _pParamOverrides=NULL;
+  _nObservedTS=0;     _pObservedTS=NULL; _pModeledTS=NULL; _aObsIndex=NULL;
+  _nObsWeightTS =0;   _pObsWeightTS=NULL;
+  _nDiagnostics=0;    _pDiagnostics=NULL;
+  _nDiagPeriods=0;    _pDiagPeriods=NULL;
+  _nAggDiagnostics=0; _pAggDiagnostics=NULL;
   
   _nTotalConnections=0;
   _nTotalLatConnections=0;
@@ -177,10 +178,11 @@ CModel::~CModel()
   if (_aShouldApplyProcess!=NULL){
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
   }
-  for (kk=0;kk<_nHRUGroups;kk++){delete _pHRUGroups[kk]; } delete [] _pHRUGroups;   _pHRUGroups  =NULL;
-  for (kk=0;kk<_nSBGroups;kk++ ){delete _pSBGroups[kk];  } delete [] _pSBGroups;     _pSBGroups  =NULL; 
-  for (j=0;j<_nTransParams;j++) {delete _pTransParams[j];} delete [] _pTransParams; _pTransParams=NULL;
-  for (j=0;j<_nClassChanges;j++){delete _pClassChanges[j];} delete [] _pClassChanges; _pClassChanges=NULL;
+  for (kk=0;kk<_nHRUGroups;kk++)  {delete _pHRUGroups[kk];    } delete [] _pHRUGroups;      _pHRUGroups  =NULL;
+  for (kk=0;kk<_nSBGroups;kk++ )  {delete _pSBGroups[kk];     } delete [] _pSBGroups;       _pSBGroups  =NULL; 
+  for (j=0;j<_nTransParams;j++)   {delete _pTransParams[j];   } delete [] _pTransParams;    _pTransParams=NULL;
+  for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
+  for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
 
   delete [] _aStateVarType;  _aStateVarType=NULL;
   delete [] _aStateVarLayer; _aStateVarLayer=NULL;
@@ -603,9 +605,10 @@ CSubbasinGroup  *CModel::GetSubBasinGroup(const string name) const
   return NULL;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns true if subbasin with global index k is in specified subbasin Group
+/// \brief Returns true if subbasin with subbasin ID SBID is in specified subbasin Group
 ///
-/// \param SBID [in] subbasin identifier/// \param SBGroupName [in] String name of subbasin group
+/// \param SBID [in] subbasin identifier
+/// \param SBGroupName [in] String name of subbasin group
 /// \return true if subbasin SBID is in subbasin Group specified by SBGroupName
 //
 bool CModel::IsInSubBasinGroup(const long SBID,const string SBGroupName) const
@@ -1260,6 +1263,17 @@ void CModel::AddTransientParameter(CTransientParam   *pTP)
   if (!DynArrayAppend((void**&)(_pTransParams),(void*)(pTP),_nTransParams)){
     ExitGracefully("CModel::AddTransientParameter: adding NULL transient parameter",BAD_DATA);}
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Adds parameter override to model
+///
+/// \param *pTP [in] (valid) pointer to transient parameter to be added to model
+//
+void CModel::AddParameterOverride(param_override   *pPO)
+{
+  if (!DynArrayAppend((void**&)(_pParamOverrides),(void*)(pPO),_nParamOverrides)){
+    ExitGracefully("CModel::AddParameterOverride: adding NULL override",BAD_DATA);}
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Adds class change to model
 ///
@@ -1554,6 +1568,19 @@ void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, co
     _PotMeltBlends_type[i]=aPM[i];
     _PotMeltBlends_wts [i]=wts[i];   
   }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Gets basin blended forcing number of weighted groups 
+/// \param label [in] String property identifier
+/// \return number of blended weights of basin corresponding to label
+//
+
+int CModel::GetBlendedForcingsNumWeights(const string label)
+{
+    string label_n = StringToUppercase(label);
+    if      (!label_n.compare("PETBLENDEDWEIGHTS"    )) { return _PETBlends_N; }
+    else if (!label_n.compare("POTMELTBLENDEDWEIGHTS")) { return _PotMeltBlends_N; }
+    return 0;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Deletes all custom outputs (For FEWS override)
@@ -1923,6 +1950,33 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
     }
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief overrides global parameters in subbasin groups
+/// \notes called only from solver within HRU loop 
+///
+/// \param k [in] global HRU index
+/// \param revert [in] true if reverting to base value, false if changing to overridden value
+//
+void CModel::ApplyLocalParamOverrrides(const int k, const bool revert) 
+{
+  for (int i=0;i<_nParamOverrides;i++)
+  {
+    if (_pParamOverrides[i]->aHRUIsOverridden[k]) {
+      if (!revert){
+        for (int j=0; j<_pParamOverrides[i]->nVals; j++){
+          _pParamOverrides[i]->pxAddress[j] = _pParamOverrides[i]->aValues[j];
+          
+        }
+      }
+      else{
+        for (int j=0; j<_pParamOverrides[i]->nVals; j++){
+          _pParamOverrides[i]->pxAddress[j] = _pParamOverrides[i]->aRevertValues[j];
+        }
+      }
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Recalculates HRU derived parameters
 /// \details Recalculate HRU derived parameters that are based upon time-of-year/day and SVs (storage, temp)

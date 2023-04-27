@@ -320,6 +320,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     else if  (!strcmp(s[0],":AvgAnnualRunoff"        )){code=718;}
 
     else if  (!strcmp(s[0],":GlobalParameter"        )){code=720;}
+    else if  (!strcmp(s[0],":GlobalParameterOverride")){code=721;}
+    else if  (!strcmp(s[0],":SBGroupOverrideWeights" )){code=722;}
 
     else if  (!strcmp(s[0],":UBCNorthSWCorr"         )){code=750;}  //TEMP
     else if  (!strcmp(s[0],":UBCSouthSWCorr"         )){code=751;}  //TEMP
@@ -1218,10 +1220,113 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     case(720):  //----------------------------------------------
     {/*:GlobalParameter
-       string ":GlobalParameter" {string PARAMETER_NAME} {double value}*/
+       :GlobalParameter {string PARAMETER_NAME} {double value}*/
       if (Options.noisy){cout <<"Global Parameter"<<endl;}
       if (Len<3){p->ImproperFormat(s); break;}
       CGlobalParams::SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
+      break;
+    }
+    case(721):  //----------------------------------------------
+    {/*:GlobalParameterOverride
+       :GlobalParameterOverride {string PARAMETER_NAME} {string SBGroupName} {double value}
+       */
+      if (Options.noisy){cout <<"Global Parameter Override"<<endl;}
+      if (Len<4){p->ImproperFormat(s); break;}
+      param_override *pPO=new param_override();
+      pPO->nVals=1;
+      pPO->aValues=new double [1];
+      pPO->aRevertValues=new double [1];
+
+      pPO->param_name  =s[1];
+      pPO->SBGroup_name=s[2];
+      pPO->aValues[0]  =s_to_d(s[3]);
+      pPO->aRevertValues[0]=0;
+
+      pModel->AddParameterOverride(pPO);
+      break;
+    }
+    case(722):  //----------------------------------------------
+    { /*
+      :SBGroupOverrideWeights [PROPERTY] [SBGROUP] [value1] [value2] ... [valueN]
+      :SBGroupOverrideWeights [PROPERTY] [SBGROUP]  w1 w2 .. wN // generically with N weights
+      :SBGroupOverrideWeights [PROPERTY] [SBGROUP]   r1 r2 r(N-1) // generically with N-1 uniform numbers      
+      e.g.,
+      :SBGroupOverrideWeights PETBlendedWeights [SBGROUP]  w1 w2 w3
+      :SBGroupOverrideWeights PETBlendedWeights [SBGROUP]  r1 r2 
+      :SBGroupOverrideWeights POTMELTBlendedWeights [SBGROUP]  w1 w2 w3 w4
+      :SBGroupOverrideWeights POTMELTBlendedWeights [SBGROUP]  r1 r2 r3
+	  */
+      bool directweights;
+
+      CSubbasinGroup* pSBGrp;
+      if (Len >= 4) {
+        pSBGrp = pModel->GetSubBasinGroup(s[1]);
+        if (pSBGrp == NULL) {
+            WriteWarning(":SBGroupOverrideWeights: invalid subbasin group (" + to_string(s[1]) + ") specified", Options.noisy);
+            break;
+        }
+
+        // currently the N is the same for all subbasins. This may change in the future (?)
+        int N = pModel->GetBlendedForcingsNumWeights(s[1]);
+        double* uniform_nums = new double[N-1];
+        double* wts          = new double[N];
+        double  sum          = 0.0;
+			
+        if ((Len - 3) == (N - 1)) {// calculate weights        
+            directweights = false;
+        }
+        else if ((Len - 3) == N) {
+            directweights = true;
+        }
+        else {
+            WriteWarning("ParseClassPropertiesFile: incorrect number of weights or uniform numbers in :SBGroupOverrideWeights command. Contents ignored.", Options.noisy);
+            break;
+        }
+
+        if (directweights == true) {
+          for (int i = 0; i < N; i++) {
+            wts[i] = s_to_d(s[i + 3]);
+            sum += wts[i];
+          }
+          //ensure weights add exactly to 1
+          if (fabs(sum - 1.0) < 0.05) {
+            for (int i = 0; i < N; i++) { wts[i] /= sum; }
+          }
+          else {
+            WriteWarning("ParseClassPropertiesFile: Weights in :SBGroupOverrideWeights command with SubBasinGroup " + pSBGrp->GetName() + " do not add to 1.0. Contents ignored.", Options.noisy); 
+            break;
+          }
+        }
+        else {
+          // calculate weights based on pieshare algorithm, treat provided values as uniform seeds
+          for (int i = 0; i < N-1; i++) {
+              uniform_nums[i] = s_to_d(s[i + 3]);
+          }
+          CalcWeightsFromUniformNums(uniform_nums, wts, N);
+        }
+
+        // update weights in SubBasin group
+
+        param_override *pPO=new param_override();
+        pPO->nVals=N;
+        pPO->aValues=new double [N];
+        pPO->aRevertValues=new double [N];
+
+        pPO->param_name  =s[1];
+        pPO->SBGroup_name=s[2];
+        for (int i = 0; i < N; i++) {
+          pPO->aValues[i]  =wts[i];
+          pPO->aRevertValues[i]=0;
+        }
+        
+        pModel->AddParameterOverride(pPO);
+
+		    delete[] uniform_nums;
+        delete[] wts;
+      }
+      else {
+        WriteWarning(":SBGroupOverrideWeights: improper syntax", Options.noisy);
+      }
       break;
     }
     case(800):  //----------------------------------------------

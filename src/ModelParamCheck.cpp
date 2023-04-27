@@ -268,14 +268,16 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   }
   else if(Options.ow_evaporation==PET_FROMMONTHLY)
   {
-    // \todo [funct] Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    // \todo [clean] Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    // //now handled in gauge QA/QC 
     //aP[nP]=":MonthlyAveEvaporation"; aPC[nP]=CLASS_; nP++;
     //aP[nP]=":MonthlyAveTemperature"; aPC[nP]=CLASS_; nP++;
   }
   else if(Options.ow_evaporation==PET_MONTHLY_FACTOR)
   {
     aP[nP]="FOREST_PET_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
-    // \todo [funct] Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    // \todo [clean] Parameters are located in the RVT file, and there's no checking routine for that file yet.
+    // // //now handled in gauge QA/QC 
     //aP[nP]=":MonthlyEvapFactor";   aPC[nP]=CLASS_; nP++;
   }
   else if(Options.ow_evaporation==PET_PENMAN_MONTEITH)

@@ -1672,6 +1672,24 @@ double TimeVaryingADRCumDist(const double &t,const double &L,const double *v, in
   return F;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief calculates N process weights from N-1 numbers ranging from 0 to 1
+///
+/// \param *aVals [in/out] array of weight seeds (uniform numbers) between 0 and 1 (size:N-1)
+/// \param *aWeights [in/out] array of weights between 0 and 1 (size:N)
+/// \param N [in] size of aWeights to use 
+/// From Mai et al., The pie sharing problem: Unbiased sampling of N+1 summative weights, Environmental Modelling and Software, 148, 105282, doi:10.1016/j.envsoft.2021.105282, 2022
+//
+void CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int N)
+{
+    double sum = 0.0;
+    for (int q = 0; q < (N - 1); q++) {
+        aWeights[q] = (1.0 - sum) * (1.0 - pow(1.0 - aVals[q], 1.0 / (N - q - 1)));
+        sum += aWeights[q];
+    }
+    aWeights[N - 1] = 1.0 - sum;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Quicksort algorithm
 /// \author coded by Ayman Khedr, 3A Environmental University of Waterloo
 ///

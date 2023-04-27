@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Class CGlobalParams
   ----------------------------------------------------------------*/
@@ -36,6 +36,8 @@ public:/*-------------------------------------------------------*/
   static void InitializeGlobalParameters (global_struct &G, bool is_template);
   static void SetGlobalProperty          (global_struct &G, const string  param_name, const double value);
   static double GetGlobalProperty        (const global_struct &G, string  param_name, const bool strict=true);
+
+  static double *GetAddress(const string param_name);
 
   static void SummarizeToScreen();
 };

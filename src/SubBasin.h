@@ -227,13 +227,13 @@ public:/*-------------------------------------------------------*/
 
   CReservoir     *GetReservoir             () const;
 
+  double          GetBasinProperties       (const string label) const;
+
   //Manipulator functions
   //called during model construction/assembly:
   void            AddHRU                   (CHydroUnit *pHRU);
   void            AddReservoir             (CReservoir *pReservoir);
-  bool            SetBasinProperties       (const string label,
-                                            const double &value);
-  double          GetBasinProperties       (const string label);
+  bool            SetBasinProperties       (const string label,const double &value);
   void            SetAsNonHeadwater        ();
   double          CalculateBasinArea       ();
   void            Initialize               (const double    &Qin_avg,          //[m3/s]

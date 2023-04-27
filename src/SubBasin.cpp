@@ -947,7 +947,7 @@ bool CSubBasin::SetBasinProperties(const string label,
 /// \param label [in] String property identifier
 /// \return value of basin property corresponding to label
 //
-double CSubBasin::GetBasinProperties(const string label)
+double CSubBasin::GetBasinProperties(const string label) const
 {
   string label_n = StringToUppercase(label);
   if      (!label_n.compare("TIME_CONC"     ))  {return _t_conc;}
@@ -1337,7 +1337,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if(Options.catchment_routing==ROUTE_DUMP              ){_t_peak=AUTO_COMPUTE;}
 
     if (_t_peak     ==AUTO_COMPUTE){
-      _t_peak=0.3*_t_conc; /// \todo [fix hack] better means of determining needed
+      _t_peak=0.3*_t_conc; 
       _t_peak*=CGlobalParams::GetParams()->TIME_TO_PEAK_multiplier;
     }
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}

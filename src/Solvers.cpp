@@ -185,6 +185,7 @@ void MassEnergyBalance( CModel            *pModel,
     for (k=0;k<nHRUs;k++)
     {
       pHRU=pModel->GetHydroUnit(k);
+      pModel->ApplyLocalParamOverrrides(k, false); 
 
       if(pHRU->IsEnabled()) 
       {
@@ -227,6 +228,7 @@ void MassEnergyBalance( CModel            *pModel,
           }
         }//end for j=0 to nProcesses
       }
+      pModel->ApplyLocalParamOverrrides(k, true); 
     }//end for k=0 to nHRUs
 
   }//end if Options.sol_method==ORDERED_SERIES

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CProcessGroup
@@ -57,7 +57,7 @@ public:/*-------------------------------------------------------*/
   //manipulator functions
   void AddProcess(CHydroProcessABC *pProc);
   void SetWeights(const double *aWts, const int nVal);
-  void CalcWeightsFromUniformNums(const double *aVals,const int nVal);
+  void CalcWeights(const double *aVals,const int nVal);
 };
 
 #endif

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2018 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ProcessGroup.h"
 
@@ -196,18 +196,12 @@ void CProcessGroup::SetWeights(const double *aWts, const int nVal)
 /// \param *aVals [in] array of weight seeds between 0 and 1
 /// \param nVal [in] number of weight seeds
 //
-void CProcessGroup::CalcWeightsFromUniformNums(const double *aVals,const int nVal)
+void CProcessGroup::CalcWeights(const double *aVals,const int nVal)
 {
   if(nVal!=_nSubProcesses-1) {
     WriteWarning("CProcessGroup::SetWeights: Incorrect number of numbers for process group. Weights will be ignored",false);
     return;
   }
-  double sum=0.0;
-  int    N=_nSubProcesses;
-  for(int q=0; q<N-1;q++) {
-    _aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q-1)));
-    sum+=_aWeights[q];
-  }
-  _aWeights[N-1]=1.0-sum;
+  CalcWeightsFromUniformNums(aVals, _aWeights, _nSubProcesses);
 }
 

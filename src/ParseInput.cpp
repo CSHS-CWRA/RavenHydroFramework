@@ -48,7 +48,6 @@ int  ParseSVTypeIndex          (string s,  CModel *&pModel);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
 void AddNetCDFAttribute        (optStruct &Options,const string att,const string &val);
-void CalcWeightsFromUniformNums(const double *aVals, double *aWeights, int N);
 
 void FromToErrorCheck          (string cmd,string sFrom,string sTo,sv_type tFrom,sv_type tTo);
 
@@ -878,7 +877,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"NONE"            )){Options.orocorr_PET=OROCORR_NONE;}
       else if (!strcmp(s[1],"OROCORR_HBV"     )){Options.orocorr_PET=OROCORR_HBV;}
       else if (!strcmp(s[1],"OROCORR_PRMS"    )){Options.orocorr_PET=OROCORR_PRMS;}
-      //else if (!strcmp(s[1],"OROCORR_UBCWM"   )){Options.orocorr_PET=OROCORR_UBCWM;}
+      else if (!strcmp(s[1],"OROCORR_UBCWM"   )){Options.orocorr_PET=OROCORR_UBCWM;}
       else if (!strcmp(s[1],"OROCORR_NONE"    )){Options.orocorr_PET=OROCORR_NONE;}
       else{
         ExitGracefully("ParseMainInputFile: Unrecognized Orographic PET Correction Method",BAD_DATA_WARN);
@@ -2915,7 +2914,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Len==N+1) {
         if(!strcmp(s[1],"CALCULATE_WTS")) { 
           for(i=0;i<N-1;i++) { aWts[i]=s_to_d(s[i+2]); }
-          pProcGroup->CalcWeightsFromUniformNums(aWts,N-1);
+          pProcGroup->CalcWeights(aWts,N-1);
         }
         else {    
           for(i=0;i<N;i++) { aWts[i]=s_to_d(s[i+1]); }
@@ -3473,22 +3472,6 @@ void AddNetCDFAttribute(optStruct &Options,const string att,const string &val)
   delete[]Options.aNetCDFattribs;
   Options.aNetCDFattribs=&aTmp[0];
   Options.nNetCDFattribs++;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief calculates N process weights from N-1 numbers ranging from 0 to 1
-///
-/// \param *aVals [in/out] array of weight seeds (uniform numbers) between 0 and 1
-/// \param *aWeights [in/out] array of weights between 0 and 1
-/// \param N [in] size of aWeights to use (expect aVals to be of size N-1)
-//
-void CalcWeightsFromUniformNums(const double *aVals, double *aWeights, int N)
-{
-  double sum=0.0;
-  for(int q=0; q<(N-1);q++) {
-    aWeights[q]=(1.0-sum)*(1.0-pow(1.0-aVals[q],1.0/(N-q-1)));
-    sum+=aWeights[q];
-  }
-  aWeights[N-1]=1.0-sum;
 }
 
 ///////////////////////////////////////////////////////////////////

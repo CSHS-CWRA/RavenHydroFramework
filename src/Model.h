@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef MODEL_H
 #define MODEL_H
@@ -87,10 +87,13 @@ private:/*------------------------------------------------------*/
 
   int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
 
-  int             _nTransParams;  ///< number of transient parameters
-  CTransientParam**_pTransParams; ///< array of pointers to transient parameters with time series
-  int            _nClassChanges;  ///< number of HRU Group class changes
-  class_change **_pClassChanges;  ///< array of pointers to class_changes
+  int                 _nTransParams;  ///< number of transient parameters
+  CTransientParam   **_pTransParams;  ///< array of pointers to transient parameters with time series
+  int                _nClassChanges;  ///< number of HRU Group class changes
+  class_change     **_pClassChanges;  ///< array of pointers to class_changes
+  int              _nParamOverrides;  ///< number of local parameter overrides 
+  param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides 
+
 
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
@@ -152,7 +155,7 @@ private:/*------------------------------------------------------*/
   const optStruct   *_pOptStruct; ///< pointer to model options information
 
   //Blended PET/potential melt members
-  int              _PETBlends_N;       ///< Not the best place to store these rarely used members
+  int              _PETBlends_N;       ///< Not the best place to store these rarely used members \todo : move to globals 
   evap_method     *_PETBlends_type;
   double          *_PETBlends_wts; 
   int              _PotMeltBlends_N;
@@ -171,6 +174,7 @@ private:/*------------------------------------------------------*/
                                        const time_struct &tt);
   void         WriteNetcdfMinorOutput (const optStruct   &Options,
                                        const time_struct &tt);
+  void    InitializeParameterOverrides();
 
   //private routines used during simulation:
   force_struct      GetAverageForcings() const;
@@ -227,7 +231,11 @@ private:/*------------------------------------------------------*/
                                       const optStruct    &Options,
                                       const CHydroUnit   *pHRU,
                                       const time_struct  &tt);
-
+  double         EstimateSnowFraction(const rainsnow_method  method,
+                                      const CHydroUnit* pHRU,
+                                      const force_struct* F,
+                                      const optStruct& Options);
+														 
   double       CalculateAggDiagnostic(const int ii, const int j,
                                       const double &starttime, const double &endtime, 
                                       const comparison compare,const double &thresh,
@@ -347,11 +355,12 @@ public:/*-------------------------------------------------------*/
   void    AddSubBasinGroup          (        CSubbasinGroup    *pSBGrp          );
   void    AddGauge                  (        CGauge            *pGage           );
   void    AddForcingGrid            (        CForcingGrid      *pGrid           , forcing_type typ);
-  void    AddStateVariables         (const sv_type           *aSV,
-                                     const int               *aLev,
-                                     const int                nSV               );
-  void    AddCustomOutput           (        CCustomOutput     *pCO             );
-  void    AddTransientParameter     (        CTransientParam   *pTP             );
+  void    AddStateVariables         (const sv_type             *aSV,
+                                     const int                 *aLev,
+                                     const int                  nSV             );
+  void    AddCustomOutput           (      CCustomOutput       *pCO             );
+  void    AddTransientParameter     (      CTransientParam     *pTP             );
+  void    AddParameterOverride      (      param_override      *pPO             );
   void    AddPropertyClassChange    (const string             HRUgroup,
                                      const class_type         tclass,
                                      const string             new_class,
@@ -376,6 +385,7 @@ public:/*-------------------------------------------------------*/
   void    SetPETBlendValues         (const int N, const evap_method    *aET, const double *wts);
   void    SetPotMeltBlendValues     (const int N, const potmelt_method *aPM, const double *wts);
 
+  int     GetBlendedForcingsNumWeights(const string label);
   void    DeleteCustomOutputs       ();
 
   /*--Other Functions: mostly called by Solver--*/
@@ -392,6 +402,9 @@ public:/*-------------------------------------------------------*/
                                           const string      pname,
                                           const string      cname,
                                           const double      &value);
+  void        ApplyLocalParamOverrrides  (const int         k,
+                                          const bool        revert);
+
   //called during simulation:
   //critical simulation routines (called once during each timestep):
   void        UpdateTransientParams      (const optStruct   &Options,

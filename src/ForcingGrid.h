@@ -160,9 +160,9 @@ public:/*------------------------------------------------------*/
                                            const double     weight);                    ///< sets one entry of _GridWeight[HRUID, CellID] = weight
   bool   CheckWeightArray(                 const int        nHydroUnits,
                                            const int        nGridCells,
-                                           const CModel    *pModel);                ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
+                                           const CModel    *pModel);                    ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   double GetGridWeight(                    const int        k,
-                                           const int        CellID) const;              ///< returns weighting of HRU and CellID pair
+                                           const int        CellID) const;              ///< returns weighting of HRU and CellID pair \todo[clean]: function not used
   double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
                                            const double     global_model_time)  const;  ///< returns index in current chunk corresponding to model time step \todo[clean]: function not used
   double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,

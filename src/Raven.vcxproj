@@ -713,12 +713,10 @@
     <ClCompile Include="ConstituentModel.cpp" />
     <ClCompile Include="MassRouting.cpp" />
     <ClCompile Include="ParseGWFile.cpp" />
-    <ClCompile Include="Raven_BMI.cpp" />
     <ClCompile Include="RiverReach.cpp" />
     <ClCompile Include="SoilBalance.cpp" />
     <ClCompile Include="StageDischargeRelations.cpp" />
     <ClCompile Include="Transport.cpp" />
-    <ClCompile Include="RobinInterface.cpp" />
     <ClCompile Include="SubbasinGroups.cpp" />
     <ClCompile Include="SurfaceEnergyExchange.cpp" />
     <ClCompile Include="Flush.cpp" />
@@ -949,7 +947,6 @@
   <ItemGroup>
     <ClInclude Include="Advection.h" />
     <ClInclude Include="Albedo.h" />
-    <ClInclude Include="BMI.h" />
     <ClInclude Include="ChemEquilibrium.h" />
     <ClInclude Include="ControlStructures.h" />
     <ClInclude Include="Convolution.h" />
@@ -966,7 +963,6 @@
     <ClInclude Include="MassLoading.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="MFUSGpp.h" />
-    <ClInclude Include="Raven_BMI.h" />
     <ClInclude Include="RiverReach.h" />
     <ClInclude Include="RobinInterface.h" />
     <ClInclude Include="StageDischargeRelations.h" />

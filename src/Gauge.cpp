@@ -234,7 +234,6 @@ void CGauge::Initialize(const optStruct   &Options,
 
   // Check for monthly values, when needed
   //--------------------------------------------------------------------------
-  // \todo [??] should move to CModel::GetParticipatingParamList
   ExitGracefullyIf((_aAveTemp[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY)),
                    "CGauge::Initialize: monthly temps for gauge not specified, but are needed",BAD_DATA);
   ExitGracefullyIf((_aAvePET[0]==NOT_SPECIFIED) && ((Options.evaporation==PET_FROMMONTHLY) || (Options.evaporation==PET_MONTHLY_FACTOR)),

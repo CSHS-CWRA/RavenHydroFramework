@@ -738,7 +738,7 @@ void CmvSnowBalance::ColdContentBalance(const double             *state_vars,
   const double MELT_FAC=1.5;//[MJ/m2-d-K],
   const double LAIMLT  =0.2;
   const double SAIMLT  =0.5;
-  const double MAXLQF  =0.05;//Liquid water holding capacity
+  const double SWI=CGlobalParams::GetParams()->snow_SWI;
 
   double Ta        =pHRU->GetForcingFunctions()->temp_daily_ave;
   double day_length=pHRU->GetForcingFunctions()->day_length;
@@ -832,7 +832,7 @@ void CmvSnowBalance::ColdContentBalance(const double             *state_vars,
       melt_to_SW=threshMin(eq_en_avail,S/tstep-melt_to_liq,0.0);
       rates[3]+=melt_to_SW;//snow->surface water
 
-      shrinking_poro=melt_to_SW*MAXLQF;
+      shrinking_poro=melt_to_SW*SWI;
       rates[4]+=shrinking_poro;//snow_liq->surface water
     }
   }

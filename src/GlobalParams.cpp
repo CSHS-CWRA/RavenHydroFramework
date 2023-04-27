@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "GlobalParams.h"
@@ -549,6 +549,25 @@ double CGlobalParams::GetParameter(const string param_name)
 {
   return CGlobalParams::GetGlobalProperty(G,param_name);
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief gets global property corresponding to param_name
+/// \param param_name [in] Parameter identifier
+/// \returns value of parameter
+//
+double *CGlobalParams::GetAddress(const string name)
+{
+  if      (!name.compare("SNOW_SWI"            )){return &(G.snow_SWI);}
+  else if (!name.compare("SNOW_TEMPERATURE"    )){return &(G.snow_temperature);}
+  else if (!name.compare("RAINSNOW_TEMP"       )){return &(G.rainsnow_temp);}
+  else if (!name.compare("RAINSNOW_DELTA"      )){return &(G.rainsnow_delta);}
+  else if (!name.compare("ADIABATIC_LAPSE"     )){return &(G.adiabatic_lapse);}
+  else if (!name.compare("WET_ADIABATIC_LAPSE" )){return &(G.wet_adiabatic_lapse);}
+  else if (!name.compare("PRECIP_LAPSE"        )){return &(G.precip_lapse);}
+
+  return NULL;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Returns global parameter value corresponding to param_name from global variable structure provided
 /// \param &G [in] global variable structure

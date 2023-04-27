@@ -43,9 +43,12 @@ string CDiagnostic::GetName() const
   case(DIAG_DAILY_NSE):         {return "DIAG_DAILY_NSE"; }
   case(DIAG_RMSE):              {return "DIAG_RMSE";}
   case(DIAG_PCT_BIAS):          {return "DIAG_PCT_BIAS";}
+  case(DIAG_ABS_PCT_BIAS):      {return "DIAG_ABS_PCT_BIAS"; }
   case(DIAG_ABSERR):            {return "DIAG_ABSERR";}
   case(DIAG_ABSMAX):            {return "DIAG_ABSMAX";}
   case(DIAG_PDIFF):             {return "DIAG_PDIFF";}
+  case(DIAG_PCT_PDIFF):         {return "DIAG_PCT_PDIFF";}
+  case(DIAG_ABS_PCT_PDIFF):     {return "DIAG_ABS_PCT_PDIFF";}
   case(DIAG_TMVOL):             {return "DIAG_TMVOL";}
   case(DIAG_RCOEF):             {return "DIAG_RCOEF"; }
   case(DIAG_NSC):               {return "DIAG_NSC";}
@@ -444,6 +447,31 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       return ALMOST_INF;
     }
   }
+  case(DIAG_ABS_PCT_BIAS)://-------------------------------------------------
+  {
+      double sum1(0.0), sum2(0.0);
+      N = 0;
+      for (nn = nnstart; nn < nnend; nn++)
+      {
+          weight = baseweight[nn];
+          obsval = pTSObs->GetSampledValue(nn);
+          modval = pTSMod->GetSampledValue(nn);
+
+          sum1 += weight * (modval - obsval);
+          sum2 += weight * obsval;
+          N += weight;
+      }
+      if (N > 0.0)
+      {
+          return fabs( 100.0 * sum1 / sum2);
+      }
+      else
+      {
+          string warn = "DIAG_ABS_PCT_BIAS not calculated. Missing non-zero weighted observations during simulation duration.";
+          WriteWarning(warn, Options.noisy);
+          return ALMOST_INF;
+      }
+  }
   case(DIAG_ABSERR) ://----------------------------------------------------
   {
     double sum=0.0;
@@ -526,6 +554,64 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       WriteWarning(warn, Options.noisy);
       return -ALMOST_INF;
     }
+  }
+  case(DIAG_PCT_PDIFF)://----------------------------------------------------
+  {
+      double maxObs = 0;
+      double maxMod = 0;
+      double N = 0;
+
+      for (nn = nnstart; nn < nnend; nn++)
+      {
+          obsval = pTSObs->GetSampledValue(nn);
+          modval = pTSMod->GetSampledValue(nn);
+          weight = baseweight[nn];
+
+          if (weight > 0) {
+              if (obsval > maxObs) { maxObs = obsval; }
+              if (modval > maxMod) { maxMod = modval; }
+              N += weight;
+          }
+      }
+      if (N > 0.0)
+      {
+          return (100.0 * maxMod - maxObs)/maxObs;
+      }
+      else
+      {
+          string warn = "DIAG_PCT_PDIFF not calculated. Missing non-zero weighted observations during simulation duration.";
+          WriteWarning(warn, Options.noisy);
+          return -ALMOST_INF;
+      }
+  }
+  case(DIAG_ABS_PCT_PDIFF)://----------------------------------------------------
+  {
+      double maxObs = 0;
+      double maxMod = 0;
+      double N = 0;
+
+      for (nn = nnstart; nn < nnend; nn++)
+      {
+          obsval = pTSObs->GetSampledValue(nn);
+          modval = pTSMod->GetSampledValue(nn);
+          weight = baseweight[nn];
+
+          if (weight > 0) {
+              if (obsval > maxObs) { maxObs = obsval; }
+              if (modval > maxMod) { maxMod = modval; }
+              N += weight;
+          }
+      }
+      if (N > 0.0)
+      {
+          return abs(100.0*(maxMod - maxObs) / maxObs);
+      }
+      else
+      {
+          string warn = "DIAG_ABS_PCT_PDIFF not calculated. Missing non-zero weighted observations during simulation duration.";
+          WriteWarning(warn, Options.noisy);
+          return -ALMOST_INF;
+      }
   }
   case(DIAG_TMVOL) ://----------------------------------------------------
   {
@@ -1265,9 +1351,12 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("DAILY_NSE"            )){return DIAG_DAILY_NSE; }
   else if (!distring.compare("RMSE"                 )){return DIAG_RMSE;}
   else if (!distring.compare("PCT_BIAS"             )){return DIAG_PCT_BIAS;}
+  else if (!distring.compare("ABS_PCT_BIAS"         )){return DIAG_ABS_PCT_BIAS; }
   else if (!distring.compare("ABSERR"               )){return DIAG_ABSERR;}
   else if (!distring.compare("ABSMAX"               )){return DIAG_ABSMAX;}
   else if (!distring.compare("PDIFF"                )){return DIAG_PDIFF;}
+  else if (!distring.compare("PCT_PDIFF"            )){return DIAG_PCT_PDIFF;}
+  else if (!distring.compare("ABS_PCT_PDIFF"        )){return DIAG_ABS_PCT_PDIFF;}
   else if (!distring.compare("TMVOL"                )){return DIAG_TMVOL;}
   else if (!distring.compare("RCOEF"                )){return DIAG_RCOEF;}
   else if (!distring.compare("NSC"                  )){return DIAG_NSC;}

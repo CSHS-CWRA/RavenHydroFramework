@@ -125,6 +125,9 @@ void CModel::Initialize(const optStruct &Options)
   for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(Options);}
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups  [kk]->Initialize(); } //disables HRUs
   for (pp=0;pp<_nSBGroups; pp++){_pSBGroups   [pp]->Initialize(); } //disables SBs and HRUs
+
+  InitializeParameterOverrides();
+
   // Forcing grids are not "Initialized" here because the derived data have to be populated everytime a new chunk is read
 
   // QA/QC Check for partial or full disabling of basin HRUs (after HRU group initialize, must be before area calculation)
@@ -689,6 +692,64 @@ void CModel::ClearTimeSeriesData(const optStruct& Options)
   }
   for(c=0;c<_pTransModel->GetNumConstituents();c++) {
     _pTransModel->GetConstituentModel(c)->ClearTimeSeriesData(Options);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief initializes all paramter override structures
+///
+//
+void CModel::InitializeParameterOverrides() 
+{
+  for (int i=0;i<_nParamOverrides;i++)
+  {
+    //determines memory address location of the appropriate global variable
+    // this is the only time we mess with addresses like this in the code - merely for speed
+    string name=_pParamOverrides[i]->param_name;
+    if      (name == "PET_BLEND_WTS") { //special case 
+      _pParamOverrides[i]->pxAddress=_PETBlends_wts;
+      for (int i=0;i<_PETBlends_N;i++){
+        _pParamOverrides[i]->aRevertValues[i] =_PETBlends_wts[i];
+      }
+    }
+    else if (name == "POTMELT_BLEND_WTS") {
+      _pParamOverrides[i]->pxAddress=_PotMeltBlends_wts;
+      for (int i=0;i<_PotMeltBlends_N;i++){
+        _pParamOverrides[i]->aRevertValues[i] =_PotMeltBlends_wts[i];
+      }
+    }
+    else 
+    {
+      double *address=CGlobalParams::GetAddress(name);
+      if (address==NULL){
+        ExitGracefully("CModel::InitializeParameterOverrides() : Invalid or unsupported global parameter name in :LocalParameterOverride command",BAD_DATA);
+      }
+      _pParamOverrides[i]->pxAddress=address;
+      
+      _pParamOverrides[i]->aRevertValues[0] = CGlobalParams::GetParameter(name);
+    }
+
+    _pParamOverrides[i]->aHRUIsOverridden=new bool [_nHydroUnits];
+
+    // Search for SB Group - this is done here so that group can be read in .rvp without knowledge of SB groups 
+    int pp=DOESNT_EXIST;
+    string sbg_name=_pParamOverrides[i]->SBGroup_name;
+    for (int j=0;j<_nSBGroups;j++){
+      if (_pSBGroups[j]->GetName()==sbg_name){pp=j; break;}
+    }
+    if (pp==DOESNT_EXIST){
+      ExitGracefully("CModel::InitializeParameterOverrides() : Invalid subbasin group in :LocalParameterOverride command",BAD_DATA);
+    }
+
+    // determine HRUs in which this applies
+    for (int k=0;k<_nHydroUnits;k++){
+      long SBID=_pSubBasins[_pHydroUnits[k]->GetSubBasinIndex()]->GetID();
+       _pParamOverrides[i]->aHRUIsOverridden[k]=(_pSBGroups[pp]->IsInGroup(SBID));
+    }
+  }
+  if (_nParamOverrides > 0) {
+    string warn="One or more global parameter overrides are used in this model. These can have high computational overhead and should be used sparingly";
+    WriteWarning(warn.c_str(),true);
   }
 }
 

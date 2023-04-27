@@ -1574,6 +1574,7 @@ double TriCumDist       (const double &t, const double &tc, const double &tp);
 double NashCumDist      (const double &t, const double &k, const int &NR);
 double ADRCumDist       (const double &t, const double &L, const double &v, const double &D);
 double TimeVaryingADRCumDist(const double &t,const double &L,const double *v,int nv,const double &D,const double &dt);
+void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int N);
 
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
@@ -1614,9 +1615,6 @@ double TemperatureEnthalpyDerivative         (const double &hv);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp
-double EstimateSnowFraction       (const rainsnow_method method,
-                                   const force_struct       *F,
-                                   const optStruct          &Options);
 double CalcFreshSnowDensity       (const double &air_temp);
 double GetSnowThermCond           (const double &snow_dens);
 double GetSensibleHeatSnow        (const double &air_temp,const double &surf_temp,const double &V, const double &ref_ht, const double &rough);

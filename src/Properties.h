@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Properties.h
   ------------------------------------------------------------------
@@ -419,4 +419,36 @@ struct global_struct
   double           windvel_icept;            ///< [m/s] intercept parameter for regression between wind vel. and F(T_max-T_min)
   double           windvel_scale;            ///< [changes] slope parameter for regression between wind vel. and F(T_max-T_min)
 };
+// parameter override structure 
+struct param_override 
+{
+  string  SBGroup_name;
+  string  param_name;
+
+  int     nVals;
+  double *aValues;
+  double *aRevertValues; 
+  
+  bool   *aHRUIsOverridden; 
+  double *pxAddress; 
+
+  param_override()  /* Constructor */
+  {
+    SBGroup_name="";
+    param_name="";
+
+    nVals=0;
+    aValues=NULL;
+    aRevertValues=NULL;
+    aHRUIsOverridden=NULL;
+    pxAddress=NULL;
+  }
+  ~param_override() /* Destructor */
+  {
+    delete [] aValues;
+    delete [] aRevertValues;
+    delete [] aHRUIsOverridden;
+  }
+};
+
 #endif

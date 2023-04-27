@@ -625,8 +625,6 @@
     <ClInclude Include="ChemEquilibrium.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
-
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc">

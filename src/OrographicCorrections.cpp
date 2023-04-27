@@ -351,7 +351,6 @@ void CModel::CorrectPET(const optStruct &Options,
       max_month_temp+=_aGaugeWtTemp[k][g]*max;
       min_month_temp+=_aGaugeWtTemp[k][g]*min;
     }
-    /// \todo: repair for southern hemisphere
 
     sat_vap_max=GetSaturatedVaporPressure(max_month_temp);
     sat_vap_min=GetSaturatedVaporPressure(min_month_temp);

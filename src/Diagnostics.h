@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef _DIAGNOSTICS_H
 #define _DIAGNOSTICS_H
@@ -13,9 +13,12 @@ enum diag_type {
   DIAG_DAILY_NSE,
   DIAG_RMSE,
   DIAG_PCT_BIAS,
+  DIAG_ABS_PCT_BIAS,
   DIAG_ABSERR,
   DIAG_ABSMAX,
   DIAG_PDIFF,
+  DIAG_PCT_PDIFF,
+  DIAG_ABS_PCT_PDIFF,
   DIAG_TMVOL,
   DIAG_RCOEF,
   DIAG_NSC,
