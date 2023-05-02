@@ -226,10 +226,10 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   if(_nMembers==0) {
     ExitGracefully("CEnKFEnsemble::Initialize: number of EnKF ensemble members must be >0",BAD_DATA);
   }
-  if(_nPerturbations==0) {
+  if ((_nPerturbations==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
     ExitGracefully("CEnKFEnsemble::Initialize: at least one forcing perturbation must be set using :ForcingPerturbation command",BAD_DATA);
   }
-  if(_nAssimStates==0) {
+  if ((_nAssimStates==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
     ExitGracefully("CEnKFEnsemble::Initialize: at least one assimilated state must be set in :ForcingPerturbation command",BAD_DATA);
   }
 
@@ -312,12 +312,14 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
       }
     }
   }
-  ExitGracefullyIf(_nObs==0          ,"EnKF::Initialize : no observations available for assimilation. Use :AssimilateStreamflow command to indicate enabled observation time series",BAD_DATA);
+  if ((_nObs==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
+    ExitGracefully("EnKF::Initialize : no observations available for assimilation. Use :AssimilateStreamflow command to indicate enabled observation time series",BAD_DATA);
+  }
 
-  if (_nObsDatapoints==0){//DELTARES_REV - if no obs found, just skip assimilation 
+  if ((_nObsDatapoints==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {//DELTARES_REV - if no obs found, just skip assimilation 
     WriteWarning("EnKF::Initialize : no observations were available for assimilation. EnKF assimilation updates will not be performed.",Options.noisy);
   }
-  else{
+  else if (_nObsDatapoints>0) {
     cout<<"ENKF: Found "<<_nObsDatapoints<<" valid observation data points for assimilation. Observation matrices built."<<endl;
   }
 

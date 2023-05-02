@@ -56,12 +56,15 @@ potmelt_method ParsePotMeltMethod(const string s);
 
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the .rvc and other initialization file, called by main
-/// must be called AFTER model initialization
+/// must be called AFTER model initialization, and ONLY once, even in ensemble mode
 ///
 bool ParseInitialConditions(CModel*& pModel, const optStruct& Options) 
 {
-  if (!ParseInitialConditionsFile(pModel,Options)){
-    ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
+  if (pModel->GetEnsemble()->GetType() != ENSEMBLE_ENKF) 
+  {
+    if (!ParseInitialConditionsFile(pModel,Options)){
+      ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
+    }
   }
   if (!ParseNetCDFStateFile(pModel, Options)) {
     ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;

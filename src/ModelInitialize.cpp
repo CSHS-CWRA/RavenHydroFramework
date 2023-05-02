@@ -708,14 +708,14 @@ void CModel::InitializeParameterOverrides()
     string name=_pParamOverrides[i]->param_name;
     if      (name == "PET_BLEND_WTS") { //special case 
       _pParamOverrides[i]->pxAddress=_PETBlends_wts;
-      for (int i=0;i<_PETBlends_N;i++){
-        _pParamOverrides[i]->aRevertValues[i] =_PETBlends_wts[i];
+      for (int j=0;j<_PETBlends_N;j++){
+        _pParamOverrides[i]->aRevertValues[j] =_PETBlends_wts[j];
       }
     }
     else if (name == "POTMELT_BLEND_WTS") {
       _pParamOverrides[i]->pxAddress=_PotMeltBlends_wts;
-      for (int i=0;i<_PotMeltBlends_N;i++){
-        _pParamOverrides[i]->aRevertValues[i] =_PotMeltBlends_wts[i];
+      for (int j=0;j<_PotMeltBlends_N;j++){
+        _pParamOverrides[i]->aRevertValues[j] =_PotMeltBlends_wts[j];
       }
     }
     else 
@@ -730,6 +730,7 @@ void CModel::InitializeParameterOverrides()
     }
 
     _pParamOverrides[i]->aHRUIsOverridden=new bool [_nHydroUnits];
+    ExitGracefullyIf(_pParamOverrides[i]->aHRUIsOverridden==NULL,"InitializeParameterOverrides()",OUT_OF_MEMORY);
 
     // Search for SB Group - this is done here so that group can be read in .rvp without knowledge of SB groups 
     int pp=DOESNT_EXIST;

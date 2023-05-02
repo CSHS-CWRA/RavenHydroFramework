@@ -154,7 +154,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   for (k = 0; k < _nHydroUnits; k++)
   {
     elev  = _pHydroUnits[k]->GetElevation();
-
+    
     ZeroOutForcings(F);
     ref_elev_temp=ref_elev_precip=0.0;
     ref_measurement_ht=0.0;
@@ -168,6 +168,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
     if(_pHydroUnits[k]->IsEnabled())
     {
+      ApplyLocalParamOverrrides(k,false);
+
       //interpolate forcing values from gauges
       //-------------------------------------------------------------------
       for(g = 0; g < _nGauges; g++)
@@ -525,6 +527,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         F.precip-=reduce;
         F.PET   -=reduce;
       }  
+
+      ApplyLocalParamOverrrides(k,true);
     }//end if (!_pHydroUnits[k]->IsDisabled())
 
     //-------------------------------------------------------------------

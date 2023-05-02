@@ -1251,21 +1251,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       :SBGroupOverrideWeights [PROPERTY] [SBGROUP]  w1 w2 .. wN // generically with N weights
       :SBGroupOverrideWeights [PROPERTY] [SBGROUP]   r1 r2 r(N-1) // generically with N-1 uniform numbers      
       e.g.,
-      :SBGroupOverrideWeights PETBlendedWeights [SBGROUP]  w1 w2 w3
-      :SBGroupOverrideWeights PETBlendedWeights [SBGROUP]  r1 r2 
-      :SBGroupOverrideWeights POTMELTBlendedWeights [SBGROUP]  w1 w2 w3 w4
-      :SBGroupOverrideWeights POTMELTBlendedWeights [SBGROUP]  r1 r2 r3
+      :SBGroupOverrideWeights PET_BLEND_WTS [SBGROUP]  w1 w2 w3
+      :SBGroupOverrideWeights PET_BLEND_WTS [SBGROUP]  r1 r2 
+      :SBGroupOverrideWeights POTMELT_BLEND_WTS [SBGROUP]  w1 w2 w3 w4
+      :SBGroupOverrideWeights POTMELT_BLEND_WTS [SBGROUP]  r1 r2 r3
 	  */
       bool directweights;
 
-      CSubbasinGroup* pSBGrp;
       if (Len >= 4) {
-        pSBGrp = pModel->GetSubBasinGroup(s[1]);
-        if (pSBGrp == NULL) {
-            WriteWarning(":SBGroupOverrideWeights: invalid subbasin group (" + to_string(s[1]) + ") specified", Options.noisy);
-            break;
-        }
-
         // currently the N is the same for all subbasins. This may change in the future (?)
         int N = pModel->GetBlendedForcingsNumWeights(s[1]);
         double* uniform_nums = new double[N-1];
@@ -1293,7 +1286,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
             for (int i = 0; i < N; i++) { wts[i] /= sum; }
           }
           else {
-            WriteWarning("ParseClassPropertiesFile: Weights in :SBGroupOverrideWeights command with SubBasinGroup " + pSBGrp->GetName() + " do not add to 1.0. Contents ignored.", Options.noisy); 
+            WriteWarning("ParseClassPropertiesFile: Weights in :SBGroupOverrideWeights command with SubBasinGroup " + to_string(s[2])+ " do not add to 1.0. Contents ignored.", Options.noisy); 
             break;
           }
         }
@@ -1306,17 +1299,17 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         }
 
         // update weights in SubBasin group
-
         param_override *pPO=new param_override();
         pPO->nVals=N;
-        pPO->aValues=new double [N];
+        pPO->aValues      =new double [N];
         pPO->aRevertValues=new double [N];
+        ExitGracefullyIf(pPO->aRevertValues==NULL,"ParseClassPropertiesFile::SBGroupOverrideWeights command",OUT_OF_MEMORY);
 
         pPO->param_name  =s[1];
         pPO->SBGroup_name=s[2];
         for (int i = 0; i < N; i++) {
-          pPO->aValues[i]  =wts[i];
-          pPO->aRevertValues[i]=0;
+          pPO->aValues      [i]  =wts[i];
+          pPO->aRevertValues[i]=0.0;
         }
         
         pModel->AddParameterOverride(pPO);

@@ -1563,7 +1563,7 @@ void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, co
 {
   _PotMeltBlends_N=N;
   _PotMeltBlends_type=new potmelt_method [N];
-  _PotMeltBlends_wts =new double      [N];
+  _PotMeltBlends_wts =new double         [N];
   for (int i = 0; i < N; i++) {
     _PotMeltBlends_type[i]=aPM[i];
     _PotMeltBlends_wts [i]=wts[i];   
@@ -1578,9 +1578,12 @@ void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, co
 int CModel::GetBlendedForcingsNumWeights(const string label)
 {
     string label_n = StringToUppercase(label);
-    if      (!label_n.compare("PETBLENDEDWEIGHTS"    )) { return _PETBlends_N; }
-    else if (!label_n.compare("POTMELTBLENDEDWEIGHTS")) { return _PotMeltBlends_N; }
-    return 0;
+    if      (!label_n.compare("PET_BLEND_WTS"    )) { return _PETBlends_N; }
+    else if (!label_n.compare("POTMELT_BLEND_WTS")) { return _PotMeltBlends_N; }
+    else {
+      ExitGracefully("CModel::GetBlendedForcingsNumWeights: unrecognized blend type",BAD_DATA_WARN);
+      return 0;
+    }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Deletes all custom outputs (For FEWS override)
