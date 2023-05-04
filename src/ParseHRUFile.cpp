@@ -92,8 +92,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":DisableSubBasinGroup"     )){code=14; }
     else if  (!strcmp(s[0],":PopulateSubBasinGroup"    )){code=15; }
     else if  (!strcmp(s[0],":IntersectHRUGroups"       )){code=16; }
-    else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=17; }
-    else if  (!strcmp(s[0],":IntersectSubBasinGroups"  )){code=19; }   
+    else if  (!strcmp(s[0],":IntersectSubBasinGroups"  )){code=17; }
+    else if  (!strcmp(s[0],":MergeHRUGroups"           )){code=18; }
+    else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=19; }  
+    else if  (!strcmp(s[0],":GaugedSubBasinGroup"      )){code=20; }
 
     switch(code)
     {
@@ -883,17 +885,106 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     }
     case(17):  //----------------------------------------------
     { /*
+        :IntersectSubBasinGroups {NewGroup} From {SubBasinGroup1} And {conditionbase} {SubBasinGroup2}
+        e.g.,
+        :IntersectSubBasinGroups SelectSubbasins From subGroup1 And NOTWITHIN subGroup2
+        :IntersectSubBasinGroups SelectSubbasins From subGroup1 And WITHIN    subGroup2
+      */
+        if (Options.noisy) { cout << "   Intersect SubBasin Groups..." << endl; }
+
+        if (Len != 7) {
+            // char advice = ':IntersectSubBasinGroups: invalid syntax used in attempting to construct SubBasinGroup `' + to_string(s[1]) + "`.";
+            ExitGracefully(":IntersectSubBasinGroups: invalid syntax used in attempting to construct new subbasin group", BAD_DATA_WARN);
+        }
+
+        CSubbasinGroup* pSBGroup = NULL;
+        CSubbasinGroup* pSBGroup1 = NULL;
+        CSubbasinGroup* pSBGroup2 = NULL;
+
+        pSBGroup = pModel->GetSubBasinGroup(s[1]);
+        if (pSBGroup == NULL) {//group not yet defined
+            pSBGroup = new CSubbasinGroup(s[1], pModel->GetNumSubBasinGroups());
+            pModel->AddSubBasinGroup(pSBGroup);
+        }
+
+        pSBGroup1 = pModel->GetSubBasinGroup(s[3]);
+        pSBGroup2 = pModel->GetSubBasinGroup(s[6]);
+        if (pSBGroup1 == NULL || pSBGroup2 == NULL) {
+            WriteWarning("ParseHRUFile: Invalid SubBasin Group used in :IntersectSubBasinGroups command. Command ignored", Options.noisy);
+            break;
+        }
+
+        if (!strcmp(s[5], "NOTWITHIN")) {
+            /*for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
+                if (pSBGroup1->IsInGroup(pModel->GetSubBasin(p)->GetID()) & !pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                    pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
+                }
+            }
+            more efficient version below just iterates subbasins in group 1 for this logic
+            */
+            for (int p = 0; p < pSBGroup1->GetNumSubbasins(); p++) {
+                if (!pSBGroup2->IsInGroup(pSBGroup1->GetSubBasin(p)->GetID())) {
+                    pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
+                }
+            }
+        }
+        else if (!strcmp(s[5], "WITHIN")) {
+            for (int p = 0; p < pSBGroup1->GetNumSubbasins(); p++) {
+                if (pSBGroup2->IsInGroup(pSBGroup1->GetSubBasin(p)->GetID())) {
+                    pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
+                }
+            }
+        }
+        else {
+            ExitGracefully(":IntersectSubBasinGroups: invalid condition used in IntersectSubBasinGroups command. Command ignored.", BAD_DATA_WARN);
+        }
+        // string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
+        // WriteAdvisory(advice, Options.noisy);
+        break;
+    }
+    case(18):  //----------------------------------------------
+    { /*
+        :MergeHRUGroups {NewGroup} From {HRUGroup1} {HRUGroup2} ... {HRUGroupN}
+        e.g.,
+        :MergeHRUGroups MainSubbasins From subGroup1 subGroup2 subGroup3
+        */
+        if (Options.noisy) { cout << "   Merge HRU Groups..." << endl; }
+
+        CHRUGroup* pHRUGrp = NULL;
+        pHRUGrp = pModel->GetHRUGroup(s[1]);
+
+        if (pHRUGrp == NULL) {//group not yet defined
+            WriteWarning(":MergeHRUGroups: HRU groups should ideally be defined in .rvi file (using :DefineHRUGroup(s) commands) before being populated in .rvh file (2)", Options.noisy);
+            pHRUGrp = new CHRUGroup(s[1], pModel->GetNumHRUGroups());
+            pModel->AddHRUGroup(pHRUGrp);
+        }
+
+        CHRUGroup* pHRUGrp1 = NULL;
+
+        // iterate string and add HRUs to new group
+        for (int striter = 3; striter < Len; striter++)
+        {
+            pHRUGrp1 = pModel->GetHRUGroup(s[striter]);
+            if (pHRUGrp1 == NULL) {
+                ExitGracefully(":MergeHRUGroups: invalid HRU group reference used in command", BAD_DATA_WARN);
+            }
+            else {
+                for (int k = 0; k < pHRUGrp1->GetNumHRUs(); k++) {
+                    pHRUGrp->AddHRU(pHRUGrp1->GetHRU(k));
+                    // do we need to account for duplicate additions of the same HRU here?
+                }
+            }
+        }
+        // string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
+        // WriteAdvisory(advice, Options.noisy);
+        break;
+    }
+    case(19):  //----------------------------------------------
+    { /*
         :MergeSubBasinGroups {NewGroup} From {SubBasinGroup1} {SubBasinGroup2} ... {SubBasinGroupN}
         e.g.,
         :MergeSubbasinGroups MainSubbasins From subGroup1 subGroup2 subGroup3
-
-        This is an alternative to:
-
-        :PopulateSubBasinGroup subgroup1 With SUBBASINS WITHIN {group2}
-        :PopulateSubBasinGroup subgroup1 With SUBBASINS WITHIN {group3}
-        ...
-        :PopulateSubBasinGroup subgroup1 With SUBBASINS WITHIN {groupN}
-     */
+              */
         if (Options.noisy) { cout << "   Merge SubBasin Groups..." << endl; }
 
         CSubbasinGroup* pSBGroup = NULL;
@@ -904,89 +995,60 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             pModel->AddSubBasinGroup(pSBGroup);
         }
 
-        CSubbasinGroup* pSBGroup2 = NULL;
+        CSubbasinGroup* pSBGroup1 = NULL;
 
         // iterate string and add subbasins to new group
         for (int striter = 3; striter < Len; striter++)
         {
-            pSBGroup2 = pModel->GetSubBasinGroup(s[striter]);
-            if (pSBGroup2 == NULL) {
+            pSBGroup1 = pModel->GetSubBasinGroup(s[striter]);
+            if (pSBGroup1 == NULL) {
                 ExitGracefully(":MergeSubBasinGroups: invalid SB group reference used in command", BAD_DATA_WARN);
             }
             else {
-                for (int p = 0; p < pModel->GetNumSubBasins(); p++)
-                {
+                for (int p = 0; p < pModel->GetNumSubBasins(); p++) {
                     // if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
                     // account for possibility of duplication in subbasins in each group being merged
-                    if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID()) & !pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                    if (pSBGroup1->IsInGroup(pModel->GetSubBasin(p)->GetID()) & !pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
                         pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
                     }
                 }
             }
         }
-        string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
-        WriteAdvisory(advice, Options.noisy);
+        // string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
+        // WriteAdvisory(advice, Options.noisy);
         break;
     }
-    case(19):  //----------------------------------------------
+    case(20):  //----------------------------------------------
     { /*
-        :IntersectSubBasinGroups {NewGroup} From {SubBasinGroup1} And {conditionbase} {SubBasinGroup2} 
+        :GaugedSubBasinGroup {SubBasinGroup}
         e.g.,
-        :IntersectSubBasinGroups SelectSubbasins From subGroup1 And NOTWITHIN subGroup2
-        :IntersectSubBasinGroups SelectSubbasins From subGroup1 And WITHIN    subGroup2
+        :GaugedSubBasinGroup KeyGauges 
       */
-      if (Options.noisy) { cout << "   Intersect SubBasin Groups..." << endl; }
+        if (Options.noisy) { cout << "   GaugedSubBasinGroup..." << endl; }
 
-      if (Len != 7) {
-        // char advice = ':IntersectSubBasinGroups: invalid syntax used in attempting to construct SubBasinGroup `' + to_string(s[1]) + "`.";
-        ExitGracefully(":IntersectSubBasinGroups: invalid syntax used in attempting to construct new subbasin group", BAD_DATA_WARN);
-      }
+        if (Len != 2) {
+            ExitGracefully(":GaugedSubBasinGroup: invalid syntax used in attempting to provide a gauged subbasin group", BAD_DATA_WARN);
+        }
 
-      CSubbasinGroup* pSBGroup  = NULL;
-      CSubbasinGroup* pSBGroup2 = NULL;
-      CSubbasinGroup* pSBGroup3 = NULL;
+        CSubbasinGroup* pSBGroup = NULL;
+        pSBGroup = pModel->GetSubBasinGroup(s[1]);
+        if (pSBGroup == NULL) {
+            ExitGracefully(":GaugedSubBasinGroup: invalid SB group reference used in attempting to provide a gauged subbasin group", BAD_DATA_WARN);
+        }
 
-      pSBGroup = pModel->GetSubBasinGroup(s[1]);
-      if (pSBGroup == NULL) {//group not yet defined
-        pSBGroup = new CSubbasinGroup(s[1], pModel->GetNumSubBasinGroups());
-        pModel->AddSubBasinGroup(pSBGroup);
-      }
-
-      pSBGroup2 = pModel->GetSubBasinGroup(s[3]);
-      if (pSBGroup2 == NULL) {
-        ExitGracefully(":IntersectSubBasinGroups: invalid SB group reference used in attempting to construct new SubBasinGroup", BAD_DATA_WARN);}
-      
-      pSBGroup3 = pModel->GetSubBasinGroup(s[6]);
-      if (pSBGroup3 == NULL) {
-          ExitGracefully(":IntersectSubBasinGroups: invalid SB group reference used in attempting to construct new SubBasinGroup", BAD_DATA_WARN);}
-
-      if (!strcmp(s[5], "NOTWITHIN")) 
-      {
         for (int p = 0; p < pModel->GetNumSubBasins(); p++)
         {
-          // account for possibility of duplication in subbasins in each group being merged
-          if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID()) & 
-             !pSBGroup3->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
-            pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
-          }
+            if (pSBGroup->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
+                pModel->GetSubBasin(p)->SetGauged(true);
+            }
+            else {
+                pModel->GetSubBasin(p)->SetGauged(false); 
+            }
         }
-      }
-      else if (!strcmp(s[5], "WITHIN")) {
-        for (int p = 0; p < pModel->GetNumSubBasins(); p++)
-        {
-          // account for possibility of duplication in subbasins in each group being merged
-          if (pSBGroup2->IsInGroup(pModel->GetSubBasin(p)->GetID()) & 
-              pSBGroup3->IsInGroup(pModel->GetSubBasin(p)->GetID())) {
-            pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
-          }
-        }
-      }
-      else {
-         ExitGracefully(":IntersectSubBasinGroups: invalid condition used in attempting to construct SubBasinGroup.", BAD_DATA_WARN);
-      }
-      string advice = "SubBasinGroup " + to_string(s[1]) + " was populated with " + to_string(pSBGroup->GetNumSubbasins()) + " basin(s).";
-      WriteAdvisory(advice, Options.noisy);
-      break;
+
+        string advice = "Number of gauged subbasins to to " + to_string(pSBGroup->GetNumSubbasins());
+        WriteAdvisory(advice, Options.noisy);
+        break;
     }
     default://------------------------------------------------
     {

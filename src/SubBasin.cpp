@@ -1211,6 +1211,13 @@ void CSubBasin::SetDownstreamBasin(const CSubBasin* pSB) {
   if (_pReservoir!=NULL){_pReservoir->SetDownstreamBasin(pSB); }
 }
 /////////////////////////////////////////////////////////////////
+/// \brief Sets whether basin is gauged
+/// \param isgauged [in] boolean whether subbasin is gauged
+//
+void CSubBasin::SetGauged(const bool isgauged) {
+    _gauged = isgauged;
+}
+/////////////////////////////////////////////////////////////////
 /// \brief Sets basin as disabled
 //
 void CSubBasin::Disable(){
