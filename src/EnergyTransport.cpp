@@ -45,7 +45,7 @@ double CEnthalpyModel::CalculateReportingConcentration(const double &M,const dou
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Converts basic energy units [deg C] to [mJ/mm/m2] 
-/// \param C [in] composition, in o/oo
+/// \param T [in] temperature in deg C
 /// \returns concentration, in mJ/mm/m2
 //
 double CEnthalpyModel::ConvertConcentration(const double &T) const
@@ -104,7 +104,6 @@ double CEnthalpyModel::GetOutflowIceFraction(const int p) const
     if(flow<=0) { return 0.0; }
 
     return ConvertVolumetricEnthalpyToIceContent(hv); 
-    
   }
   else {
      return ConvertVolumetricEnthalpyToIceContent(_aMres[p]/pRes->GetStorage()); //[C]

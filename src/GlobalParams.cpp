@@ -303,6 +303,21 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   {
     G.reservoir_demand_mult=1.0; //default
   }
+  autocalc=SetCalculableValue(G.HBVEC_lapse_rate,Gtmp.HBVEC_lapse_rate,Gtemplate.HBVEC_lapse_rate);
+  if (autocalc)
+  {
+    G.HBVEC_lapse_rate=0.08; //Default [mm/d/km]
+  }
+  autocalc = SetCalculableValue(G.HBVEC_lapse_upper, Gtmp.HBVEC_lapse_upper, Gtemplate.HBVEC_lapse_upper);
+  if (autocalc)
+  {
+    G.HBVEC_lapse_upper=0.0;//Default [mm/d/km]
+  }
+  autocalc=SetCalculableValue(G.HBVEC_lapse_elev,Gtmp.HBVEC_lapse_elev,Gtemplate.HBVEC_lapse_elev);
+  if (autocalc)
+  {
+    G.HBVEC_lapse_upper=5000.0;//Default [m]
+  }
 
 
   //Model-specific global parameters - cannot be autocomputed, must be specified by user
@@ -338,6 +353,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   SetSpecifiedValue(G.init_stream_temp,Gtmp.init_stream_temp,Gtemplate.init_stream_temp,false,"INIT_STREAM_TEMP");
   SetSpecifiedValue(G.windvel_icept,Gtmp.windvel_icept,Gtemplate.windvel_icept,false,"WINDVEL_ICEPT");
   SetSpecifiedValue(G.windvel_scale,Gtmp.windvel_scale,Gtemplate.windvel_scale,false,"WINDVEL_SCALE");
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -385,6 +401,10 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.alb_decay_cold      =DefaultParameterValue(is_template,true);
   g.bare_ground_albedo  =DefaultParameterValue(is_template,true);
   g.snowfall_albthresh  =DefaultParameterValue(is_template,true);
+
+  g.HBVEC_lapse_rate    =DefaultParameterValue(is_template,true);
+  g.HBVEC_lapse_upper   =DefaultParameterValue(is_template,true);
+  g.HBVEC_lapse_elev    =DefaultParameterValue(is_template,true);
 
   g.max_SWE_surface         =DefaultParameterValue(is_template,true);
   g.TOC_multiplier          =DefaultParameterValue(is_template,true);
@@ -534,6 +554,9 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("RESERVOIR_DEMAND_MULT")){G.reservoir_demand_mult=value; }
   else if (!name.compare("WINDVEL_ICEPT"       )){G.windvel_icept=value; }
   else if (!name.compare("WINDVEL_SCALE"       )){G.windvel_scale=value; }
+  else if (!name.compare("HBVEC_LAPSE_RATE"    )){G.HBVEC_lapse_rate=value; }
+  else if (!name.compare("HBVEC_LAPSE_UPPER"   )){G.HBVEC_lapse_upper=value; }
+  else if (!name.compare("HBVEC_LAPSE_ELEV"    )){G.HBVEC_lapse_elev=value; }
   else{
     WriteWarning("CGlobalParams::SetGlobalProperty: Unrecognized/invalid global parameter name ("+name+") in .rvp file",false);
 
@@ -652,6 +675,9 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("RESERVOIR_DEMAND_MULT")){return G.reservoir_demand_mult; }
   else if (!name.compare("WINDVEL_ICEPT"        )){return G.windvel_icept; }
   else if (!name.compare("WINDVEL_SCALE"        )){return G.windvel_scale; }
+  else if (!name.compare("HBVEC_LAPSE_RATE"     )){return G.HBVEC_lapse_rate; }
+  else if (!name.compare("HBVEC_LAPSE_UPPER"    )){return G.HBVEC_lapse_upper; }
+  else if (!name.compare("HBVEC_LAPSE_ELEV"     )){return G.HBVEC_lapse_elev; }
   else{
     if (strict){
       string msg="CGlobalParams::GetParameter: Unrecognized/invalid global parameter name in .rvp file: "+name;

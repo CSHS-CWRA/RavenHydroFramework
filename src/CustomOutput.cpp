@@ -745,7 +745,10 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    
                                                              {reset=true;}//Oct 1 - print preceding year
 
-  if (reset)
+  bool skip=false;
+  if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { skip=true;}
+
+  if ((reset) && (!skip))
   {
     if(Options.output_format==OUTPUT_STANDARD)//=================================================================
     {
@@ -1017,6 +1020,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     {
 #ifdef _RVNETCDF_
       // Write to NetCDF (done entire vector of data at once)
+      
       if (num_data > 0)
       {
         int retval,data_id;
@@ -1048,6 +1052,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
 #endif
   }
   _filename=_filename_user; //so works in ensemble mode
+  _time_index=0;
 }
 
 int  ParseSVTypeIndex(string s,CModel *&pModel);

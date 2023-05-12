@@ -206,10 +206,12 @@ void CModel::CorrectPrecip(const optStruct     &Options,
   //---------------------------------------------------------------------------
   else if (Options.orocorr_precip==OROCORR_HBV)
   {
-    double corr=HBV_PRECIP_CORR;
+    double corr_upper=CGlobalParams::GetParams()->HBVEC_lapse_upper/M_PER_KM;
+    double corr      =CGlobalParams::GetParams()->HBVEC_lapse_rate/M_PER_KM;
+    double lapse_elev=CGlobalParams::GetParams()->HBVEC_lapse_elev;
     double add=0.0;
-    if (elev>HBV_PRECIP_CORR_ELEV){
-      add=(HBV_PRECIP_CORR_UP-HBV_PRECIP_CORR)*(elev-HBV_PRECIP_CORR_ELEV);
+    if (elev>lapse_elev){
+      add=(corr_upper-corr)*(elev-lapse_elev);
     }
     F.precip          *=max(1.0+corr*(elev-ref_elev)+add,0.0);
     F.precip_5day     *=max(1.0+corr*(elev-ref_elev)+add,0.0);

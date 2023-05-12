@@ -224,9 +224,6 @@ const double  WIND_EXTINCT            =2.5;                                     
 const double  LEAF_PROJ_RAT           =2.2;                                     ///< [m2/m2] ratio of total leaf area to projected area.
 
 const double HBV_REFERENCE_ELEV       =1000;                                    ///< [masl]  (zref in HBV)
-const double HBV_PRECIP_CORR          =0.00008;                                 ///< [1/m]   precipitation lapse rate for low elevations (PCALT in HBV, PGRADL in HBV-EC)
-const double HBV_PRECIP_CORR_UP       =0.0;                                     ///< [1/m]   precipitation lapse rate for high elevations(PCALTUP in HBV, PGRADH in HBV-EC)
-const double HBV_PRECIP_CORR_ELEV     =5000;                                    ///< [masl]  reference correction elevation (PCALTL/EMID in HBV-EC)
 const double HBV_PET_ELEV_CORR        =0.0005;                                  ///< [mm/m-d] PET lapse rate (ECALT in HBV-EC)
 const double HBV_PET_TEMP_CORR        =0.5;                                     ///< [-]     (ETF in HBV-EC)
 const double GLOBAL_PET_CORR          =1.0;                                     ///< [-]     (ECORR in HBV-EC)

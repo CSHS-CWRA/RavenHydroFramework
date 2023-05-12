@@ -400,6 +400,10 @@ struct global_struct
   double           UBC_LW_forest_fact;       ///< UBC mulitplier of temperature to estimate LW radiation in forests (P0BLUE*P0LWVF) [mm/d/K]
   double           UBC_flash_ponding;        ///< UBC ponding threshold for flash factor (V0FLAS) [mm]
 
+  double           HBVEC_lapse_rate;         ///< HBV-EC precipitation lapse rate below HBVEC_lapse_elev [mm/d/km] (PCALT*1000 in HBV, PGRADL*1000 in HBV-EC)
+  double           HBVEC_lapse_upper;        ///< HBV-EC precipitation lapse rate above HBVEC_lapse_elev [mm/d/km] (PCALTUP*1000 in HBV, PGRADH*1000 in HBV-EC)
+  double           HBVEC_lapse_elev;         ///< HBV-EC precipitation lapse rate shift elevation [m]  (PCALTL/EMID in HBV-EC)
+
   double           airsnow_coeff;            ///< [1/d] air/snow heat transfer coefficient
 
   double           MOHYSE_PET_coeff;         ///< [mm/d] MOHYSE PET constant (PET @ equinox when temperature is 10 degC)

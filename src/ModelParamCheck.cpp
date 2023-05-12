@@ -421,9 +421,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   //----------------------------------------------------------------------
   if(Options.orocorr_precip==OROCORR_HBV)
   {
-    // Parameters are located in the RVT file, and there's no checking routine for that file yet.
-    //aP[nP]=":RainCorrection"; aPC[nP]=CLASS_; nP++;
-    //aP[nP]=":SnowCorrection"; aPC[nP]=CLASS_; nP++;
+    aP[nP]="HBVEC_LAPSE_ELEV";  aPC[nP]=CLASS_GLOBAL; nP++;
+    aP[nP]="HBVEC_LAPSE_RATE";  aPC[nP]=CLASS_GLOBAL; nP++;   
+    aP[nP]="HBVEC_LAPSE_UPPER"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
   else if((Options.orocorr_precip==OROCORR_UBCWM) || (Options.orocorr_precip==OROCORR_UBCWM2))
   {
