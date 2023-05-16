@@ -316,7 +316,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   autocalc=SetCalculableValue(G.HBVEC_lapse_elev,Gtmp.HBVEC_lapse_elev,Gtemplate.HBVEC_lapse_elev);
   if (autocalc)
   {
-    G.HBVEC_lapse_upper=5000.0;//Default [m]
+    G.HBVEC_lapse_elev=5000.0;//Default [m]
   }
 
 

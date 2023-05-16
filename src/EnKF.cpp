@@ -447,7 +447,7 @@ void CEnKFEnsemble::CloseTimeStepOps(CModel* pModel,optStruct& Options,const tim
       if(obsval!=RAV_BLANK_DATA) {
         if(nn==curr_nn) {
           _output_matrix[e][j]=pTSMod->GetSampledValue(nn);
-          cout<<"GRABBING OUTPUT ens: "<<e<<" nn="<<curr_nn<<" obs: "<<_output_matrix[e][j]<<" "<<obsval<<" duration "<<Options.duration<<endl;
+          //cout<<"GRABBING OUTPUT ens: "<<e<<" nn="<<curr_nn<<" obs: "<<_output_matrix[e][j]<<" "<<obsval<<" duration "<<Options.duration<<endl;
           break;
         }
         j++;
