@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   
-  Options.version="3.6";
+  Options.version="3.7";
 #ifdef _NETCDF_ 
   Options.version+=" w/ netCDF";
 #endif

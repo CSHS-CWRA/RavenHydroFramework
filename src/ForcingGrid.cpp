@@ -34,6 +34,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _ForcingType = GetForcingTypeFromString(ForcingType);
   _filename		 = filename;
   _varname		 = varname;
+  _dim_order   = 0;
   _DimNames[0] = DimNames[0]; _DimNames[1]  = DimNames[1]; _DimNames[2]  = DimNames[2];
   _is_3D		   = is_3D;
   _GridDims [0]=0; _GridDims [1]=0; _GridDims [2]=0;
@@ -121,6 +122,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   _start_year                  = grid._start_year                      ;
   _tag                         = grid._tag                             ;
   _interval                    = grid._interval                        ;
+  _dim_order                   = grid._dim_order                       ;
   _is_derived                  = true                                  ;
   _nPulses                     = grid._nPulses                         ;
   _pulse                       = grid._pulse                           ;
@@ -371,7 +373,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
       _dim_order = 2;
     }
   }
-  if(Options.noisy) { printf("  Order of dimensions in NetCDF is Case %i...\n",_dim_order); }
+  if(Options.noisy) { cout<<"  Order of dimensions in NetCDF is Case "<<_dim_order<<endl; }
 
   // start year, date
   // ----------------------------------------------------------------------------------------------
@@ -583,22 +585,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
 #ifdef _RVNETCDF_
 
-  // local variables
   int     ir,ic,it;
-  int     ncid;          // file unit
-  int     dim1;          // length of 1st dimension in NetCDF data
-  int     dim2;          // length of 2nd dimension in NetCDF data
-  int     dim3;          // length of 3rd dimension in NetCDF data
-
-  int     varid_f;       // id of forcing variable read
-  double  missval;       // value of "missing_value" attribute of forcing variable 
-  double  fillval;       // value of "_FillValue"    attribute of forcing variable
-  double  add_offset;    // value of "add_offset"    attribute of forcing variable
-  double  scale_factor;  // value of "scale_factor"  attribute of forcing variable
-  size_t  att_len;       // length of the attribute's text
-  nc_type att_type;      // type of attribute
-  int     retval;        // error value for NetCDF routines
-  int     iChunkSize;    // size of current chunk; always equal _ChunkSize except for last chunk in file (might be shorter)
   int     iChunk_new;    // chunk in which current model time step falls
 
   // check if chunk id is valid
@@ -640,11 +627,30 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   // check if given model time step is covered by current chunk; if yes, do nothing; if no,  read next chunk
   if(_iChunk != iChunk_new)
   {  
+    // local variables
+
+  int     ncid;          // file unit
+  int     dim1;          // length of 1st dimension in NetCDF data
+  int     dim2;          // length of 2nd dimension in NetCDF data
+  int     dim3;          // length of 3rd dimension in NetCDF data
+
+  int     varid_f;       // id of forcing variable read
+  double  missval;       // value of "missing_value" attribute of forcing variable 
+  double  fillval;       // value of "_FillValue"    attribute of forcing variable
+  double  add_offset;    // value of "add_offset"    attribute of forcing variable
+  double  scale_factor;  // value of "scale_factor"  attribute of forcing variable
+  size_t  att_len;       // length of the attribute's text
+  nc_type att_type;      // type of attribute
+  int     retval;        // error value for NetCDF routines
+  int     iChunkSize;    // size of current chunk; always equal _ChunkSize except for last chunk in file (might be shorter)
+  
+  
     if(Options.noisy){ 
-      cout<<endl<<" Start reading new chunk... iChunk = "<<iChunk_new<<" (var = "<<_varname.c_str()<<")"<<endl;
+      cout<<endl<<" Start reading new chunk... iChunk = "<<iChunk_new<<" (var = "<<_varname.c_str()<<", forcing: "<<ForcingToString(_ForcingType) << ")"<<endl;
       time_struct tt_tmp;
       JulianConvert(global_model_time,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt_tmp);
       cout<<tt_tmp.date_string<<endl;
+      if(Options.noisy) { cout<<"  Order of dimensions in NetCDF is Case "<<_dim_order<<endl; }
     }
     
     _iChunk = iChunk_new;
@@ -785,7 +791,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       nc_length[0] = (size_t)(dim1); nc_stride[0] = 1; 
       nc_length[1] = (size_t)(dim2); nc_stride[1] = 1;
       nc_length[2] = (size_t)(dim3); nc_stride[2] = 1;
-      
+
       switch(_dim_order) {
       case(1): // dimensions are (x,y,t)
         nc_start[0]  = (size_t)(_WinStart[0]);  nc_start[1]  = (size_t)(_WinStart[1]);  nc_start[2]  = (size_t)(start_point);
@@ -813,10 +819,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
       if (Options.noisy) {
         cout<<" CForcingGrid::ReadData - is3D"<<endl;
-        printf("  Dim of chunk read: dim3 = %i   dim2 = %i   dim1 = %i\n",dim3,dim2,dim1);
-        printf("  start  chunk: (%zu, %zu, %zu)\n", nc_start[0], nc_start[1], nc_start[2]);
-        printf("  length chunk: (%zu, %zu, %zu)\n",nc_length[0],nc_length[1],nc_length[2]);
-        printf("  stride chunk: (%zu, %zu, %zu)\n",nc_stride[0],nc_stride[1],nc_stride[2]);
+        cout<<"  Dim of chunk read: dim3 = "<<dim3<<"   dim2 = "<<dim2<<"   dim1 = "<<dim1<<endl;
+        cout<<"  start  chunk: ("<<nc_start[0]<<","<<nc_start[1]<<","<<nc_start[2]<<")"<<endl;
+        cout<<"  length  chunk: ("<<nc_length[0]<<","<<nc_length[1]<<","<<nc_length[2]<<")"<<endl;
+        cout<<"  stride  chunk: ("<<nc_stride[0]<<","<<nc_stride[1]<<","<<nc_stride[2]<<")"<<endl;
       }
     }
     else //2D
@@ -847,10 +853,10 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
       if (Options.noisy) {
         cout<<" CForcingGrid::ReadData - !is3D"<<endl;
-        printf("  Dim of chunk read: dim2 = %i   dim1 = %i\n",dim2,dim1);
-        printf("  start  chunk: (%zu, %zu)\n", nc_start[0], nc_start[1]);
-        printf("  length chunk: (%zu, %zu)\n",nc_length[0],nc_length[1]);
-        printf("  stride chunk: (%zu, %zu)\n",nc_stride[0],nc_stride[1]);
+        cout<<"  Dim of chunk read: dim2 = "<<dim2<<"   dim1 = "<<dim1<<endl;
+        cout<<"  start  chunk: (" <<nc_start [0]<<","<<nc_start [1]<<")"<<endl;
+        cout<<"  length  chunk: ("<<nc_length[0]<<","<<nc_length[1]<<")"<<endl;
+        cout<<"  stride  chunk: ("<<nc_stride[0]<<","<<nc_stride[1]<<")"<<endl;
       }
     }
 
@@ -987,28 +993,30 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
     // read attribute grids - lat, long, elevation of grid cells
     // -------------------------------
-    if(_is_3D) {
-      switch(_dim_order)
-      {
-        case(1): dim1 = _GridDims[0]; dim2 = _GridDims[1]; break; // dimensions are (x,y,t)->(x,y)
-        case(2): dim1 = _GridDims[1]; dim2 = _GridDims[0]; break; // dimensions are (y,x,t)->(y,x)*
-        case(3): dim1 = _GridDims[0]; dim2 = _GridDims[1]; break; // dimensions are (x,t,y)->(x,y)
-        case(4): dim1 = _GridDims[0]; dim2 = _GridDims[1]; break; // dimensions are (t,x,y)->(x,y)
-        case(5): dim1 = _GridDims[1]; dim2 = _GridDims[0]; break; // dimensions are (y,t,x)->(y,x)*
-        case(6): dim1 = _GridDims[1]; dim2 = _GridDims[0]; break; // dimensions are (t,y,x)->(y,x)*
+    if (iChunk_new==0){
+      if(_is_3D){
+        switch(_dim_order)
+        {
+          case(1): dim1 = _GridDims[0]; dim2 = _GridDims[1]; break; // dimensions are (x,y,t)->(x,y)
+          case(2): dim1 = _GridDims[1]; dim2 = _GridDims[0]; break; // dimensions are (y,x,t)->(y,x)*
+          case(3): dim1 = _GridDims[0]; dim2 = _GridDims[1]; break; // dimensions are (x,t,y)->(x,y)
+          case(4): dim1 = _GridDims[0]; dim2 = _GridDims[1]; break; // dimensions are (t,x,y)->(x,y)
+          case(5): dim1 = _GridDims[1]; dim2 = _GridDims[0]; break; // dimensions are (y,t,x)->(y,x)*
+          case(6): dim1 = _GridDims[1]; dim2 = _GridDims[0]; break; // dimensions are (t,y,x)->(y,x)*
+        }
       }
-    }
-    else {
-      dim1 = _GridDims[0]; dim2 = 1;
-    }
-    ReadAttGridFromNetCDF(ncid,_AttVarNames[0],dim1,dim2,_aLatitude);
-    ReadAttGridFromNetCDF(ncid,_AttVarNames[1],dim1,dim2,_aLongitude);
-    ReadAttGridFromNetCDF(ncid,_AttVarNames[2],dim1,dim2,_aElevation);
-    //ReadAttGridFromNetCDF2(ncid,_AttVarNames[3],dim1,dim2,_aStationIDs);
+      else {
+        dim1 = _GridDims[0]; dim2 = 1;
+      }
+      ReadAttGridFromNetCDF(ncid,_AttVarNames[0],dim1,dim2,_aLatitude);
+      ReadAttGridFromNetCDF(ncid,_AttVarNames[1],dim1,dim2,_aLongitude);
+      ReadAttGridFromNetCDF(ncid,_AttVarNames[2],dim1,dim2,_aElevation);
+      //ReadAttGridFromNetCDF2(ncid,_AttVarNames[3],dim1,dim2,_aStationIDs);
 
-    if (_aElevation!=NULL){
-      for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {
-        ExitGracefullyIf(rvn_isnan(_aElevation[ic]),"CForcingGrid::ReadData - NaN elevation found in NetCDF elevation grid with non-zero HRU weight",BAD_DATA);
+      if (_aElevation!=NULL){
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {
+          ExitGracefullyIf(rvn_isnan(_aElevation[ic]),"CForcingGrid::ReadData - NaN elevation found in NetCDF elevation grid with non-zero HRU weight",BAD_DATA);
+        }
       }
     }
 
@@ -2114,7 +2122,7 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
   // Open NetCDF file, Get the lat long elev information
   // -------------------------------
 #ifdef _RVNETCDF_
-
+  cout<<" READING ATTRIBUTE GRID "<<varname<<endl;
   if(varname!="NONE")
   {
     int       retval,varid;
