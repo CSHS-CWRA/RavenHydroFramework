@@ -1512,6 +1512,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
               printf("Wrong HRU ID in :GridWeights: HRU_ID = %s\n",s[0]);
               ExitGracefully("ParseTimeSeriesFile: HRU ID found in :GridWeights which does not exist in :HRUs!",BAD_DATA);
             }
+            int CellID=atoi(s[1]);
+            if ((CellID<0) || (CellID>=nGridCells)){
+              ExitGracefully("ParseTimeSeriesFile: invalid Cell ID in :GridWeights commmand (<0 or >=number of cells)",BAD_DATA);
+            }
             pGrid->SetWeightVal(pHRU->GetGlobalIndex(),atoi(s[1]),atof(s[2]));
           }
           else {

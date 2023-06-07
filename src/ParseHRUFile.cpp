@@ -1336,6 +1336,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         string warn=":LakeArea for lake-like reservoir in subbasin "+to_string(SBID)+" seems small. Note LakeArea should be in units of m2, not km2";
         WriteWarning(warn,Options.noisy);
       }
+      
       type=CURVE_LAKE;
     }
     else if(!strcmp(s[0],":AbsoluteCrestHeight"))
@@ -1867,6 +1868,15 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
     ExitGracefullyIf(cwidth   ==DOESNT_EXIST,"CReservoir::Parse: :CrestWidth must be specified for lake-type reservoirs",BAD_DATA_WARN);
     ExitGracefullyIf(lakearea ==DOESNT_EXIST,"CReservoir::Parse: :LakeArea  must be specified for lake-type reservoirs",BAD_DATA_WARN);
     ExitGracefullyIf(max_depth==DOESNT_EXIST,"CReservoir::Parse: :LakeDepth must be specified for lake-type reservoirs",BAD_DATA_WARN);
+
+   if (HRUID != DOESNT_EXIST) {
+     double HRUarea =pModel->GetHRUByID(HRUID)->GetArea() * M2_PER_KM2;
+     if (fabs((HRUarea - lakearea) / lakearea) > 0.2) {
+       string warn="CReservoirParse: specified :LakeArea and corresponding HRU area (in .rvh file) do not seem to agree.";
+       WriteWarning(warn.c_str(), Options.noisy);
+     }
+    }
+
 
     pRes=new CReservoir(name,SBID,weircoeff,cwidth,crestht,lakearea,max_depth);
   }

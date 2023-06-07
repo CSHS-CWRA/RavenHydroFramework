@@ -7,7 +7,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 #include "Matrix.h"
 
 bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long SBID);
-bool ParseInitialConditionsFile(CModel*& pModel,const optStruct& Options);
+bool ParseInitialConditions(CModel*& pModel,const optStruct& Options);
 bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 
 string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
@@ -231,6 +231,12 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   }
   if ((_nAssimStates==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
     ExitGracefully("CEnKFEnsemble::Initialize: at least one assimilated state must be set in :ForcingPerturbation command",BAD_DATA);
+  }
+  if (Options.assimilate_flow == true) {
+    WriteWarning("CEnKFEnsemble::Initialize: It is not recommended to use EnKF data assimilation simultaneously with direct insertion streamflow assimilation (enabled with the :AssimilateStreamflow command in the .rvi file). The two assimilation strategies may interfere with each other, particularly when the assimilated observations are shared by both.",Options.noisy);
+  }
+  if (Options.assimilate_stage == true) {
+    WriteWarning("CEnKFEnsemble::Initialize: It is not recommended to use EnKF data assimilation simultaneously with direct insertion reservoir stage assimilation (enabled with the :AssimilateReservoirStage command in the .rvi file). The two assimilation strategies may interfere with each other, particularly when the assimilated observations are shared by both.",Options.noisy);
   }
 
   //TO ADD - complain if .rvc file is anything other than runname_solution.rvc
@@ -765,7 +771,7 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
     Options.rvc_filename=_orig_rvc_file;
   }
 
-  ParseInitialConditionsFile(pModel,Options);
+  ParseInitialConditions(pModel,Options);
 
   // read ensemble-member specific time series (e.g., upstream flows in model cascade), if present
   if (_extra_rvt != "") {
@@ -827,7 +833,7 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
       else                     { solfile=Options.run_name+"_"+"solution.rvc"; }
       Options.rvc_filename=_aOutputDirs[ee]+solfile;
 
-      ParseInitialConditionsFile(pModel,Options);
+      ParseInitialConditions(pModel,Options);
 
       //Update state vector in model 
       UpdateFromStateMatrix(pModel,Options,ee);

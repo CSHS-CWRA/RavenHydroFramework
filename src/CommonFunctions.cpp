@@ -180,7 +180,7 @@ bool DynArrayAppend(void **& pArr, void *xptr,int &size)
   tmp=new void *[size+1];                                     //allocate memory
   if (tmp==NULL){ExitGracefully("DynArrayAppend::Out of memory",OUT_OF_MEMORY);}
   for (int i=0; i<(size-1); i++){                             //copy array
-#if _STRICTCHECK_
+#ifdef _STRICTCHECK_
     if (pArr[i]==NULL){ExitGracefully("DynArrayAppend::Bad existing array",RUNTIME_ERR);}
 #endif
     tmp[i]=pArr[i];

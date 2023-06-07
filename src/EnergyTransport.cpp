@@ -429,6 +429,8 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
 
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
 
+  double Acorr=pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
+
   double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
   double hstar(0),ksed(0),Vsed=0.001;
   if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
@@ -437,7 +439,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
     LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
     
-    AET      =pRes->GetAET()/ MM_PER_METER ;                   //[m/d]
+    AET      =pRes->GetAET()*Acorr/ MM_PER_METER ;                   //[m/d] //*pHRU->GetArea()/A_avg
 
     hstar = pRes->GetLakeConvectionCoeff();                    //[MJ/m2/d/K]  
     Vsed  = pRes->GetLakebedThickness() * pHRU->GetArea()*M2_PER_KM2;
@@ -457,7 +459,7 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
   return -(Q_sens + Q_cond  + Q_rad +  Q_lat + Q_rain) * tstep; //[MJ]
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Calculates Res_mass and ResSedMass in basin with reservoir at end of time step
+/// \brief Calculates Res_mass (total reservoir energ) and ResSedMass (total sediment energy) in basin with reservoir at end of time step
 ///
 /// \param p           [in]  subbasin index
 /// \param aMout_new[] [in]  Array of energy outflows at downstream end of each segment at end of current timestep [MJ/d] [size: nsegs]
@@ -490,6 +492,8 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
   
+  double Acorr=pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
+
   double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
   double hstar(0), ksed(0), Vsed=0.001;
   if(pHRU!=NULL) { //otherwise only simulate advective mixing+ rain input
@@ -498,7 +502,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
     LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
 
-    AET      =pRes->GetAET()/ MM_PER_METER ;                   //[m/d]
+    AET      =pRes->GetAET()*Acorr/ MM_PER_METER ;             //[m/d]
 
     Vsed     =pRes->GetLakebedThickness() * pHRU->GetArea()*M2_PER_KM2;
     hstar    =pRes->GetLakeConvectionCoeff(); //[MJ/m2/d/K]  
@@ -852,7 +856,7 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
           _LAKEOUT << name << " lake temp [C],";
           _LAKEOUT << name << " lake sed temp [C],";
           _LAKEOUT << name << " inflow temp [C],";
-          _LAKEOUT << name << " pct froz [0..1]";
+          _LAKEOUT << name << " pct froz [0..1],";
         }
       }
     }
@@ -932,11 +936,16 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
           double Qin=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d]
           
           GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_rad,Q_rain);
+
           
           double lakeTemp  =ConvertVolumetricEnthalpyToTemperature(_aMres[p] / V_new);
           double sedTemp   =ConvertVolumetricEnthalpyToTemperature(_aMsed[p] / V_sed);
           double inflowTemp=ConvertVolumetricEnthalpyToTemperature(Ein / Qin);
           double pctFroz   =ConvertVolumetricEnthalpyToIceContent (_aMres[p] / V_new);
+
+          if (V_new==0){lakeTemp  =-60; pctFroz=-1;}
+          if (V_sed==0){sedTemp   =-60;}
+          if (Qin  ==0){inflowTemp=-60;}
 
           _LAKEOUT << mult * Ein    << "," << mult * Eout      << ",";
           _LAKEOUT << mult * Q_rain << "," << mult * Q_sens    << ",";

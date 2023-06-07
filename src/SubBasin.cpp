@@ -483,7 +483,7 @@ double CSubBasin::GetEnviroMinFlow(const double &t) const
 //
 int CSubBasin::GetDiversionTargetIndex(const int i) const
 {
-#if _STRICTCHECK_
+#ifdef _STRICTCHECK_
   if ((i<0) || (i>=_nDiversions)){ExitGracefully("GetDiversionTargetIndex: bad index",RUNTIME_ERR);}
 #endif
   return _pDiversions[i]->target_p;

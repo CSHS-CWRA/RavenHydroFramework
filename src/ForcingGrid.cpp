@@ -2122,7 +2122,6 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
   // Open NetCDF file, Get the lat long elev information
   // -------------------------------
 #ifdef _RVNETCDF_
-  cout<<" READING ATTRIBUTE GRID "<<varname<<endl;
   if(varname!="NONE")
   {
     int       retval,varid;
