@@ -93,6 +93,7 @@ private:/*------------------------------------------------------*/
   bool         _is_3D;                       ///< true if forcings are 3D (lat, lon, time); false if 2D (stations, time)
   double       _rainfall_corr;               ///< correction factor for rainfall (stored with gauge, used elsewhere)
   double       _snowfall_corr;               ///< correction factor for snowfall (stored with gauge, used elsewhere)
+  double       _temperature_corr;            ///< correction factor for temperature (stored with gauge, used elsewhere)
   double       _cloud_min_temp;              ///< minimum temperature threshold used to determine cloud_cover factor
   double       _cloud_max_temp;              ///< maximum temparature threshold used to determine cloud_cover factor
   double       _aAveTemp[12];                ///< representative average monthly temperatures [C]
@@ -201,6 +202,7 @@ public:/*------------------------------------------------------*/
   void         SetInterval(                const double interval);                  ///< set _interval                  of class
   void         SetSnowfallCorr(            const double snowfall_corr);             ///< set _snowfall_corr             of class
   void         SetRainfallCorr(            const double rainfall_corr);             ///< set _rainfall_corr             of class
+  void         SetTemperatureCorr(         const double temperature_corr);          ///< set _temperature_corr          of class
   void         Setcloud_min_temp(          const double cloud_min_temp);            ///< set _cloud_min_temp            of class
   void         Setcloud_max_temp(          const double cloud_max_temp);            ///< set _cloud_max_temp            of class
   void         SetaAveTemp(                const double aAveTemp[12]);              ///< set _aAveTemp[12]              of class
@@ -230,6 +232,7 @@ public:/*------------------------------------------------------*/
   bool         ShouldDeaccumulate()                               const; ///< true if data must be deaccumulated
   double       GetSnowfallCorr()                                  const; ///< snowfall correction factor
   double       GetRainfallCorr()                                  const; ///< rainfall correction factor
+  double       GetTemperatureCorr()                               const; ///< temperature correction factor
   double       GetCloudMinRange()                                 const; ///< Minimum temperature threshold used to determine cloud_cover factor
   double       GetCloudMaxRange()                                 const; ///< Maximum temperature threshold used to determine cloud_cover factor
   double       GetMonthlyAveTemp(const int month)                 const; ///< Representative Average temperature for month

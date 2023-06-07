@@ -64,6 +64,7 @@ CSubBasin::CSubBasin( const long           Identifier,
 
   _rain_corr         =1.0;
   _snow_corr         =1.0;
+  _temperature_corr = 0.0;
   _unusable_flow_pct =0.0;
 
   _res_disabled      =false;
@@ -237,6 +238,12 @@ double            CSubBasin::GetRainCorrection         () const {return _rain_co
 /// \return snowfall correction factor for basin
 //
 double            CSubBasin::GetSnowCorrection         () const{ return _snow_corr;     }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns temperature correction factor for basin
+/// \return temperature correction factor for basin
+//
+double            CSubBasin::GetTemperatureCorrection  () const { return _temperature_corr; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns Unit Hydrograph as array pointer
@@ -916,6 +923,7 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("RAIN_CORR"     ))  {_rain_corr=value;}
   else if (!label_n.compare("SNOW_CORR"     ))  {_snow_corr=value;}
+  else if (!label_n.compare("TEMP_CORR"     ))  {_temperature_corr=value; }
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }
@@ -966,6 +974,7 @@ double CSubBasin::GetBasinProperties(const string label) const
 
   else if (!label_n.compare("RAIN_CORR"     ))  { return _rain_corr;}
   else if (!label_n.compare("SNOW_CORR"     ))  { return _snow_corr;}
+  else if (!label_n.compare("TEMP_CORR"     ))  { return _temperature_corr; }
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { return (double)(_reach_HRUindex); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { return _hyporheic_flux; }

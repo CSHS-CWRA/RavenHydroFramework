@@ -27,6 +27,7 @@ CGauge::CGauge(string gauge_name,
   _meas_ht       =2.0; // [m], default
   _rainfall_corr =1.0;
   _snowfall_corr =1.0;
+  _temperature_corr = 0.0;
   _cloud_min_temp=-20.0;//ensures cloud-free status always unless overriden
   _cloud_max_temp= 40.0;
 
@@ -319,6 +320,7 @@ bool     CGauge::SetGaugeProperty          (const string prop_tag, const double 
   string label_n = StringToUppercase(prop_tag);
   if      (!label_n.compare("RAINFALL_CORR"   ))  {_rainfall_corr=value;}
   else if (!label_n.compare("SNOWFALL_CORR"   ))  {_snowfall_corr=value;}
+  else if (!label_n.compare("TEMP_CORR"       ))  { _temperature_corr=value; }
   else if (!label_n.compare("ELEVATION"       ))  {_elevation=value;}
   else if (!label_n.compare("CLOUD_MIN_RANGE" ))  {_cloud_min_temp=value;}
   else if (!label_n.compare("CLOUD_MAX_RANGE" ))  {_cloud_max_temp=value;}
@@ -417,15 +419,17 @@ double   CGauge::GetElevation     () const {return _elevation;}
 /// \brief Returns measurement height of gauge above land surface
 /// \return Height of gauge [m]
 //
-double   CGauge::GetMeasurementHt () const {return _meas_ht;}
+double   CGauge::GetMeasurementHt   () const {return _meas_ht;}
 //----------------------------------------------------------------
-double   CGauge::GetRainfallCorr  () const {return _rainfall_corr;}
+double   CGauge::GetRainfallCorr    () const {return _rainfall_corr;}
 //----------------------------------------------------------------
-double   CGauge::GetSnowfallCorr  () const {return _snowfall_corr;}
+double   CGauge::GetSnowfallCorr    () const {return _snowfall_corr;}
 //----------------------------------------------------------------
-double   CGauge::GetCloudMinRange () const {return _cloud_min_temp;}
+double   CGauge::GetTemperatureCorr () const {return _temperature_corr;}
 //----------------------------------------------------------------
-double   CGauge::GetCloudMaxRange () const {return _cloud_max_temp;}
+double   CGauge::GetCloudMinRange   () const {return _cloud_min_temp;}
+//----------------------------------------------------------------
+double   CGauge::GetCloudMaxRange   () const {return _cloud_max_temp;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Return hourly temperature correction at time t

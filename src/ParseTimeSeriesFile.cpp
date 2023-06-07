@@ -88,6 +88,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":RainCorrection"              )){code=30; }
     else if  (!strcmp(s[0],":SnowCorrection"              )){code=31; }
     else if  (!strcmp(s[0],":CloudTempRanges"             )){code=32; }
+    else if  (!strcmp(s[0],":TemperatureCorrection"       )){code=33;}
     //-------------------OBSERVATIONS---------------------------
     else if  (!strcmp(s[0],":ObservationData"             )){code=40; }
     else if  (!strcmp(s[0],":IrregularObservations"       )){code=41; }
@@ -396,6 +397,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       pGage->SetGaugeProperty("CLOUD_MIN_RANGE",s_to_d(s[1]));
       pGage->SetGaugeProperty("CLOUD_MAX_RANGE",s_to_d(s[2]));
       break;
+    }
+    case(33):  //----------------------------------------------
+    {/* :TemperatureCorrection [double value] */
+        if (Options.noisy) { cout << "Temperature Correction" << endl; }
+        ExitGracefullyIf(pGage == NULL && pGrid == NULL,
+            "ParseTimeSeriesFile::Temperature correction added before specifying a gauge station/ gridded forcing and its properties", BAD_DATA);
+        if (Len < 2) { p->ImproperFormat(s); break; }
+        if (pGage != NULL) { pGage->SetGaugeProperty("TEMP_CORR", s_to_d(s[1])); }
+        if (pGrid != NULL) { pGrid->SetTemperatureCorr(s_to_d(s[1])); }
+        break;
     }
     case (40): //---------------------------------------------
     {/*:ObservationData [data type] [long SBID or int HRUID] {constituent name if data type=STREAM_CONCENTRATION } 
@@ -1511,10 +1522,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
               printf("\n\n");
               printf("Wrong HRU ID in :GridWeights: HRU_ID = %s\n",s[0]);
               ExitGracefully("ParseTimeSeriesFile: HRU ID found in :GridWeights which does not exist in :HRUs!",BAD_DATA);
-            }
-            int CellID=atoi(s[1]);
-            if ((CellID<0) || (CellID>=nGridCells)){
-              ExitGracefully("ParseTimeSeriesFile: invalid Cell ID in :GridWeights commmand (<0 or >=number of cells)",BAD_DATA);
             }
             pGrid->SetWeightVal(pHRU->GetGlobalIndex(),atoi(s[1]),atof(s[2]));
           }

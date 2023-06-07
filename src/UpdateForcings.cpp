@@ -396,9 +396,42 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //-------------------------------------------------------------------
       //  Temperature Corrections
       //-------------------------------------------------------------------
-      F.temp_ave_unc = F.temp_daily_ave;
-      F.temp_min_unc = F.temp_daily_min;
-      F.temp_max_unc = F.temp_daily_max;
+      double tc;
+      int p = _pHydroUnits[k]->GetSubBasinIndex();
+      tc = _pSubBasins[p]->GetTemperatureCorrection();
+
+      //--Gauge Corrections------------------------------------------------
+      if (!(temp_ave_gridded || (temp_daily_min_gridded && temp_daily_max_gridded) || temp_daily_ave_gridded)) //Gauge Data
+      {
+          double gauge_corr;
+          F.temp_ave = F.temp_daily_ave = F.temp_daily_max = F.temp_daily_min = 0.0; // leave out monthly for now
+          for (g = 0; g < _nGauges; g++)
+          {
+              gauge_corr = tc + _pGauges[g]->GetTemperatureCorr();
+              wt = _aGaugeWtTemp[k][g];
+
+              F.temp_ave       += wt * (gauge_corr + Fg[g].temp_ave);
+              F.temp_daily_ave += wt * (gauge_corr + Fg[g].temp_daily_ave);
+              F.temp_daily_max += wt * (gauge_corr + Fg[g].temp_daily_max);
+              F.temp_daily_min += wt * (gauge_corr + Fg[g].temp_daily_min);
+
+          }
+      }
+      else //Gridded Data
+      {
+          double grid_corr;
+          grid_corr = pGrid_pre->GetTemperatureCorr();
+          if ((tc+grid_corr)!=0.0){
+            F.temp_ave       += tc + grid_corr;
+            F.temp_daily_ave += tc + grid_corr;
+            F.temp_daily_max += tc + grid_corr;
+            F.temp_daily_min += tc + grid_corr;
+          }
+      }
+
+      F.temp_ave_unc = F.temp_daily_ave; 
+      F.temp_min_unc = F.temp_daily_min; 
+      F.temp_max_unc = F.temp_daily_max; 
 
       CorrectTemp(Options,F,elev,ref_elev_temp,tt);
 
@@ -434,7 +467,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //  Precip Corrections
       //-------------------------------------------------------------------
       double rc,sc;
-      int p=_pHydroUnits[k]->GetSubBasinIndex();
+      // int p=_pHydroUnits[k]->GetSubBasinIndex(); // defined for temp correction already
       rc=_pSubBasins[p]->GetRainCorrection();
       sc=_pSubBasins[p]->GetSnowCorrection();
 

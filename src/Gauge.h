@@ -31,10 +31,11 @@ private:/*------------------------------------------------------*/
   double        _aMaxTemp[12];   ///< representative maximum monthly temperatures [C]
   double        _aAvePET [12];   ///< representative average monthly PET [mm/d] (or monthly PET factor [mm/d/K], if MONTHLY_FACTOR is used)
 
-  double        _rainfall_corr;  ///< correction factor for rainfall (stored with gauge, used elsewhere)
-  double        _snowfall_corr;  ///< correction factor for snowfall (stored with gauge, used elsewhere)
-  double        _cloud_min_temp; ///< minimum temperature threshold used to determine cloud_cover factor
-  double        _cloud_max_temp; ///< maximum temparature threshold used to determine cloud_cover factor
+  double        _rainfall_corr;     ///< correction factor for rainfall (stored with gauge, used elsewhere)
+  double        _snowfall_corr;     ///< correction factor for snowfall (stored with gauge, used elsewhere)
+  double        _temperature_corr;  ///< correction factor for temperature (stored with gauge, used elsewhere)
+  double        _cloud_min_temp;    ///< minimum temperature threshold used to determine cloud_cover factor
+  double        _cloud_max_temp;    ///< maximum temparature threshold used to determine cloud_cover factor
 
   double       DailyTempCorrection              (const double t) const; ///< Daily temperature correction [C]
   void         GenerateMinMaxAveTempFromSubdaily(const optStruct &Options);
@@ -63,6 +64,7 @@ public:/*-------------------------------------------------------*/
   double   GetMeasurementHt   () const;
   double   GetRainfallCorr    () const;
   double   GetSnowfallCorr    () const;
+  double   GetTemperatureCorr () const;
   double   GetCloudMinRange   () const;
   double   GetCloudMaxRange   () const;
   double   GetGaugeProperty   (const string &pname) const;

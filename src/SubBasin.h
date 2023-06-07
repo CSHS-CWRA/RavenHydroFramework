@@ -86,6 +86,7 @@ private:/*------------------------------------------------------*/
   //Other params
   double            _rain_corr;   ///< correction factor for rainfall [-]
   double            _snow_corr;   ///< correction factor for snowfall [-]
+  double            _temperature_corr;   ///< correction factor (additive) for temperature [-]
 
   int               _nSegments;   ///< Number of river segments used in routing(>=1)
 
@@ -180,6 +181,7 @@ public:/*-------------------------------------------------------*/
   bool                 IsHeadwater          () const;
   double               GetRainCorrection    () const;
   double               GetSnowCorrection    () const;
+  double               GetTemperatureCorrection () const;
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
   double               GetWaterLevel        () const;

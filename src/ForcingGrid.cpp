@@ -55,6 +55,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   // -------------------------------
   _rainfall_corr  = 1.0;
   _snowfall_corr  = 1.0;
+  _temperature_corr  = 0.0;
 
   _cloud_min_temp =-20.0; //ensures cloud-free status always unless overriden
   _cloud_max_temp = 40.0;
@@ -129,6 +130,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   _t_corr                      = grid._t_corr                          ;
   _rainfall_corr               = grid._rainfall_corr                   ;
   _snowfall_corr               = grid._snowfall_corr                   ;
+  _temperature_corr            = grid._temperature_corr                ;
   _cloud_min_temp              = grid._cloud_min_temp                  ;
   _cloud_max_temp              = grid._cloud_max_temp                  ;
   for (int ii=0; ii<12; ii++) {_aAveTemp[ii] = grid._aAveTemp[ii];}
@@ -1387,6 +1389,16 @@ void CForcingGrid::SetRainfallCorr(const double rainfall_corr)
 }
 
 ///////////////////////////////////////////////////////////////////
+/// \brief sets the _temperature_corr in class CForcingGrid
+///
+/// \param _temperature_corr  [in] value giving the temperature additive correction (default 0.0)
+//
+void CForcingGrid::SetTemperatureCorr(const double temperature_corr)
+{
+    _temperature_corr = temperature_corr;
+}
+
+///////////////////////////////////////////////////////////////////
 /// \brief sets the _cloud_min_temp in class CForcingGrid
 ///
 /// \param cloud_min_temp  [in] value giving the minimum temperature threshold used to determine
@@ -1987,6 +1999,13 @@ double CForcingGrid::GetSnowfallCorr() const {return _snowfall_corr; }
 /// \return Rainfall correction factor
 //
 double CForcingGrid::GetRainfallCorr() const {return _rainfall_corr; }
+
+///////////////////////////////////////////////////////////////////
+/// \brief Returns temperature correction factor
+/// \param None
+/// \return Temperature (additive) correction factor
+//
+double CForcingGrid::GetTemperatureCorr() const { return _temperature_corr; }
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns minimum temperature threshold used to determine cloud_cover factor
