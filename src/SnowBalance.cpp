@@ -702,12 +702,6 @@ void CmvSnowBalance::GetRatesOfChange(const double               *state_var,
       rates[6] = (snow_d - state_var[iFrom[6]]) / tstep; //rates[6]: snow deficit modification
     }
 
-    rates[0]*=pHRU->GetForcingFunctions()->subdaily_corr;
-    rates[1]*=pHRU->GetForcingFunctions()->subdaily_corr;
-    rates[2]*=pHRU->GetForcingFunctions()->subdaily_corr;
-    rates[4]*=pHRU->GetForcingFunctions()->subdaily_corr;
-    rates[5]*=pHRU->GetForcingFunctions()->subdaily_corr;
-    rates[6]*=pHRU->GetForcingFunctions()->subdaily_corr;
 
   }//end UBC Melt
 

@@ -1511,7 +1511,7 @@ double IncompleteGamma(const double &x, const double &a)
   //cumulative distribution
   /// \ref from http://algolist.manual.ru/maths/count_fast/gamma_function.php
   const int N=100;
-  if (x==0){return 0.0;}
+  if (x<=0){return 0.0;}
   double num=1;
   double sum=0.0;
   double prod=1.0;

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvConvolution
@@ -31,14 +31,19 @@ enum convolution_type
 class CmvConvolution: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  convolution_type  _type;        ///< Model of baseflow selected
+  static bool       _smartmode;   ///< True if smart algorithm is used to reduce stores
+  static int        _nStores;     ///< Number of convolution stores used in smart mode
+
+  convolution_type  _type;        ///< Model of convolution selected
 
   int               _iTarget;     ///< state variable index of outflow target
 
 
   static int        _nConv;       /// # of CONVOLUTION variables (a.k.a. processes) in model
 
-  void GenerateUnitHydrograph(const CHydroUnit *pHRU, const optStruct &Options, double *aUnitHydro, int &N) const;
+  double LocalCumulDist(const double &t, const CHydroUnit *pHRU) const;
+
+  void GenerateUnitHydrograph(const CHydroUnit *pHRU, const optStruct &Options, double *aUnitHydro, int *aIntervals, int &N) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:

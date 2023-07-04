@@ -180,6 +180,8 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   aP[nP]="FOREST_COVERAGE";   aPC[nP]=CLASS_LANDUSE; nP++;
   aP[nP]="POROSITY";          aPC[nP]=CLASS_SOIL;    nP++;
 
+  aP[nP]="LAKE_PET_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; //required for ET from any reservoir, defaults to 1.0
+
   // Interpolation Method parameters
   //----------------------------------------------------------------------
   if((Options.interpolation==INTERP_NEAREST_NEIGHBOR) || (Options.interpolation==INTERP_AVERAGE_ALL))
@@ -558,6 +560,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   {
     // no parameter required
   }
+
+  //Assume all models need this...
+  aP[nP] = "RELATIVE_HT";     aPC[nP] = CLASS_VEGETATION; nP++;
 
   // Interception factor estimators
   //----------------------------------------------------------------------

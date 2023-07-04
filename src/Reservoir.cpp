@@ -1045,9 +1045,8 @@ double CReservoir::GetAET() const
     double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
     if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
       Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-      return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/(_pHRU->GetArea()*M2_PER_KM2); //normalized to HRU area 
     }
-    return 0.0;
+    return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/(_pHRU->GetArea()*M2_PER_KM2); //normalized to HRU area 
   }
   else {
     return 0.0;
