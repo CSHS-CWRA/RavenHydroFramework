@@ -1089,6 +1089,7 @@ struct optStruct
   bool             write_demandfile;          ///< true if demands.csv file is to be written
   bool             write_simpleout;           ///< true if simple_out.csv file is to be written (for scripting)
   bool             write_massloading;         ///< true if MassLoadings.csv file is to be written
+  bool             write_localflow;           ///< true if local flows are written to Hydrographs file (csv or nc)
   bool             benchmarking;              ///< true if benchmarking output - removes version/timestamps in output   
   bool             suppressICs;               ///< true if initial conditions are suppressed when writing output time series
   bool             period_ending;             ///< true if period ending convention should be used for reading/writing Ensim files

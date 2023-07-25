@@ -323,6 +323,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("SNOWLIQ"         )){typ=SNOW_LIQ;}
   else if (!tmp.compare("SNOW_LIQ"        )){typ=SNOW_LIQ;}
   else if (!tmp.compare("SNOW_DEPTH"      )){typ=SNOW_DEPTH;}
+  else if (!tmp.compare("SNOW_TEMP"       )){typ=SNOW_TEMP;}
   else if (!tmp.compare("COLD_CONTENT"    )){typ=COLD_CONTENT;}
   else if (!tmp.compare("WETLAND"         )){typ=WETLAND;}
   else if (!tmp.compare("DEPRESSION"      )){typ=DEPRESSION;}

@@ -107,6 +107,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   }
   _QoutLast=AUTO_COMPUTE; //can be overridden by initial conditions
   _QlatLast=AUTO_COMPUTE; //can be overridden by initial conditions
+  _Qlocal=0;
+  _QlocLast=0;
   _channel_storage=0.0;   //calculated from initial flows
   _rivulet_storage=0.0;   //calculated from initial flows
 
@@ -718,6 +720,15 @@ double    CSubBasin::GetLastOutflowRate() const
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns local (in-catchment) contribution to outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
+/// \return local outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
+//
+double CSubBasin::GetLocalOutflowRate() const
+{
+  return _Qlocal;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 /// \return Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 //
@@ -777,6 +788,15 @@ double CSubBasin::GetIntegratedSpecInflow(const double &t, const double &tstep) 
   sum+=0.5*(GetSpecifiedInflow(t) +GetSpecifiedInflow (t+tstep))*(tstep*SEC_PER_DAY); //integrated
   sum+=GetDownstreamInflow(t)*(tstep*SEC_PER_DAY);                   //integrated -period starting
   return sum;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns total volume lost by main reach sourced from in-catcment routing over timestep [m^3]
+/// \note Should be called only at end of completed tstep
+/// \return Total volume lost by main reach sourced from in-catcment routing over timestep [m^3]
+//
+double CSubBasin::GetIntegratedLocalOutflow(const double &tstep) const//[m3]
+{
+  return 0.5*(_Qlocal+_QlocLast)*(tstep*SEC_PER_DAY); //integrated
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reference discharge [m^3/s]
@@ -1798,6 +1818,8 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
   for (int n=0;n<_nQlatHist;n++){
     Qlat_new+=_aUnitHydro[n]*_aQlatHist[n];
   }
+  _QlocLast=_Qlocal;
+  _Qlocal=Qlat_new; 
 
   //volume change from linearly varying upstream inflow over this time step
   dV+=0.5*(_aQinHist[0]+_aQinHist[1])*dt;

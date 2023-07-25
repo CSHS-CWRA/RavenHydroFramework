@@ -104,6 +104,8 @@ private:/*------------------------------------------------------*/
   double      _rivulet_storage;   ///< water storage in rivulets [m3]
   double             _QoutLast;   ///< Qout from downstream channel segment [m3/s] at start of previous timestep- needed for reporting integrated outflow
   double             _QlatLast;   ///< Qlat (after convolution) at start of previous timestep [m3/s]
+  double               _Qlocal;   ///< local contribution to current subbasin outflow [m3/s] (just from in-catchment routing)
+  double             _QlocLast;   ///< last local contribution [m3/s]
 
   double                 _Qirr;   ///< Qirr (irrigation/diversion flow) at end of timestep [m3/s] (for MB accounting)
   double             _QirrLast;   ///< Qirr (irrigation/diversion flow) at start of timestep [m3/s] (for MB accounting)
@@ -206,9 +208,11 @@ public:/*-------------------------------------------------------*/
 
   double          GetOutflowRate           () const;                   //[m3/s] from final segment, point in time
   double          GetLastOutflowRate       () const;                   //[m3/s] from final segment, previous timestep
+  double          GetLocalOutflowRate      () const;                   //[m3/s] local contribution to outflow
   double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
   double          GetIntegratedSpecInflow  (const double &t,
                                             const double &tstep) const;//[m3] from specified inflows integrated over timestep
+  double          GetIntegratedLocalOutflow(const double &tstep) const;//[m3] from local contributions, integrated over timestep
   double          GetReservoirInflow       () const;                   //[m3/s] from final segment upstream of reservoir, point in time
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep

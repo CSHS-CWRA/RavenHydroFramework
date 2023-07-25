@@ -304,6 +304,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.write_massloading       =false;
   Options.write_constitmass       =false;
   Options.write_waterlevels       =false;
+  Options.write_localflow         =false;
   Options.suppressICs             =false;
   Options.period_ending           =false;
   Options.period_starting         =false;
@@ -496,6 +497,8 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteSimpleOutput"         )){code=181;}
     else if  (!strcmp(s[0],":WriteWaterLevels"          )){code=182;}
     else if  (!strcmp(s[0],":WriteMassLoadings"         )){code=183;}
+    else if  (!strcmp(s[0],":WriteLocalFlows"           )){code=184;}
+    
     //...
     //--------------------SYSTEM OPTIONS -----------------------
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
@@ -1972,7 +1975,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_massloading=true;
       break;
     }
-      
+    case(184):  //--------------------------------------------
+    {/*:WriteLocalFlows*/
+      if(Options.noisy) { cout << "Write local flows to hydrographs file" << endl; }
+      Options.write_localflow=true;
+      break;
+    }      
     case(199):  //--------------------------------------------
     {/*:AggregatedVariable [SV_TAG] {optional HRU_Group}*/
 

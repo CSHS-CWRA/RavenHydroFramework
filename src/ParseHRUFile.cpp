@@ -343,7 +343,9 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       int HRUID;
       pRes=ReservoirParse(pp,s[1],pModel,HRUID,Options);
       pSB=pModel->GetSubBasinByID(pRes->GetSubbasinID());
-      pRes->SetHRU(pModel->GetHRUByID(HRUID));
+      if (HRUID!=DOESNT_EXIST){
+        pRes->SetHRU(pModel->GetHRUByID(HRUID));
+      }
       if (pSB!=NULL){pSB->AddReservoir(pRes);}
       else          {
         ExitGracefully("ParseHRUProps: Bad Sub-basin index in :Reservoir command",BAD_DATA);

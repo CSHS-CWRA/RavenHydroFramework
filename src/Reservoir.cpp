@@ -1061,7 +1061,12 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 {
   _MB_losses=0.0; //all losses outside the system 
 
-  _AET = GetAET()*(_pHRU->GetArea()*M2_PER_KM2)/ MM_PER_METER * tstep; //m3;
+  if (_pHRU!=NULL){
+    _AET = GetAET()*(_pHRU->GetArea()*M2_PER_KM2)/ MM_PER_METER * tstep; //m3;
+  }
+  else {
+    _AET = 0.0;
+  }
   _MB_losses+=_AET;
 
   if(_seepage_const>0) {

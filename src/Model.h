@@ -143,10 +143,12 @@ private:/*------------------------------------------------------*/
   ofstream             _RESSTAGE; ///< output file stream for ReservoirStages.csv
   ofstream              _DEMANDS; ///< output file stream for Demands.csv
   ofstream               _LEVELS; ///< output file stream for WaterLevels.csv
-  int                _HYDRO_ncid; ///< output file ID  for Hydrographs.nc;     
-  int             _RESSTAGE_ncid; ///< output file ID  for ReservoirStages.nc;  
-  int              _STORAGE_ncid; ///< output file ID  for WatershedStorage.nc; 
-  int             _FORCINGS_ncid; ///< output file ID  for ForcingFunctions.nc;   
+  int                _HYDRO_ncid; ///< output file ID for Hydrographs.nc     
+  int             _RESSTAGE_ncid; ///< output file ID for ReservoirStages.nc  
+  int              _STORAGE_ncid; ///< output file ID for WatershedStorage.nc 
+  int             _FORCINGS_ncid; ///< output file ID for ForcingFunctions.nc 
+  int                _RESMB_ncid; ///< output file ID for ReservoirMassBalance.nc
+  
   double          *_aOutputTimes; ///< array of model major output times (LOCAL times at which full solution is written)
   int              _nOutputTimes; ///< size of array of model major output times
   int         _currOutputTimeInd; ///< index of current output time

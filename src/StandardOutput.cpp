@@ -148,9 +148,11 @@ void CModel::CloseOutputStreams()
   _STORAGE_ncid  = -9;
   if (_FORCINGS_ncid != -9) {retval = nc_close(_FORCINGS_ncid); HandleNetCDFErrors(retval); }
   _FORCINGS_ncid = -9;
-  if(_RESSTAGE_ncid != -9) { retval = nc_close(_RESSTAGE_ncid); HandleNetCDFErrors(retval); }
+  if(_RESSTAGE_ncid != -9)  {retval = nc_close(_RESSTAGE_ncid); HandleNetCDFErrors(retval); }
   _RESSTAGE_ncid = -9;
-  
+  if(_RESMB_ncid != -9)     {retval = nc_close(_RESMB_ncid);    HandleNetCDFErrors(retval); }
+  _RESMB_ncid = -9;
+
 #endif   // end compilation if NetCDF library is available
 }
 
@@ -219,7 +221,10 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
             else                     {_HYDRO<<","   <<pSB->GetName()<<" (observed) [m3/s]";}
           }
         }
-
+        if (Options.write_localflow) {
+          if (pSB->GetName()=="")    {_HYDRO<<",ID="<<pSB->GetID()  <<" (local) [m3/s]";}
+          else                       {_HYDRO<<","   <<pSB->GetName()<<" (local) [m3/s]";}
+        }
         if (pSB->GetReservoir() != NULL)
         {
           if (pSB->GetName()=="")    {_HYDRO<<",ID="<<pSB->GetID()  <<" (res. inflow) [m3/s]";}
@@ -299,6 +304,63 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       _RESSTAGE<<endl;
     }
 
+    //ReservoirMassBalance.csv
+    //--------------------------------------------------------------
+    if (Options.write_reservoirMB) 
+    {
+      ofstream RES_MB;
+      string name;
+      tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
+      RES_MB.open(tmpFilename.c_str());
+      if (RES_MB.fail()){
+        ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+      }
+      RES_MB<<"time,date,hour";
+      RES_MB<<",precip [mm/day]";
+      for(p=0;p<_nSubBasins;p++){
+        if((_pSubBasins[p]->IsGauged())  && (_pSubBasins[p]->IsEnabled())  && (_pSubBasins[p]->GetReservoir()!=NULL)) {
+
+          if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
+          else                             { name=_pSubBasins[p]->GetName(); }
+          RES_MB<<","   <<name<<" stage [m]";
+          RES_MB<<","   <<name<<" inflow [m3]";
+          RES_MB<<","   <<name<<" outflow [m3]"; //from main outlet
+          for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
+            string name2=_pSubBasins[p]->GetReservoir()->GetControlName(i);
+            RES_MB<<","   <<name<<" ctrl outflow "<<name2<<" [m3]";
+            RES_MB<<","   <<name<<" ctrl regime "<<name2;
+          }
+          RES_MB<<","   <<name<<" precip [m3]";
+          RES_MB<<","   <<name<<" evap [m3]";
+          RES_MB<<","   <<name<<" seepage [m3]";
+          RES_MB<<","   <<name<<" volume [m3]";
+          RES_MB<<","   <<name<<" losses [m3]";
+          RES_MB<<","   <<name<<" MB error [m3]";
+          RES_MB<<","   <<name<<" constraint";
+        }
+      }
+      RES_MB<<endl;
+      RES_MB.close();
+    }
+
+    //ForcingFunctions.csv
+    //--------------------------------------------------------------
+    if(Options.write_forcings)
+    {
+      tmpFilename=FilenamePrepare("ForcingFunctions.csv",Options);
+      _FORCINGS.open(tmpFilename.c_str());
+      if (_FORCINGS.fail()){
+        ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+      }
+      _FORCINGS<<"time [d], date, hour, day_angle,";
+      _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
+      _FORCINGS<<" air_density [kg/m3], air_pressure [KPa], rel_humidity [-],";
+      _FORCINGS<<" cloud_cover [-],";
+      _FORCINGS<<" ET_radiation [MJ/m2/d], SW_radiation [MJ/m2/d], net_SW_radiation [MJ/m2/d], LW_radiation [MJ/m2/d], wind_speed [m/s],";
+      _FORCINGS<<" PET [mm/d], OW_PET [mm/d],";
+      _FORCINGS<<" daily_correction [-], potential_melt [mm/d]";
+      _FORCINGS<<endl;
+    }
   }
   else if (Options.output_format==OUTPUT_ENSIM)
   {
@@ -308,7 +370,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     WriteNetcdfStandardHeaders(Options);  // creates NetCDF files, writes dimensions and creates variables (without writing actual values)
   }
-
 
   //Demands.csv
   //--------------------------------------------------------------
@@ -334,46 +395,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
     _DEMANDS<<endl;
   }
-
-  //ReservoirMassBalance.csv
-  //--------------------------------------------------------------
-  if ((Options.write_reservoirMB) && (Options.output_format!=OUTPUT_NONE))
-  {
-    ofstream RES_MB;
-    string name;
-    tmpFilename=FilenamePrepare("ReservoirMassBalance.csv",Options);
-    RES_MB.open(tmpFilename.c_str());
-    if (RES_MB.fail()){
-      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-    RES_MB<<"time,date,hour";
-    RES_MB<<",precip [mm/day]";
-    for(p=0;p<_nSubBasins;p++){
-      if((_pSubBasins[p]->IsGauged())  && (_pSubBasins[p]->IsEnabled())  && (_pSubBasins[p]->GetReservoir()!=NULL)) {
-
-        if(_pSubBasins[p]->GetName()==""){ name=to_string(_pSubBasins[p]->GetID())+"="+to_string(_pSubBasins[p]->GetID()); }
-        else                             { name=_pSubBasins[p]->GetName(); }
-        RES_MB<<","   <<name<<" stage [m]";
-        RES_MB<<","   <<name<<" inflow [m3]";
-        RES_MB<<","   <<name<<" outflow [m3]"; //from main outlet
-        for (int i = 0; i < _pSubBasins[p]->GetReservoir()->GetNumControlStructures(); i++) {
-          string name2=_pSubBasins[p]->GetReservoir()->GetControlName(i);
-          RES_MB<<","   <<name<<" ctrl outflow "<<name2<<" [m3]";
-          RES_MB<<","   <<name<<" ctrl regime "<<name2;
-        }
-        RES_MB<<","   <<name<<" precip [m3]";
-        RES_MB<<","   <<name<<" evap [m3]";
-        RES_MB<<","   <<name<<" seepage [m3]";
-        RES_MB<<","   <<name<<" volume [m3]";
-        RES_MB<<","   <<name<<" losses [m3]";
-        RES_MB<<","   <<name<<" MB error [m3]";
-        RES_MB<<","   <<name<<" constraint";
-      }
-    }
-    RES_MB<<endl;
-    RES_MB.close();
-  }
-
 
   //WatershedMassEnergyBalance.csv
   //--------------------------------------------------------------
@@ -527,25 +548,6 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     }
     MB<<endl;
     MB.close();
-  }
-
-  //ForcingFunctions.csv
-  //--------------------------------------------------------------
-  if((Options.write_forcings) && (Options.output_format==OUTPUT_STANDARD))
-  {
-    tmpFilename=FilenamePrepare("ForcingFunctions.csv",Options);
-    _FORCINGS.open(tmpFilename.c_str());
-    if (_FORCINGS.fail()){
-      ExitGracefully(("CModel::WriteOutputFileHeaders: Unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-    _FORCINGS<<"time [d], date, hour, day_angle,";
-    _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
-    _FORCINGS<<" air_density [kg/m3], air_pressure [KPa], rel_humidity [-],";
-    _FORCINGS<<" cloud_cover [-],";
-    _FORCINGS<<" ET_radiation [MJ/m2/d], SW_radiation [MJ/m2/d], net_SW_radiation [MJ/m2/d], LW_radiation [MJ/m2/d], wind_speed [m/s],";
-    _FORCINGS<<" PET [mm/d], OW_PET [mm/d],";
-    _FORCINGS<<" daily_correction [-], potential_melt [mm/d]";
-    _FORCINGS<<endl;
   }
 
   // HRU Storage files
@@ -751,6 +753,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                 else                                             { _HYDRO << ",";       }
               }
             }
+            if (Options.write_localflow){
+              _HYDRO<<","<<pSB->GetIntegratedLocalOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+            }
             if (pSB->GetReservoir() != NULL){
               _HYDRO<<","<<pSB->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
               for(i = 0; i < _nObservedTS; i++)
@@ -789,7 +794,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   else                                            { _HYDRO << ","; }
                 }
               }
-
+              if (Options.write_localflow){
+                _HYDRO<<","<<pSB->GetLocalOutflowRate();
+              }
               if(pSB->GetReservoir() != NULL){
                 _HYDRO<<","<<pSB->GetReservoirInflow();
                 for(i = 0; i < _nObservedTS; i++)
@@ -1572,7 +1579,7 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
     {
       CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
       if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}
-      if ((kk!=DOESNT_EXIST) && (!IsInSubBasinGroup(pBasin->GetID(),_pSBGroups[kk]->GetName()))){skip=true;}
+      if ((pBasin!=NULL) && (kk!=DOESNT_EXIST) && (!IsInSubBasinGroup(pBasin->GetID(),_pSBGroups[kk]->GetName()))){skip=true;}
     }
     else{ //HRU-linked
       if ((kk!=DOESNT_EXIST) && (!IsInHRUGroup(_pObservedTS[i]->GetLocID(),_pHRUGroups[kk]->GetName()))){skip=true;}
@@ -1758,6 +1765,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   int         varid_qsim;                            // variable ID for simulated outflows
   int         varid_qobs;                            // variable ID for observed outflows
   int         varid_qin;                             // variable ID for observed inflows
+  int         varid_qloc;
 
   int         retval;                                // error value for NetCDF routines
   string      tmpFilename;
@@ -1769,6 +1777,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
   _RESSTAGE_ncid = -9;   // output file ID for ReservoirStages.nc    (-9 --> not opened)
+  _RESMB_ncid    = -9;
 
   //converts start day into "hours since YYYY-MM-DD HH:MM:SS"  (model start time)
   char  starttime[200]; // start time string in format 'hours since YYY-MM-DD HH:MM:SS'
@@ -1835,6 +1844,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
     varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
     varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Observed inflows"  ,"m**3 s**-1");
+    if (Options.write_localflow){
+    varid_qloc= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_loc" ,"Local inflow contribution"  ,"m**3 s**-1");
+    }
   }// end if nSim>0
 
   // End define mode. This tells netCDF we are done defining metadata.
@@ -2013,6 +2025,76 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     // End define mode. This tells netCDF we are done defining metadata.
     retval = nc_enddef(_FORCINGS_ncid);  HandleNetCDFErrors(retval);
   }
+
+  //====================================================================
+  //  ReservoirMassBalance.nc
+  //====================================================================
+  if(Options.write_reservoirMB)
+  {
+    tmpFilename = FilenamePrepare("ReservoirMassBalance.nc",Options);
+    retval = nc_create(tmpFilename.c_str(),NC_CLOBBER|NC_NETCDF4,&ncid);  HandleNetCDFErrors(retval);
+    _RESMB_ncid    = ncid;
+    
+    WriteNetCDFGlobalAttributes(_RESMB_ncid,Options,"Standard Output");
+
+    // ----------------------------------------------------------
+    // time vector
+    // ----------------------------------------------------------
+    retval = nc_def_dim(_RESMB_ncid,"time",NC_UNLIMITED,&time_dimid);  HandleNetCDFErrors(retval);
+    dimids1[0] = time_dimid;
+    retval = nc_def_var(_RESMB_ncid,"time",NC_DOUBLE,ndims1,dimids1,&varid_time);                HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_RESMB_ncid,varid_time,"units",strlen(starttime),starttime);        HandleNetCDFErrors(retval);
+    retval = nc_put_att_text(_RESMB_ncid,varid_time,"calendar",strlen("gregorian"),"gregorian"); HandleNetCDFErrors(retval);
+
+    // ----------------------------------------------------------
+    int varid;
+    varid= NetCDFAddMetadata(_RESMB_ncid,time_dimid,"precip","Precipitation","mm d**-1");
+
+    // (a) count number of simulated reservoirs "nSim"
+    nSim = 0;
+    for(p=0;p<_nSubBasins;p++) {
+      if((_pSubBasins[p]->IsGauged())  && (_pSubBasins[p]->IsEnabled())  && (_pSubBasins[p]->GetReservoir()!=NULL)) { nSim++; }
+    }
+
+    if(nSim > 0)
+    {
+      // (b) create dimension "nbasins"
+      retval = nc_def_dim(_RESMB_ncid,"nbasins",nSim,&nbasins_dimid);                             HandleNetCDFErrors(retval);
+
+      // (c) create variable  and set attributes for"basin_name"
+      dimids1[0] = nbasins_dimid;
+      retval = nc_def_var(_RESMB_ncid,"basin_name",NC_STRING,ndims1,dimids1,&varid_bsim);         HandleNetCDFErrors(retval);
+      tmp ="Name/ID of sub-basins with simulated outflows";
+      tmp2="timeseries_id";
+      tmp3="1";
+      retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"long_name", tmp.length(), tmp.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"cf_role",  tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
+      retval = nc_put_att_text(_RESMB_ncid,varid_bsim,"units",    tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
+
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"stage",    "stage",  "m");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"inflow",   "inflow", "m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"outflow",  "outflow","m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"precip_m3","precip", "m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"evap",     "evap",   "m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"seepage",  "seepage","m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"volume",   "volume", "m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"losses",   "losses", "m3");
+      varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"MB_error","Mass balance error","m3");
+      //varid= NetCDFAddMetadata2D(_RESMB_ncid,time_dimid,nbasins_dimid,"constraint","constraint","");
+
+      //NetCDF DOES NOT Report control structure outflow details (see .csv)
+
+    }// end if nSim>0
+
+    // End define mode. This tells netCDF we are done defining metadata.
+    retval = nc_enddef(_RESMB_ncid);  HandleNetCDFErrors(retval);
+
+    // write values to NetCDF
+    // (a) write gauged reservoir basin names/IDs to variable "basin_name"
+    if (nSim>0){
+      WriteNetCDFBasinList(_RESMB_ncid,varid_bsim,this,true,Options);
+    }
+  }
 #endif   // end compilation if NetCDF library is available
 }
 
@@ -2142,11 +2224,13 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   // (b) allocate memory if necessary
   double *outflow_obs=NULL;   // q_obs
   double *outflow_sim=NULL;   // q_sim
-  double *inflow_obs =NULL;    // q_in
+  double *inflow_obs =NULL;   // q_in
+  double *outflow_loc=NULL;   // q_loc
   if(nSim>0){
     outflow_sim=new double[nSim];
     outflow_obs=new double[nSim];
     inflow_obs =new double[nSim];
+    outflow_loc=new double[nSim];
   }
 
   // (c) obtain data
@@ -2168,6 +2252,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
             if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ outflow_obs[iSim] = val;    }
           }
         }
+        outflow_loc[iSim] =_pSubBasins[p]->GetIntegratedLocalOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
+        
         inflow_obs[iSim] =NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
           inflow_obs[iSim] = _pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
@@ -2191,6 +2277,8 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
             if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ outflow_obs[iSim] = val;    }
           }
         }
+        outflow_loc[iSim] =_pSubBasins[p]->GetLocalOutflowRate();
+        
         inflow_obs[iSim] =NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
           inflow_obs[iSim] = _pSubBasins[p]->GetReservoirInflow();
@@ -2220,11 +2308,17 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     retval = nc_put_vara_double(_HYDRO_ncid, qsim_id, start2, count2, &outflow_sim[0]); HandleNetCDFErrors(retval);
     retval = nc_put_vara_double(_HYDRO_ncid, qobs_id, start2, count2, &outflow_obs[0]); HandleNetCDFErrors(retval);
     retval = nc_put_vara_double(_HYDRO_ncid, qin_id,  start2, count2, &inflow_obs[0]);  HandleNetCDFErrors(retval);
+    if (Options.write_localflow){
+      int qloc_id;
+      retval = nc_inq_varid (_HYDRO_ncid, "q_loc",  &qloc_id);                            HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_HYDRO_ncid, qloc_id, start2, count2, &outflow_loc[0]); HandleNetCDFErrors(retval);
+    }
   }
 
   delete[] outflow_obs;
   delete[] outflow_sim;
   delete[] inflow_obs;
+  delete[] outflow_loc;
 
   //====================================================================
   //  ReservoirStages.nc
@@ -2384,6 +2478,117 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     AddSingleValueToNetCDF(_FORCINGS_ncid,"PET"              ,time_ind2,pFave->PET);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"OW_PET"           ,time_ind2,pFave->OW_PET);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"potential_melt"   ,time_ind2,pFave->potential_melt);
+  }
+
+  //====================================================================
+  //  ReservoirMassBalance.nc
+  //====================================================================
+  if(Options.write_reservoirMB)
+  {
+
+    int    this_id;
+
+    // (a) count how many values need to be written 
+    int iSim,nSim; // current and total # of sub-basins with simulated stages
+    nSim = 0;
+    for(int p=0;p<_nSubBasins;p++) {
+      if(_pSubBasins[p]->IsGauged()  && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) { nSim++; }
+    }
+
+    // (b) allocate memory if necessary
+    double* stage=NULL;   
+    double* inflow=NULL;
+    double* outflow=NULL;
+    double* evap=NULL;
+    double* seepage=NULL;
+    double *stor=NULL;
+    double* MBerr=NULL;
+    double* losses=NULL;
+    double* precip=NULL;
+    if(nSim>0) {
+      stage  =new double [nSim];
+      inflow =new double [nSim];
+      outflow=new double [nSim];
+      evap   =new double [nSim];
+      seepage=new double [nSim];
+      stor   =new double [nSim];
+      MBerr  =new double [nSim];
+      losses =new double [nSim];
+      precip =new double [nSim];
+    }
+
+    // (c) obtain data
+    iSim = 0;
+    current_prec[0] = NETCDF_BLANK_VALUE;
+    if(tt.model_time != 0.0) { current_prec[0] = GetAveragePrecip(); } //watershed-wide precip
+    double oldstor;
+    for(int p=0;p<_nSubBasins;p++)
+    {
+      CSubBasin *pSB=_pSubBasins[p];
+      if(pSB->IsGauged() && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) 
+      {
+        stage  [iSim]=pSB->GetReservoir()->GetResStage();
+        inflow [iSim]=pSB->GetIntegratedReservoirInflow(Options.timestep);//m3
+        outflow[iSim]=pSB->GetIntegratedOutflow        (Options.timestep);//m3
+        evap   [iSim]=pSB->GetReservoir()->GetReservoirEvapLosses (Options.timestep);//m3
+        seepage[iSim]=pSB->GetReservoir()->GetReservoirGWLosses   (Options.timestep);//m3
+        stor   [iSim]=pSB->GetReservoir()->GetStorage             ();//m3
+        oldstor      =pSB->GetReservoir()->GetOldStorage          ();//m3
+        losses [iSim]=pSB->GetReservoir()->GetReservoirLosses     (Options.timestep);//m3 = GW+ET
+        precip [iSim]=pSB->GetReservoir()->GetReservoirPrecipGains(Options.timestep);//m3
+        MBerr  [iSim]=inflow[iSim]-outflow[iSim]-losses[iSim]+precip[iSim]-(stor[iSim]-oldstor);
+        //constraint_str[iSim]=pSB->GetReservoir()->GetCurrentConstraint   ();
+        if(tt.model_time==0.0){ inflow[iSim]=0.0; }
+
+
+        iSim++;
+      }
+    }
+    
+    // write new time step
+    retval = nc_inq_varid      (_RESMB_ncid,"time",&time_id);                              HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_RESMB_ncid,time_id,time_index,count1,&current_time[0]);   HandleNetCDFErrors(retval);
+
+    // write precipitation values
+    retval = nc_inq_varid      (_RESMB_ncid,"precip",&this_id);                          HandleNetCDFErrors(retval);
+    retval = nc_put_vara_double(_RESMB_ncid,this_id,time_index,count1,&current_prec[0]); HandleNetCDFErrors(retval);
+
+    // write simulated stage/obs stage values
+    if(nSim > 0) {
+      start2[0] = int(rvn_round(tt.model_time/Options.timestep)); // element of NetCDF array that will be written
+      start2[1] = 0;                                              // element of NetCDF array that will be written
+      count2[0] = 1;      // writes exactly one time step
+      count2[1] = nSim;   // writes exactly nSim elements
+      retval = nc_inq_varid(_RESMB_ncid,"stage",&this_id);                          HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&stage[0]);     HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"inflow",&this_id);                         HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&inflow[0]);    HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"outflow",&this_id);                        HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&outflow[0]);   HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"evap",&this_id);                           HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&evap[0]);      HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"seepage",&this_id);                        HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&seepage[0]);   HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"volume",&this_id);                         HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&stor[0]);      HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"MB_error",&this_id);                          HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&MBerr[0]);     HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"losses",&this_id);                         HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&losses[0]);    HandleNetCDFErrors(retval);
+      retval = nc_inq_varid(_RESMB_ncid,"precip_m3",&this_id);                      HandleNetCDFErrors(retval);
+      retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&precip[0]);    HandleNetCDFErrors(retval);
+      //retval = nc_inq_varid(_RESMB_ncid,"constraint",&this_id);                      HandleNetCDFErrors(retval);
+      //retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&constraint[0]); HandleNetCDFErrors(retval);
+    }
+    delete [] stage;   
+    delete [] inflow;
+    delete [] outflow;
+    delete [] evap;
+    delete [] seepage;
+    delete [] stor;
+    delete [] MBerr;
+    delete [] losses;
+    delete [] precip;
   }
 #endif
 }

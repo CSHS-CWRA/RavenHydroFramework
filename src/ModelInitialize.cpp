@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "IrregularTimeSeries.h"
@@ -255,6 +255,7 @@ void CModel::Initialize(const optStruct &Options)
   _STORAGE_ncid  = -9;   // output file ID for WatershedStorage.nc    (-9 --> not opened)
   _FORCINGS_ncid = -9;   // output file ID for ForcingFunctions.nc    (-9 --> not opened)
   _RESSTAGE_ncid = -9;   // output file ID for ReservoirStages.nc     (-9 --> not opened)
+  _RESMB_ncid    = -9;
 
   //Initialize Custom Output
   //--------------------------------------------------------------

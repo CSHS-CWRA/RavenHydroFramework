@@ -59,6 +59,7 @@ CModel::CModel(const int        nsoillayers,
   _STORAGE_ncid =-9;
   _FORCINGS_ncid=-9; 
   _RESSTAGE_ncid=-9;
+  _RESMB_ncid   =-9;
 
   _PETBlends_N=0;
   _PETBlends_type=NULL;
