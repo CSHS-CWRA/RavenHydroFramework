@@ -179,7 +179,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CmvPrecipitation *pPrecip=NULL;
   CProcessGroup    *pProcGroup=NULL;
   CProcessGroup    *pProcGroupOuter=NULL; //for nested processgroups
-  CGroundwaterModel *pGW=NULL;
+  CGroundwaterModel*pGW=NULL;
   bool              transprepared(false);
   bool              runname_overridden(false);
   bool              runmode_overridden(false);
@@ -278,7 +278,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.res_overflowmode        =OVERFLOW_ALL;
 
   //Groundwater model options
-  Options.modeltype            =MODELTYPE_SURFACE;
+  Options.modeltype               =MODELTYPE_SURFACE;
   
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable

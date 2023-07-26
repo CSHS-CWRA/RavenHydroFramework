@@ -4,23 +4,9 @@
   ----------------------------------------------------------------*/
 #include <time.h>
 #include "RavenInclude.h"
+#include "RavenMain.h"
 #include "Model.h"
 #include "UnitTesting.h"
-
-// Function Declarations------------------------------------------
-//Defined in ParseInput.cpp
-bool ParseInputFiles       (CModel*&pModel,        optStruct &Options);
-bool ParseInitialConditions(CModel*& pModel, const optStruct &Options);
-
-//Defined in Solvers.cpp
-void MassEnergyBalance     (CModel *pModel,const optStruct   &Options,const time_struct &tt);        
-void ParseLiveFile         (CModel*&pModel,const optStruct   &Options, const time_struct &tt);
-
-//Local functions defined below main() in RavenMain.cpp
-void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
-void CheckForErrorWarnings     (bool quiet);
-bool CheckForStopfile          (const int step, const time_struct &tt);
-void CallExternalScript        (const optStruct &Options, const time_struct &tt);
 
 // Main Driver Variables------------------------------------------
 static optStruct   Options;
@@ -34,6 +20,7 @@ double g_debug_vars[10];
 bool   g_disable_freezing =false;
 double g_min_storage      =0.0;
 int    g_current_e        =0;
+
 static string RavenBuildDate(__DATE__);
 
 //////////////////////////////////////////////////////////////////

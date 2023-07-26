@@ -103,6 +103,12 @@
     <Filter Include="Header Files\Groundwater">
       <UniqueIdentifier>{d870bb41-d9f9-4166-8030-2b86c1b5be5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_Testing">
+      <UniqueIdentifier>{8e0c0c7d-3821-4085-87f5-d218a81ddbfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_Testing">
+      <UniqueIdentifier>{c5b07c69-dece-4da1-b1e6-3a8df6384b3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonFunctions.cpp">
@@ -438,7 +444,8 @@
     <ClCompile Include="ChemEquilibrium.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-
+    <ClCompile Include="Raven_BMI.cpp">
+      <Filter>Source Files\_Driver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -624,6 +631,15 @@
     </ClInclude>
     <ClInclude Include="ChemEquilibrium.h">
       <Filter>Header Files\Transport</Filter>
+    </ClInclude>
+    <ClInclude Include="RavenMain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Raven_BMI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BMI.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
