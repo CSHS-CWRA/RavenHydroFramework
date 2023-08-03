@@ -16,7 +16,7 @@ bool ParseInitialConditions(CModel*& pModel, const optStruct &Options);
 void MassEnergyBalance     (CModel *pModel,const optStruct   &Options, const time_struct &tt);        
 void ParseLiveFile         (CModel*&pModel,const optStruct   &Options, const time_struct &tt);
 
-//Local functions defined below main()
+//Local functions defined below main() in RavenMain.cpp
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
 void CheckForErrorWarnings     (bool quiet);
 bool CheckForStopfile          (const int step, const time_struct &tt);

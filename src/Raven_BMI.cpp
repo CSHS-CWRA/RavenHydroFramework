@@ -29,6 +29,24 @@ CRavenBMI::~CRavenBMI() {}
 void CRavenBMI::Initialize(std::string config_file)
 {
   //NOTE: ENSEMBLE MODE NOT SUPPORTED WITH BMI
+  //model name handed in via configuration file
+
+  ifstream CONFIG;
+  CONFIG.open(config_file);
+  if (CONFIG.fail()){cout << "Cannot find configuration file "<<config_file <<endl; return;}
+  std::string line;
+  getline(CONFIG,line);
+
+  Options.rvi_filename=line+".rvi";
+  Options.rvp_filename=line+".rvp";
+  Options.rvh_filename=line+".rvh";
+  Options.rvt_filename=line+".rvt";
+  Options.rvc_filename=line+".rvc";
+  Options.rvg_filename=line+".rvg";
+  Options.rve_filename=line+".rve";
+  Options.rvl_filename=line+".rvl";
+
+  CONFIG.close();
 
   PrepareOutputdirectory(Options);
 
@@ -282,8 +300,14 @@ void CRavenBMI::GetValue(std::string name, void* dest)
   if      (name=="streamflow")
   {
     out=new double [pModel->GetNumSubBasins()];
-    for (p = 0; p < pModel->GetNumSubBasins(); p++) {
-      out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep);
+    for (p = 0; p < pModel->GetNumSubBasins(); p++) 
+    {
+      if (Options.ave_hydrograph){
+        out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep))/(Options.timestep*SEC_PER_DAY);
+      }
+      else{
+        out[p]=pModel->GetSubBasin(p)->GetOutflowRate();
+      }
     }
     memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
   }
