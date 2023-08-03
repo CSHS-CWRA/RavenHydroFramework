@@ -1,0 +1,52 @@
+{
+  "title": "Raven Hydrological Modelling Framework",
+  "creators": [
+    {
+      "name": "Craig, James",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0003-2715-7166"
+    },
+    {
+      "name": "Mai, Juliane",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-1132-2342"
+    },
+    {
+      "name": "Arsenault, Richard",
+      "affiliation": "École de technologie supérieure",
+      "orcid": "0000-0003-2834-2750"
+    },
+    {
+      "name": "Huard, David",
+      "affiliation": "Ouranos",
+      "orcid": "0000-0003-0311-5498"
+    },
+    {
+      "name": "Jauvin, Christian",
+      "affiliation": "K2 Geospatial",
+      "orcid": "0000-0002-2257-5636"
+    },
+    {
+      "name": "Smith, Trevor James",
+      "affiliation": "Ouranos",
+      "orcid": "0000-0001-5393-8359"
+    }
+  ],
+  "keywords": [
+    "hydrological framework",
+    "hydrology",
+    "modelling",
+    "prediction",
+    "raven",
+    "simulation"
+  ],
+  "license": "Artistic-2.0",
+  "language": "eng",
+  "communities": [
+    {
+      "identifier": "ouranos"
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open"
+}
