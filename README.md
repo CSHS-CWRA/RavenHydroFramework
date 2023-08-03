@@ -1,7 +1,7 @@
 # RavenHydroFramework
 The code repository for the Raven Hydrological Modelling Framework developed at the University of Waterloo
 
-Release versions, tutorials, documentation, and more distributed at [http://raven.uwaterloo.ca/Main.html](the Raven website)
+Release versions, tutorials, documentation, and more distributed at [the Raven website](http://raven.uwaterloo.ca/Main.html)
 
 Intended for use with Visual Studio Community Edition 2021, but also provided with Windows/linux/unix/MacOS g++ makefile and CMake configuration file. 
 
