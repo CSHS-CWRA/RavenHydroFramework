@@ -12,7 +12,7 @@
  * ...
 
 ### Does this PR introduce a breaking change?
-<!-- If so, please describe the impact and migration path for existing applications) -->
+<!-- If so, please describe the impact and migration path for existing applications -->
 
  * ...
 
