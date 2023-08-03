@@ -1,0 +1,21 @@
+name: Question/Support
+description: Ask for help from the developers
+labels: [ "support" ]
+
+body:
+  - type: textarea
+    id: setup-information
+    attributes:
+      label: Setup Information
+      description: |
+        What software versions are you running?
+      value: |
+        - Raven version:
+        - Operating System:
+  - type: textarea
+    id: description
+    attributes:
+      label: Context
+      description: Describe what you were trying to get done. Tell us what happened, what went wrong, and what you expected to happen.
+      value: |
+        <!--- Please be as detailed as possible. -->
