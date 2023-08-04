@@ -7,30 +7,148 @@
       "orcid": "0000-0003-2715-7166"
     },
     {
+      "name": "Chlumsky, Robert",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-1303-5064"
+    },
+    {
+      "name": "Jenkinson, Wayne",
+      "affiliation": "International Joint Commission",
+    },
+    {
+      "name": "Georg Jost",
+      "affiliation": "BC Hydro",
+    },
+    {
       "name": "Mai, Juliane",
       "affiliation": "University of Waterloo",
       "orcid": "0000-0002-1132-2342"
     },
     {
+      "name": "Scantlebury, Leland",
+      "affiliation": "University of California Davis",
+      "orcid": "0000-0002-6770-063X"
+    },
+    {
+      "name": "Serrer, Martin",
+      "affiliation": "National Research Council",
+    },
+    {
+      "name": "Sgro, Nicholas",
+      "affiliation": "Geofirma Engineering Ltd",
+    },
+    {
+      "name": "Snowdon, Andrew P.",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0003-3698-6177",
+    },
+    {
+      "name": "Tolson, Bryan",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-3092-5536",
+    },
+    {
+      "name": "Arabzadeh, Rezgar",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-1775-1076",
+    },
+    {
       "name": "Arsenault, Richard",
       "affiliation": "École de technologie supérieure",
-      "orcid": "0000-0003-2834-2750"
+      "orcid": "0000-0003-2834-2750",
+    },
+    {
+      "name": "Basu, Nandita B.",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-8867-8523",
+    },
+    {
+      "name": "Brown, Genevieve",
+      "affiliation": "University of Waterloo",
+    },
+    {
+      "name": "Burdett, Hannah",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-8144-9584",
+    },
+    {
+      "name": "Kheydr, Ayman",
+      "affiliation": "University of Waterloo",
+    },
+    {
+      "name": "Han, Ming",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-7258-2121",
     },
     {
       "name": "Huard, David",
       "affiliation": "Ouranos",
-      "orcid": "0000-0003-0311-5498"
+      "orcid": "0000-0003-0311-5498",
+    },
+    {
+      "name": "Huang, Susan",
     },
     {
       "name": "Jauvin, Christian",
       "affiliation": "K2 Geospatial",
-      "orcid": "0000-0002-2257-5636"
+      "orcid": "0000-0002-2257-5636",
+    },
+    {
+      "name": "Lapointe, Francis",
+      "affiliation": "Université de Sherbrooke",
+      "orcid": "0000-0002-7638-4018",
+    },
+    {
+      "name": "Lee, Konhee",
+      "affiliation": "Ontario Power Generation",
+      "orcid": "0000-0003-0494-6015",
+    },
+    {
+      "name": "Lin, Simon G.M.",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0001-5261-4977",
+    },
+    {
+      "name": "Shafii, Mahyar",
+      "affiliation": "University of Waterloo",
+      "orcid": "0000-0002-8303-1253",
+    },
+    {
+      "name": "Pearson, Stuart",
+      "affiliation": "Delft University of Technology",
+      "orcid": "0000-0002-3986-4469",
     },
     {
       "name": "Smith, Trevor James",
       "affiliation": "Ouranos",
-      "orcid": "0000-0001-5393-8359"
-    }
+      "orcid": "0000-0001-5393-8359",
+    },
+    {
+      "name": "Spraakman, Sylvie",
+      "affiliation": "City of Vancouver",
+      "orcid": "0000-0002-4474-4074",
+    },
+    {
+      "name": "Stonebridge, Graham",
+      "affiliation": "University of Waterloo, Aquanty",
+    },
+    {
+      "name": "Taheri, Mahkameh",
+      "affiliation": "Hatch Canada",
+      "orcid": "0000-0003-0604-5982",
+    },
+    {
+      "name": "Werstuck, Connor",
+      "affiliation": "Ontario Power Generation",
+    },
+    {
+      "name": "Zhang, Cloud",
+      "affiliation": "Andrews.engineer",
+    },
+    {
+      "name": "Zorn, Nicholas",
+      "affiliation": "Morrison Hershfield",
+    },
   ],
   "keywords": [
     "hydrological framework",
