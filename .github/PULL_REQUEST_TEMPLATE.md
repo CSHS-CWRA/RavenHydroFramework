@@ -1,0 +1,20 @@
+<!--Please ensure the PR fulfills the following requirements! -->
+<!-- If this is your first PR, make sure to add your details to the AUTHORS.rst! -->
+### Pull Request Checklist:
+- [ ] This PR addresses an already opened issue (for bug fixes / features)
+    - This PR fixes #xyz
+- [ ] Tests for the changes have been added (for bug fixes / features)
+  - [ ] (If applicable) Documentation has been added / updated (for bug fixes / features)
+- [ ] CHANGES.rst has been updated (with summary of main changes)
+
+### What kind of change does this PR introduce?
+
+ * ...
+
+### Does this PR introduce a breaking change?
+<!-- If so, please describe the impact and migration path for existing applications -->
+
+ * ...
+
+### Other information:
+<!-- Any other information that is of relevance to this PR, such as screenshots or references to external documentation. -->
