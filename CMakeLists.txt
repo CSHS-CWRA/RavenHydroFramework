@@ -10,6 +10,10 @@ find_package(NetCDF)
 file(GLOB HEADER "src/*.h")
 file(GLOB SOURCE "src/*.cpp")
 
+# creates a shared library - file extension is OS dependent (Linux: .so, Windows: .dll)
+add_library(ravenbmi SHARED ${SOURCE})
+
+# creates an executable - file extension is OS dependent (Linux: none, Windows: .exe)
 add_executable(Raven
   ${SOURCE}
   ${HEADER}
