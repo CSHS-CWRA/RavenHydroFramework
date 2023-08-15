@@ -18,6 +18,11 @@ class CRavenBMI : public bmixx::Bmi
     optStruct   Options;
     time_struct tt;
 
+    // Internal functions for reading the YAML config file.
+    void ReadConfigFile(std::string config_file);
+    std::vector<char *> SplitLine(std::string line);
+    void ProcessConfigFileArgument(std::string config_key, std::string config_value);
+
   public:
     CRavenBMI();
     ~CRavenBMI();

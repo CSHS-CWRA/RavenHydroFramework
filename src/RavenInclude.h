@@ -274,7 +274,8 @@ enum exitcode
   SIMULATION_DONE ///< Upon completion of the simulation
 };
 
-void ExitGracefully(const char *statement, exitcode code);//defined in RavenMain.cpp
+void FinalizeGracefully(const char *statement, exitcode code);  //defined in RavenMain.cpp
+void ExitGracefully(const char *statement, exitcode code);      //defined in RavenMain.cpp
 
 /////////////////////////////////////////////////////////////////
 /// \brief In-line function that calls ExitGracefully function in the case of condition
@@ -1110,6 +1111,7 @@ struct optStruct
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ////< [MB] size of memory chunk for each forcing grid
+  bool             in_bmi_mode;               ///< true if in BMI mode (no rvt files, no end time)
 };
 
 ///////////////////////////////////////////////////////////////////
