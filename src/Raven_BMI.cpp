@@ -434,7 +434,10 @@ void CRavenBMI::GetValue(std::string name, void* dest)
   }
   else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
   else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
-  
+  else {
+    throw std::logic_error("RavenBMI.GetValue: variable '" + name + "' not covered by this function.");
+    return;
+  }
 
   if ((is_HRU_SV) && (iSV!=DOESNT_EXIST))
   {
@@ -487,9 +490,15 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
 //
 void *CRavenBMI::GetValuePtr(std::string name) 
 {
-  //given that storage is never in array, this will never work!
-  throw std::logic_error("Not Implemented");
-  return NULL;
+  double *out = new double[pModel->GetNumSubBasins()];  // allocate memory for output
+  try {
+    this->GetValue(name, out);                            // get the value
+  } catch (std::logic_error &e) {
+    delete[] out;
+    throw std::logic_error(std::string("CRavenBMI.GetValuePtr: ") + e.what());
+    return NULL;
+  }
+  return out;
 }
 
 //------------------------------------------------------------------

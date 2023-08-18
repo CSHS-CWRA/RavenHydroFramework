@@ -86,4 +86,32 @@ class CRavenBMI : public bmixx::Bmi
     void GetGridNodesPerFace(const int grid, int *nodes_per_face);
 };
 
+
+////////////////////////////////////////////////////////////////////
+/// NextGen expects two externalized functions, one to create a new
+/// instance of the model and one to destroy/free an instance.
+/// More: https://github.com/NOAA-OWP/ngen/blob/master/doc/BMI_MODELS.md#bmi-c-model-as-shared-library-1
+
+extern "C"
+{
+  //////////////////////////////////////////////////////////////////
+  /// \brief Create a new instance of the model as expected by NextGen.
+  /// \return A pointer to the newly allocated instance.
+  //
+	CRavenBMI *bmi_model_create()
+	{
+		return new CRavenBMI();
+	}
+
+  //////////////////////////////////////////////////////////////////
+  /// \brief Destroy/free an instance created with @see bmi_model_create
+  /// \param ptr A pointer to the instance to be destroyed.
+  //
+	void bmi_model_destroy(CRavenBMI *ptr)
+	{
+		delete ptr;
+	}
+}
+
+
 #endif
