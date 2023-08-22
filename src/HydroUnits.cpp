@@ -482,14 +482,47 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon,
     else                    {_Forcings.snow_frac=1.0-(1.0-_Forcings.snow_frac)*Po/_Forcings.precip;}
   }
   else if (Ftyp == F_TEMP_AVE) {
-    //some of these dont work with sub-daily time steps!!!
-    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.temp_ave*=epsilon; _Forcings.temp_daily_min*=epsilon; _Forcings.temp_daily_max*=epsilon;}
-    else if (adj==ADJ_ADDITIVE      ){_Forcings.temp_ave+=epsilon;_Forcings.temp_daily_min+=epsilon; _Forcings.temp_daily_max+=epsilon;}
-    else if (adj==ADJ_REPLACE       ){_Forcings.temp_daily_min+=(epsilon-_Forcings.temp_ave); _Forcings.temp_daily_max+=(epsilon-_Forcings.temp_ave); _Forcings.temp_ave =epsilon;} 
+    //daily mean/min/max handled via AdjustDailyHRUForcings()
+    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.temp_ave*=epsilon; }
+    else if (adj==ADJ_ADDITIVE      ){_Forcings.temp_ave+=epsilon; }
+    else if (adj==ADJ_REPLACE       ){_Forcings.temp_ave =epsilon;} 
   }
   //AdjustForcing(_Forcings,Ftyp,value,adj);
   //AdjustForcings(force_struct F, forcing_type typ, double value, adjustment adj);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Adjust HRU daily mean/min/max Forcing values mid-simulation (only used for temperature)
+//
+void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* epsilon, const adjustment adj, const int nStepsPerDay)
+{
+  if (Ftyp == F_TEMP_AVE) 
+  {
+    if      (adj==ADJ_MULTIPLICATIVE)
+    {
+      double adjust=0;
+      for (int n=0;n<nStepsPerDay;n++){
+        adjust+=1.0*epsilon[n]; //mean multiplicative perturbation over the day -exact for single time step
+      }
+      _Forcings.temp_daily_min*=adjust; //approximate - uses mean perturbation to adjust extremes
+      _Forcings.temp_daily_max*=adjust; //approximate - uses mean perturbation to adjust extremes
+      _Forcings.temp_daily_ave*=adjust; //approximate - uses mean perturbation to adjust extremes
+    }
+    else if (adj==ADJ_ADDITIVE      )
+    { 
+      double adjust=0;
+      for (int n=0;n<nStepsPerDay;n++){
+        adjust+=epsilon[n];
+      }
+      _Forcings.temp_daily_ave+=adjust; //exact
+      _Forcings.temp_daily_min+=adjust; //approximate - uses mean perturbation to adjust extremes
+      _Forcings.temp_daily_max+=adjust; //approximate - uses mean perturbation to adjust extremes
+    }
+  }
+
+  //doesn't make sense for other forcings or REPLACEMENT
+
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns maximum allowable value of state variable in model
 ///

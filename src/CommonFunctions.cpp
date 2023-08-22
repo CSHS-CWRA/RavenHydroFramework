@@ -56,6 +56,8 @@ string GetProcessName(process_type p)
   case(GLACIER_INFIL):      {name="Glacier Infiltration";     break;}
   case(SNOW_ALBEDO_EVOLVE): {name="Snow Albedo Evolution";    break;}
   case(BLOWING_SNOW):       {name="Blowing Snow";             break;}
+  case(LAKE_FREEZING):      {name="Lake Freezing";            break;}
+  case(GROUND_FREEZING):    {name="Ground Freezing";          break;}
 
   case(CROP_HEAT_UNIT_EVOLVE):{name="Crop Heat Unit Evolution";break;}
   case(ABSTRACTION):        {name="Abstraction";              break;}

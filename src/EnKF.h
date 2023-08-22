@@ -14,6 +14,7 @@ struct force_perturb
   double       distpar[3];   ///< distribution parameters - conditional on distribution
   int          kk;           //< HRU group index (or DOESNT_EXIST if perturbation should apply everywhere)
   adjustment   adj_type;     //< additive or multiplicative adjustment
+  double      *eps;          //< stored adjustment factors for day - allows perturbations to be pre-calculated for day so that daily mean/min/max can be generated
 };
 struct obs_perturb
 {
@@ -84,19 +85,19 @@ public:
   double GetStartTime(const int e) const;
   EnKF_mode GetEnKFMode() const; 
 
-  void SetEnKFMode          (EnKF_mode mode);
-  void SetWarmRunname       (string runname);
-  void SetWindowSize        (const int nTimesteps);
-  void SetExtraRVTFile      (string filename);
-  void AddPerturbation      (forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj);
-  void AddObsPerturbation   (sv_type      type, disttype distrib, double *distpars, adjustment adj);
-  void AddAssimilationState (sv_type sv, int layer, int assim_groupID);
+  void SetEnKFMode           (EnKF_mode mode);
+  void SetWarmRunname        (string runname);
+  void SetWindowSize         (const int nTimesteps);
+  void SetExtraRVTFile       (string filename);
+  void AddForcingPerturbation(forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj, const int nStepsPerDay);
+  void AddObsPerturbation    (sv_type      type, disttype distrib, double *distpars, adjustment adj);
+  void AddAssimilationState  (sv_type sv, int layer, int assim_groupID);
 
-  void Initialize           (const CModel* pModel,const optStruct &Options);
-  void UpdateModel          (CModel *pModel,optStruct &Options,const int e);
-  void StartTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct &tt,const int e);
-  void CloseTimeStepOps     (CModel* pModel,optStruct& Options,const time_struct &tt,const int e); //called at end of each timestep
-  void FinishEnsembleRun    (CModel *pModel,optStruct &Options,const time_struct &tt,const int e);
+  void Initialize            (const CModel* pModel,const optStruct &Options);
+  void UpdateModel           (CModel *pModel,optStruct &Options,const int e);
+  void StartTimeStepOps      (CModel* pModel,optStruct& Options,const time_struct &tt,const int e);
+  void CloseTimeStepOps      (CModel* pModel,optStruct& Options,const time_struct &tt,const int e); //called at end of each timestep
+  void FinishEnsembleRun     (CModel *pModel,optStruct &Options,const time_struct &tt,const int e);
 };
 #endif
 

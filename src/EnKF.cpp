@@ -88,7 +88,12 @@ CEnKFEnsemble::~CEnKFEnsemble()
   delete [] _output_matrix;
   delete [] _noise_matrix;
 
-  for (int i=0;i<_nPerturbations;   i++){delete _pPerturbations   [i];} delete [] _pPerturbations;
+  for (int i=0;i<_nPerturbations;   i++)
+  {
+    delete [] _pPerturbations[i]->eps;
+    delete _pPerturbations   [i];
+  } 
+  delete [] _pPerturbations;
   for (int i=0;i<_nObsPerturbations;i++){delete _pObsPerturbations[i];} delete [] _pObsPerturbations;
   
   delete [] _aAssimStates;
@@ -104,7 +109,7 @@ CEnKFEnsemble::~CEnKFEnsemble()
 /// \param group_index [in] HRU group ID (or DOESNT_EXIST if all HRUs should be perturbed)
 /// \param adj [in] type of perturbation (e.g., additive or multiplicative)
 //
-void CEnKFEnsemble::AddPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj) 
+void CEnKFEnsemble::AddForcingPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj, int nStepsPerDay) 
 {
   force_perturb *pFP=new force_perturb();
   pFP->forcing     =type;
@@ -113,6 +118,10 @@ void CEnKFEnsemble::AddPerturbation(forcing_type type, disttype distrib, double*
   pFP->adj_type    =adj;
   for (int i = 0; i < 3; i++) {
     pFP->distpar[i]=distpars[i];
+  }
+  pFP->eps=new double [nStepsPerDay];
+  for (int n = 0; n < nStepsPerDay; n++) {
+    pFP->eps[n]=0;
   }
 
   if (!DynArrayAppend((void**&)(_pPerturbations),(void*)(pFP),_nPerturbations)){
@@ -137,7 +146,6 @@ void CEnKFEnsemble::AddObsPerturbation(sv_type type, disttype distrib, double* d
   for (int i = 0; i < 3; i++) {
     pOP->distpar[i]=distpars[i];
   }
-
   if (!DynArrayAppend((void**&)(_pObsPerturbations),(void*)(pOP),_nObsPerturbations)){
     ExitGracefully("CEnKFEnsemble::AddObsPerturbation: creating NULL observation perturbation",BAD_DATA_WARN);
   }
@@ -407,17 +415,34 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 //
 void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const time_struct &tt,const int e)
 {
+
   //Apply forcing perturbations for the current time step
   //----------------------------------------------------------
-  if ((_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
+  if ((_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) 
+  {
     int kk=DOESNT_EXIST;
     double eps=0;
-    for(int i=0;i<_nPerturbations;i++) {
+    for(int i=0;i<_nPerturbations;i++) 
+    {
       kk=_pPerturbations[i]->kk;
-      eps=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar);
+
+      int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+      double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+      int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+      bool   start_of_day = ((nn==0) || (tt.model_time==0.0)); //nn==0 corresponds to midnight
+
+      if (start_of_day)  { //get all random perturbation samples for the day
+        for (int n=0;n<nStepsPerDay;n++){
+          _pPerturbations[i]->eps[n]=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar); 
+        }
+      }
+
       for(int k=0;k<pModel->GetNumHRUs();k++) {
         if((kk==DOESNT_EXIST) || (pModel->GetHRUGroup(kk)->IsInGroup(k))) {
-          pModel->GetHydroUnit(k)->AdjustHRUForcing(_pPerturbations[i]->forcing,eps,_pPerturbations[i]->adj_type);
+          pModel->GetHydroUnit(k)->AdjustHRUForcing(_pPerturbations[i]->forcing,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
+          if (start_of_day){
+            pModel->GetHydroUnit(k)->AdjustDailyHRUForcings(_pPerturbations[i]->forcing,_pPerturbations[i]->eps,_pPerturbations[i]->adj_type,nStepsPerDay);
+          }
         }
       }
     }
@@ -772,6 +797,7 @@ void CEnKFEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   }
 
   ParseInitialConditions(pModel,Options);
+  pModel->CalculateInitialWaterStorage(Options);
 
   // read ensemble-member specific time series (e.g., upstream flows in model cascade), if present
   if (_extra_rvt != "") {
@@ -834,7 +860,7 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
       Options.rvc_filename=_aOutputDirs[ee]+solfile;
 
       ParseInitialConditions(pModel,Options);
-
+      
       //Update state vector in model 
       UpdateFromStateMatrix(pModel,Options,ee);
   

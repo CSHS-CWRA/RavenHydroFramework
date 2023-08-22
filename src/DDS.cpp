@@ -7,7 +7,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 //external function declarations
 double UniformRandom();
 double GaussRandom();
-bool   ParseInitialConditionsFile(CModel *&pModel,const optStruct &Options);
+bool   ParseInitialConditions(CModel *&pModel,const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 /// \brief DDS Ensemble Construcutor 
@@ -194,9 +194,10 @@ void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
                             _TestParams[k]);
   }
   //- Re-read initial conditions to update state variables----
-  if(!ParseInitialConditionsFile(pModel,Options)) {
+  if(!ParseInitialConditions(pModel,Options)) {
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);
   }
+  pModel->CalculateInitialWaterStorage(Options);
 
   //The model is run following this routine call...
 }

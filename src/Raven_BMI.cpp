@@ -303,7 +303,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
     for (p = 0; p < pModel->GetNumSubBasins(); p++) 
     {
       if (Options.ave_hydrograph){
-        out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep))/(Options.timestep*SEC_PER_DAY);
+        out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
       }
       else{
         out[p]=pModel->GetSubBasin(p)->GetOutflowRate();

@@ -1843,7 +1843,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
     varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
     varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
-    varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Observed inflows"  ,"m**3 s**-1");
+    varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Simulated reservoir inflows"  ,"m**3 s**-1");
     if (Options.write_localflow){
     varid_qloc= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_loc" ,"Local inflow contribution"  ,"m**3 s**-1");
     }

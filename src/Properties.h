@@ -251,6 +251,7 @@ struct surface_struct
   double cond_melt_mult;    ///< [-]       condensation melt multiplier
   double rain_melt_mult;    ///< [-]       rain melt multiplier
   double bsnow_distrib;     ///< [-]       blowing snow distribution parameter
+  double lakesnow_buffer_ht;///< [mmSWE]   height of snow above which potential melt energy doest reach lake ice 
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
