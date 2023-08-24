@@ -363,7 +363,7 @@ std::string CRavenBMI::GetVarUnits(std::string name)
 //
 std::string CRavenBMI::GetVarType(std::string name) 
 {
-  return "float";
+  return "double";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns size of input or output variable, in bytes
