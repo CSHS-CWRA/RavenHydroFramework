@@ -19,7 +19,7 @@ bool   g_suppress_zeros   =false;
 double g_debug_vars[10];
 bool   g_disable_freezing =false;
 double g_min_storage      =0.0;
-int    g_current_e        =0;
+int    g_current_e        =DOESNT_EXIST;
 
 static string RavenBuildDate(__DATE__);
 
@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   
-  Options.version="3.7";
+  Options.version="3.7.1";
 #ifdef _NETCDF_ 
   Options.version+=" w/ netCDF";
 #endif

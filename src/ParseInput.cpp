@@ -61,7 +61,8 @@ potmelt_method ParsePotMeltMethod(const string s);
 ///
 bool ParseInitialConditions(CModel*& pModel, const optStruct& Options) 
 {
-
+  if ((pModel->GetEnsemble()->GetType()==ENSEMBLE_ENKF) && (g_current_e==DOESNT_EXIST)){return true;}//waits until UpdateModel() is called
+  
   if (!ParseInitialConditionsFile(pModel,Options)){
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
   }
