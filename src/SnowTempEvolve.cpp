@@ -135,7 +135,7 @@ void GetSnowTemperature(force_struct *F, CHydroUnit *pHRU, const double ref_elev
   double delta = AIR_H20_MW_RAT*LS*Qss/(UNIV_GAS_CONST*sqrt(air_temp));
 
   double q = F->rel_humidity*Qs(F->air_pres,air_temp); // specific humidity (kg/kg)
-  
+
   double snow_temp = air_temp + (EMISS*(LWi - SBC*pow(air_temp,4.0)) + LS*(q - Qss)*air_dens/ra)/(4*EMISS*SBC*pow(air_temp,3.0) + (CP + LS*delta)*air_dens/ra);
 
   return min(snow_temp-ZERO_CELSIUS,FREEZING_TEMP);

@@ -66,7 +66,7 @@ void ZeroOutForcings(force_struct &F)
 /// \brief Copys only the forcings that are constant over the course of a day from stcuture Ffrom to structure Fto
 ///
 //
-void CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto) 
+void CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto)
 {
   Fto.temp_daily_min = Ffrom.temp_daily_min;
   Fto.temp_daily_max = Ffrom.temp_daily_max;

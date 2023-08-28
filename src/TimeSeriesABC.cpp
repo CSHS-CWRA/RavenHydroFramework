@@ -72,7 +72,7 @@ long   CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns location identifier
-/// \return constituent index (or DOESNT_EXIST, otherwise) 
+/// \return constituent index (or DOESNT_EXIST, otherwise)
 //
 int    CTimeSeriesABC::GetConstitInd() const { return _constit_ind; }
 

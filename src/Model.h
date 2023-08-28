@@ -24,7 +24,7 @@
 #include "Reservoir.h"
 #include "Transport.h"
 #include "Diagnostics.h"
-#include "ForcingGrid.h"        
+#include "ForcingGrid.h"
 #include "ModelEnsemble.h"
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
@@ -91,8 +91,8 @@ private:/*------------------------------------------------------*/
   CTransientParam   **_pTransParams;  ///< array of pointers to transient parameters with time series
   int                _nClassChanges;  ///< number of HRU Group class changes
   class_change     **_pClassChanges;  ///< array of pointers to class_changes
-  int              _nParamOverrides;  ///< number of local parameter overrides 
-  param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides 
+  int              _nParamOverrides;  ///< number of local parameter overrides
+  param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides
 
 
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
@@ -111,15 +111,15 @@ private:/*------------------------------------------------------*/
   CDiagnostic   **_pDiagnostics;  ///< array of pointers to diagnostics to be calculated [size: _nDiagnostics]
   int             _nDiagnostics;  ///< number of diagnostics to be calculated comparing obs. vs modeled
   CDiagPeriod   **_pDiagPeriods;  ///< array of pointers to diagnostic periods [size _nDiagPeriods]
-  int             _nDiagPeriods;  ///< number of diagnostic periods 
+  int             _nDiagPeriods;  ///< number of diagnostic periods
   agg_diag   **_pAggDiagnostics;  ///< array of pointers to aggregate diagnostic structures [size: _nAggDiagnostics]
   int          _nAggDiagnostics;  ///< number of aggregated diagnostics
 
-  //Data Assimilation 
+  //Data Assimilation
   double             *_aDAscale; ///< array of data assimilation flow scaling parameters [size: _nSubBasins] (NULL w/o DA)
   double            *_aDAlength; ///< array of downstream distance to nearest DA observation [m] [size: _nSubBasins] (NULL w/o DA)
   double         *_aDAtimesince; ///< array of downstream time since most recent downstream DA observation [size: _nSubBasins] (NULL w/o DA)
-  bool            *_aDAoverride; ///< array of booleans indicating if observation data is available for assimilation at basin p's outlet [size: _nSubBasins] (NULL w/o DA) 
+  bool            *_aDAoverride; ///< array of booleans indicating if observation data is available for assimilation at basin p's outlet [size: _nSubBasins] (NULL w/o DA)
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
   double             * _aDAlast; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
 
@@ -143,12 +143,12 @@ private:/*------------------------------------------------------*/
   ofstream             _RESSTAGE; ///< output file stream for ReservoirStages.csv
   ofstream              _DEMANDS; ///< output file stream for Demands.csv
   ofstream               _LEVELS; ///< output file stream for WaterLevels.csv
-  int                _HYDRO_ncid; ///< output file ID for Hydrographs.nc     
-  int             _RESSTAGE_ncid; ///< output file ID for ReservoirStages.nc  
-  int              _STORAGE_ncid; ///< output file ID for WatershedStorage.nc 
-  int             _FORCINGS_ncid; ///< output file ID for ForcingFunctions.nc 
+  int                _HYDRO_ncid; ///< output file ID for Hydrographs.nc
+  int             _RESSTAGE_ncid; ///< output file ID for ReservoirStages.nc
+  int              _STORAGE_ncid; ///< output file ID for WatershedStorage.nc
+  int             _FORCINGS_ncid; ///< output file ID for ForcingFunctions.nc
   int                _RESMB_ncid; ///< output file ID for ReservoirMassBalance.nc
-  
+
   double          *_aOutputTimes; ///< array of model major output times (LOCAL times at which full solution is written)
   int              _nOutputTimes; ///< size of array of model major output times
   int         _currOutputTimeInd; ///< index of current output time
@@ -157,9 +157,9 @@ private:/*------------------------------------------------------*/
   const optStruct   *_pOptStruct; ///< pointer to model options information
 
   //Blended PET/potential melt members
-  int              _PETBlends_N;       ///< Not the best place to store these rarely used members \todo : move to globals 
+  int              _PETBlends_N;       ///< Not the best place to store these rarely used members \todo : move to globals
   evap_method     *_PETBlends_type;
-  double          *_PETBlends_wts; 
+  double          *_PETBlends_wts;
   int              _PotMeltBlends_N;
   potmelt_method  *_PotMeltBlends_type;
   double          *_PotMeltBlends_wts;
@@ -237,9 +237,9 @@ private:/*------------------------------------------------------*/
                                       const CHydroUnit* pHRU,
                                       const force_struct* F,
                                       const optStruct& Options);
-														 
+
   double       CalculateAggDiagnostic(const int ii, const int j,
-                                      const double &starttime, const double &endtime, 
+                                      const double &starttime, const double &endtime,
                                       const comparison compare,const double &thresh,
                                       const optStruct &Options);
 
@@ -292,7 +292,7 @@ public:/*-------------------------------------------------------*/
   double            GetAvgCumulFluxBet (const int iFrom, const int iTo) const;
 
   int               GetNumSoilLayers   () const;
-  int               GetLakeStorageIndex() const; 
+  int               GetLakeStorageIndex() const;
 
   /*--below are only available to global routines--*/
   //Accessor functions
@@ -348,7 +348,7 @@ public:/*-------------------------------------------------------*/
                                                        int &nP,
                                                        const optStruct &Options) const;
   class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
-                                                       
+
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );
   void    AddHRU                    (        CHydroUnit        *pHRU            );
@@ -445,7 +445,7 @@ public:/*-------------------------------------------------------*/
   void        IncrementBalance        (const int q_star,
                                        const int k,
                                        const double moved);//[mm] or [MJ/m2] or [mg]
-  void        IncrementLatBalance     (const int j_star,  
+  void        IncrementLatBalance     (const int j_star,
                                        const double moved);//[mm] or [MJ/m2] or [mg]
   void        IncrementCumulInput     (const optStruct &Options, const time_struct &tt);
   void        IncrementCumOutflow     (const optStruct &Options, const time_struct &tt);

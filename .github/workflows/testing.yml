@@ -41,9 +41,8 @@ jobs:
          wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake cmake/FindNetCDF.cmake
      - name: Build
        run: |
-         make 
+         make
          make install
      - name: Run tests
        run: |
          raven
-

@@ -40,7 +40,7 @@ enum  badcode {//error codes
 	MESH_GEN_ERR,
 	STUB_MAT,
 	OTHER
-}; 
+};
 
   //type definitions-------------------
 typedef const double *               Unchangeable1DArray; //unchangeable but movable
@@ -52,8 +52,8 @@ typedef       double *       * const Writeable2DArray;
 typedef const double * const * const Ironclad2DArray;
 
 
-/*!************************************************ 
- \class CSparseMatrix 
+/*!************************************************
+ \class CSparseMatrix
  \brief Sparse Matrix Data Abstraction
 
  Adapted from Press et al. Numerical Recipes for c++, pg.81.
@@ -62,7 +62,7 @@ typedef const double * const * const Ironclad2DArray;
  BiCGstab, modification to use armadillo for vector math added by Richard B. Simms
  ***************************************************/
 class CSparseMatrix
-{ 
+{
  private: /*------------------------------------------------*/
 	double *sA;         ///Storage
 	int    *ija;
@@ -90,16 +90,16 @@ class CSparseMatrix
  public: /*------------------------------------------------*/
 
   CSparseMatrix();
-  CSparseMatrix(double *spA, int *indices, double *bvec); 
-  CSparseMatrix(double *spA, int *indices, double *bvec, int sizen); 
+  CSparseMatrix(double *spA, int *indices, double *bvec);
+  CSparseMatrix(double *spA, int *indices, double *bvec, int sizen);
 	CSparseMatrix(const CSparseMatrix &A);
-	CSparseMatrix(Ironclad2DArray A, const int size, const double thresh);	
+	CSparseMatrix(Ironclad2DArray A, const int size, const double thresh);
  ~CSparseMatrix();
 
 	int    GetNumEntries() const;
 
-	bool   K_to_IJ    (const int k, int &i, int &j) const;	
-	int    IJ_to_K    (const int i, const int j) const;	
+	bool   K_to_IJ    (const int k, int &i, int &j) const;
+	int    IJ_to_K    (const int i, const int j) const;
 	double GetAij     (const int i, const int j) const;
 	double GetAk	  (const int k) const;
 
@@ -122,35 +122,35 @@ class CSparseMatrix
   void   DynamicInsert    (const double &a, const int i, const int j);
 
 	void   ScalarMult       (const double     w);
-	void   MatVectMult      (Ironclad1DArray  x, 
-		                       Writeable1DArray b, 
-													 const int        size, 
+	void   MatVectMult      (Ironclad1DArray  x,
+		                       Writeable1DArray b,
+													 const int        size,
 													 const bool       transpose,
 													 const bool       ignore) const;
 
-	void   MatVectMult      (	arma::vec  x, 
+	void   MatVectMult      (	arma::vec  x,
 								arma::vec *b ) const;
   void   MatVectMult (	vec  x, vec *b, CSparseMatrix *SpNR ) const;
 	void   MatMatAdd		(   const CSparseMatrix &A);
-	
+
 	void   Print            (const bool full, int sample) const;
 	void   PrintRow         (const bool full, const int i) const;
 
-	void   BCG              (						Ironclad1DArray     b, 
+	void   BCG              (						Ironclad1DArray     b,
 													Writeable1DArray    x,
 													const int           size,
 													const BCGtestparam  BCGtype,
 													double				&err,
 													const double        tolerance) const;
 
-	void   BCG              (						arma::vec					b, 
+	void   BCG              (						arma::vec					b,
 													arma::vec					&x,
 													const int           size,
 													const BCGtestparam  BCGtype,
 													double				&err,
 													const double        tolerance) const;
-	
-	void   BCGstab         (						arma::vec					b, 
+
+	void   BCGstab         (						arma::vec					b,
 													arma::vec					&x,
 													const int           size,
 													double				&err,
@@ -158,20 +158,20 @@ class CSparseMatrix
 													preconditioner		precondition,
 													CSparseMatrix*		ILUmatrix=0) const;
 
-	void   BCGstab         (						arma::vec					b, 
+	void   BCGstab         (						arma::vec					b,
 													arma::vec					&x,
 													const int           size,
 													double				&err,
 													const double        tolerance) const;
 
-  void   BCGstab         (arma::vec				    b, 
-	                        arma::vec					 &x, 
-	                        const int           size, 
+  void   BCGstab         (arma::vec				    b,
+	                        arma::vec					 &x,
+	                        const int           size,
 	                        double				     &err,
 	                        const double        BCG_tol,
                           CSparseMatrix      *SparseNewtonMat) const;
 
-	void TriBandSolve			(					arma::vec const			    b, 
+	void TriBandSolve			(					arma::vec const			    b,
 													arma::vec					&x );
 
 	arma::mat ConvertToDense	();
@@ -179,7 +179,7 @@ class CSparseMatrix
 	arma::vec SolveLUSystem			(				arma::vec b) const;
   arma::vec SolveLUSystem     (arma::vec b, CSparseMatrix *SpNR) const;
 
-};	
+};
 
 /*!**************************************************
  *  Class CSparseMatrix

@@ -3,8 +3,8 @@ To get NetCDF to compile with Raven in Visual Studio:
 (1) uncomment #define _RVNETCDF_  line at top of RavenInclude.h
 (2) Install NetCDF 4 Library (without DAP) from https://www.unidata.ucar.edu/software/netcdf/docs/winbin.html
 - the 32 and 64 bit may be necessary
-(3) Add the installed library path (e.g., c:/Program Files/netCDF 4.5.0/include/) to 
+(3) Add the installed library path (e.g., c:/Program Files/netCDF 4.5.0/include/) to
 Raven Properties->Configuration Properties->VC++ Directorys->Include Directories
-(4) Add the netcdf.lib file path (e.g., c:/Program Files/netCDF 4.5.0/lib/netcdf.lib) to 
+(4) Add the netcdf.lib file path (e.g., c:/Program Files/netCDF 4.5.0/lib/netcdf.lib) to
 Raven Properties->Configurations Properties->Linker->Input->Additional Dependencies
 (5) Note that the 32-bit lib is required for 32-bit .exe, same with x64

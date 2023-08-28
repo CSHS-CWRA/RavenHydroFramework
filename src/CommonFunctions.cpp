@@ -45,7 +45,7 @@ string GetProcessName(process_type p)
   case(RECHARGE):           {name="Recharge";                 break;}
   case(DRAIN):              {name="Drain";                    break;}
   case(GWRECHARGE):         {name="Groundwater Recharge";     break;}
-  
+
   case(SNOWMELT):           {name="Snow Melt";                break;}
   case(SNOWSQUEEZE):        {name="Liquid snow release";      break;}
   case(REFREEZE):           {name="Snow Refreeze";            break;}
@@ -267,7 +267,7 @@ double RoundToNearestMinute(const double &t)
 /// \param calendar [in] enum int of calendar used
 /// \return Boolean value indicating if year passed is a leap year
 
-bool IsLeapYear(const int year, const int calendar) 
+bool IsLeapYear(const int year, const int calendar)
 {
     bool leap = false;
 
@@ -276,11 +276,11 @@ bool IsLeapYear(const int year, const int calendar)
       leap = (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)); //valid until ~4000 AD:)
       return leap;
     }
-    
+
     if(calendar==CALENDAR_365_DAY){return false;}
     if(calendar==CALENDAR_366_DAY){return true; }
 
-    // other calendars 
+    // other calendars
     if ((calendar == CALENDAR_JULIAN ||
          calendar == CALENDAR_GREGORIAN ) &&
         (year % 4 == 0)) {
@@ -317,7 +317,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   {
     model_time = floor(model_time+TIME_CORRECTION);
   }
-  //handles hourly roundoff error (e.g., t=5.24999873->t=5.25) 
+  //handles hourly roundoff error (e.g., t=5.24999873->t=5.25)
   if(model_time*HR_PER_DAY-floor(model_time*HR_PER_DAY) > (1.0-TIME_CORRECTION)*HR_PER_DAY) {
     model_time = floor(HR_PER_DAY*(model_time+TIME_CORRECTION))/HR_PER_DAY;
   }
@@ -465,7 +465,7 @@ time_struct DateStringToTimeStruct(const string sDate, string sTime, const int c
 /// \param julian_start [in] integer start day of date range (0=Jan 1, 364=Dec 31 in non-leap)
 /// \param julian_end [in] integer end day of date range (0=Jan 1, 364=Dec 31 in non-leap)
 //
-bool        IsInDateRange(const double &julian_day,const int &julian_start,const int &julian_end) 
+bool        IsInDateRange(const double &julian_day,const int &julian_start,const int &julian_end)
 {
   if(julian_start<julian_end) {
     return ((julian_day>=julian_start) && (julian_day<=julian_end));
@@ -492,7 +492,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
   // ---------------------------
   // check if format is hours since YYYY-MM-DD HH:MM:SS, fill with leading zeros if necessary
   // blank between date and time (position 10) can be either ' ' or 'T'
-  // Y  Y  Y  Y  -  M  M  -  d  d  _  0  0  :  0  0  :  0  0  .  0     +  0  0  0  0 
+  // Y  Y  Y  Y  -  M  M  -  d  d  _  0  0  :  0  0  :  0  0  .  0     +  0  0  0  0
   // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
   // ---------------------------
   dash = tmp.substr(start+4,1);  // first dash in date
@@ -514,7 +514,7 @@ time_struct TimeStructFromNetCDFString(const string unit_t_str,const string time
     if(!strstr(tmp.substr(start+16,1).c_str(),":")) { tmp.insert(start+14,"0"); } // second colon in time - fixes 11:0:00 (?)
   }
   else {
-    if(strlen(tmp.c_str())==(size_t)(start+9)) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d 
+    if(strlen(tmp.c_str())==(size_t)(start+9)) { tmp.insert(start+8,"0"); } // second dash in date - fixes YYYY-MM-d
   }
   string sTime,sDate;
   sDate = tmp.substr(start,10); //YYYY-MM-DD
@@ -561,24 +561,24 @@ bool IsValidNetCDFTimeString(const string time_string)
   int att_len=(int)strlen(time_string.c_str());
   bool isvalid = true;
   if (att_len<15) {return false;}
-  
+
   size_t pos=time_string.find("since",0);
   if(pos==string::npos) { return false; } //no "since" in string
-  
+
   pos+=6;
   string date_string=time_string.substr(pos,10);
 
   if (!strstr(date_string.substr(4,1).c_str(),"-")){isvalid=false;}//properly located dashes in date string
   if (!strstr(date_string.substr(7,1).c_str(),"-")){isvalid=false;}
 
-  if(time_string.length()<(pos+19)) { return isvalid; } //no time stamp 
-  
+  if(time_string.length()<(pos+19)) { return isvalid; } //no time stamp
+
   string hr_string  =time_string.substr(pos+11,8);
   //cout<<"TIME STRING: "<<time_string<<" "<<pos<<" "<<date_string<<" "<<hr_string<<endl;
 
   if(!strstr(hr_string.substr(2,1).c_str(),":")) { isvalid=false; }//properly located dashes in date string
   if(!strstr(hr_string.substr(5,1).c_str(),":")) { isvalid=false; }
-  
+
   return isvalid;
 }
 ///////////////////////////////////////////////////////////////////
@@ -627,10 +627,10 @@ void AddTime(const double jul_day1,const int year1,const double &daysadded,const
   int    yr;
   double leap;
   double daysleft;
-  
+
   yr=year1;
   jul_day_out=jul_day1;
-  
+
   if(daysadded>=0)
   {
     daysleft=daysadded;
@@ -663,7 +663,7 @@ void AddTime(const double jul_day1,const int year1,const double &daysadded,const
         leap=0; if(IsLeapYear(yr,calendar)) { leap=1; }
         daysleft-=jul_day_out;
         if(daysleft<(365+leap)){ jul_day_out=(365+leap)-daysleft;year_out=yr;break; }
-        else                   { jul_day_out=0.0;daysleft-=(365+leap); }//skip whole year 
+        else                   { jul_day_out=0.0;daysleft-=(365+leap); }//skip whole year
       }
       ExitGracefullyIf(daysleft<0.0,"Invalid input to AddTime routine (negative julian day?)",RUNTIME_ERR);
     } while(true);
@@ -679,16 +679,16 @@ void AddTime(const double jul_day1,const int year1,const double &daysadded,const
 
     double tmp_day;
     int    tmp_yr;
-      
+
     tmp_yr  = year_out;
     tmp_day = jul_day_out;
-      
+
     AddTime(tmp_day,tmp_yr,10.0,calendar,jul_day_out,year_out);
     return;
-    
+
   }
   return;
-  
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -752,8 +752,8 @@ double    FixTimestep(double tstep)
 //
 bool IsValidDateString(const string sDate)
 {
-  return ((sDate.length()==10) && 
-          ((sDate.substr(4,1)=="/") || (sDate.substr(4,1)=="-")) && 
+  return ((sDate.length()==10) &&
+          ((sDate.substr(4,1)=="/") || (sDate.substr(4,1)=="-")) &&
           ((sDate.substr(7,1)=="/") || (sDate.substr(7,1)=="-")));
 }
 ////////////////////////////////////////////////////// /////////////////////
@@ -927,7 +927,7 @@ double GetAirDensity(const double &T, const double &P)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Converts relative humidity to specific humidity 
+/// \brief Converts relative humidity to specific humidity
 ///
 /// \param rel_hum [in] relative humidity [0-1]
 /// \param air_press [in] Air pressure [kPa]
@@ -940,7 +940,7 @@ double GetSpecificHumidity(const double &rel_hum,const double &air_press,const d
   //simplified:
   //return AIR_H20_MW_RAT*e_a/air_press;
 
-  return AIR_H20_MW_RAT*e_a/(air_press- e_a*(1-AIR_H20_MW_RAT)); 
+  return AIR_H20_MW_RAT*e_a/(air_press- e_a*(1-AIR_H20_MW_RAT));
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1044,12 +1044,12 @@ double GetDewPointTemp(const double &e)
 /// \param hv [in] volumetric enthapy [MJ/m3 water]
 /// \return water temperature [C]
 //
-double ConvertVolumetricEnthalpyToTemperature(const double &hv) 
+double ConvertVolumetricEnthalpyToTemperature(const double &hv)
 {
 
-  if      (g_disable_freezing)         { 
+  if      (g_disable_freezing)         {
     if(hv/SPH_WATER/DENSITY_WATER  > 40) { return  40.0; } //upper limit - due to small volume, small energy roundoff error
-    return hv/SPH_WATER/DENSITY_WATER; 
+    return hv/SPH_WATER/DENSITY_WATER;
   }
 
   double g_freeze_temp=-0.0;
@@ -1103,11 +1103,11 @@ double TemperatureEnthalpyDerivative(const double &hv)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief converts temperature to volumetric enthalpy of water/ice only [MJ/m3 water] 
+/// \brief converts temperature to volumetric enthalpy of water/ice only [MJ/m3 water]
 ///
 /// \param T [in] water temperature [C]
 /// \param pctfroz [in] percent frozen [0..1]
-/// \return volumetric enthapy [MJ/m3 water] 
+/// \return volumetric enthapy [MJ/m3 water]
 //
 double ConvertTemperatureToVolumetricEnthalpy(const double &T,const double &pctfroz)
 {
@@ -1268,7 +1268,7 @@ bool IsComment(const char *s, const int Len)
 /// \param &to [in]  substring to replace it with
 /// from solution by Michael Mrozek in https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
 //
-void SubstringReplace(string &str,const string &from,const string &to) 
+void SubstringReplace(string &str,const string &from,const string &to)
 {
   if(from.empty()) { return; }
   size_t start_pos = 0;
@@ -1389,7 +1389,7 @@ double rvn_erf(const double &x)
   return 1-rvn_erfc(x);
 }
 //////////////////////////////////////////////////////////////////
-/// local versions of math functiosn trunc, floor, round, and isnan 
+/// local versions of math functiosn trunc, floor, round, and isnan
 /// - not available for standard BORLAND C compiler
 //
 double rvn_trunc(const double& x) {
@@ -1502,10 +1502,10 @@ double gamma2(double x)
   return ga;
 }
 /////////////////////////////////////////////////////////////////
-/// \brief returns value of incomplete gamma function  with parameter a for input x 
+/// \brief returns value of incomplete gamma function  with parameter a for input x
 /// incomplete Gamma is g(x,a)=int_0^x of t^a-1 exp(-t) dt
 /// \param &x [in] upper limit of integral
-/// \param &a [in] shape parameter 
+/// \param &a [in] shape parameter
 /// \return Incomplete gamma function g(x,a)
 //
 double IncompleteGamma(const double &x, const double &a)
@@ -1545,8 +1545,8 @@ double GammaDist(const double &x, const double &alpha, const double &beta)
 ///
 /// \param &t [in] time
 /// \param &alpha [in] shape parameter
-/// \param &beta [in] scaling parameter 
-/// \return integrated gamma distribution from 0..t 
+/// \param &beta [in] scaling parameter
+/// \return integrated gamma distribution from 0..t
 //
 double GammaCumDist(const double &t,  const double &alpha,const double &beta)
 {
@@ -1632,7 +1632,7 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
     integ+=pow(tt,-1.5)*exp(-((alpha*tt-beta)*(alpha*tt-beta))/4.0/tt);
     // equivalent to (old) version, but more stable since alpha, beta ~1-10 whereas both v^2 and D can be very large
     //integ+=pow(tt,-1.5)*exp(-((v*tt-L)*(v*tt-L))/4.0/D/tt); //old version
-  }  
+  }
   return integ*term*dt;
   */
   //Analytical- Ogata Banks, 1969
@@ -1650,7 +1650,7 @@ double ADRCumDist(const double &t, const double &L, const double &v, const doubl
 /// \param &t time [d]
 /// \param &L reach length [m]
 /// \param *v array of celerities [m/d] for nv timesteps of length dt
-/// \param &nv number of celerity values in array 
+/// \param &nv number of celerity values in array
 /// \param &D diffusivity [m2/d]
 /// \param &dt timestep [d]
 /// \return Returns cumulative kinematic wave solution distribution for temporally variable velocity
@@ -1678,7 +1678,7 @@ double TimeVaryingADRCumDist(const double &t,const double &L,const double *v, in
 ///
 /// \param *aVals [in/out] array of weight seeds (uniform numbers) between 0 and 1 (size:N-1)
 /// \param *aWeights [in/out] array of weights between 0 and 1 (size:N)
-/// \param N [in] size of aWeights to use 
+/// \param N [in] size of aWeights to use
 /// From Mai et al., The pie sharing problem: Unbiased sampling of N+1 summative weights, Environmental Modelling and Software, 148, 105282, doi:10.1016/j.envsoft.2021.105282, 2022
 //
 void CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int N)

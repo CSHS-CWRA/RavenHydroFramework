@@ -29,7 +29,7 @@ class CGWRiverConnection;
 /// connected to lower nodes shouldn't be needing weights (e.g., all the water
 /// goes to a specific node). This could change in the future.
 /// For consistency with MODFLOW, processes moving water to the groundwater
-/// table can check if the node they are sending water to is the top 
+/// table can check if the node they are sending water to is the top
 /// active node using GetTopActiveNode() (see usage in UpdateProcessBudgets()).
 /// This is further mediated by the recharge option settings (NRCHOP,
 /// SetRCHOptCode) which defaults to 3 - "top active"
@@ -37,16 +37,16 @@ class CGWRiverConnection;
 /// Layer 1 node for queries into HRU overlap calculations.
 /// It's an unstructured model - figuring out the node above/below another is
 /// not always arbitrary! (see rvn_first_active_below in Extern.f)
-/// 
+///
 class CGroundwaterModel
 {
 private:/*----------------------------------------------------*/
 
   CModel                             *_pModel;
   CGWRiverConnection                 *_pRiver;
-                                    
+
   int                                 _nNodes;  ///< Nodes in the groundwater model
-  int                                _nLayers;  ///< number of layers in the groundwater model 
+  int                                _nLayers;  ///< number of layers in the groundwater model
   int                       * _aNodesPerLayer;  ///< Array of number of nodes per layer [size:_nLayers]
 
   int                         _nStressPeriods;  ///< Total # of Stress periods
@@ -54,7 +54,7 @@ private:/*----------------------------------------------------*/
 
   int                             *_aNumSteps;  ///< Number of steps in each stress period [size:_nStressPeriods]
   int                                  _iStep;  ///< Current time step (kstp in MFUSG)
-  
+
   int                                _maxiter;  ///< Maximum outer interations for GW Solver
   int                                 _niunit;  ///< Number of items in the Modflow IUNIT array
   int                                _doSolve;  ///< Equivalent to MFUSG var "idoflow" - 0 means don't solve (Steady state or transport step).
@@ -67,10 +67,10 @@ private:/*----------------------------------------------------*/
   double                *_aStressPeriodLength;  ///< Length of each stress period [d] (perlen in MFUSG)
   double                     *_aProcessesAMAT;  ///< Array of conductance terms to be added to MFUSG LHS, by node [size _nNodes+1] (to index from 1)
   double                      *_aProcessesRHS;  ///< Array of volumes to added to MFUSG RHS, by node [size _nNodes+1] (to index from 1)
-  double                        *_aGWSWFluxes;  ///< Sum of fluxes (one for each HRU) to/from the GW compartment. 
+  double                        *_aGWSWFluxes;  ///< Sum of fluxes (one for each HRU) to/from the GW compartment.
                                                 ///  Used to determine non-GWSW process flux to GW model
 
-  map<pair<int,int>, double> _mOverlapWeights;  ///< 2D "matrix" of weights relating which HRUs are connected to which GW cells 
+  map<pair<int,int>, double> _mOverlapWeights;  ///< 2D "matrix" of weights relating which HRUs are connected to which GW cells
                                                 ///  =A_ki/A_i where A_ki is area of overlap between HRU k and node i and A_i is area of node i
                                                 ///  Only contains weights for layer 1 (see HRU-node comment at top)
                                                 ///  Dimensions : [_nHydroUnits][_aNodesPerLayer[0]] (variable)
@@ -104,7 +104,7 @@ public:/*-------------------------------------------------------*/
   //-- Setters
   void                   AddProcess       (process_type ptype, CHydroProcessABC *pGWSWProc);
   void                   AddToGWEquation  (int n, double head_coefficient, double flow_rate); // added to AMAT and RHS, respectively.
-  void                   SetOverlapWeight (const int        HRUID, 
+  void                   SetOverlapWeight (const int        HRUID,
                                            const int        node,
                                            const double     weight,
                                            const optStruct &Options);

@@ -46,7 +46,7 @@ void CLateralExchangeProcessABC::DynamicSpecifyLatConnections(const int nLatConn
 
   delete [] _kFrom; //if these have already been created
   delete [] _kTo;
-  delete [] _iFromLat; 
+  delete [] _iFromLat;
   delete [] _iToLat;
   _iToLat=NULL;
   _kFrom   =new int [_nLatConnections];

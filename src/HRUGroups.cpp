@@ -75,8 +75,8 @@ CHydroUnit *CHRUGroup::GetHRU(const int k) const
 void CHRUGroup::AddHRU(CHydroUnit *pHRU)
 {
   if (!DynArrayAppend((void**&)(_pHRUs),(void*)(pHRU),_nHRUs)){
-   ExitGracefully("CHRUGroup::AddHRU: adding NULL HRU",BAD_DATA);} 
-} 
+   ExitGracefully("CHRUGroup::AddHRU: adding NULL HRU",BAD_DATA);}
+}
 //////////////////////////////////////////////////////////////////
 /// \brief initializes HRU Groups
 //

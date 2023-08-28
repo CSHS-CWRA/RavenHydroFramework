@@ -73,7 +73,7 @@ public: /*-------------------------------------------------------*/
 };
 
 /*****************************************************************
-                             Drain 
+                             Drain
 ------------------------------------------------------------------
 *****************************************************************/
 
@@ -81,7 +81,7 @@ public: /*-------------------------------------------------------*/
 /// \brief Data abstraction for groundwater rising above a given elevation and leaving the subsurface
 //
 class CGWDrain : public CGWSWProcessABC
-{  
+{
 private:/*------------------------------------------------------*/
 	double    *_aElevations;
 	double    *_aConductances;
@@ -94,13 +94,13 @@ public:/*-------------------------------------------------------*/
 
 	// HydroProcess inherited functions
 	void        InitializeDrainClass        (int nDrains);
-	void        GetRatesOfChange            (const double		  *state_vars, 
-		                                       const CHydroUnit  *pHRU, 
+	void        GetRatesOfChange            (const double		  *state_vars,
+		                                       const CHydroUnit  *pHRU,
 		                                       const optStruct	  &Options,
 		                                       const time_struct &tt,
 		                                       double            *rates) const;
 	void        ApplyConstraints            (const double      *state_vars,
-		                                       const CHydroUnit  *pHRU, 
+		                                       const CHydroUnit  *pHRU,
 		                                       const optStruct	  &Options,
 		                                       const time_struct &tt,
 		                                       double            *rates) const;

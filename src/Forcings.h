@@ -15,5 +15,5 @@ double           GetForcingFromString(const string &forcing_string, const force_
 double             GetForcingFromType(const forcing_type &ftype, const force_struct &f);
 string            GetForcingTypeUnits(      forcing_type ftype);
 void                  ZeroOutForcings(force_struct &F);
-void            CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto); 
+void            CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto);
 #endif

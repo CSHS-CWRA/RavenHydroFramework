@@ -172,7 +172,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     break;
   }
   }
-  if ((typ==SOIL) || (typ==SOIL_TEMP) || 
+  if ((typ==SOIL) || (typ==SOIL_TEMP) ||
       (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";
@@ -487,7 +487,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     }
   }
   //multilayer variables
-  if ((typ==SOIL) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  || 
+  if ((typ==SOIL) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  ||
     (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";

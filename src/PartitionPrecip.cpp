@@ -27,15 +27,15 @@ CmvPrecipitation::~CmvPrecipitation(){}
 //
 void CmvPrecipitation::Initialize()
 {
-  
+
   int iAtmos=pModel->GetStateVarIndex(ATMOS_PRECIP);
-  
+
   int N=12;
 
   if (pModel->StateVarExists(ICE_THICKNESS)){N+=3;}
 
   CHydroProcessABC::DynamicSpecifyConnections(N);
-  
+
   iFrom[0]=iAtmos; iTo[0]=pModel->GetStateVarIndex(PONDED_WATER);
   iFrom[1]=iAtmos; iTo[1]=pModel->GetStateVarIndex(CANOPY);
   iFrom[2]=iAtmos; iTo[2]=pModel->GetStateVarIndex(CANOPY_SNOW);
@@ -46,7 +46,7 @@ void CmvPrecipitation::Initialize()
   iFrom[7]=iAtmos; iTo[7]=pModel->GetStateVarIndex(SNOW_DEFICIT);
   iFrom[8]=iAtmos; iTo[8]=pModel->GetStateVarIndex(NEW_SNOW);
   iFrom[9]=iAtmos; iTo[9]=pModel->GetLakeStorageIndex(); //Lake handling
-  
+
   iFrom[10]=iTo[10]=pModel->GetStateVarIndex(COLD_CONTENT);
   iFrom[11]=iTo[11]=pModel->GetStateVarIndex(SNOW_DEPTH);
 
@@ -60,7 +60,7 @@ void CmvPrecipitation::Initialize()
   {
     iFrom[12]=pModel->GetStateVarIndex(SNOW);         iTo[12]=pModel->GetLakeStorageIndex();
     iFrom[13]=pModel->GetStateVarIndex(SNOW_LIQ);     iTo[13]=pModel->GetLakeStorageIndex();
-    iFrom[14]=pModel->GetStateVarIndex(PONDED_WATER); iTo[14]=pModel->GetLakeStorageIndex(); 
+    iFrom[14]=pModel->GetStateVarIndex(PONDED_WATER); iTo[14]=pModel->GetLakeStorageIndex();
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -165,7 +165,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   int qSnowToLake=12;
   int qSnLiqToLake=13;
   int qPondToLake=14;
-    
+
   //get precipitation information from gauges
   total_precip=pHRU->GetForcingFunctions()->precip;//[mm/day]
   Fsnow       =pHRU->GetForcingFunctions()->snow_frac;
@@ -184,7 +184,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   //-----------------------------------------------------------------
   Fs = pHRU->GetSnowCover();
 
-  if (!pHRU->IsLake()) 
+  if (!pHRU->IsLake())
   {
     // Throughfall & interception for rain & snow
     //-----------------------------------------------------------------
@@ -195,8 +195,8 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     //total rain interception rate over canopy covered portion of HRU
     rain_pct = pHRU->GetVegVarProps()->rain_icept_pct;
     rain_int = rainfall*rain_pct;
-      
-    if (pModel->StateVarExists(CANOPY)) 
+
+    if (pModel->StateVarExists(CANOPY))
     {
       capacity = pHRU->GetVegVarProps()->capacity;
       rain_int = threshMin(rain_int, max((capacity - state_vars[iCan]) / tstep, 0.0), 0.0);
@@ -206,7 +206,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
       rates[qAtmos] += Fcan*rain_int;
     }
     rainthru = rainfall - Fcan*rain_int;//[mm/day]
-    
+
     //rate of snow interception over canopy portion of HRU
     snow_pct = pHRU->GetVegVarProps()->snow_icept_pct;
     snow_int = snowfall*snow_pct;
@@ -242,10 +242,10 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     rates[qLake]=snowthru+rainthru; // in lake, all water just added
 
     if (pModel->StateVarExists(ICE_THICKNESS))//all remaining snow and ponded water dumped to lake
-    { 
+    {
        rates[qSnowToLake ]+=state_vars[iSWE  ]/Options.timestep;
        rates[qSnLiqToLake]+=state_vars[iSnLiq]/Options.timestep;
-       rates[qPondToLake ]+=state_vars[iPond ]/Options.timestep; //handles on-lake snowmelt 
+       rates[qPondToLake ]+=state_vars[iPond ]/Options.timestep; //handles on-lake snowmelt
     }
   }
   else
@@ -284,15 +284,15 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     else{
       rates[qNewSnow]=snowthru;
     }
-    
+
     //everything remaining goes to ponded water variable, usually handled by infiltration & abstraction algorithms
-    if(pHRU->GetHRUType()!=HRU_WETLAND) 
+    if(pHRU->GetHRUType()!=HRU_WETLAND)
     {
       rates[qPond]=rainthru;
-    } 
-    else 
+    }
+    else
     {
-      rates[qDep] =rainthru; //ponded water goes to depression in wetland 
+      rates[qDep] =rainthru; //ponded water goes to depression in wetland
       /*if(!wetland_frozen){ // \todo [funct] handle snow on frozen wetlands
         rates[qSnow]-=snowthru;
         rates[qDep] +=snowthru;

@@ -13,7 +13,7 @@
 //
 int  CmvConvolution::_nConv=-1;
 
-//int  CmvConvolution::_nStores=20; 
+//int  CmvConvolution::_nStores=20;
 //bool CmvConvolution::_smartmode=true;
 
 int  CmvConvolution::_nStores=MAX_CONVOL_STORES;
@@ -35,7 +35,7 @@ CmvConvolution::CmvConvolution(convolution_type type,
   _type=type;
   _nConv++; //starts at -1
   _iTarget=to_index;
-  
+
   if (!_smartmode){_nStores=MAX_CONVOL_STORES;}
 
   int N=_nStores; //shorthand
@@ -72,7 +72,7 @@ void   CmvConvolution::Initialize(){}
 //////////////////////////////////////////////////////////////////
 /// \brief unit S-hydrograph (cumulative hydrograph) for all options
 //
-double CmvConvolution::LocalCumulDist(const double& t, const CHydroUnit* pHRU) const 
+double CmvConvolution::LocalCumulDist(const double& t, const CHydroUnit* pHRU) const
 {
   if (_type==CONVOL_GR4J_1)
   {
@@ -102,7 +102,7 @@ double CmvConvolution::LocalCumulDist(const double& t, const CHydroUnit* pHRU) c
 
 void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optStruct &Options, double *aUnitHydro, int *aInterval, int &N) const
 {
-  //generates unit hydrograph based upon HRU parameters 
+  //generates unit hydrograph based upon HRU parameters
   //(called every timestep because it is potentially different in every HRU)
   double tstep=Options.timestep;
   double max_time(0);
@@ -133,7 +133,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   double sum=0;;
   if (!_smartmode)
   {
-    max_time=min(MAX_CONVOL_STORES*tstep,max_time); //must truncate 
+    max_time=min(MAX_CONVOL_STORES*tstep,max_time); //must truncate
     N =(int)(ceil(max_time/tstep));
     if (N==0){N=1;}
     NN=N;
@@ -154,8 +154,8 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
     int    nlast=-1;
     double Flast=0.0;
     double Fn;
-    
-    for (int n = 0; n < NN; n++) 
+
+    for (int n = 0; n < NN; n++)
     {
       Fn=LocalCumulDist((n+1)*tstep,pHRU);
       if ((i == 0) && (n>0) && (Fn > 1.0 / _nStores / 4.0)) { //handles lag effect
@@ -228,7 +228,7 @@ void CmvConvolution::GetParticipatingParamList(string  *aP , class_type *aPC , i
     nP=1;
     aP[0]="GR4J_X4";                    aPC[0]=CLASS_LANDUSE;
   }
-  else if (_type==CONVOL_GAMMA) 
+  else if (_type==CONVOL_GAMMA)
   {
     nP=2;
     aP[0]="GAMMA_SHAPE";                aPC[0]=CLASS_LANDUSE;
@@ -284,18 +284,18 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
   int i;
   double TS_old;
   double tstep=Options.timestep;
-  static double S         [MAX_CONVOL_STORES]; 
+  static double S         [MAX_CONVOL_STORES];
   static double aUnitHydro[MAX_CONVOL_STORES];
   static int    aInterval [MAX_CONVOL_STORES];
 
   int N =0;
-  GenerateUnitHydrograph(pHRU,Options,&aUnitHydro[0],&aInterval[0],N); //THIS IS SLOW!! - create aUnitHydro as process array 
+  GenerateUnitHydrograph(pHRU,Options,&aUnitHydro[0],&aInterval[0],N); //THIS IS SLOW!! - create aUnitHydro as process array
 
   //Calculate S[0] as change in convolution total storage
   TS_old=state_vars[iFrom[2*_nStores-1]]; //total storage after water added to convol stores earlier in process list
   double sum(0.0);
   int NN=0;
-  for (i=0;i<N;i++){ 
+  for (i=0;i<N;i++){
     S[i]=state_vars[iFrom[i]];
     sum+=S[i];
     NN+=aInterval[i];
@@ -316,7 +316,7 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
       S[i]-=rates[i]*tstep;
       sumrem-=aUnitHydro[i];
     }//sumrem should ==0 at end, so should S[N-1]
-    //challengee here - original storage is not necessarily S/sum_0^i-1 UH because of partial shifts of mass 
+    //challengee here - original storage is not necessarily S/sum_0^i-1 UH because of partial shifts of mass
   }
   if (_smartmode){
     int sumn=0;
@@ -344,7 +344,7 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
     }
   }
   //cout<<"convend: "<<sumrem<<" "<<S[N-1]<<endl;
-  
+
   //time shift convolution history
   double move;
   for (i=N-2; i>=0; i--)
@@ -354,7 +354,7 @@ void   CmvConvolution::GetRatesOfChange( const double      *state_vars,
     S[i  ]-=move;
     S[i+1]+=move;
   }
-  
+
   //update total convolution storage:
   double TS_new=0;
   for (i=1; i<N; i++){TS_new+=S[i];}

@@ -294,25 +294,25 @@ enum drain_type
 /// \brief Data abstration of loss of water from one soil layer to a lower soil layer
 //
 class CmvDrain: public CHydroProcessABC
-{  
+{
   private:/*------------------------------------------------------*/
 		drain_type					type; ///< Model of drainage selected
 		int					 nSoilLayers; ///< number of soil layers subject to drainage
 
   public:/*-------------------------------------------------------*/
 		//Constructors/destructors:
-		CmvDrain(drain_type	d_type);			
+		CmvDrain(drain_type	d_type);
 		~CmvDrain();
 
 		//inherited functions
     void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
+    void GetRatesOfChange(const double		  *state_vars,
+								          const CHydroUnit  *pHRU,
 								          const optStruct	  &Options,
 								          const time_struct &tt,
                                 double      *rates) const;
     void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
+											    const CHydroUnit  *pHRU,
 								          const optStruct	  &Options,
 								          const time_struct &tt,
                                 double      *rates) const;
@@ -325,9 +325,9 @@ class CmvDrain: public CHydroProcessABC
 //
 enum recharge_type
 {
-  RECHARGE_FROMFILE,             ///< uses recharge from data 
+  RECHARGE_FROMFILE,             ///< uses recharge from data
   RECHARGE_CONSTANT,         ///< constant recharge method applied to aquifers
-  RECHARGE_CONSTANT_OVERLAP, ///<constant recharge method applied to aquifers with area weighted separation to connected gw cells 
+  RECHARGE_CONSTANT_OVERLAP, ///<constant recharge method applied to aquifers with area weighted separation to connected gw cells
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction of capillary rise
@@ -336,12 +336,12 @@ enum recharge_type
 class CmvRecharge: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  recharge_type	      _type;        ///< Model of recharge 
+  recharge_type	      _type;        ///< Model of recharge
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvRecharge(recharge_type	rech_type, int to_index, int junk); //junk just to distinguish constructors
-  CmvRecharge(recharge_type	rech_type, int nConns);			
+  CmvRecharge(recharge_type	rech_type, int nConns);
   ~CmvRecharge();
 
   //inherited functions

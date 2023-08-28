@@ -27,7 +27,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
                            const double       ref_elev,
                            const time_struct &tt)
 {
-  
+
   //---------------------------------------------------------------------------
   if ((Options.orocorr_temp==OROCORR_SIMPLELAPSE) ||
       (Options.orocorr_temp==OROCORR_HBV        ))
@@ -382,7 +382,7 @@ void CModel::CorrectPET(const optStruct &Options,
   F.PET*=F.subdaily_corr;
 
   //Snow cover
-  if(Options.snow_suppressPET) 
+  if(Options.snow_suppressPET)
   {
     double SWE     =0.0;
     double snow_cov=1.0;
@@ -390,7 +390,7 @@ void CModel::CorrectPET(const optStruct &Options,
     int iSC  =GetStateVarIndex(SNOW_COVER);
     if(iSnow!=DOESNT_EXIST) { SWE     =pHRU->GetStateVarValue(iSnow); }
     if(iSC  !=DOESNT_EXIST) { snow_cov=pHRU->GetStateVarValue(iSC); }
-      
+
     if(SWE>0.1) { F.PET*=(1.0-snow_cov); }
   }
 }

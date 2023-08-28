@@ -39,10 +39,10 @@ CGWRiverConnection::CGWRiverConnection(CGroundwaterModel* pGWModel)
 //
 CGWRiverConnection::~CGWRiverConnection()
 {
-  delete [] _aNodes   ; 
-  delete [] _aSubBasin; 
-  delete [] _aWeights ; 
-  delete [] _aLength  ; 
+  delete [] _aNodes   ;
+  delete [] _aSubBasin;
+  delete [] _aWeights ;
+  delete [] _aLength  ;
   if (_aElevs != NULL) {
     for (int i = 0; i < _nSeg; i++) { delete[] _aElevs[i]; delete[] _aCond[i]; } delete[] _aElevs; delete[] _aCond;
   }
@@ -61,7 +61,7 @@ void CGWRiverConnection::Initialize(int nSegments, int NB)
   _nSeg      = nSegments;
   _NB        = NB;
   _aNodes    = new int*    [_nSeg];
-  _aSubBasin = new int     [_nSeg]; 
+  _aSubBasin = new int     [_nSeg];
   _aWeights  = new double* [_nSeg];
   _aLength   = new double  [_nSeg];
   _aGWFlux   = new double  [_nSeg];
@@ -112,7 +112,7 @@ void CGWRiverConnection::InitializePBJ()
     pNBCounter[p] += 1;
   }
   delete [] pNBCounter;
-  
+
   MFUSG::init_pbj_settings(&_nSeg, &pbjmode, &condtype);
 
   //-- Add Segments (One-by-one, since Fortran & C store 2D arrays differently)
@@ -135,7 +135,7 @@ void CGWRiverConnection::InitializePBJ()
 //////////////////////////////////////////////////////////////////
 /// \brief Updates stream segment elevations in MODFLOW
 /// \details Currently passing the depth to MF and letting it calculate the elevation.
-/// 
+///
 /// \param p      [in] subbasin global index
 /// \param pBasin [in] pointer to subbasin
 ///
@@ -169,7 +169,7 @@ void CGWRiverConnection::UpdateRiverFlux() const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Updates _aGWFlux array with latest fluxes from MODFLOW
-/// 
+///
 /// \param p [in] SubBasin global index
 //
 double CGWRiverConnection::CalcRiverFlowBySB(const int p) const
@@ -190,7 +190,7 @@ double CGWRiverConnection::CalcRiverFlowBySB(const int p) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets whether the segments will act as Rivers or Drains in MODFLOW
-/// 
+///
 /// \param s [in] name of calculation type
 //
 void CGWRiverConnection::SetMode(const char *s)
@@ -218,7 +218,7 @@ void CGWRiverConnection::SetCondType(const char *s)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Adds a river segment to the object. Called during parsing.
-/// 
+///
 /// \param segid [in] sequential number of segment
 /// \param *nodes [in] pointer to nodeIDs of segment
 /// \param *weights [in] pointer to barycentric weights of segment start/end
@@ -257,17 +257,17 @@ void CGWRiverConnection::AddSegment(const int segid, const int *nodes, const dou
 /// \brief Returns the number of river segments involved in the process
 /// \return Number of river segments
 //
-int CGWRiverConnection::GetNumSegments() { 
-  return _nSeg; 
+int CGWRiverConnection::GetNumSegments() {
+  return _nSeg;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns pointer to array of segment indexes for the given Basin
 /// \return Segments present in subbasin p
-/// 
+///
 /// \param p [in] SubBasin index
 //
 int* CGWRiverConnection::GetSubBasinSegments(int p) const
-{ 
-  return _aSegmentsBySB[p]; 
+{
+  return _aSegmentsBySB[p];
 }

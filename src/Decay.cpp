@@ -100,10 +100,10 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
   for (int ii = 0; ii < nWaterCompartments; ii++)
   {
     iStor   =_pTransModel->GetStorWaterIndex(ii);
-    
-    if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment 
+
+    if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment
     if(_pTransModel->GetConstituentModel2(_constit_ind)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
-    
+
     mass=state_vars[iFrom[q]];
 
     //------------------------------------------------------------------
@@ -113,7 +113,7 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
       if(decay_coeff==NOT_SPECIFIED) { continue; }
 
-      rates[q]= decay_coeff*mass; 
+      rates[q]= decay_coeff*mass;
     }
     //------------------------------------------------------------------
     else if (_dtype==DECAY_ZEROORDER)
@@ -131,12 +131,12 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
       if(decay_coeff==NOT_SPECIFIED) { continue; }
 
-      rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep; 
+      rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
       //cout<<" DECAY: "<<mass<<" "<<rates[q]<<" "<<decay_coeff*mass<<" "<<
       //CStateVariable::GetStateVarLongName(pModel->GetStateVarType(iStor),pModel->GetStateVarLayer(iStor))<<endl;
     }
     //------------------------------------------------------------------
-    else if(_dtype==DECAY_DENITRIF) 
+    else if(_dtype==DECAY_DENITRIF)
     {
       double decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_ind,ii,_process_ind,pHRU);
       if(decay_coeff==NOT_SPECIFIED) { continue; }
@@ -150,7 +150,7 @@ void   CmvDecay::GetRatesOfChange(const double      *state_vars,
       else if ((temp>=10) && (temp<=30)) { c1=1.0; }
       else if (temp< 10)                 { c1=(temp-5.0 )/(10.0-5.0 );}
       else if (temp> 30)                 { c1=(30.0-temp)/(30.0-50.0);}
-      
+
       decay_coeff *= c1 * min(stor/stor_max,1.0);
 
       rates[q] = mass * (1.0 - exp(-decay_coeff*Options.timestep))/Options.timestep;
@@ -201,4 +201,3 @@ void   CmvDecay::ApplyConstraints(const double           *state_vars,
     rates[ii] = min(rates[ii],state_vars[iConstit]/Options.timestep);//cannot remove more mass than is there
   }
 }
-

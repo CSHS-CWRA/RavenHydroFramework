@@ -251,7 +251,7 @@ struct surface_struct
   double cond_melt_mult;    ///< [-]       condensation melt multiplier
   double rain_melt_mult;    ///< [-]       rain melt multiplier
   double bsnow_distrib;     ///< [-]       blowing snow distribution parameter
-  double lakesnow_buffer_ht;///< [mmSWE]   height of snow above which potential melt energy doest reach lake ice 
+  double lakesnow_buffer_ht;///< [mmSWE]   height of snow above which potential melt energy doest reach lake ice
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
@@ -425,18 +425,18 @@ struct global_struct
   double           windvel_icept;            ///< [m/s] intercept parameter for regression between wind vel. and F(T_max-T_min)
   double           windvel_scale;            ///< [changes] slope parameter for regression between wind vel. and F(T_max-T_min)
 };
-// parameter override structure 
-struct param_override 
+// parameter override structure
+struct param_override
 {
   string  SBGroup_name;
   string  param_name;
 
   int     nVals;
   double *aValues;
-  double *aRevertValues; 
-  
-  bool   *aHRUIsOverridden; 
-  double *pxAddress; 
+  double *aRevertValues;
+
+  bool   *aHRUIsOverridden;
+  double *pxAddress;
 
   param_override()  /* Constructor */
   {
