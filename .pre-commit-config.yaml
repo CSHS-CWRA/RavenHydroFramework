@@ -9,7 +9,9 @@ repos:
     - id: pretty-format-json
       args: ['--autofix', '--no-ensure-ascii', '--no-sort-keys']
     - id: trailing-whitespace
+      exclude: benchmarking
     - id: end-of-file-fixer
+      exclude: benchmarking
 
 #  - repo: https://github.com/pocc/pre-commit-hooks
 #    rev: master
