@@ -31,6 +31,7 @@
 #include "GWSWProcesses.h"
 #include "HeatConduction.h"
 #include "SurfaceEnergyExchange.h"
+#include "FrozenLake.h"
 #include "EnKF.h"
 
 bool ParseMainInputFile        (CModel *&pModel, optStruct &Options);
@@ -56,22 +57,22 @@ potmelt_method ParsePotMeltMethod(const string s);
 
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the .rvc and other initialization file, called by main
-/// must be called AFTER model initialization, and ONLY once, even in ensemble mode
+/// must be called AFTER model initialization
 ///
 bool ParseInitialConditions(CModel*& pModel, const optStruct& Options) 
 {
-  if (pModel->GetEnsemble()->GetType() != ENSEMBLE_ENKF) 
-  {
-    if (!ParseInitialConditionsFile(pModel,Options)){
-      ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
-    }
-    if (!ParseNetCDFStateFile(pModel, Options)) {
-      ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;
-    }
-    if(!ParseNetCDFFlowStateFile(pModel,Options)) {
-      ExitGracefully("Cannot find or read NetCDF flow state file",BAD_DATA); return false;
-    }
+  if ((pModel->GetEnsemble()->GetType()==ENSEMBLE_ENKF) && (g_current_e==DOESNT_EXIST)){return true;}//waits until UpdateModel() is called
+  
+  if (!ParseInitialConditionsFile(pModel,Options)){
+    ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
   }
+  if (!ParseNetCDFStateFile(pModel, Options)) {
+    ExitGracefully("Cannot find or read NetCDF state file", BAD_DATA); return false;
+  }
+  if(!ParseNetCDFFlowStateFile(pModel,Options)) {
+    ExitGracefully("Cannot find or read NetCDF flow state file",BAD_DATA); return false;
+  }
+  
   return true;
 }
 //////////////////////////////////////////////////////////////////
@@ -550,6 +551,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":LakeRelease"               )){code=236;}
     else if  (!strcmp(s[0],":SoilBalance"               )){code=237;}
     else if  (!strcmp(s[0],":LateralEquilibrate"        )){code=238;}
+    else if  (!strcmp(s[0],":LakeFreeze"                )){code=239;}
     //...
     else if  (!strcmp(s[0],":-->RedirectFlow"           )){code=294;}
     else if  (!strcmp(s[0],":ProcessGroup"              )){code=295;}
@@ -2892,6 +2894,26 @@ bool ParseMainInputFile (CModel     *&pModel,
                                        !interbasin);
         AddProcess(pModel, pMover, pProcGroup);
       }
+      break;
+    }
+    case(239):  //----------------------------------------------
+    {/*LakeFreeze
+       :LakeFreeze [string method] */
+      if (Options.noisy){cout <<"Lake Freezing Process"<<endl;}
+      cout<<"LEN: "<<Len<<endl;
+      if (Len<2){ImproperFormatWarning(":LakeFreeze",p,Options.noisy); break;}
+      lakefreeze_type lf_type=LFREEZE_BASIC;
+      if      (!strcmp(s[1],"LFREEZE_BASIC"    )){lf_type=LFREEZE_BASIC;}
+      else if (!strcmp(s[1],"LFREEZE_THERMAL"  )){lf_type=LFREEZE_THERMAL;}
+      else {
+        ExitGracefully("ParseMainInputFile: Unrecognized lake freezing process representation",BAD_DATA_WARN); break;
+      }
+
+      CmvFrozenLake::GetParticipatingStateVarList(lf_type,tmpS,tmpLev,tmpN);
+      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+
+      pMover=new CmvFrozenLake(lf_type,pModel->GetTransportModel());
+      AddProcess(pModel,pMover,pProcGroup);
       break;
     }
     case(294):  //----------------------------------------------

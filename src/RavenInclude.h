@@ -857,6 +857,7 @@ enum sv_type
   SNOW_AGE,                ///< [d] snow age, in days
   SNODRIFT_TEMP,           ///< [C] temperature of drifting snow 
   SNOW_DRIFT,              ///< [mm as SWE] drifting snow storage
+  ICE_THICKNESS,           ///< [mm as SWE] lake ice thickness
 
   SNOW_ALBEDO,             ///< [-] Snow Surface albedo
 
@@ -943,6 +944,12 @@ enum process_type
 
   //in HeatConduction.h
   HEATCONDUCTION,
+
+  //In FrozenGround.h
+  GROUND_FREEZING,
+
+  //In FrozenLake.h
+  LAKE_FREEZING,
 
   //in ProcessGroup.h
   PROCESS_GROUP,

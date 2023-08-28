@@ -162,6 +162,7 @@ public:/*-------------------------------------------------------*/
   void          ChangeVegetation        (const CVegetationClass *veg_class);
   void          ChangeHRUType           (const HRU_type typ);
   void          AdjustHRUForcing        (const forcing_type Ftyp,const double& epsilon, const adjustment adj); 
+  void          AdjustDailyHRUForcings  (const forcing_type Ftyp,const double* epsilon, const adjustment adj, const int nStepsPerDay); 
 
   //will be removed with landscape elements:
   void          RecalculateDerivedParams(const optStruct    &Options,

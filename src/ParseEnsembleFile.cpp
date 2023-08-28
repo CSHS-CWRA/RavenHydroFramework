@@ -202,15 +202,24 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           dist->class_group=s[2];
           dist->default_val=s_to_d(s[3]);
 
-          if     (!strcmp(s[4],"DIST_UNIFORM")) { dist->distribution=DIST_UNIFORM; }
-          else if(!strcmp(s[4],"DIST_NORMAL" )) { dist->distribution=DIST_NORMAL; }
-          else if(!strcmp(s[4],"DIST_GAMMA"  )) { dist->distribution=DIST_GAMMA; }
+          bool fix=false;
+          if     (!strcmp(s[4],"DIST_UNIFORM"   )) { dist->distribution=DIST_UNIFORM; }
+          else if(!strcmp(s[4],"DIST_NORMAL"    )) { dist->distribution=DIST_NORMAL; }
+          else if(!strcmp(s[4],"DIST_LOGNORMAL" )) { dist->distribution=DIST_LOGNORMAL; }
+          else if(!strcmp(s[4],"DIST_LOGNORMAL2")) { dist->distribution=DIST_LOGNORMAL; fix=true;}
+          else if(!strcmp(s[4],"DIST_GAMMA"     )) { dist->distribution=DIST_GAMMA; }
           else {
             ExitGracefully("ParseEnsembleFile: invalid distribution type in :ParameterDistributions command",BAD_DATA);
           }
           dist->distpar[0]=s_to_d(s[5]);
           dist->distpar[1]=s_to_d(s[6]);
           if(Len>7) { dist->distpar[2]=s_to_d(s[7]); }
+          if (fix) { //convert mu_x and std_x to mu(ln(x)) and std(ln(x))
+            double mean=dist->distpar[0];
+            double std= dist->distpar[1];
+            dist->distpar[0]=log(mean*mean)-log(sqrt(mean*mean+std*std));
+            dist->distpar[1]=log(1.0+std*std/mean/mean);
+          }
 
           if (pEnsemble->GetType() == ENSEMBLE_MONTECARLO){
             ((CMonteCarloEnsemble*)(pEnsemble))->AddParamDist(dist);
@@ -257,9 +266,12 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         
         forcing_type ftyp=GetForcingTypeFromString(s[1]);
         disttype distrib=DIST_NORMAL;
-        if     (!strcmp(s[2],"DIST_UNIFORM")) { distrib=DIST_UNIFORM; }
-        else if(!strcmp(s[2],"DIST_NORMAL" )) { distrib=DIST_NORMAL; }
-        else if(!strcmp(s[2],"DIST_GAMMA"  )) { distrib=DIST_GAMMA; }
+        bool fix=false;
+        if     (!strcmp(s[2],"DIST_UNIFORM"   )) { distrib=DIST_UNIFORM; }
+        else if(!strcmp(s[2],"DIST_NORMAL"    )) { distrib=DIST_NORMAL; }
+        else if(!strcmp(s[2],"DIST_LOGNORMAL" )) { distrib=DIST_LOGNORMAL; }
+        else if(!strcmp(s[2],"DIST_LOGNORMAL2")) { distrib=DIST_LOGNORMAL; fix=true;}
+        else if(!strcmp(s[2],"DIST_GAMMA"     )) { distrib=DIST_GAMMA; }
         else {
           ExitGracefully("ParseEnsembleFile: invalid distribution type in :ForcingPerturbation command",BAD_DATA);
         }
@@ -268,6 +280,15 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         distpars[0]=s_to_d(s[3]);
         distpars[1]=s_to_d(s[4]);
         distpars[2]=0.0;
+
+        if (fix) { //convert mu_x and std_x to mu(ln(x)) and std(ln(x))
+          double mean=distpars[0];
+          double std= distpars[1];
+          distpars[0]=log(mean*mean)-log(sqrt(mean*mean+std*std));
+          distpars[1]=log(1.0+std*std/mean/mean);
+          ExitGracefullyIf(mean<=0.0,"ParseEnsembleFile: invalid (negative or zero) mean of lognormal distribution in :ForcingPerturbation command",BAD_DATA_WARN);
+        }
+
         int kk=DOESNT_EXIST;
         if     (!strcmp(s[5],"ADDITIVE"       )) { adj=ADJ_ADDITIVE; }
         else if(!strcmp(s[5],"MULTIPLICATIVE" )) { adj=ADJ_MULTIPLICATIVE; }
@@ -278,7 +299,8 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           kk=pModel->GetHRUGroup(s[6])->GetGlobalIndex();
         }
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
-        pEnKF->AddPerturbation(ftyp,distrib,distpars,kk, adj);
+        int nStepsPerDay=(int)(rvn_round(1.0/Options.timestep));
+        pEnKF->AddForcingPerturbation(ftyp,distrib,distpars,kk, adj,nStepsPerDay);
       }
       else {
         WriteWarning(":ForcingPerturbation command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
@@ -362,10 +384,13 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         int lay;
         sv=CStateVariable::StringToSVType(s[1],lay,true);
 
+        bool fix=false;
         disttype distrib=DIST_NORMAL;
-        if     (!strcmp(s[2],"DIST_UNIFORM")) { distrib=DIST_UNIFORM; }
-        else if(!strcmp(s[2],"DIST_NORMAL" )) { distrib=DIST_NORMAL; }
-        else if(!strcmp(s[2],"DIST_GAMMA"  )) { distrib=DIST_GAMMA; }
+        if     (!strcmp(s[2],"DIST_UNIFORM"   )) { distrib=DIST_UNIFORM; }
+        else if(!strcmp(s[2],"DIST_NORMAL"    )) { distrib=DIST_NORMAL; }
+        else if(!strcmp(s[2],"DIST_LOGNORMAL" )) { distrib=DIST_LOGNORMAL; }
+        else if(!strcmp(s[2],"DIST_LOGNORMAL2")) { distrib=DIST_LOGNORMAL; fix=true;}
+        else if(!strcmp(s[2],"DIST_GAMMA"     )) { distrib=DIST_GAMMA; }
         else {
           ExitGracefully("ParseEnsembleFile: invalid distribution type in :ObservationErrorModel command",BAD_DATA);
         }
@@ -374,6 +399,13 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         distpars[0]=s_to_d(s[3]);
         distpars[1]=s_to_d(s[4]);
         distpars[2]=0.0;
+        if (fix) { //convert mu_x and std_x to mu(ln(x)) and std(ln(x))
+          double mean=distpars[0];
+          double std= distpars[1];
+          distpars[0]=log(mean*mean)-log(sqrt(mean*mean+std*std));
+          distpars[1]=log(1.0+std*std/mean/mean);
+          ExitGracefullyIf(mean<=0.0,"ParseEnsembleFile: invalid (negative or zero) mean of lognormal distribution in :ObservationErrorModel command",BAD_DATA_WARN);
+        }
 
         adjustment adj=ADJ_ADDITIVE;
         if     (!strcmp(s[5],"ADDITIVE"       )) { adj=ADJ_ADDITIVE; }

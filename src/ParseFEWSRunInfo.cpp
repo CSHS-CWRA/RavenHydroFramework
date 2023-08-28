@@ -846,7 +846,7 @@ void GetNetCDFTimeInfo(const int ncid, int &time_dimid, int &ntime, int &start_t
 
   GetJulianDateFromNetCDFTime(unit_t, Options.calendar, timearr[0], ref_day, ref_year);
 
-  delta_t=TimeDifference(Options.julian_start_day, Options.julian_start_year, ref_day, ref_year, Options.calendar);
+  delta_t=TimeDifference(ref_day, ref_year, Options.julian_start_day, Options.julian_start_year, Options.calendar); //gets start day with reference to reference day (start-ref) - should be postive  
   start_time_index = (int)(rvn_round(delta_t / Options.timestep));
 
   //TMP DEBUG - only for debugging below
