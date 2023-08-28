@@ -139,7 +139,6 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
                                             const time_struct &tt,
                                             double     *rates) const
 {
-  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   const force_struct *F=pHRU->GetForcingFunctions();
 
@@ -261,7 +260,6 @@ void CmvSnowAlbedoEvolve::ApplyConstraints( const double      *state_vars,
                                             const time_struct &t,
                                             double      *rates) const
 {
-  if (pHRU->GetHRUType()==HRU_LAKE){return;}
 
   double albedo  =state_vars[pModel->GetStateVarIndex(SNOW_ALBEDO)];
   lowerswap(rates[0],(1.0-albedo)/Options.timestep);//albedo<-=1

@@ -6,7 +6,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 //#include <random>
 //see http://anadoxin.org/blog/c-shooting-yourself-in-the-foot-4.html
 
-bool ParseInitialConditionsFile(CModel *&pModel,const optStruct &Options);
+bool ParseInitialConditions(CModel *&pModel,const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns uniformly distributed random variable between 0 and 1
@@ -256,8 +256,9 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
   MCOUT<<endl;
 
   //- Re-read initial conditions to update state variables----
-  if(!ParseInitialConditionsFile(pModel,Options)) {
+  if(!ParseInitialConditions(pModel,Options)) {
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);}
+  pModel->CalculateInitialWaterStorage(Options);
 
   MCOUT.close();
 }
@@ -319,6 +320,11 @@ double SampleFromDistribution(disttype distribution, double distpar[3])
     //std::normal_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
     //value = distribution(generator);
     value=distpar[0]+(distpar[1]*GaussRandom());
+  }
+  else if (distribution == DIST_LOGNORMAL) {
+    double mu =distpar[0];
+    double std=distpar[1];
+    value=exp(mu+std*GaussRandom());
   }
   return value;
 }

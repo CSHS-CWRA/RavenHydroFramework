@@ -37,7 +37,7 @@ void CModel::Initialize(const optStruct &Options)
                     "CModel::Initialize: Must have at least one SubBasin",BAD_DATA);
   ExitGracefullyIf(_nHydroUnits<1,
                     "CModel::Initialize: Must have at least one hydrologic unit",BAD_DATA);
-  ExitGracefullyIf(_nGauges<1 && _nForcingGrids<1,
+  ExitGracefullyIf(_nGauges<1 && _nForcingGrids<1 && (!Options.in_bmi_mode),
                     "CModel::Initialize: Must have at least one meteorological gauge station or forcing grid",BAD_DATA);
   ExitGracefullyIf(_nProcesses==0,
                     "CModel::Initialize: must have at least one hydrological process included in model",BAD_DATA);
@@ -171,35 +171,39 @@ void CModel::Initialize(const optStruct &Options)
     }
   }
   
-  // Generate Gauge Weights from Interpolation
+  // Generate Gauge Weights from Interpolation (except if in BMI mode and no RVT file is specified)
   //--------------------------------------------------------------
-  if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
-  forcing_type f_gauge=F_PRECIP;
-  //search for the 'other' forcing
-  if      (Options.air_pressure  ==AIRPRESS_DATA){f_gauge=F_AIR_PRES;}
-  else if (Options.SW_radiation  ==SW_RAD_DATA  ){f_gauge=F_SW_RADIA;}
-  else if (Options.evaporation   ==PET_DATA     ){f_gauge=F_PET; }
-  else if (Options.rel_humidity  ==RELHUM_DATA  ){f_gauge=F_REL_HUMIDITY;}
-  else if (Options.SW_radia_net  ==NETSWRAD_DATA){f_gauge=F_SW_RADIA_NET;}
-  else if (Options.LW_radiation  ==LW_RAD_DATA  ){f_gauge=F_LW_RADIA_NET;}
-  else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
-  else if (Options.wind_velocity ==WINDVEL_DATA ){f_gauge=F_WIND_VEL;}
-  if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
-  
-  if(Options.write_interp_wts)
-  { //creates and/or deletes existing InterpolationWeights.csv file
-    ofstream WTS;
-    string tmpFilename=FilenamePrepare("InterpolationWeights.csv",Options);
-    WTS.open(tmpFilename.c_str());
-    if(WTS.fail()) {
-      ExitGracefully(("CModel::GenerateGaugeWeights: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
-    }
-    WTS.close();
-  }
+  if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) {
 
-  GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
-  GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
-  GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
+    if (!Options.silent){cout <<"  Generating Gauge Interpolation Weights..."<<endl;}
+    forcing_type f_gauge=F_PRECIP;
+    //search for the 'other' forcing
+    if      (Options.air_pressure  ==AIRPRESS_DATA){f_gauge=F_AIR_PRES;}
+    else if (Options.SW_radiation  ==SW_RAD_DATA  ){f_gauge=F_SW_RADIA;}
+    else if (Options.evaporation   ==PET_DATA     ){f_gauge=F_PET; }
+    else if (Options.rel_humidity  ==RELHUM_DATA  ){f_gauge=F_REL_HUMIDITY;}
+    else if (Options.SW_radia_net  ==NETSWRAD_DATA){f_gauge=F_SW_RADIA_NET;}
+    else if (Options.LW_radiation  ==LW_RAD_DATA  ){f_gauge=F_LW_RADIA_NET;}
+    else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
+    else if (Options.wind_velocity ==WINDVEL_DATA ){f_gauge=F_WIND_VEL;}
+    if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
+    
+    if(Options.write_interp_wts)
+    { //creates and/or deletes existing InterpolationWeights.csv file
+      ofstream WTS;
+      string tmpFilename=FilenamePrepare("InterpolationWeights.csv",Options);
+      WTS.open(tmpFilename.c_str());
+      if(WTS.fail()) {
+        ExitGracefully(("CModel::GenerateGaugeWeights: unable to open output file "+tmpFilename+" for writing.").c_str(),FILE_OPEN_ERR);
+      }
+      WTS.close();
+    }
+
+    GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
+    GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
+    GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
+  
+  }
 
   //Initialize SubBasins, calculate routing orders, topology
   //--------------------------------------------------------------

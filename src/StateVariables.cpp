@@ -138,6 +138,7 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
   case(SNOW_COVER):         {name="Fractional Snow Cover";      break;}
   case(CUM_SNOWMELT):       {name="Cumulative Snowmelt";        break;}
   case(SNOW_DEFICIT):       {name="Snow Deficit";               break;}
+  case(ICE_THICKNESS):      {name="Ice Thickness";              break;}
 
   case(SNOW_AGE):           {name="Snow Age";                   break;}
   case(SNODRIFT_TEMP):      {name="Blowing Snow Temperature";   break;}
@@ -249,6 +250,7 @@ string CStateVariable::GetStateVarUnits(const sv_type typ)
   case(SNOW_DEFICIT):     {units="mm";   break;}
   case(SNOW_AGE):         {units="d";    break;}
   case(SNODRIFT_TEMP):    {units="C";    break;}
+  case(ICE_THICKNESS):    {units="mm";   break;}
 
   case(GLACIER):          {units="mm";   break;}
   case(GLACIER_ICE):      {units="mm";   break;}
@@ -335,6 +337,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
   else if (!tmp.compare("SNOW_AGE"        )){typ=SNOW_AGE;}
   else if (!tmp.compare("SNODRIFT_TEMP"   )){typ=SNODRIFT_TEMP;}
   else if (!tmp.compare("SNOW_DRIFT"      )){typ=SNOW_DRIFT;}
+  else if (!tmp.compare("ICE_THICKNESS"   )){typ=ICE_THICKNESS;}
   else if (!tmp.compare("GLACIER"         )){typ=GLACIER;}
   else if (!tmp.compare("GLACIER_ICE"     )){typ=GLACIER_ICE;}
   else if (!tmp.compare("GLACIER_CC"      )){typ=GLACIER_CC;}
@@ -430,6 +433,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     case(SNOW_DEFICIT):       {name="SNOW_DEFICIT";             break;}
     case(SNOW_AGE):           {name="SNOW_AGE";                 break;}
     case(SNODRIFT_TEMP):      {name="SNODRIFT_TEMP";            break;}
+    case(ICE_THICKNESS):      {name="ICE_THICKNESS";            break;}
 
     //Glacier variables
     case(GLACIER):            {name="GLACIER";                  break;}

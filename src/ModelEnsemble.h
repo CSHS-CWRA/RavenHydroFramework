@@ -12,6 +12,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 enum disttype {
   DIST_UNIFORM,     ///< Uniform distribution
   DIST_NORMAL,      ///< Gaussian (normal) distribution
+  DIST_LOGNORMAL,   ///< Lognormal distribution
   DIST_GAMMA        ///< Gamma distribution
 };
 struct param_dist 
@@ -25,6 +26,7 @@ struct param_dist
   double       distpar[3];   ///< distribution parameters 
   //                         //   for DIST_UNIFORM, distpar[0]=min, distpar[1]=max
   //                         //   for DIST_NORMAL, distpar[0]=mean, distpar[1]=std_dev
+  //                         //   for DIST_NORMAL, distpar[0]=mean of ln, distpar[1]=std_dev of ln
   //                         //   for DIST_GAMMA, distpar[0]=shape, distpar[1]=scale
   //transformation trans; e.g., log transform
         
