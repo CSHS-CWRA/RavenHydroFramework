@@ -12,5 +12,5 @@
 
 ## Contributors
 
-* André D.L. Zanchetta <adlzanchetta@gmail.com> [@adlzanchetta](https://github.com/adlzanchetta)
 * Trevor James Smith <smith.trevorj@ouranos.ca> [@Zeitsperre](https://github.com/Zeitsperre)
+* André D.L. Zanchetta <andre.dellaliberazanchetta@umanitoba.ca> [@adlzanchetta](https://github.com/adlzanchetta)
