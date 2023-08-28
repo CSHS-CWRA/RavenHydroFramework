@@ -1,0 +1,49 @@
+name: RavenHydroFramework Testing
+
+on:
+  push:
+    branches:
+     - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - uses: pre-commit/action@v3.0.0
+
+  build:
+    name: Build RavenHydroFramework binary
+    needs: lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+     - name: Checkout
+       uses: actions/checkout@v3
+     - name: Install dependencies
+       run: |
+         sudo apt-get update
+         sudo apt-get install libnetcdf-dev build-essential cmake
+     - name: Fetch NetCDF CMake script
+       run: |
+         mkdir cmake
+         wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake cmake/FindNetCDF.cmake
+     - name: Build
+       run: |
+         make 
+         make install
+     - name: Run tests
+       run: |
+         raven
+
