@@ -39,6 +39,8 @@
    	 31,	 0.625657,	 1500,	 49.3,	 -100,	 1,	 OPEN_7,	 FOREST,	 DEFAULT_P,	 [NONE],	 [NONE],	 0,	 0
    	 32,	 2.09459,	 1500,	 49.3,	 -100,	 1,	 OPEN_7,	 FOREST,	 DEFAULT_P,	 [NONE],	 [NONE],	 0,	 180
    	 33,	 0.37975,	 1500,	 49.3,	 -100,	 1,	 FOREST_7,	 FOREST,	 DEFAULT_P,	 [NONE],	 [NONE],	 0,	 138.6
+   	 34,	 0.04,	     1500,	 49.3,	 -100,	 1,	 GLACIER,	 FOREST,	 GLACIER,	 [NONE],	 [NONE],	 0,	 0
+   	 35,	 0.04,	     1500,	 49.3,	 -100,	 1,	 GLACIER,	 FOREST,	 GLACIER,	 [NONE],	 [NONE],	 0,	 180
 :EndHRUs
 
 #---------------------------------------------------------
@@ -71,7 +73,7 @@
  26, 27, 28
 :EndHRUGroup
 :HRUGroup Band7
- 31, 32, 33
+ 31, 32, 33, 34, 35
 :EndHRUGroup
 
 #---------------------------------------------------------
@@ -86,4 +88,6 @@
 :HRUGroup Forest
  3, 8, 13, 18, 23, 28, 33
 :EndHRUGroup
-
+:HRUGroup Glacier
+ 34, 35
+:EndHRUGroup

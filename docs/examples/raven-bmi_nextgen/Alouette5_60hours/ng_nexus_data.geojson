@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "nexus_data",
+"crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}},
+"features": [
+{"type": "Feature", "id": "nex-2", "properties": {"toid": "cat-2"}, "geometry": {"type": "Point", "coordinates": [-122.489751, 49.28725]}}
+]
+}
