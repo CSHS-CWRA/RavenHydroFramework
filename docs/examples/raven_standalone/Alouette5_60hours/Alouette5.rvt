@@ -1,0 +1,20 @@
+#########################################################################
+:FileType rvt ASCII Raven 2.5
+# DataType         Raven Met Station File
+#------------------------------------------------------------------------
+
+:Gauge ALUcomp
+  :Latitude 49.3  
+  :Longitude -100  
+  :Elevation 582.358  # C0ELPT
+  :RainCorrection 1.25885  # 1+P0RREP
+  :SnowCorrection 1.04283  # 1+P0SREP
+  :CloudTempRanges 8 14  # A0FOGY A0SUNY
+  :MonthlyEvapFactor 0.2, 0.2, 0.2, 0.2, 0.246, 0.258, 0.232, 0.218, 0.2, 0.2, 0.2, 0.2,  # V0EMOF(12) * A0EDDF
+# Data:
+#  :RedirectToFile ALUgauge.rvt
+:RedirectToFile ALUgauge_nine_mm-h.rvt
+#  :RedirectToFile <BMI>
+:EndGauge
+
+:RedirectToFile AlouetteObservedFlow.rvt
