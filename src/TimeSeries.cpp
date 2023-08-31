@@ -922,9 +922,14 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
       }
       if (!is_numeric(s[i]))
       {
-        ExitGracefully( ("Non-numeric value found in time series (line " +to_string(p->GetLineNumber())+" of file "+p->GetFilename()+")").c_str(),BAD_DATA_WARN);
+        if(!strcmp(s[i],"NaN")){aVal[n]=RAV_BLANK_DATA; }
+        else{
+          ExitGracefully( ("Non-numeric value found in time series (line " +to_string(p->GetLineNumber())+" of file "+p->GetFilename()+")").c_str(),BAD_DATA_WARN);
+        }
       }
-      aVal [n]=fast_s_to_d(s[i]);
+      else{
+        aVal [n]=fast_s_to_d(s[i]);
+      }
       n++;
     }
   }

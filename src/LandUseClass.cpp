@@ -338,6 +338,9 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.dep_crestratio,Stmp.dep_crestratio,Sdefault.dep_crestratio,needed,"DEP_CRESTRATIO");
   SetSpecifiedValue(S.PDMROF_b,Stmp.PDMROF_b,Sdefault.PDMROF_b,needed,"PDMROF_B");
   SetSpecifiedValue(S.PDM_b,Stmp.PDM_b,Sdefault.PDM_b,needed,"PDM_B");
+  SetSpecifiedValue(S.HYMOD2_G,Stmp.HYMOD2_G,Sdefault.HYMOD2_G,needed,"HYMOD2_G");
+  SetSpecifiedValue(S.HYMOD2_Kmax,Stmp.HYMOD2_Kmax,Sdefault.HYMOD2_Kmax,needed,"HYMOD2_KMAX");
+  SetSpecifiedValue(S.HYMOD2_exp,Stmp.HYMOD2_exp,Sdefault.HYMOD2_exp,needed,"HYMOD2_EXP");
   SetSpecifiedValue(S.max_dep_area_frac,Stmp.max_dep_area_frac,Sdefault.max_dep_area_frac,needed,"MAX_DEP_AREA_FRAC");
   SetSpecifiedValue(S.ponded_exp,Stmp.ponded_exp,Sdefault.ponded_exp,needed,"PONDED_EXP");
   SetSpecifiedValue(S.uwfs_b,Stmp.uwfs_b,Sdefault.uwfs_b,needed,"UWFS_B");
@@ -426,6 +429,9 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.dep_crestratio    =DefaultParameterValue(is_template,false);//1.5;      //[mm]
   S.PDMROF_b          =DefaultParameterValue(is_template,false);//4;        //[-]
   S.PDM_b             =DefaultParameterValue(is_template,false);//4;        //[-]
+  S.HYMOD2_G          =DefaultParameterValue(is_template,false);//1.0;      //[0..1]
+  S.HYMOD2_Kmax       =DefaultParameterValue(is_template,false);//1.0;      //[0..1]
+  S.HYMOD2_exp        =DefaultParameterValue(is_template,false);//1.0;      //[-]
   S.max_dep_area_frac =DefaultParameterValue(is_template,false);//0;        //[0..1]
   S.ponded_exp        =DefaultParameterValue(is_template,false);//2         //[-]
   S.uwfs_b            =DefaultParameterValue(is_template,false);//~1-10     //[-]
@@ -524,6 +530,9 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("DEP_CRESTRATIO"         )){S.dep_crestratio =value;}
   else if (!name.compare("PDMROF_B"               )){S.PDMROF_b =value; }
   else if (!name.compare("PDM_B"                  )){S.PDM_b =value; }
+  else if (!name.compare("HYMOD2_G"               )){S.HYMOD2_G =value; }
+  else if (!name.compare("HYMOD2_KMAX"            )){S.HYMOD2_Kmax =value; }
+  else if (!name.compare("HYMOD2_EXP"             )){S.HYMOD2_exp =value; }
   else if (!name.compare("MAX_DEP_AREA_FRAC"      )){S.max_dep_area_frac =value; }
   else if (!name.compare("PONDED_EXP"             )){S.ponded_exp =value; }
   else if (!name.compare("UWFS_B"                 )){S.uwfs_b =value; }
@@ -625,6 +634,9 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("DEP_CRESTRATIO"         )){return S.dep_crestratio;}
   else if (!name.compare("PDMROF_B"               )){return S.PDMROF_b; }
   else if (!name.compare("PDM_B"                  )){return S.PDM_b; }
+  else if (!name.compare("HYMOD2_G"               )){return S.HYMOD2_G; }
+  else if (!name.compare("HYMOD2_KMAX"            )){return S.HYMOD2_Kmax; }
+  else if (!name.compare("HYMOD2_EXP"             )){return S.HYMOD2_exp; }
   else if (!name.compare("MAX_DEP_AREA_FRAC"      )){return S.max_dep_area_frac; }
   else if (!name.compare("PONDED_EXP"             )){return S.ponded_exp; }
   else if (!name.compare("UWFS_B"                 )){return S.uwfs_b; }

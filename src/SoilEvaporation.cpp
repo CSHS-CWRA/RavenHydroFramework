@@ -43,6 +43,7 @@ CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
           (type==SOILEVAP_CHU)    ||
           (type==SOILEVAP_GR4J)   ||
           (type==SOILEVAP_LINEAR) ||
+          (type==SOILEVAP_HYMOD2) ||
           (type==SOILEVAP_ALL))
   {
     CHydroProcessABC::DynamicSpecifyConnections(2);
@@ -208,6 +209,15 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
     aP[0]="PDM_B";             aPC[0]=CLASS_LANDUSE;
     aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
   }
+  else if(type==SOILEVAP_HYMOD2)
+  {
+    nP=5;
+    aP[0]="PDM_B";             aPC[0]=CLASS_LANDUSE;
+    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
+    aP[2]="HYMOD2_G";          aPC[2]=CLASS_LANDUSE;
+    aP[3]="HYMOD2_KMAX";       aPC[3]=CLASS_LANDUSE;
+    aP[4]="HYMOD2_EXP";        aPC[4]=CLASS_LANDUSE;
+  }
   else if (type==SOILEVAP_LINEAR)
   {
     nP=1;
@@ -254,7 +264,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
     aSV [0]=SOIL;  aSV  [1]=SOIL;  aSV [2]=ATMOSPHERE;    aSV [3]=DEPRESSION;
     aLev[0]=0;     aLev [1]=1;     aLev[2]=DOESNT_EXIST;  aLev[3]=DOESNT_EXIST;
   }
-  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR) || (se_type==SOILEVAP_ALL) || (se_type==SOILEVAP_PDM))
+  else if ((se_type==SOILEVAP_TOPMODEL) || (se_type==SOILEVAP_VIC) || (se_type==SOILEVAP_HBV) || (se_type==SOILEVAP_LINEAR) || (se_type==SOILEVAP_ALL) || (se_type==SOILEVAP_PDM) || (se_type==SOILEVAP_HYMOD2))
   {
     nSV=2;
     aSV [0]=SOIL;  aSV [1]=ATMOSPHERE;
@@ -438,6 +448,27 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     double c_star=c_max*(1.0-pow(1.0-(stor/max_stor),1.0/(b+1.0)));
 
     rates[0] = min(c_star,(c_star/c_max)*PET);     //AET: SOIL->ATMOS
+
+    PETused=rates[0];
+  }
+  //------------------------------------------------------------
+  else if(type==SOILEVAP_HYMOD2)
+  {
+    //from Roy et al.  (2017), Using satellite-based evapotranspiration estimates to improve the structure of a simple conceptual rainfall-runoff model, HESS, 21(2), 879–896, doi:10.5194/hess-21-879-2017
+
+    double stor    =state_vars[iFrom[0]];
+    double max_stor=pHRU->GetSoilCapacity(0);
+    
+    double b   =pHRU->GetSurfaceProps()->PDM_b;
+    double gp  =pHRU->GetSurfaceProps()->HYMOD2_G;    // [0..1] ET lower resistance parameter
+    double Kmax=pHRU->GetSurfaceProps()->HYMOD2_Kmax; // [0..1] ET resistance parameter
+    double ce  =pHRU->GetSurfaceProps()->HYMOD2_exp;  // [-] ET exponent parameter 
+
+    double c_max =(b+1)*max_stor; 
+    double c_star=c_max*(1.0-pow(1.0-(stor/max_stor),1.0/(b+1.0)));
+
+    double K=Kmax*(gp+(1-gp)*pow(c_star/c_max,ce));
+    rates[0] = K*min(c_star,PET);     //AET: SOIL->ATMOS
 
     PETused=rates[0];
   }

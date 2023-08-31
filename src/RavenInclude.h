@@ -13,8 +13,10 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
+
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
+//#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -446,6 +448,8 @@ enum rainsnow_method
   RAINSNOW_HSPF,         ///< HSPF approach - variable transition temperature
   RAINSNOW_UBCWM,        ///< Linear variation between two temperatures
   RAINSNOW_HARDER,       ///< Harder & Pomeroy (2013) method ported over from CRHM (Pomeroy et al 2007)
+  RAINSNOW_WANG,         ///< Wang et al. (2019) sigmoid function 
+  RAINSNOW_SNTHERM89,    ///< Jordan et al (1991) fixed function used in SNTHERM.89 model and Noah-MP3.6
   RAINSNOW_THRESHOLD
 };
 
@@ -1601,7 +1605,8 @@ void LatLonToUTMXY (const double lat, //latitude, in decimal degrees
 double GetSaturatedVaporPressure(const double &T);
 double GetSatVapSlope           (const double &T, const double &satvap);
 double GetLatentHeatVaporization(const double &T);
-double GetPsychrometricConstant  (const double &P, const double &LH_vapor);
+double GetPsychrometricConstant (const double &P, const double &LH_vapor);
+double GetWetBulbTemperature    (const double &P,const double &T,const double &rel_hum);
 double GetAirDensity            (const double &T, const double &P);
 double GetSpecificHumidity      (const double &rel_hum,const double &air_press,const double &T);
 double GetVerticalTransportEfficiency     (const double &P,   //[kPa]

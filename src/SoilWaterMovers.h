@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvBaseflow
@@ -94,6 +94,7 @@ enum soilevap_type
   SOILEVAP_UBC,           ///< UBCWM Model (Quick, 1996)
   SOILEVAP_CHU,           ///< Ontario Crop Heat Unit method
   SOILEVAP_PDM,           ///< From Probabilty Distributed Model (Moore, 1985)
+  SOILEVAP_HYMOD2,        ///< Variant of Probability Distributed Model (Moore, 1985) used in HYMOD2 (Roy et al., 2017)
   SOILEVAP_GR4J,          ///< GR4J model approach (Perrin et al., 2003)
   SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
   SOILEVAP_SACSMA,        ///< Sacramento Soil Moisture Accounting algorithm (should only be used with SOILBAL_SACSMA)

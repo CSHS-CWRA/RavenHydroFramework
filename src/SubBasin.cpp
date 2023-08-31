@@ -1026,8 +1026,9 @@ void CSubBasin::SetAsNonHeadwater()
 //
 void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 {
-  ExitGracefullyIf(_pInflowHydro!=NULL,
+  ExitGracefullyIf((_pInflowHydro!=NULL) && (g_current_e==DOESNT_EXIST),
                    "CSubBasin::AddInflowHydrograph: only one inflow hydrograph may be specified per basin",BAD_DATA);
+  delete _pInflowHydro; // must delete previous if this is for an ensemble run
   _pInflowHydro=pInflow;
 }
 //////////////////////////////////////////////////////////////////
@@ -1036,8 +1037,9 @@ void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 //
 void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
 {
-  ExitGracefullyIf(_pInflowHydro2!=NULL,
+  ExitGracefullyIf((_pInflowHydro2!=NULL)  && (g_current_e==DOESNT_EXIST),
                    "CSubBasin::AddDownstreamInflow: only one inflow hydrograph may be specified per basin",BAD_DATA);
+  delete _pInflowHydro; // must delete previous if this is for an ensemble run
   _pInflowHydro2=pInflow;
 }
 //////////////////////////////////////////////////////////////////

@@ -701,6 +701,7 @@
     <ClCompile Include="Drain.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="EnKF.cpp" />
+    <ClCompile Include="FrozenLake.cpp" />
     <ClCompile Include="GWRecharge.cpp" />
     <ClCompile Include="GWRiverConnection.cpp" />
     <ClCompile Include="GWSWProcessABC.cpp" />
@@ -958,6 +959,7 @@
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />
     <ClInclude Include="EnKF.h" />
+    <ClInclude Include="FrozenLake.h" />
     <ClInclude Include="GroundwaterModel.h" />
     <ClInclude Include="GWRiverConnection.h" />
     <ClInclude Include="GWSWProcesses.h" />
@@ -965,10 +967,8 @@
     <ClInclude Include="MassLoading.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="MFUSGpp.h" />
-    <ClInclude Include="RavenMain.h" />
     <ClInclude Include="Raven_BMI.h" />
     <ClInclude Include="RiverReach.h" />
-    <ClInclude Include="RobinInterface.h" />
     <ClInclude Include="StageDischargeRelations.h" />
     <ClInclude Include="SurfaceEnergyExchange.h" />
     <ClInclude Include="ForcingGrid.h" />
@@ -1016,12 +1016,14 @@
     <ResourceCompile Include="Raven.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\RavenView\RavenView\RavenResource.dat" />
+    <None Include="RavenAlgParams.dat" />
     <None Include="RavenIcon.ico" />
     <None Include="ClassDiagramRaven.cd">
       <SubType>Designer</SubType>
     </None>
     <None Include="PropertyStructures.cd" />
+    <None Include="RavenParameters.dat" />
+    <None Include="RavenProcessConnections.dat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
