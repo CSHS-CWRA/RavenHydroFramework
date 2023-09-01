@@ -1006,29 +1006,7 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
       double frac;
       double delta=CGlobalParams::GetParams()->rainsnow_delta;
       double temp =CGlobalParams::GetParams()->rainsnow_temp;
-
-      if      (F->temp_daily_ave <= (temp - 0.5 * delta)) { frac = 1.0; }
-      else if (F->temp_daily_ave >= (temp + 0.5 * delta)) { frac = 0.0; }//assumes only daily avg. temp is included
-      else {
-          frac = 0.5 + (temp - F->temp_daily_ave) / delta;
-      }
-      if    (method == RAINSNOW_UBCWM) { return frac; }
-      //HBV-EC implementation - correction only applied to rain portion of snow (assumes snow data provided)
-      else if (method == RAINSNOW_HBV) { return frac * (1.0 - F->snow_frac) + F->snow_frac; }
-  }
-  //-----------------------------------------------------------
-  else if (method == RAINSNOW_HSPF) // Also, from HydroComp (1969)
-  {
-      double temp =CGlobalParams::GetParams()->rainsnow_temp;
-      double snowtemp;
-      double dewpt = GetDewPointTemp(F->temp_ave, F->rel_humidity);
-  //-----------------------------------------------------------
-  else if ((method == RAINSNOW_HBV) || (method == RAINSNOW_UBCWM))
-  {//linear variation based upon daily average temperature
-      double frac;
-      double delta=CGlobalParams::GetParams()->rainsnow_delta;
-      double temp =CGlobalParams::GetParams()->rainsnow_temp;
-
+		
       if      (F->temp_daily_ave <= (temp - 0.5 * delta)) { frac = 1.0; }
       else if (F->temp_daily_ave >= (temp + 0.5 * delta)) { frac = 0.0; }//assumes only daily avg. temp is included
       else {
