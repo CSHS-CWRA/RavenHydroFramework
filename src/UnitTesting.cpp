@@ -33,6 +33,8 @@ void RavenUnitTesting(const optStruct &Options)
   //TestEnthalpyTempConvert();
   //TestConvectionSolution();
   //TestGammaSampling();
+  //TestWetBulbTemps();
+
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function
@@ -564,4 +566,19 @@ void BarycentricWeights() {
   }
   TEST.close();
   ExitGracefully("BarycentricWeights",SIMULATION_DONE);
+}
+
+void TestWetBulbTemps() {
+  double T,RH;
+  double P=100;
+  cout<<"T ,RH ,Tw"<<endl;
+  T=30; RH=0.5;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  T=20; RH=0.9;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  T=20; RH=1.0;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  T=5; RH=0.35;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  ExitGracefully("UnitTesting:: TestWetBulbTemps",SIMULATION_DONE);
 }

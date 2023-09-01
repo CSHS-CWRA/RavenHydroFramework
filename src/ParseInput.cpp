@@ -907,6 +907,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"RAINSNOW_UBCWM"     )){Options.rainsnow=RAINSNOW_UBCWM;}
       else if (!strcmp(s[1],"RAINSNOW_HSPF"      )){Options.rainsnow=RAINSNOW_HSPF;}
       else if (!strcmp(s[1],"RAINSNOW_HARDER"    )){Options.rainsnow=RAINSNOW_HARDER;}
+      else if (!strcmp(s[1],"RAINSNOW_WANG"      )){Options.rainsnow=RAINSNOW_WANG;}
+      else if (!strcmp(s[1],"RAINSNOW_SNTHERM89" )){Options.rainsnow=RAINSNOW_SNTHERM89;}
       else if (!strcmp(s[1],"RAINSNOW_THRESHOLD" )){Options.rainsnow=RAINSNOW_THRESHOLD;}
       else {ExitGracefully("ParseInput:RainSnowMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
@@ -2204,6 +2206,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_SACSMA"       )){se_type=SOILEVAP_SACSMA;}
       else if (!strcmp(s[1],"SOILEVAP_AWBM"         )){se_type=SOILEVAP_AWBM;}
       else if (!strcmp(s[1],"SOILEVAP_ALL"          )){se_type=SOILEVAP_ALL;}
+      else if (!strcmp(s[1],"SOILEVAP_HYMOD2"       )){se_type=SOILEVAP_HYMOD2;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
       }

@@ -281,6 +281,9 @@ struct surface_struct
   double dep_crestratio;    ///<-[m/m]     ratio of crest width to square root of HRU area (0-5) ~1.5
   double PDMROF_b;          ///< [-]       PDMROF Pareto distribution function exponent
   double PDM_b;             ///< [-]       PDM (Moore, 1985) Pareto distribution function exponent
+  double HYMOD2_G;          ///< [0..1]    ET lower resistance parameter in HYMOD2 (Roy et al., 2017) AET calculation
+  double HYMOD2_Kmax;       ///< [0..1]    ET resistance parameter in HYMOD2 (Roy et al., 2017) AET calculation
+  double HYMOD2_exp;        ///< [-]       ET exponent parameter in HYMOD2 (Roy et al., 2017) AET calculation
   double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area
   double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
   double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area

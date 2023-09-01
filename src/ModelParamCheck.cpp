@@ -410,6 +410,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   else if(Options.rainsnow==RAINSNOW_HARDER) {
 
   }
+  else if ((Options.rainsnow==RAINSNOW_WANG) || (Options.rainsnow==RAINSNOW_SNTHERM89)) {
+
+  }
   else if(Options.rainsnow==RAINSNOW_THRESHOLD) {
     aP[nP]="RAINSNOW_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;
   }

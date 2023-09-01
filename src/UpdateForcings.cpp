@@ -1000,79 +1000,122 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
 	  if (F->temp_ave <= temp) { return 1.0; }
 	  else                     { return 0.0; }
 	}
-    //-----------------------------------------------------------
-    else if ((method == RAINSNOW_HBV) || (method == RAINSNOW_UBCWM))
-    {//linear variation based upon daily average temperature
-        double frac;
-        double delta=CGlobalParams::GetParams()->rainsnow_delta;
-        double temp =CGlobalParams::GetParams()->rainsnow_temp;
+  //-----------------------------------------------------------
+  else if ((method == RAINSNOW_HBV) || (method == RAINSNOW_UBCWM))
+  {//linear variation based upon daily average temperature
+      double frac;
+      double delta=CGlobalParams::GetParams()->rainsnow_delta;
+      double temp =CGlobalParams::GetParams()->rainsnow_temp;
 
-        if      (F->temp_daily_ave <= (temp - 0.5 * delta)) { frac = 1.0; }
-        else if (F->temp_daily_ave >= (temp + 0.5 * delta)) { frac = 0.0; }//assumes only daily avg. temp is included
-        else {
-            frac = 0.5 + (temp - F->temp_daily_ave) / delta;
-        }
-        if    (method == RAINSNOW_UBCWM) { return frac; }
-        //HBV-EC implementation - correction only applied to rain portion of snow (assumes snow data provided)
-        else if (method == RAINSNOW_HBV) { return frac * (1.0 - F->snow_frac) + F->snow_frac; }
+      if      (F->temp_daily_ave <= (temp - 0.5 * delta)) { frac = 1.0; }
+      else if (F->temp_daily_ave >= (temp + 0.5 * delta)) { frac = 0.0; }//assumes only daily avg. temp is included
+      else {
+          frac = 0.5 + (temp - F->temp_daily_ave) / delta;
+      }
+      if    (method == RAINSNOW_UBCWM) { return frac; }
+      //HBV-EC implementation - correction only applied to rain portion of snow (assumes snow data provided)
+      else if (method == RAINSNOW_HBV) { return frac * (1.0 - F->snow_frac) + F->snow_frac; }
+  }
+  //-----------------------------------------------------------
+  else if (method == RAINSNOW_HSPF) // Also, from HydroComp (1969)
+  {
+      double temp =CGlobalParams::GetParams()->rainsnow_temp;
+      double snowtemp;
+      double dewpt = GetDewPointTemp(F->temp_ave, F->rel_humidity);
+  //-----------------------------------------------------------
+  else if ((method == RAINSNOW_HBV) || (method == RAINSNOW_UBCWM))
+  {//linear variation based upon daily average temperature
+      double frac;
+      double delta=CGlobalParams::GetParams()->rainsnow_delta;
+      double temp =CGlobalParams::GetParams()->rainsnow_temp;
+
+      if      (F->temp_daily_ave <= (temp - 0.5 * delta)) { frac = 1.0; }
+      else if (F->temp_daily_ave >= (temp + 0.5 * delta)) { frac = 0.0; }//assumes only daily avg. temp is included
+      else {
+          frac = 0.5 + (temp - F->temp_daily_ave) / delta;
+      }
+      if    (method == RAINSNOW_UBCWM) { return frac; }
+      //HBV-EC implementation - correction only applied to rain portion of snow (assumes snow data provided)
+      else if (method == RAINSNOW_HBV) { return frac * (1.0 - F->snow_frac) + F->snow_frac; }
+  }
+  //-----------------------------------------------------------
+  else if (method == RAINSNOW_HSPF) // Also, from HydroComp (1969)
+  {
+      double temp =CGlobalParams::GetParams()->rainsnow_temp;
+      double snowtemp;
+      double dewpt = GetDewPointTemp(F->temp_ave, F->rel_humidity);
+
+      snowtemp = temp + (F->temp_ave - dewpt) * (0.5808 + 0.0144 * F->temp_ave);
+
+      if (F->temp_ave < snowtemp) { return 1.0; }
+      else                        { return 0.0; }
+  }
+  //-----------------------------------------------------------
+  else if (method == RAINSNOW_HARDER) // From Harder & Pomeroy 2013, Ported from CRHM (Pomeroy, 2007)
+  {
+    // \todo[funct] replace with T_icebulb=GetIcebulbTemp(T,rel_hum);
+    double Tk, D, lambda, pta, L, snowfrac, T_icebulb;
+    double rel_hum;
+    rel_hum = F->rel_humidity;
+    Tk = F->temp_ave + ZERO_CELSIUS;
+
+    D = 0.0000206 * pow(Tk / ZERO_CELSIUS, 1.75);
+    lambda = 0.000063 * Tk + 0.00673;
+    pta = 18.01528 * ((rel_hum) * 0.611 * exp((17.3 * F->temp_ave) / (237.3 + F->temp_ave))) / (0.00831441 * Tk) / 1000.0;
+
+    if (F->temp_ave > FREEZING_TEMP) { L = 1000.0 * (2501.0 - 2.361 * F->temp_ave); }
+    else { L = 1000.0 * (2834.1 - 0.29 * F->temp_ave - 0.004 * F->temp_ave * F->temp_ave); }
+
+    double crit = ALMOST_INF;
+    double T_old(250.0), T_guess(250.0);
+    double T1, T2;
+    double dT = 0.002; //deg C
+    double a, b, c;
+    while (crit > 0.0001)
+    { //ice bulb temp found using the newton-raphson method
+        dT = 0.002 * T_old;
+        T1 = T_old + dT / 2.0;
+        T2 = T_old - dT / 2.0;
+        a = (-T_old + Tk + (L * D / lambda) * (pta - (18.01528 * (0.611 * exp((17.3 * (T_old - ZERO_CELSIUS)) / (237.3 + (T_old - ZERO_CELSIUS)))) / (0.00831441 * T_old) / 1000)));
+        b = (-T1    + Tk + (L * D / lambda) * (pta - (18.01528 * (0.611 * exp((17.3 * (T1    - ZERO_CELSIUS)) / (237.3 + (T1    - ZERO_CELSIUS)))) / (0.00831441 * T1   ) / 1000)));
+        c = (-T2    + Tk + (L * D / lambda) * (pta - (18.01528 * (0.611 * exp((17.3 * (T2    - ZERO_CELSIUS)) / (237.3 + (T2    - ZERO_CELSIUS)))) / (0.00831441 * T2   ) / 1000)));
+
+        T_guess = T_old - (a / ((b - c) / dT));
+        crit = fabs(T_old - T_guess);
+        T_old = T_guess;
+    } // end while
+
+    T_icebulb = T_guess - ZERO_CELSIUS;
+
+    snowfrac = 1.0;
+    if (T_icebulb > -10.0) {
+        snowfrac = 1.0 - 1.0 / (1.0 + 2.50286 * pow(0.125, T_icebulb));
     }
-    //-----------------------------------------------------------
-    else if (method == RAINSNOW_HSPF) // Also, from HydroComp (1969)
-    {
-        double temp =CGlobalParams::GetParams()->rainsnow_temp;
-        double snowtemp;
-        double dewpt = GetDewPointTemp(F->temp_ave, F->rel_humidity);
+    return snowfrac;
+  }
+  else if (method == RAINSNOW_WANG) 
+  {
+    //from Wang et al., 2019. A wet-bulb temperature-based rain-snow partitioning scheme improves snowpack prediction over the drier western United States. Geophysical Research Letters, 46(23), pp.13825-13835.
 
-        snowtemp = temp + (F->temp_ave - dewpt) * (0.5808 + 0.0144 * F->temp_ave);
+    double Ta     =F->temp_ave;
+    double rel_hum=F->rel_humidity;
+    double P      =F->air_pres;
 
-        if (F->temp_ave < snowtemp) { return 1.0; }
-        else                        { return 0.0; }
-    }
-    //-----------------------------------------------------------
-    else if (method == RAINSNOW_HARDER) // From Harder & Pomeroy 2013, Ported from CRHM (Pomeroy, 2007)
-    {
-        // \todo[funct] replace with T_icebulb=GetIcebulbTemp(T,rel_hum);
-        double Tk, D, lambda, pta, L, snowfrac, T_icebulb;
-        double rel_hum;
-        rel_hum = F->rel_humidity;
-        Tk = F->temp_ave + ZERO_CELSIUS;
-
-        D = 0.0000206 * pow(Tk / ZERO_CELSIUS, 1.75);
-        lambda = 0.000063 * Tk + 0.00673;
-        pta = 18.01528 * ((rel_hum) * 0.611 * exp((17.3 * F->temp_ave) / (237.3 + F->temp_ave))) / (0.00831441 * Tk) / 1000.0;
-
-        if (F->temp_ave > FREEZING_TEMP) { L = 1000.0 * (2501.0 - 2.361 * F->temp_ave); }
-        else { L = 1000.0 * (2834.1 - 0.29 * F->temp_ave - 0.004 * F->temp_ave * F->temp_ave); }
-
-        double crit = ALMOST_INF;
-        double T_old(250.0), T_guess(250.0);
-        double T1, T2;
-        double dT = 0.002; //deg C
-        double a, b, c;
-        while (crit > 0.0001)
-        { //ice bulb temp found using the newton-raphston method
-            dT = 0.002 * T_old;
-            T1 = T_old + dT / 2.0;
-            T2 = T_old - dT / 2.0;
-            a = (-T_old + Tk + (L * D / lambda) * (pta - (18.01528 * (0.611 * exp((17.3 * (T_old - ZERO_CELSIUS)) / (237.3 + (T_old - ZERO_CELSIUS)))) / (0.00831441 * T_old) / 1000)));
-            b = (-T1    + Tk + (L * D / lambda) * (pta - (18.01528 * (0.611 * exp((17.3 * (T1    - ZERO_CELSIUS)) / (237.3 + (T1    - ZERO_CELSIUS)))) / (0.00831441 * T1   ) / 1000)));
-            c = (-T2    + Tk + (L * D / lambda) * (pta - (18.01528 * (0.611 * exp((17.3 * (T2    - ZERO_CELSIUS)) / (237.3 + (T2    - ZERO_CELSIUS)))) / (0.00831441 * T2   ) / 1000)));
-
-            T_guess = T_old - (a / ((b - c) / dT));
-            crit = fabs(T_old - T_guess);
-            T_old = T_guess;
-        } // end while
-
-        T_icebulb = T_guess - ZERO_CELSIUS;
-
-        snowfrac = 1.0;
-        if (T_icebulb > -10.0) {
-            snowfrac = 1.0 - 1.0 / (1.0 + 2.50286 * pow(0.125, T_icebulb));
-        }
-        return snowfrac;
-    }
-    return 0.0;
-    //Should check/add:
-    //Stefan W. Kienzle,A new temperature based method to separate rain and snow,
-    ///< Hydrological Processes 22(26),p5067-5085,2008,http://dx.doi.org/10.1002/hyp.7131 \cite kienzle2008HP
+    double Twet=GetWetBulbTemperature(P,rel_hum,Ta);
+    return  1.0/(1.0+6.99e-5*exp(2.0*(Twet+3.97)));
+  }
+  else if (method == RAINSNOW_SNTHERM89) 
+  {
+    //from Jordan, R.: A one-dimensional temperature model for a snow cover: Technical documentation for SNTHERM.89., 1991. (as used in Noah-MP-3.6)
+    double Ta=F->temp_ave;
+    
+    if      (Ta>2.5){return 0.0;}
+    else if (Ta>2.0){return 0.6;}
+    else if (Ta>0.5){return 1.0-(0.4/1.5)*(Ta-0.5); }
+    else            {return 1.0;}
+  }
+  return 0.0;
+  //Should check/add:
+  //Stefan W. Kienzle,A new temperature based method to separate rain and snow,
+  ///< Hydrological Processes 22(26),p5067-5085,2008,http://dx.doi.org/10.1002/hyp.7131 \cite kienzle2008HP
 }

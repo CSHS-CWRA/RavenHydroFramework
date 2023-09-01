@@ -859,6 +859,8 @@ double GetSaturatedVaporPressure(const double &T)//[C]
 
   //0.61115*exp(22.452*T/(T+ZERO_CELSIUS)); //MESH
 
+  //0.611*exp(17.27*Ta/(Ta+237.3)); //Common simplification of Dingman for T>0
+
   if (T>=0){return A1*exp(A2*T/(T+A3));}  // Dingman/Brook90 version (Tetens equation, 1930)
   else     {return A1*exp(A4*T/(T+A5));}
 }
@@ -868,18 +870,18 @@ double GetSaturatedVaporPressure(const double &T)//[C]
 /// \remark Uses Dingman equation 7.4 \cite Dingman1994 (Murray, Applied Meteorol 6:203, 1967) \cite Murray1966JAM
 ///
 /// \param &T [in] Temperature in Celsius
-/// \param &satvap [in] Saturated vapour pressure [kpa]
+/// \param &e_sat [in] Saturated vapour pressure [kPa]
 /// \return Saturated vapor pressure corresponding to passed temperature
 //
-double GetSatVapSlope(const double &T, const double &satvap)
+double GetSatVapSlope(const double &T, const double &e_sat)
 {
   const double A2=17.26939;
   const double A3=237.3;
   const double A4=21.87456;
   const double A5=265.5;
   //calculate d(sat_vap)/dT - Dingman 7.6 , SWAT 1:2.3.4
-  if (T>0){return A2*A3/pow(T+A3,2)*satvap;}
-  else    {return A4*A5/pow(T+A5,2)*satvap;}
+  if (T>0){return A2*A3/pow(T+A3,2)*e_sat;}
+  else    {return A4*A5/pow(T+A5,2)*e_sat;}
 
   //from CRHM routine ClassCRHMCanopyClearingGap::delta
   //if(T>0) { return(2504.0*exp(17.27 * T/(T+237.3)) / sqrt(T+237.3)); }
@@ -910,6 +912,37 @@ double GetLatentHeatVaporization(const double &T)
 double GetPsychrometricConstant  (const double &P,const double &LH_vapor)
 {
   return SPH_AIR/AIR_H20_MW_RAT*P/LH_vapor;//[kPa/K];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns wet bulb temperature, calculated using newton Raphson method 
+//
+/// \param &P [in] Atmospheric pressure [kPa]
+/// \param &Ta [in] air temperature
+/// \return Psychrometric 'constant'  [kPa/K] (~0.07)
+//
+double GetWetBulbTemperature  (const double &P,const double &Ta,const double &rel_hum)
+{
+  double LH_vapor=GetLatentHeatVaporization(Ta);
+  double gamma   =GetPsychrometricConstant(P,LH_vapor);
+  double e_sat   =GetSaturatedVaporPressure(Ta);
+  double e_a     =e_sat*rel_hum;
+
+  double change=10;
+  double tolerance=0.025; 
+  double Twet=Ta; //initial guess
+  double F,dF,e_wet;
+
+  while (fabs(change) > tolerance) //solve using Newton's method (usually ~2-3 iters)
+  {
+    e_wet=GetSaturatedVaporPressure(Twet);
+    F=Ta-Twet-1/gamma*(e_wet-e_a);
+    dF=-1.0-1/gamma*(GetSatVapSlope(Twet,e_wet));
+    change=-F/dF;
+    Twet+=change;
+  }
+
+  return Twet; //[C]
 }
 
 //////////////////////////////////////////////////////////////////
