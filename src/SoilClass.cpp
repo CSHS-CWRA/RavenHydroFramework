@@ -122,7 +122,7 @@ const CSoilClass *CSoilClass::GetSoilClass(int c)
 ///
 /// \param &Stmp [in] Input soil parameters (read from .rvp file)
 /// \param &Sdefault [in] Default soil parameters
-/// \param nConstit [in] number of constitutents 
+/// \param nConstit [in] number of constitutents
 //
 void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
                                         const soil_struct &Sdefault,
@@ -371,7 +371,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   {
     _Soil.unavail_frac=0.0; //no warning
   }
-  
+
 
   //Albedo
   //----------------------------------------------------------------------------

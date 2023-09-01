@@ -10,9 +10,9 @@ using namespace arma;
 //-----------------------------------------------------------------------
 CSparseMatrix::CSparseMatrix(){
 	sA      =NULL;
-	ija     =NULL; 
+	ija     =NULL;
 	nNonZero=0;
-	size    =0;	
+	size    =0;
 	buffersize=0;
 	dirichlet=NULL;
 	p =NULL;
@@ -35,7 +35,7 @@ CSparseMatrix::CSparseMatrix(){
 //-----------------------------------------------------------------------
 CSparseMatrix::CSparseMatrix(double *spA, int *indices, double *bvec){
 	sA      =spA;
-	ija     =indices; 
+	ija     =indices;
   b       =bvec;
 	//nNonZero=0;
 	//buffersize=0;
@@ -60,7 +60,7 @@ CSparseMatrix::CSparseMatrix(double *spA, int *indices, double *bvec){
 //-----------------------------------------------------------------------
 CSparseMatrix::CSparseMatrix(double *spA, int *indices, double *bvec, int sizen){
 	sA      =spA;
-	ija     =indices; 
+	ija     =indices;
   b       =bvec;
 	//nNonZero=0;
   size = sizen;
@@ -74,7 +74,7 @@ CSparseMatrix::CSparseMatrix(double *spA, int *indices, double *bvec, int sizen)
 	z        =new double [size];
 	zz       =new double [size];
 
-	// Intialize armadillo library vectors;  
+	// Intialize armadillo library vectors;
 #ifdef _ARMADILLO_
 	pArma = new arma::vec(size);
 	ppArma = new arma::vec(size);
@@ -90,13 +90,13 @@ CSparseMatrix::CSparseMatrix(double *spA, int *indices, double *bvec, int sizen)
 }
 //-----------------------------------------------------------------------
 CSparseMatrix::CSparseMatrix(const CSparseMatrix &A){
-	
+
 	int j,k;
 	this->size    =A.size;
 	this->nNonZero=A.nNonZero;
 	this->buffersize=this->nNonZero+1;
 	//Allocate memory
-	this->sA =new double [this->nNonZero+1]; 
+	this->sA =new double [this->nNonZero+1];
 	this->ija=new int    [this->nNonZero+1];
 
 	for (k=0; k<=nNonZero;k++){
@@ -130,7 +130,7 @@ CSparseMatrix::~CSparseMatrix(){
 	//if (globaldebug){cout<<"DELETING SPARSE MATRIX"<<endl;}
   cout<<"DELETING SPARSE MATRIX"<<endl;
 	delete [] sA;
-	delete [] ija; 
+	delete [] ija;
 	nNonZero=0;
 	size    =0;
 	buffersize=0;
@@ -163,7 +163,7 @@ CSparseMatrix::CSparseMatrix(Ironclad2DArray A, const int N, const double thresh
 		}
 	}
 	//Allocate memory
-	sA =new double [nNonZero+1]; 
+	sA =new double [nNonZero+1];
 	ija=new int    [nNonZero+1];
 	if (ija==NULL){MatExitGracefully("CSparseMatrix::Constructor::Out of memory",OUT_OF_MEMORY_MAT);}
 	buffersize=nNonZero+1;
@@ -178,7 +178,7 @@ CSparseMatrix::CSparseMatrix(Ironclad2DArray A, const int N, const double thresh
 				k++;
 				//++k;
 				sA [k]=A[i][j];
-				ija[k]=j;	
+				ija[k]=j;
 			}
 		}
 		if (i>nNonZero){MatExitGracefully("sprsTranslate: bad index calc",RUNTIME_ERR_MAT);}
@@ -210,7 +210,7 @@ CSparseMatrix::CSparseMatrix(Ironclad2DArray A, const int N, const double thresh
 int CSparseMatrix::GetNumEntries() const{return nNonZero;}
 /************************************************************************
  DynamicInitialize:
-	Initializes dynamic sparse array with zero diagonal values 
+	Initializes dynamic sparse array with zero diagonal values
 ------------------------------------------------------------------------*/
 void CSparseMatrix::DynamicInitialize(const int N){
 	if (size!=0) {
@@ -218,7 +218,7 @@ void CSparseMatrix::DynamicInitialize(const int N){
 	size    =N;
 	nNonZero=N;
 	//Allocate memory
-	sA =new double [size+1]; 
+	sA =new double [size+1];
 	ija=new int    [size+1];
 	if (ija==NULL){
 		MatExitGracefully("CSparseMatrix::DynamicInitialize::Out of memory",OUT_OF_MEMORY_MAT);}
@@ -262,7 +262,7 @@ void CSparseMatrix::DynamicInitialize(Ironclad1DArray Adiag,
 	size    =N;
 	nNonZero=N;
 	//Allocate memory
-	sA =new double [size+1]; 
+	sA =new double [size+1];
 	ija=new int    [size+1];
 	if (ija==NULL){MatExitGracefully("CSparseMatrix::DynamicInitialize::Out of memory",OUT_OF_MEMORY_MAT);}
 	buffersize=size+1;
@@ -289,7 +289,7 @@ void CSparseMatrix::DynamicInitialize(Ironclad1DArray Adiag,
 	rrArma = new arma::vec(size);
 	zArma = new arma::vec(size);
 	zzArma = new arma::vec(size);
-#endif 
+#endif
 
 	for (int j=0; j<size;j++){
 		p[j]=pp[j]=r[j]=rr[j]=z[j]=zz[j]=0.0;
@@ -303,23 +303,23 @@ void CSparseMatrix::DynamicInitialize(Ironclad1DArray Adiag,
 	could get costly with large matrices;
 	but is helped with buffering of the matrices-rebuffering is called 4 times for each bandwidth increase
 
-	Created by R.Simms, Mar 15, 2011	
+	Created by R.Simms, Mar 15, 2011
 ------------------------------------------------------------------------*/
 void CSparseMatrix::DynamicAdd(const double &a, const int i, const int j){
-	
+
 	int buffer=(size/4);
 
 	int    *tmpija;
 	double *tmpsA;
 	int     knew, i1,k;
-	
+
 	if (size==0)                  {MatExitGracefully("CSparseMatrix::DynamicAdd::not initialized correctly",RUNTIME_ERR_MAT);}
 	if ((sA==NULL) || (ija==NULL)){MatExitGracefully("CSparseMatrix::DynamicAdd: not initialized correctly",RUNTIME_ERR_MAT);}
 	if ((i>=size)  || (j>=size))  {MatExitGracefully("CSparseMatrix::DynamicAdd: bad indices specified",RUNTIME_ERR_MAT);}
 	if ((i<0)      || (j<0))      {MatExitGracefully("CSparseMatrix::DynamicAdd: bad indices specified(2)",RUNTIME_ERR_MAT);}
-	
+
 	if (i==j){sA[i]+=a; return;}
-  
+
 	if (a==0.0){return;}                     //do not dynamically add if a zero entry (should this be here?}
 
 	//find k index of inserted coefficient--------------------------------
@@ -329,22 +329,22 @@ void CSparseMatrix::DynamicAdd(const double &a, const int i, const int j){
 		else if (ija[k]> j){knew=k; break;}      //otherwise, adopt knew
 	}
 
-	//copy all terms in array and insert---------------------------------- 
+	//copy all terms in array and insert----------------------------------
 	nNonZero++;                              //item added to total array
 
 	if (knew>nNonZero){cout << "bad knew"<<endl;}
 
 	if (buffersize<=nNonZero){
-		tmpija=new int    [nNonZero+1+buffer];				
+		tmpija=new int    [nNonZero+1+buffer];
 		tmpsA =new double [nNonZero+1+buffer];
 		if (tmpsA==NULL){
 			MatExitGracefully("CSparseMatrix::DynamicAdd::Out of memory",OUT_OF_MEMORY_MAT);}
 		buffersize=nNonZero+1+buffer;
 
-		for (k=0; k<knew; k++){               //before inserted coefficient 
+		for (k=0; k<knew; k++){               //before inserted coefficient
 			tmpija[k]=ija[k];
 			tmpsA [k]= sA[k];
-		}	             
+		}
 		for (k=nNonZero; k>=knew+1; k--){     //after inserted coefficient
 			tmpija[k]=ija[k-1];
 			tmpsA [k]= sA[k-1];
@@ -385,20 +385,20 @@ void CSparseMatrix::DynamicAdd(const double &a, const int i, const int j){
 	renamed for accuracy by R.Simms, Mar 15 2011
 ------------------------------------------------------------------------*/
 void CSparseMatrix::DynamicInsert(const double &a, const int i, const int j){
-	
+
 	int buffer=(size/4);
 
 	int    *tmpija;
 	double *tmpsA;
 	int     knew, i1,k;
-	
+
 	if (size==0)                  {MatExitGracefully("CSparseMatrix::DynamicAdd::not initialized correctly",RUNTIME_ERR_MAT);}
 	if ((sA==NULL) || (ija==NULL)){MatExitGracefully("CSparseMatrix::DynamicAdd: not initialized correctly",RUNTIME_ERR_MAT);}
 	if ((i>=size)  || (j>=size))  {MatExitGracefully("CSparseMatrix::DynamicAdd: bad indices specified",RUNTIME_ERR_MAT);}
 	if ((i<0)      || (j<0))      {MatExitGracefully("CSparseMatrix::DynamicAdd: bad indices specified(2)",RUNTIME_ERR_MAT);}
-	
+
 	if (i==j){sA[i]=a; return;}
-  
+
 	//find k index of inserted coefficient--------------------------------
 	knew=ija[i+1];                           //default- guess last coefficient in row i
 	for (k=ija[i]; k<ija[i+1]; k++){           //searches through row i
@@ -407,22 +407,22 @@ void CSparseMatrix::DynamicInsert(const double &a, const int i, const int j){
 	}
 	if (a==0.0){return;}                     //do not dynamically add if a zero entry (should this be here?}
 
-	//copy all terms in array and insert---------------------------------- 
+	//copy all terms in array and insert----------------------------------
 	nNonZero++;                              //item added to total array
 
 	if (knew>nNonZero){cout << "bad knew"<<endl;}
 
 	if (buffersize<=nNonZero){
-		tmpija=new int    [nNonZero+1+buffer];				
+		tmpija=new int    [nNonZero+1+buffer];
 		tmpsA =new double [nNonZero+1+buffer];
 		if (tmpsA==NULL){
 			MatExitGracefully("CSparseMatrix::DynamicAdd::Out of memory",OUT_OF_MEMORY_MAT);}
 		buffersize=nNonZero+1+buffer;
 
-		for (k=0; k<knew; k++){               //before inserted coefficient 
+		for (k=0; k<knew; k++){               //before inserted coefficient
 			tmpija[k]=ija[k];
 			tmpsA [k]= sA[k];
-		}	             
+		}
 		for (k=nNonZero; k>=knew+1; k--){     //after inserted coefficient
 			tmpija[k]=ija[k-1];
 			tmpsA [k]= sA[k-1];
@@ -454,7 +454,7 @@ void CSparseMatrix::DynamicInsert(const double &a, const int i, const int j){
 }
 /************************************************************************
  MakeDirichlet:
-	marks all rows and colums specified by rows[] as dirichlet 
+	marks all rows and colums specified by rows[] as dirichlet
 	affects BCG, MatVectMultiply, SolveEst, Print and CalculateAdjustedNorm
 ------------------------------------------------------------------------*/
 void CSparseMatrix::MakeDirichlet(const int *rows, const int ndirichlet){
@@ -467,8 +467,8 @@ void CSparseMatrix::MakeDirichlet(const int *rows, const int ndirichlet){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/// <summary>	Sets rows to zero except for the diagonal which is set to 1 
-/// 			
+/// <summary>	Sets rows to zero except for the diagonal which is set to 1
+///
 /// 			There is a strong potential for this method to be unstable because
 /// 			the diagonal isnt normalized.</summary>
 ///
@@ -499,7 +499,7 @@ void CSparseMatrix::MakeEssential1(const int j1, const int k1, const double a, c
 	if ((j1<0)      || (k1<0))      {
 		MatExitGracefully("CSparseMatrix::MakeEssential1: bad indices specified",RUNTIME_ERR_MAT);}
 	if ((j1==k1) && (a!=0.0)) {return;} //cannot force constraint on itself
-  
+
 	double Sjj=this->GetAij(j1,j1);
 	double *Skrow=new double [this->size];
 	double *Sjrow=new double [this->size];
@@ -513,7 +513,7 @@ void CSparseMatrix::MakeEssential1(const int j1, const int k1, const double a, c
 	}
 
 	for (i=0; i<size; i++){ //for each row in matrix
-		
+
 		if ((i==k1) && (a!=0.0)){ //special row (constraint for X_k1)
 			for (j=0; j<size; j++){ //for each column
 				double Sk1=Skrow[j];//this->GetAij(k1,j);
@@ -534,7 +534,7 @@ void CSparseMatrix::MakeEssential1(const int j1, const int k1, const double a, c
 		}
 
 		else 	{		//All other rows
-			if (a!=0.0){this->DynamicAdd(Sik[i]-a*Sij[i],i,k1);} 
+			if (a!=0.0){this->DynamicAdd(Sik[i]-a*Sij[i],i,k1);}
 			this->DynamicAdd(0.0,i,j1);
 		}
 	}
@@ -554,11 +554,11 @@ void CSparseMatrix::MakeEssential2(const CSparseMatrix *A, const int j1, const i
 	int i,j;
 	if ((j1<0)      || (k1<0))      {MatExitGracefully("CSparseMatrix::MakeEssential2: bad indices specified",RUNTIME_ERR_MAT);}
 	if ((j1==k1) && (a!=0.0)) {return;} //cannot force constraint on itself
-  
+
 
 	//cout <<"CSparseMatrix::MakeEssential2: "<<a<<endl;
 	for (i=0; i<size; i++){ //for each row in matrix
-		
+
 		if ((i==k1) && (a!=0.0)){ //special row (constraint for X_k1)
 			for (j=0; j<size; j++){ //for each column
 
@@ -577,15 +577,15 @@ void CSparseMatrix::MakeEssential2(const CSparseMatrix *A, const int j1, const i
 		}
 
 		else 	{		//All other rows
-			if (a!=0.0){this->DynamicAdd(A->GetAij(i,k1)-a*A->GetAij(i,j1),i,k1);} 
+			if (a!=0.0){this->DynamicAdd(A->GetAij(i,k1)-a*A->GetAij(i,j1),i,k1);}
 			this->DynamicAdd(0.0,i,j1);
-		} 
+		}
 	}
 
 }
 /************************************************************************
  IJ_TO_K:
-	Translates i (row) and j (column) index of equivalent matrix A[size][size] 
+	Translates i (row) and j (column) index of equivalent matrix A[size][size]
 	to single index [k] of sparse matrix sA[nNonZero]
 	The k returned skips over k=size
 ------------------------------------------------------------------------*/
@@ -600,7 +600,7 @@ int CSparseMatrix::IJ_to_K   (const int i, const int j) const{
 }
 /************************************************************************
  K_to_IJ:
-	Translates k index of sparse matrix sA[nNonZero] to i,j of equivalent matrix A[size][size] 
+	Translates k index of sparse matrix sA[nNonZero] to i,j of equivalent matrix A[size][size]
 ------------------------------------------------------------------------*/
 bool   CSparseMatrix::K_to_IJ    (const int k, int &i, int &j) const{
 	i=-2;
@@ -609,14 +609,14 @@ bool   CSparseMatrix::K_to_IJ    (const int k, int &i, int &j) const{
 	if (k<size){i=j=k;}
 	else{
 		ktmp=k+1;
-    j=ija[ktmp]; 
-		for (int itmp=0; itmp<=size; itmp++){ //searches for correct row i 
-			if (ija[itmp]> ktmp){i=itmp-1;return true;} 
+    j=ija[ktmp];
+		for (int itmp=0; itmp<=size; itmp++){ //searches for correct row i
+			if (ija[itmp]> ktmp){i=itmp-1;return true;}
       if (ija[itmp]==ktmp){i=itmp;  return true;}
 			i=itmp;//takes care of k==nNonZero
-		}	
+		}
 	}
-  
+
 	return true;
 }
 
@@ -685,7 +685,7 @@ bool CSparseMatrix::SetAij(const double &a, const int i, const int j){
 			}
 		}
 		if (a==0.0){return true;}
-		else       {return false;} 
+		else       {return false;}
 	}
 }
 /************************************************************************
@@ -702,7 +702,7 @@ bool CSparseMatrix::AddToAij(const double &a, const int i, const int j){
 				return true;}
 		}
 	  if (a==0.0){return true;}
-		else       {return false;} 
+		else       {return false;}
 	}
 }
 /************************************************************************
@@ -713,13 +713,13 @@ bool CSparseMatrix::AddToAij(const double &a, const int i, const int j){
 ------------------------------------------------------------------------*/
 void CSparseMatrix::MatVectMult(Ironclad1DArray  x,
 															  Writeable1DArray b,
-																const int        N, 
+																const int        N,
 																const bool       transpose,
 																const bool       ignore) const {
 	if (size<=N){
 		MatExitGracefully("CSparseMatrix::MatVectMult: Cannot multiply matrix and vector of different sizes",BAD_DATA_MAT);}
-	
-	int i,k;	
+
+	int i,k;
 	if (!transpose){
 		for (i=0;i<size;i++){
 			if (!(dirichlet[i])){
@@ -762,7 +762,7 @@ void CSparseMatrix::MatVectMult(Ironclad1DArray  x,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	Mat vect multiply. Wrapper using arma::vec </summary>
 ///
-/// <remarks>	rsimms, 2/13/2011. 
+/// <remarks>	rsimms, 2/13/2011.
 /// 			rsimms, 2/13/2011: Rewrote so that this code used armadillo library</remarks>
 ///
 /// <param name="x">	The x in Ax=b. </param>
@@ -773,11 +773,11 @@ void   CSparseMatrix::MatVectMult (	vec  x, vec *b ) const {
 	//Use mat vec multiply directly
 	if (size<=(int)x.n_rows ){
 		MatExitGracefully("CSparseMatrix::MatVectMult: Cannot multiply matrix and vector of different sizes",BAD_DATA_MAT);}
-	
+
 	(*b).set_size(x.n_rows);
 	(*b).fill(0);
 
-	int i,k;	
+	int i,k;
 	for (i=0;i<size;i++){
 		if (!(dirichlet[i])){
 			(*b)[i]=sA[i]*x[i];
@@ -807,11 +807,11 @@ void   CSparseMatrix::MatVectMult (	vec  x, vec *b, CSparseMatrix *SpNR ) const 
 	//Use mat vec multiply directly
 	if ((SpNR->size)<=(int)x.n_rows ){
 		MatExitGracefully("CSparseMatrix::MatVectMult: Cannot multiply matrix and vector of different sizes",BAD_DATA_MAT);}
-	
+
 	(*b).set_size(x.n_rows);
 	(*b).fill(0);
 
-	int i,k;	
+	int i,k;
 	for (i=0;i<(SpNR->size);i++){
 		if (!(SpNR->dirichlet[i])){
 			(*b)[i]=(SpNR->sA[i])*x[i];
@@ -833,7 +833,7 @@ void   CSparseMatrix::MatVectMult (	vec  x, vec *b, CSparseMatrix *SpNR ) const 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	Add the components of the input matrix to the current matrix</summary>
 ///
-/// <remarks>	rsimms, 6/21/2011. 
+/// <remarks>	rsimms, 6/21/2011.
 /// 			OPTIMIZE: could probably find a better routine than using the k's and converting to IJs</remarks>
 ///
 /// <param name="A"> The matrix to be added </param>
@@ -868,7 +868,7 @@ void CSparseMatrix::ScalarMult (const double w){
 	Print
 ------------------------------------------------------------------------*/
 void CSparseMatrix::Print(const bool full, int sample) const{
-	if (sample>size){sample=size;} 
+	if (sample>size){sample=size;}
 	for (int i=0;i<sample;i++){//for each row
 		PrintRow(full,i);
 	}
@@ -914,9 +914,9 @@ void CSparseMatrix::SolveEst(Ironclad1DArray b, Writeable1DArray x, const int si
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/// <summary>	Solve est: 
+/// <summary>	Solve est:
 /// 			same as James's old version
-/// 			
+///
 /// 			Jacobi/Diagonal Preconditioner
 /// 			</summary>
 ///
@@ -935,9 +935,9 @@ void CSparseMatrix::SolveEst(vec b, vec * x, const int size, const bool transpos
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/// <summary>	Solve est: 
+/// <summary>	Solve est:
 /// 			same as James's old version
-/// 			
+///
 /// 			Jacobi/Diagonal Preconditioner
 /// 			</summary>
 ///
@@ -960,7 +960,7 @@ void CSparseMatrix::SolveEst(vec b, vec * x, const int size, const bool transpos
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	Converts this matrix to an ILU matrix
 /// 			DESTROYS THE ORIGINAL MATRIX
-/// 			
+///
 /// 			ILU(0) Preconditioner
 /// 			Implementation as specified in
 /// 			Iterative Methods for Sparse Linear Systems
@@ -1005,13 +1005,13 @@ void CSparseMatrix::ConvertToILU() {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/// <summary>	Solves Ax=b where A is represented in LU form 
+/// <summary>	Solves Ax=b where A is represented in LU form
 /// 			THIS MATRIX MUST ALREADY BE IN LU FORM FOR THIS METHOD TO WORK
 /// 			Works with complete and incomplete LU factorizations</summary>
-///				
+///
 ///				Solves: Ly=b for y then...
 ///						Ux=y for x
-/// 
+///
 /// <remarks>	rsimms, 3/30/2012. </remarks>
 ///
 /// <param name="b">	The rhs. </param>
@@ -1021,7 +1021,7 @@ void CSparseMatrix::ConvertToILU() {
 vec CSparseMatrix::SolveLUSystem(vec b) const{
 	int N = (int) (b.n_rows);
 	vec x = b;
-	
+
 	//START OF FORWARD SOLVE
 	x(0) = x(0) / GetAij(0,0);
 	for(int i =1; i< N;i++){// row iterator
@@ -1049,13 +1049,13 @@ vec CSparseMatrix::SolveLUSystem(vec b) const{
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/// <summary>	Solves Ax=b where A is represented in LU form 
+/// <summary>	Solves Ax=b where A is represented in LU form
 /// 			THIS MATRIX MUST ALREADY BE IN LU FORM FOR THIS METHOD TO WORK
 /// 			Works with complete and incomplete LU factorizations</summary>
-///				
+///
 ///				Solves: Ly=b for y then...
 ///						Ux=y for x
-/// 
+///
 /// <remarks>	asnowdon, 3/30/2015. </remarks>
 ///
 /// <param name="b">	The rhs. </param>
@@ -1065,7 +1065,7 @@ vec CSparseMatrix::SolveLUSystem(vec b) const{
 vec CSparseMatrix::SolveLUSystem(vec b, CSparseMatrix *SpNR) const{
 	int N = (int)( b.n_rows);
 	vec x = b;
-	
+
 	//START OF FORWARD SOLVE
 	x(0) = x(0) / GetAij(0,0);
 	for(int i =1; i< N;i++){// row iterator
@@ -1101,25 +1101,25 @@ double CSparseMatrix::CalculateAdjustedNorm(Ironclad1DArray b, int size, const n
 	static double norm;
 	if      (type==VECTOR_MAGNITUDE_NORM){
 
-		norm=0.0;for (i=0;i<size;i++){norm+=b[i]*b[i];}//if (!dirichlet[i]){norm+=b[i]*b[i];}}                           
+		norm=0.0;for (i=0;i<size;i++){norm+=b[i]*b[i];}//if (!dirichlet[i]){norm+=b[i]*b[i];}}
 		return sqrt(norm);
 	}
 	else if (type==LARGEST_COMPONENT_NORM){
 
-		isamax=0;for (i=1;i<size;i++){if (fabs(b[i])>fabs(b[isamax])){isamax=i;}}//if (!dirichlet[i]){if (fabs(b[i])>fabs(b[isamax])){isamax=i;}}} 
+		isamax=0;for (i=1;i<size;i++){if (fabs(b[i])>fabs(b[isamax])){isamax=i;}}//if (!dirichlet[i]){if (fabs(b[i])>fabs(b[isamax])){isamax=i;}}}
 		return fabs(b[isamax]);
 	}
-	else{                                                                  
+	else{
 		return 0.0;
 	}
 }
 /************************************************************************
  BCG:
-	Sparse Preconditioned Biconjugate Gradient Solver 
+	Sparse Preconditioned Biconjugate Gradient Solver
 	S is sparse matrix representing A[size][size] matrix
 	x[size] is output vector
-	b[size] is RHS 
-	BCGtype is testing criteria 
+	b[size] is RHS
+	BCGtype is testing criteria
 		if RELATIVE_RESIDUAL,       |Ax-b|/|b|         <BCG_tol
 		if RELATIVE_TRANS_RESIDUAL, |At(Ax-b)|/|(At*b)|<BCG_tol
 		if NORM_ERROR,              |xerr|/|x|         <BCG_tol
@@ -1127,10 +1127,10 @@ double CSparseMatrix::CalculateAdjustedNorm(Ironclad1DArray b, int size, const n
 
 	MUST OPTIMIZE!!!!!
 ------------------------------------------------------------------------*/
-void CSparseMatrix::BCG(						Ironclad1DArray     b, 
-												Writeable1DArray    x, 
-												const int           size, 
-												const BCGtestparam  BCGtype, 
+void CSparseMatrix::BCG(						Ironclad1DArray     b,
+												Writeable1DArray    x,
+												const int           size,
+												const BCGtestparam  BCGtype,
 												double             &err,
 //												double              normalize,
 												const double        BCG_tol) const{
@@ -1138,7 +1138,7 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 	static double ak,akden;
 	static double bk,bkden(1.0),bknum;
   static double bnorm,dxnorm,xnorm,zm1norm,znorm;
-	int    j;	
+	int    j;
 	bkden=1.0;
 	const double eps=1e-14;
 
@@ -1156,7 +1156,7 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 
 	int iter=0;
 	MatVectMult(x,r,size,false,true);
-	
+
 	for (j=0; j<size;j++){
 		if (!dirichlet[j]){
 			r [j]=b[j]-r[j];
@@ -1214,11 +1214,11 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 	while (iter<=BCG_max_iter){
 		iter++;
 		SolveEst(rr,zz,size,true); //true indicates transpose matrix At
-		
+
 		bknum=0.0;
 		for (j=0;j<size;j++){bknum+=z[j]*rr[j];}
 		if (bknum==0.0){cout <<z[0]<<" "<<rr[0]<<endl;MatExitGracefully("BCG: beta numerator is zero",BAD_DATA_MAT);}
-		
+
 		//Calculate coeff bk and direction vectors p and pp--------------------------
 		if (iter==1){
 			for (j=0;j<size;j++){
@@ -1244,10 +1244,10 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 
 		//Calculate coeff ak, new iterate x and new residuals r and rr---------------
 		bkden=bknum;
-		
+
 		MatVectMult(p,z,size,false,true);
 
-		akden=0.0; 
+		akden=0.0;
 		for (j=0;j<size;j++){if (!dirichlet[j]){akden+=z[j]*pp[j];}} //{S*p}*{S/rr}
 		if (akden==0){MatExitGracefully("BCG: alpha denominator is zero",BAD_DATA_MAT);}
 
@@ -1266,19 +1266,19 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 				rr[j]=0.0;
 			}
 		}
-		
+
 		//Solve A*z=r and check stopping criteria------------------------------------
 		SolveEst(r,z,size,false);
 
 		if       (BCGtype==RELATIVE_RESIDUAL){
-			
+
 			err=CalculateAdjustedNorm(r,size,VECTOR_MAGNITUDE_NORM)/bnorm;
 		}
 		else if  (BCGtype==RELATIVE_TRANS_RESIDUAL){
 
 			err=CalculateAdjustedNorm(z,size,VECTOR_MAGNITUDE_NORM)/bnorm;
 		}
-		else if ((BCGtype==NORM_ERROR) || 
+		else if ((BCGtype==NORM_ERROR) ||
 			       (BCGtype==MAX_ERROR)){
 
 			normtype ntype;
@@ -1314,9 +1314,9 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	BCGstabalized implementation
-/// 			
+///
 /// 			as taken from van der Vortst (1992)
-/// 			
+///
 /// 			only wise to use relative residual error at the moment</summary>
 ///
 /// <remarks>	rsimms, 3/18/2011. </remarks>
@@ -1328,18 +1328,18 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 /// <param name="BCG_tol">	The bcg tolerance. </param>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CSparseMatrix::BCGstab(
-	arma::vec				    b, 
-	arma::vec					&x, 
-	const int           size, 
+	arma::vec				    b,
+	arma::vec					&x,
+	const int           size,
 	double				&err,
 	const double        BCG_tol,
 	preconditioner preconditionerType,
 	CSparseMatrix*		ILUmatrix
 	) const{
-	if (size!=this->size){MatExitGracefully("BCG: Matrix and vector not same size",BAD_DATA_MAT);}	
+	if (size!=this->size){MatExitGracefully("BCG: Matrix and vector not same size",BAD_DATA_MAT);}
 	//check the initial conditions to make sure x is an initial condition
 	if(x.n_rows != b.n_rows){ x.set_size(b.n_rows); x.fill(0.0);}
-	
+
 	//begin the algorthim
 	double bnorm = norm(b,2);
   if(bnorm == 0){bnorm = 1;}
@@ -1370,7 +1370,7 @@ void CSparseMatrix::BCGstab(
 
 	// for the i-2's
 	double rho_2 = 1;
-	
+
 	/*!!! step 4 complete: alpha, omega, rho1 and rho2 set   !!!*/
 
 	if (norm(res,2)==0.0){
@@ -1389,7 +1389,7 @@ void CSparseMatrix::BCGstab(
 	int iter=0;
 	while (iter<=BiCGSTAB_max_iter){ //!!! begining of step 6
 		iter++;
-		
+
 		rho_1 = dot(rr,res);
 
 		if (iter == 1){
@@ -1417,7 +1417,7 @@ void CSparseMatrix::BCGstab(
 			//SolveEst(p,&phat,n,false);
 			break;
 		default: //NONE
-			phat = p; 
+			phat = p;
 			break;
 		}
 
@@ -1445,7 +1445,7 @@ void CSparseMatrix::BCGstab(
 			//SolveEst(s,&shat,n,false);
 			break;
 		default: //NONE
-			shat = s; 
+			shat = s;
 			break;
 		}
 
@@ -1488,9 +1488,9 @@ void CSparseMatrix::BCGstab(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	BCGstabalized implementation
 /// 			defaults to no preconditioner
-/// 			
+///
 /// 			as taken from van der Vortst (1992)
-/// 			
+///
 /// 			only wise to use relative residual error at the moment</summary>
 ///
 /// <remarks>	rsimms, 3/18/2011. </remarks>
@@ -1502,9 +1502,9 @@ void CSparseMatrix::BCGstab(
 /// <param name="BCG_tol">	The bcg tolerance. </param>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CSparseMatrix::BCGstab(
-	arma::vec				    b, 
-	arma::vec					&x, 
-	const int           size, 
+	arma::vec				    b,
+	arma::vec					&x,
+	const int           size,
 	double				&err,
 	const double        BCG_tol
 	) const{
@@ -1515,9 +1515,9 @@ void CSparseMatrix::BCGstab(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>	BCGstabalized implementation
 /// 			defaults to no preconditioner
-/// 			
+///
 /// 			as taken from van der Vortst (1992)
-/// 			
+///
 /// 			only wise to use relative residual error at the moment</summary>
 ///
 /// <remarks>	asnowdon, 3/18/2015. </remarks>
@@ -1529,14 +1529,14 @@ void CSparseMatrix::BCGstab(
 /// <param name="BCG_tol">	The bcg tolerance. </param>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CSparseMatrix::BCGstab(
-	arma::vec				   b, 
-	arma::vec					&x, 
-	const int          size, 
+	arma::vec				   b,
+	arma::vec					&x,
+	const int          size,
 	double				    &err,
 	const double       BCG_tol,
   CSparseMatrix     *SparseNewtonMat
 	) const{
-    
+
 		BCGstab(b,x,size,err,BCG_tol,NONE_MAT,SparseNewtonMat);
 }
 
@@ -1552,22 +1552,22 @@ void CSparseMatrix::BCGstab(
 /// <param name="err">		[out] The error. </param>
 /// <param name="BCG_tol">	The bcg tolerance. </param>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void CSparseMatrix::BCG(						
-	arma::vec				    b, 
-	arma::vec					&x, 
-	const int           size, 
-	const BCGtestparam  BCGtype, 
+void CSparseMatrix::BCG(
+	arma::vec				    b,
+	arma::vec					&x,
+	const int           size,
+	const BCGtestparam  BCGtype,
 	double				&err,
 //	double              normalize,
 	const double        BCG_tol
 	) const{
 
-		
-	
+
+
 	static double ak,akden;
 	static double bk,bkden(1.0),bknum;
     static double bnorm,dxnorm,xnorm,zm1norm,znorm;
-	int    j;	
+	int    j;
 	bkden=1.0;
 	const double eps=1e-14;
 
@@ -1575,7 +1575,7 @@ void CSparseMatrix::BCG(
 
 	int iter=0;
 	MatVectMult(x,rArma);
-	
+
 	for (j=0; j<size;j++){
 		if (!dirichlet[j]){
 			(*rArma) [j]=b[j]-(*rArma)[j];
@@ -1633,12 +1633,12 @@ void CSparseMatrix::BCG(
 	while (iter<=BCG_max_iter){
 		iter++;
 		SolveEst(*rrArma,zzArma,size,true); //true indicates transpose matrix At
-		
+
 		bknum=0.0;
 		for (j=0;j<size;j++){bknum+=(*zArma)[j]*(*rrArma)[j];}
 
 		if (bknum==0.0){cout <<z[0]<<" "<<rr[0]<<endl;MatExitGracefully("BCG: beta numerator is zero",BAD_DATA_MAT);}
-		
+
 		//Calculate coeff bk and direction vectors p and pp--------------------------
 		if (iter==1){
 			*pArma = *zArma;
@@ -1660,10 +1660,10 @@ void CSparseMatrix::BCG(
 
 		//Calculate coeff ak, new iterate x and new residuals r and rr---------------
 		bkden=bknum;
-		
+
 		MatVectMult(*pArma,zArma);
 
-		akden=0.0; 
+		akden=0.0;
 		for (j=0;j<size;j++){if (!dirichlet[j]){akden+=(*zArma)[j]*(*ppArma)[j];}} //{S*p}*{S/rr}
 		if (akden==0){MatExitGracefully("BCG: alpha denominator is zero",BAD_DATA_MAT);}
 
@@ -1682,19 +1682,19 @@ void CSparseMatrix::BCG(
 				(*rrArma)[j]=0.0;
 			}
 		}
-		
+
 		//Solve A*z=r and check stopping criteria------------------------------------
 		SolveEst(*rArma,zArma,size,false);
 
 		if       (BCGtype==RELATIVE_RESIDUAL){
-			
+
 			err=norm(*rArma,2)/bnorm;
 		}
 		else if  (BCGtype==RELATIVE_TRANS_RESIDUAL){
 
 			err=norm(*zArma,2)/bnorm;
 		}
-		else if ((BCGtype==NORM_ERROR) || 
+		else if ((BCGtype==NORM_ERROR) ||
 			       (BCGtype==MAX_ERROR)){
 
 			normtype ntype;
@@ -1717,7 +1717,7 @@ void CSparseMatrix::BCG(
 				}
 			}
 			else                    {ntype=LARGEST_COMPONENT_NORM;
-			
+
 				zm1norm=znorm;
 				znorm  =norm(*zArma,"inf");
 				if (fabs(zm1norm-znorm)>eps*znorm){
@@ -1752,9 +1752,9 @@ void CSparseMatrix::BCG(
 /// <param name="b">	The right hand side. </param>
 /// <param name="x">	[out] The vector to be solved for. </param>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void CSparseMatrix::TriBandSolve(						
-	arma::vec const			    b, 
-	arma::vec					&x 
+void CSparseMatrix::TriBandSolve(
+	arma::vec const			    b,
+	arma::vec					&x
 	)
 {
 	if (b.n_rows!=this->size){MatExitGracefully("TriBandSolve: Matrix and vector not same size",BAD_DATA_MAT);}
@@ -1811,10 +1811,10 @@ arma::mat CSparseMatrix::ConvertToDense(){
 
 	for(int j = 0; j < GetNumRows(); j++){
 		for(int i = 0; i < GetNumRows(); i++){
-			denseMatrix(i,j) = GetAij(i,j); 
+			denseMatrix(i,j) = GetAij(i,j);
 		}
 	}
-	
+
 	return denseMatrix;
 }
 

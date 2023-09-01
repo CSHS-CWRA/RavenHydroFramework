@@ -25,7 +25,7 @@ CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
     CHydroProcessABC::DynamicSpecifyConnections(1);
     iFrom[0]=iSnowAlbedo;       iTo[0]=iSnowAlbedo;//rates[0]: SNOW_ALBEDO->SNOW_ALBEDO
   }
-  else if(type==SNOALB_BAKER) 
+  else if(type==SNOALB_BAKER)
   {
     int iSnowAge=pModel->GetStateVarIndex(SNOW_AGE);
     CHydroProcessABC::DynamicSpecifyConnections(2);
@@ -200,7 +200,7 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
     {
       if(snow_temp < 0) {albedo-=a1*tstep; } // cold snow - 0th order decay
       else              {albedo = (albedo - albmin)*exp(-a2*tstep) + albmin; } // melting snow -1st order decay
-    
+
       albedo += (albmax - albedo)*((F->snow_frac*F->precip)/snowfall_th);
 
       upperswap(albedo,albmin);
@@ -214,7 +214,7 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
   else if(type==SNOALB_BAKER)//===============================================================
   {
     //ported from CRHM (Pomeroy, 2007) -ClassalbedoBaker::run
-    // albedo decay formulation after 
+    // albedo decay formulation after
     // Baker, D.G., Ruschy, D.L., Wall, D.B., 1990. The albedo decay of prairie snows. J. Appl. Meteor. 29 _2, 179-187
     double tstep=Options.timestep;
 
@@ -227,8 +227,8 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
 
     double old_albedo =albedo;
     double old_snowage=snow_age;//time [d] since albedo refresh
-  
-    if (SWE > 1.0) 
+
+    if (SWE > 1.0)
     {
       if ((F->snow_frac*F->precip)>snowfall_th){snow_age=0.0;}
       else                                     {snow_age+=tstep; };

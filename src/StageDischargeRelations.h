@@ -60,7 +60,7 @@ class CBasicWeir : public CStageDischargeRelationABC
 {
 public:
   double _crest_elev;         ///< elevation of crest [m]
-  double _crestwidth;         ///< width of crest [m] 
+  double _crestwidth;         ///< width of crest [m]
   double _weir_coeff;         ///< weir coefficient [-]
 
 public:
@@ -79,8 +79,8 @@ class CSluiceGate : public CStageDischargeRelationABC
 {
 public:
   double _bottom_elev;        ///< bottom elevation of crest [m]
-  double _gatewidth;          ///< width of gate [m] 
-  double _gateheight;         ///< height of gate when raised [m] 
+  double _gatewidth;          ///< width of gate [m]
+  double _gateheight;         ///< height of gate when raised [m]
   double _gate_coeff;         ///< gate coefficient [-]
   int    _num_gates;          ///< number of parallel (identical) gates [-]
 

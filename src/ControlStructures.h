@@ -12,7 +12,7 @@
 #include "RavenInclude.h"
 #include "StageDischargeRelations.h"
 
-/*****************************************************************   
+/*****************************************************************
  RegimeCondition: defines single condition under which regime applies
 *****************************************************************/
 struct RegimeCondition
@@ -27,7 +27,7 @@ struct RegimeCondition
 //example :Condition DOY IS_BETWEEN 213 320
 //example :Condition STAGE IS_GREATER_THAN 340
 
-/*****************************************************************   
+/*****************************************************************
  RegimeConstraint: defines single constraint to be applied to outflow
 *****************************************************************/
 struct RegimeConstraint
@@ -55,11 +55,11 @@ private:
 
   CStageDischargeRelationABC *_pCurve;      ///< pointer to stage discharge curve (or other Q=f(h) relation)
 
-  RegimeCondition  **_pConditions;         ///< conditions for operation *e.g., date range, etc., ALL conditions must be met     
+  RegimeCondition  **_pConditions;         ///< conditions for operation *e.g., date range, etc., ALL conditions must be met
   int                _nConditions;         ///< number of conditions for operation under this regime
 
   RegimeConstraint **_pConstraints;        ///< constraints on operation, sorted by priority
-  int                _nConstraints;        ///< number of constraints   
+  int                _nConstraints;        ///< number of constraints
 
   bool IsConditionMet(int i) const;
 
@@ -77,7 +77,7 @@ public:/*-------------------------------------------------------*/
   void   AddRegimeConstraint(RegimeConstraint *pCond);
 
   bool      AreConditionsMet(const time_struct &tt) const;
-  double          GetOutflow(const double &h, const double &Qstart, const double &hstart, const long &target_SBID, const double &drefelev) const; 
+  double          GetOutflow(const double &h, const double &Qstart, const double &hstart, const long &target_SBID, const double &drefelev) const;
 };
 
 
@@ -95,7 +95,7 @@ private:/*-------------------------------------------------------*/
   double           _dRefElev;            ///< downstream reference elevation [m] (used in some structures for backwater, limiting flow, etc.)
 
   int              _nRegimes;            ///< number of flow regimes
-  COutflowRegime **_aRegimes;            ///< array of pointers to flow regimes with unique Q=f(h,Q,...)  
+  COutflowRegime **_aRegimes;            ///< array of pointers to flow regimes with unique Q=f(h,Q,...)
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -104,14 +104,14 @@ public:/*-------------------------------------------------------*/
 
   void   AddRegime       (COutflowRegime *pRegime);
   void   SetTargetBasin  (const long SBID);
-  
+
   void   SetDownstreamRefElevation (const double dRefElev);
 
   string GetName         () const;
   long   GetTargetBasinID() const;
-  
+
   double GetOutflow(const double &stage,const double &stage_start,const double &Q_start,const time_struct &tt) const;
-  
+
   string GetCurrentRegimeName(const time_struct &tt) const;
 };
 #endif

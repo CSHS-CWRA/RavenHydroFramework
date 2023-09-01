@@ -50,7 +50,7 @@ double Makkink1957Evap(const force_struct *F)
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates PET using Turc 1961 method \cite Lu2005JotAWRA
 /// \ref From Turc, L., 1961. Evaluation de besoins en eau d'irrigation, ET potentielle, Ann. Agron. 12:13-49. \cite turc1961AA
-/// as defined in "A comparison of six potential 
+/// as defined in "A comparison of six potential
 /// evapotranspiration methods for regional use in the southeastern
 /// united states", American Water Resources Association, 2005.
 /// \note This is a utility function called by EstimatePET
@@ -195,7 +195,7 @@ double HargreavesEvap(const force_struct *F)//[C]
        CelsiusToFarenheit(F->temp_month_min);
 
   // \todo [optimize] - move this check to initialization routine
-  
+
   ExitGracefullyIf(F->temp_month_max==NOT_SPECIFIED,
                    "PET_HARGREAVES requires minimum and maximum monthly temperatures",BAD_DATA);
 
@@ -314,7 +314,7 @@ double CModel::EstimatePET(const force_struct &F,
   {
     if(open_water) {PET=F.OW_PET;}
     else           {PET=F.PET;   }
-    
+
     //Handle blank data
     if (PET==RAV_BLANK_DATA) {
       if(open_water) {
@@ -323,8 +323,8 @@ double CModel::EstimatePET(const force_struct &F,
       else {
         PET=EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,Options.evap_infill,Options,tt,false);
       }
-    } 
-    
+    }
+
     break;//calculated direct from Gauge
   }
   //-------------------------------------------------------------------------------------
@@ -371,7 +371,7 @@ double CModel::EstimatePET(const force_struct &F,
     double XEVAP2=A0PELA * 0.001 * (refelev - pHRU->GetElevation());
     PET=forest_corr*(F.PET_month_ave*max_temp+XEVAP2); //PET_month_ave actually stores Monthly evap factors [mm/d/K]
 
-    PET=max(PET,0.0); 
+    PET=max(PET,0.0);
 
     break;
   }
@@ -788,7 +788,7 @@ double SnowEvaporation(const force_struct   *F,
     esnow = GetSaturatedVaporPressure(min(F->temp_ave,snow_temp));
   }
   double tmp;
-  tmp=0.3*(MM_PER_METER/LH_SUBLIM/DENSITY_WATER)*(HCP_AIR/MJ_PER_J/gamma)*(esnow-sat_vap)/(Raa+Rga); 
+  tmp=0.3*(MM_PER_METER/LH_SUBLIM/DENSITY_WATER)*(HCP_AIR/MJ_PER_J/gamma)*(esnow-sat_vap)/(Raa+Rga);
   //[-][kg/MJ]*[m3/kg]*[J/m3/K]*[K/kPa]*[kPa]*[m/s]-->[mm/s*J/MJ]
   return tmp*MJ_PER_J*SEC_PER_DAY;//=[m/d]
 }
@@ -796,7 +796,7 @@ double SnowEvaporation(const force_struct   *F,
 //////////////////////////////////////////////////////////////////
 /// \brief calculates drying power modifier for wind thru canopy
 /// \details from Granger & Gray \cite GrangerGray1989
-/// \ref ported from classEvap in CRHM 
+/// \ref ported from classEvap in CRHM
 /// \param wind_vel [in] wind velocity in m/s
 /// \param veg_ht [in] canopy height in meters
 /// \return drying power modifying coefficient (mm/d/kPa)
@@ -810,7 +810,7 @@ double GetDryingPower(const double &wind_vel,const double &veg_ht) //u in m/s; c
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates evaporation using Granger & Gray method
 /// \details from Granger & Gray \cite GrangerGray1989
-/// \ref ported from classEvap in CRHM 
+/// \ref ported from classEvap in CRHM
 /// \param *F [in] Model forcing functions
 /// \param *pHRU pointer to HRU
 /// \return Calculated PET [mm/d]

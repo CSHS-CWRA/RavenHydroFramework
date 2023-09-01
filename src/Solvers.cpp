@@ -31,7 +31,7 @@ void MassEnergyBalance( CModel            *pModel,
   double             tstep;       //[d] timestep
   double             t;           //[d] model time
   time_struct        tt_end;      //time at end of timestep
-  
+
   CHydroUnit        *pHRU;        //pointer to current HRU
   CSubBasin         *pBasin;      //pointer to current SubBasin
   CGroundwaterModel *pGWModel;    //pointer to GW model
@@ -52,9 +52,9 @@ void MassEnergyBalance( CModel            *pModel,
   static double    **rate_guess;  //need to set first array to nProcesses
 
   static int        *kFrom;
-  static int        *kTo; 
-  static double     *exchange_rates=NULL; 
-  
+  static int        *kTo;
+  static double     *exchange_rates=NULL;
+
   //local shorthand for often-used variables
   NS           =pModel->GetNumStateVars();
   NB           =pModel->GetNumSubBasins();
@@ -185,9 +185,9 @@ void MassEnergyBalance( CModel            *pModel,
     for (k=0;k<nHRUs;k++)
     {
       pHRU=pModel->GetHydroUnit(k);
-      pModel->ApplyLocalParamOverrrides(k, false); 
+      pModel->ApplyLocalParamOverrrides(k, false);
 
-      if(pHRU->IsEnabled()) 
+      if(pHRU->IsEnabled())
       {
         qs=0;
         for(j=0;j<nProcesses;j++)
@@ -228,7 +228,7 @@ void MassEnergyBalance( CModel            *pModel,
           }
         }//end for j=0 to nProcesses
       }
-      pModel->ApplyLocalParamOverrrides(k, true); 
+      pModel->ApplyLocalParamOverrrides(k, true);
     }//end for k=0 to nHRUs
 
   }//end if Options.sol_method==ORDERED_SERIES
@@ -398,7 +398,7 @@ void MassEnergyBalance( CModel            *pModel,
   int    qss=0;//index of lateral process connection
   int    nLatConnections;
   double Afrom,Ato;
-   
+
   for (q=0;q<MAX_LAT_CONNECTIONS;q++)
   {
     kFrom[q]=DOESNT_EXIST;
@@ -408,21 +408,21 @@ void MassEnergyBalance( CModel            *pModel,
   for (j=0;j<nProcesses;j++)
   {
     if (pModel->ApplyLateralProcess(j,aPhinew,Options,tt,kFrom,kTo,iFrom,iTo,nLatConnections,exchange_rates))
-    {       
+    {
 #ifdef _STRICTCHECK_
       if(nLatConnections>MAX_LAT_CONNECTIONS) {
         cout<<nLatConnections<<endl;
         ExitGracefully("MassEnergyBalance:: Maximum number of lateral connections exceeded. Please contact author.",RUNTIME_ERR);
       }
-#endif 
+#endif
       for (q=0;q<nLatConnections;q++)
       {
         Afrom=pModel->GetHydroUnit(kFrom[q])->GetArea();
         Ato  =pModel->GetHydroUnit(kTo[q]  )->GetArea();
-        aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q]/Afrom*tstep;  
+        aPhinew[kFrom[q]][iFrom[q]]-=exchange_rates[q]/Afrom*tstep;
         aPhinew[  kTo[q]][  iTo[q]]+=exchange_rates[q]/Ato  *tstep;
-       
-        pModel->IncrementLatBalance(qss,exchange_rates[q]*tstep); 
+
+        pModel->IncrementLatBalance(qss,exchange_rates[q]*tstep);
 
         qss++;
       }
@@ -455,7 +455,7 @@ void MassEnergyBalance( CModel            *pModel,
       pHRU=pModel->GetHydroUnit(k);
       pGWModel->FluxToGWEquation(pHRU, aPhinew[k][iGW]);
     }
-    
+
     pGWModel->Solve(t);               // Run MODFLOW-USG
     pGWModel->PostSolve(tstep);       // Post-solve MFUSG Routines, Budget update, etc
     pGW2River->UpdateRiverFlux();     // Update River Fluxes (for routing)
@@ -484,8 +484,8 @@ void MassEnergyBalance( CModel            *pModel,
     if(pHRU->IsEnabled())
     {
       p   =pHRU->GetSubBasinIndex();
-      SWvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3] 
-      if(pHRU->IsLinkedToReservoir()) { 
+      SWvol=(aPhinew[k][iSW]/MM_PER_METER)*(pHRU->GetArea()*M2_PER_KM2);//[m3]
+      if(pHRU->IsLinkedToReservoir()) {
         pModel->GetSubBasin(p)->GetReservoir()->SetPrecip(SWvol);//[SW is treated as precip on reservoir]
       }
       else{
@@ -496,7 +496,7 @@ void MassEnergyBalance( CModel            *pModel,
       aPhinew[k][iSW]=0.0;             //zero out surface water storage
     }
   }
-  // Identify magnitude of flow diversions, calculate inflows  
+  // Identify magnitude of flow diversions, calculate inflows
   for(p=0;p<NB;p++)
   {
     //Regular Diversions
@@ -528,7 +528,7 @@ void MassEnergyBalance( CModel            *pModel,
         }
       }
     }
-    //User-specified inflows to upstream end 
+    //User-specified inflows to upstream end
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
   }
   // Route water over timestep
@@ -542,7 +542,7 @@ void MassEnergyBalance( CModel            *pModel,
     if(pBasin->IsEnabled())
     {
       pBasin->UpdateSubBasin(tt,Options);            // also used to assimilate lake levels and update routing hydrograph for timestep
-      
+
       pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
       down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
@@ -614,7 +614,7 @@ void MassEnergyBalance( CModel            *pModel,
         p       =pHRU->GetSubBasinIndex();
         m       =pModel->GetTransportModel()->GetLayerIndex(c,iSW);
         iSWmass =pModel->GetStateVarIndex(CONSTITUENT,m);
-        
+
         Ploading=(aPhinew[k][iSWmass])*(pHRU->GetArea()*M2_PER_KM2)/tstep;//[mg/d] or [MJ/d] [iSWmass is ALL precip mass/energy on HRU]
         if(pHRU->IsLinkedToReservoir()) {
           pConstitModel->SetReservoirPrecipLoad(p,Ploading);
@@ -625,7 +625,7 @@ void MassEnergyBalance( CModel            *pModel,
         aPhinew[k][iSWmass]=0.0; //empty out from landscape storage
       }
     }
-    
+
     //Route mass over timestep
     //calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
     for(pp=0;pp<NB;pp++)
@@ -685,4 +685,3 @@ void MassEnergyBalance( CModel            *pModel,
     }
   }
 }
-

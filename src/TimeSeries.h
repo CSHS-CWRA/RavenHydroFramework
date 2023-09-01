@@ -129,7 +129,7 @@ public:/*-------------------------------------------------------*/
                                                long   loc_ID,               // critical information about timeseries, e.g. subbasin ID or HRU ID
                                                string gauge_name,           // gauge name if gauge-linked data ("none" otherwise)
                                                bool   shift_to_per_ending,  // true if data are period starting and need to be shifted (HYDROGRAPH?)
-                                               bool   shift_from_per_ending,// true if data are period-ending and need to be shifted 
+                                               bool   shift_from_per_ending,// true if data are period-ending and need to be shifted
                                                string FileNameNC,           // file name of NetCDF
                                                string VarNameNC,            // name of variable in NetCDF
                                                string DimNamesNC_stations,  // name of station dimension (optional; default=None)
@@ -143,13 +143,13 @@ public:/*-------------------------------------------------------*/
                                                );
 };
 
-class CConstTimeSeries : public CTimeSeries 
+class CConstTimeSeries : public CTimeSeries
 {
 private:/*------------------------------------------------------*/
 
   double _value;
 
-  
+
 public:/*-------------------------------------------------------*/
        //Constructors:
   CConstTimeSeries(string name, long loc_ID, double one_value) :CTimeSeries(name, loc_ID, one_value) { _value = one_value; }

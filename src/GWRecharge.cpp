@@ -65,7 +65,7 @@ void CGWRecharge::InitializeRechargeClass(int nNodes)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Adds Node when type is RECHARGE_FLUX
-/// 
+///
 /// \param index  [in] location in arrays of where to store other parameters (why isn't the process tracking this itself?! -LS)
 /// \param nodeID [in] node number in GW model where recharge will be moved
 /// \param flux   [in] flux to be moved [mm/day] to node
@@ -118,7 +118,7 @@ void CGWRecharge::GetRatesOfChange(const double		   *state_vars,
                                    double      *rates) const
 {
 #ifdef _MODFLOW_USG_
-  if (pHRU->GetHRUType() == HRU_STANDARD) 
+  if (pHRU->GetHRUType() == HRU_STANDARD)
   {
     set<int> HRU_nodes;
     double   area, weight;
@@ -183,7 +183,7 @@ void CGWRecharge::GetRatesOfChange(const double		   *state_vars,
 //////////////////////////////////////////////////////////////////
 /// \brief Fills arrays[_nnodes] with process rates to(+)/from(-) the GW model.
 ///        Placeholder method for child processes to override.
-/// 
+///
 /// \param pModel [in] pointer to groundwater model
 /// \param nodes [out] array of nodes where process is active
 /// \param rates [out] rates of flux to GW model
@@ -204,7 +204,7 @@ void CGWRecharge::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
     nodes[i] = topnode;
     rates[i] = 0.0;
     area = pGWModel->GetNodeArea(n);  // m
-    
+
     //-- Recharge via DATA is by HRU
     if (_recharge_type == RECHARGE_HRU_DATA) {
       nodeHRUs = pGWModel->GetHRUsByNode(n);
@@ -225,7 +225,7 @@ void CGWRecharge::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief 
+/// \brief
 /// \details
 ///
 /// \param *state_vars [in] Array of current state variables in HRU

@@ -307,7 +307,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
                                         double      *rates) const
 {
 
-  if ((pHRU->GetHRUType()!=HRU_STANDARD) && (pHRU->GetHRUType()!=HRU_ROCK)){return;}//Lakes & glaciers 
+  if ((pHRU->GetHRUType()!=HRU_STANDARD) && (pHRU->GetHRUType()!=HRU_ROCK)){return;}//Lakes & glaciers
 
   double runoff;
   double rainthru;
@@ -510,9 +510,9 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     rates[3]=delayed;   //PONDED->CONVOL[1]
   }
   //-----------------------------------------------------------------
-  else if(type==INF_XINANXIANG) 
+  else if(type==INF_XINANXIANG)
   {
-    // from Jayawardena, AW and MC Zhou A modified spatial soil moisture storage capacity distribution curve for the Xinanjiang model. 
+    // from Jayawardena, AW and MC Zhou A modified spatial soil moisture storage capacity distribution curve for the Xinanjiang model.
     // Journal of Hydrology, 227(1-4), p93-113, 2000
 
     double b=1.0;//pHRU->GetSoilProps(0)->Xinanxiang_b;
@@ -528,14 +528,14 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     double sat1=max(0.0,stor/(max_stor-tens_stor));
     if(sat<=0.5-c) { infil=(    pow(0.5-c,1-b)*pow(  sat,b))*direct; }
     else           { infil=(1.0-pow(0.5+c,1-b)*pow(1-sat,b))*direct; }
-    
+
     sat_excess=1.0;//(1.0-pow(1-sat1,n))*direct;
 
     ExitGracefully("INF_XINANXIANG",STUB);
 
     infil=(1.0-Fimp)*infil; //correct for impermeable surfaces (?)
     rates[0]=infil;          //PONDED->SOIL
-    rates[1]=rainthru-infil; //PONDED->SW 
+    rates[1]=rainthru-infil; //PONDED->SW
   }
   //----------------------------------------------------------------------------
   else if(type==INF_PDM)
@@ -557,11 +557,11 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     //analytical evaluation of P*dt-equation 3 of Mekonnen et al. (2014); min() handles case where entire landscape sheds
     infil=max_stor*(pow(1.0-(c_star/c_max),b+1.0)-pow(1.0-min(c_star+ponded_water,c_max)/c_max,b+1.0));
     infil=min(infil,ponded_water);
-    
+
     infil=(1.0-Fimp)*infil/Options.timestep; //correct for impermeable surfaces
 
     rates[0]=infil;          //PONDED->SOIL[0]
-    rates[1]=rainthru-infil; //PONDED->SW 
+    rates[1]=rainthru-infil; //PONDED->SW
   }
   //----------------------------------------------------------------------------
   else if(type==INF_AWBM)
@@ -574,7 +574,7 @@ void CmvInfiltration::GetRatesOfChange (const double              *state_vars,
     double BFI=pHRU->GetSurfaceProps()->AWBM_bflow_index;
 
     def1=max(a1*pHRU->GetSoilCapacity(0)-state_vars[iFrom[0]],0.0); // deficit averaged over domain
-    def2=max(a2*pHRU->GetSoilCapacity(1)-state_vars[iFrom[1]],0.0); 
+    def2=max(a2*pHRU->GetSoilCapacity(1)-state_vars[iFrom[1]],0.0);
     def3=max(a3*pHRU->GetSoilCapacity(2)-state_vars[iFrom[2]],0.0);
 
     runoff1=max(a1*ponded_water-def1,0.0);
@@ -677,7 +677,7 @@ double CmvInfiltration::GetSCSRunoff(const CHydroUnit *pHRU,
   }
   Weff=pow(threshPositive(W-Ia),2)/(W+(S-Ia));//[mm]
   if (W+(S-Ia)==0.0){Weff=0.0;}
-  
+
   return Weff/Options.timestep;
 
 }

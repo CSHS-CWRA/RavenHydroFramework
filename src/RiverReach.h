@@ -38,8 +38,8 @@ public:/*-------------------------------------------------------*/
   CRiverReach              (CModel *pModel, CGroundwaterModel *pGWModel, int reachNo, double length,
                             double wp, double river_bot, LeakanceMethod leakance_method);
  ~CRiverReach              ();
-                          
-  //-- Setters            
+
+  //-- Setters
   void         addNode          (int nodeid);
   //-- Accessors
   vector<int>* getNodes         ();

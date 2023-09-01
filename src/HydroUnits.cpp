@@ -357,7 +357,7 @@ void CHydroUnit::Disable(){_Disabled=true;}
 void CHydroUnit::Enable(){_Disabled=false;}
 
 //////////////////////////////////////////////////////////////////
-/// \brief links HRU to reservoir 
+/// \brief links HRU to reservoir
 //
 void CHydroUnit::LinkToReservoir(const long SBID){_res_linked=true;}
 
@@ -425,7 +425,7 @@ void      CHydroUnit::SetPrecipMultiplier     (const double factor)
 /// \brief Sets the HRU-specific  specified gauge index to override interpolation weights
 ///
 //
-void     CHydroUnit::SetSpecifiedGaugeIndex(const int g) 
+void     CHydroUnit::SetSpecifiedGaugeIndex(const int g)
 {
   _SpecifiedGaugeIdx=g;
  }
@@ -453,15 +453,15 @@ void CHydroUnit:: ChangeHRUType(const HRU_type typ)
 //////////////////////////////////////////////////////////////////
 /// \brief Adjust HRU Forcing values mid-simulation
 //
-void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon, const adjustment adj) 
-{ 
-  if(Ftyp==F_PRECIP) { 
+void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon, const adjustment adj)
+{
+  if(Ftyp==F_PRECIP) {
     if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip*=epsilon;}
     else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon;}
     else if (adj==ADJ_REPLACE       ){_Forcings.precip =epsilon;}
     upperswap(_Forcings.precip,0.0);
   }
-  else if(Ftyp==F_RAINFALL) { 
+  else if(Ftyp==F_RAINFALL) {
     double sf=_Forcings.snow_frac;
     double Po=_Forcings.precip;
     if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip+=Po*(1.0-sf)*(epsilon-1.0);}
@@ -471,7 +471,7 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon,
     if (_Forcings.precip==0){_Forcings.snow_frac=0;}
     else                    {_Forcings.snow_frac=_Forcings.snow_frac*Po/_Forcings.precip;}
   }
-  else if(Ftyp==F_SNOWFALL) { 
+  else if(Ftyp==F_SNOWFALL) {
     double sf=_Forcings.snow_frac;
     double Po=_Forcings.precip;
     if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip+=Po*(sf)*(epsilon-1.0);}
@@ -485,7 +485,7 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon,
     //daily mean/min/max handled via AdjustDailyHRUForcings()
     if      (adj==ADJ_MULTIPLICATIVE){_Forcings.temp_ave*=epsilon; }
     else if (adj==ADJ_ADDITIVE      ){_Forcings.temp_ave+=epsilon; }
-    else if (adj==ADJ_REPLACE       ){_Forcings.temp_ave =epsilon;} 
+    else if (adj==ADJ_REPLACE       ){_Forcings.temp_ave =epsilon;}
   }
   //AdjustForcing(_Forcings,Ftyp,value,adj);
   //AdjustForcings(force_struct F, forcing_type typ, double value, adjustment adj);
@@ -495,7 +495,7 @@ void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon,
 //
 void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* epsilon, const adjustment adj, const int nStepsPerDay)
 {
-  if (Ftyp == F_TEMP_AVE) 
+  if (Ftyp == F_TEMP_AVE)
   {
     if      (adj==ADJ_MULTIPLICATIVE)
     {
@@ -508,7 +508,7 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* e
       _Forcings.temp_daily_ave*=adjust; //approximate - uses mean perturbation to adjust extremes
     }
     else if (adj==ADJ_ADDITIVE      )
-    { 
+    {
       double adjust=0;
       for (int n=0;n<nStepsPerDay;n++){
         adjust+=epsilon[n];
@@ -529,7 +529,7 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* e
 /// \param i [in] Integer index of state variable type
 /// \param *curr_state_var [in] Current array of state variables in HRU
 /// \param &Options [in] Global model options information
-/// \param ignorevar [in] true if variable values (such as those linked to vegetation) 
+/// \param ignorevar [in] true if variable values (such as those linked to vegetation)
 ///        should be disregarded (for applying initial conditions where these are not yet initialized)
 /// \return Double representing maximum value of state variable
 //
@@ -570,7 +570,7 @@ double        CHydroUnit::GetStateVarMax(const int      i,
     }
     default:{
       max_var=ALMOST_INF;break;
-    } 
+    }
   }/* end switch*/
   return max_var;
 }
@@ -578,7 +578,7 @@ double        CHydroUnit::GetStateVarMax(const int      i,
 /// \brief returns snow albedo
 /// \note uses default snow albedo if not tracked as state variable
 /// \note lagged - information specific to start of time step only
-/// 
+///
 /// \return current snow albedo in HRU [dimensionless]
 //
 double CHydroUnit::GetSnowAlbedo() const
@@ -588,17 +588,17 @@ double CHydroUnit::GetSnowAlbedo() const
   else                         {return GetStateVarValue(iSnAlb);}
 }
 /////////////////////////////////////////////////////////////////////
-/// \brief Calculates snow depth 
+/// \brief Calculates snow depth
 /// \return Snow depth [mm]
 //
 double CHydroUnit::GetSnowDepth() const
-{ 
+{
   int iSnow   =_pModel->GetStateVarIndex(SNOW);
   if (iSnow==DOESNT_EXIST){return 0.0; }
 
   int iSnowDep=_pModel->GetStateVarIndex(SNOW_DEPTH);
   if (iSnowDep!=DOESNT_EXIST){return GetStateVarValue(iSnowDep); }
-  
+
   double SWE= GetStateVarValue(iSnow);
   return (SWE/TYPICAL_SNOW_DENS)*DENSITY_WATER; //[mm]
 }
@@ -644,21 +644,21 @@ double  CHydroUnit::GetSnowCover () const
 
   int    iSnFrac=_pModel->GetStateVarIndex(SNOW_COVER);
   int    iSnow  =_pModel->GetStateVarIndex(SNOW);
-  
+
   if (iSnow==DOESNT_EXIST){return 0.0;}
   double SWE=this->GetStateVarValue(iSnow);
-  
+
   if(iSnFrac!=DOESNT_EXIST) { //snow cover explicitly simulated
     return this->GetStateVarValue(iSnFrac);
   }
   else  //snowcover depletion curves
   {
-    if(Options->snow_depletion==SNOWCOV_NONE) 
+    if(Options->snow_depletion==SNOWCOV_NONE)
     {
       if(GetSnowSWE()<NEGLIGBLE_SNOW) { return 0.0; }
       else                            { return 1.0; }
     }
-    else if(Options->snow_depletion==SNOWCOV_LINEAR) 
+    else if(Options->snow_depletion==SNOWCOV_LINEAR)
     {
       //double snowthresh=GetSurfaceProps()->SDC_threshold;
       double snowthresh=200;
@@ -724,7 +724,7 @@ double  CHydroUnit::GetTotalAlbedo() const
     //correction for urban surfaces?
 
     veg_albedo    =_pVeg->albedo; //correction for wetness?
-    
+
     //JRC: checks put in just in case parameters not supplied (only cosmetic in Forcings.csv, since if not supplied, SW_RADIA_NET not used in calcs).
     if (veg_albedo<0 ){veg_albedo=0.14;}
     if (svf>1.0      ){svf=0.0;}

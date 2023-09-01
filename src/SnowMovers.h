@@ -27,7 +27,7 @@ enum sublimation_type
   SUBLIM_CENTRAL_SIERRA,  ///< US Army Corps of Engineers : adapted from Gray 1973 \cite Engineers1956NPDPO
   SUBLIM_PBSM,            ///< Pomeroy Prairie Blowing Snow Model Sublimation : adapted from Pomeroy 1993 \cite Pomeroy1993JoH
   SUBLIM_WILLIAMS,        ///< Canadian National Research Council [1959] - developed from Sverdrup
-  SUBLIM_KUCHMENT_GELFAN, ///< Kuchment Gelfan (1996) - essentially equivalent to Kuzmin 
+  SUBLIM_KUCHMENT_GELFAN, ///< Kuchment Gelfan (1996) - essentially equivalent to Kuzmin
   SUBLIM_BULK_AERO        ///< Bulk aerodynamic approach of Hock (2005)
 };
 

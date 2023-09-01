@@ -13,7 +13,7 @@ bool ParseInputFiles       (CModel*&pModel,        optStruct &Options);
 bool ParseInitialConditions(CModel*& pModel, const optStruct &Options);
 
 //Defined in Solvers.cpp
-void MassEnergyBalance     (CModel *pModel,const optStruct   &Options, const time_struct &tt);        
+void MassEnergyBalance     (CModel *pModel,const optStruct   &Options, const time_struct &tt);
 void ParseLiveFile         (CModel*&pModel,const optStruct   &Options, const time_struct &tt);
 
 //Local functions defined below main() in RavenMain.cpp

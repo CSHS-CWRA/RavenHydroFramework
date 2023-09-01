@@ -292,7 +292,7 @@ void CmvSoilEvap::GetParticipatingStateVarList(soilevap_type se_type,sv_type *aS
   else if ((se_type==SOILEVAP_SEQUEN) || (se_type==SOILEVAP_ROOT) || (se_type==SOILEVAP_ROOT_CONSTRAIN))
   {
     nSV=3;
-    aSV [0]=SOIL;       aLev[0]=0;  
+    aSV [0]=SOIL;       aLev[0]=0;
     aSV [1]=SOIL;       aLev[1]=1;
     aSV [2]=ATMOSPHERE; aLev[2]=DOESNT_EXIST;
   }
@@ -353,7 +353,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   PET=pHRU->GetSoilProps(0)->PET_correction*PET; //corrected PET
 
   if (!Options.suppressCompetitiveET){
-    //competitive ET - reduce PET by AET 
+    //competitive ET - reduce PET by AET
     PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
     PET=max(PET,0.0);
   }
@@ -392,7 +392,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     PETused=rates[0];
   }
   //------------------------------------------------------------
-  else if (type==SOILEVAP_ALL) 
+  else if (type==SOILEVAP_ALL)
   {
     rates[0]  = PET;  //evaporation rate [mm/d]
     PETused=rates[0];
@@ -418,7 +418,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     PETused=rates[0];
 
     //SOILEVAP_HYPR from
-    //Ahmed et al., Toward Simple Modeling Practices in the Complex Canadian Prairie Watersheds,  
+    //Ahmed et al., Toward Simple Modeling Practices in the Complex Canadian Prairie Watersheds,
     //Journal of Hydrologic Engineering 25(6), 04020024, doi:10.1061/(ASCE)HE.1943-5584.0001922, 2020
     if (type==SOILEVAP_HYPR)
     {
@@ -428,20 +428,20 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       double dep_max          =pHRU->GetSurfaceProps()->dep_max;
 
       double area_ponded=maxPondedAreaFrac*pow(min(state_vars[iDep]/dep_max,1.0),n);
-      
+
       rates[0]=(1.0-area_ponded)*rates[0]; //correct AET              //SOIL->ATMOS
       rates[1]=(    area_ponded)*pHRU->GetForcingFunctions()->OW_PET; //DEPRESSION->ATMOS
 
       PETused=(rates[0]+rates[1]);
     }
-    
+
   }
   //------------------------------------------------------------
   else if(type==SOILEVAP_PDM)
   {
     double stor    =state_vars[iFrom[0]];
     double max_stor=pHRU->GetSoilCapacity(0);
-    
+
     double b=pHRU->GetSurfaceProps()->PDM_b;
 
     double c_max =(b+1)*max_stor;
@@ -458,13 +458,13 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     double stor    =state_vars[iFrom[0]];
     double max_stor=pHRU->GetSoilCapacity(0);
-    
+
     double b   =pHRU->GetSurfaceProps()->PDM_b;
     double gp  =pHRU->GetSurfaceProps()->HYMOD2_G;    // [0..1] ET lower resistance parameter
     double Kmax=pHRU->GetSurfaceProps()->HYMOD2_Kmax; // [0..1] ET resistance parameter
-    double ce  =pHRU->GetSurfaceProps()->HYMOD2_exp;  // [-] ET exponent parameter 
+    double ce  =pHRU->GetSurfaceProps()->HYMOD2_exp;  // [-] ET exponent parameter
 
-    double c_max =(b+1)*max_stor; 
+    double c_max =(b+1)*max_stor;
     double c_star=c_max*(1.0-pow(1.0-(stor/max_stor),1.0/(b+1.0)));
 
     double K=Kmax*(gp+(1-gp)*pow(c_star/c_max,ce));
@@ -562,7 +562,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   else if (type==SOILEVAP_FEDERER)
   {
-  ///  Adapted from Brook90 routine TBYLAYER based on model of Federer 1979, [A soil-plant-atmosphere model for transpiration and availability of soil water. Water Resour Res 15:555-562.] 
+  ///  Adapted from Brook90 routine TBYLAYER based on model of Federer 1979, [A soil-plant-atmosphere model for transpiration and availability of soil water. Water Resour Res 15:555-562.]
 
     ExitGracefully("FedererSoilEvap::Not tested!",STUB);
     //FedererSoilEvap(PET,state_vars,pHRU,Options,tt,rates);
@@ -656,9 +656,9 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     }*/
   //------------------------------------------------------------------
   else if (type==SOILEVAP_GR4J)
-  { //from GR4J model (Perrin et al., 2003) 
+  { //from GR4J model (Perrin et al., 2003)
     double max_stor=pHRU->GetSoilCapacity(0);
-    double stor    =state_vars[iFrom[0]];    
+    double stor    =state_vars[iFrom[0]];
     double sat     =stor/max_stor;
 
     double tmp=tanh(max(PET,0.0)/max_stor);
@@ -668,7 +668,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   }
   //------------------------------------------------------------------
   else if(type==SOILEVAP_SACSMA)
-  { //From Sacramento Soil Accounting Model 
+  { //From Sacramento Soil Accounting Model
     double red;            // [mm] residual evap demand
     double e1,e2,e3,e5;    // [mm] different ETs from different regions
 
@@ -700,9 +700,9 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
     e2=min(red,uzf_stor);
     red-=e2;
     uzf_stor-=e2;
-    rates[1]=e2*Aperv/Options.timestep; //UZF SOIL[1]->ATMOSPHERE  
+    rates[1]=e2*Aperv/Options.timestep; //UZF SOIL[1]->ATMOSPHERE
 
-    // equilibrate storage ratios in upper zone 
+    // equilibrate storage ratios in upper zone
     if((uzt_stor/uzt_stor_max) < (uzf_stor/uzf_stor_max))
     {
       double delta= uzt_stor_max*(uzt_stor + uzf_stor) / (uzt_stor_max + uzf_stor_max)-uzt_stor;
@@ -714,7 +714,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     e3 = min(red * (lzt_stor/(uzt_stor_max + lzt_stor_max)),lzt_stor);
     lzt_stor -= e3;
-    rates[3]=e3*Aperv/Options.timestep;       //LZT SOIL[2]->ATMOSPHERE  
+    rates[3]=e3*Aperv/Options.timestep;       //LZT SOIL[2]->ATMOSPHERE
 
     double ratlzt = lzt_stor/lzt_stor_max;
     double saved = rserv * (lzfp_stor_max + lzfs_stor_max);
@@ -727,11 +727,11 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
       //rates[4]=del*Aperv/Options.timestep;   //LZFS SOIL[4]->LZT SOIL[2]
     }
 
-    // adjust adimc,additional impervious area storage, for evaporation 
+    // adjust adimc,additional impervious area storage, for evaporation
     e5 = min(e1 + (red+e2) * (adimc_stor-uzt_stor-e1) / (uzt_stor_max+lzt_stor_max),adimc_stor);
     adimc_stor -= e5;
     rates[5]=e5*Adimp/Options.timestep;     //ADIMC (SOIL[5])->ATMOS
-  
+
     PETused=(e1+e2+e3)*Aperv+e5*Adimp;
   }
   //------------------------------------------------------------
@@ -754,7 +754,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
   //updated used PET
   rates[_nConnections-1]=PETused;
- 
+
 }
 
 //////////////////////////////////////////////////////////////////

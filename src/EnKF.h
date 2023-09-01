@@ -7,7 +7,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 
 #include "ModelEnsemble.h"
 
-struct force_perturb 
+struct force_perturb
 {
   forcing_type forcing;
   disttype     distribution;
@@ -52,13 +52,13 @@ private:
   int            _nObsDatapoints;   ///< number of valid datapoints available for assimilation
 
   force_perturb**_pPerturbations;   ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
-  int            _nPerturbations;   ///< number of forcing functions to perturb 
+  int            _nPerturbations;   ///< number of forcing functions to perturb
 
-  obs_perturb  **_pObsPerturbations;///< array of pointers to observation perturbation data [size _nObsPerturbations] 
+  obs_perturb  **_pObsPerturbations;///< array of pointers to observation perturbation data [size _nObsPerturbations]
   int            _nObsPerturbations;///< number of observational perturbations. If observation does not have perturbation, it is assumed "perfect" data
 
   sv_type       *_aAssimStates;     ///< assimilated state variable [size: _nAssimStates]
-  int           *_aAssimLayers;     ///< layer of assimilated state variable [size: _nAssimStates] 
+  int           *_aAssimLayers;     ///< layer of assimilated state variable [size: _nAssimStates]
   int           *_aAssimGroupID;    ///< index (kk) of HRU group or SubBasin group  [size: _nAssimStates]
   int            _nAssimStates;     ///< number of assimilated state variable types (!= number of total state vars)
 
@@ -67,7 +67,7 @@ private:
 
   string         _warm_runname;     //< run name of closed loop or open loop solution files (e.g., run1_solution.rvc)
 
-  string         _extra_rvt;        //< name of extra-data .rvt file for ensemble member-specific time series 
+  string         _extra_rvt;        //< name of extra-data .rvt file for ensemble member-specific time series
   string         _orig_rvc_file;    //< original rvc filename (full path)
 
   int           *_aObsIndices;      //< indices of CModel::pObsTS array corresponding to assimilation time series [size:_nObs]
@@ -83,7 +83,7 @@ public:
   ~CEnKFEnsemble();
 
   double GetStartTime(const int e) const;
-  EnKF_mode GetEnKFMode() const; 
+  EnKF_mode GetEnKFMode() const;
 
   void SetEnKFMode           (EnKF_mode mode);
   void SetWarmRunname        (string runname);
@@ -100,4 +100,3 @@ public:
   void FinishEnsembleRun     (CModel *pModel,optStruct &Options,const time_struct &tt,const int e);
 };
 #endif
-

@@ -15,20 +15,20 @@ typedef const double* const* Unchangeable2DArray;
 typedef       double** const Writeable2DArray;
 typedef const double* const* const Ironclad2DArray;
 
-void   MatVectMult    (Ironclad2DArray  A, 
-											 Ironclad1DArray  x, 
-											 const int N, 
+void   MatVectMult    (Ironclad2DArray  A,
+											 Ironclad1DArray  x,
+											 const int N,
 											 bool transpose,
 	                     Writeable1DArray b);
-void   MatVectMult    (Ironclad2DArray  A, 
-											 Ironclad1DArray  x, 
-											 const int N, 
+void   MatVectMult    (Ironclad2DArray  A,
+											 Ironclad1DArray  x,
+											 const int N,
 											 const int M,
 	                     Writeable1DArray b);
-void   MatMult        (Ironclad2DArray  A, 
-											 Ironclad2DArray  B, 
-											 const int				N, 
-											 const int				M, 
+void   MatMult        (Ironclad2DArray  A,
+											 Ironclad2DArray  B,
+											 const int				N,
+											 const int				M,
 											 const int				P,
 											 Writeable2DArray C);
 void   ScalarMatMult  (Ironclad2DArray  A,
@@ -36,10 +36,10 @@ void   ScalarMatMult  (Ironclad2DArray  A,
 											 const int				N,
 									     const int				M,
 											 Writeable2DArray C);
-void   MatAdd         (Ironclad2DArray  A, 
-											 Ironclad2DArray  B, 
-											 const int				N, 
-											 const int				M, 
+void   MatAdd         (Ironclad2DArray  A,
+											 Ironclad2DArray  B,
+											 const int				N,
+											 const int				M,
 											 Writeable2DArray C);
 void  CopyMatrix      (Ironclad2DArray  A,
 											 const int				N,

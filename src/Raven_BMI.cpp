@@ -64,7 +64,7 @@ void CRavenBMI::Initialize(std::string config_file)
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
-   
+
   CheckForErrorWarnings(true);
 
   pModel->Initialize                  (Options);
@@ -77,10 +77,10 @@ void CRavenBMI::Initialize(std::string config_file)
 
   PrepareOutputdirectory(Options); //adds new output folders, if needed
   pModel->WriteOutputFileHeaders(Options);
-      
+
   double t_start=0.0;
   t_start=pModel->GetEnsemble()->GetStartTime(0);
-      
+
   //Write initial conditions-------------------------------------
   JulianConvert(t_start,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
   pModel->RecalculateHRUDerivedParams(Options,tt);
@@ -90,7 +90,7 @@ void CRavenBMI::Initialize(std::string config_file)
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief run simulation for a single time step 
+/// \brief run simulation for a single time step
 ///
 //
 void CRavenBMI::Update()
@@ -121,7 +121,7 @@ void CRavenBMI::Update()
 }
 //////////////////////////////////////////////////////////////////
 /// \brief run simulation for multiple time steps, ending at time 'time'
-///  
+///
 /// \param time [in] model time at which simulation should stop (in days)
 //
 void CRavenBMI::UpdateUntil(double time)
@@ -132,7 +132,7 @@ void CRavenBMI::UpdateUntil(double time)
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief called after simulation is done 
+/// \brief called after simulation is done
 //
 void CRavenBMI::Finalize()
 {
@@ -149,51 +149,51 @@ void CRavenBMI::Finalize()
 //------------------------------------------------------------------
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns name of BMI component  
-/// \return name of BMI component 
+/// \brief returns name of BMI component
+/// \return name of BMI component
 //
 std::string CRavenBMI::GetComponentName()
 {
   return "Raven Hydrological Modelling Framework "+Options.version;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns number of accessible input datasets  
+/// \brief returns number of accessible input datasets
 /// \return number of accessible input datasets
 //
-int CRavenBMI::GetInputItemCount() 
+int CRavenBMI::GetInputItemCount()
 {
-  return 2;   
+  return 2;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns array of accessible input dataset names  
+/// \brief returns array of accessible input dataset names
 /// \return array of accessible input dataset names
 //
-std::vector<std::string> CRavenBMI::GetInputVarNames() 
+std::vector<std::string> CRavenBMI::GetInputVarNames()
 {
   vector<string> names;
   names.push_back("rainfall");
   names.push_back("temp_ave");
-  return names;   
+  return names;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns number of accessible output datasets  
+/// \brief returns number of accessible output datasets
 /// \return number of accessible output datasets
 //
-int CRavenBMI::GetOutputItemCount() 
+int CRavenBMI::GetOutputItemCount()
 {
-  return 3;   
+  return 3;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns array of accessible output dataset names  
+/// \brief returns array of accessible output dataset names
 /// \return array of accessible output dataset names
 //
-std::vector<std::string> CRavenBMI::GetOutputVarNames() 
+std::vector<std::string> CRavenBMI::GetOutputVarNames()
 {
   vector<string> names;
   names.push_back("streamflow");
   names.push_back("soil[0]");
   names.push_back("snow");
-  return names;   
+  return names;
 }
 
 //------------------------------------------------------------------
@@ -201,10 +201,10 @@ std::vector<std::string> CRavenBMI::GetOutputVarNames()
 //------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////
 /// \brief returns grid id of input or output variable
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \return grid id of input or output variable
 //
-int CRavenBMI::GetVarGrid(std::string name) 
+int CRavenBMI::GetVarGrid(std::string name)
 {
   //input variables
   if      (name=="rainfall"  ){return GRID_HRU;}
@@ -219,10 +219,10 @@ int CRavenBMI::GetVarGrid(std::string name)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns units of input or output variable as string
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \return units of input or output variable as string
 //
-std::string CRavenBMI::GetVarUnits(std::string name) 
+std::string CRavenBMI::GetVarUnits(std::string name)
 {
   //input variables
   if      (name=="rainfall"  ){return "mm/d";}
@@ -237,39 +237,39 @@ std::string CRavenBMI::GetVarUnits(std::string name)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns type of input or output variable as string
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \return type of input (now, assumes all outputs are double precision numbers)
 //
-std::string CRavenBMI::GetVarType(std::string name) 
+std::string CRavenBMI::GetVarType(std::string name)
 {
   return "float";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns size of input or output variable, in bytes
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \return size of individual input or output variable item, in bytes
 //
-int CRavenBMI::GetVarItemsize(std::string name) 
+int CRavenBMI::GetVarItemsize(std::string name)
 {
-  return sizeof(double);   
+  return sizeof(double);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns total size of input or output variable array, in bytes
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \return total size of input or output variable array, in bytes
 //
-int CRavenBMI::GetVarNbytes(std::string name) 
+int CRavenBMI::GetVarNbytes(std::string name)
 {
   return GetVarItemsize(name)*GetGridSize(GetVarGrid(name));
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns variable location on unstructured grid
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \return "node", always
 //
-std::string CRavenBMI::GetVarLocation(std::string name) 
+std::string CRavenBMI::GetVarLocation(std::string name)
 {
-  return "node";   
+  return "node";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief accessors for model basic elements
@@ -286,10 +286,10 @@ std::string CRavenBMI::GetTimeUnits(){  return "d";              }
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of variable values for variable with supplied name
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \param dest [out] - pointer to array of variable values
 //
-void CRavenBMI::GetValue(std::string name, void* dest) 
+void CRavenBMI::GetValue(std::string name, void* dest)
 {
   double *out=NULL;
   int k,p;
@@ -300,7 +300,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
   if      (name=="streamflow")
   {
     out=new double [pModel->GetNumSubBasins()];
-    for (p = 0; p < pModel->GetNumSubBasins(); p++) 
+    for (p = 0; p < pModel->GetNumSubBasins(); p++)
     {
       if (Options.ave_hydrograph){
         out[p]=pModel->GetSubBasin(p)->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
@@ -313,7 +313,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
   }
   else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
   else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
-  
+
 
   if ((is_HRU_SV) && (iSV!=DOESNT_EXIST))
   {
@@ -327,12 +327,12 @@ void CRavenBMI::GetValue(std::string name, void* dest)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of variable values for variable with supplied name at subset o flocations
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \param dest [out] - pointer to array of variable values
 /// \param inds [in] - array of array indices/grid nodes from which to grab variables
 /// \param count[in] - size of inds and dest arrays
 //
-void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int count) 
+void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int count)
 {
   //output variables
   double *out=new double [count];
@@ -349,7 +349,7 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
   }
   else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
   else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
-  
+
   if ((is_HRU_SV) && (iSV!=DOESNT_EXIST))
   {
     for (i = 0; i <count; i++) {
@@ -361,10 +361,10 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
   delete [] out;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief unavailable BMI functionality 
-/// \param name [in] - name of  variable 
+/// \brief unavailable BMI functionality
+/// \param name [in] - name of  variable
 //
-void *CRavenBMI::GetValuePtr(std::string name) 
+void *CRavenBMI::GetValuePtr(std::string name)
 {
   //given that storage is never in array, this will never work!
   throw std::logic_error("Not Implemented");
@@ -377,10 +377,10 @@ void *CRavenBMI::GetValuePtr(std::string name)
 
 //////////////////////////////////////////////////////////////////
 /// \brief sets values for full variable array with supplied name
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \param src  [in] - pointer to array of variable values
 //
-void CRavenBMI::SetValue(std::string name, void* src) 
+void CRavenBMI::SetValue(std::string name, void* src)
 {
   //input variables
   double *input=(double*)src;
@@ -389,7 +389,7 @@ void CRavenBMI::SetValue(std::string name, void* src)
 
   if      (name=="rainfall"){is_forcing=true; Ftype=F_RAINFALL;}
   else if (name=="temp_ave"){is_forcing=true; Ftype=F_TEMP_AVE;}
-   
+
   if (is_forcing){
     for (int k=0;k<pModel->GetNumHRUs();k++){
       pModel->GetHydroUnit(k)->AdjustHRUForcing(Ftype, input[k], ADJ_REPLACE);
@@ -398,7 +398,7 @@ void CRavenBMI::SetValue(std::string name, void* src)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief sets values for subset of variable array with supplied name
-/// \param name [in] - name of  variable 
+/// \param name [in] - name of  variable
 /// \param src  [in] - pointer to array of variable values
 /// \param inds [in] - array of array indices/grid nodes from which to grab variables
 /// \param count[in] - size of inds and src arrays
@@ -412,7 +412,7 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
 
   if      (name=="rainfall"){is_forcing=true; Ftype=F_RAINFALL;}
   else if (name=="temp_ave"){is_forcing=true; Ftype=F_TEMP_AVE;}
-   
+
   if (is_forcing){
     for (int i=0;i<count;i++){
       int k=inds[i];
@@ -427,7 +427,7 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns rank of grid
-/// \param grid [in]  
+/// \param grid [in]
 /// \return rank of grid (always 1 for Raven unstructured 'grid' - HRUs or Basins)
 //
 int CRavenBMI::GetGridRank(const int grid)
@@ -436,7 +436,7 @@ int CRavenBMI::GetGridRank(const int grid)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns size of unstructured grid
-/// \param grid [in]  
+/// \param grid [in]
 /// \return size of grid (# HRUs or #SubBasins)
 //
 int CRavenBMI::GetGridSize(const int grid)
@@ -448,8 +448,8 @@ int CRavenBMI::GetGridSize(const int grid)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns type of grid
-/// \param grid [in]  
-/// \returns 'unstructured', always 
+/// \param grid [in]
+/// \returns 'unstructured', always
 //
 std::string CRavenBMI::GetGridType(const int grid)
 {
@@ -457,7 +457,7 @@ std::string CRavenBMI::GetGridType(const int grid)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns x-coordinates of centroids of subbasins or HRUs
-/// \param grid [in]  
+/// \param grid [in]
 /// \param x [out] - x locations of centroids of subbasins or HRUs
 //
 void CRavenBMI::GetGridX(const int grid, double *x)

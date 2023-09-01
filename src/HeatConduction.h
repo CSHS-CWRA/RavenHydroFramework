@@ -18,7 +18,7 @@ class definitions: CmvHeatConduction
 class CmvHeatConduction : public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  
+
   const CTransportModel *_pTransModel;
   static int             _nHRUs;   //must store locally to retain start-of-timestep water storage
 

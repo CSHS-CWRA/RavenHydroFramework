@@ -13,7 +13,7 @@ Copyright (c) 2008-2021 the Raven Development Team
 /// \param &Options [in] Global model options information
 /// \return calendar (PROLEPTIC_GREGORIAN if calendar not in file)
 //
- int GetCalendarFromNetCDF(const int ncid,int varid_t,const string filename,const optStruct &Options) 
+ int GetCalendarFromNetCDF(const int ncid,int varid_t,const string filename,const optStruct &Options)
 {
    int calendar=CALENDAR_PROLEPTIC_GREGORIAN;
 
@@ -21,10 +21,10 @@ Copyright (c) 2008-2021 the Raven Development Team
   int     retval;
   size_t  att_len;        // length of the attribute's text
   nc_type att_type;      // type of attribute
-  
+
 
   retval = nc_inq_att(ncid,varid_t,"calendar",&att_type,&att_len);
-  if(retval != NC_ENOTATT) 
+  if(retval != NC_ENOTATT)
   {
     HandleNetCDFErrors(retval);
     // if found, read and make sure '\0' is terminating character
@@ -63,12 +63,12 @@ Copyright (c) 2008-2021 the Raven Development Team
  /// \param start_yr [out] julian start year of data
  /// \param time_zone [out] time zone of data
  //
- void GetTimeInfoFromNetCDF(const char *unit_t,int calendar,const double *time,const int ntime,const string filename,double &tstep,double &start_day,int &start_yr,double &time_zone) 
+ void GetTimeInfoFromNetCDF(const char *unit_t,int calendar,const double *time,const int ntime,const string filename,double &tstep,double &start_day,int &start_yr,double &time_zone)
  {
 #ifdef _RVNETCDF_
    // -------------------------------
    // check if we have equal time steps in time data vector
-   // -------------------------------  
+   // -------------------------------
    double delta_t = time[1] - time[0];
    for(int ii=1; ii<ntime-1; ii++)
    {
@@ -103,7 +103,7 @@ Copyright (c) 2008-2021 the Raven Development Team
 
 }
  //////////////////////////////////////////////////////////////////
- /// reads converts Netcdf time since a reference date to a julian date 
+ /// reads converts Netcdf time since a reference date to a julian date
  //
  /// \param unit_t_str [in] netCDF time unit string - includes information about reference date
  /// \param calendar [in] netCDF calendar
@@ -137,9 +137,9 @@ Copyright (c) 2008-2021 the Raven Development Team
  /// \param ntime [in] number of time entries in vector
  /// \param my_time [out] vector of times ( in hours/minutes/days/seconds since reference date), pre-allocated to size ntime
  //
-void GetTimeVectorFromNetCDF(const int ncid,const int varid_t,const int ntime,double *my_time) 
+void GetTimeVectorFromNetCDF(const int ncid,const int varid_t,const int ntime,double *my_time)
 {
-  
+
 #ifdef _RVNETCDF_
   int     retval;
   nc_type type;

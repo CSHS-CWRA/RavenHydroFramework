@@ -44,7 +44,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     cout <<"Parsing Model Ensemble File " << Options.rve_filename <<"..."<<endl;
     cout <<"======================================================"<<endl;
   }
-  
+
   //--Sift through file-----------------------------------------------
   bool end_of_file=pp->Tokenize(s,Len);
   while(!end_of_file)
@@ -67,7 +67,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":End"))                         { code=-4; }//stop reading
     else if(!strcmp(s[0],":IfModeEquals"                )){ code=-5; }
     else if(in_ifmode_statement)                          { code=-6; }
-    else if(!strcmp(s[0],":EndIfModeEquals"             )){ code=-2; }//treat as comment - unused mode 
+    else if(!strcmp(s[0],":EndIfModeEquals"             )){ code=-2; }//treat as comment - unused mode
 
     //-------------------MODEL ENSEMBLE PARAMETERS----------------
     else if(!strcmp(s[0],":OutputDirectoryFormat"))       { code=1;  }
@@ -78,7 +78,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     else if(!strcmp(s[0],":ForcingPerturbation"))         { code=12; }
     else if(!strcmp(s[0],":AssimilatedState"))            { code=13; }
     else if(!strcmp(s[0],":SolutionRunName"))             { code=14; }
-    else if(!strcmp(s[0],":WindowSize"))                  { code=15; } 
+    else if(!strcmp(s[0],":WindowSize"))                  { code=15; }
     else if(!strcmp(s[0],":ObservationErrorModel"))       { code=16; }
     else if(!strcmp(s[0],":EnKFMode"))                    { code=18; }
     else if(!strcmp(s[0],":ExtraRVTFilename"))            { code=19; }
@@ -120,7 +120,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     }
     case(-4):  //----------------------------------------------
     {/*:End*/
-      if(Options.noisy) { cout <<"EOF"<<endl; } ended=true; 
+      if(Options.noisy) { cout <<"EOF"<<endl; } ended=true;
       break;
     }
     case(-5):  //----------------------------------------------
@@ -146,7 +146,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     }
     case(1):  //----------------------------------------------
     {/*:OutputDirectoryFormat [dirname with * for ensemble ID]*/
-      if(Options.noisy) { cout <<"OutputDirectoryFormat"<<endl; } 
+      if(Options.noisy) { cout <<"OutputDirectoryFormat"<<endl; }
       string outdir="";
       for (i=1;i<Len;i++){outdir=outdir+to_string(s[i]); }
       //outdir=CorrectForRelativePath(outdir,Options.rvi_filename); (not for directory?)
@@ -155,13 +155,13 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     }
     case(2):  //----------------------------------------------
     {/*:RunNameFormat [runn name, with * for ensemble number locale] */
-      if(Options.noisy) { cout <<"RunNameFormat"<<endl; } 
+      if(Options.noisy) { cout <<"RunNameFormat"<<endl; }
       pEnsemble->SetRunNames(s[1]); //No spaces!
       break;
     }
     case(3):  //----------------------------------------------
     {/*:EnsembleRVCFormat [solution file names, with * for ensemble number locale] */
-      if(Options.noisy) { cout <<"Ensemble RVC Format"<<endl; } 
+      if(Options.noisy) { cout <<"Ensemble RVC Format"<<endl; }
       pEnsemble->SetSolutionFiles(s[1]); //No spaces!
       break;
     }
@@ -184,9 +184,9 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           ExitGracefullyIf(Len<7,
             "Parse Ensemble File: incorrect number of terms in ParameterDistributions command.",BAD_DATA);
           param_dist *dist=new param_dist;
-          
+
           dist->param_name=s[0];
-          
+
           class_type ptype;
           if     (!strcmp(s[1],"SOIL"      )) { ptype=CLASS_SOIL; }
           else if(!strcmp(s[1],"VEGETATION")) { ptype=CLASS_VEGETATION; }
@@ -239,13 +239,13 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       int width=DOESNT_EXIST;
       string tmp = CStateVariable::SVStringBreak(s[2], width); //using other routine to grab width
       diag_type diag=StringToDiagnostic(tmp);
-      
+
       if (diag==DIAG_UNRECOGNIZED) {
         ExitGracefully("ParseEnsembleFile::unknown diagnostic in :ObjectiveFunction command.",BAD_DATA_WARN);
       }
       string per_string="ALL";
       if (Len>=4){per_string=to_string(s[3]); }
-      
+
       //if diagnostic doesn't exist,
       //CDiagnostic *pDiag=CDiagnostic(diag);
       //pModel->AddDiagnostic(pDiag);
@@ -263,7 +263,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       //:ForcingPerturbation RAINFALL DIST_GAMMA [dist param1] [dist param2] [adj_type] {HRU_Group}
       if(Options.noisy) { cout <<":ForcingPerturbation"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
-        
+
         forcing_type ftyp=GetForcingTypeFromString(s[1]);
         disttype distrib=DIST_NORMAL;
         bool fix=false;
@@ -338,7 +338,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
           }
           kk=pModel->GetHRUGroup(s[2])->GetGlobalIndex();
         }
-        
+
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
         pEnKF->AddAssimilationState(sv,lay,kk);
       }
@@ -355,7 +355,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         string runname=Options.run_name; //default
         if (Len>1){runname=to_string(s[1]); }
         if (Options.warm_ensemble_run!=""){ runname= Options.warm_ensemble_run;} //overwritten if handed in via command line
-        pEnKF->SetWarmRunname(runname); 
+        pEnKF->SetWarmRunname(runname);
       }
       else {
         WriteWarning(":SolutionRunName command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
@@ -367,7 +367,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       if(Options.noisy) { cout <<":WindowSize"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
-        pEnKF->SetWindowSize(s_to_i(s[1])); 
+        pEnKF->SetWindowSize(s_to_i(s[1]));
       }
       else {
         WriteWarning(":WindowSize command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
@@ -379,7 +379,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       //:ObservationErrorModel STREAMFLOW DIST_NORMAL 1 0.07 MULTIPLICATIVE
       if(Options.noisy) { cout <<":ObservationErrorModel"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
-        
+
         sv_type sv;
         int lay;
         sv=CStateVariable::StringToSVType(s[1],lay,true);
@@ -440,14 +440,14 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         else if (!strcmp(s[1],"ENKF_OPEN_LOOP"    )){mode=ENKF_OPEN_LOOP;}
         else if (!strcmp(s[1],"ENKF_FORECAST"     )){mode=ENKF_FORECAST;}
         else if (!strcmp(s[1],"ENKF_OPEN_FORECAST")){mode=ENKF_OPEN_FORECAST;}
-   
+
         else if (!strcmp(s[1],"ENKF_CLOSEDLOOP"   )){mode=ENKF_CLOSED_LOOP;}
         else if (!strcmp(s[1],"ENKF_OPENLOOP"     )){mode=ENKF_OPEN_LOOP;}
         else {
           cout<<s[1]<<endl;
           ExitGracefully("ParseEnsembleFile: EnKFMode-  invalid mode specified",BAD_DATA_WARN);
         }
-        pEnKF->SetEnKFMode(mode); 
+        pEnKF->SetEnKFMode(mode);
       }
       else {
         WriteWarning(":EnKFMode command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
@@ -504,7 +504,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         else if(!strcmp(s[0],":WrittenBy"   )) { if(Options.noisy) { cout<<"WrittenBy"  <<endl; } }//do nothing
         else if(!strcmp(s[0],":CreationDate")) { if(Options.noisy) { cout<<"CreationDate"<<endl; } }//do nothing
         else if(!strcmp(s[0],":SourceFile"  )) { if(Options.noisy) { cout<<"SourceFile"  <<endl; } }//do nothing
-        else 
+        else
         {
           string warn ="IGNORING unrecognized command: " + string(s[0])+ " in .rve file";
           WriteWarning(warn,Options.noisy);
