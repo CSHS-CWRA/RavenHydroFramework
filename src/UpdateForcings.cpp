@@ -1093,7 +1093,7 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
     }
     return snowfrac;
   }
-  else if (method == RAINSNOW_WANG) 
+  else if (method == RAINSNOW_WANG)
   {
     //from Wang et al., 2019. A wet-bulb temperature-based rain-snow partitioning scheme improves snowpack prediction over the drier western United States. Geophysical Research Letters, 46(23), pp.13825-13835.
 
@@ -1104,11 +1104,11 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
     double Twet=GetWetBulbTemperature(P,rel_hum,Ta);
     return  1.0/(1.0+6.99e-5*exp(2.0*(Twet+3.97)));
   }
-  else if (method == RAINSNOW_SNTHERM89) 
+  else if (method == RAINSNOW_SNTHERM89)
   {
     //from Jordan, R.: A one-dimensional temperature model for a snow cover: Technical documentation for SNTHERM.89., 1991. (as used in Noah-MP-3.6)
     double Ta=F->temp_ave;
-    
+
     if      (Ta>2.5){return 0.0;}
     else if (Ta>2.0){return 0.6;}
     else if (Ta>0.5){return 1.0-(0.4/1.5)*(Ta-0.5); }

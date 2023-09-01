@@ -458,13 +458,13 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
 
     double stor    =state_vars[iFrom[0]];
     double max_stor=pHRU->GetSoilCapacity(0);
-    
+
     double b   =pHRU->GetSurfaceProps()->PDM_b;
     double gp  =pHRU->GetSurfaceProps()->HYMOD2_G;    // [0..1] ET lower resistance parameter
     double Kmax=pHRU->GetSurfaceProps()->HYMOD2_Kmax; // [0..1] ET resistance parameter
-    double ce  =pHRU->GetSurfaceProps()->HYMOD2_exp;  // [-] ET exponent parameter 
+    double ce  =pHRU->GetSurfaceProps()->HYMOD2_exp;  // [-] ET exponent parameter
 
-    double c_max =(b+1)*max_stor; 
+    double c_max =(b+1)*max_stor;
     double c_star=c_max*(1.0-pow(1.0-(stor/max_stor),1.0/(b+1.0)));
 
     double K=Kmax*(gp+(1-gp)*pow(c_star/c_max,ce));

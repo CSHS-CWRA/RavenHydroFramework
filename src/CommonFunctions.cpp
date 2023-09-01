@@ -915,7 +915,7 @@ double GetPsychrometricConstant  (const double &P,const double &LH_vapor)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns wet bulb temperature, calculated using newton Raphson method 
+/// \brief returns wet bulb temperature, calculated using newton Raphson method
 //
 /// \param &P [in] Atmospheric pressure [kPa]
 /// \param &Ta [in] air temperature
@@ -929,7 +929,7 @@ double GetWetBulbTemperature  (const double &P,const double &Ta,const double &re
   double e_a     =e_sat*rel_hum;
 
   double change=10;
-  double tolerance=0.025; 
+  double tolerance=0.025;
   double Twet=Ta; //initial guess
   double F,dF,e_wet;
 

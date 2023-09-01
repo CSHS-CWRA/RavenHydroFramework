@@ -448,7 +448,7 @@ enum rainsnow_method
   RAINSNOW_HSPF,         ///< HSPF approach - variable transition temperature
   RAINSNOW_UBCWM,        ///< Linear variation between two temperatures
   RAINSNOW_HARDER,       ///< Harder & Pomeroy (2013) method ported over from CRHM (Pomeroy et al 2007)
-  RAINSNOW_WANG,         ///< Wang et al. (2019) sigmoid function 
+  RAINSNOW_WANG,         ///< Wang et al. (2019) sigmoid function
   RAINSNOW_SNTHERM89,    ///< Jordan et al (1991) fixed function used in SNTHERM.89 model and Noah-MP3.6
   RAINSNOW_THRESHOLD
 };
