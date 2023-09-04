@@ -94,7 +94,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     else if  (!strcmp(s[0],":IntersectHRUGroups"       )){code=16; }
     else if  (!strcmp(s[0],":IntersectSubBasinGroups"  )){code=17; }
     else if  (!strcmp(s[0],":MergeHRUGroups"           )){code=18; }
-    else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=19; }  
+    else if  (!strcmp(s[0],":MergeSubBasinGroups"      )){code=19; }
     else if  (!strcmp(s[0],":GaugedSubBasinGroup"      )){code=20; }
 
     switch(code)
@@ -751,7 +751,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
       :PopulateSubBasinGroup NotRock With SUBBASINS NOTWITHIN RockSBGroup
       :PopulateSubBasinGroup UpstreamOfBasin2 With SUBBASINS UPSTREAM_OF 2
       :PopulateSubBasinGroup DownstreamOfBasin35 With SUBBASINS DOWNSTREAM_OF 35
-      
+
       // since calls are additive, can also build up the same group with successive calls and WITHIN condtion
       :PopulateSubBasinGroup BigSubgroup With SUBBASINS WITHIN SmallGroup1
       :PopulateSubBasinGroup BigSubgroup With SUBBASINS WITHIN SmallGroup2
@@ -1024,7 +1024,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
     { /*
         :GaugedSubBasinGroup {SubBasinGroup}
         e.g.,
-        :GaugedSubBasinGroup KeyGauges 
+        :GaugedSubBasinGroup KeyGauges
       */
         if (Options.noisy) { cout << "   GaugedSubBasinGroup..." << endl; }
 
@@ -1044,7 +1044,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
                 pModel->GetSubBasin(p)->SetGauged(true);
             }
             else {
-                pModel->GetSubBasin(p)->SetGauged(false); 
+                pModel->GetSubBasin(p)->SetGauged(false);
             }
         }
 
@@ -1338,7 +1338,7 @@ CReservoir *ReservoirParse(CParser *p,string name,const CModel *pModel,int &HRUI
         string warn=":LakeArea for lake-like reservoir in subbasin "+to_string(SBID)+" seems small. Note LakeArea should be in units of m2, not km2";
         WriteWarning(warn,Options.noisy);
       }
-      
+
       type=CURVE_LAKE;
     }
     else if(!strcmp(s[0],":AbsoluteCrestHeight"))

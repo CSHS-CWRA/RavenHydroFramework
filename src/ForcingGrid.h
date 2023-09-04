@@ -41,7 +41,7 @@ private:/*------------------------------------------------------*/
 
   int          _nHydroUnits;                 ///< number of HRUs (important for weights)
 
-  int          _dim_order;                   ///< code (1-6) for different dimension orders  
+  int          _dim_order;                   ///< code (1-6) for different dimension orders
   //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
   //                                         ///< (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
 
@@ -57,13 +57,13 @@ private:/*------------------------------------------------------*/
   int          _steps_per_day;               ///< number of data intervals per day (pre-calculated for speed) =1.0/_interval
   bool         _is_derived;                  ///< true if forcing grid is derived from input forcings (e.g. t_ave from t_min and t_max)
   ///                                        ///< false if forcing grid is truely read from NetCDF file (e.g. t_min or t_max)
-  
+
   double     **_aVal;                        ///< Array of magnitudes of pulses (variable units)
   ///                                        ///< [size _ChunkSize, _nNonZeroWeightedGridCells]
   ///                                        ///< time steps are in model resolution (means original input data are
   ///                                        ///< already aggregated to match model resolution)
 
-  double     **_GridWeight;                  ///< Sparse array of weights for each HRU for a list of cells    
+  double     **_GridWeight;                  ///< Sparse array of weights for each HRU for a list of cells
   //                                         ///< Dimensions : [_nHydroUnits][_nWeights[k]] (variable)
   //                                         ///< _GridWeight[k][i] is fraction of forcing for HRU k is from grid cell _GridWtCellIDs[k][i]
   //                                         ///< where grid cell index l=_GridWtCellIDs[k][i] is derived by l = j * dim_cols + i
@@ -75,11 +75,11 @@ private:/*------------------------------------------------------*/
   int         *_CellIDToIdx;                 ///< local cell index ic (ranging from 0 to _nNonZeroWeightedGridCells-1)) corresponding to cell ID [size: ncells]
   int         *_nWeights;                    ///< number of weights for each HRU k (size=_nHydroUnits) (each entry greater or equal to 1)
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
-  //                                         ///< This is effectively the number of data points which is stored from the original data. 
+  //                                         ///< This is effectively the number of data points which is stored from the original data.
   int         *_IdxNonZeroGridCells;         ///< indexes of non-zero weighted grid cells [size = _nNonZeroWeightedGridCells]
   int          _WinLength[3];                ///< length of data grid window in each dimension (x,y,t - defaults to _GridDims)
   int          _WinStart [3];                ///< data grid window starting point (x,y,t - defaults to 0, 0, chunksize)
-  
+
   int          _nPulses;                     ///< number of pulses (total duration=(nPulses-1)*_interval)
   bool         _pulse;                       ///< flag determining whether this is a pulse-based or
   ///                                        ///< piecewise-linear time series
@@ -193,10 +193,10 @@ public:/*------------------------------------------------------*/
   void         SetAsPeriodEnding           ();                                      ///< set _period_ending
   void         SetIs3D(                    const bool   is3D);                      ///< set _is3D                      of class
   void         SetIdxNonZeroGridCells(     const int    nHydroUnits,
-                                           const int    nGridCells, const optStruct &Options); 
+                                           const int    nGridCells, const optStruct &Options);
                                                                                     ///< set _IdxNonZeroGridCells       of class
   void         CalculateChunkSize         (const optStruct &Options);
-                                                                                    
+
   void         SetnHydroUnits(             const int    nHydroUnits);               ///< set _nHydroUnits               of class
   void         SetChunkSize(               const int    ChunkSize);                 ///< set _ChunkSize                 of class
   void         SetInterval(                const double interval);                  ///< set _interval                  of class
@@ -225,7 +225,7 @@ public:/*------------------------------------------------------*/
   int          GetCols()                                          const; ///< Number of columns (= 1st dimension of gridded data)
   int          GetRows()                                          const; ///< Number of rows    (= 2nd dimension of gridded data)
   int          GetNumValues()                                     const; ///< Number of pulses  (= 3rd dimension of gridded data)
-  int          GetNumberNonZeroGridCells()                        const; ///< Number of non-zero weighted grid cells 
+  int          GetNumberNonZeroGridCells()                        const; ///< Number of non-zero weighted grid cells
   int          GetChunkSize()                                     const; ///< Current chunk size
   int          GetnHydroUnits()                                   const; ///< get number of HRUs _nHydroUnits
   forcing_type GetForcingType()                                   const; ///< Type of forcing data, e.g. PRECIP, TEMP
@@ -253,5 +253,3 @@ public:/*------------------------------------------------------*/
 };
 
 #endif
-
-

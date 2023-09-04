@@ -38,12 +38,12 @@ int main(int argc, char* argv[])
   clock_t     t0, t1;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
-  
+
   Options.version="3.7.1";
-#ifdef _NETCDF_ 
+#ifdef _NETCDF_
   Options.version+=" w/ netCDF";
 #endif
-  
+
   ProcessExecutableArguments(argc,argv,Options);
   PrepareOutputdirectory(Options);
 
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
   WARNINGS.close();
-  
+
   t0=clock();
 
   CStateVariable::Initialize();
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
-   
+
   CheckForErrorWarnings(true);
 
   if (!Options.silent){
@@ -94,23 +94,23 @@ int main(int argc, char* argv[])
   CheckForErrorWarnings(false);
 
   nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
-    
+
   for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
   {
-    
+
     pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
     PrepareOutputdirectory(Options); //adds new output folders, if needed
     pModel->WriteOutputFileHeaders(Options);
-      
+
     if(!Options.silent) {
       cout <<endl<<"======================================================"<<endl;
       if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<" "; g_suppress_warnings=true;}
       cout <<"Simulation Start..."<<endl;
     }
-    
+
     double t_start=0.0;
     t_start=pModel->GetEnsemble()->GetStartTime(e);
-      
+
     //Write initial conditions-------------------------------------
     JulianConvert(t_start,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
     pModel->RecalculateHRUDerivedParams(Options,tt);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     //Solve water/energy balance over time--------------------------------
     t1=clock();
     int step=0;
-      
+
     for(t=t_start; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
     {
       pModel->UpdateTransientParams      (Options,tt);
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 
       pModel->WriteMinorOutput           (Options,tt);
       pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
-      pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!! 
+      pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!!
       pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
       if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
     pModel->WriteMajorOutput  (Options,tt,"solution",true);
     pModel->CloseOutputStreams();
 
-    if(!Options.silent) 
+    if(!Options.silent)
     {
       cout <<"======================================================"<<endl;
       cout <<"...Raven Simulation Complete: "<<Options.run_name<<endl;
@@ -217,8 +217,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     if (i!=argc){
       word=to_string(argv[i]);
     }
-    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || 
-        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") || 
+    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") ||
+        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") ||
         (word=="-we")|| (word=="-tt")|| (i==argc))
     {
       if      (mode==0){
@@ -255,7 +255,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-n"){Options.noisy=true;  mode=10;}
       else if (word=="-r"){mode=6; }
       else if (word=="-e"){mode=7; }
-      else if (word=="-g"){mode=8; }	  
+      else if (word=="-g"){mode=8; }
       else if (word=="-l"){mode=9; }
       else if (word=="-m"){mode=11;}
       else if (word=="-tt"){mode=12; }
@@ -282,7 +282,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   // make sure that output dir has trailing '/' if not empty
   if ((Options.output_dir.compare("") != 0) && (Options.output_dir.back()!='/')){ Options.output_dir=Options.output_dir+"/"; }
 
-  //convert to days 
+  //convert to days
   Options.forecast_shift/=HR_PER_DAY;
 
   char cCurrentPath[FILENAME_MAX];
@@ -409,7 +409,7 @@ void CheckForErrorWarnings(bool quiet)
 //
 bool CheckForStopfile(const int step, const time_struct &tt)
 {
-  if(step%100!=0){ return false; } //only check every 100th timestep 
+  if(step%100!=0){ return false; } //only check every 100th timestep
   ifstream STOP;
   STOP.open("stop");
   if (STOP.fail()){STOP.close(); return false;}
@@ -423,10 +423,10 @@ bool CheckForStopfile(const int step, const time_struct &tt)
   }
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Calls external script to be run 
+/// \brief Calls external script to be run
 /// idea/code from Kai Tsuruta, PCIC
 //
-void CallExternalScript(const optStruct &Options,const time_struct &tt) 
+void CallExternalScript(const optStruct &Options,const time_struct &tt)
 {
   if(Options.external_script!="") {
     string script=Options.external_script;

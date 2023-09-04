@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace bmixx 
+namespace bmixx
 {
   const int BMI_SUCCESS = 0;
   const int BMI_FAILURE = 1;

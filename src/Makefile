@@ -33,7 +33,7 @@ LDLIBS   := -L/usr/local -lnetcdf   # if netcdf is installed give first path "-L
 all: $(appname)
 
 $(appname): $(objects)
-	$(CXX) $(CXXFLAGS) -o $(appname) $(objects) $(LDLIBS) $(LDFLAGS) 
+	$(CXX) $(CXXFLAGS) -o $(appname) $(objects) $(LDLIBS) $(LDFLAGS)
 
 depend: .depend
 
@@ -48,4 +48,3 @@ dist-clean: clean
 	rm -f *~ .depend
 
 include .depend
-

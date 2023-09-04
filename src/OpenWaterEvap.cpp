@@ -20,9 +20,9 @@ CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype, const int i_from)
 
   if(_type==OPEN_WATER_UWFS) {
     CHydroProcessABC::DynamicSpecifyConnections(3);
-    iFrom[0]=i_from;                          
+    iFrom[0]=i_from;
     iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);                          //rates[0]: PONDED_WATER/DEPRESSION->ATMOSPHERE
-    iFrom[1]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);  iTo[1]=iFrom[1];   //rates[1]: 
+    iFrom[1]=pModel->GetStateVarIndex(MIN_DEP_DEFICIT);  iTo[1]=iFrom[1];   //rates[1]:
     iFrom[2]=pModel->GetStateVarIndex(AET);              iTo[2]=iFrom[2];   //rates[2]: AET->AET
   }
   else { //Default
@@ -119,7 +119,7 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
     if(pHRU->IsLinkedToReservoir()) { return; }//reservoir-linked HRUs handle ET via reservoir MB
 
     if (!Options.suppressCompetitiveET) {
-        //competitive ET - reduce PET by AET 
+        //competitive ET - reduce PET by AET
         OWPET -= (state_vars[pModel->GetStateVarIndex(AET)] / Options.timestep);
         OWPET = max(OWPET, 0.0);
     }
@@ -141,7 +141,7 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
       double Dmin = state_vars[iFrom[1]];        //=Dmin [mm] if positive,=-Pf if negative
 
       rates[0] = pHRU->GetSurfaceProps()->max_dep_area_frac * pHRU->GetSurfaceProps()->ow_PET_corr * OWPET;//DEPRESSION->ATMOS
-      if (state_vars[iFrom[1]] > 0.0) // if Dmin is positive changes in deficit will be sames as rate [0] 
+      if (state_vars[iFrom[1]] > 0.0) // if Dmin is positive changes in deficit will be sames as rate [0]
       {
         rates[1] = rates[0];
       }
@@ -159,7 +159,7 @@ void CmvOWEvaporation::GetRatesOfChange(const double* state_vars,
 
 //////////////////////////////////////////////////////////////////
 /// \brief Corrects rates of change (*rates) returned from RatesOfChange function
-/// 
+///
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -265,7 +265,7 @@ void CmvLakeEvaporation::GetRatesOfChange(const double                  *state_v
   if ((!pHRU->IsLake()) && (pModel->GetLakeStorageIndex()!=iFrom[0])){
     return;
   } //only works for lakes OR special storage units designated using :LakeStorage (the latter is to support HBV)
-  
+
   if(pHRU->IsLinkedToReservoir()) { return; }//reservoir-linked HRUs handle ET via reservoir MB
 
   double OWPET;

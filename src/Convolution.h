@@ -21,7 +21,7 @@ enum convolution_type
   CONVOL_TRIANGLE,      ///< Triangular UH
   CONVOL_GR4J_1,        ///< GR4J UH type 1
   CONVOL_GR4J_2,        ///< GR4J UH type 2
-  CONVOL_GAMMA,         ///< Gamma distribution unit hydrograph - uses params alpha_Gamma, beta_Gamma 
+  CONVOL_GAMMA,         ///< Gamma distribution unit hydrograph - uses params alpha_Gamma, beta_Gamma
   CONVOL_GAMMA_2        ///< Gamma distribution unit hydrograph 2 - uses params alpha_Gamma2, beta_Gamma2
 };
 

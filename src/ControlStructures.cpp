@@ -8,9 +8,9 @@
 /// \brief control structure constructor, creates empty featureless outflow control structure
 /// \param name [in] structure name
 /// \param SBID [in] subbasin ID of reservoir
-/// \param downID [in] downstream subbasin 
+/// \param downID [in] downstream subbasin
 /// \notes assumes SBID basin has valid reservoir
-// 
+//
 CControlStructure::CControlStructure(string name, const long SBID,const long downID) {
   _name=name;
   _SBID=SBID;
@@ -21,15 +21,15 @@ CControlStructure::CControlStructure(string name, const long SBID,const long dow
 }
 //////////////////////////////////////////////////////////////////
 /// \brief control structure destructor
-// 
-CControlStructure::~CControlStructure() 
+//
+CControlStructure::~CControlStructure()
 {
   delete [] _aRegimes;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns control structure name
 /// \returns name of control structure
-// 
+//
 string CControlStructure::GetName         () const {return _name;}
 
 
@@ -74,9 +74,9 @@ void CControlStructure::AddRegime(COutflowRegime* pRegime)
 /// \returns current regime name
 //
 string CControlStructure::GetCurrentRegimeName(const time_struct &tt) const {
-  for (int i = 0; i < _nRegimes; i++) 
+  for (int i = 0; i < _nRegimes; i++)
   {
-    if (_aRegimes[i]->AreConditionsMet(tt)) 
+    if (_aRegimes[i]->AreConditionsMet(tt))
     {
       return _aRegimes[i]->GetName();
     }
@@ -94,13 +94,13 @@ string CControlStructure::GetCurrentRegimeName(const time_struct &tt) const {
 /// \param tt      [in] - time structure corresponding to END of current timestep
 /// \returns outflow from control structure at end of timestep
 //
-double CControlStructure::GetOutflow(const double& stage, const double& stage_start, const double& Q_start, const time_struct& tt) const 
+double CControlStructure::GetOutflow(const double& stage, const double& stage_start, const double& Q_start, const time_struct& tt) const
 {
-  for (int i = 0; i < _nRegimes; i++) 
+  for (int i = 0; i < _nRegimes; i++)
   {
-    if (_aRegimes[i]->AreConditionsMet(tt)) 
+    if (_aRegimes[i]->AreConditionsMet(tt))
     {
-      return _aRegimes[i]->GetOutflow(stage,stage_start,Q_start,_target_SBID,_dRefElev); 
+      return _aRegimes[i]->GetOutflow(stage,stage_start,Q_start,_target_SBID,_dRefElev);
     }
   }
   return 0.0; //no regime active, no flow
@@ -109,8 +109,8 @@ double CControlStructure::GetOutflow(const double& stage, const double& stage_st
 //////////////////////////////////////////////////////////////////
 /// \brief outflow regime constructor, creates empty featureless outflow regime
 /// \param name [in] structure name
-/// \param pMod  [in] pointer to model 
-// 
+/// \param pMod  [in] pointer to model
+//
 COutflowRegime::COutflowRegime(const CModel *pMod, const string name)
 {
   _pModel=pMod;
@@ -125,7 +125,7 @@ COutflowRegime::COutflowRegime(const CModel *pMod, const string name)
 
 //////////////////////////////////////////////////////////////////
 /// \brief outflow regime destructor
-// 
+//
 COutflowRegime::~COutflowRegime()
 {
   delete [] _pConstraints;
@@ -135,7 +135,7 @@ COutflowRegime::~COutflowRegime()
 //////////////////////////////////////////////////////////////////
 /// \brief get regime name
 /// \returns regime name
-// 
+//
 string COutflowRegime::GetName() const
 {
   return _name;
@@ -143,21 +143,21 @@ string COutflowRegime::GetName() const
 //////////////////////////////////////////////////////////////////
 /// \brief get stage discharge relation
 /// \returns stage discharge relation
-// 
+//
 const CStageDischargeRelationABC* COutflowRegime::GetCurve() const {
   return _pCurve;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief checks all conditions and constraints, issues errors and warnings as needed
-// 
-void    COutflowRegime::CheckConditionsAndConstraints() const 
+//
+void    COutflowRegime::CheckConditionsAndConstraints() const
 {
   string warn;
   for (int i = 0; i < _nConditions; i++) {
 
   }
   for (int j = 0; j < _nConstraints; j++) {
-    string      var=_pConstraints[j]->variable; 
+    string      var=_pConstraints[j]->variable;
     if ((var=="FLOW") && (_pConstraints[j]->compare_val1<=0)){
         WriteWarning("COutflowRegime::CheckConditionsAndConstraints: FLOW Constraints must be greater than zero",false);
     }
@@ -165,13 +165,13 @@ void    COutflowRegime::CheckConditionsAndConstraints() const
         warn="COutflowRegime::CheckConditionsAndConstraints: unrecognized constraint "+var;
         ExitGracefully(warn.c_str(),BAD_DATA_WARN);
     }
-  }  
+  }
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief specifies active stage discharge relation for outflow regime
 /// \param pCurv [in] pointer to valid stage discharge relation
-// 
+//
 void    COutflowRegime::SetCurve(CStageDischargeRelationABC *pCurv)
 {
   ExitGracefullyIf(pCurv==NULL,"COutflowRegime::SetCurve: null curve",BAD_DATA_WARN);
@@ -181,19 +181,19 @@ void    COutflowRegime::SetCurve(CStageDischargeRelationABC *pCurv)
 //////////////////////////////////////////////////////////////////
 /// \brief adds regime condition to outflow regime
 /// \param pCond [in] pointer to valid regime condition
-// 
-void    COutflowRegime::AddRegimeCondition(RegimeCondition* pCond) 
+//
+void    COutflowRegime::AddRegimeCondition(RegimeCondition* pCond)
 {
   if (!DynArrayAppend((void**&)(_pConditions),(void*)(pCond),_nConditions)){
     ExitGracefully("COutflowRegime::AddRegimeCondition: trying to add NULL condition",BAD_DATA);
-  }  
+  }
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief adds regime constraint to outflow regime
 /// \param pCond [in] pointer to valid regime constraint
-// 
-void    COutflowRegime::AddRegimeConstraint(RegimeConstraint* pCond) 
+//
+void    COutflowRegime::AddRegimeConstraint(RegimeConstraint* pCond)
 {
   if (!DynArrayAppend((void**&)(_pConstraints),(void*)(pCond),_nConstraints)){
     ExitGracefully("COutflowRegime::AddRegimeConstraint: trying to add NULL constraint",BAD_DATA);
@@ -207,8 +207,8 @@ void    COutflowRegime::AddRegimeConstraint(RegimeConstraint* pCond)
 /// \param v1 [in] comparator value
 /// \param v2 [in] secondary comparator value (only used for COMPARE_BETWEEN)
 /// \returns true if comparison evaluates to true, false otherwise
-// 
-bool EvaluateCondition(const comparison cond, const double& v, const double& v1, const double& v2) 
+//
+bool EvaluateCondition(const comparison cond, const double& v, const double& v1, const double& v2)
 {
   if      (cond==COMPARE_IS_EQUAL   ){return (v==v1); }
   else if (cond==COMPARE_NOT_EQUAL  ){return (v!=v1); }
@@ -222,10 +222,10 @@ bool EvaluateCondition(const comparison cond, const double& v, const double& v1,
 /// \brief returns true if regime conditions are met
 /// \param tt [in] time structure corresponding to END of timestep
 /// \returns true if regime conditions are met
-// 
-bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const 
+//
+bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
 {
-  for (int i = 0; i < _nConditions; i++) 
+  for (int i = 0; i < _nConditions; i++)
   {
     comparison comp=_pConditions[i]->compare;
     long SBID=_pConditions[i]->basinID;
@@ -242,9 +242,9 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
       }
       else {
         if (!(
-             ((tt.julian_day >= v1) && (tt.julian_day <= v2)) || //regular between  
-             (((v2 < v1) && ((tt.julian_day <= v2) || (tt.julian_day >= v1)))) //wrap between 
-           )) 
+             ((tt.julian_day >= v1) && (tt.julian_day <= v2)) || //regular between
+             (((v2 < v1) && ((tt.julian_day <= v2) || (tt.julian_day >= v1)))) //wrap between
+           ))
         {
           return false;
         }
@@ -285,8 +285,8 @@ bool      COutflowRegime::AreConditionsMet(const time_struct& tt) const
 /// \param h [in] stage, in [m]
 /// \param Q_start [in] outflow at start of timestep [m3/s]
 /// \returns outflow, in [m3/s]
-// 
-double          COutflowRegime::GetOutflow(const double &h, const double &h_start, const double &Q_start, const long &target_SBID, const double &drefelev) const 
+//
+double          COutflowRegime::GetOutflow(const double &h, const double &h_start, const double &Q_start, const long &target_SBID, const double &drefelev) const
 {
   double tstep    = _pModel->GetOptStruct()->timestep;
   double rivdepth = _pModel->GetSubBasinByID(target_SBID)->GetRiverDepth();
@@ -295,15 +295,15 @@ double          COutflowRegime::GetOutflow(const double &h, const double &h_star
   double dQdt = (Q-Q_start)/tstep;
 
   //apply constraints here
-  for (int j = _nConstraints-1; j >=0; j--) //priority from first to last 
+  for (int j = _nConstraints-1; j >=0; j--) //priority from first to last
   {
-    string      var=_pConstraints[j]->variable; 
+    string      var=_pConstraints[j]->variable;
     comparison comp=_pConstraints[j]->compare_typ;
     double       v1=_pConstraints[j]->compare_val1;
     double       v2=_pConstraints[j]->compare_val2;
 
     if      (var== "FLOW") {
-      
+
       if      (comp == COMPARE_GREATERTHAN) {if (Q<=v1){Q=v1;}}
       else if (comp == COMPARE_LESSTHAN   ) {if (Q>=v1){Q=v1;}}
       else if (comp == COMPARE_BETWEEN    ) {if (Q<=v1){Q=v1;} if (Q>=v2){Q=v2;}}

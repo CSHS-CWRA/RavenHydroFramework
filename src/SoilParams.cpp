@@ -68,5 +68,3 @@ double CSoilClass::CalcSoilPotential( const double &sat_liq,
 
   return psi;
 }
-
-

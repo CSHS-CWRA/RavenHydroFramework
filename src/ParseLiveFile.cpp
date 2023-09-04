@@ -10,7 +10,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Live Communications File
-/// \details model.rvl: input file that is read every N time steps 
+/// \details model.rvl: input file that is read every N time steps
 ///
 /// \param *&pModel [out] Reference to model object
 /// \param &Options [out] Global model options information
@@ -210,7 +210,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     { /*:SetReservoirFlow [SBID] [value]*/
       pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
       //pSB->GetReservoir()->OverrideFlow(s_to_d(s[2]));
-      //JRC: add CReservoir member _overrideQ which takes priority over override Q time series 
+      //JRC: add CReservoir member _overrideQ which takes priority over override Q time series
       ExitGracefully("ParseLiveFile:SetReservoirFlow",STUB);
       break;
     }

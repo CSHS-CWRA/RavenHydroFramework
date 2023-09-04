@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef UNITTESTING_H
 #define UNITTESTING_H
@@ -23,4 +23,5 @@ void TestEnthalpyTempConvert();
 void TestConvectionSolution();
 void ADRCumDistTest();
 void TestGammaSampling();
+void TestWetBulbTemps();
 #endif

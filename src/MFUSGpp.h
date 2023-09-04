@@ -4,10 +4,10 @@
 using namespace std;
 
 /* MODFLOW-USG Basic Model Interface (BMI) Fortran-imported functions
-* 
+*
 * All non-PBJ functions/routines are defined in Extern.f90
 * PBJ routines are defined in rvn2pbju1.f90
-* 
+*
 * If you're ever getting a unresolved externals error, one thing to check
 * is if you've declared a function with CAPITALS. The exported Fortran
 * functions/subroutines are always lowercase.
@@ -15,7 +15,7 @@ using namespace std;
 namespace MFUSG
 {
 	// Function declarations
-	extern "C" 
+	extern "C"
 	{
 		// Routines to run MFUSG
     void   init_mfusg            (char *fname, int *fnlen, int *export_nodes, int *export_nlay,

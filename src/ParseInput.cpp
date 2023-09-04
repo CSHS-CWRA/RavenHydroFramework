@@ -53,16 +53,16 @@ void AddNetCDFAttribute        (optStruct &Options,const string att,const string
 void FromToErrorCheck          (string cmd,string sFrom,string sTo,sv_type tFrom,sv_type tTo);
 
 evap_method    ParseEvapMethod   (const string s);
-potmelt_method ParsePotMeltMethod(const string s); 
+potmelt_method ParsePotMeltMethod(const string s);
 
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the .rvc and other initialization file, called by main
 /// must be called AFTER model initialization
 ///
-bool ParseInitialConditions(CModel*& pModel, const optStruct& Options) 
+bool ParseInitialConditions(CModel*& pModel, const optStruct& Options)
 {
   if ((pModel->GetEnsemble()->GetType()==ENSEMBLE_ENKF) && (g_current_e==DOESNT_EXIST)){return true;}//waits until UpdateModel() is called
-  
+
   if (!ParseInitialConditionsFile(pModel,Options)){
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);return false;
   }
@@ -72,7 +72,7 @@ bool ParseInitialConditions(CModel*& pModel, const optStruct& Options)
   if(!ParseNetCDFFlowStateFile(pModel,Options)) {
     ExitGracefully("Cannot find or read NetCDF flow state file",BAD_DATA); return false;
   }
-  
+
   return true;
 }
 //////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ bool ParseInitialConditions(CModel*& pModel, const optStruct& Options)
 /// \details This method provides an interface by which the main method can parse input files\n
 ///   Files used include:\n
 ///   - \b [modelname].rvi: input file that determines general model settings, nHRUs, timesteps,etc
-///   - \b [modelname].rvp: default properties for LULT & soil type 
+///   - \b [modelname].rvp: default properties for LULT & soil type
 ///   - \b [modelname].rvh: HRU/basin property files
 ///   - \b [modelname].rvt: time series precip/temp input
 ///   - \b [modelname].rvc: initial conditions file
@@ -138,7 +138,7 @@ bool ParseInputFiles (CModel      *&pModel,
   for(int pp=0;pp<pModel->GetNumSubBasins(); pp++) {
     if(pModel->GetSubBasin(pp)->GetReservoir()!=NULL) { Options.write_reservoir=true; }
   }
-  
+
   // Time series input file (.rvt)
   //--------------------------------------------------------------------------------
   if (!ParseTimeSeriesFile       (pModel,Options)){
@@ -152,7 +152,7 @@ bool ParseInputFiles (CModel      *&pModel,
       ExitGracefully("Cannot find or read .rve file",BAD_DATA);return false;
     }
   }
-  
+
   if (!Options.silent){
     cout <<"...model input successfully parsed"             <<endl;
     cout <<endl;
@@ -162,7 +162,7 @@ bool ParseInputFiles (CModel      *&pModel,
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief This local method (called by ParseInputFiles) reads an input .rvi file and generates 
+/// \brief This local method (called by ParseInputFiles) reads an input .rvi file and generates
 /// a new model with all options and processes created.
 ///
 /// \remark Custom output must be AFTER processes are specified.
@@ -231,7 +231,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.sol_method              =ORDERED_SERIES;
   Options.convergence_crit        =0.01;
   Options.max_iterations          =30;
-  Options.ensemble                =ENSEMBLE_NONE; 
+  Options.ensemble                =ENSEMBLE_NONE;
   Options.external_script         ="";
 
   Options.routing                 =ROUTE_STORAGECOEFF;
@@ -280,7 +280,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   //Groundwater model options
   Options.modeltype               =MODELTYPE_SURFACE;
-  
+
   //Output options:
   if (Options.silent!=true){ //if this wasn't overridden in flag to executable
     Options.noisy                 =false;
@@ -341,7 +341,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   {
     if (ended){break;}
     if (Options.noisy){ cout << "reading line " << p->GetLineNumber() << ": ";}
-    
+
     /*assign code for switch statement
       ------------------------------------------------------------------
       <100         : ignored/special
@@ -353,7 +353,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       500 thru 600 : Groundwater
       ------------------------------------------------------------------
     */
-    
+
     code=0;
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                     {code=-1; }
@@ -364,7 +364,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":End"                       )){code=-3; }//premature end of file
     else if  (!strcmp(s[0],":IfModeEquals"              )){code=-5; }
     else if  (in_ifmode_statement)                        {code=-6; }
-    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode 
+    else if  (!strcmp(s[0],":EndIfModeEquals"           )){code=-2; }//treat as comment - unused mode
     else if  (!strcmp(s[0],":RedirectToFile"            )){code=-4; }//redirect to secondary file
     //--------------------MODEL OPTIONS ------------------------
     else if  (!strcmp(s[0],"?? "                        )){code=1;  }
@@ -381,7 +381,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":Routing"                   )){code=9;  }
     else if  (!strcmp(s[0],":SoilModel"                 )){code=10; }//REQUIRED- CREATES MODEL!
     else if  (!strcmp(s[0],":EndPause"                  )){code=11; }
-    else if  (!strcmp(s[0],":Calendar"                  )){code=12; }    
+    else if  (!strcmp(s[0],":Calendar"                  )){code=12; }
     else if  (!strcmp(s[0],":Evaporation"               )){code=13; }
     else if  (!strcmp(s[0],":OW_Evaporation"            )){code=14; }
     else if  (!strcmp(s[0],":CatchmentRouting"          )){code=16; }
@@ -402,7 +402,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":PrecipIceptFract"          )){code=30; }
     else if  (!strcmp(s[0],":OroTempCorrect"            )){code=31; }
     else if  (!strcmp(s[0],":OroPrecipCorrect"          )){code=32; }
-    
+
     else if  (!strcmp(s[0],":PotentialMeltMethod"       )){code=34; }
     else if  (!strcmp(s[0],":SubdailyMethod"            )){code=35; }
     else if  (!strcmp(s[0],":SubDailyMethod"            )){code=35; }
@@ -422,7 +422,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":SnowSuppressesPET"         )){code=49; }
 	//---I/O------------------------------------------------------
     else if  (!strcmp(s[0],":DebugMode"                 )){code=50; }
-    else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=51; } 
+    else if  (!strcmp(s[0],":BenchmarkingMode"          )){code=51; }
     else if  (!strcmp(s[0],":OutputInterval"            )){code=52; }
     else if  (!strcmp(s[0],":PavicsMode"                )){code=53; }//some special options only for PAVICS
     else if  (!strcmp(s[0],":DeltaresFEWSMode"          )){code=54; }
@@ -443,10 +443,10 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":DontWriteWatershedStorage" )){code=70; }//*//avoid writing WatershedStorage.csv
     else if  (!strcmp(s[0],":EvaluationMetrics"         )){code=71; }
     else if  (!strcmp(s[0],":EvaluationTime"            )){code=72; }//After StartDate or JulianStartDay and JulianStartYear commands
-    else if  (!strcmp(s[0],":EvaluationPeriod"          )){code=73; } 
+    else if  (!strcmp(s[0],":EvaluationPeriod"          )){code=73; }
     else if  (!strcmp(s[0],":SuppressOutputICs"         )){code=75; }
     else if  (!strcmp(s[0],":WaterYearStartMonth"       )){code=76; }
-    else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; } 
+    else if  (!strcmp(s[0],":CreateRVPTemplate"         )){code=77; }
     else if  (!strcmp(s[0],":Mode"                      )){code=78; }
     else if  (!strcmp(s[0],":DefineHRUGroup"            )){code=80; }//After :SoilModel command
     else if  (!strcmp(s[0],":DefineHRUGroups"           )){code=81; }//After :SoilModel command
@@ -474,17 +474,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteGroundwaterHeads"     )){code=510;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":WriteGroundwaterFlows"     )){code=511;}//GWMIGRATE -TO REMOVE
     else if  (!strcmp(s[0],":rvg_Filename"              )){code=512;}//GWMIGRATE -TO REMOVE
-    
+
 	  if       (in_ifmode_statement)                        {code=-6; }
     else if  (!strcmp(s[0],":rvh_Filename"              )){code=160;}
     else if  (!strcmp(s[0],":rvp_Filename"              )){code=161;}
     else if  (!strcmp(s[0],":rvt_Filename"              )){code=162;}
     else if  (!strcmp(s[0],":rvc_Filename"              )){code=163;}
     else if  (!strcmp(s[0],":rvl_Filename"              )){code=164;}
-    else if  (!strcmp(s[0],":rve_Filename"              )){code=165;}                                                                    
-    
+    else if  (!strcmp(s[0],":rve_Filename"              )){code=165;}
+
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=170;}
-    else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=171;} 
+    else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=171;}
     else if  (!strcmp(s[0],":WriteEnergyStorage"        )){code=172;}// OBSOLETE?
     else if  (!strcmp(s[0],":WriteReservoirMBFile"      )){code=173;}
     else if  (!strcmp(s[0],":WriteSubbasinFile"         )){code=174;}
@@ -499,7 +499,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":WriteWaterLevels"          )){code=182;}
     else if  (!strcmp(s[0],":WriteMassLoadings"         )){code=183;}
     else if  (!strcmp(s[0],":WriteLocalFlows"           )){code=184;}
-    
+
     //...
     //--------------------SYSTEM OPTIONS -----------------------
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
@@ -666,7 +666,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     }
     case(4):  //----------------------------------------------
     {/*:Duration [double time]  /or/
-       :Duration [double time] [hh:mm:ss.00]       
+       :Duration [double time] [hh:mm:ss.00]
        */
       if (Options.noisy) {cout <<"Simulation duration"<<endl;}
       if (Options.in_bmi_mode) { WriteWarning("ParseMainInputFile: a value was provided for the simulation duration. This may affect the behavior of BMI::Update() after the duration period.", Options.noisy); }
@@ -718,9 +718,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(7): //----------------------------------------------
-    {/*:StartDate [yyyy-mm-dd] [hh:mm:ss.00] 
-       or 
-       :StartDate [yyyy-mm-dd] 
+    {/*:StartDate [yyyy-mm-dd] [hh:mm:ss.00]
+       or
+       :StartDate [yyyy-mm-dd]
      */
       if(Options.noisy) { cout <<"Simulation Start Date"<<endl; }
       if(Len<2) { ImproperFormatWarning(":StartDate",p,Options.noisy); break; }
@@ -735,7 +735,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(8):  //--------------------------------------------
-    {/* :EndDate [yyyy-mm-dd] [hh:mm:ss.00] 
+    {/* :EndDate [yyyy-mm-dd] [hh:mm:ss.00]
        or
        :EndDate [yyyy-mm-dd]
      */
@@ -909,6 +909,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"RAINSNOW_UBCWM"     )){Options.rainsnow=RAINSNOW_UBCWM;}
       else if (!strcmp(s[1],"RAINSNOW_HSPF"      )){Options.rainsnow=RAINSNOW_HSPF;}
       else if (!strcmp(s[1],"RAINSNOW_HARDER"    )){Options.rainsnow=RAINSNOW_HARDER;}
+      else if (!strcmp(s[1],"RAINSNOW_WANG"      )){Options.rainsnow=RAINSNOW_WANG;}
+      else if (!strcmp(s[1],"RAINSNOW_SNTHERM89" )){Options.rainsnow=RAINSNOW_SNTHERM89;}
       else if (!strcmp(s[1],"RAINSNOW_THRESHOLD" )){Options.rainsnow=RAINSNOW_THRESHOLD;}
       else {ExitGracefully("ParseInput:RainSnowMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
@@ -1234,7 +1236,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       ExitGracefullyIf(pModel==NULL,"Parse Input: :BlendedPETWeights command must appear after :SoilModel command in .rvi file",BAD_DATA_WARN);
       pModel->SetPETBlendValues(N,methods,wts);
-      delete [] wts; 
+      delete [] wts;
       delete [] methods;
       break;
     }
@@ -1243,7 +1245,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy) {cout <<"Recharge Calculation Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":RechargeMethod",p,Options.noisy); break;}
       if      (!strcmp(s[1],"RECHARGE_NONE"            )){Options.recharge=RECHARGE_NONE;} //default
-      else if (!strcmp(s[1],"RECHARGE_MODEL"           )){Options.recharge=RECHARGE_MODEL;} 
+      else if (!strcmp(s[1],"RECHARGE_MODEL"           )){Options.recharge=RECHARGE_MODEL;}
       else if (!strcmp(s[1],"RECHARGE_DATA"            )){Options.recharge=RECHARGE_DATA;}
       else {ExitGracefully("ParseInput:RechargeMethod: Unrecognized method",BAD_DATA_WARN);}
       break;
@@ -1292,7 +1294,7 @@ bool ParseMainInputFile (CModel     *&pModel,
           wts    [i] =s_to_d(s[2*i+2]);
           sum+=wts[i];
         }
-      } 
+      }
 	  else {
         // calculate weights, treat provided values as uniform seeds
         for (int i = 0; i < N; i++) {
@@ -1311,8 +1313,8 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       //ensure weights add exactly to 1
       if (fabs(sum - 1.0) < 0.05) {
-        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}        
-      } 
+        for (int i = 0; i < N; i++) {wts[i]=wts[i]/sum;}
+      }
 	  else {
         WriteWarning("ParseInput: :BlendedPotMeltWeights do not add to 1.0",Options.noisy);
       }
@@ -1321,7 +1323,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       ExitGracefullyIf(pModel==NULL,"Parse Input: :BlendedPotMeltWeights command must appear after :SoilModel command in .rvi file",BAD_DATA_WARN);
       pModel->SetPotMeltBlendValues(N,methods,wts);
-      delete [] wts; 
+      delete [] wts;
       delete [] methods;
       break;
     }
@@ -1365,7 +1367,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_mass_bal  =true;
       Options.write_forcings  =true;
       Options.write_channels  =true;
-    
+
       WriteWarning("Debug mode is ON: this will significantly slow down model progress. Note that ':DebugMode no' command is deprecated",Options.noisy);
       break;
     }
@@ -1649,7 +1651,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(82):  //--------------------------------------------
-    {/*:DisableHRUGroup */ //AFTER DefineHRUGroup(s) commands 
+    {/*:DisableHRUGroup */ //AFTER DefineHRUGroup(s) commands
       if (Options.noisy) {cout <<"Disabling HRU Group"<<endl;}
       if (Len<2){ImproperFormatWarning(":DisableHRUGroup",p,Options.noisy); break;}
 
@@ -1691,7 +1693,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(89):  //--------------------------------------------
-    {/*:OutputConstituentMass*/ 
+    {/*:OutputConstituentMass*/
       if (Options.noisy) {cout <<"Write constituent mass / enthalpy instead of concentrations / temperatures"<<endl;}
       Options.write_constitmass=true;
       break;
@@ -1705,7 +1707,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       for(i=3;i<Len;i++){tmpstring=tmpstring+" "+s[i];}
       AddNetCDFAttribute(Options,s[1],tmpstring);
       break;
-    }          
+    }
     case(92):  //--------------------------------------------
     {/*:AssimilationStartTime [yyyy-mm-dd] [00:00:00]*///AFTER StartDate or JulianStartDay and JulianStartYear commands
       if(Options.noisy) { cout << "Assimilation Start Time" << endl; }
@@ -1753,7 +1755,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:CustomOutput
        :CustomOutput [time_aggregation] [statistic] [parameter] [space_aggregation] {ONLY HRUGroup} {[hist_min] [hist_max] [#bins]} {filename} (optional)
      */
-     // 
+     //
       if(Options.noisy) { cout <<"Custom Output "<<endl; }
       CCustomOutput *pCustom;
       pCustom=CCustomOutput::ParseCustomOutputCommand(s,Len,pModel,Options);
@@ -1792,8 +1794,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.rvl_read_frequency=Options.timestep; //default if not overrun - read every timestep
       if(Len>=2) {
         string tString=s[1];
-        if((tString.length()>=2) && 
-          ((tString.substr(2,1)==":") || 
+        if((tString.length()>=2) &&
+          ((tString.substr(2,1)==":") ||
            (tString.substr(1,1)==":"))) //support for hh:mm:ss.00 format
         {
           time_struct tt=DateStringToTimeStruct("0000-01-01",tString,Options.calendar);
@@ -1989,7 +1991,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout << "Write local flows to hydrographs file" << endl; }
       Options.write_localflow=true;
       break;
-    }      
+    }
     case(199):  //--------------------------------------------
     {/*:AggregatedVariable [SV_TAG] {optional HRU_Group}*/
 
@@ -2211,6 +2213,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"SOILEVAP_SACSMA"       )){se_type=SOILEVAP_SACSMA;}
       else if (!strcmp(s[1],"SOILEVAP_AWBM"         )){se_type=SOILEVAP_AWBM;}
       else if (!strcmp(s[1],"SOILEVAP_ALL"          )){se_type=SOILEVAP_ALL;}
+      else if (!strcmp(s[1],"SOILEVAP_HYMOD2"       )){se_type=SOILEVAP_HYMOD2;}
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
       }
@@ -2252,7 +2255,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (sbtype == SNOBAL_SIMPLE_MELT) {
         tmpS[0]=CStateVariable::StringToSVType(s[3],tmpLev[0],true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
-        pMover=new CmvSnowBalance(sbtype, ParseSVTypeIndex(s[3],pModel)); 
+        pMover=new CmvSnowBalance(sbtype, ParseSVTypeIndex(s[3],pModel));
       }
       else{
         pMover=new CmvSnowBalance(sbtype);
@@ -2292,7 +2295,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<4){ImproperFormatWarning(":OpenWaterEvaporation",p,Options.noisy); break;}
       if      (!strcmp(s[1],"OPEN_WATER_EVAP"     )){ow_type=OPEN_WATER_EVAP;}
       else if (!strcmp(s[1],"OPEN_WATER_RIPARIAN" )){ow_type=OPEN_WATER_RIPARIAN;} //should come from SURFACE_WATER
-      else if (!strcmp(s[1],"OPEN_WATER_UWFS"     )){ow_type=OPEN_WATER_UWFS; } 
+      else if (!strcmp(s[1],"OPEN_WATER_UWFS"     )){ow_type=OPEN_WATER_UWFS; }
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Open Water Evaporation process representation",BAD_DATA_WARN); break;
       }
@@ -2463,7 +2466,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
 
       FromToErrorCheck(":GlacierMelt",s[2],s[3],GLACIER_ICE,USERSPEC_SVTYPE);
-      
+
       CmvGlacierMelt::GetParticipatingStateVarList(gm_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
@@ -2733,7 +2736,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
       if ((Len>=8) && (!strcmp(s[7],"INTERBASIN"))){interbasin=true; }
- 
+
       if((pModel->GetHRUGroup(s[2])==NULL) || (pModel->GetHRUGroup(s[5])==NULL)){
         ExitGracefully("ParseInput: Lateral Flush - invalid 'to' or 'from' HRU Group used. Must define using :DefineHRUGroups command.",BAD_DATA_WARN);
       }
@@ -2786,7 +2789,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized recharge process representation",BAD_DATA);
       }
       FromToErrorCheck(":Recharge",s[2],s[3],ATMOS_PRECIP,SOIL);
-      if(rech_typ==1) 
+      if(rech_typ==1)
       {
         CmvRecharge::GetParticipatingStateVarList(rech_type,tmpS,tmpLev,tmpN);
         pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2833,7 +2836,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       break;
     }
     case(236):  //----------------------------------------------
-    {/*LakeRelease  //JRC: I THINK THIS SHOULD BE MADE OBSOLETE. 
+    {/*LakeRelease  //JRC: I THINK THIS SHOULD BE MADE OBSOLETE.
        :LakeRelease LAKEREL_LINEAR LAKE_STORAGE SURFACE_WATER*/
       if (Options.noisy){cout <<"Lake Release process"<<endl;}
       if (Len<4){ImproperFormatWarning(":LakeRelease",p,Options.noisy); break;}
@@ -2886,7 +2889,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (pModel->GetHRUGroup(s[2]) == NULL)  {
         ExitGracefully("ParseInput: Lateral Equilibrate - invalid HRU Group used. Must define using :DefineHRUGroups command.", BAD_DATA_WARN);
       }
-      else 
+      else
       {
         pMover = new CmvLatEquilibrate(pModel->GetStateVarIndex(tmpS[0], tmpLev[0]),//SV index
                                        pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
@@ -2948,15 +2951,15 @@ bool ParseMainInputFile (CModel     *&pModel,
        or
        string ":EndProcessGroup CALCULATE_WTS {r1 r2 r3 ... rN-1}"*/
       if (Options.noisy){cout <<"Process Group End"<<endl;}
-      
+
       int N=pProcGroup->GetGroupSize();
       double *aWts=new double[N];
       if(Len==N+1) {
-        if(!strcmp(s[1],"CALCULATE_WTS")) { 
+        if(!strcmp(s[1],"CALCULATE_WTS")) {
           for(i=0;i<N-1;i++) { aWts[i]=s_to_d(s[i+2]); }
           pProcGroup->CalcWeights(aWts,N-1);
         }
-        else {    
+        else {
           for(i=0;i<N;i++) { aWts[i]=s_to_d(s[i+1]); }
           pProcGroup->SetWeights(aWts,N);
         }
@@ -3031,7 +3034,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         if(!strcmp(s[2],"SORBED" )) { is_passive=true; ctype=SORBED; }
         if(!strcmp(s[2],"TRACER"))  { is_tracer =true; ctype=TRACER; }
       }
-      
+
       if(!strcmp(s[1],"TEMPERATURE")) { ctype=ENTHALPY; }
       if(!strcmp(s[1],"18O")        ) { ctype=ISOTOPE;  }
       if(!strcmp(s[1],"2H")         ) { ctype=ISOTOPE;  }
@@ -3091,7 +3094,7 @@ bool ParseMainInputFile (CModel     *&pModel,
               kk = pSourceGrp->GetGlobalIndex();
             }
           }
-        
+
           double C2=s_to_d(s[3]);
           if ((add==1) && (Len>=5)){C2=s_to_d(s[4]);} // for isotope
           pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletCompartment(i_stor,kk,s_to_d(s[3]),C2);
@@ -3138,7 +3141,7 @@ bool ParseMainInputFile (CModel     *&pModel,
             kk=pSourceGrp->GetGlobalIndex();
           }
         }
-        
+
         int c=pModel->GetTransportModel()->GetConstituentIndex(s[1]);
         if(c!=DOESNT_EXIST) {
           pModel->GetTransportModel()->GetConstituentModel(c)->AddInfluxSource(i_stor,kk,s_to_d(s[3]));
@@ -3349,7 +3352,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pGW->AddProcess(DRAIN, pMover);
       break;
     }
-    
+
     default://----------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -3415,7 +3418,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     Options.SW_cloudcovercorr   =SW_CLOUD_CORR_NONE;
     WriteWarning("Cloud cover corrections have been set to 'NONE', since the shortwave radiation method is SW_RAD_DATA",Options.noisy);
   } //if data provided, then cloudcover corrections not needed
-  
+
   if(Options.SW_radiation==SW_RAD_NONE) {
     WriteAdvisory("The shortwave radiation calculation method is SW_RAD_NONE. This may impact some snowmelt and PET algorithms which require radiation.",Options.noisy);
   }
@@ -3517,7 +3520,7 @@ void AddNetCDFAttribute(optStruct &Options,const string att,const string &val)
 ///////////////////////////////////////////////////////////////////
 /// \brief returns corresponding evaporation method from string name
 //
-evap_method ParseEvapMethod(const string s) 
+evap_method ParseEvapMethod(const string s)
 {
   string tmp=StringToUppercase(s);
   if      (!strcmp(tmp.c_str(),"CONSTANT"              )){return PET_CONSTANT;}
@@ -3557,7 +3560,7 @@ evap_method ParseEvapMethod(const string s)
 ///////////////////////////////////////////////////////////////////
 /// \brief returns corresponding potential melt method from string name
 //
-potmelt_method ParsePotMeltMethod(const string s) 
+potmelt_method ParsePotMeltMethod(const string s)
 {
   string tmp=StringToUppercase(s);
   if      (!strcmp(tmp.c_str(),"POTMELT_DEGREE_DAY")){return POTMELT_DEGREE_DAY;}
@@ -3581,7 +3584,7 @@ potmelt_method ParsePotMeltMethod(const string s)
 ///////////////////////////////////////////////////////////////////
 /// \brief throws warning if 'to' and 'from' state variables in process command cmd are not appropriate
 //
-void FromToErrorCheck(string cmd,string sFrom,string sTo,sv_type tFrom,sv_type tTo) 
+void FromToErrorCheck(string cmd,string sFrom,string sTo,sv_type tFrom,sv_type tTo)
 {
   int lay;
   string warn;
@@ -3591,7 +3594,7 @@ void FromToErrorCheck(string cmd,string sFrom,string sTo,sv_type tFrom,sv_type t
       WriteWarning(warn.c_str(),false);
     }
   }
-  if ((tTo!=UNRECOGNIZED_SVTYPE) && (tTo!=USERSPEC_SVTYPE)) { 
+  if ((tTo!=UNRECOGNIZED_SVTYPE) && (tTo!=USERSPEC_SVTYPE)) {
     if(CStateVariable::StringToSVType(sTo,lay,false)!=tTo) {
       warn="ParseInputFile: "+cmd+" command only accepts a 'to' compartment type of "+CStateVariable::SVTypeToString(tTo,DOESNT_EXIST)+". The user-specified compartment will be overridden.";
       WriteWarning(warn.c_str(),false);

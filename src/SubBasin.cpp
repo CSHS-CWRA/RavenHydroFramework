@@ -1026,8 +1026,9 @@ void CSubBasin::SetAsNonHeadwater()
 //
 void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 {
-  ExitGracefullyIf(_pInflowHydro!=NULL,
+  ExitGracefullyIf((_pInflowHydro!=NULL) && (g_current_e==DOESNT_EXIST),
                    "CSubBasin::AddInflowHydrograph: only one inflow hydrograph may be specified per basin",BAD_DATA);
+  delete _pInflowHydro; // must delete previous if this is for an ensemble run
   _pInflowHydro=pInflow;
 }
 //////////////////////////////////////////////////////////////////
@@ -1036,8 +1037,9 @@ void    CSubBasin::AddInflowHydrograph (CTimeSeries *pInflow)
 //
 void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
 {
-  ExitGracefullyIf(_pInflowHydro2!=NULL,
+  ExitGracefullyIf((_pInflowHydro2!=NULL)  && (g_current_e==DOESNT_EXIST),
                    "CSubBasin::AddDownstreamInflow: only one inflow hydrograph may be specified per basin",BAD_DATA);
+  delete _pInflowHydro; // must delete previous if this is for an ensemble run
   _pInflowHydro2=pInflow;
 }
 //////////////////////////////////////////////////////////////////
@@ -1373,7 +1375,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     if(Options.catchment_routing==ROUTE_DUMP              ){_t_peak=AUTO_COMPUTE;}
 
     if (_t_peak     ==AUTO_COMPUTE){
-      _t_peak=0.3*_t_conc; 
+      _t_peak=0.3*_t_conc;
       _t_peak*=CGlobalParams::GetParams()->TIME_TO_PEAK_multiplier;
     }
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
@@ -1819,7 +1821,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
     Qlat_new+=_aUnitHydro[n]*_aQlatHist[n];
   }
   _QlocLast=_Qlocal;
-  _Qlocal=Qlat_new; 
+  _Qlocal=Qlat_new;
 
   //volume change from linearly varying upstream inflow over this time step
   dV+=0.5*(_aQinHist[0]+_aQinHist[1])*dt;

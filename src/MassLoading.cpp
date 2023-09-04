@@ -29,7 +29,7 @@ CmvMassLoading::CmvMassLoading(string constit_name,
     iFrom[ii]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     int m=pTransModel->GetLayerIndex(_constit_ind,pTransModel->GetStorWaterIndex(ii));
     iTo  [ii]=pModel->GetStateVarIndex(CONSTITUENT,m);
-    
+
   }
 }
 
@@ -73,7 +73,7 @@ void   CmvMassLoading::GetRatesOfChange(const double      *state_vars,
                                         double            *rates) const
 {
   int    k=pHRU->GetGlobalIndex();
-  
+
   //Handle Neumann influx conditions, if present
   //-------------------------------------------------------
   int iTo;

@@ -11,7 +11,7 @@
 #include "BMI.h"
 #include "Model.h"
 
-class CRavenBMI : public bmixx::Bmi 
+class CRavenBMI : public bmixx::Bmi
 {
   private:
     CModel     *pModel;
