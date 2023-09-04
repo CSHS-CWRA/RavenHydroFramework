@@ -1027,7 +1027,7 @@ double CModel::EstimateSnowFraction(const rainsnow_method method,
       double frac;
       double delta=CGlobalParams::GetParams()->rainsnow_delta;
       double temp =CGlobalParams::GetParams()->rainsnow_temp;
-		
+
       if      (F->temp_daily_ave <= (temp - 0.5 * delta)) { frac = 1.0; }
       else if (F->temp_daily_ave >= (temp + 0.5 * delta)) { frac = 0.0; }//assumes only daily avg. temp is included
       else {

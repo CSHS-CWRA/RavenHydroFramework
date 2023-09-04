@@ -117,12 +117,12 @@ void CRavenBMI::ReadConfigFile(std::string config_file)
         // find ini and end of substring
         config_str_ini = config_str_end + 1;
         config_str_end = line.find(":", config_str_ini);
-        
+
         // extract substring and trim leading and trailing whitespaces
         config_value = line.substr(config_str_ini, config_str_end - config_str_ini);
         config_value.erase(0, config_value.find_first_not_of(" \t"));
         config_value.erase(config_value.find_last_not_of(" \t") + 1);
-        
+
         // set config_key if it is the first substring
         if (config_key == "") {
           config_key = config_value;

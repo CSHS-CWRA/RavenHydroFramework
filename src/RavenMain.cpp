@@ -302,7 +302,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 /////////////////////////////////////////////////////////////////
 /// \brief Finalizes program gracefully, explaining reason for finalizing, and destructing simulation and all pertinent parameters
 /// \remark Called from within ExitGracefully() or from the BMI Finalize() function
-/// 
+///
 /// \param statement [in] String to print to user upon exit
 /// \param code [in] Code to determine why the system is exiting
 //

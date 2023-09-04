@@ -1871,7 +1871,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.rvt_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension!
       break;
 
-      
+
     }
     case(163):  //--------------------------------------------
     {/*:rvc_Filename [filename]*/

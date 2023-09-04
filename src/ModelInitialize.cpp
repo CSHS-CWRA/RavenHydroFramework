@@ -170,7 +170,7 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
-  
+
   // Generate Gauge Weights from Interpolation (except if in BMI mode and no RVT file is specified)
   //--------------------------------------------------------------
   if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) {
@@ -187,7 +187,7 @@ void CModel::Initialize(const optStruct &Options)
     else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
     else if (Options.wind_velocity ==WINDVEL_DATA ){f_gauge=F_WIND_VEL;}
     if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
-    
+
     if(Options.write_interp_wts)
     { //creates and/or deletes existing InterpolationWeights.csv file
       ofstream WTS;
@@ -202,7 +202,7 @@ void CModel::Initialize(const optStruct &Options)
     GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
     GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
     GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
-  
+
   }
 
   //Initialize SubBasins, calculate routing orders, topology
