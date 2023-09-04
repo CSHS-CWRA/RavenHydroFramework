@@ -37,6 +37,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   int                 k,g,nn;
   double              mid_day,model_day, time_shift;
   double              wt;
+  bool                rvt_file_provided=(stcmp(Options.rvt_filename.c_str(),””) != 0);
 
   //Reserve static memory (only gets called once in course of simulation)
   if (Fg==NULL){
@@ -223,7 +224,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       }
 
       // if in BMI without RVT file, precip and temp values are expected to have been given before this point
-      if (Options.in_bmi_mode && strcmp(Options.rvt_filename.c_str(), "") == 0) {
+      if (Options.in_bmi_mode && !rvt_file_provided) {
         F.precip           = _pHydroUnits[k]->GetForcingFunctions()->precip + 0.0;
         F.precip_daily_ave = _pHydroUnits[k]->GetForcingFunctions()->precip + 0.0;  // TODO: check
         F.precip_5day      = F.precip * 5;                                          // TODO: check
@@ -409,7 +410,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       tc = _pSubBasins[p]->GetTemperatureCorrection();
 
       //--Gauge Corrections------------------------------------------------
-      if (Options.in_bmi_mode && (strcmp(Options.rvt_filename.c_str(), "") == 0))  // temperature was given by the BMI and no gauge corrections are to be applied
+      if (Options.in_bmi_mode && !rvt_file_provided)  // temperature was given by the BMI and no gauge corrections are to be applied
       {
         F.temp_daily_ave = F.temp_daily_max = F.temp_daily_min = F.temp_ave;  // TODO: check if this is acceptable
       }
@@ -488,7 +489,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       {
         double gauge_corr;
         F.precip=F.precip_5day=F.precip_daily_ave=0.0;
-        if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) {
+        if ((!Options.in_bmi_mode) || rvt_file_provided) {
           // Gauge-based precip and snowfall correction
           for(g=0; g<_nGauges; g++)
           {
