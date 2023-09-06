@@ -140,7 +140,6 @@ void CmvGlacierMelt::GetRatesOfChange( const double             *state_var,
     double pot_melt;                          //potential melt [mm/d]
 
     pot_melt =pHRU->GetForcingFunctions()->potential_melt;
-    pot_melt*=pHRU->GetForcingFunctions()->subdaily_corr;
 
     if (pot_melt>0.0) {pot_melt*=(1.0-snow_coverage);}//glacier doesnt melt if snow is on top
     else              {pot_melt=0.0;} //issue: cold content for glaciers will never increase! (needed for emulation)

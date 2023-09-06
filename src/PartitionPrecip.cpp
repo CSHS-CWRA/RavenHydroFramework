@@ -30,7 +30,7 @@ void CmvPrecipitation::Initialize()
 
   int iAtmos=pModel->GetStateVarIndex(ATMOS_PRECIP);
 
-  int N=12;
+  int N=13;
 
   if (pModel->StateVarExists(ICE_THICKNESS)){N+=3;}
 
@@ -46,11 +46,12 @@ void CmvPrecipitation::Initialize()
   iFrom[7]=iAtmos; iTo[7]=pModel->GetStateVarIndex(SNOW_DEFICIT);
   iFrom[8]=iAtmos; iTo[8]=pModel->GetStateVarIndex(NEW_SNOW);
   iFrom[9]=iAtmos; iTo[9]=pModel->GetLakeStorageIndex(); //Lake handling
+  iFrom[10]=iAtmos; iTo[10]=pModel->GetStateVarIndex(SURFACE_WATER); //reservoir handling
 
-  iFrom[10]=iTo[10]=pModel->GetStateVarIndex(COLD_CONTENT);
-  iFrom[11]=iTo[11]=pModel->GetStateVarIndex(SNOW_DEPTH);
+  iFrom[11]=iTo[11]=pModel->GetStateVarIndex(COLD_CONTENT);
+  iFrom[12]=iTo[12]=pModel->GetStateVarIndex(SNOW_DEPTH);
 
-  for(int q=0;q<12;q++) {
+  for(int q=0;q<13;q++) {
     if (iTo  [q]==DOESNT_EXIST){iTo  [q]=iAtmos; } //add dummy slot for missing connections
     if (iFrom[q]==DOESNT_EXIST){iFrom[q]=iAtmos; } //since this routine reacts to presence or absence of individual state variables
   }
@@ -58,9 +59,9 @@ void CmvPrecipitation::Initialize()
   //lake snow handling
   if (pModel->StateVarExists(ICE_THICKNESS))
   {
-    iFrom[12]=pModel->GetStateVarIndex(SNOW);         iTo[12]=pModel->GetLakeStorageIndex();
-    iFrom[13]=pModel->GetStateVarIndex(SNOW_LIQ);     iTo[13]=pModel->GetLakeStorageIndex();
-    iFrom[14]=pModel->GetStateVarIndex(PONDED_WATER); iTo[14]=pModel->GetLakeStorageIndex();
+    iFrom[13]=pModel->GetStateVarIndex(SNOW);         iTo[13]=pModel->GetLakeStorageIndex();
+    iFrom[14]=pModel->GetStateVarIndex(SNOW_LIQ);     iTo[14]=pModel->GetLakeStorageIndex();
+    iFrom[15]=pModel->GetStateVarIndex(PONDED_WATER); iTo[15]=pModel->GetLakeStorageIndex();
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -160,11 +161,12 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   int qSnowDef=7;
   int qNewSnow=8;
   int qLake=9;
-  int qColdContent=10;
-  int qSnowDepth=11;
-  int qSnowToLake=12;
-  int qSnLiqToLake=13;
-  int qPondToLake=14;
+  int qSW=10;
+  int qColdContent=11;
+  int qSnowDepth=12;
+  int qSnowToLake=13;
+  int qSnLiqToLake=14;
+  int qPondToLake=15;
 
   //get precipitation information from gauges
   total_precip=pHRU->GetForcingFunctions()->precip;//[mm/day]
@@ -239,7 +241,12 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
 
   if ((pHRU->IsLake()) && (!lake_frozen))
   {
-    rates[qLake]=snowthru+rainthru; // in lake, all water just added
+    if (pHRU->IsLinkedToReservoir()) {
+      rates[qSW]=snowthru+rainthru; //handles case when both reservoirs and lake storage used
+    }
+    else{
+      rates[qLake]=snowthru+rainthru; // in lake, all water just added
+    }
 
     if (pModel->StateVarExists(ICE_THICKNESS))//all remaining snow and ponded water dumped to lake
     {

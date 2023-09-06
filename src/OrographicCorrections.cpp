@@ -378,8 +378,10 @@ void CModel::CorrectPET(const optStruct &Options,
       */
   }
 
-  //sub-daily correction
-  F.PET*=F.subdaily_corr;
+  //sub-daily correction (only apply to PET methods using daily ET)
+  if (IsDailyPETmethod(Options.evaporation)){
+    F.PET*=F.subdaily_corr;
+  }
 
   //Snow cover
   if(Options.snow_suppressPET)

@@ -73,8 +73,6 @@ int main(int argc, char* argv[])
 
   CStateVariable::Initialize();
 
-  Options.in_bmi_mode = false;  // "regular mode": Raven called from command line
-
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
@@ -210,6 +208,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.pause =true;
   Options.forecast_shift=0.0;
   Options.warm_ensemble_run="";
+  Options.in_bmi_mode = false;  // "regular mode": Raven called from command line
 
   //Parse argument list
   while (i<=argc)

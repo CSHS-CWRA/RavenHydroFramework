@@ -425,6 +425,8 @@ enum evap_method
   PET_UNKNOWN                   ///< special PET type for unrecognized commands
 };
 
+bool IsDailyPETmethod(evap_method method); //DEfined in Evaporation.cpp
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Methods used for correcting forcing functions with elevation
 //
@@ -1121,7 +1123,7 @@ struct optStruct
   double           assimilation_start;        ///< assimilation start time (in model time [d])
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
-  int              NetCDF_chunk_mem;          ////< [MB] size of memory chunk for each forcing grid
+  int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid
   bool             in_bmi_mode;               ///< true if in BMI mode (no rvt files, no end time)
 };
 

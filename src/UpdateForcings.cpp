@@ -37,7 +37,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   int                 k,g,nn;
   double              mid_day,model_day, time_shift;
   double              wt;
-  bool                rvt_file_provided=(stcmp(Options.rvt_filename.c_str(),””) != 0);
+  bool                rvt_file_provided = (strcmp(Options.rvt_filename.c_str(), "") != 0);
 
   //Reserve static memory (only gets called once in course of simulation)
   if (Fg==NULL){
@@ -499,12 +499,13 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
             F.precip_daily_ave+=wt*gauge_corr*Fg[g].precip_daily_ave;
             F.precip_5day    += wt*gauge_corr*Fg[g].precip_5day;
           }
-        } else {
+        } 
+		else {
           // Gauge-less precip and snowfall correction
-          gauge_corr = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
-          F.precip = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
+          gauge_corr         = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
+          F.precip           = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;
           F.precip_daily_ave = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip;  // TODO: check if this is acceptable
-          F.precip_5day = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip * 5;   // TODO: check if this is acceptable
+          F.precip_5day      = gauge_corr * _pHydroUnits[k]->GetForcingFunctions()->precip * 5;   // TODO: check if this is acceptable
         }
       }
       else //Gridded Data

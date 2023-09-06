@@ -153,8 +153,8 @@ double  SublimationRate  (const double      *state_vars,
     double air_dens=pHRU->GetForcingFunctions()->air_dens;
     double Tsnow   =pHRU->GetSnowTemperature();
 
-    double ea   =GetSaturatedVaporPressure(Ta)*rel_hum;     //Vapour pressure of air[kPa]
-    double es   =GetSaturatedVaporPressure(Tsnow)*1.0;    //snow surface vapour pressure(assume saturated)[kPa]
+    double ea   =GetSaturatedVaporPressure(Ta   )*rel_hum;  //Vapour pressure of air[kPa]
+    double es   =GetSaturatedVaporPressure(Tsnow)*1.0;      //snow surface vapour pressure(assume saturated)[kPa]
 
     double z_ref=2.0;            //reference height [m]
     double z0   =0.00005;        //aerodynamic roughness length for snow [m]
@@ -165,7 +165,7 @@ double  SublimationRate  (const double      *state_vars,
     double C_E = (VON_KARMAN*VON_KARMAN) / (log(z_ref / z0) * log(z_ref / z0e));
 
     //Calculate Latent Heat Flux,then convert units to get sublimation rate
-    double Q_E = air_dens * LH_SUBLIM * C_E * wind_vel * ((0.622 * (es - ea)) / air_pres)*SEC_PER_DAY; //MJ/m2/d
+    double Q_E = air_dens * LH_SUBLIM * C_E * wind_vel * ((AIR_H20_MW_RAT * (es - ea)) / air_pres)*SEC_PER_DAY; //MJ/m2/d
     return  Q_E / (LH_SUBLIM * DENSITY_WATER)*MM_PER_METER; //[mm/d]
   }
   //-----------------------------------------------------------------

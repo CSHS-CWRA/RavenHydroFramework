@@ -199,7 +199,7 @@ double HargreavesEvap(const force_struct *F)//[C]
   ExitGracefullyIf(F->temp_month_max==NOT_SPECIFIED,
                    "PET_HARGREAVES requires minimum and maximum monthly temperatures",BAD_DATA);
 
-  return max(0.0,HARGREAVES_CONST*Ra*Ct*sqrt(delT)*CelsiusToFarenheit(F->temp_ave));
+  return max(0.0,HARGREAVES_CONST*Ra*Ct*sqrt(delT)*CelsiusToFarenheit(F->temp_daily_ave));
 }
 
 //////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ double Hargreaves1985Evap(const force_struct *F)//[C]
   delT=F->temp_daily_max-F->temp_daily_min;
   delT=max(delT,0.0);
 
-  return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_ave+17.8));
+  return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_daily_ave+17.8));
 }
 /*****************************************************************
 Jensen Haise Evaporation
@@ -457,7 +457,7 @@ double CModel::EstimatePET(const force_struct &F,
   }
   //-------------------------------------------------------------------------------------
   case(PET_PENMAN_SIMPLE33) :
-  {
+  {//Simplified Penman equation from eqn 33 of Valiantzas (2006)
     double Rs =F.SW_radia;   //[MJ/m2/d]
     double R_et =F.ET_radia; //[MJ/m2/d]
     double Tave=F.temp_ave;  //[C]
@@ -469,7 +469,7 @@ double CModel::EstimatePET(const force_struct &F,
   }
   //-------------------------------------------------------------------------------------
   case(PET_PENMAN_SIMPLE39) :
-  {
+  {//Simplified Penman equation from eqn 39 of Valiantzas (2006)
     double Rs  =F.SW_radia;   //[MJ/m2/d]
     double R_et=F.ET_radia; //[MJ/m2/d]
     double Tave=F.temp_ave;  //[C]
@@ -500,13 +500,14 @@ double CModel::EstimatePET(const force_struct &F,
   case(PET_LINACRE):
   {
     //eqns 8 and 9  of Linacre, E., A simple formula for estimating evaporation rates in various climates, using temperature data alone, Agricultural Meteorology 18, p409-424, 1977
-    double Tdewpoint=GetDewPointTemp(F.temp_daily_ave,F.rel_humidity);
+    double T=F.temp_daily_ave;
+    double Tdewpoint=GetDewPointTemp(T,F.rel_humidity);
     double latit=pHRU->GetLatRad()*RADIANS_TO_DEGREES;
     if (open_water){
-      PET= (700* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
+      PET= (700* T/(100-latit)+15.0*(T-Tdewpoint))/(80.0-T);
     }
     else {
-      PET= (500* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
+      PET= (500* T/(100-latit)+15.0*(T-Tdewpoint))/(80.0-T);
     }
     PET=max(PET,0.0);
     break;
@@ -531,6 +532,26 @@ double CModel::EstimatePET(const force_struct &F,
 
   double veg_corr=pHRU->GetVegetationProps()->PET_veg_corr;
   return PET*veg_corr;
+}
+
+bool IsDailyPETmethod(evap_method method)
+{
+  switch (method)
+  {
+  //case PET_OUDIN: return true; //these have subdaily ET radiation corrections
+  //case PET_HARGREAVES: return true; 
+  //case PET_HARGREAVES_1985: return true;
+  case PET_LINACRE: return true;
+  case PET_MONTHLY_FACTOR: return true;
+  case PET_FROMMONTHLY: return true;
+  case PET_TURC_1961: return true;
+  case PET_JENSEN_HAISE: return true;
+  case PET_HAMON: return true;
+  case PET_LINEAR_TEMP: return true;
+  case PET_CONSTANT: return true;
+  default: return false;
+  }
+  //Also, PET_DATA with dt=1.0 \todo
 }
 
 //////////////////////////////////////////////////////////////////

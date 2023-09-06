@@ -98,7 +98,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double wind_vel  = F->wind_vel;
 
     double ref_ht    = 2.0; // [m];
-    double roughness = pHRU->GetSurfaceProps()->roughness ;
+    double roughness = pHRU->GetSurfaceProps()->roughness;
     double surf_temp = pHRU->GetSnowTemperature();
 
     double K = F->SW_radia_net;   //net short wave radiation to snowpack [MJ/m2/d]
