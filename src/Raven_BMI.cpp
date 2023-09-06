@@ -21,6 +21,139 @@ CRavenBMI::CRavenBMI()
 
 CRavenBMI::~CRavenBMI() {}
 
+
+//////////////////////////////////////////////////////////////////
+/// \brief Splits a string by whitespace into a vector of char*
+///
+/// \param line [in] string to be split
+/// \return vector of char* containing the split string
+std::vector<char *> CRavenBMI::SplitLine(std::string line)
+{
+  std::vector<char *> args;
+  std::istringstream iss(line);
+  std::string token;
+
+  while(iss >> token)
+  {
+    char *arg = new char[token.size() + 1];
+    copy(token.begin(), token.end(), arg);
+    arg[token.size()] = '\0';
+    args.push_back(arg);
+  }
+  args.push_back(0);
+  return args;
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// @brief Sets values to Option struct based on command line arguments
+///
+/// @param config_key Argument key of the yaml config file
+/// @param config_value Value of the argument
+/// @return void - sets values in Options struct
+void CRavenBMI::ProcessConfigFileArgument(std::string config_key, std::string config_value)
+{
+  if (config_key == "rvi_file") {
+    Options.rvi_filename = config_value;
+  } else if (config_key == "rvp_file") {
+    Options.rvp_filename = config_value;
+  } else if (config_key == "rvh_file") {
+    Options.rvh_filename = config_value;
+  } else if (config_key == "rvt_file") {
+    Options.rvt_filename = config_value;
+  } else if (config_key == "rvc_file") {
+    Options.rvc_filename = config_value;
+  } else if (config_key == "rvg_file") {
+    Options.rvg_filename = config_value;
+  } else if (config_key == "rve_file") {
+    Options.rve_filename = config_value;
+  } else if (config_key == "rvl_file") {
+    Options.rvl_filename = config_value;
+  } else if (config_key == "output_directory") {
+    Options.output_dir = config_value;
+  } else if (config_key == "main_output_directory") {
+    Options.main_output_dir = config_value;
+  } else {
+    // TODO: include all remaining options
+    cout << "WARNING: Unknown key '" << config_key << "' in Raven config file. Ignoring it." << endl;
+  }
+  return;
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Reads the BMI configuration file and checks if model options are valid
+///
+/// \param config_file [in] name of configuration file
+/// \return void - sets values in Options struct
+void CRavenBMI::ReadConfigFile(std::string config_file)
+{
+  ifstream CONFIG;
+  int config_str_ini, config_str_end;    // used to parse the lines of the config file
+  std::string config_key, config_value;  // used to parse the lines of the config file
+  bool cli_args = false;                 // used to check if command line arguments were used
+  std::vector<char *> args;              // used to parse the command line arguments
+  char** argv;
+
+  CONFIG.open(config_file);
+  if (CONFIG.fail()) {
+    cout << "Cannot find configuration file " << config_file << endl;
+    return;
+  }
+
+  // read line by line and parse
+  for( std::string line; getline( CONFIG, line ); )
+  {
+    // skip blank lines and comments
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    // parse line and update options struct accordingly
+    config_str_end = -1;
+    config_key = "";
+    config_value = "";
+    do {
+        // find ini and end of substring
+        config_str_ini = config_str_end + 1;
+        config_str_end = line.find(":", config_str_ini);
+
+        // extract substring and trim leading and trailing whitespaces
+        config_value = line.substr(config_str_ini, config_str_end - config_str_ini);
+        config_value.erase(0, config_value.find_first_not_of(" \t"));
+        config_value.erase(config_value.find_last_not_of(" \t") + 1);
+
+        // set config_key if it is the first substring
+        if (config_key == "") {
+          config_key = config_value;
+          config_value = "";
+          continue;
+        }
+
+        // set options struct accordingly
+        if (config_key == "cli_args") {
+          cli_args = true;
+          // "Raven.exe" is a dummy argument to mimic the command line arguments
+          args = SplitLine("Raven.exe " + config_value);
+          argv = args.data();
+          ProcessExecutableArguments(args.size()-1, argv, Options);
+          break;
+        } else {
+          ProcessConfigFileArgument(config_key, config_value);
+        }
+
+    } while (config_str_end != -1);
+
+    // if a "cli_args:" line was found then we can stop parsing
+    if (cli_args) { break; }
+
+  }
+  CONFIG.close();
+
+  return;
+}
+
+
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization called prior to model simulation
 ///
@@ -29,24 +162,8 @@ CRavenBMI::~CRavenBMI() {}
 void CRavenBMI::Initialize(std::string config_file)
 {
   //NOTE: ENSEMBLE MODE NOT SUPPORTED WITH BMI
-  //model name handed in via configuration file
 
-  ifstream CONFIG;
-  CONFIG.open(config_file);
-  if (CONFIG.fail()){cout << "Cannot find configuration file "<<config_file <<endl; return;}
-  std::string line;
-  getline(CONFIG,line);
-
-  Options.rvi_filename=line+".rvi";
-  Options.rvp_filename=line+".rvp";
-  Options.rvh_filename=line+".rvh";
-  Options.rvt_filename=line+".rvt";
-  Options.rvc_filename=line+".rvc";
-  Options.rvg_filename=line+".rvg";
-  Options.rve_filename=line+".rve";
-  Options.rvl_filename=line+".rvl";
-
-  CONFIG.close();
+  ReadConfigFile(config_file);
 
   PrepareOutputdirectory(Options);
 
@@ -60,6 +177,10 @@ void CRavenBMI::Initialize(std::string config_file)
   WARNINGS.close();
 
   CStateVariable::Initialize();
+
+  Options.in_bmi_mode = true;  // flag needed to ignore some arguments of the .rvi file
+  Options.rvt_filename = "";   // just a dummy filename to avoid errors
+  Options.duration = std::numeric_limits<double>::max();  // "infinity": will run as long as "Update()" is called
 
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
@@ -141,7 +262,7 @@ void CRavenBMI::Finalize()
   pModel->WriteMajorOutput  (Options,tt,"solution",true);
   pModel->CloseOutputStreams();
 
-  ExitGracefully("Successful Simulation",SIMULATION_DONE);
+  FinalizeGracefully("Successful Simulation", SIMULATION_DONE);
 }
 
 //------------------------------------------------------------------
@@ -242,7 +363,7 @@ std::string CRavenBMI::GetVarUnits(std::string name)
 //
 std::string CRavenBMI::GetVarType(std::string name)
 {
-  return "float";
+  return "double";
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns size of input or output variable, in bytes
@@ -313,7 +434,10 @@ void CRavenBMI::GetValue(std::string name, void* dest)
   }
   else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
   else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
-
+  else {
+    throw std::logic_error("RavenBMI.GetValue: variable '" + name + "' not covered by this function.");
+    return;
+  }
 
   if ((is_HRU_SV) && (iSV!=DOESNT_EXIST))
   {
@@ -366,9 +490,15 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
 //
 void *CRavenBMI::GetValuePtr(std::string name)
 {
-  //given that storage is never in array, this will never work!
-  throw std::logic_error("Not Implemented");
-  return NULL;
+  double *out = new double[pModel->GetNumSubBasins()];  // allocate memory for output
+  try {
+    this->GetValue(name, out);                            // get the value
+  } catch (std::logic_error &e) {
+    delete[] out;
+    throw std::logic_error(std::string("CRavenBMI.GetValuePtr: ") + e.what());
+    return NULL;
+  }
+  return out;
 }
 
 //------------------------------------------------------------------
