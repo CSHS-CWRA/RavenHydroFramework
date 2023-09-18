@@ -76,7 +76,7 @@ void CSoilClass::SummarizeToScreen()
 void CSoilClass::DestroyAllSoilClasses()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL CLASSES"<<endl;}
-  
+
   // the classes may have been already destroyed
   if (_nAllSoilClasses == 0) {
     if (DESTRUCTOR_DEBUG){cout <<"  NO SOIL CLASSES TO DESTROY"<<endl;}
