@@ -73,10 +73,22 @@ void CLandUseClass::SummarizeToScreen()
 void CLandUseClass::DestroyAllLUClasses()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (NumLUClasses == 0) {
+    if (DESTRUCTOR_DEBUG) {cout << "  No LULT classes to destroy" << endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
   for (int c=0; c<NumLUClasses;c++){
     delete pAllLUClasses[c];
   }
   delete [] pAllLUClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  pAllLUClasses=NULL;
+  NumLUClasses=0;
 }
 
 //////////////////////////////////////////////////////////////////

@@ -76,10 +76,22 @@ void CSoilClass::SummarizeToScreen()
 void CSoilClass::DestroyAllSoilClasses()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL CLASSES"<<endl;}
+  
+  // the classes may have been already destroyed
+  if (_nAllSoilClasses == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO SOIL CLASSES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
   for (int c=0; c<_nAllSoilClasses;c++){
     delete _pAllSoilClasses[c];
   }
   delete [] _pAllSoilClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  _pAllSoilClasses = NULL;
+  _nAllSoilClasses = 0;
 }
 
 //////////////////////////////////////////////////////////////////

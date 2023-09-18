@@ -184,10 +184,22 @@ int CSoilProfile::GetNumProfiles()
 void CSoilProfile::DestroyAllSoilProfiles()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL PROFILES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (NumSoilProfiles == 0) { 
+    if (DESTRUCTOR_DEBUG){cout <<"  No soil profiles to destroy"<<endl; }
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
   for (int p=0; p<NumSoilProfiles;p++){
     delete pAllSoilProfiles[p];
   }
   delete [] pAllSoilProfiles;
+
+  // reset the static variables
+  pAllSoilProfiles = NULL;
+  NumSoilProfiles = 0;
 }
 
 ///////////////////////////////////////////////////////////////////

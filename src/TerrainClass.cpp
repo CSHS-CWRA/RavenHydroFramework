@@ -71,10 +71,22 @@ void CTerrainClass::SummarizeToScreen()
 void CTerrainClass::DestroyAllTerrainClasses()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL TERRAIN CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (NumTerrainClasses == 0) {
+     if (DESTRUCTOR_DEBUG) {cout <<"  No terrain classes to destroy"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
   for (int c=0; c<NumTerrainClasses;c++){
     delete pAllTerrainClasses[c];
   }
   delete [] pAllTerrainClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  pAllTerrainClasses = NULL;
+  NumTerrainClasses = 0;
 }
 
 //////////////////////////////////////////////////////////////////
