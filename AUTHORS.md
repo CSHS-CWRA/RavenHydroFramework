@@ -13,3 +13,4 @@
 ## Contributors
 
 * Trevor James Smith <smith.trevorj@ouranos.ca> [@Zeitsperre](https://github.com/Zeitsperre)
+* Andre Della Libera Zanchetta <andre.dellaliberazanchetta@umanitoba.ca> [@adlzanchetta](https://github.com/adlzanchetta)
