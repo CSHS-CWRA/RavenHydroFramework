@@ -604,8 +604,8 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     //(f) set some attributes to variable _netCDFtag
     tmp=_timeAggStr+" "+_statStr+" "+_varName+" "+_spaceAggStr;
     tmp2=_varUnits;
-    static double fill_val[] = {NETCDF_BLANK_VALUE};
-    static double miss_val[] = {NETCDF_BLANK_VALUE};
+    double fill_val[] = {NETCDF_BLANK_VALUE};
+    double miss_val[] = {NETCDF_BLANK_VALUE};
     retval = nc_put_att_text  (_netcdf_ID, varid_data, "long_name"    , tmp.length(), tmp.c_str());  HandleNetCDFErrors(retval);
     retval = nc_put_att_text  (_netcdf_ID, varid_data, "units"        , tmp2.length(),tmp2.c_str()); HandleNetCDFErrors(retval);
     retval = nc_put_att_double(_netcdf_ID, varid_data, "_FillValue"   , NC_DOUBLE,1,  fill_val);     HandleNetCDFErrors(retval);

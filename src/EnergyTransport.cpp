@@ -198,13 +198,13 @@ double CEnthalpyModel::GetAvgLatentHeatFlux() const
 /// \brief returns heat per unit area generated from friction in reach [MJ/m2/d]
 /// \param Q     [in] flow rate [m3/s]
 /// \param slope [in] bed slope [m/m]
-/// \param perim [in] wetted perimeter [m]
+/// \param top_width [in] top_width [m]
 /// from Theurer et al 1984, US Fish and Wildlife Serviec FWS/OBS-85/15, as reported in MacDonald, Boon, and Byrne 2014
 //
-double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const
+double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,const double &top_width) const
 {
-  if (perim<PRETTY_SMALL){return 0.0;}
-  return 9805*Q/perim*slope*WATT_TO_MJ_PER_D;
+  if (top_width<PRETTY_SMALL){return 0.0;}
+  return GRAVITY*DENSITY_WATER*Q/top_width*slope*WATT_TO_MJ_PER_D;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -254,7 +254,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double dbed     =pBasin->GetRiverbedThickness(); //[m]
   double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   double S(0.0);                            //source term [MJ/m3/d]
   S+=(SW+LW)/dbar;                          //net incoming energy term
@@ -321,7 +321,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double dbed     =pBasin->GetRiverbedThickness(); //[m]
   double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   dbar=max(dbar,0.001);
 

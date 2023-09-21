@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "IrregularTimeSeries.h"
+#include "HeatConduction.h"
 
 string FilenamePrepare(string filebase,const optStruct &Options); //defined in StandardOutput.cpp
 
@@ -237,6 +238,12 @@ void CModel::Initialize(const optStruct &Options)
   if (_pTransModel->GetNumConstituents()>0){
     if (!Options.silent){cout<<"  Initializing Transport Model..."<<endl;}
     _pTransModel->Initialize(Options);
+  }
+  for (int j = 0; j < _nProcesses; j++) {
+    if (_pProcesses[j]->GetProcessType() == HEATCONDUCTION) {
+      CmvHeatConduction *pHC=static_cast<CmvHeatConduction *>(_pProcesses[j]);
+      pHC->StoreNumberOfHRUs(GetNumHRUs());
+    }
   }
 
   // Precalculate whether individual processes should apply (for speed)

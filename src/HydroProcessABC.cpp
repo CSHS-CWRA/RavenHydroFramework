@@ -100,8 +100,6 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype,
         ExitGracefully("CHydroProcessABC::Constructor:invalid state variable index",BAD_DATA);}
     }
   }
-  ExitGracefullyIf(pModel==NULL,
-                   "CHydroProcessABC::Constructor:no model associated with hydrologic process",BAD_DATA);
 
   _pConditions=NULL;
   _nConditions=0;

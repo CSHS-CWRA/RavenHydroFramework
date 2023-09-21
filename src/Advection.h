@@ -43,9 +43,5 @@ public:/*-------------------------------------------------------*/
                         double      *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-
-  /*static void GetParticipatingStateVarList(sv_type *aSV,
-    int     *aLev,
-    int     &nSV);*/ //not used
 };
 #endif

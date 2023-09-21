@@ -1098,7 +1098,7 @@ vec CSparseMatrix::SolveLUSystem(vec b, CSparseMatrix *SpNR) const{
 ------------------------------------------------------------------------*/
 double CSparseMatrix::CalculateAdjustedNorm(Ironclad1DArray b, int size, const normtype type) const{
 	int i,isamax;
-	static double norm;
+    double norm;
 	if      (type==VECTOR_MAGNITUDE_NORM){
 
 		norm=0.0;for (i=0;i<size;i++){norm+=b[i]*b[i];}//if (!dirichlet[i]){norm+=b[i]*b[i];}}
@@ -1135,9 +1135,9 @@ void CSparseMatrix::BCG(						Ironclad1DArray     b,
 //												double              normalize,
 												const double        BCG_tol) const{
 
-	static double ak,akden;
-	static double bk,bkden(1.0),bknum;
-  static double bnorm,dxnorm,xnorm,zm1norm,znorm;
+    double ak,akden;
+    double bk,bkden(1.0),bknum;
+    double bnorm,dxnorm,xnorm,zm1norm,znorm;
 	int    j;
 	bkden=1.0;
 	const double eps=1e-14;
@@ -1553,20 +1553,20 @@ void CSparseMatrix::BCGstab(
 /// <param name="BCG_tol">	The bcg tolerance. </param>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CSparseMatrix::BCG(
-	arma::vec				    b,
-	arma::vec					&x,
-	const int           size,
-	const BCGtestparam  BCGtype,
-	double				&err,
-//	double              normalize,
-	const double        BCG_tol
-	) const{
+												arma::vec				    b,
+												arma::vec					&x,
+												const int           size,
+												const BCGtestparam  BCGtype,
+												double				&err,
+											//	double              normalize,
+												const double        BCG_tol
+												) const{
 
 
 
-	static double ak,akden;
-	static double bk,bkden(1.0),bknum;
-    static double bnorm,dxnorm,xnorm,zm1norm,znorm;
+    double ak,akden;
+    double bk,bkden(1.0),bknum;
+    double bnorm,dxnorm,xnorm,zm1norm,znorm;
 	int    j;
 	bkden=1.0;
 	const double eps=1e-14;

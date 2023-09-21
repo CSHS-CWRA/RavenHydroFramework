@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Infiltration.h"
@@ -26,7 +26,7 @@ double epsilon (const double &t,
 double CmvInfiltration::GreenAmptCumInf(const double &t,     //[d], time from start of rainfall (or time step)
                                         const double &alpha, //[mm]
                                         const double &Ks,    //[mm/d]
-                                        const double &w)      //rainfall rate, [mm/d]
+                                        const double &w) const     //rainfall rate, [mm/d]
 {
   //explicit solution to green ampt formulae
   if (Ks==0){return 0.0;}
@@ -131,16 +131,17 @@ void CmvInfiltration::GetGreenAmptRunoff (const double            *state_vars,
   deficit=(1.0-stor/max_stor)*poro;
   alpha=psi_wf*deficit;
 
+  double tstep=Options.timestep;
   if (type==INF_GREEN_AMPT)
   {
     //high-order approximation
-    cumInf=GreenAmptCumInf(Options.timestep,alpha,Keff,rainthru);//[mm]
+    cumInf=GreenAmptCumInf(tstep,alpha,Keff,rainthru);//[mm]
   }
   else if (type==INF_GA_SIMPLE)
   {
     if(cumInf<=0) //First time step of rainfall event
     {
-      cumInf=GreenAmptCumInf(Options.timestep,alpha,Keff,rainthru);//[mm]
+      cumInf=GreenAmptCumInf(tstep,alpha,Keff,rainthru);//[mm]
       initStor=stor; //set initial storage
     }
     else

@@ -14,7 +14,7 @@
 //
 string GetProcessName(process_type p)
 {
-  static string name;
+  string name;
   switch(p)
   {
   case(NULL_PROCESS_TYPE):  {name="NULL";                     break;}
@@ -1387,10 +1387,10 @@ double FormatDouble(const double &d)
 double rvn_erfc(const double &x)
 {
   double tmp(fabs(x)); //take abs so that we are always in positive quadrant.
-  static double fun;
-  static double f1;
-  static double tmp2;
-  static double tmp3;
+  double fun;
+  double f1;
+  double tmp2;
+  double tmp3;
 
   if(tmp > 3.0){
     f1  = (1.0 - 1.0/(2.0 * tmp * tmp)

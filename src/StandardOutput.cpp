@@ -642,8 +642,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   if ((tt.model_time==0) && (Options.suppressICs)){return;}
 
-  if ((_pEnsemble != NULL) && (_pEnsemble->DontWriteOutput())
-    && (tt.model_time>Options.assimilation_start)) { return; } //specific to EnKF
+  if ((_pEnsemble != NULL) && (_pEnsemble->DontWriteOutput())) { return; } //specific to EnKF
 
   //converts the 'write every x timesteps' into a 'write at time y' value
   output_int = Options.output_interval * Options.timestep;
