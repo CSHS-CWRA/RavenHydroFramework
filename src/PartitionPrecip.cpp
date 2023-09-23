@@ -301,7 +301,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     else{
       rates[qNewSnow]=snowthru;
     }
-    
+
     if ( pHRU->IsLake())
     {
       if (pHRU->IsLinkedToReservoir()) {
@@ -309,17 +309,17 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
       }
       else{
         rates[qLake]=rainthru; // in lake, all water just added
-      }   
-    
+      }
+
       if (pModel->StateVarExists(ICE_THICKNESS))
       {
          rates[qPondToLake ]+=state_vars[iPond ]/Options.timestep; //handles on-lake snowmelt whether ice is present or not
       }
     }
-    else if (pHRU->GetHRUType() == HRU_WETLAND) 
+    else if (pHRU->GetHRUType() == HRU_WETLAND)
     {
       rates[qDep] =rainthru; //ponded water goes to depression in wetland
-      
+
       /*if (pModel->StateVarExists(ICE_THICKNESS))
       {
          rates[qPondToDep ]+=state_vars[iPond ]/Options.timestep; //handles on-wetland snowmelt whether ice is present or not
