@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ------------------------------------------------------------------
 Soil Heat Conduction
 convention assumes conduction is positive downward
@@ -76,8 +76,9 @@ double CalculateThermalConductivity(const double &poro,const double&kappa_soil,c
   */
   return kappa;
 }
-int CmvHeatConduction::_nHRUs=-1;
-void CmvHeatConduction::StoreNumberOfHRUs(const int nHRUs){_nHRUs=nHRUs;}
+void CmvHeatConduction::StoreNumberOfHRUs(const int nHRUs){
+  _nHRUs=nHRUs;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the heat conduction constructor
 ///
@@ -88,6 +89,8 @@ CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroP
   //g_disable_freezing=true; TMP DEBUG ONLY
 
   _pTransModel=pTransMod;
+  
+  _nHRUs=-1;
 
   int nSoils=pModel->GetNumSoilLayers();
 

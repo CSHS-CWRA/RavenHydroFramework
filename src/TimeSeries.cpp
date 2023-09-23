@@ -361,8 +361,7 @@ int CTimeSeries::GetTimeIndexFromModelTime(const double &t_mod) const
 double CTimeSeries::GetValue(const double &t) const
 {
   //takes in GLOBAL time
-  static int n;
-  n = 0;
+  int n= 0;
   double t_loc = t + _t_corr;
   n = GetTimeIndex(t_loc);
 
@@ -556,8 +555,7 @@ double CTimeSeries::GetDailyMax(const int model_day) const
 //
 double CTimeSeries::GetModelledValue(const double &t,const ts_type type) const
 {
-  static int n;
-  n=0;
+  int n=0;
   double t_loc=t+_t_corr;
   n=GetTimeIndex(t_loc);
 

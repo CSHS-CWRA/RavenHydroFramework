@@ -375,7 +375,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   if(Options.SW_canopycorr==SW_CANOPY_CORR_STATIC) {
     aP[nP]="RELATIVE_LAI";     aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="FOREST_SPARSENESS";aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="SVF_EXTINCTION";  aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="SVF_EXTINCTION";   aPC[nP]=CLASS_VEGETATION; nP++;
   }
   else if(Options.SW_canopycorr ==SW_CANOPY_CORR_UBCWM) {
     aP[nP]="UBC_EXPOSURE_FACT";  aPC[nP]=CLASS_GLOBAL; nP++;

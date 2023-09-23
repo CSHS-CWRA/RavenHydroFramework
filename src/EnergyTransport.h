@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ENERGY_TRANSPORT_H
@@ -25,7 +25,7 @@ class CEnthalpyModel :public CConstituentModel
 
   bool      _anyGaugedLakes;   ///< true if any gauged lakes/reservoirs exist for writing LakeEnergyBalances.csv
 
-  double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
+  double GetReachFrictionHeat(const double &Q,const double &slope,const double &top_width) const;
   void   UpdateReachEnergySourceTerms(const int p);
   double GetNetReachLosses           (const int p) const;
 

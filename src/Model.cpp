@@ -196,7 +196,7 @@ CModel::~CModel()
   delete [] _aDAscale;       _aDAscale=NULL;
   delete [] _aDAlength;      _aDAlength=NULL;
   delete [] _aDAtimesince;   _aDAtimesince=NULL;
-  delete [] _aDAlast;          _aDAlast=NULL;
+  delete [] _aDAlast;        _aDAlast=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 

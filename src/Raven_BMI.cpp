@@ -116,7 +116,7 @@ void CRavenBMI::ReadConfigFile(std::string config_file)
     do {
         // find ini and end of substring
         config_str_ini = config_str_end + 1;
-        config_str_end = line.find(":", config_str_ini);
+        config_str_end = (int)line.find(":", config_str_ini);
 
         // extract substring and trim leading and trailing whitespaces
         config_value = line.substr(config_str_ini, config_str_end - config_str_ini);
@@ -136,7 +136,7 @@ void CRavenBMI::ReadConfigFile(std::string config_file)
           // "Raven.exe" is a dummy argument to mimic the command line arguments
           args = SplitLine("Raven.exe " + config_value);
           argv = args.data();
-          ProcessExecutableArguments(args.size()-1, argv, Options);
+          ProcessExecutableArguments((int)(args.size())-1, argv, Options);
           break;
         } else {
           ProcessConfigFileArgument(config_key, config_value);
@@ -431,6 +431,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
       }
     }
     memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
+    delete [] out;
   }
   else if (name == "soil[0]") {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SOIL,0);}
   else if (name == "snow")    {is_HRU_SV=true; iSV=pModel->GetStateVarIndex(SNOW);  }
@@ -446,8 +447,9 @@ void CRavenBMI::GetValue(std::string name, void* dest)
       out[k]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
     }
     memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
+    delete [] out;  
   }
-  delete [] out;
+  
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of variable values for variable with supplied name at subset o flocations

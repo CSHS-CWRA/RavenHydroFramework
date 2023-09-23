@@ -162,7 +162,7 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
       lowerswap(albedo,max_alb);
 
       if (albedo>PP.ALBASE){
-        static double albrec_factor = pow(PP.ALBREC,Options.timestep);
+        double albrec_factor = pow(PP.ALBREC,Options.timestep);
         albedo*= albrec_factor;
       }
 

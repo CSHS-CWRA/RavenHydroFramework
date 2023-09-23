@@ -179,7 +179,7 @@ string CTransportModel::GetConstituentLongName_loc(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
-  sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
+  sv_type typ=pModel->GetStateVarType (_iWaterStorage[j]);
   int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
 
   if(_pConstitModels[c]->GetType()==ENTHALPY) {
@@ -827,7 +827,6 @@ void CTransportModel::Initialize(const optStruct &Options)
   for(int c=0;c<_nConstituents;c++){
     _pConstitModels[c]->Initialize(Options);
   }
-  CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
 }
 
 //////////////////////////////////////////////////////////////////

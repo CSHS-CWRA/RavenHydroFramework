@@ -233,6 +233,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
   }
 
   bool lake_frozen=false;
+  bool wetland_frozen=false;
   if (pModel->StateVarExists(ICE_THICKNESS))
   {
     int iIceThick=pModel->GetStateVarIndex(ICE_THICKNESS);
@@ -252,10 +253,19 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     {
        rates[qSnowToLake ]+=state_vars[iSWE  ]/Options.timestep;
        rates[qSnLiqToLake]+=state_vars[iSnLiq]/Options.timestep;
-       rates[qPondToLake ]+=state_vars[iPond ]/Options.timestep; //handles on-lake snowmelt
     }
   }
-  else
+  else if ((pHRU->GetHRUType()==HRU_WETLAND) && (!wetland_frozen))
+  {
+    rates[qDep] =snowthru + rainthru; //all water goes to depression in wetland
+
+    /*if (pModel->StateVarExists(ICE_THICKNESS))//all remaining snow and ponded water dumped to wetland/depression
+    {
+       rates[qSnowToDep ]+=state_vars[iSWE  ]/Options.timestep;
+       rates[qSnLiqToDep]+=state_vars[iSnLiq]/Options.timestep;
+    }*/
+  }
+  else //regular land, frozen lakes or frozen wetlands - treat snow
   {
     //Handle all snow variables
     //--------------------------------------------------------------------
@@ -291,19 +301,33 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
     else{
       rates[qNewSnow]=snowthru;
     }
-
-    //everything remaining goes to ponded water variable, usually handled by infiltration & abstraction algorithms
-    if(pHRU->GetHRUType()!=HRU_WETLAND)
+    
+    if ( pHRU->IsLake())
     {
-      rates[qPond]=rainthru;
+      if (pHRU->IsLinkedToReservoir()) {
+        rates[qSW]=rainthru; //handles case when both reservoirs and lake storage used
+      }
+      else{
+        rates[qLake]=rainthru; // in lake, all water just added
+      }   
+    
+      if (pModel->StateVarExists(ICE_THICKNESS))
+      {
+         rates[qPondToLake ]+=state_vars[iPond ]/Options.timestep; //handles on-lake snowmelt whether ice is present or not
+      }
     }
-    else
+    else if (pHRU->GetHRUType() == HRU_WETLAND) 
     {
       rates[qDep] =rainthru; //ponded water goes to depression in wetland
-      /*if(!wetland_frozen){ // \todo [funct] handle snow on frozen wetlands
-        rates[qSnow]-=snowthru;
-        rates[qDep] +=snowthru;
+      
+      /*if (pModel->StateVarExists(ICE_THICKNESS))
+      {
+         rates[qPondToDep ]+=state_vars[iPond ]/Options.timestep; //handles on-wetland snowmelt whether ice is present or not
       }*/
+    }
+    else{
+      //everything remaining goes to ponded water variable, usually handled by infiltration & abstraction algorithms
+      rates[qPond]=rainthru;
     }
   }
 }
