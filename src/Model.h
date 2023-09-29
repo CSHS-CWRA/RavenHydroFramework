@@ -45,6 +45,9 @@ class CModel: public CModelABC
 {
 private:/*------------------------------------------------------*/
 
+  // Simulation options 
+  optStruct             Options;  ///< model options
+
   //Model attributes
   double         _WatershedArea;  ///< total area of all subbasins [km^2]
 
@@ -269,6 +272,11 @@ public:/*-------------------------------------------------------*/
   //Constructor/Destructor:
   CModel(const int nsoillayers, const optStruct &Options);
   ~CModel();
+
+  // Terminating functions
+  void FinalizeGracefully(const char *statement, exitcode code) const;
+  void ExitGracefully(const char *statement, exitcode code) const;
+  void ExitGracefullyIf(bool condition, const char *statement, exitcode code) const;
 
   //Inherited Accessor functions (from ModelABC.h)
   bool              StateVarExists     (sv_type type) const;

@@ -216,6 +216,67 @@ CModel::~CModel()
   delete [] _PotMeltBlends_type;
   delete [] _PotMeltBlends_wts;
 }
+
+/*****************************************************************
+   Terminators
+------------------------------------------------------------------
+*****************************************************************/
+
+void CModel::FinalizeGracefully(const char *statement, exitcode code) const {
+  string typeline;
+  switch (code){
+    case(SIMULATION_DONE): {typeline="============================================================";break;}
+    case(RUNTIME_ERR):     {typeline="Error Type: Runtime Error";       break;}
+    case(BAD_DATA):        {typeline="Error Type: Bad input data";      break;}
+    case(BAD_DATA_WARN):   {typeline="Error Type: Bad input data";      break;}
+    case(OUT_OF_MEMORY):   {typeline="Error Type: Out of memory";       break;}
+    case(FILE_OPEN_ERR):   {typeline="Error Type: File opening error";  break;}
+    case(STUB):            {typeline="Error Type: Stub function called";break;}
+    default:               {typeline="Error Type: Unknown";             break;}
+  }
+
+  if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
+    ofstream WARNINGS;
+    WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
+    if (WARNINGS.fail()) {
+      WARNINGS.close();
+      string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
+      ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
+    }
+    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
+    else                       {WARNINGS<<"SIMULATION COMPLETE :)"<<endl;}
+    WARNINGS.close();
+  }
+  if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode
+
+  cout <<endl<<endl;
+  cout <<"============== Exiting Gracefully =========================="<<endl;
+  cout <<"Exiting Gracefully from method: "<<statement                 <<endl;
+  cout << typeline                                                     <<endl;
+  cout <<"============================================================"<<endl;
+
+  delete this;  // deletes EVERYTHING! - TODO: be careful with this (dangling pointers after this call)
+  // pModel=NULL;
+  CStateVariable::Destroy();
+
+  if(Options.pause) {
+    cout << "Press the ENTER key to continue"<<endl;
+    cin.get();
+  }
+}
+
+// TODO: document
+void CModel::ExitGracefully(const char *statement, exitcode code) const {
+  FinalizeGracefully(statement, code);
+  exit(0);
+}
+
+// TODO: document
+void CModel::ExitGracefullyIf(bool condition, const char *statement, exitcode code) const {
+  if (condition){ExitGracefully(statement,code);}
+}
+
+
 /*****************************************************************
    Accessors
 ------------------------------------------------------------------

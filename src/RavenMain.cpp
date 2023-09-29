@@ -171,8 +171,7 @@ int main(int argc, char* argv[])
     pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,tt,e);
   }/* end ensemble loop*/
 
-
-  ExitGracefully("Successful Simulation",SIMULATION_DONE);
+  pModel->ExitGracefully("Successful Simulation", SIMULATION_DONE);
   return 0;
 }
 
