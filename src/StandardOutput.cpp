@@ -122,6 +122,14 @@ string FilenamePrepare(string filebase, const optStruct &Options)
   return fn;
 }
 
+// TODO: document
+string FilenamePrepare(string filebase, const optStruct* Options) {
+  string fn;
+  if (Options->run_name==""){fn=Options->output_dir+filebase;}
+  else                      {fn=Options->output_dir+Options->run_name+"_"+filebase;}
+  return fn;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output file streams
 /// \details after end of simulation from Main() or in ExitGracefully; All file streams are opened in WriteOutputFileHeaders() routine
@@ -1219,6 +1227,114 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
   }
 
 }
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Replaces the WriteOutputFileHeaders function by not requiring the Options structure as an argument
+/// TODO: document
+void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final) const
+{
+  int i,k;
+  string tmpFilename;
+  const optStruct* Options = this->_pOptStruct;  // just to make the code more readable
+
+  if (Options->output_format==OUTPUT_NONE){return;} //:SuppressOutput is on
+
+  // WRITE {RunName}_solution.rvc - final state variables file
+  ofstream RVC;
+  tmpFilename=FilenamePrepare(solfile+".rvc", Options);
+  RVC.open(tmpFilename.c_str());
+  if (RVC.fail()){
+    WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),
+                  Options->noisy);
+  }
+  RVC<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
+
+  //Header--------------------------
+  //write in blocks of 80 state variables
+  int mini,maxi;
+  int M=80;
+  for (int j=0; j<ceil(GetNumStateVars()/(double)(M)); j++){
+    mini=j*M;
+    maxi=min(GetNumStateVars(),(j+1)*M);
+    RVC<<":HRUStateVariableTable"<<endl;
+    RVC<<"  :Attributes,";
+    for (i=mini;i<maxi;i++)
+    {
+      RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+      if (i!=GetNumStateVars()-1){RVC<<",";}
+    }
+    RVC<<endl;
+    RVC<<"  :Units,";
+    for (i=mini;i<maxi;i++)
+    {
+      RVC<<CStateVariable::GetStateVarUnits(_aStateVarType[i]);
+      if (i!=GetNumStateVars()-1){RVC<<",";}
+    }
+    RVC<<endl;
+    //Data----------------------------
+    for (k=0;k<_nHydroUnits;k++)
+    {
+      RVC<<std::fixed; RVC.precision(5);
+      RVC<<"  "<<_pHydroUnits[k]->GetID()<<",";
+      for (i=mini;i<maxi;i++)
+      {
+        RVC<<_pHydroUnits[k]->GetStateVarValue(i);
+        if (i!=GetNumStateVars()-1){RVC<<",";}
+      }
+      RVC<<endl;
+    }
+    RVC<<":EndHRUStateVariableTable"<<endl;
+  }
+  //By basin------------------------
+  RVC<<":BasinStateVariables"<<endl;
+  for (int p=0;p<_nSubBasins;p++){
+    RVC<<"  :BasinIndex "<<_pSubBasins[p]->GetID()<<",";
+    _pSubBasins[p]->WriteToSolutionFile(RVC);
+  }
+  RVC<<":EndBasinStateVariables"<<endl;
+
+  _pTransModel->WriteMajorOutput(RVC);
+
+  RVC.close();
+
+  // SubbasinProperties.csv
+  //--------------------------------------------------------------
+  if (Options->write_basinfile){
+    ofstream BAS;
+    tmpFilename=FilenamePrepare("SubbasinProperties.csv",Options);
+    BAS.open(tmpFilename.c_str());
+    if(BAS.fail()) {
+      WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options->noisy);
+    }
+    BAS<<"ID,Qref[m3/s],reach_length[m],area[km2],drainage_area[km2],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
+    for(int pp=0;pp<_nSubBasins;pp++) {
+      BAS<<_pSubBasins[pp]->GetID()<<",  "<<_pSubBasins[pp]->GetReferenceFlow();
+      BAS<<","<<_pSubBasins[pp]->GetReachLength();
+      BAS<<","<<_pSubBasins[pp]->GetBasinArea();
+      BAS<<","<<_pSubBasins[pp]->GetDrainageArea();
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_CONC");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("TIME_TO_PEAK");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SHAPE");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("GAMMA_SCALE");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("CELERITY");
+      BAS<<","<<_pSubBasins[pp]->GetBasinProperties("DIFFUSIVITY");
+      BAS<<","<<_pSubBasins[pp]->GetLatHistorySize();
+      for (int i = 0; i < _pSubBasins[pp]->GetLatHistorySize(); i++) {
+        BAS<<","<<_pSubBasins[pp]->GetUnitHydrograph()[i];
+      }
+      BAS<<endl;
+    }
+    BAS.close();
+  }
+
+  // rating_curves.csv
+  //--------------------------------------------------------------
+  if(Options->write_channels){
+    CChannelXSect::WriteRatingCurves(Options);
+  }
+}
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief Writes major output to file at the end of simulation

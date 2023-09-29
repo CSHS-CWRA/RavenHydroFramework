@@ -237,10 +237,10 @@ void CModel::FinalizeGracefully(const char *statement, exitcode code) const {
 
   if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
     ofstream WARNINGS;
-    WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
+    WARNINGS.open((_pOptStruct->main_output_dir+"Raven_errors.txt").c_str(), ios::app);
     if (WARNINGS.fail()) {
       WARNINGS.close();
-      string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
+      string message="Unable to open errors file ("+_pOptStruct->main_output_dir+"Raven_errors.txt)";
       ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
     }
     if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
@@ -259,7 +259,7 @@ void CModel::FinalizeGracefully(const char *statement, exitcode code) const {
   // pModel=NULL;
   CStateVariable::Destroy();
 
-  if(Options.pause) {
+  if(_pOptStruct->pause) {
     cout << "Press the ENTER key to continue"<<endl;
     cin.get();
   }

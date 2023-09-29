@@ -45,9 +45,6 @@ class CModel: public CModelABC
 {
 private:/*------------------------------------------------------*/
 
-  // Simulation options 
-  optStruct             Options;  ///< model options
-
   //Model attributes
   double         _WatershedArea;  ///< total area of all subbasins [km^2]
 
@@ -461,6 +458,7 @@ public:/*-------------------------------------------------------*/
   //output routines
   void        WriteMinorOutput        (const optStruct &Options, const time_struct &tt);
   void        WriteSimpleOutput       (const optStruct &Options, const time_struct &tt);
+  void        WriteMajorOutput        (const time_struct &tt,string solfile,bool final) const;
   void        WriteMajorOutput        (const optStruct &Options, const time_struct &tt,string solfile,bool final) const;
   void        WriteProgressOutput     (const optStruct &Options, clock_t elapsed_time, int elapsed_steps, int total_steps);
   void        CloseOutputStreams      ();

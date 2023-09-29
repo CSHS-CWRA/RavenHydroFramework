@@ -105,5 +105,6 @@ public:/*-------------------------------------------------------*/
   static void                DestroyAllChannelXSections();
   static void                SummarizeToScreen         ();
   static void                WriteRatingCurves         (const optStruct& Options);
+  static void                WriteRatingCurves         (const optStruct* Options);
 };
 #endif

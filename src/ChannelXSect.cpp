@@ -5,6 +5,8 @@
 #include "ChannelXSect.h"
 void TestManningsInfluence(const CChannelXSect *pChan,const double &Qref);
 string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
+string FilenamePrepare(string filebase,const optStruct* Options); //Defined in StandardOutput.cpp
+
 //////////////////////////////////////////////////////////////////
 /// \brief Utility method to assign parameter name to cross section "nickname", add to static array of all x-sections
 /// \param name [in] Nickname for cross section
@@ -587,6 +589,31 @@ void CChannelXSect::WriteRatingCurves(const optStruct& Options)
   for (int p=0; p<NumChannelXSects;p++)
   {
     const CChannelXSect *pP=pAllChannelXSects[p];
+    CURVES<<pP->_name <<"----------------"<<endl;
+    CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aQ[i]       <<",";}CURVES<<endl;
+    CURVES<<"Stage Height [m],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aStage[i]   <<",";}CURVES<<endl;
+    CURVES<<"Top Width [m],";       for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aTopWidth[i]<<",";}CURVES<<endl;
+    CURVES<<"X-sect area [m2],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aXArea[i]   <<",";}CURVES<<endl;
+    CURVES<<"Wetted Perimeter [m],";for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aPerim[i]   <<",";}CURVES<<endl;
+  }
+  CURVES.close();
+}
+
+// TODO: document
+void CChannelXSect::WriteRatingCurves(const optStruct* Options)
+{
+  ofstream CURVES;
+  string tmpFilename = FilenamePrepare("rating_curves.csv", Options);
+  CURVES.open(tmpFilename.c_str());
+
+  if (CURVES.fail()){
+    ExitGracefully("CChannelXSect::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.",
+                   FILE_OPEN_ERR);
+  }
+  int i;
+  for (int p=0; p<NumChannelXSects;p++)
+  {
+    const CChannelXSect *pP = pAllChannelXSects[p];
     CURVES<<pP->_name <<"----------------"<<endl;
     CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aQ[i]       <<",";}CURVES<<endl;
     CURVES<<"Stage Height [m],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aStage[i]   <<",";}CURVES<<endl;

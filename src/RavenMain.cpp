@@ -9,7 +9,6 @@
 #include "UnitTesting.h"
 
 // Main Driver Variables------------------------------------------
-static optStruct   Options;
 static CModel      *pModel;
 
 // Global variables - declared as extern in RavenInclude.h--------
@@ -38,6 +37,7 @@ int main(int argc, char* argv[])
   clock_t     t0, t1;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
+  optStruct   Options;
 
   Options.version="3.7.1";
 #ifdef _NETCDF_
@@ -306,6 +306,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 //
 void FinalizeGracefully(const char *statement, exitcode code)
 {
+  const optStruct* Options = pModel->GetOptStruct();
+
   string typeline;
   switch (code){
     case(SIMULATION_DONE): {typeline="============================================================";break;}
@@ -320,10 +322,10 @@ void FinalizeGracefully(const char *statement, exitcode code)
 
   if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
     ofstream WARNINGS;
-    WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
+    WARNINGS.open((Options->main_output_dir+"Raven_errors.txt").c_str(),ios::app);
     if (WARNINGS.fail()) {
       WARNINGS.close();
-      string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
+      string message="Unable to open errors file ("+Options->main_output_dir+"Raven_errors.txt)";
       ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
     }
     if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
@@ -341,7 +343,7 @@ void FinalizeGracefully(const char *statement, exitcode code)
   delete pModel; pModel=NULL; //deletes EVERYTHING!
   CStateVariable::Destroy();
 
-  if(Options.pause) {
+  if(Options->pause) {
     cout << "Press the ENTER key to continue"<<endl;
     cin.get();
   }
@@ -374,12 +376,13 @@ void CheckForErrorWarnings(bool quiet)
   char    *s[MAXINPUTITEMS];
   bool     errors_found(false);
   bool     warnings_found(false);
+  const optStruct* Options = pModel->GetOptStruct();
 
   ifstream WARNINGS;
-  WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str());
+  WARNINGS.open((Options->main_output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){WARNINGS.close();return;}
 
-  CParser *p=new CParser(WARNINGS,Options.main_output_dir+"Raven_errors.txt",0);
+  CParser *p=new CParser(WARNINGS,Options->main_output_dir+"Raven_errors.txt",0);
 
   while (!(p->Tokenize(s,Len)))
   {
@@ -414,7 +417,7 @@ bool CheckForStopfile(const int step, const time_struct &tt)
   else //Stopfile found
   {
     STOP.close();
-    pModel->WriteMajorOutput  (Options,tt,"solution",true);
+    pModel->WriteMajorOutput(tt, "solution", true);
     pModel->CloseOutputStreams();
     ExitGracefully("CheckForStopfile: simulation interrupted by user using stopfile",SIMULATION_DONE);
     return true;
