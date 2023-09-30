@@ -49,8 +49,8 @@ void CmvSnowTempEvolve::GetRatesOfChange( const double      *state_vars,
   if (_type==SNOTEMP_NEWTONS)
   {
     //linear heat transfer coefficient
-    double alpha=CGlobalParams::GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
-    rates[0]=alpha*(Tair-Tsnow);
+    double alpha = pModel->GetGlobalParams()->GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
+    rates[0] = alpha*(Tair-Tsnow);
   }
 }
 

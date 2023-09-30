@@ -5,6 +5,7 @@
 #include "Properties.h"
 #include "GlobalParams.h"
 #include "HydroUnits.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns thermal conductivity of snow [MJ/d/m/K]
@@ -75,14 +76,14 @@ double GetSnowDensity(const double &snowSWE,const double &snow_depth)
 /// \param &Options [in] Global model options information
 /// \return Snow liquid capacity [-]
 //
-double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, const optStruct &Options)
+double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, const CModelABC* pModel)
 {
   double liq_cap;
   //if (snow_depth>0.0){
   //  liq_cap=CGlobalParams::GetParams()->snow_SWI*(1.0-SWE/snow_depth);
   //}
 
-  liq_cap= CGlobalParams::GetParams()->snow_SWI*SWE; //HBV-EC, Brook90, UBCWM, GAWSER
+  liq_cap = pModel->GetGlobalParams()->GetParams()->snow_SWI*SWE; //HBV-EC, Brook90, UBCWM, GAWSER
 
   return liq_cap;
 

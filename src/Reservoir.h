@@ -246,7 +246,7 @@ public:/*-------------------------------------------------------*/
   //Called during simulation:
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
-                                              const optStruct   &Options,
+                                              const CModelABC*  pModel,
                                               const time_struct &tt,
                                                     double      &res_outflow,
                                                  res_constraint &constraint,

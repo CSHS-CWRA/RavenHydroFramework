@@ -401,17 +401,17 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
               //special handling of some parameters
               if(!aParamStrings[i].compare("TIME_CONC")    && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-                in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
+                in *= pModel->GetGlobalParams()->GetParameter("TOC_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("TIME_TO_PEAK") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
                 //in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");    // use to be this; but has its own multiplier now; maybe set default to TOC_MULTIPLIER??
-				in*=CGlobalParams::GetParameter("TIME_TO_PEAK_MULTIPLIER");
+                in *= pModel->GetGlobalParams()->GetParameter("TIME_TO_PEAK_MULTIPLIER");
               }
-	      	  if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-			  	in*=CGlobalParams::GetParameter("GAMMA_SHAPE_MULTIPLIER");
+	            if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+                in *= pModel->GetGlobalParams()->GetParameter("GAMMA_SHAPE_MULTIPLIER");
               }
-	      	  if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-				in*=CGlobalParams::GetParameter("GAMMA_SCALE_MULTIPLIER");
+              if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+                in *= pModel->GetGlobalParams()->GetParameter("GAMMA_SCALE_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
                 if(pModel->GetHRUByID((int)in)!=NULL) {
@@ -1108,7 +1108,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
   // Add parameters needed for discharge initialization/reference flow calculation
   //--------------------------------------------------------------------------
-  if ((pModel->GetNumSubBasins()>1) && (CGlobalParams::GetParameter("AVG_ANNUAL_RUNOFF")<0))
+  if ((pModel->GetNumSubBasins()>1) && (pModel->GetGlobalParams()->GetParameter("AVG_ANNUAL_RUNOFF")<0))
   {
     // \todo [QA/QC]: reduce generalization- only really needed if routing method requires Q_REF
     ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied (using :AvgAnnualRunoff command in .rvp file) if more than one basin is included in model",BAD_DATA_WARN);

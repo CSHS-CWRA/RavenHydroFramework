@@ -26,7 +26,7 @@ double AutoOrDoubleOrAlias(const string s, val_alias **aAl,const int nAl)
 bool ParsePropArray(CParser *p,int *indices,double **properties,
                     int &num_read,string *tags,const int line_length,const int max_classes,
                     val_alias **pAliases,  const int nAliases);
-void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, const optStruct &Options);
+void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, CModel* pModel);
 void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  ImproperFormatWarning(string command,CParser *p,bool noisy);
 void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int       &nPm,
@@ -90,8 +90,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   val_alias       **aAliases=NULL;
   int               nAliases=0;
 
-  CGlobalParams::InitializeGlobalParameters(global_template,true);
-  CGlobalParams::InitializeGlobalParameters(parsed_globals,false);
+  pModel->GetGlobalParams()->InitializeGlobalParameters(global_template,true);
+  pModel->GetGlobalParams()->InitializeGlobalParameters(parsed_globals,false);
 
   CVegetationClass::InitializeVegetationProps ("[DEFAULT]",parsed_veg[0],true);//zero-index canopy is template
   vegtags    [0]="[DEFAULT]";
@@ -208,10 +208,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     else if (aPCmaster[p]==CLASS_GLOBAL    )
     {
-      val=CGlobalParams::GetGlobalProperty(global_template,aPmaster[p]);
+      val = pModel->GetGlobalParams()->GetGlobalProperty(global_template,aPmaster[p]);
       if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
       else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
-      CGlobalParams::SetGlobalProperty    (global_template,aPmaster[p],val);
+      pModel->GetGlobalParams()->SetGlobalProperty    (global_template,aPmaster[p],val);
     }
   }
 
@@ -1223,7 +1223,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :GlobalParameter {string PARAMETER_NAME} {double value}*/
       if (Options.noisy){cout <<"Global Parameter"<<endl;}
       if (Len<3){p->ImproperFormat(s); break;}
-      CGlobalParams::SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
+      pModel->GetGlobalParams()->SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
       break;
     }
     case(721):  //----------------------------------------------
@@ -1467,7 +1467,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   if (!Options.silent){cout<<"Autocalculating Model Parameters..."<<endl;}
 
-  CGlobalParams::AutoCalculateGlobalParams          (parsed_globals,global_template);
+  pModel->GetGlobalParams()->AutoCalculateGlobalParams          (parsed_globals,global_template);
 
   for (int c=1;c<num_parsed_veg;c++){
     pVegClasses [c-1]->AutoCalculateVegetationProps (parsed_veg[c],parsed_veg[0]);
@@ -1487,7 +1487,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     cout<<"Checking for Required Model Parameters..."<<endl;
   }
 
-  RVPParameterWarning(aPmaster,aPCmaster,nPmaster,Options);
+  RVPParameterWarning(aPmaster, aPCmaster, nPmaster, pModel);
 
   //Check for existence of classes
   //--------------------------------------------------------------------------
@@ -1611,11 +1611,12 @@ bool ParsePropArray(CParser          *p,           //parser
 /// \param &nP [out] Number of parameters in list (size of aP[] and aPC[])
 /// \param &Options global options structure
 //
-void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStruct &Options)
+void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, CModel* pModel)
 {
+  const optStruct* Options = pModel->GetOptStruct();
   for (int ii=0;ii<nP;ii++)
   {
-    if (Options.noisy){cout<<"    checking availability of parameter "<<aP[ii]<<endl;}
+    if (Options->noisy){cout<<"    checking availability of parameter "<<aP[ii]<<endl;}
 
     if (aPC[ii]==CLASS_SOIL){
       for (int c=0;c<CSoilClass::GetNumClasses();c++){
@@ -1651,7 +1652,7 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStr
       }
     }
     else if (aPC[ii]==CLASS_GLOBAL){
-      if (CGlobalParams::GetParameter(aP[ii])==NOT_SPECIFIED){
+      if (pModel->GetGlobalParams()->GetParameter(aP[ii]) == NOT_SPECIFIED){
 
         string warning="ParsePropertyFile: required global parameter "+aP[ii]+" not included in .rvp file.";
         ExitGracefully(warning.c_str(),BAD_DATA_WARN);

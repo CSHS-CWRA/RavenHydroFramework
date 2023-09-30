@@ -45,6 +45,8 @@ class CModel: public CModelABC
 {
 private:/*------------------------------------------------------*/
 
+  CGlobalParams *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
+
   //Model attributes
   double         _WatershedArea;  ///< total area of all subbasins [km^2]
 
@@ -278,6 +280,7 @@ public:/*-------------------------------------------------------*/
   //Inherited Accessor functions (from ModelABC.h)
   bool              StateVarExists     (sv_type type) const;
 
+  CGlobalParams*    GetGlobalParams    () const;
   int               GetNumStateVars    () const;
   sv_type           GetStateVarType    (const int i) const;
   int               GetStateVarIndex   (sv_type type) const; //assumes layer=0

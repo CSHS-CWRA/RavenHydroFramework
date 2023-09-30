@@ -439,9 +439,9 @@ void CmvGlacierInfil::GetParticipatingStateVarList(glacial_infil_type r_type,sv_
 /// \param *rates [out] Array of rates of change in modified state variables
 ///
 //
-void CmvGlacierInfil::GetRatesOfChange ( const double               *state_vars,
+void CmvGlacierInfil::GetRatesOfChange ( const double      *state_vars,
                                          const CHydroUnit  *pHRU,
-                                         const optStruct     &Options,
+                                         const optStruct   &Options,
                                          const time_struct &tt,
                                          double            *rates) const
 {
@@ -456,8 +456,8 @@ void CmvGlacierInfil::GetRatesOfChange ( const double               *state_vars,
     double ponded       =state_vars[iFrom[0]];
     double rain_and_melt=ponded/Options.timestep;
 
-    double max_perc_rate=pHRU->GetSoilProps(1)->max_perc_rate;
-    double P0DSH        =CGlobalParams::GetParams()->UBC_GW_split;
+    double max_perc_rate = pHRU->GetSoilProps(1)->max_perc_rate;
+    double P0DSH         = pModel->GetGlobalParams()->GetParams()->UBC_GW_split;
 
     //.NET
     //to_GW=0;

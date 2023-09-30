@@ -634,11 +634,11 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
   // initialize stream temperatures if init_stream_temp is given
   //--------------------------------------------------------------------
   double hv;
-  if(CGlobalParams::GetParams()->init_stream_temp>0.0)
+  if(_pModel->GetGlobalParams()->GetParams()->init_stream_temp>0.0)
   {
     const CSubBasin *pBasin;
 
-    hv=ConvertTemperatureToVolumetricEnthalpy(CGlobalParams::GetParams()->init_stream_temp,0.0);
+    hv=ConvertTemperatureToVolumetricEnthalpy(_pModel->GetGlobalParams()->GetParams()->init_stream_temp,0.0);
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       pBasin=_pModel->GetSubBasin(p);
@@ -668,7 +668,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
       _initial_mass+=_channel_storage[p];
 //      cout<<" init storage!"<<_initial_mass;
 
-      _aBedTemp[p]=CGlobalParams::GetParams()->init_stream_temp;
+      _aBedTemp[p] = _pModel->GetGlobalParams()->GetParams()->init_stream_temp;
     }
   }
 

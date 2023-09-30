@@ -1631,13 +1631,14 @@ double TemperatureEnthalpyDerivative         (const double &hv);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp
+class CModelABC;  // defined in ModelABC.h
 double CalcFreshSnowDensity       (const double &air_temp);
 double GetSnowThermCond           (const double &snow_dens);
 double GetSensibleHeatSnow        (const double &air_temp,const double &surf_temp,const double &V, const double &ref_ht, const double &rough);
 double GetLatentHeatSnow          (const double &P,const double &air_temp,const double &surf_temp,const double &rel_humid,const double &V,const double &ref_ht,const double &rough);
 double GetRainHeatInput           (const double &surf_temp, const double &air_temp,const double &rain_rate,const double &rel_humid);
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
-double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth,const optStruct &Options);
+double CalculateSnowLiquidCapacity(const double &SWE, const double &snow_depth, const CModelABC* pModel);
 
 //Crop Functions---------------------------------------------------
 bool   IsGrowingSeason            (const time_struct &tt, const double &CHU);

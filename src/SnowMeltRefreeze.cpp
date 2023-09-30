@@ -209,7 +209,7 @@ void CmvSnowSqueeze::GetRatesOfChange( const double              *state_vars,
   if (pModel->GetStateVarIndex(SNOW_DEPTH)!=DOESNT_EXIST){
     SD=state_vars[pModel->GetStateVarIndex(SNOW_DEPTH)];
   }
-  liq_cap=CalculateSnowLiquidCapacity(S,SD,Options);
+  liq_cap=CalculateSnowLiquidCapacity(S, SD, pModel);
 
   rates[0]=max(SL-liq_cap,0.0)/Options.timestep;
 

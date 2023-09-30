@@ -1982,11 +1982,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID,long SBIDres,double pct_met,int jul_start,int jul_end)
 {
   double dmult;
-  double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
+  double mult = pModel->GetGlobalParams()->GetParameter("RESERVOIR_DEMAND_MULT");
   string warn;
 
-  CSubBasin *pSB,*pSBres;
-  pSB=pModel->GetSubBasinByID(SBID);
+  CSubBasin *pSB, *pSBres;
+  pSB = pModel->GetSubBasinByID(SBID);
   if(pSB==NULL) {
     warn=":AllocateReservoirDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
     WriteWarning(warn,Options.noisy);

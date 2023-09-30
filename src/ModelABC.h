@@ -7,6 +7,7 @@
 
 #include "RavenInclude.h"
 
+class CGlobalParams;  // defined in GlobalParams.h
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for surface water model with limited access to variables
@@ -47,6 +48,7 @@ public:/*-------------------------------------------------------*/
   virtual int         GetLakeStorageIndex() const=0;
 
   virtual const optStruct   *GetOptStruct() const = 0;
+  virtual CGlobalParams     *GetGlobalParams() const = 0;
 };
 
 #endif

@@ -54,6 +54,7 @@ CModel::CModel(const int        nsoillayers,
   _aDAlast        =NULL;
 
   _pOptStruct = &Options;
+  _pGlobalParams = new CGlobalParams();
 
   _HYDRO_ncid   =-9;
   _STORAGE_ncid =-9;
@@ -281,6 +282,15 @@ void CModel::ExitGracefullyIf(bool condition, const char *statement, exitcode co
    Accessors
 ------------------------------------------------------------------
 *****************************************************************/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns pointer to global parameters object
+///
+/// \return Pointer to global parameters object
+//
+CGlobalParams* CModel::GetGlobalParams() const {
+  return _pGlobalParams;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of sub basins in model
@@ -1934,7 +1944,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   if (pval!=INDEX_NOT_FOUND){return CLASS_VEGETATION;}
   pval=CLandUseClass::GetSurfaceProperty(L,param_str,false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_LANDUSE;}
-  pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
+  pval = this->_pGlobalParams->GetGlobalProperty(G, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_GLOBAL;}
   if(_nGauges>0) {
     pval=_pGauges[0]->GetGaugeProperty(param_str);
@@ -1983,7 +1993,7 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_GLOBAL)
   {
-    CGlobalParams::SetGlobalProperty(pname,value);
+    this->_pGlobalParams->SetGlobalProperty(pname,value);
   }
   else if(ctype==CLASS_GAUGE)
   {

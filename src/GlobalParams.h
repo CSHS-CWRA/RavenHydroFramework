@@ -17,7 +17,7 @@ class CGlobalParams
 {
 protected:/*----------------------------------------------------*/
 
-  static global_struct             G;   ///< global parameters
+  global_struct G;   ///< global parameters
 
 public:/*-------------------------------------------------------*/
 
@@ -25,21 +25,20 @@ public:/*-------------------------------------------------------*/
   ~CGlobalParams();
 
   //Accessors
-  static const global_struct    *GetParams();
-  static double GetParameter(const string param_name);
-  static void SetGlobalProperty          (const string  &param_name, const double &value);
+  const global_struct *GetParams();
+  double GetParameter     (const string param_name);
+  void   SetGlobalProperty(const string  &param_name, const double &value);
 
   //routines
-  static void AutoCalculateGlobalParams(const global_struct &Gtmp, const global_struct &Gdefault);
+  void AutoCalculateGlobalParams  (const global_struct &Gtmp, const global_struct &Gdefault);
 
+  void InitializeGlobalParameters (global_struct &G, bool is_template);
+  void SetGlobalProperty          (global_struct &G, const string  param_name, const double value);
+  double GetGlobalProperty        (const global_struct &G, string  param_name, const bool strict=true);
 
-  static void InitializeGlobalParameters (global_struct &G, bool is_template);
-  static void SetGlobalProperty          (global_struct &G, const string  param_name, const double value);
-  static double GetGlobalProperty        (const global_struct &G, string  param_name, const bool strict=true);
+  double *GetAddress(const string param_name);
 
-  static double *GetAddress(const string param_name);
-
-  static void SummarizeToScreen();
+  void SummarizeToScreen();
 };
 
 #endif

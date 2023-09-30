@@ -270,7 +270,7 @@ void CmvCanopySublimation::GetParticipatingStateVarList(sublimation_type cs_type
 
 double  SublimationRate(const double      *state_vars,
                         const CHydroUnit  *pHRU,
-                        const optStruct   &Options,
+                        const CModelABC   *pModel,
                         const time_struct &tt,
                         const double      &wind_vel,
                         sublimation_type   type); //defined in Sublimation.cpp
@@ -322,8 +322,8 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
   {
     double wind_vel=pHRU->GetForcingFunctions()->wind_vel;//pModel->WindspeedAtHeight(pHRU->GetVegVarProps()->height, Options,pHRU,F,2.0);
 
-    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity",STUB);
-    rates[0]=Fc*SublimationRate(state_vars,pHRU,Options,tt,wind_vel,type);
+    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity", STUB);
+    rates[0] = Fc*SublimationRate(state_vars, pHRU, pModel, tt, wind_vel, type);
   }
   rates[1]=PETused;
 }

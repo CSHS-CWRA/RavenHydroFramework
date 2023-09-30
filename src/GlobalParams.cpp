@@ -23,8 +23,6 @@ CGlobalParams::~CGlobalParams()
 {
   if (DESTRUCTOR_DEBUG){cout<<"  DELETING GLOBAL PARAMETER CLASS "<<endl;}
 }
-//////////////////////////////////////////////////////////////////
-global_struct  CGlobalParams::G;//Static initialization
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Returns pointer to global parameters
