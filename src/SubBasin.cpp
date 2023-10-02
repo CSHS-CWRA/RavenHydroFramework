@@ -2063,7 +2063,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     double dt,Qin,Qin_new;
     dt=min(K,tstep);
     //dt=tstep;
-    
+
     static double aQoutStored[MAX_RIVER_SEGS];
     for (seg=0;seg<_nSegments;seg++){aQoutStored[seg]=_aQout[seg];}
     //cout<<"check: "<< 2*K*X<<" < "<<dt<< " < " << 2*K*(1-X)<<" K="<<K<<" X="<<X<<" dt="<<dt<<endl;

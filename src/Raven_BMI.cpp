@@ -447,9 +447,9 @@ void CRavenBMI::GetValue(std::string name, void* dest)
       out[k]=pModel->GetHydroUnit(k)->GetStateVarArray()[iSV];
     }
     memcpy(dest,out,pModel->GetNumSubBasins()*sizeof(double));
-    delete [] out;  
+    delete [] out;
   }
-  
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns array of variable values for variable with supplied name at subset o flocations

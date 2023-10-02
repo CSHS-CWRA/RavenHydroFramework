@@ -499,7 +499,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
             F.precip_daily_ave+=wt*gauge_corr*Fg[g].precip_daily_ave;
             F.precip_5day    += wt*gauge_corr*Fg[g].precip_5day;
           }
-        } 
+        }
 		else {
           // Gauge-less precip and snowfall correction
           gauge_corr         = (F.snow_frac * sc) + ((1.0-F.snow_frac)*rc);
