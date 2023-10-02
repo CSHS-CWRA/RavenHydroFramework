@@ -89,7 +89,7 @@ CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroP
   //g_disable_freezing=true; TMP DEBUG ONLY
 
   _pTransModel=pTransMod;
-  
+
   _nHRUs=-1;
 
   int nSoils=pModel->GetNumSoilLayers();

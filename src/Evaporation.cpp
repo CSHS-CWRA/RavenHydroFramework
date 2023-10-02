@@ -539,7 +539,7 @@ bool IsDailyPETmethod(evap_method method)
   switch (method)
   {
   //case PET_OUDIN: return true; //these have subdaily ET radiation corrections
-  //case PET_HARGREAVES: return true; 
+  //case PET_HARGREAVES: return true;
   //case PET_HARGREAVES_1985: return true;
   case PET_LINACRE: return true;
   case PET_MONTHLY_FACTOR: return true;
