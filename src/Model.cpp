@@ -201,7 +201,6 @@ CModel::~CModel()
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 
-  CSoilClass::      DestroyAllSoilClasses();
   CVegetationClass::DestroyAllVegClasses();
   CTerrainClass::   DestroyAllTerrainClasses();
   CSoilProfile::    DestroyAllSoilProfiles();
@@ -1820,6 +1819,94 @@ void CModel::DestroyAllLUClasses()
   NumLUClasses=0;
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the soil class corresponding to passed string
+/// \details Converts string (e.g., "SILT" in HRU file) to soilclass
+///  can accept either soilclass index or soilclass _tag
+///  if string is invalid, returns NULL
+/// \param s [in] Soil class identifier (_tag or index)
+/// \return Reference to soil class corresponding to identifier s
+//
+CSoilClass *CModel::StringToSoilClass(const string s)
+{
+  string sup=StringToUppercase(s);
+  for (int c=0;c<_nAllSoilClasses;c++)
+  {
+    if (!sup.compare(StringToUppercase(_pAllSoilClasses[c]->GetTag()))){return _pAllSoilClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                 {return _pAllSoilClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the soil class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to soil class corresponding to index c
+//
+const CSoilClass *CModel::GetSoilClass(int c)
+{
+  if ((c < 0) || (c >= this->_nAllSoilClasses)){return NULL;}
+  return this->_pAllSoilClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of soil classes
+/// \return Number of soil classes
+//
+int CModel::GetNumSoilClasses(){
+  return this->_nAllSoilClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a land use class to the model
+/// \param pLUClass [in] Pointer to land use class to add
+//
+void CModel::AddSoilClass(CSoilClass *pSoilClass) {
+  if (!DynArrayAppend((void**&)(_pAllSoilClasses), (void*)pSoilClass, _nAllSoilClasses)) {
+    this->ExitGracefully("CModel::AddSoilClass: adding NULL soil class", BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize soil class information to screen
+//
+void CModel::SummarizeSoilClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Soil Class Summary:"<<this->_nAllSoilClasses<<" soils in database"<<endl;
+  for (int c=0; c < this->_nAllSoilClasses;c++){
+    cout<<"-Soil class \""<<_pAllSoilClasses[c]->GetTag()<<"\" "<<endl;
+    cout<<"       %sand: "<<_pAllSoilClasses[c]->GetSoilStruct()->sand_con<<endl;
+    cout<<"       %clay: "<<_pAllSoilClasses[c]->GetSoilStruct()->clay_con<<endl;
+    cout<<"    %organic: "<<_pAllSoilClasses[c]->GetSoilStruct()->org_con<<endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all soil classes
+//
+void CModel::DestroyAllSoilClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL CLASSES"<<endl;}
+
+  // the classes may have been already destroyed
+  if (_nAllSoilClasses == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO SOIL CLASSES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<_nAllSoilClasses;c++){
+    delete _pAllSoilClasses[c];
+  }
+  delete [] _pAllSoilClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  _pAllSoilClasses = NULL;
+  _nAllSoilClasses = 0;
+}
+
 /*****************************************************************
    Routines called repeatedly during model simulation
 ------------------------------------------------------------------
@@ -2057,7 +2144,7 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
 
   if (ctype==CLASS_SOIL)
   {
-    CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
+    this->StringToSoilClass(cname)->SetSoilProperty(pname,value);
   }
   else if(ctype==CLASS_TRANSPORT)
   {

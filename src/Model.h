@@ -171,6 +171,8 @@ private:/*------------------------------------------------------*/
   /* below are attributes that were static in the past */
   CLandUseClass **pAllLUClasses;  // = NULL; used to be static attribute of CLandUseClass
   int             NumLUClasses;   // = 0;    same of above
+  CSoilClass    **_pAllSoilClasses;  /// used to be static attribute of CSoilClass
+  int             _nAllSoilClasses;  /// same of above
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -309,12 +311,20 @@ public:/*-------------------------------------------------------*/
   int               GetLakeStorageIndex() const;
 
   /* below are functions that were static in the past */
+  // CLandUseClass
   CLandUseClass *StringToLUClass(const string s);      // used to be static function of CLandUseClass
   int            GetNumLUClasses();                    // used to be static function of CLandUseClass
   CLandUseClass *GetLUClass(int);                      // used to be static function of CLandUseClass
   void           AddLUClass(CLandUseClass *pLUClass);  // used to be static function of CLandUseClass
   void           SummarizeLUClassesToScreen();
   void           DestroyAllLUClasses();
+  // CSoilClass
+  CSoilClass       *StringToSoilClass(const string s);
+  int               GetNumSoilClasses();
+  const CSoilClass *GetSoilClass(int c);
+  void              AddSoilClass(CSoilClass *pSoilClass);
+  void              SummarizeSoilClassesToScreen();
+  void              DestroyAllSoilClasses();
 
   /*--below are only available to global routines--*/
   //Accessor functions

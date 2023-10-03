@@ -54,18 +54,18 @@ cmake -DCOMPILE_LIB=ON -DCOMPILE_EXE=OFF ../
    2. attributes ```pAllLUClasses``` and ```NumLUClasses``` must go to ```CModel```;
    3. methods must be non-static;
    4. Commit: [d8ecaae](https://github.com/adlzanchetta/RavenHydroFramework/commit/d8ecaaeca934eebf2b7fbaa2e22501b356c9c48e).
-5. [```TODO```] Make ```CSoilClass``` non-static and a class member of ```CModel```;
-   1. Starts with 43 "static" words in ```SoilAndLandClasses.h```;
+5. [```DONE```] Make ```CSoilClass``` non-static and a class member of ```CModel```;
+   1. At: ```CSoilClass.cpp```, ```SoilAndLandClasses.h``` (46 "static" words);
    2. attributes must be non-static;
    3. methods must be non-static;
 6. [```TODO```] Make ```CVegetationClass``` non-static and a class member of ```CModel```;
-   1. attributes must be non-static;
+   1. At: ```VegetationClass.cpp```, ```SoilAndLandClasses.h``` (39 "static" words);
    2. methods must be non-static;
 7. [```TODO```] Make ```CTerrainClass``` non-static and a class member of ```CModel```;
-   1. attributes must be non-static;
+   1. At: ```TerrainClass.cpp```, ```SoilAndLandClasses.h```;
    2. methods must be non-static;
 8. [```TODO```] Make ```CSoilProfile``` non-static and a class member of ```CModel```;
-   1. attributes must be non-static;
+   1. At: ```SoilProfile.cpp```, ```SoilAndLandClasses.h```;
    2. methods must be non-static;
 9. [```TODO```] Make ```CChannelXSect``` non-static and a class member of ```CModel```;
    1. attributes must be non-static;

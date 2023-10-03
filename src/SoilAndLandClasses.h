@@ -43,12 +43,9 @@ protected:/*----------------------------------------------------*/
   string              _tag;                 ///< nickname for soil, e.g., "SILTY_SAND"
   soil_struct         _Soil;                ///< corresponding properties for soil
 
-  static CSoilClass **_pAllSoilClasses;     ///< array of pointers to all soil classes that have been created
-  static int          _nAllSoilClasses;     ///< number of soil classes
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CSoilClass(const string name, const int nConstits);
+  CSoilClass(const string name, const int nConstits, CModel* pModel);
   ~CSoilClass();
 
   //Accessors
@@ -60,10 +57,6 @@ public:/*-------------------------------------------------------*/
   //routines
   void AutoCalculateSoilProps(const soil_struct &Stmp,const soil_struct &Sdefault,const int nConstit);
 
-  static int               GetNumClasses();
-  static const CSoilClass *GetSoilClass(int c);
-  static       CSoilClass *StringToSoilClass(const string s);
-  static void              DestroyAllSoilClasses();
   static void              SetSoilProperty         (soil_struct &S, string param_name, const double value);
   static double            GetSoilProperty         (const soil_struct &S, string param_name, const bool strict=true);
   static void              InitializeSoilProperties(soil_struct &S, bool is_template,int nConstits);
@@ -77,8 +70,6 @@ public:/*-------------------------------------------------------*/
   static double            CalcSoilPotential (const double      &sat_liq,
                                               const double      &sat_ice,
                                               const soil_struct &S);
-
-  static void              SummarizeToScreen();
 };
 
 ///////////////////////////////////////////////////////////////////
