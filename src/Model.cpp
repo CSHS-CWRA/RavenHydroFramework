@@ -201,7 +201,9 @@ CModel::~CModel()
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 
-  CVegetationClass::DestroyAllVegClasses();
+  this->DestroyAllLUClasses();
+  this->DestroyAllSoilClasses();
+  this->DestroyAllVegClasses();
   CTerrainClass::   DestroyAllTerrainClasses();
   CSoilProfile::    DestroyAllSoilProfiles();
   CChannelXSect::   DestroyAllChannelXSections();
@@ -1372,7 +1374,7 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
   if ((tclass == CLASS_LANDUSE) && (this->StringToLUClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid land use class specified",BAD_DATA_WARN);return;
   }
-  if ((tclass == CLASS_VEGETATION) && (CVegetationClass::StringToVegClass(new_class) == NULL)){
+  if ((tclass == CLASS_VEGETATION) && (this->StringToVegClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid vegetation class specified",BAD_DATA_WARN);return;
   }
   if ((tclass == CLASS_HRUTYPE) && (StringToHRUType(new_class) == HRU_INVALID_TYPE)){
@@ -1859,8 +1861,8 @@ int CModel::GetNumSoilClasses(){
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Add a land use class to the model
-/// \param pLUClass [in] Pointer to land use class to add
+/// \brief Add a soil class to the model
+/// \param pLUClass [in] Pointer to soil class to add
 //
 void CModel::AddSoilClass(CSoilClass *pSoilClass) {
   if (!DynArrayAppend((void**&)(_pAllSoilClasses), (void*)pSoilClass, _nAllSoilClasses)) {
@@ -1905,6 +1907,99 @@ void CModel::DestroyAllSoilClasses()
   // the static variables must be reset to avoid dangling pointers and attempts to re-delete
   _pAllSoilClasses = NULL;
   _nAllSoilClasses = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the vegetation class corresponding to passed string
+/// \details Converts string (e.g., "BROADLEAF" in HRU file) to vegetation class
+///  can accept either vegclass index or vegclass tag
+///  if string is invalid, returns NULL
+/// \param s [in] Vegetation class identifier (tag or index)
+/// \return Reference to vegetation class corresponding to identifier s
+//
+CVegetationClass *CModel::StringToVegClass(const string s)
+{
+  string sup;
+  sup = StringToUppercase(s);
+  for (int c=0; c<this->_numVegClasses; c++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllVegClasses[c]->GetVegetationName()))){return this->_pAllVegClasses[c];}
+    else if (s_to_i(sup.c_str()) == (c+1))                                             {return this->_pAllVegClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the vegetation class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to vegetation class corresponding to index c
+//
+const CVegetationClass *CModel::GetVegClass(int c)
+{
+  if ((c<0) || (c >= this->_numVegClasses)) { return NULL; }
+  return this->_pAllVegClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of vegetation classes
+/// \return Number of vegetation classes
+//
+int CModel::GetNumVegClasses(){
+  return this->_numVegClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a vegetation to the model
+/// \param pLUClass [in] Pointer to vegetation class to add
+//
+void CModel::AddVegClass(CVegetationClass *pVegClass) {
+  if (!DynArrayAppend((void**&)(this->_pAllVegClasses),
+                      (void*)pVegClass,
+                      this->_numVegClasses)) {
+    this->ExitGracefully("CModel::AddVegClass: adding NULL vegetation class", BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize vegetation class information to screen
+//
+void CModel::SummarizeVegClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Vegetation Class Summary:"<<this->_numVegClasses<<" vegetation classes in database"<<endl;
+  for (int c = 0; c < this->_numVegClasses; c++){
+    cout<<"-Veg. class \""<<this->_pAllVegClasses[c]->GetVegetationName()<<"\" "<<endl;
+    cout<<"    max. height: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->max_height<<" m"<<endl;
+    cout<<"       max. LAI: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->max_LAI  <<endl;
+    cout<<"   max. conduct: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->max_leaf_cond<<" mm/s"<<endl;
+    cout<<"         albedo: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->albedo<<endl;
+  }
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all vegetation classes
+//
+void CModel::DestroyAllVegClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL VEGETATION CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_numVegClasses == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO VEGETATION CLASSES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<this->_numVegClasses;c++){
+    delete this->_pAllVegClasses[c];
+  }
+  delete [] this->_pAllVegClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  this->_pAllVegClasses = NULL;
+  this->_numVegClasses = 0;
 }
 
 /*****************************************************************
@@ -2077,7 +2172,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
         }
         else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
         {
-          CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
+          CVegetationClass *veg_class = this->StringToVegClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeVegetation(veg_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE)
@@ -2144,34 +2239,34 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
 
   if (ctype==CLASS_SOIL)
   {
-    this->StringToSoilClass(cname)->SetSoilProperty(pname,value);
+    this->StringToSoilClass(cname)->SetSoilProperty(pname, value);
   }
   else if(ctype==CLASS_TRANSPORT)
   {
-    ExitGracefully("UpdateParameter::CLASS_TRANSPORT",STUB);
+    ExitGracefully("UpdateParameter::CLASS_TRANSPORT", STUB);
     //CSoilClass::StringToSoilClass(cname)->SetTransportProperty(constit,pname,value);
   }
   else if(ctype==CLASS_VEGETATION)
   {
-    CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
+    this->StringToVegClass(cname)->SetVegetationProperty(pname, value);
   }
   else if(ctype==CLASS_TERRAIN)
   {
-    CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
+    CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname, value);
   }
   else if(ctype==CLASS_LANDUSE)
   {
-    this->StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+    this->StringToLUClass(cname)->SetSurfaceProperty(pname, value);
   }
   else if(ctype==CLASS_GLOBAL)
   {
-    this->_pGlobalParams->SetGlobalProperty(pname,value);
+    this->_pGlobalParams->SetGlobalProperty(pname, value);
   }
   else if(ctype==CLASS_GAUGE)
   {
     int g=GetGaugeIndexFromName(cname);
     if(g!=DOESNT_EXIST) {
-      _pGauges[g]->SetGaugeProperty(pname,value);
+      _pGauges[g]->SetGaugeProperty(pname, value);
     }
     else {
       WriteWarning("CModel::UpdateParameter: Unrecognized/invalid gauge ID ("+cname+") in input",false);

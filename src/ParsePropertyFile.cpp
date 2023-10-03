@@ -649,12 +649,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_veg>=MAX_VEG_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of vegetation classes",BAD_DATA);}
 
-          CVegetationClass::InitializeVegetationProps(s[0],parsed_veg [num_parsed_veg],false);
-          pVegClasses[num_parsed_veg-1]=new CVegetationClass(s[0]);
-          vegtags    [num_parsed_veg]=s[0];
-          parsed_veg [num_parsed_veg].max_height   =s_to_d(s[1]);
-          parsed_veg [num_parsed_veg].max_LAI      =s_to_d(s[2]);
-          parsed_veg [num_parsed_veg].max_leaf_cond=s_to_d(s[3]);
+          CVegetationClass::InitializeVegetationProps(s[0], parsed_veg [num_parsed_veg], false);
+          pVegClasses[num_parsed_veg-1] = new CVegetationClass(s[0], pModel);
+          vegtags    [num_parsed_veg] = s[0];
+          parsed_veg [num_parsed_veg].max_height    = s_to_d(s[1]);
+          parsed_veg [num_parsed_veg].max_LAI       = s_to_d(s[2]);
+          parsed_veg [num_parsed_veg].max_leaf_cond = s_to_d(s[3]);
 
           num_parsed_veg++;
         }
@@ -1636,9 +1636,9 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, CModel* pMod
       }
     }
     else if (aPC[ii]==CLASS_VEGETATION){
-      for (int c=0;c<CVegetationClass::GetNumClasses();c++){
-        if (CVegetationClass::GetVegClass(c)->GetVegetationProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required vegetation property "+aP[ii]+" not included in .rvp file for vegetation class "+CVegetationClass::GetVegClass(c)->GetVegetationName();
+      for (int c=0; c < pModel->GetNumVegClasses(); c++){
+        if (pModel->GetVegClass(c)->GetVegetationProperty(aP[ii])==NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required vegetation property "+aP[ii]+" not included in .rvp file for vegetation class "+pModel->GetVegClass(c)->GetVegetationName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }

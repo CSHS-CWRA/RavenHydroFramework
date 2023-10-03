@@ -58,11 +58,11 @@ cmake -DCOMPILE_LIB=ON -DCOMPILE_EXE=OFF ../
    1. At: ```CSoilClass.cpp```, ```SoilAndLandClasses.h``` (46 "static" words);
    2. attributes must be non-static;
    3. methods must be non-static;
-6. [```TODO```] Make ```CVegetationClass``` non-static and a class member of ```CModel```;
+6. [```DONE```] Make ```CVegetationClass``` non-static and a class member of ```CModel```;
    1. At: ```VegetationClass.cpp```, ```SoilAndLandClasses.h``` (39 "static" words);
    2. methods must be non-static;
 7. [```TODO```] Make ```CTerrainClass``` non-static and a class member of ```CModel```;
-   1. At: ```TerrainClass.cpp```, ```SoilAndLandClasses.h```;
+   1. At: ```TerrainClass.cpp```, ```SoilAndLandClasses.h``` (33 "static" words);
    2. methods must be non-static;
 8. [```TODO```] Make ```CSoilProfile``` non-static and a class member of ```CModel```;
    1. At: ```SoilProfile.cpp```, ```SoilAndLandClasses.h```;

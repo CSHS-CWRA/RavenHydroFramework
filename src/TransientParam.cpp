@@ -76,14 +76,14 @@ void CTransientParam::Initialize(const optStruct &Options)
 
   if (param_type==CLASS_SOIL)
   {
-    if (_pModel->StringToSoilClass(class_name)==NULL){
+    if (_pModel->StringToSoilClass(class_name) == NULL){
       string msg="CTransientParam::Initialize: invalid soil class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }
   }
   else if (param_type==CLASS_VEGETATION)
   {
-    if (CVegetationClass::StringToVegClass(class_name)==NULL){
+    if (_pModel->StringToVegClass(class_name) == NULL){
       string msg="CTransientParam::Initialize: invalid vegetation class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }

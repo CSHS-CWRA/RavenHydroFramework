@@ -267,7 +267,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           }
 
           CVegetationClass const *pVegetation=NULL;
-          pVegetation=CVegetationClass::StringToVegClass(string(s[7]));
+          pVegetation = pModel->StringToVegClass(string(s[7]));
           if (pVegetation==NULL){
             error="Parse HRU File: Unrecognized Vegetation Code/index: \""+string(s[7])+"\"";
             ExitGracefully(error.c_str(),BAD_DATA);

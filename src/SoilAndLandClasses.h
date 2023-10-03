@@ -81,12 +81,9 @@ protected:/*----------------------------------------------------*/
 
   veg_struct                V;                    ///< corresponding canopy/root properties
 
-  static CVegetationClass **pAllVegClasses;       ///< array of pointers to all vegetation classes that have been created
-  static int                NumVegClasses;        ///< Number of vegetation classes that have been created (length of pAllVegClasses array)
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CVegetationClass(const string name);
+  CVegetationClass(const string name, CModel* pModel);
   ~CVegetationClass();
 
   //Accessors
@@ -101,10 +98,6 @@ public:/*-------------------------------------------------------*/
                                     const veg_struct    &Vdefault);
 
   static void                    PreInitialize();
-  static int                     GetNumClasses();
-  static const CVegetationClass *GetVegClass(int c);
-  static       CVegetationClass *StringToVegClass(const string s);
-  static void                    DestroyAllVegClasses();
 
   static void                    SetVegetationProperty(veg_struct &V, const string param_name, const double &value);
   static void                    SetVegTransportProperty( int          constit_ind,int          constit_ind2,
