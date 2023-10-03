@@ -39,20 +39,21 @@ cmake -DCOMPILE_LIB=ON -DCOMPILE_EXE=OFF ../
    1. Requirement: Must be able to exit finely from anywhere in the code;
    2. *DONE*: Create method;
    3. *DONE*: Make the public function not use the static ```optStruct``` variable (uses the one from global CModel instead);
+   4. Commit: [699b25e](https://github.com/adlzanchetta/RavenHydroFramework/commit/699b25ec47dd05c8df11007f8bdc8678d00979e2).
 2. [```DONE```] Make ```static optStruct Options;``` a class member of the "CModel" class;
     1. **TODO**: Document changes done;
     2. ```Options``` usually becomes ```pModel->GetOptStruct()```;
-    3. Commit: c0b81b406ab0807f74bab6001d1ccdef752a26c1.
+    3. Commit: [c0b81b4](https://github.com/adlzanchetta/RavenHydroFramework/commit/c0b81b406ab0807f74bab6001d1ccdef752a26c1).
 3. [```DONE```] Make ```CGlobalParams``` a class member of the "CModel" class;
     1. E.g., ```CGlobalParams::GetParams()``` becomes:
         1. ```this->_pGlobalParams->GetParams()``` (within ```CModel```);
         2. ```_pModel->GetGlobalParams()->GetParams()``` (outside ```CModel```).
-     2. Commit: 9f6396cee470f7ed2cc4ef32e49253814dc8abe5.
-4. [```DONE```: ] Make ```CLandUseClass```  non-static and a class member of ```CModel```;
+     2. Commit: [9f6396c](https://github.com/adlzanchetta/RavenHydroFramework/commit/9f6396cee470f7ed2cc4ef32e49253814dc8abe5).
+4. [```DONE```] Make ```CLandUseClass```  non-static and a class member of ```CModel```;
    1. At: ```LandUseClass.cpp```, ```SoilAndLandClasses.h``` (53 "static" words);
    2. attributes ```pAllLUClasses``` and ```NumLUClasses``` must go to ```CModel```;
    3. methods must be non-static;
-   4. Commit: HEAD.
+   4. Commit: [d8ecaae](https://github.com/adlzanchetta/RavenHydroFramework/commit/d8ecaaeca934eebf2b7fbaa2e22501b356c9c48e).
 5. [```TODO```] Make ```CSoilClass``` non-static and a class member of ```CModel```;
    1. Starts with 43 "static" words in ```SoilAndLandClasses.h```;
    2. attributes must be non-static;
@@ -66,12 +67,12 @@ cmake -DCOMPILE_LIB=ON -DCOMPILE_EXE=OFF ../
 8. [```TODO```] Make ```CSoilProfile``` non-static and a class member of ```CModel```;
    1. attributes must be non-static;
    2. methods must be non-static;
-9.  [```TODO```] Make ```CChannelXSect``` non-static and a class member of ```CModel```;
+9. [```TODO```] Make ```CChannelXSect``` non-static and a class member of ```CModel```;
    1. attributes must be non-static;
    2. methods must be non-static;
 10. [```TODO```] Make ```CModel``` a non-static class;
-   1. TODO - detail
-   2. TODO - detail
+    1. TODO - detail
+    2. TODO - detail
 
 
 ## Notes:
