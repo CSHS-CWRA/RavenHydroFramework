@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "TransientParam.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 
 /*****************************************************************
    Constructor / Destructor
@@ -16,10 +17,11 @@
 /// \param ptype [in] class of parameter(e.g., CLASS_SOIL or CLASS_GLOBAL)
 /// \param classname [in] class of parameter time series (e.g., "GuelphLoam") (not used/ignored for CLASS_GLOBAL parameters)
 //
-CTransientParam::CTransientParam(      CTimeSeries *pTS,
-                                       const string       pname,
-                                       const class_type   ptype,
-                                       const string        classname)
+CTransientParam::CTransientParam(CTimeSeries      *pTS,
+                                 const string      pname,
+                                 const class_type  ptype,
+                                 const string      classname,
+                                 CModel *pModel)
 {
   pTimeSeries=pTS;
   param_name=pname;
@@ -28,6 +30,7 @@ CTransientParam::CTransientParam(      CTimeSeries *pTS,
   if (param_type!=CLASS_GLOBAL){
     class_name=classname;
   }
+  _pModel = pModel;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -92,11 +95,11 @@ void CTransientParam::Initialize(const optStruct &Options)
       ExitGracefully(msg.c_str(),BAD_DATA);
     }
   }
-  else if (param_type==CLASS_LANDUSE)
+  else if (param_type == CLASS_LANDUSE)
   {
-    if (CLandUseClass::StringToLUClass(class_name)==NULL){
-      string msg="CTransientParam::Initialize: invalid land use/land type class name: "+class_name;
-      ExitGracefully(msg.c_str(),BAD_DATA);
+    if (_pModel->StringToLUClass(class_name) == NULL) {
+      string msg = "CTransientParam::Initialize: invalid land use/land type class name: " + class_name;
+      ExitGracefully(msg.c_str(), BAD_DATA);
     }
   }
   else if (param_type==CLASS_GLOBAL)

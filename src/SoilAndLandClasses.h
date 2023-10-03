@@ -15,6 +15,7 @@
 
 class CHydroUnit;
 class CModelABC;
+class CModel;     // defined in Model.h
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of class
@@ -166,36 +167,31 @@ class CLandUseClass
 {
 protected:/*----------------------------------------------------*/
 
-  surface_struct            S;                    ///< corresponding surface properties
-
-  static CLandUseClass    **pAllLUClasses;        ///< array of pointers to all LU classes that have been created
-  static int                NumLUClasses;         ///< Number of land use classes (length of pAllLUClasses array)
+  surface_struct   S;                    ///< corresponding surface properties
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CLandUseClass(const string name);
+  CLandUseClass(const string name, CModel* pModel);
   ~CLandUseClass();
 
   //Accessors
-  string                   GetLanduseName() const;
-  const surface_struct    *GetSurfaceStruct() const;
-  double                   GetSurfaceProperty(string param_name) const;
-  void                     SetSurfaceProperty(const string &param_name, const double &value);
+  string                GetLanduseName() const;
+  const surface_struct *GetSurfaceStruct() const;
+  double                GetSurfaceProperty(string param_name) const;
+  void                  SetSurfaceProperty(const string &param_name, const double &value);
+  void                  InitializeSurfaceProperties(string name, bool is_template);
 
   //routines
-  void AutoCalculateLandUseProps(const surface_struct &Stmp,
-                                 const surface_struct &Sdefault);
+  void AutoCalculateLandUseProps(surface_struct &Stmp,
+                                 surface_struct &Sdefault);
 
-  static int                     GetNumClasses();
-  static const CLandUseClass    *GetLUClass(int c);
-  static       CLandUseClass    *StringToLUClass(const string s);
-  static void                    DestroyAllLUClasses();
+  // int                  GetNumClasses();
+  const CLandUseClass *GetLUClass(int c);
+        CLandUseClass *StringToLUClass(const string s);  // should die, right?
 
-  static void                    InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
-  static void                    SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
-  static double                  GetSurfaceProperty         (const surface_struct &S, string param_name, const bool strict=true);
-
-  static void                    SummarizeToScreen();
+  static void          InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
+  static void          SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
+  static double        GetSurfaceProperty         (const surface_struct &S, string param_name, const bool strict=true);
 };
 
 ///////////////////////////////////////////////////////////////////

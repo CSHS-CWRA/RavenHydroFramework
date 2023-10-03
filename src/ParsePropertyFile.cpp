@@ -57,9 +57,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   veg_struct        parsed_veg [MAX_VEG_CLASSES];
   string            vegtags    [MAX_VEG_CLASSES];
 
-  int               num_parsed_lult=0;
-  CLandUseClass    *pLUClasses  [MAX_LULT_CLASSES];
+  int               num_parsed_lult = 0;  // counter for the number of LULT classes parsed
   surface_struct    parsed_surf [MAX_LULT_CLASSES];
+  CLandUseClass    *pLUClasses  [MAX_LULT_CLASSES];
   string            lulttags    [MAX_LULT_CLASSES];
 
   int               num_parsed_soils=0;
@@ -99,7 +99,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,pModel->GetTransportModel()->GetNumConstituents(),"[DEFAULT]",true);//zero-index soil is template
 
-  CLandUseClass::InitializeSurfaceProperties("[DEFAULT]",parsed_surf[0],true);//zero-index LULT is template
+  CLandUseClass::InitializeSurfaceProperties("[DEFAULT]", parsed_surf[0], true); // zero-index LULT is template
   lulttags    [0]="[DEFAULT]";
   num_parsed_lult++;
 
@@ -194,10 +194,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     else if (aPCmaster[p]==CLASS_LANDUSE   )
     {
-      val=CLandUseClass::GetSurfaceProperty(parsed_surf[0],aPmaster[p]);
-      if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
-      else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
-      CLandUseClass::SetSurfaceProperty   (parsed_surf [0],aPmaster[p],val);
+      val = CLandUseClass::GetSurfaceProperty(parsed_surf[0], aPmaster[p]);
+      if (val == NOT_NEEDED_AUTO){val = AUTO_COMPUTE;}
+      else if (val == NOT_NEEDED){val = NOT_SPECIFIED;}
+      CLandUseClass::SetSurfaceProperty(parsed_surf[0], aPmaster[p], val);
     }
     else if (aPCmaster[p]==CLASS_TERRAIN   )
     {
@@ -335,7 +335,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
     switch(code)
     {
-    case(-1):  //----------------------------------------------
+    case(-1):  //------------------pLUClasses----------------------------
     {/*Blank Line*/
       if (Options.noisy) {cout <<""<<endl;}break;
     }
@@ -550,12 +550,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_lult>=MAX_LULT_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}
 
-          CLandUseClass::InitializeSurfaceProperties(s[0],parsed_surf[num_parsed_lult],false);
-          pLUClasses [num_parsed_lult-1]=new CLandUseClass(s[0]);
-          lulttags   [num_parsed_lult]=s[0];
-          parsed_surf[num_parsed_lult].impermeable_frac=s_to_d(s[1]);
+          CLandUseClass::InitializeSurfaceProperties(s[0], parsed_surf[num_parsed_lult], false);
+          lulttags  [num_parsed_lult]   = s[0];
+          pLUClasses[num_parsed_lult-1] = new CLandUseClass(s[0], pModel);
+          parsed_surf[num_parsed_lult].impermeable_frac = s_to_d(s[1]);
           if (Len>=3){
-            parsed_surf[num_parsed_lult].forest_coverage=s_to_d(s[2]);
+            parsed_surf[num_parsed_lult].forest_coverage = s_to_d(s[2]);
           }
           num_parsed_lult++;
         }
@@ -575,6 +575,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string lult_tag, double param_1, param_2, ... ,param_3}x<=NumLULTClasses
        :LandUseParameterList*/
       if (Options.noisy) {cout <<"Land Use / Land Type Parameter List"<<endl;}
+
+      // read line by line of the parameters list
       done=false;
       while (!done)
       {
@@ -601,10 +603,15 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (Options.noisy){
         for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
       }
-      for (int i=0;i<num_read;i++)
+
+      // once all lines are read, assign the values to the land use classes
+      for (int i=0; i<num_read; i++)
       {
-        for (int j=0;j<nParamStrings-1;j++){
-          CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],aParamStrings[j+1],properties[i][j]);
+        for (int j=0;j<nParamStrings-1;j++) {
+          // pModel->GetLUClass(i)->SetSurfaceProperty(aParamStrings[j+1], properties[i][j]);
+          CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],
+                                            aParamStrings[j+1],
+                                            properties[i][j]);
         }
       }
       break;
@@ -1349,7 +1356,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (pTimeSer!=NULL)
       {
         CTransientParam *pTransParam=NULL;
-        pTransParam = new CTransientParam(pTimeSer,param_name,ptype,class_name);
+        pTransParam = new CTransientParam(pTimeSer, param_name, ptype, class_name, pModel);
         pModel->AddTransientParameter(pTransParam);
       }
       else{
@@ -1475,8 +1482,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   for (int c=1;c<num_parsed_soils;c++){
     pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
   }
-  for (int c=1;c<num_parsed_lult;c++){
-    pLUClasses  [c-1]->AutoCalculateLandUseProps    (parsed_surf[c],parsed_surf[0]);
+  for (int c=1;c<num_parsed_lult;c++) {
+    pModel->GetLUClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);
   }
   for (int c=1;c<num_parsed_terrs;c++){
     pTerrClasses[c-1]->AutoCalculateTerrainProps    (parsed_terrs[c],parsed_terrs[0]);
@@ -1635,10 +1642,10 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, CModel* pMod
       }
     }
     else if (aPC[ii]==CLASS_LANDUSE){
-      for (int c=0;c<CLandUseClass::GetNumClasses();c++){
-        if (CLandUseClass::GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
+      for (int c=0; c<pModel->GetNumLUClasses(); c++){
+        if (pModel->GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
 
-          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+CLandUseClass::GetLUClass(c)->GetLanduseName();
+          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+pModel->GetLUClass(c)->GetLanduseName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }

@@ -105,7 +105,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:LandUseChange [HRU ID] [new LULT tag]*/
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
       if(pHRU!=NULL) {
-        CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
+        CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           pHRU->ChangeLandUse(lult_class);
         }
@@ -122,7 +122,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:GroupLandUseChange [HRU group] [new LULT tag]*/
       CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
       if(pHRUGroup!=NULL) {
-        CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
+        CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
             pHRUGroup->GetHRU(k)->ChangeLandUse(lult_class);

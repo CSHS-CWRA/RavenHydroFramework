@@ -203,7 +203,6 @@ CModel::~CModel()
 
   CSoilClass::      DestroyAllSoilClasses();
   CVegetationClass::DestroyAllVegClasses();
-  CLandUseClass::   DestroyAllLUClasses();
   CTerrainClass::   DestroyAllTerrainClasses();
   CSoilProfile::    DestroyAllSoilProfiles();
   CChannelXSect::   DestroyAllChannelXSections();
@@ -1371,7 +1370,7 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
     ExitGracefullyIf(pCC->HRU_groupID == DOESNT_EXIST,warning.c_str(),BAD_DATA_WARN); return;
   }
   pCC->newclass=new_class;
-  if ((tclass == CLASS_LANDUSE) && (CLandUseClass::StringToLUClass(new_class) == NULL)){
+  if ((tclass == CLASS_LANDUSE) && (this->StringToLUClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid land use class specified",BAD_DATA_WARN);return;
   }
   if ((tclass == CLASS_VEGETATION) && (CVegetationClass::StringToVegClass(new_class) == NULL)){
@@ -1735,6 +1734,92 @@ void CModel::OverrideStreamflow   (const long SBID)
   }
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the LU class corresponding to passed string
+/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
+///  can accept either lultclass index or lultclass tag
+///  if string is invalid, returns NULL
+/// \param s [in] LU class identifier (tag or index)
+/// \return Pointer to LU class corresponding to identifier string s
+//
+CLandUseClass *CModel::StringToLUClass(const string s)
+{
+  string sup=StringToUppercase(s);
+  for (int c=0;c<NumLUClasses;c++)
+  {
+    if (!sup.compare(StringToUppercase(pAllLUClasses[c]->GetLanduseName()))){return pAllLUClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                      {return pAllLUClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the land use  class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to land use class corresponding to index c
+//
+CLandUseClass *CModel::GetLUClass(int c) {
+  if ((c<0) || (c >= this->NumLUClasses)){return NULL;}
+  return this->pAllLUClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of land use classes in the model
+/// \return Number of land use classes
+//
+int CModel::GetNumLUClasses() {
+  return this->NumLUClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a land use class to the model
+/// \param pLUClass [in] Pointer to land use class to add
+//
+void CModel::AddLUClass(CLandUseClass *pLUClass) {
+  if (!DynArrayAppend((void**&)(pAllLUClasses), (void*)pLUClass, NumLUClasses)) {
+    this->ExitGracefully("CModel::AddLUClass: adding NULL land use class", BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize LU class information to screen
+//
+void CModel::SummarizeLUClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Land Use Class Summary:"<<NumLUClasses<<" LU/LT classes in database"<<endl;
+  for (int c=0; c<NumLUClasses;c++){
+    cout<<"-LULT. class \""<<pAllLUClasses[c]->GetLanduseName()<<"\" "<<endl;
+    cout<<"    impermeable: "<<pAllLUClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
+    cout<<"       forested: "<<pAllLUClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all LU classes
+//
+void CModel::DestroyAllLUClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (NumLUClasses == 0) {
+    if (DESTRUCTOR_DEBUG) {cout << "  No LULT classes to destroy" << endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<NumLUClasses;c++){
+    delete pAllLUClasses[c];
+  }
+  delete [] pAllLUClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  pAllLUClasses=NULL;
+  NumLUClasses=0;
+}
+
 /*****************************************************************
    Routines called repeatedly during model simulation
 ------------------------------------------------------------------
@@ -1900,7 +1985,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
         if      (_pClassChanges[j]->tclass == CLASS_LANDUSE)
         {
-          CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
+          CLandUseClass *lult_class = this->StringToLUClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeLandUse(lult_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
@@ -1942,7 +2027,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   if (pval!=INDEX_NOT_FOUND){return CLASS_SOIL;}
   pval=CVegetationClass::GetVegetationProperty(V,param_str,false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_VEGETATION;}
-  pval=CLandUseClass::GetSurfaceProperty(L,param_str,false);
+  pval = CLandUseClass::GetSurfaceProperty(L, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_LANDUSE;}
   pval = this->_pGlobalParams->GetGlobalProperty(G, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_GLOBAL;}
@@ -1989,7 +2074,7 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_LANDUSE)
   {
-    CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+    this->StringToLUClass(cname)->SetSurfaceProperty(pname,value);
   }
   else if(ctype==CLASS_GLOBAL)
   {

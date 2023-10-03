@@ -36,6 +36,8 @@ class CGroundwaterModel;
 class CTransportModel;
 class CEnsemble;
 class CForcingGrid;
+class CLandUseClass;  // defined in 'SoilAndLandClasses.h'
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
 /// \details Stores and organizes HRUs and basins, provides access to all
@@ -166,6 +168,10 @@ private:/*------------------------------------------------------*/
   potmelt_method  *_PotMeltBlends_type;
   double          *_PotMeltBlends_wts;
 
+  /* below are attributes that were static in the past */
+  CLandUseClass **pAllLUClasses;  // = NULL; used to be static attribute of CLandUseClass
+  int             NumLUClasses;   // = 0;    same of above
+
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
   void       InitializeRoutingNetwork ();
@@ -261,9 +267,9 @@ private:/*------------------------------------------------------*/
   bool         ForcingGridIsAvailable                   (const forcing_type &ftype) const;
   double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
-  void              AddFromPETParamList                 (string *aP,class_type *aPC,int &nP,
+  void         AddFromPETParamList                      (string *aP,class_type *aPC,int &nP,
                                                          const evap_method &evaporation, const netSWRad_method &SW_radia_net) const;
-  void              AddFromPotMeltParamList             (string *aP,class_type *aPC,int &nP,
+  void         AddFromPotMeltParamList                  (string *aP,class_type *aPC,int &nP,
                                                          const potmelt_method &pot_melt) const;
 
 public:/*-------------------------------------------------------*/
@@ -301,6 +307,14 @@ public:/*-------------------------------------------------------*/
 
   int               GetNumSoilLayers   () const;
   int               GetLakeStorageIndex() const;
+
+  /* below are functions that were static in the past */
+  CLandUseClass *StringToLUClass(const string s);      // used to be static function of CLandUseClass
+  int            GetNumLUClasses();                    // used to be static function of CLandUseClass
+  CLandUseClass *GetLUClass(int);                      // used to be static function of CLandUseClass
+  void           AddLUClass(CLandUseClass *pLUClass);  // used to be static function of CLandUseClass
+  void           SummarizeLUClassesToScreen();
+  void           DestroyAllLUClasses();
 
   /*--below are only available to global routines--*/
   //Accessor functions

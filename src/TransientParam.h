@@ -35,13 +35,15 @@ protected:/*----------------------------------------------------*/
   string      class_name;   ///< class name (e.g., "GuelphLoam")(ignored for global params)
 
   CTimeSeries *pTimeSeries; ///< Time series of parameter value
+  CModel      *_pModel;
 
 public:/*-------------------------------------------------------*/
 
-  CTransientParam(      CTimeSeries *pTS,
-                        const string       pname,
-                        const class_type   ptype,
-                        const string        classname);
+  CTransientParam(      CTimeSeries      *pTS,
+                        const string      pname,
+                        const class_type  ptype,
+                        const string      classname,
+                        CModel           *pModel);
   ~CTransientParam();
 
   //Accessors

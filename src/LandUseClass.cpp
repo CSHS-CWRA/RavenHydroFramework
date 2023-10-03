@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 /*****************************************************************
    Constructor / Destructor
 *****************************************************************/
@@ -11,12 +12,12 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the LandUseClass constructor
 /// \param name [in] String nickname for land use class
+/// \param pModel [in] Pointer to model object containing land use class
 //
-CLandUseClass::CLandUseClass(const string name)
+CLandUseClass::CLandUseClass(const string name, CModel* pModel)
 {
-  this->S.landuse_name=name;
-  if (!DynArrayAppend((void**&)(pAllLUClasses),(void*)(this),NumLUClasses)){
-    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
+  this->S.landuse_name = name;
+  pModel->AddLUClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -40,86 +41,9 @@ const surface_struct *CLandUseClass::GetSurfaceStruct() const{return &S;}
 string                CLandUseClass::GetLanduseName  () const{return S.landuse_name;}
 
 /*****************************************************************
-   Static Initialization, Accessors, Destructors
+   Static Initialization, Accessors
 *****************************************************************/
-CLandUseClass **CLandUseClass::pAllLUClasses=NULL;
-int             CLandUseClass::NumLUClasses=0;
 
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of land use classes
-/// \return Number of land use classes
-//
-int CLandUseClass::GetNumClasses(){
-  return NumLUClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize LU class information to screen
-//
-void CLandUseClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Land Use Class Summary:"<<NumLUClasses<<" LU/LT classes in database"<<endl;
-  for (int c=0; c<NumLUClasses;c++){
-    cout<<"-LULT. class \""<<pAllLUClasses[c]->GetLanduseName()<<"\" "<<endl;
-    cout<<"    impermeable: "<<pAllLUClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
-    cout<<"       forested: "<<pAllLUClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all LU classes
-//
-void CLandUseClass::DestroyAllLUClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
-
-  // the classes may have been already destroyed or not created
-  if (NumLUClasses == 0) {
-    if (DESTRUCTOR_DEBUG) {cout << "  No LULT classes to destroy" << endl;}
-    return;
-  }
-
-  // each class must be destroyed individually, then the array
-  for (int c=0; c<NumLUClasses;c++){
-    delete pAllLUClasses[c];
-  }
-  delete [] pAllLUClasses;
-
-  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
-  pAllLUClasses=NULL;
-  NumLUClasses=0;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the LU class corresponding to passed string
-/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
-///  can accept either lultclass index or lultclass tag
-///  if string is invalid, returns NULL
-/// \param s [in] LU class identifier (tag or index)
-/// \return Pointer to LU class corresponding to identifier string s
-//
-CLandUseClass *CLandUseClass::StringToLUClass(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int c=0;c<NumLUClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(pAllLUClasses[c]->GetLanduseName()))){return pAllLUClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))                                      {return pAllLUClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the land use  class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to land use class corresponding to index c
-//
-const CLandUseClass *CLandUseClass::GetLUClass(int c)
-{
-  if ((c<0) || (c>=NumLUClasses)){return NULL;}
-  return pAllLUClasses[c];
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates surface propeties
 /// \details  Sets surface properties based upon simple lu/lt parameters
@@ -130,8 +54,8 @@ const CLandUseClass *CLandUseClass::GetLUClass(int c)
 /// \param &Stmp [in] Input LU parameters (read from .rvp file)
 /// \param &Sdefault [in] Default LU parameters
 //
-void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
-                                              const surface_struct &Sdefault)
+void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
+                                              surface_struct &Sdefault)
 //const surface_struct &needed_params
 {
   bool autocalc;
@@ -139,8 +63,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   bool chatty=true;
 
   //these parameters are required
-  S.landuse_name    =Stmp.landuse_name;
-  S.impermeable_frac=Stmp.impermeable_frac;
+  S.landuse_name     = Stmp.landuse_name;
+  S.impermeable_frac = Stmp.impermeable_frac;
   ExitGracefullyIf(S.impermeable_frac<0.0 || S.impermeable_frac>1.0,"Invalid parameter value for IMPERMEABLE_FRAC: must be between 0 and 1",BAD_DATA_WARN);
 
   //Forest coverage
@@ -388,7 +312,17 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
 /// \brief Sets default Surface properties
 /// \details Initializes all surface properties to DEFAULT_VALUE
 ///  if is_template==true, initializes instead to NOT_SPECIFIED or AUTO_CALCULATE
-/// \param &S [out] Surface properties class
+/// \param is_template [in] True if the default value being set is for the template class
+//
+void CLandUseClass::InitializeSurfaceProperties(string name, bool is_template)
+{
+  CLandUseClass::InitializeSurfaceProperties(name, this->S, is_template);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets default Surface properties
+/// \details Initializes all surface properties to DEFAULT_VALUE
+///  if is_template==true, initializes instead to NOT_SPECIFIED or AUTO_CALCULATE
 /// \param is_template [in] True if the default value being set is for the template class
 //
 void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, bool is_template)
@@ -488,7 +422,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
 void  CLandUseClass::SetSurfaceProperty(const string &param_name,
                                         const double &value)
 {
-  SetSurfaceProperty(S,param_name,value);
+  SetSurfaceProperty(S, param_name, value);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -497,7 +431,7 @@ void  CLandUseClass::SetSurfaceProperty(const string &param_name,
 /// \param value [in] Value of parameter to be set
 //
 void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
-                                        const string    param_name,
+                                        const string param_name,
                                         const double value)
 {
   string name;
@@ -591,7 +525,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
 //
 double CLandUseClass::GetSurfaceProperty(string param_name) const
 {
-  return GetSurfaceProperty(S,param_name);
+  return this->GetSurfaceProperty(S, param_name);
 }
 
 ///////////////////////////////////////////////////////////////////////////
