@@ -171,10 +171,12 @@ private:/*------------------------------------------------------*/
   /* below are attributes that were static in the past */
   CLandUseClass **pAllLUClasses;  // = NULL; used to be static attribute of CLandUseClass
   int             NumLUClasses;   // = 0;    same of above
-  CSoilClass    **_pAllSoilClasses;   /// used to be static attribute of CSoilClass
-  int             _nAllSoilClasses;   /// same of above
+  CSoilClass       **_pAllSoilClasses;   /// used to be static attribute of CSoilClass
+  int                _nAllSoilClasses;   /// same of above
   CVegetationClass **_pAllVegClasses; /// used to be static attribute of CVegetationClass
   int                _numVegClasses;  /// same of above
+  CTerrainClass    **_pAllTerrainClasses;  ///< array of pointers to all terrain classes that have been created
+  int                _nAllTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -334,6 +336,13 @@ public:/*-------------------------------------------------------*/
   void                    AddVegClass(CVegetationClass *pVegClass);
   void                    SummarizeVegClassesToScreen();
   void                    DestroyAllVegClasses();
+  // CTerrainClass
+  CTerrainClass          *StringToTerrainClass(const string s);
+  int                     GetNumTerrainClasses();
+  const CTerrainClass    *GetTerrainClass(int c);
+  void                    AddTerrainClass(CTerrainClass *pTerrainClass);
+  void                    SummarizeTerrainClassesToScreen();
+  void                    DestroyAllTerrainClasses();
 
   /*--below are only available to global routines--*/
   //Accessor functions

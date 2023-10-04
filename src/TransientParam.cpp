@@ -90,7 +90,7 @@ void CTransientParam::Initialize(const optStruct &Options)
   }
   else if (param_type==CLASS_TERRAIN)
   {
-    if (CTerrainClass::StringToTerrainClass(class_name)==NULL){
+    if (_pModel->StringToTerrainClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid terrain class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }

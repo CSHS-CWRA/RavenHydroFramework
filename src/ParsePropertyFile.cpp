@@ -983,13 +983,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if ((num_parsed_terrs>=(MAX_TERRAIN_CLASSES-1)) || (num_parsed_terrs<0)){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of terrain classes",BAD_DATA);}
 
-          CTerrainClass::InitializeTerrainProperties(parsed_terrs[num_parsed_terrs],false);//sets all to autocompute
-          pTerrClasses[num_parsed_terrs-1]=new CTerrainClass(s[0]);
-          terraintags [num_parsed_terrs]=s[0];
-          parsed_terrs[num_parsed_terrs].hillslope_length =s_to_d(s[1]);
-          parsed_terrs[num_parsed_terrs].drainage_density =s_to_d(s[2]);
+          CTerrainClass::InitializeTerrainProperties(parsed_terrs[num_parsed_terrs], false);//sets all to autocompute
+          pTerrClasses[num_parsed_terrs-1] = new CTerrainClass(s[0], pModel);
+          terraintags [num_parsed_terrs] = s[0];
+          parsed_terrs[num_parsed_terrs].hillslope_length = s_to_d(s[1]);
+          parsed_terrs[num_parsed_terrs].drainage_density = s_to_d(s[2]);
           if (Len==4)
-            parsed_terrs[num_parsed_terrs].topmodel_lambda =s_to_d(s[3]);
+            parsed_terrs[num_parsed_terrs].topmodel_lambda = s_to_d(s[3]);
           num_parsed_terrs++;
         }
         else{
@@ -1653,9 +1653,9 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, CModel* pMod
       }
     }
     else if (aPC[ii]==CLASS_TERRAIN){
-      for (int c=0;c<CTerrainClass::GetNumClasses();c++){
-        if (CTerrainClass::GetTerrainClass(c)->GetTerrainProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required terrain property "+aP[ii]+" not included in .rvp file for terrain class "+CTerrainClass::GetTerrainClass(c)->GetTag();
+      for (int c=0; c<pModel->GetNumTerrainClasses(); c++){
+        if (pModel->GetTerrainClass(c)->GetTerrainProperty(aP[ii]) == NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required terrain property "+aP[ii]+" not included in .rvp file for terrain class "+pModel->GetTerrainClass(c)->GetTag();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }

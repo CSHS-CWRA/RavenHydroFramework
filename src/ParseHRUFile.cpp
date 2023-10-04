@@ -283,7 +283,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           CTerrainClass const *pTerrain=NULL;
           if (string(s[10])!="[NONE]") //Terrain class can be NULL
           {
-            pTerrain=CTerrainClass::StringToTerrainClass(string(s[10]));
+            pTerrain = pModel->StringToTerrainClass(string(s[10]));
             if (pTerrain==NULL){
               error="Parse HRU File: Unrecognized Terrain Code/index: \""+string(s[10])+"\"";
               ExitGracefully(error.c_str(),BAD_DATA_WARN);

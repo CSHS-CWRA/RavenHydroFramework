@@ -189,14 +189,9 @@ protected:/*----------------------------------------------------*/
   string                    tag;                  ///< nickname for terr. class, e.g., "HILLY"
   terrain_struct            T;                    ///< corresponding terrain properties
 
-
-  static CTerrainClass    **pAllTerrainClasses;   ///< array of pointers to all terrain classes that have been created
-  static int                NumTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
-
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CTerrainClass(const string name);
+  CTerrainClass(const string name, CModel* pModel);
   ~CTerrainClass();
 
   //Accessors

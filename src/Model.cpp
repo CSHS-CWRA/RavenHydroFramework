@@ -204,7 +204,7 @@ CModel::~CModel()
   this->DestroyAllLUClasses();
   this->DestroyAllSoilClasses();
   this->DestroyAllVegClasses();
-  CTerrainClass::   DestroyAllTerrainClasses();
+  this->DestroyAllTerrainClasses();
   CSoilProfile::    DestroyAllSoilProfiles();
   CChannelXSect::   DestroyAllChannelXSections();
 
@@ -2002,6 +2002,94 @@ void CModel::DestroyAllVegClasses()
   this->_numVegClasses = 0;
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the terrain class corresponding to passed string
+/// \details Converts string (e.g., "HUMMOCKY" in HRU file) to Terrain class
+///  can accept either terrainclass index or terrainclass tag
+///  if string is invalid, returns NULL
+/// \param s [in] terrain class identifier (tag or index)
+/// \return Reference to terrain class corresponding to identifier s
+//
+CTerrainClass *CModel::StringToTerrainClass(const string s)
+{
+  string sup = StringToUppercase(s);
+  for (int c=0; c < this->_nAllTerrainClasses; c++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllTerrainClasses[c]->GetTag()))){return this->_pAllTerrainClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                   {return this->_pAllTerrainClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of terrain classes
+/// \return Number of terrain classes
+//
+int CModel::GetNumTerrainClasses(){
+  return this->_nAllTerrainClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the terrain class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to terrain class corresponding to index c
+//
+const CTerrainClass *CModel::GetTerrainClass(int c)
+{
+  if ((c<0) || (c>=this->_nAllTerrainClasses)){return NULL;}
+  return this->_pAllTerrainClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a terrain class to the model
+/// \param pTerrainClass [in] Pointer to terrain class to add
+//
+void CModel::AddTerrainClass(CTerrainClass *pTerrainClass){
+  if (!DynArrayAppend((void**&)(_pAllTerrainClasses),
+                      (void*)pTerrainClass,
+                      _nAllTerrainClasses)) {
+    ExitGracefully("CModel::AddTerrainClass: creating NULL terrain class", BAD_DATA);
+  };
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize terrain class information to screen
+//
+void CModel::SummarizeTerrainClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Terrain Class Summary:"<<this->_nAllTerrainClasses<<" terrain classes in database"<<endl;
+  for (int c=0; c<this->_nAllTerrainClasses; c++){
+    cout<<"-Terrain. class \""<<this->_pAllTerrainClasses[c]->GetTag()<<"\" "<<endl;
+    cout<<"    drainage density: "<<this->_pAllTerrainClasses[c]->GetTerrainStruct()->drainage_density<<endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all terrain classes
+//
+void CModel::DestroyAllTerrainClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL TERRAIN CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_nAllTerrainClasses == 0) {
+     if (DESTRUCTOR_DEBUG) {cout <<"  No terrain classes to destroy"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<this->_nAllTerrainClasses;c++){
+    delete this->_pAllTerrainClasses[c];
+  }
+  delete [] this->_pAllTerrainClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  this->_pAllTerrainClasses = NULL;
+  this->_nAllTerrainClasses = 0;
+}
+
 /*****************************************************************
    Routines called repeatedly during model simulation
 ------------------------------------------------------------------
@@ -2252,7 +2340,7 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_TERRAIN)
   {
-    CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname, value);
+    this->StringToTerrainClass(cname)->SetTerrainProperty(pname, value);
   }
   else if(ctype==CLASS_LANDUSE)
   {
