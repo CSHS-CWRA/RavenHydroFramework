@@ -177,6 +177,8 @@ private:/*------------------------------------------------------*/
   int                _numVegClasses;  /// same of above
   CTerrainClass    **_pAllTerrainClasses;  ///< array of pointers to all terrain classes that have been created
   int                _nAllTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
+  CSoilProfile     **_pAllSoilProfiles;  ///< Reference to array of all soil profiles in model
+  int                _nAllSoilProfiles;  ///< Number of soil profiles in model (size of pAllSoilProfiles)
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -343,6 +345,13 @@ public:/*-------------------------------------------------------*/
   void                    AddTerrainClass(CTerrainClass *pTerrainClass);
   void                    SummarizeTerrainClassesToScreen();
   void                    DestroyAllTerrainClasses();
+  // CSoilProfile
+  CSoilProfile           *StringToSoilProfile(const string s);
+  int                     GetNumSoilProfiles();
+  const CSoilProfile     *GetSoilProfile(int c);
+  void                    AddSoilProfile(CSoilProfile *pSoilProfile);
+  void                    SummarizeSoilProfilesToScreen();
+  void                    DestroyAllSoilProfiles();
 
   /*--below are only available to global routines--*/
   //Accessor functions

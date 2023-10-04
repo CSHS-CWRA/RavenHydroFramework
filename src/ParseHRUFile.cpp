@@ -274,10 +274,10 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           }
 
           CSoilProfile const *pSoilProfile=NULL;
-          pSoilProfile=CSoilProfile::StringToSoilProfile(string(s[8]));
-          if (pSoilProfile==NULL){
+          pSoilProfile = pModel->StringToSoilProfile(string(s[8]));
+          if (pSoilProfile==NULL) {
             error="Parse HRU File: Unrecognized Soil Profile Code/index: \""+string(s[8])+"\"";
-            ExitGracefully(error.c_str(),BAD_DATA);
+            ExitGracefully(error.c_str(), BAD_DATA);
           }
 
           CTerrainClass const *pTerrain=NULL;

@@ -205,8 +205,8 @@ CModel::~CModel()
   this->DestroyAllSoilClasses();
   this->DestroyAllVegClasses();
   this->DestroyAllTerrainClasses();
-  CSoilProfile::    DestroyAllSoilProfiles();
-  CChannelXSect::   DestroyAllChannelXSections();
+  this->DestroyAllSoilProfiles();
+  CChannelXSect::DestroyAllChannelXSections();
 
   delete _pTransModel;
   delete _pEnsemble;
@@ -2088,6 +2088,91 @@ void CModel::DestroyAllTerrainClasses()
   // the static variables must be reset to avoid dangling pointers and attempts to re-delete
   this->_pAllTerrainClasses = NULL;
   this->_nAllTerrainClasses = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a terrain class to the model
+/// \param pTerrainClass [in] Pointer to terrain class to add
+//
+void CModel::AddSoilProfile(CSoilProfile *pSoilProfile){
+  if (!DynArrayAppend((void**&)(this->_pAllSoilProfiles),
+                      (void*)pSoilProfile,
+                      this->_nAllSoilProfiles)) {
+    ExitGracefully("CModel::AddSoilProfile: creating NULL terrain class", BAD_DATA);
+  };
+}
+
+///////////////////////////////////////////////////////////////////
+/// \brief Summarize soil profile information to screen
+//
+void CModel::SummarizeSoilProfilesToScreen()
+{
+  cout << "===================" << endl;
+  cout << "Soil Profile Summary:" << this->_nAllSoilProfiles << " soils in database" << endl;
+  for (int p=0; p<this->_nAllSoilProfiles; p++)
+  {
+    cout << "-Soil profile \"" << this->_pAllSoilProfiles[p]->GetTag() << "\" " << endl;
+    cout << "    #horizons:" << this->_pAllSoilProfiles[p]->GetNumHorizons() << endl;
+    for (int m=0; m < this->_pAllSoilProfiles[p]->GetNumHorizons(); m++) {
+      cout << "      -layer #" << m+1 << ": " << this->_pAllSoilProfiles[p]->GetSoilTag(m) << " (thickness: " << this->_pAllSoilProfiles[p]->GetThickness(m) << " m)" << endl;
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Converts string to soil profile
+/// \details Converts string (e.g., "ALL_SILT" in HRU file) to soil profile
+///  can accept either soilprofile index or soilprofile tag
+///  if string is invalid, returns NULL
+/// \param s [in] String identifier of soil profile
+/// \return Pointer to Soil profile to which passed string corresponds
+//
+CSoilProfile *CModel::StringToSoilProfile(const string s)
+{
+  string sup = StringToUppercase(s);
+  for (int p=0; p<this->_nAllSoilProfiles; p++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllSoilProfiles[p]->GetTag()))) {
+      return this->_pAllSoilProfiles[p];
+    }
+    else if (s_to_i(s.c_str())==(p+1)) {
+      return this->_pAllSoilProfiles[p];
+    }
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of soil profiles in model
+/// \return Number of soil profiles in model
+//
+int CModel::GetNumSoilProfiles()
+{
+  return (this->_nAllSoilProfiles);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all soil profiles in model
+//
+void CModel::DestroyAllSoilProfiles()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL PROFILES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_nAllSoilProfiles == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  No soil profiles to destroy"<<endl; }
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int p=0; p<this->_nAllSoilProfiles; p++){
+    delete this->_pAllSoilProfiles[p];
+  }
+  delete [] this->_pAllSoilProfiles;
+
+  // reset the static variables
+  this->_pAllSoilProfiles = NULL;
+  this->_nAllSoilProfiles = 0;
 }
 
 /*****************************************************************

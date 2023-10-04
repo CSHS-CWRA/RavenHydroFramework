@@ -452,7 +452,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_profiles>=MAX_SOIL_PROFILES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil profiles",BAD_DATA);}
 
-          pProfiles[num_parsed_profiles]=new CSoilProfile(s[0]);
+          pProfiles[num_parsed_profiles] = new CSoilProfile(s[0], pModel);
 
           int nhoriz=s_to_i(s[1]);
           ExitGracefullyIf(nhoriz<0,

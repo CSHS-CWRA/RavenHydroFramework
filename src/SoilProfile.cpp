@@ -5,6 +5,8 @@
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
 #include "SoilProfile.h"
+#include "Model.h"
+
 /*****************************************************************
    Constructor / Destructor
 *****************************************************************/
@@ -12,15 +14,14 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the soil profile constructor
 /// \param name [in] Soil profile identifier
-CSoilProfile::CSoilProfile(const string name)
+CSoilProfile::CSoilProfile(const string name, CModel* pModel)
 {
-  tag=name;
-  if (!DynArrayAppend((void**&)(pAllSoilProfiles),(void*)(this),NumSoilProfiles)){
-    ExitGracefully("CSoilProfile::Constructor: creating NULL soil profile",BAD_DATA);};
+  tag = name;
+  pModel->AddSoilProfile(this);
 
-  nHorizons   =0;
-  pSoilClasses=NULL;
-  thicknesses =NULL;
+  nHorizons    = 0;
+  pSoilClasses = NULL;
+  thicknesses  = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -162,78 +163,4 @@ void CSoilProfile::AllocateSoilLayers(const int           nSoilLayers,
     cout <<"nSoilLayers:"<<nSoilLayers<<" nHorizons:"<<nHorizons<<endl;
     ExitGracefully("CSoilProfile::AllocateSoilLayers: can currently handle a number of soil profile layers which are an even multiple of the number of soil horizons (usually 1:1)",BAD_DATA);
   }
-}
-/*****************************************************************
-   Static Initialization, Accessors, Destructors
-*****************************************************************/
-CSoilProfile **CSoilProfile::pAllSoilProfiles=NULL;
-int            CSoilProfile::NumSoilProfiles=0;
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns number of soil profiles in model
-/// \return Number of soil profiles in model
-//
-int CSoilProfile::GetNumProfiles()
-{
-  return NumSoilProfiles;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all soil profiles in model
-//
-void CSoilProfile::DestroyAllSoilProfiles()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL PROFILES"<<endl;}
-
-  // the classes may have been already destroyed or not created
-  if (NumSoilProfiles == 0) {
-    if (DESTRUCTOR_DEBUG){cout <<"  No soil profiles to destroy"<<endl; }
-    return;
-  }
-
-  // each class must be destroyed individually, then the array
-  for (int p=0; p<NumSoilProfiles;p++){
-    delete pAllSoilProfiles[p];
-  }
-  delete [] pAllSoilProfiles;
-
-  // reset the static variables
-  pAllSoilProfiles = NULL;
-  NumSoilProfiles = 0;
-}
-
-///////////////////////////////////////////////////////////////////
-/// \brief Summarize soil profile information to screen
-//
-void CSoilProfile::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Soil Profile Summary:"<<NumSoilProfiles<<" soils in database"<<endl;
-  for (int p=0; p<NumSoilProfiles;p++)
-  {
-    cout<<"-Soil profile \""<<pAllSoilProfiles[p]->GetTag()<<"\" "<<endl;
-    cout<<"    #horizons:"<<pAllSoilProfiles[p]->GetNumHorizons()<<endl;
-    for (int m=0; m<pAllSoilProfiles[p]->GetNumHorizons(); m++){
-      cout <<"      -layer #"<<m+1<<": "<<pAllSoilProfiles[p]->GetSoilTag(m)<<" (thickness: "<< pAllSoilProfiles[p]->GetThickness(m)<<" m)"<<endl;
-    }
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Converts string to soil profile
-/// \details Converts string (e.g., "ALL_SILT" in HRU file) to soil profile
-///  can accept either soilprofile index or soilprofile tag
-///  if string is invalid, returns NULL
-/// \param s [in] String identifier of soil profile
-/// \return Pointer to Soil profile to which passed string corresponds
-//
-const CSoilProfile *CSoilProfile::StringToSoilProfile(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int p=0;p<NumSoilProfiles;p++)
-  {
-    if (!sup.compare(StringToUppercase(pAllSoilProfiles[p]->GetTag()))){return pAllSoilProfiles[p];}
-    else if (s_to_i(s.c_str())==(p+1))            {return pAllSoilProfiles[p];}
-  }
-  return NULL;
 }
