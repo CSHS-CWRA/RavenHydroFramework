@@ -5,6 +5,9 @@
 #include "Model.h"
 #include "EnergyTransport.h"
 
+string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
+string FilenamePrepare(string filebase,const optStruct* Options); //Defined in StandardOutput.cpp
+
 /*****************************************************************
    Constructor/Destructor
 ------------------------------------------------------------------
@@ -206,7 +209,7 @@ CModel::~CModel()
   this->DestroyAllVegClasses();
   this->DestroyAllTerrainClasses();
   this->DestroyAllSoilProfiles();
-  CChannelXSect::DestroyAllChannelXSections();
+  this->DestroyAllChannelXSections();
 
   delete _pTransModel;
   delete _pEnsemble;
@@ -2175,6 +2178,149 @@ void CModel::DestroyAllSoilProfiles()
   this->_nAllSoilProfiles = 0;
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Converts string (e.g., "X2305" in Basin file) to channel profile
+/// \param s [in] String to be converted to a channel profile
+/// \return Pointer to channel profile with name equivalent to string, or NULL if string is invalid
+//
+CChannelXSect* CModel::StringToChannelXSect(const string s)
+{
+  string sup = StringToUppercase(s);
+  for (int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllChannelXSects[p]->GetName()))){
+      return this->_pAllChannelXSects[p];
+    }
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of channel cross-sections in model
+/// \return Number of channel cross-sections in model
+//
+int CModel::GetNumChannelXSects() {
+  return this->_nAllChannelXSects;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a cross section to the model
+/// \param pXSect [in] Pointer to cross section to add
+//
+void CModel::AddChannelXSect(CChannelXSect *pXSect) {
+  if (!DynArrayAppend((void**&)(this->_pAllChannelXSects),
+                      (void*)pXSect,
+                      this->_nAllChannelXSects)) {
+    ExitGracefully("CModel::AddChannelXSect: creating NULL cross section", BAD_DATA);
+  };
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize profile information to screen
+//
+void CModel::SummarizeChannelXSectToScreen()
+{
+  cout << "===================" << endl;
+  cout << "Channel Profile Summary:" << this->_nAllChannelXSects << " profiles in database" << endl;
+  for (int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    cout << "-Channel profile \"" << this->_pAllChannelXSects[p]->GetName() << "\" " << endl;
+    cout << "           slope: " << this->_pAllChannelXSects[p]->GetBedslope()  << endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Deletes all channel profiles in model
+//
+void CModel::DestroyAllChannelXSections()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL CHANNEL PROFILES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_nAllChannelXSects == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO CHANNEL PROFILES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int p=0; p < this->_nAllChannelXSects; p++){
+    delete this->_pAllChannelXSects[p];
+  }
+  delete [] this->_pAllChannelXSects;
+
+  // reset the static variables
+  this->_pAllChannelXSects = NULL;
+  this->_nAllChannelXSects = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Check for duplicate channel names
+//
+void CModel::CheckForChannelXSectsDuplicates(const optStruct &Options)
+{
+  for(int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    for(int pp=0; pp<p;pp++)
+    {
+      if(this->_pAllChannelXSects[p]->GetName() == this->_pAllChannelXSects[pp]->GetName()) {
+        string warn = " CModel::CheckForChannelXSectsDuplicates: found duplicated channel name: " + this->_pAllChannelXSects[p]->GetName();
+        WriteWarning(warn.c_str(), Options.noisy);
+      }
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Write rating curves to file rating_curves.csv
+//
+void CModel::WriteRatingCurves(const optStruct& Options) const
+{
+  ofstream CURVES;
+  string tmpFilename = FilenamePrepare("rating_curves.csv", Options);
+  CURVES.open(tmpFilename.c_str());
+
+  if (CURVES.fail()){
+    ExitGracefully("CModel::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.", FILE_OPEN_ERR);
+  }
+  int i;
+  for (int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    const CChannelXSect *pP = this->_pAllChannelXSects[p];
+    CURVES<<pP->GetName() <<"----------------"<<endl;
+    CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAQAt(i)       <<",";}CURVES<<endl;
+    CURVES<<"Stage Height [m],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAStageAt(i)   <<",";}CURVES<<endl;
+    CURVES<<"Top Width [m],";       for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetATopWidthAt(i)<<",";}CURVES<<endl;
+    CURVES<<"X-sect area [m2],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAXAreaAt(i)   <<",";}CURVES<<endl;
+    CURVES<<"Wetted Perimeter [m],";for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAPerimAt(i)   <<",";}CURVES<<endl;
+  }
+  CURVES.close();
+}
+
+// TODO: document
+void CModel::WriteRatingCurves(const optStruct* Options) const
+{
+  ofstream CURVES;
+  string tmpFilename = FilenamePrepare("rating_curves.csv", Options);
+  CURVES.open(tmpFilename.c_str());
+
+  if (CURVES.fail()){
+    ExitGracefully("CModel::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.",
+                   FILE_OPEN_ERR);
+  }
+  int i;
+  for (int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    const CChannelXSect *pP = this->_pAllChannelXSects[p];
+    CURVES<<pP->GetName() <<"----------------"<<endl;
+    CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAQAt(i)       <<",";}CURVES<<endl;
+    CURVES<<"Stage Height [m],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAStageAt(i)   <<",";}CURVES<<endl;
+    CURVES<<"Top Width [m],";       for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetATopWidthAt(i)<<",";}CURVES<<endl;
+    CURVES<<"X-sect area [m2],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAXAreaAt(i)   <<",";}CURVES<<endl;
+    CURVES<<"Wetted Perimeter [m],";for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAPerimAt(i)   <<",";}CURVES<<endl;
+  }
+  CURVES.close();
+}
+  
 /*****************************************************************
    Routines called repeatedly during model simulation
 ------------------------------------------------------------------

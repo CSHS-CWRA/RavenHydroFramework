@@ -28,6 +28,7 @@
 #include "ModelEnsemble.h"
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
+#include "ChannelXSect.h"
 
 class CHydroProcessABC;
 class CGauge;
@@ -37,6 +38,9 @@ class CTransportModel;
 class CEnsemble;
 class CForcingGrid;
 class CLandUseClass;  // defined in 'SoilAndLandClasses.h'
+class CSubbasinGroup; // defined in 'SubBasin.h'
+class CChannelXSect;  // defined in 'ChannelXSect.h'
+class CSubBasin;      // defined in 'SubBasin.h'
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
@@ -179,6 +183,8 @@ private:/*------------------------------------------------------*/
   int                _nAllTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
   CSoilProfile     **_pAllSoilProfiles;  ///< Reference to array of all soil profiles in model
   int                _nAllSoilProfiles;  ///< Number of soil profiles in model (size of pAllSoilProfiles)
+  CChannelXSect    **_pAllChannelXSects;
+  int                _nAllChannelXSects;
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -352,6 +358,15 @@ public:/*-------------------------------------------------------*/
   void                    AddSoilProfile(CSoilProfile *pSoilProfile);
   void                    SummarizeSoilProfilesToScreen();
   void                    DestroyAllSoilProfiles();
+  // ChannelXSects
+  CChannelXSect         *StringToChannelXSect(const string s);
+  int                    GetNumChannelXSects();
+  void                   AddChannelXSect(CChannelXSect *pXSect);
+  void                   SummarizeChannelXSectToScreen();
+  void                   DestroyAllChannelXSections();
+  void                   CheckForChannelXSectsDuplicates(const optStruct &Options);
+  void                   WriteRatingCurves(const optStruct& Options) const;
+  void                   WriteRatingCurves(const optStruct* Options) const;
 
   /*--below are only available to global routines--*/
   //Accessor functions

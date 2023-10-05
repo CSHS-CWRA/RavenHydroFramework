@@ -12,6 +12,7 @@
 #include "TimeSeries.h"
 #include "Reservoir.h"
 class CReservoir;
+class CChannelXSect;  // defined in ChannelXSect.h
 enum res_constraint;
 
 ///////////////////////////////////////////////////////////////////

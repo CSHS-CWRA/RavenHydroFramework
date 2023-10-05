@@ -1331,7 +1331,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
   // rating_curves.csv
   //--------------------------------------------------------------
   if(Options->write_channels){
-    CChannelXSect::WriteRatingCurves(Options);
+    this->WriteRatingCurves(Options);
   }
 }
 
@@ -1441,9 +1441,8 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
   // rating_curves.csv
   //--------------------------------------------------------------
   if(Options.write_channels){
-    CChannelXSect::WriteRatingCurves(Options);
+    this->WriteRatingCurves(Options);
   }
-
 
 }
 //////////////////////////////////////////////////////////////////

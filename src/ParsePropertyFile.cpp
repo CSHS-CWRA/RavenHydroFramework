@@ -870,7 +870,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       }
       ExitGracefullyIf(slope<=0,"ParseClassPropertiesFile: :Bedslope of channel must be greater than zero",BAD_DATA_WARN);
 
-      pChannel=new CChannelXSect(tag,countSP,x,y,nn,slope);
+      pChannel = new CChannelXSect(tag, countSP, x, y, nn, slope, pModel);
 
       delete [] x; delete [] n; delete [] xz; delete [] y;delete []nn;
       break;
@@ -943,7 +943,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       //Create Channel
       CChannelXSect *pChannel=NULL;
 
-      pChannel=new CChannelXSect(tag,count,Q,st,W,A,P,slope);
+      pChannel = new CChannelXSect(tag, count, Q, st, W, A, P, slope, pModel);
 
       delete [] st; delete [] A; delete [] W; delete [] Q;
       break;
@@ -952,14 +952,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     { //:TrapezoidalChannel [name] [bot_width] [bot_elev] [incline] [mannings_n] [bedslope]
       if (Len<7){ImproperFormatWarning(":TrapezoidalChannel",p,Options.noisy); break;}
       CChannelXSect *pChannel=NULL;
-      pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[4]),s_to_d(s[3]),s_to_d(s[5]),s_to_d(s[6]));
+      pChannel = new CChannelXSect(s[1], s_to_d(s[2]), s_to_d(s[4]), s_to_d(s[3]), s_to_d(s[5]), s_to_d(s[6]), pModel);
       break;
     }
     case(503):  //----------------------------------------------
     { //:CircularConduit [name] [diameter] [bot_elev] [mannings_n] [bedslope]
       if (Len<6){ImproperFormatWarning(":CircularConduit",p,Options.noisy); break;}
       CChannelXSect *pChannel=NULL;
-      pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]));
+      pChannel = new CChannelXSect(s[1], s_to_d(s[2]), s_to_d(s[3]), s_to_d(s[4]), s_to_d(s[5]), pModel);
       break;
     }
     //==========================================================
@@ -1537,11 +1537,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   ExitGracefullyIf(num_parsed_profiles<1,
                    "No soil profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
 
-  ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),
+  ExitGracefullyIf((pModel->GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),
                    "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
 
-
-  CChannelXSect::CheckForDuplicates(Options);
+  pModel->CheckForChannelXSectsDuplicates(Options);
 
   delete [] indices;
   for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;

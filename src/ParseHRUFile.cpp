@@ -181,7 +181,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             if (Len<6){pp->ImproperFormat(s);}
 
             CChannelXSect const *pChan=NULL;
-            pChan=CChannelXSect::StringToChannelXSect(string(s[3]));
+            pChan = pModel->StringToChannelXSect(string(s[3]));
             string error,error2;
             error="Parse RVH File: Unrecognized Channel profile code ("+string(s[3])+") in :SubBasins or :Conduits command";
             error2="Parse RVH File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE or ROUTE_EXTERNAL";
