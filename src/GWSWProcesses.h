@@ -37,7 +37,7 @@ class CGroundwaterModel;
 class CGWSWProcessABC : public CHydroProcessABC
 {
 protected:/*-------------------------------------------------------*/
-	static CGroundwaterModel *pGWModel;       ///< pointer to groundwater model
+	CGroundwaterModel *pGWModel;       ///< pointer to groundwater model
 
 	int          _nnodes;                     ///< Number of gw model nodes with process
 	int         *_inodes;                     ///< array of nodes with process

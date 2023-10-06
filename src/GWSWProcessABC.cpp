@@ -31,11 +31,6 @@ CGWSWProcessABC::~CGWSWProcessABC()
   delete [] _pProcName;
 }
 
-/*****************************************************************
-Static Members
-*****************************************************************/
-CGroundwaterModel *CGWSWProcessABC::pGWModel=NULL;
-
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes process, generates Node-HRU maps
 /// \details _inodes, _nnodes must be populated already when this runs
