@@ -2662,11 +2662,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized convolution process representation",BAD_DATA_WARN); break;
       }
-      CmvConvolution::GetParticipatingStateVarList(c_type,tmpS,tmpLev,tmpN);
-      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+      CmvConvolution::GetParticipatingStateVarList(c_type, tmpS, tmpLev, tmpN, pModel->GetNumConvolutionVariables());
+      pModel->AddStateVariables(tmpS, tmpLev, tmpN);
 
-      pMover=new CmvConvolution(c_type,ParseSVTypeIndex(s[3],pModel));
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvConvolution(c_type, ParseSVTypeIndex(s[3], pModel), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(229):  //----------------------------------------------

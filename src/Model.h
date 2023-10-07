@@ -29,6 +29,7 @@
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
 #include "ChannelXSect.h"
+#include "Convolution.h"
 
 class CHydroProcessABC;
 class CGauge;
@@ -173,8 +174,8 @@ private:/*------------------------------------------------------*/
   double          *_PotMeltBlends_wts;
 
   /* below are attributes that were static in the past */
-  CLandUseClass **pAllLUClasses;  // = NULL; used to be static attribute of CLandUseClass
-  int             NumLUClasses;   // = 0;    same of above
+  CLandUseClass     **pAllLUClasses;  // = NULL; used to be static attribute of CLandUseClass
+  int                 NumLUClasses;   // = 0;    same of above
   CSoilClass       **_pAllSoilClasses;   /// used to be static attribute of CSoilClass
   int                _nAllSoilClasses;   /// same of above
   CVegetationClass **_pAllVegClasses; /// used to be static attribute of CVegetationClass
@@ -185,6 +186,7 @@ private:/*------------------------------------------------------*/
   int                _nAllSoilProfiles;  ///< Number of soil profiles in model (size of pAllSoilProfiles)
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
+  int                _nConvVariables;   ///< Number of convolution variables (a.k.a. processes) in model (previous static attribute CmvConvolution::_nConv)
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -367,6 +369,9 @@ public:/*-------------------------------------------------------*/
   void                   CheckForChannelXSectsDuplicates(const optStruct &Options);
   void                   WriteRatingCurves(const optStruct& Options) const;
   void                   WriteRatingCurves(const optStruct* Options) const;
+  // Convolution variables
+  int                    GetNumConvolutionVariables();
+  void                   CountOneMoreConvolutionVariable();
 
   /*--below are only available to global routines--*/
   //Accessor functions

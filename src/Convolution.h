@@ -31,15 +31,14 @@ enum convolution_type
 class CmvConvolution: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  static bool       _smartmode;   ///< True if smart algorithm is used to reduce stores
-  static int        _nStores;     ///< Number of convolution stores used in smart mode
+  bool              _smartmode;   ///< True if smart algorithm is used to reduce stores
+  static int        _nStores;     ///< Number of convolution stores used in smart mode (always _nStores = MAX_CONVOL_STORES, so kept static)
 
   convolution_type  _type;        ///< Model of convolution selected
 
   int               _iTarget;     ///< state variable index of outflow target
 
-
-  static int        _nConv;       /// # of CONVOLUTION variables (a.k.a. processes) in model
+  // static int        _nConv;       /// # of CONVOLUTION variables (a.k.a. processes) in model (became non-static CModel::_nConvVariables)
 
   double LocalCumulDist(const double &t, const CHydroUnit *pHRU) const;
 
@@ -48,7 +47,8 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvConvolution(convolution_type type,
-                 const int        to_index);
+                 const int        to_index,
+                 CModel* pModel);
   ~CmvConvolution();
 
   //inherited functions
@@ -64,9 +64,10 @@ public:/*-------------------------------------------------------*/
                         const time_struct &tt,
                         double      *rates) const;
 
-  void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
+  void GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
   static void GetParticipatingStateVarList(convolution_type btype,
-                                           sv_type *aSV, int *aLev, int &nSV);
+                                           sv_type *aSV, int *aLev,
+                                           int &nSV, int nConv);
 
 };
 #endif

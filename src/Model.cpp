@@ -5,8 +5,9 @@
 #include "Model.h"
 #include "EnergyTransport.h"
 
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-string FilenamePrepare(string filebase,const optStruct* Options); //Defined in StandardOutput.cpp
+int CmvConvolution::_nStores;                                     // defined in Convolution.h
+string FilenamePrepare(string filebase,const optStruct& Options); // defined in StandardOutput.cpp
+string FilenamePrepare(string filebase,const optStruct* Options); // defined in StandardOutput.cpp
 
 /*****************************************************************
    Constructor/Destructor
@@ -105,6 +106,13 @@ CModel::CModel(const int        nsoillayers,
   }
   _lake_sv=0; //by default, rain on lake goes direct to surface storage [0]
 
+  _nAllSoilClasses = 0;     _pAllSoilClasses = NULL;
+  _numVegClasses = 0;       _pAllVegClasses  = NULL;
+  _nAllTerrainClasses = 0;  _pAllTerrainClasses = NULL;
+  NumLUClasses = 0;          pAllLUClasses   = NULL;
+  _nAllSoilProfiles = 0;    _pAllSoilProfiles = NULL;
+  _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
+  _nConvVariables = -1;
 
   CHydroProcessABC::SetModel(this);
   CLateralExchangeProcessABC::SetModel(this);
@@ -2320,6 +2328,22 @@ void CModel::WriteRatingCurves(const optStruct* Options) const
   }
   CURVES.close();
 }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the number of convolution variables
+/// \return Number of convolution variables
+//
+int CModel::GetNumConvolutionVariables(){
+  return (this->_nConvVariables);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the number of convolution variables
+//
+void CModel::CountOneMoreConvolutionVariable(){
+  this->_nConvVariables++;
+}
+
   
 /*****************************************************************
    Routines called repeatedly during model simulation
@@ -2909,4 +2933,43 @@ bool CModel::ApplyLateralProcess( const int          j,
   pLatProc->GetLateralExchange(state_vars,_pHydroUnits,Options,tt,exchange_rates);
 
   return true;
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of convolution constructor
+/// \param absttype [in] Selected model of abstraction
+//
+CmvConvolution::CmvConvolution(convolution_type type,
+                               const int        to_index,
+                               CModel *pModel)
+  :CHydroProcessABC(CONVOLVE)
+{
+  _type = type;
+  pModel->CountOneMoreConvolutionVariable();  // _nConv++; //starts at -1
+  _iTarget = to_index;
+  _smartmode = false;
+  CmvConvolution::_nStores = MAX_CONVOL_STORES;
+
+  if (!_smartmode){CmvConvolution::_nStores=MAX_CONVOL_STORES;}
+
+  int N = CmvConvolution::_nStores; //shorthand
+  int nConv = pModel->GetNumConvolutionVariables();  // shorthand for previous _nConv
+
+  CHydroProcessABC::DynamicSpecifyConnections(2*N);
+  for (int i=0; i<N; i++)
+  {
+    //for applying convolution
+    iFrom[i] = pModel->GetStateVarIndex(CONV_STOR, i+nConv*N);
+    iTo  [i] = _iTarget;
+
+    //for shifting storage history
+    if (i < N-1){
+      iFrom[N+i] = pModel->GetStateVarIndex(CONV_STOR, i  +nConv*N);
+      iTo  [N+i] = pModel->GetStateVarIndex(CONV_STOR, i+1+nConv*N);
+    }
+  }
+  //updating total convolution storage
+  iFrom[2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, nConv);
+  iTo  [2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, nConv);
 }
