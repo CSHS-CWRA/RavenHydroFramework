@@ -79,6 +79,8 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 
   _filename_user="";
 
+  CStateVariable* pStateVar = pModel->GetStateVariable();
+
   // Get the variable name (either the state variable name of the forcing variable name) and the units
   switch(_var)
   {
@@ -86,7 +88,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
-    _varName  = CStateVariable::SVTypeToString(typ,ind);
+    _varName  = pStateVar->SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     if (pModel->GetStateVarType(_svind)==CONSTITUENT){ _varUnits = "mg/L"; } //overridden for concentrations
     break;
@@ -104,7 +106,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
-    _varName  = "TO_"+CStateVariable::SVTypeToString(typ,ind);
+    _varName  = "TO_" + pStateVar->SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     break;
   }
@@ -112,7 +114,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
-    _varName  = "FROM_"+CStateVariable::SVTypeToString(typ,ind);
+    _varName  = "FROM_" + pStateVar->SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     break;
   }
@@ -123,7 +125,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     ExitGracefullyIf(_svind2==DOESNT_EXIST,"Invalid second SV index in :CustomOutput :Between command",BAD_DATA_WARN);
     sv_type typ2=pModel->GetStateVarType(_svind2);
     int     ind2=pModel->GetStateVarLayer(_svind2);
-    _varName  = "BETWEEN_"+CStateVariable::SVTypeToString(typ,ind)+"_AND_"+CStateVariable::SVTypeToString(typ2,ind2);
+    _varName  = "BETWEEN_" + pStateVar->SVTypeToString(typ,ind) + "_AND_" + pStateVar->SVTypeToString(typ2,ind2);
     _varUnits = CStateVariable::GetStateVarUnits(typ)+"/d";
     break;
   }

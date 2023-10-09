@@ -1409,7 +1409,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
       if(Len>=6+shift) {
         int layer_ind;
-        sv_type typ=CStateVariable::StringToSVType(s[4+shift],layer_ind,false);
+        sv_type typ = pModel->GetStateVariable()->StringToSVType(s[4+shift],layer_ind,false);
         if(typ==UNRECOGNIZED_SVTYPE) {
           WriteWarning(":GeochemParameter command: unrecognized storage variable name: "+to_string(s[6]),Options.noisy);
           break;

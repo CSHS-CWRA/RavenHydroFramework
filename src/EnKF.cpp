@@ -228,6 +228,7 @@ EnKF_mode CEnKFEnsemble::GetEnKFMode() const
 void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 {
   CEnsemble::Initialize(pModel,Options);
+  CStateVariable *pStateVar = pModel->GetStateVariable();
 
   // QA/QC
   //-----------------------------------------------
@@ -364,9 +365,9 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
       //get perturbation info from observation time series name. if not found, obs data is not perturbed
       sv_type sv; int lay;
       obs_perturb *pPerturb=NULL;
-      if      (!strcmp(pTSObs->GetName().c_str(),"HYDROGRAPH")     ){ sv=STREAMFLOW;}
-      else if (!strcmp(pTSObs->GetName().c_str(),"RESERVOIR_STAGE")){ sv=RESERVOIR_STAGE;}
-      else                                                          { sv=CStateVariable::StringToSVType(pTSObs->GetName(),lay,true);}
+      if      (!strcmp(pTSObs->GetName().c_str(),"HYDROGRAPH")     ){ sv = STREAMFLOW;}
+      else if (!strcmp(pTSObs->GetName().c_str(),"RESERVOIR_STAGE")){ sv = RESERVOIR_STAGE;}
+      else                                                          { sv = pStateVar->StringToSVType(pTSObs->GetName(),lay,true);}
 
       for (int p = 0; p < _nObsPerturbations; p++) {
         if (_pObsPerturbations[p]->state==sv){pPerturb=_pObsPerturbations[p];}

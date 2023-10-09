@@ -7,18 +7,34 @@
 #include "Transport.h"
 
 //--Initialize Static Variables-----------------------------------
-int     CStateVariable::_nAliases        =0;
-string *CStateVariable::_aAliases        =NULL;
-string *CStateVariable::_aAliasReferences=NULL;
+// int     CStateVariable::_nAliases        =0;
+// string *CStateVariable::_aAliases        =NULL;
+// string *CStateVariable::_aAliasReferences=NULL;
+
+//////////////////////////////////////////////////////////////////
+/// Constructor
+//
+CStateVariable::CStateVariable()
+{
+  this->Initialize();
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes static arrays of CStateVariable class
 //
 void CStateVariable::Initialize()
 {
-  _nAliases=0;
-  _aAliases=NULL;
-  _aAliasReferences=NULL;
+  this->_nAliases = 0;
+  this->_aAliases = NULL;
+  this->_aAliasReferences = NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// Destructor
+//
+CStateVariable::~CStateVariable()
+{
+  this->Destroy();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -61,9 +77,9 @@ bool StrArrayAppend(string *& pArr, string s,int &size)
 //
 void CStateVariable::AddAlias(const string s1, const string s2)
 {
-  StrArrayAppend(_aAliases,        s1,_nAliases);
+  StrArrayAppend(_aAliases,         s1, _nAliases);
   _nAliases--;
-  StrArrayAppend(_aAliasReferences,s2,_nAliases);
+  StrArrayAppend(_aAliasReferences, s2, _nAliases);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -299,8 +315,8 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 {
   sv_type typ;
   string stmp;
-  stmp=StringToUppercase(s);
-  stmp=CheckAliasList(stmp);//checks for alias
+  stmp = StringToUppercase(s);
+  stmp = this->CheckAliasList(stmp);//checks for alias
 
   layer_index=0;//default
   string tmp=SVStringBreak(stmp,layer_index);

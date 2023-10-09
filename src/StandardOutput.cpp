@@ -427,7 +427,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetFromIndices()[q]);
-        MB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        MB << "," <<  this->GetStateVariable()->SVTypeToString(typ, ind);
       }
     }
     MB<<endl;
@@ -436,7 +436,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetToIndices()[q]);
-        MB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        MB << "," << this->_pStateVar->SVTypeToString(typ, ind);
       }
     }
     MB<<endl;
@@ -468,7 +468,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetFromIndices()[q]);
-        HGMB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        HGMB << "," << this->_pStateVar->SVTypeToString(typ, ind);
       }
     }
     HGMB<<endl;
@@ -477,7 +477,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetToIndices()[q]);
-        HGMB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        HGMB << "," << this->GetStateVariable()->SVTypeToString(typ,ind);
       }
     }
     HGMB<<endl;
@@ -499,7 +499,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     for (i=0;i<_nStateVars;i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
       {
-        MB<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+        MB << "," << this->GetStateVariable()->SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
         first=true;
         for (j=0;j<_nProcesses;j++){
           for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
@@ -1261,7 +1261,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
     RVC<<"  :Attributes,";
     for (i=mini;i<maxi;i++)
     {
-      RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+      RVC << this->GetStateVariable()->SVTypeToString(_aStateVarType[i], _aStateVarLayer[i]);
       if (i!=GetNumStateVars()-1){RVC<<",";}
     }
     RVC<<endl;
@@ -1371,7 +1371,7 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
     RVC<<"  :Attributes,";
     for (i=mini;i<maxi;i++)
     {
-      RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+      RVC << this->GetStateVariable()->SVTypeToString(_aStateVarType[i], _aStateVarLayer[i]);
       if (i!=GetNumStateVars()-1){RVC<<",";}
     }
     RVC<<endl;
@@ -1549,9 +1549,9 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"#State Variables: "<<GetNumStateVars()   <<endl;
     for (int i=0;i<GetNumStateVars();i++){
       //don't write if convolution storage or advection storage?
-      cout<<"                - ";
-      cout<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" (";
-      cout<<CStateVariable::SVTypeToString     (_aStateVarType[i],_aStateVarLayer[i])<<")"<<endl;
+      cout << "                - ";
+      cout << CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]) << " (";
+      cout << this->GetStateVariable()->SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]) << ")" << endl;
     }
     cout <<"     # Processes: "<<GetNumProcesses()   <<endl;
     for (int j=0;j<GetNumProcesses();j++)

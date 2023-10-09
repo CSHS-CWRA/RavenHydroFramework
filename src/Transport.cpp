@@ -137,9 +137,9 @@ int CTransportModel::GetLayerIndexFromName2(const string name,const int comp_m) 
 
   int     cc,layer_index,i_stor;
   sv_type typ;
-  cc    =_pTransModel->GetConstituentIndex(constituent_name);
-  typ   =CStateVariable::StringToSVType(compartment_name,layer_index,true);
-  i_stor=pModel->GetStateVarIndex(typ,comp_m);
+  cc    = _pTransModel->GetConstituentIndex(constituent_name);
+  typ   = pModel->GetStateVariable()->StringToSVType(compartment_name, layer_index, true);
+  i_stor = pModel->GetStateVarIndex(typ, comp_m);
 
   return GetLayerIndex(cc,i_stor);
 }
@@ -196,10 +196,10 @@ string CTransportModel::GetConstituentShortName(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
-  sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
-  int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
+  sv_type typ = pModel->GetStateVarType(_iWaterStorage[j]);
+  int     ind = pModel->GetStateVarLayer(_iWaterStorage[j]);
 
-  return "!"+_pConstitModels[c]->GetName()+"|"+CStateVariable::SVTypeToString(typ,ind);
+  return "!" + _pConstitModels[c]->GetName() + "|" + pModel->GetStateVariable()->SVTypeToString(typ, ind);
 }
 
 //////////////////////////////////////////////////////////////////

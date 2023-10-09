@@ -75,15 +75,16 @@ cmake -DCOMPILE_LIB=ON -DCOMPILE_EXE=OFF ../
 11. [```DONE```] Make ```CmvConvolution```:```CHydroProcessABC``` non-static:
     1.  ```_nConv``` (previously static) counter was moved to ```CModel``` as ```_nConvVariables```;
     2.  ```_nStores``` kept static as it ends up always having the value of ```MAX_CONVOL_STORES```;
-12. [```TODO```] Make ```CGWSWProcessABC```:```CHydroProcessABC``` non-static
-13. [```TODO```] Make ```CLateralExchangeProcessABC```:```CHydroProcessABC``` non-static;
-14. [```TODO```] Make ```CHydroProcessABC``` non-static
-15. [```TODO```] Make ```CRadiation``` non-static;
+12. [```TODO```] Make ```CTransportModel``` non-static;
+    1.  1 static attribute self-pointer;
+13. [```TODO```] Make ```CGWSWProcessABC```:```CHydroProcessABC``` non-static
+14. [```TODO```] Make ```CLateralExchangeProcessABC```:```CHydroProcessABC``` non-static;
+15. [```TODO```] Make ```CHydroProcessABC``` non-static;
 16. [```TODO```] Make ```CStateVariable``` non-static;
     1.  3 basic static attributes;
-17. [```TODO```] Make ```CTransportModel``` non-static;
-    1.  1 static attribute;
-18. [```TODO```] Make ```CModel``` a non-static class;
+    2.  started with 164 results for 'CStateVariable::' in 20 files (before any changes);
+    3.  compiled with 122 results for 'CStateVariable::' in 20 files (after 3 hours of changes)
+17. [```TODO```] Make ```CModel``` a non-static class;
     1. TODO - detail
     2. TODO - detail
 

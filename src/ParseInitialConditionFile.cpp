@@ -224,7 +224,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         int     SVind;
         sv_type typ;
 
-        typ=CStateVariable::StringToSVType(s[1],layer_ind,false);
+        typ = pModel->GetStateVariable()->StringToSVType(s[1],layer_ind,false);
 
         if (typ==UNRECOGNIZED_SVTYPE){
           WriteWarning(":UniformInitialConditions: unrecognized state variable type "+to_string(s[1]),Options.noisy);
@@ -270,7 +270,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         int     SVind;
         sv_type typ;
 
-        typ=CStateVariable::StringToSVType(s[1+shift],layer_ind,false); //water state var
+        typ = pModel->GetStateVariable()->StringToSVType(s[1+shift],layer_ind,false); //water state var
         if(typ==UNRECOGNIZED_SVTYPE) {
           WriteWarning(":UniformInitialConcentration: unrecognized state variable type "+to_string(s[1+shift]),Options.noisy);
           break;
@@ -346,7 +346,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         int     layer_ind(DOESNT_EXIST);
         sv_type typ;
 
-        typ=CStateVariable::StringToSVType(s[i+1],layer_ind,false);
+        typ = pModel->GetStateVariable()->StringToSVType(s[i+1],layer_ind,false);
 
         if (typ==UNRECOGNIZED_SVTYPE){
           WriteWarning(":HRUStateVariableTable: unrecognized state variable type "+to_string(s[i+1]),Options.noisy);
@@ -461,7 +461,7 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
         string stateVariable= s[1];
         sv_type SVtype;
         int     SVlayer=0;
-        SVtype=CStateVariable::StringToSVType(s[1],SVlayer,false);
+        SVtype = pModel->GetStateVariable()->StringToSVType(s[1], SVlayer, false);
         if (SVtype==UNRECOGNIZED_SVTYPE){
           WriteWarning("Unrecognized State Variable type " + string(s[1]) +" in :InitialConditions command",Options.noisy);
           break;
@@ -698,9 +698,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       int     SVlayer,iSV,nHRUs;
       sv_type SVtype;
       double  val;
-      SVtype  =CStateVariable::StringToSVType(s[2],SVlayer,true);
-      iSV     =pModel->GetStateVarIndex(SVtype,SVlayer);
-      nHRUs   =pModel->GetNumHRUs();
+      SVtype  = pModel->GetStateVariable()->StringToSVType(s[2], SVlayer, true);
+      iSV     = pModel->GetStateVarIndex(SVtype,SVlayer);
+      nHRUs   = pModel->GetNumHRUs();
 
       if(!strcmp(s[1],"NUDGE_MULTIPLY")) {//----------------------------------
         for(int k=0;k<nHRUs;k++) {

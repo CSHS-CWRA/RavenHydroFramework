@@ -267,9 +267,10 @@ void CModel::FinalizeGracefully(const char *statement, exitcode code) const {
   cout << typeline                                                     <<endl;
   cout <<"============================================================"<<endl;
 
+  // CStateVariable::Destroy();
+  delete this->_pStateVar;  // TODO: move this to CStateVariable destructor
   delete this;  // deletes EVERYTHING! - TODO: be careful with this (dangling pointers after this call)
   // pModel=NULL;
-  CStateVariable::Destroy();
 
   if(_pOptStruct->pause) {
     cout << "Press the ENTER key to continue"<<endl;
@@ -2344,6 +2345,22 @@ void CModel::CountOneMoreConvolutionVariable(){
   this->_nConvVariables++;
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Gets the state variables
+/// \return Pointer to state variables
+//
+CStateVariable* CModel::GetStateVariable() const {
+  return this->_pStateVar;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets the state variables
+/// \param pStateVar [in] Pointer to state variables
+//
+void CModel::SetStateVariable(CStateVariable *pStateVar) {
+  this->_pStateVar = pStateVar;
+}
+
   
 /*****************************************************************
    Routines called repeatedly during model simulation
@@ -2703,8 +2720,8 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
   for (int i=0;i<_nObservedTS;i++)
   {
-    datatype=_pObservedTS[i]->GetName();
-    svtyp   =CStateVariable::StringToSVType(datatype,layer_ind,false);
+    datatype = _pObservedTS[i]->GetName();
+    svtyp    = _pStateVar->StringToSVType(datatype, layer_ind, false);
 
     if      (datatype=="HYDROGRAPH")//===============================================
     {

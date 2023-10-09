@@ -187,6 +187,7 @@ private:/*------------------------------------------------------*/
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
   int                _nConvVariables;   ///< Number of convolution variables (a.k.a. processes) in model (previous static attribute CmvConvolution::_nConv)
+  CStateVariable   *_pStateVar; ///< pointer to state variable object (used to be static attribute of CStateVariable)
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -372,6 +373,9 @@ public:/*-------------------------------------------------------*/
   // Convolution variables
   int                    GetNumConvolutionVariables();
   void                   CountOneMoreConvolutionVariable();
+  // StateVariable
+  CStateVariable         *GetStateVariable() const;
+  void                    SetStateVariable(CStateVariable *pStateVar);
 
   /*--below are only available to global routines--*/
   //Accessor functions

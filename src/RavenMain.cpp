@@ -71,7 +71,8 @@ int main(int argc, char* argv[])
 
   t0=clock();
 
-  CStateVariable::Initialize();
+  // CStateVariable::Initialize();
+  CStateVariable *pStateVar = new CStateVariable();
 
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
@@ -341,7 +342,7 @@ void FinalizeGracefully(const char *statement, exitcode code)
   cout <<"============================================================"<<endl;
 
   delete pModel; pModel=NULL; //deletes EVERYTHING!
-  CStateVariable::Destroy();
+  // CStateVariable::Destroy();  // TODO: destroy CStateVariable object in the destructor of CModel
 
   if(Options->pause) {
     cout << "Press the ENTER key to continue"<<endl;

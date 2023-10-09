@@ -15,26 +15,29 @@ class CStateVariable
 {
 private:/*------------------------------------------------------*/
 
-  static int            _nAliases;         ///< total number of aliases
-  static string        *_aAliases;         ///< Array of alias values [size: nAliases]
-  static string        *_aAliasReferences; ///< Array of strings referenced by aliases [size: nAliases]
+  int            _nAliases;         ///< total number of aliases
+  string        *_aAliases;         ///< Array of alias values [size: nAliases]
+  string        *_aAliasReferences; ///< Array of strings referenced by aliases [size: nAliases]
 
-  static string        CheckAliasList      (const string s);
+  string        CheckAliasList      (const string s);
 
 public:/*-------------------------------------------------------*/
 
+  CStateVariable();  ///< Constructor
+  ~CStateVariable(); ///< Destructor
+
   static string        SVStringBreak       (const string s, int &num);
 
-  static void          Initialize          ();
-  static void          Destroy             ();
+  void          Initialize          ();
+  void          Destroy             ();
 
-  static void          AddAlias            (const string s1, const string s2);
+  void          AddAlias            (const string s1, const string s2);
 
   //static functions
   static string        GetStateVarLongName (sv_type      typ, const int layer_index);
-  static string        GetStateVarUnits    (sv_type      typ);
-  static sv_type       StringToSVType      (const string s, int &layer_index, bool strict);
-  static string        SVTypeToString      (const sv_type typ, const int layerindex);
+  static string        GetStateVarUnits    (sv_type      typ);                         // can be kept static
+  sv_type       StringToSVType      (const string s, int &layer_index, bool strict);
+  string        SVTypeToString      (const sv_type typ, const int layerindex);
 
   static bool          IsWaterStorage      (sv_type      typ);
   static bool          IsEnergyStorage     (sv_type      typ);
