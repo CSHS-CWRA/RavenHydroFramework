@@ -45,12 +45,12 @@ bool ParseNetCDFRunInfoFile    (CModel *&pModel, optStruct &Options,bool runname
 bool ParseNetCDFStateFile      (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFParamFile      (CModel *&pModel, const optStruct &Options);
 bool ParseNetCDFFlowStateFile  (CModel *&pModel, const optStruct &Options);
-int  ParseSVTypeIndex          (string s,  CModel *&pModel);
+int  ParseSVTypeIndex          (string s,  CModel *&pModel, CStateVariable *pStateVar);
 void ImproperFormatWarning     (string command, CParser *p, bool noisy);
 void AddProcess                (CModel *pModel, CHydroProcessABC* pMover, CProcessGroup *pProcGroup);
 void AddNetCDFAttribute        (optStruct &Options,const string att,const string &val);
 
-void FromToErrorCheck          (string cmd, string sFrom, string sTo, sv_type tFrom, sv_type tTo, CModel* pModel);
+void FromToErrorCheck          (string cmd, string sFrom, string sTo, sv_type tFrom, sv_type tTo, CModel* pModel, CStateVariable* pStateVar);
 
 evap_method    ParseEvapMethod   (const string s);
 potmelt_method ParsePotMeltMethod(const string s);
@@ -201,8 +201,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   int               Len,line(0);
   char             *s[MAXINPUTITEMS];
 
-  tmpS  =new sv_type[MAX_STATE_VARS];
-  tmpLev=new int    [MAX_STATE_VARS];
+  tmpS   = new sv_type[MAX_STATE_VARS];
+  tmpLev = new int    [MAX_STATE_VARS];
 
   if (Options.noisy){
     cout <<"======================================================"<<endl;
@@ -210,18 +210,22 @@ bool ParseMainInputFile (CModel     *&pModel,
     cout <<"======================================================"<<endl;
   }
 
-
   INPUT.open(Options.rvi_filename.c_str());
   if (INPUT.fail()){cout << "Cannot find file "<<Options.rvi_filename <<endl; return false;}
 
-  CParser *p=new CParser(INPUT,Options.rvi_filename,line);
+  // the 'strategy' is to go filling StateVariable objects with the information on the go and then
+  // pass them to the model object at the end of the parsing process, as the model object may be
+  // created after the first StateVariable attributes are read.
+  CStateVariable *pStateVar = new CStateVariable();
+
+  CParser *p = new CParser(INPUT,Options.rvi_filename,line);
 
   //===============================================================================================
   // Set Default Option Values
   //===============================================================================================
-  if(Options.run_name!=""  ){runname_overridden=true;}
-  if(Options.run_mode!=' ' ){runmode_overridden=true;}
-  if(Options.output_dir!=""){rundir_overridden =true;}
+  if(Options.run_name != ""  ){runname_overridden = true;}
+  if(Options.run_mode != ' ' ){runmode_overridden = true;}
+  if(Options.output_dir != ""){rundir_overridden  = true;}
   Options.julian_start_day        =0;//Jan 1
   Options.julian_start_year       =1666;
   Options.duration                =365;
@@ -1159,7 +1163,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(pModel==NULL) {
         ExitGracefully(":LakeStorage command must be after :SoilModel command in .rvi file.",BAD_DATA_WARN); break;
       }
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[1], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[1], tmpLev[0], false);
       pModel->AddStateVariables(tmpS,tmpLev,1);
       pModel->SetLakeStorage(tmpS[0],tmpLev[0]);
       break;
@@ -1748,7 +1752,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:Alias */
       if (Options.noisy) {cout <<"Alias"<<endl;}
       if (Len<3){ImproperFormatWarning(":Alias",p,Options.noisy); break;}
-      pModel->GetStateVariable()->AddAlias(s[1], s[2]);
+      pStateVar->AddAlias(s[1], s[2]);
       break;
     }
     case(99):  //----------------------------------------------
@@ -1998,7 +2002,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       WriteWarning("The :AggregatedVariable command has been deprecated. Please use the :LateralEquilibrate command in its stead.", Options.noisy);
 
       bool interbasin = false;
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[1], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[1], tmpLev[0], true);
       pModel->AddStateVariables(tmpS, tmpLev, 2);
 
       if (pModel->GetHRUGroup(s[2]) == NULL) {
@@ -2039,14 +2043,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized baseflow process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":Baseflow", s[2], s[3], USERSPEC_SVTYPE, SURFACE_WATER, pModel);
+      FromToErrorCheck(":Baseflow", s[2], s[3], USERSPEC_SVTYPE, SURFACE_WATER, pModel, pStateVar);
 
       CmvBaseflow::GetParticipatingStateVarList(btype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
+      tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvBaseflow(btype,ParseSVTypeIndex(s[2],pModel));
+      pMover=new CmvBaseflow(btype, ParseSVTypeIndex(s[2], pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
 
       break;
@@ -2064,7 +2068,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized canopy evaporation process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":CanopyEvaporation", s[2], s[3], CANOPY, ATMOSPHERE, pModel);
+      FromToErrorCheck(":CanopyEvaporation", s[2], s[3], CANOPY, ATMOSPHERE, pModel, pStateVar);
 
       CmvCanopyEvap::GetParticipatingStateVarList(ce_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2084,14 +2088,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized canopy drip process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":CanopyDrip",s[2],s[3],CANOPY,USERSPEC_SVTYPE,pModel);
+      FromToErrorCheck(":CanopyDrip",s[2],s[3],CANOPY,USERSPEC_SVTYPE,pModel,pStateVar);
 
       CmvCanopyDrip::GetParticipatingStateVarList(ctype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvCanopyDrip(ctype,ParseSVTypeIndex(s[3],pModel));
+      pMover=new CmvCanopyDrip(ctype,ParseSVTypeIndex(s[3],pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2121,7 +2125,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized infiltration process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":Infiltration",s[2],s[3],PONDED_WATER,MULTIPLE_SVTYPE,pModel);
+      FromToErrorCheck(":Infiltration",s[2],s[3],PONDED_WATER,MULTIPLE_SVTYPE,pModel,pStateVar);
 
       CmvInfiltration::GetParticipatingStateVarList(itype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2153,17 +2157,17 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized percolation process representation",BAD_DATA_WARN); break;
       }
 
-      FromToErrorCheck(":Percolation",s[2],s[3],SOIL,USERSPEC_SVTYPE,pModel);
+      FromToErrorCheck(":Percolation",s[2],s[3],SOIL,USERSPEC_SVTYPE,pModel,pStateVar);
 
       CmvPercolation::GetParticipatingStateVarList(p_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2], tmpLev[0], true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[1], true);
+      tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
+      tmpS[1] = pStateVar->StringToSVType(s[3], tmpLev[1], true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
       pMover=new CmvPercolation(p_type,
-                                ParseSVTypeIndex(s[2],pModel),
-                                ParseSVTypeIndex(s[3],pModel));
+                                ParseSVTypeIndex(s[2],pModel, pStateVar),
+                                ParseSVTypeIndex(s[3],pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2179,10 +2183,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       CmvSnowMelt::GetParticipatingStateVarList(stype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover = new CmvSnowMelt(stype, ParseSVTypeIndex(s[3], pModel));
+      pMover = new CmvSnowMelt(stype, ParseSVTypeIndex(s[3], pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2217,7 +2221,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized soil evaporation process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":SoilEvaporation",s[2],s[3],USERSPEC_SVTYPE,ATMOSPHERE,pModel);
+      FromToErrorCheck(":SoilEvaporation",s[2],s[3],USERSPEC_SVTYPE,ATMOSPHERE,pModel,pStateVar);
 
       CmvSoilEvap::GetParticipatingStateVarList(se_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2253,9 +2257,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
       if (sbtype == SNOBAL_SIMPLE_MELT) {
-        tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+        tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
-        pMover = new CmvSnowBalance(sbtype, ParseSVTypeIndex(s[3], pModel));
+        pMover = new CmvSnowBalance(sbtype, ParseSVTypeIndex(s[3], pModel, pStateVar));
       }
       else{
         pMover=new CmvSnowBalance(sbtype);
@@ -2278,7 +2282,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized sublimation process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":Sublimation",s[2],s[3],SNOW,ATMOSPHERE,pModel);
+      FromToErrorCheck(":Sublimation",s[2],s[3],SNOW,ATMOSPHERE,pModel,pStateVar);
 
       CmvSublimation::GetParticipatingStateVarList(sub_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2299,15 +2303,15 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Open Water Evaporation process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":OpenWaterEvaporation",s[2],s[3],USERSPEC_SVTYPE,ATMOSPHERE,pModel);
+      FromToErrorCheck(":OpenWaterEvaporation",s[2],s[3],USERSPEC_SVTYPE,ATMOSPHERE,pModel,pStateVar);
 
       CmvOWEvaporation::GetParticipatingStateVarList(ow_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvOWEvaporation(ow_type,ParseSVTypeIndex(s[2],pModel));
+      pMover=new CmvOWEvaporation(ow_type,ParseSVTypeIndex(s[2],pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2319,7 +2323,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvPrecipitation::GetParticipatingStateVarList(tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      FromToErrorCheck(":Precipitation",s[2],s[3],ATMOS_PRECIP,MULTIPLE_SVTYPE,pModel);
+      FromToErrorCheck(":Precipitation",s[2],s[3],ATMOS_PRECIP,MULTIPLE_SVTYPE,pModel,pStateVar);
 
       pMover=pPrecip=new CmvPrecipitation();
       AddProcess(pModel,pMover,pProcGroup);
@@ -2336,14 +2340,14 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized interflow process representation",BAD_DATA_WARN); break;
       }
 
-      FromToErrorCheck(":Interflow",s[2],s[3],USERSPEC_SVTYPE,SURFACE_WATER,pModel);
+      FromToErrorCheck(":Interflow",s[2],s[3],USERSPEC_SVTYPE,SURFACE_WATER,pModel,pStateVar);
 
       CmvInterflow::GetParticipatingStateVarList(inttype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvInterflow(inttype,ParseSVTypeIndex(s[2],pModel));
+      pMover=new CmvInterflow(inttype,ParseSVTypeIndex(s[2],pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2357,7 +2361,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized snow refreeze process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":SnowRefreeze",s[2],s[3],SNOW_LIQ,SNOW,pModel);
+      FromToErrorCheck(":SnowRefreeze",s[2],s[3],SNOW_LIQ,SNOW,pModel,pStateVar);
 
       CmvSnowRefreeze::GetParticipatingStateVarList(rtype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2372,13 +2376,13 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Flushing Process"<<endl;}
       double pct=1.0;
       if (Len<4){ImproperFormatWarning(":Flush",p,Options.noisy); break;}
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[1],true);
+      tmpS[0] = pStateVar->StringToSVType(s[2],tmpLev[0],true);
+      tmpS[1] = pStateVar->StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
       if ((Len>=5) && (s[4][0]!='#')){pct=max(min(s_to_d(s[4]),1.0),0.0);}
 
-      pMover=new CmvFlush(ParseSVTypeIndex(s[2],pModel),
-                          ParseSVTypeIndex(s[3],pModel),pct);
+      pMover=new CmvFlush(ParseSVTypeIndex(s[2], pModel, pStateVar),
+                          ParseSVTypeIndex(s[3], pModel, pStateVar), pct);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2393,17 +2397,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized capillary rise process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":CapillaryRise",s[2],s[3],SOIL,SOIL,pModel);
+      FromToErrorCheck(":CapillaryRise",s[2],s[3],SOIL,SOIL,pModel,pStateVar);
 
       CmvCapillaryRise::GetParticipatingStateVarList(ctype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2], tmpLev[0], true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[1], true);
+      tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
+      tmpS[1] = pStateVar->StringToSVType(s[3], tmpLev[1], true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
       pMover=new CmvCapillaryRise(ctype,
-                                  ParseSVTypeIndex(s[2],pModel),
-                                  ParseSVTypeIndex(s[3],pModel));
+                                  ParseSVTypeIndex(s[2], pModel, pStateVar),
+                                  ParseSVTypeIndex(s[3], pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2418,14 +2422,14 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Lake Evaporation process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":LakeEvaporation",s[2],s[3],USERSPEC_SVTYPE,ATMOSPHERE,pModel);
+      FromToErrorCheck(":LakeEvaporation",s[2],s[3],USERSPEC_SVTYPE,ATMOSPHERE,pModel,pStateVar);
       CmvLakeEvaporation::GetParticipatingStateVarList(lk_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
       int lake_ind;
       if (Len==3){ // \todo [funct] -check - this is NEVER called
-        tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2], tmpLev[0], true);
+        tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
-        lake_ind=ParseSVTypeIndex(s[2],pModel);
+        lake_ind = ParseSVTypeIndex(s[2], pModel, pStateVar);
       }
       else{
         lake_ind=pModel->GetLakeStorageIndex();
@@ -2439,13 +2443,13 @@ bool ParseMainInputFile (CModel     *&pModel,
        :SnowSqueeze SQUEEZE_RAVEN SNOW_LIQ [state_var to_index]*/
       if (Options.noisy){cout <<"Liquid Snow Release Process"<<endl;}
       if (Len<4){ImproperFormatWarning(":SnowSqueeze",p,Options.noisy); break;}
-      FromToErrorCheck(":LakeEvaporation",s[2],s[3],SNOW_LIQ,USERSPEC_SVTYPE,pModel);
+      FromToErrorCheck(":LakeEvaporation",s[2],s[3],SNOW_LIQ,USERSPEC_SVTYPE,pModel,pStateVar);
       CmvSnowSqueeze::GetParticipatingStateVarList(tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+      tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvSnowSqueeze(ParseSVTypeIndex(s[3],pModel));
+      pMover = new CmvSnowSqueeze(ParseSVTypeIndex(s[3], pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2465,7 +2469,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized Glacier Melt process representation",BAD_DATA_WARN); break;
       }
 
-      FromToErrorCheck(":GlacierMelt",s[2],s[3],GLACIER_ICE,USERSPEC_SVTYPE,pModel);
+      FromToErrorCheck(":GlacierMelt",s[2],s[3],GLACIER_ICE,USERSPEC_SVTYPE,pModel,pStateVar);
 
       CmvGlacierMelt::GetParticipatingStateVarList(gm_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2488,7 +2492,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Glacier Release process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":LakeEvaporation",s[2],s[3],GLACIER,SURFACE_WATER,pModel);
+      FromToErrorCheck(":LakeEvaporation",s[2],s[3],GLACIER,SURFACE_WATER,pModel,pStateVar);
       CmvGlacierRelease::GetParticipatingStateVarList(gm_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
@@ -2517,7 +2521,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized canopy sublimation process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":CanopySublimation",s[2],s[3],CANOPY_SNOW,ATMOSPHERE,pModel);
+      FromToErrorCheck(":CanopySublimation",s[2],s[3],CANOPY_SNOW,ATMOSPHERE,pModel,pStateVar);
 
       CmvCanopySublimation::GetParticipatingStateVarList(sub_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2536,8 +2540,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS, tmpLev, 2);
 
-      pMover=new CmvOverflow(ParseSVTypeIndex(s[2],pModel),
-                             ParseSVTypeIndex(s[3],pModel));
+      pMover=new CmvOverflow(ParseSVTypeIndex(s[2], pModel, pStateVar),
+                             ParseSVTypeIndex(s[3], pModel, pStateVar));
 
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -2598,7 +2602,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized abstraction algorithm",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":Abstraction",s[2],s[3],PONDED_WATER,USERSPEC_SVTYPE,pModel);
+      FromToErrorCheck(":Abstraction",s[2],s[3],PONDED_WATER,USERSPEC_SVTYPE,pModel,pStateVar);
 
       CmvAbstraction::GetParticipatingStateVarList(abst_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2618,7 +2622,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized Glacier Infiltration process representation",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":GlacierInfiltration",s[2],s[3],PONDED_WATER,MULTIPLE_SVTYPE,pModel);
+      FromToErrorCheck(":GlacierInfiltration",s[2],s[3],PONDED_WATER,MULTIPLE_SVTYPE,pModel,pStateVar);
 
       CmvGlacierInfil::GetParticipatingStateVarList(gi_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2640,9 +2644,9 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pModel->AddStateVariables(tmpS,tmpLev,3);
 
-      pMover=new CmvSplit(ParseSVTypeIndex(s[2],pModel),
-                          ParseSVTypeIndex(s[3],pModel),
-                          ParseSVTypeIndex(s[4],pModel),
+      pMover=new CmvSplit(ParseSVTypeIndex(s[2], pModel, pStateVar),
+                          ParseSVTypeIndex(s[3], pModel, pStateVar),
+                          ParseSVTypeIndex(s[4], pModel, pStateVar),
                           s_to_d(s[5]));
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -2665,7 +2669,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvConvolution::GetParticipatingStateVarList(c_type, tmpS, tmpLev, tmpN, pModel->GetNumConvolutionVariables());
       pModel->AddStateVariables(tmpS, tmpLev, tmpN);
 
-      pMover = new CmvConvolution(c_type, ParseSVTypeIndex(s[3], pModel), pModel);
+      pMover = new CmvConvolution(c_type, ParseSVTypeIndex(s[3], pModel, pStateVar), pModel);
       AddProcess(pModel, pMover, pProcGroup);
       break;
     }
@@ -2700,7 +2704,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized depression overflow algorithm",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":DepressionOverflow",s[2],s[3],DEPRESSION,SURFACE_WATER,pModel);
+      FromToErrorCheck(":DepressionOverflow",s[2],s[3],DEPRESSION,SURFACE_WATER,pModel,pStateVar);
 
       CmvDepressionOverflow::GetParticipatingStateVarList(d_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2719,8 +2723,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
-      pMover=new CmvExchangeFlow(ParseSVTypeIndex(s[2],pModel),
-                                 ParseSVTypeIndex(s[3],pModel));
+      pMover=new CmvExchangeFlow(ParseSVTypeIndex(s[2], pModel, pStateVar),
+                                 ParseSVTypeIndex(s[3], pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2761,12 +2765,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized seepage algorithm",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":Seepage",s[2],s[3],DEPRESSION,USERSPEC_SVTYPE,pModel);
+      FromToErrorCheck(":Seepage",s[2],s[3],DEPRESSION,USERSPEC_SVTYPE,pModel,pStateVar);
 
       CmvSeepage::GetParticipatingStateVarList(s_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSeepage(s_type,ParseSVTypeIndex(s[3],pModel));
+      pMover=new CmvSeepage(s_type,ParseSVTypeIndex(s[3], pModel, pStateVar));
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2788,7 +2792,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       else {
         ExitGracefully("ParseMainInputFile: Unrecognized recharge process representation",BAD_DATA);
       }
-      FromToErrorCheck(":Recharge",s[2],s[3],ATMOS_PRECIP,SOIL,pModel);
+      FromToErrorCheck(":Recharge",s[2],s[3],ATMOS_PRECIP,SOIL,pModel,pStateVar);
       if(rech_typ==1)
       {
         CmvRecharge::GetParticipatingStateVarList(rech_type,tmpS,tmpLev,tmpN);
@@ -2798,7 +2802,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         pModel->AddStateVariables(tmpS,tmpLev,1);
 
         if(rech_type==RECHARGE_FROMFILE) {
-          pMover=new CmvRecharge(rech_type,ParseSVTypeIndex(s[3],pModel),0);
+          pMover=new CmvRecharge(rech_type,ParseSVTypeIndex(s[3], pModel, pStateVar),0);
         }
         else {
           int Conns=1;
@@ -2816,7 +2820,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         pModel->AddStateVariables(tmpS,tmpLev,1);
 
         pGW = pModel->GetGroundwaterModel();
-        pMover = new CGWRecharge(pGW,rech_type2,ParseSVTypeIndex(s[2],pModel));
+        pMover = new CGWRecharge(pGW,rech_type2,ParseSVTypeIndex(s[2], pModel, pStateVar));
         AddProcess(pModel,pMover,pProcGroup);
         pGW->AddProcess(GWRECHARGE,pMover);
       }
@@ -2827,7 +2831,7 @@ bool ParseMainInputFile (CModel     *&pModel,
        :BlowingSnow PBSM MULTIPLE MULTIPLE*/
       if (Options.noisy){cout <<"Blowing Snow process"<<endl;}
       if (Len<4){ImproperFormatWarning(":BlowingSnow",p,Options.noisy); break;}
-      FromToErrorCheck(":Recharge",s[2],s[3],MULTIPLE_SVTYPE,MULTIPLE_SVTYPE,pModel);
+      FromToErrorCheck(":Recharge",s[2],s[3],MULTIPLE_SVTYPE,MULTIPLE_SVTYPE,pModel,pStateVar);
       CmvPrairieBlowingSnow::GetParticipatingStateVarList(PBSM_FULL,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
@@ -2846,7 +2850,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized lake release algorithm",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":LakeRelease",s[2],s[3],LAKE_STORAGE,SURFACE_WATER,pModel);
+      FromToErrorCheck(":LakeRelease",s[2],s[3],LAKE_STORAGE,SURFACE_WATER,pModel,pStateVar);
 
       CmvLakeRelease::GetParticipatingStateVarList(l_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2865,7 +2869,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized soil balance algorithm",BAD_DATA_WARN); break;
       }
-      FromToErrorCheck(":LakeRelease",s[2],s[3],MULTIPLE_SVTYPE,MULTIPLE_SVTYPE,pModel);
+      FromToErrorCheck(":LakeRelease",s[2],s[3],MULTIPLE_SVTYPE,MULTIPLE_SVTYPE,pModel,pStateVar);
 
       CmvSoilBalance::GetParticipatingStateVarList(sb_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
@@ -2930,7 +2934,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       // \todo [QA\QC]: check if this is a process that can support this (infiltration can support runoff redirects)
 
-      pMover->Redirect(ParseSVTypeIndex(s[1],pModel),ParseSVTypeIndex(s[2],pModel));
+      pMover->Redirect(ParseSVTypeIndex(s[1], pModel, pStateVar),ParseSVTypeIndex(s[2], pModel, pStateVar));
 
       break;
     }
@@ -3069,7 +3073,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       int layer_ind;
       int i_stor;
-      sv_type typ = pModel->GetStateVariable()->StringToSVType(s[2],layer_ind,false);
+      sv_type typ = pStateVar->StringToSVType(s[2],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":FixedConcentration/:FixedTemperature command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -3122,7 +3126,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       int layer_ind;
       int i_stor;
-      sv_type typ = pModel->GetStateVariable()->StringToSVType(s[2],layer_ind,false);
+      sv_type typ = pStateVar->StringToSVType(s[2],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":MassInflux command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -3183,7 +3187,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       pModel->GetTransportModel()->AddProcessName(s[2]);
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
-      if(Len>=5) { iWat=ParseSVTypeIndex(s[4],pModel); }
+      if(Len>=5) { iWat=ParseSVTypeIndex(s[4], pModel, pStateVar); }
 
       pMover=new CmvDecay(s[3],dec_type,proc_ind,iWat,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
@@ -3213,7 +3217,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->GetTransportModel()->AddProcessName(s[2]);
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
 
-      if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel); }
+      if(Len>=6) { iWat = ParseSVTypeIndex(s[5], pModel, pStateVar); }
       pMover=new CmvTransformation(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -3235,7 +3239,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->GetTransportModel()->AddProcessName(s[2]);
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
 
-      if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel); }
+      if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel,pStateVar); }
       pMover=new CmvChemEquil(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -3441,6 +3445,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
 
   pModel->GetTransportModel()->InitializeParams(Options);
+  pModel->SetStateVariable(pStateVar);
 
   delete p; p=NULL;
   delete [] tmpS;
@@ -3455,11 +3460,11 @@ bool ParseMainInputFile (CModel     *&pModel,
 /// \param *&pModel [in] Input model object
 /// \return Integer index of state variable ins tate variable arrays, or DOESNT_EXIST (-1) if is is invalid
 //
-int  ParseSVTypeIndex(string s,  CModel *&pModel)
+int  ParseSVTypeIndex(string s, CModel *&pModel, CStateVariable *pStateVar)
 {
   int ind;
   int layer_ind(-1);
-  sv_type typ = pModel->GetStateVariable()->StringToSVType(s,layer_ind,false);
+  sv_type typ = pStateVar->StringToSVType(s,layer_ind,false);
   ExitGracefullyIf(pModel==NULL,"ParseSVTypeIndex: NULL model!?",RUNTIME_ERR);
 
   if (typ==UNRECOGNIZED_SVTYPE)
@@ -3584,19 +3589,19 @@ potmelt_method ParsePotMeltMethod(const string s)
 ///////////////////////////////////////////////////////////////////
 /// \brief throws warning if 'to' and 'from' state variables in process command cmd are not appropriate
 //
-void FromToErrorCheck(string cmd, string sFrom, string sTo, sv_type tFrom, sv_type tTo, CModel *pModel)
+void FromToErrorCheck(string cmd, string sFrom, string sTo, sv_type tFrom, sv_type tTo, CModel *pModel, CStateVariable *pStateVar)
 {
   int lay;
   string warn;
   if ((tFrom!=UNRECOGNIZED_SVTYPE) && (tFrom!=USERSPEC_SVTYPE)) {
-    if(pModel->GetStateVariable()->StringToSVType(sFrom,lay,false)!=tFrom) {
-      warn = "ParseInputFile: " + cmd + " command only accepts a 'from' compartment type of " + pModel->GetStateVariable()->SVTypeToString(tFrom,DOESNT_EXIST) + ". The user-specified compartment will be overridden.";
+    if(pStateVar->StringToSVType(sFrom,lay,false) != tFrom) {
+      warn = "ParseInputFile: " + cmd + " command only accepts a 'from' compartment type of " + pStateVar->SVTypeToString(tFrom,DOESNT_EXIST) + ". The user-specified compartment will be overridden.";
       WriteWarning(warn.c_str(),false);
     }
   }
   if ((tTo!=UNRECOGNIZED_SVTYPE) && (tTo!=USERSPEC_SVTYPE)) {
-    if(pModel->GetStateVariable()->StringToSVType(sTo,lay,false)!=tTo) {
-      warn = "ParseInputFile: " + cmd + " command only accepts a 'to' compartment type of " + pModel->GetStateVariable()->SVTypeToString(tTo,DOESNT_EXIST) + ". The user-specified compartment will be overridden.";
+    if(pStateVar->StringToSVType(sTo,lay,false) != tTo) {
+      warn = "ParseInputFile: " + cmd + " command only accepts a 'to' compartment type of " + pStateVar->SVTypeToString(tTo,DOESNT_EXIST) + ". The user-specified compartment will be overridden.";
       WriteWarning(warn.c_str(),false);
     }
   }

@@ -176,9 +176,6 @@ void CRavenBMI::Initialize(std::string config_file)
   }
   WARNINGS.close();
 
-  // CStateVariable::Initialize();
-  CStateVariable *pStateVar = new CStateVariable();
-
   Options.in_bmi_mode  = true;  // flag needed to ignore some arguments of the .rvi file
   Options.rvt_filename = "";   // just a dummy filename to avoid errors
   Options.duration     = std::numeric_limits<double>::max();  // "infinity": will run as long as "Update()" is called

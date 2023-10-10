@@ -174,20 +174,20 @@ private:/*------------------------------------------------------*/
   double          *_PotMeltBlends_wts;
 
   /* below are attributes that were static in the past */
-  CLandUseClass     **pAllLUClasses;  // = NULL; used to be static attribute of CLandUseClass
-  int                 NumLUClasses;   // = 0;    same of above
-  CSoilClass       **_pAllSoilClasses;   /// used to be static attribute of CSoilClass
-  int                _nAllSoilClasses;   /// same of above
-  CVegetationClass **_pAllVegClasses; /// used to be static attribute of CVegetationClass
-  int                _numVegClasses;  /// same of above
+  CLandUseClass     **pAllLUClasses;       // = NULL; used to be static attribute of CLandUseClass
+  int                 NumLUClasses;        // = 0;    same of above
+  CSoilClass       **_pAllSoilClasses;     /// used to be static attribute of CSoilClass
+  int                _nAllSoilClasses;     /// same of above
+  CVegetationClass **_pAllVegClasses;      /// used to be static attribute of CVegetationClass
+  int                _numVegClasses;       /// same of above
   CTerrainClass    **_pAllTerrainClasses;  ///< array of pointers to all terrain classes that have been created
   int                _nAllTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
-  CSoilProfile     **_pAllSoilProfiles;  ///< Reference to array of all soil profiles in model
-  int                _nAllSoilProfiles;  ///< Number of soil profiles in model (size of pAllSoilProfiles)
+  CSoilProfile     **_pAllSoilProfiles;    ///< Reference to array of all soil profiles in model
+  int                _nAllSoilProfiles;    ///< Number of soil profiles in model (size of pAllSoilProfiles)
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
-  int                _nConvVariables;   ///< Number of convolution variables (a.k.a. processes) in model (previous static attribute CmvConvolution::_nConv)
-  CStateVariable   *_pStateVar; ///< pointer to state variable object (used to be static attribute of CStateVariable)
+  int                _nConvVariables;    ///< Number of convolution variables (a.k.a. processes) in model (previous static attribute CmvConvolution::_nConv)
+  CStateVariable    *_pStateVar;         ///< pointer to state variable object (used to be static attribute of CStateVariable)
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -374,8 +374,8 @@ public:/*-------------------------------------------------------*/
   int                    GetNumConvolutionVariables();
   void                   CountOneMoreConvolutionVariable();
   // StateVariable
-  CStateVariable         *GetStateVariable() const;
-  void                    SetStateVariable(CStateVariable *pStateVar);
+  CStateVariable        *GetStateVariable() const;
+  void                   SetStateVariable(CStateVariable *pStateVar);
 
   /*--below are only available to global routines--*/
   //Accessor functions

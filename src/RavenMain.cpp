@@ -71,9 +71,6 @@ int main(int argc, char* argv[])
 
   t0=clock();
 
-  // CStateVariable::Initialize();
-  CStateVariable *pStateVar = new CStateVariable();
-
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
