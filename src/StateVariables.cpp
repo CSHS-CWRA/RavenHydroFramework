@@ -83,6 +83,15 @@ void CStateVariable::AddAlias(const string s1, const string s2)
 }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Sets pointer to transport model
+/// \param pTransportModel [in] Pointer to transport model
+//
+void CStateVariable::SetTransportModel(CTransportModel *pTransportModel)
+{
+  this->_pTransportModel = pTransportModel;
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Checks if input string is in alias list
 /// \details If the input string is in the alias list, then it returns the
 ///  string which it is an alias for, otherwise returns the unchanged input
@@ -108,7 +117,8 @@ string CStateVariable::CheckAliasList(const string s)
 /// \param layerindex [in] Layer index (when applicable)
 /// \return String describing state variable
 //
-string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerindex)
+string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerindex,
+                                           const CTransportModel *pTransportModel)
 {
 
   string name;
@@ -194,22 +204,22 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     name=name+"["+to_string(layerindex)+"]";
   }
   if (((typ==SNOW) || (typ==GROUNDWATER))  && (layerindex>=0)){  //GROUNDWATER Removed LS 2/25/2020
-    name=name+"["+to_string(layerindex)+"]";
+    name = name + "["+to_string(layerindex)+"]";
   }
   if (typ==CONSTITUENT){
-    name=CTransportModel::GetConstituentLongName(layerindex);
+    name = pTransportModel->GetConstituentLongName(layerindex);
   }
   else if (typ==CONSTITUENT_SRC){
     int c=layerindex;
-    name="Source of "+CTransportModel::GetConstituentTypeName2(c);
+    name = "Source of " + pTransportModel->GetConstituentTypeName2(c);
   }
   else if (typ==CONSTITUENT_SINK){
     int c=layerindex;
-    name="Sink of "+CTransportModel::GetConstituentTypeName2(c);
+    name = "Sink of " + pTransportModel->GetConstituentTypeName2(c);
   }
   else if (typ==CONSTITUENT_SW){
     int c=layerindex;
-    name="SW Sink of "+CTransportModel::GetConstituentTypeName2(c);
+    name = "SW Sink of " + pTransportModel->GetConstituentTypeName2(c);
   }
   return name;
 }
@@ -388,7 +398,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 
   if ((typ==CONSTITUENT) && ((int)(tmp.find_first_of("|"))!=-1)) //only used if e.g., !Nitrogen|SOIL[1] (rather than CONSTITUENT[32] or !Nitrogen[32]) is used
   {
-    layer_index=CTransportModel::GetLayerIndexFromName(tmp,layer_index);
+    layer_index = this->_pTransportModel->GetLayerIndexFromName2(tmp, layer_index);
     if (layer_index==DOESNT_EXIST){typ=UNRECOGNIZED_SVTYPE;}
   }
 
@@ -475,22 +485,22 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
 
     //Transport variables
     case(CONSTITUENT):    {
-      name="!"+CTransportModel::GetConstituentTypeName(layerindex); //e.g., !Nitrogen
+      name = "!" + this->_pTransportModel->GetConstituentTypeName(layerindex); //e.g., !Nitrogen
       break;
     }
     case(CONSTITUENT_SRC):    {
       int c=layerindex;
-      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SRC"; //e.g., !Nitrogen_SRC
+      name = "!" + this->_pTransportModel->GetConstituentTypeName2(c) + "_SRC"; //e.g., !Nitrogen_SRC
       break;
     }
     case(CONSTITUENT_SINK):    {
       int c=layerindex;
-      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SINK"; //e.g., !Nitrogen_SINK
+      name = "!" + this->_pTransportModel->GetConstituentTypeName2(c) + "_SINK"; //e.g., !Nitrogen_SINK
       break;
     }
     case(CONSTITUENT_SW):    {
       int c=layerindex;
-      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SW"; //e.g., !Nitrogen_SW
+      name = "!" + this->_pTransportModel->GetConstituentTypeName2(c) + "_SW"; //e.g., !Nitrogen_SW
       break;
     }
       //..

@@ -133,7 +133,7 @@ CModel::CModel(const int        nsoillayers,
 
   _aShouldApplyProcess=NULL; //Initialized in Initialize
 
-  _pTransModel=new CTransportModel(this);
+  _pTransModel = new CTransportModel(this);
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
 
 #ifdef _MODFLOW_USG_

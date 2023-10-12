@@ -195,7 +195,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
-            _STORAGE<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+            _STORAGE << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                                   _aStateVarLayer[i],
+                                                                   _pTransModel) << " [mm]";
             //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
           }
         }
@@ -575,7 +577,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
-            HRUSTOR<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+            HRUSTOR << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                                  _aStateVarLayer[i],
+                                                                  _pTransModel) << " [mm]";
             //HRUSTOR<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
           }
         }
@@ -1550,7 +1554,9 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     for (int i=0;i<GetNumStateVars();i++){
       //don't write if convolution storage or advection storage?
       cout << "                - ";
-      cout << CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]) << " (";
+      cout << CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                  _aStateVarLayer[i],
+                                                  _pTransModel) << " (";
       cout << this->GetStateVariable()->SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]) << ")" << endl;
     }
     cout <<"     # Processes: "<<GetNumProcesses()   <<endl;
@@ -1775,7 +1781,9 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
     _STORAGE<<"  :ColumnName rainfall snowfall \"Channel storage\" \"Rivulet storage\"";
     for (i=0;i<GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-  	_STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<"\"";}}
+  	_STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                         _aStateVarLayer[i],
+                                                         _pTransModel)<<"\"";}}
     _STORAGE<<" \"Total storage\" \"Cum. precip\" \"Cum. outflow\" \"MB error\""<<endl;
 
     _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
@@ -2080,7 +2088,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
     for(int i=0;i<_nStateVars;i++){
       if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-	      string name =CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+	      string name = CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                          _aStateVarLayer[i],
+                                                          _pModel->GetTransportModel());
 	      varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,name,name,"mm");
       }
     }
@@ -2535,7 +2545,9 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
 	  {
 	    S=FormatDouble(GetAvgStateVar(i));
-	    short_name=CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+	    short_name = CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                       _aStateVarLayer[i],
+                                                       _pModel->GetTransportModel());
 	    AddSingleValueToNetCDF(_STORAGE_ncid, short_name.c_str(),time_ind2,S);
 	    currentWater+=S;
 	  }

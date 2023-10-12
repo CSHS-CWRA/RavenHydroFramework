@@ -676,8 +676,10 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      _OUTPUT<<","<<
-        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)))<<" "<<mgL;
+      _OUTPUT << "," <<
+        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),
+                                            _pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)),
+                                            _pModel->GetTransportModel()) << " " << mgL;
     }
   }
 
@@ -828,7 +830,9 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
   _OUTPUT<<"  :ColumnName influx \"Channel storage\" \"Rivulet storage\"";
   for(i=0;i<_pModel->GetNumStateVars();i++) {
     if((CStateVariable::IsWaterStorage(_pModel->GetStateVarType(i))) && (i!=iCumPrecip)) {
-      _OUTPUT<<" \""<<CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),_pModel->GetStateVarLayer(i))<<"\"";
+      _OUTPUT << " \"" << CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),
+                                                              _pModel->GetStateVarLayer(i),
+                                                              _pModel->GetTransportModel()) << "\"";
     }
   }
   _OUTPUT<<" \"Total Mass\" \"Cum. Loading\" \"Cum. Mass lost\" \"MB error\""<<endl;

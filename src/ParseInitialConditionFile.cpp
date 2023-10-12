@@ -914,7 +914,9 @@ bool ParseInitialConditionsFile(CModel *&pModel, const optStruct &Options)
       double maxv=max(pHRU->GetStateVarMax(i,v,Options,true),0.0); //ignores all variable maximum thresholds that are dependent upon model state
       if ((v[i]-maxv)>PRETTY_SMALL)// check for capacity
       {
-        string name=CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),pModel->GetStateVarLayer(i));
+        string name = CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i),
+                                                          pModel->GetStateVarLayer(i),
+                                                          pModel->GetTransportModel());
         string warn ="maximum state variable limit exceeded in initial conditions for " + name+ " (in HRU "+to_string(pHRU->GetID())+") in .rvc file";
         WriteWarning(warn,Options.noisy);
 
