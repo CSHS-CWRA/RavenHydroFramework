@@ -20,8 +20,6 @@ class CLateralExchangeProcessABC: public CHydroProcessABC
 {
 protected:/*------------------------------------------------------*/
 
-  static int _nLatFlowProcesses;
-
   int      _nLatConnections; //< number of HRU lateral connections
   int     *_kFrom;           //< array of HRU from indices [size: nLatConnections] (JRC: Usually 1?)
   int     *_kTo;             //< array of HRU to indices [size: nLatConnections]
@@ -30,13 +28,13 @@ protected:/*------------------------------------------------------*/
 
   int      _LatFlowIndex;    //< global index of lateral flow process
 
-  static const CModel *_pModel;
+  const CModel *_pModel;
 
   void DynamicSpecifyLatConnections(const int nLatConnects);
 
 public:/*-------------------------------------------------------*/
 
-  static void SetModel(const CModel *pM);
+  void SetModel(const CModel *pM);
 
   CLateralExchangeProcessABC(const process_type ptype,
                              CModel             *pModel);     //multiple connection dynamic constructor

@@ -114,8 +114,6 @@ CModel::CModel(const int        nsoillayers,
   _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
   _nConvVariables = -1;
 
-  CLateralExchangeProcessABC::SetModel(this);
-
   _aGaugeWeights    =NULL; //Initialized in Initialize
   _aGaugeWtTemp     =NULL;
   _aGaugeWtPrecip   =NULL;
@@ -2360,7 +2358,21 @@ void CModel::SetStateVariable(CStateVariable *pStateVar) {
   this->_pStateVar = pStateVar;
 }
 
-  
+//////////////////////////////////////////////////////////////////
+/// \brief Gets the number of lateral flow processes
+/// \return Number of state variables
+//
+int CModel::GetNumLatFlowProcesses() {
+  return this->_nLatFlowProcesses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Increments the number of lateral flow processes
+//
+void CModel::CountOneMoreLatFlowProcess() {
+  this->_nLatFlowProcesses++;
+}
+
 /*****************************************************************
    Routines called repeatedly during model simulation
 ------------------------------------------------------------------

@@ -188,6 +188,7 @@ private:/*------------------------------------------------------*/
   int                _nAllChannelXSects;
   int                _nConvVariables;    ///< Number of convolution variables (a.k.a. processes) in model (previous static attribute CmvConvolution::_nConv)
   CStateVariable    *_pStateVar;         ///< pointer to state variable object (used to be static attribute of CStateVariable)
+  int                _nLatFlowProcesses;   /// used to be static of CLateralExchangeProcessABC
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -376,6 +377,9 @@ public:/*-------------------------------------------------------*/
   // StateVariable
   CStateVariable        *GetStateVariable() const;
   void                   SetStateVariable(CStateVariable *pStateVar);
+  // LateralExchangeABC
+  int                    GetNumLatFlowProcesses();
+  void                   CountOneMoreLatFlowProcess();
 
   /*--below are only available to global routines--*/
   //Accessor functions
