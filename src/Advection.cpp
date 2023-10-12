@@ -17,8 +17,9 @@
 /// \param pModel [in] Model object
 //
 CmvAdvection::CmvAdvection(string constit_name,
-                           CTransportModel *pTransportModel)
-  :CHydroProcessABC(ADVECTION)
+                           CTransportModel *pTransportModel,
+                           CModel *pModel)
+  :CHydroProcessABC(ADVECTION, pModel)
 {
   pTransModel=pTransportModel;
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);

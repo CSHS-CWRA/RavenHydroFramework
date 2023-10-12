@@ -33,7 +33,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvFrozenLake(const lakefreeze_type type, const CTransportModel *_pTransModel);
+  CmvFrozenLake(const lakefreeze_type type,
+                const CTransportModel *_pTransModel,
+                CModel                *pModel);
   ~CmvFrozenLake();
 
   //inherited functions

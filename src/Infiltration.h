@@ -82,7 +82,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvInfiltration(const infil_type itype);
+  CmvInfiltration(const infil_type itype,
+                  CModel           *pModel);
   ~CmvInfiltration();
 
   //inherited functions

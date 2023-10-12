@@ -32,21 +32,22 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvGlacierMelt(const glacial_melt_type mtype);
+  CmvGlacierMelt(const glacial_melt_type mtype,
+                 CModel                  *pModel);
   ~CmvGlacierMelt();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &t,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(glacial_melt_type  mtype,
@@ -73,7 +74,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvGlacierRelease(const glacial_release_type r_type);
+  CmvGlacierRelease(const glacial_release_type r_type,
+                    CModel                     *pModel);
   ~CmvGlacierRelease();
 
   //inherited functions
@@ -112,7 +114,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvGlacierInfil(const glacial_infil_type i_type);
+  CmvGlacierInfil(const glacial_infil_type i_type,
+                  CModel                   *pModel);
   ~CmvGlacierInfil();
 
   //inherited functions

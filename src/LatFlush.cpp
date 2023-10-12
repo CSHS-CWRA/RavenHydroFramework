@@ -13,10 +13,12 @@
 ------------------------------------------------------------------
 *****************************************************************/
 CmvLatFlush::CmvLatFlush(int   from_sv_ind,
-                        int     to_sv_ind,
-                        int   from_HRU_grp,
-                        int     to_HRU_grp,
-                        bool constrain_to_SBs) : CLateralExchangeProcessABC(LAT_FLUSH)
+                         int    to_sv_ind,
+                         int    from_HRU_grp,
+                         int    to_HRU_grp,
+                         bool   constrain_to_SBs,
+                         CModel *pModel) 
+  :CLateralExchangeProcessABC(LAT_FLUSH, pModel)
 {
   _iFlushFrom=from_sv_ind;
   _iFlushTo  =to_sv_ind;

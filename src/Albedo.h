@@ -31,7 +31,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowAlbedoEvolve(const snowalb_type snalbtype);
+  CmvSnowAlbedoEvolve(const snowalb_type snalbtype,
+                      CModel *pModel);
   ~CmvSnowAlbedoEvolve();
 
   //inherited functions

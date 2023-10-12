@@ -26,7 +26,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvAdvection(string constit_name, CTransportModel *pTransportModel);
+  CmvAdvection(string constit_name, CTransportModel *pTransportModel, CModel *pModel);
   ~CmvAdvection();
 
   //inherited functions

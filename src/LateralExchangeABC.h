@@ -38,7 +38,8 @@ public:/*-------------------------------------------------------*/
 
   static void SetModel(const CModel *pM);
 
-  CLateralExchangeProcessABC(const process_type ptype);     //multiple connection dynamic constructor
+  CLateralExchangeProcessABC(const process_type ptype,
+                             CModel             *pModel);     //multiple connection dynamic constructor
   ~CLateralExchangeProcessABC();
 
   int GetLateralFlowIndex() const;
@@ -50,7 +51,7 @@ public:/*-------------------------------------------------------*/
   const int *GetLateralFromIndices() const;
   const int *GetLateralToIndices() const;
 
-  virtual void GetParticipatingParamList(string *aP,class_type *aPC,int &nP) const{ nP=0;return; }
+  virtual void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const{ nP=0;return; }
 
   void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
@@ -91,10 +92,11 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvLatFlush(int   from_sv_ind,
-              int     to_sv_ind,
+              int   to_sv_ind,
               int   from_HRU_grp,
-              int     to_HRU_grp,
-              bool  constrain_to_SBs);
+              int   to_HRU_grp,
+              bool  constrain_to_SBs,
+              CModel *pModel);
   ~CmvLatFlush();
 
   //inherited functions
@@ -128,10 +130,11 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvLatEquilibrate(int   sv_ind,
-                    int   HRU_grp,
+  CmvLatEquilibrate(int    sv_ind,
+                    int    HRU_grp,
                     double mixing_rate,
-                    bool  constrain_to_SBs);
+                    bool   constrain_to_SBs,
+                    CModel *pModel);
   ~CmvLatEquilibrate();
 
   //inherited functions

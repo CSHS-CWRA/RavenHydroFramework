@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "DepressionProcesses.h"
+#include "Model.h"
 
 /*****************************************************************
    DepressionOverflow Constructor/Destructor
@@ -17,8 +18,9 @@
 /// \brief Implementation of depression overflow constructor
 /// \param dtype [in] Selected model of depression overflow
 //
-CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype)
-  :CHydroProcessABC(DEPRESSION_OVERFLOW)
+CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype,
+                                             CModel      *pModel)
+  :CHydroProcessABC(DEPRESSION_OVERFLOW, pModel)
 {
   _type=dtype;
 
@@ -178,8 +180,8 @@ void   CmvDepressionOverflow::ApplyConstraints(const double              *state_
 /// \brief Implementation of Seepage constructor
 /// \param stype [in] Selected model of seepage
 //
-CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil)
-  :CHydroProcessABC(SEEPAGE)
+CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil, CModel *pModel)
+  :CHydroProcessABC(SEEPAGE, pModel)
 {
   _type=stype;
 
@@ -300,8 +302,8 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
 /// \param lktype [in] Model of lake release used
 /// \param fromIndex [in] Index of lake from which water is released
 //
-CmvLakeRelease::CmvLakeRelease(lakerel_type lktype)
-  :CHydroProcessABC(LAKE_RELEASE)
+CmvLakeRelease::CmvLakeRelease(lakerel_type lktype, CModel *pModel)
+  :CHydroProcessABC(LAKE_RELEASE, pModel)
 {
   _type =lktype;
 

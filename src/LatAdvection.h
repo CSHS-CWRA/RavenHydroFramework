@@ -30,7 +30,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
-  CmvLatAdvection(string constit_name,CTransportModel *pTransportModel);
+  CmvLatAdvection(string          constit_name,
+                  CTransportModel *pTransportModel,
+                  CModel          *pModel);
   ~CmvLatAdvection();
 
   //inherited functions

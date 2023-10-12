@@ -6,13 +6,14 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Snow temp evolution constructor
 /// \param ste_type [in] Model of snow temp selected
 //
-CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type  ste_type):
-  CHydroProcessABC(SNOWTEMP_EVOLVE)
+CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModel *pModel)
+  :CHydroProcessABC(SNOWTEMP_EVOLVE, pModel)
 {
   _type=ste_type;
   CHydroProcessABC::DynamicSpecifyConnections(1);

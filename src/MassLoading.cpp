@@ -14,9 +14,10 @@
 /// \param constit_name [in] name of constituent being tracked
 /// \param pTransportModel [in] Transport Model object
 //
-CmvMassLoading::CmvMassLoading(string constit_name,
-                           CTransportModel *pTransportModel)
-  :CHydroProcessABC(MASS_LOADING)
+CmvMassLoading::CmvMassLoading(string          constit_name,
+                               CTransportModel *pTransportModel,
+                               CModel          *pModel)
+  :CHydroProcessABC(MASS_LOADING, pModel)
 {
   pTransModel=pTransportModel;
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);

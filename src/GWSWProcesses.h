@@ -48,7 +48,9 @@ protected:/*-------------------------------------------------------*/
 
 public: /*-------------------------------------------------------*/
 	// Constructors/Destructor
-  CGWSWProcessABC(CGroundwaterModel *pGWModel, const process_type ptype);
+  CGWSWProcessABC(CGroundwaterModel  *pGWModel,
+                  const process_type ptype,
+                  CModel             *pModel);
 	virtual ~CGWSWProcessABC();
 
 	virtual void Initialize();
@@ -89,7 +91,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
 	// Constructors/destructors:
-  CGWDrain(CGroundwaterModel *pGWM);          // Needs to set iTo
+  CGWDrain(CGroundwaterModel *pGWM,
+           CModel            *pModel);
 	~CGWDrain();
 
 	// HydroProcess inherited functions
@@ -146,7 +149,10 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   // Constructors/destructors:
-  CGWRecharge(CGroundwaterModel *pGWM, gwrecharge_type type, int From_index);          // Needs to set iFrom
+  CGWRecharge(CGroundwaterModel *pGWM,
+              gwrecharge_type    type,
+              int                From_index,
+              CModel            *pModel);          // Needs to set iFrom
   ~CGWRecharge();
 
   // HydroProcess inherited functions

@@ -12,6 +12,7 @@
 
 #include "RavenInclude.h"
 #include "HydroProcessABC.h"
+#include "Model.h"
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Method of calculating overflow of depression storage into surface water
@@ -32,7 +33,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvDepressionOverflow(const depflow_type dtype);
+  CmvDepressionOverflow(const depflow_type dtype,
+                        CModel             *pModel);
   ~CmvDepressionOverflow();
 
   //inherited functions
@@ -72,7 +74,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSeepage(const seepage_type seeptype, int iToSoil);
+  CmvSeepage(const seepage_type seeptype,
+             int iToSoil,
+             CModel *pModel);
   ~CmvSeepage();
 
   //inherited functions
@@ -117,7 +121,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvAbstraction(const abstraction_type absttype);
+  CmvAbstraction(const abstraction_type absttype, CModel *pModel);
   ~CmvAbstraction();
 
   //inherited functions
@@ -156,7 +160,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvLakeRelease(const lakerel_type absttype);
+  CmvLakeRelease(const lakerel_type absttype,
+                 CModel             *pModel);
   ~CmvLakeRelease();
 
   //inherited functions

@@ -11,8 +11,9 @@
 /// \brief Implementation of the infiltration process constructor
 /// \param itype [in] Model of infiltration selected
 //
-CmvInfiltration::CmvInfiltration(infil_type  itype)
-  :CHydroProcessABC(INFILTRATION)
+CmvInfiltration::CmvInfiltration(infil_type itype,
+                                 CModel *pModel)
+  :CHydroProcessABC(INFILTRATION, pModel)
 {
   type =itype;
   CHydroProcessABC::DynamicSpecifyConnections(2);

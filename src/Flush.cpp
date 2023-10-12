@@ -9,6 +9,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Flush Constructor/Destructor
@@ -21,8 +22,10 @@
 /// \param Out_index [in] Index of the storage compartment to which water is flushed
 //
 CmvFlush::CmvFlush(int In_index,                       //soil water storage
-                   int Out_index, const double &pct)
-  :CHydroProcessABC(FLUSH,In_index,Out_index)
+                   int Out_index,
+                   const double &pct,
+                   CModel *pModel)
+  :CHydroProcessABC(FLUSH, In_index, Out_index, pModel)
 {
   _percentage=pct;
   ExitGracefullyIf(In_index==DOESNT_EXIST,
@@ -108,11 +111,12 @@ void   CmvFlush::ApplyConstraints(const double           *storage,
 /// \param Out_index1 [in] Index of the first storage compartment to which water is flushed
 /// \param Out_index2 [in] Index of the second storage compartment to which water is flushed
 //
-CmvSplit::CmvSplit(int         In_index,                       //soil water storage
-                   int         Out_index1,
-                   int         Out_index2,
-                   double      split_amt)
-  :CHydroProcessABC(SPLIT)
+CmvSplit::CmvSplit(int    In_index,                       //soil water storage
+                   int    Out_index1,
+                   int    Out_index2,
+                   double split_amt,
+                   CModel *pModel)
+  :CHydroProcessABC(SPLIT, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvFlush Constructor: invalid 'from' compartment specified",BAD_DATA);
@@ -199,9 +203,10 @@ void   CmvSplit::ApplyConstraints(const double           *storage,
 /// \param In_index [in] Index of the storage compartment from which water overflows
 /// \param Out_index [in] Index of the storage compartment to which water overflows
 //
-CmvOverflow::CmvOverflow(int                                    In_index,                       //soil water storage
-                         int                                       Out_index)
-  :CHydroProcessABC(OVERFLOW_PROC,In_index,Out_index)
+CmvOverflow::CmvOverflow(int In_index,                       //soil water storage
+                         int Out_index,
+                         CModel *pModel)
+  :CHydroProcessABC(OVERFLOW_PROC, In_index, Out_index, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);
@@ -281,9 +286,10 @@ void   CmvOverflow::ApplyConstraints(const double                *state_var,
 /// \param In_index [in] Index of the main storage compartment
 /// \param Out_index [in] Index of the mixing storage compartment
 //
-CmvExchangeFlow::CmvExchangeFlow(int   In_index,                       //soil water storage
-                                 int   Out_index)//soil water storage
-  :CHydroProcessABC(EXCHANGE_FLOW,In_index,Out_index)
+CmvExchangeFlow::CmvExchangeFlow(int In_index,   // soil water storage
+                                 int Out_index,  // soil water storage
+                                 CModel *pModel)  
+  :CHydroProcessABC(EXCHANGE_FLOW, In_index, Out_index, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvOverflow Constructor: invalid 'from' compartment specified",BAD_DATA);

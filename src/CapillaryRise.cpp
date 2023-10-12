@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    CapillaryRise Constructor/Destructor
@@ -21,8 +22,9 @@
 //
 CmvCapillaryRise::CmvCapillaryRise(crise_type   cr_type,
                                    int          In_index,                     //soil water storage
-                                   int          Out_index)
-  :CHydroProcessABC(CAPILLARY_RISE)
+                                   int          Out_index,
+                                   CModel      *pModel)
+  :CHydroProcessABC(CAPILLARY_RISE, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvCapillaryRise Constructor: invalid 'from' compartment specified",BAD_DATA);

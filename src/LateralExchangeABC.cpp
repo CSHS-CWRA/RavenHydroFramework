@@ -8,7 +8,9 @@
    Constructor/Destructor
 ------------------------------------------------------------------
 *****************************************************************/
-CLateralExchangeProcessABC::CLateralExchangeProcessABC(const process_type ptype) : CHydroProcessABC(ptype)
+CLateralExchangeProcessABC::CLateralExchangeProcessABC(const process_type ptype,
+                                                       CModel             *pModel)
+  :CHydroProcessABC(ptype, pModel)
 {
 
   _nLatConnections=0;

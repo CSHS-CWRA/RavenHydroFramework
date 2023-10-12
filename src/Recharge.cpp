@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------
+/*------------------------------------------------------------------
   Raven Library Source Code
   Copyright (c) 2008-2021 the Raven Development Team
   ------------------------------------------------------------------
@@ -8,6 +8,7 @@
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
 #include "GroundwaterModel.h"
+#include "Model.h"
 
 /*****************************************************************
    Recharge Constructor/Destructor
@@ -20,8 +21,11 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvRecharge::CmvRecharge(recharge_type rech_type,int to_index, int junk)
-  :CHydroProcessABC(RECHARGE)
+CmvRecharge::CmvRecharge(recharge_type rech_type,
+                         int           to_index,
+                         int           junk,
+                         CModel        *pModel)
+  :CHydroProcessABC(RECHARGE, pModel)
 {
   ExitGracefullyIf(to_index==DOESNT_EXIST,
                    "CmvRecharge Constructor: invalid 'to' compartment specified",BAD_DATA);
@@ -36,8 +40,10 @@ CmvRecharge::CmvRecharge(recharge_type rech_type,int to_index, int junk)
 /// \brief Implementation of the recharge constructor
 /// \param se_type [in] Model of recharge selected
 //
-CmvRecharge::CmvRecharge(recharge_type rech_type, int nConns)
-                         :CHydroProcessABC(RECHARGE, nConns)
+CmvRecharge::CmvRecharge(recharge_type rech_type,
+                         int           nConns,
+                         CModel        *pModel)
+  :CHydroProcessABC(RECHARGE, nConns, pModel)
 {
   int iGW, i;
   _type = rech_type;

@@ -19,8 +19,10 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvFrozenLake::CmvFrozenLake(lakefreeze_type type,const CTransportModel *pTransMod)
-  :CHydroProcessABC(LAKE_FREEZING)
+CmvFrozenLake::CmvFrozenLake(lakefreeze_type       type,
+                             const CTransportModel *pTransMod,
+                             CModel                *pModel)
+  :CHydroProcessABC(LAKE_FREEZING, pModel)
 {
   _type =type;
   _pTransModel=pTransMod;

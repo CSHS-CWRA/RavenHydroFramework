@@ -38,7 +38,12 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvDecay(string constit_name, decay_type dtyp,int proc_ind,int iWatStor,CTransportModel *pTransportModel);
+  CmvDecay(string constit_name,
+           decay_type dtyp,
+           int proc_ind,
+           int iWatStor,
+           CTransportModel *pTransportModel,
+           CModel *pModel);
   ~CmvDecay();
 
   //inherited functions
@@ -79,7 +84,13 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvTransformation(string reactant_name, string product_name, transformation_type ttyp,int proc_ind,int iWatStor, CTransportModel *pTransportModel);
+  CmvTransformation(string reactant_name,
+                    string product_name,
+                    transformation_type ttyp,
+                    int proc_ind,
+                    int iWatStor,
+                    CTransportModel *pTransportModel,
+                    CModel *pModel);
   ~CmvTransformation();
 
   //inherited functions

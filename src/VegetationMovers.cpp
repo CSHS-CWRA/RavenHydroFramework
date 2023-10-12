@@ -10,6 +10,7 @@
 
 #include "HydroProcessABC.h"
 #include "VegetationMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Canopy Evaporation Constructor/Destructor
@@ -19,8 +20,9 @@
 /// \brief Implementation of the canopy evaporation constructor
 /// \param cetype [in] Model of canopy evaporation
 //
-CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype)
-  :CHydroProcessABC(CANOPY_EVAPORATION)
+CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype,
+                             CModel      *pModel)
+  :CHydroProcessABC(CANOPY_EVAPORATION, pModel)
 {
   type =cetype;
 
@@ -200,8 +202,9 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 /// \brief Implementation of the snow evaporation constructor
 /// \param cetype [in] Model of canopy snow evaporation
 //
-CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype)
-                     :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
+CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype,
+                                           CModel          *pModel)
+  :CHydroProcessABC(CANOPY_SNOW_EVAPORATION, pModel)
 {
   type =cetype;
 
@@ -363,8 +366,9 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
 /// \param to_index [in] Index of storage compartment to which water is lost
 //
 CmvCanopyDrip::CmvCanopyDrip(candrip_type cdtype,
-                             int to_index)
-  :CHydroProcessABC(CANOPY_DRIP)
+                             int          to_index,
+                             CModel       *pModel)
+  :CHydroProcessABC(CANOPY_DRIP, pModel)
 {
   int iCan;
   type =cdtype;

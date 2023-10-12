@@ -6,12 +6,13 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "Albedo.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the snow albedo evolution constructor
 //
-CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
-  CHydroProcessABC(SNOW_ALBEDO_EVOLVE)
+CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type, CModel *pModel)
+  :CHydroProcessABC(SNOW_ALBEDO_EVOLVE, pModel)
 {
   type =snalb_type;
 

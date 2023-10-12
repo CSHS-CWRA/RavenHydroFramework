@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Baseflow Constructor/Destructor
@@ -20,8 +21,9 @@
 /// \param In_index [in] Index of state variable providing baseflow to surface water
 //
 CmvBaseflow::CmvBaseflow(baseflow_type  btype,
-                         int            In_index)
-  :CHydroProcessABC(BASEFLOW)
+                         int            In_index,
+                         CModel        *pModel)
+  :CHydroProcessABC(BASEFLOW, pModel)
 {
   type =btype;
   ExitGracefullyIf(In_index==DOESNT_EXIST,

@@ -6,14 +6,15 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief   Implementation of the constructor
 /// \details For combined modelling of melt, refreeze, and energy content
 /// \param   bal_type Method of balancing energy selected
 //
-CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
-  CHydroProcessABC(SNOW_BALANCE)
+CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, CModel *pModel)
+  :CHydroProcessABC(SNOW_BALANCE, pModel)
 {
   type =bal_type;
 
@@ -178,8 +179,8 @@ CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type):
 /// \param   bal_type Method of balancing energy selected
 /// \param   iSnowTo index of 'To' state variable (should be ponded water or snow_liq)
 //
-CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, int iSnowTo) :
-  CHydroProcessABC(SNOW_BALANCE)
+CmvSnowBalance::CmvSnowBalance(snowbal_type bal_type, int iSnowTo, CModel *pModel) :
+  CHydroProcessABC(SNOW_BALANCE, pModel)
 {
   type = bal_type;
 

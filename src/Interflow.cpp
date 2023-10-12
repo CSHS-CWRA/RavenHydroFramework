@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the interflow constructor
@@ -14,9 +15,10 @@
 /// \param itype [in] Model of interflow selected
 /// \param In_index [in] Index of storage unit from which interflow is released
 //
-CmvInterflow::CmvInterflow(interflow_type       itype,
-                           int                                            In_index)
-  :CHydroProcessABC(INTERFLOW)
+CmvInterflow::CmvInterflow(interflow_type itype,
+                           int            In_index,
+                           CModel         *pModel)
+  :CHydroProcessABC(INTERFLOW, pModel)
 {
   type =itype;
   ExitGracefullyIf(In_index==DOESNT_EXIST,

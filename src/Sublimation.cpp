@@ -6,6 +6,7 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Sublimation Constructor/Destructor
@@ -16,8 +17,8 @@
 /// \brief Implementation of the sublimation constructor
 /// \param sub_type [in] Sublimation-modelling technique selected
 //
-CmvSublimation::CmvSublimation(sublimation_type sub_type):
-  CHydroProcessABC(SUBLIMATION)
+CmvSublimation::CmvSublimation(sublimation_type sub_type, CModel *pModel)
+  :CHydroProcessABC(SUBLIMATION, pModel)
 {
   type =sub_type;
 

@@ -114,7 +114,6 @@ CModel::CModel(const int        nsoillayers,
   _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
   _nConvVariables = -1;
 
-  CHydroProcessABC::SetModel(this);
   CLateralExchangeProcessABC::SetModel(this);
 
   _aGaugeWeights    =NULL; //Initialized in Initialize
@@ -2959,8 +2958,8 @@ bool CModel::ApplyLateralProcess( const int          j,
 //
 CmvConvolution::CmvConvolution(convolution_type type,
                                const int        to_index,
-                               CModel *pModel)
-  :CHydroProcessABC(CONVOLVE)
+                               CModel           *pModel)
+  :CHydroProcessABC(CONVOLVE, pModel)
 {
   _type = type;
   pModel->CountOneMoreConvolutionVariable();  // _nConv++; //starts at -1

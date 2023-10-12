@@ -38,12 +38,12 @@ class CmvSublimation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
 
-  sublimation_type      type; ///< sublimation algorithm type
-  bool              model_depth_change; ///< True if depth change is modeled
+  sublimation_type type; ///< sublimation algorithm type
+  bool             model_depth_change; ///< True if depth change is modeled
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSublimation(sublimation_type sub_type);
+  CmvSublimation(sublimation_type sub_type, CModel *pModel);
   ~CmvSublimation();
 
   //inherited functions
@@ -83,21 +83,22 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvSnowMelt(snowmelt_type melt_type,
-              int Out_index);
+              int           Out_index,
+              CModel        *pModel);
   ~CmvSnowMelt();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(snowmelt_type stype,
@@ -113,21 +114,21 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowSqueeze(int out_index);
+  CmvSnowSqueeze(int out_index, CModel *pModel);
   ~CmvSnowSqueeze();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
@@ -151,7 +152,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowRefreeze(refreeze_type freeze_type);
+  CmvSnowRefreeze(refreeze_type freeze_type, CModel *pModel);
   ~CmvSnowRefreeze();
 
   //inherited functions
@@ -221,8 +222,11 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowBalance(snowbal_type  bal_type);
-  CmvSnowBalance(snowbal_type bal_type, int iSnowTo);
+  CmvSnowBalance(snowbal_type  bal_type,
+                 CModel *pModel);
+  CmvSnowBalance(snowbal_type bal_type,
+                 int iSnowTo, 
+                 CModel *pModel);
   ~CmvSnowBalance();
 
   //inherited functions
@@ -260,21 +264,21 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowTempEvolve(snowtemp_evolve_type  ste_type);
+  CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModel *pModel);
   ~CmvSnowTempEvolve();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(snowtemp_evolve_type ste_type,

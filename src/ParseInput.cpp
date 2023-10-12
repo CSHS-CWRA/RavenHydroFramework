@@ -2010,10 +2010,11 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       else
       {
-        pMover = new CmvLatEquilibrate (pModel->GetStateVarIndex(tmpS[0], tmpLev[0]),//SV index
+        pMover = new CmvLatEquilibrate (pModel->GetStateVarIndex(tmpS[0], tmpLev[0]),  // SV index
                                         pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
-                                        100, //instantaneous
-                                        !interbasin);
+                                        100,                                           // instantaneous
+                                        !interbasin,
+                                        pModel);
         AddProcess(pModel, pMover, pProcGroup);
       }
       break;
@@ -2050,7 +2051,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvBaseflow(btype, ParseSVTypeIndex(s[2], pModel, pStateVar));
+      pMover = new CmvBaseflow(btype,
+                               ParseSVTypeIndex(s[2], pModel, pStateVar),
+                               pModel);
       AddProcess(pModel,pMover,pProcGroup);
 
       break;
@@ -2073,8 +2076,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvCanopyEvap::GetParticipatingStateVarList(ce_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvCanopyEvap(ce_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvCanopyEvap(ce_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(203):  //----------------------------------------------
@@ -2095,8 +2098,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvCanopyDrip(ctype,ParseSVTypeIndex(s[3],pModel, pStateVar));
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvCanopyDrip(ctype,
+                                 ParseSVTypeIndex(s[3],pModel, pStateVar),
+                                 pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(204):  //----------------------------------------------
@@ -2130,8 +2135,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvInfiltration::GetParticipatingStateVarList(itype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvInfiltration(itype);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvInfiltration(itype, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(205):  //----------------------------------------------
@@ -2167,7 +2172,8 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover=new CmvPercolation(p_type,
                                 ParseSVTypeIndex(s[2],pModel, pStateVar),
-                                ParseSVTypeIndex(s[3],pModel, pStateVar));
+                                ParseSVTypeIndex(s[3],pModel, pStateVar),
+                                pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2186,7 +2192,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover = new CmvSnowMelt(stype, ParseSVTypeIndex(s[3], pModel, pStateVar));
+      pMover = new CmvSnowMelt(stype,
+                               ParseSVTypeIndex(s[3], pModel, pStateVar),
+                               pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2226,8 +2234,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvSoilEvap::GetParticipatingStateVarList(se_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSoilEvap(se_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSoilEvap(se_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(209):  //----------------------------------------------
@@ -2259,10 +2267,12 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (sbtype == SNOBAL_SIMPLE_MELT) {
         tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
-        pMover = new CmvSnowBalance(sbtype, ParseSVTypeIndex(s[3], pModel, pStateVar));
+        pMover = new CmvSnowBalance(sbtype,
+                                    ParseSVTypeIndex(s[3], pModel, pStateVar),
+                                    pModel);
       }
       else{
-        pMover=new CmvSnowBalance(sbtype);
+        pMover = new CmvSnowBalance(sbtype, pModel);
       }
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -2287,8 +2297,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvSublimation::GetParticipatingStateVarList(sub_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSublimation(sub_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSublimation(sub_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(211):  //----------------------------------------------
@@ -2311,7 +2321,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvOWEvaporation(ow_type,ParseSVTypeIndex(s[2],pModel, pStateVar));
+      pMover = new CmvOWEvaporation(ow_type, ParseSVTypeIndex(s[2], pModel, pStateVar), pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2325,7 +2335,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       FromToErrorCheck(":Precipitation",s[2],s[3],ATMOS_PRECIP,MULTIPLE_SVTYPE,pModel,pStateVar);
 
-      pMover=pPrecip=new CmvPrecipitation();
+      pMover = pPrecip = new CmvPrecipitation(pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2347,7 +2357,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[0] = pStateVar->StringToSVType(s[2], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover=new CmvInterflow(inttype,ParseSVTypeIndex(s[2],pModel, pStateVar));
+      pMover = new CmvInterflow(inttype, ParseSVTypeIndex(s[2], pModel, pStateVar), pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2366,8 +2376,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvSnowRefreeze::GetParticipatingStateVarList(rtype,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSnowRefreeze(rtype);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSnowRefreeze(rtype, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(215):  //----------------------------------------------
@@ -2381,8 +2391,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,2);
       if ((Len>=5) && (s[4][0]!='#')){pct=max(min(s_to_d(s[4]),1.0),0.0);}
 
-      pMover=new CmvFlush(ParseSVTypeIndex(s[2], pModel, pStateVar),
-                          ParseSVTypeIndex(s[3], pModel, pStateVar), pct);
+      pMover = new CmvFlush(ParseSVTypeIndex(s[2], pModel, pStateVar),
+                            ParseSVTypeIndex(s[3], pModel, pStateVar),
+                            pct, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2405,9 +2416,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[1] = pStateVar->StringToSVType(s[3], tmpLev[1], true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
-      pMover=new CmvCapillaryRise(ctype,
-                                  ParseSVTypeIndex(s[2], pModel, pStateVar),
-                                  ParseSVTypeIndex(s[3], pModel, pStateVar));
+      pMover = new CmvCapillaryRise(ctype,
+                                    ParseSVTypeIndex(s[2], pModel, pStateVar),
+                                    ParseSVTypeIndex(s[3], pModel, pStateVar),
+                                    pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2434,8 +2446,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       else{
         lake_ind=pModel->GetLakeStorageIndex();
       }
-      pMover=new CmvLakeEvaporation(lk_type,lake_ind);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvLakeEvaporation(lk_type, lake_ind, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(218):  //----------------------------------------------
@@ -2449,7 +2461,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       tmpS[0] = pStateVar->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
-      pMover = new CmvSnowSqueeze(ParseSVTypeIndex(s[3], pModel, pStateVar));
+      pMover = new CmvSnowSqueeze(ParseSVTypeIndex(s[3], pModel, pStateVar), pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2474,7 +2486,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvGlacierMelt::GetParticipatingStateVarList(gm_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvGlacierMelt(gm_type);
+      pMover = new CmvGlacierMelt(gm_type, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2496,7 +2508,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvGlacierRelease::GetParticipatingStateVarList(gm_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvGlacierRelease(gm_type);
+      pMover = new CmvGlacierRelease(gm_type, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2526,8 +2538,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvCanopySublimation::GetParticipatingStateVarList(sub_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvCanopySublimation(sub_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvCanopySublimation(sub_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(222):  //----------------------------------------------
@@ -2541,7 +2553,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS, tmpLev, 2);
 
       pMover=new CmvOverflow(ParseSVTypeIndex(s[2], pModel, pStateVar),
-                             ParseSVTypeIndex(s[3], pModel, pStateVar));
+                             ParseSVTypeIndex(s[3], pModel, pStateVar),
+                             pModel);
 
       AddProcess(pModel,pMover,pProcGroup);
       break;
@@ -2561,11 +2574,11 @@ bool ParseMainInputFile (CModel     *&pModel,
         string message="ParseMainInputFile: Unrecognized snow albedo algorithm "+string(s[1]);
         ExitGracefully(message.c_str(),BAD_DATA_WARN); break;
       }
-      CmvSnowAlbedoEvolve::GetParticipatingStateVarList(snalb_type,tmpS,tmpLev,tmpN);
-      pModel->AddStateVariables(tmpS,tmpLev,tmpN);
+      CmvSnowAlbedoEvolve::GetParticipatingStateVarList(snalb_type, tmpS, tmpLev, tmpN);
+      pModel->AddStateVariables(tmpS, tmpLev, tmpN);
 
-      pMover=new CmvSnowAlbedoEvolve(snalb_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSnowAlbedoEvolve(snalb_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(224):  //----------------------------------------------
@@ -2582,7 +2595,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvCropHeatUnitEvolve::GetParticipatingStateVarList(CHU_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvCropHeatUnitEvolve(CHU_type);
+      pMover = new CmvCropHeatUnitEvolve(CHU_type, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2607,7 +2620,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvAbstraction::GetParticipatingStateVarList(abst_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvAbstraction(abst_type);
+      pMover=new CmvAbstraction(abst_type, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2627,7 +2640,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvGlacierInfil::GetParticipatingStateVarList(gi_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvGlacierInfil(gi_type);
+      pMover = new CmvGlacierInfil(gi_type, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2644,11 +2657,11 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pModel->AddStateVariables(tmpS,tmpLev,3);
 
-      pMover=new CmvSplit(ParseSVTypeIndex(s[2], pModel, pStateVar),
-                          ParseSVTypeIndex(s[3], pModel, pStateVar),
-                          ParseSVTypeIndex(s[4], pModel, pStateVar),
-                          s_to_d(s[5]));
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSplit(ParseSVTypeIndex(s[2], pModel, pStateVar),
+                            ParseSVTypeIndex(s[3], pModel, pStateVar),
+                            ParseSVTypeIndex(s[4], pModel, pStateVar),
+                            s_to_d(s[5]), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(228):  //----------------------------------------------
@@ -2687,8 +2700,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvSnowTempEvolve::GetParticipatingStateVarList(ste_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSnowTempEvolve(ste_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSnowTempEvolve(ste_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(230):  //----------------------------------------------
@@ -2709,7 +2722,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvDepressionOverflow::GetParticipatingStateVarList(d_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvDepressionOverflow(d_type);
+      pMover = new CmvDepressionOverflow(d_type, pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2724,7 +2737,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
       pMover=new CmvExchangeFlow(ParseSVTypeIndex(s[2], pModel, pStateVar),
-                                 ParseSVTypeIndex(s[3], pModel, pStateVar));
+                                 ParseSVTypeIndex(s[3], pModel, pStateVar),
+                                 pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2749,7 +2763,7 @@ bool ParseMainInputFile (CModel     *&pModel,
                                 pModel->GetStateVarIndex(tmpS[1],tmpLev[1]),//to SV index
                                 pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
                                 pModel->GetHRUGroup(s[5])->GetGlobalIndex(),
-                                !interbasin);
+                                !interbasin, pModel);
         AddProcess(pModel,pMover,pProcGroup);
       }
       break;
@@ -2770,7 +2784,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvSeepage::GetParticipatingStateVarList(s_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSeepage(s_type,ParseSVTypeIndex(s[3], pModel, pStateVar));
+      pMover = new CmvSeepage(s_type, ParseSVTypeIndex(s[3], pModel, pStateVar), pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -2808,9 +2822,9 @@ bool ParseMainInputFile (CModel     *&pModel,
           int Conns=1;
           if(Len == 2) { Conns = 1; }
           else if(Len == 3) { Conns = s_to_i(s[2]); } //GWMIGRATE - not sure what is happening here.
-          pMover=new CmvRecharge(rech_type,Conns);
+          pMover = new CmvRecharge(rech_type, Conns, pModel);
         }
-        AddProcess(pModel,pMover,pProcGroup);
+        AddProcess(pModel, pMover, pProcGroup);
       }
       else //Groundwater recharge class
       {
@@ -2820,7 +2834,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         pModel->AddStateVariables(tmpS,tmpLev,1);
 
         pGW = pModel->GetGroundwaterModel();
-        pMover = new CGWRecharge(pGW,rech_type2,ParseSVTypeIndex(s[2], pModel, pStateVar));
+        pMover = new CGWRecharge(pGW, rech_type2, ParseSVTypeIndex(s[2], pModel, pStateVar), pModel);
         AddProcess(pModel,pMover,pProcGroup);
         pGW->AddProcess(GWRECHARGE,pMover);
       }
@@ -2835,8 +2849,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvPrairieBlowingSnow::GetParticipatingStateVarList(PBSM_FULL,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvPrairieBlowingSnow(PBSM_FULL);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvPrairieBlowingSnow(PBSM_FULL, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(236):  //----------------------------------------------
@@ -2855,8 +2869,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvLakeRelease::GetParticipatingStateVarList(l_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvLakeRelease(l_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvLakeRelease(l_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(237):  //----------------------------------------------
@@ -2874,8 +2888,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvSoilBalance::GetParticipatingStateVarList(sb_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvSoilBalance(sb_type);
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvSoilBalance(sb_type, pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(238):  //----------------------------------------------
@@ -2898,7 +2912,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         pMover = new CmvLatEquilibrate(pModel->GetStateVarIndex(tmpS[0], tmpLev[0]),//SV index
                                        pModel->GetHRUGroup(s[2])->GetGlobalIndex(),
                                        s_to_d(s[4]),
-                                       !interbasin);
+                                       !interbasin,
+                                       pModel);
         AddProcess(pModel, pMover, pProcGroup);
       }
       break;
@@ -2919,8 +2934,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       CmvFrozenLake::GetParticipatingStateVarList(lf_type,tmpS,tmpLev,tmpN);
       pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-      pMover=new CmvFrozenLake(lf_type,pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvFrozenLake(lf_type, pModel->GetTransportModel(), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case(294):  //----------------------------------------------
@@ -2944,8 +2959,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout <<"Process Group Start"<<endl; }
       if(Len<1) { ImproperFormatWarning(":ProcessGroup",p,Options.noisy); break; }
       else {
-        pProcGroupOuter=pProcGroup;
-        pProcGroup=new CProcessGroup(s[1]);
+        pProcGroupOuter = pProcGroup;
+        pProcGroup = new CProcessGroup(s[1], pModel);
       }
       break;
     }
@@ -3045,13 +3060,13 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->GetTransportModel()->AddConstituent(s[1],ctype,is_passive);
 
       if(!is_passive) {
-        pMover=new CmvAdvection(s[1],pModel->GetTransportModel());
+        pMover = new CmvAdvection(s[1], pModel->GetTransportModel(), pModel);
         AddProcess(pModel,pMover,pProcGroup);
 
-        pMover=new CmvLatAdvection(s[1],pModel->GetTransportModel());
+        pMover = new CmvLatAdvection(s[1], pModel->GetTransportModel(), pModel);
         AddProcess(pModel,pMover,pProcGroup);
       }
-      pMover=new CmvMassLoading(s[1],pModel->GetTransportModel());
+      pMover = new CmvMassLoading(s[1], pModel->GetTransportModel(), pModel);
       AddProcess(pModel,pMover,pProcGroup);
 
       if(ctype==ENTHALPY) {//add precipitation source condition, by default - Tprecip=Tair
@@ -3189,8 +3204,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
       if(Len>=5) { iWat=ParseSVTypeIndex(s[4], pModel, pStateVar); }
 
-      pMover=new CmvDecay(s[3],dec_type,proc_ind,iWat,pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvDecay(s[3], dec_type, proc_ind, iWat, pModel->GetTransportModel(), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case (306)://----------------------------------------------
@@ -3218,8 +3233,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
 
       if(Len>=6) { iWat = ParseSVTypeIndex(s[5], pModel, pStateVar); }
-      pMover=new CmvTransformation(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvTransformation(s[3], s[4], t_type, proc_ind, iWat,
+                                     pModel->GetTransportModel(), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
       break;
     }
     case (308)://----------------------------------------------
@@ -3240,7 +3256,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       int proc_ind=pModel->GetTransportModel()->GetProcessIndex(s[2]);
 
       if(Len>=6) { iWat=ParseSVTypeIndex(s[5],pModel,pStateVar); }
-      pMover=new CmvChemEquil(s[3],s[4],t_type,proc_ind,iWat,pModel->GetTransportModel());
+      pMover = new CmvChemEquil(s[3], s[4], t_type, proc_ind, iWat, pModel->GetTransportModel(), pModel);
       AddProcess(pModel,pMover,pProcGroup);
       break;
     }
@@ -3255,8 +3271,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized heat conduction process representation",BAD_DATA_WARN); break;
       }
 
-      pMover=new CmvHeatConduction(pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvHeatConduction(pModel->GetTransportModel(), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
 
       break;
     }
@@ -3281,8 +3297,8 @@ bool ParseMainInputFile (CModel     *&pModel,
         ExitGracefully("ParseMainInputFile: Unrecognized surface exchange process representation",BAD_DATA_WARN); break;
       }
 
-      pMover=new CmvPartitionEnergy(pModel->GetTransportModel());
-      AddProcess(pModel,pMover,pProcGroup);
+      pMover = new CmvPartitionEnergy(pModel->GetTransportModel(), pModel);
+      AddProcess(pModel, pMover, pProcGroup);
 
       break;
     }
@@ -3351,7 +3367,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       pModel->AddStateVariables(tmpS, tmpLev, 1);
 
       pGW = pModel->GetGroundwaterModel();
-      pMover = new CGWDrain(pGW);
+      pMover = new CGWDrain(pGW, pModel);
       AddProcess(pModel, pMover, pProcGroup);
       pGW->AddProcess(DRAIN, pMover);
       break;

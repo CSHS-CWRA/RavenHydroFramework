@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Percolation Constructor/Destructor
@@ -20,10 +21,11 @@
 /// \param From_index [in] Index of soil storage unit from which percolation occurs
 /// \param To_index [in] Index of soil storage unit from to which water is lost
 //
-CmvPercolation::CmvPercolation(perc_type        p_type,
-                               int              From_index,                     //soil water storage
-                               int              To_index)
-  :CHydroProcessABC(PERCOLATION,From_index,To_index)
+CmvPercolation::CmvPercolation(perc_type  p_type,
+                               int        From_index,                     //soil water storage
+                               int        To_index,
+                               CModel    *pModel)
+  :CHydroProcessABC(PERCOLATION, From_index, To_index, pModel)
 {
   ExitGracefullyIf(From_index==DOESNT_EXIST,
                    "CmvPercolation Constructor: invalid 'from' compartment specified",BAD_DATA);
