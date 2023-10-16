@@ -80,7 +80,7 @@ CTransportModel::~CTransportModel()
 //
 void CTransportModel::m_to_cj(const int m,int &c,int &j) const
 {
-  ExitGracefullyIf((m<0) || (m>_nConstituents*_nWaterCompartments),
+  ExitGracefullyIf((m < 0) || (m > (this->_nConstituents * this->_nWaterCompartments)),
     "CTransportModel::LayerIndToConstitData: invalid layer index",BAD_DATA);
 
   j=m % _nWaterCompartments;

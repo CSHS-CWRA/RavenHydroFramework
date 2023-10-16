@@ -3462,6 +3462,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   pModel->GetTransportModel()->InitializeParams(Options);
   pModel->SetStateVariable(pStateVar);
+  pStateVar->SetTransportModel(pModel->GetTransportModel());
 
   delete p; p=NULL;
   delete [] tmpS;
