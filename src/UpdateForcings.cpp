@@ -448,6 +448,8 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       CorrectTemp(Options,F,elev,ref_elev_temp,tt);
 
+      ApplyForcingPerturbation(F_TEMP_AVE, F, k, Options, tt);
+
       //-------------------------------------------------------------------
       //  Copy Daily values from current day, earlier time steps
       //    (done after temperature corrections so that the uncorrected values are used in calculating the lapse rate for temp_ave)
@@ -523,11 +525,17 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       //--Orographic corrections-------------------------------------------
       CorrectPrecip(Options,F,elev,ref_elev_precip,k,tt);
 
+      ApplyForcingPerturbation(F_PRECIP  , F, k, Options, tt);
+      ApplyForcingPerturbation(F_RAINFALL, F, k, Options, tt);
+      ApplyForcingPerturbation(F_SNOWFALL, F, k, Options, tt);
+
       //-------------------------------------------------------------------
       //  Wind Velocity
       //-------------------------------------------------------------------
 
       F.wind_vel = EstimateWindVelocity(Options,_pHydroUnits[k],F,ref_measurement_ht,k);
+
+      //ApplyForcingPerturbation(F_WIND_VEL, F, k, Options, tt);
 
       //-------------------------------------------------------------------
       //  Cloud Cover

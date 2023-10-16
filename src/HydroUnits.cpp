@@ -453,47 +453,48 @@ void CHydroUnit:: ChangeHRUType(const HRU_type typ)
 //////////////////////////////////////////////////////////////////
 /// \brief Adjust HRU Forcing values mid-simulation
 //
-void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,const double& epsilon, const adjustment adj)
+void CHydroUnit::AdjustHRUForcing(const forcing_type Ftyp,force_struct &F, const double& epsilon, const adjustment adj)
 {
   if(Ftyp==F_PRECIP) {
-    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip*=epsilon;}
-    else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon;}
-    else if (adj==ADJ_REPLACE       ){_Forcings.precip =epsilon;}
-    upperswap(_Forcings.precip,0.0);
+    if      (adj==ADJ_MULTIPLICATIVE){F.precip*=epsilon;}
+    else if (adj==ADJ_ADDITIVE      ){F.precip+=epsilon;}
+    else if (adj==ADJ_REPLACE       ){F.precip =epsilon;}
+    upperswap(F.precip,0.0);
   }
   else if(Ftyp==F_RAINFALL) {
-    double sf=_Forcings.snow_frac;
-    double Po=_Forcings.precip;
-    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip+=Po*(1.0-sf)*(epsilon-1.0);}
-    else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon; }
-    else if (adj==ADJ_REPLACE       ){_Forcings.precip+=epsilon-(1-sf)*Po;}
-    upperswap(_Forcings.precip,0.0);
-    if (_Forcings.precip==0){_Forcings.snow_frac=0;}
-    else                    {_Forcings.snow_frac=_Forcings.snow_frac*Po/_Forcings.precip;}
+    double sf=F.snow_frac;
+    double Po=F.precip;
+    if      (adj==ADJ_MULTIPLICATIVE){F.precip+=Po*(1.0-sf)*(epsilon-1.0);}
+    else if (adj==ADJ_ADDITIVE      ){F.precip+=epsilon; }
+    else if (adj==ADJ_REPLACE       ){F.precip+=epsilon-(1-sf)*Po;}
+    upperswap(F.precip,0.0);
+    if (F.precip==0){F.snow_frac=0;}
+    else            {F.snow_frac=F.snow_frac*Po/F.precip;}
   }
   else if(Ftyp==F_SNOWFALL) {
-    double sf=_Forcings.snow_frac;
-    double Po=_Forcings.precip;
-    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.precip+=Po*(sf)*(epsilon-1.0);}
-    else if (adj==ADJ_ADDITIVE      ){_Forcings.precip+=epsilon; }
-    else if (adj==ADJ_REPLACE       ){_Forcings.precip+=epsilon-(sf)*Po;}
-    upperswap(_Forcings.precip,0.0);
-    if (_Forcings.precip==0){_Forcings.snow_frac=0;}
-    else                    {_Forcings.snow_frac=1.0-(1.0-_Forcings.snow_frac)*Po/_Forcings.precip;}
+    double sf=F.snow_frac;
+    double Po=F.precip;
+    if      (adj==ADJ_MULTIPLICATIVE){F.precip+=Po*(sf)*(epsilon-1.0);}
+    else if (adj==ADJ_ADDITIVE      ){F.precip+=epsilon; }
+    else if (adj==ADJ_REPLACE       ){F.precip+=epsilon-(sf)*Po;}
+    upperswap(F.precip,0.0);
+    if (F.precip==0){F.snow_frac=0;}
+    else            {F.snow_frac=1.0-(1.0-F.snow_frac)*Po/F.precip;}
   }
   else if (Ftyp == F_TEMP_AVE) {
     //daily mean/min/max handled via AdjustDailyHRUForcings()
-    if      (adj==ADJ_MULTIPLICATIVE){_Forcings.temp_ave*=epsilon; }
-    else if (adj==ADJ_ADDITIVE      ){_Forcings.temp_ave+=epsilon; }
-    else if (adj==ADJ_REPLACE       ){_Forcings.temp_ave =epsilon;}
+    if      (adj==ADJ_MULTIPLICATIVE){F.temp_ave*=epsilon; }
+    else if (adj==ADJ_ADDITIVE      ){F.temp_ave+=epsilon; }
+    else if (adj==ADJ_REPLACE       ){F.temp_ave =epsilon;}
   }
-  //AdjustForcing(_Forcings,Ftyp,value,adj);
-  //AdjustForcings(force_struct F, forcing_type typ, double value, adjustment adj);
+  else {
+    ExitGracefully("CHydroUnit::AdjustHRUForcing: Only PRECIP, SNOWFALL, RAINFALL, and TEMP_AVE are supported for forcing perturbation. ",BAD_DATA);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adjust HRU daily mean/min/max Forcing values mid-simulation (only used for temperature)
 //
-void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* epsilon, const adjustment adj, const int nStepsPerDay)
+void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, force_struct &F,  const double* epsilon, const adjustment adj, const int nStepsPerDay)
 {
   if (Ftyp == F_TEMP_AVE)
   {
@@ -503,9 +504,9 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* e
       for (int n=0;n<nStepsPerDay;n++){
         adjust+=1.0*epsilon[n]; //mean multiplicative perturbation over the day -exact for single time step
       }
-      _Forcings.temp_daily_min*=adjust; //approximate - uses mean perturbation to adjust extremes
-      _Forcings.temp_daily_max*=adjust; //approximate - uses mean perturbation to adjust extremes
-      _Forcings.temp_daily_ave*=adjust; //approximate - uses mean perturbation to adjust extremes
+      F.temp_daily_min*=adjust; //approximate - uses mean perturbation to adjust extremes
+      F.temp_daily_max*=adjust; //approximate - uses mean perturbation to adjust extremes
+      F.temp_daily_ave*=adjust; //approximate - uses mean perturbation to adjust extremes
     }
     else if (adj==ADJ_ADDITIVE      )
     {
@@ -513,14 +514,23 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, const double* e
       for (int n=0;n<nStepsPerDay;n++){
         adjust+=epsilon[n];
       }
-      _Forcings.temp_daily_ave+=adjust; //exact
-      _Forcings.temp_daily_min+=adjust; //approximate - uses mean perturbation to adjust extremes
-      _Forcings.temp_daily_max+=adjust; //approximate - uses mean perturbation to adjust extremes
+      F.temp_daily_ave+=adjust; //exact
+      F.temp_daily_min+=adjust; //approximate - uses mean perturbation to adjust extremes
+      F.temp_daily_max+=adjust; //approximate - uses mean perturbation to adjust extremes
     }
   }
 
   //doesn't make sense for other forcings or REPLACEMENT
 
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Set forcing values mid-simulation - used by BMI 
+//
+void CHydroUnit::SetHRUForcing(const forcing_type Ftyp, const double &val) 
+{
+  SetForcingFromType(Ftyp,_Forcings,val);
 }
 
 //////////////////////////////////////////////////////////////////

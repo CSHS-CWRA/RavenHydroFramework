@@ -138,14 +138,12 @@ void CmvLatEquilibrate::Initialize()
   delete [] kTo;
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to participating state variables
 ///
-/// \param se_type [in] Model of soil evaporation used
-/// \param *aSV [out] Array of state variable types needed by soil evaporation algorithm
+/// \param *aSV [out] Array of state variable types needed by algorithm
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
-/// \param &nSV [out] Number of state variables required by soil evaporation algorithm (size of aSV[] and aLev[] arrays)
+/// \param &nSV [out] Number of state variables required by algorithm (size of aSV[] and aLev[] arrays)
 //
 void CmvLatEquilibrate::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV)
 {
@@ -185,9 +183,9 @@ void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars
   for (int q = 0; q < _nLatConnections; q++)
   {
     stor    = state_vars[_kFrom[q]][_iFromLat[q]];
-    to_stor = state_vars[_kTo[q]][_iToLat[q]];
+    to_stor = state_vars[_kTo  [q]][_iToLat  [q]];
     Afrom   = pHRUs[_kFrom[q]]->GetArea();
-    Ato     = pHRUs[_kTo[q]]->GetArea();
+    Ato     = pHRUs[_kTo  [q]]->GetArea();
     p = _pModel->GetHydroUnit(_kFrom[q])->GetSubBasinIndex();
     if (!_constrain_to_SBs) { p = 0; }
 
@@ -198,12 +196,12 @@ void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars
     }
     if ((q >= qstart) && (q < qstart+_halfconn[p])) //step 1: mix % of water into single vessel HRU
     {
-      exchange_rates[q] = mix*max(stor, 0.0) / Options.timestep * Afrom; //[mm-m2/d] //a fraction of storage moved to mixing unit per time step
+      exchange_rates[q] = mix*max(stor, 0.0) / Options.timestep * Afrom; //[mm-km2/d] //a fraction of storage moved to mixing unit per time step
       sum[p] += exchange_rates[q]*Options.timestep; //[mm-m2] cumulative water mixed
     }
     else //step 2: redistribute mixed water back to contributing HRUs to even out water levels
     {
-      exchange_rates[q] = sum[p] *(Ato / _Asum[p]) / Options.timestep; //[mm-m2/d]fraction empties out
+      exchange_rates[q] = sum[p] *(Ato / _Asum[p]) / Options.timestep; //[mm-km2/d]fraction empties out
     }
 
   }

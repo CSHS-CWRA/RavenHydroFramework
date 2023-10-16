@@ -7,22 +7,13 @@ Copyright (c) 2008-2023 the Raven Development Team
 
 #include "ModelEnsemble.h"
 
-struct force_perturb
-{
-  forcing_type forcing;
-  disttype     distribution;
-  double       distpar[3];   ///< distribution parameters - conditional on distribution
-  int          kk;           //< HRU group index (or DOESNT_EXIST if perturbation should apply everywhere)
-  adjustment   adj_type;     //< additive or multiplicative adjustment
-  double      *eps;          //< stored adjustment factors for day - allows perturbations to be pre-calculated for day so that daily mean/min/max can be generated
-};
 struct obs_perturb
 {
   sv_type      state;
   disttype     distribution;
   double       distpar[3];   ///< distribution parameters - conditional on distribution
-  int          kk;           //< HRU group index (or DOESNT_EXIST if perturbation should apply everywhere)
-  adjustment   adj_type;     //< additive or multiplicative adjustment
+  int          kk;           ///< HRU group index (or DOESNT_EXIST if perturbation should apply everywhere)
+  adjustment   adj_type;     ///< additive or multiplicative adjustment
 };
 enum EnKF_mode
 {
@@ -45,14 +36,12 @@ private:
 
   double       **_state_matrix;     ///< current array of state vectors, X [size: _nEnKFMembers x_nStateVars]
   int            _nStateVars;       ///< total number of assimilated state variables
+  string        *_state_names;      ///< array of state names   
 
   double       **_obs_matrix;       ///< matrix of perturbed observations, D [size: _nEnKFMembers x _nObsDatapoints]
   double       **_output_matrix;    ///< matrix of simulated values corresponding to observations, HA [size: _nEnKFMembers x _nObsDatapoints]
   double       **_noise_matrix;     ///< matrix of observational noise [size: _nEnKFMembers x _nObsDatapoints]
   int            _nObsDatapoints;   ///< number of valid datapoints available for assimilation
-
-  force_perturb**_pPerturbations;   ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
-  int            _nPerturbations;   ///< number of forcing functions to perturb
 
   obs_perturb  **_pObsPerturbations;///< array of pointers to observation perturbation data [size _nObsPerturbations]
   int            _nObsPerturbations;///< number of observational perturbations. If observation does not have perturbation, it is assumed "perfect" data
@@ -89,7 +78,6 @@ public:
   void SetWarmRunname        (string runname);
   void SetWindowSize         (const int nTimesteps);
   void SetExtraRVTFile       (string filename);
-  void AddForcingPerturbation(forcing_type type, disttype distrib, double *distpars, int group_index, adjustment adj, const int nStepsPerDay);
   void AddObsPerturbation    (sv_type      type, disttype distrib, double *distpars, adjustment adj);
   void AddAssimilationState  (sv_type sv, int layer, int assim_groupID);
 

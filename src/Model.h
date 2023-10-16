@@ -123,6 +123,9 @@ private:/*------------------------------------------------------*/
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
   double             * _aDAlast; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
 
+  force_perturb**_pPerturbations;   ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
+  int            _nPerturbations;   ///< number of forcing functions to perturb
+
   //Water/Energy Balance information
   double      **_aCumulativeBal;  ///< cumulative amount of flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
   double            **_aFlowBal;  ///< current time step flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
@@ -316,6 +319,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumProcesses                   () const;
   process_type      GetProcessType                    (const int j ) const;
   int               GetNumConnections                 (const int j ) const;
+  int               GetNumForcingPerturbations        () const; 
   double            GetAveragePrecip                  () const;
   double            GetAverageSnowfall                () const;
   int               GetOrderedSubBasinIndex           (const int pp) const;
@@ -373,6 +377,7 @@ public:/*-------------------------------------------------------*/
   void    AddDiagnostic             (        CDiagnostic       *pDiag           );
   void    AddDiagnosticPeriod       (        CDiagPeriod       *pDiagPer        );
   void    AddAggregateDiagnostic    (agg_stat stat, string datatype, int group_ind);
+  void    AddForcingPerturbation    (forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj, int nStepsPerDay);
 
   void    AddModelOutputTime        (const time_struct       &tt_out,
                                      const optStruct         &Options           );
@@ -439,6 +444,8 @@ public:/*-------------------------------------------------------*/
   void         AssimilationOverride      (const int p,
                                           const optStruct &Options, const time_struct &tt);
   void         PrepareAssimilation       (const optStruct &Options, const time_struct &tt);
+  void         PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt);
+  void         ApplyForcingPerturbation  (const forcing_type f, force_struct &F, const int k, const optStruct& Options, const time_struct& tt); 
 
   //water/energy/mass balance routines
   void   CalculateInitialWaterStorage (const optStruct   &Options);

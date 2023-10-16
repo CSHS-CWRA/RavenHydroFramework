@@ -1241,7 +1241,28 @@ struct force_struct
 
   double subdaily_corr;       ///< a subdaily correction factor to re-distribute daily average PET or snowmelt [-]
 };
-
+////////////////////////////////////////////////////////////////////
+/// \brief probability distributions
+//
+enum disttype 
+{
+  DIST_UNIFORM,     ///< Uniform distribution
+  DIST_NORMAL,      ///< Gaussian (normal) distribution
+  DIST_LOGNORMAL,   ///< Lognormal distribution
+  DIST_GAMMA        ///< Gamma distribution
+};
+////////////////////////////////////////////////////////////////////
+/// \brief Contains information on forcing function random perturbations
+//
+struct force_perturb
+{
+  forcing_type forcing;
+  disttype     distribution;
+  double       distpar[3];   ///< distribution parameters - conditional on distribution
+  int          kk;           ///< HRU group index (or DOESNT_EXIST if perturbation should apply everywhere)
+  adjustment   adj_type;     ///< additive or multiplicative adjustment
+  double      *eps;          ///< stored adjustment factors for day - allows perturbations to be pre-calculated for day so that daily mean/min/max can be generated
+};
 
 /******************************************************************
   Other Functions (defined in CommonFunctions.cpp)

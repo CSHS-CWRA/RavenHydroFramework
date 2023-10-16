@@ -298,9 +298,8 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         if(Len>=7) {
           kk=pModel->GetHRUGroup(s[6])->GetGlobalIndex();
         }
-        CEnKFEnsemble* pEnKF=((CEnKFEnsemble*)(pEnsemble));
         int nStepsPerDay=(int)(rvn_round(1.0/Options.timestep));
-        pEnKF->AddForcingPerturbation(ftyp,distrib,distpars,kk, adj,nStepsPerDay);
+        pModel->AddForcingPerturbation(ftyp,distrib,distpars,kk, adj,nStepsPerDay);
       }
       else {
         WriteWarning(":ForcingPerturbation command will be ignored; only valid for EnKF ensemble simulation.",Options.noisy);
@@ -310,7 +309,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     case(13):  //----------------------------------------------
     { //:AssimilatedState STREAMFLOW [SubBasinGroup] # only STREAMFLOW to be supported initially
       //:AssimilatedState SNOW       [HRUGroup]
-      if(Options.noisy) { cout <<":ForcingPerturbation"<<endl; }
+      if(Options.noisy) { cout <<":AssimilatedState"<<endl; }
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         sv_type sv;
         int lay;
@@ -384,12 +383,12 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         int lay;
         sv=CStateVariable::StringToSVType(s[1],lay,true);
 
-        bool fix=false;
+        bool logfix=false;
         disttype distrib=DIST_NORMAL;
         if     (!strcmp(s[2],"DIST_UNIFORM"   )) { distrib=DIST_UNIFORM; }
         else if(!strcmp(s[2],"DIST_NORMAL"    )) { distrib=DIST_NORMAL; }
         else if(!strcmp(s[2],"DIST_LOGNORMAL" )) { distrib=DIST_LOGNORMAL; }
-        else if(!strcmp(s[2],"DIST_LOGNORMAL2")) { distrib=DIST_LOGNORMAL; fix=true;}
+        else if(!strcmp(s[2],"DIST_LOGNORMAL2")) { distrib=DIST_LOGNORMAL; logfix=true;}
         else if(!strcmp(s[2],"DIST_GAMMA"     )) { distrib=DIST_GAMMA; }
         else {
           ExitGracefully("ParseEnsembleFile: invalid distribution type in :ObservationErrorModel command",BAD_DATA);
@@ -399,7 +398,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         distpars[0]=s_to_d(s[3]);
         distpars[1]=s_to_d(s[4]);
         distpars[2]=0.0;
-        if (fix) { //convert mu_x and std_x to mu(ln(x)) and std(ln(x))
+        if (logfix) { //convert mu_x and std_x to mu(ln(x)) and std(ln(x))
           double mean=distpars[0];
           double std= distpars[1];
           distpars[0]=log(mean*mean)-log(sqrt(mean*mean+std*std));

@@ -9,12 +9,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 #include "Model.h"
 #include "SoilAndLandClasses.h"
 
-enum disttype {
-  DIST_UNIFORM,     ///< Uniform distribution
-  DIST_NORMAL,      ///< Gaussian (normal) distribution
-  DIST_LOGNORMAL,   ///< Lognormal distribution
-  DIST_GAMMA        ///< Gamma distribution
-};
+
 struct param_dist
 {
   //this structure defines a parameter distribution
