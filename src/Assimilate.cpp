@@ -61,6 +61,9 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
         if(pRes!=NULL) {
           pRes->TurnOnAssimilation(_pObservedTS[i]);
         }
+        else {
+          ExitGracefully("Reservoir stage observations assigned to basin without lake or reservoir. Data cannot be assimilated",BAD_DATA_WARN);
+        }
       }
     }
     WriteAdvisory("Lake stage data assimilation will lead to mass balance error estimates in the WatershedStorage output file. This is a natural side effect of assimilation.",Options.noisy);

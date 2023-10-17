@@ -13,7 +13,7 @@
 #include "SoilProfile.h"
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Abstract class representing single portion of watershed
+/// \brief Abstract class representing single portion of watershed (HRU)
 /// \details Data abstraction for single contiguous portion of watershed
 /// with homogeneous land use/ land type and homogeneous (or at least
 /// statistically homogenous) properties
@@ -161,8 +161,9 @@ public:/*-------------------------------------------------------*/
   void          ChangeLandUse           (const CLandUseClass    *lult_class);
   void          ChangeVegetation        (const CVegetationClass *veg_class);
   void          ChangeHRUType           (const HRU_type typ);
-  void          AdjustHRUForcing        (const forcing_type Ftyp,const double& epsilon, const adjustment adj);
-  void          AdjustDailyHRUForcings  (const forcing_type Ftyp,const double* epsilon, const adjustment adj, const int nStepsPerDay);
+  void          SetHRUForcing           (const forcing_type Ftyp, const double &val);
+  void          AdjustHRUForcing        (const forcing_type Ftyp,force_struct &F,const double& epsilon, const adjustment adj);
+  void          AdjustDailyHRUForcings  (const forcing_type Ftyp,force_struct &F,const double* epsilon, const adjustment adj, const int nStepsPerDay);
 
   //will be removed with landscape elements:
   void          RecalculateDerivedParams(const optStruct    &Options,

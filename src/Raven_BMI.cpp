@@ -522,7 +522,7 @@ void CRavenBMI::SetValue(std::string name, void* src)
 
   if (is_forcing){
     for (int k=0;k<pModel->GetNumHRUs();k++){
-      pModel->GetHydroUnit(k)->AdjustHRUForcing(Ftype, input[k], ADJ_REPLACE);
+      pModel->GetHydroUnit(k)->SetHRUForcing(Ftype, input[k]);
     }
   }
 }
@@ -546,7 +546,7 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
   if (is_forcing){
     for (int i=0;i<count;i++){
       int k=inds[i];
-      pModel->GetHydroUnit(k)->AdjustHRUForcing(Ftype, input[k], ADJ_REPLACE);
+      pModel->GetHydroUnit(k)->SetHRUForcing(Ftype, input[k]);
     }
   }
 }

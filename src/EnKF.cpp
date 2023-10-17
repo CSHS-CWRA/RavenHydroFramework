@@ -48,8 +48,6 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
   _EnKF_mode   =ENKF_UNSPECIFIED;
   _nEnKFMembers=num_members;
 
-  _pPerturbations=NULL; //Specified during .rve file parse
-  _nPerturbations=0;
   _pObsPerturbations=NULL;
   _nObsPerturbations=0;
   _aAssimStates =NULL;
@@ -59,6 +57,7 @@ CEnKFEnsemble::CEnKFEnsemble(const int num_members,const optStruct &Options)
 
   _state_matrix =NULL; //Built in ::Initialize
   _nStateVars=0;
+  _state_names=NULL;
 
   _warm_runname="";
   _extra_rvt="";
@@ -87,46 +86,14 @@ CEnKFEnsemble::~CEnKFEnsemble()
   delete [] _obs_matrix;
   delete [] _output_matrix;
   delete [] _noise_matrix;
+  delete [] _state_names;
 
-  for (int i=0;i<_nPerturbations;   i++)
-  {
-    delete [] _pPerturbations[i]->eps;
-    delete _pPerturbations   [i];
-  }
-  delete [] _pPerturbations;
   for (int i=0;i<_nObsPerturbations;i++){delete _pObsPerturbations[i];} delete [] _pObsPerturbations;
 
   delete [] _aAssimStates;
   delete [] _aAssimLayers;
   delete [] _aAssimGroupID;
   delete [] _aObsIndices;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief adds additional forcing perturbation
-/// \param type [in] forcing type to be perturbed
-/// \param distrib [in] sampling distribution type
-/// \param distpars [in] array of distribution parameters
-/// \param group_index [in] HRU group ID (or DOESNT_EXIST if all HRUs should be perturbed)
-/// \param adj [in] type of perturbation (e.g., additive or multiplicative)
-//
-void CEnKFEnsemble::AddForcingPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj, int nStepsPerDay)
-{
-  force_perturb *pFP=new force_perturb();
-  pFP->forcing     =type;
-  pFP->distribution=distrib;
-  pFP->kk          =group_index;
-  pFP->adj_type    =adj;
-  for (int i = 0; i < 3; i++) {
-    pFP->distpar[i]=distpars[i];
-  }
-  pFP->eps=new double [nStepsPerDay];
-  for (int n = 0; n < nStepsPerDay; n++) {
-    pFP->eps[n]=0;
-  }
-
-  if (!DynArrayAppend((void**&)(_pPerturbations),(void*)(pFP),_nPerturbations)){
-    ExitGracefully("CEnKFEnsemble::AddPerturbation: creating NULL perturbation",BAD_DATA_WARN);
-  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief adds additional state observation perturbation - applied to ALL observations of this type
@@ -235,7 +202,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   if(_nMembers==0) {
     ExitGracefully("CEnKFEnsemble::Initialize: number of EnKF ensemble members must be >0",BAD_DATA);
   }
-  if ((_nPerturbations==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
+  if ((pModel->GetNumForcingPerturbations() == 0) && (_EnKF_mode != ENKF_FORECAST) && (_EnKF_mode != ENKF_OPEN_FORECAST)) {
     ExitGracefully("CEnKFEnsemble::Initialize: at least one forcing perturbation must be set using :ForcingPerturbation command",BAD_DATA);
   }
   if ((_nAssimStates==0) && (_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST)) {
@@ -254,8 +221,11 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   // should closely echo contents of AddToStateMatrix/UpdateFromStateMatrix
   //-----------------------------------------------
   int kk;
+  string tmp_names[2000];
   _nStateVars=0;
-  for(int i=0;i<_nAssimStates;i++) {
+  int ii=0;
+  for(int i=0;i<_nAssimStates;i++) 
+  {
     kk=_aAssimGroupID[i];
     if(_aAssimStates[i]==STREAMFLOW) {
       for(int pp=0;pp<pModel->GetSubBasinGroup(kk)->GetNumSubbasins();pp++)
@@ -264,9 +234,16 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         _nStateVars+=pBasin->GetInflowHistorySize();
         _nStateVars+=pBasin->GetNumSegments();
         _nStateVars++; //Qlast
+
+        for (int n=0;n<pBasin->GetInflowHistorySize();n++){tmp_names[ii]="inflow_" +to_string(pp)+"_"+to_string(n); ii++; }
+        for (int n=0;n<pBasin->GetNumSegments();      n++){tmp_names[ii]="outflow_"+to_string(pp)+"_"+to_string(n); ii++; }
+        tmp_names[ii]="outflowlast_"+to_string(pp); ii++;
+
         if (pBasin->GetReservoir() != NULL)
         {
           _nStateVars+=2; //resflow + resflow_last
+          tmp_names[ii]="resflow_"    +to_string(pp); ii++;
+          tmp_names[ii]="resflowlast_"+to_string(pp); ii++;
         }
       }
     }
@@ -277,12 +254,25 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
         if (pBasin->GetReservoir() != NULL)
         {
           _nStateVars+=2;
+          tmp_names[ii]="resstage_"    +to_string(pp); ii++;
+          tmp_names[ii]="resstagelast_"+to_string(pp); ii++;
         }
       }
     }
     else { //HRU state variable
       _nStateVars+=pModel->GetHRUGroup(kk)->GetNumHRUs();
+      for (int n=0;n<pModel->GetHRUGroup(kk)->GetNumHRUs();n++)
+      {
+        int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetID();
+        string svname = CStateVariable::SVTypeToString(_aAssimStates[i],_aAssimLayers[i]);
+        tmp_names[ii]=svname+"_" +to_string(k); ii++; 
+      }
     }
+  }
+
+  _state_names=new string [ _nStateVars];
+  for (int i = 0; i < _nStateVars; i++) {
+    _state_names[i]=tmp_names[i];
   }
 
   //create empty _state_matrix
@@ -380,12 +370,8 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
           _noise_matrix[e][j]=0;
           if (pPerturb!=NULL){
             eps=SampleFromDistribution(pPerturb->distribution,pPerturb->distpar);
-            if (pPerturb->adj_type==ADJ_ADDITIVE){
-              _noise_matrix[e][j]=eps;
-            }
-            else if (pPerturb->adj_type == ADJ_MULTIPLICATIVE) {
-              _noise_matrix[e][j]=(eps*obsval)-obsval;
-            }
+            if      (pPerturb->adj_type == ADJ_ADDITIVE      ){ _noise_matrix[e][j]=eps;}
+            else if (pPerturb->adj_type == ADJ_MULTIPLICATIVE){ _noise_matrix[e][j]=(eps*obsval)-obsval; }
           }
           _obs_matrix[e][j]=obsval+_noise_matrix[e][j];
           j++;
@@ -416,39 +402,12 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 //
 void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const time_struct &tt,const int e)
 {
-
   //Apply forcing perturbations for the current time step
   //----------------------------------------------------------
   if ((_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST))
   {
-    int kk=DOESNT_EXIST;
-    double eps=0;
-    for(int i=0;i<_nPerturbations;i++)
-    {
-      kk=_pPerturbations[i]->kk;
-
-      int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
-      double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
-      int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
-      bool   start_of_day = ((nn==0) || (tt.model_time==0.0)); //nn==0 corresponds to midnight
-
-      if (start_of_day)  { //get all random perturbation samples for the day
-        for (int n=0;n<nStepsPerDay;n++){
-          _pPerturbations[i]->eps[n]=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar);
-        }
-      }
-
-      for(int k=0;k<pModel->GetNumHRUs();k++) {
-        if((kk==DOESNT_EXIST) || (pModel->GetHRUGroup(kk)->IsInGroup(k))) {
-          pModel->GetHydroUnit(k)->AdjustHRUForcing(_pPerturbations[i]->forcing,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
-          if (start_of_day){
-            pModel->GetHydroUnit(k)->AdjustDailyHRUForcings(_pPerturbations[i]->forcing,_pPerturbations[i]->eps,_pPerturbations[i]->adj_type,nStepsPerDay);
-          }
-        }
-      }
-    }
+    pModel->PrepareForcingPerturbation(Options, tt); 
   }
-
 }
 //////////////////////////////////////////////////////////////////
 /// \brief called at end of each time step
@@ -829,19 +788,57 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
   if(e==_nEnKFMembers-1) //After all ensemble members have run
   {
     _ENKFOUT<<"PRE-ASSIMILATION STATE MATRIX:"<<endl;
+    _ENKFOUT<<"member"<<","; 
+    for (int i = 0; i<_nStateVars; i++) {
+      _ENKFOUT<<_state_names[i]<<",";
+    }
+    _ENKFOUT<<endl;
     for(int e=0;e<_nEnKFMembers;e++) {
+      _ENKFOUT<<e+1<<",";
       for(int i=0;i<_nStateVars;i++) {
         _ENKFOUT<<_state_matrix[e][i]<<",";
       }
       _ENKFOUT<<endl;
     }
+
     cout<<endl<<"ENKF: Performing Assimilation Calculations with "<<_nObsDatapoints<<" observation datapoints..."<<endl;
     AssimilationCalcs();
 
     _ENKFOUT<<"POST-ASSIMILATION STATE MATRIX:"<<endl;
+    _ENKFOUT<<"member"<<","; 
+    for (int i = 0; i<_nStateVars; i++) {
+      _ENKFOUT<<_state_names[i]<<",";
+    }
+    _ENKFOUT<<endl;
     for(int e=0;e<_nEnKFMembers;e++) {
+      _ENKFOUT<<e+1<<",";
       for(int i=0;i<_nStateVars;i++) {
         _ENKFOUT<<_state_matrix[e][i]<<",";
+      }
+      _ENKFOUT<<endl;
+    }
+
+    _ENKFOUT<<"NOISE MATRIX:"<<endl;
+    for(int e=0;e<_nEnKFMembers;e++) {
+      _ENKFOUT<<e+1<<",";
+      for(int i=0;i<_nObsDatapoints;i++) {
+        _ENKFOUT<<_noise_matrix[e][i]<<",";
+      }
+      _ENKFOUT<<endl;
+    }
+    _ENKFOUT<<"OBSERVATION MATRIX:"<<endl;
+    for(int e=0;e<_nEnKFMembers;e++) {
+      _ENKFOUT<<e+1<<",";
+      for(int i=0;i<_nObsDatapoints;i++) {
+        _ENKFOUT<<_obs_matrix[e][i]<<",";
+      }
+      _ENKFOUT<<endl;
+    }
+    _ENKFOUT<<"SIMULATED OUTPUT MATRIX:"<<endl;
+    for(int e=0;e<_nEnKFMembers;e++) {
+      _ENKFOUT<<e+1<<",";
+      for(int i=0;i<_nObsDatapoints;i++) {
+        _ENKFOUT<<_output_matrix[e][i]<<",";
       }
       _ENKFOUT<<endl;
     }

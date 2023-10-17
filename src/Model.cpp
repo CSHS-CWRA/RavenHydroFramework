@@ -40,7 +40,8 @@ CModel::CModel(const int        nsoillayers,
   _nDiagnostics=0;    _pDiagnostics=NULL;
   _nDiagPeriods=0;    _pDiagPeriods=NULL;
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
-
+  _nPerturbations=0;  _pPerturbations=NULL; 
+  
   _nTotalConnections=0;
   _nTotalLatConnections=0;
 
@@ -193,6 +194,13 @@ CModel::~CModel()
   for (j=0;j<_nTransParams;j++)   {delete _pTransParams[j];   } delete [] _pTransParams;    _pTransParams=NULL;
   for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
   for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
+
+  for (int i=0;i<_nPerturbations;   i++)
+  {
+    delete [] _pPerturbations[i]->eps;
+    delete _pPerturbations   [i];
+  }
+  delete [] _pPerturbations;
 
   delete [] _aStateVarType;  _aStateVarType=NULL;
   delete [] _aStateVarLayer; _aStateVarLayer=NULL;
@@ -734,6 +742,10 @@ int         CModel::GetNumConnections (const int j) const
 #endif
   return _pProcesses[j]->GetNumConnections();
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of forcing perturbations in model
+//
+int         CModel::GetNumForcingPerturbations() const {return _nPerturbations;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns state variable type corresponding to passed state variable array index
@@ -1588,7 +1600,38 @@ void CModel::AddCustomOutput(CCustomOutput *pCO)
     ExitGracefully("CModel::AddCustomOutput: adding NULL custom output",BAD_DATA);}
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief adds additional forcing perturbation
+/// \param type [in] forcing type to be perturbed
+/// \param distrib [in] sampling distribution type
+/// \param distpars [in] array of distribution parameters
+/// \param group_index [in] HRU group ID (or DOESNT_EXIST if all HRUs should be perturbed)
+/// \param adj [in] type of perturbation (e.g., additive or multiplicative)
+//
+void CModel::AddForcingPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj, int nStepsPerDay)
+{
+  force_perturb *pFP=new force_perturb();
+  pFP->forcing     =type;
+  pFP->distribution=distrib;
+  pFP->kk          =group_index;
+  pFP->adj_type    =adj;
+  for (int i = 0; i < 3; i++) {
+    pFP->distpar[i]=distpars[i];
+  }
+  pFP->eps=new double [nStepsPerDay];
+  for (int n = 0; n < nStepsPerDay; n++) {
+    pFP->eps[n]=0;
+  }
 
+  if (!DynArrayAppend((void**&)(_pPerturbations),(void*)(pFP),_nPerturbations)){
+    ExitGracefully("CModel::AddForcingPerturbation: creating NULL perturbation",BAD_DATA_WARN);
+  }
+
+  if ((type==F_PRECIP) || (type==F_SNOWFALL) || (type==F_RAINFALL) || (type==F_TEMP_AVE)){}
+  else {
+    ExitGracefully("CModel::AddForcingPerturbation: only PRECIP, RAINFALL, SNOWFALL, and TEMP_AVE are supported for forcing perturbation.",BAD_DATA_WARN);
+  }
+}
 /*****************************************************************
    Other Manipulator Functions
 ------------------------------------------------------------------
@@ -2709,7 +2752,60 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
     }
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief called at start of time step if needed - generates random values for perturbation of forcings
+/// \param &Options [out] Global model options information
+/// \params tt [in] time structure
+//
+void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt) 
+{
 
+  for(int i=0;i<_nPerturbations;i++)
+  {
+    int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+    double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+    int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+    bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
+
+    if (start_of_day)  { //get all random perturbation samples for the day
+      for (int n=0;n<nStepsPerDay;n++){
+        _pPerturbations[i]->eps[n]=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar);
+      }
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief called within update forcings - actually applies forcing function changes 
+/// \param ftype [in] forcing function type
+/// \param F [out] forcing structure modified by this routine 
+/// \param k [in] HRU index of forcing
+/// \param &Options [in] Global model options information
+/// \params tt [in] time structure
+//
+void CModel::ApplyForcingPerturbation(const forcing_type ftype, force_struct &F, const int k, const optStruct& Options, const time_struct& tt)
+{
+  int kk=DOESNT_EXIST;
+  for(int i=0;i<_nPerturbations;i++)
+  {
+    if (ftype==_pPerturbations[i]->forcing)
+    {
+      int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+      double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+      int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+      bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
+      
+      kk=_pPerturbations[i]->kk;
+      
+      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k))) 
+      {
+        _pHydroUnits[k]->AdjustHRUForcing(ftype, F,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
+        if (start_of_day){
+          _pHydroUnits[k]->AdjustDailyHRUForcings(ftype,F,_pPerturbations[i]->eps,_pPerturbations[i]->adj_type,nStepsPerDay);
+        }
+      }
+    }
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Updates values stored in modeled time series of observation data
 /// modifies _pModeledTS[] time series and _aObsIndex array

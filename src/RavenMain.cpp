@@ -121,10 +121,10 @@ int main(int argc, char* argv[])
     {
       pModel->UpdateTransientParams      (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
+      pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e); 
       pModel->UpdateHRUForcingFunctions  (Options,tt);
       pModel->PrepareAssimilation        (Options,tt);
       pModel->WriteSimpleOutput          (Options,tt);
-      pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
       CallExternalScript                 (Options,tt);
       ParseLiveFile                      (pModel,Options,tt);
 

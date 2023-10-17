@@ -1371,7 +1371,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     HandleNetCDFErrors(retval);
     retval = nc_get_att_double(ncid, varid_f, "add_offset", &add_offset);       HandleNetCDFErrors(retval);// read attribute value
   }
-  if (Options.noisy){ cout << "add_offset = " << add_offset << endl; }
+  if (Options.noisy){ cout << "  add_offset = " << add_offset << endl; }
 
   // -------------------------------
   // check for attributes "scale_factor" of forcing data
@@ -1386,7 +1386,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     HandleNetCDFErrors(retval);
     retval = nc_get_att_double(ncid, varid_f, "scale_factor", &scale_factor);       HandleNetCDFErrors(retval);// read attribute value
   }
-  if (Options.noisy){ cout << "scale_factor = " << scale_factor << endl; }
+  if (Options.noisy){ cout << "  scale_factor = " << scale_factor << endl; }
 
   // -------------------------------
   // (2) get dimension lengths
@@ -1404,6 +1404,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   else {
     nstations = 0;
   }
+  if (Options.noisy){ cout << "  nstations = " << nstations << endl; }
 
   // -------------------------------
   // (3) time values and unit
@@ -1422,6 +1423,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     printf("time unit string: %s\n",unit_t_str.c_str());
     ExitGracefully("CTimeSeries::ReadTimeSeriesFromNetCDF: time unit string is not in the format '[days/hours/...] since YYYY-MM-DD HH:MM:SS +0000' !",BAD_DATA);
   }
+  if (Options.noisy){ cout << "  time unit = " << unit_t_str << endl; }
 
   //     (c) calendar
   calendar=GetCalendarFromNetCDF(ncid,varid_t,FileNameNC,Options);
@@ -1478,6 +1480,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     dim1 = ntime;
     dim2 = 1;
   }
+  if (Options.noisy){ cout << "  dim order = " << dim_order << endl; }
 
   // -------------------------------
   // (8) Initialize data array (data type that is needed by NetCDF library)
@@ -1501,7 +1504,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     aTmp1D=new double [dim1];
     ExitGracefullyIf(aTmp1D==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF: aTmp1D(0)",OUT_OF_MEMORY);
   }
-
+  
   // -------------------------------
   // (9) Read data
   // -------------------------------
@@ -1550,19 +1553,29 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
       }
       delete[] aStations;
       delete[] aStat_strings;
+
+      if (Options.noisy){ cout << " FROM_STATION_VAR station index = " << StationIdx << endl; }
     }
     //----------------------------------------------------------------------------------------
+    if (Options.noisy){cout<<"  Reading vars_double..."<<endl;}
 
     size_t    nc_start [2];
     size_t    nc_length[2];
     ptrdiff_t nc_stride[2];
 
+    int ndim;
+    retval = nc_inq_varndims(ncid,varid_f,&ndim);   HandleNetCDFErrors(retval);
+    if (ndim > 2) {
+      string warn="ReadTimeSeriesFromNetCDF: dataset within " +FileNameNC + " has more than 2 dimensions. Individual time series must be read from a 1D (time) or 2D (time x nstations) NetCDF variable";
+      ExitGracefully(warn.c_str(), BAD_DATA);
+    }
+
     if(dim_order==1) {// dimensions are (x,t)
-      nc_start[0]  = StationIdx-1; nc_length[0] = (size_t)(1);      nc_stride[0] = 1;
+      nc_start[0]  = StationIdx-1; nc_length[0] = (size_t)(1);      nc_stride[0] = 1; //-1 is because station index is provided as integer starting from one, not zero
       nc_start[1]  = 0;            nc_length[1] = (size_t)(ntime);  nc_stride[1] = 1;
       retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);   HandleNetCDFErrors(retval);
     }
-    else{// dimensions are (t,x)
+    else             {// dimensions are (t,x)
       nc_start[0]  = 0;            nc_length[0] = (size_t)(ntime);  nc_stride[0] = 1;
       nc_start[1]  = StationIdx-1; nc_length[1] = (size_t)(1);      nc_stride[1] = 1;
       retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);   HandleNetCDFErrors(retval);
@@ -1578,6 +1591,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
   }
   else
   {
+    if (Options.noisy){cout<<"  Reading vars_double (v2)..."<<endl;}
     size_t    nc_start [1];
     size_t    nc_length[1];
     ptrdiff_t nc_stride[1];
