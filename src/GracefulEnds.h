@@ -4,8 +4,8 @@
 // In BMI, the Graceful Ends does not depend on the global variable pModel and output the results to
 //   the standard output.
 
-#if COMPILE_EXE == ON
+#ifdef STANDALONE
     #include "GracefulEndStandalone.h"
-#elif COMPILE_LIB == ON
+#elif BMI_LIBRARY
     #include "GracefulEndBMI.h"
 #endif

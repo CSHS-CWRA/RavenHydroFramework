@@ -184,7 +184,7 @@ void CRavenBMI::Initialize(std::string config_file)
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
 
-  CheckForErrorWarnings(true);
+  CheckForErrorWarnings(true, pModel);
 
   pModel->Initialize                  (Options);
   ParseInitialConditions              (pModel, Options);
@@ -192,7 +192,7 @@ void CRavenBMI::Initialize(std::string config_file)
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-  CheckForErrorWarnings(false);
+  CheckForErrorWarnings(false, pModel);
 
   PrepareOutputdirectory(Options); //adds new output folders, if needed
   pModel->WriteOutputFileHeaders(Options);

@@ -37,10 +37,6 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
   cout << typeline                                                       << endl;
   cout << "============================================================" << endl;
 
-  if(Options->pause) {
-    cout << "Press the ENTER key to continue"<<endl;
-    cin.get();
-  }
 }
 
 

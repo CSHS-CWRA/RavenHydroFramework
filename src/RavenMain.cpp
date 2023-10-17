@@ -36,6 +36,7 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   optStruct   Options;
+  CModel     *pModel;
 
   Options.version="3.7.1";
 #ifdef _NETCDF_
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
 
-  CheckForErrorWarnings(true);
+  CheckForErrorWarnings(true, pModel);
 
   if (!Options.silent){
     cout <<"======================================================"<<endl;
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-  CheckForErrorWarnings(false);
+  CheckForErrorWarnings(false, pModel);
 
   nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
 
@@ -138,7 +139,7 @@ int main(int argc, char* argv[])
       pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!!
       pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
-      if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
+      if ((Options.use_stopfile) && (CheckForStopfile(step, tt, pModel))) { break; }
       step++;
     }
 
@@ -297,7 +298,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 /// \note called prior to simulation initialization, after parsing everything
 ///
 //
-void CheckForErrorWarnings(bool quiet)
+void CheckForErrorWarnings(bool quiet, CModel *pModel)
 {
   int      Len;
   char    *s[MAXINPUTITEMS];
@@ -335,7 +336,7 @@ void CheckForErrorWarnings(bool quiet)
 /// \note called during simulation to determine whether progress should be stopped
 ///
 //
-bool CheckForStopfile(const int step, const time_struct &tt)
+bool CheckForStopfile(const int step, const time_struct &tt, CModel *pModel)
 {
   if(step%100!=0){ return false; } //only check every 100th timestep
   ifstream STOP;

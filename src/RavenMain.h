@@ -18,8 +18,8 @@ void ParseLiveFile         (CModel*&pModel,const optStruct   &Options, const tim
 
 //Local functions defined below main() in RavenMain.cpp
 void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options);
-void CheckForErrorWarnings     (bool quiet);
-bool CheckForStopfile          (const int step, const time_struct &tt);
+void CheckForErrorWarnings     (bool quiet, CModel *pModel);
+bool CheckForStopfile          (const int step, const time_struct &tt, CModel *pModel);
 void CallExternalScript        (const optStruct &Options, const time_struct &tt);
 
 #endif
