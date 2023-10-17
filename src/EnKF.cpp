@@ -264,7 +264,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
       for (int n=0;n<pModel->GetHRUGroup(kk)->GetNumHRUs();n++)
       {
         int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetID();
-        string svname = CStateVariable::SVTypeToString(_aAssimStates[i],_aAssimLayers[i]);
+        string svname = pModel->GetStateVariable()->SVTypeToString(_aAssimStates[i], _aAssimLayers[i]);
         tmp_names[ii]=svname+"_" +to_string(k); ii++; 
       }
     }
