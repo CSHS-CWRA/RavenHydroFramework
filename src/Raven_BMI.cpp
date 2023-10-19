@@ -290,7 +290,7 @@ int CRavenBMI::GetInputItemCount()
 std::vector<std::string> CRavenBMI::GetInputVarNames()
 {
   vector<string> names;
-  names.push_back("rainfall");
+  names.push_back("precipitation");
   names.push_back("temp_ave");
   return names;
 }
@@ -326,13 +326,13 @@ std::vector<std::string> CRavenBMI::GetOutputVarNames()
 int CRavenBMI::GetVarGrid(std::string name)
 {
   //input variables
-  if      (name=="rainfall"  ){return GRID_HRU;}
-  else if (name=="temp_ave"  ){return GRID_HRU;}
+  if      (name=="precipitation"){return GRID_HRU;}
+  else if (name=="temp_ave"     ){return GRID_HRU;}
 
   //output variables
-  if      (name=="streamflow"){return GRID_SUBBASIN;}
-  else if (name=="soil[0]"   ){return GRID_HRU;}
-  else if (name=="snow"      ){return GRID_HRU;}
+  if      (name=="streamflow"   ){return GRID_SUBBASIN;}
+  else if (name=="soil[0]"      ){return GRID_HRU;}
+  else if (name=="snow"         ){return GRID_HRU;}
 
   return 0;
 }
@@ -344,13 +344,13 @@ int CRavenBMI::GetVarGrid(std::string name)
 std::string CRavenBMI::GetVarUnits(std::string name)
 {
   //input variables
-  if      (name=="rainfall"  ){return "mm/d";}
-  else if (name=="temp_ave"  ){return "C";}
+  if      (name=="precipitation"){return "mm/d";}
+  else if (name=="temp_ave"     ){return "C";}
 
   //output variables
-  if      (name=="streamflow"){return "m3/s";}
-  else if (name=="soil[0]"   ){return "mm";  }
-  else if (name=="snow"      ){return "mm";  }
+  if      (name=="streamflow"   ){return "m3/s";}
+  else if (name=="soil[0]"      ){return "mm";  }
+  else if (name=="snow"         ){return "mm";  }
 
   return "";
 }
@@ -517,8 +517,8 @@ void CRavenBMI::SetValue(std::string name, void* src)
   forcing_type Ftype;
   bool is_forcing=false;
 
-  if      (name=="rainfall"){is_forcing=true; Ftype=F_RAINFALL;}
-  else if (name=="temp_ave"){is_forcing=true; Ftype=F_TEMP_AVE;}
+  if      (name=="precipitation"){is_forcing=true; Ftype=F_PRECIP;  }
+  else if (name=="temp_ave")     {is_forcing=true; Ftype=F_TEMP_AVE;}
 
   if (is_forcing){
     for (int k=0;k<pModel->GetNumHRUs();k++){
@@ -540,8 +540,8 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
   forcing_type Ftype;
   bool is_forcing=false;
 
-  if      (name=="rainfall"){is_forcing=true; Ftype=F_RAINFALL;}
-  else if (name=="temp_ave"){is_forcing=true; Ftype=F_TEMP_AVE;}
+  if      (name=="precipitation"){is_forcing=true; Ftype=F_PRECIP;}
+  else if (name=="temp_ave")     {is_forcing=true; Ftype=F_TEMP_AVE;}
 
   if (is_forcing){
     for (int i=0;i<count;i++){
