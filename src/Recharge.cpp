@@ -27,7 +27,7 @@ CmvRecharge::CmvRecharge(recharge_type rech_type,int to_index, int junk)
                    "CmvRecharge Constructor: invalid 'to' compartment specified",BAD_DATA);
 
   CHydroProcessABC::DynamicSpecifyConnections(1);
-  iFrom[0]=pModel->GetStateVarIndex(ATMOS_PRECIP); 
+  iFrom[0]=pModel->GetStateVarIndex(ATMOS_PRECIP);
   iTo[0]=to_index;
   _type = rech_type;
 }
@@ -42,17 +42,17 @@ CmvRecharge::CmvRecharge(recharge_type rech_type, int nConns)
   int iGW, i;
   _type = rech_type;
   if (_type==RECHARGE_CONSTANT)
-  {  
+  {
     CHydroProcessABC::DynamicSpecifyConnections(1);
 
-    iGW  =pModel->GetStateVarIndex(GROUNDWATER);   //****fix to not always go to top layer of aquifer? 
+    iGW  =pModel->GetStateVarIndex(GROUNDWATER);   //****fix to not always go to top layer of aquifer?
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);     iTo[0]=iGW;
   }
   else if(_type==RECHARGE_CONSTANT_OVERLAP)
   {
     CHydroProcessABC::DynamicSpecifyConnections(nConns);
 
-    iGW  =pModel->GetStateVarIndex(GROUNDWATER);   //****fix to not always go to top layer of aquifer? 
+    iGW  =pModel->GetStateVarIndex(GROUNDWATER);   //****fix to not always go to top layer of aquifer?
 
     for(i = 0; i < nConns; i++)
     {
@@ -121,22 +121,22 @@ void CmvRecharge::GetParticipatingStateVarList(recharge_type	r_type,sv_type *aSV
     //soil and atmos_precip will already be in model by default
   }
   else if (r_type==RECHARGE_CONSTANT)
-  {  
+  {
     nSV=2;
-    aSV [0]=PONDED_WATER; aSV	 [1]=GROUNDWATER;  
-    aLev[0]=DOESNT_EXIST; aLev [1]=0;	   
+    aSV [0]=PONDED_WATER; aSV	 [1]=GROUNDWATER;
+    aLev[0]=DOESNT_EXIST; aLev [1]=0;
   }
   else if (r_type==RECHARGE_CONSTANT_OVERLAP)
-  {  
+  {
     nSV=2;
-    aSV [0]=PONDED_WATER; aSV	 [1]=GROUNDWATER;  
-    aLev[0]=DOESNT_EXIST; aLev [1]=0;	   
+    aSV [0]=PONDED_WATER; aSV	 [1]=GROUNDWATER;
+    aLev[0]=DOESNT_EXIST; aLev [1]=0;
   }
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns rate to aquifer due to Recharge[mm/day]
-/// \details Note that the formatting issues below will be resolved once the references have been extracted.. \n \n 
+/// \details Note that the formatting issues below will be resolved once the references have been extracted.. \n \n
 ///
 /// \param *storage [in] Reference to soil storage from which water rises
 /// \param *pHRU [in] Reference to pertinent HRU
@@ -166,7 +166,7 @@ void   CmvRecharge::GetRatesOfChange( const double      *storage,
   {
     ExitGracefully("CmvRecharge::GetRatesOfChange: undefined recharge type:RECHARGE_CONSTANT_OVERLAP",STUB);
   }
-  else 
+  else
   {
     ExitGracefully("CmvRecharge::GetRatesOfChange: undefined recharge type",BAD_DATA);
   }//end recharge type select*/
@@ -197,8 +197,8 @@ void   CmvRecharge::ApplyConstraints( const double     *state_vars,
     rates[0]=threshMin(rates[0],
                      (pHRU->GetStateVarMax(iTo[0],state_vars,Options)-state_vars[iTo[0]])/Options.timestep,0.0);
   }
-  else 
-  { 
+  else
+  {
      //cant remove more than is there
   	 rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
   }

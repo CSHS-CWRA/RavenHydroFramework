@@ -78,7 +78,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   _time_index=0;
 
   _filename_user="";
-      
+
   // Get the variable name (either the state variable name of the forcing variable name) and the units
   switch(_var)
   {
@@ -134,7 +134,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     break;
   }
   }
- 
+
 // temporal aggregation
   switch(_timeAgg)
   {
@@ -162,7 +162,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   }
   if(_aggstat==AGG_CUMULSUM) {
     if(_varUnits.substr(_varUnits.length()-2,2)=="/d") { _varUnits=_varUnits.substr(0,_varUnits.length()-2); }//remove trailing /d
-    else                                               { _varUnits=_varUnits+"-d";} 
+    else                                               { _varUnits=_varUnits+"-d";}
   } //e.g., mm-->mm-d or //mm/d-->mm
 
 // spatial aggregation
@@ -249,7 +249,7 @@ void CCustomOutput::InitializeCustomOutput(const optStruct &Options)
 //////////////////////////////////////////////////////////////////
 /// \brief Open a stream to the file and write header info
 //
-void CCustomOutput::DetermineCustomFilename(const optStruct& Options) 
+void CCustomOutput::DetermineCustomFilename(const optStruct& Options)
 {
   ostrstream sFILENAME;
   if (Options.run_name!=""){sFILENAME<<Options.output_dir<<Options.run_name<<"_";}
@@ -267,12 +267,12 @@ void CCustomOutput::DetermineCustomFilename(const optStruct& Options)
   case OUTPUT_STANDARD:
   default:                sFILENAME<<".csv"<<ends; break;
   }
-  
+
   if (_filename==""){_filename=sFILENAME.str();} //_filename wasn't overriden by user
   else                  {
     _filename_user=_filename;
     if (Options.run_name!=""){_filename=Options.output_dir+Options.run_name+"_"+_filename;}
-    else                     {_filename=Options.output_dir+_filename; } 
+    else                     {_filename=Options.output_dir+_filename; }
   }
 
   //QA/QC
@@ -306,8 +306,8 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
   case OUTPUT_STANDARD:
   default:
     WriteCSVFileHeader();           return;
-  case OUTPUT_ENSIM: 
-    WriteEnSimFileHeader(Options);  return; 
+  case OUTPUT_ENSIM:
+    WriteEnSimFileHeader(Options);  return;
   case OUTPUT_NETCDF:
     WriteNetCDFFileHeader(Options); return;
   }
@@ -530,27 +530,27 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     WriteWarning("CCustomOutput::WriteNetCDFFileHeader: cannot support custom aggregation by range/quartile/histogram/95CI with netCDF output",Options.noisy);
   }
 
-  // create file and obtain _netcdf_ID 
-  _CUSTOM.close(); //because netcdf does the opening/closing  
+  // create file and obtain _netcdf_ID
+  _CUSTOM.close(); //because netcdf does the opening/closing
   retval = nc_create(_filename.c_str(), NC_CLOBBER|NC_NETCDF4, &_netcdf_ID);       HandleNetCDFErrors(retval);
 
   // ----------------------------------------------------------
   // global attributes
-  // ---------------------------------------------------------- 
+  // ----------------------------------------------------------
   WriteNetCDFGlobalAttributes(_netcdf_ID,Options,"Custom Output");
 
-  // ---------------------------------------------------------- 
-  // time                                                       
-  // ---------------------------------------------------------- 
-  // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each. 
+  // ----------------------------------------------------------
+  // time
+  // ----------------------------------------------------------
+  // (a) Define the DIMENSIONS. NetCDF will hand back an ID for each.
   retval = nc_def_dim(_netcdf_ID, "time", NC_UNLIMITED, &time_dimid);              HandleNetCDFErrors(retval);
 
-  // (b) Define the time variable. 
+  // (b) Define the time variable.
   dimids1[0] = time_dimid;
   retval = nc_def_var(_netcdf_ID, "time", NC_DOUBLE, ndims1,dimids1, &varid_time); HandleNetCDFErrors(retval);
 
-  // (c) Assign units attributes to the netCDF VARIABLES. 
-  //     --> converts start day into "hours since YYYY-MM-DD HH:MM:SS" 
+  // (c) Assign units attributes to the netCDF VARIABLES.
+  //     --> converts start day into "hours since YYYY-MM-DD HH:MM:SS"
   char  starttime[200]; // start time string in format 'days since YYY-MM-DD HH:MM:SS'
   JulianConvert( 0.0+Options.timestep,Options.julian_start_day, Options.julian_start_year, Options.calendar, tt); //File is referenced to end of first time step
   strcpy(starttime, "hours since ") ;
@@ -560,16 +560,16 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
   if(Options.time_zone!=0) { strcat(starttime,TimeZoneToString(Options.time_zone).c_str()); }
 
   retval = nc_put_att_text(_netcdf_ID, varid_time, "units"   ,      strlen(starttime)  , starttime);   HandleNetCDFErrors(retval);
-  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);  
+  retval = nc_put_att_text(_netcdf_ID, varid_time, "calendar",      strlen("gregorian"), "gregorian"); HandleNetCDFErrors(retval);
   retval = nc_put_att_text(_netcdf_ID, varid_time, "standard_name", strlen("time"),      "time");      HandleNetCDFErrors(retval);
   retval = nc_put_att_text(_netcdf_ID, varid_time, "long_name",     strlen("time"),      "time");      HandleNetCDFErrors(retval);
 
-  // ---------------------------------------------------------- 
-  // custom data                                      
-  // ---------------------------------------------------------- 
+  // ----------------------------------------------------------
+  // custom data
+  // ----------------------------------------------------------
   if (num_data > 0)
   {
-    // (a) create dimension "ndata"                          
+    // (a) create dimension "ndata"
     retval = nc_def_dim(_netcdf_ID, "ndata", num_data, &ndata_dimid);                             HandleNetCDFErrors(retval);
 
     // (b) create variable "HRUID" or "SBID" or...
@@ -585,7 +585,7 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     dimids1[0] = ndata_dimid;
     retval = nc_def_var(_netcdf_ID, group_name.c_str(), NC_STRING, ndims1, dimids1, &varid_grps); HandleNetCDFErrors(retval);
 
-    //(c) set some attributes to variable "HRUID" or "SBID"  
+    //(c) set some attributes to variable "HRUID" or "SBID"
     tmp =long_name;
     tmp2="timeseries_id";
     tmp3="1";
@@ -594,18 +594,18 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
     retval = nc_put_att_text(_netcdf_ID, varid_grps, "cf_role"    , tmp2.length(),tmp2.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_netcdf_ID, varid_grps, "units"      , tmp3.length(),tmp3.c_str());    HandleNetCDFErrors(retval);
     retval = nc_put_att_text(_netcdf_ID, varid_grps, "coordinates", tmp4.length(),tmp4.c_str());    HandleNetCDFErrors(retval);
-    
-    //(d) create variable "custom_data" which will contain at the end custom data; shape=(tt,num_data) 
+
+    //(d) create variable "custom_data" which will contain at the end custom data; shape=(tt,num_data)
     string netCDFtag=_statStr+"_"+_varName;
     dimids2[0] = time_dimid;
     dimids2[1] = ndata_dimid;
-    retval = nc_def_var(_netcdf_ID, netCDFtag.c_str(), NC_DOUBLE, ndims2, dimids2, &varid_data);    HandleNetCDFErrors(retval);    
-    
-    //(f) set some attributes to variable _netCDFtag 
+    retval = nc_def_var(_netcdf_ID, netCDFtag.c_str(), NC_DOUBLE, ndims2, dimids2, &varid_data);    HandleNetCDFErrors(retval);
+
+    //(f) set some attributes to variable _netCDFtag
     tmp=_timeAggStr+" "+_statStr+" "+_varName+" "+_spaceAggStr;
     tmp2=_varUnits;
-    static double fill_val[] = {NETCDF_BLANK_VALUE}; 
-    static double miss_val[] = {NETCDF_BLANK_VALUE}; 
+    double fill_val[] = {NETCDF_BLANK_VALUE};
+    double miss_val[] = {NETCDF_BLANK_VALUE};
     retval = nc_put_att_text  (_netcdf_ID, varid_data, "long_name"    , tmp.length(), tmp.c_str());  HandleNetCDFErrors(retval);
     retval = nc_put_att_text  (_netcdf_ID, varid_data, "units"        , tmp2.length(),tmp2.c_str()); HandleNetCDFErrors(retval);
     retval = nc_put_att_double(_netcdf_ID, varid_data, "_FillValue"   , NC_DOUBLE,1,  fill_val);     HandleNetCDFErrors(retval);
@@ -613,15 +613,15 @@ void CCustomOutput::WriteNetCDFFileHeader(const optStruct &Options)
 
   }// end if (num_data>0)
 
-  // End define mode. This tells netCDF we are done defining metadata. 
+  // End define mode. This tells netCDF we are done defining metadata.
   retval = nc_enddef(_netcdf_ID);  HandleNetCDFErrors(retval);
 
-  // write values to NetCDF 
-  // write HRU/subbasin/HRU group names to variable "HRUID" or "SBID" or... 
+  // write values to NetCDF
+  // write HRU/subbasin/HRU group names to variable "HRUID" or "SBID" or...
   int k = 0;
   char *group_name[1];                         // HRU/watershed/basin name
   group_name[0]=new char[200];
-  
+
   for(k=0; k<num_data; k++)
   {
     ostrstream  TMP;
@@ -737,12 +737,12 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
   reset=false;
   if      ((_timeAgg==YEARLY)  && (dday==1) && (dmon==1))    {reset=true;}//Jan 1 - print preceding year
   else if ((_timeAgg==MONTHLY) && (dday==1))                 {reset=true;}//first day of month - print preceding month info
-  else if ((_timeAgg==DAILY)   && (fabs(floor(t+time_shift+TIME_CORRECTION)-(t+time_shift)) <0.5*Options.timestep))       
+  else if ((_timeAgg==DAILY)   && (fabs(floor(t+time_shift+TIME_CORRECTION)-(t+time_shift)) <0.5*Options.timestep))
                                                              {reset=true;}//start of day - print preceding day
   else if (_timeAgg==EVERY_TSTEP)                            {reset=true;}//every timestep
   else if((_timeAgg==EVERY_NDAYS)   && (fabs(ffmod(t,Options.custom_interval)) <=0.5*Options.timestep))//every N days print preceding N days
                                                              {reset=true;}
-  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))    
+  else if ((_timeAgg==WATER_YEARLY) && (dday==1) && (dmon==Options.wateryr_mo))
                                                              {reset=true;}//Oct 1 - print preceding year
 
   bool skip=false;
@@ -782,7 +782,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       int retval,time_id;
       size_t start1[1], count1[1];  // determines where and how much will be written to NetCDF; 1D variable (time)
       double current_time[1];       // current time in days since start of interval
-       
+
       if      (_timeAgg==YEARLY      ){current_time[0]=yest.model_time-yest.julian_day;}
       else if (_timeAgg==MONTHLY     ){current_time[0]=yest.model_time-yest.day_of_month;}
       else if (_timeAgg==DAILY       ){current_time[0]=yest.model_time;}
@@ -915,7 +915,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { return; }
 
       if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
-      {  
+      {
         string sep=",";
         if(Options.output_format==OUTPUT_ENSIM){ sep=" "; }//space separated
         //write to .csv or .tb0 file
@@ -967,7 +967,7 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
       else if(Options.output_format==OUTPUT_NETCDF)
       {
 #ifdef _RVNETCDF_
-        // Collect Data 
+        // Collect Data
         double out=0.0;
         if     (_aggstat==AGG_AVERAGE ){ out=data[k][0]; }
         else if(_aggstat==AGG_MAXIMUM ){ out=data[k][0]; }
@@ -978,9 +978,9 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
           double Q1,Q2,Q3;
           quickSort(data[k],0,count-1);
           GetQuartiles(data[k],count,Q1,Q2,Q3);
-          out=Q2; 
+          out=Q2;
         }
-        output[k]=out;       
+        output[k]=out;
 #endif
       }
 
@@ -1013,18 +1013,18 @@ void CCustomOutput::WriteCustomOutput(const time_struct &tt,
     if ((pModel->GetEnsemble() != NULL) && (pModel->GetEnsemble()->DontWriteOutput())) { return; }
 
   	if((Options.output_format==OUTPUT_STANDARD) || (Options.output_format==OUTPUT_ENSIM))
-    { 
+    {
       _CUSTOM<<endl;//valid for ensim or .csv format
 		}
 		else if (Options.output_format==OUTPUT_NETCDF)
     {
 #ifdef _RVNETCDF_
       // Write to NetCDF (done entire vector of data at once)
-      
+
       if (num_data > 0)
       {
         int retval,data_id;
-        size_t start2[2], count2[2]; 
+        size_t start2[2], count2[2];
         start2[0]=_time_index;  count2[0] = 1;         // writes exactly one time interval (yr/mo/day/hr)
         start2[1] = 0;          count2[1] = num_data;  // writes exactly num_data elements
 
@@ -1057,7 +1057,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
 
 int  ParseSVTypeIndex(string s,CModel *&pModel);
 //////////////////////////////////////////////////////////////////
-/// \brief Parses custom output command 
+/// \brief Parses custom output command
 // Format:
 //  :CustomOutput [time_aggregation] [statistic] [parameter] [space_aggregation] {ONLY HRUGroup} {[hist_min] [hist_max] [#bins]} {filename} (optional)
 //

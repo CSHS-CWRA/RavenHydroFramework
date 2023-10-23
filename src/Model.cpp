@@ -36,7 +36,8 @@ CModel::CModel(const int        nsoillayers,
   _nDiagnostics=0;    _pDiagnostics=NULL;
   _nDiagPeriods=0;    _pDiagPeriods=NULL;
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
-  
+  _nPerturbations=0;  _pPerturbations=NULL;
+
   _nTotalConnections=0;
   _nTotalLatConnections=0;
 
@@ -47,7 +48,7 @@ CModel::CModel(const int        nsoillayers,
   _aDownstreamInds=NULL;
 
   _aDAscale       =NULL; //Initialized in InitializeDataAssimilation
-  _aDAlength      =NULL; 
+  _aDAlength      =NULL;
   _aDAtimesince   =NULL;
   _aDAoverride    =NULL;
   _aDAobsQ        =NULL;
@@ -55,15 +56,15 @@ CModel::CModel(const int        nsoillayers,
 
   _pOptStruct = &Options;
 
-  _HYDRO_ncid   =-9; 
+  _HYDRO_ncid   =-9;
   _STORAGE_ncid =-9;
-  _FORCINGS_ncid=-9; 
+  _FORCINGS_ncid=-9;
   _RESSTAGE_ncid=-9;
   _RESMB_ncid   =-9;
 
   _PETBlends_N=0;
   _PETBlends_type=NULL;
-  _PETBlends_wts=NULL; 
+  _PETBlends_wts=NULL;
   _PotMeltBlends_N=0;
   _PotMeltBlends_type=NULL;
   _PotMeltBlends_wts=NULL;
@@ -128,7 +129,7 @@ CModel::CModel(const int        nsoillayers,
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
 
 #ifdef _MODFLOW_USG_
-  _pGWModel = new CGroundwaterModel(this);  
+  _pGWModel = new CGroundwaterModel(this);
 #endif
 
   _pEnsemble = NULL;
@@ -180,10 +181,17 @@ CModel::~CModel()
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
   }
   for (kk=0;kk<_nHRUGroups;kk++)  {delete _pHRUGroups[kk];    } delete [] _pHRUGroups;      _pHRUGroups  =NULL;
-  for (kk=0;kk<_nSBGroups;kk++ )  {delete _pSBGroups[kk];     } delete [] _pSBGroups;       _pSBGroups  =NULL; 
+  for (kk=0;kk<_nSBGroups;kk++ )  {delete _pSBGroups[kk];     } delete [] _pSBGroups;       _pSBGroups  =NULL;
   for (j=0;j<_nTransParams;j++)   {delete _pTransParams[j];   } delete [] _pTransParams;    _pTransParams=NULL;
   for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
   for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
+
+  for (int i=0;i<_nPerturbations;   i++)
+  {
+    delete [] _pPerturbations[i]->eps;
+    delete _pPerturbations   [i];
+  }
+  delete [] _pPerturbations;
 
   delete [] _aStateVarType;  _aStateVarType=NULL;
   delete [] _aStateVarLayer; _aStateVarLayer=NULL;
@@ -196,7 +204,7 @@ CModel::~CModel()
   delete [] _aDAscale;       _aDAscale=NULL;
   delete [] _aDAlength;      _aDAlength=NULL;
   delete [] _aDAtimesince;   _aDAtimesince=NULL;
-  delete [] _aDAlast;          _aDAlast=NULL;
+  delete [] _aDAlast;        _aDAlast=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 
@@ -386,7 +394,7 @@ CHydroUnit *CModel::GetHRUByID(const int HRUID) const
   static int last_k=0;
   //smart find
   int k;
-  for (int i=0;i<_nHydroUnits;i++){ 
+  for (int i=0;i<_nHydroUnits;i++){
     k=NearSearchIndex(i,last_k,_nHydroUnits);
     if (HRUID==_pHydroUnits[k]->GetID()){ last_k=k; return _pHydroUnits[k];}
   }
@@ -478,7 +486,7 @@ int         CModel::GetDownstreamBasin(const int p) const
 /// \return pointer to Sub basin object corresponding to passed ID, if ID is valid
 //
 CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
-{ 
+{
   static int last_p=0;
   int p;
   if (SBID < 0) { return NULL; }
@@ -497,7 +505,7 @@ CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
 /// \return Sub basin index corresponding to passed ID, if ID is valid
 //
 int         CModel::GetSubBasinIndex(const long SBID) const
-{  
+{
   static int last_p = 0;
   int p;
   if (SBID<0){return DOESNT_EXIST;}
@@ -518,7 +526,7 @@ int         CModel::GetSubBasinIndex(const long SBID) const
 const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) const
 {
   static const CSubBasin **pSBs=new const CSubBasin *[_nSubBasins];
-  
+
   bool *isUpstr=new bool [_nSubBasins];
   for(int p=0;p<_nSubBasins;p++) { isUpstr[p]=false; }
 
@@ -562,10 +570,10 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
 /// \brief Returns true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
 /// \notes recursive call, keeps marching downstream until outlet or SBIDdown is encounterd
 /// \param SBID [in] ID of subbasin being queried
-/// \param SBIDdown [in] subbasin ID basis of query 
+/// \param SBIDdown [in] subbasin ID basis of query
 /// \return true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
 //
-bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const 
+bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const
 {
   if      (SBID==DOESNT_EXIST    ) { return false;} //end of the recursion line
   else if (SBIDdown==SBID)         { return true; } //a subbasin is upstream of itself (even handles loops on bad networks)
@@ -654,6 +662,10 @@ int         CModel::GetNumConnections (const int j) const
 #endif
   return _pProcesses[j]->GetNumConnections();
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of forcing perturbations in model
+//
+int         CModel::GetNumForcingPerturbations() const {return _nPerturbations;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns state variable type corresponding to passed state variable array index
@@ -782,7 +794,7 @@ double CModel::GetFlux(const int k, const int js, const optStruct &Options) cons
 /// \param k [in] HRU index
 /// \param i [in] mass/energy state variable index
 //
-double CModel::GetConcentration(const int k, const int i) const 
+double CModel::GetConcentration(const int k, const int i) const
 {
   return _pTransModel->GetConcentration(k,i);
 }
@@ -840,7 +852,7 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
       }
     }
   }
-  
+
   return sum;
 }
 //////////////////////////////////////////////////////////////////
@@ -859,7 +871,7 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
 #endif
   int q,js=0;
   double sum=0;
-  const int *iFromp; 
+  const int *iFromp;
   const int *iTop;
   int nConn;
   for(int j = 0; j < _nProcesses; j++)
@@ -874,7 +886,7 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
       js++;
     }
   }
-  
+
   return sum;
 }
 //////////////////////////////////////////////////////////////////
@@ -1317,7 +1329,7 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
 
   //convert time to model time
   pCC->modeltime= TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
-  
+
   if (pCC->modeltime>Options.duration){
     string warn;
     warn="Property Class change dated "+tt.date_string+" occurs after model simulation is done; it will not effect results.";
@@ -1508,7 +1520,38 @@ void CModel::AddCustomOutput(CCustomOutput *pCO)
     ExitGracefully("CModel::AddCustomOutput: adding NULL custom output",BAD_DATA);}
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief adds additional forcing perturbation
+/// \param type [in] forcing type to be perturbed
+/// \param distrib [in] sampling distribution type
+/// \param distpars [in] array of distribution parameters
+/// \param group_index [in] HRU group ID (or DOESNT_EXIST if all HRUs should be perturbed)
+/// \param adj [in] type of perturbation (e.g., additive or multiplicative)
+//
+void CModel::AddForcingPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj, int nStepsPerDay)
+{
+  force_perturb *pFP=new force_perturb();
+  pFP->forcing     =type;
+  pFP->distribution=distrib;
+  pFP->kk          =group_index;
+  pFP->adj_type    =adj;
+  for (int i = 0; i < 3; i++) {
+    pFP->distpar[i]=distpars[i];
+  }
+  pFP->eps=new double [nStepsPerDay];
+  for (int n = 0; n < nStepsPerDay; n++) {
+    pFP->eps[n]=0;
+  }
 
+  if (!DynArrayAppend((void**&)(_pPerturbations),(void*)(pFP),_nPerturbations)){
+    ExitGracefully("CModel::AddForcingPerturbation: creating NULL perturbation",BAD_DATA_WARN);
+  }
+
+  if ((type==F_PRECIP) || (type==F_SNOWFALL) || (type==F_RAINFALL) || (type==F_TEMP_AVE)){}
+  else {
+    ExitGracefully("CModel::AddForcingPerturbation: only PRECIP, RAINFALL, SNOWFALL, and TEMP_AVE are supported for forcing perturbation.",BAD_DATA_WARN);
+  }
+}
 /*****************************************************************
    Other Manipulator Functions
 ------------------------------------------------------------------
@@ -1554,24 +1597,24 @@ void    CModel::SetPETBlendValues(const int N, const evap_method* aEv, const dou
   _PETBlends_wts =new double      [N];
   for (int i = 0; i < N; i++) {
     _PETBlends_type[i]=aEv[i];
-    _PETBlends_wts [i]=wts[i];   
+    _PETBlends_wts [i]=wts[i];
   }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets PotMelt blend values
 //
-void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, const double* wts) 
+void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, const double* wts)
 {
   _PotMeltBlends_N=N;
   _PotMeltBlends_type=new potmelt_method [N];
   _PotMeltBlends_wts =new double         [N];
   for (int i = 0; i < N; i++) {
     _PotMeltBlends_type[i]=aPM[i];
-    _PotMeltBlends_wts [i]=wts[i];   
+    _PotMeltBlends_wts [i]=wts[i];
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Gets basin blended forcing number of weighted groups 
+/// \brief Gets basin blended forcing number of weighted groups
 /// \param label [in] String property identifier
 /// \return number of blended weights of basin corresponding to label
 //
@@ -1589,7 +1632,7 @@ int CModel::GetBlendedForcingsNumWeights(const string label)
 //////////////////////////////////////////////////////////////////
 /// \brief Deletes all custom outputs (For FEWS override)
 //
-void CModel::DeleteCustomOutputs() 
+void CModel::DeleteCustomOutputs()
 {
   for(int i=0;i<_nCustomOutputs;i++) {
     delete _pCustomOutputs[i];
@@ -1650,7 +1693,7 @@ void CModel::OverrideStreamflow   (const long SBID)
 
         //need to shift everything by one interval, since hydrographs are stored as period-ending
         pTS->ShiftInTime(-(pTS->GetInterval()),*_pOptStruct);
-       
+
         //add as inflow hydrograph to downstream
         GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
         GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
@@ -1699,7 +1742,7 @@ void CModel::IncrementLatBalance( const int jss,
                                   const double moved)//[mm-m2] or [MJ]
 {
   _aCumulativeLatBal[jss]+=moved;
-  _aFlowLatBal      [jss]=moved; 
+  _aFlowLatBal      [jss]=moved;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Increments cumulative mass & energy added to system (precipitation/ustream basin flows, etc.)
@@ -1714,7 +1757,7 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
   area = _WatershedArea * M2_PER_KM2;
 
   _CumulInput+=GetAveragePrecip()*Options.timestep;
-  
+
   _CumulInput+=GetAverageForcings().recharge*Options.timestep;
 
   for (int p=0;p<_nSubBasins;p++){
@@ -1753,7 +1796,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
     bool outflowdisabled;
     CSubBasin *pSBdown=NULL;
     if(_aDownstreamInds[p]>=0) { pSBdown=_pSubBasins[_aDownstreamInds[p]]; }
-    
+
     outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
 
     if(_pSubBasins[p]->IsEnabled())
@@ -1765,14 +1808,14 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
       _CumulOutput+=_pSubBasins[p]->GetReservoirLosses (Options.timestep)/area*MM_PER_METER;
       _CumulOutput+=_pSubBasins[p]->GetIrrigationLosses(Options.timestep)/area*MM_PER_METER;
 
-      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) 
+      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++)
       {
         Qdiv=_pSubBasins[p]->GetDiversionFlow(i,_pSubBasins[p]->GetLastOutflowRate(),Options,tt,pDivert)*Options.timestep*SEC_PER_DAY;
         if(pDivert==DOESNT_EXIST) {
           _CumulOutput+=Qdiv/area*MM_PER_METER; //water that is diverted out of the watershed
         }
         if(_pSubBasins[p]->GetDownstreamID()==DOESNT_EXIST) {
-          _CumulOutput-=Qdiv/area*MM_PER_METER; //water that doesn't leave the system but is calculated as outflow 
+          _CumulOutput-=Qdiv/area*MM_PER_METER; //water that doesn't leave the system but is calculated as outflow
         }
       }
     }
@@ -1820,7 +1863,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
     if( ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
          (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep)) ||
 	    ((tt.model_time == 0.0) && (_pClassChanges[j]->modeltime < 0.0)) )
-    {//change happens this time step 
+    {//change happens this time step
 
       int kk   =_pClassChanges[j]->HRU_groupID;
       for(int k_loc = 0; k_loc <_pHRUGroups[kk]->GetNumHRUs();k_loc++)
@@ -1853,7 +1896,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Determines parameter class (e.g., CLASS_GLOBAL or CLASS_SOIL) from parameter name and class name through slow search 
+/// \brief Determines parameter class (e.g., CLASS_GLOBAL or CLASS_SOIL) from parameter name and class name through slow search
 ///
 /// \param param_str [in] string for parameter name (e.g., BASEFLOW_COEFF)
 /// \param class_name [in] class name (e.g., FOREST) or SBID for subbasin parameters
@@ -1890,7 +1933,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
 //////////////////////////////////////////////////////////////////
 /// \brief Updates model parameter during course of simulation
 ///
-/// \param &ctype [in] parameter class type 
+/// \param &ctype [in] parameter class type
 /// \param &pname [in] valid parameter name
 /// \param &cname [in] valid parameter class name (or SBID as string for CLASS_SUBBASIN or gauge ID as string for CLASS_GAUGE)
 /// \param &value [in] updated parameter value (or -1.2345, which is ignored)
@@ -1956,12 +1999,12 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
 }
 //////////////////////////////////////////////////////////////////
 /// \brief overrides global parameters in subbasin groups
-/// \notes called only from solver within HRU loop 
+/// \notes called only from solver within HRU loop
 ///
 /// \param k [in] global HRU index
 /// \param revert [in] true if reverting to base value, false if changing to overridden value
 //
-void CModel::ApplyLocalParamOverrrides(const int k, const bool revert) 
+void CModel::ApplyLocalParamOverrrides(const int k, const bool revert)
 {
   for (int i=0;i<_nParamOverrides;i++)
   {
@@ -1969,7 +2012,7 @@ void CModel::ApplyLocalParamOverrrides(const int k, const bool revert)
       if (!revert){
         for (int j=0; j<_pParamOverrides[i]->nVals; j++){
           _pParamOverrides[i]->pxAddress[j] = _pParamOverrides[i]->aValues[j];
-          
+
         }
       }
       else{
@@ -2000,7 +2043,60 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
     }
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief called at start of time step if needed - generates random values for perturbation of forcings
+/// \param &Options [out] Global model options information
+/// \params tt [in] time structure
+//
+void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt)
+{
 
+  for(int i=0;i<_nPerturbations;i++)
+  {
+    int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+    double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+    int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+    bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
+
+    if (start_of_day)  { //get all random perturbation samples for the day
+      for (int n=0;n<nStepsPerDay;n++){
+        _pPerturbations[i]->eps[n]=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar);
+      }
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief called within update forcings - actually applies forcing function changes
+/// \param ftype [in] forcing function type
+/// \param F [out] forcing structure modified by this routine
+/// \param k [in] HRU index of forcing
+/// \param &Options [in] Global model options information
+/// \params tt [in] time structure
+//
+void CModel::ApplyForcingPerturbation(const forcing_type ftype, force_struct &F, const int k, const optStruct& Options, const time_struct& tt)
+{
+  int kk=DOESNT_EXIST;
+  for(int i=0;i<_nPerturbations;i++)
+  {
+    if (ftype==_pPerturbations[i]->forcing)
+    {
+      int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+      double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+      int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+      bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
+
+      kk=_pPerturbations[i]->kk;
+
+      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k)))
+      {
+        _pHydroUnits[k]->AdjustHRUForcing(ftype, F,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
+        if (start_of_day){
+          _pHydroUnits[k]->AdjustDailyHRUForcings(ftype,F,_pPerturbations[i]->eps,_pPerturbations[i]->adj_type,nStepsPerDay);
+        }
+      }
+    }
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Updates values stored in modeled time series of observation data
 /// modifies _pModeledTS[] time series and _aObsIndex array
@@ -2016,10 +2112,10 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
   double     value, obsTime;
   string     datatype;
-  sv_type    svtyp;  
+  sv_type    svtyp;
   int        layer_ind;
-  CSubBasin *pBasin=NULL;  
-  
+  CSubBasin *pBasin=NULL;
+
   for (int i=0;i<_nObservedTS;i++)
   {
     datatype=_pObservedTS[i]->GetName();
@@ -2049,11 +2145,11 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else if (datatype == "RESERVOIR_NETINFLOW")//===================================
     {
       pBasin = GetSubBasinByID(_pObservedTS[i]->GetLocID());
-      CReservoir *pRes= pBasin->GetReservoir(); 
+      CReservoir *pRes= pBasin->GetReservoir();
       double avg_area=0.0;
       if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
-      
-      double tem_precip1 = pBasin->GetAvgForcing(F_PRECIP) / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
+
+      double tem_precip1 = pBasin->GetAvgForcing(F_PRECIP) / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER;
       double losses      = pRes->GetReservoirEvapLosses        (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       losses            += pRes->GetReservoirGWLosses          (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
@@ -2095,15 +2191,15 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     _pModeledTS[i]->SetValue(n,value);
     _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
-    
+
     obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
     //if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR) {obsTime+=Options.timestep;}//JRC: Not the most elegant fix, but Diagnostics are updated prior to Solver (no longer)
 
     //if model time is such that next unprocessed observation has occurred, update modeled
-    while ((tt.model_time >= obsTime+ _pObservedTS[i]->GetSampledInterval()) &&  
+    while ((tt.model_time >= obsTime+ _pObservedTS[i]->GetSampledInterval()) &&
 			     (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
-      value=RAV_BLANK_DATA; 
+      value=RAV_BLANK_DATA;
       // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
       if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
       {
@@ -2165,7 +2261,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
   //Special frozen flow handling - constrains flows when water is partially/wholly frozen
   //------------------------------------------------------------------------
   if (_pTransModel->GetEnthalpyModel()!=NULL)
-  { //simulating enthalpy, and therefore frozen water compartments 
+  { //simulating enthalpy, and therefore frozen water compartments
     //if ((tt.model_time==0.0) && (j==0)){WriteWarning("JAMES: Temporarily disabled frozen ground feedback",Options.noisy); }
   /*
     double Fi,liq_stor;
@@ -2173,7 +2269,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
     for(int q=0;q<nConnections;q++)
     {
       typ=_aStateVarType[iFrom[q]];
-      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW) && (typ!=SURFACE_WATER)) 
+      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW) && (typ!=SURFACE_WATER))
       {
         //precip is special case (frozen snow can fall)
         //snow is special case (already assume that only liquid water is lost)
@@ -2187,7 +2283,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
     */
   }
 
-  //Apply constraints 
+  //Apply constraints
   //------------------------------------------------------------------------
   pProc->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
 
@@ -2210,7 +2306,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 /// \param *iFrom   [in] Array (size: nLatConnections)  of Indices of state variable losing mass or energy
 /// \param *iTo     [in] Array (size: nLatConnections)  of indices of state variable gaining mass or energy
 /// \param &nConnections [out] Number of connections between storage units/state vars
-/// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm-m2/d], mass [mg/d], and/or energy [MJ/d] 
+/// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm-m2/d], mass [mg/d], and/or energy [MJ/d]
 /// \return returns false if this process doesn't apply to this HRU, true otherwise
 //
 bool CModel::ApplyLateralProcess( const int          j,
@@ -2234,8 +2330,8 @@ bool CModel::ApplyLateralProcess( const int          j,
 
   pLatProc=(CLateralExchangeProcessABC*)_pProcesses[j]; // Cast
   if (!_aShouldApplyProcess[j][pLatProc->GetFromHRUIndices()[0]]){return false;} //JRC: is the From/0 appropriate?
-  
-  
+
+
   for (int q=0;q<nLatConnections;q++)
   {
     iFrom[q]=pLatProc->GetLateralFromIndices()[q];
@@ -2253,5 +2349,3 @@ bool CModel::ApplyLateralProcess( const int          j,
 
   return true;
 }
-
-

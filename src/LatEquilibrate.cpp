@@ -15,7 +15,7 @@
 *****************************************************************/
 CmvLatEquilibrate::CmvLatEquilibrate(int    sv_ind,
                                      int    HRU_grp,
-                                     double mixing_rate, 
+                                     double mixing_rate,
                                      bool   constrain_to_SBs) : CLateralExchangeProcessABC(LAT_EQUIL)
 {
   _iSV    = sv_ind;
@@ -25,12 +25,12 @@ CmvLatEquilibrate::CmvLatEquilibrate(int    sv_ind,
   _halfconn    = NULL;
   _mixing_rate = mixing_rate; // [%/day]
 
-  DynamicSpecifyConnections(0); //purely lateral flow, no vertical 
+  DynamicSpecifyConnections(0); //purely lateral flow, no vertical
 
   //check for valid SVs, HRU group indices
   bool badHRU=(HRU_grp<0) || (HRU_grp>_pModel->GetNumHRUGroups()-1);
   ExitGracefullyIf(badHRU,"CmvLatEquilibrate::unrecognized HRU group specified in :LatEquilibrate command",BAD_DATA_WARN);
-  
+
   ExitGracefullyIf(sv_ind==DOESNT_EXIST,"CmvLatEquilibrate::unrecognized state variable specified in :LatEquilibrate command",BAD_DATA_WARN);
 }
 //////////////////////////////////////////////////////////////////
@@ -61,8 +61,8 @@ void CmvLatEquilibrate::Initialize()
     _halfconn[p] = 0;
   }
   if(_constrain_to_SBs)
-  {  
-    //sift through all subbasins 
+  {
+    //sift through all subbasins
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       _Asum[p] = 0;
@@ -96,7 +96,7 @@ void CmvLatEquilibrate::Initialize()
   else //!constrain_to_SBs
   {
     int kToSB=DOESNT_EXIST;
-    _Asum[0] = 0;    
+    _Asum[0] = 0;
     for(k=0;k<_pModel->GetNumHRUs();k++) {
       if((_pModel->IsInHRUGroup(k,HRUGrp)) && (kToSB == DOESNT_EXIST)) {
         kToSB=k; //first in group becomes aggregation target
@@ -138,14 +138,12 @@ void CmvLatEquilibrate::Initialize()
   delete [] kTo;
 }
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief Sets reference to participating state variables
 ///
-/// \param se_type [in] Model of soil evaporation used
-/// \param *aSV [out] Array of state variable types needed by soil evaporation algorithm
+/// \param *aSV [out] Array of state variable types needed by algorithm
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
-/// \param &nSV [out] Number of state variables required by soil evaporation algorithm (size of aSV[] and aLev[] arrays)
+/// \param &nSV [out] Number of state variables required by algorithm (size of aSV[] and aLev[] arrays)
 //
 void CmvLatEquilibrate::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV)
 {
@@ -166,7 +164,7 @@ void  CmvLatEquilibrate::GetParticipatingParamList(string *aP,class_type *aPC,in
 /// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-km2/day]
 //
 void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
-                                      const CHydroUnit * const *pHRUs,    
+                                      const CHydroUnit * const *pHRUs,
                                       const optStruct          &Options,
                                       const time_struct        &tt,
                                             double             *exchange_rates) const
@@ -185,9 +183,9 @@ void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars
   for (int q = 0; q < _nLatConnections; q++)
   {
     stor    = state_vars[_kFrom[q]][_iFromLat[q]];
-    to_stor = state_vars[_kTo[q]][_iToLat[q]];
+    to_stor = state_vars[_kTo  [q]][_iToLat  [q]];
     Afrom   = pHRUs[_kFrom[q]]->GetArea();
-    Ato     = pHRUs[_kTo[q]]->GetArea();
+    Ato     = pHRUs[_kTo  [q]]->GetArea();
     p = _pModel->GetHydroUnit(_kFrom[q])->GetSubBasinIndex();
     if (!_constrain_to_SBs) { p = 0; }
 
@@ -196,16 +194,16 @@ void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars
       plast = p;
       qstart = q;
     }
-    if ((q >= qstart) && (q < qstart+_halfconn[p])) //step 1: mix % of water into single vessel HRU 
+    if ((q >= qstart) && (q < qstart+_halfconn[p])) //step 1: mix % of water into single vessel HRU
     {
-      exchange_rates[q] = mix*max(stor, 0.0) / Options.timestep * Afrom; //[mm-m2/d] //a fraction of storage moved to mixing unit per time step
+      exchange_rates[q] = mix*max(stor, 0.0) / Options.timestep * Afrom; //[mm-km2/d] //a fraction of storage moved to mixing unit per time step
       sum[p] += exchange_rates[q]*Options.timestep; //[mm-m2] cumulative water mixed
     }
-    else //step 2: redistribute mixed water back to contributing HRUs to even out water levels 
-    {  
-      exchange_rates[q] = sum[p] *(Ato / _Asum[p]) / Options.timestep; //[mm-m2/d]fraction empties out
+    else //step 2: redistribute mixed water back to contributing HRUs to even out water levels
+    {
+      exchange_rates[q] = sum[p] *(Ato / _Asum[p]) / Options.timestep; //[mm-km2/d]fraction empties out
     }
-    
+
   }
   //JRC: NOTE SOME BIAS BASED UPON CHOICE OF MIXING UNIT if mix>1, WHICH WILL ALWAYS EQUILIBRATE FASTER
   delete[] sum;

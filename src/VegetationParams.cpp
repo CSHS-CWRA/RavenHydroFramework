@@ -171,8 +171,8 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
       double max_snow_load= pHRU->GetVegetationProps()->max_snow_load; //[kg/m2] ~5.9-6.6
       double max_cap      = pHRU->GetVegetationProps()->max_snow_capacity;
       double rho_s        = CalcFreshSnowDensity(pHRU->GetForcingFunctions()->temp_ave);
-      
-      VV.snow_capacity = VV.LAI * max_snow_load *(MM_PER_METER/ DENSITY_WATER) * (0.27 + 46 / rho_s); //kg/m2*m3/kg->mm 
+
+      VV.snow_capacity = VV.LAI * max_snow_load *(MM_PER_METER/ DENSITY_WATER) * (0.27 + 46 / rho_s); //kg/m2*m3/kg->mm
 
       if (max_cap > 0.0) {
        lowerswap(VV.snow_capacity, max_cap);//storage capacity override for floppy trees [M. Chernos]
@@ -186,11 +186,11 @@ void CVegetationClass::RecalculateCanopyParams (      veg_var_struct    &VV,
     }
     else { VV.snow_icept_pct = 0.0; }
   }
-  else if(Options.interception_factor == PRECIP_ICEPT_STICKY) 
+  else if(Options.interception_factor == PRECIP_ICEPT_STICKY)
   {
     VV.rain_icept_pct=(1.0-exp(-0.5*(VV.LAI+VV.SAI)));
 
-    if(iCanSnow != DOESNT_EXIST) 
+    if(iCanSnow != DOESNT_EXIST)
     {///< \ref from SUMMA
       double gamma;
       double max_snow_load=pHRU->GetVegetationProps()->max_snow_load; //kg/m2 leaf
@@ -395,5 +395,3 @@ void CVegetationClass::RecalculateRootParams(       veg_var_struct   &VV,
     }
   }
 }
-
-

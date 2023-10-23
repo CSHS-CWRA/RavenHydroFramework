@@ -45,4 +45,3 @@ public:/*-------------------------------------------------------*/
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
 };
 #endif
-

@@ -14,7 +14,7 @@ bool IsContinuousFlowObs2(const CTimeSeriesABC *pObs,long SBID)
   if(pObs==NULL)                                   { return false; }
   if(pObs->GetLocID() != SBID)                     { return false; }
   if(pObs->GetType() != CTimeSeriesABC::TS_REGULAR){ return false; }
-  return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"      
+  return (!strcmp(pObs->GetName().c_str(),"HYDROGRAPH")); //name ="HYDROGRAPH"
 }
 /////////////////////////////////////////////////////////////////
 /// \brief initializes memory for assimilation and sets up connections to observation data
@@ -50,9 +50,9 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
       ExitGracefully("InitializeDataAssimlation: :AssimilateStreamflow command was used in .rvi file, but no observations were enabled for assimilation using :AssimilateStreamflow command in .rvt file",BAD_DATA_WARN);
     }
   }
-  
+
   //Connect Lake assimilation observations
-  if(Options.assimilate_stage) 
+  if(Options.assimilate_stage)
   {
     for(int i=0;i<_nObservedTS;i++) {
       if((!strcmp(_pObservedTS[i]->GetName().c_str(),"RESERVOIR_STAGE")) && (_pObservedTS[i]->GetType() == CTimeSeriesABC::TS_REGULAR)) {
@@ -61,6 +61,9 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
         if(pRes!=NULL) {
           pRes->TurnOnAssimilation(_pObservedTS[i]);
         }
+        else {
+          ExitGracefully("Reservoir stage observations assigned to basin without lake or reservoir. Data cannot be assimilated",BAD_DATA_WARN);
+        }
       }
     }
     WriteAdvisory("Lake stage data assimilation will lead to mass balance error estimates in the WatershedStorage output file. This is a natural side effect of assimilation.",Options.noisy);
@@ -68,7 +71,7 @@ void CModel::InitializeDataAssimilation(const optStruct &Options)
 
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Overrides flows with observations at gauges, or  
+/// \brief Overrides flows with observations at gauges, or
 /// \param p [in] global subbasin index
 /// \param Options [in] current model options structure
 /// \param tt [in] current model time structure
@@ -79,7 +82,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
 
   //Get current, up-to-date flow and calculate scaling factor
   //---------------------------------------------------------------------
-  if(_aDAoverride[p]) 
+  if(_aDAoverride[p])
   {
     double Qobs,Qmod;
     double alpha     =CGlobalParams::GetParams()->assimilation_fact;
@@ -89,11 +92,11 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
     //Qmod = _pSubBasins[p]->GetIntegratedOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
     //Option B: instantaneous flow
     Qmod = _pSubBasins[p]->GetOutflowRate();
-    if(Qmod>PRETTY_SMALL) { 
+    if(Qmod>PRETTY_SMALL) {
       _aDAscale[p]=1.0+alpha*((Qobs-Qmod)/Qmod);
     }
-    else { 
-      _aDAscale[p]=1.0;                         
+    else {
+      _aDAscale[p]=1.0;
     }
     _aDAlast[p]=1.0;//no need to scale previous
   }
@@ -109,7 +112,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
 /// \brief Calculates updated DA scaling coefficients for all subbasins for forthcoming timestep
 /// \note most scale coefficients will be 1.0  except:
 /// (1) gauges with valid observation data, which scale to override OR
-/// (2) basins at or upstream of missing observation data 
+/// (2) basins at or upstream of missing observation data
 /// actual scaling performed in CModel::AssimilationOverride() during routing
 /// \param tt [in] current model time structure
 /// \param Options [in] current model options structure
@@ -117,14 +120,14 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
 void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 {
   if (!Options.assimilate_flow)                                      {return;}
-  if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0)){return;}//assimilates all data after assimilation date 
-  
+  if(tt.model_time<(Options.assimilation_start+Options.timestep/2.0)){return;}//assimilates all data after assimilation date
+
   int    p,pdown;
   double Qobs;
   double t_observationsOFF=ALMOST_INF;//Only used for debugging - keep as ALMOST_INF otherwise
 
   int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
-  
+
   for(int p=0; p<_nSubBasins; p++) {
     _aDAlast[p]=_aDAscale[p];
   }
@@ -156,7 +159,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
             _aDAobsQ     [p]=Qobs;
           }
           else
-          { //found a blank or zero flow value 
+          { //found a blank or zero flow value
             _aDAscale    [p]=_aDAscale[p];
             _aDAtimesince[p]+=Options.timestep;
             _aDAlength   [p]=0.0;
@@ -171,8 +174,8 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
     // no observations in this basin, get scaling from downstream
     //----------------------------------------------------------------
     pdown=GetDownstreamBasin(p);
-    if(ObsExists==false) { //observations may be downstream, propagate scaling upstream 
-      //if ((pdown!=DOESNT_EXIST) && (!_aDAoverride[pdown])){ //alternate - allow information to pass through reservoirs 
+    if(ObsExists==false) { //observations may be downstream, propagate scaling upstream
+      //if ((pdown!=DOESNT_EXIST) && (!_aDAoverride[pdown])){ //alternate - allow information to pass through reservoirs
       if((pdown!=DOESNT_EXIST) && (_pSubBasins[p]->GetReservoir()==NULL) && (!_aDAoverride[pdown])) {
         _aDAscale      [p]= _aDAscale    [pdown];
         _aDAlength     [p]+=_pSubBasins  [pdown]->GetReachLength();
@@ -180,7 +183,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
         _aDAoverride   [p]=false;
       }
       else{ //Nothing downstream or reservoir present in this basin, no assimilation
-        _aDAscale    [p]=1.0; 
+        _aDAscale    [p]=1.0;
         _aDAlength   [p]=0.0;
         _aDAtimesince[p]=0.0;
         _aDAoverride [p]=false;
@@ -191,7 +194,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
   // Apply time and space correction factors
   //----------------------------------------------------------------
   double time_fact =CGlobalParams::GetParams()->assim_time_decay;
-  double distfact  =CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m] 
+  double distfact  =CGlobalParams::GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
   for(p=0; p<_nSubBasins; p++)
   {
     _aDAscale[p] =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);

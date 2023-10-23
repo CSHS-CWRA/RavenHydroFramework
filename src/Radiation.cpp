@@ -60,7 +60,7 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     if (tt.day_changed) //no need to do calculations every timestep
     {
       double solar_rad;
-      double elev=pHRU->GetElevation();    
+      double elev=pHRU->GetElevation();
       solar_rad= UBC_SolarRadiation(latrad,elev,F->day_angle, F->day_length,ET_rad);
       ET_rad_flat=ET_rad;
       double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
@@ -105,8 +105,8 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
                                              const CHydroUnit    *pHRU,
                                                    double        &LW_incoming)
 {
-  
-  switch(Options.LW_incoming) 
+
+  switch(Options.LW_incoming)
   {
   case(LW_INC_DATA):
   {
@@ -116,7 +116,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   {
     //Calculates incoming long-wave terrain emmission radiation using sky view factor
     //Sicart et al. (2005), Incoming longwave radiation to melting snow: observations, sensitivity and estimation in
-    //northern environments, Hydrological Processes, 20, 3697-3708 
+    //northern environments, Hydrological Processes, 20, 3697-3708
     //Ported over from CRHM (Pomeroy et al., 2007)
     double Vf       =pHRU->GetSurfaceProps()->sky_view_factor;//0.7
     //double epsilon_s=pHRU->GetSurfaceProps()->surface_emissivity;
@@ -153,7 +153,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   case(LW_RAD_DEFAULT):
   {
     //from Dingman eqns. 5-40
-    double emissivity=0.99; 
+    double emissivity=0.99;
     double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
     double Tair =F->temp_ave+ZERO_CELSIUS;  //[K]
     //double Tsurf=pHRU->GetSurfaceTemperature()+ZERO_CELSIUS;//[K] (not yet functional)
@@ -188,7 +188,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double tmp=(LH_FUSION*DENSITY_WATER/MM_PER_METER); //[mm/d]-->[MJ/m2/d]
 
     double Fc=pHRU->GetSurfaceProps()->forest_coverage;
-    
+
     return tmp*((1.0-Fc)*LW_open+(Fc)*LW_forest);
   }
   //--------------------------------------------------------
@@ -212,9 +212,9 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double sat_vap,ea;
     sat_vap=GetSaturatedVaporPressure(F->temp_ave); //[kPa]
     ea =F->rel_humidity*sat_vap;                    //[kPa]
-    
-    f=max(1.35*(F->SW_radia/F->SW_radia_unc)-0.35,0.0); //cloud cover adjustment Valiantzas (2006) eqn 40 
-    eps= 0.34 - 0.14*sqrt(ea);                   //net emissivity Valiantzas (2006) eqn 41 
+
+    f=max(1.35*(F->SW_radia/F->SW_radia_unc)-0.35,0.0); //cloud cover adjustment Valiantzas (2006) eqn 40
+    eps= 0.34 - 0.14*sqrt(ea);                   //net emissivity Valiantzas (2006) eqn 41
 
     return -f*eps*STEFAN_BOLTZ*pow(F->temp_ave+ZERO_CELSIUS,4.0);
   }
@@ -234,11 +234,11 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double cloud_corr=0.2+0.8*min(max((F->SW_radia/F->SW_radia_unc - 0.25) / 0.5,1.0),0.0);
     return STEFAN_BOLTZ*emmissivity*cloud_corr*(emiss_eff*pow(Tair,4)-pow(Tair,4));
   }
-  */  
+  */
   //--------------------------------------------------------
    /*
    case (LW_RAD_BRUNT):
-   { //from CRHM (Pomeroy, 2007) netall routine 
+   { //from CRHM (Pomeroy, 2007) netall routine
      // based upon Brunt (1944), Physical and dynamical meteorology: Cambridge Univ. Press
      double LW_net = -0.85;
      double emiss=0.97;
@@ -249,7 +249,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
         LW_incoming = 0.85;
      }
      return LW_net;
-   } 
+   }
   */
   /*case(LW_RAD_SWAT):
     {
@@ -293,8 +293,8 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
   {
     return 0.355 + 0.68 * (1 - F->cloud_cover);
   }
-  case(SW_CLOUD_CORR_ANNANDALE): 
-  // Annandale et al (2002), Software for missing data error analysis of Penman-Monteith 
+  case(SW_CLOUD_CORR_ANNANDALE):
+  // Annandale et al (2002), Software for missing data error analysis of Penman-Monteith
   // reference evapotranspiration, Irrigation Science 21(2),pp57-67
   {
     double kRs=0.16;   // interior = ~0.16/coastal~=0.19
@@ -391,7 +391,7 @@ double CRadiation::DayLength(const double lat,    //latitude (in radians)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief  function thatdetermines solar noon, in days, on a surface with arbitrary slope/aspect 
+/// \brief  function thatdetermines solar noon, in days, on a surface with arbitrary slope/aspect
 /// \ref from Dingman E-22 \cite Dingman1994
 /// \param lat [in] Latitude [rad]
 /// \param slope [in] slope [rad]
@@ -406,13 +406,13 @@ double CRadiation::CalculateSolarNoon(const double &latrad,
   double denom=cos(slope)*cos(latrad) - sin(slope)*sin(latrad)*cos(aspect);
   if (denom==0.0){denom = REAL_SMALL;}
   solar_noon = -atan(sin(slope)*sin(-aspect)/denom)/EARTH_ANG_VEL; // Dingman eqn E-22
-  if (solar_noon> 0.5){solar_noon-=1.0;} 
+  if (solar_noon> 0.5){solar_noon-=1.0;}
   if (solar_noon<-0.5){solar_noon+=1.0;}
 
   return solar_noon;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief  function thatdetermines solar noon, in days, on a surface with arbitrary slope/aspect 
+/// \brief  function thatdetermines solar noon, in days, on a surface with arbitrary slope/aspect
 /// \ref from Dingman E-22 \cite Dingman1994
 ///
 double CRadiation::CalculateEquivLatitude(const double &latrad,
@@ -473,7 +473,7 @@ double CRadiation::RadCorr (const double declin,     //declination, radians
                             const double t_sunrise,  //time of sunrise, days before solar noon
                             const double t_sunset,   //time of sunrise, days after solar noon,
                             const double t_sol,      //time of day w.r.t. solar noon, days (not adjusted for slope)
-                            const bool   avg_daily)  
+                            const bool   avg_daily)
 {
   if(t_sunset<=t_sunrise){return 0.0;}
   if (avg_daily)
@@ -553,7 +553,7 @@ double CRadiation::CalcETRadiation( const double latrad,     //latitude in radia
   t_set2 =solar_noon-1.0+half_day;
   if      (t_rise2<t_set ){t_set2 =t_set; fnoon=solar_noon+1.0; TwoDawns=true;}
   else if (t_set2 >t_rise){t_rise2=t_rise;fnoon=solar_noon-1.0; TwoDawns=true;}
-  
+
   if (TwoDawns){
     //cout<<"TwoDawns: "<<t_set1-t_rise1<<" "<<t_set2-t_rise2<<" slope, lat"<< slope*RADIANS_TO_DEGREES<<" "<<latrad*RADIANS_TO_DEGREES<<endl;
     if (t_rise2>t_set2) {t_rise2=t_set2=0.0;}//Correct for those endless nights...
@@ -584,8 +584,8 @@ double CRadiation::CalcETRadiation( const double latrad,     //latitude in radia
 double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radians
                                     const double &aspect,     //aspect in radians clockwise from south
                                     const double &declin,     //solar declination in radians
-                                    const double &ecc,        //eccentricity correction [-] 
-                                    const double &slope,      //in radians 
+                                    const double &ecc,        //eccentricity correction [-]
+                                    const double &slope,      //in radians
                                     const double &t1,         //starttime of timeestep w.r.t. solar noon [days] [-0.5..0.5]
                                     const double &t2,         //endtime of timeestep w.r.t. solar noon [days] [-0.5..0.5] (must be > t1)
                                     const bool   avg_daily)
@@ -593,8 +593,8 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   double a, b, c;
   double ws1,ws2;        //sunrise and sunset on horizontal surface [rad]
   double noon_cos_theta; //cos of azimuth at solar noon [-]
-  
-  double revasp=-(aspect+PI);  if(revasp>2*PI){revasp-=2*PI;}//revised aspect 
+
+  double revasp=-(aspect+PI);  if(revasp>2*PI){revasp-=2*PI;}//revised aspect
 
   double cosslope =cos(slope),   sinslope=sin(slope);
   double cosdeclin=cos(declin), sindeclin=sin(declin);
@@ -620,13 +620,13 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
 
   if(latrad>0){// (N. hemisphere)
     if      (declin + latrad > PI / 2.0)       { ws1 = -PI;  ws2 = PI; }//sun never setting
-    else if (fabs(declin - latrad) > PI / 2.0) { ws1 = 0.0;  ws2 = 0.0;}//sun never rising 
+    else if (fabs(declin - latrad) > PI / 2.0) { ws1 = 0.0;  ws2 = 0.0;}//sun never rising
   }
   else if(latrad<0){//(S. hemisphere)
-    if      (declin + latrad < -PI / 2.0)      { ws1 = -PI;  ws2 = PI; }//sun never setting 
-    else if (fabs(declin - latrad) < -PI / 2.0){ ws1 = 0;    ws2 = 0;  }//sun never rising 
+    if      (declin + latrad < -PI / 2.0)      { ws1 = -PI;  ws2 = PI; }//sun never setting
+    else if (fabs(declin - latrad) < -PI / 2.0){ ws1 = 0;    ws2 = 0;  }//sun never rising
   }
-   
+
   //Step A.2. Find beginning integration limit
   //=================================================================================
   double sin_w1,w1,w1x,cos_w1,cos_w1x,cos_ws1,w1_24(0.0);
@@ -647,7 +647,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   else if (w1x <= ws1)                               {w1_24 = ws1;}
   else if (w1x > ws1)                                {w1_24 = w1x;}
 
-  w1_24 = max(w1_24, ws1);                           //Sunrise [rad], Step A.2.vi 
+  w1_24 = max(w1_24, ws1);                           //Sunrise [rad], Step A.2.vi
 
   //Step A.3. Find end integration limit
   //=================================================================================
@@ -661,7 +661,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   cos_w2  = -a + b * cos(w2 ) + c * sin(w2 );        //Eqn 14
   cos_w2x = -a + b * cos(w2x) + c * sin(w2x);        //Eqn 14
 
-  //Apply conditions in A.3.iv and A.3.v      
+  //Apply conditions in A.3.iv and A.3.v
   cos_ws2 = -a + b * cos(ws2) + c * sin(ws2) ;         //Eqn 14
   if      ((cos_ws2 <= cos_w2) && (cos_w2 < 0.001)) {w2_24 = w2;}
   else if (cos_w2x > 0.001)                         {w2_24 = ws2;}
@@ -677,20 +677,20 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   double cos_theta(0.0); //average cosine of azimuth during interval from w1_24 to w2_24
   bool doublesunset(false);
 
-  //Check for double sunrise/double sunset 
+  //Check for double sunrise/double sunset
   //if cos theta is negative at noon potential that double sunrise/sunset occurs
   //=================================================================================
   double cos_theta1,cos_theta2;
-  if(noon_cos_theta < 0) 
+  if(noon_cos_theta < 0)
   {
     double sinA,sinB,AA,BB,w2_24b,w1_24b,cos_w2b,cos_w1b;
     // Double sunrise/double sunset can occur
     sinA = (a * c + b * sqrt(quad)) / (b*b + c*c);   //Eqn 44a
     sinA = max(-1.0,sinA);                           //Limit to between -1 and 1
-    sinA = min( 1.0,sinA);                                         
+    sinA = min( 1.0,sinA);
     sinB = (a * c - b * sqrt(quad)) / (b*b + c*c);   //Eqn 44b
     sinB = max(-1.0,sinB);                             //Limit to between -1 and 1
-    sinB = min( 1.0,sinB);                          
+    sinB = min( 1.0,sinB);
     AA = asin(sinA);
     BB = asin(sinB);
     w2_24b = min(AA,BB);                             //Eqn 45
@@ -706,42 +706,42 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
       w1_24b = PI - w1_24b;                          //Eqn 48b
     }
 
-    //Confirm if double sunrise/sunset occurs                                
+    //Confirm if double sunrise/sunset occurs
     double X;
     //From equation 49a/49 b. Does not match what is siad in point g but makes more sense.
-    if((w2_24b >= w1_24) && (w1_24b <= w2_24)) 
+    if((w2_24b >= w1_24) && (w1_24b <= w2_24))
     {
 
-      X = sin(declin) * sin(latrad) * cos(slope) * (w1_24b - w2_24b) 
-        - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w1_24b - w2_24b) 
-        + cos(declin) * cos(latrad) * cos(slope) * (sin(w1_24b) - sin(w2_24b)) 
-        + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w1_24b) - sin(w2_24b)) 
+      X = sin(declin) * sin(latrad) * cos(slope) * (w1_24b - w2_24b)
+        - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w1_24b - w2_24b)
+        + cos(declin) * cos(latrad) * cos(slope) * (sin(w1_24b) - sin(w2_24b))
+        + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w1_24b) - sin(w2_24b))
         - cos(declin) * sin(slope) * sin(revasp) * (cos(w1_24b) - cos(w2_24b));
 
       if(X < 0) {
         //Dbl sunrise/sunset occurs
 
         if(!avg_daily){
-          w1_24 =max(w1_24,t1*2.0*PI); 
+          w1_24 =max(w1_24,t1*2.0*PI);
           w2_24b=min(w2_24b,t2*2.0*PI);
           if(w2_24b<w1_24){w2_24b=w1_24;}  //nighttime during this interval
         }
 
-        cos_theta1 = sin(declin) * sin(latrad) * cos(slope) * (w2_24b - w1_24) 
-        - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w2_24b - w1_24) 
-        + cos(declin) * cos(latrad) * cos(slope) * (sin(w2_24b) - sin(w1_24)) 
-        + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w2_24b) - sin(w1_24)) 
+        cos_theta1 = sin(declin) * sin(latrad) * cos(slope) * (w2_24b - w1_24)
+        - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w2_24b - w1_24)
+        + cos(declin) * cos(latrad) * cos(slope) * (sin(w2_24b) - sin(w1_24))
+        + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w2_24b) - sin(w1_24))
         - cos(declin) * sin(slope) * sin(revasp) * (cos(w2_24b) - cos(w1_24)); // Eqn 5 - integrate between w1_24 and w2_24b
 
         if(!avg_daily){
-          w1_24b=max(w1_24b,t1*2.0*PI); 
+          w1_24b=max(w1_24b,t1*2.0*PI);
           w2_24 =min(w2_24,t2*2.0*PI);
           if(w2_24<w1_24b){w2_24=w1_24b;} //nighttime during this interval
         }
-        cos_theta2 = sin(declin) * sin(latrad) * cos(slope) * (w2_24 - w1_24b) 
-        - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w2_24 - w1_24b) 
-        + cos(declin) * cos(latrad) * cos(slope) * (sin(w2_24) - sin(w1_24b)) 
-        + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w2_24) - sin(w1_24b)) 
+        cos_theta2 = sin(declin) * sin(latrad) * cos(slope) * (w2_24 - w1_24b)
+        - sin(declin) * cos(latrad) * sin(slope) * cos(revasp) * (w2_24 - w1_24b)
+        + cos(declin) * cos(latrad) * cos(slope) * (sin(w2_24) - sin(w1_24b))
+        + cos(declin) * sin(latrad) * sin(slope) * cos(revasp) * (sin(w2_24) - sin(w1_24b))
         - cos(declin) * sin(slope) * sin(revasp) * (cos(w2_24) - cos(w1_24b)); // Eqn 5 - integrate between w1_24b and w2_24
 
         doublesunset=true;
@@ -767,7 +767,7 @@ double CRadiation::CalcETRadiation2(const double &latrad,     //latitude in radi
   }
 
   return max(0.0,SOLAR_CONSTANT*cos_theta*ecc)/2.0/PI/(t2-t1);
- 
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates scattering transmissivity
@@ -937,7 +937,7 @@ double CRadiation::OpticalAirMass(const double latrad,//in radians
 /// \return Double clear sky solar radiation
 //
 double CRadiation::ClearSkySolarRadiation(const double &julian_day,
-                                          const double &tstep, 
+                                          const double &tstep,
                                           const double &latrad,    //[rad]
                                           const double &lateq,     //[rad]
                                           const double &slope,     //[rad]
@@ -1044,6 +1044,3 @@ double CRadiation::UBC_SolarRadiation(const double latrad,   //[rad]
 
   return solar_rad;
 }
-
-
-

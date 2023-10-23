@@ -55,7 +55,7 @@ public: /*-------------------------------------------------------*/
   // General Methods
   void   UpdateRiverLevelsBySB(const int p, const CSubBasin *pBasin) const;
   void   UpdateRiverFlux      () const;
-  double CalcRiverFlowBySB    (const int p) const; 
+  double CalcRiverFlowBySB    (const int p) const;
 };
 
 #endif

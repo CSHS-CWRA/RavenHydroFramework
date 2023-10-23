@@ -17,7 +17,7 @@ public:
   enum ts_type {TS_REGULAR, TS_IRREGULAR};
 
 private:/*------------------------------------------------------*/
-  ts_type   _type;        ///< type - regular or irregular 
+  ts_type   _type;        ///< type - regular or irregular
   string    _name;        ///< name of time series (used only for error messages)
   long      _loc_ID;      ///< location ID (stores additional info, like HRU or SB ID for observation data)
   int       _constit_ind; ///< constituent index, if a concentration/temperature observation

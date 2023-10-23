@@ -275,7 +275,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
     //ReservoirStages.csv
     //--------------------------------------------------------------
-    if(Options.write_reservoir) 
+    if(Options.write_reservoir)
     {
       tmpFilename=FilenamePrepare("ReservoirStages.csv",Options);
       _RESSTAGE.open(tmpFilename.c_str());
@@ -306,7 +306,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
 
     //ReservoirMassBalance.csv
     //--------------------------------------------------------------
-    if (Options.write_reservoirMB) 
+    if (Options.write_reservoirMB)
     {
       ofstream RES_MB;
       string name;
@@ -642,8 +642,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
   if ((tt.model_time==0) && (Options.suppressICs)){return;}
 
-  if ((_pEnsemble != NULL) && (_pEnsemble->DontWriteOutput()) 
-    && (tt.model_time>Options.assimilation_start)) { return; } //specific to EnKF
+  if ((_pEnsemble != NULL) && (_pEnsemble->DontWriteOutput())) { return; } //specific to EnKF
 
   //converts the 'write every x timesteps' into a 'write at time y' value
   output_int = Options.output_interval * Options.timestep;
@@ -915,7 +914,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         _LEVELS<<endl;
       }
     }
-    
+
 
 
     //ReservoirStages.csv
@@ -955,7 +954,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
       if((Options.period_starting) && (t==0)) {}//don't write anything at time zero
       else {
         _DEMANDS<< t<<","<<thisdate<<","<<thishour;
-        for(int p=0;p<_nSubBasins;p++) 
+        for(int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
           if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand()))
@@ -990,7 +989,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         for(int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
-          if((pSB->IsGauged()) &&  (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) 
+          if((pSB->IsGauged()) &&  (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
           {
             string name,constraint_str;
             if(pSB->GetName()==""){ name=to_string(pSB->GetID()); }
@@ -1322,7 +1321,7 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
     }
     BAS.close();
   }
-  
+
   // rating_curves.csv
   //--------------------------------------------------------------
   if(Options.write_channels){
@@ -1339,7 +1338,7 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
 //
 void CModel::WriteSimpleOutput(const optStruct &Options, const time_struct &tt)
 {
-  if (Options.write_simpleout) 
+  if (Options.write_simpleout)
   {
     string thisdate=tt.date_string;                   //refers to date and time at START of time step
     string thishour=DecDaysToHours(tt.julian_day);
@@ -1348,7 +1347,7 @@ void CModel::WriteSimpleOutput(const optStruct &Options, const time_struct &tt)
     force_struct *pFave;
     force_struct faveStruct = GetAverageForcings();
     pFave = &faveStruct;
-    
+
     ofstream _SIMPLE;
     string tmpFilename=FilenamePrepare("simple_output.csv",Options);
     _SIMPLE.open(tmpFilename.c_str());
@@ -1496,7 +1495,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
         CSubBasin *pBasin=GetSubBasinByID(_pObservedTS[i]->GetLocID());
         if ((pBasin==NULL) || (!pBasin->IsEnabled())){skip=true;}
       }
-      
+
       if (!skip)
       {
 
@@ -1508,7 +1507,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       }
     }
     //compute aggregate diagnostics
-    for (int ii = 0; ii < _nAggDiagnostics; ii++) 
+    for (int ii = 0; ii < _nAggDiagnostics; ii++)
     {
       int            kk  =_pAggDiagnostics[ii]->kk;
       string agg_datatype=_pAggDiagnostics[ii]->datatype;
@@ -1522,7 +1521,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
         case AGG_MEDIAN:                name+="Median";  break;
       }
       //name+=AggStatToString(_pAggDiagnostics[ii]->aggtype); //replace above with this
-      name+="_"+agg_datatype; 
+      name+="_"+agg_datatype;
       name+="_"+_pDiagPeriods[d]->GetName();
       if (kk!=DOESNT_EXIST){
         if (agg_datatype=="HYDROGRAPH"){name+="_"+_pSBGroups[kk]->GetName();} // \todo[funct]- handle more datatypes
@@ -1535,7 +1534,7 @@ void CModel::RunDiagnostics(const optStruct &Options)
       DIAG<<endl;
     }
   }
- 
+
   DIAG.close();
 
   //reset for ensemble mode
@@ -1545,13 +1544,13 @@ void CModel::RunDiagnostics(const optStruct &Options)
   }
 }
 
- 
+
 //////////////////////////////////////////////////////////////////
 /// \brief run model diagnostics (at end of simulation)
 ///
 /// \param &Options [in] global model options
 //
-double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &starttime, const double &endtime, const comparison compare,const double &thresh, const optStruct &Options) 
+double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &starttime, const double &endtime, const comparison compare,const double &thresh, const optStruct &Options)
 {
   bool skip;
   double val;
@@ -1584,11 +1583,11 @@ double CModel::CalculateAggDiagnostic(const int ii, const int j, const double &s
     else{ //HRU-linked
       if ((kk!=DOESNT_EXIST) && (!IsInHRUGroup(_pObservedTS[i]->GetLocID(),_pHRUGroups[kk]->GetName()))){skip=true;}
     }
-    
+
     if (!skip)
     {
       val=_pDiagnostics[j]->CalculateDiagnostic(_pModeledTS[i],_pObservedTS[i],_pObsWeightTS[i],starttime,endtime,compare, thresh,Options);
-      
+
       if      (type==AGG_AVERAGE){stat+=val; N++;}
       else if (type==AGG_MAXIMUM){upperswap(stat,val);N++;}
       else if (type==AGG_MINIMUM){lowerswap(stat,val);N++;}
@@ -1843,7 +1842,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
 
     varid_qsim= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_sim","Simulated outflows","m**3 s**-1");
     varid_qobs= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_obs","Observed outflows" ,"m**3 s**-1");
-    varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Observed inflows"  ,"m**3 s**-1");
+    varid_qin = NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_in" ,"Simulated reservoir inflows"  ,"m**3 s**-1");
     if (Options.write_localflow){
     varid_qloc= NetCDFAddMetadata2D(_HYDRO_ncid, time_dimid,nbasins_dimid,"q_loc" ,"Local inflow contribution"  ,"m**3 s**-1");
     }
@@ -2034,7 +2033,7 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     tmpFilename = FilenamePrepare("ReservoirMassBalance.nc",Options);
     retval = nc_create(tmpFilename.c_str(),NC_CLOBBER|NC_NETCDF4,&ncid);  HandleNetCDFErrors(retval);
     _RESMB_ncid    = ncid;
-    
+
     WriteNetCDFGlobalAttributes(_RESMB_ncid,Options,"Standard Output");
 
     // ----------------------------------------------------------
@@ -2200,7 +2199,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
   double current_prec[1];       // precipitation of current time step
   size_t time_ind2;
   current_time[0] = tt.model_time*HR_PER_DAY;
-  current_time[0]=RoundToNearestMinute(current_time[0]); 
+  current_time[0]=RoundToNearestMinute(current_time[0]);
 
   time_index [0] = int(rvn_round(tt.model_time/Options.timestep));   // element of NetCDF array that will be written
   time_ind2       =int(rvn_round(tt.model_time/Options.timestep));
@@ -2253,7 +2252,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
           }
         }
         outflow_loc[iSim] =_pSubBasins[p]->GetIntegratedLocalOutflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
-        
+
         inflow_obs[iSim] =NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
           inflow_obs[iSim] = _pSubBasins[p]->GetIntegratedReservoirInflow(Options.timestep)/(Options.timestep*SEC_PER_DAY);
@@ -2278,7 +2277,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
           }
         }
         outflow_loc[iSim] =_pSubBasins[p]->GetLocalOutflowRate();
-        
+
         inflow_obs[iSim] =NETCDF_BLANK_VALUE;
         if (_pSubBasins[p]->GetReservoir() != NULL){
           inflow_obs[iSim] = _pSubBasins[p]->GetReservoirInflow();
@@ -2351,7 +2350,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
     for(int p=0;p<_nSubBasins;p++)
     {
-      if(_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL)) 
+      if(_pSubBasins[p]->IsGauged() && (_pSubBasins[p]->IsEnabled()) && (_pSubBasins[p]->GetReservoir()!=NULL))
       {
         stage_sim[iSim] = _pSubBasins[p]->GetReservoir()->GetResStage();
         stage_obs[iSim] = NETCDF_BLANK_VALUE;
@@ -2365,7 +2364,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         iSim++;
       }
     }
-    
+
     // write new time step
     retval = nc_inq_varid      (_RESSTAGE_ncid,"time",&time_id);                              HandleNetCDFErrors(retval);
     retval = nc_put_vara_double(_RESSTAGE_ncid,time_id,time_index,count1,&current_time[0]);   HandleNetCDFErrors(retval);
@@ -2488,7 +2487,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
 
     int    this_id;
 
-    // (a) count how many values need to be written 
+    // (a) count how many values need to be written
     int iSim,nSim; // current and total # of sub-basins with simulated stages
     nSim = 0;
     for(int p=0;p<_nSubBasins;p++) {
@@ -2496,7 +2495,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     }
 
     // (b) allocate memory if necessary
-    double* stage=NULL;   
+    double* stage=NULL;
     double* inflow=NULL;
     double* outflow=NULL;
     double* evap=NULL;
@@ -2525,7 +2524,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     for(int p=0;p<_nSubBasins;p++)
     {
       CSubBasin *pSB=_pSubBasins[p];
-      if(pSB->IsGauged() && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) 
+      if(pSB->IsGauged() && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL))
       {
         stage  [iSim]=pSB->GetReservoir()->GetResStage();
         inflow [iSim]=pSB->GetIntegratedReservoirInflow(Options.timestep);//m3
@@ -2544,7 +2543,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
         iSim++;
       }
     }
-    
+
     // write new time step
     retval = nc_inq_varid      (_RESMB_ncid,"time",&time_id);                              HandleNetCDFErrors(retval);
     retval = nc_put_vara_double(_RESMB_ncid,time_id,time_index,count1,&current_time[0]);   HandleNetCDFErrors(retval);
@@ -2580,7 +2579,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       //retval = nc_inq_varid(_RESMB_ncid,"constraint",&this_id);                      HandleNetCDFErrors(retval);
       //retval = nc_put_vara_double(_RESMB_ncid,this_id,start2,count2,&constraint[0]); HandleNetCDFErrors(retval);
     }
-    delete [] stage;   
+    delete [] stage;
     delete [] inflow;
     delete [] outflow;
     delete [] evap;
@@ -2629,11 +2628,11 @@ string GetDirectoryName(const string &fname)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns file extension given filename 
+/// \brief returns file extension given filename
 ///
 /// \param filename [in] , e.g., C:\temp\thisfile.txt returns txt
 //
-string GetFileExtension(string filename) 
+string GetFileExtension(string filename)
 {
   if (filename==""){return ""; }
   return filename.substr(filename.find_last_of(".")+ 1);
@@ -2754,7 +2753,7 @@ int NetCDFAddMetadata2D(const int fileid,const int time_dimid,int nbasins_dimid,
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct &Options,const string descript)
 {
   ExitGracefullyIf(out_ncid==-9,"WriteNetCDFGlobalAttributes: netCDF file not open",RUNTIME_ERR);
-  
+
 #ifdef _RVNETCDF_
   string att,val;
   int retval(0);
@@ -2800,7 +2799,7 @@ void AddSingleValueToNetCDF(const int out_ncid,const string &shortname,const siz
 /// \param varid [in] ID of existing basin attribute
 /// \param is_res [in] true if this is a reservoir file and only reservoir basins should be included
 //
-void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct& Options) 
+void WriteNetCDFBasinList(const int ncid,const int varid,const CModel* pModel,bool is_res,const optStruct& Options)
 {
 #ifdef _RVNETCDF_
   int ibasin = 0;

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
@@ -57,7 +57,7 @@ double CSoilClass::CalcSoilPotential( const double &sat_liq,
                                       const double &sat_ice,
                                       const soil_struct &S)
 {
-  static double psi;
+  double psi;
 
   psi=S.air_entry_pressure*pow(sat_liq,-S.clapp_b);//Brooks-Corey
 
@@ -68,5 +68,3 @@ double CSoilClass::CalcSoilPotential( const double &sat_liq,
 
   return psi;
 }
-
-

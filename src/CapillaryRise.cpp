@@ -161,7 +161,7 @@ void   CmvCapillaryRise::ApplyConstraints( const double     *storage,
                                            double     *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
-  
+
   double min_stor=g_min_storage;
 
   //cant remove more than is there

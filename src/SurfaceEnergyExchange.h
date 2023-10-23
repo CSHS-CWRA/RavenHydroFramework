@@ -20,7 +20,7 @@ class CmvPartitionEnergy : public CHydroProcessABC
 private:/*------------------------------------------------------*/
 
   const CTransportModel *_pTransModel;
-  
+
   double GetStorTemp(int iEnth,int iWatStor,const double &Tair,const double *state_vars) const;
 
 public:/*-------------------------------------------------------*/

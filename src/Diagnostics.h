@@ -42,9 +42,9 @@ enum diag_type {
   DIAG_YEARS_OF_RECORD,
   DIAG_UNRECOGNIZED
 };
-struct agg_diag 
+struct agg_diag
 {
-  agg_stat aggtype;  //aggregation type (supports AVERAGE/MEDIAN/MIN/MAX) 
+  agg_stat aggtype;  //aggregation type (supports AVERAGE/MEDIAN/MIN/MAX)
   string   datatype; //observation datatype string e.g., "HYDROGRAPH"
   int      kk;       //< group index (or DOESNT_EXIST, if applied to all)
 };
@@ -68,9 +68,9 @@ public:/*------------------------------------------------------*/
   string    GetName() const;
   diag_type GetType() const;
 
-  double CalculateDiagnostic(CTimeSeriesABC  *pTSmod, 
-                             CTimeSeriesABC  *pTSObs, 
-                             CTimeSeriesABC  *pTSWeights, 
+  double CalculateDiagnostic(CTimeSeriesABC  *pTSmod,
+                             CTimeSeriesABC  *pTSObs,
+                             CTimeSeriesABC  *pTSWeights,
                              const double    &starttime,
                              const double    &endtime,
                              comparison       compare,

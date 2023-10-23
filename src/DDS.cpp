@@ -7,10 +7,10 @@ Copyright (c) 2008-2023 the Raven Development Team
 //external function declarations
 double UniformRandom();
 double GaussRandom();
-bool   ParseInitialConditionsFile(CModel *&pModel,const optStruct &Options);
+bool   ParseInitialConditions(CModel *&pModel,const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
-/// \brief DDS Ensemble Construcutor 
+/// \brief DDS Ensemble Construcutor
 /// \param num_members [in] number of DDS iterations
 /// \param &Options [out] Global model options information
 //
@@ -31,7 +31,7 @@ CDDSEnsemble::CDDSEnsemble(const int num_members,const optStruct &Options)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief DDS Ensemble Destrucutor 
+/// \brief DDS Ensemble Destrucutor
 //
 CDDSEnsemble::~CDDSEnsemble()
 {
@@ -143,7 +143,7 @@ double CDDSEnsemble::PerturbParam(const double &x_best, //current best decision 
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief updates model - called PRIOR to each model ensemble run 
+/// \brief updates model - called PRIOR to each model ensemble run
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 //
@@ -160,7 +160,7 @@ void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   Options.run_name  =_aRunNames[e];
 
   //- Update parameter values ----------------------------------
-  // Determine variable selected as neighbour 
+  // Determine variable selected as neighbour
   double Pn=1.0-log(double(e))/log(double(_nMembers));
   int dvn_count=0;
 
@@ -181,7 +181,7 @@ void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
   }
   if(dvn_count==0) {
     u=UniformRandom();
-    int dv=(int)(ceil((double)(_nParamDists)*u))-1; // index for one DV 
+    int dv=(int)(ceil((double)(_nParamDists)*u))-1; // index for one DV
     _TestParams[dv]=PerturbParam(_BestParams[dv],_pParamDists[dv]->distpar[0],_pParamDists[dv]->distpar[1]);
   }
 
@@ -194,14 +194,15 @@ void CDDSEnsemble::UpdateModel(CModel *pModel,optStruct &Options,const int e)
                             _TestParams[k]);
   }
   //- Re-read initial conditions to update state variables----
-  if(!ParseInitialConditionsFile(pModel,Options)) {
+  if(!ParseInitialConditions(pModel,Options)) {
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);
   }
+  pModel->CalculateInitialWaterStorage(Options);
 
   //The model is run following this routine call...
 }
 //////////////////////////////////////////////////////////////////
-/// \brief called AFTER each model ensemble run 
+/// \brief called AFTER each model ensemble run
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 /// \param e [out] ensembe member index

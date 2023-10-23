@@ -8,8 +8,25 @@ repos:
     - id: check-json
     - id: pretty-format-json
       args: ['--autofix', '--no-ensure-ascii', '--no-sort-keys']
+    - id: trailing-whitespace
+      exclude: benchmarking
+    - id: end-of-file-fixer
+      exclude: benchmarking
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    hooks:
+#      - id: clang-format
+#        args: [--style=Google]
+#      - id: clang-tidy
+#      - id: oclint
+#      - id: uncrustify
+#      - id: cppcheck
+#      - id: cpplint
+      - id: include-what-you-use
+
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.23.3
+    rev: 0.27.0
     hooks:
       - id: check-github-workflows
   - repo: meta
@@ -26,5 +43,5 @@ ci:
   autoupdate_branch: ''
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
   autoupdate_schedule: quarterly
-  skip: [ ]
+  skip: [ include-what-you-use ]
   submodules: false

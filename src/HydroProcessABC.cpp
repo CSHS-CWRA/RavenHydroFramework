@@ -100,8 +100,6 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype,
         ExitGracefully("CHydroProcessABC::Constructor:invalid state variable index",BAD_DATA);}
     }
   }
-  ExitGracefullyIf(pModel==NULL,
-                   "CHydroProcessABC::Constructor:no model associated with hydrologic process",BAD_DATA);
 
   _pConditions=NULL;
   _nConditions=0;
@@ -258,12 +256,12 @@ void CHydroProcessABC::AddCondition( condition_basis basis,
     ExitGracefully("CHydroProcessABC::AddCondition: adding NULL condition",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
-/// \brief redefines state variable index of recieving compartment 
+/// \brief redefines state variable index of receiving compartment
 ///
-/// \param toSVindex [in] state variable index of original storage compartment 
+/// \param toSVindex [in] state variable index of original storage compartment
 /// \param newToSVindex [in] state variable index of new storage compartment (assumed valid)
 //
-void CHydroProcessABC::Redirect(const int toSVindex,const int newToSVindex) 
+void CHydroProcessABC::Redirect(const int toSVindex,const int newToSVindex)
 {
   bool found=false;
   for(int q=0;q<_nConnections;q++)

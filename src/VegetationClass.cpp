@@ -140,7 +140,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   V.max_LAI        =Vtmp.max_LAI;
   V.max_leaf_cond  =Vtmp.max_leaf_cond;
   V.max_height     =Vtmp.max_height;
-  
+
   //Standard vegetation properties
   //----------------------------------------------------------------------------
   //Skyview extinction coefficient
@@ -229,7 +229,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
     V.PET_veg_corr=1.0;
     //no warning - default is one
   }
-    
+
 
   double max_LAI=V.max_LAI;
   double max_SAI=V.SAI_ht_ratio*V.max_height;
@@ -561,5 +561,3 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
     }
   }
 }
-
-

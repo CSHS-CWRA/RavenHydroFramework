@@ -6,7 +6,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 //#include <random>
 //see http://anadoxin.org/blog/c-shooting-yourself-in-the-foot-4.html
 
-bool ParseInitialConditionsFile(CModel *&pModel,const optStruct &Options);
+bool ParseInitialConditions(CModel *&pModel,const optStruct &Options);
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns uniformly distributed random variable between 0 and 1
@@ -14,7 +14,7 @@ bool ParseInitialConditionsFile(CModel *&pModel,const optStruct &Options);
 //
 double UniformRandom()
 {
-  return (double)(rand())/RAND_MAX; 
+  return (double)(rand())/RAND_MAX;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns normally distributed random variable with mean of 0, variance=1
@@ -55,7 +55,7 @@ CEnsemble::CEnsemble(const int num_members,const optStruct &Options)
   {
     _aOutputDirs[e]=Options.main_output_dir;
     _aRunNames  [e]=Options.run_name;
-    _aSolutionFiles[e]=""; //default is that Raven finds solution files - either Options.rvc_filename OR EnKF output results 
+    _aSolutionFiles[e]=""; //default is that Raven finds solution files - either Options.rvc_filename OR EnKF output results
   }
 
   _disable_output=false;
@@ -104,7 +104,7 @@ bool   CEnsemble::DontWriteOutput() const {
 /// \brief sets random seed
 /// \param [in] random seed
 //
-void CEnsemble::SetRandomSeed(const unsigned int seed) 
+void CEnsemble::SetRandomSeed(const unsigned int seed)
 {
   srand(seed);
 }
@@ -112,7 +112,7 @@ void CEnsemble::SetRandomSeed(const unsigned int seed)
 /// \brief sets output directory for ensemble member output
 /// \param OutDirString [in] string with or without '*' random card. If * is present, will be replaced with ensemble ID
 //
-void CEnsemble::SetOutputDirectory(const string OutDirString) 
+void CEnsemble::SetOutputDirectory(const string OutDirString)
 {
   for(int e=0;e<_nMembers;e++)
   {
@@ -125,7 +125,7 @@ void CEnsemble::SetOutputDirectory(const string OutDirString)
 /// \brief sets run name for ensemble members
 /// \param RunNameString [in] string with or without '*' random card. If * is present, will be replaced with ensemble ID
 //
-void CEnsemble::SetRunNames(const string RunNameString) 
+void CEnsemble::SetRunNames(const string RunNameString)
 {
   for(int e=0;e<_nMembers;e++)
   {
@@ -137,7 +137,7 @@ void CEnsemble::SetRunNames(const string RunNameString)
 /// \brief sets solution file names for each ensemble member
 /// \param SolFilesString [in] string with or without '*' random card. If * is present, will be replaced with ensemble ID
 //
-void CEnsemble::SetSolutionFiles(const string SolFilesString) 
+void CEnsemble::SetSolutionFiles(const string SolFilesString)
 {
   for(int e=0;e<_nMembers;e++)
   {
@@ -149,17 +149,17 @@ void CEnsemble::SetSolutionFiles(const string SolFilesString)
 /// \brief initializes ensemble
 /// \param &Options [out] Global model options information
 //
-void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options) 
+void CEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 {
   //default does nothing - abstract base class
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief updates model - called prior to each model ensemble run 
+/// \brief updates model - called prior to each model ensemble run
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 //
-void CEnsemble::UpdateModel(CModel *pModel,optStruct &Options, int e) 
+void CEnsemble::UpdateModel(CModel *pModel,optStruct &Options, int e)
 {
   g_current_e=e;
   //default does nothing - abstract base class
@@ -172,11 +172,11 @@ void CEnsemble::UpdateModel(CModel *pModel,optStruct &Options, int e)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////
-/// \brief Monte Carlo Ensemble Construcutor 
+/// \brief Monte Carlo Ensemble Construcutor
 /// \param num_members [in] number of MC ensemble realizations
 /// \param &Options [out] Global model options information
 //
-CMonteCarloEnsemble::CMonteCarloEnsemble(const int num_members,const optStruct &Options) 
+CMonteCarloEnsemble::CMonteCarloEnsemble(const int num_members,const optStruct &Options)
                     :CEnsemble(num_members,Options)
 {
   _type=ENSEMBLE_MONTECARLO;
@@ -184,9 +184,9 @@ CMonteCarloEnsemble::CMonteCarloEnsemble(const int num_members,const optStruct &
   _pParamDists=NULL;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Monte Carlo Ensemble Destrucutor 
+/// \brief Monte Carlo Ensemble Destrucutor
 //
-CMonteCarloEnsemble::~CMonteCarloEnsemble() 
+CMonteCarloEnsemble::~CMonteCarloEnsemble()
 {
   for(int i=0;i<_nParamDists;i++) {
     delete _pParamDists[i];
@@ -197,7 +197,7 @@ CMonteCarloEnsemble::~CMonteCarloEnsemble()
 /// \brief Adds parameter distribution to MC setup
 /// \param dist [in] pointer to parameter distribution structure for specified parameter
 //
-void CMonteCarloEnsemble::AddParamDist(const param_dist *dist) 
+void CMonteCarloEnsemble::AddParamDist(const param_dist *dist)
 {
   if(!DynArrayAppend((void**&)(_pParamDists),(void*)(dist),_nParamDists)) {
     ExitGracefully("CMonteCarloEnsemble::AddParamDist: adding NULL distribution",BAD_DATA);
@@ -223,11 +223,11 @@ void CMonteCarloEnsemble::Initialize(const CModel* pModel,const optStruct &Optio
   MCOUT.close();
 }
 //////////////////////////////////////////////////////////////////
-/// \brief updates model - called prior to each model ensemble run 
+/// \brief updates model - called prior to each model ensemble run
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 //
-void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const int e) 
+void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const int e)
 {
   CEnsemble::UpdateModel(pModel,Options,e);
   ExitGracefullyIf(e>=_nMembers,"CMonteCarloEnsemble::UpdateMode: invalid ensemble member index",RUNTIME_ERR);
@@ -243,7 +243,7 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
   MCOUT<<e+1<<", ";
 
   double val;
-  for(int i=0;i<_nParamDists;i++) 
+  for(int i=0;i<_nParamDists;i++)
   {
     val=SampleFromDistribution(_pParamDists[i]->distribution,_pParamDists[i]->distpar);
     pModel->UpdateParameter(_pParamDists[i]->param_class,
@@ -256,12 +256,13 @@ void CMonteCarloEnsemble::UpdateModel(CModel *pModel,optStruct &Options, const i
   MCOUT<<endl;
 
   //- Re-read initial conditions to update state variables----
-  if(!ParseInitialConditionsFile(pModel,Options)) {
+  if(!ParseInitialConditions(pModel,Options)) {
     ExitGracefully("Cannot find or read .rvc file",BAD_DATA);}
+  pModel->CalculateInitialWaterStorage(Options);
 
   MCOUT.close();
 }
-double SampleFromGamma(const double& shape,const double& scale) 
+double SampleFromGamma(const double& shape,const double& scale)
 {
   //From Cheng 1977 as documented in Devroye, L. Non-uniform random variate generation, Springer-Verlag, New York, 1986 (chap 9)
   double a=shape;
@@ -298,28 +299,32 @@ void TestGammaSampling()
   GOUT.close();
 }
 //////////////////////////////////////////////////////////////////
-/// \brief updates model - called prior to each model ensemble run 
+/// \brief updates model - called prior to each model ensemble run
 /// \param pModel [out] pointer to global model instance
 /// \param &Options [out] Global model options information
 //
-double SampleFromDistribution(disttype distribution, double distpar[3]) 
+double SampleFromDistribution(disttype distribution, double distpar[3])
 {
   double value=0;
 
   //std::mt19937 generator;
 
-  if(distribution==DIST_UNIFORM) 
+  if(distribution==DIST_UNIFORM)
   {
     //std::uniform_real_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
     //value=distribution(generator);
     value=distpar[0]+(distpar[1]-distpar[0])*UniformRandom();
   }
-  else if(distribution==DIST_NORMAL) 
-  {  
+  else if(distribution==DIST_NORMAL)
+  {
     //std::normal_distribution<double> distribution(dist->distpar[0],dist->distpar[1]);
     //value = distribution(generator);
     value=distpar[0]+(distpar[1]*GaussRandom());
   }
+  else if (distribution == DIST_LOGNORMAL) {
+    double mu =distpar[0];
+    double std=distpar[1];
+    value=exp(mu+std*GaussRandom());
+  }
   return value;
 }
-

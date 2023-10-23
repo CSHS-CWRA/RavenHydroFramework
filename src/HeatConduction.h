@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------
 class definitions: CmvHeatConduction
 ----------------------------------------------------------------*/
@@ -18,9 +18,9 @@ class definitions: CmvHeatConduction
 class CmvHeatConduction : public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  
+
   const CTransportModel *_pTransModel;
-  static int             _nHRUs;   //must store locally to retain start-of-timestep water storage
+  int                    _nHRUs;   //must store locally to retain start-of-timestep water storage
 
   bool                   _initialized;
 
@@ -39,7 +39,7 @@ public:/*-------------------------------------------------------*/
   CmvHeatConduction(const CTransportModel *pTransMod);
   ~CmvHeatConduction();
 
-  static void StoreNumberOfHRUs(const int nHRUs);
+  void StoreNumberOfHRUs(const int nHRUs);
 
   //inherited functions
   void Initialize();

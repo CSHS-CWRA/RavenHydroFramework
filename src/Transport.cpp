@@ -44,7 +44,7 @@ CTransportModel::CTransportModel(CModel *pMod)
   _nGeochemParams=0;
 
   _aIndexMapping=NULL; _nIndexMapping=0;
-  
+
   _aProcessNames=NULL;
   _nProcessNames=0;
 
@@ -179,9 +179,9 @@ string CTransportModel::GetConstituentLongName_loc(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
-  sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
+  sv_type typ=pModel->GetStateVarType (_iWaterStorage[j]);
   int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
-  
+
   if(_pConstitModels[c]->GetType()==ENTHALPY) {
     return _pConstitModels[c]->GetName()+" of "+CStateVariable::GetStateVarLongName(typ,ind);
   }
@@ -297,7 +297,7 @@ int    CTransportModel::GetLatFromIndex(const int c,const int qq) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(_iLatFromWater==NULL,"CTransportModel::GetLatFromIndex: NULL array",RUNTIME_ERR);
-#endif 
+#endif
   int j=_aIndexMapping[_iLatFromWater[qq]];
   return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
 }
@@ -310,7 +310,7 @@ int    CTransportModel::GetLatToIndex(const int c,const int qq) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(_iLatToWater==NULL,"CTransportModel::GetLatFromIndex: NULL array",RUNTIME_ERR);
-#endif 
+#endif
   int j=_aIndexMapping[_iLatToWater[qq]];
   return pModel->GetStateVarIndex(CONSTITUENT,c*_nWaterCompartments+j);
 
@@ -329,8 +329,8 @@ int    CTransportModel::GetStorIndex(const int c,const int ii) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns global state variable index of  constituent mass compartment
-/// \param i [in] global index of water storage 
-/// \returns ii, local index of water storage unit 
+/// \param i [in] global index of water storage
+/// \returns ii, local index of water storage unit
 //
 int    CTransportModel::GetWaterStorIndexFromSVIndex(const int i) const
 {
@@ -365,7 +365,7 @@ int    CTransportModel::GetLatFromWaterIndex(const int qq) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(_iLatFromWater==NULL,"CTransportModel::GetLatFromIndex: NULL array",RUNTIME_ERR);
-#endif 
+#endif
   return _iLatFromWater[qq];
 }
 
@@ -377,7 +377,7 @@ int    CTransportModel::GetLatToWaterIndex(const int qq) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(_iLatToWater==NULL,"CTransportModel::GetLatFromIndex: NULL array",RUNTIME_ERR);
-#endif 
+#endif
   return _iLatToWater[qq];
 }
 //////////////////////////////////////////////////////////////////
@@ -426,14 +426,14 @@ int CTransportModel::GetLatqsIndex(const int qq) const
 //////////////////////////////////////////////////////////////////
 /// \brief returns pointer to Enthalpy model, or NULL if none exists
 //
-const CEnthalpyModel *CTransportModel::GetEnthalpyModel() const 
+const CEnthalpyModel *CTransportModel::GetEnthalpyModel() const
 {
   return _pEnthalpyModel;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns concentration (or temperature, or isotopic composition) in HRU k corresponding to transport state variable with i=sv_index
 /// \param k - global HRU index of interest
-/// \param sv_index - state variable index (i) 
+/// \param sv_index - state variable index (i)
 //
 double CTransportModel::GetConcentration(const int k,const int sv_index) const
 {
@@ -461,7 +461,7 @@ double CTransportModel::GetAdvectionCorrection(const int c,const CHydroUnit* pHR
 //////////////////////////////////////////////////////////////////
 /// \brief Return index of process, or DOESNT_EXIST if name not found in process list
 //
-int   CTransportModel::GetProcessIndex(const string name) const 
+int   CTransportModel::GetProcessIndex(const string name) const
 {
   for(int i=0;i<_nProcessNames;i++) {
     if (StringToUppercase(_aProcessNames[i])==StringToUppercase(name)){return i;}
@@ -472,10 +472,10 @@ int   CTransportModel::GetProcessIndex(const string name) const
 /// \brief returns geochemical parameter value
 /// \notes needs optimization! - perhaps hand in iguess?
 /// note - if procind==DOESNT_EXIST, first value of parameter regardless of process name is used (means that (e.g.) global decay rate should be specified before local decay rates in .rvp file)
-/// This could be a problem when we have dozens of geochemistry parameters 
+/// This could be a problem when we have dozens of geochemistry parameters
 /// other solution - make 2D array of parameters _pGeochemParams[gtyp][i] with size _nGeochemParams[gtyp]
 //
-double CTransportModel::GetGeochemParam(const gparam_type gtyp, const int c,const int ii,const int procind,const CHydroUnit* pHRU) const 
+double CTransportModel::GetGeochemParam(const gparam_type gtyp, const int c,const int ii,const int procind,const CHydroUnit* pHRU) const
 {
   //cout<<" GEOCHEM PAR 1"<<_nGeochemParams<<endl;
   for(int i=0;i<_nGeochemParams;i++) {
@@ -483,7 +483,7 @@ double CTransportModel::GetGeochemParam(const gparam_type gtyp, const int c,cons
     if ((_pGeochemParams[i]->ii_water_stor!=DOESNT_EXIST) && (_pGeochemParams[i]->ii_water_stor!=ii)) { continue;}
     if ((procind!=DOESNT_EXIST) && (_pGeochemParams[i]->process_ind!=procind)) { continue; }
     if (_pGeochemParams[i]->constit_ind!=c){ continue;}
-    //TODO - handle soil type 
+    //TODO - handle soil type
     return _pGeochemParams[i]->value;
   }
   return NOT_SPECIFIED;
@@ -499,7 +499,7 @@ double CTransportModel::GetGeochemParam(const gparam_type gtyp,const int c,const
     if((procind!=DOESNT_EXIST) && (_pGeochemParams[i]->process_ind!=procind)) { continue; }
     if(_pGeochemParams[i]->constit_ind!=c) { continue; }
     if(_pGeochemParams[i]->constit_ind2!=c2) { continue; }
-    //TODO - handle soil type 
+    //TODO - handle soil type
     return _pGeochemParams[i]->value;
   }
   return NOT_SPECIFIED;
@@ -645,7 +645,7 @@ void CTransportModel::Prepare(const optStruct &Options)
   }
   _nIndexMapping=pModel->GetNumStateVars();
 
-  
+
   if(_nConstituents==0) { return; }/// all of the above work necessary even with no transport. Not sure why.
 
   /// QA/QC
@@ -774,7 +774,7 @@ void   CTransportModel::CalculateLateralConnections()
 //////////////////////////////////////////////////////////////////
 /// \brief Add geochem parameter
 /// \param typ [in] geochemical parameter type
-/// \param constit_name [in] name of constitutent 
+/// \param constit_name [in] name of constitutent
 /// \param constit_name2 [in] name of 2nd constituent (or "" if not relevant)
 /// \param procname [in] process name
 /// \param watcompart [in] SV index i of water compartment state variable (or DOESNT_EXIST if parameter not linked to compartment)
@@ -804,7 +804,7 @@ void   CTransportModel::AddGeochemParam(const gparam_type typ,const string const
 /// \brief add process name to process list
 /// \param name [in] name of process
 //
-void   CTransportModel::AddProcessName(string name) 
+void   CTransportModel::AddProcessName(string name)
 {
   if (GetProcessIndex(name)!=DOESNT_EXIST){return;}//name on list already
 
@@ -827,7 +827,6 @@ void CTransportModel::Initialize(const optStruct &Options)
   for(int c=0;c<_nConstituents;c++){
     _pConstitModels[c]->Initialize(Options);
   }
-  CmvHeatConduction::StoreNumberOfHRUs(pModel->GetNumHRUs());
 }
 
 //////////////////////////////////////////////////////////////////
@@ -844,7 +843,7 @@ void CTransportModel::InitializeParams(const optStruct& Options)
 /// \param Options [in] Global model options structure
 /// \param tt [in] time structure
 //
-void   CTransportModel::IncrementCumulInput(const optStruct &Options,const time_struct &tt) 
+void   CTransportModel::IncrementCumulInput(const optStruct &Options,const time_struct &tt)
 {
   for(int c=0;c<_nConstituents; c++) {
     _pConstitModels[c]->IncrementCumulInput(Options,tt);
@@ -854,7 +853,7 @@ void   CTransportModel::IncrementCumulInput(const optStruct &Options,const time_
 /// \brief Increment cumulative mass/energy lost from watershed
 /// \param Options [in] Global model options structure
 //
-void   CTransportModel::IncrementCumulOutput(const optStruct &Options) 
+void   CTransportModel::IncrementCumulOutput(const optStruct &Options)
 {
   for(int c=0;c<_nConstituents; c++) {
     _pConstitModels[c]->IncrementCumulOutput(Options);
@@ -920,7 +919,7 @@ void CTransportModel::CloseOutputFiles() const
 //////////////////////////////////////////////////////////////////
 /// \brief Write major output
 //
-void  CTransportModel::WriteMajorOutput(ofstream &RVC) const 
+void  CTransportModel::WriteMajorOutput(ofstream &RVC) const
 {
   for(int c=0;c<_nConstituents;c++) {
     _pConstitModels[c]->WriteMajorOutput(RVC);

@@ -17,7 +17,7 @@ void CChannelXSect::Construct(const string name)
   _aElev=NULL;
   _aMann=NULL;
   _is_closed_channel=false;
-  
+
   if (!DynArrayAppend((void**&)(pAllChannelXSects),(void*)(this),NumChannelXSects)){
     ExitGracefully("CChannelXSect::Constructor: creating NULL channel profile",BAD_DATA_WARN);
   }
@@ -97,7 +97,7 @@ CChannelXSect::CChannelXSect(const string  name,
                              const double  slope)
 {
   Construct(name);
-  
+
   _nPoints  =array_size;
   _aQ       =new double [_nPoints];
   _aStage   =new double [_nPoints];
@@ -315,7 +315,7 @@ double  CChannelXSect::GetDepth(const double &Q,const double &SB_slope,const dou
 double  CChannelXSect::GetWettedPerim(const double &Q,const double &SB_slope,const double &SB_n) const//Q in m3/s
 {
   double junk,Q_mult;
-  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);  
+  GetFlowCorrections(SB_slope,SB_n,junk,Q_mult);
   return InterpolateCurve(Q/Q_mult,_aQ,_aPerim,_nPoints,true);
 }
 //////////////////////////////////////////////////////////////////
@@ -371,7 +371,7 @@ double  CChannelXSect::GetCelerity(const double &Q, const double &SB_slope,const
 double CChannelXSect::GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const
 {
   ExitGracefullyIf(Q<=0,"CChannelXSect::GetDiffusivity: Invalid channel flowrate",BAD_DATA);
- 
+
   ///< diffusivity from Roberson et al. 1995, Hydraulic Engineering \cite Roberson1998
   double slope_mult=1.0;
   double Q_mult    =1.0;
@@ -621,4 +621,3 @@ void TestManningsInfluence(const CChannelXSect *pChan, const double &Qref) {
   }
   TEST.close();
 }
-

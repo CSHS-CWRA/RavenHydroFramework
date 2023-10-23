@@ -27,7 +27,7 @@ CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype)
   CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
   iFrom[0]=pModel->GetStateVarIndex(CANOPY);
   iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);
-  iFrom[1]=pModel->GetStateVarIndex(AET); 
+  iFrom[1]=pModel->GetStateVarIndex(AET);
   iTo  [1]=pModel->GetStateVarIndex(AET);
 }
 
@@ -121,7 +121,7 @@ void CmvCanopyEvap::GetRatesOfChange( const double      *state_vars,
 
   double PET=max(pHRU->GetForcingFunctions()->PET,0.0) ;
   double stor=min(max(state_vars[iFrom[0]],0.0),cap*Fc); //correct for potentially invalid storage
-  
+
   double PETused=0.0;//[mm/d]
   if(!Options.suppressCompetitiveET) {
     PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
@@ -183,7 +183,7 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
   //cant remove more than is there
   rates[0]=min(rates[0],state_vars[iFrom[0]]/Options.timestep);
 
-  //update AET 
+  //update AET
   rates[1]-=(oldRates-rates[0]);
 }
 
@@ -305,7 +305,7 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
     PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
     PET=max(PET,0.0);
   }
-  
+
   if (type==SUBLIM_MAXIMUM)//----------------------------------
   {
     //all canopy mass sublimates 'instantaneously' (up to threshold) based upon PET
@@ -352,7 +352,7 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
   //cant remove more than is there
   rates[0]=min(rates[0],state_vars[iFrom[0]]/Options.timestep);
 
-  //update AET 
+  //update AET
   rates[1]-=(oldRates-rates[0]);
 
 }
@@ -503,5 +503,3 @@ void CmvCanopyDrip::ApplyConstraints( const double      *state_vars,
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
 }
-
-

@@ -122,7 +122,7 @@ double GetSensibleHeatSnow(const double &air_temp, //[C]
 
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates latent heat exchange with atmosphere for snow
-/// \ref from Dingman pg 198 \cite Dingman1994
+/// \ref from Dingman pg 198 \cite Dingman1994 (consistent with SUBLIM_BULK_AERO)
 ///
 /// \param &P [in] Pressure [kPa]
 /// \param &air_temp [in] Air temperature [C]
@@ -141,16 +141,16 @@ double GetLatentHeatSnow(const double &P,
                          const double &ref_ht,
                          const double &rough)
 {
-  double numer,denom,temp_var,vap_pres,surf_pres,LE;
+  double temp_var,vap_pres,surf_pres,LE,CE;
 
-  vap_pres  = GetSaturatedVaporPressure(air_temp)*rel_humid;
-  surf_pres = GetSaturatedVaporPressure(surf_temp)*rel_humid;
+  vap_pres  = GetSaturatedVaporPressure(air_temp )*rel_humid;
+  surf_pres = GetSaturatedVaporPressure(surf_temp)*1.0; //assume saturated
 
-  numer = AIR_H20_MW_RAT * DENSITY_AIR * pow(VON_KARMAN,2);
-  denom = P * pow(log(ref_ht/rough),2);
+  CE = pow(VON_KARMAN,2)/pow(log(ref_ht/rough),2);
 
-  temp_var = numer/denom;
-  LE = LH_VAPOR*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
+  temp_var = AIR_H20_MW_RAT * DENSITY_AIR * CE / P;
+
+  LE = LH_SUBLIM*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
 
   return LE;//[MJ/m2/d]
 }

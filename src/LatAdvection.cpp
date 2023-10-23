@@ -32,7 +32,7 @@ CmvLatAdvection::~CmvLatAdvection() {}
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes Advection object
 //
-void   CmvLatAdvection::Initialize() 
+void   CmvLatAdvection::Initialize()
 {
   int nAdvConnections=pTransModel->GetNumLatAdvConnections();
 
@@ -88,7 +88,7 @@ void CmvLatAdvection::GetParticipatingParamList(string  *aP,class_type *aPC,int 
 /// \param **pHRUs [in] array of pointers to HRUs
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Current model time
-/// \param *exchange_rates [out] Rate of loss from "from" compartment [mg/day] 
+/// \param *exchange_rates [out] Rate of loss from "from" compartment [mg/day]
 //
 void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //array of all SVs for all HRUs, [k][i]
                                             const CHydroUnit * const *pHRUs,
@@ -115,7 +115,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
 
   Q=new double[nLatConnections]; // \todo [optimize]: preallocate in initialize, save as member
   double Afrom, Ato;
-  
+
   //get water fluxes, regenerate system state at start of timestep
   //-------------------------------------------------------------------------
   for(q=0;q<nLatConnections;q++)
@@ -139,7 +139,7 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
   //-------------------------------------------------------------------------
   for(q=0;q<nLatConnections;q++)
   {
-    
+
     kFrom     =pTransModel->GetLatFromHRU(q);
     kTo       =pTransModel->GetLatToHRU(q);
     iFromWater=pTransModel->GetLatFromWaterIndex(q);
@@ -161,11 +161,11 @@ void   CmvLatAdvection::GetLateralExchange(const double * const *state_vars, //a
     {
       mass=sv[kTo][_iToLat[q]  ];
       vol =sv[kTo][iToWater];
-      Asource=Ato; 
+      Asource=Ato;
     }
     corr=1.0;
     corr=pTransModel->GetAdvectionCorrection(_constit_ind,pHRUs[kFrom],iFromWater,iToWater,mass/vol*MM_PER_METER/LITER_PER_M3);//mg/m2/mm->mg/L
-    
+
     exchange_rates[q]=0.0;
     if(vol>1e-6) //note: otherwise Q should generally be constrained to be <vol/tstep & 0.0<rates[q]<(m/tstep/Rf)
     {

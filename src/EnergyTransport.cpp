@@ -12,8 +12,8 @@ string FilenamePrepare(string filebase,const optStruct& Options); //Defined in S
 //////////////////////////////////////////////////////////////////
 /// \brief enthalpy model constructor
 //
-CEnthalpyModel::CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,const int c) 
-               :CConstituentModel(pMod,pTMod,name,ENTHALPY,false,c) 
+CEnthalpyModel::CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,const int c)
+               :CConstituentModel(pMod,pTMod,name,ENTHALPY,false,c)
 {
   _aEnthalpyBeta=NULL;
   _aEnthalpySource=NULL;
@@ -24,7 +24,7 @@ CEnthalpyModel::CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,c
 //////////////////////////////////////////////////////////////////
 /// \brief enthalpy model destructor
 //
-CEnthalpyModel::~CEnthalpyModel() 
+CEnthalpyModel::~CEnthalpyModel()
 {
   delete [] _aEnthalpyBeta;
   delete [] _aBedTemp;
@@ -36,15 +36,15 @@ CEnthalpyModel::~CEnthalpyModel()
 /// \param M [in] energy in [MJ/m2]
 /// \param V [in] volume in mm
 //
-double CEnthalpyModel::CalculateReportingConcentration(const double &M,const double &V) const 
+double CEnthalpyModel::CalculateReportingConcentration(const double &M,const double &V) const
 {
-  if(fabs(V)>1e-6) {     
+  if(fabs(V)>1e-6) {
     return ConvertVolumetricEnthalpyToTemperature(M/V*MM_PER_METER);  //[MJ/m3]->[C]
   }
   return 0.0;// JRC: should this default to zero? or NA?
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Converts basic energy units [deg C] to [mJ/mm/m2] 
+/// \brief Converts basic energy units [deg C] to [mJ/mm/m2]
 /// \param T [in] temperature in deg C
 /// \returns concentration, in mJ/mm/m2
 //
@@ -76,11 +76,11 @@ double CEnthalpyModel::GetOutflowConcentration(const int p) const
     return ConvertVolumetricEnthalpyToTemperature(hv); //[C]
   }
   else {
-    return ConvertVolumetricEnthalpyToTemperature(_aMres[p]/pRes->GetStorage()); 
+    return ConvertVolumetricEnthalpyToTemperature(_aMres[p]/pRes->GetStorage());
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns bed temperature from reach p 
+/// \brief returns bed temperature from reach p
 /// \param p [in] subbasin index
 /// \returns outflow temperature [C]
 //
@@ -90,7 +90,7 @@ double CEnthalpyModel::GetBedTemperature(const int p) const {
 //////////////////////////////////////////////////////////////////
 /// \brief returns ice fraction of routed water in subbasin p at current point in time
 /// \notes only used for reporting; calculations exclusively in terms of mass/energy
-/// \param p [in] subbasin index 
+/// \param p [in] subbasin index
 //
 double CEnthalpyModel::GetOutflowIceFraction(const int p) const
 {
@@ -103,7 +103,7 @@ double CEnthalpyModel::GetOutflowIceFraction(const int p) const
     double hv      =MJ_per_d/(flow*SEC_PER_DAY); //[MJ/d] / [M3/d] = [MJ/m3]
     if(flow<=0) { return 0.0; }
 
-    return ConvertVolumetricEnthalpyToIceContent(hv); 
+    return ConvertVolumetricEnthalpyToIceContent(hv);
   }
   else {
      return ConvertVolumetricEnthalpyToIceContent(_aMres[p]/pRes->GetStorage()); //[C]
@@ -112,13 +112,13 @@ double CEnthalpyModel::GetOutflowIceFraction(const int p) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns water temperature (in degC) of storage unit indexed by state variable index iWater
-/// \param state_vars - vector of current state variables 
+/// \param state_vars - vector of current state variables
 /// \param iWater - state variable index of water compartment of interest
 //
 double CEnthalpyModel::GetWaterTemperature(const double *state_vars,const int iWater) const
 {
   if(iWater==DOESNT_EXIST) { return 0.0; }
- 
+
   double Hv,stor,hv(0.0);
   int    m,iEnth;
   m    =_pTransModel->GetLayerIndex(_constit_index,iWater); //layer index of water compartment
@@ -134,7 +134,7 @@ double CEnthalpyModel::GetWaterTemperature(const double *state_vars,const int iW
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns ice content [0..1] of storage unit indexed by state variable index iWater
-/// \param state_vars - vector of current state variables 
+/// \param state_vars - vector of current state variables
 /// \param iWater - state variable index of water compartment of interest
 //
 double CEnthalpyModel::GetIceContent(const double* state_vars,const int iWater) const
@@ -155,20 +155,20 @@ double CEnthalpyModel::GetIceContent(const double* state_vars,const int iWater) 
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Calculate volumetric enthalpy for Dirichlet condition in storage compartment 
+/// \brief Calculate volumetric enthalpy for Dirichlet condition in storage compartment
 /// \param pHRU - pointer to the HRU of interest
 /// \param T - dirichlet temperature (or special flag -9999)
 //  \returns volumetric enthalpy, h, in MJ/mm-m2
 //
 double CEnthalpyModel::GetDirichletEnthalpy(const CHydroUnit* pHRU,const double& T) const
 {
-  if(T!=DIRICHLET_TEMP) 
+  if(T!=DIRICHLET_TEMP)
   {
     double pctFroz=0.0; //assumes liquid water for flows (reasonable)
     return ConvertTemperatureToVolumetricEnthalpy(T,pctFroz)/MM_PER_METER;    //[C]->[MJ/m3]->[MJ/mm-m2]
   }
-  else // Special temperature condition - forces temp=air temp 
-  { 
+  else // Special temperature condition - forces temp=air temp
+  {
     double tmp,snowfrac(0.0);
     double Tair    =pHRU->GetForcingFunctions()->temp_ave;
     if(Tair<FREEZING_TEMP) {
@@ -195,24 +195,24 @@ double CEnthalpyModel::GetAvgLatentHeatFlux() const
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief returns heat per unit area generated from friction in reach [MJ/m2/d] 
+/// \brief returns heat per unit area generated from friction in reach [MJ/m2/d]
 /// \param Q     [in] flow rate [m3/s]
 /// \param slope [in] bed slope [m/m]
-/// \param perim [in] wetted perimeter [m]
+/// \param top_width [in] top_width [m]
 /// from Theurer et al 1984, US Fish and Wildlife Serviec FWS/OBS-85/15, as reported in MacDonald, Boon, and Byrne 2014
 //
-double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const
+double CEnthalpyModel::GetReachFrictionHeat(const double &Q,const double &slope,const double &top_width) const
 {
-  if (perim<PRETTY_SMALL){return 0.0;}
-  return 9805*Q/perim*slope*WATT_TO_MJ_PER_D;
+  if (top_width<PRETTY_SMALL){return 0.0;}
+  return GRAVITY*DENSITY_WATER*Q/top_width*slope*WATT_TO_MJ_PER_D;
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Set bed temperature 
+/// \brief Set bed temperature
 /// \param p     [in] subbasin index
 /// \param val   [in] bed temperature (C)
 //
-void CEnthalpyModel::SetBedTemperature(const int p,const double &val) 
+void CEnthalpyModel::SetBedTemperature(const int p,const double &val)
 {
   _aBedTemp[p]=val;
 }
@@ -235,26 +235,26 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   const CHydroUnit  *pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
   int                iAET=_pModel->GetStateVarIndex(AET);
   int    mHypo           =2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
-  int    iGW             =_pModel->GetStateVarIndex(SOIL,mHypo);  
-  
+  int    iGW             =_pModel->GetStateVarIndex(SOIL,mHypo);
+
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
   double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
   double LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
 
-  double temp_bed =_aBedTemp[p]; 
+  double temp_bed =_aBedTemp[p];
 
   double temp_GW  =pBasin->GetAvgConcentration(iGW);
-  double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  
+  double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
   double cel_corr =1.0;//pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =max(pBasin->GetRiverDepth(),0.001);
   double dbed     =pBasin->GetRiverbedThickness(); //[m]
-  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K] 
+  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   double S(0.0);                            //source term [MJ/m3/d]
   S+=(SW+LW)/dbar;                          //net incoming energy term
@@ -287,11 +287,11 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
 //
 double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const
 {
- 
+
   double tstep=_pModel->GetOptStruct()->timestep;
 
   const CSubBasin *pBasin=_pModel->GetSubBasin(p);
-  
+
   if(pBasin->IsHeadwater())
   {
     Q_sens=Q_lat=Q_GW=Q_rad=Q_fric=0.0;
@@ -301,7 +301,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   const CHydroUnit* pHRU=_pModel->GetHydroUnit(pBasin->GetReachHRUIndex());
   int               iAET=_pModel->GetStateVarIndex(AET);
   int              mHypo=2; //_pModel->GetHyporheicIndex();//TMP DEBUG - this might not be the compartment corresponding to "GW"
-  int                iGW=_pModel->GetStateVarIndex(SOIL,mHypo);  
+  int                iGW=_pModel->GetStateVarIndex(SOIL,mHypo);
 
   double temp_air =pHRU->GetForcingFunctions()->temp_ave;           //[C]
   double SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
@@ -309,19 +309,19 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   //double LW       =STEFAN_BOLTZ*EMISS*pow(T-Ta,4); T=GetOutflowConcentration(p);
   double LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
   double AET      =pHRU->GetStateVarValue(iAET)/MM_PER_METER/tstep; //[m/d]
-  
-  double temp_bed =_aBedTemp[p]; 
+
+  double temp_bed =_aBedTemp[p];
 
   double temp_GW  =pBasin->GetAvgConcentration(iGW);
-  double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]  
+  double hstar    =pBasin->GetConvectionCoeff(); //[MJ/m2/d/K]
   double qmix     =pBasin->GetHyporheicFlux();   //[m/d]
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
   double cel_corr =1.0;//pBasin->GetReferenceCelerity()/pBasin->GetCelerity();
   double dbar     =pBasin->GetRiverDepth();
   double dbed     =pBasin->GetRiverbedThickness(); //[m]
-  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]  
+  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]
 
-  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetWettedPerimeter());//[MJ/m2/d]  
+  double Qf       =GetReachFrictionHeat(pBasin->GetOutflowRate(),pBasin->GetBedslope(),pBasin->GetTopWidth());//[MJ/m2/d]
 
   dbar=max(dbar,0.001);
 
@@ -331,7 +331,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   double *zk=new double[nMinHist]; //percentage of flows in zone k
   double *Ik=new double[nMinHist]; //Integral term [degC-d]
-  
+
   //calculate mean residence time
   double tr_mean=0.0;
   for(int i=0;i<nMinHist;i++) {
@@ -350,7 +350,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   //calculate integral term I_m^n [degC*d] (see paper)
   double hin,beta,gamma;
-  beta =_aEnthalpyBeta[p];//[1/d] 
+  beta =_aEnthalpyBeta[p];//[1/d]
   beta =max(beta,1e-9); //to avoid divide by zero error
   gamma=(1.0-exp(-beta*tstep));
   Ik[0]=0.0;
@@ -389,7 +389,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
     Q_fric+=zk[m]*Qf/dbar*tstep;
 
-   // cout<<"Ik term: "<<temp_air<<" "<<Ik[m]/tstep<<" beta: "<<beta<<" "<<gamma<<endl; 
+   // cout<<"Ik term: "<<temp_air<<" "<<Ik[m]/tstep<<" beta: "<<beta<<" "<<gamma<<endl;
    // cout<<" Losses: "<<k<<": "<<Q_sens<<" "<<Q_GW<<" "<<Q_rad<<" "<<Q_lat<<" "<<Q_fric<< " "<<zk[k]*kprime*(temp_GW*tstep-Ik[k])<<" "<<Ik[k]<<" "<<zk[k]<<endl;
    // cout<<"mean res time: "<<tr_mean<<endl;
    // cout<<" "<<hstar<<" "<< dbar<<" "<<temp_air*tstep<<" "<<zk[k]<<endl;
@@ -438,18 +438,18 @@ double CEnthalpyModel::GetEnergyLossesFromLake(const int p, double &Q_sens, doub
     SW       =pHRU->GetForcingFunctions()->SW_radia_net;       //[MJ/m2/d]
     LW       =pHRU->GetForcingFunctions()->LW_radia_net;       //[MJ/m2/d]
     LW_in    =pHRU->GetForcingFunctions()->LW_incoming;        //[MJ/m2/d]
-    
+
     AET      =pRes->GetAET()*Acorr/ MM_PER_METER ;                   //[m/d] //*pHRU->GetArea()/A_avg
 
-    hstar = pRes->GetLakeConvectionCoeff();                    //[MJ/m2/d/K]  
+    hstar = pRes->GetLakeConvectionCoeff();                    //[MJ/m2/d/K]
     Vsed  = pRes->GetLakebedThickness() * pHRU->GetArea()*M2_PER_KM2;
-    ksed  = pRes->GetLakebedConductivity() / 0.5 / pRes->GetLakebedThickness();//[MJ/m2/d/K]  
+    ksed  = pRes->GetLakebedConductivity() / 0.5 / pRes->GetLakebedThickness();//[MJ/m2/d/K]
   }
   double T_new =ConvertVolumetricEnthalpyToTemperature(_aMres[p]      / V_new);
   double T_old =ConvertVolumetricEnthalpyToTemperature(_aMres_last[p] / V_old);
   double Ts_new=ConvertVolumetricEnthalpyToTemperature(_aMsed[p]      / Vsed );
   double Ts_old=ConvertVolumetricEnthalpyToTemperature(_aMsed_last[p] / Vsed );
-  
+
   Q_sens=hstar* A_avg * (temp_air -0.5*(T_new+T_old));
   Q_cond=ksed * A_avg * (0.5*(Ts_new+Ts_old)- 0.5 * (T_new + T_old));
   Q_rad =(SW+LW)*A_avg;
@@ -491,7 +491,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   if((V_old<=0.0) || (V_new<=0.0)) { Res_mass=ResSedMass=0.0; return;} //handles dried out reservoir/lake
 
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
-  
+
   double Acorr=pHRU->GetArea()*M2_PER_KM2/A_avg; //handles the fact that GetAET() returns mm/d normalized by HRU area, not actual area
 
   double SW(0), LW(0), LW_in(0), temp_air(0), AET(0);
@@ -505,22 +505,22 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
     AET      =pRes->GetAET()*Acorr/ MM_PER_METER ;             //[m/d]
 
     Vsed     =pRes->GetLakebedThickness() * pHRU->GetArea()*M2_PER_KM2;
-    hstar    =pRes->GetLakeConvectionCoeff(); //[MJ/m2/d/K]  
-    ksed     =pRes->GetLakebedConductivity()/0.5/ pRes->GetLakebedThickness();//[MJ/m2/d/K]  
+    hstar    =pRes->GetLakeConvectionCoeff(); //[MJ/m2/d/K]
+    ksed     =pRes->GetLakebedConductivity()/0.5/ pRes->GetLakebedThickness();//[MJ/m2/d/K]
   }
 
   // N-R solution of Crank-nicolson problem as set of two non-linear algebraic equations
   // -----------------------------------------------------------------------------------------
   //dE   /dt=Qh_in-Qh_out+(Rnet*A+P*hrain*A)-ET*rho*LH*A+k*(Tair-T(E))*A+ksed*(Tsed-T(E))*A     //[MJ/d]
   //dEsed/dt=                                                           -ksed*(Tsed-T(E))*A     //[MJ/d]
-  // 
+  //
   //Allocate memory
   double  *B=new double  [2];
   double  *R=new double  [2];
   double **A=new double *[2];
   double **J=new double *[2];
   for (int i=0;i<2;i++){
-    A[i]=new double [2];  
+    A[i]=new double [2];
     J[i]=new double [2];
     B[i]=R[i]=0.0;
     for (int j = 0; j < 2; j++) {A[i][j]=J[i][j]=0.0;}
@@ -533,15 +533,15 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   B[0]+= A_avg *(SW+LW)*tstep;                                     // net radiation [MJ]
   B[0]-= A_avg *(AET*DENSITY_WATER*LH_VAPOR)*tstep;                // latent heat [MJ]
   B[0]+= A_avg *(hstar*temp_air)*tstep;                            // sensible heat exhange [MJ]
-  
-  B[0]+=(1.0-0.5*tstep/V_old*Q_old)*_aMres_last[p];                 
+
+  B[0]+=(1.0-0.5*tstep/V_old*Q_old)*_aMres_last[p];
   B[0]-=0.5*tstep*hstar*A_old*T_old;
   B[0]-=0.5*tstep*ksed *A_avg*T_old;
   B[0]+=0.5*tstep*ksed *A_avg*T_sed_old;
 
   B[1] =0.5*tstep*ksed *A_avg*T_old;
   B[1]+=_aMsed_last[p]-0.5*tstep*ksed *A_avg*T_sed_old;
-  
+
   int iter=0;
   double change=ALMOST_INF;
   double tolerance=1e-2; //[deg C]
@@ -549,8 +549,8 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   double dE,dEs;
   double E_guess  =_aMres_last[p];
   double Es_guess =_aMsed_last[p];
-  
-  while (change > tolerance) 
+
+  while (change > tolerance)
   {
     T_guess = ConvertVolumetricEnthalpyToTemperature(E_guess/V_new);
     Ts_guess= ConvertVolumetricEnthalpyToTemperature(Es_guess/Vsed);
@@ -561,7 +561,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
     A[0][1] = 0.0;
     if (E_guess!=0.0){
       A[0][0]+= 0.5*tstep*hstar*A_new*T_guess/E_guess;
-      A[0][0]+= 0.5*tstep*ksed *A_avg*T_guess/E_guess;  //[MJ/m2/d/K]*[m2]/[MJ/m3/K] = [m3/d]  
+      A[0][0]+= 0.5*tstep*ksed *A_avg*T_guess/E_guess;  //[MJ/m2/d/K]*[m2]/[MJ/m3/K] = [m3/d]
       A[1][0]-= 0.5*tstep*ksed *A_avg*T_guess/E_guess;
     }
     if (Es_guess!=0.0){
@@ -592,7 +592,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
   }
   Res_mass=E_guess;
   ResSedMass=Es_guess;
-  
+
   delete [] B;
   delete [] R;
   for (int i=0;i<2;i++){delete [] A[i]; delete[] J[i]; } delete[] A; delete[] J;
@@ -602,7 +602,7 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 /// \param p    subbasin index
 /// \returns total energy lost from subbasin reach over current time step [MJ]
 //
-double CEnthalpyModel::GetNetReachLosses(const int p) const 
+double CEnthalpyModel::GetNetReachLosses(const int p) const
 {
   double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad,Q_fric;
   return GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad,Q_fric);
@@ -628,7 +628,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
     _aEnthalpySource[p]=new double[nMinHist];
     for(int i=0; i<nMinHist;i++) { _aEnthalpySource[p][i]=0.0; }
     _aEnthalpyBeta  [p]=0.0;
-    _aBedTemp       [p]=10.0; 
+    _aBedTemp       [p]=10.0;
   }
 
   // initialize stream temperatures if init_stream_temp is given
@@ -639,7 +639,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
     const CSubBasin *pBasin;
 
     hv=ConvertTemperatureToVolumetricEnthalpy(CGlobalParams::GetParams()->init_stream_temp,0.0);
-    for(int p=0;p<_pModel->GetNumSubBasins();p++) 
+    for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       pBasin=_pModel->GetSubBasin(p);
       const double *aQin=pBasin->GetInflowHistory();
@@ -667,7 +667,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
       _channel_storage[p]=pBasin->GetChannelStorage()*hv/1.717;
       _initial_mass+=_channel_storage[p];
 //      cout<<" init storage!"<<_initial_mass;
-      
+
       _aBedTemp[p]=CGlobalParams::GetParams()->init_stream_temp;
     }
   }
@@ -695,7 +695,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
 //////////////////////////////////////////////////////////////////
 /// \brief Applies special convolution with source/sink terms - analytical solution to Lagrangian heat transport problem
 /// \param p      [in]  subbasin index
-/// \param aRouteHydro [in] routing unit hydrograph [size: nMinHist] [-] 
+/// \param aRouteHydro [in] routing unit hydrograph [size: nMinHist] [-]
 /// \param aQinHist [in] reach inflow history [size: nMinHist] [m3/s]
 /// \param aMinHist [in] energy inflow history [size: nMinHist] [MJ/d]
 /// \param nSegments [in] number of reach segments
@@ -774,14 +774,14 @@ void CEnthalpyModel::WriteEnsimMinorOutput(const optStruct &Options,const time_s
 /// \details Called prior to simulation (but after initialization) from CModel::Initialize()
 /// \param &Options [in] Global model options information
 //
-void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options) 
+void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
 {
   //StreamTemperatures.csv and Temperatures.csv (similar to concentration output files)
   CConstituentModel::WriteOutputFileHeaders(Options);
 
   //StreamReachEnergyBalances.csv
   //--------------------------------------------------------------------
-  string filename ="StreamReachEnergyBalances.csv"; 
+  string filename ="StreamReachEnergyBalances.csv";
   filename=FilenamePrepare(filename,Options);
 
   _STREAMOUT.open(filename.c_str());
@@ -792,12 +792,12 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
   string name;
   _STREAMOUT<<"time[d],date,hour,air temp.["+to_string(DEG_SYMBOL)+"C]"<<", net rad [MJ/m2/d],";
   for(int p=0;p<_pModel->GetNumSubBasins();p++)
-  { 
+  {
     CSubBasin *pSB=_pModel->GetSubBasin(p);
     if(pSB->GetName()=="") { name=to_string(pSB->GetID()); }
     else                   { name=pSB->GetName(); }
 
-    if((pSB->IsGauged()) && (pSB->IsEnabled())) 
+    if((pSB->IsGauged()) && (pSB->IsEnabled()))
     {
       _STREAMOUT<<name<<" Ein[MJ/m2/d],";
       _STREAMOUT<<name<<" Eout[MJ/m2/d],";
@@ -818,10 +818,10 @@ void CEnthalpyModel::WriteOutputFileHeaders(const optStruct& Options)
   for (int p = 0; p < _pModel->GetNumSubBasins(); p++)
   {
     CSubBasin* pSB = _pModel->GetSubBasin(p);
-    if ((pSB->IsGauged()) && (pSB->IsEnabled()) && 
+    if ((pSB->IsGauged()) && (pSB->IsEnabled()) &&
         (pSB->GetReservoir()!=NULL) && (pSB->GetReservoir()->GetHRUIndex() != DOESNT_EXIST)) { _anyGaugedLakes = true; }
   }
-  
+
   if (_anyGaugedLakes)
   {
     string filename = "LakeEnergyBalances.csv";
@@ -889,7 +889,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   _STREAMOUT << _pModel->GetAvgForcing(F_TEMP_AVE) << ",";
   _STREAMOUT << _pModel->GetAvgForcing(F_SW_RADIA_NET) + _pModel->GetAvgForcing(F_LW_RADIA_NET) << ",";
 
-  double mult=1.0; //convert everything to MJ/m2/d 
+  double mult=1.0; //convert everything to MJ/m2/d
   for(p=0;p<_pModel->GetNumSubBasins();p++)
   {
     mult = 1.0 / _pModel->GetSubBasin(p)->GetReachLength() / _pModel->GetSubBasin(p)->GetTopWidth();
@@ -922,7 +922,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
       {
         CReservoir* pRes = _pModel->GetSubBasin(p)->GetReservoir();
 
-        if ((pRes != NULL) && (pRes->GetHRUIndex() != DOESNT_EXIST)) 
+        if ((pRes != NULL) && (pRes->GetHRUIndex() != DOESNT_EXIST))
         {
           double HRUarea= _pModel->GetHydroUnit(pRes->GetHRUIndex())->GetArea()*M2_PER_KM2;
           double V_sed  = pRes->GetLakebedThickness() * HRUarea;
@@ -934,10 +934,10 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
           Eout = 0.5 * (_aMout_res [p] + _aMout_res_last[p]);
 
           double Qin=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d]
-          
+
           GetEnergyLossesFromLake(p,Q_sens,Q_cond,Q_lat,Q_rad,Q_rain);
 
-          
+
           double lakeTemp  =ConvertVolumetricEnthalpyToTemperature(_aMres[p] / V_new);
           double sedTemp   =ConvertVolumetricEnthalpyToTemperature(_aMsed[p] / V_sed);
           double inflowTemp=ConvertVolumetricEnthalpyToTemperature(Ein / Qin);
@@ -965,7 +965,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Local (model) time at the end of the pertinent time step
 //
-void CEnthalpyModel::CloseOutputFiles() 
+void CEnthalpyModel::CloseOutputFiles()
 {
   CConstituentModel::CloseOutputFiles();
   _STREAMOUT.close();

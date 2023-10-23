@@ -154,7 +154,7 @@ void CGauge::Initialize(const optStruct   &Options,
   if(hasPrecip){
     //precip greater than zero, daily less than 2000 mm/d (world record = 1825 mm/d)
     index=_aTSindex[(int)(F_PRECIP)];
-    
+
     if(index!=DOESNT_EXIST){
       for(int nn=0;nn<nSamples; nn++)
       {
@@ -575,7 +575,7 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   pT=GetTimeSeries(F_TEMP_AVE);
 
   bool incomp=false;
-  double start_day=Options.julian_start_day; 
+  double start_day=Options.julian_start_day;
   int    start_yr =Options.julian_start_year;
   double duration =Options.duration;
   double timestep =Options.timestep;
@@ -588,7 +588,7 @@ void CGauge::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
   double *aMin=new double [nVals];
   double *aMax=new double [nVals];
   double *aAvg=new double [nVals];
-  
+
   double t=0.0;//model time
   for (int n=0;n<nVals;n++){
     aMin[n]=pT->GetMinValue(t-time_shift,1.0); //t-time_shift corresponds to 00:00 on day of model time t

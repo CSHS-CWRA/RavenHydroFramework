@@ -19,7 +19,7 @@ enum decay_type
   DECAY_LINEAR,   /// < analytic treatment of first-order decay/loss over finite time step
   DECAY_ZEROORDER,/// < analytic treatment of zeroth-order decay/loss over finite time step
   DECAY_DENITRIF, /// < adds temperature/saturation correction factor to decay rate
-  DECAY_HOOKESLAW /// < exchange with atmosphere 
+  DECAY_HOOKESLAW /// < exchange with atmosphere
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -72,8 +72,8 @@ private:/*------------------------------------------------------*/
   const CTransportModel* _pTransModel;
 
   transformation_type _ttype;  ///< transformation algorithm type
-  int _constit_ind1;           ///< index of reactant constituent 
-  int _constit_ind2;           ///< index of product constituent 
+  int _constit_ind1;           ///< index of reactant constituent
+  int _constit_ind2;           ///< index of product constituent
   int _process_ind;            ///< index of transport process name
   int _iWaterStore;            ///< index of water store (or DOESNT_EXIST if this should occur in all water compartments)
 
