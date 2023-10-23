@@ -19,7 +19,7 @@ jobs:
       - name: Install linters
         run: |
           sudo apt-get update
-          sudo apt-get install uncrustify cppcheck include-what-you-use
+          sudo apt-get install uncrustify cppcheck iwyu
       - uses: actions/setup-python@v4
       - uses: pre-commit/action@v3.0.0
 
@@ -39,8 +39,7 @@ jobs:
          sudo apt-get install libnetcdf-dev build-essential cmake
      - name: Fetch NetCDF CMake script
        run: |
-         mkdir cmake
-         wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake cmake/FindNetCDF.cmake
+         wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake -P cmake
      - name: Build
        run: |
          make
