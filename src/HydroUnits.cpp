@@ -526,9 +526,9 @@ void CHydroUnit::AdjustDailyHRUForcings(const forcing_type Ftyp, force_struct &F
 
 
 //////////////////////////////////////////////////////////////////
-/// \brief Set forcing values mid-simulation - used by BMI 
+/// \brief Set forcing values mid-simulation - used by BMI
 //
-void CHydroUnit::SetHRUForcing(const forcing_type Ftyp, const double &val) 
+void CHydroUnit::SetHRUForcing(const forcing_type Ftyp, const double &val)
 {
   SetForcingFromType(Ftyp,_Forcings,val);
 }

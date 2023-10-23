@@ -36,8 +36,8 @@ CModel::CModel(const int        nsoillayers,
   _nDiagnostics=0;    _pDiagnostics=NULL;
   _nDiagPeriods=0;    _pDiagPeriods=NULL;
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
-  _nPerturbations=0;  _pPerturbations=NULL; 
-  
+  _nPerturbations=0;  _pPerturbations=NULL;
+
   _nTotalConnections=0;
   _nTotalLatConnections=0;
 
@@ -2048,7 +2048,7 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
 /// \param &Options [out] Global model options information
 /// \params tt [in] time structure
 //
-void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt) 
+void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt)
 {
 
   for(int i=0;i<_nPerturbations;i++)
@@ -2066,9 +2066,9 @@ void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_str
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief called within update forcings - actually applies forcing function changes 
+/// \brief called within update forcings - actually applies forcing function changes
 /// \param ftype [in] forcing function type
-/// \param F [out] forcing structure modified by this routine 
+/// \param F [out] forcing structure modified by this routine
 /// \param k [in] HRU index of forcing
 /// \param &Options [in] Global model options information
 /// \params tt [in] time structure
@@ -2084,10 +2084,10 @@ void CModel::ApplyForcingPerturbation(const forcing_type ftype, force_struct &F,
       double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
       int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
       bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
-      
+
       kk=_pPerturbations[i]->kk;
-      
-      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k))) 
+
+      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k)))
       {
         _pHydroUnits[k]->AdjustHRUForcing(ftype, F,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
         if (start_of_day){

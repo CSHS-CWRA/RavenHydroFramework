@@ -1244,7 +1244,7 @@ struct force_struct
 ////////////////////////////////////////////////////////////////////
 /// \brief probability distributions
 //
-enum disttype 
+enum disttype
 {
   DIST_UNIFORM,     ///< Uniform distribution
   DIST_NORMAL,      ///< Gaussian (normal) distribution
