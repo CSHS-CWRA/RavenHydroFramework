@@ -319,7 +319,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumProcesses                   () const;
   process_type      GetProcessType                    (const int j ) const;
   int               GetNumConnections                 (const int j ) const;
-  int               GetNumForcingPerturbations        () const; 
+  int               GetNumForcingPerturbations        () const;
   double            GetAveragePrecip                  () const;
   double            GetAverageSnowfall                () const;
   int               GetOrderedSubBasinIndex           (const int pp) const;
@@ -445,7 +445,7 @@ public:/*-------------------------------------------------------*/
                                           const optStruct &Options, const time_struct &tt);
   void         PrepareAssimilation       (const optStruct &Options, const time_struct &tt);
   void         PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt);
-  void         ApplyForcingPerturbation  (const forcing_type f, force_struct &F, const int k, const optStruct& Options, const time_struct& tt); 
+  void         ApplyForcingPerturbation  (const forcing_type f, force_struct &F, const int k, const optStruct& Options, const time_struct& tt);
 
   //water/energy/mass balance routines
   void   CalculateInitialWaterStorage (const optStruct   &Options);
