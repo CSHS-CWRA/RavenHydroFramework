@@ -13,9 +13,9 @@ repos:
     - id: end-of-file-fixer
       exclude: benchmarking
 
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.5
-    hooks:
+#  - repo: https://github.com/pocc/pre-commit-hooks
+#    rev: v1.3.5
+#    hooks:
 #      - id: clang-format
 #        args: [--style=Google]
 #      - id: clang-tidy
@@ -23,7 +23,7 @@ repos:
 #      - id: uncrustify
 #      - id: cppcheck
 #      - id: cpplint
-      - id: include-what-you-use
+#      - id: include-what-you-use
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.27.0
