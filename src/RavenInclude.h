@@ -94,6 +94,9 @@ extern bool   g_suppress_zeros;   ///< converts all output numbers less than REA
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code
 extern double g_min_storage;      ///< minimum soil storage
 extern int    g_current_e;        ///< current ensemble member index
+
+// Model version
+const std::string __RAVEN_VERSION__   ="3.7.1";
 //*****************************************************************
 // Global Constants
 //*****************************************************************
