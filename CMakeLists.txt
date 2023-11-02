@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.20)
 # optional cmake command line arguments (e.g, "cmake -D COMPILE_LIB=ON" .)
 option(COMPILE_LIB "If ON, will create a dynamic lib file (default: OFF)" OFF)
 option(COMPILE_EXE "If ON, will create a executable file (default: ON)" ON)
+option(PYTHON, "If ON, will create a share library for python (default: OFF)" OFF)
 
 # Setup Project
 PROJECT(Raven CXX)
@@ -17,6 +18,20 @@ find_package(NetCDF)
 # find header & source
 file(GLOB HEADER "src/*.h")
 file(GLOB SOURCE "src/*.cpp")
+
+# Remove libraven.cpp from SOURCE
+list(REMOVE_ITEM SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/libraven.cpp")
+
+
+# Create library with Python bindings
+# To work, install pybind11, making sure it comes with cmake files (conda install -c conda-forge pybind11)
+if (PYTHON)
+  SET(PYBIND11_NEWPYTHON ON)
+  find_package(Python COMPONENTS REQUIRED Interpreter Development)
+  find_package(pybind11 CONFIG REQUIRED)
+  pybind11_add_module(libraven MODULE src/libraven.cpp)
+  target_compile_features(libraven PUBLIC cxx_std_11)
+endif()
 
 # creates a shared library - file extension is OS dependent (Linux: .so, Windows: .dll)
 if(COMPILE_LIB)
