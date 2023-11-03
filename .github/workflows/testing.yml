@@ -15,7 +15,7 @@ jobs:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install linters
         run: |
           sudo apt-get update
@@ -32,7 +32,7 @@ jobs:
         shell: bash
     steps:
      - name: Checkout
-       uses: actions/checkout@v3
+       uses: actions/checkout@v4
      - name: Install dependencies
        run: |
          sudo apt-get update
@@ -42,6 +42,7 @@ jobs:
          wget https://raw.githubusercontent.com/Kitware/VTK/master/CMake/FindNetCDF.cmake -P cmake
      - name: Build
        run: |
+         cmake . -DCMAKE_BUILD_TYPE=Release
          make
      - name: Run tests
        run: |
