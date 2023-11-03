@@ -19,17 +19,14 @@ find_package(NetCDF)
 file(GLOB HEADER "src/*.h")
 file(GLOB SOURCE "src/*.cpp")
 
-# Remove libraven.cpp from SOURCE
-list(REMOVE_ITEM SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/libraven.cpp")
-
-
 # Create library with Python bindings
 # To work, install pybind11, making sure it comes with cmake files (conda install -c conda-forge pybind11)
 if (PYTHON)
   SET(PYBIND11_NEWPYTHON ON)
   find_package(Python COMPONENTS REQUIRED Interpreter Development)
   find_package(pybind11 CONFIG REQUIRED)
-  pybind11_add_module(libraven MODULE src/libraven.cpp)
+  pybind11_add_module(libraven MODULE src/py/libraven.cpp)
+  include_directories("src")
   target_compile_features(libraven PUBLIC cxx_std_11)
 endif()
 
@@ -44,6 +41,7 @@ if(COMPILE_EXE)
     ${SOURCE}
     ${HEADER}
   )
+  set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 source_group("Header Files" FILES ${HEADER})
 source_group("Source Files" FILES ${SOURCE})
@@ -53,8 +51,6 @@ IF(NETCDF_FOUND)
   include_directories(${NetCDF_INCLUDE_DIRS})
   target_link_libraries(Raven NetCDF::NetCDF)
 ENDIF()
-
-set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
 
 # unset cmake variables to avoid polluting the cache
 unset(COMPILE_LIB CACHE)

@@ -19,15 +19,12 @@ CXXFLAGS := -Wno-deprecated
 # some compilers require the c++11 flag, some may not
 CXXFLAGS += -std=c++11 -fPIC
 
-srcfiles := $(shell find . -name "*.cpp" ! -name "libraven.cpp")
+srcfiles := $(shell ls *.cpp)
 objects  := $(patsubst %.cpp, %.o, $(srcfiles))
 
 # include netcdf
 CXXFLAGS += -Dnetcdf                # if netcdf is installed use "CXXFLAGS += -Dnetcdf",                    else "CXXFLAGS += "
 LDLIBS   := -L/usr/local -lnetcdf   # if netcdf is installed give first path "-L<PATH>"and then "-lnetcdf", else "LDLIBS   := "
-
-# pybind11 libs
-PYLIBS   := $(shell python3 -m pybind11 --includes)
 
 # if you use a OSX/BSD system, uncomment the LDFLAGS line below
 # this is to allow for use a 1Gb, see http://linuxtoosx.blogspot.ca/2010/10/stack-overflow-increasing-stack-limit.html
@@ -39,7 +36,7 @@ $(appname): $(objects)
 	$(CXX) $(CXXFLAGS) -o $(appname) $(objects) $(LDLIBS) $(LDFLAGS)
 
 libraven:
-	$(CXX) $(CXXFLAGS) -shared $(LDLIBS) $(PYLIBS) $(LDFLAGS) libraven.cpp -o libraven$(shell python3-config --extension-suffix)
+	$(CXX) $(CXXFLAGS) -shared $(LDLIBS) $(shell python3 -m pybind11 --includes) $(LDFLAGS) -I . py/libraven.cpp -o libraven$(shell python3-config --extension-suffix)
 
 depend: .depend
 
