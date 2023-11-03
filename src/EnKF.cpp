@@ -347,7 +347,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   for(int e=0;e<_nEnKFMembers;e++)
   {
     j=0;
-    for(int ii=0;ii<_nObs;ii++)
+    for(ii=0;ii<_nObs;ii++)
     {
       const CTimeSeriesABC* pTSObs=pModel->GetObservedTS(_aObsIndices[ii]);
 
@@ -792,10 +792,10 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
       _ENKFOUT<<_state_names[i]<<",";
     }
     _ENKFOUT<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[e][i]<<",";
+        _ENKFOUT<<_state_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
@@ -809,35 +809,35 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
       _ENKFOUT<<_state_names[i]<<",";
     }
     _ENKFOUT<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[e][i]<<",";
+        _ENKFOUT<<_state_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
 
     _ENKFOUT<<"NOISE MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_noise_matrix[e][i]<<",";
+        _ENKFOUT<<_noise_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
     _ENKFOUT<<"OBSERVATION MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_obs_matrix[e][i]<<",";
+        _ENKFOUT<<_obs_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
     _ENKFOUT<<"SIMULATED OUTPUT MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_output_matrix[e][i]<<",";
+        _ENKFOUT<<_output_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }

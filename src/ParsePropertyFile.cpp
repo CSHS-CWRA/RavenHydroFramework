@@ -1615,7 +1615,7 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStr
 {
   for (int ii=0;ii<nP;ii++)
   {
-    if (Options.noisy){cout<<"    checking availability of parameter "<<aP[ii]<<endl;}
+    if (Options.noisy){cout<<"    checking availability of parameter "<<aP[ii]<<" ("<<ii<<" of "<<nP <<" parameters)"<< endl; }
 
     if (aPC[ii]==CLASS_SOIL){
       for (int c=0;c<CSoilClass::GetNumClasses();c++){

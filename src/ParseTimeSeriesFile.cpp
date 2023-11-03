@@ -113,6 +113,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirDownstreamFlow"     )){code=61; }
     else if  (!strcmp(s[0],":ReservoirMaxQDecrease"       )){code=62; }
     else if  (!strcmp(s[0],":IrrigationDemand"            )){code=63; }
+    else if  (!strcmp(s[0],":WaterDemand"                 )){code=63; }
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand"   )){code=64; }
     else if  (!strcmp(s[0],":ReservoirMaxFlow"            )){code=65; }
     else if  (!strcmp(s[0],":FlowDiversion"               )){code=66; }
@@ -311,7 +312,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
     case(13):  //----------------------------------------------
     {/*:MultiData
-       {int nMeasurements double start_day int start_year double tstep} or
        {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
        :Parameters, PARAM_TAG_1, PARAM_TAG_2, ...
        :Units, unit1, unit2,...

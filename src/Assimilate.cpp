@@ -128,7 +128,7 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 
   int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
 
-  for(int p=0; p<_nSubBasins; p++) {
+  for(p=0; p<_nSubBasins; p++) {
     _aDAlast[p]=_aDAscale[p];
   }
 

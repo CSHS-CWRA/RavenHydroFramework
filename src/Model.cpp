@@ -186,7 +186,7 @@ CModel::~CModel()
   for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
   for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
 
-  for (int i=0;i<_nPerturbations;   i++)
+  for (i=0;i<_nPerturbations;   i++)
   {
     delete [] _pPerturbations[i]->eps;
     delete _pPerturbations   [i];
@@ -545,14 +545,14 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   do
   {
     numUpstrOld=numUpstr;
-    for(int p=0;p<_nSubBasins;p++) {
+    for(p=0;p<_nSubBasins;p++) {
       down_p=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
       if(down_p!=DOESNT_EXIST) {
         if(isUpstr[down_p]==true) { isUpstr[p]=true;}
       }
     }
     numUpstr=0;
-    for(int p=0;p<_nSubBasins;p++) {
+    for(p=0;p<_nSubBasins;p++) {
       if(isUpstr[p]==true) { numUpstr++; }
     }
     iter++;
@@ -560,7 +560,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   //cout<<"upstream basin calculations iterations = "<<iter<<" "<<numUpstr<<" basins found upstream of basin "<<SBID<<endl;
   nUpstream=numUpstr;
   int count=0;
-  for(int p=0;p<_nSubBasins;p++) {
+  for(p=0;p<_nSubBasins;p++) {
     if (isUpstr[p]==true){pSBs[count]=_pSubBasins[p];count++; }
   }
   delete [] isUpstr;
@@ -1769,7 +1769,7 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
     int iGW=GetStateVarIndex(GROUNDWATER);
     for(int k=0;k<_nHydroUnits;k++) {
       double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
-      double area=_pHydroUnits[k]->GetArea();
+      area=_pHydroUnits[k]->GetArea();
       if (GW<0){_CumulInput-=GW*area/_WatershedArea;} //negative recharge
     }
     /*for(int p=0;p<_nSubBasins;p++) {
@@ -1825,7 +1825,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
     int iGW=GetStateVarIndex(GROUNDWATER);
     for(int k=0;k<_nHydroUnits;k++) {
       double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
-      double area=_pHydroUnits[k]->GetArea();
+      area=_pHydroUnits[k]->GetArea();
       if(GW>0) { _CumulOutput+=GW*area/_WatershedArea; }
     }
     /*for(int p=0;p<_nSubBasins;p++) {
@@ -1886,7 +1886,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           _pHydroUnits[k]->ChangeHRUType(typ);
         }
 
-        for(int j=0; j<_nProcesses;j++)// kt
+        for(j=0; j<_nProcesses;j++)// kt
         {
           _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
         }

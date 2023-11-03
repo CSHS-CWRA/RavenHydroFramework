@@ -116,7 +116,9 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="TEMP_MIN_UNC"     ){return F_TEMP_MIN_UNC;}
 
   else if (f=="AIR_DENS"         ){return F_AIR_DENS;}
+  else if (f=="AIR_DENSITY"      ){return F_AIR_DENS;}
   else if (f=="AIR_PRES"         ){return F_AIR_PRES;}
+  else if (f=="AIR_PRESSURE"     ){return F_AIR_PRES;}
   else if (f=="REL_HUMIDITY"     ){return F_REL_HUMIDITY;}
 
   else if (f=="ET_RADIA"         ){return F_ET_RADIA;}
