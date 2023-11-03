@@ -759,7 +759,7 @@ bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
         bool bad=false;
         if      (pclass==CLASS_SOIL      ){if (CSoilClass      ::StringToSoilClass(class_str)==NULL){bad=true;}}
         else if (pclass==CLASS_VEGETATION){if (CVegetationClass::StringToVegClass (class_str)==NULL){bad=true;}}
-        else if (pclass==CLASS_LANDUSE   ){if (CLandUseClass   ::StringToLUClass  (class_str)==NULL){bad=true;}}
+        else if (pclass==CLASS_LANDUSE   ){if (pModel->StringToLUClass  (class_str)==NULL){bad=true;}}
 
         if (bad){
           string warn="ParseNetCDFParamFile:: unrecognized soil/veg/lult class found ("+class_str+") in FEWS parameter update file";

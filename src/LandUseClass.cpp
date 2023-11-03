@@ -14,9 +14,7 @@
 //
 CLandUseClass::CLandUseClass(const string name)
 {
-  this->S.landuse_name=name;
-  if (!DynArrayAppend((void**&)(pAllLUClasses),(void*)(this),NumLUClasses)){
-    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
+  S.landuse_name=name;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -39,87 +37,6 @@ const surface_struct *CLandUseClass::GetSurfaceStruct() const{return &S;}
 //
 string                CLandUseClass::GetLanduseName  () const{return S.landuse_name;}
 
-/*****************************************************************
-   Static Initialization, Accessors, Destructors
-*****************************************************************/
-CLandUseClass **CLandUseClass::pAllLUClasses=NULL;
-int             CLandUseClass::NumLUClasses=0;
-
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of land use classes
-/// \return Number of land use classes
-//
-int CLandUseClass::GetNumClasses(){
-  return NumLUClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize LU class information to screen
-//
-void CLandUseClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Land Use Class Summary:"<<NumLUClasses<<" LU/LT classes in database"<<endl;
-  for (int c=0; c<NumLUClasses;c++){
-    cout<<"-LULT. class \""<<pAllLUClasses[c]->GetLanduseName()<<"\" "<<endl;
-    cout<<"    impermeable: "<<pAllLUClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
-    cout<<"       forested: "<<pAllLUClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all LU classes
-//
-void CLandUseClass::DestroyAllLUClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
-
-  // the classes may have been already destroyed or not created
-  if (NumLUClasses == 0) {
-    if (DESTRUCTOR_DEBUG) {cout << "  No LULT classes to destroy" << endl;}
-    return;
-  }
-
-  // each class must be destroyed individually, then the array
-  for (int c=0; c<NumLUClasses;c++){
-    delete pAllLUClasses[c];
-  }
-  delete [] pAllLUClasses;
-
-  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
-  pAllLUClasses=NULL;
-  NumLUClasses=0;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the LU class corresponding to passed string
-/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
-///  can accept either lultclass index or lultclass tag
-///  if string is invalid, returns NULL
-/// \param s [in] LU class identifier (tag or index)
-/// \return Pointer to LU class corresponding to identifier string s
-//
-CLandUseClass *CLandUseClass::StringToLUClass(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int c=0;c<NumLUClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(pAllLUClasses[c]->GetLanduseName()))){return pAllLUClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))                                      {return pAllLUClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the land use  class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to land use class corresponding to index c
-//
-const CLandUseClass *CLandUseClass::GetLUClass(int c)
-{
-  if ((c<0) || (c>=NumLUClasses)){return NULL;}
-  return pAllLUClasses[c];
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates surface propeties
 /// \details  Sets surface properties based upon simple lu/lt parameters

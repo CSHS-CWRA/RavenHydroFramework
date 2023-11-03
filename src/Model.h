@@ -36,6 +36,8 @@ class CGroundwaterModel;
 class CTransportModel;
 class CEnsemble;
 class CForcingGrid;
+struct class_change;
+class CTransientParam;
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
 /// \details Stores and organizes HRUs and basins, provides access to all
@@ -94,6 +96,8 @@ private:/*------------------------------------------------------*/
   int              _nParamOverrides;  ///< number of local parameter overrides
   param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides
 
+  int              _nLandUseClasses;  ///< number of land use classes 
+  CLandUseClass  **_pLandUseClasses;  ///< array of pointers to land use classes 
 
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
@@ -317,6 +321,7 @@ public:/*-------------------------------------------------------*/
   int               GetNumGauges                      () const;
   int               GetNumForcingGrids                () const;
   int               GetNumProcesses                   () const;
+  int               GetNumLanduseClasses              () const;
   process_type      GetProcessType                    (const int j ) const;
   int               GetNumConnections                 (const int j ) const;
   int               GetNumForcingPerturbations        () const;
@@ -353,6 +358,10 @@ public:/*-------------------------------------------------------*/
                                                        const optStruct &Options) const;
   class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
 
+  const CLandUseClass *StringToLUClass  (const string s) const;
+  const CLandUseClass *GetLUClass       (const int    c) const;
+  const int            GetLandClassIndex(const string s) const; 
+
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );
   void    AddHRU                    (        CHydroUnit        *pHRU            );
@@ -364,6 +373,7 @@ public:/*-------------------------------------------------------*/
   void    AddStateVariables         (const sv_type             *aSV,
                                      const int                 *aLev,
                                      const int                  nSV             );
+  void    AddLandUseClass           (       CLandUseClass      *pLU             );
   void    AddCustomOutput           (      CCustomOutput       *pCO             );
   void    AddTransientParameter     (      CTransientParam     *pTP             );
   void    AddParameterOverride      (      param_override      *pPO             );

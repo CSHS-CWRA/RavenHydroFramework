@@ -260,7 +260,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             ExitGracefully(error.c_str(),BAD_DATA_WARN);
           }
           CLandUseClass const *pLULT=NULL;
-          pLULT=CLandUseClass::StringToLUClass(string(s[6]));
+          pLULT=pModel->StringToLUClass(string(s[6]));
           if (pLULT==NULL){
             error="Parse HRU File: Unrecognized Land Use Code/index: \""+string(s[6])+"\"";
             ExitGracefully(error.c_str(),BAD_DATA);

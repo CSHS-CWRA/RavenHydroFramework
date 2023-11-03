@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TransientParam.h"
 #include "SoilAndLandClasses.h"
@@ -62,7 +62,7 @@ class_type CTransientParam::GetParameterClassType(){return param_type;}
 //////////////////////////////////////////////////////////////////
 /// \brief Initialization routine, called prior to simulation
 //
-void CTransientParam::Initialize(const optStruct &Options)
+void CTransientParam::Initialize(const CModel *pModel, const optStruct &Options)
 {
   pTimeSeries->Initialize(Options.julian_start_day,
                           Options.julian_start_year,
@@ -94,7 +94,7 @@ void CTransientParam::Initialize(const optStruct &Options)
   }
   else if (param_type==CLASS_LANDUSE)
   {
-    if (CLandUseClass::StringToLUClass(class_name)==NULL){
+    if (pModel->StringToLUClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid land use/land type class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }

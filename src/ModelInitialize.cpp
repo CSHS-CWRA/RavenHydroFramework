@@ -123,7 +123,7 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   for (k=0;k<_nHydroUnits; k++ ){_pHydroUnits [k ]->Initialize(_UTM_zone);}
   for (g=0;g<_nGauges;     g++ ){_pGauges     [g ]->Initialize(Options,_UTM_zone);}
-  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(Options);}
+  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(this,Options);}
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups  [kk]->Initialize(); } //disables HRUs
   for (pp=0;pp<_nSBGroups; pp++){_pSBGroups   [pp]->Initialize(); } //disables SBs and HRUs
 

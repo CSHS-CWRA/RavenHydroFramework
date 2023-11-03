@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Class CSoilClass
   Class CVegetationClass
@@ -108,7 +108,6 @@ public:/*-------------------------------------------------------*/
   void AutoCalculateVegetationProps(const veg_struct    &Vtmp,
                                     const veg_struct    &Vdefault);
 
-  static void                    PreInitialize();
   static int                     GetNumClasses();
   static const CVegetationClass *GetVegClass(int c);
   static       CVegetationClass *StringToVegClass(const string s);
@@ -166,10 +165,7 @@ class CLandUseClass
 {
 protected:/*----------------------------------------------------*/
 
-  surface_struct            S;                    ///< corresponding surface properties
-
-  static CLandUseClass    **pAllLUClasses;        ///< array of pointers to all LU classes that have been created
-  static int                NumLUClasses;         ///< Number of land use classes (length of pAllLUClasses array)
+  surface_struct            S;    ///< corresponding surface properties
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -186,16 +182,9 @@ public:/*-------------------------------------------------------*/
   void AutoCalculateLandUseProps(const surface_struct &Stmp,
                                  const surface_struct &Sdefault);
 
-  static int                     GetNumClasses();
-  static const CLandUseClass    *GetLUClass(int c);
-  static       CLandUseClass    *StringToLUClass(const string s);
-  static void                    DestroyAllLUClasses();
-
   static void                    InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
   static void                    SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
   static double                  GetSurfaceProperty         (const surface_struct &S, string param_name, const bool strict=true);
-
-  static void                    SummarizeToScreen();
 };
 
 ///////////////////////////////////////////////////////////////////

@@ -26,7 +26,7 @@ double AutoOrDoubleOrAlias(const string s, val_alias **aAl,const int nAl)
 bool ParsePropArray(CParser *p,int *indices,double **properties,
                     int &num_read,string *tags,const int line_length,const int max_classes,
                     val_alias **pAliases,  const int nAliases);
-void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, const optStruct &Options);
+void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP,  const CModel *pModel, const optStruct &Options);
 void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  ImproperFormatWarning(string command,CParser *p,bool noisy);
 void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int       &nPm,
@@ -557,6 +557,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (Len>=3){
             parsed_surf[num_parsed_lult].forest_coverage=s_to_d(s[2]);
           }
+          pModel->AddLandUseClass(pLUClasses [num_parsed_lult-1]);
           num_parsed_lult++;
         }
         else{
@@ -1487,7 +1488,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     cout<<"Checking for Required Model Parameters..."<<endl;
   }
 
-  RVPParameterWarning(aPmaster,aPCmaster,nPmaster,Options);
+  RVPParameterWarning(aPmaster,aPCmaster,nPmaster,pModel,Options);
 
   //Check for existence of classes
   //--------------------------------------------------------------------------
@@ -1611,7 +1612,7 @@ bool ParsePropArray(CParser          *p,           //parser
 /// \param &nP [out] Number of parameters in list (size of aP[] and aPC[])
 /// \param &Options global options structure
 //
-void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStruct &Options)
+void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const CModel *pModel, const optStruct &Options)
 {
   for (int ii=0;ii<nP;ii++)
   {
@@ -1634,10 +1635,9 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStr
       }
     }
     else if (aPC[ii]==CLASS_LANDUSE){
-      for (int c=0;c<CLandUseClass::GetNumClasses();c++){
-        if (CLandUseClass::GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
-
-          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+CLandUseClass::GetLUClass(c)->GetLanduseName();
+      for (int c=0;c<pModel->GetNumLanduseClasses();c++){
+        if (pModel->GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+pModel->GetLUClass(c)->GetLanduseName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }

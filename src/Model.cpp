@@ -38,6 +38,8 @@ CModel::CModel(const int        nsoillayers,
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
   _nPerturbations=0;  _pPerturbations=NULL;
 
+  _nLandUseClasses=0; _pLandUseClasses=NULL;
+
   _nTotalConnections=0;
   _nTotalLatConnections=0;
 
@@ -210,7 +212,7 @@ CModel::~CModel()
 
   CSoilClass::      DestroyAllSoilClasses();
   CVegetationClass::DestroyAllVegClasses();
-  CLandUseClass::   DestroyAllLUClasses();
+  for (i=0;i<_nLandUseClasses;i++){delete _pLandUseClasses[i];} delete [] _pLandUseClasses; _pLandUseClasses=NULL;
   CTerrainClass::   DestroyAllTerrainClasses();
   CSoilProfile::    DestroyAllSoilProfiles();
   CChannelXSect::   DestroyAllChannelXSections();
@@ -1312,7 +1314,7 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
     ExitGracefullyIf(pCC->HRU_groupID == DOESNT_EXIST,warning.c_str(),BAD_DATA_WARN); return;
   }
   pCC->newclass=new_class;
-  if ((tclass == CLASS_LANDUSE) && (CLandUseClass::StringToLUClass(new_class) == NULL)){
+  if ((tclass == CLASS_LANDUSE) && (StringToLUClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid land use class specified",BAD_DATA_WARN);return;
   }
   if ((tclass == CLASS_VEGETATION) && (CVegetationClass::StringToVegClass(new_class) == NULL)){
@@ -1872,7 +1874,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
         if      (_pClassChanges[j]->tclass == CLASS_LANDUSE)
         {
-          CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
+          const CLandUseClass *lult_class=StringToLUClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeLandUse(lult_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
@@ -1931,6 +1933,53 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   return pclass;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief adds land use class 
+//
+void  CModel::AddLandUseClass(CLandUseClass* pLU) 
+{
+  if (!DynArrayAppend((void**&)(_pLandUseClasses),(void*)(pLU),_nLandUseClasses)){
+    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the LU class corresponding to passed string
+/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
+///  if string is invalid, returns NULL
+/// \param s [in] LU class name
+/// \return Pointer to LU class corresponding to identifier string s
+//
+const CLandUseClass *CModel::StringToLUClass(const string s) const
+{
+  int c=GetLandClassIndex(s);
+  if (c==DOESNT_EXIST){return NULL;}
+  else                {return _pLandUseClasses[c]; }
+}
+const int CModel::GetLandClassIndex(const string s) const 
+{
+  string sup=StringToUppercase(s);
+  for (int c=0;c<_nLandUseClasses;c++)
+  {
+    if (!sup.compare(StringToUppercase(_pLandUseClasses[c]->GetLanduseName()))){return c;}
+  }
+  return DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the land use  class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] land class index
+/// \return Reference to land use class corresponding to index c
+//
+const CLandUseClass *CModel::GetLUClass(const int c) const
+{
+  if ((c<0) || (c>=_nLandUseClasses)){return NULL;}
+  return _pLandUseClasses[c];
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of land use classes
+//
+int CModel::GetNumLanduseClasses() const {
+  return _nLandUseClasses;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Updates model parameter during course of simulation
 ///
 /// \param &ctype [in] parameter class type
@@ -1961,7 +2010,8 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_LANDUSE)
   {
-    CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+    int c=GetLandClassIndex(cname);
+    _pLandUseClasses[c]->SetSurfaceProperty(pname, value);
   }
   else if(ctype==CLASS_GLOBAL)
   {
