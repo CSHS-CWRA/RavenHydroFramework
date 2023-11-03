@@ -522,10 +522,22 @@ int   CChannelXSect::GetNumChannelXSects       (){return NumChannelXSects;}
 void  CChannelXSect::DestroyAllChannelXSections()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL CHANNEL PROFILES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (NumChannelXSects == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO CHANNEL PROFILES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
   for (int p=0; p<NumChannelXSects;p++){
     delete pAllChannelXSects[p];
   }
   delete [] pAllChannelXSects;
+
+  // reset the static variables
+  pAllChannelXSects = NULL;
+  NumChannelXSects = 0;
 }
 
 //////////////////////////////////////////////////////////////////

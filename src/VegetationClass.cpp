@@ -74,10 +74,22 @@ void CVegetationClass::SummarizeToScreen()
 void CVegetationClass::DestroyAllVegClasses()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL VEGETATION CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (NumVegClasses == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO VEGETATION CLASSES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
   for (int c=0; c<NumVegClasses;c++){
     delete pAllVegClasses[c];
   }
   delete [] pAllVegClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  pAllVegClasses = NULL;
+  NumVegClasses = 0;
 }
 
 //////////////////////////////////////////////////////////////////
