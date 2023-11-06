@@ -178,8 +178,8 @@ private:/*------------------------------------------------------*/
   double          *_PotMeltBlends_wts;
 
   /* below are attributes that were static in the past */
-  CLandUseClass    **_pLandUseClasses;     ///< array of pointers to land use classes 
-  int                _nLandUseClasses;     ///< number of land use classes 
+  CLandUseClass    **_pLandUseClasses;     ///< array of pointers to land use classes
+  int                _nLandUseClasses;     ///< number of land use classes
   CSoilClass       **_pAllSoilClasses;     /// used to be static attribute of CSoilClass
   int                _nAllSoilClasses;     /// same of above
   CVegetationClass **_pAllVegClasses;      /// used to be static attribute of CVegetationClass
@@ -443,7 +443,7 @@ public:/*-------------------------------------------------------*/
 
   const CLandUseClass *StringToLUClass  (const string s) const;
   const CLandUseClass *GetLanduseClass  (const int    c) const;
-  const int            GetLandClassIndex(const string s) const; 
+  const int            GetLandClassIndex(const string s) const;
 
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );

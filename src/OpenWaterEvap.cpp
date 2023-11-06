@@ -14,7 +14,7 @@
 /// \brief Implementation of the Open water evaporation constructor
 /// \param owtype [in] Model of open water evaporation used
 //
-CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype, 
+CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype,
                                    const int   i_from,
                                    CModel      *pModel)
   :CHydroProcessABC(OPEN_WATER_EVAPORATION, pModel)

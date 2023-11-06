@@ -288,7 +288,7 @@ void   CmvOverflow::ApplyConstraints(const double                *state_var,
 //
 CmvExchangeFlow::CmvExchangeFlow(int In_index,   // soil water storage
                                  int Out_index,  // soil water storage
-                                 CModel *pModel)  
+                                 CModel *pModel)
   :CHydroProcessABC(EXCHANGE_FLOW, In_index, Out_index, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
