@@ -172,7 +172,7 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   double dep_cover   =pHRU->GetSurfaceProps()->max_dep_area_frac;  //pHRU->GetDepressionAreaFraction(); //TMP DEBUG - may have to vary with depression storage
   double snow_cover  =pHRU->GetSnowCover();
   double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
-  double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
+  //double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
 
   pct_cover=max(1.0-snow_cover-dep_cover,0.0);
 

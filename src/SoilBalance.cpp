@@ -185,7 +185,6 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     if (ponded<0){ponded=0;} //TMP DEBUG - should not be required.
 
     //- compute impervious area runoff  ---------------------------------------
-    double runoff_imperv = ponded * Aimp;
     rates[0]=ponded * Aimp/Options.timestep; //PONDED_WATER->SURFACE_WATER
     if (Aimp==1.0){return;}
 

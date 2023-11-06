@@ -224,7 +224,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   string tmp_names[2000];
   _nStateVars=0;
   int ii=0;
-  for(int i=0;i<_nAssimStates;i++) 
+  for(int i=0;i<_nAssimStates;i++)
   {
     kk=_aAssimGroupID[i];
     if(_aAssimStates[i]==STREAMFLOW) {
@@ -265,7 +265,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
       {
         int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetID();
         string svname = pModel->GetStateVariable()->SVTypeToString(_aAssimStates[i], _aAssimLayers[i]);
-        tmp_names[ii]=svname+"_" +to_string(k); ii++; 
+        tmp_names[ii]=svname+"_" +to_string(k); ii++;
       }
     }
   }
@@ -348,7 +348,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   for(int e=0;e<_nEnKFMembers;e++)
   {
     j=0;
-    for(int ii=0;ii<_nObs;ii++)
+    for(ii=0;ii<_nObs;ii++)
     {
       const CTimeSeriesABC* pTSObs=pModel->GetObservedTS(_aObsIndices[ii]);
 
@@ -406,7 +406,7 @@ void CEnKFEnsemble::StartTimeStepOps(CModel* pModel,optStruct& Options,const tim
   //----------------------------------------------------------
   if ((_EnKF_mode!=ENKF_FORECAST) && (_EnKF_mode!=ENKF_OPEN_FORECAST))
   {
-    pModel->PrepareForcingPerturbation(Options, tt); 
+    pModel->PrepareForcingPerturbation(Options, tt);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -788,15 +788,15 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
   if(e==_nEnKFMembers-1) //After all ensemble members have run
   {
     _ENKFOUT<<"PRE-ASSIMILATION STATE MATRIX:"<<endl;
-    _ENKFOUT<<"member"<<","; 
+    _ENKFOUT<<"member"<<",";
     for (int i = 0; i<_nStateVars; i++) {
       _ENKFOUT<<_state_names[i]<<",";
     }
     _ENKFOUT<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[e][i]<<",";
+        _ENKFOUT<<_state_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
@@ -805,40 +805,40 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
     AssimilationCalcs();
 
     _ENKFOUT<<"POST-ASSIMILATION STATE MATRIX:"<<endl;
-    _ENKFOUT<<"member"<<","; 
+    _ENKFOUT<<"member"<<",";
     for (int i = 0; i<_nStateVars; i++) {
       _ENKFOUT<<_state_names[i]<<",";
     }
     _ENKFOUT<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[e][i]<<",";
+        _ENKFOUT<<_state_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
 
     _ENKFOUT<<"NOISE MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_noise_matrix[e][i]<<",";
+        _ENKFOUT<<_noise_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
     _ENKFOUT<<"OBSERVATION MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_obs_matrix[e][i]<<",";
+        _ENKFOUT<<_obs_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
     _ENKFOUT<<"SIMULATED OUTPUT MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_output_matrix[e][i]<<",";
+        _ENKFOUT<<_output_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }

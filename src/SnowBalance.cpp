@@ -1266,7 +1266,7 @@ void CmvSnowBalance::CRHMSnowBalance(const double *state_vars,
     refreeze = -snow_energy/LH_FUSION/DENSITY_WATER*MM_PER_METER;
     if(snow_liq > refreeze) { //partial refreeze
       snow_energy   = 0.0;
-      refreeze=refreeze;
+      //refreeze=refreeze;
     }
     else { //total refreeze /cooling
       snow_energy  +=snow_liq*LH_FUSION*DENSITY_WATER/MM_PER_METER;

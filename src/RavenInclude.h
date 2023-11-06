@@ -1244,7 +1244,7 @@ struct force_struct
 ////////////////////////////////////////////////////////////////////
 /// \brief probability distributions
 //
-enum disttype 
+enum disttype
 {
   DIST_UNIFORM,     ///< Uniform distribution
   DIST_NORMAL,      ///< Gaussian (normal) distribution
@@ -1419,8 +1419,7 @@ inline double        s_to_d (const char *s1)            {return atof(s1);       
 inline bool StringIsLong(const char *s1)
 {
   char *p;
-  long tmp=strtol(s1,&p,10);
-  tmp=0;
+  strtol(s1,&p,10);
   return !(*p);
 }
 ///////////////////////////////////////////////////////////////////

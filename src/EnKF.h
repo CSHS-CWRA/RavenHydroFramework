@@ -36,7 +36,7 @@ private:
 
   double       **_state_matrix;     ///< current array of state vectors, X [size: _nEnKFMembers x_nStateVars]
   int            _nStateVars;       ///< total number of assimilated state variables
-  string        *_state_names;      ///< array of state names   
+  string        *_state_names;      ///< array of state names
 
   double       **_obs_matrix;       ///< matrix of perturbed observations, D [size: _nEnKFMembers x _nObsDatapoints]
   double       **_output_matrix;    ///< matrix of simulated values corresponding to observations, HA [size: _nEnKFMembers x _nObsDatapoints]

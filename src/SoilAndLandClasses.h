@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Class CSoilClass
   Class CVegetationClass
@@ -98,6 +98,10 @@ public:/*-------------------------------------------------------*/
                                     const veg_struct    &Vdefault);
 
   static void                    PreInitialize();
+  static int                     GetNumClasses();
+  static const CVegetationClass *GetVegClass(int c);
+  static       CVegetationClass *StringToVegClass(const string s);
+  static void                    DestroyAllVegClasses();
 
   static void                    SetVegetationProperty(veg_struct &V, const string param_name, const double &value);
   static void                    SetVegTransportProperty( int          constit_ind,int          constit_ind2,
@@ -169,7 +173,6 @@ public:/*-------------------------------------------------------*/
   void AutoCalculateLandUseProps(surface_struct &Stmp,
                                  surface_struct &Sdefault);
 
-  // int                  GetNumClasses();
   const CLandUseClass *GetLUClass(int c);
         CLandUseClass *StringToLUClass(const string s);  // should die, right?
 

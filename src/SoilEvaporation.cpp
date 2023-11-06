@@ -477,9 +477,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   else if (type==SOILEVAP_CHU)
   { //Ontario Heat Crop Method: evaporation rated calculated using ratio of crop heat units to CHU maturity
-    double stor,CHU;
-
-    stor      = state_vars[iFrom[0]];//[mm]
+    double CHU;
 
     CHU       = max(state_vars[pModel->GetStateVarIndex(CROP_HEAT_UNITS)],0.0);
 

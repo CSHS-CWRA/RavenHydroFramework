@@ -39,7 +39,7 @@ source_group("Source Files" FILES ${SOURCE})
 IF(NETCDF_FOUND)
   add_definitions(-Dnetcdf)
   include_directories(${NetCDF_INCLUDE_DIRS})
-  target_link_libraries(Raven ${NetCDF})
+  target_link_libraries(Raven NetCDF::NetCDF)
 ENDIF()
 
 # unset cmake variables to avoid polluting the cache

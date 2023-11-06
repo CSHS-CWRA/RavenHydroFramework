@@ -736,7 +736,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   if((tt.model_time>=Options.duration-Options.timestep-TIME_CORRECTION) &&
     (pHRU->GetGlobalIndex()==((CModel*)(pModel))->GetNumHRUs()-1))
   {
-    for(int k=0;k<_nHRUs;k++) {delete [] v_old[k];} delete [] v_old;
+    for(k=0;k<_nHRUs;k++) {delete [] v_old[k];} delete [] v_old;
 
     delete[] dz;  delete[] z;    delete[] poro;
     delete[] sat; delete[] satn; delete[] kappa_s;
@@ -744,8 +744,8 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     delete[] hold;
     delete[] Tnew;   delete[] Told;    delete[] kap; delete[] kapn;
     delete[] hguess; delete[] delta_h; delete[] f;
-    for(int i=0;i<3;i++) { delete[] J[i]; } delete[] J;
-    for(int i=0;i<N;i++) { delete[]  Jinv[i]; } delete[] Jinv;
+    for(i=0;i<3;i++) { delete[] J[i]; } delete[] J;
+    for(i=0;i<N;i++) { delete[]  Jinv[i]; } delete[] Jinv;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -811,7 +811,7 @@ double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,
       hnew=hn+(ha-hn)*(1.0-exp(-gamma_w*dt));
     }
     else if(hn>0.0) { //unfrozen and cooling (case iii) -working
-      double hlim=HCP_WATER*Ta;
+      hlim=HCP_WATER*Ta;
       tstar=-1/gamma_w*log((hlim)/(hlim-hn));
       if(dt<tstar) { hnew=hn+(hlim-hn)*(1.0-exp(-gamma_i*dt)); }
       else          {hnew=(dt-tstar)*gamma_i*(ha-ht);               }

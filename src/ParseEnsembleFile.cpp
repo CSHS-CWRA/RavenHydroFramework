@@ -97,7 +97,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
     case(-3):  //----------------------------------------------
     {/*:RedirectToFile*/
       string filename="";
-      for(int i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
+      for(i=1;i<Len;i++) { filename+=s[i]; if(i<Len-1) { filename+=' '; } }
       if(Options.noisy) { cout <<"Redirect to file: "<<filename<<endl; }
 
       filename=CorrectForRelativePath(filename,Options.rve_filename);
@@ -128,7 +128,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       if(Len>1) {
         if(Options.noisy) { cout <<"Mode statement start..."<<endl; }
         bool mode_match=false;
-        for(int i=1; i<Len; i++) {
+        for(i=1; i<Len; i++) {
           if(s[i][0]==Options.run_mode) { mode_match=true; }
         }
         if(!mode_match) { in_ifmode_statement=true; }
@@ -316,7 +316,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         sv = pModel->GetStateVariable()->StringToSVType(s[1], lay, true);
         int kk = DOESNT_EXIST;
 
-        int i=pModel->GetStateVarIndex(sv,lay);
+        i=pModel->GetStateVarIndex(sv,lay);
         if ((i == DOESNT_EXIST) && (sv!=STREAMFLOW) && (sv!=RESERVOIR_STAGE) ){
           string warn="State variable "+to_string(s[1])+" does not exist in this model and will be ignored in the :AssimilatedState command";
           WriteWarning(warn,Options.noisy);
@@ -475,7 +475,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
         break;
       }
       bool ObsExists=false;
-      for(int i=0; i<pModel->GetNumObservedTS(); i++) {
+      for(i=0; i<pModel->GetNumObservedTS(); i++) {
         if(IsContinuousFlowObs2(pModel->GetObservedTS(i),SBID)) {
           ObsExists=true;
           break;

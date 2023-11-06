@@ -215,9 +215,9 @@ void CmvInfiltration::GetParticipatingParamList(string *aP, class_type *aPC, int
   else if(type==INF_AWBM)
   {
     nP=3;
-    aP[0]="ABWM_AREAFRAC1";        aPC[0]=CLASS_LANDUSE;
-    aP[1]="ABWM_AREAFRAC2";        aPC[1]=CLASS_LANDUSE;
-    aP[2]="ABWM_BFLOW_INDEX";      aPC[2]=CLASS_LANDUSE;
+    aP[0]="AWBM_AREAFRAC1";        aPC[0]=CLASS_LANDUSE;
+    aP[1]="AWBM_AREAFRAC2";        aPC[1]=CLASS_LANDUSE;
+    aP[2]="AWBM_BFLOW_INDEX";      aPC[2]=CLASS_LANDUSE;
   }
   else
   {

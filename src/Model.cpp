@@ -40,8 +40,17 @@ CModel::CModel(const int        nsoillayers,
   _nDiagnostics=0;    _pDiagnostics=NULL;
   _nDiagPeriods=0;    _pDiagPeriods=NULL;
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
-  _nPerturbations=0;  _pPerturbations=NULL; 
-  
+  _nPerturbations=0;  _pPerturbations=NULL;
+
+  _nLandUseClasses=0; _pLandUseClasses=NULL;
+
+  _nAllSoilClasses = 0;     _pAllSoilClasses = NULL;
+  _numVegClasses = 0;       _pAllVegClasses  = NULL;
+  _nAllTerrainClasses = 0;  _pAllTerrainClasses = NULL;
+  _nAllSoilProfiles = 0;    _pAllSoilProfiles = NULL;
+  _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
+  _nConvVariables = -1;
+
   _nTotalConnections=0;
   _nTotalLatConnections=0;
 
@@ -106,14 +115,6 @@ CModel::CModel(const int        nsoillayers,
     count++;
   }
   _lake_sv=0; //by default, rain on lake goes direct to surface storage [0]
-
-  _nAllSoilClasses = 0;     _pAllSoilClasses = NULL;
-  _numVegClasses = 0;       _pAllVegClasses  = NULL;
-  _nAllTerrainClasses = 0;  _pAllTerrainClasses = NULL;
-  NumLUClasses = 0;          pAllLUClasses   = NULL;
-  _nAllSoilProfiles = 0;    _pAllSoilProfiles = NULL;
-  _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
-  _nConvVariables = -1;
 
   _aGaugeWeights    =NULL; //Initialized in Initialize
   _aGaugeWtTemp     =NULL;
@@ -195,7 +196,7 @@ CModel::~CModel()
   for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
   for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
 
-  for (int i=0;i<_nPerturbations;   i++)
+  for (i=0;i<_nPerturbations;   i++)
   {
     delete [] _pPerturbations[i]->eps;
     delete _pPerturbations   [i];
@@ -217,7 +218,7 @@ CModel::~CModel()
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 
-  this->DestroyAllLUClasses();
+  this->DestroyAllLanduseClasses();
   this->DestroyAllSoilClasses();
   this->DestroyAllVegClasses();
   this->DestroyAllTerrainClasses();
@@ -625,14 +626,14 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   do
   {
     numUpstrOld=numUpstr;
-    for(int p=0;p<_nSubBasins;p++) {
+    for(p=0;p<_nSubBasins;p++) {
       down_p=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
       if(down_p!=DOESNT_EXIST) {
         if(isUpstr[down_p]==true) { isUpstr[p]=true;}
       }
     }
     numUpstr=0;
-    for(int p=0;p<_nSubBasins;p++) {
+    for(p=0;p<_nSubBasins;p++) {
       if(isUpstr[p]==true) { numUpstr++; }
     }
     iter++;
@@ -640,7 +641,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   //cout<<"upstream basin calculations iterations = "<<iter<<" "<<numUpstr<<" basins found upstream of basin "<<SBID<<endl;
   nUpstream=numUpstr;
   int count=0;
-  for(int p=0;p<_nSubBasins;p++) {
+  for(p=0;p<_nSubBasins;p++) {
     if (isUpstr[p]==true){pSBs[count]=_pSubBasins[p];count++; }
   }
   delete [] isUpstr;
@@ -1797,42 +1798,29 @@ void CModel::OverrideStreamflow   (const long SBID)
 //
 CLandUseClass *CModel::StringToLUClass(const string s)
 {
-  string sup=StringToUppercase(s);
-  for (int c=0;c<NumLUClasses;c++)
+  string s_sup = StringToUppercase(s);
+  for (int c=0;c<_nLandUseClasses;c++)
   {
-    if (!sup.compare(StringToUppercase(pAllLUClasses[c]->GetLanduseName()))){return pAllLUClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))                                      {return pAllLUClasses[c];}
+    if (!s_sup.compare(StringToUppercase(_pLandUseClasses[c]->GetLanduseName()))) {
+      return this->_pLandUseClasses[c];
+    }
+    else if (s_to_i(s.c_str())==(c+1)) {
+      return this->_pLandUseClasses[c];
+    }
   }
+
   return NULL;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the land use  class corresponding to the passed index
 ///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
+/// \param c [in] LandUse class index
 /// \return Reference to land use class corresponding to index c
 //
-CLandUseClass *CModel::GetLUClass(int c) {
-  if ((c<0) || (c >= this->NumLUClasses)){return NULL;}
-  return this->pAllLUClasses[c];
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of land use classes in the model
-/// \return Number of land use classes
-//
-int CModel::GetNumLUClasses() {
-  return this->NumLUClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Add a land use class to the model
-/// \param pLUClass [in] Pointer to land use class to add
-//
-void CModel::AddLUClass(CLandUseClass *pLUClass) {
-  if (!DynArrayAppend((void**&)(pAllLUClasses), (void*)pLUClass, NumLUClasses)) {
-    this->ExitGracefully("CModel::AddLUClass: adding NULL land use class", BAD_DATA);
-  }
+CLandUseClass *CModel::GetLanduseClass(int c) {
+  if ((c<0) || (c >= this->_nLandUseClasses)){return NULL;}
+  return this->_pLandUseClasses[c];
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1841,11 +1829,11 @@ void CModel::AddLUClass(CLandUseClass *pLUClass) {
 void CModel::SummarizeLUClassesToScreen()
 {
   cout<<"==================="<<endl;
-  cout<<"Land Use Class Summary:"<<NumLUClasses<<" LU/LT classes in database"<<endl;
-  for (int c=0; c<NumLUClasses;c++){
-    cout<<"-LULT. class \""<<pAllLUClasses[c]->GetLanduseName()<<"\" "<<endl;
-    cout<<"    impermeable: "<<pAllLUClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
-    cout<<"       forested: "<<pAllLUClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
+  cout<<"Land Use Class Summary:"<<_nLandUseClasses<<" LU/LT classes in database"<<endl;
+  for (int c=0; c<_nLandUseClasses;c++){
+    cout<<"-LULT. class \""<<_pLandUseClasses[c]->GetLanduseName()<<"\" "<<endl;
+    cout<<"    impermeable: "<<_pLandUseClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
+    cout<<"       forested: "<<_pLandUseClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
   }
 }
 
@@ -1857,20 +1845,20 @@ void CModel::DestroyAllLUClasses()
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
 
   // the classes may have been already destroyed or not created
-  if (NumLUClasses == 0) {
+  if (_nLandUseClasses == 0) {
     if (DESTRUCTOR_DEBUG) {cout << "  No LULT classes to destroy" << endl;}
     return;
   }
 
   // each class must be destroyed individually, then the array
-  for (int c=0; c<NumLUClasses;c++){
-    delete pAllLUClasses[c];
+  for (int c=0; c<_nLandUseClasses;c++){
+    delete _pLandUseClasses[c];
   }
-  delete [] pAllLUClasses;
+  delete [] _pLandUseClasses;
 
   // the static variables must be reset to avoid dangling pointers and attempts to re-delete
-  pAllLUClasses=NULL;
-  NumLUClasses=0;
+  _pLandUseClasses = NULL;
+  _nLandUseClasses = 0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2478,7 +2466,7 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
     int iGW=GetStateVarIndex(GROUNDWATER);
     for(int k=0;k<_nHydroUnits;k++) {
       double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
-      double area=_pHydroUnits[k]->GetArea();
+      area=_pHydroUnits[k]->GetArea();
       if (GW<0){_CumulInput-=GW*area/_WatershedArea;} //negative recharge
     }
     /*for(int p=0;p<_nSubBasins;p++) {
@@ -2534,7 +2522,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
     int iGW=GetStateVarIndex(GROUNDWATER);
     for(int k=0;k<_nHydroUnits;k++) {
       double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
-      double area=_pHydroUnits[k]->GetArea();
+      area=_pHydroUnits[k]->GetArea();
       if(GW>0) { _CumulOutput+=GW*area/_WatershedArea; }
     }
     /*for(int p=0;p<_nSubBasins;p++) {
@@ -2595,7 +2583,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           _pHydroUnits[k]->ChangeHRUType(typ);
         }
 
-        for(int j=0; j<_nProcesses;j++)// kt
+        for(j=0; j<_nProcesses;j++)// kt
         {
           _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
         }
@@ -2638,6 +2626,54 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   delete pSB;
 
   return pclass;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief adds land use class 
+//
+void  CModel::AddLandUseClass(CLandUseClass* pLU) 
+{
+  if (!DynArrayAppend((void**&)(_pLandUseClasses),(void*)(pLU),_nLandUseClasses)) {
+    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);
+  };
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the LU class corresponding to passed string
+/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
+///  if string is invalid, returns NULL
+/// \param s [in] LU class name
+/// \return Pointer to LU class corresponding to identifier string s
+//
+const CLandUseClass *CModel::StringToLUClass(const string s) const
+{
+  int c=GetLandClassIndex(s);
+  if (c==DOESNT_EXIST){return NULL;}
+  else                {return _pLandUseClasses[c]; }
+}
+const int CModel::GetLandClassIndex(const string s) const 
+{
+  string sup=StringToUppercase(s);
+  for (int c=0;c<_nLandUseClasses;c++)
+  {
+    if (!sup.compare(StringToUppercase(_pLandUseClasses[c]->GetLanduseName()))){return c;}
+  }
+  return DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the land use  class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] land class index
+/// \return Reference to land use class corresponding to index c
+//
+const CLandUseClass *CModel::GetLanduseClass(const int c) const
+{
+  if ((c<0) || (c>=_nLandUseClasses)){return NULL;}
+  return _pLandUseClasses[c];
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of land use classes
+//
+int CModel::GetNumLanduseClasses() const {
+  return _nLandUseClasses;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Updates model parameter during course of simulation
@@ -2757,7 +2793,7 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
 /// \param &Options [out] Global model options information
 /// \params tt [in] time structure
 //
-void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt) 
+void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt)
 {
 
   for(int i=0;i<_nPerturbations;i++)
@@ -2775,9 +2811,9 @@ void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_str
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief called within update forcings - actually applies forcing function changes 
+/// \brief called within update forcings - actually applies forcing function changes
 /// \param ftype [in] forcing function type
-/// \param F [out] forcing structure modified by this routine 
+/// \param F [out] forcing structure modified by this routine
 /// \param k [in] HRU index of forcing
 /// \param &Options [in] Global model options information
 /// \params tt [in] time structure
@@ -2793,10 +2829,10 @@ void CModel::ApplyForcingPerturbation(const forcing_type ftype, force_struct &F,
       double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
       int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
       bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
-      
+
       kk=_pPerturbations[i]->kk;
-      
-      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k))) 
+
+      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k)))
       {
         _pHydroUnits[k]->AdjustHRUForcing(ftype, F,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
         if (start_of_day){

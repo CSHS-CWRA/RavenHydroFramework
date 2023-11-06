@@ -1504,7 +1504,7 @@ CTimeSeries *CTimeSeries::ReadTimeSeriesFromNetCDF(const optStruct &Options, str
     aTmp1D=new double [dim1];
     ExitGracefullyIf(aTmp1D==NULL,"CTimeSeries::ReadTimeSeriesFromNetCDF: aTmp1D(0)",OUT_OF_MEMORY);
   }
-  
+
   // -------------------------------
   // (9) Read data
   // -------------------------------

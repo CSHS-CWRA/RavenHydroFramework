@@ -494,7 +494,7 @@ double CTransportModel::GetGeochemParam(const gparam_type gtyp,const int c,const
 {
   //cout<<" GEOCHEM PAR "<<_nGeochemParams<<endl;
   for(int i=0;i<_nGeochemParams;i++) {
-    geochem_param *p=_pGeochemParams[i];
+    //geochem_param *p=_pGeochemParams[i];
     //cout<<" GEOCHEM PAR "<<p->type<<" "<<p->constit_ind<<" "<<p->constit_ind2<<" "<<p->ii_water_stor<<" "<<p->value<<endl;
     if(_pGeochemParams[i]->type!=gtyp) { continue; }
     if((_pGeochemParams[i]->ii_water_stor!=DOESNT_EXIST) && (_pGeochemParams[i]->ii_water_stor!=ii)) { continue; }

@@ -2297,7 +2297,7 @@ void CForcingGrid::ReadAttGridFromNetCDF2(const int ncid,const string varname,co
       }
 
       //retval=nc_get_vars_text(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
-      
+
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);

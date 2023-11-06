@@ -329,7 +329,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double moddaily=0.0;
     double obsdaily=0.0;
     double dailyN  =0.0;
-    double N=0;
+    N=0;
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observation value
     {
@@ -500,7 +500,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   case(DIAG_ABSMAX)://----------------------------------------------------
   {
     double maxerr = -ALMOST_INF;
-    double N=0.0;
+    N=0.0;
 
     for(nn = nnstart; nn<nnend; nn++)
     {
@@ -530,7 +530,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
     double maxObs = 0;
     double maxMod = 0;
-    double N=0;
+    N=0;
 
     for (nn = nnstart; nn<nnend; nn++)
     {
@@ -559,7 +559,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
       double maxObs = 0;
       double maxMod = 0;
-      double N = 0;
+      N = 0;
 
       for (nn = nnstart; nn < nnend; nn++)
       {
@@ -588,7 +588,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
       double maxObs = 0;
       double maxMod = 0;
-      double N = 0;
+      N = 0;
 
       for (nn = nnstart; nn < nnend; nn++)
       {
@@ -732,7 +732,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     // Counting number of sign changes of difference between time series
     double nxtobsval,nxtmodval;
     double nsc = 0;
-    double N=0;
+    N=0;
     for (nn = nnstart; nn < nnend - 1; nn++)
     {
       nxtobsval = pTSObs->GetSampledValue(nn + 1);
@@ -1052,7 +1052,7 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
     double obsstd  (0.0), modstd  (0.0);
     double covar   =0.0;
     double dailyN  =0.0;
-    double N=0;
+    N=0;
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observed/simulated value
     {

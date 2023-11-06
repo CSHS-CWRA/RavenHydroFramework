@@ -42,6 +42,8 @@ class CLandUseClass;  // defined in 'SoilAndLandClasses.h'
 class CSubbasinGroup; // defined in 'SubBasin.h'
 class CChannelXSect;  // defined in 'ChannelXSect.h'
 class CSubBasin;      // defined in 'SubBasin.h'
+struct class_change;
+class CTransientParam;
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
@@ -102,7 +104,6 @@ private:/*------------------------------------------------------*/
   class_change     **_pClassChanges;  ///< array of pointers to class_changes
   int              _nParamOverrides;  ///< number of local parameter overrides
   param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides
-
 
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
@@ -177,8 +178,8 @@ private:/*------------------------------------------------------*/
   double          *_PotMeltBlends_wts;
 
   /* below are attributes that were static in the past */
-  CLandUseClass     **pAllLUClasses;       // = NULL; used to be static attribute of CLandUseClass
-  int                 NumLUClasses;        // = 0;    same of above
+  CLandUseClass    **_pLandUseClasses;     ///< array of pointers to land use classes 
+  int                _nLandUseClasses;     ///< number of land use classes 
   CSoilClass       **_pAllSoilClasses;     /// used to be static attribute of CSoilClass
   int                _nAllSoilClasses;     /// same of above
   CVegetationClass **_pAllVegClasses;      /// used to be static attribute of CVegetationClass
@@ -332,11 +333,10 @@ public:/*-------------------------------------------------------*/
   /* below are functions that were static in the past */
   // CLandUseClass
   CLandUseClass *StringToLUClass(const string s);
-  int            GetNumLUClasses();
-  CLandUseClass *GetLUClass(int);
-  void           AddLUClass(CLandUseClass *pLUClass);
+
+  CLandUseClass *GetLanduseClass(int);
   void           SummarizeLUClassesToScreen();
-  void           DestroyAllLUClasses();
+  void           DestroyAllLanduseClasses();
   // CSoilClass
   CSoilClass       *StringToSoilClass(const string s);
   int               GetNumSoilClasses();
@@ -404,9 +404,10 @@ public:/*-------------------------------------------------------*/
   int               GetNumGauges                      () const;
   int               GetNumForcingGrids                () const;
   int               GetNumProcesses                   () const;
+  int               GetNumLanduseClasses              () const;
   process_type      GetProcessType                    (const int j ) const;
   int               GetNumConnections                 (const int j ) const;
-  int               GetNumForcingPerturbations        () const; 
+  int               GetNumForcingPerturbations        () const;
   double            GetAveragePrecip                  () const;
   double            GetAverageSnowfall                () const;
   int               GetOrderedSubBasinIndex           (const int pp) const;
@@ -440,6 +441,10 @@ public:/*-------------------------------------------------------*/
                                                        const optStruct &Options) const;
   class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
 
+  const CLandUseClass *StringToLUClass  (const string s) const;
+  const CLandUseClass *GetLanduseClass  (const int    c) const;
+  const int            GetLandClassIndex(const string s) const; 
+
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );
   void    AddHRU                    (        CHydroUnit        *pHRU            );
@@ -451,6 +456,7 @@ public:/*-------------------------------------------------------*/
   void    AddStateVariables         (const sv_type             *aSV,
                                      const int                 *aLev,
                                      const int                  nSV             );
+  void    AddLandUseClass           (       CLandUseClass      *pLU             );
   void    AddCustomOutput           (      CCustomOutput       *pCO             );
   void    AddTransientParameter     (      CTransientParam     *pTP             );
   void    AddParameterOverride      (      param_override      *pPO             );
@@ -532,7 +538,7 @@ public:/*-------------------------------------------------------*/
                                           const optStruct &Options, const time_struct &tt);
   void         PrepareAssimilation       (const optStruct &Options, const time_struct &tt);
   void         PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt);
-  void         ApplyForcingPerturbation  (const forcing_type f, force_struct &F, const int k, const optStruct& Options, const time_struct& tt); 
+  void         ApplyForcingPerturbation  (const forcing_type f, force_struct &F, const int k, const optStruct& Options, const time_struct& tt);
 
   //water/energy/mass balance routines
   void   CalculateInitialWaterStorage (const optStruct   &Options);

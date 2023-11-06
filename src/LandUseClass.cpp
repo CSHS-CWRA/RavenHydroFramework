@@ -17,7 +17,7 @@
 CLandUseClass::CLandUseClass(const string name, CModel* pModel)
 {
   this->S.landuse_name = name;
-  pModel->AddLUClass(this);
+  pModel->AddLandUseClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -39,10 +39,6 @@ const surface_struct *CLandUseClass::GetSurfaceStruct() const{return &S;}
 /// \return nick name identifier of land use class
 //
 string                CLandUseClass::GetLanduseName  () const{return S.landuse_name;}
-
-/*****************************************************************
-   Static Initialization, Accessors
-*****************************************************************/
 
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates surface propeties

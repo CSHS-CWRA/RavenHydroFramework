@@ -1,4 +1,4 @@
-static CModel      *pModel;
+static CModel *pModel = NULL;  // in the standalone version, this pModel is a global variable
 
 /////////////////////////////////////////////////////////////////
 /// \brief Finalizes program gracefully, explaining reason for finalizing, and destructing simulation and all pertinent parameters
@@ -9,6 +9,15 @@ static CModel      *pModel;
 //
 inline void FinalizeGracefully(const char *statement, exitcode code)
 {
+  // errors can occur earlier than the initialization of global pModel variable
+  if (pModel == NULL) {
+    cout << "============== Early Gracefully Exit ==============" << endl;
+    cout << "Error Statement: " << statement << endl;
+    cout << "Error Code: " << code << endl;
+    cout << "---------------------------------------------------" << endl;
+    return;
+  }
+
   const optStruct* Options = pModel->GetOptStruct();
 
   string typeline;

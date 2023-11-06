@@ -131,7 +131,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
   {
     //just queries thermal model and updates ice thickness variable
 
-    double ice_thick=state_vars[iFrom[0]];
+    ice_thick=state_vars[iFrom[0]];
 
     const CEnthalpyModel *pEnthalpyModel=_pTransModel->GetEnthalpyModel();
 

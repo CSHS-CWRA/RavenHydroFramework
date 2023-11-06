@@ -406,7 +406,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":PrecipIceptFract"          )){code=30; }
     else if  (!strcmp(s[0],":OroTempCorrect"            )){code=31; }
     else if  (!strcmp(s[0],":OroPrecipCorrect"          )){code=32; }
-
+    else if  (!strcmp(s[0],":LWIncomingMethod"          )){code=33; }
     else if  (!strcmp(s[0],":PotentialMeltMethod"       )){code=34; }
     else if  (!strcmp(s[0],":SubdailyMethod"            )){code=35; }
     else if  (!strcmp(s[0],":SubDailyMethod"            )){code=35; }
@@ -1104,6 +1104,16 @@ bool ParseMainInputFile (CModel     *&pModel,
       else if (!strcmp(s[1],"OROCORR_SIMPLELAPSE")){Options.orocorr_precip=OROCORR_SIMPLELAPSE;}
       else if (!strcmp(s[1],"OROCORR_NONE"       )){Options.orocorr_precip=OROCORR_NONE;}
       else {ExitGracefully("ParseInput:OroPrecipCorrect: Unrecognized method",BAD_DATA_WARN);}
+      break;
+    }
+    case(33): //----------------------------------------------
+    {/*:LWIncomingMethod  [string method] */
+      if (Options.noisy) {cout <<"Incoming Longwave Radiation Estimation Method"<<endl;}
+      if (Len<2){ImproperFormatWarning(":LWIncomingMethod",p,Options.noisy); break;}
+      if      (!strcmp(s[1],"LW_INC_DATA"      )){Options.LW_incoming=LW_INC_DATA;}
+      else if (!strcmp(s[1],"LW_RAD_DEFAULT"   )){Options.LW_incoming=LW_INC_DEFAULT;}
+      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;}
+      else {ExitGracefully("ParseInput:LWIncomingMethod: Unrecognized method ",BAD_DATA_WARN);}
       break;
     }
     case(34): //----------------------------------------------

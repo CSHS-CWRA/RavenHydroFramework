@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   struct class_change
   class  CTransientParam
@@ -12,6 +12,7 @@
 #include "Properties.h"
 #include "TimeSeries.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for global model parameters
@@ -53,7 +54,7 @@ public:/*-------------------------------------------------------*/
   class_type         GetParameterClassType();
 
   //routines
-  void Initialize(const optStruct &Options);
+  void Initialize(const CModel *pModel, const optStruct &Options);
 
 };
 

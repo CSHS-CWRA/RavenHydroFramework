@@ -180,7 +180,7 @@ void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars
 
   int qstart = 0;
   double* sum = new double[_pModel->GetNumSubBasins()];
-  for (int p = 0; p < _pModel->GetNumSubBasins(); p++) { sum[p] = 0.0; }
+  for (p = 0; p < _pModel->GetNumSubBasins(); p++) { sum[p] = 0.0; }
   int plast = -1;
   for (int q = 0; q < _nLatConnections; q++)
   {

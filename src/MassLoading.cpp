@@ -77,11 +77,11 @@ void   CmvMassLoading::GetRatesOfChange(const double      *state_vars,
 
   //Handle Neumann influx conditions, if present
   //-------------------------------------------------------
-  int iTo;
+  int iToIndex;
   for (int ii = 0; ii < pTransModel->GetNumWaterCompartments(); ii++)
   {
-    iTo=pTransModel->GetStorWaterIndex(ii);
-    rates[ii] = pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iTo, k, tt); //[mg/m2/d] or [MJ/m2/d]
+    iToIndex=pTransModel->GetStorWaterIndex(ii);
+    rates[ii] = pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iToIndex, k, tt); //[mg/m2/d] or [MJ/m2/d]
   }
 
 }
