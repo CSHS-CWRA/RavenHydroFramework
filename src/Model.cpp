@@ -2628,9 +2628,9 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   return pclass;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief adds land use class 
+/// \brief adds land use class
 //
-void  CModel::AddLandUseClass(CLandUseClass* pLU) 
+void  CModel::AddLandUseClass(CLandUseClass* pLU)
 {
   if (!DynArrayAppend((void**&)(_pLandUseClasses),(void*)(pLU),_nLandUseClasses)) {
     ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);
@@ -2649,7 +2649,7 @@ const CLandUseClass *CModel::StringToLUClass(const string s) const
   if (c==DOESNT_EXIST){return NULL;}
   else                {return _pLandUseClasses[c]; }
 }
-const int CModel::GetLandClassIndex(const string s) const 
+const int CModel::GetLandClassIndex(const string s) const
 {
   string sup=StringToUppercase(s);
   for (int c=0;c<_nLandUseClasses;c++)

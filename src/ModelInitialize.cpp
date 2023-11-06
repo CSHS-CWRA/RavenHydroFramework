@@ -496,7 +496,7 @@ void CModel::InitializeRoutingNetwork()
     _aDownstreamInds[p]=pp;
     aInflowCount    [p]=0;
   }
-  // count number of inflows to each basin 
+  // count number of inflows to each basin
   //----------------------------------------------------------------------
   for (p=0;p<_nSubBasins;p++)
   {
@@ -564,7 +564,7 @@ void CModel::InitializeRoutingNetwork()
 
   for (p = 0; p < _nSubBasins; p++)
   {
-    // identify headwater basins - default is headwater 
+    // identify headwater basins - default is headwater
     if (aInflowCount[p] > 0) {
       _pSubBasins[p]->SetAsNonHeadwater();
     }

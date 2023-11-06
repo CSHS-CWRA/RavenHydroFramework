@@ -225,7 +225,7 @@ public:/*-------------------------------------------------------*/
   CmvSnowBalance(snowbal_type  bal_type,
                  CModel *pModel);
   CmvSnowBalance(snowbal_type bal_type,
-                 int iSnowTo, 
+                 int iSnowTo,
                  CModel *pModel);
   ~CmvSnowBalance();
 
