@@ -921,6 +921,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //--------------------------------------------------------------
     if ((Options.write_reservoir) && (Options.output_format==OUTPUT_STANDARD))
     {
+      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
 	      _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
@@ -930,19 +932,15 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) {
 	          _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
 	        }
-	        //if (Options.print_obs_hydro)
-	        {
-	          for (i = 0; i < _nObservedTS; i++){
-	            if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
-	            {
-	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
-	              else                                             { _RESSTAGE << ",";       }
-	            }
+	        for (i = 0; i < _nObservedTS; i++){
+	          if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
+	          {
+              double val = _pObservedTS[i]->GetValue(nn);
+	            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
+	            else                                             { _RESSTAGE << ",";       }
 	          }
-	        }
-
-	      }
+          }
+        }
 	      _RESSTAGE<<endl;
 			}
     }
