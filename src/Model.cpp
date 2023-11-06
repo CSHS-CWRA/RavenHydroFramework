@@ -1840,7 +1840,7 @@ void CModel::SummarizeLUClassesToScreen()
 //////////////////////////////////////////////////////////////////
 /// \brief Destroy all LU classes
 //
-void CModel::DestroyAllLUClasses()
+void CModel::DestroyAllLanduseClasses()
 {
   if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
 

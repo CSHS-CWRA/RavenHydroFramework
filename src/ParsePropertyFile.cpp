@@ -611,7 +611,6 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       for (int i=0; i<num_read; i++)
       {
         for (int j=0;j<nParamStrings-1;j++) {
-          // pModel->GetLUClass(i)->SetSurfaceProperty(aParamStrings[j+1], properties[i][j]);
           CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],
                                             aParamStrings[j+1],
                                             properties[i][j]);
@@ -1485,7 +1484,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
   }
   for (int c=1;c<num_parsed_lult;c++) {
-    pModel->GetLUClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);
+    pModel->GetLanduseClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);
   }
   for (int c=1;c<num_parsed_terrs;c++){
     pTerrClasses[c-1]->AutoCalculateTerrainProps    (parsed_terrs[c],parsed_terrs[0]);
@@ -1644,8 +1643,8 @@ void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, CModel* pMod
     }
     else if (aPC[ii]==CLASS_LANDUSE){
       for (int c=0; c<pModel->GetNumLanduseClasses();c++){
-        if (pModel->GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+pModel->GetLUClass(c)->GetLanduseName();
+        if (pModel->GetLanduseClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+pModel->GetLanduseClass(c)->GetLanduseName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }

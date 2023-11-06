@@ -173,7 +173,7 @@ public:/*-------------------------------------------------------*/
   void AutoCalculateLandUseProps(surface_struct &Stmp,
                                  surface_struct &Sdefault);
 
-  const CLandUseClass *GetLUClass(int c);
+  const CLandUseClass *GetLanduseClass(int c);
         CLandUseClass *StringToLUClass(const string s);  // should die, right?
 
   static void          InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
