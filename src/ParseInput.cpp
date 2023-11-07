@@ -796,7 +796,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       // MODEL BUILT HERE AFTER SOIL MODEL IS KNOWN
       //****************************************************
       pModel=new CModel(Options.num_soillayers,Options);
-      pModel->SetStateVariable(pStateVar);
+      pModel->SetStateVarInfo(pStateVar);
       //****************************************************
       break;
     }
@@ -2559,8 +2559,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Overflow Process"<<endl;}
       if (Len<4){ImproperFormatWarning(":Overflow",p,Options.noisy); break;}
 
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[1],true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[2],tmpLev[0],true);
+      tmpS[1] = pModel->GetStateVarInfo()->StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS, tmpLev, 2);
 
       pMover=new CmvOverflow(ParseSVTypeIndex(s[2], pModel, pStateVar),
@@ -2662,9 +2662,9 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Split Process"<<endl;}
       if (Len<6){ImproperFormatWarning(":Split",p,Options.noisy); break;}
 
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[1],true);
-      tmpS[2] = pModel->GetStateVariable()->StringToSVType(s[4],tmpLev[2],true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[2],tmpLev[0],true);
+      tmpS[1] = pModel->GetStateVarInfo()->StringToSVType(s[3],tmpLev[1],true);
+      tmpS[2] = pModel->GetStateVarInfo()->StringToSVType(s[4],tmpLev[2],true);
 
       pModel->AddStateVariables(tmpS,tmpLev,3);
 
@@ -2748,8 +2748,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy){cout <<"Exchange flow with mixing zone Process"<<endl;}
 
       if (Len<4){ImproperFormatWarning(":ExchangeFlow",p,Options.noisy); break;}
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[1],true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[2],tmpLev[0],true);
+      tmpS[1] = pModel->GetStateVarInfo()->StringToSVType(s[3],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
       pMover=new CmvExchangeFlow(ParseSVTypeIndex(s[2], pModel, pStateVar),
@@ -2765,8 +2765,8 @@ bool ParseMainInputFile (CModel     *&pModel,
       bool interbasin=false;
       if(Len<7){ ImproperFormatWarning(":LateralFlush",p,Options.noisy); break; }
 
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3],tmpLev[0],true);
-      tmpS[1] = pModel->GetStateVariable()->StringToSVType(s[6],tmpLev[1],true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[3],tmpLev[0],true);
+      tmpS[1] = pModel->GetStateVarInfo()->StringToSVType(s[6],tmpLev[1],true);
       pModel->AddStateVariables(tmpS,tmpLev,2);
 
       if ((Len>=8) && (!strcmp(s[7],"INTERBASIN"))){interbasin=true; }
@@ -2828,7 +2828,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         CmvRecharge::GetParticipatingStateVarList(rech_type,tmpS,tmpLev,tmpN);
         pModel->AddStateVariables(tmpS,tmpLev,tmpN);
 
-        tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+        tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[3], tmpLev[0], true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
 
         if(rech_type==RECHARGE_FROMFILE) {
@@ -2846,7 +2846,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         CGWRecharge::GetParticipatingStateVarList(tmpS,tmpLev,tmpN);
         pModel->AddStateVariables(tmpS,tmpLev,tmpN);
-        tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
+        tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[2],tmpLev[0],true);
         pModel->AddStateVariables(tmpS,tmpLev,1);
 
         pGW = pModel->GetGroundwaterModel();
@@ -2915,7 +2915,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       bool interbasin = false;
       if (Len < 5) { ImproperFormatWarning(":LateralEquilibrate", p, Options.noisy); break; }
 
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS, tmpLev, 2);
 
       if ((Len >= 6) && (!strcmp(s[5], "INTERBASIN"))) { interbasin = true; }
@@ -2960,7 +2960,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if(Options.noisy) { cout <<"Redirecting Flow"<<endl; }
       if(Len<3) { ImproperFormatWarning(":-->RedirectFlow",p,Options.noisy); break; }
 
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[2],tmpLev[0],true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[2],tmpLev[0],true);
       pModel->AddStateVariables(tmpS,tmpLev,1);
 
       // \todo [QA\QC]: check if this is a process that can support this (infiltration can support runoff redirects)
@@ -3379,7 +3379,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       */
       CGWDrain::GetParticipatingStateVarList(tmpS, tmpLev, tmpN);
       pModel->AddStateVariables(tmpS, tmpLev, tmpN);
-      tmpS[0] = pModel->GetStateVariable()->StringToSVType(s[3], tmpLev[0], true);
+      tmpS[0] = pModel->GetStateVarInfo()->StringToSVType(s[3], tmpLev[0], true);
       pModel->AddStateVariables(tmpS, tmpLev, 1);
 
       pGW = pModel->GetGroundwaterModel();
@@ -3477,7 +3477,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   //===============================================================================================
 
   pModel->GetTransportModel()->InitializeParams(Options);
-  pModel->SetStateVariable(pStateVar);
+  pModel->SetStateVarInfo(pStateVar);
   pStateVar->SetTransportModel(pModel->GetTransportModel());
 
   delete p; p=NULL;

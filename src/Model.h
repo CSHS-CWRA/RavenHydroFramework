@@ -374,8 +374,8 @@ public:/*-------------------------------------------------------*/
   int                    GetNumConvolutionVariables() const;
   void                   IncrementConvolutionCount();
   // StateVariable
-  CStateVariable        *GetStateVariable() const;
-  void                   SetStateVariable(CStateVariable *pStateVar);
+  CStateVariable        *GetStateVarInfo() const;
+  void                   SetStateVarInfo(CStateVariable *pStateVar);
   // LateralExchangeABC
   int                    GetNumLatFlowProcesses();
   void                   CountOneMoreLatFlowProcess();

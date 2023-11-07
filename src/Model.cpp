@@ -2315,7 +2315,7 @@ void CModel::IncrementConvolutionCount(){
 /// \brief Gets the state variables
 /// \return Pointer to state variables
 //
-CStateVariable* CModel::GetStateVariable() const {
+CStateVariable* CModel::GetStateVarInfo() const {
   return _pStateVar;
 }
 
@@ -2323,7 +2323,7 @@ CStateVariable* CModel::GetStateVariable() const {
 /// \brief Sets the state variables
 /// \param pStateVar [in] Pointer to state variables
 //
-void CModel::SetStateVariable(CStateVariable *pStateVar) {
+void CModel::SetStateVarInfo(CStateVariable *pStateVar) {
   _pStateVar = pStateVar;
 }
 

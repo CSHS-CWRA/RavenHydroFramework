@@ -313,7 +313,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
       if(pEnsemble->GetType()==ENSEMBLE_ENKF) {
         sv_type sv;
         int lay;
-        sv = pModel->GetStateVariable()->StringToSVType(s[1], lay, true);
+        sv = pModel->GetStateVarInfo()->StringToSVType(s[1], lay, true);
         int kk = DOESNT_EXIST;
 
         i=pModel->GetStateVarIndex(sv,lay);
@@ -381,7 +381,7 @@ bool ParseEnsembleFile(CModel *&pModel,const optStruct &Options)
 
         sv_type sv;
         int lay;
-        sv = pModel->GetStateVariable()->StringToSVType(s[1], lay, true);
+        sv = pModel->GetStateVarInfo()->StringToSVType(s[1], lay, true);
 
         bool logfix=false;
         disttype distrib=DIST_NORMAL;
