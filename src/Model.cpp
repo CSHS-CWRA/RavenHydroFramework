@@ -6,7 +6,6 @@
 #include "EnergyTransport.h"
 
 string FilenamePrepare(string filebase,const optStruct& Options); // defined in StandardOutput.cpp
-string FilenamePrepare(string filebase,const optStruct* Options); // defined in StandardOutput.cpp
 
 /*****************************************************************
    Constructor/Destructor
@@ -2256,31 +2255,6 @@ void CModel::WriteRatingCurves(const optStruct& Options) const
 
   if (CURVES.fail()){
     ExitGracefully("CModel::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.", FILE_OPEN_ERR);
-  }
-  int i;
-  for (int p=0; p<this->_nAllChannelXSects; p++)
-  {
-    const CChannelXSect *pP = this->_pAllChannelXSects[p];
-    CURVES<<pP->GetName() <<"----------------"<<endl;
-    CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAQAt(i)       <<",";}CURVES<<endl;
-    CURVES<<"Stage Height [m],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAStageAt(i)   <<",";}CURVES<<endl;
-    CURVES<<"Top Width [m],";       for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetATopWidthAt(i)<<",";}CURVES<<endl;
-    CURVES<<"X-sect area [m2],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAXAreaAt(i)   <<",";}CURVES<<endl;
-    CURVES<<"Wetted Perimeter [m],";for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAPerimAt(i)   <<",";}CURVES<<endl;
-  }
-  CURVES.close();
-}
-
-// TODO: document
-void CModel::WriteRatingCurves(const optStruct* Options) const
-{
-  ofstream CURVES;
-  string tmpFilename = FilenamePrepare("rating_curves.csv", Options);
-  CURVES.open(tmpFilename.c_str());
-
-  if (CURVES.fail()){
-    ExitGracefully("CModel::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.",
-                   FILE_OPEN_ERR);
   }
   int i;
   for (int p=0; p<this->_nAllChannelXSects; p++)

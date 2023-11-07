@@ -4,8 +4,6 @@
   ----------------------------------------------------------------*/
 #include "ChannelXSect.h"
 void TestManningsInfluence(const CChannelXSect *pChan,const double &Qref);
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-string FilenamePrepare(string filebase,const optStruct* Options); //Defined in StandardOutput.cpp
 
 //////////////////////////////////////////////////////////////////
 /// \brief Utility method to assign parameter name to cross section "nickname", add to static array of all x-sections

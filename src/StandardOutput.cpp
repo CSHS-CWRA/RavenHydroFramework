@@ -122,14 +122,6 @@ string FilenamePrepare(string filebase, const optStruct &Options)
   return fn;
 }
 
-// TODO: document
-string FilenamePrepare(string filebase, const optStruct* Options) {
-  string fn;
-  if (Options->run_name==""){fn=Options->output_dir+filebase;}
-  else                      {fn=Options->output_dir+Options->run_name+"_"+filebase;}
-  return fn;
-}
-
 //////////////////////////////////////////////////////////////////
 /// \brief Closes output file streams
 /// \details after end of simulation from Main() or in ExitGracefully; All file streams are opened in WriteOutputFileHeaders() routine
@@ -1233,7 +1225,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Replaces the WriteOutputFileHeaders function by not requiring the Options structure as an argument
-/// TODO: document
+/// \param &tt [in] Local (model) time *at the end of* the pertinent time step
+/// \param solfile [in] Name of the solution file to be written
+/// \param final [in] Whether this is the final solution file to be written
+//
 void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final) const
 {
   int i,k;
@@ -1244,7 +1239,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
 
   // WRITE {RunName}_solution.rvc - final state variables file
   ofstream RVC;
-  tmpFilename=FilenamePrepare(solfile+".rvc", Options);
+  tmpFilename=FilenamePrepare(solfile+".rvc", *_pOptStruct);
   RVC.open(tmpFilename.c_str());
   if (RVC.fail()){
     WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),
@@ -1304,7 +1299,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
   //--------------------------------------------------------------
   if (Options->write_basinfile){
     ofstream BAS;
-    tmpFilename=FilenamePrepare("SubbasinProperties.csv",Options);
+    tmpFilename=FilenamePrepare("SubbasinProperties.csv",*_pOptStruct);
     BAS.open(tmpFilename.c_str());
     if(BAS.fail()) {
       WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options->noisy);
@@ -1333,7 +1328,7 @@ void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final)
   // rating_curves.csv
   //--------------------------------------------------------------
   if(Options->write_channels){
-    this->WriteRatingCurves(Options);
+    this->WriteRatingCurves(*Options);
   }
 }
 
