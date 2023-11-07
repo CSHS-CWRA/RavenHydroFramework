@@ -85,7 +85,7 @@ void CModel::AssimilationOverride(const int p,const optStruct& Options,const tim
   if(_aDAoverride[p])
   {
     double Qobs,Qmod;
-    double alpha = this->_pGlobalParams->GetParams()->assimilation_fact;
+    double alpha = _pGlobalParams->GetParams()->assimilation_fact;
 
     Qobs = _aDAobsQ[p];
     //Option A: mean flow
@@ -193,8 +193,8 @@ void CModel::PrepareAssimilation(const optStruct &Options,const time_struct &tt)
 
   // Apply time and space correction factors
   //----------------------------------------------------------------
-  double time_fact = this->_pGlobalParams->GetParams()->assim_time_decay;
-  double distfact  = this->_pGlobalParams->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
+  double time_fact = _pGlobalParams->GetParams()->assim_time_decay;
+  double distfact  = _pGlobalParams->GetParams()->assim_upstream_decay/M_PER_KM; //[1/km]->[1/m]
   for(p=0; p<_nSubBasins; p++)
   {
     _aDAscale[p] =1.0+(_aDAscale[p]-1.0)*exp(-distfact*_aDAlength[p])*exp(-time_fact*_aDAtimesince[p]);

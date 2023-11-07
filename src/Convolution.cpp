@@ -8,15 +8,56 @@
 #include "HydroProcessABC.h"
 #include "Convolution.h"
 
-
 //////////////////////////////////////////////////////////////////
 /// \brief static variable initialization
 //
+//int  CmvConvolution::_nStores=20; //TESTING THIS - NOT FOR RELEASE
+//bool CmvConvolution::_smartmode=true;
+
+int  CmvConvolution::_nStores=MAX_CONVOL_STORES;
+bool CmvConvolution::_smartmode=false;
 
 /*****************************************************************
    Convolution Constructor/Destructor
 ------------------------------------------------------------------
 *****************************************************************/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Implementation of convolution constructor
+/// \param absttype [in] Selected model of abstraction
+/// \param pModel [in] pointer to model 
+/// \param conv_index [in] index of this convolution process 
+//
+CmvConvolution::CmvConvolution(convolution_type type,
+                               const int        to_index,
+                               CModelABC       *pModel,
+                               int              conv_index)
+  :CHydroProcessABC(CONVOLVE, pModel)
+{
+  _type = type;
+  _iTarget = to_index;
+
+  if (!_smartmode){_nStores=MAX_CONVOL_STORES;}
+
+  int N=_nStores; //shorthand
+
+  CHydroProcessABC::DynamicSpecifyConnections(2*N);
+  for (int i=0; i<N; i++)
+  {
+    //for applying convolution
+    iFrom[i] = pModel->GetStateVarIndex(CONV_STOR, i+conv_index*N);
+    iTo  [i] = _iTarget;
+
+    //for shifting storage history
+    if (i < N-1){
+      iFrom[N+i] = pModel->GetStateVarIndex(CONV_STOR, i  +conv_index*N);
+      iTo  [N+i] = pModel->GetStateVarIndex(CONV_STOR, i+1+conv_index*N);
+    }
+  }
+  //updating total convolution storage
+  iFrom[2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, conv_index);
+  iTo  [2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, conv_index);
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default destructor
@@ -106,7 +147,7 @@ void   CmvConvolution::GenerateUnitHydrograph(const CHydroUnit *pHRU, const optS
   }
   else /*smart allocation - simplifies history storage*/
   {
-    N = CmvConvolution::_nStores;
+    N=_nStores;
     NN=(int)(ceil(max_time/tstep));
 
     int    i=0;
@@ -212,19 +253,19 @@ void CmvConvolution::GetParticipatingParamList(string  *aP , class_type *aPC , i
 /// \param *aSV [out] Reference to array of state variables needed by abstraction algorithm
 /// \param *aLev [out] Array of levels of multilevel state variables (or DOESNT_EXIST of single level)
 /// \param &nSV [out] Number of participating state variables (length of aSV and aLev arrays)
-/// \param nConv [in] Number of convolution variables in model (from CModel::_nConvVariables)
+/// \param conv_index [in] Index of this convolution process in model (from CModel::_nConvVariables)
 //
-void CmvConvolution::GetParticipatingStateVarList(convolution_type absttype, sv_type *aSV, int *aLev, int &nSV, int nConv)
+void CmvConvolution::GetParticipatingStateVarList(convolution_type absttype, sv_type *aSV, int *aLev, int &nSV, int conv_index)
 {
   nSV = _nStores+1;
 
   for (int i=0;i<_nStores;i++)
   {
     aSV [i]=CONV_STOR;
-    aLev[i]=((nConv+1)*_nStores)+i;
+    aLev[i]=(conv_index*_nStores)+i;
   }
   aSV [_nStores]=CONVOLUTION;
-  aLev[_nStores]=(nConv+1);
+  aLev[_nStores]=conv_index;
 }
 
 //////////////////////////////////////////////////////////////////

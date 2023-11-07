@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "StateVariables.h"
@@ -124,9 +124,7 @@ CHydroProcessABC::~CHydroProcessABC()
   delete [] iTo;         iTo        =NULL;
   for (int i=0;i<_nConditions;i++){delete _pConditions[i];} delete [] _pConditions; _pConditions=NULL;
 }
-/*****************************************************************
-   Static Members
-*****************************************************************/
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief Specify reference to surface water model pModel

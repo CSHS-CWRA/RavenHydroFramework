@@ -462,7 +462,7 @@ void CmvGlacierInfil::GetRatesOfChange ( const double      *state_vars,
 
     double max_perc_rate = pHRU->GetSoilProps(1)->max_perc_rate;
     double P0DSH         = pModel->GetGlobalParams()->GetParams()->UBC_GW_split;
-
+    
     //.NET
     //to_GW=0;
     //runoff=rain_and_melt;

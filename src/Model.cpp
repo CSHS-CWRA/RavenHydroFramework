@@ -5,7 +5,6 @@
 #include "Model.h"
 #include "EnergyTransport.h"
 
-int CmvConvolution::_nStores;                                     // defined in Convolution.h
 string FilenamePrepare(string filebase,const optStruct& Options); // defined in StandardOutput.cpp
 string FilenamePrepare(string filebase,const optStruct* Options); // defined in StandardOutput.cpp
 
@@ -42,14 +41,13 @@ CModel::CModel(const int        nsoillayers,
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
   _nPerturbations=0;  _pPerturbations=NULL;
 
-  _nLandUseClasses=0; _pLandUseClasses=NULL;
-
+  _nLandUseClasses=0;       _pLandUseClasses=NULL;
   _nAllSoilClasses = 0;     _pAllSoilClasses = NULL;
   _numVegClasses = 0;       _pAllVegClasses  = NULL;
   _nAllTerrainClasses = 0;  _pAllTerrainClasses = NULL;
   _nAllSoilProfiles = 0;    _pAllSoilProfiles = NULL;
   _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
-  _nConvVariables = -1;
+  _nConvVariables = 0;
 
   _nTotalConnections=0;
   _nTotalLatConnections=0;
@@ -135,7 +133,7 @@ CModel::CModel(const int        nsoillayers,
 
   _aShouldApplyProcess=NULL; //Initialized in Initialize
 
-  _pTransModel = new CTransportModel(this);
+  _pTransModel=new CTransportModel(this);
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
 
 #ifdef _MODFLOW_USG_
@@ -143,6 +141,7 @@ CModel::CModel(const int        nsoillayers,
 #endif
 
   _pEnsemble = NULL;
+  _pStateVar = NULL;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -217,84 +216,24 @@ CModel::~CModel()
   delete [] _aDAlast;        _aDAlast=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
-
+  
   this->DestroyAllLanduseClasses();
   this->DestroyAllSoilClasses();
   this->DestroyAllVegClasses();
   this->DestroyAllTerrainClasses();
   this->DestroyAllSoilProfiles();
   this->DestroyAllChannelXSections();
-
+  
   delete _pTransModel;
   delete _pEnsemble;
   delete _pGWModel;
+  delete _pStateVar;
 
   delete [] _PETBlends_type;
   delete [] _PETBlends_wts;
   delete [] _PotMeltBlends_type;
   delete [] _PotMeltBlends_wts;
 }
-
-/*****************************************************************
-   Terminators
-------------------------------------------------------------------
-*****************************************************************/
-
-void CModel::FinalizeGracefully(const char *statement, exitcode code) const {
-  string typeline;
-  switch (code){
-    case(SIMULATION_DONE): {typeline="============================================================";break;}
-    case(RUNTIME_ERR):     {typeline="Error Type: Runtime Error";       break;}
-    case(BAD_DATA):        {typeline="Error Type: Bad input data";      break;}
-    case(BAD_DATA_WARN):   {typeline="Error Type: Bad input data";      break;}
-    case(OUT_OF_MEMORY):   {typeline="Error Type: Out of memory";       break;}
-    case(FILE_OPEN_ERR):   {typeline="Error Type: File opening error";  break;}
-    case(STUB):            {typeline="Error Type: Stub function called";break;}
-    default:               {typeline="Error Type: Unknown";             break;}
-  }
-
-  if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
-    ofstream WARNINGS;
-    WARNINGS.open((_pOptStruct->main_output_dir+"Raven_errors.txt").c_str(), ios::app);
-    if (WARNINGS.fail()) {
-      WARNINGS.close();
-      string message="Unable to open errors file ("+_pOptStruct->main_output_dir+"Raven_errors.txt)";
-      ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
-    }
-    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
-    else                       {WARNINGS<<"SIMULATION COMPLETE :)"<<endl;}
-    WARNINGS.close();
-  }
-  if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode
-
-  cout <<endl<<endl;
-  cout <<"============== Exiting Gracefully =========================="<<endl;
-  cout <<"Exiting Gracefully from method: "<<statement                 <<endl;
-  cout << typeline                                                     <<endl;
-  cout <<"============================================================"<<endl;
-
-  // CStateVariable::Destroy();
-  delete this->_pStateVar;  // TODO: move this to CStateVariable destructor
-  delete this;  // deletes EVERYTHING! - TODO: be careful with this (dangling pointers after this call)
-  // pModel=NULL;
-
-  if(_pOptStruct->pause) {
-    cout << "Press the ENTER key to continue"<<endl;
-    cin.get();
-  }
-}
-
-// TODO: document
-void CModel::ExitGracefully(const char *statement, exitcode code) const {
-  FinalizeGracefully(statement, code);
-  exit(0);
-}
-
-// TODO: document
-void CModel::ExitGracefullyIf(bool condition, const char *statement, exitcode code) const {
-  if (condition){ExitGracefully(statement,code);}
-}
-
 
 /*****************************************************************
    Accessors
@@ -1393,10 +1332,10 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
     ExitGracefullyIf(pCC->HRU_groupID == DOESNT_EXIST,warning.c_str(),BAD_DATA_WARN); return;
   }
   pCC->newclass=new_class;
-  if ((tclass == CLASS_LANDUSE) && (this->StringToLUClass(new_class) == NULL)){
+  if ((tclass == CLASS_LANDUSE) && (StringToLUClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid land use class specified",BAD_DATA_WARN);return;
   }
-  if ((tclass == CLASS_VEGETATION) && (this->StringToVegClass(new_class) == NULL)){
+  if ((tclass == CLASS_VEGETATION) && (StringToVegClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid vegetation class specified",BAD_DATA_WARN);return;
   }
   if ((tclass == CLASS_HRUTYPE) && (StringToHRUType(new_class) == HRU_INVALID_TYPE)){
@@ -1906,7 +1845,7 @@ int CModel::GetNumSoilClasses(){
 //
 void CModel::AddSoilClass(CSoilClass *pSoilClass) {
   if (!DynArrayAppend((void**&)(_pAllSoilClasses), (void*)pSoilClass, _nAllSoilClasses)) {
-    this->ExitGracefully("CModel::AddSoilClass: adding NULL soil class", BAD_DATA);
+    ExitGracefully("CModel::AddSoilClass: adding NULL soil class", BAD_DATA);
   }
 }
 
@@ -1997,7 +1936,7 @@ void CModel::AddVegClass(CVegetationClass *pVegClass) {
   if (!DynArrayAppend((void**&)(this->_pAllVegClasses),
                       (void*)pVegClass,
                       this->_numVegClasses)) {
-    this->ExitGracefully("CModel::AddVegClass: adding NULL vegetation class", BAD_DATA);
+    ExitGracefully("CModel::AddVegClass: adding NULL vegetation class", BAD_DATA);
   }
 }
 
@@ -2223,10 +2162,10 @@ void CModel::DestroyAllSoilProfiles()
 CChannelXSect* CModel::StringToChannelXSect(const string s)
 {
   string sup = StringToUppercase(s);
-  for (int p=0; p<this->_nAllChannelXSects; p++)
+  for (int p=0; p<_nAllChannelXSects; p++)
   {
-    if (!sup.compare(StringToUppercase(this->_pAllChannelXSects[p]->GetName()))){
-      return this->_pAllChannelXSects[p];
+    if (!sup.compare(StringToUppercase(_pAllChannelXSects[p]->GetName()))){
+      return _pAllChannelXSects[p];
     }
   }
   return NULL;
@@ -2237,17 +2176,16 @@ CChannelXSect* CModel::StringToChannelXSect(const string s)
 /// \return Number of channel cross-sections in model
 //
 int CModel::GetNumChannelXSects() {
-  return this->_nAllChannelXSects;
+  return _nAllChannelXSects;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Add a cross section to the model
 /// \param pXSect [in] Pointer to cross section to add
 //
-void CModel::AddChannelXSect(CChannelXSect *pXSect) {
-  if (!DynArrayAppend((void**&)(this->_pAllChannelXSects),
-                      (void*)pXSect,
-                      this->_nAllChannelXSects)) {
+void CModel::AddChannelXSect(CChannelXSect *pXSect) 
+{
+  if (!DynArrayAppend((void**&)(_pAllChannelXSects),(void*)pXSect,_nAllChannelXSects)) {
     ExitGracefully("CModel::AddChannelXSect: creating NULL cross section", BAD_DATA);
   };
 }
@@ -2362,15 +2300,15 @@ void CModel::WriteRatingCurves(const optStruct* Options) const
 /// \brief Returns the number of convolution variables
 /// \return Number of convolution variables
 //
-int CModel::GetNumConvolutionVariables(){
-  return (this->_nConvVariables);
+int CModel::GetNumConvolutionVariables() const {
+  return _nConvVariables;
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the number of convolution variables
 //
-void CModel::CountOneMoreConvolutionVariable(){
-  this->_nConvVariables++;
+void CModel::IncrementConvolutionCount(){
+  _nConvVariables++;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2378,7 +2316,7 @@ void CModel::CountOneMoreConvolutionVariable(){
 /// \return Pointer to state variables
 //
 CStateVariable* CModel::GetStateVariable() const {
-  return this->_pStateVar;
+  return _pStateVar;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2386,7 +2324,7 @@ CStateVariable* CModel::GetStateVariable() const {
 /// \param pStateVar [in] Pointer to state variables
 //
 void CModel::SetStateVariable(CStateVariable *pStateVar) {
-  this->_pStateVar = pStateVar;
+  _pStateVar = pStateVar;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2569,12 +2507,12 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
         if      (_pClassChanges[j]->tclass == CLASS_LANDUSE)
         {
-          CLandUseClass *lult_class = this->StringToLUClass(_pClassChanges[j]->newclass);
+          CLandUseClass *lult_class = StringToLUClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeLandUse(lult_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
         {
-          CVegetationClass *veg_class = this->StringToVegClass(_pClassChanges[j]->newclass);
+          CVegetationClass *veg_class = StringToVegClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeVegetation(veg_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE)
@@ -2613,7 +2551,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   if (pval!=INDEX_NOT_FOUND){return CLASS_VEGETATION;}
   pval = CLandUseClass::GetSurfaceProperty(L, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_LANDUSE;}
-  pval = this->_pGlobalParams->GetGlobalProperty(G, param_str, false);
+  pval = _pGlobalParams->GetGlobalProperty(G, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_GLOBAL;}
   if(_nGauges>0) {
     pval=_pGauges[0]->GetGaugeProperty(param_str);
@@ -2633,8 +2571,7 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
 void  CModel::AddLandUseClass(CLandUseClass* pLU)
 {
   if (!DynArrayAppend((void**&)(_pLandUseClasses),(void*)(pLU),_nLandUseClasses)) {
-    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);
-  };
+    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns the LU class corresponding to passed string
@@ -2689,7 +2626,7 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
 
   if (ctype==CLASS_SOIL)
   {
-    this->StringToSoilClass(cname)->SetSoilProperty(pname, value);
+    StringToSoilClass(cname)->SetSoilProperty(pname, value);
   }
   else if(ctype==CLASS_TRANSPORT)
   {
@@ -2698,19 +2635,19 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
   }
   else if(ctype==CLASS_VEGETATION)
   {
-    this->StringToVegClass(cname)->SetVegetationProperty(pname, value);
+    StringToVegClass(cname)->SetVegetationProperty(pname, value);
   }
   else if(ctype==CLASS_TERRAIN)
   {
-    this->StringToTerrainClass(cname)->SetTerrainProperty(pname, value);
+    StringToTerrainClass(cname)->SetTerrainProperty(pname, value);
   }
   else if(ctype==CLASS_LANDUSE)
   {
-    this->StringToLUClass(cname)->SetSurfaceProperty(pname, value);
+    StringToLUClass(cname)->SetSurfaceProperty(pname, value);
   }
   else if(ctype==CLASS_GLOBAL)
   {
-    this->_pGlobalParams->SetGlobalProperty(pname, value);
+    _pGlobalParams->SetGlobalProperty(pname, value);
   }
   else if(ctype==CLASS_GAUGE)
   {
@@ -3093,43 +3030,4 @@ bool CModel::ApplyLateralProcess( const int          j,
   pLatProc->GetLateralExchange(state_vars,_pHydroUnits,Options,tt,exchange_rates);
 
   return true;
-}
-
-
-//////////////////////////////////////////////////////////////////
-/// \brief Implementation of convolution constructor
-/// \param absttype [in] Selected model of abstraction
-//
-CmvConvolution::CmvConvolution(convolution_type type,
-                               const int        to_index,
-                               CModel           *pModel)
-  :CHydroProcessABC(CONVOLVE, pModel)
-{
-  _type = type;
-  pModel->CountOneMoreConvolutionVariable();  // _nConv++; //starts at -1
-  _iTarget = to_index;
-  _smartmode = false;
-  CmvConvolution::_nStores = MAX_CONVOL_STORES;
-
-  if (!_smartmode){CmvConvolution::_nStores=MAX_CONVOL_STORES;}
-
-  int N = CmvConvolution::_nStores; //shorthand
-  int nConv = pModel->GetNumConvolutionVariables();  // shorthand for previous _nConv
-
-  CHydroProcessABC::DynamicSpecifyConnections(2*N);
-  for (int i=0; i<N; i++)
-  {
-    //for applying convolution
-    iFrom[i] = pModel->GetStateVarIndex(CONV_STOR, i+nConv*N);
-    iTo  [i] = _iTarget;
-
-    //for shifting storage history
-    if (i < N-1){
-      iFrom[N+i] = pModel->GetStateVarIndex(CONV_STOR, i  +nConv*N);
-      iTo  [N+i] = pModel->GetStateVarIndex(CONV_STOR, i+1+nConv*N);
-    }
-  }
-  //updating total convolution storage
-  iFrom[2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, nConv);
-  iTo  [2*N-1] = pModel->GetStateVarIndex(CONVOLUTION, nConv);
 }

@@ -54,8 +54,6 @@ class CModel: public CModelABC
 {
 private:/*------------------------------------------------------*/
 
-  CGlobalParams *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
-
   //Model attributes
   double         _WatershedArea;  ///< total area of all subbasins [km^2]
 
@@ -84,6 +82,7 @@ private:/*------------------------------------------------------*/
   int               _nProcesses;  ///< number of hydrological processes that move water, mass, or energy from one storage unit to another
   CHydroProcessABC**_pProcesses;  ///< Array of pointers to hydrological processes
   bool   **_aShouldApplyProcess;  ///< array of flags for whether or not each process applies to each HRU [_nProcesses][_nHydroUnits]
+  int           _nConvVariables;  ///< Number of convolution variables (a.k.a. processes) in model
 
   int                  _nGauges;  ///< number of precip/temp gauges for forcing interpolation
   CGauge             **_pGauges;  ///< array of pointers to gauges which store time series info [size:_nGauges]
@@ -98,6 +97,8 @@ private:/*------------------------------------------------------*/
 
   int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
 
+  CGlobalParams     *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
+  
   int                 _nTransParams;  ///< number of transient parameters
   CTransientParam   **_pTransParams;  ///< array of pointers to transient parameters with time series
   int                _nClassChanges;  ///< number of HRU Group class changes
@@ -190,7 +191,7 @@ private:/*------------------------------------------------------*/
   int                _nAllSoilProfiles;    ///< Number of soil profiles in model (size of pAllSoilProfiles)
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
-  int                _nConvVariables;    ///< Number of convolution variables (a.k.a. processes) in model (previous static attribute CmvConvolution::_nConv)
+  
   CStateVariable    *_pStateVar;         ///< pointer to state variable object (used to be static attribute of CStateVariable)
   int                _nLatFlowProcesses;   /// used to be static of CLateralExchangeProcessABC
 
@@ -300,15 +301,10 @@ public:/*-------------------------------------------------------*/
   CModel(const int nsoillayers, const optStruct &Options);
   ~CModel();
 
-  // Terminating functions
-  void FinalizeGracefully(const char *statement, exitcode code) const;
-  void ExitGracefully(const char *statement, exitcode code) const;
-  void ExitGracefullyIf(bool condition, const char *statement, exitcode code) const;
-
   //Inherited Accessor functions (from ModelABC.h)
   bool              StateVarExists     (sv_type type) const;
 
-  CGlobalParams*    GetGlobalParams    () const;
+  CGlobalParams    *GetGlobalParams    () const;
   int               GetNumStateVars    () const;
   sv_type           GetStateVarType    (const int i) const;
   int               GetStateVarIndex   (sv_type type) const; //assumes layer=0
@@ -375,8 +371,8 @@ public:/*-------------------------------------------------------*/
   void                   WriteRatingCurves(const optStruct& Options) const;
   void                   WriteRatingCurves(const optStruct* Options) const;
   // Convolution variables
-  int                    GetNumConvolutionVariables();
-  void                   CountOneMoreConvolutionVariable();
+  int                    GetNumConvolutionVariables() const;
+  void                   IncrementConvolutionCount();
   // StateVariable
   CStateVariable        *GetStateVariable() const;
   void                   SetStateVariable(CStateVariable *pStateVar);

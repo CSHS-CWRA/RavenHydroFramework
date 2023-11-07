@@ -796,6 +796,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       // MODEL BUILT HERE AFTER SOIL MODEL IS KNOWN
       //****************************************************
       pModel=new CModel(Options.num_soillayers,Options);
+      pModel->SetStateVariable(pStateVar);
       //****************************************************
       break;
     }
@@ -2689,11 +2690,16 @@ bool ParseMainInputFile (CModel     *&pModel,
       {
         ExitGracefully("ParseMainInputFile: Unrecognized convolution process representation",BAD_DATA_WARN); break;
       }
-      CmvConvolution::GetParticipatingStateVarList(c_type, tmpS, tmpLev, tmpN, pModel->GetNumConvolutionVariables());
+      pModel->IncrementConvolutionCount();
+      int conv_index=pModel->GetNumConvolutionVariables()-1;
+
+      CmvConvolution::GetParticipatingStateVarList(c_type, tmpS, tmpLev, tmpN, conv_index);
+
       pModel->AddStateVariables(tmpS, tmpLev, tmpN);
 
-      pMover = new CmvConvolution(c_type, ParseSVTypeIndex(s[3], pModel, pStateVar), pModel);
+      pMover = new CmvConvolution(c_type, ParseSVTypeIndex(s[3], pModel, pStateVar), pModel,conv_index);
       AddProcess(pModel, pMover, pProcGroup);
+      
       break;
     }
     case(229):  //----------------------------------------------

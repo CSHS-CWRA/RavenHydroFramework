@@ -1,3 +1,9 @@
+/*----------------------------------------------------------------
+Raven Library Source Code
+Copyright (c) 2008-2023 the Raven Development Team
+----------------------------------------------------------------*/
+#include "RavenInclude.h"
+
 /////////////////////////////////////////////////////////////////
 /// \brief Finalizes program gracefully, explaining reason for finalizing, and destructing simulation and all pertinent parameters
 /// \remark Called from within ExitGracefully() or from the BMI Finalize() function
@@ -7,8 +13,6 @@
 //
 inline void FinalizeGracefully(const char *statement, exitcode code)
 {
-  // const optStruct* Options = pModel->GetOptStruct();
-
   string typeline;
   switch (code){
     case(SIMULATION_DONE): {typeline="============================================================";break;}

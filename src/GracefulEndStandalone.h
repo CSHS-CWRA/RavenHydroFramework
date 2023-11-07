@@ -1,4 +1,11 @@
-static CModel *pModel = NULL;  // in the standalone version, this pModel is a global variable
+/*----------------------------------------------------------------
+Raven Library Source Code
+Copyright (c) 2008-2023 the Raven Development Team
+----------------------------------------------------------------*/
+#include "RavenInclude.h"
+#include "Model.h"
+
+static CModel *pModel = NULL;  // in the standalone version, the pModel is a global variable
 
 /////////////////////////////////////////////////////////////////
 /// \brief Finalizes program gracefully, explaining reason for finalizing, and destructing simulation and all pertinent parameters
@@ -53,7 +60,6 @@ inline void FinalizeGracefully(const char *statement, exitcode code)
   cout <<"============================================================"<<endl;
 
   delete pModel; pModel=NULL; //deletes EVERYTHING!
-  // CStateVariable::Destroy();  // TODO: destroy CStateVariable object in the destructor of CModel
 
   if(Options->pause) {
     cout << "Press the ENTER key to continue"<<endl;

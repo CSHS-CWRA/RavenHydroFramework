@@ -7,7 +7,11 @@
 #include "RavenMain.h"
 #include "Model.h"
 #include "UnitTesting.h"
-#include "GracefulEnds.h"
+#ifdef STANDALONE
+    #include "GracefulEndStandalone.h"
+#elif BMI_LIBRARY
+    #include "GracefulEndBMI.h"
+#endif
 
 // Global variables - declared as extern in RavenInclude.h--------
 string g_output_directory ="";
@@ -36,7 +40,6 @@ int main(int argc, char* argv[])
   time_struct tt;
   int         nEnsembleMembers;
   optStruct   Options;
-  CModel     *pModel;
 
   Options.version="3.7.1";
 #ifdef _NETCDF_
@@ -167,7 +170,8 @@ int main(int argc, char* argv[])
     pModel->GetEnsemble()->FinishEnsembleRun(pModel,Options,tt,e);
   }/* end ensemble loop*/
 
-  pModel->ExitGracefully("Successful Simulation", SIMULATION_DONE);
+
+  ExitGracefully("Successful Simulation",SIMULATION_DONE);
   return 0;
 }
 
