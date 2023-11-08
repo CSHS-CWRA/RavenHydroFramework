@@ -215,14 +215,14 @@ CModel::~CModel()
   delete [] _aDAlast;        _aDAlast=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
-  
+
   this->DestroyAllLanduseClasses();
   this->DestroyAllSoilClasses();
   this->DestroyAllVegClasses();
   this->DestroyAllTerrainClasses();
   this->DestroyAllSoilProfiles();
   this->DestroyAllChannelXSections();
-  
+
   delete _pTransModel;
   delete _pEnsemble;
   delete _pGWModel;
@@ -2182,7 +2182,7 @@ int CModel::GetNumChannelXSects() {
 /// \brief Add a cross section to the model
 /// \param pXSect [in] Pointer to cross section to add
 //
-void CModel::AddChannelXSect(CChannelXSect *pXSect) 
+void CModel::AddChannelXSect(CChannelXSect *pXSect)
 {
   if (!DynArrayAppend((void**&)(_pAllChannelXSects),(void*)pXSect,_nAllChannelXSects)) {
     ExitGracefully("CModel::AddChannelXSect: creating NULL cross section", BAD_DATA);

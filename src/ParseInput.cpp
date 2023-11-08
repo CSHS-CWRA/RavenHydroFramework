@@ -2699,7 +2699,7 @@ bool ParseMainInputFile (CModel     *&pModel,
 
       pMover = new CmvConvolution(c_type, ParseSVTypeIndex(s[3], pModel, pStateVar), pModel,conv_index);
       AddProcess(pModel, pMover, pProcGroup);
-      
+
       break;
     }
     case(229):  //----------------------------------------------
