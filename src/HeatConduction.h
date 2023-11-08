@@ -37,7 +37,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
   CmvHeatConduction(const CTransportModel *pTransMod,
-                    CModel                *pModel);
+                    CModelABC             *pModel);
   ~CmvHeatConduction();
 
   void StoreNumberOfHRUs(const int nHRUs);

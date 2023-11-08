@@ -23,7 +23,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvPrecipitation(CModel *pModel);
+  CmvPrecipitation(CModelABC *pModel);
   ~CmvPrecipitation();
 
   //inherited functions

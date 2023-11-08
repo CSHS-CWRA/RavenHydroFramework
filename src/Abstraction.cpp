@@ -19,7 +19,7 @@
 /// \brief Implementation of abstraction constructor
 /// \param absttype [in] Selected model of abstraction
 //
-CmvAbstraction::CmvAbstraction(abstraction_type absttype, CModel *pModel)
+CmvAbstraction::CmvAbstraction(abstraction_type absttype, CModelABC *pModel)
   :CHydroProcessABC(ABSTRACTION, pModel)
 {
   _type=absttype;

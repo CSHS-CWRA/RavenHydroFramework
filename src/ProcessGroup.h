@@ -32,7 +32,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CProcessGroup(string name, CModel *pModel);
+  CProcessGroup(string name, CModelABC *pModel);
   ~CProcessGroup();
 
   //inherited functions

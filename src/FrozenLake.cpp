@@ -21,7 +21,7 @@
 //
 CmvFrozenLake::CmvFrozenLake(lakefreeze_type       type,
                              const CTransportModel *pTransMod,
-                             CModel                *pModel)
+                             CModelABC             *pModel)
   :CHydroProcessABC(LAKE_FREEZING, pModel)
 {
   _type =type;

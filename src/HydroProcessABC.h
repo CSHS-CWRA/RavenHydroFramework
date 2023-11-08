@@ -124,7 +124,7 @@ public:/*-------------------------------------------------------*/
   CmvFlush(int          from_index,
            int          to_index,
            const double &pct,
-           CModel       *pM);
+           CModelABC    *pM);
   ~CmvFlush();
 
   //inherited functions
@@ -155,11 +155,11 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSplit(int    from_index,
-           int    to_index1,
-           int    to_index2,
-           double split_amt,
-           CModel *pM);
+  CmvSplit(int       from_index,
+           int       to_index1,
+           int       to_index2,
+           double    split_amt,
+           CModelABC *pM);
   ~CmvSplit();
 
   //inherited functions
@@ -189,9 +189,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvOverflow(int    from_index,
-              int    to_index,
-              CModel *pModel);
+  CmvOverflow(int       from_index,
+              int       to_index,
+              CModelABC *pModel);
   ~CmvOverflow();
 
   //inherited functions
@@ -222,7 +222,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvExchangeFlow(int from_index,
                   int mixingzone_index,
-                  CModel *pModel);
+                  CModelABC *pModel);
   ~CmvExchangeFlow();
 
   //inherited functions

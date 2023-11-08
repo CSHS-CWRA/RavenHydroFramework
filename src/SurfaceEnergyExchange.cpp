@@ -14,7 +14,7 @@ Atmospheric Convection Constructor/Destructor
 /// \param pTransMod [in] pointer to transport model
 /// \param iStorTo [in] state variable index of water storage corresponding to surface energy store
 //
-CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod, CModel *pModel)
+CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod, CModelABC *pModel)
   :CHydroProcessABC(PARTITION_ENERGY, pModel)
 {
   _pTransModel=pTransMod;

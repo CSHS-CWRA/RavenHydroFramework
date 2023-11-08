@@ -21,7 +21,7 @@
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
 CmvSoilBalance::CmvSoilBalance(soilbal_type sb_type,
-                               CModel       *pModel)
+                               CModelABC    *pModel)
   :CHydroProcessABC(SOIL_BALANCE, pModel)
 {
   _type =sb_type;

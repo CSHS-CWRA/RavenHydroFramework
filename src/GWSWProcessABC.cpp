@@ -13,7 +13,7 @@ Copyright (c) 2008-2021 the Raven Development Team
 //
 CGWSWProcessABC::CGWSWProcessABC(CGroundwaterModel *pGWM,
                                  const process_type ptype,
-                                 CModel *pModel)
+                                 CModelABC *pModel)
   :CHydroProcessABC(ptype, pModel)
 {
   pGWModel = pGWM;

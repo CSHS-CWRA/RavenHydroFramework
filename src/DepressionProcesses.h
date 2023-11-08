@@ -34,7 +34,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvDepressionOverflow(const depflow_type dtype,
-                        CModel             *pModel);
+                        CModelABC          *pModel);
   ~CmvDepressionOverflow();
 
   //inherited functions
@@ -76,7 +76,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvSeepage(const seepage_type seeptype,
              int iToSoil,
-             CModel *pModel);
+             CModelABC *pModel);
   ~CmvSeepage();
 
   //inherited functions
@@ -121,7 +121,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvAbstraction(const abstraction_type absttype, CModel *pModel);
+  CmvAbstraction(const abstraction_type absttype, CModelABC *pModel);
   ~CmvAbstraction();
 
   //inherited functions
@@ -161,7 +161,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvLakeRelease(const lakerel_type absttype,
-                 CModel             *pModel);
+                 CModelABC          *pModel);
   ~CmvLakeRelease();
 
   //inherited functions

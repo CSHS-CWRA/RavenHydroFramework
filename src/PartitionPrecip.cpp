@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default precipitation constructor
 //
-CmvPrecipitation::CmvPrecipitation(CModel *pModel)
+CmvPrecipitation::CmvPrecipitation(CModelABC *pModel)
   :CHydroProcessABC(PRECIPITATION, pModel)
 {}
 

@@ -19,7 +19,7 @@
 /// \param dtype [in] Selected model of depression overflow
 //
 CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype,
-                                             CModel      *pModel)
+                                             CModelABC   *pModel)
   :CHydroProcessABC(DEPRESSION_OVERFLOW, pModel)
 {
   _type=dtype;
@@ -180,7 +180,7 @@ void   CmvDepressionOverflow::ApplyConstraints(const double              *state_
 /// \brief Implementation of Seepage constructor
 /// \param stype [in] Selected model of seepage
 //
-CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil, CModel *pModel)
+CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil, CModelABC *pModel)
   :CHydroProcessABC(SEEPAGE, pModel)
 {
   _type=stype;
@@ -302,7 +302,7 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
 /// \param lktype [in] Model of lake release used
 /// \param fromIndex [in] Index of lake from which water is released
 //
-CmvLakeRelease::CmvLakeRelease(lakerel_type lktype, CModel *pModel)
+CmvLakeRelease::CmvLakeRelease(lakerel_type lktype, CModelABC *pModel)
   :CHydroProcessABC(LAKE_RELEASE, pModel)
 {
   _type =lktype;

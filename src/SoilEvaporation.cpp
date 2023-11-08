@@ -19,7 +19,7 @@
 /// \param se_type [in] Model of soil evaporation selected
 //
 CmvSoilEvap::CmvSoilEvap(soilevap_type se_type,
-                         CModel        *pModel)
+                         CModelABC     *pModel)
   :CHydroProcessABC(SOIL_EVAPORATION, pModel)
 {
   int iAtmos;

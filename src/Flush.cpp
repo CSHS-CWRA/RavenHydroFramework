@@ -24,7 +24,7 @@
 CmvFlush::CmvFlush(int In_index,                       //soil water storage
                    int Out_index,
                    const double &pct,
-                   CModel *pModel)
+                   CModelABC *pModel)
   :CHydroProcessABC(FLUSH, In_index, Out_index, pModel)
 {
   _percentage=pct;
@@ -111,11 +111,11 @@ void   CmvFlush::ApplyConstraints(const double           *storage,
 /// \param Out_index1 [in] Index of the first storage compartment to which water is flushed
 /// \param Out_index2 [in] Index of the second storage compartment to which water is flushed
 //
-CmvSplit::CmvSplit(int    In_index,                       //soil water storage
-                   int    Out_index1,
-                   int    Out_index2,
-                   double split_amt,
-                   CModel *pModel)
+CmvSplit::CmvSplit(int       In_index,                       //soil water storage
+                   int       Out_index1,
+                   int       Out_index2,
+                   double    split_amt,
+                   CModelABC *pModel)
   :CHydroProcessABC(SPLIT, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
@@ -205,7 +205,7 @@ void   CmvSplit::ApplyConstraints(const double           *storage,
 //
 CmvOverflow::CmvOverflow(int In_index,                       //soil water storage
                          int Out_index,
-                         CModel *pModel)
+                         CModelABC *pModel)
   :CHydroProcessABC(OVERFLOW_PROC, In_index, Out_index, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
@@ -288,7 +288,7 @@ void   CmvOverflow::ApplyConstraints(const double                *state_var,
 //
 CmvExchangeFlow::CmvExchangeFlow(int In_index,   // soil water storage
                                  int Out_index,  // soil water storage
-                                 CModel *pModel)
+                                 CModelABC *pModel)
   :CHydroProcessABC(EXCHANGE_FLOW, In_index, Out_index, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,

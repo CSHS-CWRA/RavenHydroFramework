@@ -16,7 +16,7 @@
 //
 CmvMassLoading::CmvMassLoading(string          constit_name,
                                CTransportModel *pTransportModel,
-                               CModel          *pModel)
+                               CModelABC       *pModel)
   :CHydroProcessABC(MASS_LOADING, pModel)
 {
   pTransModel=pTransportModel;

@@ -16,7 +16,7 @@
 //
 CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype,
                                    const int   i_from,
-                                   CModel      *pModel)
+                                   CModelABC   *pModel)
   :CHydroProcessABC(OPEN_WATER_EVAPORATION, pModel)
 {
   _type =owtype;
@@ -193,7 +193,7 @@ void  CmvOWEvaporation::ApplyConstraints( const double            *state_vars,
 //
 CmvLakeEvaporation::CmvLakeEvaporation(lakeevap_type lktype,
                                        const int     fromIndex,
-                                       CModel        *pModel)
+                                       CModelABC     *pModel)
   :CHydroProcessABC(LAKE_EVAPORATION, pModel)
 {
   type =lktype;

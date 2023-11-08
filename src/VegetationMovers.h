@@ -35,7 +35,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCanopyEvap(canevap_type eval_type, CModel *pModel);        //general constructor
+  CmvCanopyEvap(canevap_type eval_type, CModelABC *pModel);        //general constructor
   ~CmvCanopyEvap();
 
   //inherited functions
@@ -67,7 +67,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCanopySublimation(sublimation_type subl_type, CModel *pModel);  // general constructor
+  CmvCanopySublimation(sublimation_type subl_type, CModelABC *pModel);  // general constructor
   ~CmvCanopySublimation();
 
   //inherited functions
@@ -110,7 +110,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvCanopyDrip(candrip_type drip_type,
                 int          to_index,
-                CModel       *pModel);
+                CModelABC    *pModel);
   ~CmvCanopyDrip();
 
   //inherited functions

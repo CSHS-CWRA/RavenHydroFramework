@@ -12,7 +12,7 @@
 /// \brief Implementation of the Snow temp evolution constructor
 /// \param ste_type [in] Model of snow temp selected
 //
-CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModel *pModel)
+CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModelABC *pModel)
   :CHydroProcessABC(SNOWTEMP_EVOLVE, pModel)
 {
   _type=ste_type;

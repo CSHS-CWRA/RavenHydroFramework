@@ -28,7 +28,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvMassLoading(string          constit_name,
                  CTransportModel *pTransportModel,
-                 CModel          *pModel);
+                 CModelABC       *pModel);
   ~CmvMassLoading();
 
   //inherited functions

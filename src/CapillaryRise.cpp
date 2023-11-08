@@ -23,7 +23,7 @@
 CmvCapillaryRise::CmvCapillaryRise(crise_type   cr_type,
                                    int          In_index,                     //soil water storage
                                    int          Out_index,
-                                   CModel      *pModel)
+                                   CModelABC   *pModel)
   :CHydroProcessABC(CAPILLARY_RISE, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,

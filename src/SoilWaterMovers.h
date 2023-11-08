@@ -55,7 +55,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvBaseflow(baseflow_type btype,
               int           from_index,
-              CModel        *pModel);
+              CModelABC     *pModel);
   ~CmvBaseflow();
 
   //inherited functions
@@ -123,7 +123,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSoilEvap(soilevap_type se_type, CModel *pModel);
+  CmvSoilEvap(soilevap_type se_type, CModelABC *pModel);
   ~CmvSoilEvap();
 
   //inherited functions
@@ -170,7 +170,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvInterflow(interflow_type itype,
                int            from_index,
-               CModel         *pModel);
+               CModelABC      *pModel);
   ~CmvInterflow();
 
   //inherited functions
@@ -226,7 +226,7 @@ public:/*-------------------------------------------------------*/
   CmvPercolation(perc_type p_type,
                  int       In_indices,                     //soil water storage
                  int       Out_index,
-                 CModel    *pModel);
+                 CModelABC *pModel);
   ~CmvPercolation();
 
   //inherited functions
@@ -269,7 +269,7 @@ public:/*-------------------------------------------------------*/
   CmvCapillaryRise(crise_type cr_type,
                    int        In_index,                       //soil water storage
                    int        Out_index,
-                   CModel     *pModel);
+                   CModelABC  *pModel);
   ~CmvCapillaryRise();
 
   //inherited functions
@@ -353,10 +353,10 @@ public:/*-------------------------------------------------------*/
   CmvRecharge(recharge_type	rech_type,
               int           to_index,
               int           junk,
-              CModel        *pModel); //junk just to distinguish constructors
+              CModelABC     *pModel); //junk just to distinguish constructors
   CmvRecharge(recharge_type	rech_type,
               int           nConns,
-              CModel        *pModel);
+              CModelABC     *pModel);
   ~CmvRecharge();
 
   //inherited functions
@@ -394,7 +394,7 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
   CmvSoilBalance(soilbal_type sb_type,
-                 CModel *pModel);
+                 CModelABC *pModel);
   ~CmvSoilBalance();
 
   //inherited functions

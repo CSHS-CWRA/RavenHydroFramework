@@ -18,7 +18,7 @@
 //
 CmvAdvection::CmvAdvection(string constit_name,
                            CTransportModel *pTransportModel,
-                           CModel *pModel)
+                           CModelABC *pModel)
   :CHydroProcessABC(ADVECTION, pModel)
 {
   pTransModel=pTransportModel;

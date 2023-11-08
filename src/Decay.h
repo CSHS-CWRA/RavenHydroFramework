@@ -43,7 +43,7 @@ public:/*-------------------------------------------------------*/
            int proc_ind,
            int iWatStor,
            CTransportModel *pTransportModel,
-           CModel *pModel);
+           CModelABC *pModel);
   ~CmvDecay();
 
   //inherited functions
@@ -90,7 +90,7 @@ public:/*-------------------------------------------------------*/
                     int proc_ind,
                     int iWatStor,
                     CTransportModel *pTransportModel,
-                    CModel *pModel);
+                    CModelABC *pModel);
   ~CmvTransformation();
 
   //inherited functions

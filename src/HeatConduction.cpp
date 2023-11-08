@@ -85,7 +85,7 @@ void CmvHeatConduction::StoreNumberOfHRUs(const int nHRUs){
 /// \param pTransMod [in] pointer to transport model
 //
 CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod,
-                                     CModel                *pModel)
+                                     CModelABC             *pModel)
   :CHydroProcessABC(HEATCONDUCTION, pModel)
 {
   //g_disable_freezing=true; TMP DEBUG ONLY

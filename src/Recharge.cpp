@@ -24,7 +24,7 @@
 CmvRecharge::CmvRecharge(recharge_type rech_type,
                          int           to_index,
                          int           junk,
-                         CModel        *pModel)
+                         CModelABC     *pModel)
   :CHydroProcessABC(RECHARGE, pModel)
 {
   ExitGracefullyIf(to_index==DOESNT_EXIST,
@@ -42,7 +42,7 @@ CmvRecharge::CmvRecharge(recharge_type rech_type,
 //
 CmvRecharge::CmvRecharge(recharge_type rech_type,
                          int           nConns,
-                         CModel        *pModel)
+                         CModelABC     *pModel)
   :CHydroProcessABC(RECHARGE, nConns, pModel)
 {
   int iGW, i;

@@ -22,7 +22,7 @@
 //
 CmvBaseflow::CmvBaseflow(baseflow_type  btype,
                          int            In_index,
-                         CModel        *pModel)
+                         CModelABC      *pModel)
   :CHydroProcessABC(BASEFLOW, pModel)
 {
   type =btype;

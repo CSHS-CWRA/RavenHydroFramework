@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the constructor for an abstract group of hydrological processes
 //
-CProcessGroup::CProcessGroup(string name, CModel *pModel)
+CProcessGroup::CProcessGroup(string name, CModelABC *pModel)
   :CHydroProcessABC(PROCESS_GROUP, pModel)
 {
   _pSubProcesses=NULL;

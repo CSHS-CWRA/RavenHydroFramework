@@ -24,7 +24,7 @@
 CmvPercolation::CmvPercolation(perc_type  p_type,
                                int        From_index,                     //soil water storage
                                int        To_index,
-                               CModel    *pModel)
+                               CModelABC *pModel)
   :CHydroProcessABC(PERCOLATION, From_index, To_index, pModel)
 {
   ExitGracefullyIf(From_index==DOESNT_EXIST,

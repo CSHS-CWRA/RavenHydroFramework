@@ -17,7 +17,7 @@
 //
 CmvInterflow::CmvInterflow(interflow_type itype,
                            int            In_index,
-                           CModel         *pModel)
+                           CModelABC      *pModel)
   :CHydroProcessABC(INTERFLOW, pModel)
 {
   type =itype;

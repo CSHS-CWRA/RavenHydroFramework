@@ -17,7 +17,7 @@
 /// \brief Implementation of the sublimation constructor
 /// \param sub_type [in] Sublimation-modelling technique selected
 //
-CmvSublimation::CmvSublimation(sublimation_type sub_type, CModel *pModel)
+CmvSublimation::CmvSublimation(sublimation_type sub_type, CModelABC *pModel)
   :CHydroProcessABC(SUBLIMATION, pModel)
 {
   type =sub_type;

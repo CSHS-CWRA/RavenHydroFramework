@@ -21,7 +21,7 @@
 /// \param cetype [in] Model of canopy evaporation
 //
 CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype,
-                             CModel      *pModel)
+                             CModelABC    *pModel)
   :CHydroProcessABC(CANOPY_EVAPORATION, pModel)
 {
   type =cetype;
@@ -203,7 +203,7 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 /// \param cetype [in] Model of canopy snow evaporation
 //
 CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype,
-                                           CModel          *pModel)
+                                           CModelABC       *pModel)
   :CHydroProcessABC(CANOPY_SNOW_EVAPORATION, pModel)
 {
   type =cetype;
@@ -367,7 +367,7 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
 //
 CmvCanopyDrip::CmvCanopyDrip(candrip_type cdtype,
                              int          to_index,
-                             CModel       *pModel)
+                             CModelABC    *pModel)
   :CHydroProcessABC(CANOPY_DRIP, pModel)
 {
   int iCan;

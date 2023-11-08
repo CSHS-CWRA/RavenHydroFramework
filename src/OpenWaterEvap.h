@@ -35,7 +35,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvOWEvaporation(owevap_type ow_type,
                    const int   i_from,
-                   CModel      *pModel);      //general constructor
+                   CModelABC   *pModel);      //general constructor
   ~CmvOWEvaporation();
 
   //inherited functions
@@ -77,7 +77,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvLakeEvaporation(lakeevap_type lk_type,
                      const int     fromIndex,
-                     CModel        *pModel);   // general constructor
+                     CModelABC     *pModel);   // general constructor
   ~CmvLakeEvaporation();
 
   //inherited functions

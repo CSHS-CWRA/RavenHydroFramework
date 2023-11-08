@@ -24,7 +24,7 @@ CmvTransformation::CmvTransformation(string           constit_name,
                                      int              proc_ind,
                                      int              iWatStor,
                                      CTransportModel *pTransportModel,
-                                     CModel          *pModel)
+                                     CModelABC       *pModel)
   :CHydroProcessABC(TRANSFORMATION, pModel)
 {
   _ttype        =ttyp;

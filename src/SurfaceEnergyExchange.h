@@ -25,7 +25,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
-  CmvPartitionEnergy(const CTransportModel *pTransMod, CModel *pModel);
+  CmvPartitionEnergy(const CTransportModel *pTransMod, CModelABC *pModel);
   ~CmvPartitionEnergy();
 
   //inherited functions

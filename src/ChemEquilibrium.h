@@ -41,8 +41,8 @@ public:/*-------------------------------------------------------*/
                chem_equil_type dtyp,
                int proc_ind,
                int iWatStor,
-               CTransportModel* pTransportModel,
-               CModel* pModel);
+               CTransportModel *pTransportModel,
+               CModelABC *pModel);
   ~CmvChemEquil();
 
   //inherited functions

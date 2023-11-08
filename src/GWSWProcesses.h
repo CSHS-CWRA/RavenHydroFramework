@@ -50,7 +50,7 @@ public: /*-------------------------------------------------------*/
 	// Constructors/Destructor
   CGWSWProcessABC(CGroundwaterModel  *pGWModel,
                   const process_type ptype,
-                  CModel             *pModel);
+                  CModelABC          *pModel);
 	virtual ~CGWSWProcessABC();
 
 	virtual void Initialize();

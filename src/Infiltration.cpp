@@ -12,7 +12,7 @@
 /// \param itype [in] Model of infiltration selected
 //
 CmvInfiltration::CmvInfiltration(infil_type itype,
-                                 CModel *pModel)
+                                 CModelABC *pModel)
   :CHydroProcessABC(INFILTRATION, pModel)
 {
   type =itype;

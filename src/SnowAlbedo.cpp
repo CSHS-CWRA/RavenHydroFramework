@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the snow albedo evolution constructor
 //
-CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type, CModel *pModel)
+CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type, CModelABC *pModel)
   :CHydroProcessABC(SNOW_ALBEDO_EVOLVE, pModel)
 {
   type =snalb_type;

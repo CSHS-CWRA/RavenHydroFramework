@@ -43,7 +43,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSublimation(sublimation_type sub_type, CModel *pModel);
+  CmvSublimation(sublimation_type sub_type, CModelABC *pModel);
   ~CmvSublimation();
 
   //inherited functions
@@ -223,10 +223,10 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvSnowBalance(snowbal_type  bal_type,
-                 CModel *pModel);
+                 CModelABC *pModel);
   CmvSnowBalance(snowbal_type bal_type,
                  int iSnowTo,
-                 CModel *pModel);
+                 CModelABC *pModel);
   ~CmvSnowBalance();
 
   //inherited functions
@@ -264,7 +264,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModel *pModel);
+  CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModelABC *pModel);
   ~CmvSnowTempEvolve();
 
   //inherited functions
