@@ -83,6 +83,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _local_GW_head=0.0;
 
   _assimilate_stage=false;
+  _assim_blank=true;
   _pObsStage=NULL;
   _DAscale=1.0;
   _DAscale_last=1.0;
@@ -1090,21 +1091,23 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options)
 {
   // update flow rules-----------------------------------
-  if (_nDates == 0){return;}
-  int vv=_nDates-1;
-  for (int v = 0; v < _nDates; v++){
-    if (tt.julian_day >= _aDates[v]){vv=v; }
-  }
-  for (int i = 0; i < _Np; i++){
-    _aQ[i] = _aQ_back[vv][i];
+  if (_nDates != 0){
+    int vv=_nDates-1;
+    for (int v = 0; v < _nDates; v++){
+      if (tt.julian_day >= _aDates[v]){vv=v; }
+    }
+    for (int i = 0; i < _Np; i++){
+      _aQ[i] = _aQ_back[vv][i];
+    }
   }
 
   // Assimilate lake stage-------------------------------
   if(_assimilate_stage)
   {
+    _assim_blank=true;
     if(tt.model_time>Options.assimilation_start-Options.timestep/2.0)
     {
-      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep)+1;//end-of timestep index
 
       double weir_adj=0.0;
       if(_pWeirHeightTS!=NULL) {
@@ -1115,6 +1118,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
       if(obs_stage!=RAV_BLANK_DATA) {
         _stage=obs_stage;
         _Qout =GetWeirOutflow(_stage,weir_adj);//[m3/s]
+        _assim_blank=false;
       }
     }
     //Calculate change in reservoir mass
@@ -1245,7 +1249,14 @@ double  CReservoir::RouteWater(const double &Qin_old,
                                res_constraint &constraint,
                                double *aQstruct) const
 {
+  if ((_assimilate_stage) && (!_assim_blank))
+  {
+    res_outflow=_Qout; 
+    return _stage;
+  }
+
   const optStruct *Options = pModel->GetOptStruct();
+
   const double RES_TOLERANCE=0.0001; //[m]
   const int    RES_MAXITER  =100;
 

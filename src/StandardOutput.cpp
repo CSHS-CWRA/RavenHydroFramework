@@ -933,20 +933,20 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	    for (int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
-	      if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) {
-	        _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
-	      }
-	      for (i = 0; i < _nObservedTS; i++){
-	        if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
-	        {
-              double val = _pObservedTS[i]->GetValue(nn);
-	          if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
-	          else                                             { _RESSTAGE << ",";       }
+	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) {
+	          _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
 	        }
+	        for (i = 0; i < _nObservedTS; i++){
+	          if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
+	          {
+              double val = _pObservedTS[i]->GetValue(nn);
+	            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
+	            else                                             { _RESSTAGE << ",";       }
+	          }
           }
         }
-	    _RESSTAGE<<endl;
-	  }
+	      _RESSTAGE<<endl;
+			}
     }
 
     //Demands.csv
