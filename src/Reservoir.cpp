@@ -1251,7 +1251,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
 {
   if ((_assimilate_stage) && (!_assim_blank))
   {
-    res_outflow=_Qout; 
+    res_outflow=_Qout;
     return _stage;
   }
 

@@ -91,7 +91,7 @@ private:/*-------------------------------------------------------*/
 
   bool          _assimilate_stage;   ///< true if assimilating lake stage for this reservoir
   const CTimeSeriesABC *_pObsStage;  ///< observed lake stage
-  bool          _assim_blank;        ///< true if observed stage is blank this time step 
+  bool          _assim_blank;        ///< true if observed stage is blank this time step
 
   double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
   double        _DAscale_last;       //< outflow scale factor for previous time step

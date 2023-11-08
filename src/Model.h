@@ -98,7 +98,7 @@ private:/*------------------------------------------------------*/
   int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
 
   CGlobalParams     *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
-  
+
   int                 _nTransParams;  ///< number of transient parameters
   CTransientParam   **_pTransParams;  ///< array of pointers to transient parameters with time series
   int                _nClassChanges;  ///< number of HRU Group class changes
@@ -191,7 +191,7 @@ private:/*------------------------------------------------------*/
   int                _nAllSoilProfiles;    ///< Number of soil profiles in model (size of pAllSoilProfiles)
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
-  
+
   CStateVariable    *_pStateVar;         ///< pointer to state variable object (used to be static attribute of CStateVariable)
   int                _nLatFlowProcesses;   /// used to be static of CLateralExchangeProcessABC
 

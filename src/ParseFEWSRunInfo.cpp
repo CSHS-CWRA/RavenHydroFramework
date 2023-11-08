@@ -757,7 +757,7 @@ bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
 
         // check for valid class name
         bool bad=false;
-        
+
         if      (pclass==CLASS_SOIL      ){if (pModel->StringToSoilClass(class_str)==NULL){bad=true;}}
         else if (pclass==CLASS_VEGETATION){if (pModel->StringToVegClass (class_str)==NULL){bad=true;}}
         else if (pclass==CLASS_LANDUSE   ){if (pModel->StringToLUClass  (class_str)==NULL){bad=true;}}

@@ -46,7 +46,7 @@ public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvConvolution(convolution_type type,
                  const int        to_index,
-                 CModelABC* pModel, 
+                 CModelABC* pModel,
                  int conv_index);
   ~CmvConvolution();
 

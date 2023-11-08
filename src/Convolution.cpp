@@ -25,8 +25,8 @@ bool CmvConvolution::_smartmode=false;
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of convolution constructor
 /// \param absttype [in] Selected model of abstraction
-/// \param pModel [in] pointer to model 
-/// \param conv_index [in] index of this convolution process 
+/// \param pModel [in] pointer to model
+/// \param conv_index [in] index of this convolution process
 //
 CmvConvolution::CmvConvolution(convolution_type type,
                                const int        to_index,
