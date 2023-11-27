@@ -7,6 +7,7 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Snowmelt Constructor/Destructor
@@ -18,8 +19,8 @@
 /// \param melt_type [in] Model of snow melt selected
 /// \param Out_index [in] Index of storage compartment to which meltwater enters
 //
-CmvSnowMelt::CmvSnowMelt(snowmelt_type melt_type,int Out_index):
-  CHydroProcessABC(SNOWMELT)
+CmvSnowMelt::CmvSnowMelt(snowmelt_type melt_type, int Out_index, CModel *pModel):
+  CHydroProcessABC(SNOWMELT, pModel)
 {
   type=melt_type;
   CHydroProcessABC::DynamicSpecifyConnections(1);
@@ -135,8 +136,8 @@ void   CmvSnowMelt::ApplyConstraints( const double               *state_vars,
 /// \brief Implementation of the snow squeeze constructor
 /// \param Out_index [in] Index of the compartment to which water is lost
 //
-CmvSnowSqueeze::CmvSnowSqueeze(int Out_index):
-  CHydroProcessABC(SNOWSQUEEZE)
+CmvSnowSqueeze::CmvSnowSqueeze(int Out_index, CModel *pModel):
+  CHydroProcessABC(SNOWSQUEEZE, pModel)
 {
   ExitGracefullyIf(Out_index==DOESNT_EXIST,
                    "CmvSnowSqueeze Constructor: invalid 'to' compartment specified",BAD_DATA);
@@ -209,7 +210,7 @@ void CmvSnowSqueeze::GetRatesOfChange( const double              *state_vars,
   if (pModel->GetStateVarIndex(SNOW_DEPTH)!=DOESNT_EXIST){
     SD=state_vars[pModel->GetStateVarIndex(SNOW_DEPTH)];
   }
-  liq_cap=CalculateSnowLiquidCapacity(S,SD,Options);
+  liq_cap=CalculateSnowLiquidCapacity(S, SD, pModel);
 
   rates[0]=max(SL-liq_cap,0.0)/Options.timestep;
 
@@ -249,8 +250,9 @@ void   CmvSnowSqueeze::ApplyConstraints( const double            *state_vars,
 /// \brief Implementation of the snow refreeze constructor
 /// \param frz_type [in] Refreeze algorithm type
 //
-CmvSnowRefreeze::CmvSnowRefreeze(refreeze_type frz_type):
-  CHydroProcessABC(REFREEZE)
+CmvSnowRefreeze::CmvSnowRefreeze(refreeze_type frz_type,
+                                 CModel *pModel):
+  CHydroProcessABC(REFREEZE, pModel)
 {
   type =frz_type;
   if (type==FREEZE_DEGREE_DAY){

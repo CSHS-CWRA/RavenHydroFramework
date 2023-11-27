@@ -11,8 +11,9 @@
 /// \brief Implementation of the infiltration process constructor
 /// \param itype [in] Model of infiltration selected
 //
-CmvInfiltration::CmvInfiltration(infil_type  itype)
-  :CHydroProcessABC(INFILTRATION)
+CmvInfiltration::CmvInfiltration(infil_type itype,
+                                 CModelABC *pModel)
+  :CHydroProcessABC(INFILTRATION, pModel)
 {
   type =itype;
   CHydroProcessABC::DynamicSpecifyConnections(2);
@@ -708,11 +709,11 @@ void CmvInfiltration::GetUBCWMRunoff    (const double             *state_vars,
 
   double soil_deficit =max(0.0,pHRU->GetSoilCapacity(0)-state_vars[iTo[0]]);
 
-  double Fimp         =pHRU->GetSurfaceProps()->impermeable_frac;
-  double max_perc_rate=pHRU->GetSoilProps(1)->max_perc_rate;
-  double P0AGEN       =pHRU->GetSoilProps(0)->UBC_infil_soil_def;
-  double P0DSH        =CGlobalParams::GetParams()->UBC_GW_split;
-  double V0FLAS       =CGlobalParams::GetParams()->UBC_flash_ponding;//[mm]
+  double Fimp          = pHRU->GetSurfaceProps()->impermeable_frac;
+  double max_perc_rate = pHRU->GetSoilProps(1)->max_perc_rate;
+  double P0AGEN        = pHRU->GetSoilProps(0)->UBC_infil_soil_def;
+  double P0DSH         = pModel->GetGlobalParams()->GetParams()->UBC_GW_split;
+  double V0FLAS        = pModel->GetGlobalParams()->GetParams()->UBC_flash_ponding;  //[mm]
 
   //calculate b1 parameter (effective permeable area without flash factor)
   b1=1.0;

@@ -496,7 +496,7 @@ void CModel::InitializeRoutingNetwork()
     _aDownstreamInds[p]=pp;
     aInflowCount    [p]=0;
   }
-  // count number of inflows to each basin 
+  // count number of inflows to each basin
   //----------------------------------------------------------------------
   for (p=0;p<_nSubBasins;p++)
   {
@@ -564,7 +564,7 @@ void CModel::InitializeRoutingNetwork()
 
   for (p = 0; p < _nSubBasins; p++)
   {
-    // identify headwater basins - default is headwater 
+    // identify headwater basins - default is headwater
     if (aInflowCount[p] > 0) {
       _pSubBasins[p]->SetAsNonHeadwater();
     }
@@ -624,8 +624,8 @@ void CModel::InitializeBasins(const optStruct &Options,const bool re_init)
   {
     aSBArea[p]=_pSubBasins[p]->GetBasinArea();
 
-    if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
-      runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
+    if (this->_pGlobalParams->GetParams()->avg_annual_runoff > 0){
+      runoff_est= this->_pGlobalParams->GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
     }
     aSBQlat[p]=runoff_est/MM_PER_METER*(aSBArea[p]*M2_PER_KM2)/SEC_PER_DAY;//[m3/s]
     aSBQlat[p]+=_pSubBasins[p]->GetDownstreamInflow(0.0);//[m3/s]
@@ -742,13 +742,13 @@ void CModel::InitializeParameterOverrides()
     }
     else
     {
-      double *address=CGlobalParams::GetAddress(name);
+      double *address = this->_pGlobalParams->GetAddress(name);
       if (address==NULL){
         ExitGracefully("CModel::InitializeParameterOverrides() : Invalid or unsupported global parameter name in :LocalParameterOverride command",BAD_DATA);
       }
       _pParamOverrides[i]->pxAddress=address;
 
-      _pParamOverrides[i]->aRevertValues[0] = CGlobalParams::GetParameter(name);
+      _pParamOverrides[i]->aRevertValues[0] = this->_pGlobalParams->GetParameter(name);
     }
 
     _pParamOverrides[i]->aHRUIsOverridden=new bool [_nHydroUnits];

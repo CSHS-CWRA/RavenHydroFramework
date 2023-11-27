@@ -28,6 +28,8 @@
 #include "ModelEnsemble.h"
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
+#include "ChannelXSect.h"
+#include "Convolution.h"
 
 class CHydroProcessABC;
 class CGauge;
@@ -36,8 +38,13 @@ class CGroundwaterModel;
 class CTransportModel;
 class CEnsemble;
 class CForcingGrid;
+class CLandUseClass;  // defined in 'SoilAndLandClasses.h'
+class CSubbasinGroup; // defined in 'SubBasin.h'
+class CChannelXSect;  // defined in 'ChannelXSect.h'
+class CSubBasin;      // defined in 'SubBasin.h'
 struct class_change;
 class CTransientParam;
+
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
 /// \details Stores and organizes HRUs and basins, provides access to all
@@ -75,6 +82,7 @@ private:/*------------------------------------------------------*/
   int               _nProcesses;  ///< number of hydrological processes that move water, mass, or energy from one storage unit to another
   CHydroProcessABC**_pProcesses;  ///< Array of pointers to hydrological processes
   bool   **_aShouldApplyProcess;  ///< array of flags for whether or not each process applies to each HRU [_nProcesses][_nHydroUnits]
+  int           _nConvVariables;  ///< Number of convolution variables (a.k.a. processes) in model
 
   int                  _nGauges;  ///< number of precip/temp gauges for forcing interpolation
   CGauge             **_pGauges;  ///< array of pointers to gauges which store time series info [size:_nGauges]
@@ -89,15 +97,14 @@ private:/*------------------------------------------------------*/
 
   int                 _lake_sv;   ///< index of storage variable for lakes/wetlands (TMP?)
 
+  CGlobalParams     *_pGlobalParams;  ///< pointer to global parameters  (used to be global, static)
+
   int                 _nTransParams;  ///< number of transient parameters
   CTransientParam   **_pTransParams;  ///< array of pointers to transient parameters with time series
   int                _nClassChanges;  ///< number of HRU Group class changes
   class_change     **_pClassChanges;  ///< array of pointers to class_changes
   int              _nParamOverrides;  ///< number of local parameter overrides
   param_override **_pParamOverrides;  ///< array of pointers to local parameter overrides
-
-  int              _nLandUseClasses;  ///< number of land use classes 
-  CLandUseClass  **_pLandUseClasses;  ///< array of pointers to land use classes 
 
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
@@ -170,6 +177,23 @@ private:/*------------------------------------------------------*/
   int              _PotMeltBlends_N;
   potmelt_method  *_PotMeltBlends_type;
   double          *_PotMeltBlends_wts;
+
+  /* below are attributes that were static in the past */
+  CLandUseClass    **_pLandUseClasses;     ///< array of pointers to land use classes
+  int                _nLandUseClasses;     ///< number of land use classes
+  CSoilClass       **_pAllSoilClasses;     /// used to be static attribute of CSoilClass
+  int                _nAllSoilClasses;     /// same of above
+  CVegetationClass **_pAllVegClasses;      /// used to be static attribute of CVegetationClass
+  int                _numVegClasses;       /// same of above
+  CTerrainClass    **_pAllTerrainClasses;  ///< array of pointers to all terrain classes that have been created
+  int                _nAllTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
+  CSoilProfile     **_pAllSoilProfiles;    ///< Reference to array of all soil profiles in model
+  int                _nAllSoilProfiles;    ///< Number of soil profiles in model (size of pAllSoilProfiles)
+  CChannelXSect    **_pAllChannelXSects;
+  int                _nAllChannelXSects;
+
+  CStateVariable    *_pStateVar;         ///< pointer to state variable object (used to be static attribute of CStateVariable)
+  int                _nLatFlowProcesses;   /// used to be static of CLateralExchangeProcessABC
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -266,9 +290,9 @@ private:/*------------------------------------------------------*/
   bool         ForcingGridIsAvailable                   (const forcing_type &ftype) const;
   double       GetAverageSnowFrac                       (const int idx, const double t, const int n) const;
 
-  void              AddFromPETParamList                 (string *aP,class_type *aPC,int &nP,
+  void         AddFromPETParamList                      (string *aP,class_type *aPC,int &nP,
                                                          const evap_method &evaporation, const netSWRad_method &SW_radia_net) const;
-  void              AddFromPotMeltParamList             (string *aP,class_type *aPC,int &nP,
+  void         AddFromPotMeltParamList                  (string *aP,class_type *aPC,int &nP,
                                                          const potmelt_method &pot_melt) const;
 
 public:/*-------------------------------------------------------*/
@@ -280,6 +304,7 @@ public:/*-------------------------------------------------------*/
   //Inherited Accessor functions (from ModelABC.h)
   bool              StateVarExists     (sv_type type) const;
 
+  CGlobalParams    *GetGlobalParams    () const;
   int               GetNumStateVars    () const;
   sv_type           GetStateVarType    (const int i) const;
   int               GetStateVarIndex   (sv_type type) const; //assumes layer=0
@@ -300,6 +325,60 @@ public:/*-------------------------------------------------------*/
 
   int               GetNumSoilLayers   () const;
   int               GetLakeStorageIndex() const;
+
+  /* below are functions that were static in the past */
+  // CLandUseClass
+  CLandUseClass *StringToLUClass(const string s);
+
+  CLandUseClass *GetLanduseClass(int);
+  void           SummarizeLUClassesToScreen();
+  void           DestroyAllLanduseClasses();
+  // CSoilClass
+  CSoilClass       *StringToSoilClass(const string s);
+  int               GetNumSoilClasses();
+  const CSoilClass *GetSoilClass(int c);
+  void              AddSoilClass(CSoilClass *pSoilClass);
+  void              SummarizeSoilClassesToScreen();
+  void              DestroyAllSoilClasses();
+  // CVegetationClass
+  CVegetationClass       *StringToVegClass(const string s);
+  int                     GetNumVegClasses();
+  const CVegetationClass *GetVegClass(int c);
+  void                    AddVegClass(CVegetationClass *pVegClass);
+  void                    SummarizeVegClassesToScreen();
+  void                    DestroyAllVegClasses();
+  // CTerrainClass
+  CTerrainClass          *StringToTerrainClass(const string s);
+  int                     GetNumTerrainClasses();
+  const CTerrainClass    *GetTerrainClass(int c);
+  void                    AddTerrainClass(CTerrainClass *pTerrainClass);
+  void                    SummarizeTerrainClassesToScreen();
+  void                    DestroyAllTerrainClasses();
+  // CSoilProfile
+  CSoilProfile           *StringToSoilProfile(const string s);
+  int                     GetNumSoilProfiles();
+  const CSoilProfile     *GetSoilProfile(int c);
+  void                    AddSoilProfile(CSoilProfile *pSoilProfile);
+  void                    SummarizeSoilProfilesToScreen();
+  void                    DestroyAllSoilProfiles();
+  // ChannelXSects
+  CChannelXSect         *StringToChannelXSect(const string s);
+  int                    GetNumChannelXSects();
+  void                   AddChannelXSect(CChannelXSect *pXSect);
+  void                   SummarizeChannelXSectToScreen();
+  void                   DestroyAllChannelXSections();
+  void                   CheckForChannelXSectsDuplicates(const optStruct &Options);
+  void                   WriteRatingCurves(const optStruct& Options) const;
+  void                   WriteRatingCurves(const optStruct* Options) const;
+  // Convolution variables
+  int                    GetNumConvolutionVariables() const;
+  void                   IncrementConvolutionCount();
+  // StateVariable
+  CStateVariable        *GetStateVarInfo() const;
+  void                   SetStateVarInfo(CStateVariable *pStateVar);
+  // LateralExchangeABC
+  int                    GetNumLatFlowProcesses();
+  void                   CountOneMoreLatFlowProcess();
 
   /*--below are only available to global routines--*/
   //Accessor functions
@@ -359,8 +438,8 @@ public:/*-------------------------------------------------------*/
   class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
 
   const CLandUseClass *StringToLUClass  (const string s) const;
-  const CLandUseClass *GetLUClass       (const int    c) const;
-  const int            GetLandClassIndex(const string s) const; 
+  const CLandUseClass *GetLanduseClass  (const int    c) const;
+  const int            GetLandClassIndex(const string s) const;
 
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );
@@ -470,6 +549,7 @@ public:/*-------------------------------------------------------*/
   //output routines
   void        WriteMinorOutput        (const optStruct &Options, const time_struct &tt);
   void        WriteSimpleOutput       (const optStruct &Options, const time_struct &tt);
+  void        WriteMajorOutput        (const time_struct &tt,string solfile,bool final) const;
   void        WriteMajorOutput        (const optStruct &Options, const time_struct &tt,string solfile,bool final) const;
   void        WriteProgressOutput     (const optStruct &Options, clock_t elapsed_time, int elapsed_steps, int total_steps);
   void        CloseOutputStreams      ();

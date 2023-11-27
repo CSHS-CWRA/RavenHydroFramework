@@ -23,21 +23,21 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvPrecipitation();
+  CmvPrecipitation(CModelABC *pModel);
   ~CmvPrecipitation();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
   void        GetParticipatingParamList   (string *aP, class_type *aPC, int &nP) const;

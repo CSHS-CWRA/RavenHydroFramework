@@ -24,8 +24,9 @@ CmvChemEquil::CmvChemEquil(string           constit_name1,
                            chem_equil_type  etyp,
                            int              proc_ind,
                            int              iWatStor,
-                           CTransportModel* pTransportModel)
-  :CHydroProcessABC(DECAY)
+                           CTransportModel  *pTransportModel,
+                           CModelABC        *pModel)
+  :CHydroProcessABC(DECAY, pModel)
 {
   _eq_type     =etyp;
   _pTransModel =pTransportModel;

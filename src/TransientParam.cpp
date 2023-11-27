@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "TransientParam.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 
 /*****************************************************************
    Constructor / Destructor
@@ -16,10 +17,11 @@
 /// \param ptype [in] class of parameter(e.g., CLASS_SOIL or CLASS_GLOBAL)
 /// \param classname [in] class of parameter time series (e.g., "GuelphLoam") (not used/ignored for CLASS_GLOBAL parameters)
 //
-CTransientParam::CTransientParam(      CTimeSeries *pTS,
-                                       const string       pname,
-                                       const class_type   ptype,
-                                       const string        classname)
+CTransientParam::CTransientParam(CTimeSeries      *pTS,
+                                 const string      pname,
+                                 const class_type  ptype,
+                                 const string      classname,
+                                 CModel *pModel)
 {
   pTimeSeries=pTS;
   param_name=pname;
@@ -28,6 +30,7 @@ CTransientParam::CTransientParam(      CTimeSeries *pTS,
   if (param_type!=CLASS_GLOBAL){
     class_name=classname;
   }
+  _pModel = pModel;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -73,30 +76,30 @@ void CTransientParam::Initialize(const CModel *pModel, const optStruct &Options)
 
   if (param_type==CLASS_SOIL)
   {
-    if (CSoilClass::StringToSoilClass(class_name)==NULL){
+    if (_pModel->StringToSoilClass(class_name) == NULL){
       string msg="CTransientParam::Initialize: invalid soil class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }
   }
   else if (param_type==CLASS_VEGETATION)
   {
-    if (CVegetationClass::StringToVegClass(class_name)==NULL){
+    if (_pModel->StringToVegClass(class_name) == NULL){
       string msg="CTransientParam::Initialize: invalid vegetation class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }
   }
   else if (param_type==CLASS_TERRAIN)
   {
-    if (CTerrainClass::StringToTerrainClass(class_name)==NULL){
+    if (_pModel->StringToTerrainClass(class_name)==NULL){
       string msg="CTransientParam::Initialize: invalid terrain class name: "+class_name;
       ExitGracefully(msg.c_str(),BAD_DATA);
     }
   }
-  else if (param_type==CLASS_LANDUSE)
+  else if (param_type == CLASS_LANDUSE)
   {
-    if (pModel->StringToLUClass(class_name)==NULL){
-      string msg="CTransientParam::Initialize: invalid land use/land type class name: "+class_name;
-      ExitGracefully(msg.c_str(),BAD_DATA);
+    if (_pModel->StringToLUClass(class_name) == NULL) {
+      string msg = "CTransientParam::Initialize: invalid land use/land type class name: " + class_name;
+      ExitGracefully(msg.c_str(), BAD_DATA);
     }
   }
   else if (param_type==CLASS_GLOBAL)

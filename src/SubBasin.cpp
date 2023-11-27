@@ -72,7 +72,7 @@ CSubBasin::CSubBasin( const long           Identifier,
 
   // estimate reach length if needed
   //-----------------------------------------------------------------------
-  double max_len=CGlobalParams::GetParams()->max_reach_seglength*M_PER_KM;
+  double max_len = _pModel->GetGlobalParams()->GetParams()->max_reach_seglength*M_PER_KM;
 
   if((_reach_length==AUTO_COMPUTE) && (max_len/M_PER_KM<0.99*DEFAULT_MAX_REACHLENGTH))
   {
@@ -1366,7 +1366,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     {
       //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
       _t_conc=0.76*pow(max(_basin_area,0.001),0.38)/HR_PER_DAY;// [d] \ref Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)]
-      _t_conc*=CGlobalParams::GetParams()->TOC_multiplier;
+      _t_conc *= _pModel->GetGlobalParams()->GetParams()->TOC_multiplier;
       //if (Options.catchment_routing!=ROUTE_NONE){
       //  WriteAdvisory("Time of concentration has been estimated as "+to_string(_t_conc)+" days for basin "+to_string(_ID),false);
       //}
@@ -1376,16 +1376,16 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
     if (_t_peak     ==AUTO_COMPUTE){
       _t_peak=0.3*_t_conc;
-      _t_peak*=CGlobalParams::GetParams()->TIME_TO_PEAK_multiplier;
+      _t_peak *= _pModel->GetGlobalParams()->GetParams()->TIME_TO_PEAK_multiplier;
     }
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
     if (_gamma_shape==AUTO_COMPUTE){
       _gamma_shape=3.0;
-      _gamma_shape*=CGlobalParams::GetParams()->GAMMA_SHAPE_multiplier;
+      _gamma_shape *= _pModel->GetGlobalParams()->GetParams()->GAMMA_SHAPE_multiplier;
     }
     if (_gamma_scale==AUTO_COMPUTE){
       _gamma_scale=max((_gamma_shape-1.0)/_t_peak,0.01); //only really should be used if _gamma_shape>1.0
-      _gamma_scale*=CGlobalParams::GetParams()->GAMMA_SCALE_multiplier;
+      _gamma_scale *= _pModel->GetGlobalParams()->GetParams()->GAMMA_SCALE_multiplier;
     }
 
     if (_reservoir_constant==AUTO_COMPUTE){
@@ -2297,7 +2297,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],Options,tt,res_outflow,res_const,aResQstruct);
+    res_ht = _pReservoir->RouteWater(_aQout[_nSegments-1], aQout_new[_nSegments-1], _pModel, tt, res_outflow, res_const, aResQstruct);
   }
   else
   {

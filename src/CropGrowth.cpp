@@ -6,13 +6,15 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "CropGrowth.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the CropHeatUnitEvolve constructor
 /// \param CHU_type [in] Method of modelling crop heat units selected
 //
-CmvCropHeatUnitEvolve::CmvCropHeatUnitEvolve(CHUevolve_type CHU_type):
-  CHydroProcessABC(CROP_HEAT_UNIT_EVOLVE)
+CmvCropHeatUnitEvolve::CmvCropHeatUnitEvolve(CHUevolve_type CHU_type,
+                                             CModel* pModel):
+  CHydroProcessABC(CROP_HEAT_UNIT_EVOLVE, pModel)
 {
   type =CHU_type;
 

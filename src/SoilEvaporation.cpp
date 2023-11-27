@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Soil Evaporation Constructor/Destructor
@@ -17,8 +18,9 @@
 /// \brief Implementation of the soil evaporation constructor
 /// \param se_type [in] Model of soil evaporation selected
 //
-CmvSoilEvap::CmvSoilEvap(soilevap_type se_type)
-  :CHydroProcessABC(SOIL_EVAPORATION)
+CmvSoilEvap::CmvSoilEvap(soilevap_type se_type,
+                         CModelABC     *pModel)
+  :CHydroProcessABC(SOIL_EVAPORATION, pModel)
 {
   int iAtmos;
   iAtmos  =pModel->GetStateVarIndex(ATMOSPHERE);
@@ -454,7 +456,7 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   //------------------------------------------------------------
   else if(type==SOILEVAP_HYMOD2)
   {
-    //from Roy et al.  (2017), Using satellite-based evapotranspiration estimates to improve the structure of a simple conceptual rainfall-runoff model, HESS, 21(2), 879–896, doi:10.5194/hess-21-879-2017
+    //from Roy et al.  (2017), Using satellite-based evapotranspiration estimates to improve the structure of a simple conceptual rainfall-runoff model, HESS, 21(2), 879ï¿½896, doi:10.5194/hess-21-879-2017
 
     double stor    =state_vars[iFrom[0]];
     double max_stor=pHRU->GetSoilCapacity(0);

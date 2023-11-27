@@ -3,6 +3,7 @@
   Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
+#include "Model.h"     // needed to define CModel
 
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir called by all other constructors
@@ -1240,19 +1241,27 @@ void  CReservoir::SetMinStage(const double &min_z)
 /// \param res_ouflow [out] outflow at end of timestep
 /// \returns estimate of new stage at end of timestep
 //
-double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const optStruct &Options, const time_struct &tt, double &res_outflow,res_constraint &constraint, double *aQstruct) const
+double  CReservoir::RouteWater(const double &Qin_old,
+                               const double &Qin_new,
+                               const CModelABC* pModel,
+                               const time_struct &tt,
+                               double &res_outflow,
+                               res_constraint &constraint,
+                               double *aQstruct) const
 {
   if ((_assimilate_stage) && (!_assim_blank))
   {
-    res_outflow=_Qout; 
+    res_outflow=_Qout;
     return _stage;
   }
+
+  const optStruct *Options = pModel->GetOptStruct();
 
   const double RES_TOLERANCE=0.0001; //[m]
   const int    RES_MAXITER  =100;
 
-  double tstep      =Options.timestep;
-  double stage_new  =0.0;
+  double tstep      = Options->timestep;
+  double stage_new  = 0.0;
 
   double stage_limit=ALMOST_INF;
   double weir_adj   =0.0;
@@ -1330,7 +1339,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
       ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     }
-    precip=_Precip/Options.timestep/SEC_PER_DAY; //[m3]->[m3/s]
+    precip=_Precip/Options->timestep/SEC_PER_DAY; //[m3]->[m3/s]
   }
   if(_seepage_const>0) {
     seep_old=_seepage_const*(_stage-_local_GW_head); //[m3/s]
@@ -1366,8 +1375,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
       }
     }
     else if(_pDZTR!=NULL) {
-      out =GetDZTROutflow(GetVolume(h_guess   ),Qin_old,tt,Options);
-      out2=GetDZTROutflow(GetVolume(h_guess+dh),Qin_old,tt,Options);
+      out =GetDZTROutflow(GetVolume(h_guess   ), Qin_old, tt, *Options);
+      out2=GetDZTROutflow(GetVolume(h_guess+dh), Qin_old, tt, *Options);
     }
     out +=ET*GetArea(h_guess   )+_seepage_const*(h_guess   -_local_GW_head);//[m3/s]
     out2+=ET*GetArea(h_guess+dh)+_seepage_const*(h_guess+dh-_local_GW_head);//[m3/s]
@@ -1406,8 +1415,8 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
     constraint =RC_NATURAL;
   }
   else if(_pDZTR!=NULL) {
-    res_outflow=GetDZTROutflow(GetVolume(stage_new),Qin_old,tt,Options);
-    constraint =RC_DZTR;
+    res_outflow =GetDZTROutflow(GetVolume(stage_new), Qin_old, tt, *Options);
+    constraint = RC_DZTR;
   }
 
   outflow_nat=res_outflow; //saved for special max stage constraint
@@ -1415,7 +1424,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 
   //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
   //---------------------------------------------------------------------------------------------
-  double w=CGlobalParams::GetParams()->reservoir_relax;
+  double w = pModel->GetGlobalParams()->GetParams()->reservoir_relax;
   if(htarget!=RAV_BLANK_DATA) {
     double V_targ=GetVolume(htarget);
     double A_targ=GetArea(htarget);
@@ -1512,9 +1521,9 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   }
 
   //other option - returns to stage-discharge curve once max stage exceeded
-  if((Options.res_overflowmode==OVERFLOW_NATURAL) &&  (stage_nat>stage_limit)) {
-    res_outflow=outflow_nat;
-    stage_new  =stage_nat;
+  if((Options->res_overflowmode == OVERFLOW_NATURAL) && (stage_nat > stage_limit)) {
+    res_outflow = outflow_nat;
+    stage_new  = stage_nat;
   }
   // ======================================================================================
 

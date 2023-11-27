@@ -24,12 +24,9 @@ protected:/*-------------------------------------------------------*/
   CSoilClass **pSoilClasses;   ///< Array of soil horizones making up profile
   double      *thicknesses;    ///< Array of Thickness of horizons [m]
 
-  static CSoilProfile **pAllSoilProfiles; ///< Reference to array of all soil profiles in model
-  static int            NumSoilProfiles;  ///< Number of soil profiles in model (size of pAllSoilProfiles)
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CSoilProfile(const string name);
+  CSoilProfile(const string name, CModel* pModel);
   ~CSoilProfile();
 
   //Accessors
@@ -45,13 +42,6 @@ public:/*-------------------------------------------------------*/
 
   void               AddHorizon    (double            thickness, //[m]
                                     const CSoilClass *pHorizonClass);
-
-  static int                 GetNumProfiles        ();
-  static const CSoilProfile *StringToSoilProfile   (const string s);
-
-  static void                DestroyAllSoilProfiles();
-
-  static void                SummarizeToScreen     ();
 };
 
 #endif

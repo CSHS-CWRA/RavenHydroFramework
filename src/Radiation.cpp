@@ -7,6 +7,7 @@
 #include "RavenInclude.h"
 #include "Radiation.h"
 #include "GlobalParams.h"
+#include "Model.h"  // required for definition of CModel
 
 //////////////////////////////////////////////////////////////////
 /// \brief Estimates incoming clear sky shortwave radiation SW_radia and extraterrestrial radiation ET_rad [MJ/m2/d]
@@ -20,16 +21,17 @@
 /// \param ET_rad [out] ET radiation [MJ/m2/d]
 /// \return Double value representing shortwave radiation [MJ/m2/d]
 //
-double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
+double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
                                               const force_struct *F,
                                               const CHydroUnit   *pHRU,
                                               const time_struct  &tt,
                                               double             &ET_rad,
                                               double             &ET_rad_flat)
 {
+  const optStruct* Options = pModel->GetOptStruct();
   double latrad=pHRU->GetLatRad();
   double lateq =pHRU->GetLatEq();
-  switch(Options.SW_radiation)
+  switch(Options->SW_radiation)
   {
   //--------------------------------------------------------
   case(SW_RAD_NONE):
@@ -46,12 +48,13 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
     double solar_noon=pHRU->GetSolarNoon();
     double aspect    =pHRU->GetAspect();
 
-    double SWrad= ClearSkySolarRadiation(tt.julian_day, Options.timestep,
-                                        latrad, lateq, slope, aspect,
-                                        F->day_angle, F->day_length,
-                                        solar_noon, dew_pt, ET_rad,ET_rad_flat,(Options.timestep>=1.0));
-    if (Options.SW_radiation==SW_RAD_DATA){return F->SW_radia;} //ensures ET_rad still calculated!
-    else                                  {return SWrad;}
+    double SWrad= ClearSkySolarRadiation(tt.julian_day, Options->timestep,
+                                         latrad, lateq, slope, aspect,
+                                         F->day_angle, F->day_length,
+                                         solar_noon, dew_pt, ET_rad, ET_rad_flat,
+                                         (Options->timestep >= 1.0));
+    if (Options->SW_radiation==SW_RAD_DATA){return F->SW_radia;} //ensures ET_rad still calculated!
+    else                                   {return SWrad;}
 
   }
   //--------------------------------------------------------
@@ -65,8 +68,8 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
       ET_rad_flat=ET_rad;
       double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
       if(pHRU->GetLatRad()<0.0) { orient=1.0-orient; }//southern hemisphere phase shift
-      double shortwave_corr_S=InterpolateMo(CGlobalParams::GetParams()->UBC_s_corr,tt,Options);
-      double shortwave_corr_N=InterpolateMo(CGlobalParams::GetParams()->UBC_n_corr,tt,Options);
+      double shortwave_corr_S = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_s_corr, tt, *Options);
+      double shortwave_corr_N = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_n_corr, tt, *Options);
       double shortwave_corr=((orient)* shortwave_corr_S + (1.0-orient)*shortwave_corr_N);
       ET_rad*=shortwave_corr;
       return solar_rad * shortwave_corr;
@@ -100,13 +103,13 @@ double CRadiation::EstimateShortwaveRadiation(const optStruct    &Options,
 /// \return Double value representing longwave radiation [MJ/m2/d]
 //
 double CRadiation::EstimateLongwaveRadiation(const int iSnow,
-                                             const optStruct     &Options,
+                                             CModel* pModel,
                                              const force_struct  *F,
                                              const CHydroUnit    *pHRU,
-                                                   double        &LW_incoming)
+                                             double        &LW_incoming)
 {
-
-  switch(Options.LW_incoming)
+  const optStruct *Options = pModel->GetOptStruct();
+  switch(Options->LW_incoming)
   {
   case(LW_INC_DATA):
   {
@@ -137,7 +140,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   }
   }
 
-  switch(Options.LW_radiation)
+  switch(Options->LW_radiation)
   {
   //--------------------------------------------------------
   case(LW_RAD_DATA):
@@ -182,7 +185,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double cloud=F->cloud_cover;
     double LW_open=(1-cloud)*(-20+0.94*F->temp_daily_ave)+(cloud)*(1.24*F->temp_daily_min);//[mm/d]
 
-    double P0BLUE=CGlobalParams::GetParams()->UBC_LW_forest_fact;//actually P0BLUE * P0LWVF , [mm/d/K]
+    double P0BLUE = pModel->GetGlobalParams()->GetParams()->UBC_LW_forest_fact;//actually P0BLUE * P0LWVF , [mm/d/K]
     double LW_forest=P0BLUE*F->temp_daily_ave; //[mm/d]
 
     double tmp=(LH_FUSION*DENSITY_WATER/MM_PER_METER); //[mm/d]-->[MJ/m2/d]
@@ -278,15 +281,16 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 /// \param elev [in] elevation of HRU [masl]
 /// \return Double Cloud cover correction factor for shortwave radiation
 
-double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
+double CRadiation::SWCloudCoverCorrection(CModel* pModel,
                                           const force_struct *F,
                                           const double &elev)
 {
-  switch(Options.SW_cloudcovercorr)
+  const optStruct *Options = pModel->GetOptStruct();
+  switch(Options->SW_cloudcovercorr)
   {
   case(SW_CLOUD_CORR_UBCWM):
   {
-    double POCAST = CGlobalParams::GetParams()->UBC_cloud_penet;
+    double POCAST = pModel->GetGlobalParams()->GetParams()->UBC_cloud_penet;
     return 1.0 -(1.0 - POCAST) * F->cloud_cover;
   }
   case(SW_CLOUD_CORR_DINGMAN): // Dingman (2008) Eq. 5-30 (does not require parameters)
@@ -321,12 +325,13 @@ double CRadiation::SWCloudCoverCorrection(const optStruct    &Options,
 /// \param *pHRU [in] pointer to HRU for which radiation is calculated
 /// \return Double Canopy correction factor for shortwave radiation
 
-double CRadiation::SWCanopyCorrection(const optStruct  &Options,
+double CRadiation::SWCanopyCorrection(CModel *pModel,
                                       const CHydroUnit *pHRU)
 {
+  const optStruct *Options = pModel->GetOptStruct();
   double Fc=pHRU->GetSurfaceProps()->forest_coverage;
 
-  switch(Options.SW_canopycorr)
+  switch(Options->SW_canopycorr)
   {
   case(SW_CANOPY_CORR_STATIC):
   {
@@ -339,7 +344,7 @@ double CRadiation::SWCanopyCorrection(const optStruct  &Options,
   case(SW_CANOPY_CORR_UBCWM):  // A simple factor that switches on when forest cover is greater than zero
   {
     double shortwave_corr = 1.0;
-    double UBC_correction_fact = CGlobalParams::GetParams()->UBC_exposure_fact; //Sun exposure factor of forested areas
+    double UBC_correction_fact = pModel->GetGlobalParams()->GetParams()->UBC_exposure_fact; //Sun exposure factor of forested areas
     shortwave_corr*=((Fc)*UBC_correction_fact+(1.0-Fc)*1.0);
     return shortwave_corr;
   }

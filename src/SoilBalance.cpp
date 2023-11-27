@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    SoilBalance Constructor/Destructor
@@ -19,8 +20,9 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvSoilBalance::CmvSoilBalance(soilbal_type   sb_type)
-               :CHydroProcessABC(SOIL_BALANCE)
+CmvSoilBalance::CmvSoilBalance(soilbal_type sb_type,
+                               CModelABC    *pModel)
+  :CHydroProcessABC(SOIL_BALANCE, pModel)
 {
   _type =sb_type;
 

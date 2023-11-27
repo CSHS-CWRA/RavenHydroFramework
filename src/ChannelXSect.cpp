@@ -4,12 +4,13 @@
   ----------------------------------------------------------------*/
 #include "ChannelXSect.h"
 void TestManningsInfluence(const CChannelXSect *pChan,const double &Qref);
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
+
 //////////////////////////////////////////////////////////////////
 /// \brief Utility method to assign parameter name to cross section "nickname", add to static array of all x-sections
 /// \param name [in] Nickname for cross section
+/// \param pModel [in] Pointer to model object to which cross section belongs
 //
-void CChannelXSect::Construct(const string name)
+void CChannelXSect::Construct(const string name, CModel* pModel)
 {
   _name=name;
   _nSurveyPts=0;
@@ -17,10 +18,7 @@ void CChannelXSect::Construct(const string name)
   _aElev=NULL;
   _aMann=NULL;
   _is_closed_channel=false;
-
-  if (!DynArrayAppend((void**&)(pAllChannelXSects),(void*)(this),NumChannelXSects)){
-    ExitGracefully("CChannelXSect::Constructor: creating NULL channel profile",BAD_DATA_WARN);
-  }
+  pModel->AddChannelXSect(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -37,9 +35,10 @@ CChannelXSect::CChannelXSect(const string  name,
                              const double *X,
                              const double *Elev,
                              const double *ManningsN,
-                             const double  slope)
+                             const double  slope,
+                             CModel*       pModel)
 {
-  Construct(name);
+  Construct(name, pModel);
   int i;
   _nSurveyPts=NumSurveyPts;
   _aX   =new double [_nSurveyPts];
@@ -94,9 +93,10 @@ CChannelXSect::CChannelXSect(const string  name,
                              const double *width,
                              const double *area,
                              const double *perim,
-                             const double  slope)
+                             const double  slope,
+                             CModel*       pModel)
 {
-  Construct(name);
+  Construct(name, pModel);
 
   _nPoints  =array_size;
   _aQ       =new double [_nPoints];
@@ -136,9 +136,10 @@ CChannelXSect::CChannelXSect(const string  name,          //constructor for trap
                              const double  sidewall_ratio,
                              const double  bottom_elev,
                              const double  mannings_n,
-                             const double  slope)
+                             const double  slope,
+                             CModel*       pModel)
 {
-  Construct(name);
+  Construct(name, pModel);
   _bedslope=slope;
   _min_mannings=mannings_n;
   ExitGracefullyIf(_bedslope<=0.0,
@@ -179,10 +180,11 @@ CChannelXSect::CChannelXSect( const string  name,         //constructor for pipe
                               const double  diameter,
                               const double  bottom_elev,
                               const double  mannings_n,
-                              const double  bedslope) {
-  Construct(name);
-  _bedslope=bedslope;
-  _min_mannings=mannings_n;
+                              const double  bedslope,
+                              CModel*       pModel) {
+  Construct(name, pModel);
+  _bedslope = bedslope;
+  _min_mannings = mannings_n;
   ExitGracefullyIf(_bedslope<=0.0,
                   "CChannelXSect Constructor: channel profile bedslope must be greater than zero",BAD_DATA_WARN);
   ExitGracefullyIf(_min_mannings<=0.0,
@@ -250,10 +252,25 @@ string      CChannelXSect::GetName()             const { return _name;}
 double      CChannelXSect::GetMinMannings()      const { return _min_mannings; }
 
 //////////////////////////////////////////////////////////////////
+/// \brief Returns the number of survey points
+/// \return Number of survey points
+double      CChannelXSect::GetNPoints()          const { return _nPoints; }
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns Riverbed slope
 /// \return Riverbed slope [m/m]
 //
 double      CChannelXSect::GetBedslope()         const { return _bedslope;}
+
+double      CChannelXSect::GetAQAt(const int i)  const { return _aQ[i];}
+
+double      CChannelXSect::GetAStageAt(const int i)  const { return _aStage[i];}
+
+double      CChannelXSect::GetATopWidthAt(const int i)  const { return _aTopWidth[i];}
+
+double      CChannelXSect::GetAXAreaAt(const int i)  const { return _aXArea[i];}
+
+double      CChannelXSect::GetAPerimAt(const int i)  const { return _aPerim[i];}
 
 /*****************************************************************
    Rating Curve Interpolation functions
@@ -505,113 +522,8 @@ void CChannelXSect::GenerateRatingCurvesFromProfile()
   }
 }
 /*****************************************************************
-   Static Initialization, Accessors, Destructors
+   Static Initialization, Accessors
 *****************************************************************/
-CChannelXSect **CChannelXSect::pAllChannelXSects=NULL;
-int             CChannelXSect::NumChannelXSects =0;
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns number of channel cross-sections in model
-/// \return Number of channel cross-sections in model
-//
-int   CChannelXSect::GetNumChannelXSects       (){return NumChannelXSects;}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Deletes all channel profiles in model
-//
-void  CChannelXSect::DestroyAllChannelXSections()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL CHANNEL PROFILES"<<endl;}
-
-  // the classes may have been already destroyed or not created
-  if (NumChannelXSects == 0) {
-    if (DESTRUCTOR_DEBUG){cout <<"  NO CHANNEL PROFILES TO DESTROY"<<endl;}
-    return;
-  }
-
-  // each class must be destroyed individually, then the array
-  for (int p=0; p<NumChannelXSects;p++){
-    delete pAllChannelXSects[p];
-  }
-  delete [] pAllChannelXSects;
-
-  // reset the static variables
-  pAllChannelXSects = NULL;
-  NumChannelXSects = 0;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize profile information to screen
-//
-void CChannelXSect::SummarizeToScreen         ()
-{
-  cout<<"==================="<<endl;
-  cout<<"Channel Profile Summary:"<<NumChannelXSects<<" profiles in database"<<endl;
-  for (int p=0; p<NumChannelXSects;p++)
-  {
-    cout<<"-Channel profile \""<<pAllChannelXSects[p]->GetName()<<"\" "<<endl;
-    cout<<"           slope: " <<pAllChannelXSects[p]->_bedslope <<endl;
-  }
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Check for duplicate channel names
-//
-void CChannelXSect::CheckForDuplicates(const optStruct &Options)
-{
-  for(int p=0; p<NumChannelXSects;p++)
-  {
-    for(int pp=0; pp<p;pp++)
-    {
-      if(pAllChannelXSects[p]->GetName()==pAllChannelXSects[pp]->GetName()) {
-        string warn=" CChannelXSect::CheckForDuplicates: found duplicated channel name: "+pAllChannelXSects[p]->GetName();
-        WriteWarning(warn.c_str(),Options.noisy);
-      }
-    }
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Write rating curves to file rating_curves.csv
-//
-void CChannelXSect::WriteRatingCurves(const optStruct& Options)
-{
-  ofstream CURVES;
-  string tmpFilename=FilenamePrepare("rating_curves.csv",Options);
-  CURVES.open(tmpFilename.c_str());
-
-
-  if (CURVES.fail()){
-    ExitGracefully("CChannelXSect::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.",FILE_OPEN_ERR);
-  }
-  int i;
-  for (int p=0; p<NumChannelXSects;p++)
-  {
-    const CChannelXSect *pP=pAllChannelXSects[p];
-    CURVES<<pP->_name <<"----------------"<<endl;
-    CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aQ[i]       <<",";}CURVES<<endl;
-    CURVES<<"Stage Height [m],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aStage[i]   <<",";}CURVES<<endl;
-    CURVES<<"Top Width [m],";       for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aTopWidth[i]<<",";}CURVES<<endl;
-    CURVES<<"X-sect area [m2],";    for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aXArea[i]   <<",";}CURVES<<endl;
-    CURVES<<"Wetted Perimeter [m],";for(i=0;i<pP->_nPoints;i++){CURVES<<pP->_aPerim[i]   <<",";}CURVES<<endl;
-  }
-  CURVES.close();
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Converts string (e.g., "X2305" in Basin file) to channel profile
-/// \param s [in] String to be converted to a channel profile
-/// \return Pointer to channel profile with name equivalent to string, or NULL if string is invalid
-//
-const CChannelXSect*CChannelXSect::StringToChannelXSect(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int p=0;p<NumChannelXSects;p++)
-  {
-    if (!sup.compare(StringToUppercase(pAllChannelXSects[p]->GetName()))){return pAllChannelXSects[p];}
-  }
-  return NULL;
-}
-
 
 void TestManningsInfluence(const CChannelXSect *pChan, const double &Qref) {
   ofstream TEST;

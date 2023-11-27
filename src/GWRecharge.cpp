@@ -12,9 +12,10 @@ Copyright (c) 2008-2021 the Raven Development Team
 /// \param From_index [in] Index of state variable/ storage unit where recharge is coming from
 //
 CGWRecharge::CGWRecharge(CGroundwaterModel *pGWModel,
-                         gwrecharge_type type,
-                         int From_index)
-  :CGWSWProcessABC(pGWModel, GWRECHARGE)
+                         gwrecharge_type    type,
+                         int                From_index,
+                         CModel            *pModel)
+  :CGWSWProcessABC(pGWModel, GWRECHARGE, pModel)
 {
   int iSW;
   _aFluxes = NULL;

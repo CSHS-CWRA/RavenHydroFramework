@@ -17,6 +17,7 @@
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
+#define STANDALONE
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -295,7 +296,7 @@ inline void ExitGracefullyIf(bool condition, const char *statement, exitcode cod
 //  Global Constants
 //*****************************************************************
 const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is generated when destructor is called
-const int     MAX_SV_LAYERS       =100;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
+const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
 const int     MAX_STATE_VARS      =200;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
@@ -1651,13 +1652,14 @@ double TemperatureEnthalpyDerivative         (const double &hv);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp
+class CModelABC;  // defined in ModelABC.h
 double CalcFreshSnowDensity       (const double &air_temp);
 double GetSnowThermCond           (const double &snow_dens);
 double GetSensibleHeatSnow        (const double &air_temp,const double &surf_temp,const double &V, const double &ref_ht, const double &rough);
 double GetLatentHeatSnow          (const double &P,const double &air_temp,const double &surf_temp,const double &rel_humid,const double &V,const double &ref_ht,const double &rough);
 double GetRainHeatInput           (const double &surf_temp, const double &air_temp,const double &rain_rate,const double &rel_humid);
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
-double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth,const optStruct &Options);
+double CalculateSnowLiquidCapacity(const double &SWE, const double &snow_depth, const CModelABC* pModel);
 
 //Crop Functions---------------------------------------------------
 bool   IsGrowingSeason            (const time_struct &tt, const double &CHU);

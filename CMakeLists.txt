@@ -21,6 +21,7 @@ file(GLOB SOURCE "src/*.cpp")
 # creates a shared library - file extension is OS dependent (Linux: .so, Windows: .dll)
 if(COMPILE_LIB)
   add_library(ravenbmi SHARED ${SOURCE})
+  target_compile_definitions(ravenbmi PUBLIC BMI_LIBRARY)
 endif()
 
 # creates an executable - file extension is OS dependent (Linux: none, Windows: .exe)
@@ -29,6 +30,8 @@ if(COMPILE_EXE)
     ${SOURCE}
     ${HEADER}
   )
+  target_compile_definitions(Raven PUBLIC STANDALONE)
+  set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 source_group("Header Files" FILES ${HEADER})
 source_group("Source Files" FILES ${SOURCE})
@@ -38,8 +41,6 @@ IF(NETCDF_FOUND)
   include_directories(${NetCDF_INCLUDE_DIRS})
   target_link_libraries(Raven NetCDF::NetCDF)
 ENDIF()
-
-set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
 
 # unset cmake variables to avoid polluting the cache
 unset(COMPILE_LIB CACHE)

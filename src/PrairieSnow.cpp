@@ -29,8 +29,9 @@ double CalculateSnowEnergyContent(const double &SWE,            //[mm]
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the prairie blowing snow constructor
 //
-CmvPrairieBlowingSnow::CmvPrairieBlowingSnow(pbsm_type sub_type):
-  CLateralExchangeProcessABC(BLOWING_SNOW){
+CmvPrairieBlowingSnow::CmvPrairieBlowingSnow(pbsm_type sub_type, CModel *pModel)
+  :CLateralExchangeProcessABC(BLOWING_SNOW, pModel)
+{
   _type=sub_type;
   _nDriftConnections=0;
 

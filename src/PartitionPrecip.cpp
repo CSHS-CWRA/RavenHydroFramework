@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the default precipitation constructor
 //
-CmvPrecipitation::CmvPrecipitation():
-									CHydroProcessABC(PRECIPITATION)
+CmvPrecipitation::CmvPrecipitation(CModelABC *pModel)
+  :CHydroProcessABC(PRECIPITATION, pModel)
 {}
 
 //////////////////////////////////////////////////////////////////
@@ -293,7 +293,7 @@ void CmvPrecipitation::GetRatesOfChange(const double             *state_vars,
         }
         if ( (pModel->StateVarExists(SNOW_DEFICIT)) && (SWE > 0.0))  //Snow deficit in model (UBCWM)
         {
-          double SWI = CGlobalParams::GetParams()->snow_SWI;
+          double SWI = pModel->GetGlobalParams()->GetParams()->snow_SWI;
           rates[qSnowDef] = SWI*snowthru; //snowfall to snowpack
         }
       }

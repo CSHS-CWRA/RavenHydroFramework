@@ -1145,7 +1145,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int i_stor;
       int shift=0;
       if(const_name=="TEMPERATURE") { shift=-1; }
-      sv_type typ=CStateVariable::StringToSVType(s[2+shift],layer_ind,false);
+      sv_type typ = pModel->GetStateVarInfo()->StringToSVType(s[2+shift],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":ConcentrationTimeSeries command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -1193,7 +1193,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int layer_ind;
       int i_stor;
       string const_name = to_string(s[1]);
-      sv_type typ=CStateVariable::StringToSVType(s[2],layer_ind,false);
+      sv_type typ = pModel->GetStateVarInfo()->StringToSVType(s[2], layer_ind, false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":MassFluxTimeSeries command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -1982,11 +1982,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID,long SBIDres,double pct_met,int jul_start,int jul_end)
 {
   double dmult;
-  double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
+  double mult = pModel->GetGlobalParams()->GetParameter("RESERVOIR_DEMAND_MULT");
   string warn;
 
-  CSubBasin *pSB,*pSBres;
-  pSB=pModel->GetSubBasinByID(SBID);
+  CSubBasin *pSB, *pSBres;
+  pSB = pModel->GetSubBasinByID(SBID);
   if(pSB==NULL) {
     warn=":AllocateReservoirDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
     WriteWarning(warn,Options.noisy);

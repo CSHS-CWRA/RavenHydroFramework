@@ -676,8 +676,10 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      _OUTPUT<<","<<
-        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)))<<" "<<mgL;
+      _OUTPUT << "," <<
+        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),
+                                            _pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)),
+                                            _pModel->GetTransportModel()) << " " << mgL;
     }
   }
 
@@ -828,7 +830,9 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
   _OUTPUT<<"  :ColumnName influx \"Channel storage\" \"Rivulet storage\"";
   for(i=0;i<_pModel->GetNumStateVars();i++) {
     if((CStateVariable::IsWaterStorage(_pModel->GetStateVarType(i))) && (i!=iCumPrecip)) {
-      _OUTPUT<<" \""<<CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),_pModel->GetStateVarLayer(i))<<"\"";
+      _OUTPUT << " \"" << CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),
+                                                              _pModel->GetStateVarLayer(i),
+                                                              _pModel->GetTransportModel()) << "\"";
     }
   }
   _OUTPUT<<" \"Total Mass\" \"Cum. Loading\" \"Cum. Mass lost\" \"MB error\""<<endl;
@@ -1014,8 +1018,8 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   {
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      string sname=CStateVariable::SVTypeToString    (_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
-      string name=CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string sname=_pModel->GetStateVarInfo()->SVTypeToString    (_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string name =_pModel->GetStateVarInfo()->GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetTransportModel());
       varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,sname,name,mgL);
     }
   }
@@ -1523,7 +1527,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      string name=CStateVariable::SVTypeToString(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string name=_pModel->GetStateVarInfo()->SVTypeToString(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
       AddSingleValueToNetCDF(_CONC_ncid, name.c_str(),time_ind2,concentration);
       currentMass+=M*(area*M2_PER_KM2); //[mg]  or [MJ]  //increment total mass in system
     }

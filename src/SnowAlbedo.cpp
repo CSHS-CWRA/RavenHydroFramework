@@ -6,12 +6,13 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "Albedo.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the snow albedo evolution constructor
 //
-CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type):
-  CHydroProcessABC(SNOW_ALBEDO_EVOLVE)
+CmvSnowAlbedoEvolve::CmvSnowAlbedoEvolve(snowalb_type snalb_type, CModelABC *pModel)
+  :CHydroProcessABC(SNOW_ALBEDO_EVOLVE, pModel)
 {
   type =snalb_type;
 
@@ -133,11 +134,11 @@ void CmvSnowAlbedoEvolve::GetParticipatingStateVarList(snowalb_type bal_type,
 /// \param &tt [in] Reference to the instance in time to which the calculated rates of change pertain
 /// \param *rates [out] Array (size=nConnects) which contains calculate rates of change of modified variables.
 //
-void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_vars,
+void CmvSnowAlbedoEvolve::GetRatesOfChange (const double *state_vars,
                                             const CHydroUnit *pHRU,
-                                            const optStruct      &Options,
+                                            const optStruct &Options,
                                             const time_struct &tt,
-                                            double     *rates) const
+                                            double *rates) const
 {
 
   const force_struct *F=pHRU->GetForcingFunctions();
@@ -146,9 +147,9 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
   {
     double snow,albedo,cum_melt,snowfall,old_albedo;
 
-    UBC_snow_par PP=CGlobalParams::GetParams()->UBC_snow_params;
-    double min_alb=CGlobalParams::GetParams()->min_snow_albedo;
-    double max_alb=CGlobalParams::GetParams()->max_snow_albedo;
+    UBC_snow_par PP = pModel->GetGlobalParams()->GetParams()->UBC_snow_params;
+    double min_alb  = pModel->GetGlobalParams()->GetParams()->min_snow_albedo;
+    double max_alb  = pModel->GetGlobalParams()->GetParams()->max_snow_albedo;
 
     snow    =state_vars[pModel->GetStateVarIndex(SNOW)];
     albedo  =state_vars[pModel->GetStateVarIndex(SNOW_ALBEDO)];
@@ -184,12 +185,12 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
   { //ported from CRHM (Pomeroy, 2007) routine ClassalbedoRichard::run
     double tstep=Options.timestep;
 
-    double a1         =CGlobalParams::GetParams()->alb_decay_cold;    //Albedo decay time constant for cold snow (~0.008/d)
-    double a2         =CGlobalParams::GetParams()->alb_decay_melt;    //Albedo decay time constant for melting snow (~0.12/d)
-    double albmin     =CGlobalParams::GetParams()->min_snow_albedo;
-    double albmax     =CGlobalParams::GetParams()->max_snow_albedo;
-    double albbare    =CGlobalParams::GetParams()->bare_ground_albedo;
-    double snowfall_th=CGlobalParams::GetParams()->snowfall_albthresh;//Minimum snowfall to refresh snow albedo [mm/d] (~10 mm/d)
+    double a1          = pModel->GetGlobalParams()->GetParams()->alb_decay_cold;    //Albedo decay time constant for cold snow (~0.008/d)
+    double a2          = pModel->GetGlobalParams()->GetParams()->alb_decay_melt;    //Albedo decay time constant for melting snow (~0.12/d)
+    double albmin      = pModel->GetGlobalParams()->GetParams()->min_snow_albedo;
+    double albmax      = pModel->GetGlobalParams()->GetParams()->max_snow_albedo;
+    double albbare     = pModel->GetGlobalParams()->GetParams()->bare_ground_albedo;
+    double snowfall_th = pModel->GetGlobalParams()->GetParams()->snowfall_albthresh;//Minimum snowfall to refresh snow albedo [mm/d] (~10 mm/d)
 
     double albedo     =state_vars[pModel->GetStateVarIndex(SNOW_ALBEDO)];
     double SWE        =state_vars[pModel->GetStateVarIndex(SNOW)];
@@ -218,12 +219,12 @@ void CmvSnowAlbedoEvolve::GetRatesOfChange (const double                 *state_
     // Baker, D.G., Ruschy, D.L., Wall, D.B., 1990. The albedo decay of prairie snows. J. Appl. Meteor. 29 _2, 179-187
     double tstep=Options.timestep;
 
-    double SWE     =state_vars[pModel->GetStateVarIndex(SNOW)];
-    double albedo  =state_vars[pModel->GetStateVarIndex(SNOW_ALBEDO)];
-    double snow_age=state_vars[pModel->GetStateVarIndex(SNOW_AGE)];
+    double SWE      = state_vars[pModel->GetStateVarIndex(SNOW)];
+    double albedo   = state_vars[pModel->GetStateVarIndex(SNOW_ALBEDO)];
+    double snow_age = state_vars[pModel->GetStateVarIndex(SNOW_AGE)];
 
-    double snowfall_th=CGlobalParams::GetParams()->snowfall_albthresh;//Minimum snowfall to refresh snow albedo [mm/d] (~10 mm/d)
-    double albbare    =CGlobalParams::GetParams()->bare_ground_albedo;
+    double snowfall_th = pModel->GetGlobalParams()->GetParams()->snowfall_albthresh;//Minimum snowfall to refresh snow albedo [mm/d] (~10 mm/d)
+    double albbare     = pModel->GetGlobalParams()->GetParams()->bare_ground_albedo;
 
     double old_albedo =albedo;
     double old_snowage=snow_age;//time [d] since albedo refresh

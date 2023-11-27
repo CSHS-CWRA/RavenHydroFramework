@@ -38,9 +38,6 @@ private:/*------------------------------------------------------*/
 
   int               _iTarget;     ///< state variable index of outflow target
 
-
-  static int        _nConv;       /// # of CONVOLUTION variables (a.k.a. processes) in model
-
   double LocalCumulDist(const double &t, const CHydroUnit *pHRU) const;
 
   void GenerateUnitHydrograph(const CHydroUnit *pHRU, const optStruct &Options, double *aUnitHydro, int *aIntervals, int &N) const;
@@ -48,7 +45,9 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvConvolution(convolution_type type,
-                 const int        to_index);
+                 const int        to_index,
+                 CModelABC* pModel,
+                 int conv_index);
   ~CmvConvolution();
 
   //inherited functions
@@ -64,9 +63,10 @@ public:/*-------------------------------------------------------*/
                         const time_struct &tt,
                         double      *rates) const;
 
-  void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
+  void GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
   static void GetParticipatingStateVarList(convolution_type btype,
-                                           sv_type *aSV, int *aLev, int &nSV);
+                                           sv_type *aSV, int *aLev,
+                                           int &nSV, int conv_index);
 
 };
 #endif

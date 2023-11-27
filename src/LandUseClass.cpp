@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 /*****************************************************************
    Constructor / Destructor
 *****************************************************************/
@@ -11,10 +12,12 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the LandUseClass constructor
 /// \param name [in] String nickname for land use class
+/// \param pModel [in] Pointer to model object containing land use class
 //
-CLandUseClass::CLandUseClass(const string name)
+CLandUseClass::CLandUseClass(const string name, CModel* pModel)
 {
-  S.landuse_name=name;
+  this->S.landuse_name = name;
+  pModel->AddLandUseClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -47,8 +50,8 @@ string                CLandUseClass::GetLanduseName  () const{return S.landuse_n
 /// \param &Stmp [in] Input LU parameters (read from .rvp file)
 /// \param &Sdefault [in] Default LU parameters
 //
-void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
-                                              const surface_struct &Sdefault)
+void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
+                                              surface_struct &Sdefault)
 //const surface_struct &needed_params
 {
   bool autocalc;
@@ -56,8 +59,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   bool chatty=true;
 
   //these parameters are required
-  S.landuse_name    =Stmp.landuse_name;
-  S.impermeable_frac=Stmp.impermeable_frac;
+  S.landuse_name     = Stmp.landuse_name;
+  S.impermeable_frac = Stmp.impermeable_frac;
   ExitGracefullyIf(S.impermeable_frac<0.0 || S.impermeable_frac>1.0,"Invalid parameter value for IMPERMEABLE_FRAC: must be between 0 and 1",BAD_DATA_WARN);
 
   //Forest coverage
@@ -305,7 +308,17 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
 /// \brief Sets default Surface properties
 /// \details Initializes all surface properties to DEFAULT_VALUE
 ///  if is_template==true, initializes instead to NOT_SPECIFIED or AUTO_CALCULATE
-/// \param &S [out] Surface properties class
+/// \param is_template [in] True if the default value being set is for the template class
+//
+void CLandUseClass::InitializeSurfaceProperties(string name, bool is_template)
+{
+  CLandUseClass::InitializeSurfaceProperties(name, this->S, is_template);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets default Surface properties
+/// \details Initializes all surface properties to DEFAULT_VALUE
+///  if is_template==true, initializes instead to NOT_SPECIFIED or AUTO_CALCULATE
 /// \param is_template [in] True if the default value being set is for the template class
 //
 void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, bool is_template)
@@ -405,7 +418,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
 void  CLandUseClass::SetSurfaceProperty(const string &param_name,
                                         const double &value)
 {
-  SetSurfaceProperty(S,param_name,value);
+  SetSurfaceProperty(S, param_name, value);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -414,7 +427,7 @@ void  CLandUseClass::SetSurfaceProperty(const string &param_name,
 /// \param value [in] Value of parameter to be set
 //
 void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
-                                        const string    param_name,
+                                        const string param_name,
                                         const double value)
 {
   string name;
@@ -508,7 +521,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
 //
 double CLandUseClass::GetSurfaceProperty(string param_name) const
 {
-  return GetSurfaceProperty(S,param_name);
+  return this->GetSurfaceProperty(S, param_name);
 }
 
 ///////////////////////////////////////////////////////////////////////////

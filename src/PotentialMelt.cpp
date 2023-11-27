@@ -3,7 +3,7 @@
   Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
-double UBC_DailyPotentialMelt( const optStruct &Options,
+double UBC_DailyPotentialMelt( CModel* pModel,
                                const force_struct &F,
                                const CHydroUnit *pHRU,
                                const time_struct &tt);
@@ -137,7 +137,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
   //----------------------------------------------------------
   else if (method==POTMELT_UBCWM)
   {
-    return UBC_DailyPotentialMelt(Options,*F,pHRU,tt)*F->subdaily_corr;
+    return UBC_DailyPotentialMelt(this, *F, pHRU, tt)*F->subdaily_corr;
   }
   //----------------------------------------------------------
   else if (method == POTMELT_USACE)
@@ -164,7 +164,7 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     // Cloud Base Temperature
     double TcP; // Difference between the cloud base temp and snow surface
     double cloud_base = (TaP - TdP) * 400 / FEET_PER_METER; // Estimation of cloud base height in M
-    double lapse = CGlobalParams::GetParams()->adiabatic_lapse;//[C/km]
+    double lapse = this->_pGlobalParams->GetParams()->adiabatic_lapse;//[C/km]
     lapse = lapse / 1000.0; //[C/m]
     TcP = TaP - cloud_base * lapse;
 
@@ -245,11 +245,12 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
 /// \param &tt [in] Current model time
 /// \return Potential melt rate [mm/d]
 //
-double UBC_DailyPotentialMelt(const optStruct &Options,
+double UBC_DailyPotentialMelt(CModel* pModel,
                               const force_struct &F,
                               const CHydroUnit *pHRU,
                               const time_struct &tt)
 {
+  const optStruct* Options = pModel->GetOptStruct();
   double CONVM,CONDM,RAINMELT,potential_melt;
   double SHORM,ONGWMO;
   double pressure,vel,RI,RM;
@@ -264,11 +265,11 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
 
   if ((pHRU->GetHRUType()==HRU_GLACIER) && (snowSWE<=0))
   {
-    double minalb=CGlobalParams::GetParams()->min_snow_albedo;
-    albedo=1-(1.0-albedo)*(1-minalb);//UBCWM RFS implmentation
+    double minalb = pModel->GetGlobalParams()->GetParams()->min_snow_albedo;
+    albedo = 1-(1.0-albedo)*(1-minalb);//UBCWM RFS implmentation
   }
 
-  Fc    =pHRU->GetSurfaceProps()->forest_coverage;
+  Fc = pHRU->GetSurfaceProps()->forest_coverage;
 
   //calculate shortwave energy component.
   SHORM=(1.0-albedo)*F.SW_radia_subcan;            //[MJ/m2/d] //Uses subcanopy correction
@@ -299,7 +300,7 @@ double UBC_DailyPotentialMelt(const optStruct &Options,
   CONDM*=((1.0-Fc)*pressure+(Fc)*1.0);  //[mm/d]
 
   //melt due to rain heat input
-  if (Options.keepUBCWMbugs){//factor of 10 off
+  if (Options->keepUBCWMbugs){//factor of 10 off
     RAINMELT=0.00125            *max(F.temp_daily_ave,0.0)*F.precip_daily_ave*(1.0-F.snow_frac); //[mm/d]
   }
   else{

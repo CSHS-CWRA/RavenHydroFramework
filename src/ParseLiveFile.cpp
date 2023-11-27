@@ -88,7 +88,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:VegetationChange [HRU ID] [new vegetation tag] */
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
       if(pHRU!=NULL) {
-        CVegetationClass *veg_class= CVegetationClass::StringToVegClass(s[2]);
+        CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
         if(veg_class!=NULL) {
           pHRU->ChangeVegetation(veg_class);
         }
@@ -105,7 +105,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:LandUseChange [HRU ID] [new LULT tag]*/
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
       if(pHRU!=NULL) {
-        const CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
+        CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           pHRU->ChangeLandUse(lult_class);
         }
@@ -122,7 +122,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:GroupLandUseChange [HRU group] [new LULT tag]*/
       CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
       if(pHRUGroup!=NULL) {
-        const CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
+        CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
             pHRUGroup->GetHRU(k)->ChangeLandUse(lult_class);
@@ -139,11 +139,11 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(4):  //----------------------------------------------
     {/*:GroupVegetationChange [HRU group] [new veg tag]*/
-      CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
-      if(pHRUGroup!=NULL) {
-        CVegetationClass *veg_class=CVegetationClass::StringToVegClass(s[2]);
-        if(veg_class!=NULL) {
-          for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
+      CHRUGroup *pHRUGroup = pModel->GetHRUGroup(s[1]);
+      if(pHRUGroup != NULL) {
+        CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
+        if(veg_class != NULL) {
+          for(int k=0; k<pHRUGroup->GetNumHRUs(); k++) {
             pHRUGroup->GetHRU(k)->ChangeVegetation(veg_class);
           }
         }

@@ -10,6 +10,7 @@
 #define CHANNELX_H
 
 #include "RavenInclude.h"
+#include "Model.h"
 
 /*****************************************************************
    Class CChannelXSect
@@ -41,10 +42,7 @@ private:/*-------------------------------------------------------*/
   double      *_aXArea;             /// <Rating curve for X-sectional area [m2]
   double      *_aPerim;             /// <Rating curve for wetted perimeter [m]
 
-  static CChannelXSect **pAllChannelXSects;
-  static int             NumChannelXSects;
-
-  void Construct                        (const string name);
+  void Construct                        (const string name, CModel *pModel);
   void GenerateRatingCurvesFromProfile  ();
   void GenerateRatingCurvesFromPowerLaw ();
 
@@ -52,8 +50,8 @@ private:/*-------------------------------------------------------*/
   void GetPropsFromProfile(const double &elev,
                            double &Q,   double &width,
                            double &A,   double &P);
-  void GetFlowCorrections(const double &SB_slope,const double &SB_n,
-                          double &slope_mult,double &Q_mult) const;
+  void GetFlowCorrections(const double &SB_slope, const double &SB_n,
+                          double &slope_mult, double &Q_mult) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors:
@@ -62,7 +60,8 @@ public:/*-------------------------------------------------------*/
                  const double *X,
                  const double *Elev,
                  const double *ManningsN,
-                 const double  bedslope);
+                 const double  bedslope,
+                 CModel       *pModel);
   CChannelXSect( const string  name,          //constructor from raw data
                  const int     array_size,
                  const double *flow,
@@ -70,24 +69,33 @@ public:/*-------------------------------------------------------*/
                  const double *width,
                  const double *area,
                  const double *perim,
-                 const double  bedslope);
+                 const double  bedslope,
+                 CModel       *pModel);
   CChannelXSect( const string  name,          //constructor for trapezoid
                  const double  bottom_w,
                  const double  sidewall_angle,
                  const double  bottom_elev,
                  const double  mannings_n,
-                 const double  bedslope);
+                 const double  bedslope,
+                 CModel       *pModel);
   CChannelXSect( const string  name,         //constructor for pipe (of course, not really a channel)
                  const double  diameter,
                  const double  bottom_elev,
                  const double  mannings_n,
-                 const double  bedslope);
+                 const double  bedslope,
+                 CModel       *pModel);
   ~CChannelXSect();
 
   //Accessors
   string              GetName       ()                const;
   double              GetBedslope   ()                const;
   double              GetMinMannings()                const;
+  double              GetNPoints    ()                const;
+  double              GetAQAt(const int i)            const;
+  double              GetAStageAt(const int i)        const;
+  double              GetATopWidthAt(const int i)     const;
+  double              GetAXAreaAt(const int i)        const;
+  double              GetAPerimAt(const int i)        const;
   double              GetTopWidth   (const double &Q, const double &SB_slope,const double &SB_n) const;
   double              GetArea       (const double &Q, const double &SB_slope,const double &SB_n) const;
   double              GetStageElev  (const double &Q, const double &SB_slope,const double &SB_n) const;
@@ -97,13 +105,5 @@ public:/*-------------------------------------------------------*/
   double              GetDiffusivity(const double &Q, const double &SB_slope, const double &SB_n) const;
 
   void                CheckReferenceFlow(const double& Qref,const double& SB_slope,const double& SB_n,const long SBID) const;
-
-  //static accessors, destructor
-  static int                 GetNumChannelXSects       ();
-  static const CChannelXSect*StringToChannelXSect      (const string s);
-  static void                CheckForDuplicates        (const optStruct& Options);
-  static void                DestroyAllChannelXSections();
-  static void                SummarizeToScreen         ();
-  static void                WriteRatingCurves         (const optStruct& Options);
 };
 #endif

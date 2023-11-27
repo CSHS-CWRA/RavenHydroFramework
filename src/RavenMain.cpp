@@ -7,10 +7,11 @@
 #include "RavenMain.h"
 #include "Model.h"
 #include "UnitTesting.h"
-
-// Main Driver Variables------------------------------------------
-static optStruct   Options;
-static CModel      *pModel;
+#ifdef STANDALONE
+    #include "GracefulEndStandalone.h"
+#elif BMI_LIBRARY
+    #include "GracefulEndBMI.h"
+#endif
 
 // Global variables - declared as extern in RavenInclude.h--------
 string g_output_directory ="";
@@ -38,6 +39,7 @@ int main(int argc, char* argv[])
   clock_t     t0, t1;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
+  optStruct   Options;
 
   Options.version="3.7.1";
 #ifdef _NETCDF_
@@ -71,13 +73,11 @@ int main(int argc, char* argv[])
 
   t0=clock();
 
-  CStateVariable::Initialize();
-
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
 
-  CheckForErrorWarnings(true);
+  CheckForErrorWarnings(true, pModel);
 
   if (!Options.silent){
     cout <<"======================================================"<<endl;
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-  CheckForErrorWarnings(false);
+  CheckForErrorWarnings(false, pModel);
 
   nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
 
@@ -137,13 +137,12 @@ int main(int argc, char* argv[])
       pModel->IncrementCumOutflow        (Options,tt);
 
       JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
-
       pModel->WriteMinorOutput           (Options,tt);
       pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
       pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!!
       pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
-      if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
+      if ((Options.use_stopfile) && (CheckForStopfile(step, tt, pModel))) { break; }
       step++;
     }
 
@@ -299,88 +298,23 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief Finalizes program gracefully, explaining reason for finalizing, and destructing simulation and all pertinent parameters
-/// \remark Called from within ExitGracefully() or from the BMI Finalize() function
-///
-/// \param statement [in] String to print to user upon exit
-/// \param code [in] Code to determine why the system is exiting
-//
-void FinalizeGracefully(const char *statement, exitcode code)
-{
-  string typeline;
-  switch (code){
-    case(SIMULATION_DONE): {typeline="============================================================";break;}
-    case(RUNTIME_ERR):     {typeline="Error Type: Runtime Error";       break;}
-    case(BAD_DATA):        {typeline="Error Type: Bad input data";      break;}
-    case(BAD_DATA_WARN):   {typeline="Error Type: Bad input data";      break;}
-    case(OUT_OF_MEMORY):   {typeline="Error Type: Out of memory";       break;}
-    case(FILE_OPEN_ERR):   {typeline="Error Type: File opening error";  break;}
-    case(STUB):            {typeline="Error Type: Stub function called";break;}
-    default:               {typeline="Error Type: Unknown";             break;}
-  }
-
-  if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
-    ofstream WARNINGS;
-    WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
-    if (WARNINGS.fail()) {
-      WARNINGS.close();
-      string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
-      ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
-    }
-    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
-    else                       {WARNINGS<<"SIMULATION COMPLETE :)"<<endl;}
-    WARNINGS.close();
-  }
-  if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode
-
-  cout <<endl<<endl;
-  cout <<"============== Exiting Gracefully =========================="<<endl;
-  cout <<"Exiting Gracefully: "<<statement                             <<endl;
-  cout << typeline                                                     <<endl;
-  cout <<"============================================================"<<endl;
-
-  delete pModel; pModel=NULL; //deletes EVERYTHING!
-  CStateVariable::Destroy();
-
-  if(Options.pause) {
-    cout << "Press the ENTER key to continue"<<endl;
-    cin.get();
-  }
-}
-
-
-/////////////////////////////////////////////////////////////////
-/// \brief Exits gracefully from program, explaining reason for exit and destructing simulation all pertinent parameters
-/// \remark Called from within code
-///
-/// \param statement [in] String to print to user upon exit
-/// \param code [in] Code to determine why the system is exiting
-//
-void ExitGracefully(const char *statement,exitcode code)
-{
-
-  FinalizeGracefully(statement, code);
-  exit(0);
-}
-
-
-/////////////////////////////////////////////////////////////////
 /// \brief Checks if errors have been written to Raven_errors.txt, if so, exits gracefully
 /// \note called prior to simulation initialization, after parsing everything
 ///
 //
-void CheckForErrorWarnings(bool quiet)
+void CheckForErrorWarnings(bool quiet, CModel *pModel)
 {
   int      Len;
   char    *s[MAXINPUTITEMS];
   bool     errors_found(false);
   bool     warnings_found(false);
+  const optStruct* Options = pModel->GetOptStruct();
 
   ifstream WARNINGS;
-  WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str());
+  WARNINGS.open((Options->main_output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){WARNINGS.close();return;}
 
-  CParser *p=new CParser(WARNINGS,Options.main_output_dir+"Raven_errors.txt",0);
+  CParser *p=new CParser(WARNINGS,Options->main_output_dir+"Raven_errors.txt",0);
 
   while (!(p->Tokenize(s,Len)))
   {
@@ -406,7 +340,7 @@ void CheckForErrorWarnings(bool quiet)
 /// \note called during simulation to determine whether progress should be stopped
 ///
 //
-bool CheckForStopfile(const int step, const time_struct &tt)
+bool CheckForStopfile(const int step, const time_struct &tt, CModel *pModel)
 {
   if(step%100!=0){ return false; } //only check every 100th timestep
   ifstream STOP;
@@ -415,7 +349,7 @@ bool CheckForStopfile(const int step, const time_struct &tt)
   else //Stopfile found
   {
     STOP.close();
-    pModel->WriteMajorOutput  (Options,tt,"solution",true);
+    pModel->WriteMajorOutput(tt, "solution", true);
     pModel->CloseOutputStreams();
     ExitGracefully("CheckForStopfile: simulation interrupted by user using stopfile",SIMULATION_DONE);
     return true;

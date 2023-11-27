@@ -51,22 +51,26 @@ protected:/*----------------------------------------------------*/
   condition  **_pConditions;  ///< array of conditions for process to occur (ALL must be satisfied)
   int          _nConditions;  ///< number of conditions
 
-  static  CModelABC *pModel;  ///< pointer to model
+  CModelABC *pModel;          ///< pointer to model
 
   void DynamicSpecifyConnections(const int nConnects);
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CHydroProcessABC(const process_type ptype);     //multiple connection dynamic constructor
+  CHydroProcessABC(const process_type ptype,      //multiple connection dynamic constructor
+                   CModelABC         *pM);
   CHydroProcessABC(const process_type ptype,
-                   const int          nConns);     //multiple connection dynamic constructor
+                   const int          nConns,     //multiple connection dynamic constructor
+                   CModelABC         *pM);
   CHydroProcessABC(const process_type ptype,      //single connection constructor
                    const int          In_index,
-                   const int          Out_index);
+                   const int          Out_index,
+                   CModelABC         *pM);
   CHydroProcessABC(const process_type ptype,      //multiple connection constructor
                    const int         *In_indices,
                    const int         *Out_indices,
-                   const int          nConnect);
+                   const int          nConnect,
+                   CModelABC         *pM);
   virtual ~CHydroProcessABC();
 
   //accessors (some inlined for speed)
@@ -79,7 +83,7 @@ public:/*-------------------------------------------------------*/
 
   bool                 ShouldApply(const CHydroUnit*pHRU) const;
   //functions
-  static void          SetModel    (CModelABC *pM);/// \todo [reorg]: should really not be accessible
+  void                 SetModel(CModelABC *pM);/// \todo [reorg]: should really not be accessible
 
   void                 AddCondition(condition_basis basis,
                                     comparison      compare_method,
@@ -117,22 +121,24 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvFlush(int   from_index,
-           int     to_index, const double &pct);
+  CmvFlush(int          from_index,
+           int          to_index,
+           const double &pct,
+           CModelABC    *pM);
   ~CmvFlush();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
   void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const{}
@@ -149,10 +155,11 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSplit(int   from_index,
-           int     to_index1,
-           int     to_index2,
-           double  split_amt);
+  CmvSplit(int       from_index,
+           int       to_index1,
+           int       to_index2,
+           double    split_amt,
+           CModelABC *pM);
   ~CmvSplit();
 
   //inherited functions
@@ -182,8 +189,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvOverflow(int        from_index,
-              int     to_index);
+  CmvOverflow(int       from_index,
+              int       to_index,
+              CModelABC *pModel);
   ~CmvOverflow();
 
   //inherited functions
@@ -212,8 +220,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvExchangeFlow(int    from_index,
-                  int   mixingzone_index);
+  CmvExchangeFlow(int from_index,
+                  int mixingzone_index,
+                  CModelABC *pModel);
   ~CmvExchangeFlow();
 
   //inherited functions

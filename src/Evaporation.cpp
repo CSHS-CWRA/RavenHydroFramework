@@ -484,7 +484,7 @@ double CModel::EstimatePET(const force_struct &F,
   {
     double lat_rad=pHRU->GetLatRad();
     double declin=CRadiation::SolarDeclination(F.day_angle);
-    double cpet=CGlobalParams::GetParams()->MOHYSE_PET_coeff;
+    double cpet = this->_pGlobalParams->GetParams()->MOHYSE_PET_coeff;
 
     PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
     PET=max(PET,0.0);

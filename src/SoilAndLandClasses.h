@@ -15,6 +15,7 @@
 
 class CHydroUnit;
 class CModelABC;
+class CModel;     // defined in Model.h
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Types of class
@@ -42,12 +43,9 @@ protected:/*----------------------------------------------------*/
   string              _tag;                 ///< nickname for soil, e.g., "SILTY_SAND"
   soil_struct         _Soil;                ///< corresponding properties for soil
 
-  static CSoilClass **_pAllSoilClasses;     ///< array of pointers to all soil classes that have been created
-  static int          _nAllSoilClasses;     ///< number of soil classes
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CSoilClass(const string name, const int nConstits);
+  CSoilClass(const string name, const int nConstits, CModel* pModel);
   ~CSoilClass();
 
   //Accessors
@@ -59,10 +57,6 @@ public:/*-------------------------------------------------------*/
   //routines
   void AutoCalculateSoilProps(const soil_struct &Stmp,const soil_struct &Sdefault,const int nConstit);
 
-  static int               GetNumClasses();
-  static const CSoilClass *GetSoilClass(int c);
-  static       CSoilClass *StringToSoilClass(const string s);
-  static void              DestroyAllSoilClasses();
   static void              SetSoilProperty         (soil_struct &S, string param_name, const double value);
   static double            GetSoilProperty         (const soil_struct &S, string param_name, const bool strict=true);
   static void              InitializeSoilProperties(soil_struct &S, bool is_template,int nConstits);
@@ -76,8 +70,6 @@ public:/*-------------------------------------------------------*/
   static double            CalcSoilPotential (const double      &sat_liq,
                                               const double      &sat_ice,
                                               const soil_struct &S);
-
-  static void              SummarizeToScreen();
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -89,12 +81,9 @@ protected:/*----------------------------------------------------*/
 
   veg_struct                V;                    ///< corresponding canopy/root properties
 
-  static CVegetationClass **pAllVegClasses;       ///< array of pointers to all vegetation classes that have been created
-  static int                NumVegClasses;        ///< Number of vegetation classes that have been created (length of pAllVegClasses array)
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CVegetationClass(const string name);
+  CVegetationClass(const string name, CModel* pModel);
   ~CVegetationClass();
 
   //Accessors
@@ -108,6 +97,7 @@ public:/*-------------------------------------------------------*/
   void AutoCalculateVegetationProps(const veg_struct    &Vtmp,
                                     const veg_struct    &Vdefault);
 
+  static void                    PreInitialize();
   static int                     GetNumClasses();
   static const CVegetationClass *GetVegClass(int c);
   static       CVegetationClass *StringToVegClass(const string s);
@@ -165,26 +155,30 @@ class CLandUseClass
 {
 protected:/*----------------------------------------------------*/
 
-  surface_struct            S;    ///< corresponding surface properties
+  surface_struct   S;                    ///< corresponding surface properties
 
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CLandUseClass(const string name);
+  CLandUseClass(const string name, CModel* pModel);
   ~CLandUseClass();
 
   //Accessors
-  string                   GetLanduseName() const;
-  const surface_struct    *GetSurfaceStruct() const;
-  double                   GetSurfaceProperty(string param_name) const;
-  void                     SetSurfaceProperty(const string &param_name, const double &value);
+  string                GetLanduseName() const;
+  const surface_struct *GetSurfaceStruct() const;
+  double                GetSurfaceProperty(string param_name) const;
+  void                  SetSurfaceProperty(const string &param_name, const double &value);
+  void                  InitializeSurfaceProperties(string name, bool is_template);
 
   //routines
-  void AutoCalculateLandUseProps(const surface_struct &Stmp,
-                                 const surface_struct &Sdefault);
+  void AutoCalculateLandUseProps(surface_struct &Stmp,
+                                 surface_struct &Sdefault);
 
-  static void                    InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
-  static void                    SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
-  static double                  GetSurfaceProperty         (const surface_struct &S, string param_name, const bool strict=true);
+  const CLandUseClass *GetLanduseClass(int c);
+        CLandUseClass *StringToLUClass(const string s);  // should die, right?
+
+  static void          InitializeSurfaceProperties(string name, surface_struct &S, bool is_template);
+  static void          SetSurfaceProperty         (surface_struct &S, const string param_name, const double value);
+  static double        GetSurfaceProperty         (const surface_struct &S, string param_name, const bool strict=true);
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -198,14 +192,9 @@ protected:/*----------------------------------------------------*/
   string                    tag;                  ///< nickname for terr. class, e.g., "HILLY"
   terrain_struct            T;                    ///< corresponding terrain properties
 
-
-  static CTerrainClass    **pAllTerrainClasses;   ///< array of pointers to all terrain classes that have been created
-  static int                NumTerrainClasses;  ///< Number of terrain classes that have been created length of pAllTerrainClasses
-
-
 public:/*-------------------------------------------------------*/
   //Constructors:
-  CTerrainClass(const string name);
+  CTerrainClass(const string name, CModel* pModel);
   ~CTerrainClass();
 
   //Accessors

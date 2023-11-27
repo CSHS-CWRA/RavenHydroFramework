@@ -16,7 +16,9 @@
 CmvLatEquilibrate::CmvLatEquilibrate(int    sv_ind,
                                      int    HRU_grp,
                                      double mixing_rate,
-                                     bool   constrain_to_SBs) : CLateralExchangeProcessABC(LAT_EQUIL)
+                                     bool   constrain_to_SBs,
+                                     CModel *pModel)
+  :CLateralExchangeProcessABC(LAT_EQUIL, pModel)
 {
   _iSV    = sv_ind;
   _kk     = HRU_grp;
