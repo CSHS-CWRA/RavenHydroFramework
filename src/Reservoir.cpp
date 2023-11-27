@@ -561,6 +561,17 @@ string CReservoir::GetControlName(const int i) const
   return _pControlStructures[i]->GetName();
 }
 
+double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const 
+{
+  double dh=0.0001;
+  double weir_adj=0.0;
+  if(_pWeirHeightTS!=NULL) {
+    weir_adj=_pWeirHeightTS->GetValue(nn);
+  }
+
+  return (GetWeirOutflow(stage+dh,weir_adj)-GetWeirOutflow(stage,weir_adj))/dh;
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief initializes reservoir variables
 /// \param Options [in] model options structure
@@ -1244,6 +1255,7 @@ void  CReservoir::SetMinStage(const double &min_z)
 double  CReservoir::RouteWater(const double &Qin_old,
                                const double &Qin_new,
                                const CModelABC* pModel,
+                               const optStruct &Options,
                                const time_struct &tt,
                                double &res_outflow,
                                res_constraint &constraint,
@@ -1255,13 +1267,11 @@ double  CReservoir::RouteWater(const double &Qin_old,
     return _stage;
   }
 
-  const optStruct *Options = pModel->GetOptStruct();
-
   const double RES_TOLERANCE=0.0001; //[m]
   const int    RES_MAXITER  =100;
 
-  double tstep      = Options->timestep;
-  double stage_new  = 0.0;
+  double tstep      =Options.timestep;
+  double stage_new  =0.0;
 
   double stage_limit=ALMOST_INF;
   double weir_adj   =0.0;
@@ -1339,7 +1349,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
     if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
       ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     }
-    precip=_Precip/Options->timestep/SEC_PER_DAY; //[m3]->[m3/s]
+    precip=_Precip/Options.timestep/SEC_PER_DAY; //[m3]->[m3/s]
   }
   if(_seepage_const>0) {
     seep_old=_seepage_const*(_stage-_local_GW_head); //[m3/s]
@@ -1375,8 +1385,8 @@ double  CReservoir::RouteWater(const double &Qin_old,
       }
     }
     else if(_pDZTR!=NULL) {
-      out =GetDZTROutflow(GetVolume(h_guess   ), Qin_old, tt, *Options);
-      out2=GetDZTROutflow(GetVolume(h_guess+dh), Qin_old, tt, *Options);
+      out =GetDZTROutflow(GetVolume(h_guess   ),Qin_old,tt,Options);
+      out2=GetDZTROutflow(GetVolume(h_guess+dh),Qin_old,tt,Options);
     }
     out +=ET*GetArea(h_guess   )+_seepage_const*(h_guess   -_local_GW_head);//[m3/s]
     out2+=ET*GetArea(h_guess+dh)+_seepage_const*(h_guess+dh-_local_GW_head);//[m3/s]
@@ -1415,8 +1425,8 @@ double  CReservoir::RouteWater(const double &Qin_old,
     constraint =RC_NATURAL;
   }
   else if(_pDZTR!=NULL) {
-    res_outflow =GetDZTROutflow(GetVolume(stage_new), Qin_old, tt, *Options);
-    constraint = RC_DZTR;
+    res_outflow=GetDZTROutflow(GetVolume(stage_new),Qin_old,tt,Options);
+    constraint =RC_DZTR;
   }
 
   outflow_nat=res_outflow; //saved for special max stage constraint
@@ -1521,9 +1531,9 @@ double  CReservoir::RouteWater(const double &Qin_old,
   }
 
   //other option - returns to stage-discharge curve once max stage exceeded
-  if((Options->res_overflowmode == OVERFLOW_NATURAL) && (stage_nat > stage_limit)) {
-    res_outflow = outflow_nat;
-    stage_new  = stage_nat;
+  if((Options.res_overflowmode==OVERFLOW_NATURAL) &&  (stage_nat>stage_limit)) {
+    res_outflow=outflow_nat;
+    stage_new  =stage_nat;
   }
   // ======================================================================================
 

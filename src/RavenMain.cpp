@@ -200,6 +200,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.rvg_filename="";
   Options.rve_filename="";
   Options.rvl_filename="";
+  Options.rvm_filename="";
   Options.output_dir  ="";
   Options.main_output_dir="";
   Options.silent=false;
@@ -228,6 +229,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvg_filename=argument+".rvg";
         Options.rve_filename=argument+".rve";
         Options.rvl_filename=argument+".rvl";
+        Options.rvm_filename=argument+".rvm";
         argument="";
         mode=10;
       }
@@ -275,6 +277,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvg_filename="nomodel.rvg";
     Options.rve_filename="nomodel.rve";
     Options.rvl_filename="nomodel.rvl";
+    Options.rvm_filename="nomodel.rvm";
   }
 
   // make sure that output dir has trailing '/' if not empty

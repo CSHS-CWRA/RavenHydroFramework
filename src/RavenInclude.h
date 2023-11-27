@@ -1024,6 +1024,7 @@ struct optStruct
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
   string           rvl_filename;              ///< fully qualified filename of rvl (live communications) file
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
+  string           rvm_filename;              ///< fully qualified filename of rvm (management) file 
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
   string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS
@@ -1615,8 +1616,8 @@ void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const i
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
 void   quickSort        (double arr[], int left, int right) ;
-double InterpolateCurve     (const double x,const double *xx,const double *y,int N,bool extrapbottom);
-
+double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
+void   getRanks         (const double *arr, const int N, int *ranks);
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp
 void LatLonToUTMXY (const double lat, //latitude, in decimal degrees

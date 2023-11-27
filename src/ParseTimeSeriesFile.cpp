@@ -850,17 +850,20 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (63): //---------------------------------------------
-    {/*:IrrigationDemand {long Basincode}
+    {/*:IrrigationDemand {long Basincode} {int demand_ID)
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qin} x nMeasurements [m3/s]
      :EndIrrigationDemand
      */
       if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
-      long SBID=DOESNT_EXIST;
+      long SBID    =DOESNT_EXIST;
+      int  demandID=DOESNT_EXIST;
       CSubBasin *pSB;
       if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=3) {demandID = s_to_i(s[2]);}
+      if (demandID==DOESNT_EXIST){demandID=SBID;}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"IrrigationDemand_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"D"+to_string(demandID),SBID,"none",Options);
       if(pSB!=NULL) {
         pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
       }

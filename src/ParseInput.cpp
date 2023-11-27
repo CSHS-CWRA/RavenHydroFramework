@@ -486,6 +486,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     else if  (!strcmp(s[0],":rvc_Filename"              )){code=163;}
     else if  (!strcmp(s[0],":rvl_Filename"              )){code=164;}
     else if  (!strcmp(s[0],":rve_Filename"              )){code=165;}
+    else if  (!strcmp(s[0],":rvm_Filename"              )){code=166;}
 
     else if  (!strcmp(s[0],":WriteMassBalanceFile"      )){code=170;}
     else if  (!strcmp(s[0],":WriteForcingFunctions"     )){code=171;}
@@ -1885,8 +1886,6 @@ bool ParseMainInputFile (CModel     *&pModel,
       }
       Options.rvt_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvt extension!
       break;
-
-
     }
     case(163):  //--------------------------------------------
     {/*:rvc_Filename [filename]*/
@@ -1904,6 +1903,12 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:rve_Filename [filename]*/
       if(Options.noisy) { cout <<"rve filename: "<<s[1]<<endl; }
       Options.rve_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rve extension!
+      break;
+    }
+    case(166):  //--------------------------------------------
+    {/*:rvm_Filename [filename]*/
+      if(Options.noisy) { cout <<"rvm filename: "<<s[1]<<endl; }
+      Options.rvm_filename=CorrectForRelativePath(s[1],Options.rvi_filename);//with .rvm extension!
       break;
     }
     case(170):  //--------------------------------------------

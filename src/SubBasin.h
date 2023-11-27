@@ -31,7 +31,7 @@ struct diversion
   double *aQsource;       //array of discharges [m3/s] in flow diversion lookup table
   double *aQdivert;       //array of diversion flow rates [m3/s] correspionding to discharges in flow diversion lookup table
 
-  diversion()  {aQsource=NULL; aQdivert=NULL;}
+  diversion()  {aQsource=NULL; aQdivert=NULL;julian_start=julian_end=0; target_p=DOESNT_EXIST;min_flow=0;percentage=1.0;nPoints=0;}
   ~diversion() {delete [] aQsource; delete [] aQdivert;}
 };
 
@@ -128,9 +128,11 @@ private:/*------------------------------------------------------*/
   //Treatment Plant/Irrigation/Other incoming hydrograph
   CTimeSeries   *_pInflowHydro;   ///< pointer to time series of inflows; NULL if no specified input - Inflow at upstream entrance of basin
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
-  CTimeSeries   *_pIrrigDemand;   ///< pointer to time series of demand (which can be unmet) applied at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
 
+  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series  
+  CTimeSeries **_pIrrigDemands;   ///< pointer to array of time series of demand (which can be unmet) applied at downstream end of basin reach [size: _nIrrigDemand]
+  
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
 
@@ -196,7 +198,8 @@ public:/*-------------------------------------------------------*/
   double               GetWettedPerimeter   () const;
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
-
+  int                  GetNumWaterDemands   () const;
+  string               GetWaterDemandID     (const int i) const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
@@ -286,9 +289,9 @@ public:/*-------------------------------------------------------*/
                                             const double    *res_qstruct,
                                             const optStruct &Options,
                                             const time_struct &tt,
-                                            bool  initialize);//[m3/s]
+                                            const bool    initialize);//[m3/s]
 
-  double          ApplyIrrigationDemand    (const double &t,const double &Q); //[m3/s]
+  double          ApplyIrrigationDemand    (const double &t,const double &Q) const; //[m3/s]
   double          GetDiversionFlow         (const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const;
 
   void            RouteWater               (      double      *Qout_new,

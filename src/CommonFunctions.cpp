@@ -1757,6 +1757,20 @@ void quickSort(double arr[], int left, int right)
   if (i < right){quickSort(arr, i, right);}
 }
 //////////////////////////////////////////////////////////////////
+// given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater) 
+// if values are not unique, gaps will form between ranks  
+// NOT OPTIMIZED 
+void getRanks(const double* arr, const int N, int* ranks) 
+{
+  double soft=0;
+	for(int i=0;i<N;i++){
+    ranks[i]=0;
+		for(int j=0;j<N;j++){
+      if (arr[j] >= arr[i]+soft) {ranks[i]++;}
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns index of array for near searching (ordered search around a guessed array index)
 ///
 /// \param i [in] near search index, ranges from 0 to size-1

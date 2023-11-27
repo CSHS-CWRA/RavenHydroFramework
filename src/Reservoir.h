@@ -186,6 +186,7 @@ public:/*-------------------------------------------------------*/
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
   double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]
+  double            GetStageDischargeDerivative(const double &stage,const int nn) const; //[m3/s/d]
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -248,6 +249,7 @@ public:/*-------------------------------------------------------*/
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
                                               const CModelABC*  pModel,
+                                              const optStruct   &Options,
                                               const time_struct &tt,
                                                     double      &res_outflow,
                                                  res_constraint &constraint,

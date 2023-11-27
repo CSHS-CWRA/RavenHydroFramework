@@ -129,7 +129,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   //initialized in AddInflowHydrograph, similar
   _pInflowHydro  =NULL;
   _pInflowHydro2 =NULL;
-  _pIrrigDemand  =NULL;
+  _pIrrigDemands =NULL;
+  _nIrrigDemands=0;
   _pEnviroMinFlow=NULL;
 
   _Q_ref      =Qreference;
@@ -161,7 +162,7 @@ CSubBasin::~CSubBasin()
   delete [] _pDiversions;_pDiversions=NULL; _nDiversions=0;
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
-  delete _pIrrigDemand;  _pIrrigDemand=NULL;
+  for (int i = 0; i < _nIrrigDemands; i++) {delete _pIrrigDemands[i];} delete _pIrrigDemands;  _pIrrigDemands=NULL;
   delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
   delete _pReservoir;
 }
@@ -450,13 +451,20 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
 //
 double CSubBasin::GetIrrigationDemand(const double &t) const
 {
-  if(_pIrrigDemand==NULL) { return 0.0; }
-  double Qirr=_pIrrigDemand->GetValue(t); if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
-  return Qirr;
+  if(_nIrrigDemands==0) { return 0.0; }
+  double sum=0;
+  double Qirr;
+  for (int i=0;i<_nIrrigDemands;i++)
+  {
+    Qirr=_pIrrigDemands[i]->GetValue(t); 
+    if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+    sum+=Qirr;
+  }
+  return sum;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
-/// \return actual demand from subbasin [m3/s]
+/// \return actual delivery from subbasin [m3/s]
 //
 double CSubBasin::GetIrrigationRate() const
 {
@@ -470,8 +478,8 @@ double CSubBasin::GetIrrigationRate() const
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 {
   double Qirr;
-  if(_pIrrigDemand==NULL)          { Qirr=0.0; }
-  else                             { Qirr= _pIrrigDemand->GetValue(t);}
+  Qirr=GetIrrigationDemand(t);
+
   if (_downstream_ID==DOESNT_EXIST){ return Qirr; }
   else                             { return _pDownSB->GetDownstreamIrrDemand(t)+Qirr; }
 }
@@ -503,7 +511,7 @@ int CSubBasin::GetDiversionTargetIndex(const int i) const
 //
 bool CSubBasin::HasIrrigationDemand() const
 {
-  return (_pIrrigDemand!=NULL);
+  return (_nIrrigDemands>0);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
@@ -511,9 +519,13 @@ bool CSubBasin::HasIrrigationDemand() const
 /// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
 /// \return irrigation demand outflow from subbasin at time t [m3/s]
 //
-double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
+double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q) const
 {
-  if (_pIrrigDemand==NULL){return 0.0;}
+  if (_nIrrigDemands==0){return 0.0;}
+  
+  //if using Management optimization, delivery determined by optimizer /todo[funct]
+  //return pModel->GetDemandOptimizer()->GetTotalWaterDemandDelivery(_global_index);
+  
   double Qirr;
   double Qdemand=GetIrrigationDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
@@ -699,7 +711,25 @@ double CSubBasin::GetRivuletStorage () const
 {
   return _rivulet_storage;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief number of water/irrigation demands 
+/// \return number of water/irrigation demands 
+//
+int CSubBasin::GetNumWaterDemands() const 
+{
+  return _nIrrigDemands;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief number of water/irrigation demands 
+/// \return number of water/irrigation demands 
+//
+string CSubBasin::GetWaterDemandID     (const int i) const
+{ 
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+#endif
+  return _pIrrigDemands[i]->GetName();
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 /// \return Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
@@ -1048,9 +1078,8 @@ void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
 //
 void    CSubBasin::AddIrrigationDemand(CTimeSeries *pOutflow)
 {
-  ExitGracefullyIf(_pIrrigDemand!=NULL,
-    "CSubBasin::AddIrrigationDemand: only one irrigation demand time series may be specified per basin",BAD_DATA);
-  _pIrrigDemand=pOutflow;
+  if (!DynArrayAppend((void**&)(_pIrrigDemands),(void*)(pOutflow),_nIrrigDemands)){
+    ExitGracefully("CSubBasin::AddIrrigationDemand: trying to add NULL regime",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds minimum enviro flow time series
@@ -1423,8 +1452,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   if (_pInflowHydro2 != NULL){
     _pInflowHydro2->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
-  if(_pIrrigDemand != NULL) {
-    _pIrrigDemand->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
+  for (int i=0;i<_nIrrigDemands;i++){
+    _pIrrigDemands[i]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
   if(_pEnviroMinFlow != NULL) {
     _pEnviroMinFlow->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
@@ -1772,11 +1801,15 @@ void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 /// \remark Called *after* RouteWater routine is called in Solver.cpp, to reset
 /// the outflow rates for this basin
 ///
-/// \param *aQo [in] Array of new outflows [m^3/s]
+/// \param *aQo [in] Array of new outflows [m3/s]
+/// \param irr_Q [in] actual delivered water demand [m3/s]
 /// \param &res_ht [in] new reservoir stage [m]
+/// \param res_outflow [in] reservoir outflow [m3/s]
+/// \param constraint [in] current constraint applied to reservoir flow [-]
+/// \param res_Qstruct [in] pointer to structure for multiple-control reservoir 
 /// \param &Options [in] Global model options information
 /// \param &tt [in] time structure at start of current time step
-/// \param initialize Flag to indicate if flows are to only be initialized
+/// \param initialize [in] Flag to indicate if flows are to only be initialized
 //
 void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double &irr_Q,  //[m3/s]
@@ -1786,7 +1819,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double *res_Qstruct,
                                   const optStruct &Options,
                                   const time_struct &tt,
-                                  bool initialize)
+                                  const bool    initialize)
 {
   double tstep=Options.timestep;
 
@@ -2297,7 +2330,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht = _pReservoir->RouteWater(_aQout[_nSegments-1], aQout_new[_nSegments-1], _pModel, tt, res_outflow, res_const, aResQstruct);
+    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],_pModel,Options,tt,res_outflow,res_const,aResQstruct);
   }
   else
   {
@@ -2341,7 +2374,10 @@ void CSubBasin::ClearTimeSeriesData(const optStruct& Options)
 {
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
-  delete _pIrrigDemand;  _pIrrigDemand=NULL;
+  for (int i = 0; i < _nIrrigDemands; i++) {
+    delete _pIrrigDemands[i];
+  }
+  delete [] _pIrrigDemands; _pIrrigDemands=NULL; _nIrrigDemands=0;
   delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
   _pReservoir->ClearTimeSeriesData(Options);
 }
