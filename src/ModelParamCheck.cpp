@@ -188,6 +188,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
 
   aP[nP]="LAKE_PET_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; //required for ET from any reservoir, defaults to 1.0
 
+  aP[nP]="WIND_VEL_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; 
+  aP[nP]="RELHUM_CORR";       aPC[nP]=CLASS_LANDUSE; nP++; 
+
   // Interpolation Method parameters
   //----------------------------------------------------------------------
   if((Options.interpolation==INTERP_NEAREST_NEIGHBOR) || (Options.interpolation==INTERP_AVERAGE_ALL))

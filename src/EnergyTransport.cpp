@@ -266,8 +266,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
 
   _aEnthalpyBeta[p]=(hstar/dbar + qmix/dbar*HCP_WATER*bed_ratio + kbed/dbar)/HCP_WATER*cel_corr;
 
-  int nMinHist=_pModel->GetSubBasin(p)->GetInflowHistorySize();
-  for(int n=nMinHist-1;n>0;n--) {
+  for(int n=_nMinHist[p] - 1; n>0; n--) {
     _aEnthalpySource[p][n]=_aEnthalpySource[p][n-1];
   }
   _aEnthalpySource[p][0]=S*cel_corr;
@@ -504,12 +503,23 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
   _aBedTemp       =new double [nSB];
   _aMinResTime    =new double [nSB];
   for(int p=0;p<nSB;p++) {
-    int nMinHist =_pModel->GetSubBasin(p)->GetInflowHistorySize();
-    _aEnthalpySource[p]=new double[nMinHist];
-    for(int i=0; i<nMinHist;i++) { _aEnthalpySource[p][i]=0.0; }
+    _aEnthalpySource[p]=new double[_nMinHist[p]];
+    for(int i=0; i<_nMinHist[p];i++) { _aEnthalpySource[p][i]=0.0; }
     _aEnthalpyBeta  [p]=0.0;
     _aBedTemp       [p]=10.0;
-    _aMinResTime    [p]=0.01;
+    _aMinResTime    [p]=1e-6; 
+  }
+
+  //Calculate the minimum residence time (for smaller reaches) 
+  //--------------------------------------------------------------------
+  double Q,L,A,tr;
+  for(int p=0;p<nSB;p++) {
+    Q=_pModel->GetSubBasin(p)->GetReferenceFlow();
+    L=_pModel->GetSubBasin(p)->GetReachLength();
+    A=_pModel->GetSubBasin(p)->GetReferenceXSectArea();
+    tr=L*A/Q/SEC_PER_DAY;
+    if (tr<Options.timestep){_aMinResTime    [p]=tr;}
+    else                    {_aMinResTime    [p]=1e-6; }
   }
 
   // initialize stream temperatures if init_stream_temp is given
@@ -526,10 +536,10 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
       const double *aQin=pBasin->GetInflowHistory();
       for(int i=0; i<pBasin->GetNumSegments(); i++)
       {
-        _aMout[p][i]=pBasin->GetOutflowRate()*SEC_PER_DAY*hv; //not really - requires outflow rate from all segments. Don't have access to this.
+        _aMout[p][i]=pBasin->GetOutflowRate()*SEC_PER_DAY*hv; //not really - requires outflow rate from all segments. Don't have access to this. assumes nSegs=1
       }
       _aMout_last[p]=_aMout[p][0];
-      for(int i=0; i<pBasin->GetInflowHistorySize(); i++)
+      for(int i=0; i<_nMinHist[p]; i++)
       {
         _aMinHist[p][i]=aQin[i]*SEC_PER_DAY*hv;
       }
@@ -623,24 +633,23 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   dbar=max(dbar,0.001);
 
-  int nMinHist              =pBasin->GetInflowHistorySize();
   const double * aRouteHydro=pBasin->GetRoutingHydrograph();
   const double * aQin       =pBasin->GetInflowHistory();
 
-  double *zk=new double[nMinHist]; //percentage of flows in zone k
-  double *Ik=new double[nMinHist]; //Integral term [degC-d]
+  double *zk=new double[_nMinHist[p]]; //percentage of flows in zone k
+  double *Ik=new double[_nMinHist[p]]; //Integral term [degC-d]
 
   //calculate mean residence time
   double tr_mean=0.0;
-  for(int i=0;i<nMinHist;i++) {
+  for(int i=0;i<_nMinHist[p];i++) {
     tr_mean+=aRouteHydro[i]*i*tstep;
   }
 
   //calculate flow linked to each zone k, zk[k]
   double zsum=0;
-  for(int k=1;k<nMinHist;k++) {
+  for(int k=1;k<_nMinHist[p];k++) {
     zk[k]=0.0;
-    for(int i=k;i<nMinHist;i++) {
+    for(int i=k;i<_nMinHist[p];i++) {
       zk[k]+=aQin[k]*aRouteHydro[i]*(tr_mean/i/tstep)*SEC_PER_DAY; // [m3/d]
     }
     zsum+=zk[k];
@@ -655,7 +664,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   Ik[0]=0.0;
 
-  for(int m=0;m<nMinHist;m++)
+  for(int m=0;m<_nMinHist[p];m++)
   {
     gamma=gamm;
     dt=tstep;
@@ -681,7 +690,7 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
 
   double kprime=qmix/dbar*HCP_WATER*bed_ratio;
 
-  for(int m=0;m<nMinHist;m++)
+  for(int m=0;m<_nMinHist[p];m++)
   {
     if (m==0){dt=_aMinResTime[p];}
     else     {dt=tstep; }

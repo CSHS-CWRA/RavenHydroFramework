@@ -372,8 +372,8 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.max_wind_speed   =DefaultParameterValue(is_template,true);//~8 m/s
   S.stream_fraction  =DefaultParameterValue(is_template,true);//0
   S.relhum_corr      =DefaultParameterValue(is_template,true);//1.0
-  S.windvel_corr     =DefaultParameterValue(is_template,true);//1.0
-  
+  S.wind_vel_corr    =DefaultParameterValue(is_template,true);//1.0
+
   //User-specified parameters
   S.partition_coeff   =DefaultParameterValue(is_template,false);//0.4;//needs reasonable defaults
   S.SCS_CN            =DefaultParameterValue(is_template,false);//50

@@ -198,8 +198,10 @@ protected:
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
   // Routing/state var storage
-  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x nMinhist(p)]
-  double              **_aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x nMlathist(p)]
+  int                   *_nMinHist;  ///< size of upstream loading history in each basin [size: nSubBasins]
+  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x _nMinHist[p]]
+  int                  *_nMlatHist;  ///< size of lateral loading history in each basin [size: nSubBasins]
+  double             ** _aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x _nMlatHist[p]]
   double                  **_aMout;  ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
   double              *_aMout_last;  ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ]
   double              *_aMlat_last;  ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]

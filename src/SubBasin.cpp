@@ -70,7 +70,7 @@ CSubBasin::CSubBasin( const long           Identifier,
   _res_disabled      =false;
   _assimilate        =false;
 
-  // estimate reach length if needed
+  // estimate reach length and _nSegments if needed
   //-----------------------------------------------------------------------
   double max_len = _pModel->GetGlobalParams()->GetParams()->max_reach_seglength*M_PER_KM;
 
@@ -466,7 +466,7 @@ double CSubBasin::GetIrrigationDemand(const double &t) const
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
 /// \return actual delivery from subbasin [m3/s]
 //
-double CSubBasin::GetIrrigationRate() const
+double CSubBasin::GetDemandDelivery() const
 {
   return _Qirr;
 }
@@ -836,6 +836,17 @@ double CSubBasin::GetReferenceFlow() const
 {
   return _Q_ref;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns x-sect area at reference discharge [m^2]
+/// \return  x-sect area at reference discharge [m^2] or AUTO_COMPUTE if not yet calculated
+//
+double CSubBasin::GetReferenceXSectArea() const
+{
+  if (_Q_ref==AUTO_COMPUTE){return AUTO_COMPUTE;}
+  if(_pChannel==NULL)      {return ALMOST_INF;  }
+  return _pChannel->GetArea(_Q_ref,_slope,_mannings_n);
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reference celerity [m/s]
 /// \return  reference celerity [m/s] or AUTO_COMPUTE if not yet calculated

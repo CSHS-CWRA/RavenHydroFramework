@@ -42,6 +42,8 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
   _aMinHist =NULL;
   _aMlatHist=NULL;
   _aMout    =NULL;
+  _nMlatHist=NULL;
+  _nMinHist =NULL;
 
   //Initialize constituent members
   _name=name;
@@ -376,11 +378,11 @@ void   CConstituentModel::SetMoutArray(const int p,const int nsegs,const double 
 //
 void   CConstituentModel::SetMlatHist(const int p,const int histsize,const double *aMlat,const double MlatLast)
 {
-  if(histsize!=_pModel->GetSubBasin(p)->GetLatHistorySize()) {
+  if(histsize!=_nMlatHist[p]) {
     WriteWarning("Size of lateral inflow history in state file and input file are inconsistent. Unable to read in-reach mass lateral flow initial conditions",false);
     return;
   }
-  for(int i=0;i<histsize;i++) { _aMlatHist[p][i]=aMlat[i]; }
+  for(int i=0;i<_nMlatHist[p];i++) { _aMlatHist[p][i]=aMlat[i]; }
   _aMlat_last[p]=MlatLast;
 }
 //////////////////////////////////////////////////////////////////
@@ -391,11 +393,11 @@ void   CConstituentModel::SetMlatHist(const int p,const int histsize,const doubl
 //
 void   CConstituentModel::SetMinHist(const int p,const int histsize,const double *aMin)
 {
-  if(histsize!=_pModel->GetSubBasin(p)->GetLatHistorySize()) {
+  if(histsize!=_nMinHist[p]) {
     WriteWarning("Size of mass inflow history in state file and input file are inconsistent. Unable to read in-reach mass inflow initial conditions",false);
     return;
   }
-  for(int i=0;i<histsize;i++) { _aMinHist[p][i]=aMin[i]; }
+  for(int i=0;i<_nMinHist[p];i++) { _aMinHist[p][i]=aMin[i]; }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Set reservoir initial mass conditions
@@ -1662,13 +1664,11 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
   {
     RVC<<"  :BasinIndex "<<_pModel->GetSubBasin(p)->GetID()<<endl;
     int nSegs    =_pModel->GetSubBasin(p)->GetNumSegments();
-    int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();
-    int nMinHist =_pModel->GetSubBasin(p)->GetInflowHistorySize();
     RVC<<"    :ChannelMass, "<<_channel_storage[p]<<endl;
     RVC<<"    :RivuletMass, "<<_rivulet_storage[p]<<endl;
     RVC<<"    :Mout,"<<nSegs;    for(int i=0;i<nSegs;    i++) { RVC<<","<<_aMout    [p][i]; }RVC<<","<<_aMout_last[p]<<endl;
-    RVC<<"    :Mlat,"<<nMlatHist;for(int i=0;i<nMlatHist;i++) { RVC<<","<<_aMlatHist[p][i]; }RVC<<","<<_aMlat_last[p]<<endl;
-    RVC<<"    :Min ,"<<nMinHist; for(int i=0;i<nMinHist; i++) { RVC<<","<<_aMinHist [p][i]; }RVC<<endl;
+    RVC<<"    :Mlat,"<<_nMlatHist[p];for(int i=0;i<_nMlatHist[p];i++) { RVC<<","<<_aMlatHist[p][i]; }RVC<<","<<_aMlat_last[p]<<endl;
+    RVC<<"    :Min ,"<<_nMinHist[p]; for(int i=0;i<_nMinHist[p]; i++) { RVC<<","<<_aMinHist [p][i]; }RVC<<endl;
     if(_pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
       RVC<<"    :ResMassOut, "<<_aMout_res[p]<<","<<_aMout_res_last[p]<<endl;
       RVC<<"    :ResMass, "   <<_aMres    [p]<<","<<_aMres_last    [p]<<endl;

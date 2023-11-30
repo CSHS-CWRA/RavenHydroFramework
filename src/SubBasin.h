@@ -174,6 +174,7 @@ public:/*-------------------------------------------------------*/
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
   double               GetReferenceCelerity () const;
+  double               GetReferenceXSectArea() const;
   double               GetCelerity          () const;
   double               GetDiffusivity       () const;
   long                 GetDownstreamID      () const;
@@ -230,7 +231,7 @@ public:/*-------------------------------------------------------*/
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
   double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
-  double          GetIrrigationRate        () const;                   //[m3/s] instantaneous irrigation rate Qirr
+  double          GetDemandDelivery        () const;                   //[m3/s] instantaneous delivery rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i

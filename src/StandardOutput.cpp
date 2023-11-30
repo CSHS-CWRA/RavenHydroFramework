@@ -964,8 +964,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             double irr =pSB->GetIrrigationDemand(tt.model_time);
             double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
             double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed
-            double Qirr=pSB->GetIrrigationRate  ();
-            double unmet=max(irr-Qirr,0.0);
+            double Qd  =pSB->GetDemandDelivery  ();
+            double unmet=max(irr-Qd,0.0);
             _DEMANDS<<","<<Q<<","<<irr<<","<<eF<<","<<unmet;
           }
         }

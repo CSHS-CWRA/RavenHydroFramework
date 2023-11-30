@@ -850,10 +850,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (63): //---------------------------------------------
-    {/*:IrrigationDemand {long Basincode} {int demand_ID)
+    {/*:IrrigationDemand or :WaterDemand {long Basincode} {int demand_ID)
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qin} x nMeasurements [m3/s]
-     :EndIrrigationDemand
+     :EndIrrigationDemand or :EndWaterDemand
      */
       if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
       long SBID    =DOESNT_EXIST;
@@ -869,7 +869,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       else
       {
-        warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation demand time series";
+        warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation/water demand time series";
         WriteWarning(warn,Options.noisy);
       }
       break;
