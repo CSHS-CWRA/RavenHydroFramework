@@ -299,6 +299,10 @@ struct surface_struct
   double AET_coeff;         ///< [-]       linear AET coefficient
   double priestleytaylor_coeff; ///< [-]   Priestley-Taylor coefficient (defaults to 1.28)
   double pet_lin_coeff;     ///< [mm/d/K]  linear PET relation with temperature ~(0.1-0.3)
+  double pet_vap_coeff;     ///< [mm/d/kPa] linear PET relation with vapor deficit ~(1-3 mm/d/kPa, ~1.5 for mountain streams)
+
+  double relhum_corr;       ///< [-]       local correction factor for relative humidity (defaults to 1)
+  double wind_vel_corr;     ///< [-]       local correction factor for wind speed (defaults to 1)
 
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient
 

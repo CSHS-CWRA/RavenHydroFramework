@@ -7,8 +7,6 @@ CIsotopeModel routines related to isotope transport
 #include "RavenInclude.h"
 #include "IsotopeTransport.h"
 
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-
 //////////////////////////////////////////////////////////////////
 /// \brief isotope model constructor
 //

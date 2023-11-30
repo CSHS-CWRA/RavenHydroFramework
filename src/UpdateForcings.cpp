@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2020 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "Radiation.h"
@@ -9,7 +9,8 @@
 #include <limits.h>
 
 double EstimateRelativeHumidity(const relhum_method method,
-                                const force_struct &F);
+                                const force_struct &F,
+                                const CHydroUnit   *pHRU);
 double EstimateAirPressure     (const airpress_method method,
                                 const force_struct &F,
                                 const double       &elev);
@@ -69,6 +70,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   CForcingGrid *pGrid_daily_tave = NULL;
   CForcingGrid *pGrid_recharge   = NULL;
   CForcingGrid *pGrid_precip_temp= NULL;
+  CForcingGrid *pGrid_precip_conc= NULL;
 
   // see if gridded forcing is read from a NetCDF
   bool pre_gridded            = ForcingGridIsInput(F_PRECIP)         ;
@@ -79,6 +81,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
   bool temp_daily_max_gridded = ForcingGridIsInput(F_TEMP_DAILY_MAX) ;
   bool temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE) ;
   bool precip_temp_gridded    = ForcingGridIsInput(F_PRECIP_TEMP)    ;
+  bool precip_conc_gridded    = ForcingGridIsInput(F_PRECIP_CONC)    ;
 
   bool pet_gridded            = ForcingGridIsInput(F_PET)            && (Options.evaporation   ==PET_DATA);
   bool owpet_gridded          = ForcingGridIsInput(F_OW_PET)         && (Options.ow_evaporation==PET_DATA);
@@ -144,6 +147,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
     Fg[g].wind_vel        =_pGauges[g]->GetForcingValue    (F_WIND_VEL,nn);
     Fg[g].recharge        =_pGauges[g]->GetForcingValue    (F_RECHARGE,nn);
     Fg[g].precip_temp     =_pGauges[g]->GetForcingValue    (F_TEMP_AVE,nn);
+    Fg[g].precip_conc     =_pGauges[g]->GetForcingValue    (F_PRECIP_CONC,nn);
   }
   if (_nGauges > 0) {g_debug_vars[4]=_pGauges[0]->GetElevation(); }//UBCWM RFS Emulation cheat
 
@@ -257,6 +261,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       temp_daily_ave_gridded = ForcingGridIsInput(F_TEMP_DAILY_AVE);
       recharge_gridded       = ForcingGridIsInput(F_RECHARGE);
       precip_temp_gridded    = ForcingGridIsInput(F_PRECIP_TEMP);
+      precip_conc_gridded    = ForcingGridIsInput(F_PRECIP_CONC);
 
       // find the correct grid
       if(pre_gridded)             { pGrid_pre         = GetForcingGrid(F_PRECIP); }
@@ -275,6 +280,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
       if(temp_daily_ave_gridded)  { pGrid_daily_tave  = GetForcingGrid(F_TEMP_DAILY_AVE); }
       if(recharge_gridded)        { pGrid_recharge    = GetForcingGrid(F_RECHARGE); }
       if(precip_temp_gridded)     { pGrid_precip_temp = GetForcingGrid(F_PRECIP_TEMP); }
+      if(precip_conc_gridded)     { pGrid_precip_conc = GetForcingGrid(F_PRECIP_CONC); }
 
       // ---------------------
       // (1A) read gridded precip/snowfall/rainfall and populate additional time series
@@ -360,6 +366,12 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
         pGrid_precip_temp   = GetForcingGrid(F_PRECIP_TEMP);
         pGrid_precip_temp-> ReadData(Options,tt.model_time);
         F.precip_temp   = pGrid_precip_temp->GetWeightedValue(k,tt.model_time,Options.timestep);
+      }
+      if(precip_conc_gridded)
+      {
+        pGrid_precip_conc   = GetForcingGrid(F_PRECIP_CONC);
+        pGrid_precip_conc-> ReadData(Options,tt.model_time);
+        F.precip_conc   = pGrid_precip_conc->GetWeightedValue(k,tt.model_time,Options.timestep);
       }
       // ---------------------
       // (5) read gridded PET, Others
@@ -471,7 +483,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
 
       F.air_dens = GetAirDensity(F.temp_ave,F.air_pres);
 
-      F.rel_humidity = EstimateRelativeHumidity(Options.rel_humidity,F);
+      F.rel_humidity = EstimateRelativeHumidity(Options.rel_humidity,F,_pHydroUnits[k]);
 
       //-------------------------------------------------------------------
       // Snow fraction Calculations
@@ -646,22 +658,26 @@ double EstimateAirPressure     (const airpress_method method,
 /// \return Estimated relative humidity
 //
 double EstimateRelativeHumidity(const relhum_method method,
-                                const force_struct &F)
+                                const force_struct &F,
+                                const CHydroUnit   *pHRU)
 {
+  double relhum=0.5;
   if (method==RELHUM_CONSTANT)
   {
-    return 0.5;
+    relhum=0.5;
   }
   else if (method==RELHUM_MINDEWPT)
   { //uses minimum daily temperature as proxy for dew point temperature
     double dew_point_temp=F.temp_daily_min;
-    return min(GetSaturatedVaporPressure(dew_point_temp)/GetSaturatedVaporPressure(F.temp_ave),1.0);
+    relhum=min(GetSaturatedVaporPressure(dew_point_temp)/GetSaturatedVaporPressure(F.temp_ave),1.0);
   }
   else if (method==RELHUM_DATA)
   {
-    return F.rel_humidity;
+    relhum=F.rel_humidity;
   }
-  return 0.5;
+
+  return relhum * pHRU->GetSurfaceProps()->relhum_corr;
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -680,15 +696,16 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
                                     const double       &wind_measurement_ht,
                                     const int           k)
 {
+  double wind_vel=2.0; //[m/s]
   //---------------------------------------------------------------------
   if (Options.wind_velocity==WINDVEL_CONSTANT)
   {
-    return 2.0;//m/s (global average)
+    wind_vel=2.0;//[m/s] (global average)
   }
   //---------------------------------------------------------------------
   else if (Options.wind_velocity==WINDVEL_DATA)
   {
-    return F.wind_vel;
+    wind_vel=F.wind_vel;
   }
   //---------------------------------------------------------------------
   else if(Options.wind_velocity==WINDVEL_UBC_MOD)
@@ -700,7 +717,7 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
 
     double wt=min(0.04*(Tmax-Tmin),1.0);
 
-    return max(0.0,(1-wt)*v_min+(wt)*v_max);
+    wind_vel=max(0.0,(1-wt)*v_min+(wt)*v_max);
   }
   //---------------------------------------------------------------------
   else if(Options.wind_velocity==WINDVEL_SQRT)
@@ -710,7 +727,7 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
     double Tmin =F.temp_daily_min;
     double Tmax =F.temp_daily_max;
 
-    return max(0.0,m*(Tmax-Tmin)+b);
+    wind_vel=max(0.0,m*(Tmax-Tmin)+b);
   }
   //---------------------------------------------------------------------
   else if(Options.wind_velocity==WINDVEL_LOG)
@@ -720,7 +737,7 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
     double Tmin = F.temp_daily_min;
     double Tmax = F.temp_daily_max;
 
-    return max(0.0,exp(m*(Tmax-Tmin)+b)-1.0);
+    wind_vel=max(0.0,exp(m*(Tmax-Tmin)+b)-1.0);
   }
   //---------------------------------------------------------------------
   else if (Options.wind_velocity==WINDVEL_UBCWM)
@@ -748,7 +765,7 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
 
     double wt=min(TED/25.0,1.0);
 
-    double wind_vel = (1-wt)*max_wind_speed +(wt)*1;
+    wind_vel = (1-wt)*max_wind_speed +(wt)*1;
 
     upperswap(wind_vel,1.0);
     lowerswap(wind_vel,max_wind_speed - 1.0); //why the minus one? who knows...
@@ -761,12 +778,9 @@ double CModel::EstimateWindVelocity(const optStruct    &Options,
     wind_vel*=((Fc)*F0WIND+(1.0-Fc)*1.0);
 
     wind_vel*=M_PER_KM/SEC_PER_HR; //KPH_TO_M_PER_S;
-    return wind_vel;
   }
-  else
-  {
-    return 2.0;
-  }
+
+  return wind_vel * pHRU->GetSurfaceProps()->wind_vel_corr;
 }
 
 double CModel::WindspeedAtHeight (const double       &z,

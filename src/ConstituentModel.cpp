@@ -12,7 +12,6 @@ coordinates information about constituent storage
 #include "Transport.h"
 #include "EnergyTransport.h"
 
-string FilenamePrepare(string filebase,const optStruct &Options); //Defined in StandardOutput.cpp
 bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID,const int c); //Defined in StandardOutput.cpp
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
 int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
@@ -754,7 +753,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
         if(name=="") { name="ID="+to_string(pBasin->GetID()); }
 
          _LOADING<<","   <<name<<" "<<units;
-            /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
+         /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
           if(IsContinuousLoadingObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
           {
             _LOADING <<","   <<name<<" (observed) "<<units;
@@ -1226,15 +1225,15 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qf;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qf);
-      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr; Q_fric+=Qf;
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf);
+      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw; Q_fric+=Qf;
     }
   }
   double channel_stor=GetTotalChannelConstituentStorage();//[mg] or [MJ]

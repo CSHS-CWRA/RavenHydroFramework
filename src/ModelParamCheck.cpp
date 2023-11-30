@@ -65,6 +65,12 @@ void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_m
   else if(evaporation==PET_PRIESTLEY_TAYLOR)
   {
     aP[nP]="PRIESTLEYTAYLOR_COEFF";  aPC[nP]=CLASS_LANDUSE; nP++;
+  } 
+  else if (evaporation == PET_LINEAR_TEMP) {
+    aP[nP] = "PET_LIN_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if (evaporation == PET_VAPDEFICIT) {
+    aP[nP] = "PET_VAP_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
   }
 
   //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
@@ -74,8 +80,8 @@ void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_m
   {
     if(SW_radia_net == NETSWRAD_CALC) {
       aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
-      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
-      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL;       nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL;       nP++; //for SW_Radia_net
       aP[nP]="SVF_EXTINCTION";    aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
     }
   }

@@ -6,8 +6,6 @@
 #include "IrregularTimeSeries.h"
 #include "HeatConduction.h"
 
-string FilenamePrepare(string filebase,const optStruct &Options); //defined in StandardOutput.cpp
-
 /*****************************************************************
    Model Initialization Routines
 ------------------------------------------------------------------

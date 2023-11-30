@@ -200,7 +200,7 @@
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);c:/Program Files/netCDF 4.5.0/lib/;c:/Program Files/netCDF 4.5.0/bin/</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath); ../lib/lp_solve/;</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">
@@ -208,8 +208,9 @@
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release netCDF|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.8.1/include/;</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);c:/Program Files/netCDF 4.8.1/bin/;</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files\netCDF 4.8.1\include; ../lib/lp_solve/; </IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files\netCDF 4.8.1\bin\; ../lib/lp_solve/; </LibraryPath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug netCDF|x64'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);c:/Program Files/netCDF 4.7.0/include/;</IncludePath>
@@ -572,8 +573,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../lib/lp_solve/;</AdditionalLibraryDirectories>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -649,13 +649,14 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DisableSpecificWarnings>4996; 26812; 26451</DisableSpecificWarnings>
+      <UseMSVC>true</UseMSVC>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies); c:/Program Files/netCDF 4.8.1/lib/netcdf.lib; </AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies); c:/Program Files/netCDF 4.8.1/lib/netcdf.lib; ../lib/lp_solve/lpsolve55.lib; </AdditionalDependencies>
       <OutputFile>.\ReleaseNetCDF\Raven.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>.\ReleaseNetCDF/Raven.pdb</ProgramDatabaseFile>
@@ -663,7 +664,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <AdditionalLibraryDirectories>c:/Program Files/netCDF 4.8.1/bin/; </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>c:/Program Files/netCDF 4.8.1/bin/; ../lib/lp_solve/; c:/Program Files/netCDF 4.8.1/include/;</AdditionalLibraryDirectories>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -701,6 +702,7 @@
     <ClCompile Include="Drain.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="EnKF.cpp" />
+    <ClCompile Include="FrozenGround.cpp" />
     <ClCompile Include="FrozenLake.cpp" />
     <ClCompile Include="GWRecharge.cpp" />
     <ClCompile Include="GWRiverConnection.cpp" />
@@ -945,6 +947,9 @@
     </ClCompile>
     <ClCompile Include="ParsePropertyFile.cpp" />
     <ClCompile Include="ParseTimeSeriesFile.cpp" />
+    <ClCompile Include="_Unintegrated Source Files\DemandExpressionHandling.cpp" />
+    <ClCompile Include="_Unintegrated Source Files\DemandOptimization.cpp" />
+    <ClCompile Include="_Unintegrated Source Files\ParseManagementFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Advection.h" />
@@ -959,6 +964,7 @@
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />
     <ClInclude Include="EnKF.h" />
+    <ClInclude Include="FrozenGround.h" />
     <ClInclude Include="FrozenLake.h" />
     <ClInclude Include="GroundwaterModel.h" />
     <ClInclude Include="GWRiverConnection.h" />
@@ -1011,6 +1017,7 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelABC.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="_Unintegrated Source Files\DemandOptimization.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc" />
@@ -1018,10 +1025,6 @@
   <ItemGroup>
     <None Include="RavenAlgParams.dat" />
     <None Include="RavenIcon.ico" />
-    <None Include="ClassDiagramRaven.cd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="PropertyStructures.cd" />
     <None Include="RavenParameters.dat" />
     <None Include="RavenProcessConnections.dat" />
   </ItemGroup>

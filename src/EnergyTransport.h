@@ -18,6 +18,8 @@ class CEnthalpyModel :public CConstituentModel
   double **_aEnthalpySource;   ///< recent time history of reach source term [MJ/m3/d] [size: nSubBasins x nMinhist(p)]
   double    *_aEnthalpyBeta;   ///< array of beta terms for reach energy exchange [1/d] [size: nSubBasins]
 
+  double      *_aMinResTime;   ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins] 
+
   double         *_aBedTemp;   ///< array of riverbed temperatures [C] [size: nSubBasins]
 
   ofstream       _STREAMOUT;   ///< Output stream for StreamReachEnergyBalances.csv
@@ -42,8 +44,8 @@ public:/*-------------------------------------------------------*/
   double GetIceContent           (const double *state_vars, const int iWater) const;
   double GetWaterTemperature     (const double *state_vars, const int iWater) const;
 
-  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const;
-  double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad, double &Q_rain) const;
+  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out,double &Q_fric) const;
+  double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad_in,double &Q_lw_out, double &Q_rain) const;
   double GetOutflowIceFraction   (const int p) const;
   double GetAvgLatentHeatFlux    () const;
   double GetDirichletEnthalpy    (const CHydroUnit *pHRU, const double &Cs) const;

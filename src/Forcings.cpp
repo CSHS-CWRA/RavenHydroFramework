@@ -59,6 +59,7 @@ void ZeroOutForcings(force_struct &F)
 
   F.recharge=0.0;
   F.precip_temp=0.0;
+  F.precip_conc=0.0;
 
   F.subdaily_corr=0.0;
 }
@@ -146,6 +147,7 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
 
   else if (f=="RECHARGE"         ){return F_RECHARGE;}
   else if (f=="PRECIP_TEMP"      ){return F_PRECIP_TEMP; }
+  else if (f=="PRECIP_CONC"      ){return F_PRECIP_CONC; }
   else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
   else
@@ -212,6 +214,7 @@ double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
 
   else if (ftype==F_RECHARGE        ){return f.recharge;}
   else if (ftype==F_PRECIP_TEMP     ){return f.precip_temp;}
+  else if (ftype==F_PRECIP_CONC     ){return f.precip_conc;}
 
   else if (ftype==F_SUBDAILY_CORR   ){return f.subdaily_corr;}
 
@@ -278,6 +281,7 @@ void  SetForcingFromType(const forcing_type &ftype, force_struct &f, const doubl
 
   else if (ftype==F_RECHARGE        ){f.recharge=val;}
   else if (ftype==F_PRECIP_TEMP     ){f.precip_temp=val;}
+  else if (ftype==F_PRECIP_CONC     ){f.precip_conc=val;}
 
   else if (ftype==F_SUBDAILY_CORR   ){f.subdaily_corr=val;}
 
@@ -358,6 +362,7 @@ string GetForcingTypeUnits(forcing_type ftype)
 
   case F_RECHARGE:        {units="mm/d"; break;}
   case F_PRECIP_TEMP:     {units="C";    break;}
+  case F_PRECIP_CONC:     {units="mg/L"; break;}
 
   case F_SUBDAILY_CORR:   {units="none"; break;}
   default:
@@ -422,6 +427,7 @@ string ForcingToString(const forcing_type ftype)
 
   case F_RECHARGE:        {fstring="RECHARGE"; break;}
   case F_PRECIP_TEMP:     {fstring="PRECIP_TEMP"; break; }
+  case F_PRECIP_CONC:     {fstring="PRECIP_CONC"; break; }
 
   case F_SUBDAILY_CORR:   {fstring="SUBDAILY_CORR"; break;}
   default:

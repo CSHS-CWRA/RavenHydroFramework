@@ -513,6 +513,21 @@ double CModel::EstimatePET(const force_struct &F,
     break;
   }
   //-------------------------------------------------------------------------------------
+  case(PET_VAPDEFICIT):
+  {
+    //linear function of vapour deficit, from Seitz and Moore, 2020, Predicting evaporation from mountain streams, Hydrological Processes, 34
+    double T=F.temp_ave;
+    double e_sat = GetSaturatedVaporPressure(T);
+    double ea = F.rel_humidity*e_sat;
+
+    double C = pHRU->GetSurfaceProps()->pet_vap_coeff;
+
+    PET = C * (e_sat-ea);
+
+    PET=max(PET,0.0);
+    break;
+  }
+  //-------------------------------------------------------------------------------------
   case (PET_GRANGERGRAY):
   {
     PET=EvapGrangerGray(&F,pHRU);

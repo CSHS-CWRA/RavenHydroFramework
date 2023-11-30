@@ -129,6 +129,7 @@ const double  GPCM3_PER_KGPM3         =0.001;                                   
 const double  MJ_PER_J                =1e-6;                                    ///< [J] to [MJ]
 const double  KPA_PER_MPA             =1000;                                    ///< [MPa] to [KPa]
 const double  PA_PER_KPA              =1000;                                    ///< [kPa] to [Pa]
+const double  HPA_PER_KPA             =10;                                      ///< [kPa] to [hPa] 
 const double  MB_PER_KPA              =10;                                      ///< [KPa] to [millibars]
 const double  KPA_PER_ATM             =101.325;                                 ///< [atm] to [KPa]
 const double  SEC_PER_DAY             =86400;                                   ///< days to seconds
@@ -422,6 +423,7 @@ enum evap_method
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
   PET_OUDIN,                    ///< Simple PET from Oudin et. al., 2005
   PET_LINACRE,                  ///< From Linacre, Agricultural Meteorology, 1977
+  PET_VAPDEFICIT,               ///< linear function of vapour deficit, c*(e_sat-e_a) from Seitz and Moore, 2020 
   PET_BLENDED,                  ///< a blended combination of 2 or more of the methods above
   PET_UNKNOWN                   ///< special PET type for unrecognized commands
 };
@@ -514,9 +516,11 @@ enum LW_method
 //
 enum LWinc_method
 {
-  LW_INC_DEFAULT,      ///< default implementation - incoming LW ignored, only net calculated
+  LW_INC_DEFAULT,      ///< default implementation - reverts to Dingman 2014 if LW_RAD_DEFAULT is used (for backward compatibility) 
   LW_INC_DATA,         ///< specified in time series files
-  LW_INC_SICART        ///< From Sicart et al. (2005) as ported over from CRHM
+  LW_INC_SICART,       ///< From Sicart et al. (2005) as ported over from CRHM
+  LW_INC_SKYVIEW,      ///< simple sky view factor approach for stream temperature modelling, Using Prata 1996 clear sky emissivity
+  LW_INC_DINGMAN       ///< from Dingman (2014), using Brutsaert 1975 clear sky emissivity
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -1190,6 +1194,7 @@ enum forcing_type
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
   F_RECHARGE,
+  F_PRECIP_CONC,
   F_PRECIP_TEMP,
   F_UNRECOGNIZED
 };
@@ -1203,6 +1208,7 @@ struct force_struct
   double precip_5day;         ///< 5-day precipitation total [mm] (needed for SCS)
   double snow_frac;           ///< fraction of precip that is snow [0..1]
   double precip_temp;         ///< precipitation temperature [C]
+  double precip_conc;         ///< precipitation concentration [C] (\todo[funct]: should make vector)
 
   double temp_ave;            ///< average air temp over time step [C]
   double temp_daily_min;      ///< minimum air temperature over day (0:00-24:00)[C]
@@ -1580,6 +1586,7 @@ string GetDirectoryName          (const string &fname);
 void   HandleNetCDFErrors        (int error_code);        ///< NetCDF error handling
 string CorrectForRelativePath    (const string filename, const string relfile);
 string GetFileExtension          (string filename);
+string FilenamePrepare           (string filebase, const optStruct &Options);
 
 #ifdef _WIN32
 #include <direct.h>
@@ -1618,6 +1625,7 @@ void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const i
 void   quickSort        (double arr[], int left, int right) ;
 double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
 void   getRanks         (const double *arr, const int N, int *ranks);
+
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp
 void LatLonToUTMXY (const double lat, //latitude, in decimal degrees

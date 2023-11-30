@@ -10,8 +10,6 @@ bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long SBID);
 bool ParseInitialConditions(CModel*& pModel,const optStruct& Options);
 bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-
 // in .rvi file:
 //  :EnsembleMode ENSEMBLE_ENKF [double #members]
 //  :WarmEnsemble fc2 # used if ICs should be read from ensemble fc2_solution_enKF.rvc file

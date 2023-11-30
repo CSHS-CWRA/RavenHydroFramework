@@ -1113,8 +1113,10 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Options.noisy) {cout <<"Incoming Longwave Radiation Estimation Method"<<endl;}
       if (Len<2){ImproperFormatWarning(":LWIncomingMethod",p,Options.noisy); break;}
       if      (!strcmp(s[1],"LW_INC_DATA"      )){Options.LW_incoming=LW_INC_DATA;}
-      else if (!strcmp(s[1],"LW_RAD_DEFAULT"   )){Options.LW_incoming=LW_INC_DEFAULT;}
-      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;}
+      else if (!strcmp(s[1],"LW_INC_DEFAULT"   )){Options.LW_incoming=LW_INC_DEFAULT;}
+      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;} 
+      else if (!strcmp(s[1],"LW_INC_SKYVIEW"   )){Options.LW_incoming=LW_INC_SKYVIEW;}
+      else if (!strcmp(s[1],"LW_INC_DINGMAN"   )){Options.LW_incoming=LW_INC_DINGMAN;}
       else {ExitGracefully("ParseInput:LWIncomingMethod: Unrecognized method ",BAD_DATA_WARN);}
       break;
     }
@@ -3594,6 +3596,7 @@ evap_method ParseEvapMethod(const string s)
   else if (!strcmp(tmp.c_str(),"PET_MOHYSE"            )){return PET_MOHYSE;}
   else if (!strcmp(tmp.c_str(),"PET_OUDIN"             )){return PET_OUDIN;}
   else if (!strcmp(tmp.c_str(),"PET_LINACRE"           )){return PET_LINACRE; }
+  else if (!strcmp(tmp.c_str(),"PET_VAPDEFICIT"        )){return PET_VAPDEFICIT; }
   else if (!strcmp(tmp.c_str(),"PET_BLENDED"           )){return PET_BLENDED; }
   else if (!strcmp(tmp.c_str(),"PET_LINEAR_TEMP"       )){return PET_LINEAR_TEMP; }
   else{

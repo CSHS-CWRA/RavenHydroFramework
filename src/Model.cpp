@@ -5,8 +5,6 @@
 #include "Model.h"
 #include "EnergyTransport.h"
 
-string FilenamePrepare(string filebase,const optStruct& Options); // defined in StandardOutput.cpp
-
 /*****************************************************************
    Constructor/Destructor
 ------------------------------------------------------------------
@@ -1077,6 +1075,7 @@ force_struct CModel::GetAverageForcings() const
 
       Fave.recharge       +=area_wt*pF_hru->recharge;
       Fave.precip_temp    +=area_wt*pF_hru->precip_temp;
+      Fave.precip_conc    +=area_wt*pF_hru->precip_conc;
 
       Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
     }
