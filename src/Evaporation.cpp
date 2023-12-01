@@ -50,7 +50,7 @@ double Makkink1957Evap(const force_struct *F)
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates PET using Turc 1961 method \cite Lu2005JotAWRA
 /// \ref From Turc, L., 1961. Evaluation de besoins en eau d'irrigation, ET potentielle, Ann. Agron. 12:13-49. \cite turc1961AA
-/// as defined in "A comparison of six potential 
+/// as defined in "A comparison of six potential
 /// evapotranspiration methods for regional use in the southeastern
 /// united states", American Water Resources Association, 2005.
 /// \note This is a utility function called by EstimatePET
@@ -195,11 +195,11 @@ double HargreavesEvap(const force_struct *F)//[C]
        CelsiusToFarenheit(F->temp_month_min);
 
   // \todo [optimize] - move this check to initialization routine
-  
+
   ExitGracefullyIf(F->temp_month_max==NOT_SPECIFIED,
                    "PET_HARGREAVES requires minimum and maximum monthly temperatures",BAD_DATA);
 
-  return max(0.0,HARGREAVES_CONST*Ra*Ct*sqrt(delT)*CelsiusToFarenheit(F->temp_ave));
+  return max(0.0,HARGREAVES_CONST*Ra*Ct*sqrt(delT)*CelsiusToFarenheit(F->temp_daily_ave));
 }
 
 //////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ double Hargreaves1985Evap(const force_struct *F)//[C]
   delT=F->temp_daily_max-F->temp_daily_min;
   delT=max(delT,0.0);
 
-  return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_ave+17.8));
+  return max(0.0,HARGREAVES_CONST*Ra*sqrt(delT)*(F->temp_daily_ave+17.8));
 }
 /*****************************************************************
 Jensen Haise Evaporation
@@ -314,7 +314,7 @@ double CModel::EstimatePET(const force_struct &F,
   {
     if(open_water) {PET=F.OW_PET;}
     else           {PET=F.PET;   }
-    
+
     //Handle blank data
     if (PET==RAV_BLANK_DATA) {
       if(open_water) {
@@ -323,8 +323,8 @@ double CModel::EstimatePET(const force_struct &F,
       else {
         PET=EstimatePET(F,pHRU,wind_measurement_ht,ref_elevation,Options.evap_infill,Options,tt,false);
       }
-    } 
-    
+    }
+
     break;//calculated direct from Gauge
   }
   //-------------------------------------------------------------------------------------
@@ -371,7 +371,7 @@ double CModel::EstimatePET(const force_struct &F,
     double XEVAP2=A0PELA * 0.001 * (refelev - pHRU->GetElevation());
     PET=forest_corr*(F.PET_month_ave*max_temp+XEVAP2); //PET_month_ave actually stores Monthly evap factors [mm/d/K]
 
-    PET=max(PET,0.0); 
+    PET=max(PET,0.0);
 
     break;
   }
@@ -457,7 +457,7 @@ double CModel::EstimatePET(const force_struct &F,
   }
   //-------------------------------------------------------------------------------------
   case(PET_PENMAN_SIMPLE33) :
-  {
+  {//Simplified Penman equation from eqn 33 of Valiantzas (2006)
     double Rs =F.SW_radia;   //[MJ/m2/d]
     double R_et =F.ET_radia; //[MJ/m2/d]
     double Tave=F.temp_ave;  //[C]
@@ -469,7 +469,7 @@ double CModel::EstimatePET(const force_struct &F,
   }
   //-------------------------------------------------------------------------------------
   case(PET_PENMAN_SIMPLE39) :
-  {
+  {//Simplified Penman equation from eqn 39 of Valiantzas (2006)
     double Rs  =F.SW_radia;   //[MJ/m2/d]
     double R_et=F.ET_radia; //[MJ/m2/d]
     double Tave=F.temp_ave;  //[C]
@@ -484,7 +484,7 @@ double CModel::EstimatePET(const force_struct &F,
   {
     double lat_rad=pHRU->GetLatRad();
     double declin=CRadiation::SolarDeclination(F.day_angle);
-    double cpet=CGlobalParams::GetParams()->MOHYSE_PET_coeff;
+    double cpet = this->_pGlobalParams->GetParams()->MOHYSE_PET_coeff;
 
     PET = cpet/PI*acos(-tan(lat_rad)*tan(declin))*exp((17.3*F.temp_ave)/(238+F.temp_ave));
     PET=max(PET,0.0);
@@ -500,14 +500,30 @@ double CModel::EstimatePET(const force_struct &F,
   case(PET_LINACRE):
   {
     //eqns 8 and 9  of Linacre, E., A simple formula for estimating evaporation rates in various climates, using temperature data alone, Agricultural Meteorology 18, p409-424, 1977
-    double Tdewpoint=GetDewPointTemp(F.temp_daily_ave,F.rel_humidity);
+    double T=F.temp_daily_ave;
+    double Tdewpoint=GetDewPointTemp(T,F.rel_humidity);
     double latit=pHRU->GetLatRad()*RADIANS_TO_DEGREES;
     if (open_water){
-      PET= (700* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
+      PET= (700* T/(100-latit)+15.0*(T-Tdewpoint))/(80.0-T);
     }
     else {
-      PET= (500* F.temp_daily_ave/(100-latit)+15.0*(F.temp_daily_ave-Tdewpoint))/(80.0-F.temp_daily_ave);
+      PET= (500* T/(100-latit)+15.0*(T-Tdewpoint))/(80.0-T);
     }
+    PET=max(PET,0.0);
+    break;
+  }
+  //-------------------------------------------------------------------------------------
+  case(PET_VAPDEFICIT):
+  {
+    //linear function of vapour deficit, from Seitz and Moore, 2020, Predicting evaporation from mountain streams, Hydrological Processes, 34
+    double T=F.temp_ave;
+    double e_sat = GetSaturatedVaporPressure(T);
+    double ea = F.rel_humidity*e_sat;
+
+    double C = pHRU->GetSurfaceProps()->pet_vap_coeff;
+
+    PET = C * (e_sat-ea);
+
     PET=max(PET,0.0);
     break;
   }
@@ -531,6 +547,26 @@ double CModel::EstimatePET(const force_struct &F,
 
   double veg_corr=pHRU->GetVegetationProps()->PET_veg_corr;
   return PET*veg_corr;
+}
+
+bool IsDailyPETmethod(evap_method method)
+{
+  switch (method)
+  {
+  //case PET_OUDIN: return true; //these have subdaily ET radiation corrections
+  //case PET_HARGREAVES: return true;
+  //case PET_HARGREAVES_1985: return true;
+  case PET_LINACRE: return true;
+  case PET_MONTHLY_FACTOR: return true;
+  case PET_FROMMONTHLY: return true;
+  case PET_TURC_1961: return true;
+  case PET_JENSEN_HAISE: return true;
+  case PET_HAMON: return true;
+  case PET_LINEAR_TEMP: return true;
+  case PET_CONSTANT: return true;
+  default: return false;
+  }
+  //Also, PET_DATA with dt=1.0 \todo
 }
 
 //////////////////////////////////////////////////////////////////
@@ -788,7 +824,7 @@ double SnowEvaporation(const force_struct   *F,
     esnow = GetSaturatedVaporPressure(min(F->temp_ave,snow_temp));
   }
   double tmp;
-  tmp=0.3*(MM_PER_METER/LH_SUBLIM/DENSITY_WATER)*(HCP_AIR/MJ_PER_J/gamma)*(esnow-sat_vap)/(Raa+Rga); 
+  tmp=0.3*(MM_PER_METER/LH_SUBLIM/DENSITY_WATER)*(HCP_AIR/MJ_PER_J/gamma)*(esnow-sat_vap)/(Raa+Rga);
   //[-][kg/MJ]*[m3/kg]*[J/m3/K]*[K/kPa]*[kPa]*[m/s]-->[mm/s*J/MJ]
   return tmp*MJ_PER_J*SEC_PER_DAY;//=[m/d]
 }
@@ -796,7 +832,7 @@ double SnowEvaporation(const force_struct   *F,
 //////////////////////////////////////////////////////////////////
 /// \brief calculates drying power modifier for wind thru canopy
 /// \details from Granger & Gray \cite GrangerGray1989
-/// \ref ported from classEvap in CRHM 
+/// \ref ported from classEvap in CRHM
 /// \param wind_vel [in] wind velocity in m/s
 /// \param veg_ht [in] canopy height in meters
 /// \return drying power modifying coefficient (mm/d/kPa)
@@ -810,7 +846,7 @@ double GetDryingPower(const double &wind_vel,const double &veg_ht) //u in m/s; c
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates evaporation using Granger & Gray method
 /// \details from Granger & Gray \cite GrangerGray1989
-/// \ref ported from classEvap in CRHM 
+/// \ref ported from classEvap in CRHM
 /// \param *F [in] Model forcing functions
 /// \param *pHRU pointer to HRU
 /// \return Calculated PET [mm/d]

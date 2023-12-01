@@ -251,7 +251,7 @@ struct surface_struct
   double cond_melt_mult;    ///< [-]       condensation melt multiplier
   double rain_melt_mult;    ///< [-]       rain melt multiplier
   double bsnow_distrib;     ///< [-]       blowing snow distribution parameter
-  double lakesnow_buffer_ht;///< [mmSWE]   height of snow above which potential melt energy doest reach lake ice 
+  double lakesnow_buffer_ht;///< [mmSWE]   height of snow above which potential melt energy doest reach lake ice
 
   //Glacier parameters
   double glac_storage_coeff;  ///< [-]     maximum linear storage coefficient for glacial melt =K*G
@@ -281,6 +281,9 @@ struct surface_struct
   double dep_crestratio;    ///<-[m/m]     ratio of crest width to square root of HRU area (0-5) ~1.5
   double PDMROF_b;          ///< [-]       PDMROF Pareto distribution function exponent
   double PDM_b;             ///< [-]       PDM (Moore, 1985) Pareto distribution function exponent
+  double HYMOD2_G;          ///< [0..1]    ET lower resistance parameter in HYMOD2 (Roy et al., 2017) AET calculation
+  double HYMOD2_Kmax;       ///< [0..1]    ET resistance parameter in HYMOD2 (Roy et al., 2017) AET calculation
+  double HYMOD2_exp;        ///< [-]       ET exponent parameter in HYMOD2 (Roy et al., 2017) AET calculation
   double max_dep_area_frac; ///< [0..1]    maximum fraction of depression relative to total surface area
   double ponded_exp;        ///< [-]       exponent of depression surface area / depression storage relationship A~=(S/Smax)^n
   double uwfs_b;            ///< [-]       upscaled wetland fill and spill b parameter, defined distribution of contributing area
@@ -296,6 +299,10 @@ struct surface_struct
   double AET_coeff;         ///< [-]       linear AET coefficient
   double priestleytaylor_coeff; ///< [-]   Priestley-Taylor coefficient (defaults to 1.28)
   double pet_lin_coeff;     ///< [mm/d/K]  linear PET relation with temperature ~(0.1-0.3)
+  double pet_vap_coeff;     ///< [mm/d/kPa] linear PET relation with vapor deficit ~(1-3 mm/d/kPa, ~1.5 for mountain streams)
+
+  double relhum_corr;       ///< [-]       local correction factor for relative humidity (defaults to 1)
+  double wind_vel_corr;     ///< [-]       local correction factor for wind speed (defaults to 1)
 
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient
 
@@ -425,18 +432,18 @@ struct global_struct
   double           windvel_icept;            ///< [m/s] intercept parameter for regression between wind vel. and F(T_max-T_min)
   double           windvel_scale;            ///< [changes] slope parameter for regression between wind vel. and F(T_max-T_min)
 };
-// parameter override structure 
-struct param_override 
+// parameter override structure
+struct param_override
 {
   string  SBGroup_name;
   string  param_name;
 
   int     nVals;
   double *aValues;
-  double *aRevertValues; 
-  
-  bool   *aHRUIsOverridden; 
-  double *pxAddress; 
+  double *aRevertValues;
+
+  bool   *aHRUIsOverridden;
+  double *pxAddress;
 
   param_override()  /* Constructor */
   {

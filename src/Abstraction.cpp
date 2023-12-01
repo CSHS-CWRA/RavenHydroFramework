@@ -8,6 +8,7 @@
 
 #include "HydroProcessABC.h"
 #include "DepressionProcesses.h"
+#include "Model.h"
 
 /*****************************************************************
    Abstraction Constructor/Destructor
@@ -18,8 +19,8 @@
 /// \brief Implementation of abstraction constructor
 /// \param absttype [in] Selected model of abstraction
 //
-CmvAbstraction::CmvAbstraction(abstraction_type absttype)
-  :CHydroProcessABC(ABSTRACTION)
+CmvAbstraction::CmvAbstraction(abstraction_type absttype, CModelABC *pModel)
+  :CHydroProcessABC(ABSTRACTION, pModel)
 {
   _type=absttype;
 
@@ -29,7 +30,7 @@ CmvAbstraction::CmvAbstraction(abstraction_type absttype)
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
     iTo  [0]=pModel->GetStateVarIndex(DEPRESSION);
   }
-  else if (_type==ABST_PDMROF) { 
+  else if (_type==ABST_PDMROF) {
     CHydroProcessABC::DynamicSpecifyConnections(2);
     //abstraction (ponded-->depression)
     iFrom[0]=pModel->GetStateVarIndex(PONDED_WATER);
@@ -150,7 +151,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
 {
   double ponded    =state_vars[iFrom[0]]; //[mm]
   double depression=state_vars[iTo  [0]]; //[mm]
-  
+
   //----------------------------------------------------------------------------
   if      (_type==ABST_PERCENTAGE)
   {
@@ -214,7 +215,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     //analytical evaluation of P*dt-equation 3 of Mekonnen; min() handles case where entire landscape sheds
     abstracted=dep_max*(pow(1.0-(c_star/c_max),b+1.0)-pow(1.0-min(c_star+ponded,c_max)/c_max,b+1.0));
     abstracted=min(abstracted,ponded);
-    
+
     rates[0]=(       abstracted)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]
     rates[1]=(ponded-abstracted)/Options.timestep; //runoff rate [PONDED->SURFACE_WATER]
   }
@@ -231,27 +232,27 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
     double depfrac =pHRU->GetSurfaceProps()->max_dep_area_frac; //percentage of landscape covered in depressions
     double depmax  =pHRU->GetSurfaceProps()->dep_max;           //[mm] maximum total depression storage on landscape (averaged over HRU)
     if (depfrac==0){runoff=ponded;} //no abstraction, all will run off
-    else 
+    else
     {
       double Davg=(depmax-depression)/depfrac; //mm in wetland (not averaged over HRU as depression storage is)
       double Dmin=state_vars[iFrom[2]];        //=Dmin [mm] if positive,=-Pf if negative
       double Pf=0.0;                           //Fraction full
-      double d;                                //[-] deficit distribution parameter 
+      double d;                                //[-] deficit distribution parameter
       double beta_ave=beta_min+1/b;            //<beta>
       double a    = b/(P+0.0001);
       double mult = alpha / (beta_ave - 1.0 + alpha);
-     
+
       if (Dmin < 0.0) { //partially full
          Pf =-Dmin;
       }
-     
+
       double Pstar=beta_min*P-Dmin;
-      
+
       //backcalculate d from Dmin (or Pf) and Davg
-      
+
       d = min((1.0-Pf) / (Davg - Dmin + 0.00001)+ 0.0001, 1000.0);
       //Calculate net runoff (in mm averaged over basin)
-      
+
       if(Pstar>0.0) {
         runoff =mult*a*d/(a+d)*((1-Pf)*((d*Pstar-1+exp(-d*Pstar))/d/d)+(1-Pf)*(a*Pstar+1)/a/a+ (Pf) * (Pstar + 1.0 / a));
       }
@@ -259,16 +260,16 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
         runoff=mult*a*d/(a+d)*(exp(a*Pstar)/a/a);
       }
 
-      if (runoff > 0.001) 
+      if (runoff > 0.001)
       {
         if (Pstar > 0.0)
-        {         
+        {
           Pf = 1 - (a / (a +d) * exp(-d*Pstar)) * (1 - Pf);
         }
-        else 
+        else
         {
           Pf = 1 - (a / (a + d) * (1 - Pf) + (d / (a + d)*(1 - Pf) + Pf) * (1 - exp(a * Pstar)));
-        }  
+        }
         deltaDmin = (-Pf) -Dmin;
         Dmin = 0;// Dmin after runoff will be zero means that at least some of the depressions are full
       }
@@ -283,7 +284,7 @@ void   CmvAbstraction::GetRatesOfChange( const double        *state_vars,
 
     rates[0]=(ponded- runoff)/Options.timestep; //abstraction rate [PONDED->DEPRESSION]
     rates[1]=(        runoff)/Options.timestep; //runoff rate      [PONDED->SURFACE_WATER]
-    rates[2]=(deltaDmin     )/Options.timestep; //change in Dmin   [MIN_DEP_DEFICIT->MIN_DEP_DEFICIT]]   
+    rates[2]=(deltaDmin     )/Options.timestep; //change in Dmin   [MIN_DEP_DEFICIT->MIN_DEP_DEFICIT]]
   }
 }
 
@@ -303,7 +304,7 @@ void   CmvAbstraction::ApplyConstraints(const double             *state_vars,
                                         const time_struct &tt,
                                         double     *rates) const
 {
-  
+
   //cant remove more than is there (should never be an option)
   double pond=max(state_vars[iFrom[0]],0.0);
   rates[0]=min(rates[0],pond/Options.timestep);

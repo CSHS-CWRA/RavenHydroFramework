@@ -4,16 +4,16 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the vegetation class constructor
 /// \param name [in] String nickname for vegetation class
 //
-CVegetationClass::CVegetationClass(const string name)
+CVegetationClass::CVegetationClass(const string name, CModel* pModel)
 {
   this->V.vegetation_name=name;
-  if (!DynArrayAppend((void**&)(pAllVegClasses),(void*)(this),NumVegClasses)){
-    ExitGracefully("CVegetationClass::Constructor: creating NULL vegetation class",BAD_DATA);};
+  pModel->AddVegClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -39,77 +39,9 @@ const veg_struct *CVegetationClass::GetVegetationStruct() const{return &V;}
 string               CVegetationClass::GetVegetationName         () const{return V.vegetation_name;}
 
 /*****************************************************************
-   Static Initialization, Accessors, Destructors
+   Static Initialization, Accessors
 *****************************************************************/
-CVegetationClass **CVegetationClass::pAllVegClasses=NULL;
-int                CVegetationClass::NumVegClasses=0;
 
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of vegetation classes
-/// \return Number of vegetation classes
-//
-int CVegetationClass::GetNumClasses(){
-  return NumVegClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize vegetation class information to screen
-//
-void CVegetationClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Vegetation Class Summary:"<<NumVegClasses<<" vegetation classes in database"<<endl;
-  for (int c=0; c<NumVegClasses;c++){
-    cout<<"-Veg. class \""<<pAllVegClasses[c]->GetVegetationName()<<"\" "<<endl;
-    cout<<"    max. height: "<<pAllVegClasses[c]->GetVegetationStruct()->max_height<<" m"<<endl;
-    cout<<"       max. LAI: "<<pAllVegClasses[c]->GetVegetationStruct()->max_LAI  <<endl;
-    cout<<"   max. conduct: "<<pAllVegClasses[c]->GetVegetationStruct()->max_leaf_cond<<" mm/s"<<endl;
-    cout<<"         albedo: "<<pAllVegClasses[c]->GetVegetationStruct()->albedo<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all vegetation classes
-//
-void CVegetationClass::DestroyAllVegClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL VEGETATION CLASSES"<<endl;}
-  for (int c=0; c<NumVegClasses;c++){
-    delete pAllVegClasses[c];
-  }
-  delete [] pAllVegClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the vegetation class corresponding to passed string
-/// \details Converts string (e.g., "BROADLEAF" in HRU file) to vegetation class
-///  can accept either vegclass index or vegclass tag
-///  if string is invalid, returns NULL
-/// \param s [in] Vegetation class identifier (tag or index)
-/// \return Reference to vegetation class corresponding to identifier s
-//
-CVegetationClass *CVegetationClass::StringToVegClass(const string s)
-{
-  string sup;
-  sup=StringToUppercase(s);
-  for (int c=0;c<NumVegClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(pAllVegClasses[c]->GetVegetationName()))){return pAllVegClasses[c];}
-    else if (s_to_i(sup.c_str())==(c+1))                                        {return pAllVegClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the vegetation class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to vegetation class corresponding to index c
-//
-const CVegetationClass *CVegetationClass::GetVegClass(int c)
-{
-  if ((c<0) || (c>=NumVegClasses)){return NULL;}
-  return pAllVegClasses[c];
-}
 /*****************************************************************
    Accessors
 ------------------------------------------------------------------
@@ -140,7 +72,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   V.max_LAI        =Vtmp.max_LAI;
   V.max_leaf_cond  =Vtmp.max_leaf_cond;
   V.max_height     =Vtmp.max_height;
-  
+
   //Standard vegetation properties
   //----------------------------------------------------------------------------
   //Skyview extinction coefficient
@@ -229,7 +161,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
     V.PET_veg_corr=1.0;
     //no warning - default is one
   }
-    
+
 
   double max_LAI=V.max_LAI;
   double max_SAI=V.SAI_ht_ratio*V.max_height;
@@ -561,5 +493,3 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
     }
   }
 }
-
-

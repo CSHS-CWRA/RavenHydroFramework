@@ -10,10 +10,10 @@
 
 void AllocateReservoirDemand(CModel *&pModel,const optStruct &Options,long SBID, long SBIDres,double pct_met,int jul_start,int jul_end);
 bool IsContinuousFlowObs2(const CTimeSeriesABC* pObs,long SBID);
-void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, string *&aStat_string,int &nStations); 
+void GetNetCDFStationArray(const int ncid, const string filename,int &stat_dimid,int &stat_varid, long *&aStations, string *&aStat_string,int &nStations);
 //////////////////////////////////////////////////////////////////
 /// \brief Parse input time series file, model.rvt
-/// 
+///
 /// \param *&pModel [out] Reference to the model object
 /// \param Options [in] Global model options
 /// \return True if operation was successful
@@ -36,7 +36,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
   bool ended            = false;
   bool has_irrig        = false;
-  bool grid_initialized = false;  
+  bool grid_initialized = false;
   bool is_3D            = false;  // true if gridded forcing is 3D
 
   ifstream RVT;
@@ -67,14 +67,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     if (ended){break;}
     if (Options.noisy){ cout << "reading line " << p->GetLineNumber() << ": ";}
 
-    code=0; 
+    code=0;
     //---------------------SPECIAL -----------------------------
     if       (Len==0)                                       {code=-1; }
     else if  (IsComment(s[0],Len))                          {code=-2; }//comment
     else if  (!strcmp(s[0],":End"                         )){code=-4; }//premature end of file
     else if  (!strcmp(s[0],":IfModeEquals"                )){code=-5; }
     else if  (in_ifmode_statement)                          {code=-6; }
-    else if  (!strcmp(s[0],":EndIfModeEquals"             )){code=-2; }//treat as comment - unused mode 
+    else if  (!strcmp(s[0],":EndIfModeEquals"             )){code=-2; }//treat as comment - unused mode
     else if  (!strcmp(s[0],":RedirectToFile"              )){code=-3; }//redirect to secondary file
     //--------------------GAUGE BASIC DATA- --------------------
     else if  (!strcmp(s[0],":Gauge"                       )){code=1;  }
@@ -113,6 +113,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":ReservoirDownstreamFlow"     )){code=61; }
     else if  (!strcmp(s[0],":ReservoirMaxQDecrease"       )){code=62; }
     else if  (!strcmp(s[0],":IrrigationDemand"            )){code=63; }
+    else if  (!strcmp(s[0],":WaterDemand"                 )){code=63; }
     else if  (!strcmp(s[0],":ReservoirDownstreamDemand"   )){code=64; }
     else if  (!strcmp(s[0],":ReservoirMaxFlow"            )){code=65; }
     else if  (!strcmp(s[0],":FlowDiversion"               )){code=66; }
@@ -133,7 +134,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":FixedConcentrationTimeSeries")){code=300; const_name=s[1];}
     else if  (!strcmp(s[0],":FixedTemperatureTimeSeries"  )){code=300; const_name="TEMPERATURE";}
     else if  (!strcmp(s[0],":MassFluxTimeSeries"          )){code=301;}
-    else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302;}  
+    else if  (!strcmp(s[0],":SpecifiedInflowConcentration")){code=302;}
     else if  (!strcmp(s[0],":SpecifiedInflowTemperature"  )){code=303;}
     else if  (!strcmp(s[0],":MassLoading"                 )){code=304;}
     //---------GRIDDED INPUT (lat,lon,time)---------------------
@@ -311,7 +312,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     }
     case(13):  //----------------------------------------------
     {/*:MultiData
-       {int nMeasurements double start_day int start_year double tstep} or
        {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
        :Parameters, PARAM_TAG_1, PARAM_TAG_2, ...
        :Units, unit1, unit2,...
@@ -321,7 +321,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy) {cout <<"Multiple Time Series"<<endl;}
       ExitGracefullyIf(pGage==NULL,
                        "ParseTimeSeriesFile:: :MultiData command added before specifying a gauge station and its properties",BAD_DATA);
-      
+
       int nSeries=0;
       CTimeSeries **pTimeSerArray=NULL;
       forcing_type       aTypes[MAX_MULTIDATA];
@@ -413,14 +413,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         break;
     }
     case (40): //---------------------------------------------
-    {/*:ObservationData [data type] [long SBID or int HRUID] {constituent name if data type=STREAM_CONCENTRATION } 
+    {/*:ObservationData [data type] [long SBID or int HRUID] {constituent name if data type=STREAM_CONCENTRATION }
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationData
      */
       if (Options.noisy) {cout <<"Observation data"<<endl;}
       if (Len<3){p->ImproperFormat(s); break;}
-      
+
       bool ishyd      =!strcmp(s[1], "HYDROGRAPH");
       bool isstage    =!strcmp(s[1], "RESERVOIR_STAGE");
       bool isinflow   =!strcmp(s[1], "RESERVOIR_INFLOW");
@@ -429,8 +429,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       bool istemp     =!strcmp(s[1], "STREAM_TEMPERATURE");
       bool islevel    =!strcmp(s[1], "WATER_LEVEL");
       bool invalidSB=(pModel->GetSubBasinByID(s_to_l(s[2]))==NULL);
-        
-      bool period_ending =ishyd; 
+
+      bool period_ending =ishyd;
       //Hydrographs are internally stored as period-ending!
 
       pTimeSer=CTimeSeries::Parse(p,true,to_string(s[1]),s_to_l(s[2]),"none",Options,period_ending);
@@ -485,7 +485,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (42): //---------------------------------------------
-    {/*:ObservationWeights {data type} {long SBID or int HRUID}  {constituent name if data type=STREAM_CONCENTRATION } 
+    {/*:ObservationWeights {data type} {long SBID or int HRUID}  {constituent name if data type=STREAM_CONCENTRATION }
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double value} x nMeasurements
        :EndObservationWeights
@@ -574,7 +574,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }              
+    }
     case (51): //---------------------------------------------
     {/*:ReservoirExtraction {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -662,7 +662,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }     
+    }
     case (55): //---------------------------------------------
     {/*:ReservoirMinStage {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -684,7 +684,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }             
+    }
     case (56): //---------------------------------------------
     {/*:ReservoirMinStageFlow {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -706,7 +706,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }          
+    }
     case (57): //---------------------------------------------
     {/*:ReservoirTargetStage {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -728,7 +728,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }  
+    }
     case (58): //---------------------------------------------
     {/*:ReservoirMaxQDelta {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -750,7 +750,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         WriteWarning(warn,Options.noisy);
       }
       break;
-    }  
+    }
     case (59): //---------------------------------------------
     {/*:BasinInflowHydrograph2 {long Basincode}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
@@ -806,8 +806,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       long SBID_down=DOESNT_EXIST;
       CSubBasin *pSB,*pSBdown;
       double range=0;
-      if(Len>=4) { 
-        SBID=s_to_l(s[1]); 
+      if(Len>=4) {
+        SBID=s_to_l(s[1]);
         SBID_down=s_to_l(s[2]);
         range=s_to_d(s[3]);
       }
@@ -850,23 +850,26 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (63): //---------------------------------------------
-    {/*:IrrigationDemand {long Basincode}
+    {/*:IrrigationDemand or :WaterDemand {long Basincode} {int demand_ID)
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qin} x nMeasurements [m3/s]
-     :EndIrrigationDemand
+     :EndIrrigationDemand or :EndWaterDemand
      */
       if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
-      long SBID=DOESNT_EXIST;
+      long SBID    =DOESNT_EXIST;
+      int  demandID=DOESNT_EXIST;
       CSubBasin *pSB;
       if(Len>=2) { SBID=s_to_l(s[1]); }
+      if(Len>=3) {demandID = s_to_i(s[2]);}
+      if (demandID==DOESNT_EXIST){demandID=SBID;}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"IrrigationDemand_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,false,"D"+to_string(demandID),SBID,"none",Options);
       if(pSB!=NULL) {
         pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
       }
       else
       {
-        warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation demand time series";
+        warn=":IrrigationDemand: Subbasin "+to_string(SBID)+" not in model, cannot set irrigation/water demand time series";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -879,8 +882,8 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int    jul_start=0;
       int    jul_end  =365;
       double pct_met  =0.0;
-      if(Len>=4) { 
-        SBID=s_to_l(s[1]); 
+      if(Len>=4) {
+        SBID=s_to_l(s[1]);
         double tmp=AutoOrDouble(s[2]);
         if(tmp==AUTO_COMPUTE) { SBIDres=AUTO_COMPUTE_LONG; }
         else                  { SBIDres=s_to_l(s[2]); }
@@ -1133,7 +1136,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
          {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
          {double concentration values} x nMeasurements
        :EndFixedConcentrationTimeSeries
-       or 
+       or
        :FixedTemperatureTimeSeries [string state_var (storage compartment)] {optional HRU Group name}
          {yyyy-mm-dd hh:mm:ss double tstep int nMeasurements}
          {double temperature values} x nMeasurements
@@ -1145,7 +1148,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int i_stor;
       int shift=0;
       if(const_name=="TEMPERATURE") { shift=-1; }
-      sv_type typ=CStateVariable::StringToSVType(s[2+shift],layer_ind,false);
+      sv_type typ = pModel->GetStateVarInfo()->StringToSVType(s[2+shift],layer_ind,false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":ConcentrationTimeSeries command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -1166,7 +1169,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         }
         CTimeSeries *pTS;
         pTS=CTimeSeries::Parse(p,true,const_name+"_"+to_string(s[2+shift]),DOESNT_EXIST,"none",Options);//name=constitutent name+storage name
-        
+
         int c=pModel->GetTransportModel()->GetConstituentIndex(const_name);
         if(c!=DOESNT_EXIST) {
           pModel->GetTransportModel()->GetConstituentModel(c)->AddDirichletTimeSeries(i_stor,kk,pTS);
@@ -1193,7 +1196,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int layer_ind;
       int i_stor;
       string const_name = to_string(s[1]);
-      sv_type typ=CStateVariable::StringToSVType(s[2],layer_ind,false);
+      sv_type typ = pModel->GetStateVarInfo()->StringToSVType(s[2], layer_ind, false);
       if (typ==UNRECOGNIZED_SVTYPE){
         WriteWarning(":MassFluxTimeSeries command: unrecognized storage variable name: "+to_string(s[2]),Options.noisy);
         break;
@@ -1248,7 +1251,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. Command will be ignored.",BAD_DATA_WARN); break;
       }
-      
+
       CTimeSeries *pTS;
       pTS=CTimeSeries::Parse(p,true,"Specified Conc "+pModel->GetTransportModel()->GetConstituentTypeName(c)+"_"+to_string(SBID),SBID,"none",Options);
       pTS->SetLocID(SBID);
@@ -1262,7 +1265,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
         {double value} x nMeasurements
       :EndOverrideStreamConcentration
-        
+
       long SBID=s_to_l(s[2]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
         WriteWarning("ParseTimeSeries::Trying to override stream concentration at non-existent subbasin "+to_string(SBID),Options.noisy);
@@ -1287,11 +1290,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       int c=pModel->GetTransportModel()->GetConstituentIndex("TEMPERATURE");
       if(c==DOESNT_EXIST) {
-        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamTemperature: temperature is not being simulated. ",BAD_DATA_WARN); 
+        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamTemperature: temperature is not being simulated. ",BAD_DATA_WARN);
       }
       long SBID=s_to_l(s[1]);
       if(pModel->GetSubBasinByID(SBID)==NULL) {
-        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. ",BAD_DATA_WARN); 
+        ExitGracefully("ParseTimeSeriesFile: :SpecifiedStreamConcentration: invalid subbasin ID. ",BAD_DATA_WARN);
       }
 
       CTimeSeries *pTS;
@@ -1403,11 +1406,11 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       filename =CorrectForRelativePath(filename ,Options.rvt_filename);
 
       // check for existence
-      
+
       int    retval;                // error value for NetCDF routines
       retval = nc_open(filename.c_str(),NC_NOWRITE,&ncid);
       if (retval != 0){
-	      string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename; 
+	      string warn = "ParseTimeSeriesFile: :FileNameNC command: Cannot find gridded data file "+ filename;
 	      ExitGracefully(warn.c_str(),BAD_DATA_WARN);
 	      break;
       }
@@ -1434,7 +1437,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy){cout <<"   :DimNamesNC"<<endl;}
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
-#endif 
+#endif
       ExitGracefullyIf(pGrid==NULL,      "ParseTimeSeriesFile: :DimNamesNC command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
       ExitGracefullyIf(grid_initialized, "ParseTimeSeriesFile: :DimNamesNC command must be before :GaugeWeights command",BAD_DATA);
       string tmp[3];
@@ -1474,7 +1477,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
                        "ParseTimeSeriesFile: :GridWeights command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
 
       if (!grid_initialized) { //must initialize grid prior to adding grid weights
-        grid_initialized = true; 
+        grid_initialized = true;
         pGrid->ForcingGridInit(Options);
       }
 
@@ -1520,7 +1523,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else
         {
           if (nHydroUnitsGiven && nGridCellsGiven) {
-            pHRU=NULL; 
+            pHRU=NULL;
             pHRU = pModel->GetHRUByID(atoi(s[0]));
             if (pHRU == NULL) {
               printf("\n\n");
@@ -1559,7 +1562,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :TimeShift command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
       ExitGracefullyIf(Len<2,           "ParseTimeSeriesFile: :TimeShift expects at least one argument",BAD_DATA);
       ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :TimeShift argument in :GriddedForcing or :StationForcing block needs to be before :GridWeights block",BAD_DATA);
-      
+
       string tString=s[1];
       double TimeShift=0.0;
       if((tString.length()>=2) && ((tString.substr(2,1)==":") || (tString.substr(1,1)==":"))) {//support for hh:mm:ss.00 format in timestep
@@ -1572,7 +1575,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
 
       pGrid->SetTimeShift(TimeShift);
-     
+
       break;
     }
     case (409)://----------------------------------------------
@@ -1581,7 +1584,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       ExitGracefullyIf(pGrid==NULL,     "ParseTimeSeriesFile: :LinearTransform command must be within a :GriddedForcing or :StationForcing block",BAD_DATA);
       ExitGracefullyIf(Len!=3,          "ParseTimeSeriesFile: :LinearTransform expects exactly two arguments",BAD_DATA);
       ExitGracefullyIf(grid_initialized,"ParseTimeSeriesFile: :LinearTransform command must be before :GaugeWeights command",BAD_DATA);
-            
+
       double LinTrans_a=atof(s[1]);
       double LinTrans_b=atof(s[2]);
       pGrid->SetLinearTransform(LinTrans_a,LinTrans_b);
@@ -1696,10 +1699,10 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
               printf("Wrong HRU ID in :StationWeightsByAttribute: HRU_ID = %s\n",s[0]);
               ExitGracefully("ParseTimeSeriesFile: HRU ID found in :StationWeightsByAttribute which does not exist in :HRUs!",BAD_DATA);
             }
-            
-            ExitGracefully("StationWeightsByAttribute",STUB);  
-           
-            int ind=DOESNT_EXIST;//pGrid->GetStationIndex(s[1]); 
+
+            ExitGracefully("StationWeightsByAttribute",STUB);
+
+            int ind=DOESNT_EXIST;//pGrid->GetStationIndex(s[1]);
             pGrid->SetWeightVal(pHRU->GetGlobalIndex(),ind,atof(s[2]));
           }
           else {
@@ -1769,7 +1772,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         grid_initialized = true;
         pGrid->ForcingGridInit(Options);
       }
-      
+
       if(Options.noisy) { cout <<"Station Elevations..."<<endl; }
       while(((Len==0) || (strcmp(s[0],":EndStationElevationsByIdx"))) && (!(p->Tokenize(s,Len))))
       {
@@ -1790,12 +1793,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       if(Options.noisy) { cout <<"   :MapStationsTo command"<<endl; }
       ExitGracefullyIf(pGrid==NULL,"ParseTimeSeriesFile: :MapStationsTo command must be within a :StationForcing block",BAD_DATA);
-      
+
       bool sb_command;
       if      (!strcmp(s[1],"SUBBASINS")){sb_command=true;}
       else if (!strcmp(s[1],"HRUS"     )){sb_command=false;}
 
-      // Get vector of station IDs 
+      // Get vector of station IDs
       //====================================================================
       int   StatVecID;         // attribute ID of station vector
       int   StatDimID;         // nstations dimension ID
@@ -1805,7 +1808,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (ncid == -9) {
         ExitGracefully(":FileNameNC command must precede :MapStationsTo command in :StationForcings block",BAD_DATA);
       }
-      GetNetCDFStationArray(ncid, pGrid->GetFilename(),StatDimID,StatVecID, StatIDs,junk, nStations); 
+      GetNetCDFStationArray(ncid, pGrid->GetFilename(),StatDimID,StatVecID, StatIDs,junk, nStations);
       if ((sb_command) && (nStations!=pModel->GetNumSubBasins())){
         ExitGracefully(":MapStationsTo command: Number of stations in NetCDF file not the same as the number of model subbasins",BAD_DATA);
       }
@@ -1819,12 +1822,12 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       // grid weights preparation
       //====================================================================
       if (!grid_initialized) { //must initialize grid prior to adding grid weights
-        grid_initialized = true; 
+        grid_initialized = true;
         pGrid->ForcingGridInit(Options);
       }
       pGrid->SetnHydroUnits     (pModel->GetNumHRUs());
       pGrid->AllocateWeightArray(pModel->GetNumHRUs(),nStations);
-      
+
       // generate grid weights
       //====================================================================
       int StationID=DOESNT_EXIST;
@@ -1878,7 +1881,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
            [HRUID] [STATION#] [w_lk]
            ....
          :EndGridWeights
-         #OR 
+         #OR
          :MapStationsToHRUs
          #OR
          :MapStationsToSubBasins
@@ -1909,14 +1912,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if (Options.noisy){cout <<":EndStationForcing"<<endl;}
 #ifndef _RVNETCDF_
       ExitGracefully("ParseTimeSeriesFile: :StationForcing blocks are only allowed when NetCDF library is available!",BAD_DATA);
-#endif      
+#endif
       if(!grid_initialized) { pGrid->ForcingGridInit(Options);grid_initialized = true; }
       pModel->AddForcingGrid(pGrid,pGrid->GetForcingType());
       pGrid=NULL;
       ncid=-9;
       break;
     }
-    
+
     default: //----------------------------------------------
     {
       char firstChar = *(s[0]);
@@ -1930,7 +1933,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
         else if(!strcmp(s[0],":WrittenBy"))   {if (Options.noisy){cout<<"WrittenBy"<<endl;}}//do nothing
         else if(!strcmp(s[0],":CreationDate")){if (Options.noisy){cout<<"CreationDate"<<endl;}}//do nothing
         else if(!strcmp(s[0],":SourceFile"))  {if (Options.noisy){cout<<"SourceFile"<<endl;}}//do nothing
-        else 
+        else
         {
           warn ="IGNORING unrecognized command: |" + string(s[0])+ "| in .rvt file "+p->GetFilename()+" line: "+ to_string(p->GetLineNumber());
           WriteWarning(warn,Options.noisy);
@@ -1960,7 +1963,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       end_of_file=p->Tokenize(s,Len);
     }
   } //end while (!end_of_file)
-  
+
   RVT.close();
 
   //QA/QC
@@ -1979,14 +1982,14 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 /// \param *&pModel [out] Reference to the model object
 /// \param Options [in] Global model options
 //
-void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID,long SBIDres,double pct_met,int jul_start,int jul_end) 
+void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID,long SBIDres,double pct_met,int jul_start,int jul_end)
 {
   double dmult;
-  double mult=CGlobalParams::GetParameter("RESERVOIR_DEMAND_MULT");
+  double mult = pModel->GetGlobalParams()->GetParameter("RESERVOIR_DEMAND_MULT");
   string warn;
 
-  CSubBasin *pSB,*pSBres;
-  pSB=pModel->GetSubBasinByID(SBID);
+  CSubBasin *pSB, *pSBres;
+  pSB = pModel->GetSubBasinByID(SBID);
   if(pSB==NULL) {
     warn=":AllocateReservoirDemand: Subbasin "+to_string(SBID)+" not in model, cannot set reservoir downstream demand";
     WriteWarning(warn,Options.noisy);
@@ -2059,7 +2062,7 @@ void AllocateReservoirDemand(CModel *&pModel, const optStruct &Options,long SBID
       WriteWarning(warn,Options.noisy);
     }
     else
-    {  
+    {
       dmult=pSBres->GetReservoir()->GetDemandMultiplier();
       pSBres->GetReservoir()->AddDownstreamDemand(pSB,pct_met*dmult*mult,jul_start,jul_end);
     }

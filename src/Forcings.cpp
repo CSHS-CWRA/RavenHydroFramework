@@ -59,6 +59,7 @@ void ZeroOutForcings(force_struct &F)
 
   F.recharge=0.0;
   F.precip_temp=0.0;
+  F.precip_conc=0.0;
 
   F.subdaily_corr=0.0;
 }
@@ -66,7 +67,7 @@ void ZeroOutForcings(force_struct &F)
 /// \brief Copys only the forcings that are constant over the course of a day from stcuture Ffrom to structure Fto
 ///
 //
-void CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto) 
+void CopyDailyForcingItems(force_struct& Ffrom, force_struct& Fto)
 {
   Fto.temp_daily_min = Ffrom.temp_daily_min;
   Fto.temp_daily_max = Ffrom.temp_daily_max;
@@ -116,7 +117,9 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
   else if (f=="TEMP_MIN_UNC"     ){return F_TEMP_MIN_UNC;}
 
   else if (f=="AIR_DENS"         ){return F_AIR_DENS;}
+  else if (f=="AIR_DENSITY"      ){return F_AIR_DENS;}
   else if (f=="AIR_PRES"         ){return F_AIR_PRES;}
+  else if (f=="AIR_PRESSURE"     ){return F_AIR_PRES;}
   else if (f=="REL_HUMIDITY"     ){return F_REL_HUMIDITY;}
 
   else if (f=="ET_RADIA"         ){return F_ET_RADIA;}
@@ -144,6 +147,7 @@ forcing_type GetForcingTypeFromString(const string &forcing_string)
 
   else if (f=="RECHARGE"         ){return F_RECHARGE;}
   else if (f=="PRECIP_TEMP"      ){return F_PRECIP_TEMP; }
+  else if (f=="PRECIP_CONC"      ){return F_PRECIP_CONC; }
   else if (f=="SUBDAILY_CORR"    ){return F_SUBDAILY_CORR;}
 
   else
@@ -210,6 +214,7 @@ double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
 
   else if (ftype==F_RECHARGE        ){return f.recharge;}
   else if (ftype==F_PRECIP_TEMP     ){return f.precip_temp;}
+  else if (ftype==F_PRECIP_CONC     ){return f.precip_conc;}
 
   else if (ftype==F_SUBDAILY_CORR   ){return f.subdaily_corr;}
 
@@ -220,6 +225,72 @@ double GetForcingFromType(const forcing_type &ftype, const force_struct &f)
     ExitGracefully("GetForcingFromType: invalid forcing type",RUNTIME_ERR);
   }
   return 0.0;
+}
+/////////////////////////////////////////////////////////////////////
+/// \brief Modify value of forcing function specified by forcing type within force structure f
+///
+/// \param &ftype [in] forcing function as enumerateed type
+/// \param &f [out] HRU forcing functions structure
+/// \param val - value to set
+//
+void  SetForcingFromType(const forcing_type &ftype, force_struct &f, const double &val)
+{
+  if      (ftype==F_PRECIP          ){f.precip=val;}
+  else if (ftype==F_PRECIP_DAILY_AVE){f.precip_daily_ave=val;}
+  else if (ftype==F_PRECIP_5DAY     ){f.precip_5day=val;}
+  else if (ftype==F_SNOW_FRAC       ){f.snow_frac=val;}
+  else if (ftype==F_SNOWFALL        ){} //derived- cant set directly
+  else if (ftype==F_RAINFALL        ){} //derived- cant set directly
+
+  else if (ftype==F_TEMP_AVE        ){f.temp_ave=val;}
+  else if (ftype==F_TEMP_DAILY_MIN  ){f.temp_daily_min=val;}
+  else if (ftype==F_TEMP_DAILY_MAX  ){f.temp_daily_max=val;}
+  else if (ftype==F_TEMP_DAILY_AVE  ){f.temp_daily_ave=val;}
+  else if (ftype==F_TEMP_MONTH_MAX  ){f.temp_month_max=val;}
+  else if (ftype==F_TEMP_MONTH_MIN  ){f.temp_month_min=val;}
+  else if (ftype==F_TEMP_MONTH_AVE  ){f.temp_month_ave=val;}
+
+  else if (ftype==F_TEMP_AVE_UNC    ){f.temp_ave_unc =val;}
+  else if (ftype==F_TEMP_MAX_UNC    ){f.temp_max_unc =val;}
+  else if (ftype==F_TEMP_MIN_UNC    ){f.temp_min_unc =val;}
+
+  else if (ftype==F_AIR_DENS        ){f.air_dens=val;}
+  else if (ftype==F_AIR_PRES        ){f.air_pres=val;}
+  else if (ftype==F_REL_HUMIDITY    ){f.rel_humidity=val;}
+
+  else if (ftype==F_CLOUD_COVER     ){f.cloud_cover=val;}
+  else if (ftype==F_ET_RADIA        ){f.ET_radia=val;}
+  else if (ftype==F_ET_RADIA_FLAT   ){f.ET_radia_flat=val; }
+  else if (ftype==F_SW_RADIA        ){f.SW_radia=val;}
+  else if (ftype==F_SW_RADIA_UNC    ){f.SW_radia_unc=val;}
+  else if (ftype==F_SW_RADIA_SUBCAN ){f.SW_radia_subcan=val;}
+  else if (ftype==F_SW_RADIA_NET    ){f.SW_radia_net=val;}
+  else if (ftype==F_LW_INCOMING     ){f.LW_incoming=val;}
+  else if (ftype==F_LW_RADIA_NET    ){f.LW_radia_net=val;}
+
+  else if (ftype==F_DAY_LENGTH      ){f.day_length=val;}
+  else if (ftype==F_DAY_ANGLE       ){f.day_angle=val;}
+
+  else if (ftype==F_WIND_VEL        ){f.wind_vel=val;}
+
+  else if (ftype==F_PET             ){f.PET=val;}
+  else if (ftype==F_OW_PET          ){f.OW_PET=val;}
+  else if (ftype==F_PET_MONTH_AVE   ){f.PET_month_ave=val;}
+
+  else if (ftype==F_POTENTIAL_MELT  ){f.potential_melt=val;}
+
+  else if (ftype==F_RECHARGE        ){f.recharge=val;}
+  else if (ftype==F_PRECIP_TEMP     ){f.precip_temp=val;}
+  else if (ftype==F_PRECIP_CONC     ){f.precip_conc=val;}
+
+  else if (ftype==F_SUBDAILY_CORR   ){f.subdaily_corr=val;}
+
+  //else if (ftype==F_UNRECOGNIZED   ){0=val;}
+
+  else
+  {
+    ExitGracefully("GetForcingFromType: invalid forcing type",RUNTIME_ERR);
+  }
 }
 /////////////////////////////////////////////////////////////////////
 /// \brief Return double value of forcing function specified by passed string parameter of force structure f
@@ -291,6 +362,7 @@ string GetForcingTypeUnits(forcing_type ftype)
 
   case F_RECHARGE:        {units="mm/d"; break;}
   case F_PRECIP_TEMP:     {units="C";    break;}
+  case F_PRECIP_CONC:     {units="mg/L"; break;}
 
   case F_SUBDAILY_CORR:   {units="none"; break;}
   default:
@@ -355,6 +427,7 @@ string ForcingToString(const forcing_type ftype)
 
   case F_RECHARGE:        {fstring="RECHARGE"; break;}
   case F_PRECIP_TEMP:     {fstring="PRECIP_TEMP"; break; }
+  case F_PRECIP_CONC:     {fstring="PRECIP_CONC"; break; }
 
   case F_SUBDAILY_CORR:   {fstring="SUBDAILY_CORR"; break;}
   default:

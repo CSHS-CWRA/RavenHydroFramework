@@ -10,8 +10,8 @@
 /////////////////////////////////////////////////////////////////
 /// \brief Stage discharge table constructor / destructor
 //
-CStageDischargeTable::CStageDischargeTable(const string name, const double *h, const double *Q, const int N) 
-  :CStageDischargeRelationABC(name) 
+CStageDischargeTable::CStageDischargeTable(const string name, const double *h, const double *Q, const int N)
+  :CStageDischargeRelationABC(name)
 {
   _Np=N;
   ExitGracefullyIf(N<=1,"CStageDischargeTable constructor : table must have at least 2 entries",BAD_DATA);
@@ -33,7 +33,7 @@ CStageDischargeTable::CStageDischargeTable(const string name, const double *h, c
     }
   }
 }
-CStageDischargeTable::~CStageDischargeTable() 
+CStageDischargeTable::~CStageDischargeTable()
 {
   delete [] _aStage;
   delete [] _aQ;
@@ -42,7 +42,7 @@ CStageDischargeTable::~CStageDischargeTable()
 /// \param h, stage in absolute or relative height units [m]
 /// \returns discharge, in [m3/s]
 //
-double CStageDischargeTable::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const 
+double CStageDischargeTable::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const
 {
   return InterpolateCurve(h,_aStage,_aQ,_Np,true);
 }
@@ -53,8 +53,8 @@ double CStageDischargeTable::GetDischarge(const double &h, const double &hstart,
 /////////////////////////////////////////////////////////////////
 /// \brief Basic rectangular weir constructor / destructor
 //
-CBasicWeir::CBasicWeir(const string name, const double elev, const double width, const double coeff) : 
-             CStageDischargeRelationABC(name) 
+CBasicWeir::CBasicWeir(const string name, const double elev, const double width, const double coeff) :
+             CStageDischargeRelationABC(name)
 {
   _crest_elev=elev;
   _crestwidth=width;
@@ -66,7 +66,7 @@ CBasicWeir::~CBasicWeir(){}
 /// \param h, stage in absolute height units [m]
 /// \returns discharge, in [m3/s]
 //
-double CBasicWeir::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const 
+double CBasicWeir::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const
 {
  return 2.0/3.0*_weir_coeff*sqrt(2*GRAVITY)*_crestwidth*pow(max(h-_crest_elev,0.0),1.5);
 }
@@ -76,8 +76,8 @@ double CBasicWeir::GetDischarge(const double &h, const double &hstart, const dou
 /////////////////////////////////////////////////////////////////
 /// \brief Sluice gate constructor / destructor
 //
-CSluiceGate::CSluiceGate(const string name, const double elev, const double width, const double height, const double coeff, int numgates) : 
-             CStageDischargeRelationABC(name) 
+CSluiceGate::CSluiceGate(const string name, const double elev, const double width, const double height, const double coeff, int numgates) :
+             CStageDischargeRelationABC(name)
 {
   _bottom_elev=elev;
   _gatewidth=width;
@@ -91,7 +91,7 @@ CSluiceGate::~CSluiceGate(){}
 /// \param h, stage in absolute height units [m]
 /// \returns discharge, in [m3/s]
 //
-double CSluiceGate::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const 
+double CSluiceGate::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const
 {
   // free flowing condition (not restrained by backwater)
   // Q = numgates * CWB*sqrt(2gH)
@@ -103,8 +103,8 @@ double CSluiceGate::GetDischarge(const double &h, const double &hstart, const do
 /////////////////////////////////////////////////////////////////
 /// \brief Orifice constructor / destructor
 //
-COrifice::COrifice(const string name, const double elev, const double diameter, const double coeff, int numopenings) : 
-             CStageDischargeRelationABC(name) 
+COrifice::COrifice(const string name, const double elev, const double diameter, const double coeff, int numopenings) :
+             CStageDischargeRelationABC(name)
 {
   _bottom_elev=elev;
   _diameter=diameter;
@@ -117,7 +117,7 @@ COrifice::~COrifice(){}
 /// \param h, stage in absolute height units [m]
 /// \returns discharge, in [m3/s]
 //
-double COrifice::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const 
+double COrifice::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const
 {
  // free flowing condition (not restrained by backwater)
   // Q = submerged_correction * numopenings * CA*sqrt(2gH)
@@ -131,8 +131,8 @@ double COrifice::GetDischarge(const double &h, const double &hstart, const doubl
 /////////////////////////////////////////////////////////////////
 /// \brief Basic pump constructor / destructor
 //
-CBasicPump::CBasicPump(const string name, const double flow, const double on_elev, const double off_elev) : 
-             CStageDischargeRelationABC(name) 
+CBasicPump::CBasicPump(const string name, const double flow, const double on_elev, const double off_elev) :
+             CStageDischargeRelationABC(name)
 {
   _flow=flow;
   _on_elev=on_elev;
@@ -145,7 +145,7 @@ CBasicPump::~CBasicPump(){}
 /// \param Q_start [in] outflow at start of timestep [m3/s]
 /// \returns discharge, in [m3/s]
 //
-double CBasicPump::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const 
+double CBasicPump::GetDischarge(const double &h, const double &hstart, const double &Qstart, const double &rivdepth, const double &drefelev) const
 {
   /// xxx update to use h and hstart to detect decreasing flow?
 
@@ -173,4 +173,3 @@ double CBasicPump::GetDischarge(const double &h, const double &hstart, const dou
 - non-level dam top (specify dam top x-z points)
 
 */
-

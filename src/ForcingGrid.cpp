@@ -43,7 +43,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
 
   _interval		    = 1.0;
   _steps_per_day	= 1;
-  
+
   _TimeShift		  = 0.0;
   _LinTrans_a		  = 1.0;
   _LinTrans_b		  = 0.0;
@@ -93,7 +93,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _AttVarNames[1]      ="NONE";
   _AttVarNames[2]      ="NONE";
   _AttVarNames[3]      ="NONE";
-  
+
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief Copy constructor.
@@ -137,7 +137,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   for (int ii=0; ii<12; ii++) {_aMinTemp[ii] = grid._aMinTemp[ii];}
   for (int ii=0; ii<12; ii++) {_aMaxTemp[ii] = grid._aMaxTemp[ii];}
   for (int ii=0; ii<12; ii++) {_aAvePET [ii] = grid._aAvePET [ii];}
-  
+
   _aVal=NULL;
   _aVal = new double *[_ChunkSize];
   ExitGracefullyIf(_aVal==NULL,"CForcingGrid::Copy Constructor(1)",OUT_OF_MEMORY);
@@ -154,16 +154,16 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   if (_is_3D) { ncells = _GridDims[0] * _GridDims[1];}
   else        { ncells = _GridDims[0];}
 
- 
+
   //cout<<"Creating new GridWeights array (Copy Constructor): "<<ForcingToString(_ForcingType)<<endl;
 
   AllocateWeightArray(_nHydroUnits,ncells);
-  for (int k=0; k<_nHydroUnits; k++) {                       
+  for (int k=0; k<_nHydroUnits; k++) {
     for(int i=0;i<grid._nWeights[k];i++) {
       SetWeightVal(k,grid._GridWtCellIDs[k][i],grid._GridWeight[k][i]); //dynamically grows sparse matrix
     }
   }
-  
+
   _CellIDToIdx =NULL;
   _CellIDToIdx = new int [ncells];
   ExitGracefullyIf(_CellIDToIdx==NULL,"CForcingGrid::Copy Constructor(8)",OUT_OF_MEMORY);
@@ -199,7 +199,7 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
     ExitGracefullyIf(_aStationIDs==NULL,"CForcingGrid::Copy Constructor(7)",OUT_OF_MEMORY);
     for(int c=0; c<_nNonZeroWeightedGridCells; c++) { _aStationIDs[c]=grid._aStationIDs[c]; }
   }
-  
+
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -211,7 +211,7 @@ CForcingGrid::~CForcingGrid()
   if(_aVal!=NULL) {
     for(int it=0; it<_ChunkSize; it++) { delete[] _aVal[it];      _aVal[it]=NULL; }      delete[] _aVal;_aVal= NULL;
   }
-  
+
   for(int k=0; k<_nHydroUnits; k++) {
     delete[] _GridWeight[k];    _GridWeight   [k]=NULL;
     delete[] _GridWtCellIDs[k]; _GridWtCellIDs[k]=NULL;
@@ -262,7 +262,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   string colon;          // to check format of time unit string
   string unit_t_str;     // to check format of time unit string
   int    ntime;          // number of time steps
-  
+
   if(_ForcingType==F_UNRECOGNIZED) {
     ExitGracefully("ParseTimeSeriesFile: :GriddedForcing and :StationForcing blocks requires valid :ForcingType command",BAD_DATA);
   }
@@ -339,6 +339,16 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // determine in which order the dimensions are in variable
   retval = nc_inq_vardimid(ncid,varid_f,dimids_var);             HandleNetCDFErrors(retval);
 
+  int ndim;
+  retval = nc_inq_varndims(ncid,varid_f,&ndim); HandleNetCDFErrors(retval);
+  if ((!_is_3D) && (ndim > 2)) {
+    ExitGracefully("ForcingGridInit: NetCDF dataset has more than 2 dimensions, but only two supplied.",BAD_DATA);
+  }
+  else if ((_is_3D) && (ndim > 3)){
+    ExitGracefully("ForcingGridInit: NetCDF dataset has more than 3 dimensions. Gridded data must be read from a 2D (time x cell) or 3D (time x row x column) NetCDF variable",BAD_DATA);
+  }
+
+
   if(_is_3D) {
     //   if  (t,         y=lat=row, x=lon=col)   --> (2,1,0) --> (dimid_t, dimid_y, dimid_x)
     //   if  (t,         x=lon=col, y=lat=row)   --> (2,0,1) --> (dimid_t, dimid_x, dimid_y)
@@ -406,7 +416,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // calendar attribute
   // ----------------------------------------------------------------------------------------------
   calendar=GetCalendarFromNetCDF(ncid,varid_t,_filename,Options);
-			 
+
   // time attribute: set my_time[]
   // ----------------------------------------------------------------------------------------------
   if (_is_3D) {ntime = _GridDims[2];}
@@ -430,7 +440,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   printf("ForcingGrid: my_time[0]:      %f\n",my_time[0]);
   printf("ForcingGrid: _interval:       %f\n",_interval);
   printf("ForcingGrid: _start_day:      %f\n",_start_day);
-  printf("ForcingGrid: _start_year:     %d\n",_start_year); 
+  printf("ForcingGrid: _start_year:     %d\n",_start_year);
   printf("ForcingGrid: time_zone:       %f\n",time_zone);
   printf("ForcingGrid: time shift:       %f\n",_TimeShift);
   printf("ForcingGrid: # times:       %i\n",ntime);
@@ -456,7 +466,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   // add time shift to data
   //      --> only applied when _interval < 1.0 (daily)
   //      --> otherwise ignored and warning written to RavenErrors.txt
-  // -------------------------------             
+  // -------------------------------
   if (_interval >= 1.0) {   // data are not sub-daily
     if ( ceil(_TimeShift) == _TimeShift) {  // time shift of whole days requested
       AddTime(_start_day,_start_year,_TimeShift,calendar,_start_day,_start_year) ;
@@ -469,7 +479,7 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
   else {  // data are sub-daily
     AddTime(_start_day,_start_year,_TimeShift,calendar,_start_day,_start_year) ;
   }
-   
+
   // -------------------------------
   // set _tag
   //     ---> looks for attributes "long_name" and "units" of forcing variable
@@ -547,11 +557,11 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
 void CForcingGrid::ReallocateArraysInForcingGrid( )
 {
   int ntime ;  // number of time steps
-  
+
   ntime  = _GridDims[2]; //assumes _Is_3D
   //if (_is_3D) {ntime = _GridDims[2];}
   //else        {ntime = _GridDims[1];}
-  // 
+  //
   // -------------------------------
   // Initialize data array and set all entries to NODATA value
   // -------------------------------
@@ -624,47 +634,47 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
   // Now read first proper chunk (if possible)
   // --------------------------------------------------------------------------------------------
 
-  iChunk_new = max(int(floor((global_model_time+TIME_CORRECTION) / (_interval * _ChunkSize))),0);  
+  iChunk_new = max(int(floor((global_model_time+TIME_CORRECTION) / (_interval * _ChunkSize))),0);
 
   // check if given model time step is covered by current chunk; if yes, do nothing; if no,  read next chunk
   if(_iChunk != iChunk_new)
-  {  
+  {
     // local variables
 
-  int     ncid;          // file unit
-  int     dim1;          // length of 1st dimension in NetCDF data
-  int     dim2;          // length of 2nd dimension in NetCDF data
-  int     dim3;          // length of 3rd dimension in NetCDF data
+    int     ncid;          // file unit
+    int     dim1;          // length of 1st dimension in NetCDF data
+    int     dim2;          // length of 2nd dimension in NetCDF data
+    int     dim3;          // length of 3rd dimension in NetCDF data
 
-  int     varid_f;       // id of forcing variable read
-  double  missval;       // value of "missing_value" attribute of forcing variable 
-  double  fillval;       // value of "_FillValue"    attribute of forcing variable
-  double  add_offset;    // value of "add_offset"    attribute of forcing variable
-  double  scale_factor;  // value of "scale_factor"  attribute of forcing variable
-  size_t  att_len;       // length of the attribute's text
-  nc_type att_type;      // type of attribute
-  int     retval;        // error value for NetCDF routines
-  int     iChunkSize;    // size of current chunk; always equal _ChunkSize except for last chunk in file (might be shorter)
-  
-  
-    if(Options.noisy){ 
+    int     varid_f;       // id of forcing variable read
+    double  missval;       // value of "missing_value" attribute of forcing variable
+    double  fillval;       // value of "_FillValue"    attribute of forcing variable
+    double  add_offset;    // value of "add_offset"    attribute of forcing variable
+    double  scale_factor;  // value of "scale_factor"  attribute of forcing variable
+    size_t  att_len;       // length of the attribute's text
+    nc_type att_type;      // type of attribute
+    int     retval;        // error value for NetCDF routines
+    int     iChunkSize;    // size of current chunk; always equal _ChunkSize except for last chunk in file (might be shorter)
+
+
+    if(Options.noisy){
       cout<<endl<<" Start reading new chunk... iChunk = "<<iChunk_new<<" (var = "<<_varname.c_str()<<", forcing: "<<ForcingToString(_ForcingType) << ")"<<endl;
       time_struct tt_tmp;
       JulianConvert(global_model_time,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt_tmp);
       cout<<tt_tmp.date_string<<endl;
       if(Options.noisy) { cout<<"  Order of dimensions in NetCDF is Case "<<_dim_order<<endl; }
     }
-    
+
     _iChunk = iChunk_new;
 
     // check if chunk id is valid
     // -------------------------------
     ExitGracefullyIf((_iChunk>=_nChunk) || (_iChunk<-1),"CForcingGrid: ReadData: this is not a valid chunk",BAD_DATA);
 
-    // determine chunk size 
+    // determine chunk size
     // -------------------------------
     iChunkSize = min(_ChunkSize,int((Options.duration - global_model_time) / _interval));
-    
+
     // Open NetCDF file, Get the id of the forcing data, varid_f
     // -------------------------------
     string filename_e=_filename;
@@ -680,7 +690,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // find "_FillValue" of forcing data
     // -------------------------------
     fillval = NETCDF_BLANK_VALUE; //Default
-    retval = nc_inq_att(ncid, varid_f, "_FillValue", &att_type, &att_len);      
+    retval = nc_inq_att(ncid, varid_f, "_FillValue", &att_type, &att_len);
     if (retval != NC_ENOTATT) {
       HandleNetCDFErrors(retval);
       retval = nc_get_att_double(ncid, varid_f, "_FillValue", &fillval);       HandleNetCDFErrors(retval);// read attribute value
@@ -689,7 +699,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // find "missing_value" of forcing data
     // -------------------------------
     missval = NETCDF_BLANK_VALUE; //Default
-    retval = nc_inq_att(ncid, varid_f, "missing_value", &att_type, &att_len);      
+    retval = nc_inq_att(ncid, varid_f, "missing_value", &att_type, &att_len);
     if (retval != NC_ENOTATT) {
       HandleNetCDFErrors(retval);
       retval = nc_get_att_double(ncid, varid_f, "missing_value", &missval);     HandleNetCDFErrors(retval);// read attribute value
@@ -703,7 +713,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       HandleNetCDFErrors(retval);
       retval = nc_get_att_double(ncid, varid_f, "add_offset", &add_offset);       HandleNetCDFErrors(retval);// read attribute value
     }
-    
+
     // check for attributes "scale_factor" of forcing data
     // -------------------------------
     scale_factor = 1.0;
@@ -712,7 +722,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       HandleNetCDFErrors(retval);
       retval = nc_get_att_double(ncid, varid_f, "scale_factor", &scale_factor);       HandleNetCDFErrors(retval);// read attribute value
     }
-    if (Options.noisy){ 
+    if (Options.noisy){
       cout << "iChunksize:  = " << iChunkSize   << endl;
       cout << "add_offset   = " << add_offset   << endl;
       cout << "scale_factor = " << scale_factor << endl;
@@ -783,14 +793,14 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 
     // Read chunk of data.
     // -------------------------------
-    if ( _is_3D ) 
+    if ( _is_3D )
     {
       int       start_point = _ChunkSize * _iChunk+(int)(_t_corr/_interval);;//JRC_TIME_FIX:
       size_t    nc_start [3];
       size_t    nc_length[3];
       ptrdiff_t nc_stride[3];
 
-      nc_length[0] = (size_t)(dim1); nc_stride[0] = 1; 
+      nc_length[0] = (size_t)(dim1); nc_stride[0] = 1;
       nc_length[1] = (size_t)(dim2); nc_stride[1] = 1;
       nc_length[2] = (size_t)(dim3); nc_stride[2] = 1;
 
@@ -799,7 +809,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
         nc_start[0]  = (size_t)(_WinStart[0]);  nc_start[1]  = (size_t)(_WinStart[1]);  nc_start[2]  = (size_t)(start_point);
         break;
       case(2): // dimensions are (y,x,t)
-        nc_start[0]  = (size_t)(_WinStart[1]);  nc_start[1]  = (size_t)(_WinStart[0]);  nc_start[2]  = (size_t)(start_point); 
+        nc_start[0]  = (size_t)(_WinStart[1]);  nc_start[1]  = (size_t)(_WinStart[0]);  nc_start[2]  = (size_t)(start_point);
         break;
       case(3): // dimensions are (x,t,y)
         nc_start[0]  = (size_t)(_WinStart[0]);  nc_start[1]  = (size_t)(start_point);   nc_start[2]  = (size_t)(_WinStart[1]);
@@ -847,7 +857,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
           nc_start[1]  = 0;
           break;
       }
-    
+
       //Read from NetCDF (this is the bottleneck of this code)
       retval=nc_get_vars_double(ncid,varid_f,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);
       HandleNetCDFErrors(retval);
@@ -884,18 +894,18 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 	      }
       }
     }
-    
+
 
     // Copy all data from aTmp array to member array _aVal.
     // -------------------------------
     double val;
-    if ( _is_3D ) 
+    if ( _is_3D )
     {
       int irow,icol;
       if (_dim_order == 1) {
         for (it=0; it<iChunkSize; it++){                     // loop over time points in buffer
           for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){   // loop over non-zero weighted grid cells
-            CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol); 
+            CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[icol-_WinStart[0]][irow-_WinStart[1]][it];
             if(val==missval) { CheckValue3D(val,missval,it,irow,icol); }
             if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
@@ -955,8 +965,8 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
           for (ic=0; ic<_nNonZeroWeightedGridCells; ic++){    // loop over non-zero weighted grid cells
             CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
             val=aTmp3D[it][irow-_WinStart[1]][icol-_WinStart[0]];
-            if(val==missval) { CheckValue3D(val,missval,it,irow,icol);}   
-            if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); } 
+            if(val==missval) { CheckValue3D(val,missval,it,irow,icol);}
+            if(val==fillval) { CheckValue3D(val,fillval,it,irow,icol); }
             _aVal[it][ic]=_LinTrans_a*val+_LinTrans_b;
           }
         }
@@ -1010,12 +1020,18 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
       else {
         dim1 = _GridDims[0]; dim2 = 1;
       }
+
       ReadAttGridFromNetCDF(ncid,_AttVarNames[0],dim1,dim2,_aLatitude);
       ReadAttGridFromNetCDF(ncid,_AttVarNames[1],dim1,dim2,_aLongitude);
       ReadAttGridFromNetCDF(ncid,_AttVarNames[2],dim1,dim2,_aElevation);
       //ReadAttGridFromNetCDF2(ncid,_AttVarNames[3],dim1,dim2,_aStationIDs);
 
       if (_aElevation!=NULL){
+        /*int irow,icol;
+        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {
+          CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
+          cout<<irow<<" "<<icol<<" "<<_aElevation[ic]<<endl;
+        }*/
         for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {
           ExitGracefullyIf(rvn_isnan(_aElevation[ic]),"CForcingGrid::ReadData - NaN elevation found in NetCDF elevation grid with non-zero HRU weight",BAD_DATA);
         }
@@ -1026,7 +1042,7 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
     // Close NetCDF file
     // -------------------------------
     retval = nc_close(ncid);       HandleNetCDFErrors(retval);
-    
+
   }// end if(_iChunk != iChunk_new)
 
 #endif   // end #ifdef _RVNETCDF_
@@ -1043,18 +1059,18 @@ bool CForcingGrid::ReadData(const optStruct   &Options,
 /// checks if forcing data cover whole simulation period
 /// \param   Options          [in] options structure
 ///
-void CForcingGrid::Initialize( const optStruct &Options )    
+void CForcingGrid::Initialize( const optStruct &Options )
 {
   double model_start_day =Options.julian_start_day;    // fractional day of the year (here called Julian day) [days]
   int    model_start_year=Options.julian_start_year;   //         [year]
   double model_duration  =Options.duration;            //         [days]
   double model_timestep  =Options.timestep;            // delta t [days]
-                                                    
-  //_t_corr is number of days between model start date and forcing 
+
+  //_t_corr is number of days between model start date and forcing
   // start date (positive if data exists before model start date)
   //------------------------------------------------------------------------------
   _t_corr = -TimeDifference(model_start_day,model_start_year,_start_day,_start_year,Options.calendar);
- 
+
   //QA/QC: Check for overlap issues between time series duration and model duration
   //------------------------------------------------------------------------------
   double duration               = (double)(_nPulses)*_interval;
@@ -1070,7 +1086,7 @@ void CForcingGrid::Initialize( const optStruct &Options )
     cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day      << "," << _start_year      << " " << duration       << endl;
     cout << "  model start day, year, duration :"       << model_start_day << "," << model_start_year << " " << model_duration << endl;
-   
+
     ExitGracefully("CForcingGrid::Initialize: gridded forcing data not available for entire model simulation duration", BAD_DATA);
   }
   if (duration + model_timestep < local_simulation_end)    //run out of data before simulation finishes
@@ -1078,7 +1094,7 @@ void CForcingGrid::Initialize( const optStruct &Options )
     cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day      << "," << _start_year      << " " << duration       << endl;
     cout << "  model start day, year, duration :"       << model_start_day << "," << model_start_year << " " << model_duration << endl;
-   
+
     ExitGracefully("CForcingGrid::Initialize: gridded forcing data not available at end of model simulation", BAD_DATA);
   }
   if ((local_simulation_start<0) || (_start_year>model_start_year))     //data does not begin until after simulation
@@ -1086,7 +1102,7 @@ void CForcingGrid::Initialize( const optStruct &Options )
     cout << "Initialize forcing grid  '" << _varname.c_str() << "'" << endl;
     cout << "  time series start day, year, duration :" << _start_day      << "," << _start_year      << " " << duration       << endl;
     cout << "  model start day, year, duration :"       << model_start_day << "," << model_start_year << " " << model_duration << endl;
-    
+
     ExitGracefully("CForcingGrid::Initialize: gridded forcing data not available at beginning of model simulation", BAD_DATA);
   }
 }
@@ -1200,7 +1216,7 @@ void CForcingGrid::SetGridDims(const int GridDims[3])
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief allocated memory for and populates the _aLastNonZeroWt and _IdxNonZeroGridCells arrays, Calculates _nNonZeroWeightedGridCells
-/// called once after :GridWeights read in. 
+/// called once after :GridWeights read in.
 ///
 /// \param nHydroUnits number of HRUs
 /// \param nGridCells number of grid cells
@@ -1214,7 +1230,7 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   int maxcol=0;
 
   bool *nonzero= NULL;
-  nonzero =  new bool [nGridCells]; 
+  nonzero =  new bool [nGridCells];
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     nonzero[il] = false;
   }
@@ -1245,18 +1261,18 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
   _WinStart [0]=mincol;
   _WinStart [1]=minrow;
   _WinStart [2]=0; //temporary - this shifts over course of simualtion
-  
+
   //To remove support for local window:
   //_WinLength[0]=_GridDims[0];_WinStart[0]=0;
   //_WinLength[1]=_GridDims[1];_WinStart[1]=0;
-  
+
   /*cout<<"INITIALIZING GRID WINDOW"<<endl;
   cout<<" start   (col, row): ("<<_WinStart[0]              <<", "<<_WinStart[1]              <<")"<<endl;
   cout<<" end     (col, row): ("<<maxcol                    <<", "<<maxrow<<")"<<endl;
   cout<<" lengths (col, row): ("<<_WinLength[0]             <<", "<<_WinLength[1]             <<")"<<endl;
   cout<<"-----------------------------"<<endl;*/
 
-  // count number of non-zero weighted grid cells 
+  // count number of non-zero weighted grid cells
   _nNonZeroWeightedGridCells=0;
   for (int il=0; il<nGridCells; il++) { // loop over all cells of NetCDF
     if ( nonzero[il] ) { _nNonZeroWeightedGridCells++; }
@@ -1289,15 +1305,15 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
 }
 
 ///////////////////////////////////////////////////////////////////
-/// \brief calculates _ChunkSize and total number of chunks to read _nChunks, sets the id of the current chunk 
+/// \brief calculates _ChunkSize and total number of chunks to read _nChunks, sets the id of the current chunk
 /// depending upon size of grid (_nNonZeroWeightedGridCells*buffersize*8byte <=  10 MB=10*1024*1024 byte)
 /// needs to be called after SetIdxNonZeroGridCells()
 ///
 /// \param nHydroUnits number of HRUs
 /// \param nGridCells number of grid cells
 //
-void CForcingGrid::CalculateChunkSize(const optStruct& Options) 
-{  
+void CForcingGrid::CalculateChunkSize(const optStruct& Options)
+{
   if(_nNonZeroWeightedGridCells==0) { //Never called SetIdxNonZeroGridCells()
     ExitGracefully("CalculateChunkSize: called at wrong location",RUNTIME_ERR);
   }
@@ -1320,17 +1336,17 @@ void CForcingGrid::CalculateChunkSize(const optStruct& Options)
 
   if(!Options.deltaresFEWS) {
     tmpChunkSize = (int)((int)(tmpChunkSize*_interval)/_interval);               // make sure chunks are complete days (have to relax for FEWS)
-  }  
-  
+  }
+
   tmpChunkSize = max(int(rvn_round(1.0/_interval)),tmpChunkSize);            // make sure  at least one day is read
                                                                                  // support larger chunk if model duration is small
   double partday=Options.julian_start_day-floor(Options.julian_start_day);
-  tmpChunkSize = min(tmpChunkSize,(int) ceil(ceil(Options.duration+partday)/_interval));//ensures goes to midnight of last day 
+  tmpChunkSize = min(tmpChunkSize,(int) ceil(ceil(Options.duration+partday)/_interval));//ensures goes to midnight of last day
 
   SetChunkSize(tmpChunkSize);
 
   _nChunk    = int(ceil((Options.duration/_interval)/_ChunkSize));                      // total number of chunks
-  
+
   if (Options.noisy){
     cout<<"Finished CalculateChunkSize routine,     # of time steps per chunk:    "<<_ChunkSize<<endl;
     cout<<"                                         # of time chunks:             "<<_nChunk   <<endl;
@@ -1523,7 +1539,7 @@ void CForcingGrid::SetAsPeriodEnding()
 /// \param varname [in] variable name
 ///  can be done anytime prior to calling ReadData()
 //
-void  CForcingGrid::SetAttributeVarName(const string var,const string varname) 
+void  CForcingGrid::SetAttributeVarName(const string var,const string varname)
 {
   if      (var=="Latitude" ) { _AttVarNames[0]=varname;}
   else if (var=="Longitude") { _AttVarNames[1]=varname; }
@@ -1559,7 +1575,7 @@ void   CForcingGrid::AllocateWeightArray(const int nHydroUnits, const int nGridC
   // since only non-zero entries need to be specified in :GridWeight block in *.rvi file
   // -------------------------------
   //cout<<"Creating new GridWeights array (Base Constructor): "<<ForcingToString(_ForcingType)<<endl;
-  
+
   _GridWeight = NULL;
   _GridWeight = new double *[nHydroUnits];
   ExitGracefullyIf(_GridWeight==NULL   ,"AllocateWeightArray(1)",OUT_OF_MEMORY);
@@ -1569,7 +1585,7 @@ void   CForcingGrid::AllocateWeightArray(const int nHydroUnits, const int nGridC
   _nWeights=NULL;
   _nWeights = new int [nHydroUnits];
   ExitGracefullyIf(_nWeights==NULL     ,"AllocateWeightArray(3)",OUT_OF_MEMORY);
-  for(int k=0; k<nHydroUnits; k++) {  
+  for(int k=0; k<nHydroUnits; k++) {
     _GridWeight   [k] =NULL;
     _GridWtCellIDs[k] =NULL;
     _nWeights     [k] =0;
@@ -1625,10 +1641,10 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
   _nWeights[k]++;
   int    *tmpid=new int   [_nWeights[k]];
   double *tmpwt=new double[_nWeights[k]];
-  for(int i=0;i<_nWeights[k]-1;i++) { 
-    tmpwt[i]=_GridWeight   [k][i]; 
+  for(int i=0;i<_nWeights[k]-1;i++) {
+    tmpwt[i]=_GridWeight   [k][i];
     tmpid[i]=_GridWtCellIDs[k][i];
-  } 
+  }
   tmpwt[_nWeights[k]-1]=weight; //append to end
   tmpid[_nWeights[k]-1]=CellID;
 
@@ -1636,12 +1652,12 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
   delete [] _GridWtCellIDs[k]; _GridWtCellIDs[k]=tmpid;
 }
 ///////////////////////////////////////////////////////////////////
-/// \brief sets one entry of _aElevation[CellID] 
+/// \brief sets one entry of _aElevation[CellID]
 //
 /// \param cellID [in] cell ID/stationID in NetCDF (from 0 to ncells-1)
 /// \param elev [in] elevation of cell in NetCDF
 
-void   CForcingGrid::SetStationElevation(const int CellID,const double &elev) 
+void   CForcingGrid::SetStationElevation(const int CellID,const double &elev)
 {
   int ncells;
   if(_is_3D) { ncells = _GridDims[0] * _GridDims[1]; }
@@ -1650,7 +1666,7 @@ void   CForcingGrid::SetStationElevation(const int CellID,const double &elev)
   if((CellID<0) || (CellID>=ncells)) {
     ExitGracefully("CForcingGrid: SetStationElevation: invalid cell/station identifier (likely in :StationElevationsByAttribute or ByIdx command)",BAD_DATA);
   }
-  if(_aElevation==NULL) { 
+  if(_aElevation==NULL) {
     _aElevation=new double[_nNonZeroWeightedGridCells];
     for(int i=0;i<_nNonZeroWeightedGridCells;i++) { _aElevation[i]=0.0; }
   }
@@ -1716,10 +1732,10 @@ double CForcingGrid::GetGridWeight(const int k,
   if ((CellID<0) || (CellID>=nCells  )){ExitGracefully("CForcingGrid::GetGridWeight: invalid CellID index",RUNTIME_ERR); }
   if (_GridWeight==NULL){ ExitGracefully("CForcingGrid::GetGridWeight: NULL Grid weight matrix",RUNTIME_ERR); }
 #endif
-  for(int i=0; i<_nWeights[k];i++) 
+  for(int i=0; i<_nWeights[k];i++)
   {
     if(_GridWtCellIDs[k][i]==CellID) { return _GridWeight[k][i]; }
-  } 
+  }
   return 0.0;
 }
 
@@ -1858,7 +1874,7 @@ double CForcingGrid::GetWeightedAverageSnowFrac(const int k,const double &t,cons
 {
 #ifdef _STRICTCHECK_
   if ((k<0) || (k>_nHydroUnits)){ExitGracefully("CForcingGrid::GetWeightedAverageSnowFrac: invalid HRU index",RUNTIME_ERR); }
-#endif 
+#endif
 
   int nSteps = max(1,(int)(rvn_round(tstep/_interval)));//# of intervals in time step
   double wt,sum=0.0;
@@ -2135,12 +2151,13 @@ bool CForcingGrid::ShouldDeaccumulate()      const{return _deaccumulate;}
 //
 forcing_type CForcingGrid::GetForcingType  () const{return _ForcingType;}
 
-void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, const int ncols,const int nrows,double *&values)
+void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, const int nrows,const int ncols,double *&values)
 {
   // -------------------------------
   // Open NetCDF file, Get the lat long elev information
   // -------------------------------
 #ifdef _RVNETCDF_
+
   if(varname!="NONE")
   {
     int       retval,varid;
@@ -2148,31 +2165,32 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
     size_t    nc_start[2];
     size_t    nc_length[2];
     ptrdiff_t nc_stride[2];
-    nc_start[0]  = 0;  nc_stride[0]=1;  nc_length[0]=ncols;
-    nc_start[1]  = 0;  nc_stride[1]=1;  nc_length[1]=nrows;
+    nc_start[0]  = 0;  nc_stride[0]=1;  nc_length[0]=(size_t)(nrows); //dim1
+    nc_start[1]  = 0;  nc_stride[1]=1;  nc_length[1]=(size_t)(ncols); //dim2
 
-    if(_is_3D) { nCells = ncols*nrows; }
-    else       { nCells = ncols; }
-    
+    if(_is_3D) { nCells = nrows*ncols; } //dim1*dim2
+    else       { nCells = nrows;       } //dim1
+
     delete [] values; //re-read if buffered
     values=new double [_nNonZeroWeightedGridCells]; //allocate memory
 
     double *aVec=NULL;
     aVec=new double[nCells];//stores actual data
     for(int i=0; i<nCells; i++) { aVec[i]=NETCDF_BLANK_VALUE; }
-    
+
     //get the varid for this attribute
-    retval = nc_inq_varid(ncid,varname.c_str(),&varid); 
+    retval = nc_inq_varid(ncid,varname.c_str(),&varid);
     if(retval==NC_ENOTVAR) {
       string warning="Variable \""+varname+"\" not found in NetCDF file "+_filename;
       ExitGracefully(warning.c_str(),BAD_DATA); retval=0;
     }
     HandleNetCDFErrors(retval);
-    
+
     //get the data
-    if(_is_3D) 
+    if(_is_3D)
     {
       double  **aTmp2D=NULL; //stores pointers to rows/columns of 2D data
+
       aTmp2D = new double* [nrows];
       ExitGracefullyIf(aTmp2D==NULL,"CForcingGrid::ReadAttGridFromNetCDF",OUT_OF_MEMORY);
       for(int irow=0;irow<nrows;irow++) {
@@ -2181,6 +2199,36 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
 
       retval=nc_get_vars_double(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
       //copy matrix
+
+      //TMP DEBUG - plot gridded elevations/lat/long - retain this code
+      /*ofstream ELEV;
+      ELEV.open("ELEVATIONS.csv");
+      cout<<" Elevation table: "<<endl;
+      int **nonzer=new int *[nrows];
+
+      for (int r = 0; r < nrows; r++) {
+        nonzer[r]=new int[ncols];
+        for (int c = 0; c < ncols; c++) {
+          nonzer[r][c]=0;
+          ELEV<<aTmp2D[r][c]<<",";
+          for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
+            CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
+            if ((irow==r) && (icol==c)){nonzer[r][c]=true; }
+          }
+        }
+        ELEV<<endl;
+      }
+      ELEV<<endl;
+      for (int r = 0; r < nrows; r++) {
+        for (int c = 0; c < ncols; c++) {
+          ELEV<<nonzer[r][c]<<",";
+        }
+        ELEV<<endl;
+        delete [] nonzer[r];
+      }
+      delete [] nonzer;
+      ELEV.close();*/
+
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
         values[ic]=aTmp2D[irow][icol];
@@ -2188,47 +2236,27 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
 
       delete[] aTmp2D;
     }
-    else 
+    else
     {
       retval=nc_get_vars_double(ncid,varid,nc_start,nc_length,nc_stride,&aVec[0]);   HandleNetCDFErrors(retval);
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
-        values[ic]=aVec[icol];
+        values[ic]=aVec[icol]; //JRC: not sure why this is right, not irow
       }
     }
     delete[] aVec;
-    
-    //TMP DEBUG - plot gridded elevations/lat/long - retain this code 
-    /*bool found;
-    double val;
-    cout<<" #non-zero: "<<_nNonZeroWeightedGridCells<<endl;
-    for (int j = 0; j < nrows; j++) {
-      for (int i = 0; i < ncols; i++) {
-        int l=j*ncols+i;
-        found=false; val=-1;
-        for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) { 
-          if (_IdxNonZeroGridCells[ic]==l){ 
-            found=true;
-            val=values[ic];
-          }
-        }
-        if (!found){l=-1;}
-        //cout<<std::setw(3)<<l<<" "; //report cell ID
-        cout<<std::setw(8)<<val<<" "; //report elevation/lat/long
-      }
-      cout<<endl;
-    }*/
   }
 #endif
 }
 // same as above but for string information
-// Note this needs to be fixed by switching nrows/ncols as in above routine
-/*void CForcingGrid::ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values)
+
+void CForcingGrid::ReadAttGridFromNetCDF2(const int ncid,const string varname,const int nrows,const int ncols,string *values)
 {
   // -------------------------------
   // Open NetCDF file, Get the lat long elev information
   // -------------------------------
+  ExitGracefully("CForcingGrid::ReadAttGridFromNetCDF2",STUB);
 #ifdef _RVNETCDF_
 
   if(varname!="NONE")
@@ -2238,18 +2266,18 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
     size_t    nc_start[2];
     size_t    nc_length[2];
     ptrdiff_t nc_stride[2];
-    nc_start[0]  = 0; nc_stride[0]=1;
-    nc_start[1]  = 0; nc_stride[1]=1;
+    nc_start[0]  = 0;  nc_stride[0]=1;  nc_length[0]=(size_t)(nrows); //dim1
+    nc_start[1]  = 0;  nc_stride[1]=1;  nc_length[1]=(size_t)(ncols); //dim2
 
     if(_is_3D) { nCells = nrows*ncols; }
-    else { nCells = nrows; }
+    else       { nCells = nrows; }
 
     delete[] values; //re-read if buffered
     values=new string[_nNonZeroWeightedGridCells]; //allocate memory
 
-    double *aVec=NULL;
-    aVec=new double[nCells];//stores actual data
-    for(int i=0; i<nCells; i++) { aVec[i]=NETCDF_BLANK_VALUE; }
+    string *aVec=NULL;
+    aVec=new string[nCells];//stores actual data
+    for (int i = 0; i < nCells; i++) { aVec[i] = ""; }
 
     //get the varid for this attribute
     retval = nc_inq_varid(ncid,varname.c_str(),&varid);
@@ -2265,10 +2293,11 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
       char  **aTmp2D=NULL; //stores pointers to rows/columns of 2D data
       aTmp2D=new char *[nrows];
       for(int row=0;row<nrows;row++) {
-        aTmp2D[row]=&aVec[row*ncols]; //points to correct location in aVec data storage
+       // aTmp2D[row]=&aVec[row*ncols]; //points to correct location in aVec data storage
       }
 
-      retval=nc_get_vars_double(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
+      //retval=nc_get_vars_text(ncid,varid,nc_start,nc_length,nc_stride,&aTmp2D[0][0]);    HandleNetCDFErrors(retval);
+
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
@@ -2279,7 +2308,7 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
     }
     else
     {
-      retval=nc_get_vars_text(ncid,varid,nc_start,nc_length,nc_stride,&aVec[0]);   HandleNetCDFErrors(retval);
+      //retval=nc_get_vars_text(ncid,varid,nc_start,nc_length,nc_stride,&aVec[0]);   HandleNetCDFErrors(retval);
       //copy matrix
       for(int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {   // loop over non-zero weighted grid cells
         CellIdxToRowCol(_IdxNonZeroGridCells[ic],irow,icol);
@@ -2290,4 +2319,4 @@ void CForcingGrid::ReadAttGridFromNetCDF(const int ncid, const string varname, c
   }
 #endif
 
-}*/
+}

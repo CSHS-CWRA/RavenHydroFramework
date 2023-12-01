@@ -16,20 +16,20 @@
 *****************************************************************/
 
 //////////////////////////////////////////////////////////////////
-/// \brief if forcing grid of type typ doesnt exist, creates full copy of pGrid 
+/// \brief if forcing grid of type typ doesnt exist, creates full copy of pGrid
 ///    but with potentially new time interval specified
 ///    otherwise just returns existing grid of type typ
 ///    assume
 //
 CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
                                         const forcing_type typ,
-                                        const double &interval, 
+                                        const double &interval,
                                         const int nVals, const optStruct &Options)
 {
   static CForcingGrid *pTout;
   if (GetForcingGridIndexFromType(typ) == DOESNT_EXIST )
   { // for the first chunk, the derived grid does not exist and has to be added to the model
-    // all weights, etc., are copied from the base grid 
+    // all weights, etc., are copied from the base grid
 
     pTout = new CForcingGrid(*pGrid);  // copy everything from pGrid; matrices are deep copies
 
@@ -39,10 +39,10 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
     GridDims[1] = pGrid->GetRows();
     GridDims[2] = nVals;
     pTout->SetForcingType(typ);
-    pTout->SetInterval(interval);            
+    pTout->SetInterval(interval);
     pTout->SetGridDims(GridDims);
 
-    pTout->SetChunkSize(nVals); 
+    pTout->SetChunkSize(nVals);
     //pTout->CalculateChunkSize(Options);
     pTout->ReallocateArraysInForcingGrid();
   }
@@ -55,7 +55,7 @@ CForcingGrid *CModel::ForcingCopyCreate(const CForcingGrid *pGrid,
   //int nGridHRUs=pGrid->GetnHydroUnits();
   //int nCells   =pGrid->GetRows()*pGrid->GetCols(); //handles 3D or 2D
   //cout<<"**ForcingGrid Copy Create : "<<ForcingToString(pGrid->GetForcingType())<<"-->"<<ForcingToString(pTout->GetForcingType())<< " is new?:"<<is_new<<"**"<<endl;
-  
+
   return pTout;
 }
 
@@ -115,9 +115,9 @@ void CModel::GenerateGriddedPrecipVars(const optStruct &Options)
   if(!snow_gridded && (pre_gridded || rain_gridded)) {
     if(Options.noisy) { cout<<"Generating empty snow grid"<<endl; }
     GenerateZeroSnow(Options);
-    if(!pre_gridded) { 
+    if(!pre_gridded) {
       if(Options.noisy) { cout<<"Generating precip grid"<<endl; }
-      GeneratePrecipFromSnowRain(Options); 
+      GeneratePrecipFromSnowRain(Options);
     }
   }
   if(Options.noisy) { cout<<"...done generating gridded precipitation variables."<<endl; }
@@ -205,8 +205,8 @@ void CModel::GenerateGriddedTempVars(const optStruct &Options)
 void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
 {
   CForcingGrid *pTmin,*pTmax,*pTave,*pTave_daily;
-  pTmin=GetForcingGrid(F_TEMP_DAILY_MIN);  
-  pTmax=GetForcingGrid(F_TEMP_DAILY_MAX); 
+  pTmin=GetForcingGrid(F_TEMP_DAILY_MIN);
+  pTmax=GetForcingGrid(F_TEMP_DAILY_MAX);
 
   pTmin->Initialize(Options);// needed for correct mapping from time series to model time
   pTmax->Initialize(Options);
@@ -216,7 +216,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
   // ----------------------------------------------------
   // Generate daily average grid, if it doesnt exist
   // ----------------------------------------------------
-  if(!ForcingGridIsInput(F_TEMP_DAILY_AVE)) 
+  if(!ForcingGridIsInput(F_TEMP_DAILY_AVE))
   {
     int    nVals     = (int)ceil(pTmin->GetChunkSize() * pTmin->GetInterval());
     double Tave;
@@ -264,7 +264,7 @@ void CModel::GenerateAveSubdailyTempFromMinMax(const optStruct &Options)
         Tmin   = pTmin->GetValue_avg(ic, floor(t +time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
         Tmax   = pTmax->GetValue_avg(ic, floor(t +time_shift+TIME_CORRECTION)*nValsPerDay, nValsPerDay);
         T1corr = pTave->DailyTempCorrection(t+time_shift);
-        T2corr = pTave->DailyTempCorrection(t+time_shift+Options.timestep); 
+        T2corr = pTave->DailyTempCorrection(t+time_shift+Options.timestep);
         val=pTave_daily->GetValue(ic, time_idx_chunk)+0.25*(Tmax-Tmin)*(T1corr+T2corr);
         pTave->SetValue( ic, it, val);
       }
@@ -300,7 +300,7 @@ void CModel::GenerateMinMaxAveTempFromSubdaily(const optStruct &Options)
 
   pTave=GetForcingGrid(F_TEMP_AVE);
   pTave->Initialize(Options);  // needed for correct mapping from time series to model time
- 
+
   double interval = pTave->GetInterval();
   int    nVals    = (int)ceil(pTave->GetChunkSize()*interval); // number of daily values
 
@@ -343,7 +343,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
 
   double interval = pTave_daily->GetInterval();
   int       nVals = pTave_daily->GetChunkSize(); // number of subdaily values (input resolution) - should be 1
-  
+
   pTmin_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MIN,interval,nVals,Options);
   pTmax_daily = ForcingCopyCreate(pTave_daily,F_TEMP_DAILY_MAX,interval,nVals,Options);
   int chunksize=pTave_daily->GetChunkSize();
@@ -352,8 +352,8 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   for (int it=0; it<nVals; it++) {          // loop over time points in buffer
     for (int ic=0; ic<nNonZero; ic++){      // loop over non-zero grid cell indexes
       daily_temp=pTave_daily->GetValue(ic, min(chunksize,it));// should be it+0.5
-      pTmin_daily->SetValue(ic, it, daily_temp-4.0); 
-      pTmax_daily->SetValue(ic, it, daily_temp+4.0); 
+      pTmin_daily->SetValue(ic, it, daily_temp-4.0);
+      pTmax_daily->SetValue(ic, it, daily_temp+4.0);
     }
   }
   AddForcingGrid(pTmin_daily,F_TEMP_DAILY_MIN);
@@ -365,7 +365,7 @@ void CModel::GenerateMinMaxSubdailyTempFromAve(const optStruct &Options)
   GenerateAveSubdailyTempFromMinMax(Options);
 }
 
-////////////////////////////////////////////////////////////////// 
+//////////////////////////////////////////////////////////////////
 /// \brief Generates precipitation grid as sum of snowfall and rainfall grids
 /// \note  presumes existence of valid F_SNOWFALL and F_RAINFALL time series
 //
@@ -401,7 +401,7 @@ void CModel::GeneratePrecipFromSnowRain(const optStruct &Options)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Generates rainfall grid as copy of precipitation grid 
+/// \brief Generates rainfall grid as copy of precipitation grid
 /// \note  presumes existence of valid F_PRECIP time series
 //
 void CModel::GenerateRainFromPrecip(const optStruct &Options)
@@ -475,9 +475,3 @@ double CModel::GetAverageSnowFrac(const int ic, const double t, const int n) con
   return snow/(snow+rain);
 
 }
-
-
-
-
-
-

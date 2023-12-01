@@ -27,12 +27,12 @@ void   CModel::CorrectTemp(const optStruct   &Options,
                            const double       ref_elev,
                            const time_struct &tt)
 {
-  
+
   //---------------------------------------------------------------------------
   if ((Options.orocorr_temp==OROCORR_SIMPLELAPSE) ||
       (Options.orocorr_temp==OROCORR_HBV        ))
   {
-    double lapse=CGlobalParams::GetParams()->adiabatic_lapse;//[C/km]
+    double lapse=this->_pGlobalParams->GetParams()->adiabatic_lapse;//[C/km]
     lapse/=1000.0;//convert to C/m
     F.temp_ave-=lapse*(elev-ref_elev);
 
@@ -58,7 +58,7 @@ void   CModel::CorrectTemp(const optStruct   &Options,
 
     //calculate temperature lapse rates
     //--------------------------------------------------------------------
-    const   global_struct *globals=CGlobalParams::GetParams();
+    const global_struct *globals= this->_pGlobalParams->GetParams();
     UBC_lapse lapse_params=globals->UBC_lapse_params;
 
     if (lapse_params.A0PPTP > 0){
@@ -195,7 +195,7 @@ void CModel::CorrectPrecip(const optStruct     &Options,
   //---------------------------------------------------------------------------
   if (Options.orocorr_precip==OROCORR_SIMPLELAPSE)
   {
-    double lapse=CGlobalParams::GetParams()->precip_lapse;
+    double lapse = this->_pGlobalParams->GetParams()->precip_lapse;
     lapse/=1000; //[mm/d/km]->[mm/d/m]
     if (F.precip > REAL_SMALL){
       F.precip           = max(F.precip           + lapse*(elev - ref_elev), 0.0);
@@ -206,9 +206,9 @@ void CModel::CorrectPrecip(const optStruct     &Options,
   //---------------------------------------------------------------------------
   else if (Options.orocorr_precip==OROCORR_HBV)
   {
-    double corr_upper=CGlobalParams::GetParams()->HBVEC_lapse_upper/M_PER_KM;
-    double corr      =CGlobalParams::GetParams()->HBVEC_lapse_rate/M_PER_KM;
-    double lapse_elev=CGlobalParams::GetParams()->HBVEC_lapse_elev;
+    double corr_upper = this->_pGlobalParams->GetParams()->HBVEC_lapse_upper/M_PER_KM;
+    double corr       = this->_pGlobalParams->GetParams()->HBVEC_lapse_rate/M_PER_KM;
+    double lapse_elev = this->_pGlobalParams->GetParams()->HBVEC_lapse_elev;
     double add=0.0;
     if (elev>lapse_elev){
       add=(corr_upper-corr)*(elev-lapse_elev);
@@ -230,7 +230,7 @@ void CModel::CorrectPrecip(const optStruct     &Options,
       /// \todo [bug] temp should not be the temp at band 1!! (this is really unacceptable, but part of UBCWM)
 
       //orographic corrections
-      _pHydroUnits[k]->SetPrecipMultiplier(UBCPreciptiationByElev(band1_temp,ref_elev,elev,CGlobalParams::GetParams()->UBC_lapse_params));
+      _pHydroUnits[k]->SetPrecipMultiplier(UBCPreciptiationByElev(band1_temp,ref_elev,elev,this->_pGlobalParams->GetParams()->UBC_lapse_params));
     }
     F.precip           *= _pHydroUnits[k]->GetPrecipMultiplier();
     F.precip_daily_ave *= _pHydroUnits[k]->GetPrecipMultiplier();
@@ -378,11 +378,13 @@ void CModel::CorrectPET(const optStruct &Options,
       */
   }
 
-  //sub-daily correction
-  F.PET*=F.subdaily_corr;
+  //sub-daily correction (only apply to PET methods using daily ET)
+  if (IsDailyPETmethod(Options.evaporation)){
+    F.PET*=F.subdaily_corr;
+  }
 
   //Snow cover
-  if(Options.snow_suppressPET) 
+  if(Options.snow_suppressPET)
   {
     double SWE     =0.0;
     double snow_cov=1.0;
@@ -390,7 +392,7 @@ void CModel::CorrectPET(const optStruct &Options,
     int iSC  =GetStateVarIndex(SNOW_COVER);
     if(iSnow!=DOESNT_EXIST) { SWE     =pHRU->GetStateVarValue(iSnow); }
     if(iSC  !=DOESNT_EXIST) { snow_cov=pHRU->GetStateVarValue(iSC); }
-      
+
     if(SWE>0.1) { F.PET*=(1.0-snow_cov); }
   }
 }

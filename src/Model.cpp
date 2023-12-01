@@ -36,7 +36,16 @@ CModel::CModel(const int        nsoillayers,
   _nDiagnostics=0;    _pDiagnostics=NULL;
   _nDiagPeriods=0;    _pDiagPeriods=NULL;
   _nAggDiagnostics=0; _pAggDiagnostics=NULL;
-  
+  _nPerturbations=0;  _pPerturbations=NULL;
+
+  _nLandUseClasses=0;       _pLandUseClasses=NULL;
+  _nAllSoilClasses = 0;     _pAllSoilClasses = NULL;
+  _numVegClasses = 0;       _pAllVegClasses  = NULL;
+  _nAllTerrainClasses = 0;  _pAllTerrainClasses = NULL;
+  _nAllSoilProfiles = 0;    _pAllSoilProfiles = NULL;
+  _nAllChannelXSects = 0;   _pAllChannelXSects = NULL;
+  _nConvVariables = 0;
+
   _nTotalConnections=0;
   _nTotalLatConnections=0;
 
@@ -47,23 +56,24 @@ CModel::CModel(const int        nsoillayers,
   _aDownstreamInds=NULL;
 
   _aDAscale       =NULL; //Initialized in InitializeDataAssimilation
-  _aDAlength      =NULL; 
+  _aDAlength      =NULL;
   _aDAtimesince   =NULL;
   _aDAoverride    =NULL;
   _aDAobsQ        =NULL;
   _aDAlast        =NULL;
 
   _pOptStruct = &Options;
+  _pGlobalParams = new CGlobalParams();
 
-  _HYDRO_ncid   =-9; 
+  _HYDRO_ncid   =-9;
   _STORAGE_ncid =-9;
-  _FORCINGS_ncid=-9; 
+  _FORCINGS_ncid=-9;
   _RESSTAGE_ncid=-9;
   _RESMB_ncid   =-9;
 
   _PETBlends_N=0;
   _PETBlends_type=NULL;
-  _PETBlends_wts=NULL; 
+  _PETBlends_wts=NULL;
   _PotMeltBlends_N=0;
   _PotMeltBlends_type=NULL;
   _PotMeltBlends_wts=NULL;
@@ -101,10 +111,6 @@ CModel::CModel(const int        nsoillayers,
   }
   _lake_sv=0; //by default, rain on lake goes direct to surface storage [0]
 
-
-  CHydroProcessABC::SetModel(this);
-  CLateralExchangeProcessABC::SetModel(this);
-
   _aGaugeWeights    =NULL; //Initialized in Initialize
   _aGaugeWtTemp     =NULL;
   _aGaugeWtPrecip   =NULL;
@@ -128,10 +134,11 @@ CModel::CModel(const int        nsoillayers,
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
 
 #ifdef _MODFLOW_USG_
-  _pGWModel = new CGroundwaterModel(this);  
+  _pGWModel = new CGroundwaterModel(this);
 #endif
 
   _pEnsemble = NULL;
+  _pStateVar = NULL;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -180,10 +187,17 @@ CModel::~CModel()
     for (k=0;k<_nProcesses;   k++){delete [] _aShouldApplyProcess[k]; } delete [] _aShouldApplyProcess;  _aShouldApplyProcess=NULL;
   }
   for (kk=0;kk<_nHRUGroups;kk++)  {delete _pHRUGroups[kk];    } delete [] _pHRUGroups;      _pHRUGroups  =NULL;
-  for (kk=0;kk<_nSBGroups;kk++ )  {delete _pSBGroups[kk];     } delete [] _pSBGroups;       _pSBGroups  =NULL; 
+  for (kk=0;kk<_nSBGroups;kk++ )  {delete _pSBGroups[kk];     } delete [] _pSBGroups;       _pSBGroups  =NULL;
   for (j=0;j<_nTransParams;j++)   {delete _pTransParams[j];   } delete [] _pTransParams;    _pTransParams=NULL;
   for (j=0;j<_nClassChanges;j++)  {delete _pClassChanges[j];  } delete [] _pClassChanges;   _pClassChanges=NULL;
   for (j=0;j<_nParamOverrides;j++){delete _pParamOverrides[j];} delete [] _pParamOverrides; _pParamOverrides=NULL;
+
+  for (i=0;i<_nPerturbations;   i++)
+  {
+    delete [] _pPerturbations[i]->eps;
+    delete _pPerturbations   [i];
+  }
+  delete [] _pPerturbations;
 
   delete [] _aStateVarType;  _aStateVarType=NULL;
   delete [] _aStateVarLayer; _aStateVarLayer=NULL;
@@ -196,30 +210,41 @@ CModel::~CModel()
   delete [] _aDAscale;       _aDAscale=NULL;
   delete [] _aDAlength;      _aDAlength=NULL;
   delete [] _aDAtimesince;   _aDAtimesince=NULL;
-  delete [] _aDAlast;          _aDAlast=NULL;
+  delete [] _aDAlast;        _aDAlast=NULL;
   delete [] _aDAoverride;    _aDAoverride=NULL;
   delete [] _aDAobsQ;        _aDAobsQ=NULL;
 
-  CSoilClass::      DestroyAllSoilClasses();
-  CVegetationClass::DestroyAllVegClasses();
-  CLandUseClass::   DestroyAllLUClasses();
-  CTerrainClass::   DestroyAllTerrainClasses();
-  CSoilProfile::    DestroyAllSoilProfiles();
-  CChannelXSect::   DestroyAllChannelXSections();
+  this->DestroyAllLanduseClasses();
+  this->DestroyAllSoilClasses();
+  this->DestroyAllVegClasses();
+  this->DestroyAllTerrainClasses();
+  this->DestroyAllSoilProfiles();
+  this->DestroyAllChannelXSections();
 
   delete _pTransModel;
   delete _pEnsemble;
   delete _pGWModel;
+  delete _pStateVar;
 
   delete [] _PETBlends_type;
   delete [] _PETBlends_wts;
   delete [] _PotMeltBlends_type;
   delete [] _PotMeltBlends_wts;
 }
+
 /*****************************************************************
    Accessors
 ------------------------------------------------------------------
 *****************************************************************/
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns pointer to global parameters object
+///
+/// \return Pointer to global parameters object
+//
+CGlobalParams* CModel::GetGlobalParams() const {
+  return _pGlobalParams;
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number of sub basins in model
@@ -386,7 +411,7 @@ CHydroUnit *CModel::GetHRUByID(const int HRUID) const
   static int last_k=0;
   //smart find
   int k;
-  for (int i=0;i<_nHydroUnits;i++){ 
+  for (int i=0;i<_nHydroUnits;i++){
     k=NearSearchIndex(i,last_k,_nHydroUnits);
     if (HRUID==_pHydroUnits[k]->GetID()){ last_k=k; return _pHydroUnits[k];}
   }
@@ -478,7 +503,7 @@ int         CModel::GetDownstreamBasin(const int p) const
 /// \return pointer to Sub basin object corresponding to passed ID, if ID is valid
 //
 CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
-{ 
+{
   static int last_p=0;
   int p;
   if (SBID < 0) { return NULL; }
@@ -497,7 +522,7 @@ CSubBasin  *CModel::GetSubBasinByID(const long SBID) const
 /// \return Sub basin index corresponding to passed ID, if ID is valid
 //
 int         CModel::GetSubBasinIndex(const long SBID) const
-{  
+{
   static int last_p = 0;
   int p;
   if (SBID<0){return DOESNT_EXIST;}
@@ -518,7 +543,7 @@ int         CModel::GetSubBasinIndex(const long SBID) const
 const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) const
 {
   static const CSubBasin **pSBs=new const CSubBasin *[_nSubBasins];
-  
+
   bool *isUpstr=new bool [_nSubBasins];
   for(int p=0;p<_nSubBasins;p++) { isUpstr[p]=false; }
 
@@ -537,14 +562,14 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   do
   {
     numUpstrOld=numUpstr;
-    for(int p=0;p<_nSubBasins;p++) {
+    for(p=0;p<_nSubBasins;p++) {
       down_p=GetSubBasinIndex(_pSubBasins[p]->GetDownstreamID());
       if(down_p!=DOESNT_EXIST) {
         if(isUpstr[down_p]==true) { isUpstr[p]=true;}
       }
     }
     numUpstr=0;
-    for(int p=0;p<_nSubBasins;p++) {
+    for(p=0;p<_nSubBasins;p++) {
       if(isUpstr[p]==true) { numUpstr++; }
     }
     iter++;
@@ -552,7 +577,7 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
   //cout<<"upstream basin calculations iterations = "<<iter<<" "<<numUpstr<<" basins found upstream of basin "<<SBID<<endl;
   nUpstream=numUpstr;
   int count=0;
-  for(int p=0;p<_nSubBasins;p++) {
+  for(p=0;p<_nSubBasins;p++) {
     if (isUpstr[p]==true){pSBs[count]=_pSubBasins[p];count++; }
   }
   delete [] isUpstr;
@@ -562,10 +587,10 @@ const CSubBasin **CModel::GetUpstreamSubbasins(const int SBID,int &nUpstream) co
 /// \brief Returns true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
 /// \notes recursive call, keeps marching downstream until outlet or SBIDdown is encounterd
 /// \param SBID [in] ID of subbasin being queried
-/// \param SBIDdown [in] subbasin ID basis of query 
+/// \param SBIDdown [in] subbasin ID basis of query
 /// \return true if subbasin with ID SBID is upstream of (or is) basin with subbasin SBIDdown
 //
-bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const 
+bool  CModel::IsSubBasinUpstream(const long SBID,const long SBIDdown) const
 {
   if      (SBID==DOESNT_EXIST    ) { return false;} //end of the recursion line
   else if (SBIDdown==SBID)         { return true; } //a subbasin is upstream of itself (even handles loops on bad networks)
@@ -654,6 +679,10 @@ int         CModel::GetNumConnections (const int j) const
 #endif
   return _pProcesses[j]->GetNumConnections();
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of forcing perturbations in model
+//
+int         CModel::GetNumForcingPerturbations() const {return _nPerturbations;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns state variable type corresponding to passed state variable array index
@@ -782,7 +811,7 @@ double CModel::GetFlux(const int k, const int js, const optStruct &Options) cons
 /// \param k [in] HRU index
 /// \param i [in] mass/energy state variable index
 //
-double CModel::GetConcentration(const int k, const int i) const 
+double CModel::GetConcentration(const int k, const int i) const
 {
   return _pTransModel->GetConcentration(k,i);
 }
@@ -840,7 +869,7 @@ double CModel::GetCumulativeFlux(const int k, const int i, const bool to) const
       }
     }
   }
-  
+
   return sum;
 }
 //////////////////////////////////////////////////////////////////
@@ -859,7 +888,7 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
 #endif
   int q,js=0;
   double sum=0;
-  const int *iFromp; 
+  const int *iFromp;
   const int *iTop;
   int nConn;
   for(int j = 0; j < _nProcesses; j++)
@@ -874,7 +903,7 @@ double CModel::GetCumulFluxBetween(const int k,const int iFrom,const int iTo) co
       js++;
     }
   }
-  
+
   return sum;
 }
 //////////////////////////////////////////////////////////////////
@@ -1046,6 +1075,7 @@ force_struct CModel::GetAverageForcings() const
 
       Fave.recharge       +=area_wt*pF_hru->recharge;
       Fave.precip_temp    +=area_wt*pF_hru->precip_temp;
+      Fave.precip_conc    +=area_wt*pF_hru->precip_conc;
 
       Fave.subdaily_corr  +=area_wt*pF_hru->subdaily_corr;
     }
@@ -1300,10 +1330,10 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
     ExitGracefullyIf(pCC->HRU_groupID == DOESNT_EXIST,warning.c_str(),BAD_DATA_WARN); return;
   }
   pCC->newclass=new_class;
-  if ((tclass == CLASS_LANDUSE) && (CLandUseClass::StringToLUClass(new_class) == NULL)){
+  if ((tclass == CLASS_LANDUSE) && (StringToLUClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid land use class specified",BAD_DATA_WARN);return;
   }
-  if ((tclass == CLASS_VEGETATION) && (CVegetationClass::StringToVegClass(new_class) == NULL)){
+  if ((tclass == CLASS_VEGETATION) && (StringToVegClass(new_class) == NULL)){
     ExitGracefully("CModel::AddPropertyClassChange: invalid vegetation class specified",BAD_DATA_WARN);return;
   }
   if ((tclass == CLASS_HRUTYPE) && (StringToHRUType(new_class) == HRU_INVALID_TYPE)){
@@ -1317,7 +1347,7 @@ void CModel::AddPropertyClassChange(const string      HRUgroup,
 
   //convert time to model time
   pCC->modeltime= TimeDifference(Options.julian_start_day,Options.julian_start_year,tt.julian_day, tt.year, Options.calendar);
-  
+
   if (pCC->modeltime>Options.duration){
     string warn;
     warn="Property Class change dated "+tt.date_string+" occurs after model simulation is done; it will not effect results.";
@@ -1508,7 +1538,38 @@ void CModel::AddCustomOutput(CCustomOutput *pCO)
     ExitGracefully("CModel::AddCustomOutput: adding NULL custom output",BAD_DATA);}
 }
 
+//////////////////////////////////////////////////////////////////
+/// \brief adds additional forcing perturbation
+/// \param type [in] forcing type to be perturbed
+/// \param distrib [in] sampling distribution type
+/// \param distpars [in] array of distribution parameters
+/// \param group_index [in] HRU group ID (or DOESNT_EXIST if all HRUs should be perturbed)
+/// \param adj [in] type of perturbation (e.g., additive or multiplicative)
+//
+void CModel::AddForcingPerturbation(forcing_type type, disttype distrib, double* distpars, int group_index, adjustment adj, int nStepsPerDay)
+{
+  force_perturb *pFP=new force_perturb();
+  pFP->forcing     =type;
+  pFP->distribution=distrib;
+  pFP->kk          =group_index;
+  pFP->adj_type    =adj;
+  for (int i = 0; i < 3; i++) {
+    pFP->distpar[i]=distpars[i];
+  }
+  pFP->eps=new double [nStepsPerDay];
+  for (int n = 0; n < nStepsPerDay; n++) {
+    pFP->eps[n]=0;
+  }
 
+  if (!DynArrayAppend((void**&)(_pPerturbations),(void*)(pFP),_nPerturbations)){
+    ExitGracefully("CModel::AddForcingPerturbation: creating NULL perturbation",BAD_DATA_WARN);
+  }
+
+  if ((type==F_PRECIP) || (type==F_SNOWFALL) || (type==F_RAINFALL) || (type==F_TEMP_AVE)){}
+  else {
+    ExitGracefully("CModel::AddForcingPerturbation: only PRECIP, RAINFALL, SNOWFALL, and TEMP_AVE are supported for forcing perturbation.",BAD_DATA_WARN);
+  }
+}
 /*****************************************************************
    Other Manipulator Functions
 ------------------------------------------------------------------
@@ -1554,24 +1615,24 @@ void    CModel::SetPETBlendValues(const int N, const evap_method* aEv, const dou
   _PETBlends_wts =new double      [N];
   for (int i = 0; i < N; i++) {
     _PETBlends_type[i]=aEv[i];
-    _PETBlends_wts [i]=wts[i];   
+    _PETBlends_wts [i]=wts[i];
   }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets PotMelt blend values
 //
-void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, const double* wts) 
+void    CModel::SetPotMeltBlendValues(const int N, const potmelt_method* aPM, const double* wts)
 {
   _PotMeltBlends_N=N;
   _PotMeltBlends_type=new potmelt_method [N];
   _PotMeltBlends_wts =new double         [N];
   for (int i = 0; i < N; i++) {
     _PotMeltBlends_type[i]=aPM[i];
-    _PotMeltBlends_wts [i]=wts[i];   
+    _PotMeltBlends_wts [i]=wts[i];
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Gets basin blended forcing number of weighted groups 
+/// \brief Gets basin blended forcing number of weighted groups
 /// \param label [in] String property identifier
 /// \return number of blended weights of basin corresponding to label
 //
@@ -1589,7 +1650,7 @@ int CModel::GetBlendedForcingsNumWeights(const string label)
 //////////////////////////////////////////////////////////////////
 /// \brief Deletes all custom outputs (For FEWS override)
 //
-void CModel::DeleteCustomOutputs() 
+void CModel::DeleteCustomOutputs()
 {
   for(int i=0;i<_nCustomOutputs;i++) {
     delete _pCustomOutputs[i];
@@ -1650,7 +1711,7 @@ void CModel::OverrideStreamflow   (const long SBID)
 
         //need to shift everything by one interval, since hydrographs are stored as period-ending
         pTS->ShiftInTime(-(pTS->GetInterval()),*_pOptStruct);
-       
+
         //add as inflow hydrograph to downstream
         GetSubBasinByID(downID)->AddInflowHydrograph(pTS);
         GetSubBasinByID(SBID)->SetDownstreamID(DOESNT_EXIST);
@@ -1662,6 +1723,596 @@ void CModel::OverrideStreamflow   (const long SBID)
       }
     }
   }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the LU class corresponding to passed string
+/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
+///  can accept either lultclass index or lultclass tag
+///  if string is invalid, returns NULL
+/// \param s [in] LU class identifier (tag or index)
+/// \return Pointer to LU class corresponding to identifier string s
+//
+CLandUseClass *CModel::StringToLUClass(const string s)
+{
+  string s_sup = StringToUppercase(s);
+  for (int c=0;c<_nLandUseClasses;c++)
+  {
+    if (!s_sup.compare(StringToUppercase(_pLandUseClasses[c]->GetLanduseName()))) {
+      return this->_pLandUseClasses[c];
+    }
+    else if (s_to_i(s.c_str())==(c+1)) {
+      return this->_pLandUseClasses[c];
+    }
+  }
+
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the land use  class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] LandUse class index
+/// \return Reference to land use class corresponding to index c
+//
+CLandUseClass *CModel::GetLanduseClass(int c) {
+  if ((c<0) || (c >= this->_nLandUseClasses)){return NULL;}
+  return this->_pLandUseClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize LU class information to screen
+//
+void CModel::SummarizeLUClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Land Use Class Summary:"<<_nLandUseClasses<<" LU/LT classes in database"<<endl;
+  for (int c=0; c<_nLandUseClasses;c++){
+    cout<<"-LULT. class \""<<_pLandUseClasses[c]->GetLanduseName()<<"\" "<<endl;
+    cout<<"    impermeable: "<<_pLandUseClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
+    cout<<"       forested: "<<_pLandUseClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all LU classes
+//
+void CModel::DestroyAllLanduseClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (_nLandUseClasses == 0) {
+    if (DESTRUCTOR_DEBUG) {cout << "  No LULT classes to destroy" << endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<_nLandUseClasses;c++){
+    delete _pLandUseClasses[c];
+  }
+  delete [] _pLandUseClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  _pLandUseClasses = NULL;
+  _nLandUseClasses = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the soil class corresponding to passed string
+/// \details Converts string (e.g., "SILT" in HRU file) to soilclass
+///  can accept either soilclass index or soilclass _tag
+///  if string is invalid, returns NULL
+/// \param s [in] Soil class identifier (_tag or index)
+/// \return Reference to soil class corresponding to identifier s
+//
+CSoilClass *CModel::StringToSoilClass(const string s)
+{
+  string sup=StringToUppercase(s);
+  for (int c=0;c<_nAllSoilClasses;c++)
+  {
+    if (!sup.compare(StringToUppercase(_pAllSoilClasses[c]->GetTag()))){return _pAllSoilClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                 {return _pAllSoilClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the soil class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to soil class corresponding to index c
+//
+const CSoilClass *CModel::GetSoilClass(int c)
+{
+  if ((c < 0) || (c >= this->_nAllSoilClasses)){return NULL;}
+  return this->_pAllSoilClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of soil classes
+/// \return Number of soil classes
+//
+int CModel::GetNumSoilClasses(){
+  return this->_nAllSoilClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a soil class to the model
+/// \param pLUClass [in] Pointer to soil class to add
+//
+void CModel::AddSoilClass(CSoilClass *pSoilClass) {
+  if (!DynArrayAppend((void**&)(_pAllSoilClasses), (void*)pSoilClass, _nAllSoilClasses)) {
+    ExitGracefully("CModel::AddSoilClass: adding NULL soil class", BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize soil class information to screen
+//
+void CModel::SummarizeSoilClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Soil Class Summary:"<<this->_nAllSoilClasses<<" soils in database"<<endl;
+  for (int c=0; c < this->_nAllSoilClasses;c++){
+    cout<<"-Soil class \""<<_pAllSoilClasses[c]->GetTag()<<"\" "<<endl;
+    cout<<"       %sand: "<<_pAllSoilClasses[c]->GetSoilStruct()->sand_con<<endl;
+    cout<<"       %clay: "<<_pAllSoilClasses[c]->GetSoilStruct()->clay_con<<endl;
+    cout<<"    %organic: "<<_pAllSoilClasses[c]->GetSoilStruct()->org_con<<endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all soil classes
+//
+void CModel::DestroyAllSoilClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL CLASSES"<<endl;}
+
+  // the classes may have been already destroyed
+  if (_nAllSoilClasses == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO SOIL CLASSES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<_nAllSoilClasses;c++){
+    delete _pAllSoilClasses[c];
+  }
+  delete [] _pAllSoilClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  _pAllSoilClasses = NULL;
+  _nAllSoilClasses = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the vegetation class corresponding to passed string
+/// \details Converts string (e.g., "BROADLEAF" in HRU file) to vegetation class
+///  can accept either vegclass index or vegclass tag
+///  if string is invalid, returns NULL
+/// \param s [in] Vegetation class identifier (tag or index)
+/// \return Reference to vegetation class corresponding to identifier s
+//
+CVegetationClass *CModel::StringToVegClass(const string s)
+{
+  string sup;
+  sup = StringToUppercase(s);
+  for (int c=0; c<this->_numVegClasses; c++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllVegClasses[c]->GetVegetationName()))){return this->_pAllVegClasses[c];}
+    else if (s_to_i(sup.c_str()) == (c+1))                                             {return this->_pAllVegClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the vegetation class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to vegetation class corresponding to index c
+//
+const CVegetationClass *CModel::GetVegClass(int c)
+{
+  if ((c<0) || (c >= this->_numVegClasses)) { return NULL; }
+  return this->_pAllVegClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of vegetation classes
+/// \return Number of vegetation classes
+//
+int CModel::GetNumVegClasses(){
+  return this->_numVegClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a vegetation to the model
+/// \param pLUClass [in] Pointer to vegetation class to add
+//
+void CModel::AddVegClass(CVegetationClass *pVegClass) {
+  if (!DynArrayAppend((void**&)(this->_pAllVegClasses),
+                      (void*)pVegClass,
+                      this->_numVegClasses)) {
+    ExitGracefully("CModel::AddVegClass: adding NULL vegetation class", BAD_DATA);
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize vegetation class information to screen
+//
+void CModel::SummarizeVegClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Vegetation Class Summary:"<<this->_numVegClasses<<" vegetation classes in database"<<endl;
+  for (int c = 0; c < this->_numVegClasses; c++){
+    cout<<"-Veg. class \""<<this->_pAllVegClasses[c]->GetVegetationName()<<"\" "<<endl;
+    cout<<"    max. height: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->max_height<<" m"<<endl;
+    cout<<"       max. LAI: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->max_LAI  <<endl;
+    cout<<"   max. conduct: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->max_leaf_cond<<" mm/s"<<endl;
+    cout<<"         albedo: "<<this->_pAllVegClasses[c]->GetVegetationStruct()->albedo<<endl;
+  }
+}
+
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all vegetation classes
+//
+void CModel::DestroyAllVegClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL VEGETATION CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_numVegClasses == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO VEGETATION CLASSES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<this->_numVegClasses;c++){
+    delete this->_pAllVegClasses[c];
+  }
+  delete [] this->_pAllVegClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  this->_pAllVegClasses = NULL;
+  this->_numVegClasses = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the terrain class corresponding to passed string
+/// \details Converts string (e.g., "HUMMOCKY" in HRU file) to Terrain class
+///  can accept either terrainclass index or terrainclass tag
+///  if string is invalid, returns NULL
+/// \param s [in] terrain class identifier (tag or index)
+/// \return Reference to terrain class corresponding to identifier s
+//
+CTerrainClass *CModel::StringToTerrainClass(const string s)
+{
+  string sup = StringToUppercase(s);
+  for (int c=0; c < this->_nAllTerrainClasses; c++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllTerrainClasses[c]->GetTag()))){return this->_pAllTerrainClasses[c];}
+    else if (s_to_i(s.c_str())==(c+1))                                   {return this->_pAllTerrainClasses[c];}
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Return number of terrain classes
+/// \return Number of terrain classes
+//
+int CModel::GetNumTerrainClasses(){
+  return this->_nAllTerrainClasses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the terrain class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] Soil class index
+/// \return Reference to terrain class corresponding to index c
+//
+const CTerrainClass *CModel::GetTerrainClass(int c)
+{
+  if ((c<0) || (c>=this->_nAllTerrainClasses)){return NULL;}
+  return this->_pAllTerrainClasses[c];
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a terrain class to the model
+/// \param pTerrainClass [in] Pointer to terrain class to add
+//
+void CModel::AddTerrainClass(CTerrainClass *pTerrainClass){
+  if (!DynArrayAppend((void**&)(_pAllTerrainClasses),
+                      (void*)pTerrainClass,
+                      _nAllTerrainClasses)) {
+    ExitGracefully("CModel::AddTerrainClass: creating NULL terrain class", BAD_DATA);
+  };
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize terrain class information to screen
+//
+void CModel::SummarizeTerrainClassesToScreen()
+{
+  cout<<"==================="<<endl;
+  cout<<"Terrain Class Summary:"<<this->_nAllTerrainClasses<<" terrain classes in database"<<endl;
+  for (int c=0; c<this->_nAllTerrainClasses; c++){
+    cout<<"-Terrain. class \""<<this->_pAllTerrainClasses[c]->GetTag()<<"\" "<<endl;
+    cout<<"    drainage density: "<<this->_pAllTerrainClasses[c]->GetTerrainStruct()->drainage_density<<endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all terrain classes
+//
+void CModel::DestroyAllTerrainClasses()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL TERRAIN CLASSES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_nAllTerrainClasses == 0) {
+     if (DESTRUCTOR_DEBUG) {cout <<"  No terrain classes to destroy"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int c=0; c<this->_nAllTerrainClasses;c++){
+    delete this->_pAllTerrainClasses[c];
+  }
+  delete [] this->_pAllTerrainClasses;
+
+  // the static variables must be reset to avoid dangling pointers and attempts to re-delete
+  this->_pAllTerrainClasses = NULL;
+  this->_nAllTerrainClasses = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a terrain class to the model
+/// \param pTerrainClass [in] Pointer to terrain class to add
+//
+void CModel::AddSoilProfile(CSoilProfile *pSoilProfile){
+  if (!DynArrayAppend((void**&)(this->_pAllSoilProfiles),
+                      (void*)pSoilProfile,
+                      this->_nAllSoilProfiles)) {
+    ExitGracefully("CModel::AddSoilProfile: creating NULL terrain class", BAD_DATA);
+  };
+}
+
+///////////////////////////////////////////////////////////////////
+/// \brief Summarize soil profile information to screen
+//
+void CModel::SummarizeSoilProfilesToScreen()
+{
+  cout << "===================" << endl;
+  cout << "Soil Profile Summary:" << this->_nAllSoilProfiles << " soils in database" << endl;
+  for (int p=0; p<this->_nAllSoilProfiles; p++)
+  {
+    cout << "-Soil profile \"" << this->_pAllSoilProfiles[p]->GetTag() << "\" " << endl;
+    cout << "    #horizons:" << this->_pAllSoilProfiles[p]->GetNumHorizons() << endl;
+    for (int m=0; m < this->_pAllSoilProfiles[p]->GetNumHorizons(); m++) {
+      cout << "      -layer #" << m+1 << ": " << this->_pAllSoilProfiles[p]->GetSoilTag(m) << " (thickness: " << this->_pAllSoilProfiles[p]->GetThickness(m) << " m)" << endl;
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Converts string to soil profile
+/// \details Converts string (e.g., "ALL_SILT" in HRU file) to soil profile
+///  can accept either soilprofile index or soilprofile tag
+///  if string is invalid, returns NULL
+/// \param s [in] String identifier of soil profile
+/// \return Pointer to Soil profile to which passed string corresponds
+//
+CSoilProfile *CModel::StringToSoilProfile(const string s)
+{
+  string sup = StringToUppercase(s);
+  for (int p=0; p<this->_nAllSoilProfiles; p++)
+  {
+    if (!sup.compare(StringToUppercase(this->_pAllSoilProfiles[p]->GetTag()))) {
+      return this->_pAllSoilProfiles[p];
+    }
+    else if (s_to_i(s.c_str())==(p+1)) {
+      return this->_pAllSoilProfiles[p];
+    }
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of soil profiles in model
+/// \return Number of soil profiles in model
+//
+int CModel::GetNumSoilProfiles()
+{
+  return (this->_nAllSoilProfiles);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Destroy all soil profiles in model
+//
+void CModel::DestroyAllSoilProfiles()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL PROFILES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_nAllSoilProfiles == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  No soil profiles to destroy"<<endl; }
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int p=0; p<this->_nAllSoilProfiles; p++){
+    delete this->_pAllSoilProfiles[p];
+  }
+  delete [] this->_pAllSoilProfiles;
+
+  // reset the static variables
+  this->_pAllSoilProfiles = NULL;
+  this->_nAllSoilProfiles = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Converts string (e.g., "X2305" in Basin file) to channel profile
+/// \param s [in] String to be converted to a channel profile
+/// \return Pointer to channel profile with name equivalent to string, or NULL if string is invalid
+//
+CChannelXSect* CModel::StringToChannelXSect(const string s)
+{
+  string sup = StringToUppercase(s);
+  for (int p=0; p<_nAllChannelXSects; p++)
+  {
+    if (!sup.compare(StringToUppercase(_pAllChannelXSects[p]->GetName()))){
+      return _pAllChannelXSects[p];
+    }
+  }
+  return NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of channel cross-sections in model
+/// \return Number of channel cross-sections in model
+//
+int CModel::GetNumChannelXSects() {
+  return _nAllChannelXSects;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Add a cross section to the model
+/// \param pXSect [in] Pointer to cross section to add
+//
+void CModel::AddChannelXSect(CChannelXSect *pXSect)
+{
+  if (!DynArrayAppend((void**&)(_pAllChannelXSects),(void*)pXSect,_nAllChannelXSects)) {
+    ExitGracefully("CModel::AddChannelXSect: creating NULL cross section", BAD_DATA);
+  };
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Summarize profile information to screen
+//
+void CModel::SummarizeChannelXSectToScreen()
+{
+  cout << "===================" << endl;
+  cout << "Channel Profile Summary:" << this->_nAllChannelXSects << " profiles in database" << endl;
+  for (int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    cout << "-Channel profile \"" << this->_pAllChannelXSects[p]->GetName() << "\" " << endl;
+    cout << "           slope: " << this->_pAllChannelXSects[p]->GetBedslope()  << endl;
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Deletes all channel profiles in model
+//
+void CModel::DestroyAllChannelXSections()
+{
+  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL CHANNEL PROFILES"<<endl;}
+
+  // the classes may have been already destroyed or not created
+  if (this->_nAllChannelXSects == 0) {
+    if (DESTRUCTOR_DEBUG){cout <<"  NO CHANNEL PROFILES TO DESTROY"<<endl;}
+    return;
+  }
+
+  // each class must be destroyed individually, then the array
+  for (int p=0; p < this->_nAllChannelXSects; p++){
+    delete this->_pAllChannelXSects[p];
+  }
+  delete [] this->_pAllChannelXSects;
+
+  // reset the static variables
+  this->_pAllChannelXSects = NULL;
+  this->_nAllChannelXSects = 0;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Check for duplicate channel names
+//
+void CModel::CheckForChannelXSectsDuplicates(const optStruct &Options)
+{
+  for(int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    for(int pp=0; pp<p;pp++)
+    {
+      if(this->_pAllChannelXSects[p]->GetName() == this->_pAllChannelXSects[pp]->GetName()) {
+        string warn = " CModel::CheckForChannelXSectsDuplicates: found duplicated channel name: " + this->_pAllChannelXSects[p]->GetName();
+        WriteWarning(warn.c_str(), Options.noisy);
+      }
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Write rating curves to file rating_curves.csv
+//
+void CModel::WriteRatingCurves(const optStruct& Options) const
+{
+  ofstream CURVES;
+  string tmpFilename = FilenamePrepare("rating_curves.csv", Options);
+  CURVES.open(tmpFilename.c_str());
+
+  if (CURVES.fail()){
+    ExitGracefully("CModel::WriteRatingCurves: Unable to open output file rating_curves.csv for writing.", FILE_OPEN_ERR);
+  }
+  int i;
+  for (int p=0; p<this->_nAllChannelXSects; p++)
+  {
+    const CChannelXSect *pP = this->_pAllChannelXSects[p];
+    CURVES<<pP->GetName() <<"----------------"<<endl;
+    CURVES<<"Flow Rate [m3/s],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAQAt(i)       <<",";}CURVES<<endl;
+    CURVES<<"Stage Height [m],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAStageAt(i)   <<",";}CURVES<<endl;
+    CURVES<<"Top Width [m],";       for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetATopWidthAt(i)<<",";}CURVES<<endl;
+    CURVES<<"X-sect area [m2],";    for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAXAreaAt(i)   <<",";}CURVES<<endl;
+    CURVES<<"Wetted Perimeter [m],";for(i=0;i<pP->GetNPoints();i++){CURVES<<pP->GetAPerimAt(i)   <<",";}CURVES<<endl;
+  }
+  CURVES.close();
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the number of convolution variables
+/// \return Number of convolution variables
+//
+int CModel::GetNumConvolutionVariables() const {
+  return _nConvVariables;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the number of convolution variables
+//
+void CModel::IncrementConvolutionCount(){
+  _nConvVariables++;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Gets the state variables
+/// \return Pointer to state variables
+//
+CStateVariable* CModel::GetStateVarInfo() const {
+  return _pStateVar;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets the state variables
+/// \param pStateVar [in] Pointer to state variables
+//
+void CModel::SetStateVarInfo(CStateVariable *pStateVar) {
+  _pStateVar = pStateVar;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Gets the number of lateral flow processes
+/// \return Number of state variables
+//
+int CModel::GetNumLatFlowProcesses() {
+  return this->_nLatFlowProcesses;
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Increments the number of lateral flow processes
+//
+void CModel::CountOneMoreLatFlowProcess() {
+  this->_nLatFlowProcesses++;
 }
 
 /*****************************************************************
@@ -1699,7 +2350,7 @@ void CModel::IncrementLatBalance( const int jss,
                                   const double moved)//[mm-m2] or [MJ]
 {
   _aCumulativeLatBal[jss]+=moved;
-  _aFlowLatBal      [jss]=moved; 
+  _aFlowLatBal      [jss]=moved;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Increments cumulative mass & energy added to system (precipitation/ustream basin flows, etc.)
@@ -1714,7 +2365,7 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
   area = _WatershedArea * M2_PER_KM2;
 
   _CumulInput+=GetAveragePrecip()*Options.timestep;
-  
+
   _CumulInput+=GetAverageForcings().recharge*Options.timestep;
 
   for (int p=0;p<_nSubBasins;p++){
@@ -1726,7 +2377,7 @@ void CModel::IncrementCumulInput(const optStruct &Options, const time_struct &tt
     int iGW=GetStateVarIndex(GROUNDWATER);
     for(int k=0;k<_nHydroUnits;k++) {
       double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
-      double area=_pHydroUnits[k]->GetArea();
+      area=_pHydroUnits[k]->GetArea();
       if (GW<0){_CumulInput-=GW*area/_WatershedArea;} //negative recharge
     }
     /*for(int p=0;p<_nSubBasins;p++) {
@@ -1753,7 +2404,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
     bool outflowdisabled;
     CSubBasin *pSBdown=NULL;
     if(_aDownstreamInds[p]>=0) { pSBdown=_pSubBasins[_aDownstreamInds[p]]; }
-    
+
     outflowdisabled=((pSBdown==NULL) || (!pSBdown->IsEnabled()));
 
     if(_pSubBasins[p]->IsEnabled())
@@ -1765,14 +2416,14 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
       _CumulOutput+=_pSubBasins[p]->GetReservoirLosses (Options.timestep)/area*MM_PER_METER;
       _CumulOutput+=_pSubBasins[p]->GetIrrigationLosses(Options.timestep)/area*MM_PER_METER;
 
-      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++) 
+      for(int i=0;i<_pSubBasins[p]->GetNumDiversions();i++)
       {
         Qdiv=_pSubBasins[p]->GetDiversionFlow(i,_pSubBasins[p]->GetLastOutflowRate(),Options,tt,pDivert)*Options.timestep*SEC_PER_DAY;
         if(pDivert==DOESNT_EXIST) {
           _CumulOutput+=Qdiv/area*MM_PER_METER; //water that is diverted out of the watershed
         }
         if(_pSubBasins[p]->GetDownstreamID()==DOESNT_EXIST) {
-          _CumulOutput-=Qdiv/area*MM_PER_METER; //water that doesn't leave the system but is calculated as outflow 
+          _CumulOutput-=Qdiv/area*MM_PER_METER; //water that doesn't leave the system but is calculated as outflow
         }
       }
     }
@@ -1782,7 +2433,7 @@ void CModel::IncrementCumOutflow(const optStruct &Options, const time_struct &tt
     int iGW=GetStateVarIndex(GROUNDWATER);
     for(int k=0;k<_nHydroUnits;k++) {
       double GW=_pHydroUnits[k]->GetStateVarValue(iGW);
-      double area=_pHydroUnits[k]->GetArea();
+      area=_pHydroUnits[k]->GetArea();
       if(GW>0) { _CumulOutput+=GW*area/_WatershedArea; }
     }
     /*for(int p=0;p<_nSubBasins;p++) {
@@ -1820,7 +2471,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
     if( ((_pClassChanges[j]->modeltime > tt.model_time - TIME_CORRECTION) &&
          (_pClassChanges[j]->modeltime < tt.model_time + Options.timestep)) ||
 	    ((tt.model_time == 0.0) && (_pClassChanges[j]->modeltime < 0.0)) )
-    {//change happens this time step 
+    {//change happens this time step
 
       int kk   =_pClassChanges[j]->HRU_groupID;
       for(int k_loc = 0; k_loc <_pHRUGroups[kk]->GetNumHRUs();k_loc++)
@@ -1829,12 +2480,12 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
         if      (_pClassChanges[j]->tclass == CLASS_LANDUSE)
         {
-          CLandUseClass *lult_class= CLandUseClass::StringToLUClass(_pClassChanges[j]->newclass);
+          CLandUseClass *lult_class = StringToLUClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeLandUse(lult_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_VEGETATION)
         {
-          CVegetationClass *veg_class= CVegetationClass::StringToVegClass(_pClassChanges[j]->newclass);
+          CVegetationClass *veg_class = StringToVegClass(_pClassChanges[j]->newclass);
           _pHydroUnits[k]->ChangeVegetation(veg_class);
         }
         else if (_pClassChanges[j]->tclass == CLASS_HRUTYPE)
@@ -1843,7 +2494,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
           _pHydroUnits[k]->ChangeHRUType(typ);
         }
 
-        for(int j=0; j<_nProcesses;j++)// kt
+        for(j=0; j<_nProcesses;j++)// kt
         {
           _aShouldApplyProcess[j][k] = _pProcesses[j]->ShouldApply(_pHydroUnits[k]);
         }
@@ -1853,7 +2504,7 @@ void CModel::UpdateTransientParams(const optStruct   &Options,
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Determines parameter class (e.g., CLASS_GLOBAL or CLASS_SOIL) from parameter name and class name through slow search 
+/// \brief Determines parameter class (e.g., CLASS_GLOBAL or CLASS_SOIL) from parameter name and class name through slow search
 ///
 /// \param param_str [in] string for parameter name (e.g., BASEFLOW_COEFF)
 /// \param class_name [in] class name (e.g., FOREST) or SBID for subbasin parameters
@@ -1871,9 +2522,9 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   if (pval!=INDEX_NOT_FOUND){return CLASS_SOIL;}
   pval=CVegetationClass::GetVegetationProperty(V,param_str,false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_VEGETATION;}
-  pval=CLandUseClass::GetSurfaceProperty(L,param_str,false);
+  pval = CLandUseClass::GetSurfaceProperty(L, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_LANDUSE;}
-  pval=CGlobalParams::GetGlobalProperty(G,param_str,false);
+  pval = _pGlobalParams->GetGlobalProperty(G, param_str, false);
   if (pval!=INDEX_NOT_FOUND){return CLASS_GLOBAL;}
   if(_nGauges>0) {
     pval=_pGauges[0]->GetGaugeProperty(param_str);
@@ -1888,9 +2539,56 @@ class_type CModel::ParamNameToParamClass(const string param_str, const string cl
   return pclass;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief adds land use class
+//
+void  CModel::AddLandUseClass(CLandUseClass* pLU)
+{
+  if (!DynArrayAppend((void**&)(_pLandUseClasses),(void*)(pLU),_nLandUseClasses)) {
+    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the LU class corresponding to passed string
+/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
+///  if string is invalid, returns NULL
+/// \param s [in] LU class name
+/// \return Pointer to LU class corresponding to identifier string s
+//
+const CLandUseClass *CModel::StringToLUClass(const string s) const
+{
+  int c=GetLandClassIndex(s);
+  if (c==DOESNT_EXIST){return NULL;}
+  else                {return _pLandUseClasses[c]; }
+}
+const int CModel::GetLandClassIndex(const string s) const
+{
+  string sup=StringToUppercase(s);
+  for (int c=0;c<_nLandUseClasses;c++)
+  {
+    if (!sup.compare(StringToUppercase(_pLandUseClasses[c]->GetLanduseName()))){return c;}
+  }
+  return DOESNT_EXIST;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns the land use  class corresponding to the passed index
+///  if index is invalid, returns NULL
+/// \param c [in] land class index
+/// \return Reference to land use class corresponding to index c
+//
+const CLandUseClass *CModel::GetLanduseClass(const int c) const
+{
+  if ((c<0) || (c>=_nLandUseClasses)){return NULL;}
+  return _pLandUseClasses[c];
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns number of land use classes
+//
+int CModel::GetNumLanduseClasses() const {
+  return _nLandUseClasses;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Updates model parameter during course of simulation
 ///
-/// \param &ctype [in] parameter class type 
+/// \param &ctype [in] parameter class type
 /// \param &pname [in] valid parameter name
 /// \param &cname [in] valid parameter class name (or SBID as string for CLASS_SUBBASIN or gauge ID as string for CLASS_GAUGE)
 /// \param &value [in] updated parameter value (or -1.2345, which is ignored)
@@ -1901,34 +2599,34 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
 
   if (ctype==CLASS_SOIL)
   {
-    CSoilClass::StringToSoilClass(cname)->SetSoilProperty(pname,value);
+    StringToSoilClass(cname)->SetSoilProperty(pname, value);
   }
   else if(ctype==CLASS_TRANSPORT)
   {
-    ExitGracefully("UpdateParameter::CLASS_TRANSPORT",STUB);
+    ExitGracefully("UpdateParameter::CLASS_TRANSPORT", STUB);
     //CSoilClass::StringToSoilClass(cname)->SetTransportProperty(constit,pname,value);
   }
   else if(ctype==CLASS_VEGETATION)
   {
-    CVegetationClass::StringToVegClass(cname)->SetVegetationProperty(pname,value);
+    StringToVegClass(cname)->SetVegetationProperty(pname, value);
   }
   else if(ctype==CLASS_TERRAIN)
   {
-    CTerrainClass::StringToTerrainClass(cname)->SetTerrainProperty(pname,value);
+    StringToTerrainClass(cname)->SetTerrainProperty(pname, value);
   }
   else if(ctype==CLASS_LANDUSE)
   {
-    CLandUseClass::StringToLUClass(cname)->SetSurfaceProperty(pname,value);
+    StringToLUClass(cname)->SetSurfaceProperty(pname, value);
   }
   else if(ctype==CLASS_GLOBAL)
   {
-    CGlobalParams::SetGlobalProperty(pname,value);
+    _pGlobalParams->SetGlobalProperty(pname, value);
   }
   else if(ctype==CLASS_GAUGE)
   {
     int g=GetGaugeIndexFromName(cname);
     if(g!=DOESNT_EXIST) {
-      _pGauges[g]->SetGaugeProperty(pname,value);
+      _pGauges[g]->SetGaugeProperty(pname, value);
     }
     else {
       WriteWarning("CModel::UpdateParameter: Unrecognized/invalid gauge ID ("+cname+") in input",false);
@@ -1956,12 +2654,12 @@ void CModel::UpdateParameter(const class_type &ctype,const string pname,const st
 }
 //////////////////////////////////////////////////////////////////
 /// \brief overrides global parameters in subbasin groups
-/// \notes called only from solver within HRU loop 
+/// \notes called only from solver within HRU loop
 ///
 /// \param k [in] global HRU index
 /// \param revert [in] true if reverting to base value, false if changing to overridden value
 //
-void CModel::ApplyLocalParamOverrrides(const int k, const bool revert) 
+void CModel::ApplyLocalParamOverrrides(const int k, const bool revert)
 {
   for (int i=0;i<_nParamOverrides;i++)
   {
@@ -1969,7 +2667,7 @@ void CModel::ApplyLocalParamOverrrides(const int k, const bool revert)
       if (!revert){
         for (int j=0; j<_pParamOverrides[i]->nVals; j++){
           _pParamOverrides[i]->pxAddress[j] = _pParamOverrides[i]->aValues[j];
-          
+
         }
       }
       else{
@@ -2000,7 +2698,60 @@ void CModel::RecalculateHRUDerivedParams(const optStruct    &Options,
     }
   }
 }
+//////////////////////////////////////////////////////////////////
+/// \brief called at start of time step if needed - generates random values for perturbation of forcings
+/// \param &Options [out] Global model options information
+/// \params tt [in] time structure
+//
+void CModel::PrepareForcingPerturbation(const optStruct &Options, const time_struct &tt)
+{
 
+  for(int i=0;i<_nPerturbations;i++)
+  {
+    int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+    double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+    int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+    bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
+
+    if (start_of_day)  { //get all random perturbation samples for the day
+      for (int n=0;n<nStepsPerDay;n++){
+        _pPerturbations[i]->eps[n]=SampleFromDistribution(_pPerturbations[i]->distribution,_pPerturbations[i]->distpar);
+      }
+    }
+  }
+}
+//////////////////////////////////////////////////////////////////
+/// \brief called within update forcings - actually applies forcing function changes
+/// \param ftype [in] forcing function type
+/// \param F [out] forcing structure modified by this routine
+/// \param k [in] HRU index of forcing
+/// \param &Options [in] Global model options information
+/// \params tt [in] time structure
+//
+void CModel::ApplyForcingPerturbation(const forcing_type ftype, force_struct &F, const int k, const optStruct& Options, const time_struct& tt)
+{
+  int kk=DOESNT_EXIST;
+  for(int i=0;i<_nPerturbations;i++)
+  {
+    if (ftype==_pPerturbations[i]->forcing)
+    {
+      int    nStepsPerDay = (int)(rvn_round(1.0/Options.timestep));
+      double partday      = Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION);
+      int    nn           = (int)(rvn_round((tt.model_time+partday-floor(tt.model_time+partday+TIME_CORRECTION))/Options.timestep));
+      bool   start_of_day = ((nn==0) || tt.day_changed); //nn==0 corresponds to midnight
+
+      kk=_pPerturbations[i]->kk;
+
+      if((kk==DOESNT_EXIST) || (GetHRUGroup(kk)->IsInGroup(k)))
+      {
+        _pHydroUnits[k]->AdjustHRUForcing(ftype, F,_pPerturbations[i]->eps[nn], _pPerturbations[i]->adj_type);
+        if (start_of_day){
+          _pHydroUnits[k]->AdjustDailyHRUForcings(ftype,F,_pPerturbations[i]->eps,_pPerturbations[i]->adj_type,nStepsPerDay);
+        }
+      }
+    }
+  }
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Updates values stored in modeled time series of observation data
 /// modifies _pModeledTS[] time series and _aObsIndex array
@@ -2016,14 +2767,14 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
   double     value, obsTime;
   string     datatype;
-  sv_type    svtyp;  
+  sv_type    svtyp;
   int        layer_ind;
-  CSubBasin *pBasin=NULL;  
-  
+  CSubBasin *pBasin=NULL;
+
   for (int i=0;i<_nObservedTS;i++)
   {
-    datatype=_pObservedTS[i]->GetName();
-    svtyp   =CStateVariable::StringToSVType(datatype,layer_ind,false);
+    datatype = _pObservedTS[i]->GetName();
+    svtyp    = _pStateVar->StringToSVType(datatype, layer_ind, false);
 
     if      (datatype=="HYDROGRAPH")//===============================================
     {
@@ -2049,11 +2800,11 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     else if (datatype == "RESERVOIR_NETINFLOW")//===================================
     {
       pBasin = GetSubBasinByID(_pObservedTS[i]->GetLocID());
-      CReservoir *pRes= pBasin->GetReservoir(); 
+      CReservoir *pRes= pBasin->GetReservoir();
       double avg_area=0.0;
       if (pRes->GetHRUIndex()!=DOESNT_EXIST){ avg_area = _pHydroUnits[pRes->GetHRUIndex()]->GetArea(); }
-      
-      double tem_precip1 = pBasin->GetAvgForcing(F_PRECIP) / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER; 
+
+      double tem_precip1 = pBasin->GetAvgForcing(F_PRECIP) / (Options.timestep*SEC_PER_DAY)*avg_area*M2_PER_KM2/MM_PER_METER;
       double losses      = pRes->GetReservoirEvapLosses        (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       losses            += pRes->GetReservoirGWLosses          (Options.timestep) / (Options.timestep*SEC_PER_DAY);
       value              = pBasin->GetIntegratedReservoirInflow(Options.timestep) / (Options.timestep*SEC_PER_DAY) + tem_precip1 - losses;
@@ -2095,15 +2846,15 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
 
     _pModeledTS[i]->SetValue(n,value);
     _pModeledTS[i]->SetSampledValue(n,value); //Handles blank value issue in final time  step
-    
+
     obsTime =_pObservedTS[i]->GetSampledTime(_aObsIndex[i]); // time of the next observation
     //if(_pObservedTS[i]->GetType()==CTimeSeriesABC::TS_IRREGULAR) {obsTime+=Options.timestep;}//JRC: Not the most elegant fix, but Diagnostics are updated prior to Solver (no longer)
 
     //if model time is such that next unprocessed observation has occurred, update modeled
-    while ((tt.model_time >= obsTime+ _pObservedTS[i]->GetSampledInterval()) &&  
+    while ((tt.model_time >= obsTime+ _pObservedTS[i]->GetSampledInterval()) &&
 			     (_aObsIndex[i]<_pObservedTS[i]->GetNumSampledValues()))
 		{
-      value=RAV_BLANK_DATA; 
+      value=RAV_BLANK_DATA;
       // only set values within diagnostic evaluation times. The rest stay as BLANK_DATA
       if ((obsTime >= Options.diag_start_time) && (obsTime <= Options.diag_end_time))
       {
@@ -2165,7 +2916,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
   //Special frozen flow handling - constrains flows when water is partially/wholly frozen
   //------------------------------------------------------------------------
   if (_pTransModel->GetEnthalpyModel()!=NULL)
-  { //simulating enthalpy, and therefore frozen water compartments 
+  { //simulating enthalpy, and therefore frozen water compartments
     //if ((tt.model_time==0.0) && (j==0)){WriteWarning("JAMES: Temporarily disabled frozen ground feedback",Options.noisy); }
   /*
     double Fi,liq_stor;
@@ -2173,7 +2924,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
     for(int q=0;q<nConnections;q++)
     {
       typ=_aStateVarType[iFrom[q]];
-      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW) && (typ!=SURFACE_WATER)) 
+      if(CStateVariable::IsWaterStorage(typ) && (typ!=ATMOS_PRECIP) && (typ!=SNOW) && (typ!=CANOPY_SNOW) && (typ!=SURFACE_WATER))
       {
         //precip is special case (frozen snow can fall)
         //snow is special case (already assume that only liquid water is lost)
@@ -2187,7 +2938,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
     */
   }
 
-  //Apply constraints 
+  //Apply constraints
   //------------------------------------------------------------------------
   pProc->ApplyConstraints(state_var,pHRU,Options,tt,rates_of_change);
 
@@ -2210,7 +2961,7 @@ bool CModel::ApplyProcess ( const int          j,                    //process i
 /// \param *iFrom   [in] Array (size: nLatConnections)  of Indices of state variable losing mass or energy
 /// \param *iTo     [in] Array (size: nLatConnections)  of indices of state variable gaining mass or energy
 /// \param &nConnections [out] Number of connections between storage units/state vars
-/// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm-m2/d], mass [mg/d], and/or energy [MJ/d] 
+/// \param *exchange_rates [out] Double array (size: nConnections) of loss/gain rates of water [mm-m2/d], mass [mg/d], and/or energy [MJ/d]
 /// \return returns false if this process doesn't apply to this HRU, true otherwise
 //
 bool CModel::ApplyLateralProcess( const int          j,
@@ -2234,8 +2985,8 @@ bool CModel::ApplyLateralProcess( const int          j,
 
   pLatProc=(CLateralExchangeProcessABC*)_pProcesses[j]; // Cast
   if (!_aShouldApplyProcess[j][pLatProc->GetFromHRUIndices()[0]]){return false;} //JRC: is the From/0 appropriate?
-  
-  
+
+
   for (int q=0;q<nLatConnections;q++)
   {
     iFrom[q]=pLatProc->GetLateralFromIndices()[q];
@@ -2253,5 +3004,3 @@ bool CModel::ApplyLateralProcess( const int          j,
 
   return true;
 }
-
-

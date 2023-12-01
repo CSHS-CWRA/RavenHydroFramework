@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   class definitions:
   CmvBaseflow
@@ -54,7 +54,8 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvBaseflow(baseflow_type btype,
-              int           from_index);
+              int           from_index,
+              CModelABC     *pModel);
   ~CmvBaseflow();
 
   //inherited functions
@@ -94,6 +95,7 @@ enum soilevap_type
   SOILEVAP_UBC,           ///< UBCWM Model (Quick, 1996)
   SOILEVAP_CHU,           ///< Ontario Crop Heat Unit method
   SOILEVAP_PDM,           ///< From Probabilty Distributed Model (Moore, 1985)
+  SOILEVAP_HYMOD2,        ///< Variant of Probability Distributed Model (Moore, 1985) used in HYMOD2 (Roy et al., 2017)
   SOILEVAP_GR4J,          ///< GR4J model approach (Perrin et al., 2003)
   SOILEVAP_LINEAR,        ///< AET a linear function of soil moisture
   SOILEVAP_SACSMA,        ///< Sacramento Soil Moisture Accounting algorithm (should only be used with SOILBAL_SACSMA)
@@ -113,33 +115,37 @@ private:/*------------------------------------------------------*/
   int             nSoilLayers;  ///< number of soil layers subject to evaporation
 
   void FedererSoilEvap           (const double      &PET,
-                                  const double            *storage,
+                                  const double      *storage,
                                   const CHydroUnit  *pHRU,
-                                  const optStruct         &Options,
+                                  const optStruct   &Options,
                                   const time_struct &tt,
-                                  double      *rates) const;
+                                  double            *rates) const;
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvSoilEvap(soilevap_type se_type);
+  CmvSoilEvap(soilevap_type se_type, CModelABC *pModel);
   ~CmvSoilEvap();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double           *rates) const;
 
-  void        GetParticipatingParamList   (string  *aP , class_type *aPC , int &nP) const;
+  void        GetParticipatingParamList   (string *aP ,
+                                           class_type *aPC,
+                                           int &nP) const;
   static void GetParticipatingStateVarList(soilevap_type se_type,
-                                           sv_type *aSV,        int *aLev, int &nSV);
+                                           sv_type *aSV,
+                                           int *aLev,
+                                           int &nSV);
 
 };
 
@@ -162,8 +168,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvInterflow( interflow_type  itype,
-                int             from_index);
+  CmvInterflow(interflow_type itype,
+               int            from_index,
+               CModelABC      *pModel);
   ~CmvInterflow();
 
   //inherited functions
@@ -211,14 +218,15 @@ enum perc_type
 class CmvPercolation: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  perc_type       type;        ///< Model of percolation selected
-  int             nSoilLayers; ///< number of soil layers subject to percolation
+  perc_type type;        ///< Model of percolation selected
+  int       nSoilLayers; ///< number of soil layers subject to percolation
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvPercolation(perc_type      p_type,
-                 int            In_indices,                     //soil water storage
-                 int            Out_index);
+  CmvPercolation(perc_type p_type,
+                 int       In_indices,                     //soil water storage
+                 int       Out_index,
+                 CModelABC *pModel);
   ~CmvPercolation();
 
   //inherited functions
@@ -258,9 +266,10 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCapillaryRise(crise_type   cr_type,
-                   int                          In_index,                       //soil water storage
-                   int                          Out_index);
+  CmvCapillaryRise(crise_type cr_type,
+                   int        In_index,                       //soil water storage
+                   int        Out_index,
+                   CModelABC  *pModel);
   ~CmvCapillaryRise();
 
   //inherited functions
@@ -294,25 +303,26 @@ enum drain_type
 /// \brief Data abstration of loss of water from one soil layer to a lower soil layer
 //
 class CmvDrain: public CHydroProcessABC
-{  
+{
   private:/*------------------------------------------------------*/
 		drain_type					type; ///< Model of drainage selected
 		int					 nSoilLayers; ///< number of soil layers subject to drainage
 
   public:/*-------------------------------------------------------*/
 		//Constructors/destructors:
-		CmvDrain(drain_type	d_type);			
+		CmvDrain(drain_type	d_type,
+             CModel *pModel);
 		~CmvDrain();
 
 		//inherited functions
     void Initialize();
-    void GetRatesOfChange(const double		  *state_vars, 
-								          const CHydroUnit  *pHRU, 
+    void GetRatesOfChange(const double		  *state_vars,
+								          const CHydroUnit  *pHRU,
 								          const optStruct	  &Options,
 								          const time_struct &tt,
                                 double      *rates) const;
     void ApplyConstraints(const double      *state_vars,
-											    const CHydroUnit  *pHRU, 
+											    const CHydroUnit  *pHRU,
 								          const optStruct	  &Options,
 								          const time_struct &tt,
                                 double      *rates) const;
@@ -325,9 +335,9 @@ class CmvDrain: public CHydroProcessABC
 //
 enum recharge_type
 {
-  RECHARGE_FROMFILE,             ///< uses recharge from data 
+  RECHARGE_FROMFILE,             ///< uses recharge from data
   RECHARGE_CONSTANT,         ///< constant recharge method applied to aquifers
-  RECHARGE_CONSTANT_OVERLAP, ///<constant recharge method applied to aquifers with area weighted separation to connected gw cells 
+  RECHARGE_CONSTANT_OVERLAP, ///<constant recharge method applied to aquifers with area weighted separation to connected gw cells
 };
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction of capillary rise
@@ -336,12 +346,17 @@ enum recharge_type
 class CmvRecharge: public CHydroProcessABC
 {
 private:/*------------------------------------------------------*/
-  recharge_type	      _type;        ///< Model of recharge 
+  recharge_type	      _type;        ///< Model of recharge
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvRecharge(recharge_type	rech_type, int to_index, int junk); //junk just to distinguish constructors
-  CmvRecharge(recharge_type	rech_type, int nConns);			
+  CmvRecharge(recharge_type	rech_type,
+              int           to_index,
+              int           junk,
+              CModelABC     *pModel); //junk just to distinguish constructors
+  CmvRecharge(recharge_type	rech_type,
+              int           nConns,
+              CModelABC     *pModel);
   ~CmvRecharge();
 
   //inherited functions
@@ -378,7 +393,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
-  CmvSoilBalance(soilbal_type sb_type);
+  CmvSoilBalance(soilbal_type sb_type,
+                 CModelABC *pModel);
   ~CmvSoilBalance();
 
   //inherited functions

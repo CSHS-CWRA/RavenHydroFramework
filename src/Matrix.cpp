@@ -7,7 +7,7 @@
  MatMult:
 	Multiplies NxN square matrix and Nx1 vector A*x. Returns b
 -----------------------------------------------------------------------*/
-void   MatVectMult(Ironclad2DArray A,Ironclad1DArray x,Writeable1DArray b,const int N,bool transpose) 
+void   MatVectMult(Ironclad2DArray A,Ironclad1DArray x,Writeable1DArray b,const int N,bool transpose)
 {
 	int i,j;
 	if(!transpose) {
@@ -25,7 +25,7 @@ void   MatVectMult(Ironclad2DArray A,Ironclad1DArray x,Writeable1DArray b,const 
  MatVectMult:
 	Multiplies non-square NxM matrix and Mx1 vector A*x. Returns b (Nx1)
 -----------------------------------------------------------------------*/
-void   MatVectMult(Ironclad2DArray A,Ironclad1DArray x,Writeable1DArray b,const int N,const int M) 
+void   MatVectMult(Ironclad2DArray A,Ironclad1DArray x,Writeable1DArray b,const int N,const int M)
 {
 	for(int i=0;i<N;i++) {
 		b[i]=0.0;  for(int j=0; j<M;j++) { b[i]+=A[i][j]*x[j]; }
@@ -52,10 +52,10 @@ void   MatMult(Ironclad2DArray A,Ironclad2DArray B,const int N,const int M,const
 	Multiplies NxM matrix A times scalara multiplier. Returns C (NxM)
 	matrix C may be same as matrix A
 -----------------------------------------------------------------------*/
-void   ScalarMatMult(Ironclad2DArray  A,const double& muliplier,const int	N,const int M,Writeable2DArray C) 
+void   ScalarMatMult(Ironclad2DArray  A,const double& muliplier,const int	N,const int M,Writeable2DArray C)
 {
 	for(int i=0;i<N;i++) {
-		for(int j=0; j<M;j++) { 
+		for(int j=0; j<M;j++) {
 			C[i][j]=A[i][j]*muliplier;
 		}
 	}
@@ -63,9 +63,9 @@ void   ScalarMatMult(Ironclad2DArray  A,const double& muliplier,const int	N,cons
 /************************************************************************
  MatAdd:
 	Adds NxM matrix A to NxM matrix B. Returns C (NxM)
-	matrix C may be same as matrix A or B 
+	matrix C may be same as matrix A or B
 -----------------------------------------------------------------------*/
-void   MatAdd(Ironclad2DArray  A,Ironclad2DArray  B,const int	N,const int M,Writeable2DArray C) 
+void   MatAdd(Ironclad2DArray  A,Ironclad2DArray  B,const int	N,const int M,Writeable2DArray C)
 {
 	for(int i=0;i<N;i++) {
 		for(int j=0; j<M;j++) {
@@ -145,7 +145,7 @@ bool SVD(Ironclad2DArray AA,
 				 Ironclad1DArray b,
 				 Writeable1DArray x,
 				 const int size,
-				 const double SVTolerance) 
+				 const double SVTolerance)
 {
 	bool flag;
 	int i,its,j,jj,k,l,nm;

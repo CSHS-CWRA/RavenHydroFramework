@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Baseflow Constructor/Destructor
@@ -20,8 +21,9 @@
 /// \param In_index [in] Index of state variable providing baseflow to surface water
 //
 CmvBaseflow::CmvBaseflow(baseflow_type  btype,
-                         int            In_index)
-  :CHydroProcessABC(BASEFLOW)
+                         int            In_index,
+                         CModelABC      *pModel)
+  :CHydroProcessABC(BASEFLOW, pModel)
 {
   type =btype;
   ExitGracefullyIf(In_index==DOESNT_EXIST,
@@ -128,7 +130,7 @@ void CmvBaseflow::GetParticipatingStateVarList(baseflow_type  btype,sv_type *aSV
 
 //////////////////////////////////////////////////////////////////
 /// \brief Finds baseflow rate of change
-/// \details returns  of loss from soil or aquifer to surface water [mm/d] 
+/// \details returns  of loss from soil or aquifer to surface water [mm/d]
 /// if type==BASE_LINEAR (bucket model) or BASE_LINEAR_ANALYTIC (analytical solution over tstep for bucket model)
 ///     <ul> <li> flow is linearly  proportional to soil/lumped landform storage [mm] used in PRMS/HBV models, amongst others \cite Hamon1961 </ul>
 /// if type==BASE_POWER_LAW
@@ -253,8 +255,8 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
     double sat=stor / max_stor;
 
     rates[0]=0.0;
-    if (sat>tsat){ 
-      rates[0] = K*pow((sat - tsat) / (1.0-tsat),n); 
+    if (sat>tsat){
+      rates[0] = K*pow((sat - tsat) / (1.0-tsat),n);
       rates[0] = min(rates[0],max_stor*(sat-tsat)/Options.timestep);
     }
 
@@ -287,7 +289,7 @@ void   CmvBaseflow::GetRatesOfChange( const double      *storage,
 /// \param *pHRU [in] Pointer to HRU object
 /// \param &Options [in] Global model options information
 /// \param &tt [in] Current input time structure
-/// \param *rates [out] Rates of change of state variables 
+/// \param *rates [out] Rates of change of state variables
 //
 void   CmvBaseflow::ApplyConstraints( const double     *storage,
                                       const CHydroUnit *pHRU,

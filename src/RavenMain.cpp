@@ -7,10 +7,11 @@
 #include "RavenMain.h"
 #include "Model.h"
 #include "UnitTesting.h"
-
-// Main Driver Variables------------------------------------------
-static optStruct   Options;
-static CModel      *pModel;
+#ifdef STANDALONE
+    #include "GracefulEndStandalone.h"
+#elif BMI_LIBRARY
+    #include "GracefulEndBMI.h"
+#endif
 
 // Global variables - declared as extern in RavenInclude.h--------
 string g_output_directory ="";
@@ -38,12 +39,13 @@ int main(int argc, char* argv[])
   clock_t     t0, t1;          //computational time markers
   time_struct tt;
   int         nEnsembleMembers;
-  
+  optStruct   Options;
+
   Options.version="3.7.1";
-#ifdef _NETCDF_ 
+#ifdef _NETCDF_
   Options.version+=" w/ netCDF";
 #endif
-  
+
   ProcessExecutableArguments(argc,argv,Options);
   PrepareOutputdirectory(Options);
 
@@ -68,18 +70,14 @@ int main(int argc, char* argv[])
     ExitGracefully("Main::Unable to open Raven_errors.txt. Bad output directory specified?",RAVEN_OPEN_ERR);
   }
   WARNINGS.close();
-  
+
   t0=clock();
-
-  CStateVariable::Initialize();
-
-  Options.in_bmi_mode = false;  // "regular mode": Raven called from command line
 
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
-   
-  CheckForErrorWarnings(true);
+
+  CheckForErrorWarnings(true, pModel);
 
   if (!Options.silent){
     cout <<"======================================================"<<endl;
@@ -91,26 +89,26 @@ int main(int argc, char* argv[])
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-  CheckForErrorWarnings(false);
+  CheckForErrorWarnings(false, pModel);
 
   nEnsembleMembers=pModel->GetEnsemble()->GetNumMembers();
-    
+
   for(int e=0;e<nEnsembleMembers; e++) //only run once in standard mode
   {
-    
+
     pModel->GetEnsemble()->UpdateModel(pModel,Options,e);
     PrepareOutputdirectory(Options); //adds new output folders, if needed
     pModel->WriteOutputFileHeaders(Options);
-      
+
     if(!Options.silent) {
       cout <<endl<<"======================================================"<<endl;
       if(nEnsembleMembers>1) { cout<<"Ensemble Member "<<e+1<<" "; g_suppress_warnings=true;}
       cout <<"Simulation Start..."<<endl;
     }
-    
+
     double t_start=0.0;
     t_start=pModel->GetEnsemble()->GetStartTime(e);
-      
+
     //Write initial conditions-------------------------------------
     JulianConvert(t_start,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
     pModel->RecalculateHRUDerivedParams(Options,tt);
@@ -121,15 +119,15 @@ int main(int argc, char* argv[])
     //Solve water/energy balance over time--------------------------------
     t1=clock();
     int step=0;
-      
+
     for(t=t_start; t<Options.duration-TIME_CORRECTION; t+=Options.timestep)  // in [d]
     {
       pModel->UpdateTransientParams      (Options,tt);
       pModel->RecalculateHRUDerivedParams(Options,tt);
+      pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
       pModel->UpdateHRUForcingFunctions  (Options,tt);
       pModel->PrepareAssimilation        (Options,tt);
       pModel->WriteSimpleOutput          (Options,tt);
-      pModel->GetEnsemble()->StartTimeStepOps(pModel,Options,tt,e);
       CallExternalScript                 (Options,tt);
       ParseLiveFile                      (pModel,Options,tt);
 
@@ -139,13 +137,12 @@ int main(int argc, char* argv[])
       pModel->IncrementCumOutflow        (Options,tt);
 
       JulianConvert(t+Options.timestep,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);//increments time structure
-
       pModel->WriteMinorOutput           (Options,tt);
       pModel->WriteProgressOutput        (Options,clock()-t1,step,(int)ceil(Options.duration/Options.timestep));
-      pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!! 
+      pModel->UpdateDiagnostics          (Options,tt); //required to read stuff!!
       pModel->GetEnsemble()->CloseTimeStepOps(pModel,Options,tt,e);
 
-      if ((Options.use_stopfile) && (CheckForStopfile(step,tt))) { break; }
+      if ((Options.use_stopfile) && (CheckForStopfile(step, tt, pModel))) { break; }
       step++;
     }
 
@@ -155,7 +152,7 @@ int main(int argc, char* argv[])
     pModel->WriteMajorOutput  (Options,tt,"solution",true);
     pModel->CloseOutputStreams();
 
-    if(!Options.silent) 
+    if(!Options.silent)
     {
       cout <<"======================================================"<<endl;
       cout <<"...Raven Simulation Complete: "<<Options.run_name<<endl;
@@ -203,6 +200,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.rvg_filename="";
   Options.rve_filename="";
   Options.rvl_filename="";
+  Options.rvm_filename="";
   Options.output_dir  ="";
   Options.main_output_dir="";
   Options.silent=false;
@@ -210,6 +208,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
   Options.pause =true;
   Options.forecast_shift=0.0;
   Options.warm_ensemble_run="";
+  Options.in_bmi_mode = false;  // "regular mode": Raven called from command line
 
   //Parse argument list
   while (i<=argc)
@@ -217,8 +216,8 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     if (i!=argc){
       word=to_string(argv[i]);
     }
-    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") || 
-        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") || 
+    if ((word=="-p") || (word=="-h") || (word=="-t") || (word=="-e") || (word=="-c") || (word=="-o") ||
+        (word=="-s") || (word=="-r") || (word=="-n") || (word=="-l") || (word=="-m") || (word=="-v") ||
         (word=="-we")|| (word=="-tt")|| (i==argc))
     {
       if      (mode==0){
@@ -230,6 +229,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
         Options.rvg_filename=argument+".rvg";
         Options.rve_filename=argument+".rve";
         Options.rvl_filename=argument+".rvl";
+        Options.rvm_filename=argument+".rvm";
         argument="";
         mode=10;
       }
@@ -255,7 +255,7 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
       else if (word=="-n"){Options.noisy=true;  mode=10;}
       else if (word=="-r"){mode=6; }
       else if (word=="-e"){mode=7; }
-      else if (word=="-g"){mode=8; }	  
+      else if (word=="-g"){mode=8; }
       else if (word=="-l"){mode=9; }
       else if (word=="-m"){mode=11;}
       else if (word=="-tt"){mode=12; }
@@ -277,12 +277,13 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
     Options.rvg_filename="nomodel.rvg";
     Options.rve_filename="nomodel.rve";
     Options.rvl_filename="nomodel.rvl";
+    Options.rvm_filename="nomodel.rvm";
   }
 
   // make sure that output dir has trailing '/' if not empty
   if ((Options.output_dir.compare("") != 0) && (Options.output_dir.back()!='/')){ Options.output_dir=Options.output_dir+"/"; }
 
-  //convert to days 
+  //convert to days
   Options.forecast_shift/=HR_PER_DAY;
 
   char cCurrentPath[FILENAME_MAX];
@@ -300,88 +301,23 @@ void ProcessExecutableArguments(int argc, char* argv[], optStruct   &Options)
 
 
 /////////////////////////////////////////////////////////////////
-/// \brief Finalizes program gracefully, explaining reason for finalizing, and destructing simulation and all pertinent parameters
-/// \remark Called from within ExitGracefully() or from the BMI Finalize() function
-/// 
-/// \param statement [in] String to print to user upon exit
-/// \param code [in] Code to determine why the system is exiting
-//
-void FinalizeGracefully(const char *statement, exitcode code)
-{
-  string typeline;
-  switch (code){
-    case(SIMULATION_DONE): {typeline="============================================================";break;}
-    case(RUNTIME_ERR):     {typeline="Error Type: Runtime Error";       break;}
-    case(BAD_DATA):        {typeline="Error Type: Bad input data";      break;}
-    case(BAD_DATA_WARN):   {typeline="Error Type: Bad input data";      break;}
-    case(OUT_OF_MEMORY):   {typeline="Error Type: Out of memory";       break;}
-    case(FILE_OPEN_ERR):   {typeline="Error Type: File opening error";  break;}
-    case(STUB):            {typeline="Error Type: Stub function called";break;}
-    default:               {typeline="Error Type: Unknown";             break;}
-  }
-
-  if (code != RAVEN_OPEN_ERR) { //avoids recursion problems
-    ofstream WARNINGS;
-    WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str(),ios::app);
-    if (WARNINGS.fail()) {
-      WARNINGS.close();
-      string message="Unable to open errors file ("+Options.main_output_dir+"Raven_errors.txt)";
-      ExitGracefully(message.c_str(),RAVEN_OPEN_ERR);
-    }
-    if (code!=SIMULATION_DONE) {WARNINGS<<"ERROR : "<<statement<<endl;}
-    else                       {WARNINGS<<"SIMULATION COMPLETE :)"<<endl;}
-    WARNINGS.close();
-  }
-  if (code==BAD_DATA_WARN){return;}//just write these errors to a file if not in strict mode
-
-  cout <<endl<<endl;
-  cout <<"============== Exiting Gracefully =========================="<<endl;
-  cout <<"Exiting Gracefully: "<<statement                             <<endl;
-  cout << typeline                                                     <<endl;
-  cout <<"============================================================"<<endl;
-
-  delete pModel; pModel=NULL; //deletes EVERYTHING!
-  CStateVariable::Destroy();
-
-  if(Options.pause) {
-    cout << "Press the ENTER key to continue"<<endl;
-    cin.get();
-  }
-}
-
-
-/////////////////////////////////////////////////////////////////
-/// \brief Exits gracefully from program, explaining reason for exit and destructing simulation all pertinent parameters
-/// \remark Called from within code
-///
-/// \param statement [in] String to print to user upon exit
-/// \param code [in] Code to determine why the system is exiting
-//
-void ExitGracefully(const char *statement,exitcode code)
-{
-
-  FinalizeGracefully(statement, code);
-  exit(0);
-}
-
-
-/////////////////////////////////////////////////////////////////
 /// \brief Checks if errors have been written to Raven_errors.txt, if so, exits gracefully
 /// \note called prior to simulation initialization, after parsing everything
 ///
 //
-void CheckForErrorWarnings(bool quiet)
+void CheckForErrorWarnings(bool quiet, CModel *pModel)
 {
   int      Len;
   char    *s[MAXINPUTITEMS];
   bool     errors_found(false);
   bool     warnings_found(false);
+  const optStruct* Options = pModel->GetOptStruct();
 
   ifstream WARNINGS;
-  WARNINGS.open((Options.main_output_dir+"Raven_errors.txt").c_str());
+  WARNINGS.open((Options->main_output_dir+"Raven_errors.txt").c_str());
   if (WARNINGS.fail()){WARNINGS.close();return;}
 
-  CParser *p=new CParser(WARNINGS,Options.main_output_dir+"Raven_errors.txt",0);
+  CParser *p=new CParser(WARNINGS,Options->main_output_dir+"Raven_errors.txt",0);
 
   while (!(p->Tokenize(s,Len)))
   {
@@ -407,26 +343,26 @@ void CheckForErrorWarnings(bool quiet)
 /// \note called during simulation to determine whether progress should be stopped
 ///
 //
-bool CheckForStopfile(const int step, const time_struct &tt)
+bool CheckForStopfile(const int step, const time_struct &tt, CModel *pModel)
 {
-  if(step%100!=0){ return false; } //only check every 100th timestep 
+  if(step%100!=0){ return false; } //only check every 100th timestep
   ifstream STOP;
   STOP.open("stop");
   if (STOP.fail()){STOP.close(); return false;}
   else //Stopfile found
   {
     STOP.close();
-    pModel->WriteMajorOutput  (Options,tt,"solution",true);
+    pModel->WriteMajorOutput(tt, "solution", true);
     pModel->CloseOutputStreams();
     ExitGracefully("CheckForStopfile: simulation interrupted by user using stopfile",SIMULATION_DONE);
     return true;
   }
 }
 /////////////////////////////////////////////////////////////////
-/// \brief Calls external script to be run 
+/// \brief Calls external script to be run
 /// idea/code from Kai Tsuruta, PCIC
 //
-void CallExternalScript(const optStruct &Options,const time_struct &tt) 
+void CallExternalScript(const optStruct &Options,const time_struct &tt)
 {
   if(Options.external_script!="") {
     string script=Options.external_script;

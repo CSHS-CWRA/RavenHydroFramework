@@ -14,6 +14,8 @@ routing of mass/energy in catchment and channel
 void CConstituentModel::InitializeRoutingVars()
 {
   int nSB=_pModel->GetNumSubBasins();
+  _nMinHist       =new int     [nSB];
+  _nMlatHist      =new int     [nSB];
   _aMinHist       =new double *[nSB];
   _aMlatHist      =new double *[nSB];
   _aMout          =new double *[nSB];
@@ -31,18 +33,18 @@ void CConstituentModel::InitializeRoutingVars()
 
   for(int p=0;p<nSB;p++)
   {
-    int nMinHist =_pModel->GetSubBasin(p)->GetInflowHistorySize();
-    int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();
     int nSegments=_pModel->GetSubBasin(p)->GetNumSegments();
 
     _aMout[p]=NULL;
-    _aMinHist [p]=new double[nMinHist];
-    _aMlatHist[p]=new double[nMlatHist];
+    _nMlatHist[p]=_pModel->GetSubBasin(p)->GetLatHistorySize();
+    _nMinHist [p]=_pModel->GetSubBasin(p)->GetInflowHistorySize(); //TMP DEBUG - to change
+    _aMinHist [p]=new double[_nMinHist[p]];
+    _aMlatHist[p]=new double[_nMlatHist[p]];
     _aMout    [p]=new double[nSegments];
     ExitGracefullyIf(_aMout[p]==NULL,"CConstituentModel::InitializeRoutingVars(2)",OUT_OF_MEMORY);
-    for(int i=0; i<nMinHist; i++) { _aMinHist [p][i]=0.0; }
-    for(int i=0; i<nMlatHist;i++) { _aMlatHist[p][i]=0.0; }
-    for(int i=0; i<nSegments;i++) { _aMout    [p][i]=0.0; }
+    for(int i=0; i<_nMinHist[p]; i++) { _aMinHist [p][i]=0.0; }
+    for(int i=0; i<_nMlatHist[p];i++) { _aMlatHist[p][i]=0.0; }
+    for(int i=0; i<nSegments;    i++) { _aMout    [p][i]=0.0; }
     _aMout_last     [p]=0.0;
     _aMres          [p]=0.0;
     _aMres_last     [p]=0.0;
@@ -54,7 +56,7 @@ void CConstituentModel::InitializeRoutingVars()
     _aMresRain      [p]=0.0;
     _channel_storage[p]=0.0;
     _rivulet_storage[p]=0.0;
-    
+
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -68,7 +70,7 @@ void CConstituentModel::DeleteRoutingVars()
     {
       delete[] _aMinHist[p];
       delete[] _aMlatHist[p];
-      delete[] _aMout[p];   
+      delete[] _aMout[p];
     }
     delete[] _aMinHist;        _aMinHist  =NULL;
     delete[] _aMlatHist;       _aMlatHist =NULL;
@@ -84,18 +86,19 @@ void CConstituentModel::DeleteRoutingVars()
     delete[] _channel_storage; _channel_storage=NULL;
     delete[] _rivulet_storage; _rivulet_storage=NULL;
     delete[] _aMout_last;      _aMout_last     =NULL;
+    delete[] _nMlatHist;       _nMlatHist=NULL;
+    delete[] _nMinHist;        _nMinHist=NULL;
   }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Set upstream mass loading to primary channel and updates mass loading history
 ///
 /// \param p    subbasin index
-/// \param Minnew rates of upstream mass/energy loading for the current timestep [mg/d]/[MJ/d] 
+/// \param Minnew rates of upstream mass/energy loading for the current timestep [mg/d]/[MJ/d]
 //
 void   CConstituentModel::SetMassInflows(const int p,const double Minnew)
 {
-  int nMinHist=_pModel->GetSubBasin(p)->GetInflowHistorySize();
-  for(int n=nMinHist-1;n>0;n--) {
+  for(int n=_nMinHist[p]-1;n>0;n--) {
     _aMinHist[p][n]=_aMinHist[p][n-1];
   }
   _aMinHist[p][0]=Minnew;
@@ -113,7 +116,7 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   long   SBID=_pModel->GetSubBasin(p)->GetID();
   double    Q=_pModel->GetSubBasin(p)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
 
-  //Handle additional mass/energy inflows 
+  //Handle additional mass/energy inflows
   for(int i=0; i<_nMassLoadingTS; i++) {
     if(_pMassLoadingTS[i]->GetLocID()==SBID) {
       Minnew+=_pMassLoadingTS[i]->GetValue(t)*MG_PER_KG; //[mg/d]
@@ -125,11 +128,11 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
   {
     if(_pSpecFlowConcs[i]->GetLocID()==SBID) {
       C=_pSpecFlowConcs[i]->GetValue(t); //mg/L or C
-      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
       else                { C*=LITER_PER_M3; } //mg/m3
       ExitGracefullyIf(_type==ISOTOPE,"ApplySpecifiedMassInflows: cannot handle isotopes",BAD_DATA);
 
-      Minnew=Q*C;  //[m3/d]*[mg/m3] or [m3/d]*[MJ/m3] 
+      Minnew=Q*C;  //[m3/d]*[mg/m3] or [m3/d]*[MJ/m3]
     }
   }
 }
@@ -138,7 +141,7 @@ void   CConstituentModel::ApplySpecifiedMassInflows(const int p,const double t,d
 ///
 /// \param c    constituent index
 /// \param t    end of timestep, in model time
-/// \param tstep [in] 
+/// \param tstep [in]
 /// \returns net mass/energy added in this timestep due to inflow source terms [mg] or [MJ]
 //
 double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const double &tstep) const
@@ -164,7 +167,7 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
 
     Q=_pModel->GetSubBasinByID(SBID)->GetOutflowRate()*SEC_PER_DAY; //[m3/d] Flow at end of time step
     C=_pSpecFlowConcs[i]->GetValue(t+tstep);                             //mg/L or C
-    if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+    if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
     else                { C*=LITER_PER_M3; } //mg/m3
     //TMP DEBUG - DOES NOT HANDLE ISOTOPES PROPERLY !!!
     ExitGracefullyIf(_type==ISOTOPE,"GetMassAddedFromInflowSources: cannot handle isotopes",BAD_DATA);
@@ -173,7 +176,7 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
     if(t>0) {
       Qold=_pModel->GetSubBasinByID(SBID)->GetLastOutflowRate()*SEC_PER_DAY;//[m3/d] Flow at start of time step
       C=_pSpecFlowConcs[i]->GetValue(t);                             //mg/L or C
-      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3 
+      if(_type==ENTHALPY) { C=ConvertTemperatureToVolumetricEnthalpy(C,0.0); } //MJ/m3
       else                { C*=LITER_PER_M3; } //mg/m3
       mass+=0.5*Qold*C*tstep;
     }
@@ -181,9 +184,9 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
   // Handle external additions of mass
   for(int i=0; i<_nMassLoadingTS; i++)
   {
-    mass+=0.5*_pMassLoadingTS[i]->GetValue(t+tstep)*MG_PER_KG*tstep;  //[mg] 
+    mass+=0.5*_pMassLoadingTS[i]->GetValue(t+tstep)*MG_PER_KG*tstep;  //[mg]
     if(t>0) {
-    mass+=0.5*_pMassLoadingTS[i]->GetValue(t      )*MG_PER_KG*tstep;  //[mg] 
+    mass+=0.5*_pMassLoadingTS[i]->GetValue(t      )*MG_PER_KG*tstep;  //[mg]
     }
   }
 
@@ -193,16 +196,15 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
 /// \brief Sets lateral mass/energy loading to primary channel and updates mass/energy loading history
 ///
 /// \param p     subbasin index
-/// \param Mlat  lateral mass loading rate for the current timestep [mg/d][MJ/d] 
+/// \param Mlat  lateral mass loading rate for the current timestep [mg/d][MJ/d]
 //
 void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 {
-  int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();  
-  for(int n=nMlatHist-1;n>0;n--) {
+  for(int n=_nMlatHist[p]-1;n>0;n--) {
     _aMlatHist[p][n]=_aMlatHist[p][n-1];
   }
   _aMlatHist[p][0]=Mlat;
-  
+
 }
 
 //////////////////////////////////////////////////////////////////
@@ -230,8 +232,6 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
   const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
 
-  int nMlatHist   =_pModel->GetSubBasin(p)->GetLatHistorySize();
-  int nMinHist    =_pModel->GetSubBasin(p)->GetInflowHistorySize();
   int nSegments   =_pModel->GetSubBasin(p)->GetNumSegments();
   double seg_fraction=1.0/(double)(nSegments);
 
@@ -241,27 +241,23 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   // route from catchment
   //==============================================================
   Mlat_new=0.0;
-  for(n=0;n<nMlatHist;n++) {
+  for(n=0;n<_nMlatHist[p];n++) {
     Mlat_new+=_aMlatHist[p][n]*aUnitHydro[n];
   }
-  
+
   //==============================================================
   // route along channel
   //==============================================================
   if((Options.routing==ROUTE_PLUG_FLOW) || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
-  {     
+  {
     // (sometimes fancy) convolution
-    ApplyConvolutionRouting(p,aRouteHydro,aQinHist,_aMinHist[p],nSegments,nMinHist,Options.timestep,aMout_new);
+    ApplyConvolutionRouting(p,aRouteHydro,aQinHist,_aMinHist[p],nSegments,_nMinHist[p],Options.timestep,aMout_new);
   }
   //==============================================================
   else if(Options.routing==ROUTE_NONE)
   {//In channel routing instantaneous
     aMout_new[nSegments-1]=_aMinHist[p][0];//spits out the mass that just entered
   }
-  //==============================================================
-  /*else if(Options.routing==ROUTE_HYDROLOGIC){
-    ExitGracefully("Transport with ROUTE_HYDROLOGIC",STUB);
-  }*/
   //==============================================================
   else {
     ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
@@ -282,7 +278,7 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   CReservoir *pRes=_pModel->GetSubBasin(p)->GetReservoir();
   if(pRes!=NULL)
   {
-    RouteMassInReservoir(p,aMout_new,Res_mass,ResSedMass,Options,tt);    
+    RouteMassInReservoir(p,aMout_new,Res_mass,ResSedMass,Options,tt);
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -309,10 +305,10 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
   double V_old=pRes->GetOldStorage    ();
   double Q_new=pRes->GetOutflowRate   ()*SEC_PER_DAY;
   double Q_old=pRes->GetOldOutflowRate()*SEC_PER_DAY;
-    
+
   double decay_coeff=0.0;
   CHydroUnit*   pHRU=_pModel->GetHydroUnit(pRes->GetHRUIndex());
-  if(pHRU!=NULL) { 
+  if(pHRU!=NULL) {
     int     iSW = _pModel->GetStateVarIndex(SURFACE_WATER);
     int     ii  = _pTransModel->GetWaterStorIndexFromSVIndex(iSW);
     decay_coeff = _pTransModel->GetGeochemParam(PAR_DECAY_COEFF,_constit_index,ii,DOESNT_EXIST,pHRU);
@@ -338,9 +334,9 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
 /// the mass outflow rates for this basin
 ///
 /// \param **aMoutnew     [in] Array of new mass outflows [mg/d] [size:  nsegments x _nConstituents]
-/// \param ResMass       [in] new reservoir mass [mg] 
-/// \param ResMass       [in] new reservoir sediment mass [mg] 
-/// \param MassOutflow   [out] new mass outflow [mg/d] from last segment or reservoir 
+/// \param ResMass       [in] new reservoir mass [mg]
+/// \param ResMass       [in] new reservoir sediment mass [mg]
+/// \param MassOutflow   [out] new mass outflow [mg/d] from last segment or reservoir
 /// \param &Options       [in] Global model options information
 /// \param initialize     [in] Flag to indicate if flows are to only be initialized
 //
@@ -374,7 +370,7 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
 
     _aMout_res_last[p]=_aMout_res[p];
     _aMout_res     [p]=((pRes->GetOutflowRate()*SEC_PER_DAY)/pRes->GetStorage())*_aMres[p]; //mg/d or MJ/d
-    
+
     _aMsed_last    [p]=_aMsed[p];
     _aMsed         [p]=ResSedMass;
 
@@ -398,7 +394,7 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
   double dM=0.0;
   double Mlat_new(0.0);
   const double *pUH=pBasin->GetUnitHydrograph();
-  for(int n=0;n<pBasin->GetLatHistorySize();n++) {
+  for(int n=0;n<_nMlatHist[p];n++) {
     Mlat_new+=pUH[n]*_aMlatHist[p][n];
   }
 
@@ -413,7 +409,7 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
 
   //mass change from lateral inflows
   dM+=0.5*(Mlat_new+_aMlat_last[p])*dt;
-  
+
   _channel_storage[p]+=dM;//[mg] or [MJ]
 
   //Update rivulet storage
@@ -429,8 +425,8 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
 //////////////////////////////////////////////////////////////////
 /// \brief returns outflow concentration of constituent c (or temperature) in subbasin p at current point in time
 /// \notes only used for reporting; calculations exclusively in terms of mass/energy
-/// 
-/// \param p [in] subbasin index 
+///
+/// \param p [in] subbasin index
 //
 double CConstituentModel::GetOutflowConcentration(const int p) const
 {
@@ -452,7 +448,7 @@ double CConstituentModel::GetOutflowConcentration(const int p) const
 //////////////////////////////////////////////////////////////////
 /// \brief returns integrated mass outflow of constituent c from subbasin p over current timestep
 ///
-/// \param p [in] subbasin index 
+/// \param p [in] subbasin index
 /// \param c [in] constituent index
 /// \returns integrated mass outflow of constituent c, in mg
 //

@@ -14,9 +14,10 @@
 /// \param constit_name [in] name of constituent being tracked
 /// \param pTransportModel [in] Transport Model object
 //
-CmvMassLoading::CmvMassLoading(string constit_name,
-                           CTransportModel *pTransportModel)
-  :CHydroProcessABC(MASS_LOADING)
+CmvMassLoading::CmvMassLoading(string          constit_name,
+                               CTransportModel *pTransportModel,
+                               CModelABC       *pModel)
+  :CHydroProcessABC(MASS_LOADING, pModel)
 {
   pTransModel=pTransportModel;
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);
@@ -29,7 +30,7 @@ CmvMassLoading::CmvMassLoading(string constit_name,
     iFrom[ii]=pModel->GetStateVarIndex(CONSTITUENT_SRC,_constit_ind);
     int m=pTransModel->GetLayerIndex(_constit_ind,pTransModel->GetStorWaterIndex(ii));
     iTo  [ii]=pModel->GetStateVarIndex(CONSTITUENT,m);
-    
+
   }
 }
 
@@ -73,14 +74,14 @@ void   CmvMassLoading::GetRatesOfChange(const double      *state_vars,
                                         double            *rates) const
 {
   int    k=pHRU->GetGlobalIndex();
-  
+
   //Handle Neumann influx conditions, if present
   //-------------------------------------------------------
-  int iTo;
+  int iToIndex;
   for (int ii = 0; ii < pTransModel->GetNumWaterCompartments(); ii++)
   {
-    iTo=pTransModel->GetStorWaterIndex(ii);
-    rates[ii] = pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iTo, k, tt); //[mg/m2/d] or [MJ/m2/d]
+    iToIndex=pTransModel->GetStorWaterIndex(ii);
+    rates[ii] = pTransModel->GetConstituentModel2(_constit_ind)->GetSpecifiedMassFlux(iToIndex, k, tt); //[mg/m2/d] or [MJ/m2/d]
   }
 
 }

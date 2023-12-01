@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ------------------------------------------------------------------
 Soil Heat Conduction
 convention assumes conduction is positive downward
@@ -21,7 +21,7 @@ double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,
 /// \return Volumetric soil heat capacity [MJ/m3/K]
 //
 //
-double CalculateHeatCapacity(const double &poro,const double&hcp_soil,const double &sat,const double &Fice) 
+double CalculateHeatCapacity(const double &poro,const double&hcp_soil,const double &sat,const double &Fice)
 {
    return  (    sat)*(    poro)*(1.0-Fice)*HCP_WATER+
            (    sat)*(    poro)*(    Fice)*HCP_ICE  +
@@ -32,7 +32,7 @@ double CalculateHeatCapacity(const double &poro,const double&hcp_soil,const doub
 //////////////////////////////////////////////////////////////////
 /// \brief calculates density [kg/m3] of soil/water/ice mix
 //
-double CalculateDensity(const double &poro,const double&rho_soil,const double &sat,const double &Fice) 
+double CalculateDensity(const double &poro,const double&rho_soil,const double &sat,const double &Fice)
 {
    return  (    sat)*(    poro)*(1.0-Fice)*DENSITY_WATER+
            (    sat)*(    poro)*(    Fice)*DENSITY_ICE  +
@@ -57,7 +57,7 @@ double CalculateThermalConductivity(const double &poro,const double&kappa_soil,c
         pow(TC_WATER  ,sat*poro*(1-Fice))*
         pow(TC_ICE    ,sat*poro*(  Fice))*
         pow(TC_AIR    ,(1.0-sat)*poro); //[MJ/m/d/K]
- 
+
  //fixed value (as if liquid water saturated)
  //kappa= pow(kappa_soil,1.0-poro)*pow(TC_WATER,poro);
  //Kersten number
@@ -76,21 +76,26 @@ double CalculateThermalConductivity(const double &poro,const double&kappa_soil,c
   */
   return kappa;
 }
-int CmvHeatConduction::_nHRUs=-1;
-void CmvHeatConduction::StoreNumberOfHRUs(const int nHRUs){_nHRUs=nHRUs;}
+void CmvHeatConduction::StoreNumberOfHRUs(const int nHRUs){
+  _nHRUs=nHRUs;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the heat conduction constructor
 ///
 /// \param pTransMod [in] pointer to transport model
 //
-CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroProcessABC(HEATCONDUCTION)
+CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod,
+                                     CModelABC             *pModel)
+  :CHydroProcessABC(HEATCONDUCTION, pModel)
 {
   //g_disable_freezing=true; TMP DEBUG ONLY
 
   _pTransModel=pTransMod;
 
+  _nHRUs=-1;
+
   int nSoils=pModel->GetNumSoilLayers();
-  
+
   CHydroProcessABC::DynamicSpecifyConnections(2*nSoils+2);
 
   int cTemp=_pTransModel->GetConstituentIndex("TEMPERATURE");
@@ -99,52 +104,52 @@ CmvHeatConduction::CmvHeatConduction(const CTransportModel *pTransMod) : CHydroP
 
   int layer1, layer2;
 
-  //top connection - atmosphere to topsoil 
+  //top connection - atmosphere to topsoil
   //-------------------------------------------------------------
-  layer2=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,0)); //layer index of soil[0] enthalpy 
+  layer2=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,0)); //layer index of soil[0] enthalpy
 
-  iFrom[0]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp); //global index of energy source state variable 
+  iFrom[0]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp); //global index of energy source state variable
   iTo  [0]=pModel->GetStateVarIndex(CONSTITUENT,    layer2);//global index of enthalpy in soil[0]
 
-  //intermediate connections - soil to soil 
+  //intermediate connections - soil to soil
   //-------------------------------------------------------------
-  for(int m=0;m<nSoils-1;m++) 
+  for(int m=0;m<nSoils-1;m++)
   {
-    layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m  )); //layer index of soil[m] enthalpy 
-    layer2=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m+1)); //layer index of soil[m+1] enthalpy 
+    layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m  )); //layer index of soil[m] enthalpy
+    layer2=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m+1)); //layer index of soil[m+1] enthalpy
 
-    iFrom[m+1]=pModel->GetStateVarIndex(CONSTITUENT,layer1);//global index of enthalpy in soil[m] 
+    iFrom[m+1]=pModel->GetStateVarIndex(CONSTITUENT,layer1);//global index of enthalpy in soil[m]
     iTo  [m+1]=pModel->GetStateVarIndex(CONSTITUENT,layer2);//global index of enthalpy in soil[m+1]
   }
-  //bottom connection -geothermal 
+  //bottom connection -geothermal
   //-------------------------------------------------------------
-  layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,nSoils-1)); //layer index of soil[m] enthalpy 
+  layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,nSoils-1)); //layer index of soil[m] enthalpy
 
-  iFrom[nSoils]=pModel->GetStateVarIndex(CONSTITUENT,layer1);     //global index of enthalpy in soil[nSoils-1] 
-  iTo  [nSoils]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp);  //global index of energy source state variable 
+  iFrom[nSoils]=pModel->GetStateVarIndex(CONSTITUENT,layer1);     //global index of enthalpy in soil[nSoils-1]
+  iTo  [nSoils]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp);  //global index of energy source state variable
 
   //JRC: If we only track water enthalpy, we may need to include the sink/source term to the soil as it re-equilibrates
   for(int m=0;m<nSoils;m++)
   {
-    layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m)); //layer index of soil[m] enthalpy 
+    layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m)); //layer index of soil[m] enthalpy
 
-    iFrom[nSoils+1+m]=pModel->GetStateVarIndex(CONSTITUENT,layer1);//global index of enthalpy in water of soil[m] 
+    iFrom[nSoils+1+m]=pModel->GetStateVarIndex(CONSTITUENT,layer1);//global index of enthalpy in water of soil[m]
     iTo  [nSoils+1+m]=pModel->GetStateVarIndex(SOIL_TEMP,m);//actually soil enthalpy[m]
   }
-  
-  //top connection - atmosphere to topsoil 
+
+  //top connection - atmosphere to topsoil
   //-------------------------------------------------------------
-  iFrom[2*nSoils+1]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp); //global index of energy source state variable 
+  iFrom[2*nSoils+1]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp); //global index of energy source state variable
   iTo  [2*nSoils+1]=pModel->GetStateVarIndex(SOIL_TEMP,0);
 
 
   //JRC: If we only track water enthalpy, we may need to include the sink/source term to the soil as it re-equilibrates
   for(int m=0;m<nSoils;m++)
   {
-    //layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m)); //layer index of soil[m] enthalpy 
+    //layer1=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,m)); //layer index of soil[m] enthalpy
 
-    //iFrom[2*nSoils+m+1]=pModel->GetStateVarIndex(CONSTITUENT,   layer1);//global index of enthalpy in soil[m] 
-    //iTo  [2*nSoils+m+1]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp);//global index of energy source state variable 
+    //iFrom[2*nSoils+m+1]=pModel->GetStateVarIndex(CONSTITUENT,   layer1);//global index of enthalpy in soil[m]
+    //iTo  [2*nSoils+m+1]=pModel->GetStateVarIndex(CONSTITUENT_SRC,cTemp);//global index of energy source state variable
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -160,7 +165,7 @@ CmvHeatConduction::~CmvHeatConduction()
 /// \brief Initializes heat conduction process
 ///
 //
-void CmvHeatConduction::Initialize() 
+void CmvHeatConduction::Initialize()
 {
   //does nothing for now
 }
@@ -235,7 +240,7 @@ void ThomasAlgorithm(Ironclad1DArray  e,Ironclad1DArray f,
 /// \param a    [in ] diagonal       (a[i]=A[i][i]) [length=size]
 /// \param b    [in ] right diagonal (b[i]=A[i][i+1] [length=size]
 /// \param Ainv [out] resultant inverse matrix (assumes memory is already allocated in array of doubles)
-/// \param size [in]  N, size of NxN square matrix 
+/// \param size [in]  N, size of NxN square matrix
 ///
 void InvertTridiagonal(const double *cc,const double *a,const double *b,
                        double **Ainv,const int     size)
@@ -247,7 +252,7 @@ void InvertTridiagonal(const double *cc,const double *a,const double *b,
   double *theta=new double [N];
   double *phi  =new double [N];
   double *c    =new double [N];
-  for (i=0;i<N;i++){c[i]=cc[i+1]; } //requires a shift of the off-diagonal 
+  for (i=0;i<N;i++){c[i]=cc[i+1]; } //requires a shift of the off-diagonal
 
   theta[0]=a[0];
   theta[1]=a[1]*theta[0]-b[0]*c[0];
@@ -265,7 +270,7 @@ void InvertTridiagonal(const double *cc,const double *a,const double *b,
       else      { th_jm1=theta[j-1];}
       if(j==N-1){ ph_jp1=1.0;       }
       else      { ph_jp1=phi  [j+1];}
-    
+
       if(i<j) {
         bprod=1.0; for(k=i;k<=j-1;k++) { bprod*=b[k]; }
         Ainv[i][j]=pow(-1.0,i+j+2)*bprod*th_im1*ph_jp1/theta[N-1];
@@ -372,24 +377,24 @@ bool CmvHeatConduction::GenerateJacobianMatrix( const double  *z,
                                                 const double  *Vold, const double *Vnew, //[mm]
                                                 const double  *hold, const double *h,
                                                 const double  &tstep,
-                                                      double **J, 
+                                                      double **J,
                                                       double  *f,
-                                                const int      N) const 
+                                                const int      N) const
 {
   double dTdHn;
   double kappal,kappar,kappaln,kapparn,kappaln_d,kapparn_d,kappaln_di,kapparn_di;
   double ai,bi,Bn;
   double Fice,Ficen,Ficen_d;
   double dh=0.01;
-  double sum=ALMOST_INF; 
+  double sum=ALMOST_INF;
   bool zerorow=false;
-  
+
   double *kap    =new double [N];
   double *kapn   =new double [N];
   double *kapn_d =new double [N];
   double *T      =new double [N];
   double *Tn     =new double [N]; // \todo [optimize] - static storage
-  
+
   for(int i=0;i<N;i++)
   {
     Fice      =ConvertVolumetricEnthalpyToIceContent(hold[i]);
@@ -403,7 +408,7 @@ bool CmvHeatConduction::GenerateJacobianMatrix( const double  *z,
     T      [i]=ConvertVolumetricEnthalpyToTemperature(hold[i]);
     Tn     [i]=ConvertVolumetricEnthalpyToTemperature(   h[i]);
   }
-  for(int i=0;i<N;i++) 
+  for(int i=0;i<N;i++)
   {
     if(i==0) {
       ai=0.5*tstep/(z[i+1]-z[i]);
@@ -434,7 +439,7 @@ bool CmvHeatConduction::GenerateJacobianMatrix( const double  *z,
 
     dTdHn=TemperatureEnthalpyDerivative(h[i]);
 
-    Bn  =hold[i]*Vold[i]-ai*kappar *(T [i]-T [i+1])-bi*kappal *(T [i]-T [i-1])+eta[i]*T [i]; 
+    Bn  =hold[i]*Vold[i]-ai*kappar *(T [i]-T [i+1])-bi*kappal *(T [i]-T [i-1])+eta[i]*T [i];
 
     f[i]=h   [i]*Vnew[i]+ai*kapparn*(Tn[i]-Tn[i+1])+bi*kappaln*(Tn[i]-Tn[i-1])+eta[i]*Tn[i]-Bn;
 
@@ -444,12 +449,12 @@ bool CmvHeatConduction::GenerateJacobianMatrix( const double  *z,
     }
     else{J[0][i]=0.0; }
 
-    //central diagonal 
+    //central diagonal
     J[1][i] =Vnew[i];
     J[1][i]+=ai*(Tn[i]-Tn[i+1])*(kapparn_di-kapparn)/dh+ai*kapparn*dTdHn;
     J[1][i]+=bi*(Tn[i]-Tn[i-1])*(kappaln_di-kappaln)/dh+bi*kappaln*dTdHn;
     J[1][i]+=eta[i]*dTdHn;
-    
+
     //right diagonal
     if(i!=N-1) {
       J[2][i]=ai*(Tn[i]-Tn[i+1])*(kapparn_d-kapparn)/dh-ai*kapparn*TemperatureEnthalpyDerivative(h[i+1]);
@@ -495,15 +500,15 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
 
   double tstep=Options.timestep;
   int    iSoil,iSoilWaterEnthalpy,iSoilEnthalpy;
-  double hcond    = pHRU->GetSurfaceProps()->convection_coeff; //[MJ/m2/d/K] 
+  double hcond    = pHRU->GetSurfaceProps()->convection_coeff; //[MJ/m2/d/K]
   double geo_grad = pHRU->GetSurfaceProps()->geothermal_grad; //[MJ/m2]
   int    nSoils=pModel->GetNumSoilLayers();
-  
+
   //g_disable_freezing=true; //TMP DEBUG - this should make the problem easier by destroying nonlinearity. It doesn't?
   g_min_storage=0.0;
 
   int N=nSoils;//+nSnowLayers
-  
+
   static double **v_old;//[m]
   static double *dz,*z;//[m]
   static double *poro,*sat,*satn;//[-]
@@ -513,7 +518,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   static double *kappa_s,*kap,*kapn;//[MJ/m/d/K]
   static double *hold,*hguess,*delta_h,*f;
   static double **J,**Jinv;
-  
+
   // Allocate Memory for static arrays
   //-----------------------------------------------------------------------
   //if (pModel->FirstHRUFirstTimestep())
@@ -541,7 +546,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
 
   int k=pHRU->GetGlobalIndex();
 
-  // Get Soil properties 
+  // Get Soil properties
   //-----------------------------------------------------------------------
   for(int m=0;m<nSoils;m++)
   {
@@ -557,7 +562,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     else     { z[m]=0.5*(dz[m]+dz[m-1])+z[m-1]; }
 
     if(tt.model_time==0.0) {
-      v_old[k][m]=state_vars[iSoil]/MM_PER_METER; 
+      v_old[k][m]=state_vars[iSoil]/MM_PER_METER;
     }
 
     Vold[m]=v_old[k][m]; //[m]
@@ -569,14 +574,14 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     v_old[k][m]=Vnew[m];
 
     hold[m]=0.0;
-    if(Vold[m]>1e-6) { hold[m]=state_vars[iSoilWaterEnthalpy]/Vold[m]; }//[MJ/m3] 
+    if(Vold[m]>1e-6) { hold[m]=state_vars[iSoilWaterEnthalpy]/Vold[m]; }//[MJ/m3]
     hguess[m]=hold[m];
   }
 
   // Crank Nicolson approach using Newton Raphson
   //-----------------------------------------------------------------------
   //const double TOLERANCE=1e-3; //~0.2e-3 degrees C
-  const double TOLERANCE=0.5e-2; 
+  const double TOLERANCE=0.5e-2;
   const int    MAX_ITER=50;
   double       err=ALMOST_INF;
   int          i,iter;
@@ -591,15 +596,15 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   {
     //if(pHRU->GetGlobalIndex()==0) { g_debug_vars[4]=1; cout<<"<<!:"<<iter<<hold[0]<<" "<<hold[1]<<" "<<hold[2]<<endl;ExitGracefullyIf(isnan(hold[0]),"DONE",RUNTIME_ERR);}
     //else                          { g_debug_vars[4]=0; }
-    
+
     /*double satint =sat +ddt*(n  )/dt*(satn-sat ); //SUBTIMESTEPPING
       double satintn=sat +ddt*(n+1)/dt*(satn-sat );
       double Vint   =Vold+ddt*(n  )/dt*(Vnew-Vold);
       double Vintn  =Vold+ddt*(n+1)/dt*(Vnew-Vold);
       //if (GenerateJacobianMatrix(z,eta,poro,kappa_s,satint,satintn,Vint,Vintn,hguess_l,hguess,tstep/nDivs,J,f,N))*/
 
-    if(GenerateJacobianMatrix(z,eta,poro,kappa_s,sat,satn,Vold,Vnew,hold,hguess,tstep,J,f,N)) 
-    { 
+    if(GenerateJacobianMatrix(z,eta,poro,kappa_s,sat,satn,Vold,Vnew,hold,hguess,tstep,J,f,N))
+    {
       InvertTridiagonal(J[0],J[1],J[2],Jinv,N);
 
       MatVecMult(Jinv,f,delta_h,N);
@@ -636,9 +641,9 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     }
     zfx=true;//ExitGracefully("CmvHeatConduction::Hit maximum iterations. Reduce model timestep",RUNTIME_ERR);
   }
- 
+
   // Post-processing: extract energy fluxes from solution
-  // Need also to address heat exchanged with soil (sink/source term) 
+  // Need also to address heat exchanged with soil (sink/source term)
   //-----------------------------------------------------------------------
   double Ficen,Ficeo;
   for(int m=0;m<N;m++)
@@ -646,13 +651,13 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     Told[m]=ConvertVolumetricEnthalpyToTemperature(hold[m]);
     Ficeo  =ConvertVolumetricEnthalpyToIceContent (hold[m]);
     kap[m] =CalculateThermalConductivity(poro[m],kappa_s[m],sat[m],Ficeo);
-    
+
     Tnew[m]=ConvertVolumetricEnthalpyToTemperature(hguess[m]);
     if ((Vnew[m]<1e-6) && (false))
     { //special handling of tiny water volumes
       iSoilEnthalpy=pModel->GetStateVarIndex(SOIL_TEMP,m);
       eta[m]=dz[m]*(1.0-poro[m])*pHRU->GetSoilProps(m)->heat_capacity; //TMP DEBUG - only needed here if zeroed out above
-      double Hsoil=state_vars[iSoilEnthalpy]+Vnew[m]*hguess[m]; //previous soil enthalpy plus this small amount of energy added to water/soil mix 
+      double Hsoil=state_vars[iSoilEnthalpy]+Vnew[m]*hguess[m]; //previous soil enthalpy plus this small amount of energy added to water/soil mix
       Tnew[m]=Hsoil/eta[m];
       hguess[m]=ConvertTemperatureToVolumetricEnthalpy(Tnew[m],0.0);
     }
@@ -667,8 +672,8 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     cout<<" vn:";for(int m=0;m<N;m++) {cout<<Vnew[m]*MM_PER_METER<<" "; }
     cout<<"[iter: "<<iter<<", err:"<<err<<"]"<<endl;
   }*/
-  
-  /*  
+
+  /*
   for(int m=0;m<N;m++)
   {
     if(pHRU->GetGlobalIndex()==0) {
@@ -680,7 +685,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   }
   //cout<<endl;
   */
-  
+
   double Tair=pHRU->GetForcingFunctions()->temp_ave;
   double kappal,kappaln;
   double Vsoil,wfrac,condflux;
@@ -715,7 +720,7 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   wfrac   =Vnew[N-1]/(dz[N-1]*(1.0-poro[N-1])+Vnew[N-1]);
   //  wfrac   =Vnew[0]/(eta[0]*TemperatureEnthalpyDerivative(hold[0])+Vnew[0]);//pct of conductive flux going to water (can go to zero now for Vnew=deriv=0.0);
   rates[N]=wfrac*kap[N]*geo_grad; // [MJ/m2/d]
-  
+
   if(!zfx) {
     for(int m=0;m<N;m++)
     {
@@ -728,10 +733,10 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
   // Delete static arrays
   //-----------------------------------------------------------------------
   //if (pModel->LastHRULastTimeStep())
-  if((tt.model_time>=Options.duration-Options.timestep-TIME_CORRECTION) && 
+  if((tt.model_time>=Options.duration-Options.timestep-TIME_CORRECTION) &&
     (pHRU->GetGlobalIndex()==((CModel*)(pModel))->GetNumHRUs()-1))
   {
-    for(int k=0;k<_nHRUs;k++) {delete [] v_old[k];} delete [] v_old;
+    for(k=0;k<_nHRUs;k++) {delete [] v_old[k];} delete [] v_old;
 
     delete[] dz;  delete[] z;    delete[] poro;
     delete[] sat; delete[] satn; delete[] kappa_s;
@@ -739,12 +744,12 @@ void CmvHeatConduction::GetRatesOfChange(const double      *state_vars,
     delete[] hold;
     delete[] Tnew;   delete[] Told;    delete[] kap; delete[] kapn;
     delete[] hguess; delete[] delta_h; delete[] f;
-    for(int i=0;i<3;i++) { delete[] J[i]; } delete[] J;
-    for(int i=0;i<N;i++) { delete[]  Jinv[i]; } delete[] Jinv;
+    for(i=0;i<3;i++) { delete[] J[i]; } delete[] J;
+    for(i=0;i<N;i++) { delete[]  Jinv[i]; } delete[] Jinv;
   }
 }
 //////////////////////////////////////////////////////////////////
-/// \brief applies constraints to state variables 
+/// \brief applies constraints to state variables
 /// \param *state_vars [in] Array of state variable values for this HRU
 /// \param *pHRU [in] Reference to pertinent HRU
 /// \param &Options [in] Global model options information
@@ -761,7 +766,7 @@ void CmvHeatConduction::ApplyConstraints(const double      *state_vars,
   //DOES NOTHING - constraints handled within GetRatesOfChange
 }
 //////////////////////////////////////////////////////////////////
-/// \brief calculates mean convective flux over timestep when freezing may impact temperature 
+/// \brief calculates mean convective flux over timestep when freezing may impact temperature
 /// \param hn [in] volumetric enthalpy at start of timestep [MJ/m3]
 /// \param Vw [in] water volume [m]
 /// \param alpha [in] convection coefficient [MJ/m2/d/K]
@@ -769,7 +774,7 @@ void CmvHeatConduction::ApplyConstraints(const double      *state_vars,
 /// \param dt [out] timestep [d]
 /// \return mean convective flux [MJ/m2/d]
 //
-double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,const double &Ta, const double &dt) 
+double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,const double &Ta, const double &dt)
 {
   double ht,hlim;
   double hnew=hn;
@@ -785,7 +790,7 @@ double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,
   if(Vw<1e-6) { return (ha-hn)*Vw/dt; }
 
   if (Ta>0.0) {
-    if(hn>0.0)      { //unfrozen (case v) 
+    if(hn>0.0)      { //unfrozen (case v)
       hnew=hn+(ha-hn)*(1.0-exp(-gamma_w*dt));
     }
     else if(hn<ht)  { //frozen and warming (case i) -working
@@ -800,13 +805,13 @@ double MeanConvectiveFlux(const double &hn,const double &Vw,const double &alpha,
       else          { hnew=ha*(1.0-exp(-gamma_w*(dt-tstar))); }
     }
   }
-  else 
+  else
   {
     if(hn<ht)       { //frozen (case v) -working
       hnew=hn+(ha-hn)*(1.0-exp(-gamma_w*dt));
     }
     else if(hn>0.0) { //unfrozen and cooling (case iii) -working
-      double hlim=HCP_WATER*Ta;
+      hlim=HCP_WATER*Ta;
       tstar=-1/gamma_w*log((hlim)/(hlim-hn));
       if(dt<tstar) { hnew=hn+(hlim-hn)*(1.0-exp(-gamma_i*dt)); }
       else          {hnew=(dt-tstar)*gamma_i*(ha-ht);               }

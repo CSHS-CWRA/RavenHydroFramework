@@ -4,6 +4,8 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
+
 /*****************************************************************
    Constructor / Destructor
 *****************************************************************/
@@ -12,11 +14,10 @@
 /// \brief Implementation of the terrain class constructor
 /// \param name [in] String nickname for terrain class
 //
-CTerrainClass::CTerrainClass(const string name)
+CTerrainClass::CTerrainClass(const string name, CModel* pModel)
 {
-  tag=name;
-  if (!DynArrayAppend((void**&)(pAllTerrainClasses),(void*)(this),NumTerrainClasses)){
-    ExitGracefully("CTerrainClass::Constructor: creating NULL terrain class",BAD_DATA);};
+  tag = name;
+  pModel->AddTerrainClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -39,73 +40,9 @@ const terrain_struct *CTerrainClass::GetTerrainStruct() const{return &T;}
 //
 string                CTerrainClass::GetTag                                      () const{return tag;}
 /*****************************************************************
-   Static Initialization, Accessors, Destructors
+   Static Initialization, Accessors
 *****************************************************************/
-CTerrainClass **CTerrainClass::pAllTerrainClasses=NULL;
-int             CTerrainClass::NumTerrainClasses=0;
 
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of terrain classes
-/// \return Number of terrain classes
-//
-int CTerrainClass::GetNumClasses(){
-  return NumTerrainClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize terrain class information to screen
-//
-void CTerrainClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Terrain Class Summary:"<<NumTerrainClasses<<" terrain classes in database"<<endl;
-  for (int c=0; c<NumTerrainClasses;c++){
-    cout<<"-Terrain. class \""<<pAllTerrainClasses[c]->GetTag()<<"\" "<<endl;
-    cout<<"    drainage density: "<<pAllTerrainClasses[c]->GetTerrainStruct()->drainage_density<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all terrain classes
-//
-void CTerrainClass::DestroyAllTerrainClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL TERRAIN CLASSES"<<endl;}
-  for (int c=0; c<NumTerrainClasses;c++){
-    delete pAllTerrainClasses[c];
-  }
-  delete [] pAllTerrainClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the terrain class corresponding to passed string
-/// \details Converts string (e.g., "HUMMOCKY" in HRU file) to Terrain class
-///  can accept either terrainclass index or terrainclass tag
-///  if string is invalid, returns NULL
-/// \param s [in] terrain class identifier (tag or index)
-/// \return Reference to terrain class corresponding to identifier s
-//
-CTerrainClass *CTerrainClass::StringToTerrainClass(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int c=0;c<NumTerrainClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(pAllTerrainClasses[c]->GetTag()))){return pAllTerrainClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))              {return pAllTerrainClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the terrain  class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to terrain class corresponding to index c
-//
-const CTerrainClass *CTerrainClass::GetTerrainClass(int c)
-{
-  if ((c<0) || (c>=NumTerrainClasses)){return NULL;}
-  return pAllTerrainClasses[c];
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates terrain propeties
 /// \details Sets terrain properties based upon simple terrain parameters

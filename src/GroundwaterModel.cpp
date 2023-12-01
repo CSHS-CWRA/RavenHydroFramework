@@ -1,16 +1,15 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team, Leland Scantlebury
+Copyright (c) 2008-2023 the Raven Development Team, Leland Scantlebury
 ------------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "MFUSGpp.h"
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
 #include "GWRiverConnection.h"
-string FilenamePrepare(string filebase, const optStruct &Options); //Defined in StandardOutput.cpp
 
 // Constructor
-CGroundwaterModel::CGroundwaterModel(CModel *pModel) 
+CGroundwaterModel::CGroundwaterModel(CModel *pModel)
 {
   _pModel = pModel;
   _pRiver = new CGWRiverConnection(this);  // setup automatically
@@ -31,14 +30,14 @@ CGroundwaterModel::CGroundwaterModel(CModel *pModel)
 
   _iStressPeriod = 0;
   _iStep = -1;
-  
+
   _aProcessesAMAT = NULL;
   _aProcessesRHS = NULL;
   _aGWSWFluxes = NULL;
 }
 
 // Destructor
-CGroundwaterModel::~CGroundwaterModel() 
+CGroundwaterModel::~CGroundwaterModel()
 {
   free(_aNodesPerLayer);
   free(_aNumSteps);
@@ -55,7 +54,7 @@ CGroundwaterModel::~CGroundwaterModel()
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes GW Model.
 /// \details Is run AFTER InitMFUSG (requires values from reading MF model)
-/// 
+///
 /// \param &Options [in] Global model options information
 //
 void CGroundwaterModel::Initialize(const optStruct  &Options) {
@@ -93,7 +92,7 @@ void CGroundwaterModel::Initialize(const optStruct  &Options) {
 /// \brief Runs Fortran routine that reads in Modflow-USG model.
 /// \details Currently is set to run during GW file parsing when name file is
 ///          known. Empty variables are passed and filled within routine.
-/// 
+///
 /// \param namefile [in] filepath to MODFLOW name file
 //
 void CGroundwaterModel::InitMFUSG(string namefile)
@@ -113,7 +112,7 @@ void CGroundwaterModel::InitMFUSG(string namefile)
   SetRCHOptCode(3);          // See function, default is use top active node
 
   // Need to be contiguous arrays for Fortran
-  _aNodesPerLayer      = (   int*)malloc(_nLayers        *sizeof(int   )); //new int[_nLayers]; 
+  _aNodesPerLayer      = (   int*)malloc(_nLayers        *sizeof(int   )); //new int[_nLayers];
   _aNumSteps           = (   int*)malloc(_nStressPeriods *sizeof(int   )); //new int[_nStressPeriods];
   _aStressPeriodLength = (double*)malloc(_nStressPeriods *sizeof(double)); //new double[_nStressPeriods];
 
@@ -129,7 +128,7 @@ void CGroundwaterModel::InitMFUSG(string namefile)
   // (unsure if I like this being here -LS)
   CGWRecharge* pRecharge = dynamic_cast<CGWRecharge*>(GetProcess(GWRECHARGE));
   if ((pRecharge != NULL) && (pRecharge->getRechargeType()==RECHARGE_HRU_DATA)){
-    pRecharge->Initialize(); 
+    pRecharge->Initialize();
   }
 #else
   ExitGracefully("CGroundwaterModel::InitMFUSG: cannot initialize ModflowUSG unless using Raven w/USG support", RUNTIME_ERR);
@@ -156,7 +155,7 @@ void CGroundwaterModel::ClearMatrix()
 
 //////////////////////////////////////////////////////////////////
 /// \brief Turns off MFUSG packages that Raven emulates
-/// \details Sets IUNIT to zero in Modflow-USG to prevent certain packages from being active regardless of 
+/// \details Sets IUNIT to zero in Modflow-USG to prevent certain packages from being active regardless of
 ///          if they're in the model namefile. Numbers correspond to MFUSGLib Extern.f90 CUNIT declaration
 ///          Currently turns off Drain and Recharge (see notes below on smart additions)
 //
@@ -165,7 +164,7 @@ void CGroundwaterModel::MaskMFUSGpackages()
 #ifdef _MODFLOW_USG_
   // Unit numbers for each package can be determined from CUNIT array in Extern.f90
   int nunits = 2;
-  int off_units[2] = { 3, 8 };   // 3-DRN, 8-RCH // Eventual? 4-RIV, 18-STR, 22-LAK, 40-DRT, 44-SFR, 46-GAGE, 39-ETS, 
+  int off_units[2] = { 3, 8 };   // 3-DRN, 8-RCH // Eventual? 4-RIV, 18-STR, 22-LAK, 40-DRT, 44-SFR, 46-GAGE, 39-ETS,
   for (int i = 0; i < nunits; i++){
     MFUSG::mask_iunit(&off_units[i]);
   }
@@ -176,7 +175,7 @@ void CGroundwaterModel::MaskMFUSGpackages()
 /// \brief Manages time steps between Raven and MFUSG
 /// \details Handles changes in stress periods, which resets the MF time step to 1
 ///          Important for keeping the models in sync.
-/// 
+///
 /// \param t [in] model time
 //
 void CGroundwaterModel::UpdateTStep(const double &t)
@@ -278,8 +277,8 @@ void CGroundwaterModel::Solve(const double &t)
   UpdateTStep(t);
 
   int iter = 0, kiter = 0;  // Backtracking necessitates two tracking variables
-  int ibflag = 0; 
-  _Converged  = false; 
+  int ibflag = 0;
+  _Converged  = false;
 
   while (iter < _maxiter) // Mimicks MF ancient Fortran control structure
   {
@@ -303,7 +302,7 @@ void CGroundwaterModel::Solve(const double &t)
 /// \brief Runs MFUSG routines run after a solution is found, adds in Raven budget entries
 ///  \details Primarly computes the groundwater flow budget given the new flow solution. Also
 ///           where the model crashes if no solution is found!
-/// 
+///
 /// \param timestep [in] model timestep
 //
 void CGroundwaterModel::PostSolve(const double &timestep)
@@ -421,11 +420,11 @@ void CGroundwaterModel::AddProcess(process_type ptype, CHydroProcessABC* newProc
 ///  Does not support off-diagonal AMAT coefficients (e.g., connection between n and n+1)
 ///  For a complete explanation about formulating boundaries with these equations,
 ///  see the documentation for add_to_flow_eq() in Extern.f90 in the MFUSGLib
-/// 
+///
 /// \param n                [in] Node ID (valid 1 to _nNodes)
 /// \param head_coefficient [in] Addition to location n in the coefficient (AMAT) matrix
 /// \param flow_rate        [in] Addition to location n in the RHS matrix
-/// 
+///
 /// LS NOTE 2021 - Consider an error for if n=0. SHOULD BE INDEXED FROM 1!
 /// That's how it's passed to MFUSG
 void CGroundwaterModel::AddToGWEquation(int n, double head_coefficient, double flow_rate)
@@ -492,20 +491,20 @@ CGWRecharge* CGroundwaterModel::GetRechProcess()
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total number nodes in the GW model
-/// 
+///
 int CGroundwaterModel::GetNumNodes() { return _nNodes; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns number nodes in the given layer of the groundwater model (1-index)
 //
 int CGroundwaterModel::GetNumNodesByLay(int layer)
-{ 
+{
   return _aNodesPerLayer[layer-1];
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns total number of time steps set up in the GW model
-/// 
+///
 int CGroundwaterModel::GetTotalTSteps()
 {
   int total_steps = 0;
@@ -539,12 +538,12 @@ double CGroundwaterModel::GetNodeArea(int n)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the weight value for the OverlapWeight sparse matrix [HRUID][node]
-/// 
+///
 /// \param HRUID    [in] HRU identifier
 /// \param node     [in] node id (1 to _nNodes)
 /// \param weight   [in] Percentage of node that is covered by the HRU corresponding to HRUID
 /// \param &Options [in] Global model options information
-/// 
+///
 void CGroundwaterModel::SetOverlapWeight(const int HRUID, const int node, const double weight, const optStruct& Options)
 {
 #ifdef _MODFLOW_USG_
@@ -575,10 +574,10 @@ void CGroundwaterModel::SetOverlapWeight(const int HRUID, const int node, const 
 /// in layer 1. The intent for nodes in the lower layers is to use
 /// GetTopActiveNode() for the correct node to move water to, but use
 /// the layer 1 for finding HRU connections.
-/// 
+///
 /// \param HRUID    [in] HRU identifier
 /// \param node     [in] node id (1 to _aNodesPerLayer[0])
-/// 
+///
 double CGroundwaterModel::GetOverlapWeight(const int HRUID, const int node)
 {
   //-- Error checking for nodes in deeper layers
@@ -607,7 +606,7 @@ double CGroundwaterModel::GetOverlapWeight(const int HRUID, const int node)
 //////////////////////////////////////////////////////////////////
 /// \brief Returns a pointer to the Overlap Weight "matrix"
 /// \return OverlapWeights pointer
-/// 
+///
 map<pair<int, int>, double> *CGroundwaterModel::GetOverlapWeights()
 {
   return &_mOverlapWeights;
@@ -616,9 +615,9 @@ map<pair<int, int>, double> *CGroundwaterModel::GetOverlapWeights()
 //////////////////////////////////////////////////////////////////
 /// \brief Get the HRUs that overlaps with a specific cell
 /// \return vector of HRU ids
-/// 
+///
 /// \param node     [in] node id (1 to _nNodes)
-/// 
+///
 vector<int> CGroundwaterModel::GetHRUsByNode(const int node)
 {
   vector<int> HRUs;
@@ -637,9 +636,9 @@ vector<int> CGroundwaterModel::GetHRUsByNode(const int node)
 //////////////////////////////////////////////////////////////////
 /// \brief Get the cells that overlap with a specific HRU
 /// \return vector of node ids
-/// 
+///
 /// \param HRUID    [in] HRU identifier
-/// 
+///
 vector<int> CGroundwaterModel::GetNodesByHRU(const int HRUID)
 {
   vector<int> Cells;
@@ -660,13 +659,13 @@ vector<int> CGroundwaterModel::GetNodesByHRU(const int HRUID)
 /// \details A value of 1 sends recharge always to layer 1, 3 sends it to the top active
 /// node in the vertical column. Used every time GetTopActiveNode is called.
 /// Could potentially be used for GWSW Processes. See MFUSG I/O manual for more details.
-/// 
+///
 /// \param code     [in] Value to set MODFLOW variable NRCHOP
-/// 
-void CGroundwaterModel::SetRCHOptCode(int code) { 
+///
+void CGroundwaterModel::SetRCHOptCode(int code) {
 #ifdef _MODFLOW_USG_
   MFUSG::set_nrchop(&code);
-#endif 
+#endif
 }
 
 //////////////////////////////////////////////////////////////////
@@ -674,9 +673,9 @@ void CGroundwaterModel::SetRCHOptCode(int code) {
 /// \return top active node
 /// \details Controls recharge - see SetRCHOptCode & MFUSG::set_NRCHOP
 /// Could potentially be used for GWSW Processes
-/// 
+///
 /// \param node     [in] node id (1 to _nNodes)
-/// 
+///
 const int CGroundwaterModel::GetTopActiveNode(const int node)
 {
   int topnode = node;
@@ -689,11 +688,11 @@ const int CGroundwaterModel::GetTopActiveNode(const int node)
 //////////////////////////////////////////////////////////////////
 /// \brief Adds a flux to the GWSWFlux counter
 /// \details Called by GWSW Processes to keep track of how much water they add to the HRU
-/// Groundwater storage compartment. 
-/// 
+/// Groundwater storage compartment.
+///
 /// \param k     [in] HRU global index
 /// \param moved [in] amount of water [mm] moved by GWSW process to the HRU GW compartment
-/// 
+///
 /// LS Note: Maybe this should actually be a method that loops over GWSW Processes in _mGWSWProcesses
 /// and calls a method belonging to GWSW Process to return their GW flux.
 /// The goal of such a change would be to make GWSW Processes not require a pointer to the model
@@ -710,10 +709,10 @@ void CGroundwaterModel::AddFlux(const int k, const double moved)
 /// CGWSWProcessABC::SendRateToFluxTracker) and adds that to the LHS and RHS arrays Raven keeps
 /// for adding during MF iterations.
 /// The separation is important for tracking and/or updating fluxes to/from GWSW Process-connected compartments
-/// 
+///
 /// \param *pHRU    [in] Pointer to HRU
 /// \param GWVal    [in] Depth of water [mm] in HRU GW Compartment
-/// 
+///
 void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 {
   int         HRUID, k;
@@ -730,7 +729,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
 
   //-- This flux should never be below zero, right? Something to think about [checking for]
   //-- Distribute flow among HRU cells
-  for (unsigned int j=0; j< HRUnodes.size(); j++) 
+  for (unsigned int j=0; j< HRUnodes.size(); j++)
   {
     // Correct to topmost active node
     n           = HRUnodes[j];
@@ -741,7 +740,7 @@ void CGroundwaterModel::FluxToGWEquation(const CHydroUnit *pHRU, double GWVal)
     // GW Rate
     AddToGWEquation(active_node, 0.0, node_rech);
   }
-  
+
   //-- Update HRU Flux for later GW Budget update
   _aGWSWFluxes[k] = flux;
 }

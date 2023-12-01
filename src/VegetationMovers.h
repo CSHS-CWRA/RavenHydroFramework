@@ -35,21 +35,21 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCanopyEvap(canevap_type eval_type);        //general constructor
+  CmvCanopyEvap(canevap_type eval_type, CModelABC *pModel);        //general constructor
   ~CmvCanopyEvap();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(canevap_type eval_type,
@@ -67,7 +67,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCanopySublimation(sublimation_type subl_type);    //general constructor
+  CmvCanopySublimation(sublimation_type subl_type, CModelABC *pModel);  // general constructor
   ~CmvCanopySublimation();
 
   //inherited functions
@@ -109,21 +109,22 @@ private:/*------------------------------------------------------*/
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvCanopyDrip(candrip_type drip_type,
-                int                                      to_index);
+                int          to_index,
+                CModelABC    *pModel);
   ~CmvCanopyDrip();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
   static void GetParticipatingStateVarList(candrip_type drip_type,
@@ -131,4 +132,3 @@ public:/*-------------------------------------------------------*/
 };
 
 #endif
-

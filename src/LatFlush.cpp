@@ -13,10 +13,12 @@
 ------------------------------------------------------------------
 *****************************************************************/
 CmvLatFlush::CmvLatFlush(int   from_sv_ind,
-                        int     to_sv_ind,
-                        int   from_HRU_grp,
-                        int     to_HRU_grp,
-                        bool constrain_to_SBs) : CLateralExchangeProcessABC(LAT_FLUSH)
+                         int    to_sv_ind,
+                         int    from_HRU_grp,
+                         int    to_HRU_grp,
+                         bool   constrain_to_SBs,
+                         CModel *pModel)
+  :CLateralExchangeProcessABC(LAT_FLUSH, pModel)
 {
   _iFlushFrom=from_sv_ind;
   _iFlushTo  =to_sv_ind;
@@ -24,7 +26,7 @@ CmvLatFlush::CmvLatFlush(int   from_sv_ind,
   _kk_to     =to_HRU_grp;
   _constrain_to_SBs=constrain_to_SBs;
 
-  DynamicSpecifyConnections(0); //purely lateral flow, no vertical 
+  DynamicSpecifyConnections(0); //purely lateral flow, no vertical
 
   //check for valid SVs, HRU group indices
   bool badHRU;
@@ -57,7 +59,7 @@ void CmvLatFlush::Initialize()
 
   if(_constrain_to_SBs)
   {
-    //sift through all HRUs 
+    //sift through all HRUs
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       //find 'to' HRU (only one allowed per SB)
@@ -160,7 +162,7 @@ void  CmvLatFlush::GetParticipatingParamList(string *aP,class_type *aPC,int &nP)
 /// \param *exchange_rates [out] Rate of loss from "from" compartment [mm-km2/day]
 //
 void CmvLatFlush::GetLateralExchange( const double * const     *state_vars, //array of all SVs for all HRUs, [k][i]
-                                      const CHydroUnit * const *pHRUs,    
+                                      const CHydroUnit * const *pHRUs,
                                       const optStruct          &Options,
                                       const time_struct        &tt,
                                             double             *exchange_rates) const

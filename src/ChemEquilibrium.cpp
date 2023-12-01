@@ -12,7 +12,7 @@
 
   //////////////////////////////////////////////////////////////////
   /// \brief Implentation of the chemical equilibrium constructor
-  /// \param constit_name1 [in] name of constituent 1 
+  /// \param constit_name1 [in] name of constituent 1
   /// \param constit_name2 [in] name of constituent 2
   /// \param etyp [in] decay process type
   /// \param proc_ind [in] transport process index
@@ -24,8 +24,9 @@ CmvChemEquil::CmvChemEquil(string           constit_name1,
                            chem_equil_type  etyp,
                            int              proc_ind,
                            int              iWatStor,
-                           CTransportModel* pTransportModel)
-  :CHydroProcessABC(DECAY)
+                           CTransportModel  *pTransportModel,
+                           CModelABC        *pModel)
+  :CHydroProcessABC(DECAY, pModel)
 {
   _eq_type     =etyp;
   _pTransModel =pTransportModel;
@@ -39,10 +40,10 @@ CmvChemEquil::CmvChemEquil(string           constit_name1,
   ExitGracefullyIf(_constit_ind2==DOESNT_EXIST,
     "CmvChemEquil constructor: invalid constituent name in :Equilibrium command",BAD_DATA_WARN);
 
-  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  int nWaterCompartments;
   int m,m2,iWat;
-  if(_iWaterStore==DOESNT_EXIST) { //occurs everywhere 
-    int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  if(_iWaterStore==DOESNT_EXIST) { //occurs everywhere
+    nWaterCompartments = _pTransModel->GetNumWaterCompartments();
     CHydroProcessABC::DynamicSpecifyConnections(2*nWaterCompartments);
 
     //transformation occurs in all water storage compartments
@@ -58,7 +59,7 @@ CmvChemEquil::CmvChemEquil(string           constit_name1,
       iTo  [ii+nWaterCompartments]=pModel->GetStateVarIndex(CONSTITUENT,m2);//mass in water compartment
     }
   }
-  else { //only occurs in one water storage unit 
+  else { //only occurs in one water storage unit
     CHydroProcessABC::DynamicSpecifyConnections(2);
 
     m =_pTransModel->GetLayerIndex(_constit_ind1,_iWaterStore);
@@ -139,9 +140,9 @@ void   CmvChemEquil::GetRatesOfChange(const double     * state_vars,
   for(int ii = 0; ii < nWaterCompartments; ii++)
   {
     iStor    =_pTransModel->GetStorWaterIndex(ii);
-    
-    if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment 
-    
+
+    if((_iWaterStore!=DOESNT_EXIST) && (ii!=ii_active)) { continue; } //only apply to one water compartment
+
     if(_pTransModel->GetConstituentModel2(_constit_ind1)->IsDirichlet(iStor,k,tt,junk)) { continue; } //don't modify dirichlet source zones
 
     mass1=state_vars[iFrom[q]]; //mg/m2
@@ -155,7 +156,7 @@ void   CmvChemEquil::GetRatesOfChange(const double     * state_vars,
       if(cc==NOT_SPECIFIED) { continue; }
 
       // C_1 = cc*C_2 (cc positive)
-      // to enforce, 
+      // to enforce,
       // dC_1=-(C_1^0-cc*C_2^0)/(1+cc) (equal to zero if C_1^0=cc*C_2^0)
       // dC_2=-dC_1
 
@@ -165,11 +166,11 @@ void   CmvChemEquil::GetRatesOfChange(const double     * state_vars,
     //-------------------------------------------------------------------------------
     else if(_eq_type==EQUIL_LINEAR_SORPTION)
     {
-      if(pModel->GetStateVarType(iStor)==SOIL) 
+      if(pModel->GetStateVarType(iStor)==SOIL)
       {
         //Cs = Kd*C_w
         //assumes constit 1 is aqueous, constit 2 is sorbed
-        
+
         double Kd = _pTransModel->GetGeochemParam(PAR_SORPT_COEFF,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
         if(Kd==NOT_SPECIFIED) { continue; }
         Kd/=LITER_PER_M3; //[m3/kg]
@@ -185,7 +186,7 @@ void   CmvChemEquil::GetRatesOfChange(const double     * state_vars,
         cc=Kd*rho_b*Vsoil/vol;
 
         rates[q] = (mass2-cc*mass1)/(1+cc)/Options.timestep;
-        rates[q+shift]=-rates[q]; 
+        rates[q+shift]=-rates[q];
       }
     }
     //-------------------------------------------------------------------------------
@@ -229,22 +230,21 @@ void   CmvChemEquil::ApplyConstraints(const double     * state_vars,
   int iConstit1;
   int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
   int ii_active          = _pTransModel->GetWaterStorIndexFromSVIndex(_iWaterStore);
-  
+
   int shift =nWaterCompartments;
   if(_iWaterStore!=DOESNT_EXIST) {shift=1;}
 
   int q=0;
   for (int ii = 0; ii < nWaterCompartments; ii++)
   {
-    if(_iWaterStore!=DOESNT_EXIST) { //only apply to one water compartment 
+    if(_iWaterStore!=DOESNT_EXIST) { //only apply to one water compartment
       if(ii!=ii_active) { break; }
     }
     double stoich_ratio    = _pTransModel->GetGeochemParam(PAR_STOICHIO_RATIO,_constit_ind1,_constit_ind2,ii,_process_ind,pHRU);
 
     iConstit1=_pTransModel->GetStorIndex(_constit_ind1,ii);
     rates[q] = min(rates[q],state_vars[iConstit1]/Options.timestep);//cannot remove more mass than is there
-    rates[q+shift]=-stoich_ratio*rates[q]; //handles proper accounting 
+    rates[q+shift]=-stoich_ratio*rates[q]; //handles proper accounting
     q++;
   }
 }
-

@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    CapillaryRise Constructor/Destructor
@@ -21,8 +22,9 @@
 //
 CmvCapillaryRise::CmvCapillaryRise(crise_type   cr_type,
                                    int          In_index,                     //soil water storage
-                                   int          Out_index)
-  :CHydroProcessABC(CAPILLARY_RISE)
+                                   int          Out_index,
+                                   CModelABC   *pModel)
+  :CHydroProcessABC(CAPILLARY_RISE, pModel)
 {
   ExitGracefullyIf(In_index==DOESNT_EXIST,
                    "CmvCapillaryRise Constructor: invalid 'from' compartment specified",BAD_DATA);
@@ -161,7 +163,7 @@ void   CmvCapillaryRise::ApplyConstraints( const double     *storage,
                                            double     *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//Lakes & glaciers
-  
+
   double min_stor=g_min_storage;
 
   //cant remove more than is there

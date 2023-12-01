@@ -9,11 +9,12 @@ Copyright (c) 2008-2021 the Raven Development Team
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the constructor for an abstract GW-SW process
 /// \param pGWModel [in] pointer to groundwater model
-/// \param ptype    [in] process type (enum) 
+/// \param ptype    [in] process type (enum)
 //
 CGWSWProcessABC::CGWSWProcessABC(CGroundwaterModel *pGWM,
-                                 const process_type ptype)
-  :CHydroProcessABC(ptype)
+                                 const process_type ptype,
+                                 CModelABC *pModel)
+  :CHydroProcessABC(ptype, pModel)
 {
   pGWModel = pGWM;
   _nnodes  = 0;
@@ -30,11 +31,6 @@ CGWSWProcessABC::~CGWSWProcessABC()
   delete [] _inodes;
   delete [] _pProcName;
 }
-
-/*****************************************************************
-Static Members
-*****************************************************************/
-CGroundwaterModel *CGWSWProcessABC::pGWModel=NULL;
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes process, generates Node-HRU maps
@@ -71,13 +67,13 @@ char *CGWSWProcessABC::getProcName() { return(_pProcName); }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns set of nodes, for the given HRU, that have the GW SW Process
 /// \return Set of nodes to iterate over, empty if none in specified HRU
-/// 
+///
 /// \param HRUid [in] HRU identifier
-// 
+//
 set<int>  CGWSWProcessABC::getHRUnodes(int HRUid) const
 {
   if (_mNodesByHRU.find(HRUid) != _mNodesByHRU.end()) {
-    return(_mNodesByHRU.find(HRUid)->second); 
+    return(_mNodesByHRU.find(HRUid)->second);
   }
   else {
     return(set<int>()); // Empty
@@ -98,7 +94,7 @@ void CGWSWProcessABC::setProcName(string name)
 //////////////////////////////////////////////////////////////////
 /// \brief Fills arrays[_nnodes] with process rates to(+)/from(-) the GW model.
 ///        Placeholder method for child processes to override.
-/// 
+///
 /// \param pModel [in] pointer to groundwater model
 /// \param nodes [out] array of nodes where process is active
 /// \param rates [out] rates of flux to GW model

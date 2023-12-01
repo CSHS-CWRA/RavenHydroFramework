@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    SoilBalance Constructor/Destructor
@@ -19,15 +20,16 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvSoilBalance::CmvSoilBalance(soilbal_type   sb_type)
-               :CHydroProcessABC(SOIL_BALANCE)
+CmvSoilBalance::CmvSoilBalance(soilbal_type sb_type,
+                               CModelABC    *pModel)
+  :CHydroProcessABC(SOIL_BALANCE, pModel)
 {
   _type =sb_type;
 
-  if(_type==SOILBAL_SACSMA) 
+  if(_type==SOILBAL_SACSMA)
   {
     CHydroProcessABC::DynamicSpecifyConnections(13);
-    
+
     int iPond,iSW,iUZT,iADIM,iLZT,iUZF,iLZFS,iLZFP,iGW;
     iPond=pModel->GetStateVarIndex(PONDED_WATER);
     iSW  =pModel->GetStateVarIndex(SURFACE_WATER);
@@ -41,7 +43,7 @@ CmvSoilBalance::CmvSoilBalance(soilbal_type   sb_type)
 
     iFrom[ 0]=iPond;       iTo[ 0]=iSW;        //rates[0]:  PONDED_WATER->SURFACE_WATER
     iFrom[ 1]=iPond;       iTo[ 1]=iUZT;       //rates[1]:  PONDED_WATER->UZT
-    iFrom[ 2]=iPond;       iTo[ 2]=iADIM;      //rates[2]:  PONDED_WATER->ADIMC 
+    iFrom[ 2]=iPond;       iTo[ 2]=iADIM;      //rates[2]:  PONDED_WATER->ADIMC
     iFrom[ 3]=iLZFP;       iTo[ 3]=iSW;        //rates[3]:  LZFP->SURFACE_WATER
     iFrom[ 4]=iLZFP;       iTo[ 4]=iGW;        //rates[4]:  LZFP->GW
     iFrom[ 5]=iLZFS;       iTo[ 5]=iSW;        //rates[5]:  LZFS->SURFACE_WATER
@@ -72,7 +74,7 @@ CmvSoilBalance::~CmvSoilBalance(){}
 //
 void CmvSoilBalance::Initialize()
 {
- 
+
   //check for porosity!=1.0
   if(_type==SOILBAL_SACSMA)
   {
@@ -125,8 +127,8 @@ void CmvSoilBalance::GetParticipatingStateVarList(soilbal_type  sb_type,sv_type 
   {
     nSV=9;
     for (int i=0;i<7;i++){aSV[i]=SOIL; aLev[i]=i; }
-    aSV[7]=PONDED_WATER;  aLev[7]=DOESNT_EXIST; 
-    aSV[8]=SURFACE_WATER; aLev[8]=DOESNT_EXIST; 
+    aSV[7]=PONDED_WATER;  aLev[7]=DOESNT_EXIST;
+    aSV[8]=SURFACE_WATER; aLev[8]=DOESNT_EXIST;
   }
 }
 
@@ -148,8 +150,8 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
   if (pHRU->GetHRUType()!=HRU_STANDARD){return;}//no Lakes & glaciers
 
   if (_type==SOILBAL_SACSMA)
-  { 
-    // Sacramento soil moisture accounting emulation 
+  {
+    // Sacramento soil moisture accounting emulation
     //  based upon original FORTRAN code file fland1.F by Dr. Eric Anderson, HRL
 
     double Adimp       =pHRU->GetSurfaceProps()->max_sat_area_frac; //ADIMP
@@ -161,7 +163,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     double zp          =pHRU->GetSoilProps(1)->SAC_perc_alpha; //ZPERC
     double rexp        =pHRU->GetSoilProps(1)->SAC_perc_expon; //REXP
     double pfree       =pHRU->GetSoilProps(1)->SAC_perc_pfree; //PFREE
-    
+
     double uzt_stor_max =pHRU->GetSoilCapacity(0); //UZTM
     double uzf_stor_max =pHRU->GetSoilCapacity(1); //UZFM
     double lzt_stor_max =pHRU->GetSoilCapacity(2); //LZTM
@@ -169,7 +171,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     double lzfs_stor_max=pHRU->GetSoilCapacity(4); //LZFSM
     double adimc_stor_max=uzt_stor_max+lzt_stor_max;
 
-    double Aperv = 1.0 - Adimp - Aimp; 
+    double Aperv = 1.0 - Adimp - Aimp;
 
     double ponded    =state_vars[pModel->GetStateVarIndex(PONDED_WATER)];
     double uzt_stor  =state_vars[pModel->GetStateVarIndex(SOIL,0)]/Aperv;
@@ -179,22 +181,21 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     double lzfs_stor =state_vars[pModel->GetStateVarIndex(SOIL,4)]/Aperv;
     double adimc_stor=state_vars[pModel->GetStateVarIndex(SOIL,5)]/Adimp;
     if (Adimp==0){adimc_stor=0;}
-    
+
     if (ponded<0){ponded=0;} //TMP DEBUG - should not be required.
 
     //- compute impervious area runoff  ---------------------------------------
-    double runoff_imperv = ponded * Aimp;
     rates[0]=ponded * Aimp/Options.timestep; //PONDED_WATER->SURFACE_WATER
     if (Aimp==1.0){return;}
 
     //- compute infiltration and runoff amounts  ------------------------------
-    double fill=min(ponded,uzt_stor_max- uzt_stor); 
+    double fill=min(ponded,uzt_stor_max- uzt_stor);
     uzt_stor  +=fill;
     adimc_stor+=fill;
     rates[1]=fill*Aperv/Options.timestep;  //PONDED_WATER->UZT
-    rates[2]=fill*Adimp/Options.timestep;  //PONDED_WATER->ADIMC 
+    rates[2]=fill*Adimp/Options.timestep;  //PONDED_WATER->ADIMC
 
-    // determine computational time increments for the basic time interval 
+    // determine computational time increments for the basic time interval
     int    N = (int)(1.0 + 0.2 * (uzf_stor + (ponded-fill))); // number of increments in time interval
     N=min(N,100);
     double dt   = Options.timestep / (double)N;   // time increment in days
@@ -208,7 +209,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     {
       //- compute direct runoff (from Adimp area) ----------------------------
       double Frunoff = pow(max(adimc_stor - uzt_stor,0.0) / lzt_stor_max,2);
-      
+
       rates[0]+=pinc * Adimp * Frunoff /Options.timestep;  //PONDED->SURFACE_WATER
 
       //- compute baseflow ---------------------------------------------------
@@ -222,7 +223,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
       rates[5]+=bfs*Aperv*(    cc_frac)/Options.timestep;  //LZFS->SURFACE_WATER
       rates[6]+=bfs*Aperv*(1.0-cc_frac)/Options.timestep;  //LZFS->GW
 
-      // if ufz_stor is dry then skip 
+      // if ufz_stor is dry then skip
       if((pinc + uzf_stor) > 0.01)
       {
         //- compute percolation -----------------------------------------------
@@ -231,21 +232,21 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
         double perc;
 
         defr   = max(1.0 - (lzt_stor+lzfp_stor+lzfs_stor)/(lzt_stor_max+lzfp_stor_max+lzfs_stor_max),0.0);
-        perc =(dlzp * lzfp_stor_max  + dlzs* lzfs_stor_max) * (uzf_stor / uzf_stor_max); 
+        perc =(dlzp * lzfp_stor_max  + dlzs* lzfs_stor_max) * (uzf_stor / uzf_stor_max);
         perc*=(1.0 + zp * pow(defr,rexp));
         perc = min(perc,uzf_stor); //can't remove more than is there
 
         deficit=max(lzt_stor_max-lzt_stor,0.0)+max(lzfp_stor_max-lzfp_stor,0.0)+max(lzfs_stor_max-lzfs_stor,0.0);//check-perc
         perc=min(perc,deficit);   //can't fill more than the target
-        
+
         // split percolated water into the lower zones
-        // tension water is filled first except for the pfree area.  
-        double percf = perc*(    pfree);     // percf is going to free water - splits to percs and percp and excess which goes to LZT 
+        // tension water is filled first except for the pfree area.
+        double percf = perc*(    pfree);     // percf is going to free water - splits to percs and percp and excess which goes to LZT
         double perct = perc*(1.0-pfree);     // perct is percolation to tension water
 
         percf+=max(perct-max(lzt_stor_max-lzt_stor,0.0),0.0); //anything left after filling deficit goes to free
         perct =min(perct,max(lzt_stor_max-lzt_stor,0.0));      //fills tension water deficit
-        
+
         lzt_stor += perct;
         uzf_stor -= perct;
         rates[7]+=perct *Aperv/Options.timestep;  //UZF->LZT
@@ -254,7 +255,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
         {
           double hpl;   //relative size of the primary storage  as compared with total lower zone free water storage
           double ratlp; //relative fullness of primary storage
-          double ratls; //relative fullness of supplemental storage 
+          double ratls; //relative fullness of supplemental storage
           double fracp; //fraction going to primary
           double percs; //amount of excess perc going to supplemental storage
           double percp; //amount of excess perc going to primary storage
@@ -295,7 +296,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
         // check - what if Frunoff >1?
         // overflow * Frunoff = amount of surface runoff which comes from that portion of Adimp which is not currently generating direct runoff.
       }
-      
+
       uzf_stor   += pinc;  //any uninfiltrated water that didnt overflow
       rates[11]  += pinc*Aperv/Options.timestep; // PONDED->UZF
 
@@ -305,7 +306,7 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
       adimc_stor += to_adimc;
       rates[2]   += to_adimc*Adimp/Options.timestep; // PONDED->ADIMC
 
-    } // end for (int n=0;n<N;n++) 
+    } // end for (int n=0;n<N;n++)
 
     // JRC: if this is not automatically satisfied, then this is a mass balance error, by definition - nowhere to get this water from
     // BUT, this was included in original SAC-SMA code.

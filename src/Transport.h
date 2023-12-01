@@ -29,11 +29,11 @@ struct constit_source
   const  CTimeSeries *pTS; ///< time series of fixed concentration or mass/heat flux (or NULL if fixed should be used)
 };
 
-enum gparam_type 
+enum gparam_type
 {
   PAR_DECAY_COEFF,        ///< linear decay coefficient  [1/d]
   PAR_MASS_LOSS_RATE,     ///< zero-order decay or loss [mg/m2/d]
-  PAR_TRANSFORM_COEFF,    ///< linear transformation coeff [1/d for n=1, (mg/L)^-n /d for n!=1] 
+  PAR_TRANSFORM_COEFF,    ///< linear transformation coeff [1/d for n=1, (mg/L)^-n /d for n!=1]
   PAR_STOICHIO_RATIO,     ///< ratio of mass reactant to mass product [mg/mg]
   PAR_UPTAKE_COEFF,       ///< uptake coefficeint [-]
   PAR_TRANSFORM_N,        ///< transformation exponent [-]
@@ -41,11 +41,11 @@ enum gparam_type
   PAR_EQUIL_COEFF,        ///< linear equilibrium coefficient [1/d] k*(B-cc*A)
   PAR_SORPT_COEFF         ///< sorption coefficient [l/kg]
 };
-struct geochem_param 
+struct geochem_param
 {
-  gparam_type type;         ///< parameter type 
+  gparam_type type;         ///< parameter type
   double      value;        ///< parameter value (units determined by type)
-  int         constit_ind;  ///< constituent index 
+  int         constit_ind;  ///< constituent index
   int         constit_ind2; ///< 2nd constituent index (for reactions/transformations)
   int         process_ind;  ///< process index
   string      class_name;   ///< soil/veg/LU class name
@@ -94,10 +94,10 @@ private:/*------------------------------------------------------*/
   int  _nIndexMapping;               ///< size of index mapping array [=pModel::_nStateVars prior to transport variables being included]
 
   string         *_aProcessNames;    ///< list of recognized geochemical process names  [size: _nProcessNames]
-  int             _nProcessNames;    ///< size of process name list 
+  int             _nProcessNames;    ///< size of process name list
 
   geochem_param **_pGeochemParams;   ///< array of pointers to geochem parameter structures [size: _nTransParams]
-  int             _nGeochemParams;   ///< number of geochemistry paramers 
+  int             _nGeochemParams;   ///< number of geochemistry paramers
 
   int                 _nConstituents;  ///< number of transported constituents [c=0.._nConstituents-1]
   CConstituentModel **_pConstitModels; ///< array of pointers to constituent models [size:_nConstituents]
@@ -107,25 +107,23 @@ private:/*------------------------------------------------------*/
 
   string GetConstituentLongName_loc(const int layerindex) const; //e.g., "Nitrogen in Soil Water[2]"
 
-  static CTransportModel *_pTransModel;    ///< pointer to self (needed for access to transport model through static functions)
 
 public:/*-------------------------------------------------------*/
   CTransportModel(CModel *pMod);
   ~CTransportModel();
 
   //Accessors
-  static int    GetLayerIndexFromName(const string name,const int comp_m);
   int          GetLayerIndexFromName2(const string name,const int comp_m) const;     //non-static version
 
-  static string GetConstituentTypeName(const int layerindex);//e.g., "Nitrogen" (m=layer index)
-  static string GetConstituentTypeName2(const int c);         //e.g., "Nitrogen" (c=constituent index)
-  static string GetConstituentLongName(const int layerindex);//e.g., "Nitrogen in Soil Water[2]"
+  string GetConstituentTypeName(const int layerindex);//e.g., "Nitrogen" (m=layer index)
+  string GetConstituentTypeName2(const int c) const;         //e.g., "Nitrogen" (c=constituent index)
+  string GetConstituentLongName(const int layerindex) const;//e.g., "Nitrogen in Soil Water[2]"
   string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
 
   int    GetNumConstituents() const;
   int    GetConstituentIndex(const string name) const;
 
-  CConstituentModel *GetConstituentModel(const int c);
+  CConstituentModel *GetConstituentModel(const int c)  const;
   CConstituentModel *GetConstituentModel2(const int c) const;
 
   int    GetNumWaterCompartments() const;
@@ -193,17 +191,19 @@ class CConstituentModel
 protected:
   const CModel               *_pModel;
   const CTransportModel *_pTransModel;
-  
+
   string                     _name;  ///< constituent name (e.g., "Nitrogen")
-  int               _constit_index;  ///< master constituent index, c,  of this constituent 
+  int               _constit_index;  ///< master constituent index, c,  of this constituent
   constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], ISOTOPE [mg/mg] or TRACER [-]
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
   // Routing/state var storage
-  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x nMinhist(p)]
-  double              **_aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x nMlathist(p)]
+  int                   *_nMinHist;  ///< size of upstream loading history in each basin [size: nSubBasins]
+  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x _nMinHist[p]]
+  int                  *_nMlatHist;  ///< size of lateral loading history in each basin [size: nSubBasins]
+  double             ** _aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x _nMlatHist[p]]
   double                  **_aMout;  ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
-  double              *_aMout_last;  ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ] 
+  double              *_aMout_last;  ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ]
   double              *_aMlat_last;  ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
 
   double                   *_aMres;  ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins]
@@ -215,11 +215,11 @@ protected:
   double               *_aMresRain;  ///< array storing reservoir rain inputs [mg/d] or enthalpy input [MJ/d] [size: nSubBasins]
 
   // Mass balance tracking variables
-  double         *_channel_storage;  ///< array storing channel storage [mg] or [MJ] [size: nSubBasins] 
-  double         *_rivulet_storage;  ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins] 
-  double              _cumul_input;  ///< cumulative mass [mg] or enthalpy [MJ] added to system  
-  double             _cumul_output;  ///< cumulative mass [mg] or enthalpy [MJ] lost from system 
-  double             _initial_mass;  ///< initial mass [mg] or enthalpy [MJ] in system 
+  double         *_channel_storage;  ///< array storing channel storage [mg] or [MJ] [size: nSubBasins]
+  double         *_rivulet_storage;  ///< array storing rivulet storage [mg] or [MJ] [size: nSubBasins]
+  double              _cumul_input;  ///< cumulative mass [mg] or enthalpy [MJ] added to system
+  double             _cumul_output;  ///< cumulative mass [mg] or enthalpy [MJ] lost from system
+  double             _initial_mass;  ///< initial mass [mg] or enthalpy [MJ] in system
 
   // Source information
   constit_source       **_pSources;  ///< array of pointers to constituent sources [size: nSources]
@@ -229,7 +229,7 @@ protected:
 
   int              _nSpecFlowConcs;  ///< number of specified flow concentration/temperature time series [mg/L]
   CTimeSeries    **_pSpecFlowConcs;  ///< array of pointers to time series of specified flow concentration/temperatures - TS tag corresponds to SBID
-  int              _nMassLoadingTS;  ///< number of specified mass/energy loading time series [kg/d] 
+  int              _nMassLoadingTS;  ///< number of specified mass/energy loading time series [kg/d]
   CTimeSeries    **_pMassLoadingTS;  ///< array of pointers to time series of mass loadings [kg/d] - TS tag corresponds to SBID
 
   ofstream                 _OUTPUT;  ///< output stream for Concentrations.csv/Temperatures.csv
@@ -246,7 +246,7 @@ protected:
   double GetTotalRivuletConstituentStorage() const;
   double GetTotalChannelConstituentStorage() const;
   double GetMassAddedFromInflowSources(const double &t,const double &tstep) const;
-  
+
   virtual double GetNetReachLosses(const int p) const;
 
 public:/*-------------------------------------------------------*/
@@ -258,7 +258,7 @@ public:/*-------------------------------------------------------*/
   constit_type            GetType() const;
   string                  GetName() const;
   bool                    IsPassive() const;
-  
+
   virtual double GetOutflowConcentration(const int p) const;
   double GetIntegratedMassOutflow(const int p,const double &tstep) const;
 
@@ -287,7 +287,7 @@ public:/*-------------------------------------------------------*/
   void   SetInitReservoirSedMass (const int p, const double res_mass, const double res_mass_last);
   void   SetReservoirPrecipLoad  (const int p,const double precip_load_rate);
   void   SetReservoirMassOutflow (const int p,const double Mout,    const double MoutLast);
-  
+
   void   ClearTimeSeriesData     (const optStruct& Options);
 
           void   Prepare                    (const optStruct &Options);

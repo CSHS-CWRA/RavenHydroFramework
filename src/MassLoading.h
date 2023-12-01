@@ -26,7 +26,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvMassLoading(string constit_name, CTransportModel *pTransportModel);
+  CmvMassLoading(string          constit_name,
+                 CTransportModel *pTransportModel,
+                 CModelABC       *pModel);
   ~CmvMassLoading();
 
   //inherited functions
@@ -42,7 +44,8 @@ public:/*-------------------------------------------------------*/
                         const time_struct &t,
                         double      *rates) const;
 
-  void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
+  void GetParticipatingParamList(string     *aP,
+                                 class_type *aPC,
+                                 int        &nP) const;
 };
 #endif
-

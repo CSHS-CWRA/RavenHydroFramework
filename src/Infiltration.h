@@ -48,10 +48,10 @@ class CmvInfiltration: public CHydroProcessABC
 private:/*------------------------------------------------------*/
   infil_type type; ///< Infiltration algorithm
 
-  static double GreenAmptCumInf   (const double &t,         //[d], time from start of rainfall (or time step)
-                                   const double &alpha,     //[mm]
-                                   const double &Ks,        //Ksat [mm/d]
-                                   const double &w);  //rainfall rate, [mm/d]
+  double GreenAmptCumInf   (const double &t,         //[d], time from start of rainfall (or time step)
+                            const double &alpha,     //[mm]
+                            const double &Ks,        //Ksat [mm/d]
+                            const double &w) const;  //rainfall rate, [mm/d]
 
   double GetSCSRunoff      (const CHydroUnit  *pHRU,
                             const optStruct       &Options,
@@ -82,7 +82,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvInfiltration(const infil_type itype);
+  CmvInfiltration(const infil_type itype,
+                  CModelABC        *pModel);
   ~CmvInfiltration();
 
   //inherited functions

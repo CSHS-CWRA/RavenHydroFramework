@@ -10,6 +10,7 @@
 
 #include "HydroProcessABC.h"
 #include "VegetationMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Canopy Evaporation Constructor/Destructor
@@ -19,15 +20,16 @@
 /// \brief Implementation of the canopy evaporation constructor
 /// \param cetype [in] Model of canopy evaporation
 //
-CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype)
-  :CHydroProcessABC(CANOPY_EVAPORATION)
+CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype,
+                             CModelABC    *pModel)
+  :CHydroProcessABC(CANOPY_EVAPORATION, pModel)
 {
   type =cetype;
 
   CHydroProcessABC::DynamicSpecifyConnections(2);//nConnections=2
   iFrom[0]=pModel->GetStateVarIndex(CANOPY);
   iTo  [0]=pModel->GetStateVarIndex(ATMOSPHERE);
-  iFrom[1]=pModel->GetStateVarIndex(AET); 
+  iFrom[1]=pModel->GetStateVarIndex(AET);
   iTo  [1]=pModel->GetStateVarIndex(AET);
 }
 
@@ -121,7 +123,7 @@ void CmvCanopyEvap::GetRatesOfChange( const double      *state_vars,
 
   double PET=max(pHRU->GetForcingFunctions()->PET,0.0) ;
   double stor=min(max(state_vars[iFrom[0]],0.0),cap*Fc); //correct for potentially invalid storage
-  
+
   double PETused=0.0;//[mm/d]
   if(!Options.suppressCompetitiveET) {
     PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
@@ -183,7 +185,7 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
   //cant remove more than is there
   rates[0]=min(rates[0],state_vars[iFrom[0]]/Options.timestep);
 
-  //update AET 
+  //update AET
   rates[1]-=(oldRates-rates[0]);
 }
 
@@ -200,8 +202,9 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 /// \brief Implementation of the snow evaporation constructor
 /// \param cetype [in] Model of canopy snow evaporation
 //
-CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype)
-                     :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
+CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype,
+                                           CModelABC       *pModel)
+  :CHydroProcessABC(CANOPY_SNOW_EVAPORATION, pModel)
 {
   type =cetype;
 
@@ -270,7 +273,7 @@ void CmvCanopySublimation::GetParticipatingStateVarList(sublimation_type cs_type
 
 double  SublimationRate(const double      *state_vars,
                         const CHydroUnit  *pHRU,
-                        const optStruct   &Options,
+                        const CModelABC   *pModel,
                         const time_struct &tt,
                         const double      &wind_vel,
                         sublimation_type   type); //defined in Sublimation.cpp
@@ -305,7 +308,7 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
     PET-=(state_vars[pModel->GetStateVarIndex(AET)]/Options.timestep);
     PET=max(PET,0.0);
   }
-  
+
   if (type==SUBLIM_MAXIMUM)//----------------------------------
   {
     //all canopy mass sublimates 'instantaneously' (up to threshold) based upon PET
@@ -322,8 +325,8 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
   {
     double wind_vel=pHRU->GetForcingFunctions()->wind_vel;//pModel->WindspeedAtHeight(pHRU->GetVegVarProps()->height, Options,pHRU,F,2.0);
 
-    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity",STUB);
-    rates[0]=Fc*SublimationRate(state_vars,pHRU,Options,tt,wind_vel,type);
+    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity", STUB);
+    rates[0] = Fc*SublimationRate(state_vars, pHRU, pModel, tt, wind_vel, type);
   }
   rates[1]=PETused;
 }
@@ -352,7 +355,7 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
   //cant remove more than is there
   rates[0]=min(rates[0],state_vars[iFrom[0]]/Options.timestep);
 
-  //update AET 
+  //update AET
   rates[1]-=(oldRates-rates[0]);
 
 }
@@ -363,8 +366,9 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
 /// \param to_index [in] Index of storage compartment to which water is lost
 //
 CmvCanopyDrip::CmvCanopyDrip(candrip_type cdtype,
-                             int to_index)
-  :CHydroProcessABC(CANOPY_DRIP)
+                             int          to_index,
+                             CModelABC    *pModel)
+  :CHydroProcessABC(CANOPY_DRIP, pModel)
 {
   int iCan;
   type =cdtype;
@@ -503,5 +507,3 @@ void CmvCanopyDrip::ApplyConstraints( const double      *state_vars,
   //cant remove more than is there
   rates[0]=threshMin(rates[0],state_vars[iFrom[0]]/Options.timestep,0.0);
 }
-
-

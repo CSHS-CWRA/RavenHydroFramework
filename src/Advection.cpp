@@ -17,8 +17,9 @@
 /// \param pModel [in] Model object
 //
 CmvAdvection::CmvAdvection(string constit_name,
-                           CTransportModel *pTransportModel)
-  :CHydroProcessABC(ADVECTION)
+                           CTransportModel *pTransportModel,
+                           CModelABC *pModel)
+  :CHydroProcessABC(ADVECTION, pModel)
 {
   pTransModel=pTransportModel;
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);
@@ -117,7 +118,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   int    q,iFromWater,iToWater,js;
   double mass,vol,Cs;
   double corr;               // advective correction (e.g.,1/retardation factor)
-  
+
   double tstep=Options.timestep;
   int    nAdvConnections     =pTransModel->GetNumAdvConnections();
   CConstituentModel *pConstit=pTransModel->GetConstituentModel2(_constit_ind);
@@ -126,10 +127,10 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
   bool   isIsotope =(pConstit->GetType()==ISOTOPE);
   int    k=pHRU->GetGlobalIndex();
 
-  static double *Q =NULL; 
+  static double *Q =NULL;
   static double *sv=NULL;
   if(Q==NULL){
-    Q =new double [nAdvConnections]; // only done once at start of simulation for speed 
+    Q =new double [nAdvConnections]; // only done once at start of simulation for speed
     sv=new double [pModel->GetNumStateVars()];
   }
 
@@ -184,7 +185,7 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
         if(mass<-1e-9) { ExitGracefully("CmvAdvection - negative mass",RUNTIME_ERR); }
       }
     }
-    
+
     //special consideration - atmospheric precip can have negative storage but still specified concentration or temperature
     //----------------------------------------------------------------------
     if((pModel->GetStateVarType(iF)==ATMOS_PRECIP) &&
@@ -219,8 +220,8 @@ void   CmvAdvection::GetRatesOfChange(const double      *state_vars,
         Cs=pTransModel->GetEnthalpyModel()->GetDirichletEnthalpy(pHRU,Cs);
         if(pModel->GetStateVarType(iFromWater)==ATMOS_PRECIP) { Cs=0.0; }//don't explicitly try to track enthalpy content of atmospheric precip
       }
-      mass          =sv[iFrom[q]]; 
-      dirichlet_mass=Cs*sv[iFromWater]; //Cs*V 
+      mass          =sv[iFrom[q]];
+      dirichlet_mass=Cs*sv[iFromWater]; //Cs*V
       rates[nAdvConnections+q]+=(dirichlet_mass-mass)/Options.timestep; //From CONSTITUENT_SRC
       sv[iFrom[q]]=dirichlet_mass;      //override previous mass/enthalpy
     }

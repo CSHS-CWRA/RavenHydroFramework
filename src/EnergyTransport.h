@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2022 the Raven Development Team
+Copyright (c) 2008-2023 the Raven Development Team
 ----------------------------------------------------------------*/
 
 #ifndef ENERGY_TRANSPORT_H
@@ -16,7 +16,9 @@ Copyright (c) 2008-2022 the Raven Development Team
 class CEnthalpyModel :public CConstituentModel
 {
   double **_aEnthalpySource;   ///< recent time history of reach source term [MJ/m3/d] [size: nSubBasins x nMinhist(p)]
-  double    *_aEnthalpyBeta;   ///< array of beta terms for reach energy exchange [1/d] [size: nSubBasins] 
+  double    *_aEnthalpyBeta;   ///< array of beta terms for reach energy exchange [1/d] [size: nSubBasins]
+
+  double      *_aMinResTime;   ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins] 
 
   double         *_aBedTemp;   ///< array of riverbed temperatures [C] [size: nSubBasins]
 
@@ -25,7 +27,7 @@ class CEnthalpyModel :public CConstituentModel
 
   bool      _anyGaugedLakes;   ///< true if any gauged lakes/reservoirs exist for writing LakeEnergyBalances.csv
 
-  double GetReachFrictionHeat(const double &Q,const double &slope,const double &perim) const;
+  double GetReachFrictionHeat(const double &Q,const double &slope,const double &top_width) const;
   void   UpdateReachEnergySourceTerms(const int p);
   double GetNetReachLosses           (const int p) const;
 
@@ -36,20 +38,20 @@ public:/*-------------------------------------------------------*/
   double CalculateReportingConcentration(const double &M,const double &V) const;
   double GetOutflowConcentration        (const int p) const;
   double GetBedTemperature              (const int p) const;
-  double ConvertConcentration           (const double &Cs) const; 
+  double ConvertConcentration           (const double &Cs) const;
 
   //Accessors specific to Enthalpy Transport
   double GetIceContent           (const double *state_vars, const int iWater) const;
   double GetWaterTemperature     (const double *state_vars, const int iWater) const;
 
-  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad,double &Q_fric) const;
-  double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad, double &Q_rain) const;
+  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out,double &Q_fric) const;
+  double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad_in,double &Q_lw_out, double &Q_rain) const;
   double GetOutflowIceFraction   (const int p) const;
   double GetAvgLatentHeatFlux    () const;
   double GetDirichletEnthalpy    (const CHydroUnit *pHRU, const double &Cs) const;
 
   //Manipulators
-  // 
+  //
   void   SetBedTemperature       (const int p, const double &T);
   //Manipulators (inherited from CConstitModel)
   void   Initialize              (const optStruct& Options);
@@ -60,9 +62,9 @@ public:/*-------------------------------------------------------*/
                                   const int     nSegments,
                                   const int     nMinHist,
                                   const double &tstep,double *aMout_new) const;
-  void   RouteMassInReservoir    (const int    p , 
-                                  const double* aMoutnew, double& ResMass, double& ResSedMass, 
-                                  const optStruct   &Options, 
+  void   RouteMassInReservoir    (const int    p ,
+                                  const double* aMoutnew, double& ResMass, double& ResSedMass,
+                                  const optStruct   &Options,
                                   const time_struct &tt) const;
   void   UpdateMassOutflows      (const int    p,
                                   double      *aMoutnew,

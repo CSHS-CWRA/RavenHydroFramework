@@ -19,8 +19,10 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvFrozenLake::CmvFrozenLake(lakefreeze_type type,const CTransportModel *pTransMod)
-  :CHydroProcessABC(LAKE_FREEZING)
+CmvFrozenLake::CmvFrozenLake(lakefreeze_type       type,
+                             const CTransportModel *pTransMod,
+                             CModelABC             *pModel)
+  :CHydroProcessABC(LAKE_FREEZING, pModel)
 {
   _type =type;
   _pTransModel=pTransMod;
@@ -58,14 +60,14 @@ void CmvFrozenLake::GetParticipatingParamList(string  *aP , class_type *aPC , in
 {
   nP=0;
   if (_type==LFREEZE_BASIC)
-  { 
-    nP=1; 
+  {
+    nP=1;
     aP [0]="LAKESNOW_BUFFER_HT";     aPC [0]=CLASS_LANDUSE;
 
   }
-  else if (_type == LFREEZE_THERMAL) 
+  else if (_type == LFREEZE_THERMAL)
   {
-    ExitGracefully("LFREEZE_THERMAL",STUB); //need to allow snow buffering 
+    ExitGracefully("LFREEZE_THERMAL",STUB); //need to allow snow buffering
   }
   else
   {
@@ -86,7 +88,7 @@ void CmvFrozenLake::GetParticipatingStateVarList(lakefreeze_type  btype,sv_type 
 {
   nSV=0;
   aSV[0]=ICE_THICKNESS; aLev[0]=DOESNT_EXIST; nSV++;
-  aSV[1]=SNOW;          aLev[1]=DOESNT_EXIST; nSV++; 
+  aSV[1]=SNOW;          aLev[1]=DOESNT_EXIST; nSV++;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -110,7 +112,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
 
   //-----------------------------------------------------------------
   if (_type==LFREEZE_BASIC)
-  { 
+  {
     double pot_freeze=-pHRU->GetForcingFunctions()->potential_melt; //[mm/d]
     double buff_ht   = pHRU->GetSurfaceProps()->lakesnow_buffer_ht;
 
@@ -122,14 +124,14 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
     else if (SWE<=0.0    ){corr=1.0;            }
     else                  {corr=1.0-SWE/buff_ht;}
 
-    rates[0]=corr*pot_freeze; 
+    rates[0]=corr*pot_freeze;
   }
   //-----------------------------------------------------------------
-  else if (_type == LFREEZE_THERMAL) 
-  { 
-    //just queries thermal model and updates ice thickness variable 
+  else if (_type == LFREEZE_THERMAL)
+  {
+    //just queries thermal model and updates ice thickness variable
 
-    double ice_thick=state_vars[iFrom[0]];
+    ice_thick=state_vars[iFrom[0]];
 
     const CEnthalpyModel *pEnthalpyModel=_pTransModel->GetEnthalpyModel();
 
@@ -159,6 +161,6 @@ void   CmvFrozenLake::ApplyConstraints( const double     *state_vars,
                                            double     *rates) const
 {
   double ice_thick=state_vars[iFrom[0]];
-    
+
   rates[0]=max(rates[0],-ice_thick/Options.timestep); //thickness cannot be less than zero
 }

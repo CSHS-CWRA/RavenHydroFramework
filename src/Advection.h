@@ -26,7 +26,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvAdvection(string constit_name, CTransportModel *pTransportModel);
+  CmvAdvection(string constit_name, CTransportModel *pTransportModel, CModelABC *pModel);
   ~CmvAdvection();
 
   //inherited functions
@@ -43,9 +43,5 @@ public:/*-------------------------------------------------------*/
                         double      *rates) const;
 
   void        GetParticipatingParamList   (string  *aP, class_type *aPC, int &nP) const;
-
-  /*static void GetParticipatingStateVarList(sv_type *aSV,
-    int     *aLev,
-    int     &nSV);*/ //not used
 };
 #endif

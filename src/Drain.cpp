@@ -16,8 +16,9 @@
 /// \brief Implementation of the drain constructor
 /// \param pGWModel [in] pointer to groundwater model
 //
-CGWDrain::CGWDrain(CGroundwaterModel *pGWModel)
-  :CGWSWProcessABC(pGWModel, DRAIN)
+CGWDrain::CGWDrain(CGroundwaterModel *pGWModel,
+                   CModel            *pModel)
+  :CGWSWProcessABC(pGWModel, DRAIN, pModel)
 {
   _aElevations   = NULL;
   _aConductances = NULL;
@@ -84,7 +85,7 @@ void CGWDrain::GetParticipatingParamList(string  *aP , class_type *aPC , int &nP
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by drain algorithm (size of aSV[] and aLev[] arrays)
 //
-void CGWDrain::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV) 
+void CGWDrain::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 {
   nSV=1;
   aSV [0]=GROUNDWATER;  aLev[0]=DOESNT_EXIST;
@@ -100,8 +101,8 @@ void CGWDrain::GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV)
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from "from" compartment [mm/day]
 //
-void CGWDrain::GetRatesOfChange (const double		   *state_vars, 
-                                 const CHydroUnit  *pHRU, 
+void CGWDrain::GetRatesOfChange (const double		   *state_vars,
+                                 const CHydroUnit  *pHRU,
                                  const optStruct	 &Options,
                                  const time_struct &tt,
                                        double      *rates) const
@@ -122,7 +123,7 @@ void CGWDrain::GetRatesOfChange (const double		   *state_vars,
   //-- Loop over drain nodes in HRU
   HRU_nodes = getHRUnodes(HRUid);
 
-  for (int n=0; n< HRU_nodes.size(); n++) 
+  for (int n=0; n< HRU_nodes.size(); n++)
   {
     index = _mNodeIndex.at(n);  // location of node in arrays
 
@@ -161,7 +162,7 @@ void CGWDrain::GetRatesOfChange (const double		   *state_vars,
 
 //////////////////////////////////////////////////////////////////
 /// \brief Fills arrays[_nnodes] with drain rates to(+)/from(-) the GW model.
-/// 
+///
 /// \param pModel [in] pointer to groundwater model
 /// \param nodes [out] array of drain nodes
 /// \param rates [out] rates of flux to GW model
@@ -189,7 +190,7 @@ void CGWDrain::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
 }
 
 //////////////////////////////////////////////////////////////////
-/// \brief Corrects rates of change (*rates) returned from RatesOfChange function 
+/// \brief Corrects rates of change (*rates) returned from RatesOfChange function
 /// \details Ensures that the rate of flow cannot drain "from" compartment over timestep
 ///
 /// \param *state_vars [in] Array of current state variables in HRU
@@ -198,8 +199,8 @@ void CGWDrain::calcGWBudget(const CModel *pModel, int *nodes, double *rates)
 /// \param &tt [in] Specified point at time at which this accessing takes place
 /// \param *rates [out] Rate of loss from "from" compartment [mm/day]
 //
-void   CGWDrain::ApplyConstraints( const double		 *state_vars, 
-                                      const CHydroUnit *pHRU, 
+void   CGWDrain::ApplyConstraints( const double		 *state_vars,
+                                      const CHydroUnit *pHRU,
                                       const optStruct	 &Options,
                                       const time_struct &tt,
                                             double     *rates) const
@@ -236,7 +237,7 @@ void CGWDrain::UpdateRatesOfChange(const double      *state_vars,
   //-- Loop over drain nodes in HRU
   HRU_nodes = getHRUnodes(HRUid);
 
-  for (unsigned int n=0; n< HRU_nodes.size(); n++) 
+  for (unsigned int n=0; n< HRU_nodes.size(); n++)
   {
     index = _mNodeIndex.at(n);  // location of node in arrays
 

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------
   Reservoir.h
   ------------------------------------------------------------------
@@ -27,13 +27,13 @@ enum curve_function{
 struct DZTRmodel //Dynamically zoned target release model structure
 {
   double Qmc;        ///< maximum channel capacity [m3/s]
-  double Vmax;       ///< maximum reservoir storage [m3] 
+  double Vmax;       ///< maximum reservoir storage [m3]
   double Qci[12];    ///< critical release target [m3/s]
   double Qni[12];    ///< normal release target [m3/s]
   double Qmi[12];    ///< maximum release target [m3/s]
-  double Vci[12];    ///< critical release storage [m3]    
+  double Vci[12];    ///< critical release storage [m3]
   double Vni[12];    ///< normal release storage [m3]
-  double Vmi[12];    ///< critical release storage [m3]  
+  double Vmi[12];    ///< critical release storage [m3]
 };
 struct down_demand {
   const CSubBasin *pDownSB;   ///< pointer to subbasin of downstream demand location
@@ -58,7 +58,7 @@ private:/*-------------------------------------------------------*/
   double       _lakebed_thick;       ///< lakebed thickness [m]
   double       _lakebed_cond;        ///< lakebed thermal conductivity [MJ/m/K/d]
   double       _lake_convcoeff;      ///< lake surface thermal convection coefficient [MJ/m2/d/K]
- 
+
   const CHydroUnit  *_pHRU;          ///< (potentially zero-area) HRU used for Precip/ET calculation (or NULL for no ET)
 
   CTimeSeries *_pExtractTS;          ///< Time Series of extraction [m3/s] (or NULL for zero extraction)
@@ -76,21 +76,22 @@ private:/*-------------------------------------------------------*/
   CTimeSeries *_pQminTS;             ///< Time series of minimum flow constraint [m3/s] (or NULL for no minimum)
   CTimeSeries *_pQdownTS;            ///< Time series of downstream flow soft target [m3/s] (or NULL for none)
   double       _QdownRange;          ///< range of acceptable target flows from Qdown [m3/s] (or zero for hard target)
-  
+
   const CSubBasin *_pQdownSB;        ///< pointer to downstream SubBasin for diversions (or NULL for none)
   const CSubBasin *_pDownSB;         ///< pointer to downstream subbasin
 
   down_demand**_aDemands;            ///< array of pointers to downstream demand information used to determine Qmin [size:_nDemands]
-  int          _nDemands;            ///< size of downstream demand location array  
+  int          _nDemands;            ///< size of downstream demand location array
 
   DZTRmodel    *_pDZTR;              ///< pointer to DZTR model, if used (default=NULL)
 
   bool          _minStageDominant;   ///< true if minimum stage dominates minflow/overrideflow constraints (false by default)
-  double        _demand_mult;        ///< reservoir demand multiplier that indicates percentage of requested downstream irrigation demand 
-                                     ///< satisfied from this reservoir. 
+  double        _demand_mult;        ///< reservoir demand multiplier that indicates percentage of requested downstream irrigation demand
+                                     ///< satisfied from this reservoir.
 
   bool          _assimilate_stage;   ///< true if assimilating lake stage for this reservoir
-  const CTimeSeriesABC *_pObsStage;  ///< observed lake stage 
+  const CTimeSeriesABC *_pObsStage;  ///< observed lake stage
+  bool          _assim_blank;        ///< true if observed stage is blank this time step
 
   double        _DAscale;            //< outflow scale factor - used for reporting overriden flows
   double        _DAscale_last;       //< outflow scale factor for previous time step
@@ -131,7 +132,7 @@ private:/*-------------------------------------------------------*/
   CControlStructure **_pControlStructures; ///< Array of pointer to outflow control structures
 
   //GW information :
-  double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)  
+  double       _seepage_const;       ///< seepage constant [m3/s/m] for groundwater losses Q=k*(h-h_loc)
   double       _local_GW_head;       ///< local head [m] (same  for groundwater losses Q=k*(h-h_loc)
 
   void       BaseConstructor(const string Name,const long SubID); //because some versions of c++ don't like delegating constructors
@@ -152,11 +153,11 @@ public:/*-------------------------------------------------------*/
              const double a_Q, const double b_Q,
              const double a_A, const double b_A,
              const double crestht, const double depth);
-  CReservoir(const string name, const long SubID, 
+  CReservoir(const string name, const long SubID,
              const double *a_ht,
              const double *a_Q, const double *aQ_und,const double *a_A, const double *a_V,
              const int     nPoints);
-  CReservoir(const string Name, const long SubID, 
+  CReservoir(const string Name, const long SubID,
              const int nDates, const int *aDates, const double *a_ht,
              double **a_QQ, const double *aQ_und, const double *a_A, const double *a_V,
              const int     nPoints);
@@ -184,7 +185,8 @@ public:/*-------------------------------------------------------*/
   double            GetOldSurfaceArea        () const; //[m2]
   double            GetLakebedThickness      () const; //[m]
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
-  double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]  
+  double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]
+  double            GetStageDischargeDerivative(const double &stage,const int nn) const; //[m3/s/d]
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]
@@ -212,8 +214,8 @@ public:/*-------------------------------------------------------*/
   void              TurnOnAssimilation       (CTimeSeriesABC *pObs);
   void              SetPrecip                (const double &precip_m3);
   void              SetDownstreamBasin       (const CSubBasin *pDownBasin);
-  void              SetLakebedThickness      (const double &thick); 
-  void              SetLakebedConductivity   (const double &cond); 
+  void              SetLakebedThickness      (const double &thick);
+  void              SetLakebedConductivity   (const double &cond);
   void              SetLakeConvectionCoeff   (const double &conv);
 
   void              AddExtractionTimeSeries  (CTimeSeries *pOutflow);
@@ -233,7 +235,7 @@ public:/*-------------------------------------------------------*/
   void              AddDownstreamDemand      (const CSubBasin *pSB,const double pct, const int julian_start, const int julian_end);
   void              AddControlStructure      (const CControlStructure *pCS);
 
-  void              SetDZTRModel             (const double Qmc, const double Smax, 
+  void              SetDZTRModel             (const double Qmc, const double Smax,
                                               const double Sci[12], const double Sni[12],const double Smi[12],
                                               const double Qci[12], const double Qni[12],const double Qmi[12]);
   void              SetMinStageDominant      ();
@@ -246,13 +248,14 @@ public:/*-------------------------------------------------------*/
   //Called during simulation:
   double            RouteWater               (const double      &Qin_old,
                                               const double      &Qin_new,
+                                              const CModelABC*  pModel,
                                               const optStruct   &Options,
                                               const time_struct &tt,
                                                     double      &res_outflow,
                                                  res_constraint &constraint,
                                                     double      *aQstruct) const;
   void              UpdateStage              (const double      &new_stage,
-                                              const double      &new_ouflow, 
+                                              const double      &new_ouflow,
                                               const res_constraint &constraint,
                                               const double      *new_struct_flows,
                                               const optStruct   &Options,

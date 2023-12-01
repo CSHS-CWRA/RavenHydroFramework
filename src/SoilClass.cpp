@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 
 /*****************************************************************
    Constructor / Destructor
@@ -13,11 +14,10 @@
 /// \brief Implementation of the soil class constructor
 /// \param name [in] String nickname for soil (e.g., "SILTY_SAND")
 //
-CSoilClass::CSoilClass(const string name,const int nConstit)
+CSoilClass::CSoilClass(const string name, const int nConstit, CModel *pModel)
 {
   _tag=name;
-  if (!DynArrayAppend((void**&)(_pAllSoilClasses),(void*)(this),_nAllSoilClasses)){
-    ExitGracefully("CSoilClass::Constructor: creating NULL soil class",BAD_DATA);};
+  pModel->AddSoilClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -40,77 +40,9 @@ const soil_struct *CSoilClass::GetSoilStruct() const{return &_Soil;}
 string             CSoilClass::GetTag       () const{return _tag;}
 
 /*****************************************************************
-   Static Initialization, Accessors, Destructors
+   Static Initialization, Accessors
 *****************************************************************/
-CSoilClass **CSoilClass::_pAllSoilClasses=NULL;
-int          CSoilClass::_nAllSoilClasses=0;
 
-
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of soil classes
-/// \return Number of soil classes
-//
-int CSoilClass::GetNumClasses(){
-  return _nAllSoilClasses;
-}
-
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize soil class information to screen
-//
-void CSoilClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Soil Class Summary:"<<_nAllSoilClasses<<" soils in database"<<endl;
-  for (int c=0; c<_nAllSoilClasses;c++){
-    cout<<"-Soil class \""<<_pAllSoilClasses[c]->GetTag()<<"\" "<<endl;
-    cout<<"       %sand: "<<_pAllSoilClasses[c]->GetSoilStruct()->sand_con<<endl;
-    cout<<"       %clay: "<<_pAllSoilClasses[c]->GetSoilStruct()->clay_con<<endl;
-    cout<<"    %organic: "<<_pAllSoilClasses[c]->GetSoilStruct()->org_con<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all soil classes
-//
-void CSoilClass::DestroyAllSoilClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL SOIL CLASSES"<<endl;}
-  for (int c=0; c<_nAllSoilClasses;c++){
-    delete _pAllSoilClasses[c];
-  }
-  delete [] _pAllSoilClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the soil class corresponding to passed string
-/// \details Converts string (e.g., "SILT" in HRU file) to soilclass
-///  can accept either soilclass index or soilclass _tag
-///  if string is invalid, returns NULL
-/// \param s [in] Soil class identifier (_tag or index)
-/// \return Reference to soil class corresponding to identifier s
-//
-CSoilClass *CSoilClass::StringToSoilClass(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int c=0;c<_nAllSoilClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(_pAllSoilClasses[c]->GetTag()))){return _pAllSoilClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))                                 {return _pAllSoilClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the soil class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to soil class corresponding to index c
-//
-const CSoilClass *CSoilClass::GetSoilClass(int c)
-{
-  if ((c<0) || (c>=CSoilClass::_nAllSoilClasses)){return NULL;}
-  return _pAllSoilClasses[c];
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates soil propeties
 /// \details Sets soil properties based upon simple soil parameters (sand,clay
@@ -122,7 +54,7 @@ const CSoilClass *CSoilClass::GetSoilClass(int c)
 ///
 /// \param &Stmp [in] Input soil parameters (read from .rvp file)
 /// \param &Sdefault [in] Default soil parameters
-/// \param nConstit [in] number of constitutents 
+/// \param nConstit [in] number of constitutents
 //
 void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
                                         const soil_struct &Sdefault,
@@ -371,7 +303,7 @@ void CSoilClass::AutoCalculateSoilProps(const soil_struct &Stmp,
   {
     _Soil.unavail_frac=0.0; //no warning
   }
-  
+
 
   //Albedo
   //----------------------------------------------------------------------------

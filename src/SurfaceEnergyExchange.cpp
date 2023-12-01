@@ -14,7 +14,8 @@ Atmospheric Convection Constructor/Destructor
 /// \param pTransMod [in] pointer to transport model
 /// \param iStorTo [in] state variable index of water storage corresponding to surface energy store
 //
-CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod) : CHydroProcessABC(PARTITION_ENERGY)
+CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod, CModelABC *pModel)
+  :CHydroProcessABC(PARTITION_ENERGY, pModel)
 {
   _pTransModel=pTransMod;
   int cTemp=_pTransModel->GetConstituentIndex("TEMPERATURE");
@@ -24,10 +25,10 @@ CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod) : CHydr
   int N=5; //5 storage compartment which may exchange with atmosphere (for now)
 
   CHydroProcessABC::DynamicSpecifyConnections(2*N);
- 
+
   int layer_To;
   int layer_Atmos=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(ATMOSPHERE)); //layer index of atmospheric enthalpy
-  int layer_LH   =pModel->GetStateVarIndex(LATENT_HEAT); 
+  int layer_LH   =pModel->GetStateVarIndex(LATENT_HEAT);
 
   layer_To=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(SOIL,0)); //layer index of soil[0]
   iFrom[0  ]=pModel->GetStateVarIndex(CONSTITUENT,layer_Atmos); //global index of atmospheric enthalpy
@@ -52,7 +53,7 @@ CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod) : CHydr
     iTo  [N+2]=pModel->GetStateVarIndex(CONSTITUENT,layer_To   ); //global index of depression enthalpy
   }
   if(pModel->GetStateVarIndex(CANOPY)!=DOESNT_EXIST) {
-    layer_To=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(CANOPY)); //layer index of canopy 
+    layer_To=_pTransModel->GetLayerIndex(cTemp,pModel->GetStateVarIndex(CANOPY)); //layer index of canopy
 
     iFrom[3  ]=pModel->GetStateVarIndex(CONSTITUENT,layer_Atmos); //global index of atmospheric enthalpy
     iTo  [3  ]=pModel->GetStateVarIndex(CONSTITUENT,layer_To);    //global index of canopy enthalpy
@@ -102,7 +103,7 @@ void        CmvPartitionEnergy::GetParticipatingParamList(string  *aP,class_type
 /// \param *aLev [out] Array of levels of multilevel state variables (or DOESNT_EXIST of single level)
 /// \param &nSV [out] Number of participating state variables (length of aSV and aLev arrays)
 //
-void CmvPartitionEnergy::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV) 
+void CmvPartitionEnergy::GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV)
 {
   //do nothing
 };
@@ -167,11 +168,11 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
 
   double pct_cover=1.0;
 
-  //evaluate partial coverage of HRU 
-  double dep_cover   =pHRU->GetSurfaceProps()->max_dep_area_frac;  //pHRU->GetDepressionAreaFraction(); //TMP DEBUG - may have to vary with depression storage 
-  double snow_cover  =pHRU->GetSnowCover(); 
+  //evaluate partial coverage of HRU
+  double dep_cover   =pHRU->GetSurfaceProps()->max_dep_area_frac;  //pHRU->GetDepressionAreaFraction(); //TMP DEBUG - may have to vary with depression storage
+  double snow_cover  =pHRU->GetSnowCover();
   double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
-  double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
+  //double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
 
   pct_cover=max(1.0-snow_cover-dep_cover,0.0);
 
@@ -189,17 +190,17 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   //  dHsdHw=-stor*rho_soil*c_soil*dT/dH_w;
   //  rates[10]-=dHsdHw*rates[0]; // SOIL -> SOIL_EQUILIBRIUM
   //  rates[0]*=(1.0-dHsdHw);
-  
+
   //Handle evaporative energy losses
   //----------------------------------------------------------------------
   int    nAdvConnections=_pTransModel->GetNumAdvConnections();
   int    k              =pHRU->GetGlobalIndex();
   double ET,LH_loss,LH_loss_sub;
-  int N=5; //# of compartments 
+  int N=5; //# of compartments
   for(int q=0;q<nAdvConnections;q++)
   {
     int iToWater  =_pTransModel->GetToWaterIndex(q);
-    if(pModel->GetStateVarType(iToWater)==ATMOSPHERE) 
+    if(pModel->GetStateVarType(iToWater)==ATMOSPHERE)
     {
       int iFromWater=_pTransModel->GetFromWaterIndex(q);
       int js        =_pTransModel->GetJsIndex(q);
@@ -238,5 +239,5 @@ void CmvPartitionEnergy::ApplyConstraints(const double      *state_vars,
   //do nothing
 
   //JRC: may have to handle very thin amounts of water getting too much incoming energy
-  // dry soil ? 
+  // dry soil ?
 }

@@ -7,8 +7,6 @@ CIsotopeModel routines related to isotope transport
 #include "RavenInclude.h"
 #include "IsotopeTransport.h"
 
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-
 //////////////////////////////////////////////////////////////////
 /// \brief isotope model constructor
 //
@@ -39,7 +37,7 @@ void CIsotopeModel::Initialize(const optStruct& Options)
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns COMPOSITION of isotope in [o/oo] (rather than concentration in mg/mg)
-/// \param M [in] mass [mg/m2] 
+/// \param M [in] mass [mg/m2]
 /// \param V [in] volume [mm]
 //
 double CIsotopeModel::CalculateReportingConcentration(const double& mass,const double& vol) const
@@ -51,7 +49,7 @@ double CIsotopeModel::CalculateReportingConcentration(const double& mass,const d
 //////////////////////////////////////////////////////////////////
 /// \brief returns outflow composition of isotope in subbasin p at current point in time
 /// \notes only used for reporting; calculations exclusively in terms of mass/energy
-/// \param p [in] subbasin index 
+/// \param p [in] subbasin index
 //
 double CIsotopeModel::GetOutflowConcentration(const int p) const
 {
@@ -60,7 +58,7 @@ double CIsotopeModel::GetOutflowConcentration(const int p) const
   return ConcToComposition(C); //mg/L-> o/oo
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Converts basic composition units [o/oo] to [mg/mm/m2] 
+/// \brief Converts basic composition units [o/oo] to [mg/mm/m2]
 /// \param C [in] composition, in o/oo
 /// \returns concentration, in mg/mm/m2
 //
@@ -71,14 +69,14 @@ double CIsotopeModel::ConvertConcentration(const double &C) const
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns advection correction factor for isotope
-/// handles enrichment factor for evaporating waters 
+/// handles enrichment factor for evaporating waters
 /// \param pHRU       [in] pointer to HRU of interest
 /// \param iFromWater [in] index of "from" water storage state variable
 /// \param iToWater   [in] index of "to" water storage state variable
 /// \param Cs         [in] isotopic concentration of source water [mg/mg]
-/// 
+///
 double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iFromWater,const int iToWater,const double& Cs) const
-{  
+{
   sv_type fromType,toType;
 
   fromType=_pModel->GetStateVarType(iFromWater);
@@ -99,7 +97,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
 
     double h=pHRU->GetForcingFunctions()->rel_humidity;
     double T=pHRU->GetForcingFunctions()->temp_ave+ZERO_CELSIUS; //[K]
-    
+
     //TMP DEBUG - this should not be this hard. Should have a _pTransModel->GetConcentration(k,c,ATMOS_PRECIP,m=0);
     //ATMOS_PRECIP should be a dirichlet condition!
     int iAtmPrecip=_pModel->GetStateVarIndex(ATMOS_PRECIP);
@@ -108,9 +106,9 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     dP=_pTransModel->GetConcentration(pHRU->GetGlobalIndex(),i); //[o/oo]
 
     dL=ConcToComposition(Cs);//[mg/mg]->[o/oo] // is this necessary? I feel this should be specified in [o/oo]?
-    
+
     double eta=1.0;        //turbulence parameter = 1 for soil, 0.5 for open water, 0.6 for wetlands
-    double hprime=1.0;     //1.0 for small water bodies, 0.88 for large lakes/reservoirs 
+    double hprime=1.0;     //1.0 for small water bodies, 0.88 for large lakes/reservoirs
     double theta;          //advection correction
     if      (fromType==DEPRESSION   ) {eta=0.6;}
     else if (fromType==SOIL         ) {eta=1.0;}
@@ -118,8 +116,8 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
     //else if (fromType==SNOW         )  //sublimation?
     //else if (fromType==CANOPY_SNOW  )  //sublimation?
 
-    theta=(1-hprime)/(1-h); 
-  
+    theta=(1-hprime)/(1-h);
+
     //from Horita and Wesolowski,  Liquid-vapor fractionation of oxygen and hydrogen isotopes of water from the freezing to the critical temperature,
     //Geochimica et Cosmochimica Acta, 58(16), 1994,
     double alpha_star,ep_star,tmp(0.0);
@@ -133,12 +131,12 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
       tmp=1158.8*(T*T*T/1e9)-1620.1*(T*T/1e6)+794.84*(T/1e3)+2.9992*(1e9/T/T/T)-161.04;  //eqn 5 of H&W
       CK0=25.0/TO_PER_MILLE;
     }
-    alpha_star=exp(0.001*tmp); //[-] 
+    alpha_star=exp(0.001*tmp); //[-]
     ep_star   =alpha_star-1.0; //[-]
     beta      =eta*theta*CK0;  //[-]
 
     dA   =((  dP/TO_PER_MILLE-ep_star)/alpha_star)*TO_PER_MILLE;//[o/oo]
-    
+
     //conversion - all compositions in o/oo must be converted to concentrations
     // from Gat & Levy (1978), Gat (1981)
     dStar=(h*dA/TO_PER_MILLE+beta*(1-h)+ep_star/alpha_star)/(h - beta*(1-h) - ep_star/alpha_star)*TO_PER_MILLE; //[o/oo]
@@ -150,7 +148,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
 
     //cout <<"C_E, C_L"<< C_E<<" "<<C_L<<endl;
     //return 1.0; //TMP DEBUG
-    if (C_L==0.0){return 1.0;} 
+    if (C_L==0.0){return 1.0;}
     return min(C_E/C_L,1.0);
   }
 
@@ -163,7 +161,7 @@ double CIsotopeModel::GetAdvectionCorrection(const CHydroUnit* pHRU,const int iF
   else if ( ((fromType==SNOW_LIQ) || (toType==SNOW)) ) //refreeze - dilutes snow
   {
   }
-  
+
   return 1.0;
 }
 //////////////////////////////////////////////////////////////////
@@ -208,7 +206,7 @@ double CIsotopeModel::ConcentrationToRval(const double &conc) const
   return conc/(1-conc);
 }
 //////////////////////////////////////////////////////////////////
-/// \brief converts from concentration [mg/mg] to delta value (composition) [o/oo] 
+/// \brief converts from concentration [mg/mg] to delta value (composition) [o/oo]
 /// \param conc [in] [mg/mg]
 //
 double CIsotopeModel::ConcToComposition(const double &conc) const
@@ -220,7 +218,7 @@ double CIsotopeModel::ConcToComposition(const double &conc) const
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief converts from delta value (composition) [o/oo]  to concentration [mg/mg] to 
+/// \brief converts from delta value (composition) [o/oo]  to concentration [mg/mg] to
 /// \param d [in] δ-value (composition) [o/oo]
 //
 double CIsotopeModel::CompositionToConc(const double& d) const
@@ -228,7 +226,7 @@ double CIsotopeModel::CompositionToConc(const double& d) const
   double RV;
   if(_isotope==ISO_O18) { RV=RV_VMOW_O18; }
   else                  { RV=RV_VMOW_H2;}
-  
-  double R=((d/TO_PER_MILLE)+1.0)*RV; 
+
+  double R=((d/TO_PER_MILLE)+1.0)*RV;
   return RvalToConcentration(R);
 }

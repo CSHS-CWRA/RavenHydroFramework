@@ -65,7 +65,7 @@ public:
   int    GetLineNumber ();
   string GetFilename();
   void   ImproperFormat(char **s);
-  void   IgnoreSpaces  (bool ignore){comma_only=ignore;}
+  void   IgnoreSpaces  (bool ignore_it){comma_only=ignore_it;}
 
   bool   Tokenize(char **tokens, int &numwords);
 

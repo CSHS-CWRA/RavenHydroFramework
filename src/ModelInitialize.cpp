@@ -4,8 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Model.h"
 #include "IrregularTimeSeries.h"
-
-string FilenamePrepare(string filebase,const optStruct &Options); //defined in StandardOutput.cpp
+#include "HeatConduction.h"
 
 /*****************************************************************
    Model Initialization Routines
@@ -57,7 +56,7 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   _nTotalConnections=0;
   for (j=0; j<_nProcesses;j++){
-    if((_pProcesses[j]->GetProcessType()!=PRECIPITATION) && 
+    if((_pProcesses[j]->GetProcessType()!=PRECIPITATION) &&
        (_pProcesses[j]->GetProcessType()!=LAT_ADVECTION))
        {_pProcesses[j]->Initialize();} //precip already initialized in ParseInput.cpp
     _nTotalConnections+=_pProcesses[j]->GetNumConnections();
@@ -68,10 +67,10 @@ void CModel::Initialize(const optStruct &Options)
       if (_pProcesses[j]->GetProcessType()==LAT_ADVECTION){
         _pProcesses[j]->Initialize(); //must be re-initialized after all lateral processes are initialized above
         _nTotalConnections+=_pProcesses[j]->GetNumConnections();
-      } 
+      }
     }
   }
-  // reserve memory for mass balance arrays 
+  // reserve memory for mass balance arrays
   //--------------------------------------------------------------
   _aCumulativeBal = new double * [_nHydroUnits];
   _aFlowBal       = new double * [_nHydroUnits];
@@ -89,7 +88,7 @@ void CModel::Initialize(const optStruct &Options)
   }
 
   _nTotalLatConnections=0;
-  for (int j=0; j<_nProcesses;j++){
+  for (j=0; j<_nProcesses;j++){
     _nTotalLatConnections+=_pProcesses[j]->GetNumLatConnections();
   }
   if(_nTotalLatConnections>0){
@@ -97,7 +96,7 @@ void CModel::Initialize(const optStruct &Options)
     _aCumulativeLatBal = new double[_nTotalLatConnections];
     _aFlowLatBal       = new double[_nTotalLatConnections];
     ExitGracefullyIf(_aFlowLatBal==NULL,"CModel::Initialize (_aFlowLatBal)",OUT_OF_MEMORY);
-    
+
     for(int jss=0;jss<_nTotalLatConnections;jss++){
       _aCumulativeLatBal[jss]=0.0;
       _aFlowLatBal      [jss]=0.0;
@@ -122,7 +121,7 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   for (k=0;k<_nHydroUnits; k++ ){_pHydroUnits [k ]->Initialize(_UTM_zone);}
   for (g=0;g<_nGauges;     g++ ){_pGauges     [g ]->Initialize(Options,_UTM_zone);}
-  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(Options);}
+  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(this,Options);}
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups  [kk]->Initialize(); } //disables HRUs
   for (pp=0;pp<_nSBGroups; pp++){_pSBGroups   [pp]->Initialize(); } //disables SBs and HRUs
 
@@ -170,7 +169,7 @@ void CModel::Initialize(const optStruct &Options)
       }
     }
   }
-  
+
   // Generate Gauge Weights from Interpolation (except if in BMI mode and no RVT file is specified)
   //--------------------------------------------------------------
   if ((!Options.in_bmi_mode) || (strcmp(Options.rvt_filename.c_str(), "") != 0)) {
@@ -187,7 +186,7 @@ void CModel::Initialize(const optStruct &Options)
     else if (Options.ow_evaporation==PET_DATA     ){f_gauge=F_OW_PET;}
     else if (Options.wind_velocity ==WINDVEL_DATA ){f_gauge=F_WIND_VEL;}
     if (Options.noisy){cout<<"     Gauge weights determined from "<<ForcingToString(f_gauge)<<" gauges"<<endl; }
-    
+
     if(Options.write_interp_wts)
     { //creates and/or deletes existing InterpolationWeights.csv file
       ofstream WTS;
@@ -202,7 +201,7 @@ void CModel::Initialize(const optStruct &Options)
     GenerateGaugeWeights(_aGaugeWeights ,f_gauge   ,Options);//'other' forcings
     GenerateGaugeWeights(_aGaugeWtPrecip,F_PRECIP  ,Options);
     GenerateGaugeWeights(_aGaugeWtTemp  ,F_TEMP_AVE,Options);
-  
+
   }
 
   //Initialize SubBasins, calculate routing orders, topology
@@ -237,6 +236,12 @@ void CModel::Initialize(const optStruct &Options)
   if (_pTransModel->GetNumConstituents()>0){
     if (!Options.silent){cout<<"  Initializing Transport Model..."<<endl;}
     _pTransModel->Initialize(Options);
+  }
+  for (j = 0; j < _nProcesses; j++) {
+    if (_pProcesses[j]->GetProcessType() == HEATCONDUCTION) {
+      CmvHeatConduction *pHC=static_cast<CmvHeatConduction *>(_pProcesses[j]);
+      pHC->StoreNumberOfHRUs(GetNumHRUs());
+    }
   }
 
   // Precalculate whether individual processes should apply (for speed)
@@ -273,11 +278,11 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   InitializeObservations(Options);
 
-  // Generate default diagnostic period - entire simulation 
+  // Generate default diagnostic period - entire simulation
   //--------------------------------------------------------------
   CDiagPeriod *pDP=new CDiagPeriod("ALL","0001-01-01","9999-12-31",COMPARE_GREATERTHAN,-ALMOST_INF,Options);
   AddDiagnosticPeriod(pDP);
-  
+
   //General QA/QC
   //--------------------------------------------------------------
   ExitGracefullyIf((GetNumGauges()<2) && (Options.orocorr_temp==OROCORR_UBCWM2),
@@ -353,13 +358,13 @@ void CModel::Initialize(const optStruct &Options)
   }
   if(Options.calendar!=CALENDAR_PROLEPTIC_GREGORIAN){
     WriteWarning("CModelInitialize: if a non-standard calendar is used, care must be taken with forcing data. All gauge forcing data must use the same calendar convention. Mixed calendars are only supported for NetCDF forcing inputs.",Options.noisy);
-  }  
-  //--Check for non-midnight start time 
+  }
+  //--Check for non-midnight start time
   if((Options.julian_start_day-floor(Options.julian_start_day+TIME_CORRECTION)>REAL_SMALL)){
     WriteAdvisory("CModelInitialize: if non-midnight start time is used and temperature forcings begin after midnight, average/max/min daily temperature forcings will be incorrect on the first (and often last) day of simulation.",Options.noisy);
     WriteAdvisory("                  It is suggested to either (a) use forcings which start on or prior to 00:00 of the model start date or (b) avoid algorithms which require these daily temperature inputs",Options.noisy);
   }
-  //--Check for non-midnight start time 
+  //--Check for non-midnight start time
   double rem_tsteps= (1.0 - floor(Options.julian_start_day + TIME_CORRECTION))/ Options.timestep;
   if ((floor(rem_tsteps + TIME_CORRECTION)-rem_tsteps)>REAL_SMALL){
     WriteWarning("CModelInitialize: the model time step and model start time is such that midnight does not correspond to a time step ending. This will cause issues with use of daily temperature forcings (and potentially other errors) throughout the simulation.", Options.noisy);
@@ -370,7 +375,7 @@ void CModel::Initialize(const optStruct &Options)
 ///
 /// \param &Options [in] Global model options information
 //
-void CModel::CalculateInitialWaterStorage(const optStruct &Options) 
+void CModel::CalculateInitialWaterStorage(const optStruct &Options)
 {
   if (!Options.silent){cout<<"  Calculating initial system water storage..."<<endl;}
   _initWater=0.0;
@@ -466,12 +471,13 @@ void CModel::InitializeObservations(const optStruct &Options)
 void CModel::InitializeRoutingNetwork()
 {
   int p,pp,pTo,ord;
-  
+
   bool noisy=false;//useful for debugging
 
   _aDownstreamInds=NULL;
   _aSubBasinOrder =new int [_nSubBasins];
   _aDownstreamInds=new int [_nSubBasins];
+  int *aInflowCount=new int [_nSubBasins];
   ExitGracefullyIf(_aDownstreamInds==NULL,"CModel::InitializeRoutingNetwork(1)",OUT_OF_MEMORY);
 
   //check for bad downstream IDs, populate downstream_ind array
@@ -486,11 +492,18 @@ void CModel::InitializeRoutingNetwork()
     ExitGracefullyIf(pp==p,
                      "CModel::InitializeRoutingNetwork: subbasin empties into itself: circular reference!",BAD_DATA);
     _aDownstreamInds[p]=pp;
+    aInflowCount    [p]=0;
   }
-
+  // count number of inflows to each basin
+  //----------------------------------------------------------------------
+  for (p=0;p<_nSubBasins;p++)
+  {
+    pTo=_aDownstreamInds[p];
+    if (pTo!=DOESNT_EXIST){aInflowCount[pTo]++;}
+  }
   // Iterative identification of subbasin orders
   //----------------------------------------------------------------------
-  // here, order goes from 0 (trunk) to _maxSubBasinOrder (leaf). This is NOT Strahler ordering!!!
+  // here, order goes from 0 (trunk) to _maxSubBasinOrder (furthest leaf). This is NOT Strahler ordering!!!
   const int MAX_ITER=1000;
   int last_ordersum;
   int iter(0),ordersum(0);
@@ -549,11 +562,12 @@ void CModel::InitializeRoutingNetwork()
 
   for (p = 0; p < _nSubBasins; p++)
   {
-    // identify headwater basins
-    if (_aSubBasinOrder[p] != _maxSubBasinOrder){
+    // identify headwater basins - default is headwater
+    if (aInflowCount[p] > 0) {
       _pSubBasins[p]->SetAsNonHeadwater();
     }
-    // set subbasin pointers to their downstream subbasins 
+
+    // set subbasin pointers to their downstream subbasins
     pTo=_aDownstreamInds[p];
     if (pTo!=DOESNT_EXIST){
       _pSubBasins[p]->SetDownstreamBasin(_pSubBasins[pTo]);
@@ -566,6 +580,7 @@ void CModel::InitializeRoutingNetwork()
       }
     }
   }
+  delete [] aInflowCount;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -607,8 +622,8 @@ void CModel::InitializeBasins(const optStruct &Options,const bool re_init)
   {
     aSBArea[p]=_pSubBasins[p]->GetBasinArea();
 
-    if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
-      runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
+    if (this->_pGlobalParams->GetParams()->avg_annual_runoff > 0){
+      runoff_est= this->_pGlobalParams->GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
     }
     aSBQlat[p]=runoff_est/MM_PER_METER*(aSBArea[p]*M2_PER_KM2)/SEC_PER_DAY;//[m3/s]
     aSBQlat[p]+=_pSubBasins[p]->GetDownstreamInflow(0.0);//[m3/s]
@@ -665,15 +680,15 @@ void CModel::InitializeBasins(const optStruct &Options,const bool re_init)
 ///
 /// \param &Options [in] Global model options information
 //
-void CModel::ClearTimeSeriesData(const optStruct& Options) 
+void CModel::ClearTimeSeriesData(const optStruct& Options)
 {
   if(DESTRUCTOR_DEBUG) { cout<<"DELETING RVT DATA"<<endl; }
   int c,f,g,i,j,k,p;
   for (g=0;g<_nGauges;       g++){delete _pGauges       [g];} delete [] _pGauges;       _pGauges=NULL; _nGauges=0;
   for (f=0;f<_nForcingGrids; f++){delete _pForcingGrids [f];} delete [] _pForcingGrids; _pForcingGrids=NULL; _nForcingGrids=0;
-  for (i=0;i<_nObservedTS;   i++){delete _pObservedTS   [i];} delete [] _pObservedTS;   _pObservedTS=NULL; 
+  for (i=0;i<_nObservedTS;   i++){delete _pObservedTS   [i];} delete [] _pObservedTS;   _pObservedTS=NULL;
   if (_pModeledTS != NULL){
-    for (i = 0; i < _nObservedTS; i++){ delete _pModeledTS[i]; } delete[] _pModeledTS;    _pModeledTS = NULL; 
+    for (i = 0; i < _nObservedTS; i++){ delete _pModeledTS[i]; } delete[] _pModeledTS;    _pModeledTS = NULL;
   }
   _nObservedTS=0;
   for (i=0;i<_nObsWeightTS;  i++){delete _pObsWeightTS  [i];} delete [] _pObsWeightTS;  _pObsWeightTS=NULL; _nObsWeightTS;
@@ -704,14 +719,14 @@ void CModel::ClearTimeSeriesData(const optStruct& Options)
 /// \brief initializes all paramter override structures
 ///
 //
-void CModel::InitializeParameterOverrides() 
+void CModel::InitializeParameterOverrides()
 {
   for (int i=0;i<_nParamOverrides;i++)
   {
     //determines memory address location of the appropriate global variable
     // this is the only time we mess with addresses like this in the code - merely for speed
     string name=_pParamOverrides[i]->param_name;
-    if      (name == "PET_BLEND_WTS") { //special case 
+    if      (name == "PET_BLEND_WTS") { //special case
       _pParamOverrides[i]->pxAddress=_PETBlends_wts;
       for (int j=0;j<_PETBlends_N;j++){
         _pParamOverrides[i]->aRevertValues[j] =_PETBlends_wts[j];
@@ -723,21 +738,21 @@ void CModel::InitializeParameterOverrides()
         _pParamOverrides[i]->aRevertValues[j] =_PotMeltBlends_wts[j];
       }
     }
-    else 
+    else
     {
-      double *address=CGlobalParams::GetAddress(name);
+      double *address = this->_pGlobalParams->GetAddress(name);
       if (address==NULL){
         ExitGracefully("CModel::InitializeParameterOverrides() : Invalid or unsupported global parameter name in :LocalParameterOverride command",BAD_DATA);
       }
       _pParamOverrides[i]->pxAddress=address;
-      
-      _pParamOverrides[i]->aRevertValues[0] = CGlobalParams::GetParameter(name);
+
+      _pParamOverrides[i]->aRevertValues[0] = this->_pGlobalParams->GetParameter(name);
     }
 
     _pParamOverrides[i]->aHRUIsOverridden=new bool [_nHydroUnits];
     ExitGracefullyIf(_pParamOverrides[i]->aHRUIsOverridden==NULL,"InitializeParameterOverrides()",OUT_OF_MEMORY);
 
-    // Search for SB Group - this is done here so that group can be read in .rvp without knowledge of SB groups 
+    // Search for SB Group - this is done here so that group can be read in .rvp without knowledge of SB groups
     int pp=DOESNT_EXIST;
     string sbg_name=_pParamOverrides[i]->SBGroup_name;
     for (int j=0;j<_nSBGroups;j++){
@@ -778,7 +793,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
   aWts=NULL;
   aWts=new double *[_nHydroUnits];
   ExitGracefullyIf(aWts==NULL,"GenerateGaugeWeights",OUT_OF_MEMORY);
-  
+
   for (k=0;k<_nHydroUnits;k++){
     aWts[k]=NULL;
     aWts[k]=new double [_nGauges];
@@ -828,7 +843,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
         aWts[k][g]=0.0;
       }
       aWts[k][g_min]=1.0;
-      
+
     }
     break;
   }
@@ -986,7 +1001,7 @@ void CModel::GenerateGaugeWeights(double **&aWts, const forcing_type forcing, co
       aWts[k][g]=1.0;
     }
   }
-  
+
   //check quality - weights for each HRU should add to 1
   double sum;
   for (k=0;k<_nHydroUnits;k++){

@@ -33,6 +33,8 @@ void RavenUnitTesting(const optStruct &Options)
   //TestEnthalpyTempConvert();
   //TestConvectionSolution();
   //TestGammaSampling();
+  //TestWetBulbTemps();
+
 }
 /////////////////////////////////////////////////////////////////
 /// \brief Tests DateStringToTimeStruct() function
@@ -58,11 +60,11 @@ void DateTest()
   ExitGracefully("DateTest",SIMULATION_DONE);
 }
 void AddTimeTest( ) {
-  
+
   time_struct tt,tt2;
   double      outday;
   int         outyear;
-  
+
   AddTime(360,1999,5,StringToCalendar("PROLEPTIC_GREGORIAN"),outday,outyear);
   JulianConvert(0.0,360,1999,StringToCalendar("PROLEPTIC_GREGORIAN"),tt);
   JulianConvert(0.0,outday,outyear,StringToCalendar("PROLEPTIC_GREGORIAN"),tt2);
@@ -105,7 +107,7 @@ void AddTimeTest( ) {
   JulianConvert(0.0,outday,outyear,StringToCalendar("GREGORIAN"),tt2);
   cout<<tt.date_string<<" plus 733774: "<<tt2.date_string<<"   (expected   0th of 2010          = 2010-01-01)"<<endl;
 
-  // STANDARD is same as GREGORIAN  
+  // STANDARD is same as GREGORIAN
   AddTime(0,1,733774,StringToCalendar("STANDARD"),outday,outyear);  // must be 2010-01-01
   JulianConvert(0.0,0,1,StringToCalendar("STANDARD"),tt);
   JulianConvert(0.0,outday,outyear,StringToCalendar("STANDARD"),tt2);
@@ -116,7 +118,7 @@ void AddTimeTest( ) {
   JulianConvert(0.0,0,1,StringToCalendar("GREGORIAN"),tt);
   JulianConvert(0.0,outday,outyear,StringToCalendar("GREGORIAN"),tt2);
   cout<<tt.date_string<<" plus 689945: "<<tt2.date_string<<"   (expected   0th of 1890          = 1890-01-01)"<<endl;
-											   
+
   AddTime(0,1,489800.0,StringToCalendar("GREGORIAN"),outday,outyear);  //1342, 1, 1, 0, 0, 0, 0, 1, 1)
   JulianConvert(0.0,0,1,StringToCalendar("GREGORIAN"),tt);
   JulianConvert(0.0,outday,outyear,StringToCalendar("GREGORIAN"),tt2);
@@ -252,7 +254,7 @@ void ADRCumDistTest()
     TEST<<v[j]<<",";
   }
   TEST<<endl;
-  for(double t=0;t<10;t+=0.125) {    
+  for(double t=0;t<10;t+=0.125) {
     TEST<<t<<",";
     for(double D=0.12; D<1.2;D+=0.12) {
       //TEST<< TimeVaryingADRCumDist(t      ,5,v,10,D,1.0)<<",";
@@ -267,7 +269,7 @@ void ADRCumDistTest()
   for(int j=0;j<10;j++) {
     v[j]=1.0;
   }
-  v[1]=4; v[2]=2; v[3]=5; v[4]=4; v[5]=3; v[6]=3; v[7]=5; 
+  v[1]=4; v[2]=2; v[3]=5; v[4]=4; v[5]=3; v[6]=3; v[7]=5;
   for(double t=0;t<6.0;t+=0.025) {
     TEST<<t<<",";
     double D=1.0;
@@ -342,13 +344,13 @@ void OpticalAirMassTest()
     if (tt.day_of_month==21)//21st day of the month
     {
       cout<<tt.month<<endl;
-      
+
       double day_angle  = CRadiation::DayAngle(jday,1999,StringToCalendar("PROLEPTIC_GREGORIAN"));
       dec               = CRadiation::SolarDeclination(day_angle);
       double day_length = CRadiation::DayLength(lat*DEGREES_TO_RADIANS,dec*DEGREES_TO_RADIANS);
       double tsol       = t-floor(t)-0.5;
       double OM         = CRadiation::OpticalAirMass(lat*DEGREES_TO_RADIANS,dec*DEGREES_TO_RADIANS,day_length,tsol,false);
-      
+
       OAM<<tt.date_string<<","<<t<<","<<tsol<<","<<dec<<","<<OM<<",";
       OAM<<CRadiation::OpticalAirMass(lat*DEGREES_TO_RADIANS,dec,day_length,tsol,true)<<endl;
     }
@@ -405,7 +407,7 @@ void ShortwaveTest()
         slope=s*DEGREES_TO_RADIANS;//conv to rads
         lateq      = CRadiation::CalculateEquivLatitude(latrad,slope,aspect);
         solar_noon = CRadiation::CalculateSolarNoon    (latrad,slope,aspect); //relative to actual location
-        
+
         SW=CRadiation::ClearSkySolarRadiation(day+0.001,tstep,latrad,lateq,slope,aspect,day_angle,day_length,solar_noon,dew_pt,ET_rad,ET_flat,(tstep==1.0));
         SW=ET_rad;
         SHORT<<SW*conv<<",";
@@ -566,3 +568,17 @@ void BarycentricWeights() {
   ExitGracefully("BarycentricWeights",SIMULATION_DONE);
 }
 
+void TestWetBulbTemps() {
+  double T,RH;
+  double P=100;
+  cout<<"T ,RH ,Tw"<<endl;
+  T=30; RH=0.5;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  T=20; RH=0.9;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  T=20; RH=1.0;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  T=5; RH=0.35;
+  cout<<T<<" ,"<<RH<<" "<<GetWetBulbTemperature(P,T,RH)<<endl;
+  ExitGracefully("UnitTesting:: TestWetBulbTemps",SIMULATION_DONE);
+}

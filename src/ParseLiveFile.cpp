@@ -10,7 +10,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Live Communications File
-/// \details model.rvl: input file that is read every N time steps 
+/// \details model.rvl: input file that is read every N time steps
 ///
 /// \param *&pModel [out] Reference to model object
 /// \param &Options [out] Global model options information
@@ -88,7 +88,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:VegetationChange [HRU ID] [new vegetation tag] */
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
       if(pHRU!=NULL) {
-        CVegetationClass *veg_class= CVegetationClass::StringToVegClass(s[2]);
+        CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
         if(veg_class!=NULL) {
           pHRU->ChangeVegetation(veg_class);
         }
@@ -105,7 +105,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:LandUseChange [HRU ID] [new LULT tag]*/
       pHRU=pModel->GetHRUByID(s_to_i(s[1]));
       if(pHRU!=NULL) {
-        CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
+        CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           pHRU->ChangeLandUse(lult_class);
         }
@@ -122,7 +122,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     {/*:GroupLandUseChange [HRU group] [new LULT tag]*/
       CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
       if(pHRUGroup!=NULL) {
-        CLandUseClass *lult_class= CLandUseClass::StringToLUClass(s[2]);
+        CLandUseClass *lult_class= pModel->StringToLUClass(s[2]);
         if(lult_class!=NULL) {
           for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
             pHRUGroup->GetHRU(k)->ChangeLandUse(lult_class);
@@ -139,11 +139,11 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     }
     case(4):  //----------------------------------------------
     {/*:GroupVegetationChange [HRU group] [new veg tag]*/
-      CHRUGroup *pHRUGroup=pModel->GetHRUGroup(s[1]);
-      if(pHRUGroup!=NULL) {
-        CVegetationClass *veg_class=CVegetationClass::StringToVegClass(s[2]);
-        if(veg_class!=NULL) {
-          for(int k=0;k<pHRUGroup->GetNumHRUs();k++) {
+      CHRUGroup *pHRUGroup = pModel->GetHRUGroup(s[1]);
+      if(pHRUGroup != NULL) {
+        CVegetationClass *veg_class = pModel->StringToVegClass(s[2]);
+        if(veg_class != NULL) {
+          for(int k=0; k<pHRUGroup->GetNumHRUs(); k++) {
             pHRUGroup->GetHRU(k)->ChangeVegetation(veg_class);
           }
         }
@@ -210,7 +210,7 @@ void ParseLiveFile(CModel *&pModel,const optStruct &Options, const time_struct &
     { /*:SetReservoirFlow [SBID] [value]*/
       pSB=pModel->GetSubBasinByID(s_to_l(s[1]));
       //pSB->GetReservoir()->OverrideFlow(s_to_d(s[2]));
-      //JRC: add CReservoir member _overrideQ which takes priority over override Q time series 
+      //JRC: add CReservoir member _overrideQ which takes priority over override Q time series
       ExitGracefully("ParseLiveFile:SetReservoirFlow",STUB);
       break;
     }

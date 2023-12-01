@@ -3,11 +3,13 @@
   Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ProcessGroup.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the constructor for an abstract group of hydrological processes
 //
-CProcessGroup::CProcessGroup(string name) :CHydroProcessABC(PROCESS_GROUP)
+CProcessGroup::CProcessGroup(string name, CModelABC *pModel)
+  :CHydroProcessABC(PROCESS_GROUP, pModel)
 {
   _pSubProcesses=NULL;
   _nSubProcesses=0;
@@ -29,7 +31,7 @@ CProcessGroup::~CProcessGroup()
 //
 void CProcessGroup::Initialize()
 {
-  //populates iFrom, iTo, once group is populated 
+  //populates iFrom, iTo, once group is populated
   int nConn;
   int N=0;
   for(int j=0;j<_nSubProcesses;j++)
@@ -76,7 +78,7 @@ void CProcessGroup::GetRatesOfChange(const double      *state_vars,
     _pSubProcesses[j]->GetRatesOfChange(state_vars,pHRU,Options,tt,loc_rates);
     _pSubProcesses[j]->ApplyConstraints(state_vars,pHRU,Options,tt,loc_rates);
     for(int qq=0;qq<nConn;qq++){ rates[q1+qq]=_aWeights[j]*loc_rates[qq];}
-    
+
     //ORDERED SERIES:
     /*for(int qq=0;qq<nConn;qq++){
       if(iTo[qq]!=iFrom[qq]){
@@ -137,7 +139,7 @@ void CProcessGroup::GetParticipatingParamList(string *aP,class_type *aPC,int &nP
   class_type *aPCP=new class_type [MAX_PARAMS];
   nP=0;
   int pp=0;
-  for(int i=0;i<_nSubProcesses;i++) 
+  for(int i=0;i<_nSubProcesses;i++)
   {
     _pSubProcesses[i]->GetParticipatingParamList(aPP,aPCP,nPP);
     nP+=nPP;
@@ -177,7 +179,7 @@ void CProcessGroup::AddProcess(CHydroProcessABC *pProc)
 void CProcessGroup::SetWeights(const double *aWts, const int nVal)
 {
   if(nVal!=_nSubProcesses){
-    WriteWarning("CProcessGroup::SetWeights: Incorrect number of weights for process group. Weights will be ignored",false); 
+    WriteWarning("CProcessGroup::SetWeights: Incorrect number of weights for process group. Weights will be ignored",false);
     return;
   }
   double sum=0.0;
@@ -204,4 +206,3 @@ void CProcessGroup::CalcWeights(const double *aVals,const int nVal)
   }
   CalcWeightsFromUniformNums(aVals, _aWeights, _nSubProcesses);
 }
-

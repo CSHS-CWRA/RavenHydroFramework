@@ -17,7 +17,7 @@ Copyright (c) 2008-2023 the Raven Development Team
 void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_method &evaporation, const netSWRad_method &SW_radia_net) const
 {
   // cout<<"evaporation is "<<to_string(evaporation)<<" and netSWRad_method is "<<to_string(SW_radia_net)<<endl;
-  
+
   if(evaporation==PET_DATA)
   {
     // timeseries at gauge
@@ -65,6 +65,12 @@ void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_m
   else if(evaporation==PET_PRIESTLEY_TAYLOR)
   {
     aP[nP]="PRIESTLEYTAYLOR_COEFF";  aPC[nP]=CLASS_LANDUSE; nP++;
+  } 
+  else if (evaporation == PET_LINEAR_TEMP) {
+    aP[nP] = "PET_LIN_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
+  }
+  else if (evaporation == PET_VAPDEFICIT) {
+    aP[nP] = "PET_VAP_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
   }
 
   //Anywhere Albedo needs to be calculated for SW_Radia_net (will later be moved to albedo options)
@@ -74,8 +80,8 @@ void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_m
   {
     if(SW_radia_net == NETSWRAD_CALC) {
       aP[nP]="ALBEDO";            aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
-      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
-      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL; nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_WET";        aPC[nP]=CLASS_SOIL;       nP++; //for SW_Radia_net
+      aP[nP]="ALBEDO_DRY";        aPC[nP]=CLASS_SOIL;       nP++; //for SW_Radia_net
       aP[nP]="SVF_EXTINCTION";    aPC[nP]=CLASS_VEGETATION; nP++; //for SW_Radia_net
     }
   }
@@ -182,6 +188,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
 
   aP[nP]="LAKE_PET_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; //required for ET from any reservoir, defaults to 1.0
 
+  aP[nP]="WIND_VEL_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; 
+  aP[nP]="RELHUM_CORR";       aPC[nP]=CLASS_LANDUSE; nP++; 
+
   // Interpolation Method parameters
   //----------------------------------------------------------------------
   if((Options.interpolation==INTERP_NEAREST_NEIGHBOR) || (Options.interpolation==INTERP_AVERAGE_ALL))
@@ -248,23 +257,23 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   // Evaporation algorithms parameters
   //----------------------------------------------------------------------
 
-  // Evaporation Method  
-  if (Options.evaporation==PET_BLENDED) 
+  // Evaporation Method
+  if (Options.evaporation==PET_BLENDED)
   {
     // provide recursive call for number of options if blended
     netSWRad_method sw_method = Options.SW_radia_net;
-    for(int i=0; i<_PETBlends_N;i++) 
+    for(int i=0; i<_PETBlends_N;i++)
     {
       AddFromPETParamList(aP,aPC,nP,_PETBlends_type[i],sw_method);
     }
-  }  
-  else 
+  }
+  else
   {
-   
+
     AddFromPETParamList(aP,aPC,nP,Options.evaporation,Options.SW_radia_net);
   }
-  
-  
+
+
   // OW_Evaporation Method
   //----------------------------------------------------------------------
   if(Options.ow_evaporation==PET_DATA)
@@ -274,7 +283,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   else if(Options.ow_evaporation==PET_FROMMONTHLY)
   {
     // \todo [clean] Parameters are located in the RVT file, and there's no checking routine for that file yet.
-    // //now handled in gauge QA/QC 
+    // //now handled in gauge QA/QC
     //aP[nP]=":MonthlyAveEvaporation"; aPC[nP]=CLASS_; nP++;
     //aP[nP]=":MonthlyAveTemperature"; aPC[nP]=CLASS_; nP++;
   }
@@ -282,7 +291,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   {
     aP[nP]="FOREST_PET_CORR"; aPC[nP]=CLASS_LANDUSE; nP++;
     // \todo [clean] Parameters are located in the RVT file, and there's no checking routine for that file yet.
-    // // //now handled in gauge QA/QC 
+    // // //now handled in gauge QA/QC
     //aP[nP]=":MonthlyEvapFactor";   aPC[nP]=CLASS_; nP++;
   }
   else if(Options.ow_evaporation==PET_PENMAN_MONTEITH)
@@ -375,7 +384,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   if(Options.SW_canopycorr==SW_CANOPY_CORR_STATIC) {
     aP[nP]="RELATIVE_LAI";     aPC[nP]=CLASS_VEGETATION; nP++;
     aP[nP]="FOREST_SPARSENESS";aPC[nP]=CLASS_LANDUSE; nP++;
-    aP[nP]="SVF_EXTINCTION";  aPC[nP]=CLASS_VEGETATION; nP++;
+    aP[nP]="SVF_EXTINCTION";   aPC[nP]=CLASS_VEGETATION; nP++;
   }
   else if(Options.SW_canopycorr ==SW_CANOPY_CORR_UBCWM) {
     aP[nP]="UBC_EXPOSURE_FACT";  aPC[nP]=CLASS_GLOBAL; nP++;
@@ -410,6 +419,9 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   else if(Options.rainsnow==RAINSNOW_HARDER) {
 
   }
+  else if ((Options.rainsnow==RAINSNOW_WANG) || (Options.rainsnow==RAINSNOW_SNTHERM89)) {
+
+  }
   else if(Options.rainsnow==RAINSNOW_THRESHOLD) {
     aP[nP]="RAINSNOW_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
@@ -424,7 +436,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   if(Options.orocorr_precip==OROCORR_HBV)
   {
     aP[nP]="HBVEC_LAPSE_ELEV";  aPC[nP]=CLASS_GLOBAL; nP++;
-    aP[nP]="HBVEC_LAPSE_RATE";  aPC[nP]=CLASS_GLOBAL; nP++;   
+    aP[nP]="HBVEC_LAPSE_RATE";  aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="HBVEC_LAPSE_UPPER"; aPC[nP]=CLASS_GLOBAL; nP++;
   }
   else if((Options.orocorr_precip==OROCORR_UBCWM) || (Options.orocorr_precip==OROCORR_UBCWM2))
@@ -481,19 +493,19 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   // Energy algorithms parameters
   //----------------------------------------------------------------------
   // Potential Melt Method
-  if (Options.pot_melt==POTMELT_BLENDED) 
+  if (Options.pot_melt==POTMELT_BLENDED)
   {
     // provide recursive call for number of options if blended
-    for(int i=0; i<_PotMeltBlends_N;i++) 
+    for(int i=0; i<_PotMeltBlends_N;i++)
     {
       AddFromPotMeltParamList(aP,aPC,nP,_PotMeltBlends_type[i]);
     }
-  }  
-  else 
+  }
+  else
   {
     AddFromPotMeltParamList(aP,aPC,nP,Options.pot_melt);
   }
-  
+
   // Sub Daily Method
   //----------------------------------------------------------------------
   if((Options.subdaily==SUBDAILY_NONE) || (Options.subdaily==SUBDAILY_SIMPLE) || (Options.subdaily==SUBDAILY_UBC))
@@ -510,7 +522,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
   }
   else if(Options.wind_velocity==WINDVEL_UBCWM)
   {
-    aP[nP]="FOREST_COVERAGE"; aPC[nP]=CLASS_LANDUSE; nP++; 
+    aP[nP]="FOREST_COVERAGE"; aPC[nP]=CLASS_LANDUSE; nP++;
     aP[nP]="UBC_P0TEDL"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_P0TEDU"; aPC[nP]=CLASS_GLOBAL; nP++;
     aP[nP]="UBC_MAX_RANGE_TEMP"; aPC[nP]=CLASS_GLOBAL; nP++;
@@ -585,7 +597,6 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
     (Options.interception_factor == PRECIP_ICEPT_NONE)) {
     //no params but LAI
   }
-    
+
   //...
 }
-

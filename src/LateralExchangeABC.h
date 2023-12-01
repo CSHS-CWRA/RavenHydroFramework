@@ -13,34 +13,33 @@
 class CModel;
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for lateral exchange process. 
+/// \brief Data abstraction for lateral exchange process.
 /// Inherits from CHydroProcessABC
 //
 class CLateralExchangeProcessABC: public CHydroProcessABC
 {
 protected:/*------------------------------------------------------*/
 
-  static int _nLatFlowProcesses;
-
   int      _nLatConnections; //< number of HRU lateral connections
   int     *_kFrom;           //< array of HRU from indices [size: nLatConnections] (JRC: Usually 1?)
   int     *_kTo;             //< array of HRU to indices [size: nLatConnections]
-  int     *_iFromLat;        //< array of 'From' state variable indices [size: nLatConnections] 
-  int     *_iToLat;          //< array of 'To' state variable indices [size: nLatConnections] 
+  int     *_iFromLat;        //< array of 'From' state variable indices [size: nLatConnections]
+  int     *_iToLat;          //< array of 'To' state variable indices [size: nLatConnections]
 
-  int      _LatFlowIndex;    //< global index of lateral flow process 
+  int      _LatFlowIndex;    //< global index of lateral flow process
 
-  static const CModel *_pModel;
+  const CModel *_pModel;
 
   void DynamicSpecifyLatConnections(const int nLatConnects);
 
 public:/*-------------------------------------------------------*/
 
-  static void SetModel(const CModel *pM);
+  void SetModel(const CModel *pM);
 
-  CLateralExchangeProcessABC(const process_type ptype);     //multiple connection dynamic constructor
+  CLateralExchangeProcessABC(const process_type ptype,
+                             CModel             *pModel);     //multiple connection dynamic constructor
   ~CLateralExchangeProcessABC();
-  
+
   int GetLateralFlowIndex() const;
 
   int GetNumLatConnections() const;
@@ -50,7 +49,7 @@ public:/*-------------------------------------------------------*/
   const int *GetLateralFromIndices() const;
   const int *GetLateralToIndices() const;
 
-  virtual void GetParticipatingParamList(string *aP,class_type *aPC,int &nP) const{ nP=0;return; }
+  virtual void GetParticipatingParamList(string *aP, class_type *aPC, int &nP) const{ nP=0;return; }
 
   void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
@@ -66,7 +65,7 @@ public:/*-------------------------------------------------------*/
 
   //
   virtual void GetLateralExchange(const double * const *state_vars, //array of all SVs for all HRUs, [k][i]
-                                  const CHydroUnit * const *pHRUs,    
+                                  const CHydroUnit * const *pHRUs,
                                   const optStruct   &Options,
                                   const time_struct &tt,
                                         double      *exchange_rates) const=0;//purely virtual - required
@@ -74,7 +73,7 @@ public:/*-------------------------------------------------------*/
 };
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for the complete dump of water from one storage 
+/// \brief Data abstraction for the complete dump of water from one storage
 /// compartment in one HRU to another in another HRU
 //
 class CmvLatFlush: public CLateralExchangeProcessABC
@@ -84,28 +83,29 @@ private:/*------------------------------------------------------*/
   int _iFlushTo;   //< global state variable index of target state var
   int _kk_from;    //< HRU group index of source HRUs
   int _kk_to;      //< HRU group index of target HRUs
-  
+
   bool _constrain_to_SBs; // all transfer is within one sub-basin; otherwise, requires only one recipient HRU in model
 
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
   CmvLatFlush(int   from_sv_ind,
-              int     to_sv_ind,
+              int   to_sv_ind,
               int   from_HRU_grp,
-              int     to_HRU_grp,
-              bool  constrain_to_SBs);
+              int   to_HRU_grp,
+              bool  constrain_to_SBs,
+              CModel *pModel);
   ~CmvLatFlush();
 
   //inherited functions
   void Initialize();
- 
+
   static void GetParticipatingStateVarList(sv_type *aSV, int *aLev, int &nSV);
 
   void           GetParticipatingParamList(string *aP,class_type *aPC,int &nP) const;
 
   void GetLateralExchange(const double * const *state_vars, //array of all SVs for all HRUs, [k][i]
-                          const CHydroUnit * const *pHRUs,    
+                          const CHydroUnit * const *pHRUs,
                           const optStruct   &Options,
                           const time_struct &tt,
                                 double      *exchange_rates) const;//purely virtual
@@ -113,7 +113,7 @@ public:/*-------------------------------------------------------*/
 };
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Data abstraction for the complete dump of water from one storage 
+/// \brief Data abstraction for the complete dump of water from one storage
 /// compartment in one HRU to another in another HRU
 //
 class CmvLatEquilibrate : public CLateralExchangeProcessABC
@@ -128,10 +128,11 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvLatEquilibrate(int   sv_ind,
-                    int   HRU_grp,
+  CmvLatEquilibrate(int    sv_ind,
+                    int    HRU_grp,
                     double mixing_rate,
-                    bool  constrain_to_SBs);
+                    bool   constrain_to_SBs,
+                    CModel *pModel);
   ~CmvLatEquilibrate();
 
   //inherited functions

@@ -20,12 +20,12 @@ class CmvPartitionEnergy : public CHydroProcessABC
 private:/*------------------------------------------------------*/
 
   const CTransportModel *_pTransModel;
-  
+
   double GetStorTemp(int iEnth,int iWatStor,const double &Tair,const double *state_vars) const;
 
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
-  CmvPartitionEnergy(const CTransportModel *pTransMod);
+  CmvPartitionEnergy(const CTransportModel *pTransMod, CModelABC *pModel);
   ~CmvPartitionEnergy();
 
   //inherited functions

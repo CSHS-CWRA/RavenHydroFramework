@@ -8,17 +8,19 @@
    Constructor/Destructor
 ------------------------------------------------------------------
 *****************************************************************/
-CLateralExchangeProcessABC::CLateralExchangeProcessABC(const process_type ptype) : CHydroProcessABC(ptype)
+CLateralExchangeProcessABC::CLateralExchangeProcessABC(const process_type ptype,
+                                                       CModel             *pModel)
+  :CHydroProcessABC(ptype, pModel)
 {
+  _pModel = pModel;  // this is probably redundant (CHydroProcessABC has a pointer to the CModel) - kept due to legacy code
+  _nLatConnections = 0;
+  _kFrom = NULL;
+  _kTo = NULL;
+  _iFromLat = NULL;
+  _iToLat = NULL;
 
-  _nLatConnections=0;
-  _kFrom=NULL;
-  _kTo=NULL;
-  _iFromLat=NULL;
-  _iToLat=NULL;
-
-  _LatFlowIndex=_nLatFlowProcesses;
-  _nLatFlowProcesses++;
+  _LatFlowIndex = pModel->GetNumLatFlowProcesses();
+  pModel->CountOneMoreLatFlowProcess();
 }
 //----------------------------------------------------------------
 CLateralExchangeProcessABC::~CLateralExchangeProcessABC()
@@ -32,8 +34,6 @@ CLateralExchangeProcessABC::~CLateralExchangeProcessABC()
    Static members
 ------------------------------------------------------------------
 *****************************************************************/
-int CLateralExchangeProcessABC::_nLatFlowProcesses=0;
-const CModel *CLateralExchangeProcessABC::_pModel=NULL;
 void CLateralExchangeProcessABC::SetModel(const CModel *pM){_pModel=pM;}
 /*****************************************************************
    Private Member Functions
@@ -46,7 +46,7 @@ void CLateralExchangeProcessABC::DynamicSpecifyLatConnections(const int nLatConn
 
   delete [] _kFrom; //if these have already been created
   delete [] _kTo;
-  delete [] _iFromLat; 
+  delete [] _iFromLat;
   delete [] _iToLat;
   _iToLat=NULL;
   _kFrom   =new int [_nLatConnections];

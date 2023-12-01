@@ -116,11 +116,11 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
 
         filename = CorrectForRelativePath(filename ,Options.rvg_filename);
 
-        INPUT2.open(filename.c_str()); 
+        INPUT2.open(filename.c_str());
         if (INPUT2.fail()){
           string warn;
           warn=":RedirectToFile: Cannot find file "+filename;
-          ExitGracefully(warn.c_str() ,BAD_DATA); 
+          ExitGracefully(warn.c_str() ,BAD_DATA);
         }
         else{
           if (pMainParser != NULL) {
@@ -193,7 +193,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
         }
       break;
       }
- 
+
     //===========================================================================================
     //===========================================================================================
 
@@ -281,7 +281,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
       //===========================================================================================
       //===========================================================================================
       case(305):  //----------------------------------------------
-      {/*:Recharge 
+      {/*:Recharge
        string ":NumberRecords" int amount
        :Parameters, NAME_1,NAME_2,...,NAME_N
        {int ID, double numCELL, double RECHARGE
@@ -341,18 +341,18 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
         break;
       }
       case(306):  //----------------------------------------------
-      {/*:ETProperties 
+      {/*:ETProperties
        string ":NumberRecords" int amount
        :Parameters, NAME_1,NAME_2,...,NAME_N
        {int ID, double numCELL, double PET_MAX, double EXT_Depth
        :EndETProperties*/
         if (Options.noisy) {cout <<"ET Properties..."<<endl;}
-        if (Len!=1){p->ImproperFormat(s); break;} 
+        if (Len!=1){p->ImproperFormat(s); break;}
         p->Tokenize(s,Len);
         done = false;
         int i = 0;
         while(!done)
-        { 
+        {
 
           if      (IsComment(s[0], Len)){}//comment line
           else if (!strcmp(s[0],":Parameters")){}//columns are explicit within Raven - useful for GUIs
@@ -363,7 +363,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           }
           else if (Len==4)
           {
-          
+
 
             //GWSPUPDATE Add ET values
             i++;
@@ -440,7 +440,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
       {/*GWRiverConnection - Basin-level connection between specified GW cells and SW River
          River is specified by line segments within triangles that connect 3 GW cells.
          The connections are based upon segment start/end distances from the 3 cell centers,
-         i.e. the barycentric coordinates of the triangles. Conductances are given at the 
+         i.e. the barycentric coordinates of the triangles. Conductances are given at the
          start and end of the segments as well, either as a straight condutance
          (condtype: CONDUCTANCE) or per unit length (condtype: UNITCOND).
          The connection has two modes: Drain or River. River uses the basin river elevation
@@ -489,7 +489,7 @@ bool ParseGWFile(CModel*& pModel, const optStruct& Options)
           {
             // Read in (numerous) attributes
             for (i=0; i<3; i++) {
-              nodeid      [i]   = s_to_i(s[i]); 
+              nodeid      [i]   = s_to_i(s[i]);
               node_weights[i]   = s_to_d(s[3+i]);
               node_weights[i+3] = s_to_d(s[6+i]);
             }

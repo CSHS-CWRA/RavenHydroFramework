@@ -9,6 +9,8 @@
 #include "RavenInclude.h"
 #include "HydroUnits.h"
 
+class CModel;  // defined in Model.h
+
 ///////////////////////////////////////////////////////////////////
 /// \brief Utility class for radiation calculations
 //
@@ -51,7 +53,7 @@ public:/*------------------------------------------------------*/
                                            const double &slope,
                                            const double &aspect);
   static double EstimateLongwaveRadiation (const int     iSnow,
-                                           const optStruct    &Options,
+                                           CModel *pModel,
                                            const force_struct *F,
                                            const CHydroUnit   *pHRU,
                                                  double &LW_incoming);
@@ -85,17 +87,17 @@ public:/*------------------------------------------------------*/
                                            double &ET_radia,			  //ET radiation [MJ/m2/d]
                                            double &ET_radia_flat, //ET radiation without slope correction [MJ/m2/d]
                                            const bool   avg_daily);	//true if average daily is to be computed
-  static double EstimateShortwaveRadiation(const optStruct &Options,
+  static double EstimateShortwaveRadiation(CModel* pModel,
                                            const force_struct *F,
                                            const CHydroUnit *pHRU,
                                            const time_struct  &tt,
                                            double       &ET_rad,double &ET_rad_flat);
 
-  static double SWCloudCoverCorrection    (const optStruct &Options,
+  static double SWCloudCoverCorrection    (CModel* pModel,
                                            const force_struct *F,
                                            const double &elev);
 
-  static double SWCanopyCorrection        (const optStruct &Options,
+  static double SWCanopyCorrection        (CModel* pModel,
                                            const CHydroUnit *pHRU);
 
 

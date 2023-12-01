@@ -109,14 +109,14 @@
     <Filter Include="Header Files\_Testing">
       <UniqueIdentifier>{c5b07c69-dece-4da1-b1e6-3a8df6384b3f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_Support Routines">
+      <UniqueIdentifier>{1a5523ef-9be8-4d2e-b425-6ca556d60e8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_Support Headers">
+      <UniqueIdentifier>{a829b735-aa63-4c39-865d-a2593fb8012b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CommonFunctions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="UTM_to_LatLong.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="HydroProcessABC.cpp">
       <Filter>Source Files\Hydrological Processes</Filter>
     </ClCompile>
@@ -303,9 +303,6 @@
     <ClCompile Include="Solvers.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
-    <ClCompile Include="UnitTesting.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ModelInitialize.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
@@ -341,9 +338,6 @@
     </ClCompile>
     <ClCompile Include="ParseEnsembleFile.cpp">
       <Filter>Source Files\_Driver\Input Parsing</Filter>
-    </ClCompile>
-    <ClCompile Include="SparseMatrix.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Drain.cpp">
       <Filter>Source Files\Hydrological Processes</Filter>
@@ -390,14 +384,8 @@
     <ClCompile Include="SoilBalance.cpp">
       <Filter>Source Files\Hydrological Processes\Soil Water Processes</Filter>
     </ClCompile>
-    <ClCompile Include="EnergyTransport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="IsotopeTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
-    </ClCompile>
-    <ClCompile Include="EnergyTransport.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LatEquilibrate.cpp">
       <Filter>Source Files\Hydrological Processes</Filter>
@@ -438,14 +426,44 @@
     <ClCompile Include="EnKF.cpp">
       <Filter>Source Files\_Driver\Ensemble Methods</Filter>
     </ClCompile>
-    <ClCompile Include="Matrix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ChemEquilibrium.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="FrozenGround.cpp">
+      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="UnitTesting.cpp">
+      <Filter>Source Files\_Testing</Filter>
+    </ClCompile>
+    <ClCompile Include="SparseMatrix.cpp">
+      <Filter>Source Files\_Support Routines</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Source Files\_Support Routines</Filter>
+    </ClCompile>
+    <ClCompile Include="UTM_to_LatLong.cpp">
+      <Filter>Source Files\_Support Routines</Filter>
+    </ClCompile>
+    <ClCompile Include="CommonFunctions.cpp">
+      <Filter>Source Files\_Support Routines</Filter>
+    </ClCompile>
+    <ClCompile Include="FrozenLake.cpp">
+      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
+    </ClCompile>
     <ClCompile Include="Raven_BMI.cpp">
       <Filter>Source Files\_Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="_Unintegrated Source Files\DemandOptimization.cpp">
+      <Filter>Source Files\_Testing</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="_Unintegrated Source Files\DemandExpressionHandling.cpp">
+      <Filter>Source Files\_Testing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -560,9 +578,6 @@
     <ClInclude Include="DepressionProcesses.h">
       <Filter>Header Files\Hydrological Processes</Filter>
     </ClInclude>
-    <ClInclude Include="UnitTesting.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ForcingGrid.h">
       <Filter>Header Files\Forcing Functions</Filter>
     </ClInclude>
@@ -580,9 +595,6 @@
     </ClInclude>
     <ClInclude Include="ModelEnsemble.h">
       <Filter>Header Files\Model</Filter>
-    </ClInclude>
-    <ClInclude Include="SparseMatrix.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HeatConduction.h">
       <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
@@ -626,20 +638,32 @@
     <ClInclude Include="EnKF.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
-    <ClInclude Include="Matrix.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ChemEquilibrium.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
-    <ClInclude Include="RavenMain.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="FrozenGround.h">
+      <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="FrozenLake.h">
+      <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="UnitTesting.h">
+      <Filter>Header Files\_Testing</Filter>
+    </ClInclude>
+    <ClInclude Include="SparseMatrix.h">
+      <Filter>Header Files\_Support Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Header Files\_Support Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="_Unintegrated Source Files\DemandOptimization.h">
+      <Filter>Header Files\_Testing</Filter>
     </ClInclude>
     <ClInclude Include="Raven_BMI.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Input/Output</Filter>
     </ClInclude>
     <ClInclude Include="BMI.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Input/Output</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -648,12 +672,16 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagramRaven.cd" />
-    <None Include="PropertyStructures.cd" />
-    <None Include="..\RavenView\RavenView\RavenResource.dat">
+    <None Include="RavenIcon.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="RavenIcon.ico">
+    <None Include="RavenAlgParams.dat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="RavenParameters.dat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="RavenProcessConnections.dat">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

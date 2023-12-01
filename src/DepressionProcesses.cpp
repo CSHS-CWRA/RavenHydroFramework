@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "DepressionProcesses.h"
+#include "Model.h"
 
 /*****************************************************************
    DepressionOverflow Constructor/Destructor
@@ -17,8 +18,9 @@
 /// \brief Implementation of depression overflow constructor
 /// \param dtype [in] Selected model of depression overflow
 //
-CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype)
-  :CHydroProcessABC(DEPRESSION_OVERFLOW)
+CmvDepressionOverflow::CmvDepressionOverflow(depflow_type dtype,
+                                             CModelABC   *pModel)
+  :CHydroProcessABC(DEPRESSION_OVERFLOW, pModel)
 {
   _type=dtype;
 
@@ -130,7 +132,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
   {
     double thresh_stor=pHRU->GetSurfaceProps()->dep_threshhold;
     double dep_k      =pHRU->GetSurfaceProps()->dep_k;
-    
+
     //rates[0] = dep_k* max(stor-thresh_stor,0.0); //discrete
     rates[0]= max(stor-thresh_stor,0.0)*(1-exp(-dep_k*Options.timestep))/Options.timestep; //analytical formulation
   }
@@ -141,7 +143,7 @@ void   CmvDepressionOverflow::GetRatesOfChange( const double      *state_vars,
     double dep_rat    =pHRU->GetSurfaceProps()->dep_crestratio;
     double area = pHRU->GetArea();
     double c=dep_rat*sqrt(area); //crest length * weir coeff (C_d*L)
-    
+
     rates[0]=0.666*c/area*sqrt(2*GRAVITY)*pow(max(stor-thresh_stor,0.0),1.5);
   }
 }
@@ -178,8 +180,8 @@ void   CmvDepressionOverflow::ApplyConstraints(const double              *state_
 /// \brief Implementation of Seepage constructor
 /// \param stype [in] Selected model of seepage
 //
-CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil)
-  :CHydroProcessABC(SEEPAGE)
+CmvSeepage::CmvSeepage(seepage_type stype, int iToSoil, CModelABC *pModel)
+  :CHydroProcessABC(SEEPAGE, pModel)
 {
   _type=stype;
 
@@ -262,7 +264,7 @@ void   CmvSeepage::GetRatesOfChange(const double      *state_vars,
    if(_type==SEEP_LINEAR)
   {
     double dep_k      =pHRU->GetSurfaceProps()->dep_seep_k;
-    
+
     //rates[0] = dep_k* max(stor,0.0); //discrete
     rates[0]= max(stor,0.0)*(1-exp(-dep_k*Options.timestep))/Options.timestep; //analytical formulation
   }
@@ -300,11 +302,11 @@ void   CmvSeepage::ApplyConstraints(const double      *state_vars,
 /// \param lktype [in] Model of lake release used
 /// \param fromIndex [in] Index of lake from which water is released
 //
-CmvLakeRelease::CmvLakeRelease(lakerel_type lktype)
-  :CHydroProcessABC(LAKE_RELEASE)
+CmvLakeRelease::CmvLakeRelease(lakerel_type lktype, CModelABC *pModel)
+  :CHydroProcessABC(LAKE_RELEASE, pModel)
 {
   _type =lktype;
-  
+
   CHydroProcessABC::DynamicSpecifyConnections(1);//nConnections=1
   iFrom[0]=pModel->GetLakeStorageIndex();
   iTo  [0]=pModel->GetStateVarIndex(SURFACE_WATER);     //rates[0]: LAKE->SURFACE_WATER
@@ -347,7 +349,7 @@ void CmvLakeRelease::GetParticipatingParamList(string *aP, class_type *aPC, int 
 /// \note "From" compartment specified by :LakeStorage command
 ///
 /// \param lktype [in] Model of lake release used
-/// \param *aSV [out] Array of state variable types needed 
+/// \param *aSV [out] Array of state variable types needed
 /// \param *aLev [out] Array of level of multilevel state variables (or DOESNT_EXIST, if single level)
 /// \param &nSV [out] Number of state variables required by algorithm (size of aSV[] and aLev[] arrays)
 //

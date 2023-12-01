@@ -81,8 +81,8 @@ bool CSubbasinGroup::IsDisabled() const
 void CSubbasinGroup::AddSubbasin(CSubBasin *pSB)
 {
   if (!DynArrayAppend((void**&)(_pSubbasins),(void*)(pSB),_nSubbasins)){
-   ExitGracefully("CSubbasinGroup::AddSubbasin: adding NULL subbasin",BAD_DATA);} 
-} 
+   ExitGracefully("CSubbasinGroup::AddSubbasin: adding NULL subbasin",BAD_DATA);}
+}
 //////////////////////////////////////////////////////////////////
 /// \brief initializes Subbasin Groups
 //

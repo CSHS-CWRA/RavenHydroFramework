@@ -12,12 +12,13 @@
 #include "TimeSeries.h"
 #include "Reservoir.h"
 class CReservoir;
+class CChannelXSect;  // defined in ChannelXSect.h
 enum res_constraint;
 
 ///////////////////////////////////////////////////////////////////
 /// \brief flow diversion data strucure
 /// \details relates diversion quantity to flow rate in subbasin
-struct diversion 
+struct diversion
 {
   int     julian_start;   //Julian start date of flow diversion (e.g., 90 for Apr 1)
   int     julian_end;     //Julian end date of flow diversion (e.g., 242 for Aug 31)
@@ -29,8 +30,8 @@ struct diversion
   int     nPoints;        //number of points in flow-diversion lookup table
   double *aQsource;       //array of discharges [m3/s] in flow diversion lookup table
   double *aQdivert;       //array of diversion flow rates [m3/s] correspionding to discharges in flow diversion lookup table
-  
-  diversion()  {aQsource=NULL; aQdivert=NULL;}
+
+  diversion()  {aQsource=NULL; aQdivert=NULL;julian_start=julian_end=0; target_p=DOESNT_EXIST;min_flow=0;percentage=1.0;nPoints=0;}
   ~diversion() {delete [] aQsource; delete [] aQdivert;}
 };
 
@@ -63,11 +64,11 @@ private:/*------------------------------------------------------*/
   double                _t_lag;   ///< basin time lag [d]
   double   _reservoir_constant;   ///< linear basin/catchment routing constant [1/d]
   int          _num_reservoirs;   ///< number of linear reservoirs used for in-catchment routing
-  double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph 
+  double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph
   double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
   int          _reach_HRUindex;   ///< HRU *index* k (not ID) associated with reach. Used for reach-specific forcings.
 
-  double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]  
+  double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]
   double        _convect_coeff;   ///< convection coefficient [MJ/m2/d/K]
   double     _bed_conductivity;   ///< bed thermal conductivity [MJ/m/d/K]
   double        _bed_thickness;   ///< mean thickness of stream bed [m]
@@ -127,9 +128,11 @@ private:/*------------------------------------------------------*/
   //Treatment Plant/Irrigation/Other incoming hydrograph
   CTimeSeries   *_pInflowHydro;   ///< pointer to time series of inflows; NULL if no specified input - Inflow at upstream entrance of basin
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
-  CTimeSeries   *_pIrrigDemand;   ///< pointer to time series of demand (which can be unmet) applied at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
- 
+
+  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series  
+  CTimeSeries **_pIrrigDemands;   ///< pointer to array of time series of demand (which can be unmet) applied at downstream end of basin reach [size: _nIrrigDemand]
+  
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
 
@@ -156,7 +159,7 @@ public:/*-------------------------------------------------------*/
             const double         reach_len,     //reach length [m]
             const double         Qreference,    //reference flow [m3/s]
             const bool           gauged,        //if true, hydrographs are generated
-            const bool           is_conduit);   //to tag subbasin as conduit    
+            const bool           is_conduit);   //to tag subbasin as conduit
   ~CSubBasin();
 
   //Accessor functions
@@ -171,6 +174,7 @@ public:/*-------------------------------------------------------*/
   double               GetAvgCumulFluxBet   (const int iFrom, const int iTo) const;
   double               GetReferenceFlow     () const;
   double               GetReferenceCelerity () const;
+  double               GetReferenceXSectArea() const;
   double               GetCelerity          () const;
   double               GetDiffusivity       () const;
   long                 GetDownstreamID      () const;
@@ -195,7 +199,8 @@ public:/*-------------------------------------------------------*/
   double               GetWettedPerimeter   () const;
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
-
+  int                  GetNumWaterDemands   () const;
+  string               GetWaterDemandID     (const int i) const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
@@ -226,7 +231,7 @@ public:/*-------------------------------------------------------*/
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
   double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
-  double          GetIrrigationRate        () const;                   //[m3/s] instantaneous irrigation rate Qirr
+  double          GetDemandDelivery        () const;                   //[m3/s] instantaneous delivery rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
@@ -285,9 +290,9 @@ public:/*-------------------------------------------------------*/
                                             const double    *res_qstruct,
                                             const optStruct &Options,
                                             const time_struct &tt,
-                                            bool  initialize);//[m3/s]
+                                            const bool    initialize);//[m3/s]
 
-  double          ApplyIrrigationDemand    (const double &t,const double &Q); //[m3/s] 
+  double          ApplyIrrigationDemand    (const double &t,const double &Q) const; //[m3/s]
   double          GetDiversionFlow         (const int i, const double &Q, const optStruct &Options, const time_struct &tt, int &pDivert) const;
 
   void            RouteWater               (      double      *Qout_new,

@@ -6,13 +6,14 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Snow temp evolution constructor
 /// \param ste_type [in] Model of snow temp selected
 //
-CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type  ste_type):
-  CHydroProcessABC(SNOWTEMP_EVOLVE)
+CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModelABC *pModel)
+  :CHydroProcessABC(SNOWTEMP_EVOLVE, pModel)
 {
   _type=ste_type;
   CHydroProcessABC::DynamicSpecifyConnections(1);
@@ -49,8 +50,8 @@ void CmvSnowTempEvolve::GetRatesOfChange( const double      *state_vars,
   if (_type==SNOTEMP_NEWTONS)
   {
     //linear heat transfer coefficient
-    double alpha=CGlobalParams::GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
-    rates[0]=alpha*(Tair-Tsnow);
+    double alpha = pModel->GetGlobalParams()->GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
+    rates[0] = alpha*(Tair-Tsnow);
   }
 }
 
@@ -135,7 +136,7 @@ void GetSnowTemperature(force_struct *F, CHydroUnit *pHRU, const double ref_elev
   double delta = AIR_H20_MW_RAT*LS*Qss/(UNIV_GAS_CONST*sqrt(air_temp));
 
   double q = F->rel_humidity*Qs(F->air_pres,air_temp); // specific humidity (kg/kg)
-  
+
   double snow_temp = air_temp + (EMISS*(LWi - SBC*pow(air_temp,4.0)) + LS*(q - Qss)*air_dens/ra)/(4*EMISS*SBC*pow(air_temp,3.0) + (CP + LS*delta)*air_dens/ra);
 
   return min(snow_temp-ZERO_CELSIUS,FREEZING_TEMP);

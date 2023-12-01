@@ -14,11 +14,11 @@
 #include "Transport.h"
 
 ///////////////////////////////////////////////////////////////////
-/// \brief Method of calculating freezing of the lake surface 
+/// \brief Method of calculating freezing of the lake surface
 //
 enum lakefreeze_type{
-  LFREEZE_BASIC,      ///< basic - based upon potential melt energy, moderated by SWE  
-  LFREEZE_THERMAL      ///< based upon enthaly balance model  
+  LFREEZE_BASIC,      ///< basic - based upon potential melt energy, moderated by SWE
+  LFREEZE_THERMAL      ///< based upon enthaly balance model
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -33,7 +33,9 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvFrozenLake(const lakefreeze_type type, const CTransportModel *_pTransModel);
+  CmvFrozenLake(const lakefreeze_type type,
+                const CTransportModel *_pTransModel,
+                CModelABC             *pModel);
   ~CmvFrozenLake();
 
   //inherited functions

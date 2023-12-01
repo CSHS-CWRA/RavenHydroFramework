@@ -7,18 +7,34 @@
 #include "Transport.h"
 
 //--Initialize Static Variables-----------------------------------
-int     CStateVariable::_nAliases        =0;
-string *CStateVariable::_aAliases        =NULL;
-string *CStateVariable::_aAliasReferences=NULL;
+// int     CStateVariable::_nAliases        =0;
+// string *CStateVariable::_aAliases        =NULL;
+// string *CStateVariable::_aAliasReferences=NULL;
+
+//////////////////////////////////////////////////////////////////
+/// Constructor
+//
+CStateVariable::CStateVariable()
+{
+  this->Initialize();
+}
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes static arrays of CStateVariable class
 //
 void CStateVariable::Initialize()
 {
-  _nAliases=0;
-  _aAliases=NULL;
-  _aAliasReferences=NULL;
+  this->_nAliases = 0;
+  this->_aAliases = NULL;
+  this->_aAliasReferences = NULL;
+}
+
+//////////////////////////////////////////////////////////////////
+/// Destructor
+//
+CStateVariable::~CStateVariable()
+{
+  this->Destroy();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -61,9 +77,18 @@ bool StrArrayAppend(string *& pArr, string s,int &size)
 //
 void CStateVariable::AddAlias(const string s1, const string s2)
 {
-  StrArrayAppend(_aAliases,        s1,_nAliases);
+  StrArrayAppend(_aAliases,         s1, _nAliases);
   _nAliases--;
-  StrArrayAppend(_aAliasReferences,s2,_nAliases);
+  StrArrayAppend(_aAliasReferences, s2, _nAliases);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets pointer to transport model
+/// \param pTransportModel [in] Pointer to transport model
+//
+void CStateVariable::SetTransportModel(CTransportModel *pTransportModel)
+{
+  this->_pTransportModel = pTransportModel;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -92,7 +117,8 @@ string CStateVariable::CheckAliasList(const string s)
 /// \param layerindex [in] Layer index (when applicable)
 /// \return String describing state variable
 //
-string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerindex)
+string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerindex,
+                                           const CTransportModel *pTransportModel)
 {
 
   string name;
@@ -172,28 +198,28 @@ string CStateVariable::GetStateVarLongName(const sv_type typ, const int layerind
     break;
   }
   }
-  if ((typ==SOIL) || (typ==SOIL_TEMP) || 
+  if ((typ==SOIL) || (typ==SOIL_TEMP) ||
       (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";
   }
   if (((typ==SNOW) || (typ==GROUNDWATER))  && (layerindex>=0)){  //GROUNDWATER Removed LS 2/25/2020
-    name=name+"["+to_string(layerindex)+"]";
+    name = name + "["+to_string(layerindex)+"]";
   }
   if (typ==CONSTITUENT){
-    name=CTransportModel::GetConstituentLongName(layerindex);
+    name = pTransportModel->GetConstituentLongName(layerindex);
   }
   else if (typ==CONSTITUENT_SRC){
     int c=layerindex;
-    name="Source of "+CTransportModel::GetConstituentTypeName2(c);
+    name = "Source of " + pTransportModel->GetConstituentTypeName2(c);
   }
   else if (typ==CONSTITUENT_SINK){
     int c=layerindex;
-    name="Sink of "+CTransportModel::GetConstituentTypeName2(c);
+    name = "Sink of " + pTransportModel->GetConstituentTypeName2(c);
   }
   else if (typ==CONSTITUENT_SW){
     int c=layerindex;
-    name="SW Sink of "+CTransportModel::GetConstituentTypeName2(c);
+    name = "SW Sink of " + pTransportModel->GetConstituentTypeName2(c);
   }
   return name;
 }
@@ -299,8 +325,8 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 {
   sv_type typ;
   string stmp;
-  stmp=StringToUppercase(s);
-  stmp=CheckAliasList(stmp);//checks for alias
+  stmp = StringToUppercase(s);
+  stmp = this->CheckAliasList(stmp);//checks for alias
 
   layer_index=0;//default
   string tmp=SVStringBreak(stmp,layer_index);
@@ -372,7 +398,7 @@ sv_type CStateVariable::StringToSVType(const string s, int &layer_index,bool str
 
   if ((typ==CONSTITUENT) && ((int)(tmp.find_first_of("|"))!=-1)) //only used if e.g., !Nitrogen|SOIL[1] (rather than CONSTITUENT[32] or !Nitrogen[32]) is used
   {
-    layer_index=CTransportModel::GetLayerIndexFromName(tmp,layer_index);
+    layer_index = this->_pTransportModel->GetLayerIndexFromName2(tmp, layer_index);
     if (layer_index==DOESNT_EXIST){typ=UNRECOGNIZED_SVTYPE;}
   }
 
@@ -459,22 +485,22 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
 
     //Transport variables
     case(CONSTITUENT):    {
-      name="!"+CTransportModel::GetConstituentTypeName(layerindex); //e.g., !Nitrogen
+      name = "!" + this->_pTransportModel->GetConstituentTypeName(layerindex); //e.g., !Nitrogen
       break;
     }
     case(CONSTITUENT_SRC):    {
       int c=layerindex;
-      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SRC"; //e.g., !Nitrogen_SRC
+      name = "!" + this->_pTransportModel->GetConstituentTypeName2(c) + "_SRC"; //e.g., !Nitrogen_SRC
       break;
     }
     case(CONSTITUENT_SINK):    {
       int c=layerindex;
-      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SINK"; //e.g., !Nitrogen_SINK
+      name = "!" + this->_pTransportModel->GetConstituentTypeName2(c) + "_SINK"; //e.g., !Nitrogen_SINK
       break;
     }
     case(CONSTITUENT_SW):    {
       int c=layerindex;
-      name="!"+CTransportModel::GetConstituentTypeName2(c)+"_SW"; //e.g., !Nitrogen_SW
+      name = "!" + this->_pTransportModel->GetConstituentTypeName2(c) + "_SW"; //e.g., !Nitrogen_SW
       break;
     }
       //..
@@ -487,7 +513,7 @@ string CStateVariable::SVTypeToString(const sv_type typ, const int layerindex)
     }
   }
   //multilayer variables
-  if ((typ==SOIL) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  || 
+  if ((typ==SOIL) || (typ==SOIL_TEMP) || (typ==CONSTITUENT)  ||
     (typ==CONVOLUTION) || (typ==CONV_STOR) || (typ==LATERAL_EXCHANGE))
   {
     name=name+"["+to_string(layerindex)+"]";
