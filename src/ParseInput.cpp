@@ -334,6 +334,8 @@ bool ParseMainInputFile (CModel     *&pModel,
 
   Options.NetCDF_chunk_mem        =10; //MB
 
+  Options.management_optimization =false;
+
   pModel=NULL;
   pMover=NULL;
 

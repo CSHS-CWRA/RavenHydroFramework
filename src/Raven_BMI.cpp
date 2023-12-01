@@ -178,7 +178,7 @@ void CRavenBMI::Initialize(std::string config_file)
 
   Options.in_bmi_mode  = true;  // flag needed to ignore some arguments of the .rvi file
   Options.rvt_filename = "";   // just a dummy filename to avoid errors
-  Options.duration     = std::numeric_limits<double>::max();  // "infinity": will run as long as "Update()" is called
+  Options.duration     = ALMOST_INF;  // "infinity": will run as long as "Update()" is called
 
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){

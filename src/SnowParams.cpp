@@ -142,7 +142,7 @@ double GetLatentHeatSnow(const double &P,
                          const double &ref_ht,
                          const double &rough)
 {
-  double temp_var,vap_pres,surf_pres,LE,CE;
+  double temp_var,vap_pres,surf_pres,LH,CE;
 
   vap_pres  = GetSaturatedVaporPressure(air_temp )*rel_humid;
   surf_pres = GetSaturatedVaporPressure(surf_temp)*1.0; //assume saturated
@@ -151,9 +151,9 @@ double GetLatentHeatSnow(const double &P,
 
   temp_var = AIR_H20_MW_RAT * DENSITY_AIR * CE / P;
 
-  LE = LH_SUBLIM*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
+  LH = LH_SUBLIM*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
 
-  return LE;//[MJ/m2/d]
+  return LH;//[MJ/m2/d]
 }
 
 //////////////////////////////////////////////////////////////////

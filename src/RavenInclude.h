@@ -1127,6 +1127,7 @@ struct optStruct
   bool             assimilate_flow;           ///< turn on streamflow assimilation
   bool             assimilate_stage;          ///< turn on lake stage assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
+  bool             management_optimization;   ///< apply water management optimization (default: false)
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid

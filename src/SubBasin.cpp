@@ -273,6 +273,12 @@ const double        *CSubBasin::GetInflowHistory     () const{return _aQinHist;}
 const double        *CSubBasin::GetOutflowArray     () const {return _aQout;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief returns historical inflow hydrograph as array pointer
+/// \return historical inflow hydrograph as array pointer
+//
+const double        *CSubBasin::GetLatHistory       () const{return _aQlatHist;}
+
+//////////////////////////////////////////////////////////////////
 /// \brief returns number of timesteps stored in unit hydrograph history
 /// \return number of timesteps stored in unit hydrograph history
 //

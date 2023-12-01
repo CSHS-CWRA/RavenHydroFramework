@@ -134,8 +134,8 @@ private:/*------------------------------------------------------*/
   double              *_aDAobsQ; ///< array of observed flow values in basins [size: _nSubBasins]  (NULL w/o DA)
   double             * _aDAlast; ///< array of scale factors from previous time step  [size: _nSubBasins]  (NULL w/o DA)
 
-  force_perturb**_pPerturbations;   ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
-  int            _nPerturbations;   ///< number of forcing functions to perturb
+  force_perturb**_pPerturbations; ///< array of pointers to perturbation data; defines which forcing functions to perturb and how [size: _nPerturbations]
+  int            _nPerturbations; ///< number of forcing functions to perturb
 
   //Water/Energy Balance information
   double      **_aCumulativeBal;  ///< cumulative amount of flowthrough [mm or MJ/m2 or mg/m2] for each process connection, each HRU [k][j*]
@@ -178,7 +178,7 @@ private:/*------------------------------------------------------*/
   potmelt_method  *_PotMeltBlends_type;
   double          *_PotMeltBlends_wts;
 
-  /* below are attributes that were static in the past */
+  //Parameter classes 
   CLandUseClass    **_pLandUseClasses;     ///< array of pointers to land use classes
   int                _nLandUseClasses;     ///< number of land use classes
   CSoilClass       **_pAllSoilClasses;     /// used to be static attribute of CSoilClass
@@ -192,8 +192,8 @@ private:/*------------------------------------------------------*/
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
 
-  CStateVariable    *_pStateVar;         ///< pointer to state variable object (used to be static attribute of CStateVariable)
-  int                _nLatFlowProcesses;   /// used to be static of CLateralExchangeProcessABC
+  CStateVariable    *_pStateVar;           ///< pointer to state variable information object 
+  int                _nLatFlowProcesses;   ///< number of lateral flow processes 
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);
@@ -328,18 +328,21 @@ public:/*-------------------------------------------------------*/
 
   /* below are functions that were static in the past */
   // CLandUseClass
-  CLandUseClass *StringToLUClass(const string s);
-
-  CLandUseClass *GetLanduseClass(int);
-  void           SummarizeLUClassesToScreen();
-  void           DestroyAllLanduseClasses();
+  CLandUseClass          *StringToLUClass(const string s);
+  int                     GetNumLanduseClasses () const;
+  CLandUseClass          *GetLanduseClass(int);
+  void                    SummarizeLUClassesToScreen();
+  void                    DestroyAllLanduseClasses();
+  const CLandUseClass    *StringToLUClass  (const string s) const;
+  const CLandUseClass    *GetLanduseClass  (const int    c) const;
+  const int               GetLandClassIndex(const string s) const;
   // CSoilClass
-  CSoilClass       *StringToSoilClass(const string s);
-  int               GetNumSoilClasses();
-  const CSoilClass *GetSoilClass(int c);
-  void              AddSoilClass(CSoilClass *pSoilClass);
-  void              SummarizeSoilClassesToScreen();
-  void              DestroyAllSoilClasses();
+  CSoilClass             *StringToSoilClass(const string s);
+  int                     GetNumSoilClasses();
+  const CSoilClass       *GetSoilClass(int c);
+  void                    AddSoilClass(CSoilClass *pSoilClass);
+  void                    SummarizeSoilClassesToScreen();
+  void                    DestroyAllSoilClasses();
   // CVegetationClass
   CVegetationClass       *StringToVegClass(const string s);
   int                     GetNumVegClasses();
@@ -400,7 +403,6 @@ public:/*-------------------------------------------------------*/
   int               GetNumGauges                      () const;
   int               GetNumForcingGrids                () const;
   int               GetNumProcesses                   () const;
-  int               GetNumLanduseClasses              () const;
   process_type      GetProcessType                    (const int j ) const;
   int               GetNumConnections                 (const int j ) const;
   int               GetNumForcingPerturbations        () const;
@@ -424,22 +426,18 @@ public:/*-------------------------------------------------------*/
   const CTimeSeriesABC *GetObservedTS                 (const int i) const;
   const CTimeSeriesABC* GetSimulatedTS                (const int i) const;
 
-  double            GetObjFuncVal                     (long calib_SBID,diag_type calib_Obj, const string calib_period) const;
+  double               GetObjFuncVal                  (long calib_SBID,diag_type calib_Obj, const string calib_period) const;
 
-  const optStruct  *GetOptStruct                      () const;
-  CTransportModel  *GetTransportModel                 () const;
-  CGroundwaterModel*GetGroundwaterModel               () const;
-  CEnsemble        *GetEnsemble                       () const;
+  const optStruct     *GetOptStruct                   () const;
+  CTransportModel     *GetTransportModel              () const;
+  CGroundwaterModel   *GetGroundwaterModel            () const;
+  CEnsemble           *GetEnsemble                    () const;
 
   void              GetParticipatingParamList         (string *aP,
                                                        class_type *aPC,
                                                        int &nP,
                                                        const optStruct &Options) const;
   class_type        ParamNameToParamClass             (const string param_str, const string class_name) const;
-
-  const CLandUseClass *StringToLUClass  (const string s) const;
-  const CLandUseClass *GetLanduseClass  (const int    c) const;
-  const int            GetLandClassIndex(const string s) const;
 
   //Manipulator Functions: called by Parser
   void    AddProcess                (        CHydroProcessABC  *pMov            );

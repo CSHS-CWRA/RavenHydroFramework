@@ -205,6 +205,7 @@ public:/*-------------------------------------------------------*/
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
   const double   *GetInflowHistory         () const;
+  const double   *GetLatHistory            () const;
   const double   *GetOutflowArray          () const;
   int             GetLatHistorySize        () const;
   int             GetInflowHistorySize     () const;
