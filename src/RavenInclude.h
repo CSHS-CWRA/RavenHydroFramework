@@ -142,6 +142,7 @@ const double  WATT_TO_MJ_PER_D        =0.0864;                                  
 const double  MJ_PER_M2_LANGLEY       =0.04184;                                 ///< Langley to [MJ/m2]
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
+const double  ACREFTD_PER_CMS         =70.0456;                                 //// [acre-ft/d] to [m3/s] 
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
 const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
@@ -207,11 +208,6 @@ const double  PEAK_TEMP_HR            =3;                                       
 const double  WINTER_SOLSTICE_ANG     =6.111043;                                ///< Dec 21 as day angle
 
 //Hard-coded Empirical parameters
-const double  CAP_LAI_RATIO           =0.15;                                    ///< [mm] maximum ratio of canopy capacity to LAI+SAI
-//                                                                              ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60))
-//                                                                              ///> \cite Federer2010 \cite Dingman1994
-const double  SCAP_LAI_RATIO          =0.6;                                     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI
-//                                                                              ///< (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
 const double  SAT_INF                 =0.92;                                    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
 const double  MIN_PRESSURE            =1e10;                                    ///< [-mm] minimum matric potential in soil
 

@@ -145,7 +145,6 @@ bool SetSpecifiedValue(double &val, double set_val, double template_val, bool ne
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Determines default parameter value
 /// \remark Default template values depend upon whether the parameter is autocalculable
-/// \docminor Parameters could be better described
 ///
 /// \param is_template [in] true if the default value being set is for the template class
 /// \param is_computable [in] true if the value is autocalculable
