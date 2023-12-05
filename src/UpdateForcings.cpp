@@ -223,6 +223,7 @@ void CModel::UpdateHRUForcingFunctions(const optStruct &Options,
           F.OW_PET         += wt * Fg[g].OW_PET;
           F.recharge       += wt * Fg[g].recharge;
           F.precip_temp    += wt * Fg[g].precip_temp;
+          F.precip_conc    += wt * Fg[g].precip_conc;
           ref_measurement_ht+=wt*_pGauges[g]->GetMeasurementHt();
         }
       }

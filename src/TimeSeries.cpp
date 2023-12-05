@@ -848,7 +848,7 @@ CTimeSeries *CTimeSeries::Parse(CParser *p, bool is_pulse, string name, long loc
       JulianConvert(double(n),Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
       aVal[n]=0;
       for(int i=0;i<nEvents;i++) {
-        if(tt.julian_day==days[i]){aVal[n]=vals[i]; cout<<"ANNUAL EVENT "<<tt.date_string<<endl; }
+        if(tt.julian_day==days[i]){aVal[n]=vals[i];  }
       }
     }
 

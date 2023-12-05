@@ -453,18 +453,14 @@
     <ClCompile Include="Raven_BMI.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
-    <ClCompile Include="_Unintegrated Source Files\DemandOptimization.cpp">
-      <Filter>Source Files\_Testing</Filter>
-    </ClCompile>
+ 
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="_Unintegrated Source Files\DemandExpressionHandling.cpp">
-      <Filter>Source Files\_Testing</Filter>
-    </ClCompile>
+
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">

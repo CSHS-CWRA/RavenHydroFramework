@@ -576,18 +576,25 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (51): //---------------------------------------------
-    {/*:ReservoirExtraction {long SBID}
+    {/*:ReservoirExtraction {long SBID} [int demandID] [string demandName]
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Qout} x nMeasurements [m3/s]
        :EndReservoirExtraction
      */
       if (Options.noisy) {cout <<"Reservoir Extraction Time Series"<<endl;}
       long SBID=DOESNT_EXIST;
+      int  demand_ID=DOESNT_EXIST;
+      string demand_name = "";
+
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
+      if (Len>=3){demand_ID=s_to_i(s[2]);}
+      if (Len>=4){demand_name=s[3];}
+
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"Extraction_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,demand_name,SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pTimeSer->SetIDTag(demand_ID);
         pSB->GetReservoir()->AddExtractionTimeSeries(pTimeSer);
       }
       else
@@ -850,28 +857,29 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (63): //---------------------------------------------
-    {/*:IrrigationDemand or :WaterDemand {long Basincode} {string demand_name)
+    {/*:IrrigationDemand or :WaterDemand {long SBID} [int DemandID] [string demand_name/alias]
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qin} x nMeasurements [m3/s]
      :EndIrrigationDemand or :EndWaterDemand
      */
       if(Options.noisy) { cout <<"Irrigation/Water use demand"<<endl; }
-      long SBID    =DOESNT_EXIST;
-      int j=0;
+      long SBID     =DOESNT_EXIST;
+      int  demand_ID=DOESNT_EXIST;
+      int  j        =0;
       string demand_name = "";
-      string demand_ID;
-      CSubBasin *pSB;
       
       if(Len>=2) {SBID       =s_to_l(s[1]); }
-      if(Len>=3) {demand_name=s_to_i(s[2]);}
+      if(Len>=3) {demand_ID  =s_to_i(s[2]);}
+      if(Len>=4) {demand_name=s[3];}
 
-      pSB=pModel->GetSubBasinByID(SBID);
-      if(pSB!=NULL) {j=pSB->GetNumWaterDemands();}
-      demand_ID="D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[j]; //e.g., D120b
-      if (demand_name == "") { demand_name = demand_ID; }
+      CSubBasin *pSB=pModel->GetSubBasinByID(SBID);
+      if (pSB!=NULL) {j=pSB->GetNumWaterDemands();}
+      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+j;} //DEFAULT - SBIDx 
+      if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[j];} //e.g., D120b; }
       
-      pTimeSer=CTimeSeries::Parse(p,false,demand_ID,SBID,demand_name,Options);
+      pTimeSer = CTimeSeries::Parse(p, false, demand_name, SBID, "none", Options);
       if(pSB!=NULL) {
+        pTimeSer->SetIDTag(demand_ID);
         pSB->AddIrrigationDemand(pTimeSer); has_irrig=true;
       }
       else

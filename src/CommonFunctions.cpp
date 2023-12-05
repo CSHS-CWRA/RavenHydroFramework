@@ -358,6 +358,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   if (tt.day_of_month==0){tt.day_of_month=1;}
   tt.month =dmonth;
   tt.year=dyear;
+  //tt.nn = static_cast<int>(rvn_floor((tt.model_time+TIME_CORRECTION)/tstep)));
 
   tt.day_changed = false;
   if((model_time <= PRETTY_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<0.001)) { tt.day_changed = true; }

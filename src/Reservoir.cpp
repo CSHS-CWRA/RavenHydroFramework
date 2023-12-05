@@ -1056,9 +1056,7 @@ double CReservoir::GetAET() const
 {
   if(_pHRU!=NULL) {
     double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
+    Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/(_pHRU->GetArea()*M2_PER_KM2); //normalized to HRU area
   }
   else {
@@ -1346,9 +1344,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(_pHRU!=NULL)
   {
     ET=_pHRU->GetForcingFunctions()->OW_PET/SEC_PER_DAY/MM_PER_METER; //average for timestep, in m/s
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
+    ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     precip=_Precip/Options.timestep/SEC_PER_DAY; //[m3]->[m3/s]
   }
   if(_seepage_const>0) {

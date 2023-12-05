@@ -726,13 +726,24 @@ int CSubBasin::GetNumWaterDemands() const
   return _nIrrigDemands;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief number of water/irrigation demands 
-/// \return number of water/irrigation demands 
+/// \brief returns water/irrigation demand integer ID 
+/// \return water/irrigation demand integer ID  
 //
-string CSubBasin::GetWaterDemandID     (const int i) const
+int CSubBasin::GetWaterDemandID     (const int i) const
 { 
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+#endif
+  return _pIrrigDemands[i]->GetIDTag(); //stores demand ID 
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand name/alias  
+/// \return water/irrigation demand name/alias 
+//
+string CSubBasin::GetWaterDemandName   (const int i) const
+{ 
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
 #endif
   return _pIrrigDemands[i]->GetName();
 }

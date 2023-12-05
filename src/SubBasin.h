@@ -200,7 +200,8 @@ public:/*-------------------------------------------------------*/
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
   int                  GetNumWaterDemands   () const;
-  string               GetWaterDemandID     (const int i) const;
+  int                  GetWaterDemandID     (const int i) const;
+  string               GetWaterDemandName   (const int i) const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
