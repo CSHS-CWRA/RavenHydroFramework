@@ -808,7 +808,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   {
                     double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                     if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _HYDRO << "," << val; }
-                    else                                             { _HYDRO << ","; }
+                    else                                             { _HYDRO << ",";        }
                   }
                 }
               }
@@ -939,9 +939,9 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 	        for (i = 0; i < _nObservedTS; i++){
 	          if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
 	          {
-              double val = _pObservedTS[i]->GetValue(nn);
+                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
 	            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
-	            else                                             { _RESSTAGE << ",";       }
+	            else                                             { _RESSTAGE << ",";        }
 	          }
           }
         }
@@ -1438,9 +1438,19 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
   for(int p=0;p<_nSubBasins; p++){
     if(!_pSubBasins[p]->IsEnabled()){SBdisablecount++;}
   }
-  if(!Options.silent){
+  time_struct tt,tt2;
+  double day;
+  int year;
+  JulianConvert(0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+  AddTime(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.calendar,day,year);
+  JulianConvert(0,day,year,Options.calendar,tt2);
+
+  if(!Options.silent)
+  {
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
+    cout <<"      Start time: "<<tt.date_string      <<endl;
+    cout <<"        End time: "<<tt2.date_string     <<" (duration="<<Options.duration<<" days)"<<endl;
     cout <<"    rvi filename: "<<Options.rvi_filename<<endl;
     cout <<"Output Directory: "<<Options.main_output_dir  <<endl;
     cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<SBdisablecount<<" disabled)"<<endl;
