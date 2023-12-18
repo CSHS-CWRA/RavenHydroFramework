@@ -36,7 +36,13 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvChemEquil(string constit_name1,string constit_name2,chem_equil_type dtyp,int proc_ind,int iWatStor,CTransportModel* pTransportModel);
+  CmvChemEquil(string constit_name1,
+               string constit_name2,
+               chem_equil_type dtyp,
+               int proc_ind,
+               int iWatStor,
+               CTransportModel *pTransportModel,
+               CModelABC *pModel);
   ~CmvChemEquil();
 
   //inherited functions

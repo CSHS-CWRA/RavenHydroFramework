@@ -8,13 +8,16 @@
 
 #include "HydroProcessABC.h"
 #include "OpenWaterEvap.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Open water evaporation constructor
 /// \param owtype [in] Model of open water evaporation used
 //
-CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype, const int i_from)
-  :CHydroProcessABC(OPEN_WATER_EVAPORATION)
+CmvOWEvaporation::CmvOWEvaporation(owevap_type owtype,
+                                   const int   i_from,
+                                   CModelABC   *pModel)
+  :CHydroProcessABC(OPEN_WATER_EVAPORATION, pModel)
 {
   _type =owtype;
 
@@ -188,8 +191,10 @@ void  CmvOWEvaporation::ApplyConstraints( const double            *state_vars,
 /// \param lktype [in] Model of open water evaporation used
 /// \param fromIndex [in] Index of lake from which water evaporates
 //
-CmvLakeEvaporation::CmvLakeEvaporation(lakeevap_type lktype, const int fromIndex)
-  :CHydroProcessABC(LAKE_EVAPORATION)
+CmvLakeEvaporation::CmvLakeEvaporation(lakeevap_type lktype,
+                                       const int     fromIndex,
+                                       CModelABC     *pModel)
+  :CHydroProcessABC(LAKE_EVAPORATION, pModel)
 {
   type =lktype;
   ExitGracefullyIf(fromIndex==DOESNT_EXIST,

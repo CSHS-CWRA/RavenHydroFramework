@@ -20,8 +20,9 @@ CmvDecay::CmvDecay(string           constit_name,
                    decay_type       dtyp,
                    int              proc_ind,
                    int              iWatStor,
-                   CTransportModel *pTransportModel)
-  :CHydroProcessABC(DECAY)
+                   CTransportModel *pTransportModel,
+                   CModelABC       *pModel)
+  :CHydroProcessABC(DECAY, pModel)
 {
   _dtype=dtyp;
   _pTransModel=pTransportModel;

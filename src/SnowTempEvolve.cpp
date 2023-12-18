@@ -6,13 +6,14 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the Snow temp evolution constructor
 /// \param ste_type [in] Model of snow temp selected
 //
-CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type  ste_type):
-  CHydroProcessABC(SNOWTEMP_EVOLVE)
+CmvSnowTempEvolve::CmvSnowTempEvolve(snowtemp_evolve_type ste_type, CModelABC *pModel)
+  :CHydroProcessABC(SNOWTEMP_EVOLVE, pModel)
 {
   _type=ste_type;
   CHydroProcessABC::DynamicSpecifyConnections(1);
@@ -49,8 +50,8 @@ void CmvSnowTempEvolve::GetRatesOfChange( const double      *state_vars,
   if (_type==SNOTEMP_NEWTONS)
   {
     //linear heat transfer coefficient
-    double alpha=CGlobalParams::GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
-    rates[0]=alpha*(Tair-Tsnow);
+    double alpha = pModel->GetGlobalParams()->GetParams()->airsnow_coeff; // = (1-x6) as used in original cema neige =[1/d]
+    rates[0] = alpha*(Tair-Tsnow);
   }
 }
 

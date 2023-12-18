@@ -8,6 +8,7 @@
 
 #include "HydroProcessABC.h"
 #include "DepressionProcesses.h"
+#include "Model.h"
 
 /*****************************************************************
    Abstraction Constructor/Destructor
@@ -18,8 +19,8 @@
 /// \brief Implementation of abstraction constructor
 /// \param absttype [in] Selected model of abstraction
 //
-CmvAbstraction::CmvAbstraction(abstraction_type absttype)
-  :CHydroProcessABC(ABSTRACTION)
+CmvAbstraction::CmvAbstraction(abstraction_type absttype, CModelABC *pModel)
+  :CHydroProcessABC(ABSTRACTION, pModel)
 {
   _type=absttype;
 

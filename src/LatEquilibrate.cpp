@@ -16,7 +16,9 @@
 CmvLatEquilibrate::CmvLatEquilibrate(int    sv_ind,
                                      int    HRU_grp,
                                      double mixing_rate,
-                                     bool   constrain_to_SBs) : CLateralExchangeProcessABC(LAT_EQUIL)
+                                     bool   constrain_to_SBs,
+                                     CModel *pModel)
+  :CLateralExchangeProcessABC(LAT_EQUIL, pModel)
 {
   _iSV    = sv_ind;
   _kk     = HRU_grp;
@@ -178,7 +180,7 @@ void CmvLatEquilibrate::GetLateralExchange( const double * const     *state_vars
 
   int qstart = 0;
   double* sum = new double[_pModel->GetNumSubBasins()];
-  for (int p = 0; p < _pModel->GetNumSubBasins(); p++) { sum[p] = 0.0; }
+  for (p = 0; p < _pModel->GetNumSubBasins(); p++) { sum[p] = 0.0; }
   int plast = -1;
   for (int q = 0; q < _nLatConnections; q++)
   {

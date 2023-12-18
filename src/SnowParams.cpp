@@ -5,6 +5,7 @@
 #include "Properties.h"
 #include "GlobalParams.h"
 #include "HydroUnits.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Returns thermal conductivity of snow [MJ/d/m/K]
@@ -75,14 +76,14 @@ double GetSnowDensity(const double &snowSWE,const double &snow_depth)
 /// \param &Options [in] Global model options information
 /// \return Snow liquid capacity [-]
 //
-double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, const optStruct &Options)
+double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth, const CModelABC* pModel)
 {
   double liq_cap;
   //if (snow_depth>0.0){
   //  liq_cap=CGlobalParams::GetParams()->snow_SWI*(1.0-SWE/snow_depth);
   //}
 
-  liq_cap= CGlobalParams::GetParams()->snow_SWI*SWE; //HBV-EC, Brook90, UBCWM, GAWSER
+  liq_cap = pModel->GetGlobalParams()->GetParams()->snow_SWI*SWE; //HBV-EC, Brook90, UBCWM, GAWSER
 
   return liq_cap;
 
@@ -141,7 +142,7 @@ double GetLatentHeatSnow(const double &P,
                          const double &ref_ht,
                          const double &rough)
 {
-  double temp_var,vap_pres,surf_pres,LE,CE;
+  double temp_var,vap_pres,surf_pres,LH,CE;
 
   vap_pres  = GetSaturatedVaporPressure(air_temp )*rel_humid;
   surf_pres = GetSaturatedVaporPressure(surf_temp)*1.0; //assume saturated
@@ -150,9 +151,9 @@ double GetLatentHeatSnow(const double &P,
 
   temp_var = AIR_H20_MW_RAT * DENSITY_AIR * CE / P;
 
-  LE = LH_SUBLIM*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
+  LH = LH_SUBLIM*temp_var*V*SEC_PER_DAY*(vap_pres-surf_pres); //latent heat [MJ/m2/d]
 
-  return LE;//[MJ/m2/d]
+  return LH;//[MJ/m2/d]
 }
 
 //////////////////////////////////////////////////////////////////

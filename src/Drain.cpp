@@ -16,8 +16,9 @@
 /// \brief Implementation of the drain constructor
 /// \param pGWModel [in] pointer to groundwater model
 //
-CGWDrain::CGWDrain(CGroundwaterModel *pGWModel)
-  :CGWSWProcessABC(pGWModel, DRAIN)
+CGWDrain::CGWDrain(CGroundwaterModel *pGWModel,
+                   CModel            *pModel)
+  :CGWSWProcessABC(pGWModel, DRAIN, pModel)
 {
   _aElevations   = NULL;
   _aConductances = NULL;

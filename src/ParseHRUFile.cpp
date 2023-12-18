@@ -181,7 +181,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             if (Len<6){pp->ImproperFormat(s);}
 
             CChannelXSect const *pChan=NULL;
-            pChan=CChannelXSect::StringToChannelXSect(string(s[3]));
+            pChan = pModel->StringToChannelXSect(string(s[3]));
             string error,error2;
             error="Parse RVH File: Unrecognized Channel profile code ("+string(s[3])+") in :SubBasins or :Conduits command";
             error2="Parse RVH File: NONE cannot be used as channel code if routing method is anything other than ROUTE_NONE or ROUTE_EXTERNAL";
@@ -260,30 +260,30 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
             ExitGracefully(error.c_str(),BAD_DATA_WARN);
           }
           CLandUseClass const *pLULT=NULL;
-          pLULT=CLandUseClass::StringToLUClass(string(s[6]));
+          pLULT = pModel->StringToLUClass(string(s[6]));
           if (pLULT==NULL){
             error="Parse HRU File: Unrecognized Land Use Code/index: \""+string(s[6])+"\"";
             ExitGracefully(error.c_str(),BAD_DATA);
           }
 
           CVegetationClass const *pVegetation=NULL;
-          pVegetation=CVegetationClass::StringToVegClass(string(s[7]));
+          pVegetation = pModel->StringToVegClass(string(s[7]));
           if (pVegetation==NULL){
             error="Parse HRU File: Unrecognized Vegetation Code/index: \""+string(s[7])+"\"";
             ExitGracefully(error.c_str(),BAD_DATA);
           }
 
           CSoilProfile const *pSoilProfile=NULL;
-          pSoilProfile=CSoilProfile::StringToSoilProfile(string(s[8]));
-          if (pSoilProfile==NULL){
+          pSoilProfile = pModel->StringToSoilProfile(string(s[8]));
+          if (pSoilProfile==NULL) {
             error="Parse HRU File: Unrecognized Soil Profile Code/index: \""+string(s[8])+"\"";
-            ExitGracefully(error.c_str(),BAD_DATA);
+            ExitGracefully(error.c_str(), BAD_DATA);
           }
 
           CTerrainClass const *pTerrain=NULL;
           if (string(s[10])!="[NONE]") //Terrain class can be NULL
           {
-            pTerrain=CTerrainClass::StringToTerrainClass(string(s[10]));
+            pTerrain = pModel->StringToTerrainClass(string(s[10]));
             if (pTerrain==NULL){
               error="Parse HRU File: Unrecognized Terrain Code/index: \""+string(s[10])+"\"";
               ExitGracefully(error.c_str(),BAD_DATA_WARN);
@@ -401,17 +401,17 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
               //special handling of some parameters
               if(!aParamStrings[i].compare("TIME_CONC")    && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-                in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");
+                in *= pModel->GetGlobalParams()->GetParameter("TOC_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("TIME_TO_PEAK") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
                 //in*=CGlobalParams::GetParameter("TOC_MULTIPLIER");    // use to be this; but has its own multiplier now; maybe set default to TOC_MULTIPLIER??
-				in*=CGlobalParams::GetParameter("TIME_TO_PEAK_MULTIPLIER");
+                in *= pModel->GetGlobalParams()->GetParameter("TIME_TO_PEAK_MULTIPLIER");
               }
-	      	  if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-			  	in*=CGlobalParams::GetParameter("GAMMA_SHAPE_MULTIPLIER");
+	            if(!aParamStrings[i].compare("GAMMA_SHAPE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+                in *= pModel->GetGlobalParams()->GetParameter("GAMMA_SHAPE_MULTIPLIER");
               }
-	      	  if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
-				in*=CGlobalParams::GetParameter("GAMMA_SCALE_MULTIPLIER");
+              if(!aParamStrings[i].compare("GAMMA_SCALE") && (in!=AUTO_COMPUTE) && (in!=USE_TEMPLATE_VALUE)){
+                in *= pModel->GetGlobalParams()->GetParameter("GAMMA_SCALE_MULTIPLIER");
               }
               if(!aParamStrings[i].compare("REACH_HRU_ID")) {
                 if(pModel->GetHRUByID((int)in)!=NULL) {
@@ -1108,7 +1108,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
 
   // Add parameters needed for discharge initialization/reference flow calculation
   //--------------------------------------------------------------------------
-  if ((pModel->GetNumSubBasins()>1) && (CGlobalParams::GetParameter("AVG_ANNUAL_RUNOFF")<0))
+  if ((pModel->GetNumSubBasins()>1) && (pModel->GetGlobalParams()->GetParameter("AVG_ANNUAL_RUNOFF")<0))
   {
     // \todo [QA/QC]: reduce generalization- only really needed if routing method requires Q_REF
     ExitGracefully("ParseHRUPropsFile:: AVG_ANNUAL_RUNOFF should be supplied (using :AvgAnnualRunoff command in .rvp file) if more than one basin is included in model",BAD_DATA_WARN);

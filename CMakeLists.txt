@@ -33,6 +33,7 @@ endif()
 # creates a shared library - file extension is OS dependent (Linux: .so, Windows: .dll)
 if(COMPILE_LIB)
   add_library(ravenbmi SHARED ${SOURCE})
+  target_compile_definitions(ravenbmi PUBLIC BMI_LIBRARY)
 endif()
 
 # creates an executable - file extension is OS dependent (Linux: none, Windows: .exe)
@@ -41,6 +42,7 @@ if(COMPILE_EXE)
     ${SOURCE}
     ${HEADER}
   )
+  target_compile_definitions(Raven PUBLIC STANDALONE)
   set_target_properties(Raven PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 source_group("Header Files" FILES ${HEADER})

@@ -10,6 +10,7 @@
 
 #include "HydroProcessABC.h"
 #include "VegetationMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Canopy Evaporation Constructor/Destructor
@@ -19,8 +20,9 @@
 /// \brief Implementation of the canopy evaporation constructor
 /// \param cetype [in] Model of canopy evaporation
 //
-CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype)
-  :CHydroProcessABC(CANOPY_EVAPORATION)
+CmvCanopyEvap::CmvCanopyEvap(canevap_type cetype,
+                             CModelABC    *pModel)
+  :CHydroProcessABC(CANOPY_EVAPORATION, pModel)
 {
   type =cetype;
 
@@ -200,8 +202,9 @@ void CmvCanopyEvap::ApplyConstraints( const double      *state_vars,
 /// \brief Implementation of the snow evaporation constructor
 /// \param cetype [in] Model of canopy snow evaporation
 //
-CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype)
-                     :CHydroProcessABC(CANOPY_SNOW_EVAPORATION)
+CmvCanopySublimation::CmvCanopySublimation(sublimation_type cetype,
+                                           CModelABC       *pModel)
+  :CHydroProcessABC(CANOPY_SNOW_EVAPORATION, pModel)
 {
   type =cetype;
 
@@ -270,7 +273,7 @@ void CmvCanopySublimation::GetParticipatingStateVarList(sublimation_type cs_type
 
 double  SublimationRate(const double      *state_vars,
                         const CHydroUnit  *pHRU,
-                        const optStruct   &Options,
+                        const CModelABC   *pModel,
                         const time_struct &tt,
                         const double      &wind_vel,
                         sublimation_type   type); //defined in Sublimation.cpp
@@ -322,8 +325,8 @@ void CmvCanopySublimation::GetRatesOfChange(  const double      *state_vars,
   {
     double wind_vel=pHRU->GetForcingFunctions()->wind_vel;//pModel->WindspeedAtHeight(pHRU->GetVegVarProps()->height, Options,pHRU,F,2.0);
 
-    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity",STUB);
-    rates[0]=Fc*SublimationRate(state_vars,pHRU,Options,tt,wind_vel,type);
+    ExitGracefully("SUBLIMATION CANOPY - must adjust wind velocity", STUB);
+    rates[0] = Fc*SublimationRate(state_vars, pHRU, pModel, tt, wind_vel, type);
   }
   rates[1]=PETused;
 }
@@ -363,8 +366,9 @@ void CmvCanopySublimation::ApplyConstraints( const double      *state_vars,
 /// \param to_index [in] Index of storage compartment to which water is lost
 //
 CmvCanopyDrip::CmvCanopyDrip(candrip_type cdtype,
-                             int to_index)
-  :CHydroProcessABC(CANOPY_DRIP)
+                             int          to_index,
+                             CModelABC    *pModel)
+  :CHydroProcessABC(CANOPY_DRIP, pModel)
 {
   int iCan;
   type =cdtype;

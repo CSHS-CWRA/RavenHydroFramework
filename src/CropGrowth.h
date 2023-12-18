@@ -29,7 +29,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvCropHeatUnitEvolve(const CHUevolve_type snalbtype);
+  CmvCropHeatUnitEvolve(const CHUevolve_type snalbtype,
+                        CModel* pModel);
   ~CmvCropHeatUnitEvolve();
 
   //inherited functions

@@ -528,8 +528,17 @@ void MassEnergyBalance( CModel            *pModel,
         }
       }
     }
-    //User-specified inflows to upstream end
+    //User-specified inflows to upstream end of subbasin reach
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
+
+    //groundwater contributions to reach
+    if (Options.modeltype == MODELTYPE_COUPLED)
+	  {
+      aRouted[p]+= pGW2River->CalcRiverFlowBySB(p)*tstep;      // [m3]
+    }
+
+    //preparatory step prior to routing: used to assimilate lake levels and update routing hydrograph for timestep
+    pBasin->UpdateSubBasin(tt,Options);            
   }
   // Route water over timestep
   // ----------------------------------------------------------------------------------------
@@ -541,16 +550,9 @@ void MassEnergyBalance( CModel            *pModel,
     pBasin=pModel->GetSubBasin(p);
     if(pBasin->IsEnabled())
     {
-      pBasin->UpdateSubBasin(tt,Options);            // also used to assimilate lake levels and update routing hydrograph for timestep
-
       pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
       down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
-
-      if (Options.modeltype == MODELTYPE_COUPLED)
-	    {
-        aRouted[p]+= pGW2River->CalcRiverFlowBySB(p)*tstep;      // [m3]
-      }
 
       pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 

@@ -70,9 +70,9 @@ CSubBasin::CSubBasin( const long           Identifier,
   _res_disabled      =false;
   _assimilate        =false;
 
-  // estimate reach length if needed
+  // estimate reach length and _nSegments if needed
   //-----------------------------------------------------------------------
-  double max_len=CGlobalParams::GetParams()->max_reach_seglength*M_PER_KM;
+  double max_len = _pModel->GetGlobalParams()->GetParams()->max_reach_seglength*M_PER_KM;
 
   if((_reach_length==AUTO_COMPUTE) && (max_len/M_PER_KM<0.99*DEFAULT_MAX_REACHLENGTH))
   {
@@ -129,7 +129,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   //initialized in AddInflowHydrograph, similar
   _pInflowHydro  =NULL;
   _pInflowHydro2 =NULL;
-  _pIrrigDemand  =NULL;
+  _pIrrigDemands =NULL;
+  _nIrrigDemands=0;
   _pEnviroMinFlow=NULL;
 
   _Q_ref      =Qreference;
@@ -161,7 +162,7 @@ CSubBasin::~CSubBasin()
   delete [] _pDiversions;_pDiversions=NULL; _nDiversions=0;
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
-  delete _pIrrigDemand;  _pIrrigDemand=NULL;
+  for (int i = 0; i < _nIrrigDemands; i++) {delete _pIrrigDemands[i];} delete _pIrrigDemands;  _pIrrigDemands=NULL;
   delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
   delete _pReservoir;
 }
@@ -270,6 +271,12 @@ const double        *CSubBasin::GetInflowHistory     () const{return _aQinHist;}
 /// \return outflow array as array pointer
 //
 const double        *CSubBasin::GetOutflowArray     () const {return _aQout;}
+
+//////////////////////////////////////////////////////////////////
+/// \brief returns historical inflow hydrograph as array pointer
+/// \return historical inflow hydrograph as array pointer
+//
+const double        *CSubBasin::GetLatHistory       () const{return _aQlatHist;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns number of timesteps stored in unit hydrograph history
@@ -450,15 +457,22 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
 //
 double CSubBasin::GetIrrigationDemand(const double &t) const
 {
-  if(_pIrrigDemand==NULL) { return 0.0; }
-  double Qirr=_pIrrigDemand->GetValue(t); if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
-  return Qirr;
+  if(_nIrrigDemands==0) { return 0.0; }
+  double sum=0;
+  double Qirr;
+  for (int i=0;i<_nIrrigDemands;i++)
+  {
+    Qirr=_pIrrigDemands[i]->GetValue(t); 
+    if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+    sum+=Qirr;
+  }
+  return sum;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
-/// \return actual demand from subbasin [m3/s]
+/// \return actual delivery from subbasin [m3/s]
 //
-double CSubBasin::GetIrrigationRate() const
+double CSubBasin::GetDemandDelivery() const
 {
   return _Qirr;
 }
@@ -470,8 +484,8 @@ double CSubBasin::GetIrrigationRate() const
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 {
   double Qirr;
-  if(_pIrrigDemand==NULL)          { Qirr=0.0; }
-  else                             { Qirr= _pIrrigDemand->GetValue(t);}
+  Qirr=GetIrrigationDemand(t);
+
   if (_downstream_ID==DOESNT_EXIST){ return Qirr; }
   else                             { return _pDownSB->GetDownstreamIrrDemand(t)+Qirr; }
 }
@@ -503,7 +517,7 @@ int CSubBasin::GetDiversionTargetIndex(const int i) const
 //
 bool CSubBasin::HasIrrigationDemand() const
 {
-  return (_pIrrigDemand!=NULL);
+  return (_nIrrigDemands>0);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
@@ -511,9 +525,13 @@ bool CSubBasin::HasIrrigationDemand() const
 /// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
 /// \return irrigation demand outflow from subbasin at time t [m3/s]
 //
-double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q)
+double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q) const
 {
-  if (_pIrrigDemand==NULL){return 0.0;}
+  if (_nIrrigDemands==0){return 0.0;}
+  
+  //if using Management optimization, delivery determined by optimizer /todo[funct]
+  //return pModel->GetDemandOptimizer()->GetTotalWaterDemandDelivery(_global_index);
+  
   double Qirr;
   double Qdemand=GetIrrigationDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
@@ -699,7 +717,36 @@ double CSubBasin::GetRivuletStorage () const
 {
   return _rivulet_storage;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief number of water/irrigation demands 
+/// \return number of water/irrigation demands 
+//
+int CSubBasin::GetNumWaterDemands() const 
+{
+  return _nIrrigDemands;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand integer ID 
+/// \return water/irrigation demand integer ID  
+//
+int CSubBasin::GetWaterDemandID     (const int i) const
+{ 
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+#endif
+  return _pIrrigDemands[i]->GetIDTag(); //stores demand ID 
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand name/alias  
+/// \return water/irrigation demand name/alias 
+//
+string CSubBasin::GetWaterDemandName   (const int i) const
+{ 
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
+#endif
+  return _pIrrigDemands[i]->GetName();
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Returns Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
 /// \return Outflow at start of current timestep (during solution) or end of completed timestep [m^3/s]
@@ -806,6 +853,17 @@ double CSubBasin::GetReferenceFlow() const
 {
   return _Q_ref;
 }
+//////////////////////////////////////////////////////////////////
+/// \brief Returns x-sect area at reference discharge [m^2]
+/// \return  x-sect area at reference discharge [m^2] or AUTO_COMPUTE if not yet calculated
+//
+double CSubBasin::GetReferenceXSectArea() const
+{
+  if (_Q_ref==AUTO_COMPUTE){return AUTO_COMPUTE;}
+  if(_pChannel==NULL)      {return ALMOST_INF;  }
+  return _pChannel->GetArea(_Q_ref,_slope,_mannings_n);
+}
+
 //////////////////////////////////////////////////////////////////
 /// \brief Returns reference celerity [m/s]
 /// \return  reference celerity [m/s] or AUTO_COMPUTE if not yet calculated
@@ -1048,9 +1106,8 @@ void    CSubBasin::AddDownstreamInflow (CTimeSeries *pInflow)
 //
 void    CSubBasin::AddIrrigationDemand(CTimeSeries *pOutflow)
 {
-  ExitGracefullyIf(_pIrrigDemand!=NULL,
-    "CSubBasin::AddIrrigationDemand: only one irrigation demand time series may be specified per basin",BAD_DATA);
-  _pIrrigDemand=pOutflow;
+  if (!DynArrayAppend((void**&)(_pIrrigDemands),(void*)(pOutflow),_nIrrigDemands)){
+    ExitGracefully("CSubBasin::AddIrrigationDemand: trying to add NULL regime",BAD_DATA);}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Adds minimum enviro flow time series
@@ -1366,7 +1423,7 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
     {
       //_t_conc=14.6*_reach_length/M_PER_KM*pow(_basin_area,-0.1)*pow( [[AVERAGE VALLEY SLOPE???]],-0.2)/MIN_PER_DAY;
       _t_conc=0.76*pow(max(_basin_area,0.001),0.38)/HR_PER_DAY;// [d] \ref Austrailian Rainfall and runoff guidelines [McDermott and Pilgrim (1982)]
-      _t_conc*=CGlobalParams::GetParams()->TOC_multiplier;
+      _t_conc *= _pModel->GetGlobalParams()->GetParams()->TOC_multiplier;
       //if (Options.catchment_routing!=ROUTE_NONE){
       //  WriteAdvisory("Time of concentration has been estimated as "+to_string(_t_conc)+" days for basin "+to_string(_ID),false);
       //}
@@ -1376,16 +1433,16 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
 
     if (_t_peak     ==AUTO_COMPUTE){
       _t_peak=0.3*_t_conc;
-      _t_peak*=CGlobalParams::GetParams()->TIME_TO_PEAK_multiplier;
+      _t_peak *= _pModel->GetGlobalParams()->GetParams()->TIME_TO_PEAK_multiplier;
     }
     if (_t_lag      ==AUTO_COMPUTE){_t_lag =0.0;}
     if (_gamma_shape==AUTO_COMPUTE){
       _gamma_shape=3.0;
-      _gamma_shape*=CGlobalParams::GetParams()->GAMMA_SHAPE_multiplier;
+      _gamma_shape *= _pModel->GetGlobalParams()->GetParams()->GAMMA_SHAPE_multiplier;
     }
     if (_gamma_scale==AUTO_COMPUTE){
       _gamma_scale=max((_gamma_shape-1.0)/_t_peak,0.01); //only really should be used if _gamma_shape>1.0
-      _gamma_scale*=CGlobalParams::GetParams()->GAMMA_SCALE_multiplier;
+      _gamma_scale *= _pModel->GetGlobalParams()->GetParams()->GAMMA_SCALE_multiplier;
     }
 
     if (_reservoir_constant==AUTO_COMPUTE){
@@ -1423,8 +1480,8 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
   if (_pInflowHydro2 != NULL){
     _pInflowHydro2->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
-  if(_pIrrigDemand != NULL) {
-    _pIrrigDemand->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
+  for (int i=0;i<_nIrrigDemands;i++){
+    _pIrrigDemands[i]->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
   }
   if(_pEnviroMinFlow != NULL) {
     _pEnviroMinFlow->Initialize(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.timestep,false,Options.calendar);
@@ -1772,11 +1829,15 @@ void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 /// \remark Called *after* RouteWater routine is called in Solver.cpp, to reset
 /// the outflow rates for this basin
 ///
-/// \param *aQo [in] Array of new outflows [m^3/s]
+/// \param *aQo [in] Array of new outflows [m3/s]
+/// \param irr_Q [in] actual delivered water demand [m3/s]
 /// \param &res_ht [in] new reservoir stage [m]
+/// \param res_outflow [in] reservoir outflow [m3/s]
+/// \param constraint [in] current constraint applied to reservoir flow [-]
+/// \param res_Qstruct [in] pointer to structure for multiple-control reservoir 
 /// \param &Options [in] Global model options information
 /// \param &tt [in] time structure at start of current time step
-/// \param initialize Flag to indicate if flows are to only be initialized
+/// \param initialize [in] Flag to indicate if flows are to only be initialized
 //
 void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double &irr_Q,  //[m3/s]
@@ -1786,7 +1847,7 @@ void CSubBasin::UpdateOutflows   (const double *aQo,   //[m3/s]
                                   const double *res_Qstruct,
                                   const optStruct &Options,
                                   const time_struct &tt,
-                                  bool initialize)
+                                  const bool    initialize)
 {
   double tstep=Options.timestep;
 
@@ -2297,7 +2358,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   //-----------------------------------------------------------------
   if (_pReservoir!=NULL)
   {
-    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],Options,tt,res_outflow,res_const,aResQstruct);
+    res_ht=_pReservoir->RouteWater(_aQout[_nSegments-1],aQout_new[_nSegments-1],_pModel,Options,tt,res_outflow,res_const,aResQstruct);
   }
   else
   {
@@ -2341,7 +2402,10 @@ void CSubBasin::ClearTimeSeriesData(const optStruct& Options)
 {
   delete _pInflowHydro;  _pInflowHydro=NULL;
   delete _pInflowHydro2; _pInflowHydro2=NULL;
-  delete _pIrrigDemand;  _pIrrigDemand=NULL;
+  for (int i = 0; i < _nIrrigDemands; i++) {
+    delete _pIrrigDemands[i];
+  }
+  delete [] _pIrrigDemands; _pIrrigDemands=NULL; _nIrrigDemands=0;
   delete _pEnviroMinFlow;_pEnviroMinFlow=NULL;
   _pReservoir->ClearTimeSeriesData(Options);
 }

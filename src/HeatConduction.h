@@ -36,7 +36,8 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
        //Constructors/destructors:
-  CmvHeatConduction(const CTransportModel *pTransMod);
+  CmvHeatConduction(const CTransportModel *pTransMod,
+                    CModelABC             *pModel);
   ~CmvHeatConduction();
 
   void StoreNumberOfHRUs(const int nHRUs);
@@ -54,8 +55,8 @@ public:/*-------------------------------------------------------*/
                         const time_struct &tt,
                         double      *rates) const;
 
-  void        GetParticipatingParamList(string  *aP,class_type *aPC,int &nP) const;
-  static void GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV);
+  void GetParticipatingParamList(string  *aP,class_type *aPC,int &nP) const;
+  void GetParticipatingStateVarList(sv_type *aSV,int *aLev,int &nSV);
 
 };
 

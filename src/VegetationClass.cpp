@@ -4,16 +4,16 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the vegetation class constructor
 /// \param name [in] String nickname for vegetation class
 //
-CVegetationClass::CVegetationClass(const string name)
+CVegetationClass::CVegetationClass(const string name, CModel* pModel)
 {
   this->V.vegetation_name=name;
-  if (!DynArrayAppend((void**&)(pAllVegClasses),(void*)(this),NumVegClasses)){
-    ExitGracefully("CVegetationClass::Constructor: creating NULL vegetation class",BAD_DATA);};
+  pModel->AddVegClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -39,77 +39,9 @@ const veg_struct *CVegetationClass::GetVegetationStruct() const{return &V;}
 string               CVegetationClass::GetVegetationName         () const{return V.vegetation_name;}
 
 /*****************************************************************
-   Static Initialization, Accessors, Destructors
+   Static Initialization, Accessors
 *****************************************************************/
-CVegetationClass **CVegetationClass::pAllVegClasses=NULL;
-int                CVegetationClass::NumVegClasses=0;
 
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of vegetation classes
-/// \return Number of vegetation classes
-//
-int CVegetationClass::GetNumClasses(){
-  return NumVegClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize vegetation class information to screen
-//
-void CVegetationClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Vegetation Class Summary:"<<NumVegClasses<<" vegetation classes in database"<<endl;
-  for (int c=0; c<NumVegClasses;c++){
-    cout<<"-Veg. class \""<<pAllVegClasses[c]->GetVegetationName()<<"\" "<<endl;
-    cout<<"    max. height: "<<pAllVegClasses[c]->GetVegetationStruct()->max_height<<" m"<<endl;
-    cout<<"       max. LAI: "<<pAllVegClasses[c]->GetVegetationStruct()->max_LAI  <<endl;
-    cout<<"   max. conduct: "<<pAllVegClasses[c]->GetVegetationStruct()->max_leaf_cond<<" mm/s"<<endl;
-    cout<<"         albedo: "<<pAllVegClasses[c]->GetVegetationStruct()->albedo<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all vegetation classes
-//
-void CVegetationClass::DestroyAllVegClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL VEGETATION CLASSES"<<endl;}
-  for (int c=0; c<NumVegClasses;c++){
-    delete pAllVegClasses[c];
-  }
-  delete [] pAllVegClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the vegetation class corresponding to passed string
-/// \details Converts string (e.g., "BROADLEAF" in HRU file) to vegetation class
-///  can accept either vegclass index or vegclass tag
-///  if string is invalid, returns NULL
-/// \param s [in] Vegetation class identifier (tag or index)
-/// \return Reference to vegetation class corresponding to identifier s
-//
-CVegetationClass *CVegetationClass::StringToVegClass(const string s)
-{
-  string sup;
-  sup=StringToUppercase(s);
-  for (int c=0;c<NumVegClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(pAllVegClasses[c]->GetVegetationName()))){return pAllVegClasses[c];}
-    else if (s_to_i(sup.c_str())==(c+1))                                        {return pAllVegClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the vegetation class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to vegetation class corresponding to index c
-//
-const CVegetationClass *CVegetationClass::GetVegClass(int c)
-{
-  if ((c<0) || (c>=NumVegClasses)){return NULL;}
-  return pAllVegClasses[c];
-}
 /*****************************************************************
    Accessors
 ------------------------------------------------------------------
@@ -229,8 +161,18 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
     V.PET_veg_corr=1.0;
     //no warning - default is one
   }
-
-
+  //capacity LAI ratio 
+  autocalc=SetCalculableValue(V.Cap_LAI_ratio,Vtmp.Cap_LAI_ratio,Vdefault.Cap_LAI_ratio);
+  if (autocalc)
+  {
+    V.Cap_LAI_ratio=0.15; ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60))
+  }
+  //Snow capacity LAI ratio
+  autocalc=SetCalculableValue(V.SnoCap_LAI_ratio,Vtmp.SnoCap_LAI_ratio,Vdefault.SnoCap_LAI_ratio);
+  if (autocalc)
+  {
+    V.SnoCap_LAI_ratio=0.6; ///< (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
+  }
   double max_LAI=V.max_LAI;
   double max_SAI=V.SAI_ht_ratio*V.max_height;
 
@@ -238,7 +180,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   autocalc=SetCalculableValue(V.max_capacity,Vtmp.max_capacity,Vdefault.max_capacity);
   if (autocalc)
   {
-    V.max_capacity=CAP_LAI_RATIO*(max_LAI+max_SAI);     ///< maximum storage capacity [mm] (Brook90 / Dingman 7-2) \cite Federer2010
+    V.max_capacity=V.Cap_LAI_ratio*(max_LAI+max_SAI);     ///< maximum storage capacity [mm] (Brook90 / Dingman 7-2) \cite Federer2010
     warn="The required parameter MAX_CAPACITY for vegetation class "+V.vegetation_name+" was autogenerated with value "+to_string(V.max_capacity);
     if (chatty){WriteAdvisory(warn,false);}
   }
@@ -246,7 +188,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
   autocalc=SetCalculableValue(V.max_snow_capacity,Vtmp.max_snow_capacity,Vdefault.max_snow_capacity);
   if (autocalc)
   {
-    V.max_snow_capacity=SCAP_LAI_RATIO*(max_LAI+max_SAI);       //Brook90/Dingman box 5.1/CLM
+    V.max_snow_capacity=V.SnoCap_LAI_ratio*(max_LAI+max_SAI);       //Brook90/Dingman box 5.1/CLM
     ///< V.max_snow_capacity=6.0 *(0.27+46*0.119)*(V.max_LAI+maxSAI);//WATCLASS (Schmidt & Gluns, 1991)[units seem off] \cite schmidt1991CJFR
     warn="The required parameter MAX_SNOW_CAPACITY for vegetation class "+V.vegetation_name+" was autogenerated with value "+to_string(V.max_snow_capacity);
     if (chatty){WriteAdvisory(warn,false);}
@@ -360,8 +302,9 @@ void CVegetationClass::InitializeVegetationProps(string name, veg_struct &V, boo
   V.max_capacity      =DefaultParameterValue(is_template,true);
   V.max_snow_capacity =DefaultParameterValue(is_template,true);
   V.max_snow_load     =DefaultParameterValue(is_template,true);
-
-  V.PET_veg_corr=1.0;
+  V.Cap_LAI_ratio     =0.15;
+  V.SnoCap_LAI_ratio  =0.6;
+  V.PET_veg_corr      =1.0;
 
   //No autocalculation here (OR SUFFICIENT WARNING IF PARAMETER NOT SPECIFIED) \todo [funct]
   for(int c=0;c<MAX_CONSTITUENTS;c++){
@@ -434,6 +377,8 @@ void  CVegetationClass::SetVegetationProperty(veg_struct  &V,
   else if (!name.compare("VEG_MBETA"            )){V.veg_mBeta=value;}
   else if (!name.compare("VEG_DENS"             )){V.veg_dens=value;}
   else if (!name.compare("PET_VEG_CORR"         )){V.PET_veg_corr=value;}
+  else if (!name.compare("CAP_LAI_RATIO"        )){V.Cap_LAI_ratio=value;}
+  else if (!name.compare("SNOCAP_LAI_RATIO"     )){V.SnoCap_LAI_ratio=value;}
   else if (!name.compare("VEG_CONV_COEFF"       )){V.veg_conv_coeff=value;}
 
   else if (!name.compare("MAX_ROOT_LENGTH"      )){V.max_root_length=value;}
@@ -538,6 +483,8 @@ double CVegetationClass::GetVegetationProperty(const veg_struct &V, string param
   else if (!name.compare("VEG_MBETA"            )){return V.veg_mBeta;}
   else if (!name.compare("VEG_DIAM"             )){return V.veg_diam;}
   else if (!name.compare("PET_VEG_CORR"         )){return V.PET_veg_corr;}
+  else if (!name.compare("CAP_LAI_RATIO"        )){return V.Cap_LAI_ratio;}
+  else if (!name.compare("SNOCAP_LAI_RATIO"     )){return V.SnoCap_LAI_ratio;}
   else if (!name.compare("VEG_CONV_COEFF"       )){return V.veg_conv_coeff;}
 
   else if (!name.compare("MAX_ROOT_LENGTH"      )){return V.max_root_length;}

@@ -176,17 +176,15 @@ void CRavenBMI::Initialize(std::string config_file)
   }
   WARNINGS.close();
 
-  CStateVariable::Initialize();
-
   Options.in_bmi_mode  = true;  // flag needed to ignore some arguments of the .rvi file
   Options.rvt_filename = "";   // just a dummy filename to avoid errors
-  Options.duration     = std::numeric_limits<double>::max();  // "infinity": will run as long as "Update()" is called
+  Options.duration     = ALMOST_INF;  // "infinity": will run as long as "Update()" is called
 
   //Read input files, create model, set model options
   if (!ParseInputFiles(pModel, Options)){
     ExitGracefully("Main::Unable to read input file(s)",BAD_DATA);}
 
-  CheckForErrorWarnings(true);
+  CheckForErrorWarnings(true, pModel);
 
   pModel->Initialize                  (Options);
   ParseInitialConditions              (pModel, Options);
@@ -194,7 +192,7 @@ void CRavenBMI::Initialize(std::string config_file)
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
 
-  CheckForErrorWarnings(false);
+  CheckForErrorWarnings(false, pModel);
 
   PrepareOutputdirectory(Options); //adds new output folders, if needed
   pModel->WriteOutputFileHeaders(Options);
@@ -292,7 +290,7 @@ int CRavenBMI::GetInputItemCount()
 std::vector<std::string> CRavenBMI::GetInputVarNames()
 {
   vector<string> names;
-  names.push_back("rainfall");
+  names.push_back("precipitation");
   names.push_back("temp_ave");
   return names;
 }
@@ -328,13 +326,13 @@ std::vector<std::string> CRavenBMI::GetOutputVarNames()
 int CRavenBMI::GetVarGrid(std::string name)
 {
   //input variables
-  if      (name=="rainfall"  ){return GRID_HRU;}
-  else if (name=="temp_ave"  ){return GRID_HRU;}
+  if      (name=="precipitation"){return GRID_HRU;}
+  else if (name=="temp_ave"     ){return GRID_HRU;}
 
   //output variables
-  if      (name=="streamflow"){return GRID_SUBBASIN;}
-  else if (name=="soil[0]"   ){return GRID_HRU;}
-  else if (name=="snow"      ){return GRID_HRU;}
+  if      (name=="streamflow"   ){return GRID_SUBBASIN;}
+  else if (name=="soil[0]"      ){return GRID_HRU;}
+  else if (name=="snow"         ){return GRID_HRU;}
 
   return 0;
 }
@@ -346,13 +344,13 @@ int CRavenBMI::GetVarGrid(std::string name)
 std::string CRavenBMI::GetVarUnits(std::string name)
 {
   //input variables
-  if      (name=="rainfall"  ){return "mm/d";}
-  else if (name=="temp_ave"  ){return "C";}
+  if      (name=="precipitation"){return "mm/d";}
+  else if (name=="temp_ave"     ){return "C";}
 
   //output variables
-  if      (name=="streamflow"){return "m3/s";}
-  else if (name=="soil[0]"   ){return "mm";  }
-  else if (name=="snow"      ){return "mm";  }
+  if      (name=="streamflow"   ){return "m3/s";}
+  else if (name=="soil[0]"      ){return "mm";  }
+  else if (name=="snow"         ){return "mm";  }
 
   return "";
 }
@@ -519,8 +517,8 @@ void CRavenBMI::SetValue(std::string name, void* src)
   forcing_type Ftype;
   bool is_forcing=false;
 
-  if      (name=="rainfall"){is_forcing=true; Ftype=F_RAINFALL;}
-  else if (name=="temp_ave"){is_forcing=true; Ftype=F_TEMP_AVE;}
+  if      (name=="precipitation"){is_forcing=true; Ftype=F_PRECIP;  }
+  else if (name=="temp_ave")     {is_forcing=true; Ftype=F_TEMP_AVE;}
 
   if (is_forcing){
     for (int k=0;k<pModel->GetNumHRUs();k++){
@@ -542,8 +540,8 @@ void CRavenBMI::SetValueAtIndices(std::string name, int* inds, int count, void* 
   forcing_type Ftype;
   bool is_forcing=false;
 
-  if      (name=="rainfall"){is_forcing=true; Ftype=F_RAINFALL;}
-  else if (name=="temp_ave"){is_forcing=true; Ftype=F_TEMP_AVE;}
+  if      (name=="precipitation"){is_forcing=true; Ftype=F_PRECIP;}
+  else if (name=="temp_ave")     {is_forcing=true; Ftype=F_TEMP_AVE;}
 
   if (is_forcing){
     for (int i=0;i<count;i++){

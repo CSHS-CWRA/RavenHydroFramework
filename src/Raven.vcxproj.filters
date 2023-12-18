@@ -387,9 +387,6 @@
     <ClCompile Include="IsotopeTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="EnergyTransport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LatEquilibrate.cpp">
       <Filter>Source Files\Hydrological Processes</Filter>
     </ClCompile>
@@ -432,6 +429,9 @@
     <ClCompile Include="ChemEquilibrium.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="FrozenGround.cpp">
+      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
+    </ClCompile>
     <ClCompile Include="UnitTesting.cpp">
       <Filter>Source Files\_Testing</Filter>
     </ClCompile>
@@ -453,9 +453,14 @@
     <ClCompile Include="Raven_BMI.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
+ 
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
+    <ClCompile Include="EnergyTransport.cpp">
+      <Filter>Source Files\Transport Processes</Filter>
+    </ClCompile>
+
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Properties.h">
@@ -632,6 +637,9 @@
     <ClInclude Include="ChemEquilibrium.h">
       <Filter>Header Files\Transport</Filter>
     </ClInclude>
+    <ClInclude Include="FrozenGround.h">
+      <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
+    </ClInclude>
     <ClInclude Include="FrozenLake.h">
       <Filter>Header Files\Hydrological Processes\Energy Processes</Filter>
     </ClInclude>
@@ -643,6 +651,9 @@
     </ClInclude>
     <ClInclude Include="Matrix.h">
       <Filter>Header Files\_Support Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="_Unintegrated Source Files\DemandOptimization.h">
+      <Filter>Header Files\_Testing</Filter>
     </ClInclude>
     <ClInclude Include="Raven_BMI.h">
       <Filter>Header Files\Input/Output</Filter>
@@ -657,8 +668,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagramRaven.cd" />
-    <None Include="PropertyStructures.cd" />
     <None Include="RavenIcon.ico">
       <Filter>Resource Files</Filter>
     </None>

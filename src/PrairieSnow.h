@@ -11,6 +11,7 @@
 
 #include "RavenInclude.h"
 #include "HydroProcessABC.h"
+#include "Model.h"
 
 ///////////////////////////////////////////////////////////////////
 /// \brief Techniques for modelling blowing snow
@@ -59,7 +60,7 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvPrairieBlowingSnow(pbsm_type sub_type);
+  CmvPrairieBlowingSnow(pbsm_type sub_type, CModel *pModel);
   ~CmvPrairieBlowingSnow();
 
   //inherited functions

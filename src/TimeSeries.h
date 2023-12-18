@@ -100,7 +100,7 @@ public:/*-------------------------------------------------------*/
   double GetValue     (const int n) const;
 
   double GetSampledValue(const int nn) const; //nn is timestep number
-  double GetSampledTime(const int nn) const; //nn is timestep number
+  double GetSampledTime (const int nn) const; //nn is timestep number
   double GetSampledInterval() const;
   int    GetNumSampledValues() const;
 

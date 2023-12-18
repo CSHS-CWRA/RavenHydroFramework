@@ -19,8 +19,10 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvFrozenLake::CmvFrozenLake(lakefreeze_type type,const CTransportModel *pTransMod)
-  :CHydroProcessABC(LAKE_FREEZING)
+CmvFrozenLake::CmvFrozenLake(lakefreeze_type       type,
+                             const CTransportModel *pTransMod,
+                             CModelABC             *pModel)
+  :CHydroProcessABC(LAKE_FREEZING, pModel)
 {
   _type =type;
   _pTransModel=pTransMod;
@@ -129,7 +131,7 @@ void   CmvFrozenLake::GetRatesOfChange( const double      *state_vars,
   {
     //just queries thermal model and updates ice thickness variable
 
-    double ice_thick=state_vars[iFrom[0]];
+    ice_thick=state_vars[iFrom[0]];
 
     const CEnthalpyModel *pEnthalpyModel=_pTransModel->GetEnthalpyModel();
 

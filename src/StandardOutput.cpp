@@ -187,7 +187,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
-            _STORAGE<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+            _STORAGE << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                                   _aStateVarLayer[i],
+                                                                   _pTransModel) << " [mm]";
             //_STORAGE<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
           }
         }
@@ -419,7 +421,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetFromIndices()[q]);
-        MB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        MB << "," <<  _pStateVar->SVTypeToString(typ, ind);
       }
     }
     MB<<endl;
@@ -428,7 +430,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetToIndices()[q]);
-        MB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        MB << "," << _pStateVar->SVTypeToString(typ, ind);
       }
     }
     MB<<endl;
@@ -460,7 +462,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetFromIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetFromIndices()[q]);
-        HGMB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        HGMB << "," << _pStateVar->SVTypeToString(typ, ind);
       }
     }
     HGMB<<endl;
@@ -469,7 +471,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
         sv_type typ=GetStateVarType (_pProcesses[j]->GetToIndices()[q]);
         int     ind=GetStateVarLayer(_pProcesses[j]->GetToIndices()[q]);
-        HGMB<<","<<CStateVariable::SVTypeToString(typ,ind);
+        HGMB << "," << _pStateVar->SVTypeToString(typ,ind);
       }
     }
     HGMB<<endl;
@@ -491,7 +493,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
     for (i=0;i<_nStateVars;i++){
       if (CStateVariable::IsWaterStorage(_aStateVarType[i]))
       {
-        MB<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+        MB << "," << _pStateVar->SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
         first=true;
         for (j=0;j<_nProcesses;j++){
           for (int q=0;q<_pProcesses[j]->GetNumConnections();q++){
@@ -567,7 +569,9 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       for (i=0;i<GetNumStateVars();i++){
         if (CStateVariable::IsWaterStorage(_aStateVarType[i])){
           if (i!=iAtmPrecip){
-            HRUSTOR<<","<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
+            HRUSTOR << "," << CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                                  _aStateVarLayer[i],
+                                                                  _pTransModel) << " [mm]";
             //HRUSTOR<<","<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i])<<" [mm]";
           }
         }
@@ -804,7 +808,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
                   {
                     double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep); //time shift handled in CTimeSeries::Parse
                     if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _HYDRO << "," << val; }
-                    else                                             { _HYDRO << ","; }
+                    else                                             { _HYDRO << ",";        }
                   }
                 }
               }
@@ -921,28 +925,26 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     //--------------------------------------------------------------
     if ((Options.write_reservoir) && (Options.output_format==OUTPUT_STANDARD))
     {
+      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+
       if((Options.period_starting) && (t==0)){}//don't write anything at time zero
       else{
-	      _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
-	      for (int p=0;p<_nSubBasins;p++)
+	    _RESSTAGE<< t<<","<<thisdate<<","<<thishour<<","<<GetAveragePrecip();
+	    for (int p=0;p<_nSubBasins;p++)
         {
           pSB=_pSubBasins[p];
 	        if ((pSB->IsGauged())  && (pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)) {
 	          _RESSTAGE<<","<<pSB->GetReservoir()->GetResStage();
 	        }
-	        //if (Options.print_obs_hydro)
-	        {
-	          for (i = 0; i < _nObservedTS; i++){
-	            if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
-	            {
-	              double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
-	              if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
-	              else                                             { _RESSTAGE << ",";       }
-	            }
+	        for (i = 0; i < _nObservedTS; i++){
+	          if (IsContinuousStageObs(_pObservedTS[i],pSB->GetID()))
+	          {
+                double val = _pObservedTS[i]->GetAvgValue(tt.model_time,Options.timestep);
+	            if ((val != RAV_BLANK_DATA) && (tt.model_time>0)){ _RESSTAGE << "," << val; }
+	            else                                             { _RESSTAGE << ",";        }
 	          }
-	        }
-
-	      }
+          }
+        }
 	      _RESSTAGE<<endl;
 			}
     }
@@ -962,8 +964,8 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
             double irr =pSB->GetIrrigationDemand(tt.model_time);
             double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
             double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed
-            double Qirr=pSB->GetIrrigationRate  ();
-            double unmet=max(irr-Qirr,0.0);
+            double Qd  =pSB->GetDemandDelivery  ();
+            double unmet=max(irr-Qd,0.0);
             _DEMANDS<<","<<Q<<","<<irr<<","<<eF<<","<<unmet;
           }
         }
@@ -1220,27 +1222,28 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
 
 }
 
+
 //////////////////////////////////////////////////////////////////
-/// \brief Writes major output to file at the end of simulation
-/// \details Writes:
-/// - Solution file of all state variables; and
-/// - Autogenerated parameters
-///
-/// \param &Options [in] Global model options information
+/// \brief Replaces the WriteOutputFileHeaders function by not requiring the Options structure as an argument
+/// \param &tt [in] Local (model) time *at the end of* the pertinent time step
+/// \param solfile [in] Name of the solution file to be written
+/// \param final [in] Whether this is the final solution file to be written
 //
-void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, string solfile, bool final) const
+void CModel::WriteMajorOutput(const time_struct &tt, string solfile, bool final) const
 {
   int i,k;
   string tmpFilename;
+  const optStruct* Options = this->_pOptStruct;  // just to make the code more readable
 
-  if (Options.output_format==OUTPUT_NONE){return;} //:SuppressOutput is on
+  if (Options->output_format==OUTPUT_NONE){return;} //:SuppressOutput is on
 
   // WRITE {RunName}_solution.rvc - final state variables file
   ofstream RVC;
-  tmpFilename=FilenamePrepare(solfile+".rvc",Options);
+  tmpFilename=FilenamePrepare(solfile+".rvc", *_pOptStruct);
   RVC.open(tmpFilename.c_str());
   if (RVC.fail()){
-    WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
+    WriteWarning(("CModel::WriteMajorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),
+                  Options->noisy);
   }
   RVC<<":TimeStamp "<<tt.date_string<<" "<<DecDaysToHours(tt.julian_day)<<endl;
 
@@ -1255,7 +1258,7 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
     RVC<<"  :Attributes,";
     for (i=mini;i<maxi;i++)
     {
-      RVC<<CStateVariable::SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]);
+      RVC << _pStateVar->SVTypeToString(_aStateVarType[i], _aStateVarLayer[i]);
       if (i!=GetNumStateVars()-1){RVC<<",";}
     }
     RVC<<endl;
@@ -1294,12 +1297,12 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
 
   // SubbasinProperties.csv
   //--------------------------------------------------------------
-  if (Options.write_basinfile){
+  if (Options->write_basinfile){
     ofstream BAS;
-    tmpFilename=FilenamePrepare("SubbasinProperties.csv",Options);
+    tmpFilename=FilenamePrepare("SubbasinProperties.csv",*_pOptStruct);
     BAS.open(tmpFilename.c_str());
     if(BAS.fail()) {
-      WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options.noisy);
+      WriteWarning(("CModel::WriteMinorOutput: Unable to open output file "+tmpFilename+" for writing.").c_str(),Options->noisy);
     }
     BAS<<"ID,Qref[m3/s],reach_length[m],area[km2],drainage_area[km2],t_conc[d],t_peak[d],gamma_sh,gamma_sc[1/d],celerity[m/s],diffusivity[m2/s],N,UH[0],UH[1],UH[2],..."<<endl;
     for(int pp=0;pp<_nSubBasins;pp++) {
@@ -1324,11 +1327,23 @@ void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, s
 
   // rating_curves.csv
   //--------------------------------------------------------------
-  if(Options.write_channels){
-    CChannelXSect::WriteRatingCurves(Options);
+  if(Options->write_channels){
+    WriteRatingCurves(*Options);
   }
+}
 
 
+//////////////////////////////////////////////////////////////////
+/// \brief Writes major output to file at the end of simulation
+/// \details Writes:
+/// - Solution file of all state variables; and
+/// - Autogenerated parameters
+///
+/// \param &Options [in] Global model options information
+//
+void CModel::WriteMajorOutput(const optStruct &Options, const time_struct &tt, string solfile, bool final) const
+{
+  WriteMajorOutput(tt,solfile,final);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Writes simple output to file
@@ -1423,9 +1438,19 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
   for(int p=0;p<_nSubBasins; p++){
     if(!_pSubBasins[p]->IsEnabled()){SBdisablecount++;}
   }
-  if(!Options.silent){
+  time_struct tt,tt2;
+  double day;
+  int year;
+  JulianConvert(0,Options.julian_start_day,Options.julian_start_year,Options.calendar,tt);
+  AddTime(Options.julian_start_day,Options.julian_start_year,Options.duration,Options.calendar,day,year);
+  JulianConvert(0,day,year,Options.calendar,tt2);
+
+  if(!Options.silent)
+  {
     cout <<"==MODEL SUMMARY======================================="<<endl;
     cout <<"       Model Run: "<<Options.run_name    <<endl;
+    cout <<"      Start time: "<<tt.date_string      <<endl;
+    cout <<"        End time: "<<tt2.date_string     <<" (duration="<<Options.duration<<" days)"<<endl;
     cout <<"    rvi filename: "<<Options.rvi_filename<<endl;
     cout <<"Output Directory: "<<Options.main_output_dir  <<endl;
     cout <<"     # SubBasins: "<<GetNumSubBasins()   << " ("<< rescount << " reservoirs) ("<<SBdisablecount<<" disabled)"<<endl;
@@ -1434,9 +1459,11 @@ void CModel::SummarizeToScreen  (const optStruct &Options) const
     cout <<"#State Variables: "<<GetNumStateVars()   <<endl;
     for (int i=0;i<GetNumStateVars();i++){
       //don't write if convolution storage or advection storage?
-      cout<<"                - ";
-      cout<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<" (";
-      cout<<CStateVariable::SVTypeToString     (_aStateVarType[i],_aStateVarLayer[i])<<")"<<endl;
+      cout << "                - ";
+      cout << CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                  _aStateVarLayer[i],
+                                                  _pTransModel) << " (";
+      cout << _pStateVar->SVTypeToString(_aStateVarType[i],_aStateVarLayer[i]) << ")" << endl;
     }
     cout <<"     # Processes: "<<GetNumProcesses()   <<endl;
     for (int j=0;j<GetNumProcesses();j++)
@@ -1660,7 +1687,9 @@ void CModel::WriteEnsimStandardHeaders(const optStruct &Options)
     _STORAGE<<"  :ColumnName rainfall snowfall \"Channel storage\" \"Rivulet storage\"";
     for (i=0;i<GetNumStateVars();i++){
       if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-  	_STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i])<<"\"";}}
+  	_STORAGE<<" \""<<CStateVariable::GetStateVarLongName(_aStateVarType[i],
+                                                         _aStateVarLayer[i],
+                                                         _pTransModel)<<"\"";}}
     _STORAGE<<" \"Total storage\" \"Cum. precip\" \"Cum. outflow\" \"MB error\""<<endl;
 
     _STORAGE<<"  :ColumnUnits mm/d mm/d mm mm ";
@@ -1965,7 +1994,9 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     int iAtmPrecip=GetStateVarIndex(ATMOS_PRECIP);
     for(int i=0;i<_nStateVars;i++){
       if((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip)){
-	      string name =CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+	      string name = GetStateVarInfo()->GetStateVarLongName(_aStateVarType[i],
+                                                              _aStateVarLayer[i],
+                                                              GetTransportModel());
 	      varid= NetCDFAddMetadata(_STORAGE_ncid, time_dimid,name,name,"mm");
       }
     }
@@ -2420,7 +2451,9 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
       if ((CStateVariable::IsWaterStorage(_aStateVarType[i])) && (i!=iAtmPrecip))
 	  {
 	    S=FormatDouble(GetAvgStateVar(i));
-	    short_name=CStateVariable::GetStateVarLongName(_aStateVarType[i],_aStateVarLayer[i]);
+	    short_name = GetStateVarInfo()->GetStateVarLongName(_aStateVarType[i],
+                                                          _aStateVarLayer[i],
+                                                          GetTransportModel());
 	    AddSingleValueToNetCDF(_STORAGE_ncid, short_name.c_str(),time_ind2,S);
 	    currentWater+=S;
 	  }

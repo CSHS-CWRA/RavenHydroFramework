@@ -381,7 +381,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
   // ===============================================================================
   string* aSV_names = new string[pModel->GetNumStateVars()];
   for (int i = 0; i < pModel->GetNumStateVars(); i++) {
-    aSV_names[i] = CStateVariable::SVTypeToString(pModel->GetStateVarType(i), pModel->GetStateVarLayer(i));
+    aSV_names[i] = pModel->GetStateVarInfo()->SVTypeToString(pModel->GetStateVarType(i), pModel->GetStateVarLayer(i));
   }
 
   int       SVID;
@@ -467,7 +467,7 @@ bool ParseNetCDFStateFile(CModel *&pModel,const optStruct &Options)
       double maxv = max(pHRU->GetStateVarMax(i, v, Options, true), 0.0); //ignores all variable maximum thresholds that are dependent upon model state
       if ((v[i] - maxv) > PRETTY_SMALL)// check for capacity
       {
-        string name = CStateVariable::GetStateVarLongName(pModel->GetStateVarType(i), pModel->GetStateVarLayer(i));
+        string name = pModel->GetStateVarInfo()->GetStateVarLongName(pModel->GetStateVarType(i), pModel->GetStateVarLayer(i),pModel->GetTransportModel());
         string warn = "maximum state variable limit exceeded in initial conditions for " + name + " (in HRU " + to_string(pHRU->GetID()) + ") in FEWS state update file";
         WriteWarning(warn, Options.noisy);
 
@@ -757,9 +757,10 @@ bool ParseNetCDFParamFile(CModel*&pModel, const optStruct &Options)
 
         // check for valid class name
         bool bad=false;
-        if      (pclass==CLASS_SOIL      ){if (CSoilClass      ::StringToSoilClass(class_str)==NULL){bad=true;}}
-        else if (pclass==CLASS_VEGETATION){if (CVegetationClass::StringToVegClass (class_str)==NULL){bad=true;}}
-        else if (pclass==CLASS_LANDUSE   ){if (CLandUseClass   ::StringToLUClass  (class_str)==NULL){bad=true;}}
+
+        if      (pclass==CLASS_SOIL      ){if (pModel->StringToSoilClass(class_str)==NULL){bad=true;}}
+        else if (pclass==CLASS_VEGETATION){if (pModel->StringToVegClass (class_str)==NULL){bad=true;}}
+        else if (pclass==CLASS_LANDUSE   ){if (pModel->StringToLUClass  (class_str)==NULL){bad=true;}}
 
         if (bad){
           string warn="ParseNetCDFParamFile:: unrecognized soil/veg/lult class found ("+class_str+") in FEWS parameter update file";

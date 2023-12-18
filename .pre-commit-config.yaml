@@ -13,17 +13,17 @@ repos:
     - id: end-of-file-fixer
       exclude: benchmarking
 
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.5
-    hooks:
+#  - repo: https://github.com/pocc/pre-commit-hooks
+#    rev: v1.3.5
+#    hooks:
 #      - id: clang-format
-#        args: [--style=Google]
+#        args: [ '-style=file' ]
 #      - id: clang-tidy
 #      - id: oclint
 #      - id: uncrustify
 #      - id: cppcheck
 #      - id: cpplint
-      - id: include-what-you-use
+#      - id: include-what-you-use
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.27.0
@@ -43,5 +43,5 @@ ci:
   autoupdate_branch: ''
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
   autoupdate_schedule: quarterly
-  skip: [ include-what-you-use ]
+  skip: [] # [ include-what-you-use ]
   submodules: false

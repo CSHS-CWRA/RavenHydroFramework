@@ -14,7 +14,8 @@ Atmospheric Convection Constructor/Destructor
 /// \param pTransMod [in] pointer to transport model
 /// \param iStorTo [in] state variable index of water storage corresponding to surface energy store
 //
-CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod) : CHydroProcessABC(PARTITION_ENERGY)
+CmvPartitionEnergy::CmvPartitionEnergy(const CTransportModel *pTransMod, CModelABC *pModel)
+  :CHydroProcessABC(PARTITION_ENERGY, pModel)
 {
   _pTransModel=pTransMod;
   int cTemp=_pTransModel->GetConstituentIndex("TEMPERATURE");
@@ -171,7 +172,7 @@ void CmvPartitionEnergy::GetRatesOfChange(const double      *state_vars,
   double dep_cover   =pHRU->GetSurfaceProps()->max_dep_area_frac;  //pHRU->GetDepressionAreaFraction(); //TMP DEBUG - may have to vary with depression storage
   double snow_cover  =pHRU->GetSnowCover();
   double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
-  double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
+  //double sparseness  =pHRU->GetSurfaceProps()->forest_sparseness;
 
   pct_cover=max(1.0-snow_cover-dep_cover,0.0);
 

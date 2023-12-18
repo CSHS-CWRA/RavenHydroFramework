@@ -17,6 +17,7 @@
 //#define _MODFLOW_USG_ // uncomment if compiling MODFLOW-USG coupled version of Raven
 //#define _STRICTCHECK_ // uncomment if strict checking should be enabled (slows down model)
 //#define _LPSOLVE_       // uncomment if compiling lpsolve Demand Optimization version of Raven
+#define STANDALONE
 #ifdef netcdf
 #define _RVNETCDF_      // if Makefile is used this will be automatically be uncommented if netCDF library is available
 #endif
@@ -131,6 +132,7 @@ const double  GPCM3_PER_KGPM3         =0.001;                                   
 const double  MJ_PER_J                =1e-6;                                    ///< [J] to [MJ]
 const double  KPA_PER_MPA             =1000;                                    ///< [MPa] to [KPa]
 const double  PA_PER_KPA              =1000;                                    ///< [kPa] to [Pa]
+const double  HPA_PER_KPA             =10;                                      ///< [kPa] to [hPa] 
 const double  MB_PER_KPA              =10;                                      ///< [KPa] to [millibars]
 const double  KPA_PER_ATM             =101.325;                                 ///< [atm] to [KPa]
 const double  SEC_PER_DAY             =86400;                                   ///< days to seconds
@@ -143,6 +145,7 @@ const double  WATT_TO_MJ_PER_D        =0.0864;                                  
 const double  MJ_PER_M2_LANGLEY       =0.04184;                                 ///< Langley to [MJ/m2]
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
+const double  ACREFTD_PER_CMS         =70.0456;                                 //// [acre-ft/d] to [m3/s] 
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
 const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
@@ -208,11 +211,6 @@ const double  PEAK_TEMP_HR            =3;                                       
 const double  WINTER_SOLSTICE_ANG     =6.111043;                                ///< Dec 21 as day angle
 
 //Hard-coded Empirical parameters
-const double  CAP_LAI_RATIO           =0.15;                                    ///< [mm] maximum ratio of canopy capacity to LAI+SAI
-//                                                                              ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60))
-//                                                                              ///> \cite Federer2010 \cite Dingman1994
-const double  SCAP_LAI_RATIO          =0.6;                                     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI
-//                                                                              ///< (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
 const double  SAT_INF                 =0.92;                                    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
 const double  MIN_PRESSURE            =1e10;                                    ///< [-mm] minimum matric potential in soil
 
@@ -298,7 +296,7 @@ inline void ExitGracefullyIf(bool condition, const char *statement, exitcode cod
 //  Global Constants
 //*****************************************************************
 const bool    DESTRUCTOR_DEBUG    =false;       ///< if true, screen output is generated when destructor is called
-const int     MAX_SV_LAYERS       =100;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
+const int     MAX_SV_LAYERS       =160;         ///< Max number of layers per state variable (greater than MAX_SOILLAYERS)
 const int     MAX_SOILLAYERS      =50;          ///< Max number of soil layers in profile
 const int     MAX_STATE_VAR_TYPES =100;         ///< Max number of *types* of state variables in model
 const int     MAX_STATE_VARS      =200;         ///< Max number of simulated state variables manipulable by one process (CAdvection worst offender)
@@ -424,6 +422,7 @@ enum evap_method
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
   PET_OUDIN,                    ///< Simple PET from Oudin et. al., 2005
   PET_LINACRE,                  ///< From Linacre, Agricultural Meteorology, 1977
+  PET_VAPDEFICIT,               ///< linear function of vapour deficit, c*(e_sat-e_a) from Seitz and Moore, 2020 
   PET_BLENDED,                  ///< a blended combination of 2 or more of the methods above
   PET_UNKNOWN                   ///< special PET type for unrecognized commands
 };
@@ -516,9 +515,11 @@ enum LW_method
 //
 enum LWinc_method
 {
-  LW_INC_DEFAULT,      ///< default implementation - incoming LW ignored, only net calculated
+  LW_INC_DEFAULT,      ///< default implementation - reverts to Dingman 2014 if LW_RAD_DEFAULT is used (for backward compatibility) 
   LW_INC_DATA,         ///< specified in time series files
-  LW_INC_SICART        ///< From Sicart et al. (2005) as ported over from CRHM
+  LW_INC_SICART,       ///< From Sicart et al. (2005) as ported over from CRHM
+  LW_INC_SKYVIEW,      ///< simple sky view factor approach for stream temperature modelling, Using Prata 1996 clear sky emissivity
+  LW_INC_DINGMAN       ///< from Dingman (2014), using Brutsaert 1975 clear sky emissivity
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -1026,6 +1027,7 @@ struct optStruct
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
   string           rvl_filename;              ///< fully qualified filename of rvl (live communications) file
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
+  string           rvm_filename;              ///< fully qualified filename of rvm (management) file 
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
   string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS
@@ -1124,6 +1126,7 @@ struct optStruct
   bool             assimilate_flow;           ///< turn on streamflow assimilation
   bool             assimilate_stage;          ///< turn on lake stage assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
+  bool             management_optimization;   ///< apply water management optimization (default: false)
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid
@@ -1191,6 +1194,7 @@ enum forcing_type
   F_PET,F_OW_PET,   F_PET_MONTH_AVE,
   F_SUBDAILY_CORR,  F_POTENTIAL_MELT,
   F_RECHARGE,
+  F_PRECIP_CONC,
   F_PRECIP_TEMP,
   F_UNRECOGNIZED
 };
@@ -1204,6 +1208,7 @@ struct force_struct
   double precip_5day;         ///< 5-day precipitation total [mm] (needed for SCS)
   double snow_frac;           ///< fraction of precip that is snow [0..1]
   double precip_temp;         ///< precipitation temperature [C]
+  double precip_conc;         ///< precipitation concentration [C] (\todo[funct]: should make vector)
 
   double temp_ave;            ///< average air temp over time step [C]
   double temp_daily_min;      ///< minimum air temperature over day (0:00-24:00)[C]
@@ -1422,8 +1427,7 @@ inline double        s_to_d (const char *s1)            {return atof(s1);       
 inline bool StringIsLong(const char *s1)
 {
   char *p;
-  long tmp=strtol(s1,&p,10);
-  tmp=0;
+  strtol(s1,&p,10);
   return !(*p);
 }
 ///////////////////////////////////////////////////////////////////
@@ -1582,6 +1586,7 @@ string GetDirectoryName          (const string &fname);
 void   HandleNetCDFErrors        (int error_code);        ///< NetCDF error handling
 string CorrectForRelativePath    (const string filename, const string relfile);
 string GetFileExtension          (string filename);
+string FilenamePrepare           (string filebase, const optStruct &Options);
 
 #ifdef _WIN32
 #include <direct.h>
@@ -1618,7 +1623,8 @@ void   CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const i
 //Array processing Functions-------------------------------------------------
 //defined in CommonFunctions.cpp
 void   quickSort        (double arr[], int left, int right) ;
-double InterpolateCurve     (const double x,const double *xx,const double *y,int N,bool extrapbottom);
+double InterpolateCurve (const double x,const double *xx,const double *y,int N,bool extrapbottom);
+void   getRanks         (const double *arr, const int N, int *ranks);
 
 //Geographic Conversion Functions-----------------------------------
 //defined in UTM_to_LatLong.cpp
@@ -1655,13 +1661,14 @@ double TemperatureEnthalpyDerivative         (const double &hv);
 
 //Snow Functions---------------------------------------------------
 //defined in SnowParams.cpp and PotentialMelt.cpp
+class CModelABC;  // defined in ModelABC.h
 double CalcFreshSnowDensity       (const double &air_temp);
 double GetSnowThermCond           (const double &snow_dens);
 double GetSensibleHeatSnow        (const double &air_temp,const double &surf_temp,const double &V, const double &ref_ht, const double &rough);
 double GetLatentHeatSnow          (const double &P,const double &air_temp,const double &surf_temp,const double &rel_humid,const double &V,const double &ref_ht,const double &rough);
 double GetRainHeatInput           (const double &surf_temp, const double &air_temp,const double &rain_rate,const double &rel_humid);
 double GetSnowDensity             (const double &snowSWE,const double &snow_depth);
-double CalculateSnowLiquidCapacity(const double &SWE,const double &snow_depth,const optStruct &Options);
+double CalculateSnowLiquidCapacity(const double &SWE, const double &snow_depth, const CModelABC* pModel);
 
 //Crop Functions---------------------------------------------------
 bool   IsGrowingSeason            (const time_struct &tt, const double &CHU);

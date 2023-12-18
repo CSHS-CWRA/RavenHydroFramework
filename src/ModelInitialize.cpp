@@ -6,8 +6,6 @@
 #include "IrregularTimeSeries.h"
 #include "HeatConduction.h"
 
-string FilenamePrepare(string filebase,const optStruct &Options); //defined in StandardOutput.cpp
-
 /*****************************************************************
    Model Initialization Routines
 ------------------------------------------------------------------
@@ -90,7 +88,7 @@ void CModel::Initialize(const optStruct &Options)
   }
 
   _nTotalLatConnections=0;
-  for (int j=0; j<_nProcesses;j++){
+  for (j=0; j<_nProcesses;j++){
     _nTotalLatConnections+=_pProcesses[j]->GetNumLatConnections();
   }
   if(_nTotalLatConnections>0){
@@ -123,7 +121,7 @@ void CModel::Initialize(const optStruct &Options)
   //--------------------------------------------------------------
   for (k=0;k<_nHydroUnits; k++ ){_pHydroUnits [k ]->Initialize(_UTM_zone);}
   for (g=0;g<_nGauges;     g++ ){_pGauges     [g ]->Initialize(Options,_UTM_zone);}
-  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(Options);}
+  for (j=0;j<_nTransParams;j++ ){_pTransParams[j ]->Initialize(this,Options);}
   for (kk=0;kk<_nHRUGroups;kk++){_pHRUGroups  [kk]->Initialize(); } //disables HRUs
   for (pp=0;pp<_nSBGroups; pp++){_pSBGroups   [pp]->Initialize(); } //disables SBs and HRUs
 
@@ -239,7 +237,7 @@ void CModel::Initialize(const optStruct &Options)
     if (!Options.silent){cout<<"  Initializing Transport Model..."<<endl;}
     _pTransModel->Initialize(Options);
   }
-  for (int j = 0; j < _nProcesses; j++) {
+  for (j = 0; j < _nProcesses; j++) {
     if (_pProcesses[j]->GetProcessType() == HEATCONDUCTION) {
       CmvHeatConduction *pHC=static_cast<CmvHeatConduction *>(_pProcesses[j]);
       pHC->StoreNumberOfHRUs(GetNumHRUs());
@@ -479,6 +477,7 @@ void CModel::InitializeRoutingNetwork()
   _aDownstreamInds=NULL;
   _aSubBasinOrder =new int [_nSubBasins];
   _aDownstreamInds=new int [_nSubBasins];
+  int *aInflowCount=new int [_nSubBasins];
   ExitGracefullyIf(_aDownstreamInds==NULL,"CModel::InitializeRoutingNetwork(1)",OUT_OF_MEMORY);
 
   //check for bad downstream IDs, populate downstream_ind array
@@ -493,11 +492,18 @@ void CModel::InitializeRoutingNetwork()
     ExitGracefullyIf(pp==p,
                      "CModel::InitializeRoutingNetwork: subbasin empties into itself: circular reference!",BAD_DATA);
     _aDownstreamInds[p]=pp;
+    aInflowCount    [p]=0;
   }
-
+  // count number of inflows to each basin
+  //----------------------------------------------------------------------
+  for (p=0;p<_nSubBasins;p++)
+  {
+    pTo=_aDownstreamInds[p];
+    if (pTo!=DOESNT_EXIST){aInflowCount[pTo]++;}
+  }
   // Iterative identification of subbasin orders
   //----------------------------------------------------------------------
-  // here, order goes from 0 (trunk) to _maxSubBasinOrder (leaf). This is NOT Strahler ordering!!!
+  // here, order goes from 0 (trunk) to _maxSubBasinOrder (furthest leaf). This is NOT Strahler ordering!!!
   const int MAX_ITER=1000;
   int last_ordersum;
   int iter(0),ordersum(0);
@@ -556,10 +562,11 @@ void CModel::InitializeRoutingNetwork()
 
   for (p = 0; p < _nSubBasins; p++)
   {
-    // identify headwater basins
-    if (_aSubBasinOrder[p] != _maxSubBasinOrder){
+    // identify headwater basins - default is headwater
+    if (aInflowCount[p] > 0) {
       _pSubBasins[p]->SetAsNonHeadwater();
     }
+
     // set subbasin pointers to their downstream subbasins
     pTo=_aDownstreamInds[p];
     if (pTo!=DOESNT_EXIST){
@@ -573,6 +580,7 @@ void CModel::InitializeRoutingNetwork()
       }
     }
   }
+  delete [] aInflowCount;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -614,8 +622,8 @@ void CModel::InitializeBasins(const optStruct &Options,const bool re_init)
   {
     aSBArea[p]=_pSubBasins[p]->GetBasinArea();
 
-    if (CGlobalParams::GetParams()->avg_annual_runoff > 0){
-      runoff_est= CGlobalParams::GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
+    if (this->_pGlobalParams->GetParams()->avg_annual_runoff > 0){
+      runoff_est= this->_pGlobalParams->GetParams()->avg_annual_runoff/DAYS_PER_YEAR;
     }
     aSBQlat[p]=runoff_est/MM_PER_METER*(aSBArea[p]*M2_PER_KM2)/SEC_PER_DAY;//[m3/s]
     aSBQlat[p]+=_pSubBasins[p]->GetDownstreamInflow(0.0);//[m3/s]
@@ -732,13 +740,13 @@ void CModel::InitializeParameterOverrides()
     }
     else
     {
-      double *address=CGlobalParams::GetAddress(name);
+      double *address = this->_pGlobalParams->GetAddress(name);
       if (address==NULL){
         ExitGracefully("CModel::InitializeParameterOverrides() : Invalid or unsupported global parameter name in :LocalParameterOverride command",BAD_DATA);
       }
       _pParamOverrides[i]->pxAddress=address;
 
-      _pParamOverrides[i]->aRevertValues[0] = CGlobalParams::GetParameter(name);
+      _pParamOverrides[i]->aRevertValues[0] = this->_pGlobalParams->GetParameter(name);
     }
 
     _pParamOverrides[i]->aHRUIsOverridden=new bool [_nHydroUnits];

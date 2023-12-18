@@ -33,21 +33,23 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvOWEvaporation(owevap_type ow_type, const int i_from);      //general constructor
+  CmvOWEvaporation(owevap_type ow_type,
+                   const int   i_from,
+                   CModelABC   *pModel);      //general constructor
   ~CmvOWEvaporation();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   static void GetParticipatingStateVarList(owevap_type ow_type,
                                            sv_type *aSV, int *aLev, int &nSV);
@@ -73,21 +75,23 @@ private:/*------------------------------------------------------*/
 
 public:/*-------------------------------------------------------*/
   //Constructors/destructors:
-  CmvLakeEvaporation(lakeevap_type lk_type, const int fromIndex);       //general constructor
+  CmvLakeEvaporation(lakeevap_type lk_type,
+                     const int     fromIndex,
+                     CModelABC     *pModel);   // general constructor
   ~CmvLakeEvaporation();
 
   //inherited functions
   void Initialize();
-  void GetRatesOfChange(const double              *state_vars,
+  void GetRatesOfChange(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
   void ApplyConstraints(const double      *state_vars,
                         const CHydroUnit  *pHRU,
                         const optStruct   &Options,
                         const time_struct &tt,
-                        double      *rates) const;
+                        double            *rates) const;
 
   static void GetParticipatingStateVarList(lakeevap_type lk_type,
                                            sv_type *aSV, int *aLev, int &nSV);

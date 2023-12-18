@@ -10,8 +10,6 @@ bool IsContinuousFlowObs(const CTimeSeriesABC* pObs,long SBID);
 bool ParseInitialConditions(CModel*& pModel,const optStruct& Options);
 bool ParseTimeSeriesFile(CModel*& pModel,const optStruct& Options);
 
-string FilenamePrepare(string filebase,const optStruct& Options); //Defined in StandardOutput.cpp
-
 // in .rvi file:
 //  :EnsembleMode ENSEMBLE_ENKF [double #members]
 //  :WarmEnsemble fc2 # used if ICs should be read from ensemble fc2_solution_enKF.rvc file
@@ -195,6 +193,7 @@ EnKF_mode CEnKFEnsemble::GetEnKFMode() const
 void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
 {
   CEnsemble::Initialize(pModel,Options);
+  CStateVariable *pStateVar = pModel->GetStateVarInfo();
 
   // QA/QC
   //-----------------------------------------------
@@ -263,7 +262,7 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
       for (int n=0;n<pModel->GetHRUGroup(kk)->GetNumHRUs();n++)
       {
         int k=pModel->GetHRUGroup(kk)->GetHRU(n)->GetID();
-        string svname = CStateVariable::SVTypeToString(_aAssimStates[i],_aAssimLayers[i]);
+        string svname = pModel->GetStateVarInfo()->SVTypeToString(_aAssimStates[i], _aAssimLayers[i]);
         tmp_names[ii]=svname+"_" +to_string(k); ii++;
       }
     }
@@ -347,16 +346,16 @@ void CEnKFEnsemble::Initialize(const CModel* pModel,const optStruct &Options)
   for(int e=0;e<_nEnKFMembers;e++)
   {
     j=0;
-    for(int ii=0;ii<_nObs;ii++)
+    for(ii=0;ii<_nObs;ii++)
     {
       const CTimeSeriesABC* pTSObs=pModel->GetObservedTS(_aObsIndices[ii]);
 
       //get perturbation info from observation time series name. if not found, obs data is not perturbed
       sv_type sv; int lay;
       obs_perturb *pPerturb=NULL;
-      if      (!strcmp(pTSObs->GetName().c_str(),"HYDROGRAPH")     ){ sv=STREAMFLOW;}
-      else if (!strcmp(pTSObs->GetName().c_str(),"RESERVOIR_STAGE")){ sv=RESERVOIR_STAGE;}
-      else                                                          { sv=CStateVariable::StringToSVType(pTSObs->GetName(),lay,true);}
+      if      (!strcmp(pTSObs->GetName().c_str(),"HYDROGRAPH")     ){ sv = STREAMFLOW;}
+      else if (!strcmp(pTSObs->GetName().c_str(),"RESERVOIR_STAGE")){ sv = RESERVOIR_STAGE;}
+      else                                                          { sv = pStateVar->StringToSVType(pTSObs->GetName(),lay,true);}
 
       for (int p = 0; p < _nObsPerturbations; p++) {
         if (_pObsPerturbations[p]->state==sv){pPerturb=_pObsPerturbations[p];}
@@ -792,10 +791,10 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
       _ENKFOUT<<_state_names[i]<<",";
     }
     _ENKFOUT<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[e][i]<<",";
+        _ENKFOUT<<_state_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
@@ -809,35 +808,35 @@ void CEnKFEnsemble::FinishEnsembleRun(CModel *pModel,optStruct &Options,const ti
       _ENKFOUT<<_state_names[i]<<",";
     }
     _ENKFOUT<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nStateVars;i++) {
-        _ENKFOUT<<_state_matrix[e][i]<<",";
+        _ENKFOUT<<_state_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
 
     _ENKFOUT<<"NOISE MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_noise_matrix[e][i]<<",";
+        _ENKFOUT<<_noise_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
     _ENKFOUT<<"OBSERVATION MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_obs_matrix[e][i]<<",";
+        _ENKFOUT<<_obs_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }
     _ENKFOUT<<"SIMULATED OUTPUT MATRIX:"<<endl;
-    for(int e=0;e<_nEnKFMembers;e++) {
-      _ENKFOUT<<e+1<<",";
+    for(int ee=0;ee<_nEnKFMembers;ee++) {
+      _ENKFOUT<<ee+1<<",";
       for(int i=0;i<_nObsDatapoints;i++) {
-        _ENKFOUT<<_output_matrix[e][i]<<",";
+        _ENKFOUT<<_output_matrix[ee][i]<<",";
       }
       _ENKFOUT<<endl;
     }

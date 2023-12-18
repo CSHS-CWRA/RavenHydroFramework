@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2017 the Raven Development Teams
+  Copyright (c) 2008-2023 the Raven Development Teams
   ----------------------------------------------------------------*/
 #ifndef PARSELIB_H
 #define PARSELIB_H
@@ -55,6 +55,10 @@ private:
 
   bool     comma_only;//true if spaces & tabs ignored in tokenization
 
+  bool    _parsing_math_exp;
+
+  string AddSpacesBeforeOps(string line) const; 
+
 public:
 
   CParser(ifstream &FILE, const int init_line_num);
@@ -65,9 +69,13 @@ public:
   int    GetLineNumber ();
   string GetFilename();
   void   ImproperFormat(char **s);
-  void   IgnoreSpaces  (bool ignore){comma_only=ignore;}
+  void   IgnoreSpaces  (bool ignore_it){comma_only=ignore_it;}
 
   bool   Tokenize(char **tokens, int &numwords);
+
+  string Peek();
+
+  void NextIsMathExp();
 
   void         SkipLine         ();
 

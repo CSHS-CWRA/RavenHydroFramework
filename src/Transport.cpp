@@ -48,7 +48,7 @@ CTransportModel::CTransportModel(CModel *pMod)
   _aProcessNames=NULL;
   _nProcessNames=0;
 
-  _pTransModel=this;
+  // _pTransModel=this;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Implentation of the Transport destructor
@@ -72,7 +72,7 @@ CTransportModel::~CTransportModel()
 }
 
 //Static declaration
-CTransportModel* CTransportModel::_pTransModel=NULL;
+// CTransportModel* CTransportModel::_pTransModel=NULL;
 
 //////////////////////////////////////////////////////////////////
 /// \brief converts model layer index (i.e., m in CONSTITUENT[m]) to
@@ -80,7 +80,7 @@ CTransportModel* CTransportModel::_pTransModel=NULL;
 //
 void CTransportModel::m_to_cj(const int m,int &c,int &j) const
 {
-  ExitGracefullyIf((m<0) || (m>_nConstituents*_nWaterCompartments),
+  ExitGracefullyIf((m < 0) || (m > (this->_nConstituents * this->_nWaterCompartments)),
     "CTransportModel::LayerIndToConstitData: invalid layer index",BAD_DATA);
 
   j=m % _nWaterCompartments;
@@ -108,10 +108,12 @@ int CTransportModel::GetLayerIndex(const int c,const int i_stor) const
 /// \input name in format !Nitrogen|SOIL[2]
 /// \input comp_m layer index of storage compartment (e.g., 2 in above example)
 //
+/*
 int CTransportModel::GetLayerIndexFromName(const string name,const int comp_m) //static
 {
   return _pTransModel->GetLayerIndexFromName2(name,comp_m);
 }
+*/
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns layer index m corresponding to a specific constituent storage compartment (non-static version)
@@ -137,9 +139,9 @@ int CTransportModel::GetLayerIndexFromName2(const string name,const int comp_m) 
 
   int     cc,layer_index,i_stor;
   sv_type typ;
-  cc    =_pTransModel->GetConstituentIndex(constituent_name);
-  typ   =CStateVariable::StringToSVType(compartment_name,layer_index,true);
-  i_stor=pModel->GetStateVarIndex(typ,comp_m);
+  cc    = this->GetConstituentIndex(constituent_name);
+  typ   = pModel->GetStateVarInfo()->StringToSVType(compartment_name, layer_index, true);
+  i_stor = pModel->GetStateVarIndex(typ, comp_m);
 
   return GetLayerIndex(cc,i_stor);
 }
@@ -151,26 +153,26 @@ int CTransportModel::GetLayerIndexFromName2(const string name,const int comp_m) 
 //
 string CTransportModel::GetConstituentTypeName(const int m)
 {
-  int c,j;
-  _pTransModel->m_to_cj(m,c,j);
-  return _pTransModel->GetConstituentModel(c)->GetName();
+  int c, j;
+  this->m_to_cj(m, c, j);
+  return (this->GetConstituentModel(c)->GetName());
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns name of constitutent type e.g., "Nitrogen"
 /// \remark static routine
 /// \param c index of constituent storage
 //
-string CTransportModel::GetConstituentTypeName2(const int c)
+string CTransportModel::GetConstituentTypeName2(const int c) const
 {
-  return _pTransModel->GetConstituentModel(c)->GetName();
+  return this->GetConstituentModel(c)->GetName();
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns full name of constitutent e.g.,  "Nitrogen in Soil Water[2]"
 /// static version allowing calls without passing transport model
 //
-string CTransportModel::GetConstituentLongName(const int m)
+string CTransportModel::GetConstituentLongName(const int m) const
 {
-  return _pTransModel->GetConstituentLongName_loc(m);
+  return this->GetConstituentLongName_loc(m);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns full name of constitutent e.g., "Nitrogen in Soil Water[2]"
@@ -179,27 +181,27 @@ string CTransportModel::GetConstituentLongName_loc(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
-  sv_type typ=pModel->GetStateVarType (_iWaterStorage[j]);
-  int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
+  sv_type typ = pModel->GetStateVarType (_iWaterStorage[j]);
+  int     ind = pModel->GetStateVarLayer(_iWaterStorage[j]);
 
   if(_pConstitModels[c]->GetType()==ENTHALPY) {
-    return _pConstitModels[c]->GetName()+" of "+CStateVariable::GetStateVarLongName(typ,ind);
+    return _pConstitModels[c]->GetName()+" of "+ CStateVariable::GetStateVarLongName(typ, ind, this);
   }
   else {
-    return _pConstitModels[c]->GetName()+" in "+CStateVariable::GetStateVarLongName(typ,ind);
+    return _pConstitModels[c]->GetName() + " in " + CStateVariable::GetStateVarLongName(typ, ind, this);
   }
 }
-//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////g_z
 /// \brief returns full name of constitutent e.g., "!Nitrogen|SOIL[2]"
 //
 string CTransportModel::GetConstituentShortName(const int m) const
 {
   int c,j;
   m_to_cj(m,c,j);
-  sv_type typ=pModel->GetStateVarType(_iWaterStorage[j]);
-  int     ind=pModel->GetStateVarLayer(_iWaterStorage[j]);
+  sv_type typ = pModel->GetStateVarType(_iWaterStorage[j]);
+  int     ind = pModel->GetStateVarLayer(_iWaterStorage[j]);
 
-  return "!"+_pConstitModels[c]->GetName()+"|"+CStateVariable::SVTypeToString(typ,ind);
+  return "!" + _pConstitModels[c]->GetName() + "|" + pModel->GetStateVarInfo()->SVTypeToString(typ, ind);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -237,7 +239,7 @@ int    CTransportModel::GetNumConstituents() const      { return _nConstituents;
 //////////////////////////////////////////////////////////////////
 /// \brief returns constituent model c in model
 //
-CConstituentModel *CTransportModel::GetConstituentModel(const int c)
+CConstituentModel *CTransportModel::GetConstituentModel(const int c) const
 {
 #ifdef _STRICTCHECK_
   ExitGracefullyIf((c<0) || (c >= _nConstituents),"CTransportModel::GetConstituentModel: invalid index",BAD_DATA);
@@ -492,7 +494,7 @@ double CTransportModel::GetGeochemParam(const gparam_type gtyp,const int c,const
 {
   //cout<<" GEOCHEM PAR "<<_nGeochemParams<<endl;
   for(int i=0;i<_nGeochemParams;i++) {
-    geochem_param *p=_pGeochemParams[i];
+    //geochem_param *p=_pGeochemParams[i];
     //cout<<" GEOCHEM PAR "<<p->type<<" "<<p->constit_ind<<" "<<p->constit_ind2<<" "<<p->ii_water_stor<<" "<<p->value<<endl;
     if(_pGeochemParams[i]->type!=gtyp) { continue; }
     if((_pGeochemParams[i]->ii_water_stor!=DOESNT_EXIST) && (_pGeochemParams[i]->ii_water_stor!=ii)) { continue; }
@@ -514,14 +516,14 @@ void   CTransportModel::AddConstituent(string name,constit_type typ,bool is_pass
 {
   CConstituentModel *pConstitModel;
   if (typ==ENTHALPY){
-    _pEnthalpyModel=new CEnthalpyModel(pModel,_pTransModel,name,_nConstituents);
+    _pEnthalpyModel = new CEnthalpyModel(pModel, this, name, _nConstituents);
     pConstitModel=_pEnthalpyModel;
   }
   else if (typ == ISOTOPE) {
-    pConstitModel=new CIsotopeModel(pModel,_pTransModel,name,_nConstituents);
+    pConstitModel = new CIsotopeModel(pModel, this, name, _nConstituents);
   }
   else {
-    pConstitModel=new CConstituentModel(pModel,_pTransModel,name,typ,is_passive,_nConstituents);
+    pConstitModel = new CConstituentModel(pModel, this, name, typ, is_passive, _nConstituents);
   }
   //add to master list of constituents
   if(!DynArrayAppend((void**&)(_pConstitModels),(void*)(pConstitModel),_nConstituents)) {

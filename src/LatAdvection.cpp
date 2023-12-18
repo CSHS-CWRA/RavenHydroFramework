@@ -16,9 +16,10 @@ Advection of soluble contaminant/tracer/nutrient
 /// \param pFlow [in] flow process which drives advection (this acts as a wrapper for said process)
 /// \param pModel [in] Model object
 //
-CmvLatAdvection::CmvLatAdvection(string constit_name,
-                           CTransportModel *pTransportModel)
-  :CLateralExchangeProcessABC(LAT_ADVECTION)
+CmvLatAdvection::CmvLatAdvection(string          constit_name,
+                                 CTransportModel *pTransportModel,
+                                 CModel          *pModel)
+  :CLateralExchangeProcessABC(LAT_ADVECTION, pModel)
 {
   pTransModel=pTransportModel;
   _constit_ind=pTransModel->GetConstituentIndex(constit_name);

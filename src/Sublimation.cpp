@@ -6,6 +6,7 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "SnowMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    Sublimation Constructor/Destructor
@@ -16,8 +17,8 @@
 /// \brief Implementation of the sublimation constructor
 /// \param sub_type [in] Sublimation-modelling technique selected
 //
-CmvSublimation::CmvSublimation(sublimation_type sub_type):
-  CHydroProcessABC(SUBLIMATION)
+CmvSublimation::CmvSublimation(sublimation_type sub_type, CModelABC *pModel)
+  :CHydroProcessABC(SUBLIMATION, pModel)
 {
   type =sub_type;
 
@@ -96,18 +97,19 @@ void CmvSublimation::GetParticipatingStateVarList(sublimation_type sub_type,sv_t
 
 double  SublimationRate  (const double      *state_vars,
                           const CHydroUnit  *pHRU,
-                          const optStruct   &Options,
+                          const CModelABC   *pModel,
                           const time_struct &tt,
                           const double      &wind_vel,
                           sublimation_type   type)
 {
+  const optStruct* Options = pModel->GetOptStruct();
   double Ta      =pHRU->GetForcingFunctions()->temp_ave;
   double rel_hum =pHRU->GetForcingFunctions()->rel_humidity;
 
   //-----------------------------------------------------------------
   if(type==SUBLIM_SVERDRUP)
   {
-    double roughness   = CGlobalParams::GetParams()->snow_roughness;  // [m]
+    double roughness   = pModel->GetGlobalParams()->GetParams()->snow_roughness;  // [m]
     double air_density = pHRU->GetForcingFunctions()->air_dens;       // [kg/m3]
     double air_pres    = pHRU->GetForcingFunctions()->air_pres;       // [kPa]
     double Tsnow       = pHRU->GetSnowTemperature();
@@ -206,7 +208,7 @@ void CmvSublimation::GetRatesOfChange(const double      *state_vars,
 
   double wind_vel=pHRU->GetForcingFunctions()->wind_vel;          // [m/s]
 
-  rates[0]=SublimationRate(state_vars,pHRU,Options,tt,wind_vel,type); //Uses wind vel @ 2m
+  rates[0] = SublimationRate(state_vars, pHRU, pModel, tt, wind_vel, type); //Uses wind vel @ 2m
 
   if(_nConnections==2) {// simulating snow depth
     int iSnowDepth=pModel->GetStateVarIndex(SNOW_DEPTH);

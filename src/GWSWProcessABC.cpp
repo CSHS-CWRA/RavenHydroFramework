@@ -12,8 +12,9 @@ Copyright (c) 2008-2021 the Raven Development Team
 /// \param ptype    [in] process type (enum)
 //
 CGWSWProcessABC::CGWSWProcessABC(CGroundwaterModel *pGWM,
-                                 const process_type ptype)
-  :CHydroProcessABC(ptype)
+                                 const process_type ptype,
+                                 CModelABC *pModel)
+  :CHydroProcessABC(ptype, pModel)
 {
   pGWModel = pGWM;
   _nnodes  = 0;
@@ -30,11 +31,6 @@ CGWSWProcessABC::~CGWSWProcessABC()
   delete [] _inodes;
   delete [] _pProcName;
 }
-
-/*****************************************************************
-Static Members
-*****************************************************************/
-CGroundwaterModel *CGWSWProcessABC::pGWModel=NULL;
 
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes process, generates Node-HRU maps

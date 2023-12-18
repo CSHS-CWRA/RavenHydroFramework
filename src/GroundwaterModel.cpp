@@ -1,13 +1,12 @@
 /*----------------------------------------------------------------
 Raven Library Source Code
-Copyright (c) 2008-2021 the Raven Development Team, Leland Scantlebury
+Copyright (c) 2008-2023 the Raven Development Team, Leland Scantlebury
 ------------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "MFUSGpp.h"
 #include "GroundwaterModel.h"
 #include "GWSWProcesses.h"
 #include "GWRiverConnection.h"
-string FilenamePrepare(string filebase, const optStruct &Options); //Defined in StandardOutput.cpp
 
 // Constructor
 CGroundwaterModel::CGroundwaterModel(CModel *pModel)

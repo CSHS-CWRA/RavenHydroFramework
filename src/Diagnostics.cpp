@@ -70,6 +70,7 @@ string CDiagnostic::GetName() const
   case(DIAG_PERSINDEX):         {return "DIAG_PERSINDEX"; }
   case(DIAG_NSE4):              {return "DIAG_NSE4"; }
   case(DIAG_YEARS_OF_RECORD):   {return "DIAG_YEARS_OF_RECORD";}
+  case(DIAG_SPEARMAN):          {return "DIAG_SPEARMAN";}
   default:                      {return "";}
   }
 }
@@ -329,7 +330,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     double moddaily=0.0;
     double obsdaily=0.0;
     double dailyN  =0.0;
-    double N=0;
+    N=0;
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observation value
     {
@@ -401,7 +402,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     N=0;
     sum=0;
 
-    for (nn=nnstart;nn<nnend;nn++)
+    for (nn=nnstart;nn<nnend-1;nn++)
     {
       weight =baseweight[nn]*baseweight[nn+1];
       obsval = pTSObs->GetSampledValue(nn+1) - pTSObs->GetSampledValue(nn);
@@ -500,7 +501,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   case(DIAG_ABSMAX)://----------------------------------------------------
   {
     double maxerr = -ALMOST_INF;
-    double N=0.0;
+    N=0.0;
 
     for(nn = nnstart; nn<nnend; nn++)
     {
@@ -530,7 +531,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
     double maxObs = 0;
     double maxMod = 0;
-    double N=0;
+    N=0;
 
     for (nn = nnstart; nn<nnend; nn++)
     {
@@ -559,7 +560,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
       double maxObs = 0;
       double maxMod = 0;
-      double N = 0;
+      N = 0;
 
       for (nn = nnstart; nn < nnend; nn++)
       {
@@ -588,7 +589,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
   {
       double maxObs = 0;
       double maxMod = 0;
-      double N = 0;
+      N = 0;
 
       for (nn = nnstart; nn < nnend; nn++)
       {
@@ -732,7 +733,7 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
     // Counting number of sign changes of difference between time series
     double nxtobsval,nxtmodval;
     double nsc = 0;
-    double N=0;
+    N=0;
     for (nn = nnstart; nn < nnend - 1; nn++)
     {
       nxtobsval = pTSObs->GetSampledValue(nn + 1);
@@ -1052,7 +1053,7 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
     double obsstd  (0.0), modstd  (0.0);
     double covar   =0.0;
     double dailyN  =0.0;
-    double N=0;
+    N=0;
 
     for(nn=nnstart+shift;nn<nnend;nn++) //calculate mean observed/simulated value
     {
@@ -1289,6 +1290,54 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
       return -ALMOST_INF;
     }
   }
+  case (DIAG_SPEARMAN)://----------------------------------------
+  {
+    double spearman;
+    double *mvals = new double [nnend-nnstart];
+    double *ovals = new double [nnend-nnstart];
+    int    *rank1 = new int    [nnend-nnstart];
+    int    *rank2 = new int    [nnend-nnstart];
+    N=0;
+    for(nn=nnstart;nn<nnend;nn++)
+    {
+      obsval=pTSObs->GetSampledValue(nn);
+      modval=pTSMod->GetSampledValue(nn);
+
+      if ((obsval!=RAV_BLANK_DATA) && (baseweight[nn]>0.0)){
+        ovals[(int)(N)]=obsval;
+        mvals[(int)(N)]=modval;
+        N++;  
+      }
+    }
+    if(N>1) {
+      getRanks(mvals,(int)(N),rank1);
+      getRanks(ovals,(int)(N),rank2);
+      
+      double cov=0;
+      double mean1=0;
+      double mean2=0;
+      double std1=0;
+      double std2=0;
+      for (int n = 0; n < N; n++) {
+        mean1 += rank1[n]/N;
+        mean2 += rank2[n]/N;
+      }
+      for (int n = 0; n < N; n++) {
+        std1 += (rank1[n]-mean1)*(rank1[n]-mean1)/N;
+        std2 += (rank2[n]-mean2)*(rank2[n]-mean2)/N;
+        cov  += (rank1[n]-mean1)*(rank2[n]-mean2)/N;
+      }
+      spearman = cov / sqrt(std1) / sqrt(std2);
+    } 
+    else 
+    {
+      spearman=0;
+    }
+    delete[] rank1;
+    delete[] rank2;
+    delete[] mvals;
+    delete[] ovals;
+  }
   default:
   {
     return 0.0;
@@ -1377,6 +1426,7 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("PERSINDEX"            )){return DIAG_PERSINDEX;}
   else if (!distring.compare("NSE4"                 )){return DIAG_NSE4;}
   else if (!distring.compare("YEARS_OF_RECORD"      )){return DIAG_YEARS_OF_RECORD; }
+  else if (!distring.compare("SPEARMAN"             )){return DIAG_SPEARMAN; }
   else if (!distring.compare("NASH_SUTCLIFFE_RUN"   )){return DIAG_NASH_SUTCLIFFE_RUN; }
   else                                                {return DIAG_UNRECOGNIZED;}
 }

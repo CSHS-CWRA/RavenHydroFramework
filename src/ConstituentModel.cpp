@@ -12,7 +12,6 @@ coordinates information about constituent storage
 #include "Transport.h"
 #include "EnergyTransport.h"
 
-string FilenamePrepare(string filebase,const optStruct &Options); //Defined in StandardOutput.cpp
 bool IsContinuousConcObs(const CTimeSeriesABC *pObs,const long SBID,const int c); //Defined in StandardOutput.cpp
 void WriteNetCDFGlobalAttributes(const int out_ncid,const optStruct& Options,const string descript);
 int  NetCDFAddMetadata     (const int fileid,const int time_dimid,string shortname,string longname,string units);
@@ -43,6 +42,8 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
   _aMinHist =NULL;
   _aMlatHist=NULL;
   _aMout    =NULL;
+  _nMlatHist=NULL;
+  _nMinHist =NULL;
 
   //Initialize constituent members
   _name=name;
@@ -377,11 +378,11 @@ void   CConstituentModel::SetMoutArray(const int p,const int nsegs,const double 
 //
 void   CConstituentModel::SetMlatHist(const int p,const int histsize,const double *aMlat,const double MlatLast)
 {
-  if(histsize!=_pModel->GetSubBasin(p)->GetLatHistorySize()) {
+  if(histsize!=_nMlatHist[p]) {
     WriteWarning("Size of lateral inflow history in state file and input file are inconsistent. Unable to read in-reach mass lateral flow initial conditions",false);
     return;
   }
-  for(int i=0;i<histsize;i++) { _aMlatHist[p][i]=aMlat[i]; }
+  for(int i=0;i<_nMlatHist[p];i++) { _aMlatHist[p][i]=aMlat[i]; }
   _aMlat_last[p]=MlatLast;
 }
 //////////////////////////////////////////////////////////////////
@@ -392,11 +393,11 @@ void   CConstituentModel::SetMlatHist(const int p,const int histsize,const doubl
 //
 void   CConstituentModel::SetMinHist(const int p,const int histsize,const double *aMin)
 {
-  if(histsize!=_pModel->GetSubBasin(p)->GetLatHistorySize()) {
+  if(histsize!=_nMinHist[p]) {
     WriteWarning("Size of mass inflow history in state file and input file are inconsistent. Unable to read in-reach mass inflow initial conditions",false);
     return;
   }
-  for(int i=0;i<histsize;i++) { _aMinHist[p][i]=aMin[i]; }
+  for(int i=0;i<_nMinHist[p];i++) { _aMinHist[p][i]=aMin[i]; }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Set reservoir initial mass conditions
@@ -676,8 +677,10 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
   {
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      _OUTPUT<<","<<
-        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)))<<" "<<mgL;
+      _OUTPUT << "," <<
+        CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),
+                                            _pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)),
+                                            _pModel->GetTransportModel()) << " " << mgL;
     }
   }
 
@@ -752,7 +755,7 @@ void CConstituentModel::WriteOutputFileHeaders(const optStruct &Options)
         if(name=="") { name="ID="+to_string(pBasin->GetID()); }
 
          _LOADING<<","   <<name<<" "<<units;
-            /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
+         /*for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
           if(IsContinuousLoadingObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
           {
             _LOADING <<","   <<name<<" (observed) "<<units;
@@ -828,7 +831,9 @@ void CConstituentModel::WriteEnsimOutputFileHeaders(const optStruct &Options)
   _OUTPUT<<"  :ColumnName influx \"Channel storage\" \"Rivulet storage\"";
   for(i=0;i<_pModel->GetNumStateVars();i++) {
     if((CStateVariable::IsWaterStorage(_pModel->GetStateVarType(i))) && (i!=iCumPrecip)) {
-      _OUTPUT<<" \""<<CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),_pModel->GetStateVarLayer(i))<<"\"";
+      _OUTPUT << " \"" << CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(i),
+                                                              _pModel->GetStateVarLayer(i),
+                                                              _pModel->GetTransportModel()) << "\"";
     }
   }
   _OUTPUT<<" \"Total Mass\" \"Cum. Loading\" \"Cum. Mass lost\" \"MB error\""<<endl;
@@ -1014,8 +1019,8 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   {
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      string sname=CStateVariable::SVTypeToString    (_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
-      string name=CStateVariable::GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string sname=_pModel->GetStateVarInfo()->SVTypeToString    (_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string name =_pModel->GetStateVarInfo()->GetStateVarLongName(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetTransportModel());
       varid= NetCDFAddMetadata(_CONC_ncid,time_dimid,sname,name,mgL);
     }
   }
@@ -1222,15 +1227,15 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qf;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qf);
-      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr; Q_fric+=Qf;
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf);
+      Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw; Q_fric+=Qf;
     }
   }
   double channel_stor=GetTotalChannelConstituentStorage();//[mg] or [MJ]
@@ -1523,7 +1528,7 @@ void CConstituentModel::WriteNetCDFMinorOutput(const optStruct& Options,const ti
 
     if(_pTransModel->GetStorWaterIndex(ii)!=iCumPrecip)
     {
-      string name=CStateVariable::SVTypeToString(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
+      string name=_pModel->GetStateVarInfo()->SVTypeToString(_pModel->GetStateVarType(_pTransModel->GetStorWaterIndex(ii)),_pModel->GetStateVarLayer(_pTransModel->GetStorWaterIndex(ii)));
       AddSingleValueToNetCDF(_CONC_ncid, name.c_str(),time_ind2,concentration);
       currentMass+=M*(area*M2_PER_KM2); //[mg]  or [MJ]  //increment total mass in system
     }
@@ -1659,13 +1664,11 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
   {
     RVC<<"  :BasinIndex "<<_pModel->GetSubBasin(p)->GetID()<<endl;
     int nSegs    =_pModel->GetSubBasin(p)->GetNumSegments();
-    int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();
-    int nMinHist =_pModel->GetSubBasin(p)->GetInflowHistorySize();
     RVC<<"    :ChannelMass, "<<_channel_storage[p]<<endl;
     RVC<<"    :RivuletMass, "<<_rivulet_storage[p]<<endl;
     RVC<<"    :Mout,"<<nSegs;    for(int i=0;i<nSegs;    i++) { RVC<<","<<_aMout    [p][i]; }RVC<<","<<_aMout_last[p]<<endl;
-    RVC<<"    :Mlat,"<<nMlatHist;for(int i=0;i<nMlatHist;i++) { RVC<<","<<_aMlatHist[p][i]; }RVC<<","<<_aMlat_last[p]<<endl;
-    RVC<<"    :Min ,"<<nMinHist; for(int i=0;i<nMinHist; i++) { RVC<<","<<_aMinHist [p][i]; }RVC<<endl;
+    RVC<<"    :Mlat,"<<_nMlatHist[p];for(int i=0;i<_nMlatHist[p];i++) { RVC<<","<<_aMlatHist[p][i]; }RVC<<","<<_aMlat_last[p]<<endl;
+    RVC<<"    :Min ,"<<_nMinHist[p]; for(int i=0;i<_nMinHist[p]; i++) { RVC<<","<<_aMinHist [p][i]; }RVC<<endl;
     if(_pModel->GetSubBasin(p)->GetReservoir()!=NULL) {
       RVC<<"    :ResMassOut, "<<_aMout_res[p]<<","<<_aMout_res_last[p]<<endl;
       RVC<<"    :ResMass, "   <<_aMres    [p]<<","<<_aMres_last    [p]<<endl;

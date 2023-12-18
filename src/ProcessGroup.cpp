@@ -3,11 +3,13 @@
   Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "ProcessGroup.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the constructor for an abstract group of hydrological processes
 //
-CProcessGroup::CProcessGroup(string name) :CHydroProcessABC(PROCESS_GROUP)
+CProcessGroup::CProcessGroup(string name, CModelABC *pModel)
+  :CHydroProcessABC(PROCESS_GROUP, pModel)
 {
   _pSubProcesses=NULL;
   _nSubProcesses=0;

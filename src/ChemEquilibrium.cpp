@@ -24,8 +24,9 @@ CmvChemEquil::CmvChemEquil(string           constit_name1,
                            chem_equil_type  etyp,
                            int              proc_ind,
                            int              iWatStor,
-                           CTransportModel* pTransportModel)
-  :CHydroProcessABC(DECAY)
+                           CTransportModel  *pTransportModel,
+                           CModelABC        *pModel)
+  :CHydroProcessABC(DECAY, pModel)
 {
   _eq_type     =etyp;
   _pTransModel =pTransportModel;
@@ -39,10 +40,10 @@ CmvChemEquil::CmvChemEquil(string           constit_name1,
   ExitGracefullyIf(_constit_ind2==DOESNT_EXIST,
     "CmvChemEquil constructor: invalid constituent name in :Equilibrium command",BAD_DATA_WARN);
 
-  int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+  int nWaterCompartments;
   int m,m2,iWat;
   if(_iWaterStore==DOESNT_EXIST) { //occurs everywhere
-    int nWaterCompartments = _pTransModel->GetNumWaterCompartments();
+    nWaterCompartments = _pTransModel->GetNumWaterCompartments();
     CHydroProcessABC::DynamicSpecifyConnections(2*nWaterCompartments);
 
     //transformation occurs in all water storage compartments

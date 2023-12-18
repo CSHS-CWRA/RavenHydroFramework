@@ -4,6 +4,7 @@
   ----------------------------------------------------------------*/
 #include "Properties.h"
 #include "SoilAndLandClasses.h"
+#include "Model.h"
 /*****************************************************************
    Constructor / Destructor
 *****************************************************************/
@@ -11,12 +12,12 @@
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the LandUseClass constructor
 /// \param name [in] String nickname for land use class
+/// \param pModel [in] Pointer to model object containing land use class
 //
-CLandUseClass::CLandUseClass(const string name)
+CLandUseClass::CLandUseClass(const string name, CModel* pModel)
 {
-  this->S.landuse_name=name;
-  if (!DynArrayAppend((void**&)(pAllLUClasses),(void*)(this),NumLUClasses)){
-    ExitGracefully("CLandUseClass::Constructor: creating NULL land use class",BAD_DATA);};
+  this->S.landuse_name = name;
+  pModel->AddLandUseClass(this);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -39,75 +40,6 @@ const surface_struct *CLandUseClass::GetSurfaceStruct() const{return &S;}
 //
 string                CLandUseClass::GetLanduseName  () const{return S.landuse_name;}
 
-/*****************************************************************
-   Static Initialization, Accessors, Destructors
-*****************************************************************/
-CLandUseClass **CLandUseClass::pAllLUClasses=NULL;
-int             CLandUseClass::NumLUClasses=0;
-
-//////////////////////////////////////////////////////////////////
-/// \brief Return number of land use classes
-/// \return Number of land use classes
-//
-int CLandUseClass::GetNumClasses(){
-  return NumLUClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Summarize LU class information to screen
-//
-void CLandUseClass::SummarizeToScreen()
-{
-  cout<<"==================="<<endl;
-  cout<<"Land Use Class Summary:"<<NumLUClasses<<" LU/LT classes in database"<<endl;
-  for (int c=0; c<NumLUClasses;c++){
-    cout<<"-LULT. class \""<<pAllLUClasses[c]->GetLanduseName()<<"\" "<<endl;
-    cout<<"    impermeable: "<<pAllLUClasses[c]->GetSurfaceStruct()->impermeable_frac*100<<" %"<<endl;
-    cout<<"       forested: "<<pAllLUClasses[c]->GetSurfaceStruct()->forest_coverage*100<<" %"<<endl;
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Destroy all LU classes
-//
-void CLandUseClass::DestroyAllLUClasses()
-{
-  if (DESTRUCTOR_DEBUG){cout <<"DESTROYING ALL LULT CLASSES"<<endl;}
-  for (int c=0; c<NumLUClasses;c++){
-    delete pAllLUClasses[c];
-  }
-  delete [] pAllLUClasses;
-}
-
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the LU class corresponding to passed string
-/// \details Converts string (e.g., "AGRICULTURAL" in HRU file) to LU class
-///  can accept either lultclass index or lultclass tag
-///  if string is invalid, returns NULL
-/// \param s [in] LU class identifier (tag or index)
-/// \return Pointer to LU class corresponding to identifier string s
-//
-CLandUseClass *CLandUseClass::StringToLUClass(const string s)
-{
-  string sup=StringToUppercase(s);
-  for (int c=0;c<NumLUClasses;c++)
-  {
-    if (!sup.compare(StringToUppercase(pAllLUClasses[c]->GetLanduseName()))){return pAllLUClasses[c];}
-    else if (s_to_i(s.c_str())==(c+1))                                      {return pAllLUClasses[c];}
-  }
-  return NULL;
-}
-//////////////////////////////////////////////////////////////////
-/// \brief Returns the land use  class corresponding to the passed index
-///  if index is invalid, returns NULL
-/// \param c [in] Soil class index
-/// \return Reference to land use class corresponding to index c
-//
-const CLandUseClass *CLandUseClass::GetLUClass(int c)
-{
-  if ((c<0) || (c>=NumLUClasses)){return NULL;}
-  return pAllLUClasses[c];
-}
 //////////////////////////////////////////////////////////////////
 /// \brief Automatically calculates surface propeties
 /// \details  Sets surface properties based upon simple lu/lt parameters
@@ -118,8 +50,8 @@ const CLandUseClass *CLandUseClass::GetLUClass(int c)
 /// \param &Stmp [in] Input LU parameters (read from .rvp file)
 /// \param &Sdefault [in] Default LU parameters
 //
-void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
-                                              const surface_struct &Sdefault)
+void CLandUseClass::AutoCalculateLandUseProps(surface_struct &Stmp,
+                                              surface_struct &Sdefault)
 //const surface_struct &needed_params
 {
   bool autocalc;
@@ -127,8 +59,8 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   bool chatty=true;
 
   //these parameters are required
-  S.landuse_name    =Stmp.landuse_name;
-  S.impermeable_frac=Stmp.impermeable_frac;
+  S.landuse_name     = Stmp.landuse_name;
+  S.impermeable_frac = Stmp.impermeable_frac;
   ExitGracefullyIf(S.impermeable_frac<0.0 || S.impermeable_frac>1.0,"Invalid parameter value for IMPERMEABLE_FRAC: must be between 0 and 1",BAD_DATA_WARN);
 
   //Forest coverage
@@ -316,6 +248,15 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
     warn="The required parameter STREAM_FRACTION for land use class "+S.landuse_name+" was autogenerated with value 0.0";
     if(chatty) { WriteAdvisory(warn,false); }
   }
+  autocalc = SetCalculableValue(S.relhum_corr,Stmp.relhum_corr,Sdefault.relhum_corr);
+  if(autocalc) {
+    S.relhum_corr = 1.0;
+  }
+  autocalc = SetCalculableValue(S.wind_vel_corr,Stmp.wind_vel_corr,Sdefault.wind_vel_corr);
+  if(autocalc) {
+    S.wind_vel_corr = 1.0;
+  }
+
   /*for(i=0;i<N_LU_PARAMETERS;i++) {
   if (!S.params[i].iscomputable){
     SetSpecifiedValue(S.params[i].value,Stmp.params[i].value,Sdefault.params[i].value,params[i].name);//(needed_params.partition_coeff>0.0)
@@ -370,13 +311,24 @@ void CLandUseClass::AutoCalculateLandUseProps(const surface_struct &Stmp,
   SetSpecifiedValue(S.lakesnow_buffer_ht,Stmp.lakesnow_buffer_ht,Sdefault.lakesnow_buffer_ht,needed,"LAKESNOW_BUFFER_HT");
   SetSpecifiedValue(S.convection_coeff,Stmp.convection_coeff,Sdefault.convection_coeff,needed,"CONVECTION_COEFF");
   SetSpecifiedValue(S.pet_lin_coeff,Stmp.pet_lin_coeff,Sdefault.pet_lin_coeff,needed,"PET_LIN_COEFF");
+  SetSpecifiedValue(S.pet_vap_coeff,Stmp.pet_vap_coeff,Sdefault.pet_vap_coeff,needed,"PET_VAP_COEFF");
 }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets default Surface properties
 /// \details Initializes all surface properties to DEFAULT_VALUE
 ///  if is_template==true, initializes instead to NOT_SPECIFIED or AUTO_CALCULATE
-/// \param &S [out] Surface properties class
+/// \param is_template [in] True if the default value being set is for the template class
+//
+void CLandUseClass::InitializeSurfaceProperties(string name, bool is_template)
+{
+  CLandUseClass::InitializeSurfaceProperties(name, this->S, is_template);
+}
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets default Surface properties
+/// \details Initializes all surface properties to DEFAULT_VALUE
+///  if is_template==true, initializes instead to NOT_SPECIFIED or AUTO_CALCULATE
 /// \param is_template [in] True if the default value being set is for the template class
 //
 void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, bool is_template)
@@ -419,6 +371,8 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.min_wind_speed   =DefaultParameterValue(is_template,true);//~1 m/s
   S.max_wind_speed   =DefaultParameterValue(is_template,true);//~8 m/s
   S.stream_fraction  =DefaultParameterValue(is_template,true);//0
+  S.relhum_corr      =DefaultParameterValue(is_template,true);//1.0
+  S.wind_vel_corr    =DefaultParameterValue(is_template,true);//1.0
 
   //User-specified parameters
   S.partition_coeff   =DefaultParameterValue(is_template,false);//0.4;//needs reasonable defaults
@@ -466,6 +420,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
   S.lakesnow_buffer_ht=DefaultParameterValue(is_template,false);//50 mm
   S.convection_coeff  =DefaultParameterValue(is_template,false);//~2
   S.pet_lin_coeff     =DefaultParameterValue(is_template,false);//~0.1-0.3
+  S.pet_vap_coeff     =DefaultParameterValue(is_template,false);//~1-3
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -476,7 +431,7 @@ void CLandUseClass::InitializeSurfaceProperties(string name, surface_struct &S, 
 void  CLandUseClass::SetSurfaceProperty(const string &param_name,
                                         const double &value)
 {
-  SetSurfaceProperty(S,param_name,value);
+  SetSurfaceProperty(S, param_name, value);
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets the value of the surface property corresponding to param_name
@@ -485,7 +440,7 @@ void  CLandUseClass::SetSurfaceProperty(const string &param_name,
 /// \param value [in] Value of parameter to be set
 //
 void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
-                                        const string    param_name,
+                                        const string param_name,
                                         const double value)
 {
   string name;
@@ -550,6 +505,9 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
   else if (!name.compare("FOREST_PET_CORR"        )){S.forest_PET_corr=value;}
   else if (!name.compare("PRIESTLEYTAYLOR_COEFF"  )){S.priestleytaylor_coeff=value;}
   else if (!name.compare("PET_LIN_COEFF"          )){S.pet_lin_coeff=value;}
+  else if (!name.compare("PET_VAP_COEFF"          )){S.pet_vap_coeff=value;}
+  else if (!name.compare("RELHUM_CORR"            )){S.relhum_corr=value;}
+  else if (!name.compare("WIND_VEL_CORR"          )){S.wind_vel_corr=value;}
   else if (!name.compare("GR4J_X4"                )){S.GR4J_x4=value;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){S.UBC_icept_factor=value;}
   else if (!name.compare("WIND_EXPOSURE"          )){S.wind_exposure=value;}
@@ -579,7 +537,7 @@ void  CLandUseClass::SetSurfaceProperty(surface_struct &S,
 //
 double CLandUseClass::GetSurfaceProperty(string param_name) const
 {
-  return GetSurfaceProperty(S,param_name);
+  return this->GetSurfaceProperty(S, param_name);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -652,6 +610,9 @@ double CLandUseClass::GetSurfaceProperty(const surface_struct &S, string param_n
   else if (!name.compare("FOREST_PET_CORR"        )){return S.forest_PET_corr;}
   else if (!name.compare("PRIESTLEYTAYLOR_COEFF"  )){return S.priestleytaylor_coeff;}
   else if (!name.compare("PET_LIN_COEFF"          )){return S.pet_lin_coeff;}
+  else if (!name.compare("PET_VAP_COEFF"          )){return S.pet_vap_coeff;}
+  else if (!name.compare("RELHUM_CORR"            )){return S.relhum_corr;}
+  else if (!name.compare("WIND_VEL_CORR"          )){return S.wind_vel_corr;}
   else if (!name.compare("GR4J_X4"                )){return S.GR4J_x4;}
   else if (!name.compare("UBC_ICEPT_FACTOR"       )){return S.UBC_icept_factor;}
   else if (!name.compare("WIND_EXPOSURE"          )){return S.wind_exposure;}

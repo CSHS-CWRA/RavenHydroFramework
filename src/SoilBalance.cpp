@@ -7,6 +7,7 @@
 
 #include "HydroProcessABC.h"
 #include "SoilWaterMovers.h"
+#include "Model.h"
 
 /*****************************************************************
    SoilBalance Constructor/Destructor
@@ -19,8 +20,9 @@
 /// \param In_index [in] Soil storage unit index from which water is lost
 /// \param Out_index [in] Soil storage unit index to which water rises
 //
-CmvSoilBalance::CmvSoilBalance(soilbal_type   sb_type)
-               :CHydroProcessABC(SOIL_BALANCE)
+CmvSoilBalance::CmvSoilBalance(soilbal_type sb_type,
+                               CModelABC    *pModel)
+  :CHydroProcessABC(SOIL_BALANCE, pModel)
 {
   _type =sb_type;
 
@@ -183,7 +185,6 @@ void   CmvSoilBalance::GetRatesOfChange(const double      *state_vars,
     if (ponded<0){ponded=0;} //TMP DEBUG - should not be required.
 
     //- compute impervious area runoff  ---------------------------------------
-    double runoff_imperv = ponded * Aimp;
     rates[0]=ponded * Aimp/Options.timestep; //PONDED_WATER->SURFACE_WATER
     if (Aimp==1.0){return;}
 

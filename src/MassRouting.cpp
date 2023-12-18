@@ -14,6 +14,8 @@ routing of mass/energy in catchment and channel
 void CConstituentModel::InitializeRoutingVars()
 {
   int nSB=_pModel->GetNumSubBasins();
+  _nMinHist       =new int     [nSB];
+  _nMlatHist      =new int     [nSB];
   _aMinHist       =new double *[nSB];
   _aMlatHist      =new double *[nSB];
   _aMout          =new double *[nSB];
@@ -31,18 +33,18 @@ void CConstituentModel::InitializeRoutingVars()
 
   for(int p=0;p<nSB;p++)
   {
-    int nMinHist =_pModel->GetSubBasin(p)->GetInflowHistorySize();
-    int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();
     int nSegments=_pModel->GetSubBasin(p)->GetNumSegments();
 
     _aMout[p]=NULL;
-    _aMinHist [p]=new double[nMinHist];
-    _aMlatHist[p]=new double[nMlatHist];
+    _nMlatHist[p]=_pModel->GetSubBasin(p)->GetLatHistorySize();
+    _nMinHist [p]=_pModel->GetSubBasin(p)->GetInflowHistorySize(); //TMP DEBUG - to change
+    _aMinHist [p]=new double[_nMinHist[p]];
+    _aMlatHist[p]=new double[_nMlatHist[p]];
     _aMout    [p]=new double[nSegments];
     ExitGracefullyIf(_aMout[p]==NULL,"CConstituentModel::InitializeRoutingVars(2)",OUT_OF_MEMORY);
-    for(int i=0; i<nMinHist; i++) { _aMinHist [p][i]=0.0; }
-    for(int i=0; i<nMlatHist;i++) { _aMlatHist[p][i]=0.0; }
-    for(int i=0; i<nSegments;i++) { _aMout    [p][i]=0.0; }
+    for(int i=0; i<_nMinHist[p]; i++) { _aMinHist [p][i]=0.0; }
+    for(int i=0; i<_nMlatHist[p];i++) { _aMlatHist[p][i]=0.0; }
+    for(int i=0; i<nSegments;    i++) { _aMout    [p][i]=0.0; }
     _aMout_last     [p]=0.0;
     _aMres          [p]=0.0;
     _aMres_last     [p]=0.0;
@@ -84,6 +86,8 @@ void CConstituentModel::DeleteRoutingVars()
     delete[] _channel_storage; _channel_storage=NULL;
     delete[] _rivulet_storage; _rivulet_storage=NULL;
     delete[] _aMout_last;      _aMout_last     =NULL;
+    delete[] _nMlatHist;       _nMlatHist=NULL;
+    delete[] _nMinHist;        _nMinHist=NULL;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -94,8 +98,7 @@ void CConstituentModel::DeleteRoutingVars()
 //
 void   CConstituentModel::SetMassInflows(const int p,const double Minnew)
 {
-  int nMinHist=_pModel->GetSubBasin(p)->GetInflowHistorySize();
-  for(int n=nMinHist-1;n>0;n--) {
+  for(int n=_nMinHist[p]-1;n>0;n--) {
     _aMinHist[p][n]=_aMinHist[p][n-1];
   }
   _aMinHist[p][0]=Minnew;
@@ -197,8 +200,7 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
 //
 void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 {
-  int nMlatHist=_pModel->GetSubBasin(p)->GetLatHistorySize();
-  for(int n=nMlatHist-1;n>0;n--) {
+  for(int n=_nMlatHist[p]-1;n>0;n--) {
     _aMlatHist[p][n]=_aMlatHist[p][n-1];
   }
   _aMlatHist[p][0]=Mlat;
@@ -230,8 +232,6 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
   const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
 
-  int nMlatHist   =_pModel->GetSubBasin(p)->GetLatHistorySize();
-  int nMinHist    =_pModel->GetSubBasin(p)->GetInflowHistorySize();
   int nSegments   =_pModel->GetSubBasin(p)->GetNumSegments();
   double seg_fraction=1.0/(double)(nSegments);
 
@@ -241,7 +241,7 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   // route from catchment
   //==============================================================
   Mlat_new=0.0;
-  for(n=0;n<nMlatHist;n++) {
+  for(n=0;n<_nMlatHist[p];n++) {
     Mlat_new+=_aMlatHist[p][n]*aUnitHydro[n];
   }
 
@@ -251,17 +251,13 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   if((Options.routing==ROUTE_PLUG_FLOW) || (Options.routing==ROUTE_DIFFUSIVE_WAVE))
   {
     // (sometimes fancy) convolution
-    ApplyConvolutionRouting(p,aRouteHydro,aQinHist,_aMinHist[p],nSegments,nMinHist,Options.timestep,aMout_new);
+    ApplyConvolutionRouting(p,aRouteHydro,aQinHist,_aMinHist[p],nSegments,_nMinHist[p],Options.timestep,aMout_new);
   }
   //==============================================================
   else if(Options.routing==ROUTE_NONE)
   {//In channel routing instantaneous
     aMout_new[nSegments-1]=_aMinHist[p][0];//spits out the mass that just entered
   }
-  //==============================================================
-  /*else if(Options.routing==ROUTE_HYDROLOGIC){
-    ExitGracefully("Transport with ROUTE_HYDROLOGIC",STUB);
-  }*/
   //==============================================================
   else {
     ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
@@ -398,7 +394,7 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
   double dM=0.0;
   double Mlat_new(0.0);
   const double *pUH=pBasin->GetUnitHydrograph();
-  for(int n=0;n<pBasin->GetLatHistorySize();n++) {
+  for(int n=0;n<_nMlatHist[p];n++) {
     Mlat_new+=pUH[n]*_aMlatHist[p][n];
   }
 

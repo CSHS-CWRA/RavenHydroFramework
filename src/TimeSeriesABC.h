@@ -22,6 +22,7 @@ private:/*------------------------------------------------------*/
   long      _loc_ID;      ///< location ID (stores additional info, like HRU or SB ID for observation data)
   int       _constit_ind; ///< constituent index, if a concentration/temperature observation
   string    _srcfile;     ///< original source file
+  int       _ID_tag;      ///< integer ID tag for (e.g.,) demand ID 
 
   CTimeSeriesABC(const CTimeSeriesABC &t); //suppresses default copy constructor
 
@@ -47,9 +48,11 @@ public:/*-------------------------------------------------------*/
   long    GetLocID     () const;
   int     GetConstitInd() const;
   string  GetSourceFile() const;
+  int     GetIDTag     () const;
 
   void    SetLocID     (long ID);
   void    SetConstitInd(const int c);
+  void    SetIDTag     (int IDtag);
 
   virtual double GetInterval() const=0;
   virtual double GetTime      (const int n) const=0;

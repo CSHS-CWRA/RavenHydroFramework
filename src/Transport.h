@@ -107,25 +107,23 @@ private:/*------------------------------------------------------*/
 
   string GetConstituentLongName_loc(const int layerindex) const; //e.g., "Nitrogen in Soil Water[2]"
 
-  static CTransportModel *_pTransModel;    ///< pointer to self (needed for access to transport model through static functions)
 
 public:/*-------------------------------------------------------*/
   CTransportModel(CModel *pMod);
   ~CTransportModel();
 
   //Accessors
-  static int    GetLayerIndexFromName(const string name,const int comp_m);
   int          GetLayerIndexFromName2(const string name,const int comp_m) const;     //non-static version
 
-  static string GetConstituentTypeName(const int layerindex);//e.g., "Nitrogen" (m=layer index)
-  static string GetConstituentTypeName2(const int c);         //e.g., "Nitrogen" (c=constituent index)
-  static string GetConstituentLongName(const int layerindex);//e.g., "Nitrogen in Soil Water[2]"
+  string GetConstituentTypeName(const int layerindex);//e.g., "Nitrogen" (m=layer index)
+  string GetConstituentTypeName2(const int c) const;         //e.g., "Nitrogen" (c=constituent index)
+  string GetConstituentLongName(const int layerindex) const;//e.g., "Nitrogen in Soil Water[2]"
   string GetConstituentShortName(const int layerindex) const; //e.g., "!Nitrogen_SOIL[2]"
 
   int    GetNumConstituents() const;
   int    GetConstituentIndex(const string name) const;
 
-  CConstituentModel *GetConstituentModel(const int c);
+  CConstituentModel *GetConstituentModel(const int c)  const;
   CConstituentModel *GetConstituentModel2(const int c) const;
 
   int    GetNumWaterCompartments() const;
@@ -200,8 +198,10 @@ protected:
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
   // Routing/state var storage
-  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x nMinhist(p)]
-  double              **_aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x nMlathist(p)]
+  int                   *_nMinHist;  ///< size of upstream loading history in each basin [size: nSubBasins]
+  double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x _nMinHist[p]]
+  int                  *_nMlatHist;  ///< size of lateral loading history in each basin [size: nSubBasins]
+  double             ** _aMlatHist;  ///< array used for storing routing lateral loading history [mg/d] or [MJ/d] [size: nSubBasins  x _nMlatHist[p]]
   double                  **_aMout;  ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
   double              *_aMout_last;  ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ]
   double              *_aMlat_last;  ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]

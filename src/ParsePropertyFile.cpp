@@ -26,12 +26,14 @@ double AutoOrDoubleOrAlias(const string s, val_alias **aAl,const int nAl)
 bool ParsePropArray(CParser *p,int *indices,double **properties,
                     int &num_read,string *tags,const int line_length,const int max_classes,
                     val_alias **pAliases,  const int nAliases);
-void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, const optStruct &Options);
+void  RVPParameterWarning   (string *aP, class_type *aPC, int &nP, CModel* pModel);
 void  CreateRVPTemplate     (string *aP, class_type *aPC, int &nP, const optStruct &Options);
 void  ImproperFormatWarning(string command,CParser *p,bool noisy);
 void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int       &nPm,
                               const string  *aP , const class_type *aPC , const int &nP);
-void  AddNewSoilClass       (CSoilClass **&pSoilClasses,soil_struct **&parsed_soils,string *&soiltags,int &num_parsed_soils,int nConstits,const string name, bool isdefault);
+void  AddNewSoilClass       (CSoilClass **&pSoilClasses, soil_struct **&parsed_soils,
+                             string *&soiltags, int &num_parsed_soils, int nConstits,
+                             const string name, bool isdefault, CModel *pModel);
 
 //////////////////////////////////////////////////////////////////
 /// \brief This method parses the class properties .rvp file
@@ -57,9 +59,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   veg_struct        parsed_veg [MAX_VEG_CLASSES];
   string            vegtags    [MAX_VEG_CLASSES];
 
-  int               num_parsed_lult=0;
-  CLandUseClass    *pLUClasses  [MAX_LULT_CLASSES];
+  int               num_parsed_lult = 0;  // counter for the number of LULT classes parsed
   surface_struct    parsed_surf [MAX_LULT_CLASSES];
+  CLandUseClass    *pLUClasses  [MAX_LULT_CLASSES];
   string            lulttags    [MAX_LULT_CLASSES];
 
   int               num_parsed_soils=0;
@@ -90,16 +92,16 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   val_alias       **aAliases=NULL;
   int               nAliases=0;
 
-  CGlobalParams::InitializeGlobalParameters(global_template,true);
-  CGlobalParams::InitializeGlobalParameters(parsed_globals,false);
+  pModel->GetGlobalParams()->InitializeGlobalParameters(global_template,true);
+  pModel->GetGlobalParams()->InitializeGlobalParameters(parsed_globals,false);
 
   CVegetationClass::InitializeVegetationProps ("[DEFAULT]",parsed_veg[0],true);//zero-index canopy is template
   vegtags    [0]="[DEFAULT]";
   num_parsed_veg++;
 
-  AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,pModel->GetTransportModel()->GetNumConstituents(),"[DEFAULT]",true);//zero-index soil is template
+  AddNewSoilClass(pSoilClasses, parsed_soils, soiltags, num_parsed_soils, pModel->GetTransportModel()->GetNumConstituents(), "[DEFAULT]", true, pModel);//zero-index soil is template
 
-  CLandUseClass::InitializeSurfaceProperties("[DEFAULT]",parsed_surf[0],true);//zero-index LULT is template
+  CLandUseClass::InitializeSurfaceProperties("[DEFAULT]", parsed_surf[0], true); // zero-index LULT is template
   lulttags    [0]="[DEFAULT]";
   num_parsed_lult++;
 
@@ -194,10 +196,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     else if (aPCmaster[p]==CLASS_LANDUSE   )
     {
-      val=CLandUseClass::GetSurfaceProperty(parsed_surf[0],aPmaster[p]);
-      if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
-      else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
-      CLandUseClass::SetSurfaceProperty   (parsed_surf [0],aPmaster[p],val);
+      val = CLandUseClass::GetSurfaceProperty(parsed_surf[0], aPmaster[p]);
+      if (val == NOT_NEEDED_AUTO){val = AUTO_COMPUTE;}
+      else if (val == NOT_NEEDED){val = NOT_SPECIFIED;}
+      CLandUseClass::SetSurfaceProperty(parsed_surf[0], aPmaster[p], val);
     }
     else if (aPCmaster[p]==CLASS_TERRAIN   )
     {
@@ -208,10 +210,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     }
     else if (aPCmaster[p]==CLASS_GLOBAL    )
     {
-      val=CGlobalParams::GetGlobalProperty(global_template,aPmaster[p]);
+      val = pModel->GetGlobalParams()->GetGlobalProperty(global_template,aPmaster[p]);
       if (val==NOT_NEEDED_AUTO){val=AUTO_COMPUTE;}
       else if (val==NOT_NEEDED){val=NOT_SPECIFIED;}
-      CGlobalParams::SetGlobalProperty    (global_template,aPmaster[p],val);
+      pModel->GetGlobalParams()->SetGlobalProperty    (global_template,aPmaster[p],val);
     }
   }
 
@@ -335,7 +337,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
     switch(code)
     {
-    case(-1):  //----------------------------------------------
+    case(-1):  //------------------pLUClasses----------------------------
     {/*Blank Line*/
       if (Options.noisy) {cout <<""<<endl;}break;
     }
@@ -408,7 +410,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         else if (!strcmp(s[0],":Units")){} //units are explicit within Raven - useful for GUIs
         else if (Len >= 1)
         {
-          AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,pModel->GetTransportModel()->GetNumConstituents(),s[0],false);
+          AddNewSoilClass(pSoilClasses,parsed_soils,soiltags,num_parsed_soils,pModel->GetTransportModel()->GetNumConstituents(),s[0],false,pModel);
 
           //default - common for conceptual models
           parsed_soils[num_parsed_soils-1]->sand_con = 0.4111111; //special code for autogeneration of soil params
@@ -450,7 +452,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_profiles>=MAX_SOIL_PROFILES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of soil profiles",BAD_DATA);}
 
-          pProfiles[num_parsed_profiles]=new CSoilProfile(s[0]);
+          pProfiles[num_parsed_profiles] = new CSoilProfile(s[0], pModel);
 
           int nhoriz=s_to_i(s[1]);
           ExitGracefullyIf(nhoriz<0,
@@ -469,8 +471,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           {
             const CSoilClass *pHorizon;
             double thisthick;
-            thisthick=s_to_d(s[2*m+2+1]);
-            pHorizon =CSoilClass::StringToSoilClass(string(s[2*m+2]));
+            thisthick = s_to_d(s[2*m+2+1]);
+            pHorizon = pModel->StringToSoilClass(string(s[2*m+2]));
             if(pHorizon==NULL){
               string warning="ParseClassPropertiesFile: bad soiltype code '"+string(s[2*m+2])+"' in soil profile";
               ExitGracefully(warning.c_str(),BAD_DATA);
@@ -550,12 +552,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_lult>=MAX_LULT_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of LU/LT classes",BAD_DATA);}
 
-          CLandUseClass::InitializeSurfaceProperties(s[0],parsed_surf[num_parsed_lult],false);
-          pLUClasses [num_parsed_lult-1]=new CLandUseClass(s[0]);
-          lulttags   [num_parsed_lult]=s[0];
-          parsed_surf[num_parsed_lult].impermeable_frac=s_to_d(s[1]);
+          CLandUseClass::InitializeSurfaceProperties(s[0], parsed_surf[num_parsed_lult], false);
+          lulttags  [num_parsed_lult]   = s[0];
+          pLUClasses[num_parsed_lult-1] = new CLandUseClass(s[0], pModel);
+          parsed_surf[num_parsed_lult].impermeable_frac = s_to_d(s[1]);
           if (Len>=3){
-            parsed_surf[num_parsed_lult].forest_coverage=s_to_d(s[2]);
+            parsed_surf[num_parsed_lult].forest_coverage = s_to_d(s[2]);
           }
           num_parsed_lult++;
         }
@@ -566,6 +568,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
         p->Tokenize(s,Len);
         if (!strcmp(s[0],":EndLandUseClasses")){done=true;}
       }
+
       break;
     }
     case(101)://----------------------------------------------
@@ -575,6 +578,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        {string lult_tag, double param_1, param_2, ... ,param_3}x<=NumLULTClasses
        :LandUseParameterList*/
       if (Options.noisy) {cout <<"Land Use / Land Type Parameter List"<<endl;}
+
+      // read line by line of the parameters list
       done=false;
       while (!done)
       {
@@ -601,10 +606,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (Options.noisy){
         for (int j=0;j<nParamStrings-1;j++){cout<<"  "<<aParamStrings[j+1]<<endl;}
       }
-      for (int i=0;i<num_read;i++)
+
+      // once all lines are read, assign the values to the land use classes
+      for (int i=0; i<num_read; i++)
       {
-        for (int j=0;j<nParamStrings-1;j++){
-          CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],aParamStrings[j+1],properties[i][j]);
+        for (int j=0;j<nParamStrings-1;j++) {
+          CLandUseClass::SetSurfaceProperty(parsed_surf[indices[i]],
+                                            aParamStrings[j+1],
+                                            properties[i][j]);
         }
       }
       break;
@@ -640,12 +649,12 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if (num_parsed_veg>=MAX_VEG_CLASSES-1){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of vegetation classes",BAD_DATA);}
 
-          CVegetationClass::InitializeVegetationProps(s[0],parsed_veg [num_parsed_veg],false);
-          pVegClasses[num_parsed_veg-1]=new CVegetationClass(s[0]);
-          vegtags    [num_parsed_veg]=s[0];
-          parsed_veg [num_parsed_veg].max_height   =s_to_d(s[1]);
-          parsed_veg [num_parsed_veg].max_LAI      =s_to_d(s[2]);
-          parsed_veg [num_parsed_veg].max_leaf_cond=s_to_d(s[3]);
+          CVegetationClass::InitializeVegetationProps(s[0], parsed_veg [num_parsed_veg], false);
+          pVegClasses[num_parsed_veg-1] = new CVegetationClass(s[0], pModel);
+          vegtags    [num_parsed_veg] = s[0];
+          parsed_veg [num_parsed_veg].max_height    = s_to_d(s[1]);
+          parsed_veg [num_parsed_veg].max_LAI       = s_to_d(s[2]);
+          parsed_veg [num_parsed_veg].max_leaf_cond = s_to_d(s[3]);
 
           num_parsed_veg++;
         }
@@ -861,7 +870,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       }
       ExitGracefullyIf(slope<=0,"ParseClassPropertiesFile: :Bedslope of channel must be greater than zero",BAD_DATA_WARN);
 
-      pChannel=new CChannelXSect(tag,countSP,x,y,nn,slope);
+      pChannel = new CChannelXSect(tag, countSP, x, y, nn, slope, pModel);
 
       delete [] x; delete [] n; delete [] xz; delete [] y;delete []nn;
       break;
@@ -934,7 +943,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       //Create Channel
       CChannelXSect *pChannel=NULL;
 
-      pChannel=new CChannelXSect(tag,count,Q,st,W,A,P,slope);
+      pChannel = new CChannelXSect(tag, count, Q, st, W, A, P, slope, pModel);
 
       delete [] st; delete [] A; delete [] W; delete [] Q;
       break;
@@ -943,14 +952,14 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     { //:TrapezoidalChannel [name] [bot_width] [bot_elev] [incline] [mannings_n] [bedslope]
       if (Len<7){ImproperFormatWarning(":TrapezoidalChannel",p,Options.noisy); break;}
       CChannelXSect *pChannel=NULL;
-      pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[4]),s_to_d(s[3]),s_to_d(s[5]),s_to_d(s[6]));
+      pChannel = new CChannelXSect(s[1], s_to_d(s[2]), s_to_d(s[4]), s_to_d(s[3]), s_to_d(s[5]), s_to_d(s[6]), pModel);
       break;
     }
     case(503):  //----------------------------------------------
     { //:CircularConduit [name] [diameter] [bot_elev] [mannings_n] [bedslope]
       if (Len<6){ImproperFormatWarning(":CircularConduit",p,Options.noisy); break;}
       CChannelXSect *pChannel=NULL;
-      pChannel=new CChannelXSect(s[1],s_to_d(s[2]),s_to_d(s[3]),s_to_d(s[4]),s_to_d(s[5]));
+      pChannel = new CChannelXSect(s[1], s_to_d(s[2]), s_to_d(s[3]), s_to_d(s[4]), s_to_d(s[5]), pModel);
       break;
     }
     //==========================================================
@@ -974,13 +983,13 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
           if ((num_parsed_terrs>=(MAX_TERRAIN_CLASSES-1)) || (num_parsed_terrs<0)){
             ExitGracefully("ParseClassPropertiesFile: exceeded maximum # of terrain classes",BAD_DATA);}
 
-          CTerrainClass::InitializeTerrainProperties(parsed_terrs[num_parsed_terrs],false);//sets all to autocompute
-          pTerrClasses[num_parsed_terrs-1]=new CTerrainClass(s[0]);
-          terraintags [num_parsed_terrs]=s[0];
-          parsed_terrs[num_parsed_terrs].hillslope_length =s_to_d(s[1]);
-          parsed_terrs[num_parsed_terrs].drainage_density =s_to_d(s[2]);
+          CTerrainClass::InitializeTerrainProperties(parsed_terrs[num_parsed_terrs], false);//sets all to autocompute
+          pTerrClasses[num_parsed_terrs-1] = new CTerrainClass(s[0], pModel);
+          terraintags [num_parsed_terrs] = s[0];
+          parsed_terrs[num_parsed_terrs].hillslope_length = s_to_d(s[1]);
+          parsed_terrs[num_parsed_terrs].drainage_density = s_to_d(s[2]);
           if (Len==4)
-            parsed_terrs[num_parsed_terrs].topmodel_lambda =s_to_d(s[3]);
+            parsed_terrs[num_parsed_terrs].topmodel_lambda = s_to_d(s[3]);
           num_parsed_terrs++;
         }
         else{
@@ -1223,7 +1232,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
        :GlobalParameter {string PARAMETER_NAME} {double value}*/
       if (Options.noisy){cout <<"Global Parameter"<<endl;}
       if (Len<3){p->ImproperFormat(s); break;}
-      CGlobalParams::SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
+      pModel->GetGlobalParams()->SetGlobalProperty(parsed_globals,s[1],s_to_d(s[2]));
       break;
     }
     case(721):  //----------------------------------------------
@@ -1349,7 +1358,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
       if (pTimeSer!=NULL)
       {
         CTransientParam *pTransParam=NULL;
-        pTransParam = new CTransientParam(pTimeSer,param_name,ptype,class_name);
+        pTransParam = new CTransientParam(pTimeSer, param_name, ptype, class_name, pModel);
         pModel->AddTransientParameter(pTransParam);
       }
       else{
@@ -1400,7 +1409,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
       if(Len>=6+shift) {
         int layer_ind;
-        sv_type typ=CStateVariable::StringToSVType(s[4+shift],layer_ind,false);
+        sv_type typ = pModel->GetStateVarInfo()->StringToSVType(s[4+shift],layer_ind,false);
         if(typ==UNRECOGNIZED_SVTYPE) {
           WriteWarning(":GeochemParameter command: unrecognized storage variable name: "+to_string(s[6]),Options.noisy);
           break;
@@ -1464,10 +1473,9 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
 
   INPUT.close();
 
-
   if (!Options.silent){cout<<"Autocalculating Model Parameters..."<<endl;}
 
-  CGlobalParams::AutoCalculateGlobalParams          (parsed_globals,global_template);
+  pModel->GetGlobalParams()->AutoCalculateGlobalParams          (parsed_globals,global_template);
 
   for (int c=1;c<num_parsed_veg;c++){
     pVegClasses [c-1]->AutoCalculateVegetationProps (parsed_veg[c],parsed_veg[0]);
@@ -1475,8 +1483,8 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   for (int c=1;c<num_parsed_soils;c++){
     pSoilClasses[c]->AutoCalculateSoilProps       (*parsed_soils[c],*parsed_soils[0],pModel->GetTransportModel()->GetNumConstituents());
   }
-  for (int c=1;c<num_parsed_lult;c++){
-    pLUClasses  [c-1]->AutoCalculateLandUseProps    (parsed_surf[c],parsed_surf[0]);
+  for (int c=1;c<num_parsed_lult;c++) {
+    pModel->GetLanduseClass(c-1)->AutoCalculateLandUseProps(parsed_surf[c], parsed_surf[0]);
   }
   for (int c=1;c<num_parsed_terrs;c++){
     pTerrClasses[c-1]->AutoCalculateTerrainProps    (parsed_terrs[c],parsed_terrs[0]);
@@ -1487,7 +1495,7 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
     cout<<"Checking for Required Model Parameters..."<<endl;
   }
 
-  RVPParameterWarning(aPmaster,aPCmaster,nPmaster,Options);
+  RVPParameterWarning(aPmaster, aPCmaster, nPmaster, pModel);
 
   //Check for existence of classes
   //--------------------------------------------------------------------------
@@ -1528,11 +1536,10 @@ bool ParseClassPropertiesFile(CModel         *&pModel,
   ExitGracefullyIf(num_parsed_profiles<1,
                    "No soil profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
 
-  ExitGracefullyIf((CChannelXSect::GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),
+  ExitGracefullyIf((pModel->GetNumChannelXSects()==0) && (Options.routing!=ROUTE_NONE) && (Options.routing!=ROUTE_EXTERNAL),
                    "No channel profiles specified in .rvp file. Cannot proceed.",BAD_DATA_WARN);
 
-
-  CChannelXSect::CheckForDuplicates(Options);
+  pModel->CheckForChannelXSectsDuplicates(Options);
 
   delete [] indices;
   for (int i=0;i<MAX_NUM_IN_CLASS;i++){delete [] properties[i];}delete [] properties;
@@ -1611,47 +1618,47 @@ bool ParsePropArray(CParser          *p,           //parser
 /// \param &nP [out] Number of parameters in list (size of aP[] and aPC[])
 /// \param &Options global options structure
 //
-void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, const optStruct &Options)
+void  RVPParameterWarning   (string  *aP, class_type *aPC, int &nP, CModel* pModel)
 {
+  const optStruct* Options = pModel->GetOptStruct();
   for (int ii=0;ii<nP;ii++)
   {
-    if (Options.noisy){cout<<"    checking availability of parameter "<<aP[ii]<<endl;}
+    if (Options->noisy){cout<<"    checking availability of parameter "<<aP[ii]<<" ("<<ii<<" of "<<nP <<" parameters)"<< endl; }
 
     if (aPC[ii]==CLASS_SOIL){
-      for (int c=0;c<CSoilClass::GetNumClasses();c++){
-        if (CSoilClass::GetSoilClass(c)->GetSoilProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required soil property "+aP[ii]+" not included in .rvp file for class "+CSoilClass::GetSoilClass(c)->GetTag();
+      for (int c=0; c< pModel->GetNumSoilClasses(); c++){
+        if (pModel->GetSoilClass(c)->GetSoilProperty(aP[ii]) == NOT_SPECIFIED) {
+          string warning="ParsePropertyFile: required soil property "+aP[ii]+" not included in .rvp file for class "+pModel->GetSoilClass(c)->GetTag();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }
     }
     else if (aPC[ii]==CLASS_VEGETATION){
-      for (int c=0;c<CVegetationClass::GetNumClasses();c++){
-        if (CVegetationClass::GetVegClass(c)->GetVegetationProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required vegetation property "+aP[ii]+" not included in .rvp file for vegetation class "+CVegetationClass::GetVegClass(c)->GetVegetationName();
+      for (int c=0; c < pModel->GetNumVegClasses(); c++){
+        if (pModel->GetVegClass(c)->GetVegetationProperty(aP[ii])==NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required vegetation property "+aP[ii]+" not included in .rvp file for vegetation class "+pModel->GetVegClass(c)->GetVegetationName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }
     }
     else if (aPC[ii]==CLASS_LANDUSE){
-      for (int c=0;c<CLandUseClass::GetNumClasses();c++){
-        if (CLandUseClass::GetLUClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
-
-          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+CLandUseClass::GetLUClass(c)->GetLanduseName();
+      for (int c=0; c<pModel->GetNumLanduseClasses();c++){
+        if (pModel->GetLanduseClass(c)->GetSurfaceProperty(aP[ii])==NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required land use/land type property "+aP[ii]+" not included in .rvp file for land use class "+pModel->GetLanduseClass(c)->GetLanduseName();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }
     }
     else if (aPC[ii]==CLASS_TERRAIN){
-      for (int c=0;c<CTerrainClass::GetNumClasses();c++){
-        if (CTerrainClass::GetTerrainClass(c)->GetTerrainProperty(aP[ii])==NOT_SPECIFIED){
-          string warning="ParsePropertyFile: required terrain property "+aP[ii]+" not included in .rvp file for terrain class "+CTerrainClass::GetTerrainClass(c)->GetTag();
+      for (int c=0; c<pModel->GetNumTerrainClasses(); c++){
+        if (pModel->GetTerrainClass(c)->GetTerrainProperty(aP[ii]) == NOT_SPECIFIED){
+          string warning="ParsePropertyFile: required terrain property "+aP[ii]+" not included in .rvp file for terrain class "+pModel->GetTerrainClass(c)->GetTag();
           ExitGracefully(warning.c_str(),BAD_DATA_WARN);
         }
       }
     }
     else if (aPC[ii]==CLASS_GLOBAL){
-      if (CGlobalParams::GetParameter(aP[ii])==NOT_SPECIFIED){
+      if (pModel->GetGlobalParams()->GetParameter(aP[ii]) == NOT_SPECIFIED){
 
         string warning="ParsePropertyFile: required global parameter "+aP[ii]+" not included in .rvp file.";
         ExitGracefully(warning.c_str(),BAD_DATA_WARN);
@@ -1704,20 +1711,22 @@ void  AddToMasterParamList   (string        *&aPm, class_type       *&aPCm, int 
 /// \param  *soiltags [in/out] array of soil names
 /// \param &Options global options structure
 //
-void  AddNewSoilClass(CSoilClass **&pSoilClasses,
+void AddNewSoilClass(CSoilClass **&pSoilClasses,
                       soil_struct **&parsed_soils,
                       string *&soiltags,
                       int &num_parsed_soils,
                       int nConstits,
-                      const string name, bool isdefault)
+                      const string name,
+                      bool isdefault,
+                      CModel *pModel)
 {
   //cout<<"ADDING NEW SOIL CLASS ! "<<num_parsed_soils<<" : "<<name<<endl;
   //create new soil class, dynamically add to array
   CSoilClass *pSC;
-  pSC=new CSoilClass(name,nConstits);
-  int tmp=num_parsed_soils;
-  if (!DynArrayAppend((void**&)(pSoilClasses),(void*)(pSC),tmp)){
-    ExitGracefully("AddNewSoilClass: creating NULL soil class",BAD_DATA);}
+  pSC = new CSoilClass(name, nConstits, pModel);
+  int tmp = num_parsed_soils;
+  if (!DynArrayAppend((void**&)(pSoilClasses), (void*)(pSC), tmp)){
+    ExitGracefully("AddNewSoilClass: creating NULL soil class", BAD_DATA);}
 
   //create new soil structure, dynamically add to array, initialize properties
   soil_struct *pSS;

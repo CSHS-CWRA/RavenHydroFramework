@@ -79,6 +79,8 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
 
   _filename_user="";
 
+  CStateVariable* pStateVar = pModel->GetStateVarInfo();
+
   // Get the variable name (either the state variable name of the forcing variable name) and the units
   switch(_var)
   {
@@ -86,7 +88,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
-    _varName  = CStateVariable::SVTypeToString(typ,ind);
+    _varName  = pStateVar->SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     if (pModel->GetStateVarType(_svind)==CONSTITUENT){ _varUnits = "mg/L"; } //overridden for concentrations
     break;
@@ -104,7 +106,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
-    _varName  = "TO_"+CStateVariable::SVTypeToString(typ,ind);
+    _varName  = "TO_" + pStateVar->SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     break;
   }
@@ -112,7 +114,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
   {
     sv_type typ=pModel->GetStateVarType(_svind);
     int     ind=pModel->GetStateVarLayer(_svind);
-    _varName  = "FROM_"+CStateVariable::SVTypeToString(typ,ind);
+    _varName  = "FROM_" + pStateVar->SVTypeToString(typ,ind);
     _varUnits = CStateVariable::GetStateVarUnits(typ);
     break;
   }
@@ -123,7 +125,7 @@ CCustomOutput::CCustomOutput( const diagnostic    variable,
     ExitGracefullyIf(_svind2==DOESNT_EXIST,"Invalid second SV index in :CustomOutput :Between command",BAD_DATA_WARN);
     sv_type typ2=pModel->GetStateVarType(_svind2);
     int     ind2=pModel->GetStateVarLayer(_svind2);
-    _varName  = "BETWEEN_"+CStateVariable::SVTypeToString(typ,ind)+"_AND_"+CStateVariable::SVTypeToString(typ2,ind2);
+    _varName  = "BETWEEN_" + pStateVar->SVTypeToString(typ,ind) + "_AND_" + pStateVar->SVTypeToString(typ2,ind2);
     _varUnits = CStateVariable::GetStateVarUnits(typ)+"/d";
     break;
   }
@@ -1055,7 +1057,7 @@ void CCustomOutput::CloseFiles(const optStruct& Options)
   _time_index=0;
 }
 
-int  ParseSVTypeIndex(string s,CModel *&pModel);
+int  ParseSVTypeIndex(string s,CModel *&pModel, CStateVariable *pStateVar);  // defined in ParseInput.cpp
 //////////////////////////////////////////////////////////////////
 /// \brief Parses custom output command
 // Format:
@@ -1107,7 +1109,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   sv_type    sv_typ;
 
   diag  =VAR_STATE_VAR;//the default
-  SV_ind=ParseSVTypeIndex(s[3], pModel);
+  SV_ind=ParseSVTypeIndex(s[3], pModel, pModel->GetStateVarInfo());
   SV_ind2=DOESNT_EXIST;
 
   //Special treatment of To:, From: and Between:1.And.2 fluxes
@@ -1116,7 +1118,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   if (!strcmp((tmp.substr(0, 3)).c_str(), "To:")){
     right = tmp.substr(3,string::npos);
 
-    SV_ind=ParseSVTypeIndex(right, pModel);
+    SV_ind=ParseSVTypeIndex(right, pModel, pModel->GetStateVarInfo());
     if (SV_ind == DOESNT_EXIST){
       WriteWarning(":CustomOutput command: Custom output Flux variable " + right + " is unrecognized. No output will be written.", Options.noisy);
       return NULL;
@@ -1128,7 +1130,7 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
   }
   if (!strcmp((tmp.substr(0, 5)).c_str(), "From:")){
     right = tmp.substr(5,string::npos);
-    SV_ind=ParseSVTypeIndex(right, pModel);
+    SV_ind=ParseSVTypeIndex(right, pModel, pModel->GetStateVarInfo());
     if (SV_ind == DOESNT_EXIST){
       WriteWarning(":CustomOutput command: Custom output Flux variable " + right + " is unrecognized. No output will be written.", Options.noisy);
       return NULL;
@@ -1144,8 +1146,8 @@ CCustomOutput *CCustomOutput::ParseCustomOutputCommand(char *s[MAXINPUTITEMS], c
     string firstSV = right.substr(0,right.find(".And."));
     string lastSV  = right.substr(right.find(".And.")+5,string::npos);
 
-    SV_ind =ParseSVTypeIndex(firstSV, pModel);
-    SV_ind2=ParseSVTypeIndex(lastSV,  pModel);
+    SV_ind =ParseSVTypeIndex(firstSV, pModel, pModel->GetStateVarInfo());
+    SV_ind2=ParseSVTypeIndex(lastSV,  pModel, pModel->GetStateVarInfo());
     if (SV_ind == DOESNT_EXIST){
       WriteWarning(":CustomOutput command: Custom output Flux variable " + firstSV + " is unrecognized. No output will be written.", Options.noisy);
       return NULL;

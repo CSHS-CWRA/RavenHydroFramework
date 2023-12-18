@@ -7,13 +7,15 @@
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "GlacierProcesses.h"
+#include "Model.h"
 
 //////////////////////////////////////////////////////////////////
 /// \brief Implementation of the glacier ice melt constructor
 /// \param melt_type [in] Model of glacial melting selected
 //
-CmvGlacierMelt::CmvGlacierMelt(glacial_melt_type melt_type)://should just be out index?
-  CHydroProcessABC(GLACIER_MELT)
+CmvGlacierMelt::CmvGlacierMelt(glacial_melt_type melt_type,
+                               CModel            *pModel): //should just be out index?
+  CHydroProcessABC(GLACIER_MELT, pModel)
 {
   type =melt_type;
 
@@ -198,8 +200,9 @@ void   CmvGlacierMelt::ApplyConstraints( const double           *state_var,
 /// \brief Implementation of the glacier release constructor
 /// \param mtype [in] Model of glacial release selected
 //
-CmvGlacierRelease::CmvGlacierRelease(glacial_release_type r_type):
-  CHydroProcessABC(GLACIER_RELEASE)
+CmvGlacierRelease::CmvGlacierRelease(glacial_release_type r_type,
+                                     CModel               *pModel):
+  CHydroProcessABC(GLACIER_RELEASE, pModel)
 {
   type =r_type;
 
@@ -284,13 +287,13 @@ void CmvGlacierRelease::GetParticipatingStateVarList(glacial_release_type r_type
 /// \param *rates [out] Array of rates of change in modified state variables
 ///
 //
-void CmvGlacierRelease::GetRatesOfChange( const double            *storage,
+void CmvGlacierRelease::GetRatesOfChange( const double      *storage,
                                           const CHydroUnit  *pHRU,
-                                          const optStruct     &Options,
+                                          const optStruct   &Options,
                                           const time_struct &tt,
                                           double            *rates) const
 {
-  if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
+  if (pHRU->GetHRUType() != HRU_GLACIER) { return; }
 
   double glacier_stor=storage[pModel->GetStateVarIndex(GLACIER)];
 
@@ -332,11 +335,11 @@ void CmvGlacierRelease::GetRatesOfChange( const double            *storage,
 /// \param &tt [in] Specified point at time at which rates of change are calculated
 /// \param *rates [out] Corrected rates of change of state variables
 //
-void   CmvGlacierRelease::ApplyConstraints( const double                  *storage,
+void   CmvGlacierRelease::ApplyConstraints( const double      *storage,
                                             const CHydroUnit  *pHRU,
                                             const optStruct   &Options,
                                             const time_struct &tt,
-                                            double      *rates) const
+                                            double            *rates) const
 {
   if (pHRU->GetHRUType()!=HRU_GLACIER){return;}
 
@@ -356,8 +359,9 @@ void   CmvGlacierRelease::ApplyConstraints( const double                  *stora
 /// \brief Implementation of the glacier infiltration constructor
 /// \param mtype [in] Model of glacial infiltration selected
 //
-CmvGlacierInfil::CmvGlacierInfil(glacial_infil_type i_type):
-  CHydroProcessABC(GLACIER_INFIL)
+CmvGlacierInfil::CmvGlacierInfil(glacial_infil_type i_type,
+                                 CModel            *pModel):
+  CHydroProcessABC(GLACIER_INFIL, pModel)
 {
   type =i_type;
 
@@ -439,9 +443,9 @@ void CmvGlacierInfil::GetParticipatingStateVarList(glacial_infil_type r_type,sv_
 /// \param *rates [out] Array of rates of change in modified state variables
 ///
 //
-void CmvGlacierInfil::GetRatesOfChange ( const double               *state_vars,
+void CmvGlacierInfil::GetRatesOfChange ( const double      *state_vars,
                                          const CHydroUnit  *pHRU,
-                                         const optStruct     &Options,
+                                         const optStruct   &Options,
                                          const time_struct &tt,
                                          double            *rates) const
 {
@@ -456,8 +460,8 @@ void CmvGlacierInfil::GetRatesOfChange ( const double               *state_vars,
     double ponded       =state_vars[iFrom[0]];
     double rain_and_melt=ponded/Options.timestep;
 
-    double max_perc_rate=pHRU->GetSoilProps(1)->max_perc_rate;
-    double P0DSH        =CGlobalParams::GetParams()->UBC_GW_split;
+    double max_perc_rate = pHRU->GetSoilProps(1)->max_perc_rate;
+    double P0DSH         = pModel->GetGlobalParams()->GetParams()->UBC_GW_split;
 
     //.NET
     //to_GW=0;

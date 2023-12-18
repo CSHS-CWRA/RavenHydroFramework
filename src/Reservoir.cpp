@@ -3,6 +3,7 @@
   Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "Reservoir.h"
+#include "Model.h"     // needed to define CModel
 
 //////////////////////////////////////////////////////////////////
 /// \brief Base Constructor for reservoir called by all other constructors
@@ -82,6 +83,7 @@ void CReservoir::BaseConstructor(const string Name,const long SubID)
   _local_GW_head=0.0;
 
   _assimilate_stage=false;
+  _assim_blank=true;
   _pObsStage=NULL;
   _DAscale=1.0;
   _DAscale_last=1.0;
@@ -557,6 +559,17 @@ long   CReservoir::GetControlFlowTarget(const int i) const
 string CReservoir::GetControlName(const int i) const
 {
   return _pControlStructures[i]->GetName();
+}
+
+double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const 
+{
+  double dh=0.0001;
+  double weir_adj=0.0;
+  if(_pWeirHeightTS!=NULL) {
+    weir_adj=_pWeirHeightTS->GetValue(nn);
+  }
+
+  return (GetWeirOutflow(stage+dh,weir_adj)-GetWeirOutflow(stage,weir_adj))/dh;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1043,9 +1056,7 @@ double CReservoir::GetAET() const
 {
   if(_pHRU!=NULL) {
     double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
+    Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/(_pHRU->GetArea()*M2_PER_KM2); //normalized to HRU area
   }
   else {
@@ -1089,21 +1100,23 @@ void CReservoir::UpdateMassBalance(const time_struct &tt,const double &tstep)
 void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options)
 {
   // update flow rules-----------------------------------
-  if (_nDates == 0){return;}
-  int vv=_nDates-1;
-  for (int v = 0; v < _nDates; v++){
-    if (tt.julian_day >= _aDates[v]){vv=v; }
-  }
-  for (int i = 0; i < _Np; i++){
-    _aQ[i] = _aQ_back[vv][i];
+  if (_nDates != 0){
+    int vv=_nDates-1;
+    for (int v = 0; v < _nDates; v++){
+      if (tt.julian_day >= _aDates[v]){vv=v; }
+    }
+    for (int i = 0; i < _Np; i++){
+      _aQ[i] = _aQ_back[vv][i];
+    }
   }
 
   // Assimilate lake stage-------------------------------
   if(_assimilate_stage)
   {
+    _assim_blank=true;
     if(tt.model_time>Options.assimilation_start-Options.timestep/2.0)
     {
-      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep);//current timestep index
+      int nn=(int)((tt.model_time+TIME_CORRECTION)/Options.timestep)+1;//end-of timestep index
 
       double weir_adj=0.0;
       if(_pWeirHeightTS!=NULL) {
@@ -1114,6 +1127,7 @@ void CReservoir::UpdateReservoir(const time_struct &tt, const optStruct &Options
       if(obs_stage!=RAV_BLANK_DATA) {
         _stage=obs_stage;
         _Qout =GetWeirOutflow(_stage,weir_adj);//[m3/s]
+        _assim_blank=false;
       }
     }
     //Calculate change in reservoir mass
@@ -1236,8 +1250,21 @@ void  CReservoir::SetMinStage(const double &min_z)
 /// \param res_ouflow [out] outflow at end of timestep
 /// \returns estimate of new stage at end of timestep
 //
-double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, const optStruct &Options, const time_struct &tt, double &res_outflow,res_constraint &constraint, double *aQstruct) const
+double  CReservoir::RouteWater(const double &Qin_old,
+                               const double &Qin_new,
+                               const CModelABC* pModel,
+                               const optStruct &Options,
+                               const time_struct &tt,
+                               double &res_outflow,
+                               res_constraint &constraint,
+                               double *aQstruct) const
 {
+  if ((_assimilate_stage) && (!_assim_blank))
+  {
+    res_outflow=_Qout;
+    return _stage;
+  }
+
   const double RES_TOLERANCE=0.0001; //[m]
   const int    RES_MAXITER  =100;
 
@@ -1317,9 +1344,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
   if(_pHRU!=NULL)
   {
     ET=_pHRU->GetForcingFunctions()->OW_PET/SEC_PER_DAY/MM_PER_METER; //average for timestep, in m/s
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
+    ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     precip=_Precip/Options.timestep/SEC_PER_DAY; //[m3]->[m3/s]
   }
   if(_seepage_const>0) {
@@ -1405,7 +1430,7 @@ double  CReservoir::RouteWater(const double &Qin_old, const double &Qin_new, con
 
   //special correction - minimum stage reached or target flow- flow overriden (but forced override takes priority)
   //---------------------------------------------------------------------------------------------
-  double w=CGlobalParams::GetParams()->reservoir_relax;
+  double w = pModel->GetGlobalParams()->GetParams()->reservoir_relax;
   if(htarget!=RAV_BLANK_DATA) {
     double V_targ=GetVolume(htarget);
     double A_targ=GetArea(htarget);

@@ -160,6 +160,9 @@ struct veg_struct
 
   double PET_veg_corr;      ///< [0..1]    vegetation-based PET correction (multiplicative)
 
+  double Cap_LAI_ratio;     ///< [mm]      ratio of leaf liquid water capacity to LAI (~0.15)
+  double SnoCap_LAI_ratio;  ///< [mm]      ratio of leaf snow water capacity to LAI (~0.6)
+
   //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
   double max_root_length;   ///< [mm/m2]   root length per unit canopy area
@@ -299,6 +302,10 @@ struct surface_struct
   double AET_coeff;         ///< [-]       linear AET coefficient
   double priestleytaylor_coeff; ///< [-]   Priestley-Taylor coefficient (defaults to 1.28)
   double pet_lin_coeff;     ///< [mm/d/K]  linear PET relation with temperature ~(0.1-0.3)
+  double pet_vap_coeff;     ///< [mm/d/kPa] linear PET relation with vapor deficit ~(1-3 mm/d/kPa, ~1.5 for mountain streams)
+
+  double relhum_corr;       ///< [-]       local correction factor for relative humidity (defaults to 1)
+  double wind_vel_corr;     ///< [-]       local correction factor for wind speed (defaults to 1)
 
   double lake_rel_coeff;    ///< [1/d]     linear lake storage coefficient
 

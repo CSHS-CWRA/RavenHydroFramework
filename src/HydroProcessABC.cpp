@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "HydroProcessABC.h"
 #include "StateVariables.h"
@@ -9,12 +9,14 @@
 /// \brief Implementation of the constructor for an abstract hydrological process
 /// \param ptype [in] Type of hydrological process
 //
-CHydroProcessABC::CHydroProcessABC(const process_type ptype)
+CHydroProcessABC::CHydroProcessABC(const process_type ptype,
+                                   CModelABC          *pM)
 {
-  _process=ptype;
-  _nConnections=0;
-  iFrom=NULL;
-  iTo  =NULL;
+  pModel = pM;
+  _process = ptype;
+  _nConnections = 0;
+  iFrom = NULL;
+  iTo   = NULL;
 
   _pConditions=NULL;
   _nConditions=0;
@@ -27,12 +29,15 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype)
 /// \brief Implementation of the constructor for an abstract hydrological process
 /// \param ptype [in] Type of hydrological process
 //
-CHydroProcessABC::CHydroProcessABC(const process_type ptype, const int nConns)
+CHydroProcessABC::CHydroProcessABC(const process_type ptype,
+                                   const int nConns,
+                                   CModelABC *pM)
 {
-  _process  	  =ptype;
-  _nConnections=nConns;
-  iFrom=NULL;
-  iTo  =NULL;
+  pModel = pM;
+  _process = ptype;
+  _nConnections = nConns;
+  iFrom = NULL;
+  iTo   = NULL;
 
   _pConditions=NULL;
   _nConditions=0;
@@ -50,10 +55,12 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype, const int nConns)
 //
 CHydroProcessABC::CHydroProcessABC(const process_type ptype,
                                    const int          From_index,
-                                   const int          To_index)
+                                   const int          To_index,
+                                   CModelABC *pM)
 {
-  _process    =ptype;
-  _nConnections=1;
+  pModel = pM;
+  _process = ptype;
+  _nConnections = 1;
   iFrom=new int [_nConnections];
   iTo  =new int [_nConnections];
 
@@ -82,10 +89,12 @@ CHydroProcessABC::CHydroProcessABC(const process_type ptype,
 CHydroProcessABC::CHydroProcessABC(const process_type ptype,
                                    const int         *From_indices,
                                    const int         *To_indices,
-                                   const int          nConnect)
+                                   const int          nConnect,
+                                   CModelABC         *pM)
 {
-  _process    =ptype;
-  _nConnections=nConnect;
+  pModel        = pM;
+  _process      = ptype;
+  _nConnections = nConnect;
   iFrom=new int [_nConnections];
   iTo  =new int [_nConnections];
   if ((From_indices!=NULL) && (To_indices!=NULL)){
@@ -115,10 +124,7 @@ CHydroProcessABC::~CHydroProcessABC()
   delete [] iTo;         iTo        =NULL;
   for (int i=0;i<_nConditions;i++){delete _pConditions[i];} delete [] _pConditions; _pConditions=NULL;
 }
-/*****************************************************************
-   Static Members
-*****************************************************************/
-CModelABC *CHydroProcessABC::pModel=NULL;
+
 
 //////////////////////////////////////////////////////////////////
 /// \brief Specify reference to surface water model pModel

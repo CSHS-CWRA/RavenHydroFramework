@@ -573,8 +573,8 @@ double        CHydroUnit::GetStateVarMax(const int      i,
     {
       if(!ignorevar) {
         int iSNO  =_pModel->GetStateVarIndex(SNOW);
-        double SWE=curr_state_var[iSNO];
-        max_var=CalculateSnowLiquidCapacity(SWE,GetSnowDepth(),Options);
+        double SWE = curr_state_var[iSNO];
+        max_var = CalculateSnowLiquidCapacity(SWE, GetSnowDepth(), _pModel);
       }
       break;
     }
@@ -622,13 +622,17 @@ double CHydroUnit::GetSnowDepth() const
 //
 double CHydroUnit::GetSnowTemperature() const
 {
-  int    iSnTemp=_pModel->GetStateVarIndex(SNOW_TEMP);
-  if     (iSnTemp==DOESNT_EXIST){
-    double sntmp=CGlobalParams::GetParams()->snow_temperature;
-    if (sntmp==NOT_NEEDED_AUTO){return 0.0;}
+  int iSnTemp = _pModel->GetStateVarIndex(SNOW_TEMP);
+  if (iSnTemp == DOESNT_EXIST){
+    double sntmp = _pModel->GetGlobalParams()->GetParams()->snow_temperature;
+    if (sntmp == NOT_NEEDED_AUTO){
+      return 0.0;
+    }
     return sntmp;
   }
-  else                          {return this->GetStateVarValue(iSnTemp);}
+  else {
+    return this->GetStateVarValue(iSnTemp);
+  }
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns snow storage as SWE, averaged over HRU
