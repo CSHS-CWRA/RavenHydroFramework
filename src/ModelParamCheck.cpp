@@ -256,7 +256,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
 
   // Evaporation algorithms parameters
   //----------------------------------------------------------------------
-
+  aP[nP]="PET_CORRECTION"; aPC [nP]=CLASS_SOIL; nP++;//All soilevap algorithms use this.
   // Evaporation Method
   if (Options.evaporation==PET_BLENDED)
   {

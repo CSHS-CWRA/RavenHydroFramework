@@ -1333,6 +1333,17 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
     {
       spearman=0;
     }
+    if(N>0)
+    {
+      return spearman;
+    }
+    else
+    {
+      string warn = "DIAG_SPEARMAN not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+
     delete[] rank1;
     delete[] rank2;
     delete[] mvals;

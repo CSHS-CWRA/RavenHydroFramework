@@ -128,19 +128,17 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
 {
   if (type==SOILEVAP_VIC)
   {
-    nP=6;
+    nP=5;
     aP[0]="VIC_ALPHA";      aPC[0]=CLASS_SOIL;
     aP[1]="VIC_ZMAX";       aPC[1]=CLASS_SOIL;
     aP[2]="VIC_ZMIN";       aPC[2]=CLASS_SOIL;
     aP[3]="VIC_EVAP_GAMMA"; aPC[3]=CLASS_SOIL;
     aP[4]="POROSITY";       aPC[4]=CLASS_SOIL;
-    aP[5]="PET_CORRECTION"; aPC[5]=CLASS_SOIL;
   }
   else if (type==SOILEVAP_GAWSER)
   {
-    nP=2;
+    nP=1;
     aP[0]="POROSITY";       aPC[0]=CLASS_SOIL;
-    aP[1]="PET_CORRECTION"; aPC[1]=CLASS_SOIL;
   }
   else if (type==SOILEVAP_FEDERER)
   {
@@ -148,57 +146,44 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
   }
   else if (type==SOILEVAP_ROOTFRAC)
   {
-    nP=3;
+    nP=2;
     aP[0]="POROSITY";       aPC[0]=CLASS_SOIL;
-    aP[1]="PET_CORRECTION"; aPC[1]=CLASS_SOIL;
-    aP[2]="REL_ROOTDEN";    aPC[2]=CLASS_VEGETATION;
+    aP[1]="REL_ROOTDEN";    aPC[1]=CLASS_VEGETATION;
   }
-  else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_SEQUEN))
+  else if ((type==SOILEVAP_TOPMODEL) || (type==SOILEVAP_SEQUEN) || (type==SOILEVAP_ROOT) || (type == SOILEVAP_ROOT_CONSTRAIN))
   {
-    nP=4;
-    aP[0]="PET_CORRECTION";    aPC[0]=CLASS_SOIL;
-    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
-    aP[2]="FIELD_CAPACITY";    aPC[2]=CLASS_SOIL;
-    aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
-  }
-  else if ((type==SOILEVAP_ROOT) || (type == SOILEVAP_ROOT_CONSTRAIN))
-  {
-    nP=4;
-    aP[0]="PET_CORRECTION";    aPC[0]=CLASS_SOIL;
-    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
-    aP[2]="FIELD_CAPACITY";    aPC[2]=CLASS_SOIL;
-    aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
+    nP=3;
+    aP[0]="POROSITY";          aPC[0]=CLASS_SOIL;
+    aP[1]="FIELD_CAPACITY";    aPC[1]=CLASS_SOIL;
+    aP[2]="SAT_WILT";          aPC[2]=CLASS_SOIL;
   }
   else if (type==SOILEVAP_HBV)
   {
-    nP=5;
-    aP[0]="PET_CORRECTION";    aPC[0]=CLASS_SOIL;
-    aP[1]="POROSITY";          aPC[1]=CLASS_SOIL;
-    aP[2]="FIELD_CAPACITY";    aPC[2]=CLASS_SOIL;
-    aP[3]="SAT_WILT";          aPC[3]=CLASS_SOIL;
-    aP[4]="FOREST_COVERAGE";   aPC[4]=CLASS_LANDUSE; //JRCFLAG
+    nP=4;
+    aP[0]="POROSITY";          aPC[0]=CLASS_SOIL;
+    aP[1]="FIELD_CAPACITY";    aPC[1]=CLASS_SOIL;
+    aP[2]="SAT_WILT";          aPC[2]=CLASS_SOIL;
+    aP[3]="FOREST_COVERAGE";   aPC[3]=CLASS_LANDUSE; //JRCFLAG
   }
   else if(type==SOILEVAP_HYPR)
   {
-    nP=9;
-    aP[0]="PET_CORRECTION";       aPC[0]=CLASS_SOIL;
-    aP[1]="POROSITY";             aPC[1]=CLASS_SOIL;
-    aP[2]="FIELD_CAPACITY";       aPC[2]=CLASS_SOIL;
-    aP[3]="SAT_WILT";             aPC[3]=CLASS_SOIL;
-    aP[4]="FOREST_COVERAGE";      aPC[4]=CLASS_LANDUSE;
-    aP[5]="MAX_DEP_AREA_FRAC";    aPC[5]=CLASS_LANDUSE;
-    aP[6]="PONDED_EXP";           aPC[6]=CLASS_LANDUSE;
-    aP[7]="DEP_MAX";              aPC[7]=CLASS_LANDUSE;
-    aP[8]="PDMROF_B";             aPC[8]=CLASS_LANDUSE;
+    nP=8;
+    aP[0]="POROSITY";             aPC[0]=CLASS_SOIL;
+    aP[1]="FIELD_CAPACITY";       aPC[1]=CLASS_SOIL;
+    aP[2]="SAT_WILT";             aPC[2]=CLASS_SOIL;
+    aP[3]="FOREST_COVERAGE";      aPC[3]=CLASS_LANDUSE;
+    aP[4]="MAX_DEP_AREA_FRAC";    aPC[4]=CLASS_LANDUSE;
+    aP[5]="PONDED_EXP";           aPC[5]=CLASS_LANDUSE;
+    aP[6]="DEP_MAX";              aPC[6]=CLASS_LANDUSE;
+    aP[7]="PDMROF_B";             aPC[7]=CLASS_LANDUSE;
   }
   else if (type==SOILEVAP_UBC)
   {
-    nP=5;
-    aP[0]="PET_CORRECTION";     aPC[0]=CLASS_SOIL;
-    aP[1]="IMPERMEABLE_FRAC";   aPC[1]=CLASS_LANDUSE;
-    aP[2]="UBC_EVAP_SOIL_DEF";  aPC[2]=CLASS_SOIL;
-    aP[3]="UBC_INFIL_SOIL_DEF"; aPC[3]=CLASS_SOIL;
-    aP[4]="POROSITY";           aPC[4]=CLASS_SOIL;
+    nP=4;
+    aP[0]="IMPERMEABLE_FRAC";   aPC[0]=CLASS_LANDUSE;
+    aP[1]="UBC_EVAP_SOIL_DEF";  aPC[1]=CLASS_SOIL;
+    aP[2]="UBC_INFIL_SOIL_DEF"; aPC[2]=CLASS_SOIL;
+    aP[3]="POROSITY";           aPC[3]=CLASS_SOIL;
   }
   else if (type==SOILEVAP_CHU)
   {
@@ -246,8 +231,6 @@ void CmvSoilEvap::GetParticipatingParamList(string  *aP , class_type *aPC , int 
   {
     ExitGracefully("CmvSoilEvap::GetParticipatingParamList: undefined soil evaporation algorithm",BAD_DATA);
   }
-  nP++;
-  aP[nP-1]="PET_CORRECTION"; aPC [nP-1]=CLASS_SOIL; //All soilevap algorithms use this.
 }
 
 //////////////////////////////////////////////////////////////////
@@ -352,7 +335,6 @@ void CmvSoilEvap::GetRatesOfChange (const double      *state_vars,
   const soil_struct *pSoil;
 
   PET=pHRU->GetForcingFunctions()->PET;
-  PET=pHRU->GetSoilProps(0)->PET_correction*PET; //corrected PET
 
   if (!Options.suppressCompetitiveET){
     //competitive ET - reduce PET by AET

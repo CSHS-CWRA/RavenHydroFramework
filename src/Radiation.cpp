@@ -60,24 +60,18 @@ double CRadiation::EstimateShortwaveRadiation(CModel* pModel,
   //--------------------------------------------------------
   case(SW_RAD_UBCWM):
   {
-    if (tt.day_changed) //no need to do calculations every timestep
-    {
-      double solar_rad;
-      double elev=pHRU->GetElevation();
-      solar_rad= UBC_SolarRadiation(latrad,elev,F->day_angle, F->day_length,ET_rad);
-      ET_rad_flat=ET_rad;
-      double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
-      if(pHRU->GetLatRad()<0.0) { orient=1.0-orient; }//southern hemisphere phase shift
-      double shortwave_corr_S = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_s_corr, tt, *Options);
-      double shortwave_corr_N = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_n_corr, tt, *Options);
-      double shortwave_corr=((orient)* shortwave_corr_S + (1.0-orient)*shortwave_corr_N);
-      ET_rad*=shortwave_corr;
-      return solar_rad * shortwave_corr;
-    }
-    else
-    {
-      return F->SW_radia_unc;
-    }
+    //calculates DAILY MEAN shortwave
+    double solar_rad;
+    double elev=pHRU->GetElevation();
+    solar_rad= UBC_SolarRadiation(latrad,elev,F->day_angle, F->day_length,ET_rad);
+    ET_rad_flat=ET_rad;
+    double orient=1.0-fabs(pHRU->GetAspect()/PI-1.0);        //=0 for north, 1.0 for south
+    if(pHRU->GetLatRad()<0.0) { orient=1.0-orient; }//southern hemisphere phase shift
+    double shortwave_corr_S = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_s_corr, tt, *Options);
+    double shortwave_corr_N = InterpolateMo(pModel->GetGlobalParams()->GetParams()->UBC_n_corr, tt, *Options);
+    double shortwave_corr=((orient)* shortwave_corr_S + (1.0-orient)*shortwave_corr_N);
+    ET_rad*=shortwave_corr;
+    return solar_rad * shortwave_corr;
   }
   //--------------------------------------------------------
   case(SW_RAD_VALIANTZAS) :
@@ -117,8 +111,9 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     }
     case(LW_INC_DEFAULT):
     {
-      LW_incoming=0.0; //calculated below with LW_DEFAULT 
+      LW_incoming=0.0; //calculated below with LW_DEFAULT, or not at all for algorithms which can calculate net LW only
     }
+    //--------------------------------------------------------
     case(LW_INC_SICART):
     {
       //Calculates incoming long-wave terrain emmission radiation using sky view factor
@@ -127,8 +122,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       //Ported over from CRHM (Pomeroy et al., 2007), added forest cover term
  
       double Fc        =pHRU->GetSurfaceProps()->forest_coverage;
-      double svf       =pHRU->GetSurfaceProps()->sky_view_factor;//0.7
-      //double epsilon_s=pHRU->GetSurfaceProps()->surface_emissivity;
+      double svf       =pHRU->GetSurfaceProps()->sky_view_factor;
       double epsilon_s =0.98;//vegetation emissivity    
       double tau       =0.8; //atmospheric transmittance
       if(F->ET_radia >= 0.001) { tau =  (F->SW_radia_unc/F->ET_radia); } //Based upon comments, not code
@@ -146,6 +140,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     
       LW_incoming = svf*L_0 + (1.0-svf)*L_F; 
     }
+    //--------------------------------------------------------
     case (LW_INC_SKYVIEW):
     {
       //simple sky view factor with air emissivity from 
@@ -168,10 +163,10 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       LW_incoming =  epsilon_s   * (1 - svf) * STEFAN_BOLTZ * pow(Tair,4);
       LW_incoming += epsilon_air * (    svf) * STEFAN_BOLTZ * pow(Tair,4);   
     }
+    //--------------------------------------------------------
     case (LW_INC_DINGMAN):
     {
       //from Dingman eqns. 5-40
-      double emissivity=0.99;
       double forest_cover=pHRU->GetSurfaceProps()->forest_coverage;
 
       double Tair =F->temp_ave+ZERO_CELSIUS;  //[K]
@@ -190,7 +185,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
 
       eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor 
 
-      LW_incoming=STEFAN_BOLTZ*emissivity*eps_at*pow(Tair,4);
+      LW_incoming=STEFAN_BOLTZ*eps_at*pow(Tair,4);
     }
   }
 
@@ -216,20 +211,18 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double Tsurf=F->temp_ave+ZERO_CELSIUS;  //[K] //\todo better way to do this.
     //double Tsurf=pHRU->GetSurfaceTemperature()+ZERO_CELSIUS;//[K] (not yet functional)
 
-    double ea=F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); 
+    double ea   =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); 
 
-    double emiss_eff; //effective clear sky emmisivity
-    emiss_eff=1.72*pow(ea/Tair,1/7.0);/// \ref Brutsaert 1975, via Dingman clear sky emmissivity 
+    double emiss_eff=1.72*pow(ea/Tair,1/7.0);/// effective clear sky emmisivity \ref Brutsaert 1975, via Dingman clear sky emmissivity 
 
-    double eps_at=emiss_eff*(1.0+0.22*F->cloud_cover*F->cloud_cover);
+    double eps_at   =emiss_eff*(1.0+0.22*F->cloud_cover*F->cloud_cover);
 
     eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor 
 
     if (Options->LW_incoming==LW_INC_DEFAULT) { //now, DEFAULT==DINGMAN
-      LW_incoming=STEFAN_BOLTZ*emissivity*eps_at*pow(Tair,4);
+      LW_incoming=STEFAN_BOLTZ*eps_at*pow(Tair,4);
     }
     return LW_incoming-STEFAN_BOLTZ*emissivity*pow(Tsurf,4);
-    //return STEFAN_BOLTZ*emissivity*(eps_at*pow(Tair,4)-pow(Tsurf,4));
   }
   //--------------------------------------------------------
   case (LW_RAD_UBCWM):
@@ -263,11 +256,8 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
   case(LW_RAD_VALIANTZAS):
   {
     //from Valiantzas, 2006, Simplified versions for the Penman evaporation equation using routine weather data, Journal of Hydrology, 331
-    double f;
-    double eps;
-    double sat_vap,ea;
-    sat_vap=GetSaturatedVaporPressure(F->temp_ave); //[kPa]
-    ea =F->rel_humidity*sat_vap;                    //[kPa]
+    double f,eps,ea;
+    ea =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);                    //[kPa]
 
     f=max(1.35*(F->SW_radia/F->SW_radia_unc)-0.35,0.0); //cloud cover adjustment Valiantzas (2006) eqn 40
     eps= 0.34 - 0.14*sqrt(ea);                          //net emissivity Valiantzas (2006) eqn 41
@@ -478,8 +468,6 @@ double CRadiation::CalculateEquivLatitude(const double &latrad,
                                           const double &slope,
                                           const double &aspect)
 {
-  //double arg=cos(slope)*sin(latrad) + sin(slope)*cos(latrad)*cos(aspect);
-  //cout<<arg<<" "<<asin(arg)<<endl;
   return asin(min(cos(slope)*sin(latrad) + sin(slope)*cos(latrad)*cos(aspect),1.0)); //Dingman eqn E-23
 }
 //////////////////////////////////////////////////////////////////
@@ -622,6 +610,7 @@ double CRadiation::CalcETRadiation( const double latrad,     //latitude in radia
 
   return SOLAR_CONSTANT*ecc*ExTerCorr;//[MJ/m2/d] E-25 dingman
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Calculates extraterrestrial radiation on an inclined or horizontal plane
 /// \details Returns total incoming solar radation, K_{ET}, in [MJ/m2/d], corrected for slope and aspect

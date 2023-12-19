@@ -294,8 +294,6 @@ double UBC_DailyPotentialMelt(CModel* pModel,
 
   //condensation melt
   CONDM=P0COND*max(F.temp_daily_min,0.0)*RM*vel;  //[mm/d]
-  //temp_daily_min should be dew point temp
-  //to account for a (sketchy) UBC implementation detail
 
   CONDM*=((1.0-Fc)*pressure+(Fc)*1.0);  //[mm/d]
 

@@ -219,7 +219,7 @@ public:/*-------------------------------------------------------*/
   double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
   double          GetIntegratedSpecInflow  (const double &t,
                                             const double &tstep) const;//[m3] from specified inflows integrated over timestep
-  double          GetIntegratedLocalOutflow(const double &tstep) const;//[m3] from local contributions, integrated over timestep
+  double          GetIntegratedLocalOutflow(const double &tstep) const;//[m3] from in-catchment local contributions, integrated over timestep
   double          GetReservoirInflow       () const;                   //[m3/s] from final segment upstream of reservoir, point in time
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep

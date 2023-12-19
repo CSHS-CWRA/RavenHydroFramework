@@ -305,6 +305,8 @@ void CCustomOutput::WriteFileHeader(const optStruct &Options)
   // write the appropriately formatted header
   switch(Options.output_format)
   {
+  case OUTPUT_NONE:
+    /* do nothing */                return;
   case OUTPUT_STANDARD:
   default:
     WriteCSVFileHeader();           return;
@@ -710,6 +712,8 @@ void GetQuartiles(const double *values, const int size, double &Q1, double &Q2, 
 void CCustomOutput::WriteCustomOutput(const time_struct &tt,
                                       const optStruct   &Options)
 {
+  if(Options.output_format==OUTPUT_NONE){return; }
+
   //each custom output gets values of vals data[nHRUs] (max size)
   double val=0;
   double dday;//,jul_day;

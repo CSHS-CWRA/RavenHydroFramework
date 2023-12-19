@@ -563,6 +563,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       long SBID=DOESNT_EXIST;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
+      
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,"none",Options);
       if (pSB!=NULL){
@@ -971,6 +972,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
      */
       if(Options.noisy) { cout << ":FlowDiversionRatingCurve" << endl; }
       long SBID=DOESNT_EXIST;
+      long SBID2=0;
       int target_p(DOESNT_EXIST),start, end;
       int NQ(0);
       CSubBasin *pSB;
@@ -983,11 +985,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       if(pSB!=NULL) {
         if(Len>=5) { start=s_to_i(s[3]); end=s_to_i(s[4]); }
         target_p=pModel->GetSubBasinIndex(s_to_l(s[2]));
+        SBID2=s_to_l(s[2]);
+      }
+      else if (SBID == DOESNT_EXIST) {
+        warn=":FlowDiversionLookupTable command: no source subbasin ID provided, cannot add diversion";
+        WriteWarning(warn,Options.noisy);
       }
       else
       {
         warn=":FlowDiversionLookupTable command: Subbasin "+to_string(SBID)+" not found in model, cannot add diversion";
-        WriteWarning(warn,Options.noisy);
+        WriteWarning(warn,Options.noisy); 
       }
 
       p->Tokenize(s,Len);
@@ -1009,7 +1016,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       p->Tokenize(s,Len); //:EndFlowDiversionRatingCurve
 
-      if((s_to_l(s[2])==-1) || (target_p!=DOESNT_EXIST)) {
+      if((SBID2==-1) || (target_p!=DOESNT_EXIST)) {
         pSB->AddFlowDiversion(start,end,target_p,aQ1,aQ2,NQ);
       }
       else {
