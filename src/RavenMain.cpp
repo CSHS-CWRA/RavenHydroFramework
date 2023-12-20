@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   int         nEnsembleMembers;
   optStruct   Options;
 
-  Options.version="3.7.1";
+  Options.version=__RAVEN_VERSION__;
 #ifdef _NETCDF_
   Options.version+=" w/ netCDF";
 #endif

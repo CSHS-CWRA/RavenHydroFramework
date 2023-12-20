@@ -17,9 +17,9 @@ appname := Raven.exe
 CXX      := g++
 CXXFLAGS := -Wno-deprecated
 # some compilers require the c++11 flag, some may not
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -fPIC
 
-srcfiles := $(shell find . -name "*.cpp")
+srcfiles := $(shell ls *.cpp)
 objects  := $(patsubst %.cpp, %.o, $(srcfiles))
 
 # include netcdf
@@ -34,6 +34,9 @@ all: $(appname)
 
 $(appname): $(objects)
 	$(CXX) $(CXXFLAGS) -o $(appname) $(objects) $(LDLIBS) $(LDFLAGS)
+
+libraven:
+	$(CXX) $(CXXFLAGS) -shared $(LDLIBS) $(shell python3 -m pybind11 --includes) $(LDFLAGS) -I . py/libraven.cpp -o libraven$(shell python3-config --extension-suffix)
 
 depend: .depend
 
