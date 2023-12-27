@@ -598,6 +598,7 @@ void MassEnergyBalance( CModel            *pModel,
   double ResMass    =0;
   double ResSedMass =0;
   double MassOutflow=0;
+  double Mlat_new   =0;
   double Ploading;
   int    iSWmass,m;
   CConstituentModel *pConstitModel;
@@ -641,8 +642,9 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->SetMassInflows    (p,aMinnew[p]);
         pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
-        pConstitModel->RouteMass         (p,aMoutnew,ResMass,ResSedMass,Options,tt);  //Where everything happens!
-        pConstitModel->UpdateMassOutflows(p,aMoutnew,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
+        pConstitModel->PrepareForRouting (p);
+        pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,Options,tt);  //Where everything happens!
+        pConstitModel->UpdateMassOutflows(p,aMoutnew,Mlat_new,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)

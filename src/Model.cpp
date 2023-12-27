@@ -1435,6 +1435,7 @@ void CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &O
                    "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);
   if (t_loc>Options.duration){
     WriteWarning("AddModelOutputTime: model output time specified after end of simulation. It will be ignored",Options.noisy);
+    return;
   }
 
   //add to end of array

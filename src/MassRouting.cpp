@@ -30,6 +30,8 @@ void CConstituentModel::InitializeRoutingVars()
   _aMresRain      =new double  [nSB];
   _channel_storage=new double  [nSB];
   _rivulet_storage=new double  [nSB];
+  _aMlocal        =new double  [nSB];
+  _aMlocLast      =new double  [nSB];
 
   for(int p=0;p<nSB;p++)
   {
@@ -56,7 +58,8 @@ void CConstituentModel::InitializeRoutingVars()
     _aMresRain      [p]=0.0;
     _channel_storage[p]=0.0;
     _rivulet_storage[p]=0.0;
-
+    _aMlocal        [p]=0.0;
+    _aMlocLast      [p]=0.0;
   }
 }
 //////////////////////////////////////////////////////////////////
@@ -194,9 +197,8 @@ double   CConstituentModel::GetMassAddedFromInflowSources(const double &t,const 
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Sets lateral mass/energy loading to primary channel and updates mass/energy loading history
-///
-/// \param p     subbasin index
-/// \param Mlat  lateral mass loading rate for the current timestep [mg/d][MJ/d]
+/// \param p  [in]   subbasin index
+/// \param Mlat [in] lateral mass loading rate for the current timestep [mg/d][MJ/d]
 //
 void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 {
@@ -206,7 +208,13 @@ void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
   _aMlatHist[p][0]=Mlat;
 
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Gathers and prepares data prior to calling RouteMass 
+/// \param p [in]    subbasin index
+//
+void  CConstituentModel::PrepareForRouting(const int p) {
+  //does nothing - interesting in child classes
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Creates aMoutnew [m^3/s], an array of point measurements for outflow at downstream end of each river segment
 /// \details Array represents measurements at the end of the current timestep. if (catchment_routing==distributed),
@@ -215,35 +223,32 @@ void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 ///
 /// \param p           [in]  subbasin index
 /// \param aMout_new[] [out] Array of mass outflows at downstream end of each segment at end of current timestep [mg/d] [size: nsegs]
+/// \param Mlat_new    [out] in-catchment routing component of aMout_new[nSegs-1] [mg/d]
 /// \param Res_mass    [out] calculated reservoir mass at end of time step
-/// \param ResSedMass [out] calculated reservoir mass in sediment at end of time step
+/// \param ResSedMass  [out] calculated reservoir mass in sediment at end of time step
 /// \param &Options    [in]  Global model options information
 /// \param tt          [in]  Time structure
 //
 void   CConstituentModel::RouteMass(const int          p,          // SB index
                                     double            *aMout_new,  // [mg/d][size: nsegs ]
+                                    double            &Mlat_new,   // [mg/d]
                                     double            &Res_mass,   // [mg]
                                     double            &ResSedMass, // [mg]
                                     const optStruct   &Options,
                                     const time_struct &tt) const
 {
-  int n;
   const double * aUnitHydro =_pModel->GetSubBasin(p)->GetUnitHydrograph();
   const double * aRouteHydro=_pModel->GetSubBasin(p)->GetRoutingHydrograph();
   const double * aQinHist   =_pModel->GetSubBasin(p)->GetInflowHistory();
+  const double * aQlatHist  =_pModel->GetSubBasin(p)->GetLatHistory();
 
   int nSegments   =_pModel->GetSubBasin(p)->GetNumSegments();
   double seg_fraction=1.0/(double)(nSegments);
 
-  double Mlat_new;
-
   //==============================================================
   // route from catchment
   //==============================================================
-  Mlat_new=0.0;
-  for(n=0;n<_nMlatHist[p];n++) {
-    Mlat_new+=_aMlatHist[p][n]*aUnitHydro[n];
-  }
+  Mlat_new=ApplyInCatchmentRouting(p,aUnitHydro,aQlatHist,_aMlatHist[p],_nMlatHist[p], Options.timestep);
 
   //==============================================================
   // route along channel
@@ -262,9 +267,11 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   else {
     ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
   }
-
-  //all fluxes from catchment are routed directly to basin outlet
-  aMout_new[nSegments-1]+=Mlat_new;
+  
+  //all fluxes from catchment are routed directly to basin outlet (unless handled in convolution routing as source term)
+  if ((!_lateral_via_convol) || (_pModel->GetSubBasin(p)->IsHeadwater())){
+    aMout_new[nSegments-1]+=Mlat_new;
+  }
 
   //Mass removal at basin outlet (Mass removal point)
   //-----------------------------------------------------------------
@@ -340,13 +347,15 @@ void   CConstituentModel::RouteMassInReservoir(const int          p,          //
 /// \param &Options       [in] Global model options information
 /// \param initialize     [in] Flag to indicate if flows are to only be initialized
 //
-void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
-                                              double &ResMass,
-                                              double &ResSedMass,
-                                              double &MassOutflow,
+void   CConstituentModel::UpdateMassOutflows( const int     p,
+                                              const double *aMoutnew,
+                                              const double &Mlat_new,
+                                              const double &ResMass,
+                                              const double &ResSedMass,
+                                                    double &MassOutflow,
                                               const optStruct &Options,
                                               const time_struct &tt,
-                                              bool initialize)
+                                              const bool    initialize)
 {
   double tstep=Options.timestep;
 
@@ -359,6 +368,9 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
     _aMout[p][seg]=aMoutnew[seg];
   }
   MassOutflow=_aMout[p][pBasin->GetNumSegments()-1];// is now the new mass outflow from the channel
+
+  _aMlocLast[p] = _aMlocal[p];
+  _aMlocal  [p] = Mlat_new;
 
   //Update reservoir concentrations
   //-----------------------------------------------------
@@ -392,17 +404,15 @@ void   CConstituentModel::UpdateMassOutflows(const int p,double *aMoutnew,
   //------------------------------------------------------
   double dt=tstep;
   double dM=0.0;
-  double Mlat_new(0.0);
-  const double *pUH=pBasin->GetUnitHydrograph();
-  for(int n=0;n<_nMlatHist[p];n++) {
-    Mlat_new+=pUH[n]*_aMlatHist[p][n];
-  }
 
   //mass change from linearly varying upstream inflow over time step
   dM+=0.5*(_aMinHist[p][0]+_aMinHist[p][1])*dt;
 
   //mass change from linearly varying downstream outflow over time step
   dM-=0.5*(_aMout[p][pBasin->GetNumSegments()-1]+_aMout_last[p])*dt;
+
+  //energy change from loss of mass/energy in-catchment over time step
+  dM-=GetCatchmentTransitLosses(p);
 
   //energy change from loss of mass/energy along reach over time step
   dM-=GetNetReachLosses(p);

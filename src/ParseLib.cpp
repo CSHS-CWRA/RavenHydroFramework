@@ -18,6 +18,7 @@ CParser::CParser(ifstream &FILE, const int i)
   INPUT =&FILE;
   l=i;
   comma_only=false;
+  _parsing_math_exp=false;
 }
 //-----------------------------------------------------------------------
 CParser::CParser(ifstream &FILE, string _filename, const int i)
@@ -26,6 +27,7 @@ CParser::CParser(ifstream &FILE, string _filename, const int i)
   INPUT =&FILE;
   l=i;
   comma_only=false;
+  _parsing_math_exp=false;
 }
 /*----------------------------------------------------------------
   Basic Member Functions

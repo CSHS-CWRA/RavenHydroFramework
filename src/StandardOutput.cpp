@@ -358,7 +358,7 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
       _FORCINGS<<" rain [mm/d], snow [mm/d], temp [C], temp_daily_min [C], temp_daily_max [C],temp_daily_ave [C],temp_monthly_min [C],temp_monthly_max [C],";
       _FORCINGS<<" air_density [kg/m3], air_pressure [KPa], rel_humidity [-],";
       _FORCINGS<<" cloud_cover [-],";
-      _FORCINGS<<" ET_radiation [MJ/m2/d], SW_radiation [MJ/m2/d], net_SW_radiation [MJ/m2/d], LW_radiation [MJ/m2/d], wind_speed [m/s],";
+      _FORCINGS<<" ET_radiation [MJ/m2/d], SW_radiation [MJ/m2/d], net_SW_radiation [MJ/m2/d], LW_incoming [MJ/m2/d], net_LW_radiation [MJ/m2/d], wind_speed [m/s],";
       _FORCINGS<<" PET [mm/d], OW_PET [mm/d],";
       _FORCINGS<<" daily_correction [-], potential_melt [mm/d]";
       _FORCINGS<<endl;
@@ -1140,7 +1140,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
         _FORCINGS<<pFave->SW_radia<<",";
         _FORCINGS<<pFave->SW_radia_net<<",";
         //_FORCINGS<<pFave->SW_radia_subcan<<",";
-        //_FORCINGS<<pFave->LW_incoming<<",";
+        _FORCINGS<<pFave->LW_incoming<<",";
         _FORCINGS<<pFave->LW_radia_net<<",";
         _FORCINGS<<pFave->wind_vel<<",";
         _FORCINGS<<pFave->PET<<",";
@@ -2044,8 +2044,8 @@ void CModel::WriteNetcdfStandardHeaders(const optStruct &Options)
     varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"ET_radiation","ET radiation","MJ m**-2 d**-1");
     varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"SW_radiation","SW radiation","MJ m**-2 d**-1");
     varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"net_SW_radiation","net SW radiation","MJ m**-2 d**-1");
+    varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"LW_incoming","LW incoming","MJ m**-2 d**-1");
     varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"LW_radiation","LW radiation","MJ m**-2 d**-1");
-    //varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"LW_radia_inc","LW incoming","MJ m**-2 d**-1");
     //varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"SW_radia_subcan","SW subcanopy","MJ m**-2 d**-1");
     varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"wind_velocity","wind velocity","m s**-1");
     varid= NetCDFAddMetadata(_FORCINGS_ncid,time_dimid,"PET","PET","mm d**-1");
@@ -2504,7 +2504,7 @@ void  CModel::WriteNetcdfMinorOutput ( const optStruct   &Options,
     AddSingleValueToNetCDF(_FORCINGS_ncid,"SW_radiation"     ,time_ind2,pFave->SW_radia);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"net_SW_radiation" ,time_ind2,pFave->SW_radia_net);
     //AddSingleValueToNetCDF(_FORCINGS_ncid,"SW_radia_subcan"  ,time_ind2,pFave->SW_rad_subcanopy);
-    //AddSingleValueToNetCDF(_FORCINGS_ncid,"LW_incoming"      ,time_ind2,pFave->LW_incoming);
+    AddSingleValueToNetCDF(_FORCINGS_ncid,"LW_incoming"      ,time_ind2,pFave->LW_incoming);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"LW_radiation"     ,time_ind2,pFave->cloud_cover);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"wind_velocity"    ,time_ind2,pFave->wind_vel);
     AddSingleValueToNetCDF(_FORCINGS_ncid,"PET"              ,time_ind2,pFave->PET);

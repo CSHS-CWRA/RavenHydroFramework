@@ -197,6 +197,7 @@ const double  LH_SUBLIM               =2.845;                                   
 
 const double  EMISS_ATM               =0.985;                                   ///< [-] emissivity of the atmosphere and snowpack
 const double  EMISS_CANOPY            =0.96;                                    ///< [-] emissivity of the canopy
+const double  EMISS_WATER             =0.97;                                    ///< [-] emissivity of open water
 
 const double  AIR_H20_MW_RAT          =0.622;                                   ///< ratio of molecular weight of air to that of water
 const double  MOLWT_WATER             =18.01528;                                ///< [g/mol] molecular weight of H2O

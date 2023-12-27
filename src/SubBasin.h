@@ -67,6 +67,8 @@ private:/*------------------------------------------------------*/
   double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph
   double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
   int          _reach_HRUindex;   ///< HRU *index* k (not ID) associated with reach. Used for reach-specific forcings.
+  double      _sens_exch_coeff;   ///< in-catchment sensible exchange coefficient [1/d]
+  double        _GW_exch_coeff;   ///< in-catchment groundwater temperature exchange coefficient [1/d]
 
   double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]
   double        _convect_coeff;   ///< convection coefficient [MJ/m2/d/K]
@@ -190,6 +192,7 @@ public:/*-------------------------------------------------------*/
   double               GetTemperatureCorrection () const;
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
+  double               GetXSectArea         () const;
   double               GetWaterLevel        () const;
   double               GetHyporheicFlux     () const;
   double               GetConvectionCoeff   () const;

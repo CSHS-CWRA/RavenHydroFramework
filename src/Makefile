@@ -10,6 +10,7 @@
 # Modified   Feb 2017    Juliane Mai    - add NetCDF support
 #            Mar 2017    Juliane Mai    - increase stack size to 256 MB from standard 64MB
 #            Jan 2019    Alan J. Barton - added OS name to created exe name
+#            Dec 2023    David Huard - support for python binding 
 ###
 # appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g')_$(shell uname -o).exe
 appname := Raven.exe

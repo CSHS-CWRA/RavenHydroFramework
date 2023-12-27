@@ -165,8 +165,6 @@ bool ParseInputFiles (CModel      *&pModel,
 /// \brief This local method (called by ParseInputFiles) reads an input .rvi file and generates
 /// a new model with all options and processes created.
 ///
-/// \remark Custom output must be AFTER processes are specified.
-///
 /// \param *filename [in] The fully-qualified file name of .rvi input file
 /// \param *&pModel [in] Input object that determines general model settings
 /// \param &Options [in] Global model options information
@@ -181,6 +179,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CProcessGroup    *pProcGroup=NULL;
   CProcessGroup    *pProcGroupOuter=NULL; //for nested processgroups
   CGroundwaterModel*pGW=NULL;
+  CEnthalpyModel   *pEnthalpyModel=NULL;
   bool              transprepared(false);
   bool              runname_overridden(false);
   bool              runmode_overridden(false);
@@ -509,7 +508,9 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     //...
     //--------------------SYSTEM OPTIONS -----------------------
+    else if  (!strcmp(s[0],":HyporheicLayer"            )){code=198;}
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
+
 
     //--------------------HYDROLOGICAL PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
@@ -2016,6 +2017,17 @@ bool ParseMainInputFile (CModel     *&pModel,
       Options.write_localflow=true;
       break;
     }
+    case(198):  //--------------------------------------------
+    {/*:HyporheicLayer*/
+      if(Options.noisy) { cout << "HyporheicLayer" << endl; }
+      if (pEnthalpyModel != NULL) {
+        pEnthalpyModel->SetHyporheicLayer(s_to_i(s[1]));
+      }
+      else {
+        ExitGracefully("ParseMainInputFile: :HyporheicLayer must be supplied after :Transport TEMPERATURE command",BAD_DATA_WARN);
+      }
+      break;
+    }
     case(199):  //--------------------------------------------
     {/*:AggregatedVariable [SV_TAG] {optional HRU_Group}*/
 
@@ -3098,7 +3110,9 @@ bool ParseMainInputFile (CModel     *&pModel,
         //\todo [funct] implement this by default
         //int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
         //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_TEMP);
+        pEnthalpyModel =(CEnthalpyModel*)(pModel->GetTransportModel()->GetConstituentModel(pModel->GetTransportModel()->GetNumConstituents()-1));
       }
+  
       break;
     }
 

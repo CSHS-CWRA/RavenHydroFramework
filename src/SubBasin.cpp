@@ -51,6 +51,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
   _convect_coeff     =2.0; //default
+  _sens_exch_coeff   =0.0;
+  _GW_exch_coeff     =0.0;
   _bed_conductivity  =0.0;
   _bed_thickness     =0.5; //m
 
@@ -673,8 +675,8 @@ double CSubBasin::GetHyporheicFlux() const {
   return _hyporheic_flux;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns reach bed conductance
-/// \return reach hyporheic bed conductance
+/// \brief Returns reach bed conductivity
+/// \return reach hyporheic bed conductivity
 //
 double CSubBasin::GetRiverbedConductivity() const {
   return _bed_conductivity;
@@ -899,13 +901,23 @@ double CSubBasin::GetDiffusivity() const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel depth, in meters
-/// \return  reference channel depth [m], with minimum depth of 1cm
+/// \return  channel depth [m], with minimum depth of 1cm
 //
 double CSubBasin::GetRiverDepth() const
 {
   if (_pChannel==NULL){return ALMOST_INF;}
   const double MIN_CHANNEL_DEPTH=0.01;
   return max(_pChannel->GetDepth(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_DEPTH);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns channel area, in m2
+/// \return  channel area [m], with minimum area of 0.01 m2
+//
+double CSubBasin::GetXSectArea() const 
+{
+  if (_pChannel==NULL){return ALMOST_INF;}
+  const double MIN_CHANNEL_AREA=0.01;
+  return max(_pChannel->GetArea(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_AREA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1005,7 +1017,9 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }
-  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }
+  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; } 
+  else if (!label_n.compare("SENS_EXCH_COEFF")) { _sens_exch_coeff=value; }
+  else if (!label_n.compare("GW_EXCH_COEFF" ))  { _GW_exch_coeff=value; }
 
   else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ _bed_conductivity = value; }
   else if (!label_n.compare("RIVERBED_THICKNESS"   )){ _bed_thickness = value; }
@@ -1057,6 +1071,8 @@ double CSubBasin::GetBasinProperties(const string label) const
   else if (!label_n.compare("REACH_HRU_ID"  ))  { return (double)(_reach_HRUindex); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { return _hyporheic_flux; }
   else if (!label_n.compare("CONVECT_COEFF"))   { return _convect_coeff; }
+  else if (!label_n.compare("SENS_EXCH_COEFF")) { return _sens_exch_coeff; }
+  else if (!label_n.compare("GW_EXCH_COEFF"))   { return _GW_exch_coeff; }
 
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
@@ -1394,8 +1410,9 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
         string warn="CSubBasin::Initialize: negative or zero average flow specified in initialization (basin "+to_string(_ID)+")";
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
+      double mult=_pModel->GetGlobalParams()->GetParams()->reference_flow_mult;
+      ResetReferenceFlow(mult*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
 
-      ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
       //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AvgAnnualRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
       //WriteAdvisory(advice,false);
     }
@@ -2072,7 +2089,12 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
 /// lateral flow is all routed to most downstream outflow segment . Assumes uniform time step
 ///
 /// \param [out] *aQout_new Array of outflows at downstream end of each segment at end of current timestep [m^3/s]
+/// \param [out] res_ht - reservoir stage at end of timestep
+/// \param [out] res_outflow - reservoir outflow at end of timestep
+/// \param [out] res_const - current reservoir constraint over timestep
+/// \param [out] aResQstruct - reservoir outflows from various control structures 
 /// \param &Options [in] Global model options information
+/// \param tt [in] - time structure 
 //
 void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            double &res_ht, //[m]
@@ -2098,11 +2120,6 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   Qlat_new=0.0;
   for (n=0;n<_nQlatHist;n++){
     Qlat_new+=_aUnitHydro[n]*_aQlatHist[n];
-  }
-
-  double Qlat_last=0;
-  for (n=0;n<_nQlatHist-1;n++){
-    Qlat_last+=_aUnitHydro[n]*_aQlatHist[n+1];
   }
 
   //==============================================================
@@ -2178,7 +2195,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
 
       //new outflow proportional to old outflow without correction
       double corr=1.0;
-      aQout_new[seg] = c1*Qin + c2*Qin_new + c3*(_aQout[seg]-corr*_QlatLast);
+      aQout_new[seg] = c1*Qin + c2*Qin_new + c3*(_aQout[seg]-corr*_Qlocal);
       Qin    =_aQout   [seg];
       Qin_new=aQout_new[seg];
     }
@@ -2194,7 +2211,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     const double ROUTE_MAXITER=20;
     const double ROUTE_TOLERANCE=0.0001;//[m3/s]
 
-    double Qout_old =_aQout   [_nSegments-1]-Qlat_last;
+    double Qout_old =_aQout   [_nSegments-1]-_Qlocal;
     double Qin_new  =_aQinHist[0];
     double Qin_old  =_aQinHist[1];
     double V_old=_pChannel->GetArea(Qout_old,_slope,_mannings_n)*_reach_length;
@@ -2253,7 +2270,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     const double ROUTE_MAXITER=20;
     const double ROUTE_TOLERANCE=0.0001;//[m3/s]
 
-    double Qout_old =_aQout   [_nSegments-1]-Qlat_last;
+    double Qout_old =_aQout   [_nSegments-1]-_Qlocal;
     double Qin_new  =_aQinHist[0];
 		double Qin_old  =_aQinHist[1];
 

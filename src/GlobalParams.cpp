@@ -156,6 +156,13 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   {
     G.GAMMA_SCALE_multiplier=1.0;//default=nothing (no warning needed)
   }
+  autocalc=SetCalculableValue(G.reference_flow_mult,Gtmp.reference_flow_mult,Gtemplate.reference_flow_mult);
+  if (autocalc)
+  {
+    G.reference_flow_mult=10; 
+    warn="The required global parameter REFERENCE_FLOW_MULT is set to the value "+to_string(G.reference_flow_mult);
+    if (chatty){WriteAdvisory(warn,false);}
+  }
   autocalc=SetCalculableValue(G.adiabatic_lapse,Gtmp.adiabatic_lapse,Gtemplate.adiabatic_lapse);
   if (autocalc)
   {
@@ -379,6 +386,7 @@ void CGlobalParams::InitializeGlobalParameters(global_struct &g, bool is_templat
   g.assim_time_decay     =0.2;
   g.assimilation_fact    =1.0;
   g.reservoir_demand_mult=1.0;
+  g.reference_flow_mult  =10.0;
 
   //calculable /estimable parameters
   g.snow_SWI            =DefaultParameterValue(is_template,true);
@@ -492,6 +500,7 @@ void  CGlobalParams::SetGlobalProperty (global_struct &G,
   else if (!name.compare("RAINSNOW_TEMP"       )){G.rainsnow_temp=value;}
   else if (!name.compare("RAINSNOW_DELTA"      )){G.rainsnow_delta=value;}
   else if (!name.compare("ADIABATIC_LAPSE"     )){G.adiabatic_lapse=value;}
+  else if (!name.compare("REFERENCE_FLOW_MULT" )){G.reference_flow_mult=value;}
   else if (!name.compare("WET_ADIABATIC_LAPSE" )){G.wet_adiabatic_lapse=value;}
   else if (!name.compare("PRECIP_LAPSE"        )){G.precip_lapse=value;}
 
@@ -583,6 +592,7 @@ double *CGlobalParams::GetAddress(const string name)
   else if (!name.compare("RAINSNOW_TEMP"       )){return &(G.rainsnow_temp);}
   else if (!name.compare("RAINSNOW_DELTA"      )){return &(G.rainsnow_delta);}
   else if (!name.compare("ADIABATIC_LAPSE"     )){return &(G.adiabatic_lapse);}
+  else if (!name.compare("REFERENCE_FLOW_MULT" )){return &(G.reference_flow_mult);}
   else if (!name.compare("WET_ADIABATIC_LAPSE" )){return &(G.wet_adiabatic_lapse);}
   else if (!name.compare("PRECIP_LAPSE"        )){return &(G.precip_lapse);}
 
@@ -614,6 +624,7 @@ double CGlobalParams::GetGlobalProperty(const global_struct &G, string  param_na
   else if (!name.compare("SNOW_ROUGHNESS"      )){return G.snow_roughness;}
   else if (!name.compare("RAINSNOW_DELTA"      )){return G.rainsnow_delta;}
   else if (!name.compare("ADIABATIC_LAPSE"     )){return G.adiabatic_lapse;}
+  else if (!name.compare("REFERENCE_FLOW_MULT" )){return G.reference_flow_mult;}
   else if (!name.compare("WET_ADIABATIC_LAPSE" )){return G.wet_adiabatic_lapse;}
   else if (!name.compare("PRECIP_LAPSE"        )){return G.precip_lapse;}
 

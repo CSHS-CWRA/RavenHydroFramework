@@ -1734,7 +1734,7 @@ void CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int
 //
 void quickSort(double arr[], int left, int right)
 {
-  if (right<=left){return;}//e.g., if array size==0
+  if (right<=left){return;}//e.g., if array size==0 or 1 
   int i = left, j = right;
   double tmp;
   double pivot = arr[(left + right) / 2];
