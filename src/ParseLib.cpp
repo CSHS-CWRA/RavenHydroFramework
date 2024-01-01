@@ -40,26 +40,26 @@ string CParser::GetFilename() {return filename;}
 //-----------------------------------------------------------------------
 void CParser::NextIsMathExp() {_parsing_math_exp=true;}
 //-----------------------------------------------------------------------
-string CParser::Peek() 
+string CParser::Peek()
 {
-// return first word of current line in INPUT without proceeding forward in the file 
+// return first word of current line in INPUT without proceeding forward in the file
     std::streampos place;
     int Len;
     char *s[MAXINPUTITEMS];
-  
+
     place=INPUT->tellg(); // Get current position
-    
-    Tokenize(s,Len); //read and parse whole line 
+
+    Tokenize(s,Len); //read and parse whole line
     string firstword = "";
     if (Len > 0) {firstword=s[0];}
-    
+
     INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line .
     return firstword;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief takes expression string and adds spaces to help with expression tokenization 
-/// \param line [in] - string 
-/// \returns same line but with spaces to left and right of operators 
+/// \brief takes expression string and adds spaces to help with expression tokenization
+/// \param line [in] - string
+/// \returns same line but with spaces to left and right of operators
 //
 string CParser::AddSpacesBeforeOps(string line) const
 {
@@ -117,7 +117,7 @@ bool CParser::Tokenize(char **out, int &numwords){
     strcpy(wholeline,line.c_str());
     _parsing_math_exp=false;
   }
-  
+
   p=strtok(wholeline, delimiters);
   while (p){                                         //sift through words, place in temparray, count line length
     tempwordarray[ct]=p;

@@ -159,7 +159,7 @@ void CGlobalParams::AutoCalculateGlobalParams(const global_struct &Gtmp, const g
   autocalc=SetCalculableValue(G.reference_flow_mult,Gtmp.reference_flow_mult,Gtemplate.reference_flow_mult);
   if (autocalc)
   {
-    G.reference_flow_mult=10; 
+    G.reference_flow_mult=10;
     warn="The required global parameter REFERENCE_FLOW_MULT is set to the value "+to_string(G.reference_flow_mult);
     if (chatty){WriteAdvisory(warn,false);}
   }

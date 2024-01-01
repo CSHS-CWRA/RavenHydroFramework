@@ -161,7 +161,7 @@ void CVegetationClass::AutoCalculateVegetationProps(const veg_struct &Vtmp, cons
     V.PET_veg_corr=1.0;
     //no warning - default is one
   }
-  //capacity LAI ratio 
+  //capacity LAI ratio
   autocalc=SetCalculableValue(V.Cap_LAI_ratio,Vtmp.Cap_LAI_ratio,Vdefault.Cap_LAI_ratio);
   if (autocalc)
   {

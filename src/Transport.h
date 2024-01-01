@@ -308,7 +308,7 @@ public:/*-------------------------------------------------------*/
           void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
           void   SetMassInflows           (const int p,const double Minnew);
           void   SetLateralInfluxes       (const int p,const double RoutedMass);
-		  
+
   virtual void   PrepareForRouting        (const int p);
           void   RouteMass                (const int p,      double *aMoutnew,double &Mlat_new,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
   virtual void   RouteMassInReservoir     (const int p,const double *aMoutnew,                 double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;

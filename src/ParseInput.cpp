@@ -1117,7 +1117,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<2){ImproperFormatWarning(":LWIncomingMethod",p,Options.noisy); break;}
       if      (!strcmp(s[1],"LW_INC_DATA"      )){Options.LW_incoming=LW_INC_DATA;}
       else if (!strcmp(s[1],"LW_INC_DEFAULT"   )){Options.LW_incoming=LW_INC_DEFAULT;}
-      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;} 
+      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;}
       else if (!strcmp(s[1],"LW_INC_SKYVIEW"   )){Options.LW_incoming=LW_INC_SKYVIEW;}
       else if (!strcmp(s[1],"LW_INC_DINGMAN"   )){Options.LW_incoming=LW_INC_DINGMAN;}
       else {ExitGracefully("ParseInput:LWIncomingMethod: Unrecognized method ",BAD_DATA_WARN);}
@@ -3112,7 +3112,7 @@ bool ParseMainInputFile (CModel     *&pModel,
         //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_TEMP);
         pEnthalpyModel =(CEnthalpyModel*)(pModel->GetTransportModel()->GetConstituentModel(pModel->GetTransportModel()->GetNumConstituents()-1));
       }
-  
+
       break;
     }
 

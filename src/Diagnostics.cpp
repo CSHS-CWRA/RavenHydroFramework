@@ -1306,13 +1306,13 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
       if ((obsval!=RAV_BLANK_DATA) && (baseweight[nn]>0.0)){
         ovals[(int)(N)]=obsval;
         mvals[(int)(N)]=modval;
-        N++;  
+        N++;
       }
     }
     if(N>1) {
       getRanks(mvals,(int)(N),rank1);
       getRanks(ovals,(int)(N),rank2);
-      
+
       double cov=0;
       double mean1=0;
       double mean2=0;
@@ -1328,8 +1328,8 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
         cov  += (rank1[n]-mean1)*(rank2[n]-mean2)/N;
       }
       spearman = cov / sqrt(std1) / sqrt(std2);
-    } 
-    else 
+    }
+    else
     {
       spearman=0;
     }

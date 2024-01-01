@@ -73,7 +73,7 @@ long   CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
 
 //////////////////////////////////////////////////////////////////
 /// \brief returns identifier tag
-/// \return identifier tag 
+/// \return identifier tag
 //
 int   CTimeSeriesABC::GetIDTag() const {return _ID_tag; }
 
@@ -91,7 +91,7 @@ void   CTimeSeriesABC::SetLocID(long ID) { _loc_ID=ID; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets identifier tag
-/// \param IDtag - integer tag (e.g., demand ID) 
+/// \param IDtag - integer tag (e.g., demand ID)
 //
 void   CTimeSeriesABC::SetIDTag(int IDtag) { _ID_tag=IDtag; }
 

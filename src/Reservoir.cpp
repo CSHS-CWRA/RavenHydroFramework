@@ -561,7 +561,7 @@ string CReservoir::GetControlName(const int i) const
   return _pControlStructures[i]->GetName();
 }
 
-double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const 
+double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const
 {
   double dh=0.0001;
   double weir_adj=0.0;

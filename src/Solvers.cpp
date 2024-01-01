@@ -538,7 +538,7 @@ void MassEnergyBalance( CModel            *pModel,
     }
 
     //preparatory step prior to routing: used to assimilate lake levels and update routing hydrograph for timestep
-    pBasin->UpdateSubBasin(tt,Options);            
+    pBasin->UpdateSubBasin(tt,Options);
   }
   // Route water over timestep
   // ----------------------------------------------------------------------------------------

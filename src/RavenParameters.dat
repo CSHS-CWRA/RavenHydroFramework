@@ -34,7 +34,7 @@ DEP_K LULT [-]  False 0.1 0.0 -9999
 DEP_CRESTRATIO LULT [m/m]  False 0.0 10 -9999
 DEP_SEEP_K LULT [-]  False 0.1 0.0 -9999
 PET_VAP_COEFF [mm/d/kPa] False 1.5 1.0 3.0
-PET_LIN_COEFF [mm/d/K] False -9999 0.0 -9999  
+PET_LIN_COEFF [mm/d/K] False -9999 0.0 -9999
 WINDVEL_CORR [-] True 1.0 0.0 4.0
 RELHUM_CORR [-] True 1.0 0.5 1.5
 
@@ -193,7 +193,7 @@ MAX_INTERCEPT_RATE VEG [mm/d] False 10 0 9999
 CHU_MATURITY VEG [-] False 2800 0 9999
 UPTAKE_MODERATOR VEG [-] True 1 0 1
 CAP_LAI_RATIO VEG [-] True 0.15 0.05 2
-SNOCAP_LAI_RATIO VEG [-] True 0.6 0.2 8 
+SNOCAP_LAI_RATIO VEG [-] True 0.6 0.2 8
 
 #veg_var_struct
 LAI VEG [m2/m2] False 4.0 0.0 7

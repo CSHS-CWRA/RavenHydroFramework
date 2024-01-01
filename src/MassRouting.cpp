@@ -209,7 +209,7 @@ void   CConstituentModel::SetLateralInfluxes(const int p,const double Mlat)
 
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Gathers and prepares data prior to calling RouteMass 
+/// \brief Gathers and prepares data prior to calling RouteMass
 /// \param p [in]    subbasin index
 //
 void  CConstituentModel::PrepareForRouting(const int p) {
@@ -267,7 +267,7 @@ void   CConstituentModel::RouteMass(const int          p,          // SB index
   else {
     ExitGracefully("Unrecognized or unsupported constiuent routing method (:Routing command must be ROUTE_NONE, ROUTE_PLUG_FLOW, or ROUTE_DIFFUSIVE_WAVE to support transport)",STUB);
   }
-  
+
   //all fluxes from catchment are routed directly to basin outlet (unless handled in convolution routing as source term)
   if ((!_lateral_via_convol) || (_pModel->GetSubBasin(p)->IsHeadwater())){
     aMout_new[nSegments-1]+=Mlat_new;

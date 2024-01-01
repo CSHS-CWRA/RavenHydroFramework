@@ -362,9 +362,9 @@ double CTimeSeries::GetValue(const double &t) const
 {
   //takes in GLOBAL model time
   int n= 0;
-  double t_loc = t + _t_corr; //local time series time 
+  double t_loc = t + _t_corr; //local time series time
   n = GetTimeIndex(t_loc);
-  
+
   if (_pulse){return _aVal[n];}
   else      {
     if (n==_nPulses-1){return _aVal[n];}

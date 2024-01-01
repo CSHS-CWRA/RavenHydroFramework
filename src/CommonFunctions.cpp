@@ -1734,7 +1734,7 @@ void CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int
 //
 void quickSort(double arr[], int left, int right)
 {
-  if (right<=left){return;}//e.g., if array size==0 or 1 
+  if (right<=left){return;}//e.g., if array size==0 or 1
   int i = left, j = right;
   double tmp;
   double pivot = arr[(left + right) / 2];
@@ -1757,10 +1757,10 @@ void quickSort(double arr[], int left, int right)
   if (i < right){quickSort(arr, i, right);}
 }
 //////////////////////////////////////////////////////////////////
-// given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater) 
-// if values are not unique, gaps will form between ranks  
-// NOT OPTIMIZED 
-void getRanks(const double* arr, const int N, int* ranks) 
+// given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater)
+// if values are not unique, gaps will form between ranks
+// NOT OPTIMIZED
+void getRanks(const double* arr, const int N, int* ranks)
 {
   double soft=0;
 	for(int i=0;i<N;i++){

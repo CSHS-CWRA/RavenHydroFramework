@@ -464,7 +464,7 @@ double CSubBasin::GetIrrigationDemand(const double &t) const
   double Qirr;
   for (int i=0;i<_nIrrigDemands;i++)
   {
-    Qirr=_pIrrigDemands[i]->GetValue(t); 
+    Qirr=_pIrrigDemands[i]->GetValue(t);
     if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
     sum+=Qirr;
   }
@@ -530,10 +530,10 @@ bool CSubBasin::HasIrrigationDemand() const
 double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q) const
 {
   if (_nIrrigDemands==0){return 0.0;}
-  
+
   //if using Management optimization, delivery determined by optimizer /todo[funct]
   //return pModel->GetDemandOptimizer()->GetTotalWaterDemandDelivery(_global_index);
-  
+
   double Qirr;
   double Qdemand=GetIrrigationDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
@@ -720,30 +720,30 @@ double CSubBasin::GetRivuletStorage () const
   return _rivulet_storage;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief number of water/irrigation demands 
-/// \return number of water/irrigation demands 
+/// \brief number of water/irrigation demands
+/// \return number of water/irrigation demands
 //
-int CSubBasin::GetNumWaterDemands() const 
+int CSubBasin::GetNumWaterDemands() const
 {
   return _nIrrigDemands;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand integer ID 
-/// \return water/irrigation demand integer ID  
+/// \brief returns water/irrigation demand integer ID
+/// \return water/irrigation demand integer ID
 //
 int CSubBasin::GetWaterDemandID     (const int i) const
-{ 
+{
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
 #endif
-  return _pIrrigDemands[i]->GetIDTag(); //stores demand ID 
+  return _pIrrigDemands[i]->GetIDTag(); //stores demand ID
 }
 //////////////////////////////////////////////////////////////////
-/// \brief returns water/irrigation demand name/alias  
-/// \return water/irrigation demand name/alias 
+/// \brief returns water/irrigation demand name/alias
+/// \return water/irrigation demand name/alias
 //
 string CSubBasin::GetWaterDemandName   (const int i) const
-{ 
+{
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
 #endif
@@ -913,7 +913,7 @@ double CSubBasin::GetRiverDepth() const
 /// \brief Returns channel area, in m2
 /// \return  channel area [m], with minimum area of 0.01 m2
 //
-double CSubBasin::GetXSectArea() const 
+double CSubBasin::GetXSectArea() const
 {
   if (_pChannel==NULL){return ALMOST_INF;}
   const double MIN_CHANNEL_AREA=0.01;
@@ -1017,7 +1017,7 @@ bool CSubBasin::SetBasinProperties(const string label,
 
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }
-  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; } 
+  else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }
   else if (!label_n.compare("SENS_EXCH_COEFF")) { _sens_exch_coeff=value; }
   else if (!label_n.compare("GW_EXCH_COEFF" ))  { _GW_exch_coeff=value; }
 
@@ -1851,7 +1851,7 @@ void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 /// \param &res_ht [in] new reservoir stage [m]
 /// \param res_outflow [in] reservoir outflow [m3/s]
 /// \param constraint [in] current constraint applied to reservoir flow [-]
-/// \param res_Qstruct [in] pointer to structure for multiple-control reservoir 
+/// \param res_Qstruct [in] pointer to structure for multiple-control reservoir
 /// \param &Options [in] Global model options information
 /// \param &tt [in] time structure at start of current time step
 /// \param initialize [in] Flag to indicate if flows are to only be initialized
@@ -2092,9 +2092,9 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
 /// \param [out] res_ht - reservoir stage at end of timestep
 /// \param [out] res_outflow - reservoir outflow at end of timestep
 /// \param [out] res_const - current reservoir constraint over timestep
-/// \param [out] aResQstruct - reservoir outflows from various control structures 
+/// \param [out] aResQstruct - reservoir outflows from various control structures
 /// \param &Options [in] Global model options information
-/// \param tt [in] - time structure 
+/// \param tt [in] - time structure
 //
 void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            double &res_ht, //[m]

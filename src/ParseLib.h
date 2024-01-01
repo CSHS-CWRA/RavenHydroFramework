@@ -57,7 +57,7 @@ private:
 
   bool    _parsing_math_exp;
 
-  string AddSpacesBeforeOps(string line) const; 
+  string AddSpacesBeforeOps(string line) const;
 
 public:
 
