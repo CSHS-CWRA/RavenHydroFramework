@@ -613,13 +613,13 @@ void CConstituentModel::IncrementCumulOutput(const optStruct &Options)
 /// \param aMlatHist [in] lateral inflow history [size: nMlatHist] [m3/s]
 /// \param nMlatHist [in] size of lateral inflow history
 /// \param tstep [in] model time step [d]
-/// \returns new lateral inflow to reach 
+/// \returns new lateral inflow to reach
 //
 double CConstituentModel::ApplyInCatchmentRouting(const int     p,
                                                   const double *aUnitHydro,
                                                   const double *aQlatHist,
                                                   const double *aMlatHist,
-                                                  const int     nMlatHist, 
+                                                  const int     nMlatHist,
                                                   const double &tstep) const
 {
   double Mlat_new=0.0;

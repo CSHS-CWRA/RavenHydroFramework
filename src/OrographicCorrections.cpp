@@ -396,7 +396,7 @@ void CModel::CorrectPET(const optStruct &Options,
     if(SWE>0.1) { F.PET*=(1.0-snow_cov); }
   }
 
-  //soil-based correction 
+  //soil-based correction
   if (pHRU->GetHRUType()==HRU_STANDARD){
     F.PET*=pHRU->GetSoilProps(0)->PET_correction; //corrected PET
   }

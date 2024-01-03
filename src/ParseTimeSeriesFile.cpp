@@ -563,7 +563,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       long SBID=DOESNT_EXIST;
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
-      
+
       pSB=pModel->GetSubBasinByID(SBID);
       pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,"none",Options);
       if (pSB!=NULL){
@@ -868,16 +868,16 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       int  demand_ID=DOESNT_EXIST;
       int  j        =0;
       string demand_name = "";
-      
+
       if(Len>=2) {SBID       =s_to_l(s[1]); }
       if(Len>=3) {demand_ID  =s_to_i(s[2]);}
       if(Len>=4) {demand_name=s[3];}
 
       CSubBasin *pSB=pModel->GetSubBasinByID(SBID);
       if (pSB!=NULL) {j=pSB->GetNumWaterDemands();}
-      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+j;} //DEFAULT - SBIDx 
+      if (demand_ID   == DOESNT_EXIST) { demand_ID = SBID*10+j;} //DEFAULT - SBIDx
       if (demand_name == "")           { demand_name = "D"+to_string(SBID)+"abcdefghijklmnopqrstuvwxyz"[j];} //e.g., D120b; }
-      
+
       pTimeSer = CTimeSeries::Parse(p, false, demand_name, SBID, "none", Options);
       if(pSB!=NULL) {
         pTimeSer->SetIDTag(demand_ID);
@@ -994,7 +994,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         warn=":FlowDiversionLookupTable command: Subbasin "+to_string(SBID)+" not found in model, cannot add diversion";
-        WriteWarning(warn,Options.noisy); 
+        WriteWarning(warn,Options.noisy);
       }
 
       p->Tokenize(s,Len);

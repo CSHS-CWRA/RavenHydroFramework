@@ -22,7 +22,7 @@ private:/*------------------------------------------------------*/
   long      _loc_ID;      ///< location ID (stores additional info, like HRU or SB ID for observation data)
   int       _constit_ind; ///< constituent index, if a concentration/temperature observation
   string    _srcfile;     ///< original source file
-  int       _ID_tag;      ///< integer ID tag for (e.g.,) demand ID 
+  int       _ID_tag;      ///< integer ID tag for (e.g.,) demand ID
 
   CTimeSeriesABC(const CTimeSeriesABC &t); //suppresses default copy constructor
 

@@ -178,7 +178,7 @@ private:/*------------------------------------------------------*/
   potmelt_method  *_PotMeltBlends_type;
   double          *_PotMeltBlends_wts;
 
-  //Parameter classes 
+  //Parameter classes
   CLandUseClass    **_pLandUseClasses;     ///< array of pointers to land use classes
   int                _nLandUseClasses;     ///< number of land use classes
   CSoilClass       **_pAllSoilClasses;     /// used to be static attribute of CSoilClass
@@ -192,8 +192,8 @@ private:/*------------------------------------------------------*/
   CChannelXSect    **_pAllChannelXSects;
   int                _nAllChannelXSects;
 
-  CStateVariable    *_pStateVar;           ///< pointer to state variable information object 
-  int                _nLatFlowProcesses;   ///< number of lateral flow processes 
+  CStateVariable    *_pStateVar;           ///< pointer to state variable information object
+  int                _nLatFlowProcesses;   ///< number of lateral flow processes
 
   //initialization subroutines:
   void           GenerateGaugeWeights (double **&aWts, const forcing_type forcing, const optStruct 	 &Options);

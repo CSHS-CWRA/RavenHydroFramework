@@ -132,9 +132,9 @@ private:/*------------------------------------------------------*/
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
 
-  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series  
+  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series
   CTimeSeries **_pIrrigDemands;   ///< pointer to array of time series of demand (which can be unmet) applied at downstream end of basin reach [size: _nIrrigDemand]
-  
+
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
 

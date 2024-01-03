@@ -132,7 +132,7 @@ const double  GPCM3_PER_KGPM3         =0.001;                                   
 const double  MJ_PER_J                =1e-6;                                    ///< [J] to [MJ]
 const double  KPA_PER_MPA             =1000;                                    ///< [MPa] to [KPa]
 const double  PA_PER_KPA              =1000;                                    ///< [kPa] to [Pa]
-const double  HPA_PER_KPA             =10;                                      ///< [kPa] to [hPa] 
+const double  HPA_PER_KPA             =10;                                      ///< [kPa] to [hPa]
 const double  MB_PER_KPA              =10;                                      ///< [KPa] to [millibars]
 const double  KPA_PER_ATM             =101.325;                                 ///< [atm] to [KPa]
 const double  SEC_PER_DAY             =86400;                                   ///< days to seconds
@@ -145,7 +145,7 @@ const double  WATT_TO_MJ_PER_D        =0.0864;                                  
 const double  MJ_PER_M2_LANGLEY       =0.04184;                                 ///< Langley to [MJ/m2]
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
-const double  ACREFTD_PER_CMS         =70.0456;                                 //// [acre-ft/d] to [m3/s] 
+const double  ACREFTD_PER_CMS         =70.0456;                                 //// [acre-ft/d] to [m3/s]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
 const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
@@ -423,7 +423,7 @@ enum evap_method
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
   PET_OUDIN,                    ///< Simple PET from Oudin et. al., 2005
   PET_LINACRE,                  ///< From Linacre, Agricultural Meteorology, 1977
-  PET_VAPDEFICIT,               ///< linear function of vapour deficit, c*(e_sat-e_a) from Seitz and Moore, 2020 
+  PET_VAPDEFICIT,               ///< linear function of vapour deficit, c*(e_sat-e_a) from Seitz and Moore, 2020
   PET_BLENDED,                  ///< a blended combination of 2 or more of the methods above
   PET_UNKNOWN                   ///< special PET type for unrecognized commands
 };
@@ -516,7 +516,7 @@ enum LW_method
 //
 enum LWinc_method
 {
-  LW_INC_DEFAULT,      ///< default implementation - reverts to Dingman 2014 if LW_RAD_DEFAULT is used (for backward compatibility) 
+  LW_INC_DEFAULT,      ///< default implementation - reverts to Dingman 2014 if LW_RAD_DEFAULT is used (for backward compatibility)
   LW_INC_DATA,         ///< specified in time series files
   LW_INC_SICART,       ///< From Sicart et al. (2005) as ported over from CRHM
   LW_INC_SKYVIEW,      ///< simple sky view factor approach for stream temperature modelling, Using Prata 1996 clear sky emissivity
@@ -1028,7 +1028,7 @@ struct optStruct
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
   string           rvl_filename;              ///< fully qualified filename of rvl (live communications) file
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
-  string           rvm_filename;              ///< fully qualified filename of rvm (management) file 
+  string           rvm_filename;              ///< fully qualified filename of rvm (management) file
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
   string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS

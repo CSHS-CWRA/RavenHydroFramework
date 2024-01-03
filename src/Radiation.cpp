@@ -120,10 +120,10 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       //Sicart et al. (2005), Incoming longwave radiation to melting snow: observations, sensitivity and estimation in
       //northern environments, Hydrological Processes, 20, 3697-3708
       //Ported over from CRHM (Pomeroy et al., 2007), added forest cover term
- 
+
       double Fc        =pHRU->GetSurfaceProps()->forest_coverage;
       double svf       =pHRU->GetSurfaceProps()->sky_view_factor;
-      double epsilon_s =0.98;//vegetation emissivity    
+      double epsilon_s =0.98;//vegetation emissivity
       double tau       =0.8; //atmospheric transmittance
       if(F->ET_radia >= 0.001) { tau =  (F->SW_radia_unc/F->ET_radia); } //Based upon comments, not code
 
@@ -131,20 +131,20 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       double ea        =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);//kPa
 
       double epsilon_air= 1.24 * pow(ea*HPA_PER_KPA/Tair,1.0/7.0); //Brutsaert 1975
-    
+
       svf=((svf)*Fc + 1.0 * (1 - Fc)); //correct for partial forest cover
 
       double L_0,L_F; //incoming from atmos [MJ/m2/d], incoming from vegetation [MJ/m2/d]
       L_0 = epsilon_air*(1.0 + 0.44*F->rel_humidity - 0.18*tau)*WATT_TO_MJ_PER_D;//eqn 9 of Sicart et al (2005)
       L_F = epsilon_s*STEFAN_BOLTZ*pow(Tair,4.0); // eqn 6 of Sicart et al (2005)
-    
-      LW_incoming = svf*L_0 + (1.0-svf)*L_F; 
+
+      LW_incoming = svf*L_0 + (1.0-svf)*L_F;
     }
     //--------------------------------------------------------
     case (LW_INC_SKYVIEW):
     {
-      //simple sky view factor with air emissivity from 
-      //Prata, A. J. A new long wave formula for estimating downward clear sky radiation at the surface. 
+      //simple sky view factor with air emissivity from
+      //Prata, A. J. A new long wave formula for estimating downward clear sky radiation at the surface.
       //Quartely Journal of the Royal Meteorological Society, v. 122, p. 1127 - 1151,1996.
       double Fc = pHRU->GetSurfaceProps()->forest_coverage;
       double svf =pHRU->GetSurfaceProps()->sky_view_factor;//0.7
@@ -161,7 +161,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       svf=((svf)*Fc + 1.0 * (1 - Fc)); //correct for partial forest cover
 
       LW_incoming =  epsilon_s   * (1 - svf) * STEFAN_BOLTZ * pow(Tair,4);
-      LW_incoming += epsilon_air * (    svf) * STEFAN_BOLTZ * pow(Tair,4);   
+      LW_incoming += epsilon_air * (    svf) * STEFAN_BOLTZ * pow(Tair,4);
     }
     //--------------------------------------------------------
     case (LW_INC_DINGMAN):
@@ -176,14 +176,14 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
       double ea=F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);
 
       double emiss_eff=1.72*pow(ea/Tair,1/7.0);/// effective clear sky emmisivity - Brutsaert, 1975 in units of kPa/K
-      
+
       //emiss_eff = 1.08 *(1.0- exp(-(10*ea)*Tair/2016.0));            ///< Satterlund (1979) via Brook90 documentation \cite Satterlund1979WRR
       //emiss_eff = 1.0- 0.261*exp(-0.000777*F->temp_ave*F->temp_ave); ///< Idso and Jackson (1969) via Brook90 documentation \cite Idso1969JoGR
       //emiss_eff = 0.0000092*Tair*Tair;                               ///< Swinbank (1963) via Brook90 documentation \cite Swinbank1963QJotRMS
 
-      double eps_at=emiss_eff*(1.0+0.22*F->cloud_cover*F->cloud_cover); //cloud cover correction 
+      double eps_at=emiss_eff*(1.0+0.22*F->cloud_cover*F->cloud_cover); //cloud cover correction
 
-      eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor 
+      eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor
 
       LW_incoming=STEFAN_BOLTZ*eps_at*pow(Tair,4);
     }
@@ -211,13 +211,13 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     double Tsurf=F->temp_ave+ZERO_CELSIUS;  //[K] //\todo better way to do this.
     //double Tsurf=pHRU->GetSurfaceTemperature()+ZERO_CELSIUS;//[K] (not yet functional)
 
-    double ea   =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave); 
+    double ea   =F->rel_humidity*GetSaturatedVaporPressure(F->temp_ave);
 
-    double emiss_eff=1.72*pow(ea/Tair,1/7.0);/// effective clear sky emmisivity \ref Brutsaert 1975, via Dingman clear sky emmissivity 
+    double emiss_eff=1.72*pow(ea/Tair,1/7.0);/// effective clear sky emmisivity \ref Brutsaert 1975, via Dingman clear sky emmissivity
 
     double eps_at   =emiss_eff*(1.0+0.22*F->cloud_cover*F->cloud_cover);
 
-    eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor 
+    eps_at=(1-forest_cover)*eps_at+(forest_cover)*1.0; //treats forest as blackbody - neglects sky view factor
 
     if (Options->LW_incoming==LW_INC_DEFAULT) { //now, DEFAULT==DINGMAN
       LW_incoming=STEFAN_BOLTZ*eps_at*pow(Tair,4);
@@ -306,7 +306,7 @@ double CRadiation::EstimateLongwaveRadiation(const int iSnow,
     ea =F->rel_humidity*sat_vap;                    //[kPa]
     emiss      = (0.34 - 0.139 * sqrt(ea));                  // net emissivity  equation 2.2.20 in SWAT manual
     cloud_corr = 0.1+ 0.9 * (F->SW_radia / F->SW_radia_unc);  // cloud cover factor equation 2.2.19 SWAT
-    LW_incoming=(0.98-emiss*cloud_corr) * STEFAN_BOLTZ * pow(F->temp_ave+ZERO_CELSIUS,4); 
+    LW_incoming=(0.98-emiss*cloud_corr) * STEFAN_BOLTZ * pow(F->temp_ave+ZERO_CELSIUS,4);
     return -emiss * cloud_corr * STEFAN_BOLTZ * pow(F->temp_ave+ZERO_CELSIUS,4);   // net long-wave radiation equation 2.2.21 SWAT
     }*/
 

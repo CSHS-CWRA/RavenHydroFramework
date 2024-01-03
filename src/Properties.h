@@ -396,7 +396,7 @@ struct global_struct
 
   double           avg_annual_snow;          ///< [mm] avg annual snow as SWE
   double           avg_annual_runoff;        ///< [mm] avg annual runoff from basin
-  double           reference_flow_mult;      ///< [-] multiplier for reference flow relative to annual mean flow 
+  double           reference_flow_mult;      ///< [-] multiplier for reference flow relative to annual mean flow
                                              ///< (10 for flood modelling, 0.5 for low-flow conditions)
 
   double           max_reach_seglength;      ///< [km] maximum reach segment length

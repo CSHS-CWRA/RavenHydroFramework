@@ -26,7 +26,7 @@ class CEnthalpyModel :public CConstituentModel
 
   double   *_aSS_temperature;  ///< array of steady state target temperatures in each basin [C] [size: nSubBasins]
 
-  double       *_aMinResTime;  ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins] 
+  double       *_aMinResTime;  ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins]
 
   double          *_aBedTemp;  ///< array of riverbed temperatures [C] [size: nSubBasins]
 
@@ -61,7 +61,7 @@ public:/*-------------------------------------------------------*/
   double GetEnergyLossesInTransit(const int p,double &Q_sens,double &Q_GW) const;
   double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out,double &Q_fric) const;
   double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad_in,double &Q_lw_out, double &Q_rain) const;
-  
+
   double GetOutflowIceFraction   (const int p) const;
   double GetAvgLatentHeatFlux    () const;
   double GetDirichletEnthalpy    (const CHydroUnit *pHRU, const double &Cs) const;
@@ -79,7 +79,7 @@ public:/*-------------------------------------------------------*/
                                   const double *aUnitHydro,
                                   const double *aQlatHist,
                                   const double *aMlatHist,
-                                  const int     nMlatHist, 
+                                  const int     nMlatHist,
                                   const double &tstep) const;
   void   ApplyConvolutionRouting (const int     p,
                                   const double *aRouteHydro,
