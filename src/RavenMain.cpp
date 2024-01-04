@@ -24,6 +24,8 @@ int    g_current_e        =DOESNT_EXIST;
 
 static string RavenBuildDate(__DATE__);
 
+bool ParseManagementFile       (CModel *&pModel, const optStruct &Options);
+
 //////////////////////////////////////////////////////////////////
 //
 /// \brief Primary Raven driver routine
@@ -88,6 +90,12 @@ int main(int argc, char* argv[])
   pModel->CalculateInitialWaterStorage(Options);
   pModel->SummarizeToScreen           (Options);
   pModel->GetEnsemble()->Initialize   (pModel,Options);
+
+  //Management file (.rvm)
+  //--------------------------------------------------------------------------------
+  if(Options.management_optimization) {
+    if(!ParseManagementFile(pModel,Options)) {
+      ExitGracefully("Cannot find or read .rvm file",BAD_DATA);}}
 
   CheckForErrorWarnings(false, pModel);
 

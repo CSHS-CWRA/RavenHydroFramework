@@ -20,8 +20,10 @@ CEnthalpyModel::CEnthalpyModel(CModel *pMod,CTransportModel *pTMod,string name,c
   _aEnthalpySource2=NULL;
   _aInCatch_a=NULL;
   _aInCatch_b=NULL;
+  _aKbed=NULL;
   _aSS_temperature=NULL;
   _aBedTemp=NULL;
+  _aTave_reach=NULL;
   _aMinResTime=NULL;
   _anyGaugedLakes=false;
 
@@ -35,9 +37,11 @@ CEnthalpyModel::~CEnthalpyModel()
 {
   delete [] _aEnthalpyBeta;
   delete [] _aBedTemp;
+  delete [] _aTave_reach;
   delete [] _aMinResTime;
   delete [] _aInCatch_a;
   delete [] _aInCatch_b;
+  delete [] _aKbed;
   delete [] _aSS_temperature;
   for(int p=0;p<_pModel->GetNumSubBasins();p++) { delete[] _aEnthalpySource;  } delete [] _aEnthalpySource;
   for(int p=0;p<_pModel->GetNumSubBasins();p++) { delete[] _aEnthalpySource2; } delete [] _aEnthalpySource2;
@@ -449,12 +453,14 @@ void   CEnthalpyModel::RouteMassInReservoir   (const int          p,          //
 /// \param p [in] subbasin index
 /// \returns total energy lost from subbasin reach over current time step [MJ]
 //
-double CEnthalpyModel::GetNetReachLosses(const int p) const
+double CEnthalpyModel::GetNetReachLosses(const int p)
 {
-  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out, Q_fric;
+  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out, Q_fric,Qtot,Tave;
   double Q=_pModel->GetSubBasin(p)->GetOutflowRate();
   if (Q<REAL_SMALL){return 0;}
-  return GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out,Q_fric);
+  Qtot=GetEnergyLossesFromReach(p,Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out,Q_fric,Tave);
+  _aTave_reach[p]=Tave;
+  return Qtot;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief returns net energy lost while transporting in-catchment towards reach p [MJ]
@@ -484,8 +490,10 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
   _aEnthalpyBeta   =new double [nSB];
   _aInCatch_a      =new double [nSB];
   _aInCatch_b      =new double [nSB];
+  _aKbed           =new double [nSB];
   _aSS_temperature =new double [nSB];
   _aBedTemp        =new double [nSB];
+  _aTave_reach     =new double [nSB];
   _aMinResTime     =new double [nSB];
   for(int p=0;p<nSB;p++) {
     _aEnthalpySource [p]=new double[_nMinHist[p]];
@@ -497,7 +505,10 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
     _aMinResTime     [p]=1e-6;
     _aInCatch_a      [p]=_pModel->GetSubBasin(p)->GetBasinProperties("SENS_EXCH_COEFF");
     _aInCatch_b      [p]=_pModel->GetSubBasin(p)->GetBasinProperties("GW_EXCH_COEFF");
+    double dbed         =_pModel->GetSubBasin(p)->GetRiverbedThickness();
+    _aKbed           [p]=_pModel->GetSubBasin(p)->GetRiverbedConductivity()/0.5/dbed;
     _aSS_temperature [p]=0.0;
+    _aTave_reach     [p]=0.0;
   }
 
   //Calculate the minimum residence time (for smaller reaches)
@@ -515,11 +526,12 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
   // initialize stream temperatures if init_stream_temp is given
   //--------------------------------------------------------------------
   double hv;
-  if(_pModel->GetGlobalParams()->GetParams()->init_stream_temp>0.0)
+  double init_temp=_pModel->GetGlobalParams()->GetParams()->init_stream_temp;
+  if(init_temp>0.0)
   {
     const CSubBasin *pBasin;
 
-    hv=ConvertTemperatureToVolumetricEnthalpy(_pModel->GetGlobalParams()->GetParams()->init_stream_temp,0.0);
+    hv=ConvertTemperatureToVolumetricEnthalpy(init_temp,0.0);
     for(int p=0;p<_pModel->GetNumSubBasins();p++)
     {
       pBasin=_pModel->GetSubBasin(p);
@@ -547,9 +559,9 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
       //NO PROBLEMS WITH ABOVE MASS FLOW RATE INITIALIZATION, ONLY EXTRA MASS BALANCE TERMS
       _channel_storage[p]=pBasin->GetChannelStorage()*hv/1.717;
       _initial_mass+=_channel_storage[p];
-//      cout<<" init storage!"<<_initial_mass;
 
-      _aBedTemp[p] = _pModel->GetGlobalParams()->GetParams()->init_stream_temp;
+      _aBedTemp   [p] = init_temp;
+      _aTave_reach[p] = init_temp;
     }
   }
 
@@ -638,11 +650,10 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double dbar     =pBasin->GetRiverDepth();
   double Ax       =pBasin->GetXSectArea();
   double L        =pBasin->GetReachLength();
-  double dbed     =pBasin->GetRiverbedThickness(); //[m]
   double qlat     =pBasin->GetIntegratedLocalOutflow(tstep)/L; //total
   double qhlat     =0.5*(_aMlocal[p] + _aMlocLast[p]) / L; //q_lat*h_lat
 
-  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed; //[MJ/m2/d/K]
+  double kbed     =_aKbed[p];                                     //[MJ/m2/d/K]
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0);
   double kprime   =qmix*bed_ratio*HCP_WATER;                  //[MJ/m2/d/K]
 
@@ -716,7 +727,7 @@ double CEnthalpyModel::FunkyTemperatureIntegral(const int k, const int m, const 
 /// \param Q_fric   [out] energy gain from friction [MJ/d]
 /// \returns total energy lost from reach over current time step [MJ]
 //
-double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out, double &Q_fric) const
+double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out, double &Q_fric, double &Tave) const
 {
   double tstep=_pModel->GetOptStruct()->timestep;
 
@@ -748,10 +759,9 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   double bed_ratio=pBasin->GetTopWidth()/max(pBasin->GetWettedPerimeter(),0.001);
   double dbar     =pBasin->GetRiverDepth();        //averaged depth [m]
   double Ax       =pBasin->GetXSectArea();         //[m2]
-  double dbed     =pBasin->GetRiverbedThickness(); //[m]
   double As       =pBasin->GetTopWidth()*pBasin->GetReachLength(); //[m2]
 
-  double kbed     =pBasin->GetRiverbedConductivity()/0.5/dbed;     //[MJ/m2/d/K]
+  double kbed     =_aKbed[p];                                      //[MJ/m2/d/K]
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0); //[MJ/m2/d/K]
   double kprime   =qmix*HCP_WATER*bed_ratio;                       //[MJ/m2/d/K]
 
@@ -802,6 +812,8 @@ double CEnthalpyModel::GetEnergyLossesFromReach(const int p,double &Q_sens,doubl
   Q_rad_in=(SW+LW_in)*As;   //[MJ/d]
   Q_lat   =-AET*DENSITY_WATER*LH_VAPOR*As; //[MJ/d]
   Q_fric  =Qf*As; //[MJ/d]
+
+  Tave=temp_average;
 
   delete[] hin_hist;
 
@@ -937,6 +949,13 @@ void    CEnthalpyModel::ApplyConvolutionRouting(const int p,const double *aRoute
     }
     term2*=(aQinHist[i]*SEC_PER_DAY);
     aMout_new[nSegments-1]+=aRouteHydro[i]*(term1+term2);
+  }
+
+  double dbed = _pModel->GetSubBasin(p)->GetRiverbedThickness();
+  if (dbed != 0) {
+    double ee=exp(-(_aKbed[p]/HCP_WATER/dbed)*tstep);
+    //_aBedTemp[p] +=k*(_aTave_reach[p] - _aBedTemp[p]) * tstep;
+    _aBedTemp[p] = _aBedTemp[p]*(ee)+_aTave_reach[p]*(1-ee);
   }
 }
 
@@ -1075,7 +1094,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
   // StreamReachEnergyBalances.csv
   //--------------------------------------------------------------------
   int    p;
-  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out,Q_fric,Q_rain;
+  double Q_sens,Q_cond,Q_lat,Q_GW,Q_rad_in,Q_lw_out,Q_fric,Q_rain,Tave;
   double Ein,Eout,mult;
   CSubBasin *pSB;
 
@@ -1095,7 +1114,7 @@ void CEnthalpyModel::WriteMinorOutput(const optStruct& Options,const time_struct
 
       Ein  = 0.5 * (_aMinHist  [p][0] + _aMinHist[p][1]);
       Eout = 0.5 * (_aMout_last[p]    + _aMout   [p][pSB->GetNumSegments() - 1]);
-      GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_rad_in,Q_lw_out, Q_fric);
+      GetEnergyLossesFromReach(p, Q_sens, Q_cond, Q_lat, Q_GW, Q_rad_in,Q_lw_out, Q_fric, Tave);
 
       if (pSB->GetTopWidth() < REAL_SMALL) {//running dry
         _STREAMOUT << ",,,,,,,,,,";

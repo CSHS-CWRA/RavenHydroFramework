@@ -697,12 +697,13 @@
     <ClCompile Include="CropGrowth.cpp" />
     <ClCompile Include="DDS.cpp" />
     <ClCompile Include="Decay.cpp" />
+    <ClCompile Include="DemandExpressionHandling.cpp" />
+    <ClCompile Include="DemandOptimization.cpp" />
     <ClCompile Include="DepressionProcesses.cpp" />
     <ClCompile Include="Diagnostics.cpp" />
     <ClCompile Include="Drain.cpp" />
     <ClCompile Include="EnergyTransport.cpp" />
     <ClCompile Include="EnKF.cpp" />
-    <ClCompile Include="FrozenGround.cpp" />
     <ClCompile Include="FrozenLake.cpp" />
     <ClCompile Include="GWRecharge.cpp" />
     <ClCompile Include="GWRiverConnection.cpp" />
@@ -716,6 +717,7 @@
     <ClCompile Include="ConstituentModel.cpp" />
     <ClCompile Include="MassRouting.cpp" />
     <ClCompile Include="ParseGWFile.cpp" />
+    <ClCompile Include="ParseManagementFile.cpp" />
     <ClCompile Include="Raven_BMI.cpp" />
     <ClCompile Include="RiverReach.cpp" />
     <ClCompile Include="SoilBalance.cpp" />
@@ -947,9 +949,6 @@
     </ClCompile>
     <ClCompile Include="ParsePropertyFile.cpp" />
     <ClCompile Include="ParseTimeSeriesFile.cpp" />
-    <ClCompile Include="_Unintegrated Source Files\DemandExpressionHandling.cpp" />
-    <ClCompile Include="_Unintegrated Source Files\DemandOptimization.cpp" />
-    <ClCompile Include="_Unintegrated Source Files\ParseManagementFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Advection.h" />
@@ -960,6 +959,7 @@
     <ClInclude Include="Convolution.h" />
     <ClInclude Include="CropGrowth.h" />
     <ClInclude Include="Decay.h" />
+    <ClInclude Include="DemandOptimization.h" />
     <ClInclude Include="DepressionProcesses.h" />
     <ClInclude Include="Diagnostics.h" />
     <ClInclude Include="EnergyTransport.h" />
@@ -1017,7 +1017,6 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelABC.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="_Unintegrated Source Files\DemandOptimization.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Raven.rc" />

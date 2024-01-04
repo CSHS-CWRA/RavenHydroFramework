@@ -30,6 +30,7 @@
 #include "GWSWProcesses.h"
 #include "ChannelXSect.h"
 #include "Convolution.h"
+#include "DemandOptimization.h"
 
 class CHydroProcessABC;
 class CGauge;
@@ -44,6 +45,7 @@ class CChannelXSect;  // defined in 'ChannelXSect.h'
 class CSubBasin;      // defined in 'SubBasin.h'
 struct class_change;
 class CTransientParam;
+class CDemandOptimizer;
 
 ////////////////////////////////////////////////////////////////////
 /// \brief Data abstraction for water surface model
@@ -109,6 +111,7 @@ private:/*------------------------------------------------------*/
   CGroundwaterModel  *_pGWModel;  ///< pointer to corresponding groundwater model
   CTransportModel *_pTransModel;  ///< pointer to corresponding transport model
   CEnsemble         *_pEnsemble;  ///< pointer to model ensemble
+  CDemandOptimizer        *_pDO;  ///< pointer to demand optimizer (NULL w/o optimization)  
 
   //For Diagnostics Calculation
   CTimeSeriesABC **_pObservedTS;  ///< array of pointers of observation time series [size: _nObservedTS]
@@ -432,6 +435,7 @@ public:/*-------------------------------------------------------*/
   CTransportModel     *GetTransportModel              () const;
   CGroundwaterModel   *GetGroundwaterModel            () const;
   CEnsemble           *GetEnsemble                    () const;
+  CDemandOptimizer    *GetDemandOptimizer             () const;
 
   void              GetParticipatingParamList         (string *aP,
                                                        class_type *aPC,
@@ -475,6 +479,7 @@ public:/*-------------------------------------------------------*/
 
   void    OverrideStreamflow        (const long SBID);
   void    SetEnsembleMode           (CEnsemble *pEnsemble);
+  void    AddDemandOptimization     (CDemandOptimizer *pDO);
 
   void    SetPETBlendValues         (const int N, const evap_method    *aET, const double *wts);
   void    SetPotMeltBlendValues     (const int N, const potmelt_method *aPM, const double *wts);

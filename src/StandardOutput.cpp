@@ -139,6 +139,8 @@ void CModel::CloseOutputStreams()
   if ( _DEMANDS.is_open()){ _DEMANDS.close();}
   if (  _LEVELS.is_open()){  _LEVELS.close();}
 
+  if (_pDO!=NULL){_pDO->CloseOutputStreams();}
+   
 #ifdef _RVNETCDF_
 
   int    retval;      // error value for NetCDF routines
@@ -591,6 +593,10 @@ void CModel::WriteOutputFileHeaders(const optStruct &Options)
   // Transport output files
   //--------------------------------------------------------------
   _pTransModel->WriteOutputFileHeaders(Options);
+
+  if (Options.management_optimization) {
+    _pDO->WriteOutputFileHeaders(Options);
+  }
 
   //raven_debug.csv
   //--------------------------------------------------------------
@@ -1154,6 +1160,10 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
     // Transport output files
     //--------------------------------------------------------------
     _pTransModel->WriteMinorOutput(Options,tt);
+
+    if (Options.management_optimization) {
+      _pDO->WriteMinorOutput(Options,tt);
+    }
 
     // raven_debug.csv
     //--------------------------------------------------------------

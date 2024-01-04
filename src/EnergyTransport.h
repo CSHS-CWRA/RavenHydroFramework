@@ -21,14 +21,14 @@ class CEnthalpyModel :public CConstituentModel
   double **_aEnthalpySource2;  ///< recent time history of in-catchment source term [MJ/m3/d] [size: nSubBasins x nMlathist(p)]
   double        *_aInCatch_a;  ///< array of a terms for in-catchment energy exchange [1/d] [size: nSubBasins]
   double        *_aInCatch_b;  ///< array of b terms for in-catchment energy exchange [1/d] [size: nSubBasins]
+  double             *_aKbed;  ///< bed heat transfer coefficient [MJ/m2/d/K] [size: nSubBasins]
 
   int            _mHyporheic;  ///< model soil layer corresponding to hyporheic mixing layer (default=2)
-
-  double   *_aSS_temperature;  ///< array of steady state target temperatures in each basin [C] [size: nSubBasins]
-
   double       *_aMinResTime;  ///< minimum residence time [d] (<1 dt) in each stream reach [size: nSubBasins]
 
-  double          *_aBedTemp;  ///< array of riverbed temperatures [C] [size: nSubBasins]
+  double          *_aBedTemp;  ///< array of riverbed temperatures (state variable) [C] [size: nSubBasins]
+  double       *_aTave_reach;  ///< time-lagged average reach water temperature [C] [size: nSubBasins]
+  double   *_aSS_temperature;  ///< array of steady state target temperatures in each basin [C] [size: nSubBasins]
 
   ofstream        _STREAMOUT;  ///< Output stream for StreamReachEnergyBalances.csv
   ofstream          _LAKEOUT;  ///< Output stream for LakeEnergyBalances.csv
@@ -39,7 +39,7 @@ class CEnthalpyModel :public CConstituentModel
 
   void   UpdateReachEnergySourceTerms    (const int p);
   void   UpdateCatchmentEnergySourceTerms(const int p);
-  double GetNetReachLosses               (const int p) const;
+  double GetNetReachLosses               (const int p);
   double GetCatchmentTransitLosses       (const int p) const;
 
   double FunkyTemperatureIntegral(const int k,const int m,const double *S,
@@ -59,7 +59,7 @@ public:/*-------------------------------------------------------*/
   double GetWaterTemperature     (const double *state_vars, const int iWater) const;
 
   double GetEnergyLossesInTransit(const int p,double &Q_sens,double &Q_GW) const;
-  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out,double &Q_fric) const;
+  double GetEnergyLossesFromReach(const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_GW,double &Q_rad_in,double &Q_lw_out,double &Q_fric, double &Tave) const;
   double GetEnergyLossesFromLake (const int p,double &Q_sens,double &Q_cond,double &Q_lat,double &Q_rad_in,double &Q_lw_out, double &Q_rain) const;
 
   double GetOutflowIceFraction   (const int p) const;
@@ -69,7 +69,6 @@ public:/*-------------------------------------------------------*/
   //Manipulators
   //
   void   SetBedTemperature       (const int p, const double &T);
-  void   SetTransitParams        (const int p, const double &a, const double &b);
   void   SetHyporheicLayer       (const int m);
 
   //Manipulators (inherited from CConstitModel)

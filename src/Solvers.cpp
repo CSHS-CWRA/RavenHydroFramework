@@ -540,6 +540,14 @@ void MassEnergyBalance( CModel            *pModel,
     //preparatory step prior to routing: used to assimilate lake levels and update routing hydrograph for timestep
     pBasin->UpdateSubBasin(tt,Options);
   }
+
+  // Management optimization - determines optimal demand delivery/reservoir outflows 
+  // ----------------------------------------------------------------------------------------
+  if (Options.management_optimization)
+  { 
+    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt); 
+  }
+
   // Route water over timestep
   // ----------------------------------------------------------------------------------------
   // calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)

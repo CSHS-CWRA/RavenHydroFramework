@@ -677,7 +677,7 @@ double EstimateRelativeHumidity(const relhum_method method,
     relhum=F.rel_humidity;
   }
 
-  return relhum * pHRU->GetSurfaceProps()->relhum_corr;
+  return min(relhum * pHRU->GetSurfaceProps()->relhum_corr,1.0);
 
 }
 
@@ -829,7 +829,7 @@ double CModel::WindspeedAtHeight (const double       &z,
     // z0c+=z0snow;                                    // add nominal depth so it's never 0
 
     // if canopy taller than reference height (and not buried in snow), calculate canopy corrections
-    if((h_raw > z_ref) & (h > snow_depth))
+    if((h_raw > z_ref) && (h > snow_depth))
     {
       // Wind at different heights
       u_star = VON_KARMAN * F.wind_vel/log((h+zz-d)/z0c);                  // compute the friction velocity(m/s)

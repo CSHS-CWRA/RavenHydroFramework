@@ -251,7 +251,7 @@ protected:
   double GetTotalChannelConstituentStorage() const;
   double GetMassAddedFromInflowSources(const double &t,const double &tstep) const;
 
-  virtual double GetNetReachLosses        (const int p) const;
+  virtual double GetNetReachLosses        (const int p);
   virtual double GetCatchmentTransitLosses(const int p) const;
 
 public:/*-------------------------------------------------------*/

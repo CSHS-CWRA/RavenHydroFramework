@@ -589,6 +589,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //-------------------WATER MANAGEMENT---------------------
     else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
     else if  (!strcmp(s[0],":ReservoirOverflowMode"     )){code=401; }
+    else if  (!strcmp(s[0],":ApplyManagementOptimization")){code=402; }
     //...
     //-------------------GROUNDWATER -------------------------
     else if  (!strcmp(s[0],":ModelType"                 )){code=500; }//AFTER SoilModel Commmand
@@ -3366,6 +3367,19 @@ bool ParseMainInputFile (CModel     *&pModel,
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized Reservoir Overflow handling Method",BAD_DATA_WARN); break;
+      }
+      break;
+    }
+    case(402):  //----------------------------------------------
+    {/*:ApplyManagementOptimization */
+      if(Options.noisy) { cout <<"Apply management optimization"<<endl; }
+      if (pModel==NULL){
+        ExitGracefully(":ApplyManagementOptimization must appear after :SoilModel in raven input file. ",BAD_DATA_WARN);
+      }
+      else{
+        Options.management_optimization=true;
+        CDemandOptimizer *pDO=new CDemandOptimizer(pModel);
+        pModel->AddDemandOptimization(pDO);
       }
       break;
     }

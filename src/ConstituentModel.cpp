@@ -142,7 +142,7 @@ double CConstituentModel::GetTotalChannelConstituentStorage() const
 /// \param p [in] subbasin index
 /// \returns net mass lost while transporting along reach p [mg]
 //
-double CConstituentModel::GetNetReachLosses(const int p) const
+double CConstituentModel::GetNetReachLosses(const int p)
 {
   //return _M_loss_rate * Options.timestep;
   return 0.0;//default -assumes conservative transport in streams (more interesting for child classes)
@@ -1261,14 +1261,14 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf,Tave;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf);
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf,Tave);
       Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw; Q_fric+=Qf;
     }
   }
@@ -1715,7 +1715,7 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
     }
     if (_type == ENTHALPY) {
       CEnthalpyModel *pEnth=(CEnthalpyModel*)(this);
-      RVC<<"     :RiverbedTemp, "<<pEnth->GetBedTemperature(p)<<endl;
+      RVC<<"     :BedTemperature, "<<pEnth->GetBedTemperature(p)<<endl;
     }
   }
   RVC<<":EndBasinTransportVariables"<<endl;

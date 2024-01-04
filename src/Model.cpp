@@ -132,6 +132,7 @@ CModel::CModel(const int        nsoillayers,
 
   _pTransModel=new CTransportModel(this);
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
+  _pDO =NULL;
 
 #ifdef _MODFLOW_USG_
   _pGWModel = new CGroundwaterModel(this);
@@ -225,6 +226,7 @@ CModel::~CModel()
   delete _pEnsemble;
   delete _pGWModel;
   delete _pStateVar;
+  delete _pDO;
 
   delete [] _PETBlends_type;
   delete [] _PETBlends_wts;
@@ -970,6 +972,12 @@ CGroundwaterModel*CModel::GetGroundwaterModel() const{return _pGWModel;}
 //
 CEnsemble  *CModel::GetEnsemble() const { return _pEnsemble; }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns demand optimizer
+/// \return pointer to demand optimizer
+//
+CDemandOptimizer  *CModel::GetDemandOptimizer() const { return _pDO; }
+
 /*****************************************************************
    Watershed Diagnostic Functions
     -aggregate data from subbasins and HRUs
@@ -1606,7 +1614,14 @@ void CModel::SetOutputGroup(const CHRUGroup *pOut){
 void CModel::SetEnsembleMode(CEnsemble *pEnsemble) {
   _pEnsemble=pEnsemble;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Sets demand optimizer 
+///
+/// \param *pDO [in] (assumed valid) pointer to optimizer instance
+//
+void CModel::AddDemandOptimization(CDemandOptimizer *pDO) {
+  _pDO=pDO;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Sets PET blend values
 //
