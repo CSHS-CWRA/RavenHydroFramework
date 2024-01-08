@@ -347,7 +347,7 @@ double CRadiation::SWCloudCoverCorrection(CModel* pModel,
   {
     double kRs=0.16;   // interior = ~0.16/coastal~=0.19
     if(F->temp_daily_max>F->temp_daily_min) {
-      return kRs*(1.0 + 2.7E-5*elev)*sqrt(F->temp_daily_max>F->temp_daily_min);
+      return kRs*(1.0 + 2.7E-5*elev)*sqrt(F->temp_daily_max - F->temp_daily_min);
     }
     else {return 0.0;}
   }

@@ -75,9 +75,15 @@ void   CModel::CorrectTemp(const optStruct   &Options,
 
     lo_lapse_ave = (lo_lapse_max + lo_lapse_min)/2.0;
     hi_lapse_ave = (hi_lapse_max + hi_lapse_min)/2.0;
-    hi_lapse_sub = hi_lapse_min+(F.temp_ave-F.temp_daily_min)*(hi_lapse_max-hi_lapse_min)/(F.temp_daily_max-F.temp_daily_min);
-    lo_lapse_sub = lo_lapse_min+(F.temp_ave-F.temp_daily_min)*(lo_lapse_max-lo_lapse_min)/(F.temp_daily_max-F.temp_daily_min);
 
+    if (F.temp_daily_max>F.temp_daily_min){
+      hi_lapse_sub = hi_lapse_min+(F.temp_ave-F.temp_daily_min)*(hi_lapse_max-hi_lapse_min)/(F.temp_daily_max-F.temp_daily_min);
+      lo_lapse_sub = lo_lapse_min+(F.temp_ave-F.temp_daily_min)*(lo_lapse_max-lo_lapse_min)/(F.temp_daily_max-F.temp_daily_min);
+    }
+    else {
+      hi_lapse_sub = hi_lapse_min;
+      lo_lapse_sub = lo_lapse_min;
+    }
     if(tt.day_changed)
     {
       //calculate elevation-adjusted temperatures

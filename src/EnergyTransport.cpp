@@ -478,6 +478,8 @@ double CEnthalpyModel::GetCatchmentTransitLosses(const int p) const
 //
 void CEnthalpyModel::Initialize(const optStruct& Options)
 {
+  if (Options.noisy){cout<<"  Initializing Energy Transport..."<<endl;}
+
   // Initialize base class members
   //--------------------------------------------------------------------
   CConstituentModel::Initialize(Options);
@@ -495,6 +497,7 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
   _aBedTemp        =new double [nSB];
   _aTave_reach     =new double [nSB];
   _aMinResTime     =new double [nSB];
+  ExitGracefullyIf(_aMinResTime==NULL,"CEnthalpyModel::Initialize",OUT_OF_MEMORY);
   for(int p=0;p<nSB;p++) {
     _aEnthalpySource [p]=new double[_nMinHist[p]];
     _aEnthalpySource2[p]=new double[_nMlatHist[p]];
@@ -583,6 +586,8 @@ void CEnthalpyModel::Initialize(const optStruct& Options)
   for(int p=0;p<nSB;p++) {
     PrepareForRouting(p);
   }
+
+  if (Options.noisy){cout<<"  ...Done initializing Energy Transport"<<endl;}
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Updates source terms for energy balance on subbasin reaches each time step
@@ -611,7 +616,7 @@ void   CEnthalpyModel::UpdateCatchmentEnergySourceTerms(const int p)
   S+=_aInCatch_a[p]*HCP_WATER*temp_air;    //sensible heat transfer
   S+=_aInCatch_b[p]*HCP_WATER*temp_GW;     //GW mixing
 
-  for(int n=_nMinHist[p] - 1; n>0; n--) {
+  for(int n=_nMlatHist[p] - 1; n>0; n--) {
     _aEnthalpySource2[p][n]=_aEnthalpySource2[p][n-1];
   }
   _aEnthalpySource2[p][0]=S;
@@ -678,7 +683,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   }
   _aEnthalpySource[p][0]=S;
 
-  //cout<<" SS temperature : "<<S/_aEnthalpyBeta[p]/HCP_WATER<<endl; //independent of depth
+  //cout<<" SS temperature["<<p<<"]: "<<S/_aEnthalpyBeta[p]/HCP_WATER<<endl; //independent of depth
   _aSS_temperature[p]=S/_aEnthalpyBeta[p]/HCP_WATER;
 }
 
@@ -872,8 +877,10 @@ double CEnthalpyModel::GetEnergyLossesInTransit(const int p, double& Q_sens, dou
     }
   }
 
-  return -(Q_sens+Q_GW)*tstep;
   delete[] hin_hist;
+
+  return -(Q_sens+Q_GW)*tstep;
+
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Applies special convolution with source/sink terms - analytical solution to Lagrangian heat transport problem
