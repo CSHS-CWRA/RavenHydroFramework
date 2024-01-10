@@ -658,7 +658,7 @@ void   CEnthalpyModel::UpdateReachEnergySourceTerms(const int p)
   double qlat     =pBasin->GetIntegratedLocalOutflow(tstep)/L; //total
   double qhlat     =0.5*(_aMlocal[p] + _aMlocLast[p]) / L; //q_lat*h_lat
 
-  double kbed     =_aKbed[p];                                     //[MJ/m2/d/K]
+  double kbed     =_aKbed[p];//*bed_ratio?                    //[MJ/m2/d/K]
   double klin     =4.0*STEFAN_BOLTZ*EMISS_WATER*pow(temp_lin,3.0);
   double kprime   =qmix*bed_ratio*HCP_WATER;                  //[MJ/m2/d/K]
 

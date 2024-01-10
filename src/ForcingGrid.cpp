@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ForcingGrid.h"
@@ -41,6 +41,7 @@ CForcingGrid::CForcingGrid(string       ForcingType,
   _WinLength[0]=0; _WinLength[1]=0; _WinLength[2]=0;
   _WinStart [0]=0; _WinStart [1]=0; _WinStart [2]=0;
 
+  _nCells         = 0;
   _interval		    = 1.0;
   _steps_per_day	= 1;
 
@@ -114,7 +115,8 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   for (int ii=0; ii<3;  ii++) {_GridDims [ii]= grid._GridDims [ii]; }
   for (int ii=0; ii<3;  ii++) {_WinLength[ii]= grid._WinLength[ii]; }
   for (int ii=0; ii<3;  ii++) {_WinStart [ii]= grid._WinStart [ii]; }
-  _nNonZeroWeightedGridCells   = grid._nNonZeroWeightedGridCells;
+  _nCells                      = grid._nCells                          ;
+  _nNonZeroWeightedGridCells   = grid._nNonZeroWeightedGridCells       ;
   _nHydroUnits                 = grid._nHydroUnits                     ;
   _ChunkSize                   = grid._ChunkSize                       ;
   _nChunk                      = grid._nChunk                          ;
@@ -150,14 +152,9 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
     }
   }
 
-  int ncells;
-  if (_is_3D) { ncells = _GridDims[0] * _GridDims[1];}
-  else        { ncells = _GridDims[0];}
-
-
   //cout<<"Creating new GridWeights array (Copy Constructor): "<<ForcingToString(_ForcingType)<<endl;
 
-  AllocateWeightArray(_nHydroUnits,ncells);
+  AllocateWeightArray(_nHydroUnits,_nCells);
   for (int k=0; k<_nHydroUnits; k++) {
     for(int i=0;i<grid._nWeights[k];i++) {
       SetWeightVal(k,grid._GridWtCellIDs[k][i],grid._GridWeight[k][i]); //dynamically grows sparse matrix
@@ -165,17 +162,17 @@ CForcingGrid::CForcingGrid( const CForcingGrid &grid )
   }
 
   _CellIDToIdx =NULL;
-  _CellIDToIdx = new int [ncells];
+  _CellIDToIdx = new int [_nCells];
   ExitGracefullyIf(_CellIDToIdx==NULL,"CForcingGrid::Copy Constructor(8)",OUT_OF_MEMORY);
-  for(int c=0; c<ncells; c++) {             // loop over non-zero weighted cells
-    _CellIDToIdx[c]=grid._CellIDToIdx[c];              // copy the value
+  for(int c=0; c<_nCells; c++) {             // loop over non-zero weighted cells
+    _CellIDToIdx[c]=grid._CellIDToIdx[c];             
   }
 
   _IdxNonZeroGridCells = NULL;
   _IdxNonZeroGridCells = new int [_nNonZeroWeightedGridCells];
   ExitGracefullyIf(_IdxNonZeroGridCells==NULL,"CForcingGrid::Copy Constructor(3)",OUT_OF_MEMORY);
   for (int ic=0; ic<_nNonZeroWeightedGridCells; ic++) {             // loop over non-zero weighted cells
-    _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              // copy the value
+    _IdxNonZeroGridCells[ic]=grid._IdxNonZeroGridCells[ic];              
   }
 
   _aLatitude=NULL;_aLongitude=NULL;_aElevation=NULL;_aStationIDs=NULL;
@@ -317,6 +314,8 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     retval = nc_inq_dimid(ncid,_DimNames[2].c_str(),&dimid_t);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval); //this should also be able to handle UNLIMITED time dimension
     _GridDims[2] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
+
+    _nCells=_GridDims[0]*_GridDims[1];
   }
   else {
     // dimension x = number of stations in NetCDF file
@@ -328,6 +327,8 @@ void CForcingGrid::ForcingGridInit(const optStruct   &Options)
     retval = nc_inq_dimid(ncid,_DimNames[1].c_str(),&dimid_t);   HandleNetCDFErrors(retval);
     retval = nc_inq_dimlen(ncid,dimid_t,&GridDim_t);             HandleNetCDFErrors(retval);
     _GridDims[1] = static_cast<int>(GridDim_t);  // convert returned 'size_t' to 'int'
+
+    _nCells=_GridDims[0];
   }
 
   // Get the id of the data variable based on its name; varid will be set
@@ -1213,6 +1214,8 @@ void CForcingGrid::SetGridDims(const int GridDims[3])
   _GridDims[0]=GridDims[0];
   _GridDims[1]=GridDims[1];
   _GridDims[2]=GridDims[2];
+  if (_is_3D){_nCells=_GridDims[0]*_GridDims[1];}
+  else       {_nCells=_GridDims[0];             }
 }
 ///////////////////////////////////////////////////////////////////
 /// \brief allocated memory for and populates the _aLastNonZeroWt and _IdxNonZeroGridCells arrays, Calculates _nNonZeroWeightedGridCells
@@ -1245,7 +1248,6 @@ void CForcingGrid::SetIdxNonZeroGridCells(const int nHydroUnits, const int nGrid
           if(col>maxcol) { maxcol=col; }
           if(row<minrow) { minrow=row; }
           if(col<mincol) { mincol=col; }
-
         }
       }
     }
@@ -1619,15 +1621,13 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
     ExitGracefully(
       "CForcingGrid: SetWeightVal: _GridWeight is not allocated yet. Call AllocateWeightArray(nHRUs) first.",RUNTIME_ERR);
   }
-  int ncells;
-  if(_is_3D) { ncells = _GridDims[0] * _GridDims[1]; }
-  else       { ncells = _GridDims[0]; }
+#endif
 
   if((HRUID<0) || (HRUID>=_nHydroUnits)) {
     ExitGracefully("CForcingGrid: SetWeightVal: invalid HRU ID",BAD_DATA);}
-  if((CellID<0) || (CellID>=ncells)) {
+  if((CellID<0) || (CellID>=_nCells)) {
     ExitGracefully("CForcingGrid: SetWeightVal: invalid cell ID",BAD_DATA);}
-#endif
+
   int k=HRUID;
 
   //entry already exists in sparse weights matrix, replace
@@ -1654,16 +1654,12 @@ void   CForcingGrid::SetWeightVal(const int HRUID,
 ///////////////////////////////////////////////////////////////////
 /// \brief sets one entry of _aElevation[CellID]
 //
-/// \param cellID [in] cell ID/stationID in NetCDF (from 0 to ncells-1)
+/// \param cellID [in] cell ID/stationID in NetCDF (from 0 to _nCells-1)
 /// \param elev [in] elevation of cell in NetCDF
 
 void   CForcingGrid::SetStationElevation(const int CellID,const double &elev)
 {
-  int ncells;
-  if(_is_3D) { ncells = _GridDims[0] * _GridDims[1]; }
-  else       { ncells = _GridDims[0]; }
-
-  if((CellID<0) || (CellID>=ncells)) {
+  if((CellID<0) || (CellID>=_nCells)) {
     ExitGracefully("CForcingGrid: SetStationElevation: invalid cell/station identifier (likely in :StationElevationsByAttribute or ByIdx command)",BAD_DATA);
   }
   if(_aElevation==NULL) {
@@ -2084,59 +2080,6 @@ double CForcingGrid::GetMonthlyAvePET   (const int month) const
 double CForcingGrid::DailyTempCorrection(const double t) const
 {
   return -cos(2.0*PI*(t-PEAK_TEMP_HR/HR_PER_DAY));
-}
-
-///////////////////////////////////////////////////////////////////
-/// \brief  Returns time index of currently read chunk corresponding to current model time step.
-///         Returned value is double because time series could start at fractional day,
-///         i.e. not at 00:00:00 hours.
-///
-/// \param  &Options          [in] Global model options information
-/// \param  global_model_time [in] current simulation time stime
-///
-/// \return Index of current read chunk
-///
-double CForcingGrid::GetChunkIndexFromModelTimeStep(const optStruct &Options,
-                                                    const double    global_model_time  // current model time step in [days]
-                                                    ) const
-{
-  // overall un-chunked index in NetCDF file starting from very first entry in NetCDF file
-  double idx_NC = (_t_corr + global_model_time) / _interval ;
-  double delta  = (_t_corr + global_model_time) / _interval - floor(idx_NC); // difference from integer index
-
-  // for example overall index = 17 and _ChunkSize = 5 [time points]  --> index in current chunk = 2
-  int idx_chunk = (int)idx_NC % _ChunkSize;
-
-  return (double)idx_chunk + delta;
-}
-
-///////////////////////////////////////////////////////////////////
-/// \brief  Returns time index of currently read chunk corresponding to beginning of currently modelled day.
-///         Returned value is double because time series could start at fractional day,
-///         i.e. not at 00:00:00 hours.
-///
-/// \param  &Options          [in] Global model options information
-/// \param  global_model_time [in] current simulation time stime
-///
-/// \return Index of current read chunk
-///
-double CForcingGrid::GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
-                                                       const double    global_model_time  // current model time step in [days]
-                                                       ) const
-{
-  // overall un-chunked index in NetCDF file starting from very first entry in NetCDF file
-  double idx_NC = (_t_corr + global_model_time) / _interval ;
-
-  // for example overall index = 17 and _ChunkSize = 5 [time points]  --> index in current chunk = 2
-  int idx_chunk = (int)idx_NC % _GridDims[2];
-
-  // number of values per day
-  int nn = (int)(1.0/_interval);
-
-  // returned index is beginning of day not actual time step
-  idx_chunk = idx_chunk - (idx_chunk % nn);
-
-  return (double)idx_chunk; // + delta;
 }
 
 ///////////////////////////////////////////////////////////////////
