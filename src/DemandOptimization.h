@@ -127,12 +127,19 @@ struct decision_var
   string  name;      //< decision variable names: Qxxxx or Dxxxx where xxxx is SBID 
   dv_type dvar_type; //< decision variable type: e.g., DV_QOUT or DV_DELIVERY
   int     p_index;   //< raw subbasin index p (not SBID) of decision variable (or DOESNT_EXIST if not linked to SB) 
-  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY) 
+  int     dem_index; //< demand index in subbasin p (or DOESNT_EXIST if type not DV_DELIVERY) (i..nDemands in SB p_index, usually <=1)
+  int     loc_index; //< local index (rescount or subbasincount or demand count) 
   double  value;     //< solution value for decision variable
   double  min;       //< minimum bound (default=0) 
   double  max;       //< maximum bound (default unbounded)
 
-  decision_var(string nam, int p, dv_type typ){name=nam; p_index=p; value=0.0;min=0.0;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;}
+  decision_var(string nam, int p, dv_type typ, int loc_ind)
+  {
+    name=nam; 
+    p_index=p; 
+    loc_index=loc_ind; 
+    value=0.0;min=0.0;max=ALMOST_INF;dvar_type=typ;dem_index=DOESNT_EXIST;
+  }
 };
 //////////////////////////////////////////////////////////////////
 // decision variable constraint condition 
@@ -192,7 +199,8 @@ private: /*------------------------------------------------------*/
   dv_constraint  **_pConstraints;       //< array of pointers to user-defined enforced constraints/goals in management model
 
   int              _nEnabledSubBasins;  //< number of enabled subbasins in model 
-  
+  int             *_aSBIndices;         //< local index of enabled subbasins (0:_nEnabledSubBasins) [size: _nSubBasins]
+
   int              _nReservoirs;        //< local storage of number of simulated lakes/reservoirs 
   int             *_aResIndices;        //< storage of enabled reservoir indices (0:_nReservoirs or DOESNT_EXIST) [size:_nSubBasins] 
 
@@ -244,6 +252,7 @@ public: /*------------------------------------------------------*/
   int    GetDemandIndexFromName(const string dname) const;
   double GetNamedConstant      (const string s) const; 
   double GetTotalWaterDemandDelivery(const int p) const;
+  int    GetNumUserDVs         () const;
 
   void   SetHistoryLength      (const int n);
   void   SetCumulativeDate     (const int julian_date, const string demandID);
@@ -257,7 +266,7 @@ public: /*------------------------------------------------------*/
    
   //void MultiplyDemand        (const string dname, const double &mult);
   //void MultiplyGroupDemand   (const string groupname, const double &mult);
-  //void SetDemandPenalty      (const string dname, const double &pen);
+  void SetDemandPenalty        (const string dname, const double &pen);
   //void SetDemandPriority     (const string dname, const int &prior);
 
   expressionStruct *ParseExpression(const char **s, const int Len, const int lineno, const string filename) const;

@@ -4,9 +4,10 @@ Copyright (c) 2008-2024 the Raven Development Team
 ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
-//#include "StateVariables.h"
 #include "ParseLib.h"
 #include "DemandOptimization.h"
+
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp); //defined in DemandExpressionHandling.cpp 
 
 //////////////////////////////////////////////////////////////////
 /// \brief Parses Demand Management file
@@ -35,7 +36,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
   ifstream INPUT2;           //For Secondary input
   CParser *pMainParser=NULL; //for storage of main parser while reading secondary files
 
-  CDemandOptimizer *pDO=pDO=pModel->GetDemandOptimizer();
+  CDemandOptimizer *pDO=pModel->GetDemandOptimizer();
 
   pDO->Initialize(pModel,Options); //only requires rvh read
 
@@ -51,6 +52,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     pp->NextIsMathExp();
   }
   bool end_of_file=pp->Tokenize(s,Len);
+
   while(!end_of_file)
   {
     if(ended) { break; }
@@ -183,7 +185,7 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
     case(14):  //----------------------------------------------
     {/*:DemandPenalty [demand1] [penalty] */
       if(Options.noisy) { cout <<"Demand Penalty"<<endl; }
-      //pDO->SetDemandPenalty(s[1],s_to_d(s[2]);
+      pDO->SetDemandPenalty(s[1],s_to_d(s[2]));
       break;
     }
     case(15):  //----------------------------------------------
@@ -208,10 +210,15 @@ bool ParseManagementFile(CModel *&pModel,const optStruct &Options)
       if(Options.noisy) { cout <<"Define Decision Variable"<<endl; }
       expressionStruct *pExp;      
       dv_constraint    *pConst=NULL;
-      decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER);
+      decision_var     *pDV = new decision_var(s[1],DOESNT_EXIST,DV_USER,pDO->GetNumUserDVs());
       
       pDO->AddDecisionVar(pDV);
       pExp=pDO->ParseExpression((const char**)(s),Len,pp->GetLineNumber(),pp->GetFilename());
+
+      if (Options.noisy){
+        SummarizeExpression((const char**)(s),Len,pExp); 
+      }
+
       if (pExp!=NULL){
         pConst = pDO->AddConstraint(s[1], pExp, false);
       } 

@@ -967,7 +967,7 @@ void CModel::WriteMinorOutput(const optStruct &Options,const time_struct &tt)
           pSB=_pSubBasins[p];
           if((pSB->IsEnabled()) && (pSB->IsGauged()) && (pSB->HasIrrigationDemand()))
           {
-            double irr =pSB->GetIrrigationDemand(tt.model_time);
+            double irr =pSB->GetTotalWaterDemand(tt.model_time);
             double eF  =pSB->GetEnviroMinFlow   (tt.model_time);
             double Q   =pSB->GetOutflowRate     (); //AFTER irrigation removed
             double Qd  =pSB->GetDemandDelivery  ();

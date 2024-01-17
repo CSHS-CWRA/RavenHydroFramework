@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -205,6 +205,7 @@ public:/*-------------------------------------------------------*/
   int                  GetNumWaterDemands   () const;
   int                  GetWaterDemandID     (const int i) const;
   string               GetWaterDemandName   (const int i) const;
+  double               GetUnusableFlowPercentage() const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
@@ -234,10 +235,12 @@ public:/*-------------------------------------------------------*/
 
   double          GetSpecifiedInflow       (const double &t) const;    //[m3/s] to upstream end of channel at point in time
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
-  double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
+  double          GetTotalWaterDemand      (const double &t) const;    //[m3/s] total from downstream end of channel at point in time
+  double          GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
   double          GetDemandDelivery        () const;                   //[m3/s] instantaneous delivery rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
+  bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series 
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 

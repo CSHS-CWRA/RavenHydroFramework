@@ -399,6 +399,20 @@ double  CReservoir::GetResStage          () const { return _stage; }
 double  CReservoir::GetOldStage          () const { return _stage_last; }
 
 //////////////////////////////////////////////////////////////////
+/// \returns min stage [m]
+//
+double  CReservoir::GetMinStage          (const int nn) const { 
+  if(_pMinStageTS    !=NULL){ return _pMinStageTS->GetSampledValue(nn);}
+  return _min_stage;
+}
+//////////////////////////////////////////////////////////////////
+/// \returns max stage [m]
+//
+double  CReservoir::GetMaxStage          (const int nn) const { 
+  if(_pMaxStageTS    !=NULL){ return _pMaxStageTS->GetSampledValue(nn);}
+  return ALMOST_INF;
+}
+//////////////////////////////////////////////////////////////////
 /// \returns current surface area [m2]
 //
 double  CReservoir::GetSurfaceArea       () const { return GetArea(_stage); }
@@ -1314,7 +1328,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   // Downstream irrigation demand
   for(int i=0;i<_nDemands;i++) {
     if(IsInDateRange(tt.julian_day,_aDemands[i]->julian_start,_aDemands[i]->julian_end)){
-      Qmin+=(_aDemands[i]->pDownSB->GetIrrigationDemand(tt.model_time)*_aDemands[i]->percent);
+      Qmin+=(_aDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDemands[i]->percent);
       Qmin+= _aDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
     }
   }

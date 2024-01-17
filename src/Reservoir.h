@@ -187,6 +187,8 @@ public:/*-------------------------------------------------------*/
   double            GetLakebedConductivity   () const; //[MJ/m/K/d]
   double            GetLakeConvectionCoeff   () const; //[MJ/m2/d/K]
   double            GetStageDischargeDerivative(const double &stage,const int nn) const; //[m3/s/d]
+  double            GetMinStage              (const int nn) const;//[m]
+  double            GetMaxStage              (const int nn) const;//[m]
 
   int               GetHRUIndex              () const;
   double            GetMaxCapacity           () const; //[m3]

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -457,7 +457,7 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified demand from subbasin at time t
 //
-double CSubBasin::GetIrrigationDemand(const double &t) const
+double CSubBasin::GetTotalWaterDemand(const double &t) const
 {
   if(_nIrrigDemands==0) { return 0.0; }
   double sum=0;
@@ -471,6 +471,18 @@ double CSubBasin::GetIrrigationDemand(const double &t) const
   return sum;
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns specified irrigation/water use demand from subbasin at time t
+/// \param &t [in] Model time at which the demand from SB is to be determined
+/// \return specified demand from subbasin at time t
+//
+double CSubBasin::GetWaterDemand(const int ii, const double &t) const
+{
+  double Qirr;
+  Qirr=_pIrrigDemands[ii]->GetValue(t);
+  if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+  return Qirr;
+}
+//////////////////////////////////////////////////////////////////
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
 /// \return actual delivery from subbasin [m3/s]
 //
@@ -479,14 +491,14 @@ double CSubBasin::GetDemandDelivery() const
   return _Qirr;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns cumulative downstream specified irrigation demand, including from this subbasin
+/// \brief Returns cumulative downstream specified water demand, including from this subbasin
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified cumulative downstream demand (in [m3/s]) from subbasin at time t
 //
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 {
   double Qirr;
-  Qirr=GetIrrigationDemand(t);
+  Qirr=GetTotalWaterDemand(t);
 
   if (_downstream_ID==DOESNT_EXIST){ return Qirr; }
   else                             { return _pDownSB->GetDownstreamIrrDemand(t)+Qirr; }
@@ -522,6 +534,15 @@ bool CSubBasin::HasIrrigationDemand() const
   return (_nIrrigDemands>0);
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns true if subbasin has irrigation demand
+/// \return true if subbasin has irrigation demand
+//
+bool CSubBasin::HasEnviroMinFlow() const
+{
+  return (_pEnviroMinFlow!=NULL);
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
 /// \param &t [in] Model time at which the outflow from SB is to be determined
 /// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
@@ -535,7 +556,7 @@ double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q) const
   //return pModel->GetDemandOptimizer()->GetTotalWaterDemandDelivery(_global_index);
 
   double Qirr;
-  double Qdemand=GetIrrigationDemand(t);
+  double Qdemand=GetTotalWaterDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
 
   Qirr=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
@@ -956,6 +977,12 @@ double CSubBasin::GetTopWidth() const {
   if(_pChannel==NULL) { return ALMOST_INF; }
   return _pChannel->GetTopWidth(_aQout[_nSegments-1],_slope,_mannings_n);
 }
+//////////////////////////////////////////////////////////////////
+/// \brief gets unusable flow percentatge
+//
+double CSubBasin::GetUnusableFlowPercentage() const {
+  return _unusable_flow_pct;
+}
 
 /*****************************************************************
    Manipulators
@@ -1253,6 +1280,7 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
     "CSubBasin:SetUnusableFlowPercentage: invalid value for :UnusableFlowPercentage (must be between zero and one).",BAD_DATA_WARN);
   _unusable_flow_pct=val;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief scales all internal flows by scale factor (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!

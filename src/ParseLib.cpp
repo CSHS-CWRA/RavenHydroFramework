@@ -45,15 +45,17 @@ string CParser::Peek()
 // return first word of current line in INPUT without proceeding forward in the file
     std::streampos place;
     int Len;
+    bool eof;
     char *s[MAXINPUTITEMS];
 
     place=INPUT->tellg(); // Get current position
 
-    Tokenize(s,Len); //read and parse whole line
+    eof=Tokenize(s,Len); //read and parse whole line
     string firstword = "";
     if (Len > 0) {firstword=s[0];}
-
-    INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line .
+    if (!eof){
+      INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
+    }
     return firstword;
 }
 //////////////////////////////////////////////////////////////////

@@ -122,6 +122,9 @@ double CDemandOptimizer::GetNamedConstant(const string s) const
   }
   return RAV_BLANK_DATA;
 }
+int CDemandOptimizer::GetNumUserDVs() const{
+  return _nUserDecisionVars;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief parses individual expression string and converts to expression term structure
 /// \param s [in] - string
@@ -172,11 +175,17 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         WriteWarning(warn.c_str(),true);
         return false;
       }
+      if (_aSBIndices[p] == DOESNT_EXIST) {
+        warn="ConvertToExpressionTerm: disabled subbasin ID in expression"+warnstring+ ". Expression will be ignored";
+        WriteWarning(warn.c_str(),true);
+        return false;
+      }
     } 
-    else {
+    else if (s[1] == 'D')  { 
       string demandID;
       if (s[1] == '.') {demandID=s.substr(2);} //!D1234
       else             {demandID=s.substr(1);} //!D.FarmerBobsDemand
+      d=GetDemandIndexFromName(demandID);
       if (d == DOESNT_EXIST) {
         warn = "ConvertToExpressionTerm: invalid demand ID or demand from disabled subbasin used in expression " +
                warnstring +" goal/constraint will be ignored";
@@ -184,16 +193,22 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
         return false; 
       }
     }
+    else{
+      warn="ConvertToExpression:: Unparseable term in expression starting with ! - only !Q, !d, or !h currently supported. "+warnstring;
+      ExitGracefully(warn.c_str(), BAD_DATA_WARN);
+    }
     
     if      (s[1]=='Q')
     {
-      if (_aResIndices[p] != DOESNT_EXIST) {
+      if      (_aResIndices[p] != DOESNT_EXIST) {
         term->DV_ind = GetDVColumnInd(DV_QOUTRES, _aResIndices[p]);  
       } 
-      else {
-        term->DV_ind=GetDVColumnInd(DV_QOUT,p);  
+      else if (_aSBIndices[p]  != DOESNT_EXIST) {
+        term->DV_ind=GetDVColumnInd(DV_QOUT,_aSBIndices[p]);  
       }
-      //TODO - need to handle reservoir outflow 
+      else {
+        //invalid p - likely not enabled 
+      }
     } 
     else if (s[1]=='D')
     {
@@ -401,7 +416,35 @@ bool CDemandOptimizer::ConvertToExpressionTerm(const string s, expressionTerm* t
   }
   return true;
 }
-
+string expTypeToString(termtype &typ){
+  switch (typ)
+  {
+  case(TERM_DV):      return "TERM_DV"; break;
+  case(TERM_TS):      return "TERM_TS"; break;
+  case(TERM_LT):      return "TERM_LT"; break;
+  case(TERM_CONST):   return "TERM_CONST"; break;
+  case(TERM_HISTORY): return "TERM_HISTORY"; break;
+  case(TERM_MAX):     return "TERM_MAX"; break;
+  case(TERM_MIN):     return "TERM_MIN"; break;
+  case(TERM_CONVERT): return "TERM_CONVERT"; break;
+  case(TERM_UNKNOWN): return "TERM_UNKNOWN"; break;
+  }
+  return "?";
+}
+void SummarizeExpression(const char **s, const int Len, expressionStruct* exp) 
+{
+  cout<<"*"<<endl;
+  cout<<"EXPRESSION: "<<endl;
+  for (int i = 0; i < Len; i++) {cout<<s[i]<<" ";}cout<<endl;
+  cout<<"---->"<<endl;
+  for (int i = 0; i < exp->nGroups; i++) {
+    cout << "  GROUP "<<i+1<<": " << endl;
+    for (int j = 0; j < exp->nTermsPerGrp[i]; j++) {
+      cout<<"   TERM "<<j+1<<": " << exp->pTerms[i][j]->origexp<<" ("<< expTypeToString(exp->pTerms[i][j]->type) <<")" <<endl;
+    }
+  }
+  cout<<"*"<<endl;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Parses demand constraint expression of form (e.g.,) A * B(x) * C + D * E - F = G * H(t) [NO PARENTHESES!]
 /// \params s [in] - array of strings of [size: Len]
@@ -513,6 +556,7 @@ expressionStruct *CDemandOptimizer::ParseExpression(const char **s,
       tmp->pTerms[j][k]=terms[j][k];
     }
   }
+
   return tmp;
 }
 

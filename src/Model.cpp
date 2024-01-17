@@ -2829,13 +2829,15 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     {
       int c=_pObservedTS[i]->GetConstitInd();
       int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
-      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
+      if (c==DOESNT_EXIST){value=RAV_BLANK_DATA;}
+      else                {value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);}
     }
     else if(datatype == "STREAM_TEMPERATURE")//=======================================
     {
       int c=_pObservedTS[i]->GetConstitInd();
       int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
-      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
+      if (c==DOESNT_EXIST){value=RAV_BLANK_DATA;}
+      else                {value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);}
     }
     else if(datatype == "WATER_LEVEL")//=======================================
     {
