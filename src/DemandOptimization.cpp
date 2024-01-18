@@ -185,6 +185,9 @@ void CDemandOptimizer::AddUserLookupTable(const CLookupTable *pLUT)
   if (!DynArrayAppend((void**&)(_pUserLookupTables),(void*)(pLUT),_nUserLookupTables)){
    ExitGracefully("CDemandOptimizer::AddUserLookupTable: adding NULL lookup table",BAD_DATA);}
 }
+//////////////////////////////////////////////////////////////////
+/// \brief sets demand penalty for demand dname
+//
 void CDemandOptimizer::SetDemandPenalty(const string dname, const double& pen) {
 
   int d=GetDemandIndexFromName(dname);
@@ -412,6 +415,7 @@ void CDemandOptimizer::Initialize(CModel* pModel, const optStruct& Options)
     }
   }
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief Initializes Demand optimization instance
 /// \notes to be called after .rvm file read 
@@ -493,6 +497,114 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
   cout<<" # Slack Vars: "<<_nSlackVars<<endl;
   if (Options.noisy){cout<<"   ...end Post-rvm-read initialization."<<endl;}
 }
+
+
+bool CDemandOptimizer::UserTimeSeriesExists(string TSname) const
+{
+  for (int i = 0; i < _nUserTimeSeries; i++) {
+    if (_pUserTimeSeries[i]->GetName()==TSname){return true;}
+  }
+  return false;
+}
+void TokenizeString(string instring, char **s, int Len) 
+{
+  // Returns first token 
+    static char str[256];
+    strcpy(str,instring.c_str());
+    char *token = strtok(str, " ");
+
+    int i=0;
+    while (token != NULL)
+    {
+        s[i]=token;
+        printf("%s\n", token);
+        token = strtok(NULL, " ");
+        cout <<"TOKENIZE: "<<s[i] << endl;
+        i++;
+    }
+    Len=i;
+}
+//////////////////////////////////////////////////////////////////
+// adds reservoir constraints as 'user-specified' constraints 
+// these are done as if the corresponding constraints were read in as expressions from the .rvm file 
+//  
+void CDemandOptimizer::AddReservoirConstraints()
+{
+  int p;
+  CSubBasin *pSB;
+  string TSname,SBIDs;
+  long SBID;
+  expressionStruct *exp;
+  dv_constraint    *pConst=NULL;
+  string expString;
+  int Len;
+  char *s[MAXINPUTITEMS];
+
+  for (int pp=0;pp<_pModel->GetNumSubBasins();pp++)
+  {
+    p   =_pModel->GetOrderedSubBasinIndex(pp);
+    pSB =_pModel->GetSubBasin(p);
+    SBID=pSB->GetID();
+    SBIDs=to_string(SBID);
+    if (((pSB->IsEnabled()) && (pSB->GetReservoir()!=NULL)))
+    {
+      //Min Flow constraints
+      // Q <= Q_min
+      //------------------------------------------------------------------------
+      TSname="_ResQmin_" + SBIDs;
+      if (UserTimeSeriesExists(TSname))
+      {  
+        expString="!Q" + SBIDs+ " < @ts(" + TSname + ",0)"; 
+        TokenizeString(expString, s, Len);
+        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst=AddConstraint(TSname, exp, true);
+        pConst->penalty_over=5.0;
+      }
+
+      //Max Flow constraints
+      // Q >= Q_max
+      //------------------------------------------------------------------------
+      TSname="_ResQmax_" + SBIDs;
+      if (UserTimeSeriesExists(TSname))
+      {  
+        expString="!Q" + SBIDs+ " > @ts(" + TSname + ",0)"; 
+        TokenizeString(expString, s, Len);
+        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst=AddConstraint(TSname, exp, true);
+        pConst->penalty_over=5.0;
+      }
+      // Override reservoir flow
+      // Q == Q_spec
+      //------------------------------------------------------------------------
+      TSname="_ResFlow_" + SBIDs;
+      if (UserTimeSeriesExists(TSname))
+      {  
+        expString="!Q" + SBIDs+ " = @ts(" + TSname + ",0)"; 
+        TokenizeString(expString, s, Len);
+        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst=AddConstraint(TSname, exp, true);
+        pConst->penalty_over=4.0;
+      }
+      // Maximum Q delta
+      // Q^{n+1} < dQ/dt * dt +Q^{n}
+      //------------------------------------------------------------------------
+      TSname="_MaxQDelta_" + SBIDs;
+      if (UserTimeSeriesExists(TSname))
+      {  
+        expString = "!Q" + SBIDs + " < @ts(" + TSname + ",0) * 86400 +!Q"+SBIDs+"[-1]"; //TBD - check if this is !Q[0] or !Q[-1]
+        //expString = "!q" + SBIDs + " < @ts(" + TSname + ",0)"; 
+        TokenizeString(expString, s, Len);
+        exp = ParseExpression((const char**)(s), Len, 0, "internal");
+        pConst=AddConstraint(TSname, exp, true);
+        pConst->penalty_over=4.0;
+      }
+
+      // Max Q Decrease 
+
+    }
+  }
+  
+}
 //////////////////////////////////////////////////////////////////
 // indexing for DV vector
 // 0     ..   nSB-1 - outflow of stream reach p 
@@ -500,7 +612,7 @@ void CDemandOptimizer::InitializePostRVMRead(CModel* pModel, const optStruct& Op
 // nSB+nRes.. nSB+2*Res-1 - reservoir stages 
 // nSB+2*nRes .. nSB+2*nRes+nDem-1 - satisfied demand 
 // nSB+2*nRes+nDem .. nSB+2*nRes+nDem+nDV - user-specified decision variables 
-// remaining - slack vars - [#enviro min flow+ # user > < goals + 2* user == goals]
+// remaining - slack vars - [#enviro min flow+ # user <=/>= goals + 2* # user == goals + all reservoir goals ]
 //  
 int CDemandOptimizer::GetDVColumnInd(const dv_type typ, const int counter) const 
 {
@@ -646,8 +758,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
     }
   }
   //ADD RESERVOIR EXTRACTION HERE 
-  //cout<<"DEMAND PENALTY SUM: "<<demand_penalty_sum<<endl;
- 
+   
   // enviro min flow goal penalties 
   // ----------------------------------------------------------------
   for (int pp = 0; pp<pModel->GetNumSubBasins(); pp++)
@@ -684,7 +795,7 @@ void CDemandOptimizer::SolveDemandProblem(CModel *pModel, const optStruct &Optio
       else // only one slack var (>= or <=) 
       {
         col_ind[i]=GetDVColumnInd(DV_SLACK,s);
-        row_val[i]=_pConstraints[j]->penalty_value;
+        row_val[i]=_pConstraints[j]->penalty_over;
         i++; s++;
       }
     }
@@ -1120,7 +1231,7 @@ void CDemandOptimizer::WriteMinorOutput(const optStruct &Options,const time_stru
   for (int i = 0; i < _nConstraints; i++) {
     if (_pConstraints[i]->is_goal) {
       if (_pConstraints[i]->pExpression->compare != COMPARE_IS_EQUAL) {
-        if (include_pen){mult=_pConstraints[i]->penalty_value;}
+        if (include_pen){mult=_pConstraints[i]->penalty_over;}
         pen = mult*_aSlackValues[k];
         _GOALSAT<<","<<pen;
         k++;

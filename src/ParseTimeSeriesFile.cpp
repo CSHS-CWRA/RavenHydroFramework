@@ -1,6 +1,6 @@
 ﻿/*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "RavenInclude.h"
 #include "Model.h"
@@ -100,22 +100,24 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
     else if  (!strcmp(s[0],":IrregularWeights"            )){code=43; }
     //----------HYDROGRAPHS /RESERVOIR PARAMS -------------------
     else if  (!strcmp(s[0],":BasinInflowHydrograph"       )){code=50; }
-    else if  (!strcmp(s[0],":ReservoirExtraction"         )){code=51; }
-    else if  (!strcmp(s[0],":VariableWeirHeight"          )){code=52; }
-    else if  (!strcmp(s[0],":ReservoirMaxStage"           )){code=53; }
-    else if  (!strcmp(s[0],":OverrideReservoirFlow"       )){code=54; }
+    else if  (!strcmp(s[0],":BasinInflowHydrograph2"      )){code=51; }
+    else if  (!strcmp(s[0],":ReservoirExtraction"         )){code=52; }
+    else if  (!strcmp(s[0],":ReservoirDemand"             )){code=52; }
+    else if  (!strcmp(s[0],":VariableWeirHeight"          )){code=53; }
+    else if  (!strcmp(s[0],":ReservoirMaxStage"           )){code=54; }
     else if  (!strcmp(s[0],":ReservoirMinStage"           )){code=55; }
     else if  (!strcmp(s[0],":ReservoirMinStageFlow"       )){code=56; }
     else if  (!strcmp(s[0],":ReservoirTargetStage"        )){code=57; }
     else if  (!strcmp(s[0],":ReservoirMaxQDelta"          )){code=58; }
-    else if  (!strcmp(s[0],":BasinInflowHydrograph2"      )){code=59; }
+    else if  (!strcmp(s[0],":ReservoirMaxQDecrease"       )){code=59; }
     else if  (!strcmp(s[0],":ReservoirMinFlow"            )){code=60; }
-    else if  (!strcmp(s[0],":ReservoirDownstreamFlow"     )){code=61; }
-    else if  (!strcmp(s[0],":ReservoirMaxQDecrease"       )){code=62; }
+    else if  (!strcmp(s[0],":ReservoirMaxFlow"            )){code=61; }
+    else if  (!strcmp(s[0],":OverrideReservoirFlow"       )){code=62; }
+    //----------DEMAND PARAMS ----------------------------------
     else if  (!strcmp(s[0],":IrrigationDemand"            )){code=63; }
     else if  (!strcmp(s[0],":WaterDemand"                 )){code=63; }
-    else if  (!strcmp(s[0],":ReservoirDownstreamDemand"   )){code=64; }
-    else if  (!strcmp(s[0],":ReservoirMaxFlow"            )){code=65; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamFlow"     )){code=64; }
+    else if  (!strcmp(s[0],":ReservoirDownstreamDemand"   )){code=65; }
     else if  (!strcmp(s[0],":FlowDiversion"               )){code=66; }
     else if  (!strcmp(s[0],":FlowDiversionLookupTable"    )){code=67; }
     else if  (!strcmp(s[0],":EnvironmentalMinFlow"        )){code=68; }
@@ -577,6 +579,28 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (51): //---------------------------------------------
+    {/*:BasinInflowHydrograph2 {long Basincode}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Qin} x nMeasurements [m3/s]
+       :EndBasinInflowHydrograph2
+     */
+      if (Options.noisy) {cout <<"Basin Inflow Hydrograph(2)"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,"none",Options);
+      if (pSB!=NULL){
+        pSB->AddDownstreamInflow(pTimeSer);
+      }
+      else
+      {
+        warn=":BasinInflowHydrograph2 Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (52): //---------------------------------------------
     {/*:ReservoirExtraction {long SBID} [int demandID] [string demandName]
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double Qout} x nMeasurements [m3/s]
@@ -605,7 +629,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
-    case (52): //---------------------------------------------
+    case (53): //---------------------------------------------
     {/*:VariableWeirHeight {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double delta_h} x nMeasurements [m]
@@ -627,7 +651,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       }
       break;
     }
-    case (53): //---------------------------------------------
+    case (54): //---------------------------------------------
     {/*:ReservoirMaxStage {long SBID}
        {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
        {double stage} x nMeasurements [m]
@@ -645,28 +669,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         warn=":ReservoirMaxStage Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set Reservoir maximum stage";
-        WriteWarning(warn,Options.noisy);
-      }
-      break;
-    }
-    case (54): //---------------------------------------------
-    {/*:OverrideReservoirFlow {long SBID}
-       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-       {double Q} x nMeasurements [m3/s]
-       :EndOverrideReservoirFlow
-     */
-      if (Options.noisy) {cout <<"Forced Reservoir Outflow Time Series"<<endl;}
-      long SBID=DOESNT_EXIST;
-      CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
-      pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"ResFlow_"+to_string(SBID),SBID,"none",Options);
-      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pSB->GetReservoir()->AddOverrideQTimeSeries(pTimeSer);
-      }
-      else
-      {
-        warn=":OverrideReservoirFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set overriden discharge";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -748,7 +750,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       CSubBasin *pSB;
       if (Len>=2){SBID=s_to_l(s[1]);}
       pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,true,"QDelta_"+to_string(SBID),SBID,"none",Options);
+      pTimeSer=CTimeSeries::Parse(p,true,"_MaxQDelta_"+to_string(SBID),SBID,"none",Options);
       if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
         pSB->GetReservoir()->AddMaxQIncreaseTimeSeries(pTimeSer);
       }
@@ -760,82 +762,6 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (59): //---------------------------------------------
-    {/*:BasinInflowHydrograph2 {long Basincode}
-       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-       {double Qin} x nMeasurements [m3/s]
-       :EndBasinInflowHydrograph2
-     */
-      if (Options.noisy) {cout <<"Basin Inflow Hydrograph(2)"<<endl;}
-      long SBID=DOESNT_EXIST;
-      CSubBasin *pSB;
-      if (Len>=2){SBID=s_to_l(s[1]);}
-      pSB=pModel->GetSubBasinByID(SBID);
-      pTimeSer=CTimeSeries::Parse(p,false,"Inflow_Hydrograph_"+to_string(SBID),SBID,"none",Options);
-      if (pSB!=NULL){
-        pSB->AddDownstreamInflow(pTimeSer);
-      }
-      else
-      {
-        warn=":BasinInflowHydrograph2 Subbasin "+to_string(SBID)+" not in model, cannot set inflow hydrograph";
-        WriteWarning(warn,Options.noisy);
-      }
-      break;
-    }
-    case (60): //---------------------------------------------
-    {/*:ReservoirMinFlow {long Basincode}
-     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-     {double Qmin} x nMeasurements [m3/s]
-     :EndReservoirMinFlow
-     */
-      if(Options.noisy) { cout <<"Reservoir Minimum Flow time series"<<endl; }
-      long SBID=DOESNT_EXIST;
-      CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
-      pSB=pModel->GetSubBasinByID(SBID);
-      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),SBID,"none",Options);
-        pSB->GetReservoir()->AddMinQTimeSeries(pTimeSer);
-      }
-      else
-      {
-        warn=":ReservoirMinFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum flow";
-        WriteWarning(warn,Options.noisy);
-      }
-      break;
-    }
-    case (61): //---------------------------------------------
-    {/*:ReservoirDownstreamFlow {long Basincode} {long downstreamSBID} {double range}
-     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-     {double Qtarget} x nMeasurements [m3/s]
-     :EndReservoirDownstreamFlow
-     */
-      if(Options.noisy) { cout <<"Reservoir Dowstream Flow  target time series"<<endl; }
-      long SBID=DOESNT_EXIST;
-      long SBID_down=DOESNT_EXIST;
-      CSubBasin *pSB,*pSBdown;
-      double range=0;
-      if(Len>=4) {
-        SBID=s_to_l(s[1]);
-        SBID_down=s_to_l(s[2]);
-        range=s_to_d(s[3]);
-      }
-      else {
-        ExitGracefully(":ReservoirDownstreamFlow: incorrect number of terms in command",BAD_DATA);
-      }
-      pSB    =pModel->GetSubBasinByID(SBID);
-      pSBdown=pModel->GetSubBasinByID(SBID_down);
-      pTimeSer=CTimeSeries::Parse(p,true,"Qmin_"+to_string(SBID),SBID,"none",Options);
-      if((pSB!=NULL) && (pSBdown!=NULL) && (pSB->GetReservoir()!=NULL)){
-        pSB->GetReservoir()->AddDownstreamTargetQ(pTimeSer,pSBdown,range);
-      }
-      else
-      {
-        warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model or doesn't have reservoir, cannot set downstream flow target";
-        WriteWarning(warn,Options.noisy);
-      }
-      break;
-    }
-    case (62): //---------------------------------------------
     {/*:ReservoirMaxQDecrease {long SBID}
      {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
      {double Qdelta} x nMeasurements [m3/s/d]
@@ -853,6 +779,87 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       else
       {
         warn=":ReservoirMaxQDecrease Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum Qdelta decrease";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (60): //---------------------------------------------
+    {/*:ReservoirMinFlow {long Basincode}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qmin} x nMeasurements [m3/s]
+     :EndReservoirMinFlow
+     */
+      if(Options.noisy) { cout <<"Reservoir Minimum Flow time series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pTimeSer=CTimeSeries::Parse(p,true,"_ResQmin_"+to_string(SBID),SBID,"none",Options);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else {
+          pSB->GetReservoir()->AddMinQTimeSeries(pTimeSer);
+        }
+      }
+      else
+      {
+        warn=":ReservoirMinFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set minimum flow";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (61): //---------------------------------------------
+    {/*:ReservoirMaxFlow {long Basincode}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qmin} x nMeasurements [m3/s]
+     :EndReservoirMinFlow
+     */
+      if(Options.noisy) { cout <<"Reservoir Maximum Flow time series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if(Len>=2) { SBID=s_to_l(s[1]); }
+      pSB=pModel->GetSubBasinByID(SBID);
+      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
+        pTimeSer=CTimeSeries::Parse(p,true,"_ResQmax_"+to_string(SBID),SBID,"none",Options);
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else{
+          pSB->GetReservoir()->AddMaxQTimeSeries(pTimeSer);
+        }
+      }
+      else
+      {
+        warn=":ReservoirMaxFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum flow";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (62): //---------------------------------------------
+    {/*:OverrideReservoirFlow {long SBID}
+       {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+       {double Q} x nMeasurements [m3/s]
+       :EndOverrideReservoirFlow
+     */
+      if (Options.noisy) {cout <<"Forced Reservoir Outflow Time Series"<<endl;}
+      long SBID=DOESNT_EXIST;
+      CSubBasin *pSB;
+      if (Len>=2){SBID=s_to_l(s[1]);}
+      pSB=pModel->GetSubBasinByID(SBID);
+      pTimeSer=CTimeSeries::Parse(p,true,"_ResFlow_"+to_string(SBID),SBID,"none",Options);
+      if ((pSB!=NULL) && (pSB->GetReservoir()!=NULL)){
+        if (pModel->GetDemandOptimizer() != NULL) {
+          pModel->GetDemandOptimizer()->AddUserTimeSeries(pTimeSer);
+        }
+        else{
+          pSB->GetReservoir()->AddOverrideQTimeSeries(pTimeSer);
+        }
+      }
+      else
+      {
+        warn=":OverrideReservoirFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set overriden discharge";
         WriteWarning(warn,Options.noisy);
       }
       break;
@@ -891,6 +898,38 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
       break;
     }
     case (64): //---------------------------------------------
+    {/*:ReservoirDownstreamFlow {long Basincode} {long downstreamSBID} {double range}
+     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
+     {double Qtarget} x nMeasurements [m3/s]
+     :EndReservoirDownstreamFlow
+     */
+      if(Options.noisy) { cout <<"Reservoir Dowstream Flow  target time series"<<endl; }
+      long SBID=DOESNT_EXIST;
+      long SBID_down=DOESNT_EXIST;
+      CSubBasin *pSB,*pSBdown;
+      double range=0;
+      if(Len>=4) {
+        SBID=s_to_l(s[1]);
+        SBID_down=s_to_l(s[2]);
+        range=s_to_d(s[3]);
+      }
+      else {
+        ExitGracefully(":ReservoirDownstreamFlow: incorrect number of terms in command",BAD_DATA);
+      }
+      pSB    =pModel->GetSubBasinByID(SBID);
+      pSBdown=pModel->GetSubBasinByID(SBID_down);
+      pTimeSer=CTimeSeries::Parse(p,true,"_ResDownQ_"+to_string(SBID),SBID,"none",Options);
+      if((pSB!=NULL) && (pSBdown!=NULL) && (pSB->GetReservoir()!=NULL)){
+        pSB->GetReservoir()->AddDownstreamTargetQ(pTimeSer,pSBdown,range);
+      }
+      else
+      {
+        warn=":ReservoirDownstreamFlow Subbasin "+to_string(SBID)+" or downstream subbasin "+to_string(SBID_down)+" not in model or doesn't have reservoir, cannot set downstream flow target";
+        WriteWarning(warn,Options.noisy);
+      }
+      break;
+    }
+    case (65): //---------------------------------------------
     {/*:ReservoirDownstreamDemand {long downstream SBID} {long reservoir SBID} {double percent_met} [julian_start] [julian_end]*/
       if(Options.noisy) { cout <<"Reservoir downstream demand"<<endl; }
       long   SBID     =DOESNT_EXIST;
@@ -914,28 +953,7 @@ bool ParseTimeSeriesFile(CModel *&pModel, const optStruct &Options)
 
       break;
     }
-    case (65): //---------------------------------------------
-    {/*:ReservoirMaxFlow {long Basincode}
-     {yyyy-mm-dd} {hh:mm:ss.0} {double timestep} {int nMeasurements}
-     {double Qmin} x nMeasurements [m3/s]
-     :EndReservoirMinFlow
-     */
-      if(Options.noisy) { cout <<"Reservoir Maximum Flow time series"<<endl; }
-      long SBID=DOESNT_EXIST;
-      CSubBasin *pSB;
-      if(Len>=2) { SBID=s_to_l(s[1]); }
-      pSB=pModel->GetSubBasinByID(SBID);
-      if((pSB!=NULL) && (pSB->GetReservoir()!=NULL)) {
-        pTimeSer=CTimeSeries::Parse(p,true,"Qmax_"+to_string(SBID),SBID,"none",Options);
-        pSB->GetReservoir()->AddMaxQTimeSeries(pTimeSer);
-      }
-      else
-      {
-        warn=":ReservoirMaxFlow Subbasin "+to_string(SBID)+" not in model or doesn't have reservoir, cannot set maximum flow";
-        WriteWarning(warn,Options.noisy);
-      }
-      break;
-    }
+
     case (66): //---------------------------------------------
     {/*:FlowDiversion [fromSBID] [toSBID] [fract. diverted] [Qmin] {start_day} {end_day}*/
       if(Options.noisy) { cout <<"Flow diversion"<<endl; }

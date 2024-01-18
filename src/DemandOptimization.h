@@ -245,6 +245,9 @@ private: /*------------------------------------------------------*/
 
   void             CheckConditions(const int ii, const time_struct &tt); 
 
+  bool        UserTimeSeriesExists(string TSname) const;
+  void     AddReservoirConstraints();
+
 public: /*------------------------------------------------------*/
   CDemandOptimizer(CModel *pMod);
   ~CDemandOptimizer();
