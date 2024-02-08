@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef SUBBASIN_H
 #define SUBBASIN_H
@@ -67,6 +67,8 @@ private:/*------------------------------------------------------*/
   double          _gamma_shape;   ///< shape parameter of gamma unit hydrograph
   double          _gamma_scale;   ///< scale parameter of gamma unit hydrograph
   int          _reach_HRUindex;   ///< HRU *index* k (not ID) associated with reach. Used for reach-specific forcings.
+  double      _sens_exch_coeff;   ///< in-catchment sensible exchange coefficient [1/d]
+  double        _GW_exch_coeff;   ///< in-catchment groundwater temperature exchange coefficient [1/d]
 
   double       _hyporheic_flux;   ///< gross exchange flux with groundwater [m/d]
   double        _convect_coeff;   ///< convection coefficient [MJ/m2/d/K]
@@ -130,9 +132,9 @@ private:/*------------------------------------------------------*/
   CTimeSeries  *_pInflowHydro2;   ///< pointer to time series of inflows/extractions ; at downstream end of basin reach
   CTimeSeries *_pEnviroMinFlow;   ///< pointer to time series of environmental minimum flow targets that force reduced irrigation demand (=0 by default)
 
-  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series  
+  int           _nIrrigDemands;   ///< number of irrigation demand/water demand time series
   CTimeSeries **_pIrrigDemands;   ///< pointer to array of time series of demand (which can be unmet) applied at downstream end of basin reach [size: _nIrrigDemand]
-  
+
   int             _nDiversions;   ///< number of flow diversions from basin
   diversion     **_pDiversions;   ///< array of pointers to flow diversion structures
 
@@ -190,6 +192,7 @@ public:/*-------------------------------------------------------*/
   double               GetTemperatureCorrection () const;
   int                  GetReachHRUIndex     () const;
   double               GetRiverDepth        () const;
+  double               GetXSectArea         () const;
   double               GetWaterLevel        () const;
   double               GetHyporheicFlux     () const;
   double               GetConvectionCoeff   () const;
@@ -200,11 +203,14 @@ public:/*-------------------------------------------------------*/
   double               GetTopWidth          () const;
   bool                 UseInFlowAssimilation() const;
   int                  GetNumWaterDemands   () const;
-  string               GetWaterDemandID     (const int i) const;
+  int                  GetWaterDemandID     (const int i) const;
+  string               GetWaterDemandName   (const int i) const;
+  double               GetUnusableFlowPercentage() const;
 
   const double   *GetUnitHydrograph        () const;
   const double   *GetRoutingHydrograph     () const;
   const double   *GetInflowHistory         () const;
+  const double   *GetLatHistory            () const;
   const double   *GetOutflowArray          () const;
   int             GetLatHistorySize        () const;
   int             GetInflowHistorySize     () const;
@@ -217,7 +223,7 @@ public:/*-------------------------------------------------------*/
   double          GetIntegratedOutflow     (const double &tstep) const;//[m3] from final segment integrated over timestep
   double          GetIntegratedSpecInflow  (const double &t,
                                             const double &tstep) const;//[m3] from specified inflows integrated over timestep
-  double          GetIntegratedLocalOutflow(const double &tstep) const;//[m3] from local contributions, integrated over timestep
+  double          GetIntegratedLocalOutflow(const double &tstep) const;//[m3] from in-catchment local contributions, integrated over timestep
   double          GetReservoirInflow       () const;                   //[m3/s] from final segment upstream of reservoir, point in time
   double          GetReservoirLosses       (const double &tstep) const;//[m3] from reservoir integrated over timestep
   double      GetIntegratedReservoirInflow (const double &tstep) const;//[m3] from final segment upstream of reservoir integrated over timestep
@@ -229,10 +235,12 @@ public:/*-------------------------------------------------------*/
 
   double          GetSpecifiedInflow       (const double &t) const;    //[m3/s] to upstream end of channel at point in time
   double          GetDownstreamInflow      (const double &t) const;    //[m3/s] to downstream end of channel at point in time
-  double          GetIrrigationDemand      (const double &t) const;    //[m3/s] from downstream end of channel at point in time
+  double          GetTotalWaterDemand      (const double &t) const;    //[m3/s] total from downstream end of channel at point in time
+  double          GetWaterDemand           (const int ii,const double &t) const;  //[m3/s] iith demand from downstream end of channel at point in time
   double          GetDownstreamIrrDemand   (const double &t) const;    //[m3/s] cumulative downstream irrigation demand, including from this subbasin
   double          GetDemandDelivery        () const;                   //[m3/s] instantaneous delivery rate Qirr
   double          GetEnviroMinFlow         (const double &t) const;    //[m3/s] environmental minimum flow target from downstream outlet
+  bool            HasEnviroMinFlow         () const;                   // true if basin has enviro min flow time series 
   bool            HasIrrigationDemand      () const;                   // true if basin has specified irrigation demand
   int             GetDiversionTargetIndex  (const int i) const;        // returns subbasin index p of diversion i
 

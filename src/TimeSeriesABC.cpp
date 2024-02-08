@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2021 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "TimeSeriesABC.h"
 
@@ -26,6 +26,7 @@ CTimeSeriesABC::CTimeSeriesABC(ts_type type,
   _loc_ID     =loc_ID;
   _srcfile    =filename;
   _constit_ind=DOESNT_EXIST;
+  _ID_tag     =DOESNT_EXIST;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -71,6 +72,12 @@ string CTimeSeriesABC::GetName()  const{return _name;}
 long   CTimeSeriesABC::GetLocID()      const{return _loc_ID;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief returns identifier tag
+/// \return identifier tag
+//
+int   CTimeSeriesABC::GetIDTag() const {return _ID_tag; }
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns location identifier
 /// \return constituent index (or DOESNT_EXIST, otherwise)
 //
@@ -81,6 +88,12 @@ int    CTimeSeriesABC::GetConstitInd() const { return _constit_ind; }
 /// \param ID - HRU ID or SubBasin ID linked to observations
 //
 void   CTimeSeriesABC::SetLocID(long ID) { _loc_ID=ID; }
+
+//////////////////////////////////////////////////////////////////
+/// \brief Sets identifier tag
+/// \param IDtag - integer tag (e.g., demand ID)
+//
+void   CTimeSeriesABC::SetIDTag(int IDtag) { _ID_tag=IDtag; }
 
 //////////////////////////////////////////////////////////////////
 /// \brief Sets constituent index

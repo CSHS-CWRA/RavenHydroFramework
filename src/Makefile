@@ -10,6 +10,7 @@
 # Modified   Feb 2017    Juliane Mai    - add NetCDF support
 #            Mar 2017    Juliane Mai    - increase stack size to 256 MB from standard 64MB
 #            Jan 2019    Alan J. Barton - added OS name to created exe name
+#            Dec 2023    David Huard - support for python binding
 ###
 # appname := raven_rev$(shell svnversion -n . | sed -e 's/:/-/g')_$(shell uname -o).exe
 appname := Raven.exe
@@ -17,9 +18,9 @@ appname := Raven.exe
 CXX      := g++
 CXXFLAGS := -Wno-deprecated
 # some compilers require the c++11 flag, some may not
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -fPIC
 
-srcfiles := $(shell find . -name "*.cpp")
+srcfiles := $(shell ls *.cpp)
 objects  := $(patsubst %.cpp, %.o, $(srcfiles))
 
 # include netcdf
@@ -34,6 +35,9 @@ all: $(appname)
 
 $(appname): $(objects)
 	$(CXX) $(CXXFLAGS) -o $(appname) $(objects) $(LDLIBS) $(LDFLAGS)
+
+libraven:
+	$(CXX) $(CXXFLAGS) -shared $(LDLIBS) $(shell python3 -m pybind11 --includes) $(LDFLAGS) -I . py/libraven.cpp -o libraven$(shell python3-config --extension-suffix)
 
 depend: .depend
 

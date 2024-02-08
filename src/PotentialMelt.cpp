@@ -104,10 +104,10 @@ double CModel::EstimatePotentialMelt(const force_struct *F,
     double K = F->SW_radia_net;   //net short wave radiation to snowpack [MJ/m2/d]
     double L = F->LW_radia_net;   //net long wave radiation [MJ/m2/d]
     double H = GetSensibleHeatSnow(air_temp,surf_temp,wind_vel,ref_ht,roughness); //[MJ/m2/d]
-    double LE= GetLatentHeatSnow  (air_pres,air_temp,surf_temp,rel_humid,wind_vel,ref_ht,roughness); //[MJ/m2/d]
+    double LH= GetLatentHeatSnow  (air_pres,air_temp,surf_temp,rel_humid,wind_vel,ref_ht,roughness); //[MJ/m2/d]
     double R = GetRainHeatInput   (surf_temp,air_temp,rainfall ,rel_humid); //[MJ/m2/d]
 
-    double S = K + L + H + LE + R;                //total heat input rate [MJ/m2/d]
+    double S = K + L + H + LH + R;                //total heat input rate [MJ/m2/d]
     S*=(MM_PER_METER/DENSITY_WATER/LH_FUSION);    //[MJ/m2/d-->mm/d]
     return S;
   }
@@ -294,8 +294,6 @@ double UBC_DailyPotentialMelt(CModel* pModel,
 
   //condensation melt
   CONDM=P0COND*max(F.temp_daily_min,0.0)*RM*vel;  //[mm/d]
-  //temp_daily_min should be dew point temp
-  //to account for a (sketchy) UBC implementation detail
 
   CONDM*=((1.0-Fc)*pressure+(Fc)*1.0);  //[mm/d]
 

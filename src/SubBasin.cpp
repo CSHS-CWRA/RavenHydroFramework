@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #include "SubBasin.h"
 
@@ -51,6 +51,8 @@ CSubBasin::CSubBasin( const long           Identifier,
   _reach_HRUindex    =DOESNT_EXIST; //default
   _hyporheic_flux    =0.0; //default
   _convect_coeff     =2.0; //default
+  _sens_exch_coeff   =0.0;
+  _GW_exch_coeff     =0.0;
   _bed_conductivity  =0.0;
   _bed_thickness     =0.5; //m
 
@@ -273,6 +275,12 @@ const double        *CSubBasin::GetInflowHistory     () const{return _aQinHist;}
 const double        *CSubBasin::GetOutflowArray     () const {return _aQout;}
 
 //////////////////////////////////////////////////////////////////
+/// \brief returns historical inflow hydrograph as array pointer
+/// \return historical inflow hydrograph as array pointer
+//
+const double        *CSubBasin::GetLatHistory       () const{return _aQlatHist;}
+
+//////////////////////////////////////////////////////////////////
 /// \brief returns number of timesteps stored in unit hydrograph history
 /// \return number of timesteps stored in unit hydrograph history
 //
@@ -449,18 +457,30 @@ double CSubBasin::GetDownstreamInflow(const double &t) const
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified demand from subbasin at time t
 //
-double CSubBasin::GetIrrigationDemand(const double &t) const
+double CSubBasin::GetTotalWaterDemand(const double &t) const
 {
   if(_nIrrigDemands==0) { return 0.0; }
   double sum=0;
   double Qirr;
   for (int i=0;i<_nIrrigDemands;i++)
   {
-    Qirr=_pIrrigDemands[i]->GetValue(t); 
+    Qirr=_pIrrigDemands[i]->GetValue(t);
     if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
     sum+=Qirr;
   }
   return sum;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns specified irrigation/water use demand from subbasin at time t
+/// \param &t [in] Model time at which the demand from SB is to be determined
+/// \return specified demand from subbasin at time t
+//
+double CSubBasin::GetWaterDemand(const int ii, const double &t) const
+{
+  double Qirr;
+  Qirr=_pIrrigDemands[ii]->GetValue(t);
+  if (Qirr==RAV_BLANK_DATA){Qirr=0.0;}
+  return Qirr;
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns instantaneous ACTUAL irrigation use at end of current timestep
@@ -471,14 +491,14 @@ double CSubBasin::GetDemandDelivery() const
   return _Qirr;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns cumulative downstream specified irrigation demand, including from this subbasin
+/// \brief Returns cumulative downstream specified water demand, including from this subbasin
 /// \param &t [in] Model time at which the demand from SB is to be determined
 /// \return specified cumulative downstream demand (in [m3/s]) from subbasin at time t
 //
 double CSubBasin::GetDownstreamIrrDemand(const double &t) const
 {
   double Qirr;
-  Qirr=GetIrrigationDemand(t);
+  Qirr=GetTotalWaterDemand(t);
 
   if (_downstream_ID==DOESNT_EXIST){ return Qirr; }
   else                             { return _pDownSB->GetDownstreamIrrDemand(t)+Qirr; }
@@ -514,6 +534,15 @@ bool CSubBasin::HasIrrigationDemand() const
   return (_nIrrigDemands>0);
 }
 //////////////////////////////////////////////////////////////////
+/// \brief Returns true if subbasin has irrigation demand
+/// \return true if subbasin has irrigation demand
+//
+bool CSubBasin::HasEnviroMinFlow() const
+{
+  return (_pEnviroMinFlow!=NULL);
+}
+
+//////////////////////////////////////////////////////////////////
 /// \brief Returns downstream outflow due to irrigation demand after flow constraints applied
 /// \param &t [in] Model time at which the outflow from SB is to be determined
 /// \param &Q [in] Estimate of subbasin outflow prior to applying demand [m3/s]
@@ -522,12 +551,12 @@ bool CSubBasin::HasIrrigationDemand() const
 double CSubBasin::ApplyIrrigationDemand(const double &t,const double &Q) const
 {
   if (_nIrrigDemands==0){return 0.0;}
-  
+
   //if using Management optimization, delivery determined by optimizer /todo[funct]
   //return pModel->GetDemandOptimizer()->GetTotalWaterDemandDelivery(_global_index);
-  
+
   double Qirr;
-  double Qdemand=GetIrrigationDemand(t);
+  double Qdemand=GetTotalWaterDemand(t);
   double Qmin   =GetEnviroMinFlow(t);
 
   Qirr=min(max((1.0-_unusable_flow_pct)*(Q-Qmin),0.0),Qdemand);
@@ -667,8 +696,8 @@ double CSubBasin::GetHyporheicFlux() const {
   return _hyporheic_flux;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief Returns reach bed conductance
-/// \return reach hyporheic bed conductance
+/// \brief Returns reach bed conductivity
+/// \return reach hyporheic bed conductivity
 //
 double CSubBasin::GetRiverbedConductivity() const {
   return _bed_conductivity;
@@ -712,21 +741,32 @@ double CSubBasin::GetRivuletStorage () const
   return _rivulet_storage;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief number of water/irrigation demands 
-/// \return number of water/irrigation demands 
+/// \brief number of water/irrigation demands
+/// \return number of water/irrigation demands
 //
-int CSubBasin::GetNumWaterDemands() const 
+int CSubBasin::GetNumWaterDemands() const
 {
   return _nIrrigDemands;
 }
 //////////////////////////////////////////////////////////////////
-/// \brief number of water/irrigation demands 
-/// \return number of water/irrigation demands 
+/// \brief returns water/irrigation demand integer ID
+/// \return water/irrigation demand integer ID
 //
-string CSubBasin::GetWaterDemandID     (const int i) const
-{ 
+int CSubBasin::GetWaterDemandID     (const int i) const
+{
 #ifdef _STRICTCHECK_
   ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandID: invalid index",RUNTIME_ERR);
+#endif
+  return _pIrrigDemands[i]->GetIDTag(); //stores demand ID
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns water/irrigation demand name/alias
+/// \return water/irrigation demand name/alias
+//
+string CSubBasin::GetWaterDemandName   (const int i) const
+{
+#ifdef _STRICTCHECK_
+  ExitGracefullyIf(i < 0 || i >= _nWaterDemands, "CSubBasin::GetWaterDemandName: invalid index",RUNTIME_ERR);
 #endif
   return _pIrrigDemands[i]->GetName();
 }
@@ -882,13 +922,23 @@ double CSubBasin::GetDiffusivity() const
 }
 //////////////////////////////////////////////////////////////////
 /// \brief Returns channel depth, in meters
-/// \return  reference channel depth [m], with minimum depth of 1cm
+/// \return  channel depth [m], with minimum depth of 1cm
 //
 double CSubBasin::GetRiverDepth() const
 {
   if (_pChannel==NULL){return ALMOST_INF;}
   const double MIN_CHANNEL_DEPTH=0.01;
   return max(_pChannel->GetDepth(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_DEPTH);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief Returns channel area, in m2
+/// \return  channel area [m], with minimum area of 0.01 m2
+//
+double CSubBasin::GetXSectArea() const
+{
+  if (_pChannel==NULL){return ALMOST_INF;}
+  const double MIN_CHANNEL_AREA=0.01;
+  return max(_pChannel->GetArea(_aQout[_nSegments-1],_slope,_mannings_n),MIN_CHANNEL_AREA);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -926,6 +976,12 @@ double CSubBasin::GetWettedPerimeter() const
 double CSubBasin::GetTopWidth() const {
   if(_pChannel==NULL) { return ALMOST_INF; }
   return _pChannel->GetTopWidth(_aQout[_nSegments-1],_slope,_mannings_n);
+}
+//////////////////////////////////////////////////////////////////
+/// \brief gets unusable flow percentatge
+//
+double CSubBasin::GetUnusableFlowPercentage() const {
+  return _unusable_flow_pct;
 }
 
 /*****************************************************************
@@ -989,6 +1045,8 @@ bool CSubBasin::SetBasinProperties(const string label,
   else if (!label_n.compare("REACH_HRU_ID"  ))  { _reach_HRUindex=(int)(value); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { _hyporheic_flux=value; }
   else if (!label_n.compare("CONVECT_COEFF" ))  { _convect_coeff=value; }
+  else if (!label_n.compare("SENS_EXCH_COEFF")) { _sens_exch_coeff=value; }
+  else if (!label_n.compare("GW_EXCH_COEFF" ))  { _GW_exch_coeff=value; }
 
   else if (!label_n.compare("RIVERBED_CONDUCTIVITY")){ _bed_conductivity = value; }
   else if (!label_n.compare("RIVERBED_THICKNESS"   )){ _bed_thickness = value; }
@@ -1040,6 +1098,8 @@ double CSubBasin::GetBasinProperties(const string label) const
   else if (!label_n.compare("REACH_HRU_ID"  ))  { return (double)(_reach_HRUindex); }
   else if (!label_n.compare("HYPORHEIC_FLUX"))  { return _hyporheic_flux; }
   else if (!label_n.compare("CONVECT_COEFF"))   { return _convect_coeff; }
+  else if (!label_n.compare("SENS_EXCH_COEFF")) { return _sens_exch_coeff; }
+  else if (!label_n.compare("GW_EXCH_COEFF"))   { return _GW_exch_coeff; }
 
   else if (!label_n.compare("RESERVOIR_DISABLED")) { return (double)(_res_disabled); }
   else if (!label_n.compare("CORR_REACH_LENGTH"))  { return _reach_length2; }
@@ -1220,6 +1280,7 @@ void CSubBasin::SetUnusableFlowPercentage(const double &val)
     "CSubBasin:SetUnusableFlowPercentage: invalid value for :UnusableFlowPercentage (must be between zero and one).",BAD_DATA_WARN);
   _unusable_flow_pct=val;
 }
+
 //////////////////////////////////////////////////////////////////
 /// \brief scales all internal flows by scale factor (for assimilation/nudging)
 /// \remark Messes with mass balance something fierce!
@@ -1377,8 +1438,9 @@ void CSubBasin::Initialize(const double    &Qin_avg,          //[m3/s] from upst
         string warn="CSubBasin::Initialize: negative or zero average flow specified in initialization (basin "+to_string(_ID)+")";
         ExitGracefully(warn.c_str(),BAD_DATA);
       }
+      double mult=_pModel->GetGlobalParams()->GetParams()->reference_flow_mult;
+      ResetReferenceFlow(mult*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
 
-      ResetReferenceFlow(10.0*(Qin_avg+Qlat_avg)); //VERY APPROXIMATE - much better to specify!
       //string advice="Reference flow in basin " +to_string(_ID)+" was estimated from :AvgAnnualRunoff to be "+to_string(_Q_ref) +" m3/s. (this will not be used in headwater basins)";
       //WriteAdvisory(advice,false);
     }
@@ -1817,7 +1879,7 @@ void  CSubBasin::UpdateSubBasin(const time_struct &tt, const optStruct &Options)
 /// \param &res_ht [in] new reservoir stage [m]
 /// \param res_outflow [in] reservoir outflow [m3/s]
 /// \param constraint [in] current constraint applied to reservoir flow [-]
-/// \param res_Qstruct [in] pointer to structure for multiple-control reservoir 
+/// \param res_Qstruct [in] pointer to structure for multiple-control reservoir
 /// \param &Options [in] Global model options information
 /// \param &tt [in] time structure at start of current time step
 /// \param initialize [in] Flag to indicate if flows are to only be initialized
@@ -2055,7 +2117,12 @@ void CSubBasin::UpdateRoutingHydro(const double &tstep)
 /// lateral flow is all routed to most downstream outflow segment . Assumes uniform time step
 ///
 /// \param [out] *aQout_new Array of outflows at downstream end of each segment at end of current timestep [m^3/s]
+/// \param [out] res_ht - reservoir stage at end of timestep
+/// \param [out] res_outflow - reservoir outflow at end of timestep
+/// \param [out] res_const - current reservoir constraint over timestep
+/// \param [out] aResQstruct - reservoir outflows from various control structures
 /// \param &Options [in] Global model options information
+/// \param tt [in] - time structure
 //
 void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
                            double &res_ht, //[m]
@@ -2081,11 +2148,6 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
   Qlat_new=0.0;
   for (n=0;n<_nQlatHist;n++){
     Qlat_new+=_aUnitHydro[n]*_aQlatHist[n];
-  }
-
-  double Qlat_last=0;
-  for (n=0;n<_nQlatHist-1;n++){
-    Qlat_last+=_aUnitHydro[n]*_aQlatHist[n+1];
   }
 
   //==============================================================
@@ -2161,7 +2223,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
 
       //new outflow proportional to old outflow without correction
       double corr=1.0;
-      aQout_new[seg] = c1*Qin + c2*Qin_new + c3*(_aQout[seg]-corr*_QlatLast);
+      aQout_new[seg] = c1*Qin + c2*Qin_new + c3*(_aQout[seg]-corr*_Qlocal);
       Qin    =_aQout   [seg];
       Qin_new=aQout_new[seg];
     }
@@ -2177,7 +2239,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     const double ROUTE_MAXITER=20;
     const double ROUTE_TOLERANCE=0.0001;//[m3/s]
 
-    double Qout_old =_aQout   [_nSegments-1]-Qlat_last;
+    double Qout_old =_aQout   [_nSegments-1]-_Qlocal;
     double Qin_new  =_aQinHist[0];
     double Qin_old  =_aQinHist[1];
     double V_old=_pChannel->GetArea(Qout_old,_slope,_mannings_n)*_reach_length;
@@ -2236,7 +2298,7 @@ void CSubBasin::RouteWater(double *aQout_new,//[m3/s][size:_nSegments]
     const double ROUTE_MAXITER=20;
     const double ROUTE_TOLERANCE=0.0001;//[m3/s]
 
-    double Qout_old =_aQout   [_nSegments-1]-Qlat_last;
+    double Qout_old =_aQout   [_nSegments-1]-_Qlocal;
     double Qin_new  =_aQinHist[0];
 		double Qin_old  =_aQinHist[1];
 

@@ -528,9 +528,26 @@ void MassEnergyBalance( CModel            *pModel,
         }
       }
     }
-    //User-specified inflows to upstream end
+    //User-specified inflows to upstream end of subbasin reach
     aQinnew[p]+=pBasin->GetSpecifiedInflow(t+tstep);
+
+    //groundwater contributions to reach
+    if (Options.modeltype == MODELTYPE_COUPLED)
+	  {
+      aRouted[p]+= pGW2River->CalcRiverFlowBySB(p)*tstep;      // [m3]
+    }
+
+    //preparatory step prior to routing: used to assimilate lake levels and update routing hydrograph for timestep
+    pBasin->UpdateSubBasin(tt,Options);
   }
+
+  // Management optimization - determines optimal demand delivery/reservoir outflows 
+  // ----------------------------------------------------------------------------------------
+  if (Options.management_optimization)
+  { 
+    pModel->GetDemandOptimizer()->SolveDemandProblem(pModel, Options, aRouted, tt); 
+  }
+
   // Route water over timestep
   // ----------------------------------------------------------------------------------------
   // calculations performed in order from upstream (pp=0) to downstream (pp=nSubBasins-1)
@@ -541,16 +558,9 @@ void MassEnergyBalance( CModel            *pModel,
     pBasin=pModel->GetSubBasin(p);
     if(pBasin->IsEnabled())
     {
-      pBasin->UpdateSubBasin(tt,Options);            // also used to assimilate lake levels and update routing hydrograph for timestep
-
       pBasin->UpdateInflow(aQinnew[p]);              // from upstream, diversions, and specified flows
 
       down_Q=pBasin->GetDownstreamInflow(t);         // treated as additional runoff (period starting)
-
-      if (Options.modeltype == MODELTYPE_COUPLED)
-	    {
-        aRouted[p]+= pGW2River->CalcRiverFlowBySB(p)*tstep;      // [m3]
-      }
 
       pBasin->UpdateLateralInflow(aRouted[p]/(tstep*SEC_PER_DAY)+down_Q);//[m3/d]->[m3/s]
 
@@ -596,6 +606,7 @@ void MassEnergyBalance( CModel            *pModel,
   double ResMass    =0;
   double ResSedMass =0;
   double MassOutflow=0;
+  double Mlat_new   =0;
   double Ploading;
   int    iSWmass,m;
   CConstituentModel *pConstitModel;
@@ -639,8 +650,9 @@ void MassEnergyBalance( CModel            *pModel,
 
         pConstitModel->SetMassInflows    (p,aMinnew[p]);
         pConstitModel->SetLateralInfluxes(p,aRoutedMass[p]);
-        pConstitModel->RouteMass         (p,aMoutnew,ResMass,ResSedMass,Options,tt);  //Where everything happens!
-        pConstitModel->UpdateMassOutflows(p,aMoutnew,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
+        pConstitModel->PrepareForRouting (p);
+        pConstitModel->RouteMass         (p,aMoutnew,Mlat_new,ResMass,ResSedMass,Options,tt);  //Where everything happens!
+        pConstitModel->UpdateMassOutflows(p,aMoutnew,Mlat_new,ResMass,ResSedMass,MassOutflow,Options,tt,false); //actually updates mass flow values here
 
         pTo   =pModel->GetDownstreamBasin(p);
         if(pTo!=DOESNT_EXIST)

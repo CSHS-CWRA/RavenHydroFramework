@@ -145,7 +145,6 @@ bool SetSpecifiedValue(double &val, double set_val, double template_val, bool ne
 ///////////////////////////////////////////////////////////////////////////
 /// \brief Determines default parameter value
 /// \remark Default template values depend upon whether the parameter is autocalculable
-/// \docminor Parameters could be better described
 ///
 /// \param is_template [in] true if the default value being set is for the template class
 /// \param is_computable [in] true if the value is autocalculable
@@ -358,6 +357,7 @@ void JulianConvert(double model_time, const double start_date, const int start_y
   if (tt.day_of_month==0){tt.day_of_month=1;}
   tt.month =dmonth;
   tt.year=dyear;
+  //tt.nn = static_cast<int>(rvn_floor((tt.model_time+TIME_CORRECTION)/tstep)));
 
   tt.day_changed = false;
   if((model_time <= PRETTY_SMALL) || (tt.julian_day-floor(tt.julian_day+TIME_CORRECTION)<0.001)) { tt.day_changed = true; }
@@ -1734,7 +1734,7 @@ void CalcWeightsFromUniformNums(const double* aVals, double* aWeights, const int
 //
 void quickSort(double arr[], int left, int right)
 {
-  if (right<=left){return;}//e.g., if array size==0
+  if (right<=left){return;}//e.g., if array size==0 or 1
   int i = left, j = right;
   double tmp;
   double pivot = arr[(left + right) / 2];
@@ -1757,10 +1757,10 @@ void quickSort(double arr[], int left, int right)
   if (i < right){quickSort(arr, i, right);}
 }
 //////////////////////////////////////////////////////////////////
-// given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater) 
-// if values are not unique, gaps will form between ranks  
-// NOT OPTIMIZED 
-void getRanks(const double* arr, const int N, int* ranks) 
+// given unsorted or sorted array arr[] returns rank of each term, where 0 indicates the largest value (none smaller) and N-1 the smallest value (all are greater)
+// if values are not unique, gaps will form between ranks
+// NOT OPTIMIZED
+void getRanks(const double* arr, const int N, int* ranks)
 {
   double soft=0;
 	for(int i=0;i<N;i++){

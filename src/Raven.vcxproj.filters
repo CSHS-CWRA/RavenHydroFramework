@@ -115,6 +115,9 @@
     <Filter Include="Header Files\_Support Headers">
       <UniqueIdentifier>{a829b735-aa63-4c39-865d-a2593fb8012b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Water Demand">
+      <UniqueIdentifier>{b1b522d7-f7f8-40a5-b79e-06d083a9d869}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HydroProcessABC.cpp">
@@ -429,9 +432,6 @@
     <ClCompile Include="ChemEquilibrium.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="FrozenGround.cpp">
-      <Filter>Source Files\Hydrological Processes\Energy Processes</Filter>
-    </ClCompile>
     <ClCompile Include="UnitTesting.cpp">
       <Filter>Source Files\_Testing</Filter>
     </ClCompile>
@@ -453,17 +453,20 @@
     <ClCompile Include="Raven_BMI.cpp">
       <Filter>Source Files\_Driver</Filter>
     </ClCompile>
-    <ClCompile Include="_Unintegrated Source Files\DemandOptimization.cpp">
-      <Filter>Source Files\_Testing</Filter>
-    </ClCompile>
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
     <ClCompile Include="EnergyTransport.cpp">
       <Filter>Source Files\Transport Processes</Filter>
     </ClCompile>
-    <ClCompile Include="_Unintegrated Source Files\DemandExpressionHandling.cpp">
-      <Filter>Source Files\_Testing</Filter>
+    <ClCompile Include="DemandOptimization.cpp">
+      <Filter>Source Files\Water Demand</Filter>
+    </ClCompile>
+    <ClCompile Include="DemandExpressionHandling.cpp">
+      <Filter>Source Files\Water Demand</Filter>
+    </ClCompile>
+    <ClCompile Include="ParseManagementFile.cpp">
+      <Filter>Source Files\_Driver\Input Parsing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -656,14 +659,14 @@
     <ClInclude Include="Matrix.h">
       <Filter>Header Files\_Support Headers</Filter>
     </ClInclude>
-    <ClInclude Include="_Unintegrated Source Files\DemandOptimization.h">
-      <Filter>Header Files\_Testing</Filter>
-    </ClInclude>
     <ClInclude Include="Raven_BMI.h">
       <Filter>Header Files\Input/Output</Filter>
     </ClInclude>
     <ClInclude Include="BMI.h">
       <Filter>Header Files\Input/Output</Filter>
+    </ClInclude>
+    <ClInclude Include="DemandOptimization.h">
+      <Filter>Header Files\Subbasins/HRUs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
   ----------------------------------------------------------------*/
 #ifndef FORCINGGRID_H
 #define FORCINGGRID_H
@@ -35,18 +35,16 @@ private:/*------------------------------------------------------*/
   string       _filename;                    ///< Name of NetCDF file
   string       _varname;                     ///< Name of forcing variable in NetCDF file
 
-  string       _DimNames[3];                 ///< Names of all three dimensions as in NetCDF file
-  ///                                        ///< [ dim_cols, dim_row, dim_time]
+  string       _DimNames[3];                 ///< Names of all three dimensions as in NetCDF file [ dim_cols, dim_row, dim_time]
   int          _GridDims[3];                 ///< Length of dimensions of grid [ size = (x,y,t) = (NC, NR, _ChunkSize) ]
+  int          _nCells;                      ///< number of cells = _GridDims[0]*_GridDims[1] for 3D, _GridDims[0] otherwise
 
-  int          _nHydroUnits;                 ///< number of HRUs (important for weights)
+  int          _nHydroUnits;                 ///< number of HRUs, locally stored
 
   int          _dim_order;                   ///< code (1-6) for different dimension orders
-  //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3,
-  //                                         ///< (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
+  //                                         ///< (x,y,t) = 1, (y,x,t) = 2, (x,t,y) = 3, (t,x,y) = 4, (y,t,x) = 5, (t,y,x) = 6
 
-  int          _ChunkSize;                   ///< number of time points read before upper limit of
-  ///                                        ///< allowed storage is reached
+  int          _ChunkSize;                   ///< number of time points read before upper limit of allowed storage is reached
   int          _nChunk;                      ///< number of chunks (blocks) which can be read
   int          _iChunk;                      ///< current chunk read and stored in _aVal
 
@@ -56,7 +54,7 @@ private:/*------------------------------------------------------*/
   double       _interval;                    ///< uniform interval between data points (in days); delta t
   int          _steps_per_day;               ///< number of data intervals per day (pre-calculated for speed) =1.0/_interval
   bool         _is_derived;                  ///< true if forcing grid is derived from input forcings (e.g. t_ave from t_min and t_max)
-  ///                                        ///< false if forcing grid is truely read from NetCDF file (e.g. t_min or t_max)
+  ///                                        ///< false if forcing grid is directly read from NetCDF file (e.g. t_min or t_max)
 
   double     **_aVal;                        ///< Array of magnitudes of pulses (variable units)
   ///                                        ///< [size _ChunkSize, _nNonZeroWeightedGridCells]
@@ -72,7 +70,7 @@ private:/*------------------------------------------------------*/
   ///                                        ///< Following contraint must be satisfied:
   ///                                        ///<      sum(_GridWeight[k][i], {i=0,_nWeights[k]-1}) = 1.0 for all HRUs k=0,...,_nHydroUnits-1
   int        **_GridWtCellIDs;               ///< cell IDs for all non-zero grid weights for HRU k size=[_nHydroUnits][_nWeights[k]] (variable)
-  int         *_CellIDToIdx;                 ///< local cell index ic (ranging from 0 to _nNonZeroWeightedGridCells-1)) corresponding to cell ID [size: ncells]
+  int         *_CellIDToIdx;                 ///< local cell index ic (ranging from 0 to _nNonZeroWeightedGridCells-1)) corresponding to cell ID [size: _nCells]
   int         *_nWeights;                    ///< number of weights for each HRU k (size=_nHydroUnits) (each entry greater or equal to 1)
   int          _nNonZeroWeightedGridCells;   ///< Number of non-zero weighted grid cells:
   //                                         ///< This is effectively the number of data points which is stored from the original data.
@@ -91,6 +89,7 @@ private:/*------------------------------------------------------*/
   double       _LinTrans_b;                  ///< linear transformation of read data: new = a*data + b
   bool         _period_ending;               ///< true if data is period ending - subtracts additional interval *on top of _TimeShift*
   bool         _is_3D;                       ///< true if forcings are 3D (lat, lon, time); false if 2D (stations, time)
+
   double       _rainfall_corr;               ///< correction factor for rainfall (stored with gauge, used elsewhere)
   double       _snowfall_corr;               ///< correction factor for snowfall (stored with gauge, used elsewhere)
   double       _temperature_corr;            ///< correction factor for temperature (stored with gauge, used elsewhere)
@@ -164,10 +163,6 @@ public:/*------------------------------------------------------*/
                                            const CModel    *pModel);                    ///< checks if sum(_GridWeight[HRUID, :]) = 1.0 for all HRUIDs
   double GetGridWeight(                    const int        k,
                                            const int        CellID) const;              ///< returns weighting of HRU and CellID pair \todo[clean]: function not used
-  double GetChunkIndexFromModelTimeStep(   const optStruct &Options,
-                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to model time step \todo[clean]: function not used
-  double GetChunkIndexFromModelTimeStepDay(const optStruct &Options,
-                                           const double     global_model_time)  const;  ///< returns index in current chunk corresponding to beginning of day of currentmodel time step \todo[clean]: function not used
 
   // Routines for checking content
   void   CheckValue3D(                     const double value,

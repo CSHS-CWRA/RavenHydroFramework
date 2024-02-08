@@ -197,6 +197,8 @@ protected:
   constit_type               _type;  ///< AQUEOUS [mg], ENTHALPY [MJ], ISOTOPE [mg/mg] or TRACER [-]
   bool                 _is_passive;  ///< doesn't transport via advection (default: false)
 
+  bool         _lateral_via_convol;  ///< true if lateral mass/energy transfer handled within routing convolution (default: false)
+
   // Routing/state var storage
   int                   *_nMinHist;  ///< size of upstream loading history in each basin [size: nSubBasins]
   double               **_aMinHist;  ///< array used for storing routing upstream loading history [mg/d] or [MJ/d] [size: nSubBasins x _nMinHist[p]]
@@ -205,6 +207,8 @@ protected:
   double                  **_aMout;  ///< array storing current mass flow at points along channel [mg/d] or [MJ/d] [size: nSubBasins x _nSegments(p)]
   double              *_aMout_last;  ///< array used for storing mass outflow from channel at start of timestep [mg/d] or [MJ/d] [size: nSubBasins ]
   double              *_aMlat_last;  ///< array storing mass/energy outflow from start of timestep [size: nSubBasins]
+  double                 *_aMlocal;  ///< local contribution to current subbasin mass/energy outflow [mg/d] or [MJ/d] [size: nSubBasins] (just from in-catchment mass/energy routing)
+  double               *_aMlocLast;  ///< last local contribution [mg/d] or [MJ/d] [size: nSubBasins]
 
   double                   *_aMres;  ///< array used for storing reservoir masses [mg] or enthalpy [MJ] [size: nSubBasins]
   double              *_aMres_last;  ///< array storing reservoir mass [mg] or enthalpy [MJ] at start of timestep [size: nSubBasins]
@@ -247,7 +251,8 @@ protected:
   double GetTotalChannelConstituentStorage() const;
   double GetMassAddedFromInflowSources(const double &t,const double &tstep) const;
 
-  virtual double GetNetReachLosses(const int p) const;
+  virtual double GetNetReachLosses        (const int p);
+  virtual double GetCatchmentTransitLosses(const int p) const;
 
 public:/*-------------------------------------------------------*/
   // Constructor/destructor
@@ -298,13 +303,17 @@ public:/*-------------------------------------------------------*/
           void   IncrementCumulInput        (const optStruct &Options,const time_struct &tt);
           void   IncrementCumulOutput       (const optStruct &Options);
 
-  virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist,const double *aMinHist,const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
+  virtual double ApplyInCatchmentRouting (const int p, const double *aUnitHydro, const double *aQlatHist,const double *aMlatHist,const int    nMlatHist, const double &tstep) const;
+  virtual void   ApplyConvolutionRouting  (const int p,const double *aRouteHydro,const double *aQinHist, const double *aMinHist,const int nSegments,const int nMinHist,const double &tstep,double *aMout_new) const;
           void   ApplySpecifiedMassInflows(const int p,const double t,double &Minnew);
           void   SetMassInflows           (const int p,const double Minnew);
           void   SetLateralInfluxes       (const int p,const double RoutedMass);
-          void   RouteMass                (const int p,      double *aMoutnew,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
-  virtual void   RouteMassInReservoir     (const int p,const double *aMoutnew,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
-  virtual void   UpdateMassOutflows       (const int p,      double *aMoutnew,double &ResMass,double &ResSedMass, double &ResMassOutflow,const optStruct &Options,const time_struct &tt,bool initialize);
+
+  virtual void   PrepareForRouting        (const int p);
+          void   RouteMass                (const int p,      double *aMoutnew,double &Mlat_new,double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
+  virtual void   RouteMassInReservoir     (const int p,const double *aMoutnew,                 double &ResMass,double &ResSedMass, const optStruct &Options,const time_struct &tt) const;
+          void   UpdateMassOutflows       (const int p,const double *aMoutnew,const double &Mlat_new,const double &ResMass,const double &ResSedMass, double &MassOutflow,
+                                           const optStruct &Options,const time_struct &tt,const bool initialize);
 
   virtual void   WriteOutputFileHeaders      (const optStruct &Options);
   virtual void   WriteMinorOutput            (const optStruct &Options,const time_struct &tt);

@@ -160,6 +160,9 @@ struct veg_struct
 
   double PET_veg_corr;      ///< [0..1]    vegetation-based PET correction (multiplicative)
 
+  double Cap_LAI_ratio;     ///< [mm]      ratio of leaf liquid water capacity to LAI (~0.15)
+  double SnoCap_LAI_ratio;  ///< [mm]      ratio of leaf snow water capacity to LAI (~0.6)
+
   //root properties
   double root_extinct;      ///< [-]       extinction coefficient for roots, exp(-ext*z)
   double max_root_length;   ///< [mm/m2]   root length per unit canopy area
@@ -393,6 +396,8 @@ struct global_struct
 
   double           avg_annual_snow;          ///< [mm] avg annual snow as SWE
   double           avg_annual_runoff;        ///< [mm] avg annual runoff from basin
+  double           reference_flow_mult;      ///< [-] multiplier for reference flow relative to annual mean flow
+                                             ///< (10 for flood modelling, 0.5 for low-flow conditions)
 
   double           max_reach_seglength;      ///< [km] maximum reach segment length
   double           max_SWE_surface;          ///< [mm] maximum SWE in surface snow layer

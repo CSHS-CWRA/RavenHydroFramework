@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2022 the Raven Development Team
+  Copyright (c) 2008-2023 the Raven Development Team
   ----------------------------------------------------------------*/
 
 #include "ParseLib.h"
@@ -18,6 +18,7 @@ CParser::CParser(ifstream &FILE, const int i)
   INPUT =&FILE;
   l=i;
   comma_only=false;
+  _parsing_math_exp=false;
 }
 //-----------------------------------------------------------------------
 CParser::CParser(ifstream &FILE, string _filename, const int i)
@@ -26,6 +27,7 @@ CParser::CParser(ifstream &FILE, string _filename, const int i)
   INPUT =&FILE;
   l=i;
   comma_only=false;
+  _parsing_math_exp=false;
 }
 /*----------------------------------------------------------------
   Basic Member Functions
@@ -35,6 +37,44 @@ void   CParser::SetLineCounter(int i)    {l=i;}
 int    CParser::GetLineNumber ()         {return l;}
 //-----------------------------------------------------------------------
 string CParser::GetFilename() {return filename;}
+//-----------------------------------------------------------------------
+void CParser::NextIsMathExp() {_parsing_math_exp=true;}
+//-----------------------------------------------------------------------
+string CParser::Peek()
+{
+// return first word of current line in INPUT without proceeding forward in the file
+    std::streampos place;
+    int Len;
+    bool eof;
+    char *s[MAXINPUTITEMS];
+
+    place=INPUT->tellg(); // Get current position
+
+    eof=Tokenize(s,Len); //read and parse whole line
+    string firstword = "";
+    if (Len > 0) {firstword=s[0];}
+    if (!eof){
+      INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
+    }
+    return firstword;
+}
+//////////////////////////////////////////////////////////////////
+/// \brief takes expression string and adds spaces to help with expression tokenization
+/// \param line [in] - string
+/// \returns same line but with spaces to left and right of operators
+//
+string CParser::AddSpacesBeforeOps(string line) const
+{
+  string tmp;
+  for (int i = 0; i < line.size(); i++) {
+    char o=line[i];//).c_str();
+    if      (o == '/' || o == '*' || o == '+' || o == '-'){tmp+=" "+to_string(line[i])+" ";}
+    else if (o == '=')                                    {tmp+=line[i]+" ";               }
+    else if (o == '~' || o == '<' || o == '>')            {tmp+=" "+line[i];               }
+    else                                                  {tmp+=line[i];                   }
+  }
+  return tmp;
+}
 /*----------------------------------------------------------------
   Tokenize
   ----------------------------------------------------------------
@@ -73,6 +113,13 @@ bool CParser::Tokenize(char **out, int &numwords){
     l++;
     if ((parserdebug) && ((*wholeline)!=0)){cout <<wholeline<<endl;}
   }                 //if line is null, break, return true
+  if (_parsing_math_exp) {
+    string line;
+    line=AddSpacesBeforeOps(wholeline);
+    strcpy(wholeline,line.c_str());
+    _parsing_math_exp=false;
+  }
+
   p=strtok(wholeline, delimiters);
   while (p){                                         //sift through words, place in temparray, count line length
     tempwordarray[ct]=p;

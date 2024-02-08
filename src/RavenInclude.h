@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------
   Raven Library Source Code
-  Copyright (c) 2008-2023 the Raven Development Team
+  Copyright (c) 2008-2024 the Raven Development Team
 
   Includes declaration of global constants, enumerated types, and
   shared common & hydrological functions
@@ -95,6 +95,9 @@ extern bool   g_suppress_zeros;   ///< converts all output numbers less than REA
 extern bool   g_disable_freezing; ///< disables freezing impacts in thermal wrapper code
 extern double g_min_storage;      ///< minimum soil storage
 extern int    g_current_e;        ///< current ensemble member index
+
+// Model version
+const std::string __RAVEN_VERSION__   ="3.8.0";
 //*****************************************************************
 // Global Constants
 //*****************************************************************
@@ -129,7 +132,7 @@ const double  GPCM3_PER_KGPM3         =0.001;                                   
 const double  MJ_PER_J                =1e-6;                                    ///< [J] to [MJ]
 const double  KPA_PER_MPA             =1000;                                    ///< [MPa] to [KPa]
 const double  PA_PER_KPA              =1000;                                    ///< [kPa] to [Pa]
-const double  HPA_PER_KPA             =10;                                      ///< [kPa] to [hPa] 
+const double  HPA_PER_KPA             =10;                                      ///< [kPa] to [hPa]
 const double  MB_PER_KPA              =10;                                      ///< [KPa] to [millibars]
 const double  KPA_PER_ATM             =101.325;                                 ///< [atm] to [KPa]
 const double  SEC_PER_DAY             =86400;                                   ///< days to seconds
@@ -142,6 +145,7 @@ const double  WATT_TO_MJ_PER_D        =0.0864;                                  
 const double  MJ_PER_M2_LANGLEY       =0.04184;                                 ///< Langley to [MJ/m2]
 const double  INCH_PER_METER          =39.37;                                   ///< [m] to [in]
 const double  FEET_PER_METER          =3.28;                                    ///< [m] to [ft]
+const double  ACREFTD_PER_CMS         =70.0456;                                 //// [acre-ft/d] to [m3/s]
 const double  MPH_PER_KPH             =1.609;                                   ///< [kph] to [mph]
 const double  MPH_PER_MPS             =2.237;                                   ///< [m/s] to [mph]
 const double  RADIANS_TO_DEGREES      =57.29578951;                             ///< [rad] to [deg]
@@ -193,6 +197,7 @@ const double  LH_SUBLIM               =2.845;                                   
 
 const double  EMISS_ATM               =0.985;                                   ///< [-] emissivity of the atmosphere and snowpack
 const double  EMISS_CANOPY            =0.96;                                    ///< [-] emissivity of the canopy
+const double  EMISS_WATER             =0.97;                                    ///< [-] emissivity of open water
 
 const double  AIR_H20_MW_RAT          =0.622;                                   ///< ratio of molecular weight of air to that of water
 const double  MOLWT_WATER             =18.01528;                                ///< [g/mol] molecular weight of H2O
@@ -207,11 +212,6 @@ const double  PEAK_TEMP_HR            =3;                                       
 const double  WINTER_SOLSTICE_ANG     =6.111043;                                ///< Dec 21 as day angle
 
 //Hard-coded Empirical parameters
-const double  CAP_LAI_RATIO           =0.15;                                    ///< [mm] maximum ratio of canopy capacity to LAI+SAI
-//                                                                              ///< (\ref from Dingman/Brook90 7-2-CLM uses 0.1 (eqn 7.8), WATCLASS uses 0.2 (pg. 60))
-//                                                                              ///> \cite Federer2010 \cite Dingman1994
-const double  SCAP_LAI_RATIO          =0.6;                                     ///< [mm] maximum ratio of canopy snow capacity to LAI+SAI
-//                                                                              ///< (\ref from Dingman/Brook90 box 5.1, g 217-CLM uses 0.1 (eqn 7.8))
 const double  SAT_INF                 =0.92;                                    ///< [0..1] cutoff saturation for parabolic calculation of phi in clapp-hornberger soil characteristics
 const double  MIN_PRESSURE            =1e10;                                    ///< [-mm] minimum matric potential in soil
 
@@ -423,7 +423,7 @@ enum evap_method
   PET_MOHYSE,                   ///< MOHYSE algorithm (https://docplayer.fr/69668879-Le-modele-hydrologique-mohyse.html)
   PET_OUDIN,                    ///< Simple PET from Oudin et. al., 2005
   PET_LINACRE,                  ///< From Linacre, Agricultural Meteorology, 1977
-  PET_VAPDEFICIT,               ///< linear function of vapour deficit, c*(e_sat-e_a) from Seitz and Moore, 2020 
+  PET_VAPDEFICIT,               ///< linear function of vapour deficit, c*(e_sat-e_a) from Seitz and Moore, 2020
   PET_BLENDED,                  ///< a blended combination of 2 or more of the methods above
   PET_UNKNOWN                   ///< special PET type for unrecognized commands
 };
@@ -516,7 +516,7 @@ enum LW_method
 //
 enum LWinc_method
 {
-  LW_INC_DEFAULT,      ///< default implementation - reverts to Dingman 2014 if LW_RAD_DEFAULT is used (for backward compatibility) 
+  LW_INC_DEFAULT,      ///< default implementation - reverts to Dingman 2014 if LW_RAD_DEFAULT is used (for backward compatibility)
   LW_INC_DATA,         ///< specified in time series files
   LW_INC_SICART,       ///< From Sicart et al. (2005) as ported over from CRHM
   LW_INC_SKYVIEW,      ///< simple sky view factor approach for stream temperature modelling, Using Prata 1996 clear sky emissivity
@@ -1028,7 +1028,7 @@ struct optStruct
   string           rve_filename;              ///< fully qualified filename of rve (ensemble) file
   string           rvl_filename;              ///< fully qualified filename of rvl (live communications) file
   string           rvg_filename;              ///< fully qualified filename of rvg (groundwater properties) file
-  string           rvm_filename;              ///< fully qualified filename of rvm (management) file 
+  string           rvm_filename;              ///< fully qualified filename of rvm (management) file
   string           runinfo_filename;          ///< fully qualified filename of runinfo.nc file from FEWS
   string           stateinfo_filename;        ///< fully qualified filename of state_mods.nc file from FEWS
   string           flowinfo_filename;         ///< fully qualified filename of flowstate_mods.nc file from FEWS
@@ -1127,6 +1127,7 @@ struct optStruct
   bool             assimilate_flow;           ///< turn on streamflow assimilation
   bool             assimilate_stage;          ///< turn on lake stage assimilation
   double           assimilation_start;        ///< assimilation start time (in model time [d])
+  bool             management_optimization;   ///< apply water management optimization (default: false)
   netcdfatt       *aNetCDFattribs;            ///< array of NetCDF attrributes {attribute/value pair}
   int              nNetCDFattribs;            ///< size of array of NetCDF attributes
   int              NetCDF_chunk_mem;          ///< [MB] size of memory chunk for each forcing grid

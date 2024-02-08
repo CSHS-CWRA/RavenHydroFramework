@@ -54,7 +54,6 @@ string CDiagnostic::GetName() const
   case(DIAG_NSC):               {return "DIAG_NSC";}
   case(DIAG_RSR):               {return "DIAG_RSR";}
   case(DIAG_R2):                {return "DIAG_R2";}
-  case(DIAG_CUMUL_FLOW):        {return "DIAG_CUMUL_FLOW";}
   case(DIAG_LOG_NASH):          {return "DIAG_LOG_NASH";}
   case(DIAG_KLING_GUPTA):       {return "DIAG_KLING_GUPTA";}
   case(DIAG_DAILY_KGE):         {return "DIAG_DAILY_KGE";}
@@ -901,34 +900,6 @@ double CDiagnostic::CalculateDiagnostic(CTimeSeriesABC  *pTSMod,
       return -ALMOST_INF;
     }
   }
-  case(DIAG_CUMUL_FLOW)://-----------------------------------------
-  { // % error in cumulative flows
-    double sumobs=0;
-    double summod=0;
-    N=0;
-
-    for (nn=nnstart;nn<nnend;nn++)
-    {
-      obsval = pTSObs->GetSampledValue(nn);
-      modval = pTSMod->GetSampledValue(nn);
-      weight =baseweight[nn];
-
-      sumobs+=obsval*weight;
-      summod+=modval*weight;
-      N+=weight;
-    }
-
-    if ((N>0) && (sumobs!=0.0))
-    {
-      return (summod-sumobs)/sumobs; //relative error in cumulative flow
-    }
-    else
-    {
-      string warn = "DIAG_CUMUL_FLOW not calculated. Missing non-zero weighted observations during simulation duration.";
-      WriteWarning(warn,Options.noisy);
-      return ALMOST_INF;
-    }
-  }
   case(DIAG_KLING_GUPTA)://-----------------------------------------
   case(DIAG_KLING_GUPTA_DEVIATION)://-------------------------------
   {
@@ -1306,13 +1277,13 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
       if ((obsval!=RAV_BLANK_DATA) && (baseweight[nn]>0.0)){
         ovals[(int)(N)]=obsval;
         mvals[(int)(N)]=modval;
-        N++;  
+        N++;
       }
     }
     if(N>1) {
       getRanks(mvals,(int)(N),rank1);
       getRanks(ovals,(int)(N),rank2);
-      
+
       double cov=0;
       double mean1=0;
       double mean2=0;
@@ -1328,11 +1299,22 @@ case(DIAG_DAILY_KGE)://----------------------------------------------------
         cov  += (rank1[n]-mean1)*(rank2[n]-mean2)/N;
       }
       spearman = cov / sqrt(std1) / sqrt(std2);
-    } 
-    else 
+    }
+    else
     {
       spearman=0;
     }
+    if(N>0)
+    {
+      return spearman;
+    }
+    else
+    {
+      string warn = "DIAG_SPEARMAN not calculated. Missing non-zero weighted observations during simulation duration.";
+      WriteWarning(warn,Options.noisy);
+      return -ALMOST_INF;
+    }
+
     delete[] rank1;
     delete[] rank2;
     delete[] mvals;
@@ -1411,7 +1393,6 @@ diag_type StringToDiagnostic(string distring)
   else if (!distring.compare("NSC"                  )){return DIAG_NSC;}
   else if (!distring.compare("RSR"                  )){return DIAG_RSR;}
   else if (!distring.compare("R2"                   )){return DIAG_R2;}
-  else if (!distring.compare("CUMUL_FLOW"           )){return DIAG_CUMUL_FLOW;}
   else if (!distring.compare("LOG_NASH"             )){return DIAG_LOG_NASH;}
   else if (!distring.compare("KLING_GUPTA"          )){return DIAG_KLING_GUPTA;}
   else if (!distring.compare("DAILY_KGE"            )){return DIAG_DAILY_KGE;}

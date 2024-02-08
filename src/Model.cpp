@@ -132,6 +132,7 @@ CModel::CModel(const int        nsoillayers,
 
   _pTransModel=new CTransportModel(this);
   _pGWModel = NULL; //GW MIGRATE -should initialize with empty GW model
+  _pDO =NULL;
 
 #ifdef _MODFLOW_USG_
   _pGWModel = new CGroundwaterModel(this);
@@ -225,6 +226,7 @@ CModel::~CModel()
   delete _pEnsemble;
   delete _pGWModel;
   delete _pStateVar;
+  delete _pDO;
 
   delete [] _PETBlends_type;
   delete [] _PETBlends_wts;
@@ -970,6 +972,12 @@ CGroundwaterModel*CModel::GetGroundwaterModel() const{return _pGWModel;}
 //
 CEnsemble  *CModel::GetEnsemble() const { return _pEnsemble; }
 
+//////////////////////////////////////////////////////////////////
+/// \brief Returns demand optimizer
+/// \return pointer to demand optimizer
+//
+CDemandOptimizer  *CModel::GetDemandOptimizer() const { return _pDO; }
+
 /*****************************************************************
    Watershed Diagnostic Functions
     -aggregate data from subbasins and HRUs
@@ -1435,6 +1443,7 @@ void CModel::AddModelOutputTime   (const time_struct &tt_out, const optStruct &O
                    "AddModelOutputTime: Cannot have model output time prior to start of simulation",BAD_DATA_WARN);
   if (t_loc>Options.duration){
     WriteWarning("AddModelOutputTime: model output time specified after end of simulation. It will be ignored",Options.noisy);
+    return;
   }
 
   //add to end of array
@@ -1605,7 +1614,14 @@ void CModel::SetOutputGroup(const CHRUGroup *pOut){
 void CModel::SetEnsembleMode(CEnsemble *pEnsemble) {
   _pEnsemble=pEnsemble;
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief Sets demand optimizer 
+///
+/// \param *pDO [in] (assumed valid) pointer to optimizer instance
+//
+void CModel::AddDemandOptimization(CDemandOptimizer *pDO) {
+  _pDO=pDO;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief Sets PET blend values
 //
@@ -2813,13 +2829,15 @@ void CModel::UpdateDiagnostics(const optStruct   &Options,
     {
       int c=_pObservedTS[i]->GetConstitInd();
       int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
-      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
+      if (c==DOESNT_EXIST){value=RAV_BLANK_DATA;}
+      else                {value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);}
     }
     else if(datatype == "STREAM_TEMPERATURE")//=======================================
     {
       int c=_pObservedTS[i]->GetConstitInd();
       int p=GetSubBasinIndex(_pObservedTS[i]->GetLocID());
-      value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);
+      if (c==DOESNT_EXIST){value=RAV_BLANK_DATA;}
+      else                {value = _pTransModel->GetConstituentModel2(c)->GetOutflowConcentration(p);}
     }
     else if(datatype == "WATER_LEVEL")//=======================================
     {

@@ -65,7 +65,7 @@ void CModel::AddFromPETParamList(string *aP,class_type *aPC,int &nP,const evap_m
   else if(evaporation==PET_PRIESTLEY_TAYLOR)
   {
     aP[nP]="PRIESTLEYTAYLOR_COEFF";  aPC[nP]=CLASS_LANDUSE; nP++;
-  } 
+  }
   else if (evaporation == PET_LINEAR_TEMP) {
     aP[nP] = "PET_LIN_COEFF"; aPC[nP]=CLASS_LANDUSE; nP++;
   }
@@ -188,8 +188,8 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
 
   aP[nP]="LAKE_PET_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; //required for ET from any reservoir, defaults to 1.0
 
-  aP[nP]="WIND_VEL_CORR";     aPC[nP]=CLASS_LANDUSE; nP++; 
-  aP[nP]="RELHUM_CORR";       aPC[nP]=CLASS_LANDUSE; nP++; 
+  aP[nP]="WIND_VEL_CORR";     aPC[nP]=CLASS_LANDUSE; nP++;
+  aP[nP]="RELHUM_CORR";       aPC[nP]=CLASS_LANDUSE; nP++;
 
   // Interpolation Method parameters
   //----------------------------------------------------------------------
@@ -256,7 +256,7 @@ void CModel::GetParticipatingParamList(string *aP,class_type *aPC,int &nP,const 
 
   // Evaporation algorithms parameters
   //----------------------------------------------------------------------
-
+  aP[nP]="PET_CORRECTION"; aPC [nP]=CLASS_SOIL; nP++;//All soilevap algorithms use this.
   // Evaporation Method
   if (Options.evaporation==PET_BLENDED)
   {

@@ -29,6 +29,8 @@ CConstituentModel::CConstituentModel(CModel *pMod,CTransportModel *pTMod, string
   _pModel=pMod;
   _pTransModel=pTMod;
 
+  _lateral_via_convol=false;
+
   _pSources=NULL;
   _nSources=0;
 
@@ -140,9 +142,18 @@ double CConstituentModel::GetTotalChannelConstituentStorage() const
 /// \param p [in] subbasin index
 /// \returns net mass lost while transporting along reach p [mg]
 //
-double CConstituentModel::GetNetReachLosses(const int p) const
+double CConstituentModel::GetNetReachLosses(const int p)
 {
   //return _M_loss_rate * Options.timestep;
+  return 0.0;//default -assumes conservative transport in streams (more interesting for child classes)
+}
+//////////////////////////////////////////////////////////////////
+/// \brief returns net mass lost while transporting in-catchment towards reach p [mg]
+/// \param p [in] subbasin index
+/// \returns net mass lost while transporting in-catchment towards reach p [mg]
+//
+double CConstituentModel::GetCatchmentTransitLosses(const int p) const
+{
   return 0.0;//default -assumes conservative transport in streams (more interesting for child classes)
 }
 //////////////////////////////////////////////////////////////////
@@ -591,9 +602,32 @@ void CConstituentModel::IncrementCumulOutput(const optStruct &Options)
       _cumul_output+=GetIntegratedMassOutflow(p,Options.timestep);
     }
     _cumul_output+=GetNetReachLosses(p);
+    _cumul_output+=GetCatchmentTransitLosses(p);
   }
 }
-
+//////////////////////////////////////////////////////////////////
+/// \brief calculates lateral flow using convoluition
+/// \details This parent version is simple conservative version, child versions may calculate decay, etc. in transit
+/// \param p      [in]  subbasin index
+/// \param aUnitHydro [in] in-catchment routing unit hydrograph [size: nMlatHist] [-]
+/// \param aMlatHist [in] lateral inflow history [size: nMlatHist] [m3/s]
+/// \param nMlatHist [in] size of lateral inflow history
+/// \param tstep [in] model time step [d]
+/// \returns new lateral inflow to reach
+//
+double CConstituentModel::ApplyInCatchmentRouting(const int     p,
+                                                  const double *aUnitHydro,
+                                                  const double *aQlatHist,
+                                                  const double *aMlatHist,
+                                                  const int     nMlatHist,
+                                                  const double &tstep) const
+{
+  double Mlat_new=0.0;
+  for(int n=0;n<_nMlatHist[p];n++) {
+    Mlat_new+=_aMlatHist[p][n]*aUnitHydro[n];
+  }
+  return Mlat_new;
+}
 //////////////////////////////////////////////////////////////////
 /// \brief calculates mass outflow using convoluition
 /// \details This parent version is simple, child versions may calculate decay, etc. in channel
@@ -1036,7 +1070,7 @@ void CConstituentModel::WriteNetCDFOutputFileHeaders(const optStruct& Options)
   //--------------------------------------------------------------------
   if(!_is_passive) {
     if(_type!=ENTHALPY) { filename=_name+"Pollutographs.nc"; }
-    else { filename="StreamTemperatures.nc"; }
+    else                { filename="StreamTemperatures.nc"; }
 
     filename=FilenamePrepare(filename,Options);
     retval = nc_create(filename.c_str(),NC_CLOBBER|NC_NETCDF4,&ncid);  HandleNetCDFErrors(retval);
@@ -1227,14 +1261,14 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   double latent_flux=0;
   double Q_sens(0.0),Q_cond(0.0),Q_lat(0.0),Q_GW(0.0),Q_rad(0.0),Q_fric(0.0);
-  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf;
+  double Qs,Qc,Ql,Qg,Qr,Qlw,Qf,Tave;
   if(_type==ENTHALPY)
   {
     pEnthalpyModel=(CEnthalpyModel*)(this);
     latent_flux =pEnthalpyModel->GetAvgLatentHeatFlux()*(area*M2_PER_KM2)*Options.timestep; // [MJ] (loss term)t)
 
     for(int p=0;p<_pModel->GetNumSubBasins();p++) {
-      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf);
+      pEnthalpyModel->GetEnergyLossesFromReach(p,Qs,Qc,Ql,Qg,Qr,Qlw,Qf,Tave);
       Q_sens+=Qs;Q_cond+=Qc;Q_lat+=Ql;Q_GW+=Qg;Q_rad+=Qr+Qlw; Q_fric+=Qf;
     }
   }
@@ -1306,6 +1340,7 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
 
   // Pollutographs.csv or StreamTemperatures.csv
   //----------------------------------------------------------------
+  double val,Q;
   if(!_is_passive) {
     _POLLUT<<tt.model_time<<","<<thisdate<<","<<thishour;
     if(_type==ENTHALPY) {
@@ -1316,14 +1351,18 @@ void CConstituentModel::WriteMinorOutput(const optStruct &Options,const time_str
       CSubBasin* pBasin=_pModel->GetSubBasin(p);
       if(pBasin->IsGauged() && (pBasin->IsEnabled()))
       {
-        _POLLUT<<","<<GetOutflowConcentration(p);
-        if(_type==ENTHALPY) {
-          _POLLUT<<","<<pEnthalpyModel->GetOutflowIceFraction(p);
+        Q=pBasin->GetOutflowRate();
+        if (Q<REAL_SMALL){_POLLUT<<",,";}
+        else             {
+          _POLLUT<<","<<GetOutflowConcentration(p);
+          if(_type==ENTHALPY) {
+            _POLLUT<<","<<pEnthalpyModel->GetOutflowIceFraction(p);
+          }
         }
         for(int i = 0; i < _pModel->GetNumObservedTS(); i++) {
           if(IsContinuousConcObs(_pModel->GetObservedTS(i),pBasin->GetID(),_constit_index))
           {
-            double val = _pModel->GetObservedTS(i)->GetAvgValue(tt.model_time,Options.timestep);
+            val = _pModel->GetObservedTS(i)->GetAvgValue(tt.model_time,Options.timestep);
             if((val != RAV_BLANK_DATA) && (tt.model_time>0)) { _POLLUT << "," << val; }
             else                                             { _POLLUT << ","; }
           }
@@ -1676,7 +1715,7 @@ void CConstituentModel::WriteMajorOutput(ofstream &RVC) const
     }
     if (_type == ENTHALPY) {
       CEnthalpyModel *pEnth=(CEnthalpyModel*)(this);
-      RVC<<"     :RiverbedTemp, "<<pEnth->GetBedTemperature(p)<<endl;
+      RVC<<"     :BedTemperature, "<<pEnth->GetBedTemperature(p)<<endl;
     }
   }
   RVC<<":EndBasinTransportVariables"<<endl;

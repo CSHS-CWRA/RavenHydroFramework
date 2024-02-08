@@ -690,9 +690,9 @@ double ShuttleworthWallaceEvap(const force_struct   *F,
 
   double PMS =((Raa+Rga)*de_dT*AE+vpd1) / ((de_dT+gamma) * (Raa + Rga) + gamma * Rss);
   double PMC =((Raa+Rac)*de_dT*AE+vpd2) / ((de_dT+gamma) * (Raa + Rac) + gamma * Rsc);
-  double LE=Ccc*PMC+Ccs*PMS;//total latent heat flux density
+  double LH=Ccc*PMC+Ccs*PMS;//total latent heat flux density
 
-  double vpd3 = vapor_def + Raa*(de_dT*AE-(de_dT+gamma)*LE);
+  double vpd3 = vapor_def + Raa*(de_dT*AE-(de_dT+gamma)*LH);
 
   double PET,EVAP;
   PET =(Rac*de_dT*(AE - AE_grnd)+vpd3)/((de_dT+gamma)*Rac+gamma*Rsc);
@@ -786,9 +786,9 @@ double GroundEvaporation(const double actual_transpiration,//[mm/d]
 
   double Rs = (de_dT + gamma) * Rga + gamma * Rss;
   double Ra = (de_dT + gamma) * Raa;
-  double LE = (Rs* trans + HCP_AIR/MJ_PER_J*vapor_def + de_dT*(Rga*AE_grnd + Raa*AE)) / (Rs + Ra);
+  double LH = (Rs* trans + HCP_AIR/MJ_PER_J*vapor_def + de_dT*(Rga*AE_grnd + Raa*AE)) / (Rs + Ra);
 
-  return (LE - trans)/DENSITY_WATER/LH_vapor;//[mm/d]
+  return (LH - trans)/DENSITY_WATER/LH_vapor;//[mm/d]
 
 }
 

@@ -165,8 +165,6 @@ bool ParseInputFiles (CModel      *&pModel,
 /// \brief This local method (called by ParseInputFiles) reads an input .rvi file and generates
 /// a new model with all options and processes created.
 ///
-/// \remark Custom output must be AFTER processes are specified.
-///
 /// \param *filename [in] The fully-qualified file name of .rvi input file
 /// \param *&pModel [in] Input object that determines general model settings
 /// \param &Options [in] Global model options information
@@ -181,6 +179,7 @@ bool ParseMainInputFile (CModel     *&pModel,
   CProcessGroup    *pProcGroup=NULL;
   CProcessGroup    *pProcGroupOuter=NULL; //for nested processgroups
   CGroundwaterModel*pGW=NULL;
+  CEnthalpyModel   *pEnthalpyModel=NULL;
   bool              transprepared(false);
   bool              runname_overridden(false);
   bool              runmode_overridden(false);
@@ -333,6 +332,8 @@ bool ParseMainInputFile (CModel     *&pModel,
   Options.flowinfo_filename       ="";
 
   Options.NetCDF_chunk_mem        =10; //MB
+
+  Options.management_optimization =false;
 
   pModel=NULL;
   pMover=NULL;
@@ -507,7 +508,9 @@ bool ParseMainInputFile (CModel     *&pModel,
 
     //...
     //--------------------SYSTEM OPTIONS -----------------------
+    else if  (!strcmp(s[0],":HyporheicLayer"            )){code=198;}
     else if  (!strcmp(s[0],":AggregatedVariable"        )){code=199;}//After corresponding DefineHRUGroup(s) command
+
 
     //--------------------HYDROLOGICAL PROCESSES ---------------
     if       (in_ifmode_statement)                        {code=-6; }
@@ -586,6 +589,7 @@ bool ParseMainInputFile (CModel     *&pModel,
     //-------------------WATER MANAGEMENT---------------------
     else if  (!strcmp(s[0],":ReservoirDemandAllocation" )){code=400; }
     else if  (!strcmp(s[0],":ReservoirOverflowMode"     )){code=401; }
+    else if  (!strcmp(s[0],":ApplyManagementOptimization")){code=402; }
     //...
     //-------------------GROUNDWATER -------------------------
     else if  (!strcmp(s[0],":ModelType"                 )){code=500; }//AFTER SoilModel Commmand
@@ -1114,7 +1118,7 @@ bool ParseMainInputFile (CModel     *&pModel,
       if (Len<2){ImproperFormatWarning(":LWIncomingMethod",p,Options.noisy); break;}
       if      (!strcmp(s[1],"LW_INC_DATA"      )){Options.LW_incoming=LW_INC_DATA;}
       else if (!strcmp(s[1],"LW_INC_DEFAULT"   )){Options.LW_incoming=LW_INC_DEFAULT;}
-      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;} 
+      else if (!strcmp(s[1],"LW_INC_SICART"    )){Options.LW_incoming=LW_INC_SICART;}
       else if (!strcmp(s[1],"LW_INC_SKYVIEW"   )){Options.LW_incoming=LW_INC_SKYVIEW;}
       else if (!strcmp(s[1],"LW_INC_DINGMAN"   )){Options.LW_incoming=LW_INC_DINGMAN;}
       else {ExitGracefully("ParseInput:LWIncomingMethod: Unrecognized method ",BAD_DATA_WARN);}
@@ -2012,6 +2016,17 @@ bool ParseMainInputFile (CModel     *&pModel,
     {/*:WriteLocalFlows*/
       if(Options.noisy) { cout << "Write local flows to hydrographs file" << endl; }
       Options.write_localflow=true;
+      break;
+    }
+    case(198):  //--------------------------------------------
+    {/*:HyporheicLayer*/
+      if(Options.noisy) { cout << "HyporheicLayer" << endl; }
+      if (pEnthalpyModel != NULL) {
+        pEnthalpyModel->SetHyporheicLayer(s_to_i(s[1]));
+      }
+      else {
+        ExitGracefully("ParseMainInputFile: :HyporheicLayer must be supplied after :Transport TEMPERATURE command",BAD_DATA_WARN);
+      }
       break;
     }
     case(199):  //--------------------------------------------
@@ -3096,7 +3111,9 @@ bool ParseMainInputFile (CModel     *&pModel,
         //\todo [funct] implement this by default
         //int iAtmPrecip=pModel->GetStateVarIndex(ATMOS_PRECIP);
         //pModel->GetTransportModel()->AddDirichletCompartment(s[1],iAtmPrecip,DOESNT_EXIST,DIRICHLET_TEMP);
+        pEnthalpyModel =(CEnthalpyModel*)(pModel->GetTransportModel()->GetConstituentModel(pModel->GetTransportModel()->GetNumConstituents()-1));
       }
+
       break;
     }
 
@@ -3350,6 +3367,19 @@ bool ParseMainInputFile (CModel     *&pModel,
       else
       {
         ExitGracefully("ParseMainInputFile: Unrecognized Reservoir Overflow handling Method",BAD_DATA_WARN); break;
+      }
+      break;
+    }
+    case(402):  //----------------------------------------------
+    {/*:ApplyManagementOptimization */
+      if(Options.noisy) { cout <<"Apply management optimization"<<endl; }
+      if (pModel==NULL){
+        ExitGracefully(":ApplyManagementOptimization must appear after :SoilModel in raven input file. ",BAD_DATA_WARN);
+      }
+      else{
+        Options.management_optimization=true;
+        CDemandOptimizer *pDO=new CDemandOptimizer(pModel);
+        pModel->AddDemandOptimization(pDO);
       }
       break;
     }

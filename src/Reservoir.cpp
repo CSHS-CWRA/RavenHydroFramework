@@ -399,6 +399,20 @@ double  CReservoir::GetResStage          () const { return _stage; }
 double  CReservoir::GetOldStage          () const { return _stage_last; }
 
 //////////////////////////////////////////////////////////////////
+/// \returns min stage [m]
+//
+double  CReservoir::GetMinStage          (const int nn) const { 
+  if(_pMinStageTS    !=NULL){ return _pMinStageTS->GetSampledValue(nn);}
+  return _min_stage;
+}
+//////////////////////////////////////////////////////////////////
+/// \returns max stage [m]
+//
+double  CReservoir::GetMaxStage          (const int nn) const { 
+  if(_pMaxStageTS    !=NULL){ return _pMaxStageTS->GetSampledValue(nn);}
+  return ALMOST_INF;
+}
+//////////////////////////////////////////////////////////////////
 /// \returns current surface area [m2]
 //
 double  CReservoir::GetSurfaceArea       () const { return GetArea(_stage); }
@@ -561,7 +575,7 @@ string CReservoir::GetControlName(const int i) const
   return _pControlStructures[i]->GetName();
 }
 
-double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const 
+double CReservoir::GetStageDischargeDerivative(const double &stage, const int nn) const
 {
   double dh=0.0001;
   double weir_adj=0.0;
@@ -1056,9 +1070,7 @@ double CReservoir::GetAET() const
 {
   if(_pHRU!=NULL) {
     double Evap=_pHRU->GetForcingFunctions()->OW_PET;//mm/d
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
+    Evap*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     return Evap*0.5*(GetArea(_stage)+GetArea(_stage_last))/(_pHRU->GetArea()*M2_PER_KM2); //normalized to HRU area
   }
   else {
@@ -1316,7 +1328,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   // Downstream irrigation demand
   for(int i=0;i<_nDemands;i++) {
     if(IsInDateRange(tt.julian_day,_aDemands[i]->julian_start,_aDemands[i]->julian_end)){
-      Qmin+=(_aDemands[i]->pDownSB->GetIrrigationDemand(tt.model_time)*_aDemands[i]->percent);
+      Qmin+=(_aDemands[i]->pDownSB->GetTotalWaterDemand(tt.model_time)*_aDemands[i]->percent);
       Qmin+= _aDemands[i]->pDownSB->GetEnviroMinFlow   (tt.model_time)*1.0; //assume 100% of environmental min flow must be met
     }
   }
@@ -1346,9 +1358,7 @@ double  CReservoir::RouteWater(const double &Qin_old,
   if(_pHRU!=NULL)
   {
     ET=_pHRU->GetForcingFunctions()->OW_PET/SEC_PER_DAY/MM_PER_METER; //average for timestep, in m/s
-    if(_pHRU->GetSurfaceProps()->lake_PET_corr>=0.0) {
-      ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
-    }
+    ET*=_pHRU->GetSurfaceProps()->lake_PET_corr;
     precip=_Precip/Options.timestep/SEC_PER_DAY; //[m3]->[m3/s]
   }
   if(_seepage_const>0) {
