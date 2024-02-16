@@ -30,7 +30,7 @@ class CRavenBMI : public bmixx::Bmi
     void _ReadConfigFile(std::string config_file);
     std::vector<char *> _SplitLineByWhitespace(std::string line);
     std::vector<std::string> _SplitLineByColon(std::string line);
-    bool _IsValidDerivedVariable(std::string var_name);
+    bool _IsValidSubBasinStateVariable(std::string var_name);
 
   public:
     CRavenBMI();
