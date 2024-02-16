@@ -830,7 +830,7 @@ bool ParseHRUPropsFile(CModel *&pModel, const optStruct &Options, bool terrain_r
           int iter=0;
           for(int p=0;p<pModel->GetNumSubBasins();p++)
           {
-            if ((pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) || 
+            if ((pModel->IsSubBasinUpstream(pModel->GetSubBasin(p)->GetID(),SBID)) ||
                 (pModel->GetSubBasin(p)->GetID() == SBID) ) {
               pSBGroup->AddSubbasin(pModel->GetSubBasin(p));
               advice=advice+to_string(pModel->GetSubBasin(p)->GetID())+" ";

@@ -140,7 +140,7 @@ void CModel::CloseOutputStreams()
   if (  _LEVELS.is_open()){  _LEVELS.close();}
 
   if (_pDO!=NULL){_pDO->CloseOutputStreams();}
-   
+
 #ifdef _RVNETCDF_
 
   int    retval;      // error value for NetCDF routines

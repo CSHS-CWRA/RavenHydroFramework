@@ -62,7 +62,7 @@ std::vector<char *> CRavenBMI::_SplitLineByWhitespace(std::string line)
 
 //////////////////////////////////////////////////////////////////
 /// \brief Splits a string by colon into a vector of char*
-/// 
+///
 /// \param line [in] string to be split
 /// \return vector of char* containing the split string
 std::vector<std::string> CRavenBMI::_SplitLineByColon(std::string line)
@@ -163,7 +163,7 @@ void CRavenBMI::_ReadConfigFile(std::string config_file)
       listing_inp_vars = false;
       listing_out_vars = false;
       continue;
-      
+
     } else if (config_key == CFG_FILE_INPVARS_TAG) {
 
       listing_inp_vars = true;
@@ -606,7 +606,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
         throw std::logic_error("CRavenBMI.GetValue: variable '" + name + "' is not an HRU state variable.");
         return;
       }
-      
+
       Stype = (sv_type)output_var_ids[i];
       Slayer = output_var_layer_index[i];
       is_HRU_SV=true;
@@ -630,7 +630,7 @@ void CRavenBMI::GetValue(std::string name, void* dest)
     delete [] out;
     return;
   }
-  
+
   // if it got here... dude, I have a bad news for you...
   throw std::logic_error("RavenBMI.GetValue: variable '" + name + "' not covered by this function.");
   return;
@@ -687,7 +687,7 @@ void CRavenBMI::GetValueAtIndices(std::string name, void* dest, int* inds, int c
         throw std::logic_error("CRavenBMI.GetValue: variable '" + name + "' is not an HRU state variable.");
         return;
       }
-      
+
       Stype = (sv_type)output_var_ids[i];
       Slayer = output_var_layer_index[i];
       is_HRU_SV=true;

@@ -401,14 +401,14 @@ double  CReservoir::GetOldStage          () const { return _stage_last; }
 //////////////////////////////////////////////////////////////////
 /// \returns min stage [m]
 //
-double  CReservoir::GetMinStage          (const int nn) const { 
+double  CReservoir::GetMinStage          (const int nn) const {
   if(_pMinStageTS    !=NULL){ return _pMinStageTS->GetSampledValue(nn);}
   return _min_stage;
 }
 //////////////////////////////////////////////////////////////////
 /// \returns max stage [m]
 //
-double  CReservoir::GetMaxStage          (const int nn) const { 
+double  CReservoir::GetMaxStage          (const int nn) const {
   if(_pMaxStageTS    !=NULL){ return _pMaxStageTS->GetSampledValue(nn);}
   return ALMOST_INF;
 }

@@ -54,7 +54,7 @@ string CParser::Peek()
     string firstword = "";
     if (Len > 0) {firstword=s[0];}
     if (!eof){
-      INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line 
+      INPUT->seekg(place ,std::ios_base::beg);    // Return to position before peeked line
     }
     return firstword;
 }
